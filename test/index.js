@@ -13,16 +13,18 @@ import {
 } from '../src/index.js';
 
 const recordDefEx = [
-    { name: 'a', type: 'uint32_t' },
-    { name: 'b', type: 'int32_t' },
+    { name: 'a', type: 'uint32_le' },
+    { name: 'b', type: 'int32_le' },
+    { name: 'c', type: 'int_le', size: 3 },
+    { name: 'd', type: 'int_le', size: 5 },
     { name: 'nested', type: 'record', def: [
-        { name: 'a', type: 'uint32_t' },
-        { name: 'b', type: 'uint32_t' }
+        { name: 'a', type: 'uint32_le' },
+        { name: 'b', type: 'uint32_le' }
     ]},
     { name: 'x', type: 'record', def: [
-        { name: 'a', type: 'uint32_t' },
+        { name: 'a', type: 'uint32_le' },
         { name: 'y', type: 'record', def: [
-            { name: 'a', type: 'uint32_t' },
+            { name: 'a', type: 'uint32_le' },
         ]}
     ]},
 ];
@@ -30,6 +32,8 @@ const recordDefEx = [
 const obj = {
     a: 4,
     b: -128,
+    c: 10,
+    d: 5,
     nested: {
         a: 5,
         b: 5,
@@ -51,20 +55,9 @@ const buf = createRecord(compiled, obj);
 console.log('buf', buf);
 
 setValue(buf, compiled, '.x.y.a', 1337);
-console.log('read', getValue(buf, compiled, '.x.y.a'));
+console.log('read .x.y.a', getValue(buf, compiled, '.x.y.a'));
 
 const COUNT = 99999;
-
-const writer = createWriter(buf, compiled, '.x.y.a');
-const reader = createReader(buf, compiled, '.x.y.a');
-
-function dataRecordTest() {
-    let x = 0;
-	for (let i = 0; i < COUNT; i++) {
-        x = reader();
-        writer(i);
-	}
-}
 
 function nativeObjectTest() {
     let x = 0;
@@ -74,7 +67,7 @@ function nativeObjectTest() {
 	}
 }
 
-function nativeObjectSerTest() {
+function nativeV8SerializerTest() {
     let ser = v8.serialize(obj);
     let x = 0;
 	for (let i = 0; i < COUNT; i++) {
@@ -96,11 +89,31 @@ function jsonTest() {
     }
 }
 
+function dataRecordTestSlow() {
+    let x = 0;
+	for (let i = 0; i < COUNT; i++) {
+        x = getValue(buf, compiled, '.x.y.a');
+        setValue(buf, compiled, '.x.y.a', i);
+	}
+}
+
+const writer = createWriter(buf, compiled, '.x.y.a');
+const reader = createReader(buf, compiled, '.x.y.a');
+
+function dataRecordTestFast() {
+    let x = 0;
+	for (let i = 0; i < COUNT; i++) {
+        x = reader();
+        writer(i);
+	}
+}
+
 const wrapped = [
     nativeObjectTest,
-    nativeObjectSerTest,
+    nativeV8SerializerTest,
     jsonTest,
-    dataRecordTest
+    dataRecordTestSlow,
+    dataRecordTestFast,
 ].map(performance.timerify);
 
 const obs = new PerformanceObserver((list) => {
