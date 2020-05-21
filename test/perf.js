@@ -6,8 +6,8 @@ import {
 import {
     compile,
     createRecord,
-    getValue,
-    setValue,
+    readValue,
+    writeValue,
     createReader,
     createWriter,
 } from '../src/index.js';
@@ -46,16 +46,10 @@ const obj = {
     }
 };
 
-console.log('obj', obj);
-
 const compiled = compile(recordDefEx);
-console.log('compiledDef', compiled);
-
 const buf = createRecord(compiled, obj);
-console.log('buf', buf);
-
-setValue(buf, compiled, '.x.y.a', 1337);
-console.log('read .x.y.a', getValue(buf, compiled, '.x.y.a'));
+const writer = createWriter(buf, compiled, '.x.y.a');
+const reader = createReader(buf, compiled, '.x.y.a');
 
 const COUNT = 99999;
 
@@ -92,13 +86,10 @@ function jsonTest() {
 function dataRecordTestSlow() {
     let x = 0;
 	for (let i = 0; i < COUNT; i++) {
-        x = getValue(buf, compiled, '.x.y.a');
-        setValue(buf, compiled, '.x.y.a', i);
+        x = readValue(buf, compiled, '.x.y.a');
+        writeValue(buf, compiled, '.x.y.a', i);
 	}
 }
-
-const writer = createWriter(buf, compiled, '.x.y.a');
-const reader = createReader(buf, compiled, '.x.y.a');
 
 function dataRecordTestFast() {
     let x = 0;

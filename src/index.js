@@ -46,6 +46,7 @@ const TYPES = {
     int_le: 't',
     uint_be: 'u',
     uint_le: 'v',
+    string: 'w',
     // Virtual
     record: 'z',
 };
@@ -78,6 +79,7 @@ function getReadFunc(buf) {
         t: (offset, len) => buf.readIntLE(offset, len),
         u: (offset, len) => buf.readUIntBE(offset, len),
         v: (offset, len) => buf.readUIntLE(offset, len),
+        w: (offset, len, encoding) => buf.toString(encoding, offset, offset + len),
     };
 }
 
@@ -109,6 +111,7 @@ function getWriteFunc(buf) {
         t: (v, offset, len) => buf.writeIntLE(v, offset, len),
         u: (v, offset, len) => buf.writeUIntBE(v, offset, len),
         v: (v, offset, len) => buf.writeUIntLE(v, offset, len),
+        w: (v, offset, len, encoding) => buf.write(v, offset, len, encoding),
     };
 }
 
@@ -191,7 +194,7 @@ export function createRecord(compiledDef, obj) {
     return buf;
 }
 
-export function getValue(buf, compiledDef, path) {
+export function readValue(buf, compiledDef, path) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -202,7 +205,22 @@ export function getValue(buf, compiledDef, path) {
     return funcs[type](offset, size);
 }
 
-export function setValue(buf, compiledDef, path, value) {
+export function readString(buf, compiledDef, path, encoding) {
+    const funcs = getReadFunc(buf);
+    const {offset, size, type} = compiledDef.fieldMap[path] || {};
+
+    if (!offset) {
+        throw new Error('Not found');
+    }
+
+    if (type !== 'w') {
+        throw new TypeError('Not a string');
+    }
+
+    return funcs[type](offset, size, encoding);
+}
+
+export function writeValue(buf, compiledDef, path, value) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -211,6 +229,21 @@ export function setValue(buf, compiledDef, path, value) {
     }
 
     funcs[type](value, offset, size);
+}
+
+export function writeString(buf, compiledDef, path, value, encoding) {
+    const funcs = getWriteFunc(buf);
+    const {offset, size, type} = compiledDef.fieldMap[path] || {};
+
+    if (!offset) {
+        throw new Error('Not found');
+    }
+
+    if (type !== 'w') {
+        throw new TypeError('Not a string');
+    }
+
+    funcs[type](value, offset, size, encoding);
 }
 
 export function createReader(buf, compiledDef, path) {
