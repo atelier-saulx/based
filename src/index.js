@@ -60,15 +60,15 @@ function getReadFunc(buf) {
         c: (offset) => buf.readInt16LE(offset),
         d: (offset) => buf.readInt32BE(offset),
         e: (offset) => buf.readInt32LE(offset),
-        f: (offset) => buf.readInt64BE(offset),
-        g: (offset) => buf.readInt64LE(offset),
+        f: (offset) => buf.readBigInt64BE(offset),
+        g: (offset) => buf.readBigInt64LE(offset),
         h: (offset) => buf.readUInt8(offset),
         i: (offset) => buf.readUInt16BE(offset),
         j: (offset) => buf.readUInt16LE(offset),
         k: (offset) => buf.readUInt32BE(offset),
         l: (offset) => buf.readUInt32LE(offset),
-        m: (offset) => buf.readUInt64BE(offset),
-        n: (offset) => buf.readUInt64LE(offset),
+        m: (offset) => buf.readBigUInt64BE(offset),
+        n: (offset) => buf.readBigUInt64LE(offset),
         o: (offset) => buf.readFloatBE(offset),
         p: (offset) => buf.readFloatLE(offset),
         q: (offset) => buf.readDoubleBE(offset),
@@ -92,15 +92,15 @@ function getWriteFunc(buf) {
         c: (v, offset) => buf.writeInt16LE(v, offset),
         d: (v, offset) => buf.writeInt32BE(v, offset),
         e: (v, offset) => buf.writeInt32LE(v, offset),
-        f: (v, offset) => buf.writeInt64BE(v, offset),
-        g: (v, offset) => buf.writeInt64LE(v, offset),
+        f: (v, offset) => buf.writeBigInt64BE(v, offset),
+        g: (v, offset) => buf.writeBigInt64LE(v, offset),
         h: (v, offset) => buf.writeUInt8(v, offset),
         i: (v, offset) => buf.writeUInt16BE(v, offset),
         j: (v, offset) => buf.writeUInt16LE(v, offset),
         k: (v, offset) => buf.writeUInt32BE(v, offset),
         l: (v, offset) => buf.writeUInt32LE(v, offset),
-        m: (v, offset) => buf.writeUInt64BE(v, offset),
-        n: (v, offset) => buf.writeUInt64LE(v, offset),
+        m: (v, offset) => buf.writeBigUInt64BE(v, offset),
+        n: (v, offset) => buf.writeBigUInt64LE(v, offset),
         o: (v, offset) => buf.writeFloatBE(v, offset),
         p: (v, offset) => buf.writeFloatLE(v, offset),
         q: (v, offset) => buf.writeDoubleBE(v, offset),
@@ -225,7 +225,7 @@ export function readValue(compiledDef, buf, path) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
@@ -236,7 +236,7 @@ export function readString(compiledDef, buf, path, encoding) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
@@ -251,7 +251,7 @@ export function writeValue(compiledDef, buf, path, value) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
@@ -262,7 +262,7 @@ export function writeString(compiledDef, buf, path, value, encoding) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
@@ -277,7 +277,7 @@ export function createReader(compiledDef, buf, path) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
@@ -288,7 +288,7 @@ export function createWriter(compiledDef, buf, path) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
-    if (!offset) {
+    if (!type) {
         throw new Error('Not found');
     }
 
