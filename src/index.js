@@ -1,5 +1,3 @@
-// TODO packed fields
-
 const SIZES = {
     int8: 1,
     int16_be: 2,
