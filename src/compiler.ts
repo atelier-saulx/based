@@ -9,13 +9,13 @@ export interface RecordDef {
 
 export interface CompiledRecordDef {
 	size: number;
-	fieldList: ReturnType<typeof _compile>;
+	fieldList: [number, number, Char, string[]][];
 	fieldMap: { [index: string]: { offset: number; size: number; type: Char; name: string } };
 }
 
 const makeName = (a: string, b: string) => `${a}.${b}`;
 
-function _compile(recordDef: RecordDef[], parentName: string): [number, number, Char, string][] {
+function _compile(recordDef: RecordDef[], parentName: string): [number, number, Char, string[], string][] {
 	// @ts-ignore
 	return recordDef
 		.map(({ name, type, size, def }) => {
@@ -37,15 +37,16 @@ function _compile(recordDef: RecordDef[], parentName: string): [number, number, 
 				throw new Error(`Size must be set to an integer for type: "${type}"`);
 			}
 
-			// The final format will be [ offset, size, type, name ]
-			return [[size, size, t, makeName(parentName, name)]];
+			// The final format will be [ offset, size, type, name, path ]
+			const fullName = makeName(parentName, name);
+			return [[size, size, t, fullName.substring(1).split('.'), fullName]];
 		})
 		.flat(1);
 }
 
 export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 	const arr = _compile(recordDef, '');
-	const size = arr.reduce((acc: number, cur: [number, number, Char, string]) => acc + cur[0], 0);
+	const size = arr.reduce((acc: number, cur: [number, number, Char, string[], string]) => acc + cur[0], 0);
 
 	let prevOffset = 0;
 	for (const field of arr) {
@@ -54,18 +55,21 @@ export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 		prevOffset += tmp;
 	}
 
-	const compiled: CompiledRecordDef = { size, fieldList: arr, fieldMap: {} };
-	for (const [offset, size, type, name] of arr) {
+	const compiled: CompiledRecordDef = { size, fieldList: [], fieldMap: {} };
+	for (const [offset, size, type, _path, name] of arr) {
 		if (compiled.fieldMap[name]) {
 			throw new Error(`"${name}" is already defined`);
 		}
 		compiled.fieldMap[name] = { offset, size, type, name };
 	}
 
+	// Map fieldList to the final type
+	compiled.fieldList = arr.map(([a, b, c, d]) => [a, b, c, d]);
+
 	return compiled;
 }
 
-export function generateRecordDef(obj: any) {
+export function generateRecordDef(obj: any): RecordDef[] {
 	const def: RecordDef[] = [];
 
 	for (const key of Object.keys(obj)) {

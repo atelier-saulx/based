@@ -6,7 +6,7 @@
   "scripts": {
     "build": "rm -rf ./lib && tsc",
     "lint": "eslint --ext .ts ./src",
-    "perf": "node --expose-gc __test__/perf.js",
+    "perf": "node --prof ./node_modules/.bin/ts-node __perf__/perf.ts",
     "prettier": "prettier --write './{src,__test__}/**/*.ts'",
     "test": "jest --runInBand --clearCache && jest --coverage"
   },

@@ -104,3 +104,14 @@ const jsonStr = JSON.stringify(obj);
 console.log(`buf.length = ${buf.length}, objSerialized.length = ${objSerialized.length}, jsonStr.length = ${jsonStr.length}`);
 // buf.length = 32, objSerialized.length = 69, JSON.length = 76
 ```
+
+Performance Testing
+-------------------
+
+The performance tests are located under the `__perf__` directory and can be executed with `yarn perf`.
+
+Each run will create a isolate file that can be parsed as follows:
+
+```
+node --prof-process isolate-0x5ecbef0-130826-v8.log > processed.txt
+```

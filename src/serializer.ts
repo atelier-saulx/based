@@ -5,12 +5,7 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 	const ops = getWriteFunc(buf);
 
 	for (const [offset, size, type, path] of compiledDef.fieldList) {
-		const names = path.substring(1).split('.');
-
-		let cur = obj;
-		for (const name of names) {
-			cur = cur[name];
-		}
+		const cur = path.reduce((o, i) => o[i], obj);
 
 		try {
 			// @ts-ignore
@@ -24,13 +19,11 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 	return buf;
 }
 
-export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer) {
+export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
 	const ops = getReadFunc(buf);
 	const obj: { [index: string]: any } = {};
 
-	for (const [offset, size, type, path] of compiledDef.fieldList) {
-		const names = path.substring(1).split('.');
-
+	for (const [offset, size, type, names] of compiledDef.fieldList) {
 		let cur = obj;
 		let prev = cur;
 		let name: string;
