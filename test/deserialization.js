@@ -49,9 +49,7 @@ const compiled = compile(recordDefEx);
 console.log('compiledDef', compiled);
 
 const buf = createRecord(compiled, obj);
-console.log('buf', buf);
+const deser = deserialize(buf, compiled);
 
-writeValue(buf, compiled, '.x.y.a', 1337);
-console.log('read .x.y.a', readValue(buf, compiled, '.x.y.a'));
-
-console.log(`read firstName: ${readString(buf, compiled, '.firstName', 'utf8')}`);
+console.log('deser', deser);
+console.log(`deser.firstName: ${deser.firstName.toString('utf8')}`);

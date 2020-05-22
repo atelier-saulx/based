@@ -167,7 +167,7 @@ export function allocRecord(compiledDef) {
     return buf;
 }
 
-export function fillRecord(buf, compiledDef, obj) {
+export function serialize(buf, compiledDef, obj) {
     const ops = getWriteFunc(buf);
 
     for (const [offset, size, type, path] of compiledDef.fieldList) {
@@ -187,9 +187,38 @@ export function fillRecord(buf, compiledDef, obj) {
     }
 }
 
+export function deserialize(buf, compiledDef) {
+    const ops = getReadFunc(buf);
+    const obj = {};
+
+    for (const [offset, size, type, path] of compiledDef.fieldList) {
+        const names = path.substring(1).split('.');
+
+        let cur = obj;
+        let prev = cur;
+        let name;
+        for (name of names) {
+            prev = cur;
+            if (!cur[name]) {
+                cur[name] = {};
+            }
+            cur = cur[name];
+        }
+
+        // string
+        if (type === 'w') {
+            prev[name] = Buffer.from(buf.subarray(offset, offset + size));
+        } else {
+            prev[name] = ops[type](offset, size);
+        }
+    }
+
+    return obj;
+}
+
 export function createRecord(compiledDef, obj) {
     const buf = allocRecord(compiledDef);
-    fillRecord(buf, compiledDef, obj);
+    serialize(buf, compiledDef, obj);
 
     return buf;
 }
