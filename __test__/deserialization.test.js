@@ -43,7 +43,7 @@ test('deserialization can deconstruct the object', () => {
     };
 
     const buf = createRecord(compiled, obj1);
-    const obj2 = deserialize(buf, compiled);
+    const obj2 = deserialize(compiled, buf);
 
     expect(obj1).toEqual(obj2);
 });
@@ -60,7 +60,7 @@ test('A string can be reconstructed', () => {
 
     const compiled = compile(recordDef);
     const buf = createRecord(compiled, obj);
-    const deser = deserialize(buf, compiled);
+    const deser = deserialize(compiled, buf);
 
     expect(deser.a).toBe(4);
     expect(deser.firstName.toString('utf8')).toEqual(expect.stringMatching('Olli'));

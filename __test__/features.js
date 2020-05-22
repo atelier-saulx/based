@@ -1,7 +1,6 @@
 import {
     compile,
     createRecord,
-    deserialize,
     readValue,
     writeValue,
     readString,
@@ -51,7 +50,7 @@ console.log('compiledDef', compiled);
 const buf = createRecord(compiled, obj);
 console.log('buf', buf);
 
-writeValue(buf, compiled, '.x.y.a', 1337);
-console.log('read .x.y.a', readValue(buf, compiled, '.x.y.a'));
+writeValue(compiled, buf, '.x.y.a', 1337);
+console.log('read .x.y.a', readValue(compiled, buf, '.x.y.a'));
 
-console.log(`read firstName: ${readString(buf, compiled, '.firstName', 'utf8')}`);
+console.log(`read firstName: ${readString(compiled, buf, '.firstName', 'utf8')}`);

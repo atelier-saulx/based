@@ -165,7 +165,7 @@ export function allocRecord(compiledDef) {
     return buf;
 }
 
-export function serialize(buf, compiledDef, obj) {
+export function serialize(compiledDef, buf, obj) {
     const ops = getWriteFunc(buf);
 
     for (const [offset, size, type, path] of compiledDef.fieldList) {
@@ -185,7 +185,7 @@ export function serialize(buf, compiledDef, obj) {
     }
 }
 
-export function deserialize(buf, compiledDef) {
+export function deserialize(compiledDef, buf) {
     const ops = getReadFunc(buf);
     const obj = {};
 
@@ -216,12 +216,12 @@ export function deserialize(buf, compiledDef) {
 
 export function createRecord(compiledDef, obj) {
     const buf = allocRecord(compiledDef);
-    serialize(buf, compiledDef, obj);
+    serialize(compiledDef, buf, obj);
 
     return buf;
 }
 
-export function readValue(buf, compiledDef, path) {
+export function readValue(compiledDef, buf, path) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -232,7 +232,7 @@ export function readValue(buf, compiledDef, path) {
     return funcs[type](offset, size);
 }
 
-export function readString(buf, compiledDef, path, encoding) {
+export function readString(compiledDef, buf, path, encoding) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -247,7 +247,7 @@ export function readString(buf, compiledDef, path, encoding) {
     return funcs[type](offset, size, encoding);
 }
 
-export function writeValue(buf, compiledDef, path, value) {
+export function writeValue(compiledDef, buf, path, value) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -258,7 +258,7 @@ export function writeValue(buf, compiledDef, path, value) {
     funcs[type](value, offset, size);
 }
 
-export function writeString(buf, compiledDef, path, value, encoding) {
+export function writeString(compiledDef, buf, path, value, encoding) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -273,7 +273,7 @@ export function writeString(buf, compiledDef, path, value, encoding) {
     funcs[type](value, offset, size, encoding);
 }
 
-export function createReader(buf, compiledDef, path) {
+export function createReader(compiledDef, buf, path) {
     const funcs = getReadFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 
@@ -284,7 +284,7 @@ export function createReader(buf, compiledDef, path) {
     return () => funcs[type](offset, size);
 }
 
-export function createWriter(buf, compiledDef, path) {
+export function createWriter(compiledDef, buf, path) {
     const funcs = getWriteFunc(buf);
     const {offset, size, type} = compiledDef.fieldMap[path] || {};
 

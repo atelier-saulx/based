@@ -48,8 +48,8 @@ const obj = {
 
 const compiled = compile(recordDefEx);
 const buf = createRecord(compiled, obj);
-const writer = createWriter(buf, compiled, '.x.y.a');
-const reader = createReader(buf, compiled, '.x.y.a');
+const reader = createReader(compiled, buf, '.x.y.a');
+const writer = createWriter(compiled, buf, '.x.y.a');
 
 const COUNT = 99999;
 
@@ -86,8 +86,8 @@ function jsonTest() {
 function dataRecordTestSlow() {
     let x = 0;
 	for (let i = 0; i < COUNT; i++) {
-        x = readValue(buf, compiled, '.x.y.a');
-        writeValue(buf, compiled, '.x.y.a', i);
+        x = readValue(compiled, buf, '.x.y.a');
+        writeValue(compiled, buf, '.x.y.a', i);
 	}
 }
 

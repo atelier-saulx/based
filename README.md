@@ -30,15 +30,15 @@ const compiled = compile(def);
 ```js
 compile(recordDef)
 allocRecord(compiledDef)
-serialize(buf, compiledDef, obj)
-deserialize(buf, compiledDef)
+serialize(compiledDef, buf, obj)
+deserialize(compiledDef, buf)
 createRecord(compiledDef, obj)
-readValue(buf, compiledDef, path)
-readString(buf, compiledDef, path, encoding)
-writeValue(buf, compiledDef, path, value)
-writeString(buf, compiledDef, path, value, encoding)
-createReader(buf, compiledDef, path)
-createWriter(buf, compiledDef, path)
+readValue(compiledDef, buf, path)
+readString(compiledDef, buf, path, encoding)
+writeValue(compiledDef, buf, path, value)
+writeString(compiledDef, buf, path, value, encoding)
+createReader(compiledDef, buf, path)
+createWriter(compiledDef, buf, path)
 ```
 
 
