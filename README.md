@@ -1,7 +1,16 @@
 data-record
 ===========
 
+Record for Node.js.
+
+**Scripts**
+
+- `yarn test` - run tests
+- `yarn perf` - run a perf test
+
+
 ```
+$ yarn perf
 nativeObjectTest: 1.322862 ms
 nativeV8SerializerTest: 12681.731264 ms
 jsonTest: 264.924124 ms

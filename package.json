@@ -5,7 +5,15 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "test": "jest --runInBand",
+    "perf": "node __test__/perf.js"
   },
   "author": "Olli Vanhoja",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "7.9.6",
+    "@babel/preset-env": "7.9.6",
+    "babel-jest": "26.0.1",
+    "jest": "26.0.1"
+  }
 }
