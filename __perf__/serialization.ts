@@ -6,34 +6,39 @@ import { join as pathJoin } from 'path';
 import gc from './util/gc';
 import { compile, allocRecord, serialize, deserialize, writeValue, generateRecordDef } from '../src/index';
 
-const COUNT = 99999;
+const dataFiles: [number, string][] = [
+	[ 9999990, './data/simple.json' ],
+	[ 999999, './data/nesting.json' ],
+];
 
 export default function serialization() {
-	const obj = JSON.parse(fs.readFileSync(pathJoin(__dirname, './data/data.json')).toString());
-	const recordDef = generateRecordDef(obj);
-	//console.log(util.inspect(recordDef, false, null, true));
+	const objs = dataFiles.map(([_, path]) => JSON.parse(fs.readFileSync(pathJoin(__dirname, path)).toString()));
+	const recordDefs = objs.map((o) => generateRecordDef(o));
 
-	function nativeV8SerializerTest() {
+	function nativeV8SerializerTest(i: number, n: number) {
+		const obj = objs[i];
 		const o = JSON.parse(JSON.stringify(obj));
 
-		for (let i = 0; i < COUNT; i++) {
+		for (let i = 0; i < n; i++) {
 			v8.deserialize(v8.serialize(o));
 		}
 	}
 
-	function jsonTest() {
+	function jsonTest(i: number, n: number) {
+		const obj = objs[i];
 		let o = JSON.parse(JSON.stringify(obj));
 
-		for (let i = 0; i < COUNT; i++) {
+		for (let i = 0; i < n; i++) {
 			JSON.parse(JSON.stringify(o));
 		}
 	}
 
-	function dataRecordSerializeTest() {
-		const compiled = compile(recordDef);
+	function dataRecordSerializeTest(i: number, n: number) {
+		const obj = objs[i];
+		const compiled = compile(recordDefs[i]);
 		let o = JSON.parse(JSON.stringify(obj));
 
-		for (let i = 0; i < COUNT; i++) {
+		for (let i = 0; i < n; i++) {
 			const buf = allocRecord(compiled);
 
 			//deserialize(compiled, serialize(compiled, buf, o));
@@ -48,8 +53,13 @@ export default function serialization() {
 	].map(performance.timerify);
 
 
-	for (const test of wrapped) {
-		gc();
-		test();
+	for (let i = 0; i < objs.length; i++) {
+		const [n, dataFile] = dataFiles[i];
+
+		console.log(dataFile);
+		for (const test of wrapped) {
+			gc();
+			test(i, n);
+		}
 	}
 }
