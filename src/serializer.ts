@@ -1,8 +1,8 @@
 import { CompiledRecordDef } from './compiler';
-import { getReadFunc, getWriteFunc } from './accessors';
+import { getReadFuncs, getWriteFuncs } from './accessors';
 
 export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any) {
-	const ops = getWriteFunc(buf);
+	const ops = getWriteFuncs(buf);
 	const fl = compiledDef.fieldList;
 	const n = compiledDef.fieldList.length;
 
@@ -27,7 +27,7 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 }
 
 export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
-	const ops = getReadFunc(buf);
+	const ops = getReadFuncs(buf);
 	const obj: { [index: string]: any } = {};
 
 	for (const [offset, size, type, names] of compiledDef.fieldList) {

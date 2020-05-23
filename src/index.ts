@@ -1,6 +1,6 @@
 import { CompiledRecordDef } from './compiler';
 import { serialize } from './serializer';
-import {getWriteFunc, getReadFunc} from './accessors';
+import { getWriteFuncs, getReadFuncs } from './accessors';
 export { RecordDef, CompiledRecordDef, compile, generateRecordDef } from './compiler';
 export { serialize, deserialize } from './serializer';
 export { readValue, writeValue, readString, writeString, createReader, createWriter } from './accessors';

@@ -21,7 +21,7 @@ function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: E
  * Get read functions for a data-record buffer.
  * @param {Buffer} buf is a data-record buffer.
  */
-export function getReadFunc(buf: Buffer): { [index: string]: BufferReadFunction } {
+export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction } {
 	return {
 		a: (offset: number): number => buf.readInt8(offset),
 		b: (offset: number): number => buf.readInt16BE(offset),
@@ -55,7 +55,7 @@ type BufferWriteFunction = (v: any, offset: number, len: number, encoding?: Enco
  * Get write functions for a data-record buffer.
  * @param {Buffer} buf is a data-record buffer.
  */
-export function getWriteFunc(buf: Buffer): { [index: string]: BufferWriteFunction } {
+export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFunction } {
 	return {
 		a: (v: number, offset: number): number => buf.writeInt8(v, offset),
 		b: (v: number, offset: number): number => buf.writeInt16BE(v, offset),
@@ -84,7 +84,7 @@ export function getWriteFunc(buf: Buffer): { [index: string]: BufferWriteFunctio
 }
 
 export function readValue<T = number | bigint>(compiledDef: CompiledRecordDef, buf: Buffer, path: string): T {
-	const funcs = getReadFunc(buf);
+	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -96,7 +96,7 @@ export function readValue<T = number | bigint>(compiledDef: CompiledRecordDef, b
 }
 
 export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding?: Encoding) {
-	const funcs = getReadFunc(buf);
+	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -111,7 +111,7 @@ export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: st
 }
 
 export function writeValue(compiledDef: CompiledRecordDef, buf: Buffer, path: string, value: any): void {
-	const funcs = getWriteFunc(buf);
+	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -129,7 +129,7 @@ export function writeString(
 	value: string,
 	encoding?: Encoding
 ): void {
-	const funcs = getWriteFunc(buf);
+	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -148,7 +148,7 @@ export function writeString(
 }
 
 export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
-	const funcs = getReadFunc(buf);
+	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -160,7 +160,7 @@ export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 }
 
 export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding: Encoding) {
-	const funcs = getReadFunc(buf);
+	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
@@ -176,7 +176,7 @@ export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, 
 }
 
 export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
-	const funcs = getWriteFunc(buf);
+	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
 	if (!type) {
