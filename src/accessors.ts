@@ -159,6 +159,22 @@ export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 	return () => funcs[type](offset, size);
 }
 
+export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding: Encoding) {
+	const funcs = getReadFunc(buf);
+	const { offset, size, type } = compiledDef.fieldMap[path] || {};
+
+	if (!type) {
+		throw new Error('Not found');
+	}
+
+	if (type !== 'w') {
+		throw new TypeError('Not a string');
+	}
+
+	// @ts-ignore
+	return () => funcs[type](offset, size, encoding);
+}
+
 export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
 	const funcs = getWriteFunc(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
