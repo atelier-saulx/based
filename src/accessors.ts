@@ -10,8 +10,8 @@ function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: E
 		const str = ind > 0 ? sub.subarray(0, ind) : sub;
 
 		return Buffer.from(str).toString(encoding);
-	} else if (encoding === 'binary') {
-		return buf.toString('binary', offset, offset + len);
+	} else if (encoding) {
+		return buf.toString(encoding, offset, offset + len);
 	}
 
 	return Buffer.from(buf.subarray(offset, offset + len));
@@ -140,7 +140,7 @@ export function writeString(
 		throw new TypeError('Not a string');
 	}
 
-	funcs[type](value, offset, size, encoding);
+	return funcs[type](value, offset, size, encoding);
 }
 
 export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
