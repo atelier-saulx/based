@@ -140,6 +140,10 @@ export function writeString(
 		throw new TypeError('Not a string');
 	}
 
+	// Zero the buffer section before writing to make sure the string will be
+	// null-terminated.
+	buf.fill(0, offset, offset + size);
+
 	return funcs[type](value, offset, size, encoding);
 }
 
@@ -162,9 +166,6 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 	if (!type) {
 		throw new Error('Not found');
 	}
-
-	// Zero the buffer before writing to make sure the string will be null-terminated.
-	buf.fill(0, offset, offset + size);
 
 	// @ts-ignore
 	return (value) => funcs[type](value, offset, size);
