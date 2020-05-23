@@ -64,5 +64,5 @@ test('A string can be reconstructed', () => {
 	const deser = deserialize(compiled, buf);
 
 	expect(deser.a).toBe(4);
-	expect(deser.firstName.toString('utf8')).toEqual(expect.stringMatching('Olli'));
+	expect(deser.firstName.toString('utf8')).toBe('Olli');
 });
