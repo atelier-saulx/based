@@ -76,12 +76,36 @@ createWriter(compiledDef, buf, path)
 
 ```
 $ yarn perf
-nativeObjectTest: 1.322862 ms
-nativeV8SerializerTest: 12681.731264 ms
-jsonTest: 264.924124 ms
-dataRecordTestSlow: 50.892434 ms
-dataRecordTestFast: 3.34631 ms
-buf.length = 32, objSerialized.length = 61
+$ node --prof ./node_modules/.bin/ts-node __perf__/perf.ts
+modify
+======
+nativeObjectTest                                1.21 ms
+nativeV8SerializerTest                      18544.97 ms
+jsonTest                                      171.72 ms
+dataRecordTestSlow                             55.11 ms
+dataRecordTestFast                              5.60 ms
+
+serialization
+=============
+./data/simple.json
+nativeV8SerializerTest                      10953.32 ms
+jsonTest                                      489.59 ms
+dataRecordSerializeTest                       370.34 ms
+
+./data/nesting.json
+nativeV8SerializerTest                       5362.70 ms
+jsonTest                                     2724.44 ms
+dataRecordSerializeTest                      2800.08 ms
+
+./data/mega-flat.json
+nativeV8SerializerTest                      10268.37 ms
+jsonTest                                    20080.70 ms
+dataRecordSerializeTest                      6110.32 ms
+
+./data/numbers.json
+nativeV8SerializerTest                       5280.86 ms
+jsonTest                                     7111.44 ms
+dataRecordSerializeTest                       769.95 ms
 ```
 
 Examples
