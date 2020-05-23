@@ -7,8 +7,10 @@ import gc from './util/gc';
 import { compile, allocRecord, serialize, deserialize, writeValue, generateRecordDef } from '../src/index';
 
 const dataFiles: [number, string][] = [
-	[ 9999990, './data/simple.json' ],
-	[ 999999, './data/nesting.json' ],
+	[ 99999, './data/simple.json' ],
+	[ 99999, './data/nesting.json' ],
+	[ 99999, './data/mega-flat.json' ],
+	[ 9999, './data/numbers.json' ],
 ];
 
 export default function serialization() {
@@ -61,5 +63,6 @@ export default function serialization() {
 			gc();
 			test(i, n);
 		}
+		console.log('');
 	}
 }

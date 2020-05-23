@@ -6,10 +6,11 @@ const tests = [
 	modify,
 	serialization
 ];
-
+100000.00
 const obs = new PerformanceObserver((list) => {
 	const entry = list.getEntries()[0];
-	console.log(`${entry.name}: ${entry.duration} ms`);
+	const duration = `${entry.duration.toFixed(2)}`;
+	console.log(`${entry.name.padEnd(40)} ${duration.padStart(11)} ms`);
 });
 obs.observe({ entryTypes: ['function'] });
 
