@@ -70,43 +70,12 @@ createWriter(compiledDef, buf, path)
 
 **Scripts**
 
+- `yarn build` - run TS build
+- `yarn lint` - un ESlint
+- `yarn prettier` - run Prettier
 - `yarn test` - run tests
 - `yarn perf` - run a perf test
 
-
-```
-$ yarn perf
-$ node --prof ./node_modules/.bin/ts-node __perf__/perf.ts
-modify
-======
-nativeObjectTest                                1.21 ms
-nativeV8SerializerTest                      18544.97 ms
-jsonTest                                      171.72 ms
-dataRecordTestSlow                             55.11 ms
-dataRecordTestFast                              5.60 ms
-
-serialization
-=============
-./data/simple.json
-nativeV8SerializerTest                      10953.32 ms
-jsonTest                                      489.59 ms
-dataRecordSerializeTest                       370.34 ms
-
-./data/nesting.json
-nativeV8SerializerTest                       5362.70 ms
-jsonTest                                     2724.44 ms
-dataRecordSerializeTest                      2800.08 ms
-
-./data/mega-flat.json
-nativeV8SerializerTest                      10268.37 ms
-jsonTest                                    20080.70 ms
-dataRecordSerializeTest                      6110.32 ms
-
-./data/numbers.json
-nativeV8SerializerTest                       5280.86 ms
-jsonTest                                     7111.44 ms
-dataRecordSerializeTest                       769.95 ms
-```
 
 Examples
 --------
@@ -155,8 +124,43 @@ console.log(`buf.length = ${buf.length}, objSerialized.length = ${objSerialized.
 // buf.length = 32, objSerialized.length = 69, JSON.length = 76
 ```
 
+
 Performance Testing
 -------------------
+
+```
+$ yarn perf
+$ node --prof ./node_modules/.bin/ts-node __perf__/perf.ts
+modify
+======
+nativeObjectTest                                1.21 ms
+nativeV8SerializerTest                      18544.97 ms
+jsonTest                                      171.72 ms
+dataRecordTestSlow                             55.11 ms
+dataRecordTestFast                              5.60 ms
+
+serialization
+=============
+./data/simple.json
+nativeV8SerializerTest                      10953.32 ms
+jsonTest                                      489.59 ms
+dataRecordSerializeTest                       370.34 ms
+
+./data/nesting.json
+nativeV8SerializerTest                       5362.70 ms
+jsonTest                                     2724.44 ms
+dataRecordSerializeTest                      2800.08 ms
+
+./data/mega-flat.json
+nativeV8SerializerTest                      10268.37 ms
+jsonTest                                    20080.70 ms
+dataRecordSerializeTest                      6110.32 ms
+
+./data/numbers.json
+nativeV8SerializerTest                       5280.86 ms
+jsonTest                                     7111.44 ms
+dataRecordSerializeTest                       769.95 ms
+```
 
 The performance tests are located under the `__perf__` directory and can be executed with `yarn perf`.
 
