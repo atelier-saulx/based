@@ -1,6 +1,5 @@
 import v8 from 'v8';
 import { performance } from 'perf_hooks';
-import util from 'util';
 import fs from 'fs';
 import { join as pathJoin } from 'path';
 import gc from './util/gc';

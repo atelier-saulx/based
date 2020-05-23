@@ -3,6 +3,8 @@ import { performance } from 'perf_hooks';
 import gc from './util/gc';
 import { compile, createRecord, readValue, writeValue, createReader, createWriter } from '../src/index';
 
+const COUNT = 99999;
+
 export default function modify() {
 	const recordDefEx = [
 		{ name: 'a', type: 'uint32_le' },
@@ -45,8 +47,6 @@ export default function modify() {
 	};
 
 	const compiled = compile(recordDefEx);
-
-	const COUNT = 99999;
 
 	function nativeObjectTest() {
 		// @ts-ignore
