@@ -85,7 +85,7 @@ export function generateRecordDef(obj: any): RecordDef[] {
 				def.push({ name: key, type: 'double_le' });
 				break;
 			case 'string':
-				def.push({ name: key, type: 'string', size: value.length });
+				def.push({ name: key, type: 'cstring', size: value.length });
 				break;
 			case 'object':
 				if (!Array.isArray(value)) {

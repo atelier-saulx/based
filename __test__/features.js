@@ -21,7 +21,7 @@ const recordDefEx = [
             { name: 'a', type: 'uint32_le' },
         ]}
     ]},
-    { name: 'firstName', type: 'string', size: 15 },
+    { name: 'firstName', type: 'cstring', size: 15 },
 ];
 
 const obj = {

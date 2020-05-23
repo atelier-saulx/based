@@ -121,7 +121,7 @@ export const TYPES: { [index: string]: Char } = {
 	int_le: 't',
 	uint_be: 'u',
 	uint_le: 'v',
-	string: 'w',
+	cstring: 'w',
 	// Virtual
 	record: 'z',
 };

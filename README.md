@@ -20,10 +20,37 @@ const def = [
             { name: 'a', type: 'uint32_le' },
         ]}
     ]},
-    { name: 'firstName', type: 'string', size: 15 },
+    { name: 'firstName', type: 'cstring', size: 15 },
 ]
 const compiled = compile(def);
 ```
+
+**Types**
+
+- `int8`
+- `int16_be`
+- `int16_le`
+- `int32_be`
+- `int32_le`
+- `int64_be`
+- `int64_le`
+- `uint8`
+- `uint16_be`
+- `uint16_le`
+- `uint32_be`
+- `uint32_le`
+- `uint64_be`
+- `uint64_le`
+- `float_be`
+- `float_le`
+- `double_be`
+- `double_le`
+- `int_be` - 0 to 48 bit variable size big endian signed integer
+- `int_le` - 0 to 48 bit variable size little endian signed integer
+- `uint_be` - 0 to 48 bit variable size big endian unsigned integer
+- `uint_le` - 0 to 48 bit variable size little endian unsigned integer
+- `cstring` - null-terminated C-string (termination not enforced, same behavior as `strcpy()`)
+- `record` - defines a nested record
 
 **Functions**
 
@@ -40,7 +67,6 @@ writeString(compiledDef, buf, path, value, encoding)
 createReader(compiledDef, buf, path)
 createWriter(compiledDef, buf, path)
 ```
-
 
 **Scripts**
 
