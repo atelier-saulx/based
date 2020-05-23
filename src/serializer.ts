@@ -42,14 +42,10 @@ export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
 			cur = cur[name];
 		}
 
-		// string
+		// cstring
 		if (type === 'w') {
-			const sub = buf.subarray(offset, offset + size);
-			const ind = sub.indexOf(0);
-			const str = ind > 0 ? sub.subarray(0, ind) : sub;
-
 			// @ts-ignore
-			prev[name] = Buffer.from(str);
+			prev[name] = ops[type](offset, size, 'utf8');
 		} else {
 			// @ts-ignore
 			prev[name] = ops[type](offset, size);

@@ -3,6 +3,20 @@ import { CompiledRecordDef } from './compiler';
 
 type BufferReadFunction = (offset: number, len: number, encoding: Encoding) => any;
 
+function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: Encoding) {
+	if (encoding && ['utf8', 'utf16le', 'latin1', 'ascii'].includes(encoding)) {
+		const sub = buf.subarray(offset, offset + len);
+		const ind = sub.indexOf(0);
+		const str = ind > 0 ? sub.subarray(0, ind) : sub;
+
+		return Buffer.from(str).toString(encoding);
+	} else if (encoding === 'binary') {
+		return buf.toString('binary', offset, offset + len);
+	}
+
+	return Buffer.from(buf.subarray(offset, offset + len));
+}
+
 /**
  * Get read functions for a data-record buffer.
  * @param {Buffer} buf is a data-record buffer.
@@ -31,11 +45,11 @@ export function getReadFunc(buf: Buffer): { [index: string]: BufferReadFunction 
 		t: (offset: number, len: number): number => buf.readIntLE(offset, len),
 		u: (offset: number, len: number): number => buf.readUIntBE(offset, len),
 		v: (offset: number, len: number): number => buf.readUIntLE(offset, len),
-		w: (offset: number, len: number, encoding: Encoding): string => buf.toString(encoding, offset, offset + len),
+		w: (offset: number, len: number, encoding: Encoding): string | Buffer => bufferReadString(buf, offset, len, encoding),
 	};
 }
 
-type BufferWriteFunction = (v: any, offset: number, len: number, encoding: Encoding) => void;
+type BufferWriteFunction = (v: any, offset: number, len: number, encoding?: Encoding) => void;
 
 /**
  * Get write functions for a data-record buffer.
@@ -81,7 +95,7 @@ export function readValue<T = number | bigint>(compiledDef: CompiledRecordDef, b
 	return funcs[type](offset, size);
 }
 
-export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding: Encoding): string {
+export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding?: Encoding) {
 	const funcs = getReadFunc(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -113,7 +127,7 @@ export function writeString(
 	buf: Buffer,
 	path: string,
 	value: string,
-	encoding: Encoding
+	encoding?: Encoding
 ): void {
 	const funcs = getWriteFunc(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
@@ -148,6 +162,9 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 	if (!type) {
 		throw new Error('Not found');
 	}
+
+	// Zero the buffer before writing to make sure the string will be null-terminated.
+	buf.fill(0, offset, offset + size);
 
 	// @ts-ignore
 	return (value) => funcs[type](value, offset, size);
