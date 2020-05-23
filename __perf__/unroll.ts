@@ -23,17 +23,16 @@ export default function unroll() {
 	const compiled = compile(recordDefEx);
 
 	function serializer() {
-		let o = JSON.parse(JSON.stringify(obj));
 		const buf = allocRecord(compiled);
 
 		for (let i = 0; i < COUNT; i++) {
+			const o = JSON.parse(JSON.stringify(obj));
 			o.a = (o.a + i) % 1024;
 			serialize(compiled, buf, o);
 		}
 	}
 
 	function unrolledSerialize() {
-		let o = JSON.parse(JSON.stringify(obj));
 		const buf = allocRecord(compiled);
 		const writerA = createWriter(compiled, buf, '.a');
 		const writerB = createWriter(compiled, buf, '.b');
@@ -41,6 +40,7 @@ export default function unroll() {
 		const writerD = createWriter(compiled, buf, '.d');
 
 		for (let i = 0; i < COUNT; i++) {
+			const o = JSON.parse(JSON.stringify(obj));
 			o.a = (o.a + i) % 1024;
 			writerA(o.a);
 			writerB(o.b);
