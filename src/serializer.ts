@@ -3,13 +3,20 @@ import { getReadFunc, getWriteFunc } from './accessors';
 
 export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any) {
 	const ops = getWriteFunc(buf);
+	const fl = compiledDef.fieldList;
+	const n = compiledDef.fieldList.length;
 
-	for (const [offset, size, type, path] of compiledDef.fieldList) {
-		const cur = path.reduce((o, i) => o[i], obj);
+	for (let i = 0; i < n; i++) {
+		const z = fl[i];
+		const path = z[3];
+		const v = path.reduce((o, j) => o[j], obj);
 
 		try {
+			// z[0] = offset
+			// z[1] = size
+			// z[2] = type
 			// @ts-ignore
-			ops[type](cur, offset, size);
+			ops[z[2]](v, z[0], z[1]);
 		} catch (err) {
 			err.name = path;
 			throw err;
