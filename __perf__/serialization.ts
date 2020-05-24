@@ -10,6 +10,7 @@ const dataFiles: [number, string][] = [
 	[99999, './data/nesting.json'],
 	[99999, './data/mega-flat.json'],
 	[9999, './data/numbers.json'],
+	[9999, './data/arrays.json'],
 ];
 
 export default function serialization() {
