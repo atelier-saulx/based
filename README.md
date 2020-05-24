@@ -61,10 +61,11 @@ serialize(compiledDef, buf, obj)
 deserialize(compiledDef, buf)
 createRecord(compiledDef, obj)
 readValue(compiledDef, buf, path)
-readString(compiledDef, buf, path, encoding)
+readString(compiledDef, buf, path[, encoding])
 writeValue(compiledDef, buf, path, value)
-writeString(compiledDef, buf, path, value, encoding)
+writeString(compiledDef, buf, path, value[, encoding])
 createReader(compiledDef, buf, path)
+createStringReader(compiledDef, buf, path[, encoding]);
 createWriter(compiledDef, buf, path)
 ```
 
