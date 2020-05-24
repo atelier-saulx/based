@@ -1,21 +1,15 @@
-import {
-    compile,
-    createRecord,
-    readValue,
-    readString,
-	writeString,
-} from '../src/index';
+import { compile, createRecord, readValue, readString, writeString } from '../src/index';
 
 const CANARY = 0xffffffff;
 
 const recordDef = [
-    { name: 'str', type: 'cstring', size: 5 },
-    { name: 'canary', type: 'uint32_le' },
+	{ name: 'str', type: 'cstring', size: 5 },
+	{ name: 'canary', type: 'uint32_le' },
 ];
 
 const compiled = compile(recordDef);
 
-test('Test that a normal string write doesn\'t overwrite', () => {
+test("Test that a normal string write doesn't overwrite", () => {
 	const buf = createRecord(compiled, { str: 'abc', canary: CANARY });
 
 	expect(readString(compiled, buf, '.str', 'utf8')).toBe('abc');
@@ -29,7 +23,7 @@ test('Test that max length string works', () => {
 	expect(readValue(compiled, buf, '.canary')).toBe(CANARY);
 });
 
-test('Test that a too long string doesn\'t overwrite', () => {
+test("Test that a too long string doesn't overwrite", () => {
 	const buf = createRecord(compiled, { str: 'abcdef', canary: CANARY });
 
 	expect(readString(compiled, buf, '.str', 'utf8')).toBe('abcde');
@@ -79,7 +73,7 @@ test('readString() with no encoding returns a proper buffer', () => {
 	expect(read.toString('hex')).toBe('6100000000');
 });
 
-test('readString() with \'utf8\' returns a proper string', () => {
+test("readString() with 'utf8' returns a proper string", () => {
 	const buf = createRecord(compiled, { str: 'ä', canary: CANARY });
 
 	const read = readString(compiled, buf, '.str', 'utf8');
@@ -87,7 +81,7 @@ test('readString() with \'utf8\' returns a proper string', () => {
 	expect(read).toBe('ä');
 });
 
-test('readString() with \'ascii\' returns a proper string', () => {
+test("readString() with 'ascii' returns a proper string", () => {
 	const buf = createRecord(compiled, { str: 'a', canary: CANARY });
 
 	const read = readString(compiled, buf, '.str', 'ascii');

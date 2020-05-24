@@ -1,6 +1,6 @@
 import { compile, createRecord, deserialize } from '../src/index';
 
-test('deserialization can deconstruct the object', () => {
+test('deserialization can deconstruct the object it serialized', () => {
 	const recordDef = [
 		{ name: 'a', type: 'uint32_le' },
 		{ name: 'b', type: 'int32_le' },
@@ -65,4 +65,20 @@ test('A string can be reconstructed', () => {
 
 	expect(deser.a).toBe(4);
 	expect(deser.firstName.toString('utf8')).toBe('Olli');
+});
+
+test('An integer array can be reconstructed', () => {
+	const recordDef = [{ name: 'a', type: 'uint16_be[4]' }];
+	const obj = {
+		a: [0xbeef, 0xface, 0xcafe, 0xf00d],
+	};
+
+	const compiled = compile(recordDef);
+	expect(compiled.size).toBe(4 * 2);
+
+	const buf = createRecord(compiled, obj);
+	expect(buf.toString('hex')).toBe('beeffacecafef00d');
+
+	const deser = deserialize(compiled, buf);
+	expect(deser.a).toEqual([0xbeef, 0xface, 0xcafe, 0xf00d]);
 });

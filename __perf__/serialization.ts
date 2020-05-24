@@ -6,10 +6,10 @@ import gc from './util/gc';
 import { compile, allocRecord, serialize, deserialize, writeValue, generateRecordDef } from '../src/index';
 
 const dataFiles: [number, string][] = [
-	[ 99999, './data/simple.json' ],
-	[ 99999, './data/nesting.json' ],
-	[ 99999, './data/mega-flat.json' ],
-	[ 9999, './data/numbers.json' ],
+	[99999, './data/simple.json'],
+	[99999, './data/nesting.json'],
+	[99999, './data/mega-flat.json'],
+	[9999, './data/numbers.json'],
 ];
 
 export default function serialization() {
@@ -47,12 +47,7 @@ export default function serialization() {
 		}
 	}
 
-	const wrapped = [
-		nativeV8SerializerTest,
-		jsonTest,
-		dataRecordSerializeTest,
-	].map(performance.timerify);
-
+	const wrapped = [nativeV8SerializerTest, jsonTest, dataRecordSerializeTest].map(performance.timerify);
 
 	for (let i = 0; i < objs.length; i++) {
 		const [n, dataFile] = dataFiles[i];

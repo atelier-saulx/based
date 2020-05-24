@@ -5,12 +5,7 @@ import modify from './modify';
 import serialization from './serialization';
 import unroll from './unroll';
 
-const allTests = [
-	finalSize,
-	modify,
-	serialization,
-	unroll,
-];
+const allTests = [finalSize, modify, serialization, unroll];
 
 function selectTests() {
 	if (process.argv.length > 2) {

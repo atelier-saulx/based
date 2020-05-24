@@ -127,13 +127,41 @@ describe('Test that each type writes a proper value', () => {
 		expect(buf.toString('hex')).toBe('efbeaddee0acef0d');
 	});
 
-	/*
-	 * TODO
-	 * float_be: 'o',
-	 * float_le: 'p',
-	 * double_be: 'q',
-	 * double_le: 'r',
-	 */
+	test('float_be', () => {
+		const def = [{ name: 'a', type: 'float_be' }];
+		const compiled = compile(def);
+		const buf = allocRecord(compiled);
+
+		writeValue(compiled, buf, '.a', 1.5);
+		expect(buf.readFloatBE()).toBe(1.5);
+	});
+
+	test('float_le', () => {
+		const def = [{ name: 'a', type: 'float_le' }];
+		const compiled = compile(def);
+		const buf = allocRecord(compiled);
+
+		writeValue(compiled, buf, '.a', 1.5);
+		expect(buf.readFloatLE()).toBe(1.5);
+	});
+
+	test('double_be', () => {
+		const def = [{ name: 'a', type: 'double_be' }];
+		const compiled = compile(def);
+		const buf = allocRecord(compiled);
+
+		writeValue(compiled, buf, '.a', 1.2345);
+		expect(buf.readDoubleBE()).toBe(1.2345);
+	});
+
+	test('double_le', () => {
+		const def = [{ name: 'a', type: 'double_le' }];
+		const compiled = compile(def);
+		const buf = allocRecord(compiled);
+
+		writeValue(compiled, buf, '.a', 1.2345);
+		expect(buf.readDoubleLE()).toBe(1.2345);
+	});
 });
 
 describe('Test that each type reads a proper value', () => {

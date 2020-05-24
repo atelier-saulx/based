@@ -1,7 +1,7 @@
 import { Encoding } from './types';
 import { CompiledRecordDef } from './compiler';
 
-type BufferReadFunction = (offset: number, len: number, encoding: Encoding) => any;
+type BufferReadFunction = (offset: number, len: number, encoding?: Encoding) => any;
 
 function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: Encoding) {
 	if (encoding && ['utf8', 'utf16le', 'latin1', 'ascii'].includes(encoding)) {
@@ -45,7 +45,8 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 		t: (offset: number, len: number): number => buf.readIntLE(offset, len),
 		u: (offset: number, len: number): number => buf.readUIntBE(offset, len),
 		v: (offset: number, len: number): number => buf.readUIntLE(offset, len),
-		w: (offset: number, len: number, encoding: Encoding): string | Buffer => bufferReadString(buf, offset, len, encoding),
+		w: (offset: number, len: number, encoding: Encoding): string | Buffer =>
+			bufferReadString(buf, offset, len, encoding),
 	};
 }
 

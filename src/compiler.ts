@@ -9,21 +9,35 @@ export interface RecordDef {
 
 export interface CompiledRecordDef {
 	size: number;
-	fieldList: [number, number, Char, string[]][];
-	fieldMap: { [index: string]: { offset: number; size: number; type: Char; name: string } };
+	/**
+	 * List of all fields in the record type.
+	 * [offset, typeSize, arrSize, typeCode, path fullName]
+	 * arrSize = 0 = the field is not an array
+	 */
+	fieldList: [number, number, number, Char, string[]][];
+	fieldMap: { [index: string]: { offset: number; size: number; arrSize: number; type: Char; name: string } };
 }
 
 const makeName = (a: string, b: string) => `${a}.${b}`;
 
-function _compile(recordDef: RecordDef[], parentName: string): [number, number, Char, string[], string][] {
+function _compile(recordDef: RecordDef[], parentName: string): [number, number, number, Char, string[], string][] {
 	// @ts-ignore
 	return recordDef
-		.map(({ name, type, size, def }) => {
-			const t = TYPES[type];
-			size = SIZES[type] || size;
+		.map(({ name, type: rawType, size, def }) => {
+			const reMatch = rawType.match(/^([^\[\]]+)(?:\[(\d+)\])?$/);
+			if (!reMatch) {
+				throw new TypeError(`Invalid type: "${rawType}"`);
+			}
 
-			if (!t) {
-				throw new Error(`Invalid type: "${type}"`);
+			const type = reMatch[1];
+			const arrSize = Number(reMatch[2] || 0);
+			if (!Number.isInteger(arrSize)) {
+				throw new TypeError('Array size must be an integer');
+			}
+
+			const typeCode = TYPES[type];
+			if (!typeCode) {
+				throw new TypeError(`Invalid type: "${rawType}"`);
 			}
 
 			if (type === 'record') {
@@ -33,40 +47,74 @@ function _compile(recordDef: RecordDef[], parentName: string): [number, number, 
 				return _compile(def, makeName(parentName, name));
 			}
 
+			size = SIZES[type] || size;
 			if (!Number.isInteger(size)) {
-				throw new Error(`Size must be set to an integer for type: "${type}"`);
+				throw new Error(`Size must be set to an integer for type: "${rawType}"`);
 			}
 
-			// The final format will be [ offset, size, type, name, path ]
+			// The final format will be [ offset, size, arrSize, type, name, path ]
 			const fullName = makeName(parentName, name);
-			return [[size, size, t, fullName.substring(1).split('.'), fullName]];
+			return [[0, size, arrSize, typeCode, fullName.substring(1).split('.'), fullName]];
 		})
 		.flat(1);
 }
 
 export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 	const arr = _compile(recordDef, '');
-	const size = arr.reduce((acc: number, cur: [number, number, Char, string[], string]) => acc + cur[0], 0);
 
+	// Calculate the size of the whole Record
+	// cur[1] = sizeof T
+	// cur[2] = sizeof array || 0
+	const recordSize = arr.reduce(
+		(acc: number, field: [number, number, number, Char, string[], string]) => acc + field[1] * (field[2] || 1),
+		0
+	);
+
+	// Calculate offsets
 	let prevOffset = 0;
 	for (const field of arr) {
-		const tmp = field[0];
+		const tmp = field[1] * (field[2] || 1);
 		field[0] = prevOffset;
 		prevOffset += tmp;
 	}
 
-	const compiled: CompiledRecordDef = { size, fieldList: [], fieldMap: {} };
-	for (const [offset, size, type, _path, name] of arr) {
+	const compiled: CompiledRecordDef = { size: recordSize, fieldList: [], fieldMap: {} };
+	for (const [offset, size, arrSize, type, _path, name] of arr) {
 		if (compiled.fieldMap[name]) {
 			throw new Error(`"${name}" is already defined`);
 		}
-		compiled.fieldMap[name] = { offset, size, type, name };
+		compiled.fieldMap[name] = { offset, size, arrSize, type, name };
 	}
 
 	// Map fieldList to the final type
-	compiled.fieldList = arr.map(([a, b, c, d]) => [a, b, c, d]);
+	compiled.fieldList = arr.map(([a, b, c, d, e]) => [a, b, c, d, e]);
 
 	return compiled;
+}
+
+function refToFieldType(key: string, value: any, inner: number = 0): string {
+	const type = typeof value;
+
+	switch (type) {
+		case 'boolean':
+			return 'int8';
+		case 'number':
+			return 'double_le';
+		case 'string':
+			return 'cstring';
+		case 'object':
+			if (Array.isArray(value)) {
+				if (inner > 0) {
+					throw new Error('Multidimensional arrays are not supported');
+				}
+
+				return `${refToFieldType(key, value, inner + 1)}[${value.length}]`;
+			} else {
+				return 'record';
+			}
+		default:
+			throw new Error(`Unsupported type: "${key}": ${type}`);
+	}
 }
 
 export function generateRecordDef(obj: any): RecordDef[] {
@@ -74,26 +122,23 @@ export function generateRecordDef(obj: any): RecordDef[] {
 
 	for (const key of Object.keys(obj)) {
 		const value = obj[key];
-		const type = typeof value;
+		const jsType = typeof value;
+		const type = refToFieldType(key, value);
 
-		switch (type) {
-			case 'boolean':
-				// TODO Do we want a more "real" boolean?
-				def.push({ name: key, type: 'int8' });
-				break;
-			case 'number':
-				def.push({ name: key, type: 'double_le' });
-				break;
+		switch (jsType) {
 			case 'string':
 				def.push({ name: key, type: 'cstring', size: value.length });
 				break;
 			case 'object':
-				if (!Array.isArray(value)) {
+				if (Array.isArray(value)) {
+					// RFE We expect that all members are of the same type
+					def.push({ name: key, type, size: value.length });
+				} else {
 					def.push({ name: key, type: 'record', def: generateRecordDef(value) });
-					break;
 				}
+				break;
 			default:
-				throw new TypeError(`Type not supported: ${key}: ${type}`);
+				def.push({ name: key, type });
 		}
 	}
 

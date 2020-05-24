@@ -1,43 +1,46 @@
 import v8 from 'v8';
 import printResult from './util/print-result';
-import {
-	compile,
-	createRecord
-} from '../src';
+import { compile, createRecord } from '../src';
 
 export default function finalSize() {
 	const recordDefEx = [
-	    { name: 'a', type: 'uint32_le' },
-	    { name: 'b', type: 'int32_le' },
-	    { name: 'c', type: 'int_le', size: 3 },
-	    { name: 'd', type: 'int_le', size: 5 },
-	    { name: 'nested', type: 'record', def: [
-	        { name: 'a', type: 'uint32_le' },
-	        { name: 'b', type: 'uint32_le' }
-	    ]},
-	    { name: 'x', type: 'record', def: [
-	        { name: 'a', type: 'uint32_le' },
-	        { name: 'y', type: 'record', def: [
-	            { name: 'a', type: 'uint32_le' },
-	        ]}
-	    ]},
+		{ name: 'a', type: 'uint32_le' },
+		{ name: 'b', type: 'int32_le' },
+		{ name: 'c', type: 'int_le', size: 3 },
+		{ name: 'd', type: 'int_le', size: 5 },
+		{
+			name: 'nested',
+			type: 'record',
+			def: [
+				{ name: 'a', type: 'uint32_le' },
+				{ name: 'b', type: 'uint32_le' },
+			],
+		},
+		{
+			name: 'x',
+			type: 'record',
+			def: [
+				{ name: 'a', type: 'uint32_le' },
+				{ name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+			],
+		},
 	];
 
 	const obj = {
-	    a: 4,
-	    b: -128,
-	    c: 10,
-	    d: 5,
-	    nested: {
-	        a: 5,
-	        b: 5,
-	    },
-	    x: {
-	        a: 5,
-	        y: {
-	            a: 5
-	        }
-	    }
+		a: 4,
+		b: -128,
+		c: 10,
+		d: 5,
+		nested: {
+			a: 5,
+			b: 5,
+		},
+		x: {
+			a: 5,
+			y: {
+				a: 5,
+			},
+		},
 	};
 
 	const compiled = compile(recordDefEx);
