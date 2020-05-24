@@ -1,18 +1,23 @@
 import { CompiledRecordDef } from './compiler';
 import { getReadFuncs, getWriteFuncs } from './accessors';
+import { memalign_word } from './mach';
 
-function getV(obj: any, path: string[], fullName: string) {
+/**
+ * Get the node.
+ */
+export function getNode(obj: any, path: string[], fullName: string) {
 	// If it's a record array then there is a special naming convention
 	// record.name.here[index] and we'll need to parse those [] parts.
 	if (!fullName.includes('[')) {
 		// not a record array
 		return path.reduce((o, j) => o[j], obj);
 	} else {
-		// record array
+		// the path contains one or more record arrays (array of objects)
 		return path.reduce((o, j) => {
 			const [realName, rest] = j.split('[');
 
 			if (rest) {
+				// found an array of records
 				const i = Number(rest.substring(0, rest.length - 1));
 
 				return o[realName][i];
@@ -23,6 +28,7 @@ function getV(obj: any, path: string[], fullName: string) {
 }
 
 export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any) {
+	let heapOffset = compiledDef.size;
 	const ops = getWriteFuncs(buf);
 	const fl = compiledDef.fieldList;
 	const n = compiledDef.fieldList.length;
@@ -33,21 +39,32 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 		// z[2] = arrSize
 		// z[3] = type
 		// z[4] = path
-		// z[5] = fullNam
+		// z[5] = fullName
 		const z = fl[i];
+		const typeSize = z[1];
 		const type = z[3];
+		const [incrHeap, getSize] =
+			type === 'pw'
+				? [(d: string) => (heapOffset += compiledDef.align(d.length)), (d: string) => d.length]
+				: [() => {}, () => typeSize];
 		const path = z[4];
-		const v = getV(obj, path, z[5]);
+		const v = getNode(obj, path, z[5]);
 
 		try {
 			if (z[2] > 0) {
+				// it's an array
 				let j = 0;
 				for (let i = 0; i < z[2]; i++) {
-					// @ts-ignore
-					ops[type](v[j++], z[0] + i * z[1], z[1]);
+					// for each value
+					const d = v[j];
+					ops[type](d, z[0] + i * typeSize, getSize(d), heapOffset);
+					incrHeap(d);
+					j++;
 				}
 			} else {
-				ops[type](v, z[0], z[1]);
+				// just a value
+				ops[type](v, z[0], getSize(v), heapOffset);
+				incrHeap(v);
 			}
 		} catch (err) {
 			err.name = path;

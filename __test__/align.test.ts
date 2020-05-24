@@ -1,4 +1,4 @@
-import { compile, createRecord, deserialize } from '../src/index';
+import { compile, createRecord } from '../src/index';
 
 describe('Test that aligned serialization works correctly', () => {
 	test('simple mixed struct', () => {

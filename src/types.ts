@@ -1,3 +1,5 @@
+import { WORD_SIZE } from './mach';
+
 export type Encoding =
 	| 'ascii'
 	| 'utf8'
@@ -75,6 +77,8 @@ export type Char =
 	| '8'
 	| '9';
 
+export type FieldTypeCode = Char | 'pw';
+
 export const SIZES: { [index: string]: number } = {
 	int8: 1,
 	int16_be: 2,
@@ -94,9 +98,10 @@ export const SIZES: { [index: string]: number } = {
 	float_le: 4,
 	double_be: 8,
 	double_le: 8,
+	cstring_p: 2 * WORD_SIZE,
 };
 
-export const TYPES: { [index: string]: Char } = {
+export const TYPES: { [index: string]: FieldTypeCode } = {
 	// Fixed size
 	int8: 'a',
 	int16_be: 'b',
@@ -124,4 +129,10 @@ export const TYPES: { [index: string]: Char } = {
 	cstring: 'w',
 	// Virtual
 	record: 'z',
+	// Pointer types
+	cstring_p: 'pw',
 };
+
+export function isPointer(typeCode: FieldTypeCode) {
+	return typeCode === 'pw';
+}

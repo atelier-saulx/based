@@ -57,11 +57,12 @@ human-readable record definition object.
 - `float_le`
 - `double_be`
 - `double_le`
-- `int_be` - 0 to 48 bit variable size big endian signed integer
-- `int_le` - 0 to 48 bit variable size little endian signed integer
-- `uint_be` - 0 to 48 bit variable size big endian unsigned integer
-- `uint_le` - 0 to 48 bit variable size little endian unsigned integer
+- `int_be` - 0 to 48 bit variable size big-endian signed integer
+- `int_le` - 0 to 48 bit variable size little-endian signed integer
+- `uint_be` - 0 to 48 bit variable size big-endian unsigned integer
+- `uint_le` - 0 to 48 bit variable size little-endian unsigned integer
 - `cstring` - null-terminated C-string (termination not enforced, same behavior as `strcpy()`)
+- `cstring_p` - A pointer to a C-string
 - `record` - defines a nested record
 
 **Arrays**
@@ -78,6 +79,61 @@ The array notation is as follows:
 { name: 'intArr', type: 'int8[80]' }
 ```
 
+**Data Structure**
+
+In the following examples the data structure is represented in 32bit big-endian
+format, but all common architectures are supported 32-bit BE/LE, 64-bit BE/LE,
+or even mixed endianness is possible.
+
+The `serialize()` function returns a `Buffer` object that contains a
+record structure and a heap. The heap is only populated if the record contains
+pointers to the data in heap.
+
+The following example shows a record definition, what is stored in the buffer,
+and a matching C struct.
+
+```json
+[
+  { "name": "sport", "type": "uint16_be" },
+  { "name": "dport", "type": "uint16_be" },
+  { "name": "seqno", "type": "uint32_be" },
+  { "name": "ackno", "type": "uint32_be" },
+  { "name": "options", "type": "uint_be", "size": 24 },
+  { "name": "data", "type": "cstring_p" }
+]
+```
+
+```
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |              sport            |               dport           |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             seqno                             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             ackno                             |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                    options                    |    PADDING    |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                             data                              |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+```
+
+Here `data` is inside the heap area.
+
+```c
+struct frame {
+	uint16_t sport;
+	uint16_t dport;
+	uint32_t seqno;
+	uint32_t ackno;
+	struct {
+		unsigned int options : 32;
+	};
+	char * data;
+};
+```
+
 
 API
 ---
@@ -86,7 +142,9 @@ API
 
 ```js
 compile(recordDef[, { align: false }])
-allocRecord(compiledDef)
+allocRecord(compiledDef[, { unpool, heapSize }])
+calcHeapSize(compiledDef, obj)
+createRecord(compiledDef, obj)
 generateRecordDef(obj)
 serialize(compiledDef, buf, obj)
 deserialize(compiledDef, buf)
@@ -100,18 +158,60 @@ createStringReader(compiledDef, buf, path[, encoding]);
 createWriter(compiledDef, buf, path)
 ```
 
-If `align` is set true for `compile()` then the resulting buffers will be
-aligned to the expected C struct alignment on the underlying architecture.
-
 `generateRecordDef()` makes a best effort guess on how an object could be
 serialized. Strings will be serialized to the size they were seen in the
 example object, and numbers will be stored using the same endianness as the
 host architecture is currently using.
 
-**Scripts**
+### Record alignment
+
+By default `compile()` does not alignment and the resulting data will suboptimal
+for access in C. If `align` is set true for `compile()` then the resulting
+buffers will be aligned to the expected C struct alignment on the underlying
+architecture.
+
+However, subrecords/nested records are not aligned as C structures even if
+`align` is set. Therefore, if nested records and especially record arrays will
+be accessed in C care should be taking to ensure that all the records are
+aligned to word size. This was a common manual task in pre-ANSI C world.
+
+Typically in C this manual alignment would look something like
+(assuming 32bit little-endian):
+
+```c
+struct x {
+	struct {
+		int16_t value;
+		int16_t _spare;
+	} a;
+	uint32_t flags;
+};
+```
+
+With the definition language here we can do the following:
+
+```json
+[
+  {
+	"name": "x",
+	"type": "record",
+	"def": [
+		{ "name": "value", "type": "int16_le" },
+		{ "name": "_spare", "type": "int16_le" }
+	]
+  },
+  { "name": "flags", "type": "uint32_le" }
+]
+```
+
+This is the exact bitwise equivalent of the previous C struct.
+
+
+Scripts
+-------
 
 - `yarn build` - run TS build
-- `yarn lint` - un ESlint
+- `yarn lint` - run ESlint
 - `yarn prettier` - run Prettier
 - `yarn test` - run tests
 - `yarn perf` - run a perf test

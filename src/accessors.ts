@@ -1,5 +1,6 @@
 import { Encoding } from './types';
 import { CompiledRecordDef } from './compiler';
+import { WORD_SIZE, MACH_TYPE } from './mach';
 
 type BufferReadFunction = (offset: number, len: number, encoding?: Encoding) => any;
 
@@ -50,7 +51,39 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 	};
 }
 
-type BufferWriteFunction = (v: any, offset: number, len: number, encoding?: Encoding) => void;
+type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: number, encoding?: Encoding) => void;
+
+function writeWW(buf: Buffer, offset: number, value: number | bigint) {
+	switch (MACH_TYPE) {
+		case 'BE4':
+			buf.writeUInt32BE(Number(value), offset);
+			break;
+		case 'BE8':
+			buf.writeBigUInt64BE(BigInt(value), offset);
+			break;
+		case 'LE4':
+			buf.writeUInt32LE(Number(value), offset);
+			break;
+		case 'LE8':
+			buf.writeBigUInt64LE(BigInt(value), offset);
+			break;
+		default:
+			throw new Error('Arch not supported');
+	}
+}
+
+function bufferWriteCstringP(
+	buf: Buffer,
+	offset: number,
+	destOffset: number,
+	value: string,
+	len: number,
+	encoding: Encoding
+) {
+	writeWW(buf, offset, destOffset);
+	writeWW(buf, offset + WORD_SIZE, len);
+	return buf.write(value, destOffset, len, encoding);
+}
 
 /**
  * Get write functions for a data-record buffer.
@@ -80,7 +113,10 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 		t: (v: number, offset: number, len: number): number => buf.writeIntLE(v, offset, len),
 		u: (v: number, offset: number, len: number): number => buf.writeUIntBE(v, offset, len),
 		v: (v: number, offset: number, len: number): number => buf.writeUIntLE(v, offset, len),
-		w: (v: string, offset: number, len: number, encoding: Encoding): number => buf.write(v, offset, len, encoding),
+		w: (v: string, offset: number, len: number, _destOffset: number, encoding: Encoding): number =>
+			buf.write(v, offset, len, encoding),
+		pw: (v: string, offset: number, len: number, destOffset: number, encoding: Encoding): number =>
+			bufferWriteCstringP(buf, offset, destOffset, v, len, encoding),
 	};
 }
 
@@ -145,7 +181,8 @@ export function writeString(
 	// null-terminated.
 	buf.fill(0, offset, offset + size);
 
-	return funcs[type](value, offset, size, encoding);
+	// 0 is a dummy value for heapOffset
+	return funcs[type](value, offset, size, 0, encoding);
 }
 
 export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {

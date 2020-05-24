@@ -1,5 +1,5 @@
-import { ENDIANNESS, memalign_offset } from './memalign';
-import { Char, TYPES, SIZES } from './types';
+import { ENDIANNESS, WORD_SIZE, memalign_padding, memalign_word } from './mach';
+import { FieldTypeCode, TYPES, SIZES } from './types';
 
 export interface RecordDef {
 	name: string;
@@ -10,18 +10,23 @@ export interface RecordDef {
 
 export interface CompiledRecordDef {
 	size: number;
+	aligned: boolean;
+	align: (len: number) => number;
 	/**
 	 * List of all fields in the record type.
 	 * [offset, typeSize, arrSize, typeCode, path fullName, recordIndex ]
 	 * arrSize = 0 = the field is not an array
 	 */
-	fieldList: [number, number, number, Char, string[], string][];
-	fieldMap: { [index: string]: { offset: number; size: number; arrSize: number; type: Char; name: string } };
+	fieldList: [number, number, number, FieldTypeCode, string[], string][];
+	fieldMap: { [index: string]: { offset: number; size: number; arrSize: number; type: FieldTypeCode; name: string } };
 }
 
 const makeName = (a: string, b: string) => `${a}.${b}`;
 
-function _compile(recordDef: RecordDef[], parentName: string): [number, number, number, Char, string[], string][] {
+function _compile(
+	recordDef: RecordDef[],
+	parentName: string
+): [number, number, number, FieldTypeCode, string[], string][] {
 	// @ts-ignore
 	return recordDef
 		.map(({ name, type: rawType, size, def }) => {
@@ -65,23 +70,36 @@ function _compile(recordDef: RecordDef[], parentName: string): [number, number, 
 		.flat(1);
 }
 
+function getAlignSize(typeCode: FieldTypeCode, size: number) {
+	if (typeCode === 'pw') {
+		// A pointer is actually two values
+		// [pointer, size]
+		return WORD_SIZE;
+	}
+
+	return size;
+}
+
 export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
 	const align = opts?.align || false;
+	const alignWord = align ? (len: number) => memalign_word(len) : (len: number) => len;
 	const arr = _compile(recordDef, '');
 
 	// Calculate the size of the whole Record without considering alignment yet
 	// cur[1] = sizeof T
 	// cur[2] = sizeof array || 0
 	let recordSize = arr.reduce(
-		(acc: number, field: [number, number, number, Char, string[], string]) => acc + field[1] * (field[2] || 1),
+		(acc: number, field: [number, number, number, FieldTypeCode, string[], string]) =>
+			acc + field[1] * (field[2] || 1),
 		0
 	);
 
 	// Calculate offsets
 	let prevOffset = 0;
 	for (const field of arr) {
+		const typeCode = field[3];
 		const size = field[1] * (field[2] || 1);
-		const padding = align ? memalign_offset(prevOffset, size) : 0;
+		const padding = align ? memalign_padding(prevOffset, getAlignSize(typeCode, size)) : 0;
 
 		if (padding > 0) {
 			recordSize += padding;
@@ -90,8 +108,15 @@ export function compile(recordDef: RecordDef[], opts?: { align: boolean }): Comp
 		field[0] = prevOffset + padding;
 		prevOffset += size + padding;
 	}
+	recordSize = alignWord(recordSize);
 
-	const compiled: CompiledRecordDef = { size: recordSize, fieldList: [], fieldMap: {} };
+	const compiled: CompiledRecordDef = {
+		size: recordSize,
+		aligned: align,
+		align: alignWord,
+		fieldList: [],
+		fieldMap: {},
+	};
 	for (const [offset, size, arrSize, type, _path, name] of arr) {
 		if (compiled.fieldMap[name]) {
 			throw new Error(`"${name}" is already defined`);
