@@ -1,3 +1,4 @@
+import { ENDIANNESS, memalign_offset } from './memalign';
 import { Char, TYPES, SIZES } from './types';
 
 export interface RecordDef {
@@ -64,13 +65,14 @@ function _compile(recordDef: RecordDef[], parentName: string): [number, number, 
 		.flat(1);
 }
 
-export function compile(recordDef: RecordDef[]): CompiledRecordDef {
+export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
+	const align = opts?.align || false;
 	const arr = _compile(recordDef, '');
 
-	// Calculate the size of the whole Record
+	// Calculate the size of the whole Record without considering alignment yet
 	// cur[1] = sizeof T
 	// cur[2] = sizeof array || 0
-	const recordSize = arr.reduce(
+	let recordSize = arr.reduce(
 		(acc: number, field: [number, number, number, Char, string[], string]) => acc + field[1] * (field[2] || 1),
 		0
 	);
@@ -78,9 +80,15 @@ export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 	// Calculate offsets
 	let prevOffset = 0;
 	for (const field of arr) {
-		const tmp = field[1] * (field[2] || 1);
-		field[0] = prevOffset;
-		prevOffset += tmp;
+		const size = field[1] * (field[2] || 1);
+		const padding = align ? memalign_offset(prevOffset, size) : 0;
+
+		if (padding > 0) {
+			recordSize += padding;
+		}
+
+		field[0] = prevOffset + padding;
+		prevOffset += size + padding;
 	}
 
 	const compiled: CompiledRecordDef = { size: recordSize, fieldList: [], fieldMap: {} };
@@ -103,7 +111,7 @@ function refToFieldType(key: string, value: any, inner: number = 0): string {
 		case 'boolean':
 			return 'int8';
 		case 'number':
-			return 'double_le';
+			return ENDIANNESS === 'LE' ? 'double_le' : 'double_be';
 		case 'string':
 			return 'cstring';
 		case 'object':
