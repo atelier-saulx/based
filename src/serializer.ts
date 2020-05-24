@@ -5,17 +5,19 @@ function getV(obj: any, path: string[], fullName: string) {
 	// If it's a record array then there is a special naming convention
 	// record.name.here[index] and we'll need to parse those [] parts.
 	if (!fullName.includes('[')) {
+		// not a record array
 		return path.reduce((o, j) => o[j], obj);
 	} else {
+		// record array
 		return path.reduce((o, j) => {
-			const [realPath, rest] = j.split('[');
+			const [realName, rest] = j.split('[');
 
 			if (rest) {
 				const i = Number(rest.substring(0, rest.length - 1));
 
-				return o[realPath][i];
+				return o[realName][i];
 			}
-			return o[realPath];
+			return o[realName];
 		}, obj);
 	}
 }
@@ -63,13 +65,32 @@ export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
 	for (const [offset, size, arrSize, type, names] of compiledDef.fieldList) {
 		let cur = obj;
 		let prev = cur;
-		let name: string = '';
+		let name: string | number = '';
+
 		for (name of names) {
 			prev = cur;
-			if (!cur[name]) {
-				cur[name] = {};
+			if (!name.includes('[')) {
+				// Not a record array
+				if (!cur[name]) {
+					cur[name] = {};
+				}
+
+				cur = cur[name];
+			} else {
+				// record array
+				const [realName, rest] = name.split('[');
+
+				const i = Number(rest.substring(0, rest.length - 1));
+				if (!cur[realName]) {
+					cur[realName] = [];
+				}
+				if (!cur[realName][i]) {
+					cur[realName][i] = {};
+				}
+
+				cur = cur[realName][i];
+				name = i;
 			}
-			cur = cur[name];
 		}
 
 		const op = ops[type];

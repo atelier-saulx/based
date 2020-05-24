@@ -91,8 +91,7 @@ export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 		compiled.fieldMap[name] = { offset, size, arrSize, type, name };
 	}
 
-	// Map fieldList to the final type
-	compiled.fieldList = arr; //arr.map(([a, b, c, d, e]) => [a, b, c, d, e]);
+	compiled.fieldList = arr;
 
 	return compiled;
 }
