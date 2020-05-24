@@ -79,15 +79,29 @@ The array notation is as follows:
 { name: 'intArr', type: 'int8[80]' }
 ```
 
-**Data Structure**
+**Pointers**
+
+Pointer types can point to variable size data (at runtime) without need to
+recompile the record definition. This is different from variable size field
+types (`int_be`, `int_le`, `uint_be`, `uint_l`, `cstring`) as the size of those
+fields are locked in compilation and have a fixed position in the data
+structure.
+
+For example a `cstring_p` pointer can point to the string `"Hello"` during one
+serialization and to the string `"world!!"` on the next call. The string is
+copied into a dynamic heap section of the resulting buffer which allows
+variable size payload to be stored.
+
+
+### Data Structure
 
 In the following examples the data structure is represented in 32bit big-endian
 format, but all common architectures are supported 32-bit BE/LE, 64-bit BE/LE,
 or even mixed endianness is possible.
 
 The `serialize()` function returns a `Buffer` object that contains a
-record structure and a heap. The heap is only populated if the record contains
-pointers to the data in heap.
+record structure and a heap sections. The heap is only populated if the record
+contains pointers to the data in heap.
 
 The following example shows a record definition, what is stored in the buffer,
 and a matching C struct.
