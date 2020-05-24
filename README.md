@@ -3,6 +3,14 @@ data-record
 
 Record type for Node.js.
 
+Record Format
+-------------
+
+A record is consist of and array of field definitions, describing a physical data
+structure that can be mapped to a `struct` type in C or C++.
+
+The following array defines a simple fixed size record with some nested records.
+
 ```js
 // A record definition
 const def = [
@@ -24,6 +32,10 @@ const def = [
 ]
 const compiled = compile(def);
 ```
+
+The compilation result contains the same information as the original definition
+but in an optimized data structure that can be accessed more efficiently than the
+human-readable record definition object.
 
 **Types**
 
@@ -51,6 +63,24 @@ const compiled = compile(def);
 - `uint_le` - 0 to 48 bit variable size little endian unsigned integer
 - `cstring` - null-terminated C-string (termination not enforced, same behavior as `strcpy()`)
 - `record` - defines a nested record
+
+**Arrays**
+
+Any type can be used to create an array but there is a caveat, all the items
+inside an must have the same fixed size. The size can be implicit from the type
+or a variable size given in the field definition (`int_be`, `int_le`, `uint_be`,
+`cstring`, and `record`).
+
+The array notation is as follows:
+
+```js
+// TYPE[SIZE]
+{ name: 'intArr', type: 'int8[80]' }
+```
+
+
+API
+---
 
 **Functions**
 
