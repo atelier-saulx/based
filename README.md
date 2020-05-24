@@ -145,6 +145,7 @@ struct frame {
 		unsigned int options : 24;
 	};
 	char * data;
+	size_t data_len;
 };
 ```
 
@@ -160,6 +161,7 @@ allocRecord(compiledDef[, { unpool, heapSize }])
 calcHeapSize(compiledDef, obj)
 createRecord(compiledDef, obj)
 generateRecordDef(obj)
+generateCHeader(compiledDef)
 serialize(compiledDef, buf, obj)
 deserialize(compiledDef, buf)
 createRecord(compiledDef, obj)

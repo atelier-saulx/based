@@ -1,8 +1,8 @@
 import { CompiledRecordDef } from './compiler';
 import { serialize, getNode } from './serializer';
 import { getWriteFuncs, getReadFuncs } from './accessors';
-import { isPointer } from './types';
-export { RecordDef, CompiledRecordDef, compile, generateRecordDef } from './compiler';
+import { isPointerType } from './types';
+export { RecordDef, CompiledRecordDef, compile, generateRecordDef, generateCHeader } from './compiler';
 export { serialize, deserialize } from './serializer';
 export { readValue, writeValue, readString, writeString, createReader, createWriter } from './accessors';
 
@@ -24,7 +24,7 @@ export function calcHeapSize(compiledDef: CompiledRecordDef, obj: any): number {
 	let size = 0;
 
 	for (const [_offet, _typeSize, _arrSize, typeCode, path, fullName] of compiledDef.fieldList) {
-		if (isPointer(typeCode)) {
+		if (isPointerType(typeCode)) {
 			const node = getNode(obj, path, fullName);
 
 			size += compiledDef.align(node.length);

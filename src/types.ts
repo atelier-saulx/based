@@ -77,7 +77,32 @@ export type Char =
 	| '8'
 	| '9';
 
-export type FieldTypeCode = Char | 'pw';
+export type FieldTypeCode =
+	| 'a'
+	| 'b'
+	| 'c'
+	| 'd'
+	| 'e'
+	| 'f'
+	| 'g'
+	| 'h'
+	| 'i'
+	| 'j'
+	| 'k'
+	| 'l'
+	| 'm'
+	| 'n'
+	| 'o'
+	| 'p'
+	| 'q'
+	| 'r'
+	| 's'
+	| 't'
+	| 'u'
+	| 'v'
+	| 'w'
+	| 'z'
+	| 'pw';
 
 export const SIZES: { [index: string]: number } = {
 	int8: 1,
@@ -133,6 +158,44 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	cstring_p: 'pw',
 };
 
-export function isPointer(typeCode: FieldTypeCode) {
+export function isVarType(typeCode: FieldTypeCode) {
+	return ['s', 't', 'u', 'v', 'w'].includes(typeCode);
+}
+
+export function isVirtualType(typeCode: FieldTypeCode) {
+	return typeCode === 'z';
+}
+
+export function isPointerType(typeCode: FieldTypeCode) {
 	return typeCode === 'pw';
 }
+
+export const C_TYPES = {
+	// Fixed size
+	a: 'int8_t',
+	b: 'int16_t',
+	c: 'int16_t',
+	d: 'int32_t',
+	e: 'int32_t',
+	f: 'int64_t',
+	g: 'int64_t',
+	h: 'uint8_t',
+	i: 'uint16_t',
+	j: 'uint16_t',
+	k: 'uint32_t',
+	l: 'uint32_t',
+	m: 'uint64_t',
+	n: 'uint64_t',
+	o: 'float',
+	p: 'float',
+	q: 'double',
+	r: 'double',
+	// Variable size
+	s: 'int8_t',
+	t: 'int8_t',
+	u: 'uint8_t',
+	v: 'uint8_t',
+	w: 'char',
+	// Pointer types
+	pw: 'char *',
+};

@@ -14,6 +14,7 @@ module.exports = {
 		"@typescript-eslint/explicit-function-return-type": "off",
 		"@typescript-eslint/no-explicit-any": "off",
 		"@typescript-eslint/no-use-before-define": "off",
+		"@typescript-eslint/no-empty-function": "off",
 		"no-console": "error"
 	}
 };
