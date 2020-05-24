@@ -142,7 +142,7 @@ struct frame {
 	uint32_t seqno;
 	uint32_t ackno;
 	struct {
-		unsigned int options : 32;
+		unsigned int options : 24;
 	};
 	char * data;
 };
