@@ -112,7 +112,7 @@ and a matching C struct.
   { "name": "dport", "type": "uint16_be" },
   { "name": "seqno", "type": "uint32_be" },
   { "name": "ackno", "type": "uint32_be" },
-  { "name": "options", "type": "uint_be", "size": 24 },
+  { "name": "options", "type": "uint_be", "size": 3 },
   { "name": "data", "type": "cstring_p" }
 ]
 ```
