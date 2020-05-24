@@ -85,8 +85,9 @@ API
 **Functions**
 
 ```js
-compile(recordDef)
+compile(recordDef[, { align: false }])
 allocRecord(compiledDef)
+generateRecordDef(obj)
 serialize(compiledDef, buf, obj)
 deserialize(compiledDef, buf)
 createRecord(compiledDef, obj)
@@ -98,6 +99,14 @@ createReader(compiledDef, buf, path)
 createStringReader(compiledDef, buf, path[, encoding]);
 createWriter(compiledDef, buf, path)
 ```
+
+If `align` is set true for `compile()` then the resulting buffers will be
+aligned to the expected C struct alignment on the underlying architecture.
+
+`generateRecordDef()` makes a best effort guess on how an object could be
+serialized. Strings will be serialized to the size they were seen in the
+example object, and numbers will be stored using the same endianness as the
+host architecture is currently using.
 
 **Scripts**
 
