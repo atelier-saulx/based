@@ -11,10 +11,10 @@ export interface CompiledRecordDef {
 	size: number;
 	/**
 	 * List of all fields in the record type.
-	 * [offset, typeSize, arrSize, typeCode, path fullName]
+	 * [offset, typeSize, arrSize, typeCode, path fullName, recordIndex ]
 	 * arrSize = 0 = the field is not an array
 	 */
-	fieldList: [number, number, number, Char, string[]][];
+	fieldList: [number, number, number, Char, string[], string][];
 	fieldMap: { [index: string]: { offset: number; size: number; arrSize: number; type: Char; name: string } };
 }
 
@@ -44,7 +44,12 @@ function _compile(recordDef: RecordDef[], parentName: string): [number, number, 
 				if (!def) {
 					throw new TypeError('Incomplete record');
 				}
-				return _compile(def, makeName(parentName, name));
+				return arrSize > 0
+					? Array(arrSize)
+							.fill(null)
+							.map((_, i) => _compile(def, makeName(parentName, `${name}[${i}]`)))
+							.flat(1)
+					: _compile(def, makeName(parentName, name));
 			}
 
 			size = SIZES[type] || size;
@@ -87,7 +92,7 @@ export function compile(recordDef: RecordDef[]): CompiledRecordDef {
 	}
 
 	// Map fieldList to the final type
-	compiled.fieldList = arr.map(([a, b, c, d, e]) => [a, b, c, d, e]);
+	compiled.fieldList = arr; //arr.map(([a, b, c, d, e]) => [a, b, c, d, e]);
 
 	return compiled;
 }
