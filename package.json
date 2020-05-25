@@ -2,13 +2,17 @@
   "name": "data-record",
   "version": "0.1.0",
   "description": "",
-  "main": "index.js",
+  "main": "lib/index.js",
+  "files": [
+    "lib/"
+  ],
   "scripts": {
     "build": "rm -rf ./lib && tsc",
     "lint": "eslint --ext .ts ./src",
     "perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
     "prettier": "prettier --write './{src,__test__,__perf__}/**/*.ts'",
-    "test": "jest --runInBand --clearCache && jest --coverage"
+    "test": "jest --runInBand --clearCache && jest --coverage",
+    "prepublish": "npm run build"
   },
   "author": "Olli Vanhoja",
   "license": "ISC",
