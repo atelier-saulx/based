@@ -188,7 +188,8 @@ export function writeValue(compiledDef: CompiledRecordDef, buf: Buffer, path: st
 		throw new Error('Not found');
 	}
 
-	funcs[type](value, offset, size);
+	// 0 is a dummy value for headOffset
+	funcs[type](value, offset, size, 0);
 }
 
 export function writeString(
