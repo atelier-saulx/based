@@ -27,10 +27,10 @@ describe('Test that pointer types are serialized correctly', () => {
 		});
 
 		const offset = buf.readBigUInt64LE(0);
-		expect(offset).toBe(0n);
+		expect(offset).toBe(BigInt(0));
 
 		const size = buf.readBigUInt64LE(WORD_SIZE);
-		expect(size).toBe(0n);
+		expect(size).toBe(BigInt(0));
 
 		expect(buf.length).toBe(2 * WORD_SIZE);
 	});

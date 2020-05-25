@@ -13,7 +13,7 @@
     "removeComments": true,
     "outDir": "./lib",
     "strict": true,
-    "target": "ES2020",
+    "target": "ES2018",
     "inlineSourceMap": true,
     "types": ["node","jest"],
     "typeRoots": [
