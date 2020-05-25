@@ -1,7 +1,7 @@
 {
   "name": "data-record",
-  "version": "0.1.0",
-  "description": "",
+  "version": "0.1.1",
+  "description": "Data records for Node.js",
   "main": "lib/index.js",
   "files": [
     "lib/"
