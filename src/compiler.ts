@@ -233,6 +233,7 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 		}
 
 		// TS doesn't understand a damn anything about typing
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		const cType = C_TYPES[typeCode];
 		const fullName = _fullName.slice(1);

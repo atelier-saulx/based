@@ -97,7 +97,10 @@ describe('Test that pointer types are deserialized correctly', () => {
 			{ name: 'str2', type: 'cstring_p' },
 		];
 		const compiled = compile(recordDef, { align: true });
-		const buf = Buffer.from('280000000000000005000000000000000d000000000000003000000000000000050000000000000068656c6c6f000000776f726c64000000', 'hex');
+		const buf = Buffer.from(
+			'280000000000000005000000000000000d000000000000003000000000000000050000000000000068656c6c6f000000776f726c64000000',
+			'hex'
+		);
 		const obj = deserialize(compiled, buf);
 
 		expect(obj).toEqual({

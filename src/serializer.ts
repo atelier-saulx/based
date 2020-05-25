@@ -45,12 +45,11 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 		const typeSize = z[1];
 		const type = z[3];
 		const incrHeap = isPointerType(type)
-			?
-					(d: string) => {
-						if (d) {
-							heapOffset += compiledDef.align(d.length);
-						}
+			? (d: string) => {
+					if (d) {
+						heapOffset += compiledDef.align(d.length);
 					}
+			  }
 			: () => {};
 		const path = z[4];
 		const v = getNode(obj, path, z[5]);

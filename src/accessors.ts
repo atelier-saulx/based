@@ -162,7 +162,6 @@ export function readValue<T = number | bigint>(compiledDef: CompiledRecordDef, b
 		throw new Error('Not found');
 	}
 
-	// @ts-ignore
 	return funcs[type](offset, size);
 }
 
@@ -189,7 +188,6 @@ export function writeValue(compiledDef: CompiledRecordDef, buf: Buffer, path: st
 		throw new Error('Not found');
 	}
 
-	// @ts-ignore
 	funcs[type](value, offset, size);
 }
 
@@ -227,7 +225,6 @@ export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 		throw new Error('Not found');
 	}
 
-	// @ts-ignore
 	return () => funcs[type](offset, size);
 }
 
@@ -243,7 +240,6 @@ export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, 
 		throw new TypeError('Not a string');
 	}
 
-	// @ts-ignore
 	return () => funcs[type](offset, size, encoding);
 }
 
@@ -255,6 +251,6 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 		throw new Error('Not found');
 	}
 
-	// @ts-ignore
-	return (value) => funcs[type](value, offset, size);
+	// 0 is a dummy value for headOffset
+	return (value: any) => funcs[type](value, offset, size, 0);
 }

@@ -1,6 +1,5 @@
 import { CompiledRecordDef } from './compiler';
 import { serialize, getNode } from './serializer';
-import { getWriteFuncs, getReadFuncs } from './accessors';
 import { isPointerType } from './types';
 export { RecordDef, CompiledRecordDef, compile, generateRecordDef, generateCHeader } from './compiler';
 export { serialize, deserialize } from './serializer';
