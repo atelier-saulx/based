@@ -27,7 +27,7 @@ export function calcHeapSize(compiledDef: CompiledRecordDef, obj: any): number {
 		if (isPointerType(typeCode)) {
 			const node = getNode(obj, path, fullName);
 
-			size += compiledDef.align(node.length);
+			size += node ? compiledDef.align(node.length) : 0;
 		}
 	}
 

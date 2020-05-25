@@ -80,6 +80,12 @@ function bufferWriteCstringP(
 	len: number,
 	encoding: Encoding
 ) {
+	if (!value) {
+		writeWW(buf, offset, 0);
+		writeWW(buf, offset + WORD_SIZE, 0);
+		return 0;
+	}
+
 	writeWW(buf, offset, destOffset);
 	writeWW(buf, offset + WORD_SIZE, len);
 	return buf.write(value, destOffset, len, encoding);

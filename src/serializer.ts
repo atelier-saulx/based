@@ -1,6 +1,7 @@
 import { CompiledRecordDef } from './compiler';
 import { getReadFuncs, getWriteFuncs } from './accessors';
 import { memalign_word } from './mach';
+import { isPointerType } from './types';
 
 /**
  * Get the node.
@@ -43,10 +44,16 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 		const z = fl[i];
 		const typeSize = z[1];
 		const type = z[3];
-		const [incrHeap, getSize] =
-			type === 'pw'
-				? [(d: string) => (heapOffset += compiledDef.align(d.length)), (d: string) => d.length]
-				: [() => {}, () => typeSize];
+		const [incrHeap, getSize] = isPointerType(type)
+			? [
+					(d: string) => {
+						if (d) {
+							heapOffset += compiledDef.align(d.length);
+						}
+					},
+					(d: string) => d?.length || 0,
+			  ]
+			: [() => {}, () => typeSize];
 		const path = z[4];
 		const v = getNode(obj, path, z[5]);
 
@@ -94,7 +101,7 @@ export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
 
 				cur = cur[name];
 			} else {
-				// record array
+				// a record array
 				const [realName, rest] = name.split('[');
 
 				const i = Number(rest.substring(0, rest.length - 1));

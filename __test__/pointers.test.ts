@@ -19,6 +19,20 @@ describe('Test that pointer types work', () => {
 		expect(str).toEqual('hello world!');
 	});
 
+	test('cstring_p NULL pointer', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			str: null,
+		});
+
+		const offset = buf.readBigUInt64LE(0);
+		expect(offset).toBe(0n);
+
+		const size = buf.readBigUInt64LE(WORD_SIZE);
+		expect(size).toBe(0n);
+	});
+
 	test('a complex record with pointers is written correctly', () => {
 		const recordDef = [
 			{ name: 'str1', type: 'cstring_p' },
