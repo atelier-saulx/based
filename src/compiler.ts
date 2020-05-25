@@ -71,10 +71,16 @@ function _compile(
 }
 
 function getAlignSize(typeCode: FieldTypeCode, size: number) {
-	if (typeCode === 'pw') {
+	if (isPointerType(typeCode)) {
 		// A pointer is actually two values
 		// [pointer, size]
 		return WORD_SIZE;
+	}
+
+	// Strings are aligned to one byte
+	// TODO Hide the code in types.ts
+	if (typeCode === 'w') {
+		return 1;
 	}
 
 	return size;
