@@ -2,9 +2,22 @@ import { Encoding } from './types';
 import { CompiledRecordDef } from './compiler';
 import { WORD_SIZE, MACH_TYPE } from './mach';
 
-type BufferReadFunction = (offset: number, len: number, encoding?: Encoding) => any;
+function readWord(buf: Buffer, offset: number): number | bigint {
+	switch (MACH_TYPE) {
+		case 'BE4':
+			return buf.readUInt32BE(offset);
+		case 'BE8':
+			return buf.readBigUInt64BE(offset);
+		case 'LE4':
+			return buf.readUInt32LE(offset);
+		case 'LE8':
+			return buf.readBigUInt64LE(offset);
+		default:
+			throw new Error('Arch not supported');
+	}
+}
 
-function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: Encoding) {
+function bufferReadCstring(buf: Buffer, offset: number, len: number, encoding?: Encoding) {
 	if (encoding && ['utf8', 'utf16le', 'latin1', 'ascii'].includes(encoding)) {
 		const sub = buf.subarray(offset, offset + len);
 		const ind = sub.indexOf(0);
@@ -17,6 +30,57 @@ function bufferReadString(buf: Buffer, offset: number, len: number, encoding?: E
 
 	return Buffer.from(buf.subarray(offset, offset + len));
 }
+
+function BufferReadCstringP(buf: Buffer, offset: number, _len: number, encoding: Encoding): Buffer | string | null {
+	const str_p = Number(readWord(buf, offset));
+	const str_len = Number(readWord(buf, offset + WORD_SIZE));
+
+	if (Number(str_p) === 0) {
+		return null;
+	}
+
+	return bufferReadCstring(buf, str_p, str_len, encoding);
+}
+
+function writeWord(buf: Buffer, offset: number, value: number | bigint) {
+	switch (MACH_TYPE) {
+		case 'BE4':
+			buf.writeUInt32BE(Number(value), offset);
+			break;
+		case 'BE8':
+			buf.writeBigUInt64BE(BigInt(value), offset);
+			break;
+		case 'LE4':
+			buf.writeUInt32LE(Number(value), offset);
+			break;
+		case 'LE8':
+			buf.writeBigUInt64LE(BigInt(value), offset);
+			break;
+		default:
+			throw new Error('Arch not supported');
+	}
+}
+
+function bufferWriteCstringP(
+	buf: Buffer,
+	offset: number,
+	destOffset: number,
+	value: string,
+	_len: number,
+	encoding: Encoding
+) {
+	if (!value) {
+		writeWord(buf, offset, 0);
+		writeWord(buf, offset + WORD_SIZE, 0);
+		return 0;
+	}
+
+	writeWord(buf, offset, destOffset);
+	writeWord(buf, offset + WORD_SIZE, value.length);
+	return buf.write(value, destOffset, value.length, encoding);
+}
+
+type BufferReadFunction = (offset: number, len: number, encoding?: Encoding) => any;
 
 /**
  * Get read functions for a data-record buffer.
@@ -46,50 +110,14 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 		t: (offset: number, len: number): number => buf.readIntLE(offset, len),
 		u: (offset: number, len: number): number => buf.readUIntBE(offset, len),
 		v: (offset: number, len: number): number => buf.readUIntLE(offset, len),
-		w: (offset: number, len: number, encoding: Encoding): string | Buffer =>
-			bufferReadString(buf, offset, len, encoding),
+		w: (offset: number, len: number, encoding: Encoding): Buffer | string =>
+			bufferReadCstring(buf, offset, len, encoding),
+		pw: (offset: number, len: number, encoding: Encoding): Buffer | string | null =>
+			BufferReadCstringP(buf, offset, len, encoding),
 	};
 }
 
 type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: number, encoding?: Encoding) => void;
-
-function writeWW(buf: Buffer, offset: number, value: number | bigint) {
-	switch (MACH_TYPE) {
-		case 'BE4':
-			buf.writeUInt32BE(Number(value), offset);
-			break;
-		case 'BE8':
-			buf.writeBigUInt64BE(BigInt(value), offset);
-			break;
-		case 'LE4':
-			buf.writeUInt32LE(Number(value), offset);
-			break;
-		case 'LE8':
-			buf.writeBigUInt64LE(BigInt(value), offset);
-			break;
-		default:
-			throw new Error('Arch not supported');
-	}
-}
-
-function bufferWriteCstringP(
-	buf: Buffer,
-	offset: number,
-	destOffset: number,
-	value: string,
-	len: number,
-	encoding: Encoding
-) {
-	if (!value) {
-		writeWW(buf, offset, 0);
-		writeWW(buf, offset + WORD_SIZE, 0);
-		return 0;
-	}
-
-	writeWW(buf, offset, destOffset);
-	writeWW(buf, offset + WORD_SIZE, len);
-	return buf.write(value, destOffset, len, encoding);
-}
 
 /**
  * Get write functions for a data-record buffer.

@@ -225,7 +225,8 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 	}
 	code.push('};\n\n');
 
-	code.push(`static inline int ${recordName}_fixup(struct ${recordName} * p)\n{\n`);
+	// HTON function
+	code.push(`static inline int ${recordName}_hton(struct ${recordName} * p)\n{\n`);
 	for (const [_offset, _size, _arrSize, typeCode, _names, _fullName] of compiledDef.fieldList) {
 		if (!isPointerType(typeCode)) {
 			continue;
@@ -239,6 +240,9 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 		code.push(`\tp->${fullName} = (${cType})((uintptr_t)(p) + (uintptr_t)(p->${fullName}));\n`);
 	}
 	code.push(`\treturn 0;\n}\n\n`);
+
+	// NTOH function
+	// TODO
 
 	code.push(`#endif /* ${MACRO_NAME} */`);
 

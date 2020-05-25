@@ -1,7 +1,7 @@
-import { compile, createRecord } from '../src/index';
+import { compile, createRecord, deserialize } from '../src/index';
 import { WORD_SIZE } from '../src/mach';
 
-describe('Test that pointer types work', () => {
+describe('Test that pointer types are serialized correctly', () => {
 	test('a cstring_p is written correctly', () => {
 		const recordDef = [{ name: 'str', type: 'cstring_p' }];
 		const compiled = compile(recordDef, { align: true });
@@ -31,6 +31,8 @@ describe('Test that pointer types work', () => {
 
 		const size = buf.readBigUInt64LE(WORD_SIZE);
 		expect(size).toBe(0n);
+
+		expect(buf.length).toBe(2 * WORD_SIZE);
 	});
 
 	test('a complex record with pointers is written correctly', () => {
@@ -66,5 +68,42 @@ describe('Test that pointer types work', () => {
 
 		const str2 = buf.subarray(offset2, offset2 + size2).toString('utf8');
 		expect(str2).toBe('world');
+	});
+});
+
+describe('Test that pointer types are deserialized correctly', () => {
+	test('a cstring_p is deserialized', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000000c0000000000000068656c6c6f20776f726c642100000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ str: 'hello world!' });
+	});
+
+	test('a cstring_p null pointer is deserialized', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('00000000000000000000000000000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ str: null });
+	});
+
+	test('a complex record with pointers is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'str1', type: 'cstring_p' },
+			{ name: 'num', type: 'int8' },
+			{ name: 'str2', type: 'cstring_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('280000000000000005000000000000000d000000000000003000000000000000050000000000000068656c6c6f000000776f726c64000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({
+			str1: 'hello',
+			num: 13,
+			str2: 'world',
+		});
 	});
 });
