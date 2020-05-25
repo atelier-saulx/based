@@ -190,6 +190,44 @@ export function generateRecordDef(obj: any): RecordDef[] {
 
 const toSnakeCase = (s: string) => s.replace(/(?:^|\.?)([A-Z])/g, (_x, y) => '_' + y.toLowerCase()).replace(/^_/, '');
 
+function genHtonFn(compiledDef: CompiledRecordDef, recordName: string) {
+	const code: string[] = [];
+	const prevLens: string[] = [];
+	const variableDefs: string[] = [];
+	const fixupCode: string[] = [];
+
+	for (const [_offset, _size, _arrSize, typeCode, _names, _fullName] of compiledDef.fieldList) {
+		if (!isPointerType(typeCode)) {
+			continue;
+		}
+
+		// TS doesn't understand a damn anything about typing
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		const cType = C_TYPES[typeCode];
+		const fullName = _fullName.slice(1);
+
+		variableDefs.push(
+			`\tuintptr_t ${fullName}_offset = sizeof(struct ${recordName})${
+				prevLens.length > 0 ? ' + ' : ''
+			}${prevLens.join(' + ')};\n`
+		);
+		fixupCode.push(
+			`\tmemcpy((char *)((uintptr_t)(p) + ${fullName}_offset), p->${fullName}, p->${fullName}_len);\n`
+		);
+		fixupCode.push(`\tp->${fullName} = (char *)(${fullName}_offset);\n\n`);
+		prevLens.push(`p->${fullName}_len`);
+	}
+
+	code.push(`static inline int ${recordName}_hton(struct ${recordName} * p)\n{\n`);
+	code.push(...variableDefs);
+	code.push('\n');
+	code.push(...fixupCode);
+	code.push(`\treturn 0;\n}\n\n`);
+
+	return code.join('');
+}
+
 export function generateCHeader(compiledDef: CompiledRecordDef, recordName: string) {
 	recordName = toSnakeCase(recordName);
 	const filename = `${recordName}.h`;
@@ -204,6 +242,9 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 #pragma once
 #ifndef ${MACRO_NAME}
 #define ${MACRO_NAME}
+
+#include <stddef.h>
+#include <stdint.h>
 
 `,
 	];
@@ -232,21 +273,7 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 	code.push('};\n\n');
 
 	// HTON function
-	code.push(`static inline int ${recordName}_hton(struct ${recordName} * p)\n{\n`);
-	for (const [_offset, _size, _arrSize, typeCode, _names, _fullName] of compiledDef.fieldList) {
-		if (!isPointerType(typeCode)) {
-			continue;
-		}
-
-		// TS doesn't understand a damn anything about typing
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-		// @ts-ignore
-		const cType = C_TYPES[typeCode];
-		const fullName = _fullName.slice(1);
-
-		code.push(`\tp->${fullName} = (${cType})((uintptr_t)(p) + (uintptr_t)(p->${fullName}));\n`);
-	}
-	code.push(`\treturn 0;\n}\n\n`);
+	code.push(genHtonFn(compiledDef, recordName));
 
 	// NTOH function
 	// TODO
