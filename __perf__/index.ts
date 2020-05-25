@@ -3,9 +3,10 @@ import printResult from './util/print-result';
 import finalSize from './final-size';
 import modify from './modify';
 import serialization from './serialization';
+import deserialization from './deserialization';
 import unroll from './unroll';
 
-const allTests = [finalSize, modify, serialization, unroll];
+const allTests = [finalSize, modify, serialization, deserialization, unroll];
 
 function selectTests() {
 	if (process.argv.length > 2) {
