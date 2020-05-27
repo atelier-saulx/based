@@ -160,7 +160,7 @@ API
 **Functions**
 
 ```js
-compile(recordDef[, { align: false }])
+compile(recordDef[, { align: true }])
 allocRecord(compiledDef[, { unpool, heapSize }])
 calcHeapSize(compiledDef, obj)
 createRecord(compiledDef, obj)
@@ -185,15 +185,17 @@ host architecture is currently using.
 
 ### Record alignment
 
-By default `compile()` does not alignment and the resulting data will suboptimal
-for access in C. If `align` is set true for `compile()` then the resulting
-buffers will be aligned to the expected C struct alignment on the underlying
-architecture.
+By default `compile()` aligns the resulting data for optimal access in C.
+If `align` is set true for `compile()` then the resulting buffers will be
+aligned to the expected C struct alignment on the underlying architecture.
+if `align` is false, then the resulting data is packed as compact as
+possible. `generateCHeader()` does not support unaligned mode.
 
-However, subrecords/nested records are not aligned as C structures even if
-`align` is set. Therefore, if nested records and especially record arrays will
-be accessed in C care should be taking to ensure that all the records are
-aligned to word size. This was a common manual task in pre-ANSI C world.
+However, currently subrecords/nested records are not aligned as C structures
+even if `align` is set. Therefore, if nested records and especially record
+arrays will be accessed in C care should be taking to ensure that all the
+records are aligned to word size. This was a common manual task in
+pre-ANSI C world.
 
 Typically in C this manual alignment would look something like
 (assuming 32bit little-endian):
