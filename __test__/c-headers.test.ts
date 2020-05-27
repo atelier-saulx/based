@@ -1,8 +1,8 @@
 import { join as pathJoin } from 'path';
 import { spawn } from 'child_process';
+import { unlinkSync } from 'fs';
 import tmp from 'tmp-promise';
 import { compile, generateCHeader, deserialize } from '../src';
-import {unlinkSync} from 'fs';
 
 const tmpFiles: string[] = [];
 
@@ -37,7 +37,7 @@ function runBin(bin: string): Promise<Buffer> {
 		const prg = spawn(bin);
 
 		prg.stdout.on('data', (data: Buffer) => {
-			out += data.toString('utf8')
+			out += data.toString('utf8');
 		});
 		prg.on('close', (code) => {
 			if (code !== 0) {
@@ -52,7 +52,7 @@ afterAll(() => {
 	for (const path of tmpFiles) {
 		try {
 			unlinkSync(path);
-		} catch (err) { }
+		} catch (err) {}
 	}
 });
 
@@ -121,10 +121,10 @@ int main(void)
 		c: 4294967295,
 		d: 4294967295,
 		e: -2,
-		f: BigInt("18446744073709551615"),
+		f: BigInt('18446744073709551615'),
 		str: 'QWERTYUI',
 		str_a: 'Hello world!',
-		str_b: 'Ciao a tutti!'
+		str_b: 'Ciao a tutti!',
 	};
 
 	expect(obj).toEqual(expected);

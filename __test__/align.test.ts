@@ -28,9 +28,9 @@ describe('Test that aligned serialization works correctly', () => {
 		const def = compile([
 			{ name: 'index', type: 'int32_le' },
 			{ name: '$increment', type: 'int32_le' },
-			{ name: '$default', type: 'int32_le' }
+			{ name: '$default', type: 'int32_le' },
 		]);
-		const obj = createRecord(def, { index: 0x1234, $increment: 12, $default: 0x3412});
+		const obj = createRecord(def, { index: 0x1234, $increment: 12, $default: 0x3412 });
 
 		expect(obj.toString('hex')).toBe('341200000c0000001234000000000000');
 	});
