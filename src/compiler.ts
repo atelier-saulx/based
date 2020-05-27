@@ -266,6 +266,10 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 	const MACRO_PREFIX = MACRO_NAME.substring(0, MACRO_NAME.length - 2);
 	const ALIGN_MACRO = `${MACRO_PREFIX}_ALIGN`;
 
+	if (!compiledDef.aligned) {
+		throw new Error('Unaligned record not supported');
+	}
+
 	const code = [
 		`
 /*
