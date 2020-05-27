@@ -1,6 +1,8 @@
 import os from 'os';
 
-function getWW(): number {
+type WordWidth = 4 | 8;
+
+function getWW(): WordWidth {
 	const arch = os.arch();
 
 	switch (arch) {
@@ -22,8 +24,8 @@ function getWW(): number {
 	}
 }
 
-export const ENDIANNESS = os.endianness();
-export const WORD_SIZE = getWW();
+export const ENDIANNESS: 'LE' | 'BE' = os.endianness();
+export const WORD_SIZE: WordWidth = getWW();
 export const MACH_TYPE = `${ENDIANNESS}${WORD_SIZE}`;
 
 const modAl = (x: number, y: number) => x & (y - 1);
@@ -31,7 +33,7 @@ const modAl = (x: number, y: number) => x & (y - 1);
 /**
  * Returns a word aligned size.
  */
-export function memalign_word(size: number) {
+export function memalign_word(size: number): number {
 	const padding = modAl(WORD_SIZE - modAl(size, WORD_SIZE), WORD_SIZE);
 
 	return size + padding;
@@ -40,7 +42,7 @@ export function memalign_word(size: number) {
 /**
  * Aligns size to a given multiple.
  */
-export function memalign_size(size: number, bytes: number) {
+export function memalign_size(size: number, bytes: number): number {
 	const padding = modAl(bytes - modAl(size, bytes), bytes);
 
 	return size + padding;
@@ -49,6 +51,6 @@ export function memalign_size(size: number, bytes: number) {
 /**
  * Returns the required number of padding bytes.
  */
-export function memalign_padding(offset: number, align: number) {
+export function memalign_padding(offset: number, align: number): number {
 	return -offset & (align - 1);
 }

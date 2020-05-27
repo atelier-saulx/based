@@ -1,5 +1,8 @@
 import { WORD_SIZE } from './mach';
 
+/**
+ * Encodings accepted by Record read and write operations.
+ */
 export type Encoding =
 	| 'ascii'
 	| 'utf8'
@@ -13,70 +16,9 @@ export type Encoding =
 	| 'hex'
 	| undefined;
 
-export type Char =
-	| 'a'
-	| 'b'
-	| 'c'
-	| 'd'
-	| 'e'
-	| 'f'
-	| 'g'
-	| 'h'
-	| 'i'
-	| 'j'
-	| 'k'
-	| 'l'
-	| 'm'
-	| 'n'
-	| 'o'
-	| 'p'
-	| 'q'
-	| 'r'
-	| 's'
-	| 't'
-	| 'u'
-	| 'v'
-	| 'w'
-	| 'x'
-	| 'y'
-	| 'z'
-	| 'A'
-	| 'B'
-	| 'C'
-	| 'D'
-	| 'E'
-	| 'F'
-	| 'G'
-	| 'H'
-	| 'I'
-	| 'J'
-	| 'K'
-	| 'L'
-	| 'M'
-	| 'N'
-	| 'O'
-	| 'P'
-	| 'Q'
-	| 'R'
-	| 'S'
-	| 'T'
-	| 'U'
-	| 'V'
-	| 'W'
-	| 'X'
-	| 'Y'
-	| 'Z'
-	| '0'
-	| '1'
-	| '2'
-	| '3'
-	| '4'
-	| '5'
-	| '6'
-	| '7'
-	| '8'
-	| '9';
-
+/**
+ * A list of valid Field Type Codes.
+ */
 export type FieldTypeCode =
 	| 'a'
 	| 'b'
@@ -104,6 +46,9 @@ export type FieldTypeCode =
 	| 'z'
 	| 'pw';
 
+/**
+ * A map from type name to type size.
+ */
 export const SIZES: { [index: string]: number } = {
 	int8: 1,
 	int16_be: 2,
@@ -126,6 +71,9 @@ export const SIZES: { [index: string]: number } = {
 	cstring_p: 2 * WORD_SIZE,
 };
 
+/**
+ * A map from type names to Field Type Codes.
+ */
 export const TYPES: { [index: string]: FieldTypeCode } = {
 	// Fixed size
 	int8: 'a',
@@ -158,18 +106,30 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	cstring_p: 'pw',
 };
 
-export function isVarType(typeCode: FieldTypeCode) {
+/**
+ * Returns a boolean true if the given Field Type Code is a variable type.
+ */
+export function isVarType(typeCode: FieldTypeCode): boolean {
 	return ['s', 't', 'u', 'v', 'w'].includes(typeCode);
 }
 
-export function isVirtualType(typeCode: FieldTypeCode) {
+/**
+ * Returns a boolean true if the given Field Type Code is a virtual type.
+ */
+export function isVirtualType(typeCode: FieldTypeCode): boolean {
 	return typeCode === 'z';
 }
 
-export function isPointerType(typeCode: FieldTypeCode) {
+/**
+ * Returns a boolean true if the given Field Type Code is a pointer type.
+ */
+export function isPointerType(typeCode: FieldTypeCode): boolean {
 	return typeCode === 'pw';
 }
 
+/**
+ * Map Field Type Codes to C types.
+ */
 export const C_TYPES = {
 	// Fixed size
 	a: 'int8_t',

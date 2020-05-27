@@ -17,7 +17,7 @@ function readWord(buf: Buffer, offset: number): number | bigint {
 	}
 }
 
-function bufferReadCstring(buf: Buffer, offset: number, len: number, encoding?: Encoding) {
+function bufferReadCstring(buf: Buffer, offset: number, len: number, encoding?: Encoding): Buffer | string {
 	if (encoding && ['utf8', 'utf16le', 'latin1', 'ascii'].includes(encoding)) {
 		const sub = buf.subarray(offset, offset + len);
 		const ind = sub.indexOf(0);
@@ -31,7 +31,7 @@ function bufferReadCstring(buf: Buffer, offset: number, len: number, encoding?: 
 	return Buffer.from(buf.subarray(offset, offset + len));
 }
 
-function BufferReadCstringP(buf: Buffer, offset: number, _len: number, encoding: Encoding): Buffer | string | null {
+function bufferReadCstringP(buf: Buffer, offset: number, _len: number, encoding: Encoding): Buffer | string | null {
 	const str_p = Number(readWord(buf, offset));
 	const str_len = Number(readWord(buf, offset + WORD_SIZE));
 
@@ -113,7 +113,7 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 		w: (offset: number, len: number, encoding: Encoding): Buffer | string =>
 			bufferReadCstring(buf, offset, len, encoding),
 		pw: (offset: number, len: number, encoding: Encoding): Buffer | string | null =>
-			BufferReadCstringP(buf, offset, len, encoding),
+			bufferReadCstringP(buf, offset, len, encoding),
 	};
 }
 
@@ -165,7 +165,12 @@ export function readValue<T = number | bigint>(compiledDef: CompiledRecordDef, b
 	return funcs[type](offset, size);
 }
 
-export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding?: Encoding) {
+export function readString(
+	compiledDef: CompiledRecordDef,
+	buf: Buffer,
+	path: string,
+	encoding?: Encoding
+): ReturnType<typeof bufferReadCstring> {
 	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -180,7 +185,12 @@ export function readString(compiledDef: CompiledRecordDef, buf: Buffer, path: st
 	return funcs[type](offset, size, encoding);
 }
 
-export function writeValue(compiledDef: CompiledRecordDef, buf: Buffer, path: string, value: any): void {
+export function writeValue<T = number | bigint>(
+	compiledDef: CompiledRecordDef,
+	buf: Buffer,
+	path: string,
+	value: T
+): void {
 	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -218,7 +228,11 @@ export function writeString(
 	return funcs[type](value, offset, size, 0, encoding);
 }
 
-export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
+export function createReader(
+	compiledDef: CompiledRecordDef,
+	buf: Buffer,
+	path: string
+): () => ReturnType<BufferReadFunction> {
 	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -226,10 +240,15 @@ export function createReader(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 		throw new Error('Not found');
 	}
 
-	return () => funcs[type](offset, size);
+	return (): ReturnType<BufferReadFunction> => funcs[type](offset, size);
 }
 
-export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, path: string, encoding: Encoding) {
+export function createStringReader(
+	compiledDef: CompiledRecordDef,
+	buf: Buffer,
+	path: string,
+	encoding: Encoding
+): () => string | Buffer | null {
 	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -241,10 +260,10 @@ export function createStringReader(compiledDef: CompiledRecordDef, buf: Buffer, 
 		throw new TypeError('Not a string');
 	}
 
-	return () => funcs[type](offset, size, encoding);
+	return (): string | Buffer | null => funcs[type](offset, size, encoding);
 }
 
-export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string) {
+export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string): (value: any) => void {
 	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -253,5 +272,5 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 	}
 
 	// 0 is a dummy value for headOffset
-	return (value: any) => funcs[type](value, offset, size, 0);
+	return (value: any): void => funcs[type](value, offset, size, 0);
 }

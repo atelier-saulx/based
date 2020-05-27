@@ -1,12 +1,11 @@
 import { CompiledRecordDef } from './compiler';
 import { getReadFuncs, getWriteFuncs } from './accessors';
-import { memalign_word } from './mach';
 import { isPointerType } from './types';
 
 /**
  * Get the node.
  */
-export function getNode(obj: any, path: string[], fullName: string) {
+export function getNode(obj: any, path: string[], fullName: string): any {
 	// If it's a record array then there is a special naming convention
 	// record.name.here[index] and we'll need to parse those [] parts.
 	if (!fullName.includes('[')) {
@@ -28,7 +27,7 @@ export function getNode(obj: any, path: string[], fullName: string) {
 	}
 }
 
-export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any) {
+export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any): Buffer {
 	let heapOffset = compiledDef.size;
 	const ops = getWriteFuncs(buf);
 	const fl = compiledDef.fieldList;
