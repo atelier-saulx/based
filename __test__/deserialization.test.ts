@@ -24,7 +24,7 @@ test('deserialization can deconstruct the object it serialized', () => {
 		},
 	];
 
-	const compiled = compile(recordDef);
+	const compiled = compile(recordDef, { align: false });
 
 	const obj1 = {
 		a: 4,
@@ -59,7 +59,7 @@ test('A string can be reconstructed', () => {
 		firstName: 'Olli',
 	};
 
-	const compiled = compile(recordDef);
+	const compiled = compile(recordDef, { align: false });
 	const buf = createRecord(compiled, obj);
 	const deser = deserialize(compiled, buf);
 
@@ -73,7 +73,7 @@ test('An integer array can be reconstructed', () => {
 		a: [0xbeef, 0xface, 0xcafe, 0xf00d],
 	};
 
-	const compiled = compile(recordDef);
+	const compiled = compile(recordDef, { align: false });
 	expect(compiled.size).toBe(4 * 2);
 
 	const buf = createRecord(compiled, obj);

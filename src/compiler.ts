@@ -87,7 +87,7 @@ function getAlignSize(typeCode: FieldTypeCode, size: number) {
 }
 
 export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
-	const align = opts?.align || false;
+	const align = opts?.align ?? true;
 	const alignWord = align ? (len: number) => memalign_word(len) : (len: number) => len;
 	const arr = _compile(recordDef, '');
 

@@ -3,7 +3,7 @@ import { compile, createRecord, deserialize } from '../src/index';
 describe('Test that various kinds of arrays are serialized as expected', () => {
 	test('int8[1]', () => {
 		const def = [{ name: 'a', type: 'int8[1]' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: [1],
 		});
@@ -14,7 +14,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 
 	test('serializing int8[2]', () => {
 		const def = [{ name: 'a', type: 'int8[2]' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: [1, 2],
 		});
@@ -25,7 +25,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 
 	test('serializing cstring[2]', () => {
 		const def = [{ name: 'a', type: 'cstring[2]', size: 10 }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: ['hello', 'world'],
 		});
@@ -36,7 +36,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 
 	test('serializing record[2]', () => {
 		const def = [{ name: 'a', type: 'record[2]', def: [{ name: 'value', type: 'uint32_be' }] }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: [{ value: 1337 }, { value: 42069 }],
 		});
@@ -53,7 +53,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 				def: [{ name: 'nest', type: 'record', def: [{ name: 'value', type: 'uint32_be' }] }],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: [{ nest: { value: 1337 } }, { nest: { value: 42069 } }],
 		});
@@ -70,7 +70,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 				def: [{ name: 'nest', type: 'record[2]', def: [{ name: 'value', type: 'uint32_be' }] }],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: { nest: [{ value: 1337 }, { value: 42069 }] },
 		});
@@ -93,7 +93,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 				],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: {
 				nesta: [{ nestb: { value: 1337 } }, { nestb: { value: 42069 } }],
@@ -124,7 +124,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 				],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = createRecord(compiled, {
 			a: {
 				nesta: [
@@ -149,7 +149,7 @@ describe('Test that various kinds of arrays are serialized as expected', () => {
 describe("Test that it's possible to deserialize various kinds of arrays", () => {
 	test('int8[1]', () => {
 		const def = [{ name: 'a', type: 'int8[1]' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('01', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -158,7 +158,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 
 	test('int8[3]', () => {
 		const def = [{ name: 'a', type: 'int8[3]' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('010101', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -167,7 +167,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 
 	test('deserializing cstring[2]', () => {
 		const def = [{ name: 'a', type: 'cstring[2]', size: 10 }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('hello\0\0\0\0\0world\0\0\0\0\0', 'utf8');
 		const obj = deserialize(compiled, buf);
 
@@ -178,7 +178,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 
 	test('deserializing record[2]', () => {
 		const def = [{ name: 'a', type: 'record[2]', def: [{ name: 'value', type: 'uint32_be' }] }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('000005390000a455', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -195,7 +195,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 				def: [{ name: 'nest', type: 'record', def: [{ name: 'value', type: 'uint32_be' }] }],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('000005390000a455', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -212,7 +212,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 				def: [{ name: 'nest', type: 'record[2]', def: [{ name: 'value', type: 'uint32_be' }] }],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('000005390000a455', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -235,7 +235,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 				],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('000005390000a455', 'hex');
 		const obj = deserialize(compiled, buf);
 
@@ -266,7 +266,7 @@ describe("Test that it's possible to deserialize various kinds of arrays", () =>
 				],
 			},
 		];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('000005390000a455000005390000a455000005390000a455', 'hex');
 		const obj = deserialize(compiled, buf);
 

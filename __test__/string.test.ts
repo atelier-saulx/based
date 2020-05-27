@@ -7,7 +7,7 @@ const recordDef = [
 	{ name: 'canary', type: 'uint32_le' },
 ];
 
-const compiled = compile(recordDef);
+const compiled = compile(recordDef, { align: false });
 
 test("Test that a normal string write doesn't overwrite", () => {
 	const buf = createRecord(compiled, { str: 'abc', canary: CANARY });

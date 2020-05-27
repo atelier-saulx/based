@@ -3,7 +3,7 @@ import { compile, allocRecord, writeValue, readValue } from '../src/index';
 describe('Test that each type writes a proper value', () => {
 	test('int8', () => {
 		const def = [{ name: 'a', type: 'int8' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', -127);
@@ -12,7 +12,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int16_be', () => {
 		const def = [{ name: 'a', type: 'int16_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x1234);
@@ -21,7 +21,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int16_le', () => {
 		const def = [{ name: 'a', type: 'int16_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x1234);
@@ -30,7 +30,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int32_be', () => {
 		const def = [{ name: 'a', type: 'int32_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x12345678);
@@ -39,7 +39,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int32_le', () => {
 		const def = [{ name: 'a', type: 'int32_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x12345678);
@@ -48,7 +48,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int64_be', () => {
 		const def = [{ name: 'a', type: 'int64_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', BigInt('0xdeface0deadbeef'));
@@ -57,7 +57,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('int64_le', () => {
 		const def = [{ name: 'a', type: 'int64_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', BigInt('0xdeface0deadbeef'));
@@ -66,7 +66,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint8', () => {
 		const def = [{ name: 'a', type: 'uint8' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 254);
@@ -75,7 +75,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint16_be', () => {
 		const def = [{ name: 'a', type: 'uint16_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x1234);
@@ -84,7 +84,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint16_le', () => {
 		const def = [{ name: 'a', type: 'uint16_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x1234);
@@ -93,7 +93,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint32_be', () => {
 		const def = [{ name: 'a', type: 'uint32_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x12345678);
@@ -102,7 +102,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint32_le', () => {
 		const def = [{ name: 'a', type: 'uint32_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 0x12345678);
@@ -111,7 +111,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint64_be', () => {
 		const def = [{ name: 'a', type: 'uint64_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', BigInt('0xdeface0deadbeef'));
@@ -120,7 +120,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('uint64_le', () => {
 		const def = [{ name: 'a', type: 'uint64_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', BigInt('0xdeface0deadbeef'));
@@ -129,7 +129,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('float_be', () => {
 		const def = [{ name: 'a', type: 'float_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 1.5);
@@ -138,7 +138,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('float_le', () => {
 		const def = [{ name: 'a', type: 'float_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 1.5);
@@ -147,7 +147,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('double_be', () => {
 		const def = [{ name: 'a', type: 'double_be' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 1.2345);
@@ -156,7 +156,7 @@ describe('Test that each type writes a proper value', () => {
 
 	test('double_le', () => {
 		const def = [{ name: 'a', type: 'double_le' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = allocRecord(compiled);
 
 		writeValue(compiled, buf, '.a', 1.2345);
@@ -167,7 +167,7 @@ describe('Test that each type writes a proper value', () => {
 describe('Test that each type reads a proper value', () => {
 	test('int8', () => {
 		const def = [{ name: 'a', type: 'int8' }];
-		const compiled = compile(def);
+		const compiled = compile(def, { align: false });
 		const buf = Buffer.from('81', 'hex');
 		const value = readValue(compiled, buf, '.a');
 
