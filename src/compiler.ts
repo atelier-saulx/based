@@ -212,10 +212,7 @@ function genHtonFn(compiledDef: CompiledRecordDef, alignMacro: string, recordNam
 				prevLens.length > 0 ? ' + ' : ''
 			}${prevLens.join(' + ')});\n`
 		);
-		fixupCode.push(
-			`\tmemcpy((char *)((uintptr_t)(p) + ${fullName}_offset), p->${fullName}, p->${fullName}_len);\n`
-		);
-		fixupCode.push(`\tp->${fullName} = (char *)(${fullName}_offset);\n\n`);
+		fixupCode.push(`\tp->${fullName} = (char *)(${fullName}_offset);\n`);
 		prevLens.push(`p->${fullName}_len`);
 	}
 
@@ -223,7 +220,7 @@ function genHtonFn(compiledDef: CompiledRecordDef, alignMacro: string, recordNam
 	code.push(...variableDefs);
 	code.push('\n');
 	code.push(...fixupCode);
-	code.push(`\treturn 0;\n}\n\n`);
+	code.push(`\n\treturn 0;\n}\n\n`);
 
 	return code.join('');
 }
@@ -267,7 +264,8 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 	recordName = toSnakeCase(recordName);
 	const filename = `${recordName}.h`;
 	const MACRO_NAME = filename.toUpperCase().replace(/\./g, '_');
-	const ALIGN_MACRO = `${MACRO_NAME.substring(0, MACRO_NAME.length - 2)}_ALIGN`;
+	const MACRO_PREFIX = MACRO_NAME.substring(0, MACRO_NAME.length - 2);
+	const ALIGN_MACRO = `${MACRO_PREFIX}_ALIGN`;
 
 	const code = [
 		`
@@ -281,9 +279,9 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 
 #define ${ALIGN_MACRO}(_offset_) (((_offset_) + (${WORD_SIZE} - 1)) & -${WORD_SIZE})
+#define ${MACRO_PREFIX}_POINTER(_record_, _name_) ((char *)((uintptr_t)(_record_) + (uintptr_t)((_record_)->_name_)))
 
 `,
 	];

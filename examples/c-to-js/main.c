@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "my_record.h"
 
 char hello_en[] = "Hello world!";
@@ -26,6 +27,8 @@ int main(void)
 		.str_b_len = sizeof(hello_it),
 	});
 	my_record_hton(record);
+	memcpy(MY_RECORD_POINTER(record, str_a), hello_en, sizeof(hello_en));
+	memcpy(MY_RECORD_POINTER(record, str_b), hello_it, sizeof(hello_it));
 
 #if 0
 	printf("a         %p\n", (uint8_t *)(&record->a) - (uint8_t *)record);
