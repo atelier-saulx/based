@@ -225,7 +225,7 @@ function genHtonFn(compiledDef: CompiledRecordDef, alignMacro: string, recordNam
 	return code.join('');
 }
 
-function genNtohFn(compiledDef: CompiledRecordDef,alignMacro: string, recordName: string) {
+function genNtohFn(compiledDef: CompiledRecordDef, alignMacro: string, recordName: string) {
 	const code: string[] = [];
 	const prevLens: string[] = [];
 	const variableDefs: string[] = [];
