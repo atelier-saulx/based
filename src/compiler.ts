@@ -190,7 +190,7 @@ export function generateRecordDef(obj: any): RecordDef[] {
 
 const toSnakeCase = (s: string) => s.replace(/(?:^|\.?)([A-Z])/g, (_x, y) => '_' + y.toLowerCase()).replace(/^_/, '');
 
-function genHtonFn(compiledDef: CompiledRecordDef, recordName: string) {
+function genHtonFn(compiledDef: CompiledRecordDef, alignMacro: string, recordName: string) {
 	const code: string[] = [];
 	const prevLens: string[] = [];
 	const variableDefs: string[] = [];
@@ -208,9 +208,9 @@ function genHtonFn(compiledDef: CompiledRecordDef, recordName: string) {
 		const fullName = _fullName.slice(1);
 
 		variableDefs.push(
-			`\tuintptr_t ${fullName}_offset = sizeof(struct ${recordName})${
+			`\tconst uintptr_t ${fullName}_offset = ${alignMacro}(sizeof(struct ${recordName})${
 				prevLens.length > 0 ? ' + ' : ''
-			}${prevLens.join(' + ')};\n`
+			}${prevLens.join(' + ')});\n`
 		);
 		fixupCode.push(
 			`\tmemcpy((char *)((uintptr_t)(p) + ${fullName}_offset), p->${fullName}, p->${fullName}_len);\n`
@@ -228,10 +228,46 @@ function genHtonFn(compiledDef: CompiledRecordDef, recordName: string) {
 	return code.join('');
 }
 
+function genNtohFn(compiledDef: CompiledRecordDef,alignMacro: string, recordName: string) {
+	const code: string[] = [];
+	const prevLens: string[] = [];
+	const variableDefs: string[] = [];
+	const fixupCode: string[] = [];
+
+	for (const [_offset, _size, _arrSize, typeCode, _names, _fullName] of compiledDef.fieldList) {
+		if (!isPointerType(typeCode)) {
+			continue;
+		}
+
+		// TS doesn't understand a damn anything about typing
+		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+		// @ts-ignore
+		const cType = C_TYPES[typeCode];
+		const fullName = _fullName.slice(1);
+
+		variableDefs.push(
+			`\tconst uintptr_t ${fullName}_offset = ${alignMacro}(sizeof(struct ${recordName})${
+				prevLens.length > 0 ? ' + ' : ''
+			}${prevLens.join(' + ')});\n`
+		);
+		fixupCode.push(`\tp->${fullName} = (char *)((uintptr_t)(p) + ${fullName}_offset);\n`);
+		prevLens.push(`p->${fullName}_len`);
+	}
+
+	code.push(`static inline int ${recordName}_ntoh(struct ${recordName} * p)\n{\n`);
+	code.push(...variableDefs);
+	code.push('\n');
+	code.push(...fixupCode);
+	code.push(`\n\treturn 0;\n}\n\n`);
+
+	return code.join('');
+}
+
 export function generateCHeader(compiledDef: CompiledRecordDef, recordName: string) {
 	recordName = toSnakeCase(recordName);
 	const filename = `${recordName}.h`;
 	const MACRO_NAME = filename.toUpperCase().replace(/\./g, '_');
+	const ALIGN_MACRO = `${MACRO_NAME.substring(0, MACRO_NAME.length - 2)}_ALIGN`;
 
 	const code = [
 		`
@@ -245,6 +281,9 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
+
+#define ${ALIGN_MACRO}(_offset_) (((_offset_) + (${WORD_SIZE} - 1)) & -${WORD_SIZE})
 
 `,
 	];
@@ -273,10 +312,10 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 	code.push('};\n\n');
 
 	// HTON function
-	code.push(genHtonFn(compiledDef, recordName));
+	code.push(genHtonFn(compiledDef, ALIGN_MACRO, recordName));
 
 	// NTOH function
-	// TODO
+	code.push(genNtohFn(compiledDef, ALIGN_MACRO, recordName));
 
 	code.push(`#endif /* ${MACRO_NAME} */`);
 
