@@ -104,7 +104,6 @@ int main(void)
 	expect(obj).toEqual(expected);
 });
 
-
 test('The final size matches to C (3)', async () => {
 	const def = [
 		{ name: 'a', type: 'int16_le' },

@@ -53,5 +53,4 @@ export default class CC {
 			unlinkSync(this.#tmpFile);
 		} catch (err) {}
 	}
-
-};
+}
