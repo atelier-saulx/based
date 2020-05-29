@@ -106,6 +106,8 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	cstring_p: 'pw',
 };
 
+export const TYPE_CODE2TYPE = new Map(Object.keys(TYPES).map((k) => [TYPES[k], k]));
+
 /**
  * Returns a boolean true if the given Field Type Code is a variable type.
  */

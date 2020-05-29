@@ -1,5 +1,5 @@
 import { ENDIANNESS, WORD_SIZE, memalign_padding, memalign_word } from './mach';
-import { FieldTypeCode, TYPES, SIZES, isVarType, isPointerType, C_TYPES } from './types';
+import { FieldTypeCode, TYPES, SIZES, TYPE_CODE2TYPE, isVarType, isPointerType, C_TYPES } from './types';
 
 export interface RecordDef {
 	name: string;
@@ -83,7 +83,10 @@ function getAlignSize(typeCode: FieldTypeCode, size: number) {
 		return 1;
 	}
 
-	return size;
+	// Most types are aligned to their size, nothing is ever aligned to the size
+	// of an array.
+	const type = TYPE_CODE2TYPE.get(typeCode);
+	return type && SIZES[type] || size;
 }
 
 export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
@@ -101,20 +104,26 @@ export function compile(recordDef: RecordDef[], opts?: { align: boolean }): Comp
 	);
 
 	// Calculate offsets
+	let largestAlignment = 0;
 	let prevOffset = 0;
 	for (const field of arr) {
 		const typeCode = field[3];
 		const size = field[1] * (field[2] || 1);
-		const padding = align ? memalign_padding(prevOffset, getAlignSize(typeCode, size)) : 0;
+		const alignSize = align ? getAlignSize(typeCode, size) : 0;
+		const padding = align ? memalign_padding(prevOffset, alignSize) : 0;
 
-		if (padding > 0) {
-			recordSize += padding;
+		// A C struct is aligned to the largest alignment of any member,
+		// therefore the size of a struct is a multiple of the largest member of
+		// the struct.
+		if (alignSize > largestAlignment) {
+			largestAlignment = alignSize;
 		}
 
 		field[0] = prevOffset + padding;
 		prevOffset += size + padding;
+		recordSize += padding;
 	}
-	recordSize = alignWord(recordSize);
+	recordSize = align ? recordSize + memalign_padding(recordSize, largestAlignment) : recordSize;
 
 	const compiled: CompiledRecordDef = {
 		size: recordSize,
@@ -303,11 +312,23 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 		const cType = C_TYPES[typeCode];
 
 		if (isVarType(typeCode)) {
-			code.push(`\t${cType} ${fullName}[${size}];\n`);
+			if (arrSize) {
+				code.push(`\t${cType} ${fullName}[${arrSize}][${size}];\n`);
+			} else {
+				code.push(`\t${cType} ${fullName}[${size}];\n`);
+			}
 		} else if (isPointerType(typeCode)) {
-			code.push(`\t${cType} ${fullName};\n\tsize_t ${fullName}_len;\n`);
+			if (arrSize) {
+				throw new TypeError('C string pointer arrays are not currently supported');
+			} else {
+				code.push(`\t${cType} ${fullName};\n\tsize_t ${fullName}_len;\n`);
+			}
 		} else {
-			code.push(`\t${cType} ${fullName};\n`);
+			if (arrSize) {
+				code.push(`\t${cType} ${fullName}[${arrSize}];\n`);
+			} else {
+				code.push(`\t${cType} ${fullName};\n`);
+			}
 		}
 	}
 	code.push('};\n\n');

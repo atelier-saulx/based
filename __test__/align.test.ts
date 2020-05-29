@@ -32,6 +32,6 @@ describe('Test that aligned serialization works correctly', () => {
 		]);
 		const obj = createRecord(def, { index: 0x1234, $increment: 12, $default: 0x3412 });
 
-		expect(obj.toString('hex')).toBe('341200000c0000001234000000000000');
+		expect(obj.toString('hex')).toBe('341200000c00000012340000');
 	});
 });

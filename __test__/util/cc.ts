@@ -36,6 +36,9 @@ export default class CC {
 			prg.stdout.on('data', (data: Buffer) => {
 				out += data.toString('utf8');
 			});
+			prg.stderr.on('data', (data: Buffer) => {
+				console.error(data.toString('utf8'));
+			});
 			prg.on('close', (code) => {
 				if (code !== 0) {
 					return reject('Failed');
