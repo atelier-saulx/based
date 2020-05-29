@@ -1,59 +1,10 @@
-import { join as pathJoin } from 'path';
-import { spawn } from 'child_process';
-import { unlinkSync } from 'fs';
-import tmp from 'tmp-promise';
+import CC from './util/cc';
 import { compile, generateCHeader, deserialize } from '../src';
 
-const tmpFiles: string[] = [];
-
-async function cc(code: string): Promise<string> {
-	const tmpFile = await tmp.tmpName({ tmpdir: __dirname, template: pathJoin(__dirname, `tmp-XXXXXX`) });
-	tmpFiles.push(tmpFile);
-
-	return new Promise((resolve, reject) => {
-		const cc = spawn('gcc', ['-xc', '-', '-o', tmpFile]);
-
-		cc.stdin.end(code);
-		cc.stderr.on('data', (data: Buffer) => {
-			const str = data.toString('utf8');
-
-			if (!str.includes('#pragma')) {
-				console.error(data.toString('utf8'));
-			}
-		});
-		cc.on('close', (code) => {
-			if (code !== 0) {
-				return reject(`gcc failed with: ${code}`);
-			}
-			resolve(tmpFile);
-		});
-	});
-}
-
-function runBin(bin: string): Promise<Buffer> {
-	return new Promise((resolve, reject) => {
-		let out = '';
-
-		const prg = spawn(bin);
-
-		prg.stdout.on('data', (data: Buffer) => {
-			out += data.toString('utf8');
-		});
-		prg.on('close', (code) => {
-			if (code !== 0) {
-				return reject('Failed');
-			}
-			resolve(Buffer.from(out, 'hex'));
-		});
-	});
-}
+const cc = new CC();
 
 afterAll(() => {
-	for (const path of tmpFiles) {
-		try {
-			unlinkSync(path);
-		} catch (err) {}
-	}
+	cc.clean();
 });
 
 test('Generates a C header that compiles and produces correct output', async () => {
@@ -112,8 +63,8 @@ int main(void)
 }
 `;
 
-	const bin = await cc(code);
-	const buf = await runBin(bin);
+	await cc.compile(code);
+	const buf = await cc.run();
 	const obj = deserialize(compiled, buf);
 	const expected = {
 		a: 1,
