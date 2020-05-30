@@ -4,7 +4,7 @@ import {
     readValue,
     writeValue,
     readString,
-} from '../src/index.js';
+} from '../src';
 
 const recordDefEx = [
     { name: 'a', type: 'uint32_le' },
@@ -23,7 +23,6 @@ const recordDefEx = [
     ]},
     { name: 'firstName', type: 'cstring', size: 15 },
 ];
-
 const obj = {
     a: 4,
     b: -128,
@@ -42,15 +41,26 @@ const obj = {
     firstName: 'Olli',
 };
 
-console.log('obj', obj);
+// TODO Alignment isn't supported properly
+const compiled = compile(recordDefEx, { align: false });
 
-const compiled = compile(recordDefEx);
-console.log('compiledDef', compiled);
+Object.freeze(recordDefEx);
+Object.freeze(obj);
+Object.freeze(compiled);
 
-const buf = createRecord(compiled, obj);
-console.log('buf', buf);
+describe('Test nested records', () => {
+	test('Can read from nested subrecords', () => {
+		const buf = createRecord(compiled, obj);
 
-writeValue(compiled, buf, '.x.y.a', 1337);
-console.log('read .x.y.a', readValue(compiled, buf, '.x.y.a'));
+		expect(readValue(compiled, buf, '.x.y.a')).toBe(5);
+		expect(readString(compiled, buf, '.firstName', 'utf8')).toBe('Olli');
+	});
 
-console.log(`read firstName: ${readString(compiled, buf, '.firstName', 'utf8')}`);
+	test('Can write to nested subrecords', () => {
+		const buf = createRecord(compiled, obj);
+
+		writeValue(compiled, buf, '.x.y.a', 1337);
+
+		expect(readValue(compiled, buf, '.x.y.a')).toBe(1337);
+	});
+});
