@@ -1,4 +1,4 @@
-import { WORD_SIZE } from './mach';
+import { ENDIANNESS, WORD_SIZE } from './mach';
 
 /**
  * Encodings accepted by Record read and write operations.
@@ -47,56 +47,41 @@ export type FieldTypeCode =
 	| 'pw';
 
 /**
- * A map from type name to type size.
- */
-export const SIZES: { [index: string]: number } = {
-	int8: 1,
-	int16_be: 2,
-	int16_le: 2,
-	int32_be: 4,
-	int32_le: 4,
-	int64_be: 8,
-	int64_le: 8,
-	uint8: 1,
-	uint16_be: 2,
-	uint16_le: 2,
-	uint32_be: 4,
-	uint32_le: 4,
-	uint64_be: 8,
-	uint64_le: 8,
-	float_be: 4,
-	float_le: 4,
-	double_be: 8,
-	double_le: 8,
-	cstring_p: 2 * WORD_SIZE,
-};
-
-/**
  * A map from type names to Field Type Codes.
  */
 export const TYPES: { [index: string]: FieldTypeCode } = {
 	// Fixed size
 	int8: 'a',
+	int16: ENDIANNESS === 'BE' ? 'b' : 'c',
 	int16_be: 'b',
 	int16_le: 'c',
+	int32: ENDIANNESS === 'BE' ? 'd' : 'e',
 	int32_be: 'd',
 	int32_le: 'e',
+	int64: ENDIANNESS === 'BE' ? 'f' : 'g',
 	int64_be: 'f',
 	int64_le: 'g',
 	uint8: 'h',
+	uint16: ENDIANNESS === 'BE' ? 'i' : 'j',
 	uint16_be: 'i',
 	uint16_le: 'j',
+	uint32: ENDIANNESS === 'BE' ? 'k' : 'l',
 	uint32_be: 'k',
 	uint32_le: 'l',
+	uint64: ENDIANNESS === 'BE' ? 'm' : 'n',
 	uint64_be: 'm',
 	uint64_le: 'n',
+	float: ENDIANNESS === 'BE' ? 'o' : 'p',
 	float_be: 'o',
 	float_le: 'p',
+	double: ENDIANNESS === 'BE' ? 'q' : 'r',
 	double_be: 'q',
 	double_le: 'r',
 	// Variable size
+	int: ENDIANNESS === 'BE' ? 's' : 't',
 	int_be: 's',
 	int_le: 't',
+	uint: ENDIANNESS === 'BE' ? 'u' : 'v',
 	uint_be: 'u',
 	uint_le: 'v',
 	cstring: 'w',
@@ -107,6 +92,31 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 };
 
 export const TYPE_CODE2TYPE = new Map(Object.keys(TYPES).map((k) => [TYPES[k], k]));
+
+/**
+ * A map from type code to type size.
+ */
+export const SIZES: { [index: string]: number } = {
+	a: 1, // int8
+	b: 2, // int16_be
+	c: 2, // int16_le
+	d: 4, // int32_be
+	e: 4, // int32_le
+	f: 8, // int64_be
+	g: 8, // int64_le
+	h: 1, // uint8
+	i: 2, // uint16_be
+	j: 2, // uint16_le
+	k: 4, // uint32_be
+	l: 4, // uint32_le
+	m: 8, // uint64_be
+	n: 8, // uint64_le
+	o: 4, // float_be
+	p: 4, // float_le
+	q: 8, // double_be
+	r: 8, // double_le
+	pw: 2 * WORD_SIZE, // cstring_p
+};
 
 /**
  * Returns a boolean true if the given Field Type Code is a variable type.

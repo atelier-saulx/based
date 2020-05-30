@@ -1,5 +1,5 @@
 import { ENDIANNESS, WORD_SIZE, memalign_padding, memalign_word } from './mach';
-import { FieldTypeCode, TYPES, SIZES, TYPE_CODE2TYPE, isVarType, isPointerType, C_TYPES } from './types';
+import { FieldTypeCode, TYPES, SIZES, isVarType, isPointerType, C_TYPES } from './types';
 
 export interface RecordDef {
 	name: string;
@@ -58,7 +58,7 @@ function _compile(
 					: _compile(def, makeName(parentName, name));
 			}
 
-			size = SIZES[type] || size;
+			size = SIZES[typeCode] || size;
 			if (!Number.isInteger(size)) {
 				throw new Error(`Size must be set to an integer for type: "${rawType}"`);
 			}
@@ -85,8 +85,7 @@ function getAlignSize(typeCode: FieldTypeCode, size: number) {
 
 	// Most types are aligned to their size, nothing is ever aligned to the size
 	// of an array.
-	const type = TYPE_CODE2TYPE.get(typeCode);
-	return (type && SIZES[type]) || size;
+	return SIZES[typeCode] || size;
 }
 
 export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
