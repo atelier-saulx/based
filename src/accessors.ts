@@ -1,4 +1,4 @@
-import { Encoding, TYPES } from './types';
+import { Encoding, TYPES, isPointerType } from './types';
 import { CompiledRecordDef } from './compiler';
 import { WORD_SIZE, MACH_TYPE } from './mach';
 
@@ -178,7 +178,7 @@ export function readString(
 		throw new Error('Not found');
 	}
 
-	if (type !== TYPES.cstring) {
+	if (type !== TYPES.cstring && type !== TYPES.cstring_p) {
 		throw new TypeError('Not a string');
 	}
 
@@ -196,6 +196,10 @@ export function writeValue<T = number | bigint>(
 
 	if (!type) {
 		throw new Error('Not found');
+	}
+
+	if (isPointerType(type)) {
+		throw new Error('Cannot write to a pointer');
 	}
 
 	// 0 is a dummy value for headOffset
@@ -256,7 +260,7 @@ export function createStringReader(
 		throw new Error('Not found');
 	}
 
-	if (type !== TYPES.cstring) {
+	if (type !== TYPES.cstring && type !== TYPES.cstring_p) {
 		throw new TypeError('Not a string');
 	}
 
@@ -269,6 +273,10 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 
 	if (!type) {
 		throw new Error('Not found');
+	}
+
+	if (isPointerType(type)) {
+		throw new Error('Writers are not supported for pointer types');
 	}
 
 	// 0 is a dummy value for headOffset

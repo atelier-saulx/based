@@ -1,5 +1,5 @@
-import { ENDIANNESS } from '../src/mach';
-import { compile, allocRecord, writeValue, readValue } from '../src/index';
+import { ENDIANNESS, WORD_SIZE } from '../src/mach';
+import { compile, allocRecord, writeValue, readValue, readString, createRecord } from '../src/index';
 
 describe('Test that each type writes the correct value', () => {
 	test('int8', () => {
@@ -267,6 +267,15 @@ describe('Test that each type writes the correct value', () => {
 		writeValue(compiled, buf, '.a', 1.2345);
 		expect(buf.readDoubleLE()).toBe(1.2345);
 	});
+
+	test('cstring', () => {
+		const def = [{ name: 'a', type: 'cstring', size: 5 }];
+		const compiled = compile(def, { align: false });
+		const buf = allocRecord(compiled);
+
+		writeValue(compiled, buf, '.a', 'hello');
+		expect(buf.toString('utf8')).toBe('hello');
+	});
 });
 
 describe('Test that each type reads the correct value', () => {
@@ -492,5 +501,27 @@ describe('Test that each type reads the correct value', () => {
 
 		const value = readValue(compiled, buf, '.a');
 		expect(value).toBe(BigInt('0xefbeaddee0acef0d'));
+	});
+
+	test('cstring', () => {
+		const def = [{ name: 'a', type: 'cstring', size: 5 }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('hello');
+
+		const value = readString(compiled, buf, '.a', 'utf8');
+		expect(value).toBe('hello');
+	});
+
+	test('cstring_p', () => {
+		if (WORD_SIZE !== 8) {
+			console.error('This test is 64-bit only');
+		}
+
+		const def = [{ name: 'a', type: 'cstring_p' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('1000000000000000050000000000000068656c6c6f', 'hex');
+
+		const value = readString(compiled, buf, '.a', 'utf8');
+		expect(value).toBe('hello');
 	});
 });

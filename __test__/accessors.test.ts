@@ -345,7 +345,7 @@ describe('Test createReader accessors', () => {
 		expect(val).toBe('ciao');
 	});
 
-	test.skip('createReader() ascii cstring_p', () => {
+	test('createReader() ascii cstring_p', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createStringReader(compiled, buf, '.7', 'ascii');
 
@@ -353,13 +353,13 @@ describe('Test createReader accessors', () => {
 		expect(val).toBe('ciao');
 	});
 
-	test.skip('createReader() buffer cstring_p', () => {
+	test('createReader() buffer cstring_p', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createStringReader(compiled, buf, '.7');
 
 		const val = read();
 		expect(Buffer.isBuffer(val)).toBeTruthy();
-		expect(val?.toString('hex')).toBe('6369616f000000000000');
+		expect(val?.toString('hex')).toBe('6369616f');
 	});
 });
 
@@ -473,16 +473,6 @@ describe('Test createWriter accessors', () => {
 		write('ab\0');
 		expect(read()).toBe('ab');
 	});
-
-	test.skip('createWriter() cstring_p', () => {
-		const buf = createRecord(compiled, obj);
-		const read = createStringReader(compiled, buf, '.7', 'utf8');
-		const write = createWriter(compiled, buf, '.7');
-
-		// Note that the writer doesn't not clear the string
-		write('ab');
-		expect(read()).toBe('abllo');
-	});
 });
 
 describe('Test createReader error handling', () => {
@@ -529,5 +519,10 @@ describe('Test createReader error handling', () => {
 	test('createStringReader() throws not a string', () => {
 		const buf = createRecord(compiled, obj);
 		expect(() => createStringReader(compiled, buf, '.c')).toThrowError(/Not a string/);
+	});
+
+	test('createWriter() throws not supported for cstring_p', () => {
+		const buf = createRecord(compiled, obj);
+		expect(() => createWriter(compiled, buf, '.7')).toThrowError(/not supported/);
 	});
 });
