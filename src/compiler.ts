@@ -1,5 +1,5 @@
 import { ENDIANNESS, WORD_SIZE, memalign_padding, memalign_word } from './mach';
-import { FieldTypeCode, TYPES, SIZES, isVarType, isPointerType, C_TYPES } from './types';
+import { FieldTypeCode, TYPES, SIZES, isVarType, isVirtualType, isPointerType, C_TYPES } from './types';
 
 export interface RecordDef {
 	name: string;
@@ -79,7 +79,7 @@ function getAlignSize(typeCode: FieldTypeCode, size: number) {
 
 	// Strings are aligned to one byte
 	// TODO Hide the code in types.ts
-	if (typeCode === 'w') {
+	if (typeCode === TYPES.cstring) {
 		return 1;
 	}
 
@@ -303,7 +303,7 @@ export function generateCHeader(compiledDef: CompiledRecordDef, recordName: stri
 			throw new Error('Nested structures are not supported yet');
 		}
 
-		if (typeCode === 'z') {
+		if (isVirtualType(typeCode)) {
 			throw new TypeError('Record is a virtual type');
 		}
 
