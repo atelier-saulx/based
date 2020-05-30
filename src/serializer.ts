@@ -82,37 +82,47 @@ export function deserialize(compiledDef: CompiledRecordDef, buf: Buffer): any {
 	const ops = getReadFuncs(buf);
 	const obj: { [index: string]: any } = {};
 
-	for (const [offset, size, arrSize, type, names] of compiledDef.fieldList) {
+	const fieldList = compiledDef.fieldList;
+	for (let i = 0; i < fieldList.length; i++) {
 		let cur = obj;
-		let prev = cur;
+		let prev = cur; // Speed optimization
 		let name: string | number = '';
+		const field = fieldList[i];
+		const names = field[4];
 
 		for (name of names) {
 			prev = cur;
-			if (!name.includes('[')) {
+			if (name.endsWith(']')) {
+				// It's a record array
+				const res = name.match(/^([^\[\]]*)\[(.*)\]$/);
+				// @ts-ignore
+				const realName = res[1];
+				// @ts-ignore
+				const j = Number(res[2]);
+
+				if (!cur[realName]) {
+					cur[realName] = [];
+				}
+				if (!cur[realName][j]) {
+					cur[realName][j] = {};
+				}
+
+				cur = cur[realName][j];
+				name = j;
+			} else {
 				// Not a record array
 				if (!cur[name]) {
 					cur[name] = {};
 				}
 
 				cur = cur[name];
-			} else {
-				// a record array
-				const [realName, rest] = name.split('[');
-
-				const i = Number(rest.substring(0, rest.length - 1));
-				if (!cur[realName]) {
-					cur[realName] = [];
-				}
-				if (!cur[realName][i]) {
-					cur[realName][i] = {};
-				}
-
-				cur = cur[realName][i];
-				name = i;
 			}
 		}
 
+		const offset = field[0];
+		const size = field[1];
+		const arrSize = field[2];
+		const type = field[3];
 		const op = ops[type];
 
 		if (arrSize > 0) {
