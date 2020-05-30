@@ -39,24 +39,32 @@ human-readable record definition object.
 
 **Types**
 
-- `int8`
-- `int16_be`
-- `int16_le`
-- `int32_be`
-- `int32_le`
-- `int64_be`
-- `int64_le`
-- `uint8`
-- `uint16_be`
-- `uint16_le`
-- `uint32_be`
-- `uint32_le`
-- `uint64_be`
-- `uint64_le`
-- `float_be`
-- `float_le`
-- `double_be`
-- `double_le`
+- `int8` - 8-bit signed integer
+- `int16` - 16-bit signed integer in host byte order
+- `int16_be` 16-bit signed integer in big-endian order
+- `int16_le` - 16-bit signed integer in little-endian order
+- `int32` - 32-bit signed integer in host byte order
+- `int32_be` - 32-bit signed integer in big-endian order
+- `int32_le` 32-bit signed integer in little-endian order
+- `int64` - 64-bit signed integer in host byte order
+- `int64_be` - 64-bit signed integer in big-endian order
+- `int64_le` - 64-bit signed integer in little-endian order
+- `uint8` - 8-bit unsigned integer
+- `uint16` - 16-bit unsigned integer in host byte order
+- `uint16_be` - 16-bit unsigned integer in big-endian order
+- `uint16_le` - 16-bit unsigned integer in little-endian order
+- `uint32` - 32-bit unsigned integer in host byte order
+- `uint32_be` - 32-bit unsigned integer in big-endian order
+- `uint32_le` - 32-bit unsigned integer in little-endian order
+- `uint64` - 64-bit unsigned integer in host byte order
+- `uint64_be` - 64-bit unsigned integer in big-endian order
+- `uint64_le` - 64-bit unsigned integer in little-endian order
+- `float` - 32-bit single-precision floating-point in host byte order
+- `float_be` 32-bit single-precision floating-point in big-endian order
+- `float_le` - 32-bit single-precision floating-point in little-endian order
+- `double` - 64-bit double-precision floating-point in host byte order
+- `double_be` - 64-bit double-precision floating-point in big-endian order
+- `double_le` - 64-bit double-precision floating-point in little-endian order
 - `int_be` - 0 to 48 bit variable size big-endian signed integer
 - `int_le` - 0 to 48 bit variable size little-endian signed integer
 - `uint_be` - 0 to 48 bit variable size big-endian unsigned integer
