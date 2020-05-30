@@ -427,6 +427,33 @@ describe('Test createWriter accessors', () => {
 		expect(read()).toBe(0x41512);
 	});
 
+	test('createWriter() int64', () => {
+		const buf = createRecord(compiled, obj);
+		const read = createReader(compiled, buf, '.h');
+		const write = createWriter(compiled, buf, '.h');
+
+		write(BigInt('0x40410014004020'));
+		expect(read()).toBe(BigInt('0x40410014004020'));
+	});
+
+	test('createWriter() int64_be', () => {
+		const buf = createRecord(compiled, obj);
+		const read = createReader(compiled, buf, '.i');
+		const write = createWriter(compiled, buf, '.i');
+
+		write(BigInt('0x40410014004020'));
+		expect(read()).toBe(BigInt('0x40410014004020'));
+	});
+
+	test('createWriter() int64_le', () => {
+		const buf = createRecord(compiled, obj);
+		const read = createReader(compiled, buf, '.j');
+		const write = createWriter(compiled, buf, '.j');
+
+		write(BigInt('0x40410014004020'));
+		expect(read()).toBe(BigInt('0x40410014004020'));
+	});
+
 	test('createWriter() cstring', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createStringReader(compiled, buf, '.6', 'utf8');
