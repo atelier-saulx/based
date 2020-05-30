@@ -1,4 +1,4 @@
-import { Encoding } from './types';
+import { Encoding, TYPES } from './types';
 import { CompiledRecordDef } from './compiler';
 import { WORD_SIZE, MACH_TYPE } from './mach';
 
@@ -178,7 +178,7 @@ export function readString(
 		throw new Error('Not found');
 	}
 
-	if (type !== 'w') {
+	if (type !== TYPES.cstring) {
 		throw new TypeError('Not a string');
 	}
 
@@ -216,7 +216,7 @@ export function writeString(
 		throw new Error('Not found');
 	}
 
-	if (type !== 'w') {
+	if (type !== TYPES.cstring) {
 		throw new TypeError('Not a string');
 	}
 
@@ -256,7 +256,7 @@ export function createStringReader(
 		throw new Error('Not found');
 	}
 
-	if (type !== 'w') {
+	if (type !== TYPES.cstring) {
 		throw new TypeError('Not a string');
 	}
 
