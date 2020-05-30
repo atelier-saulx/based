@@ -1,4 +1,14 @@
-import { compile, createRecord, readValue, readString, writeValue, writeString, createReader, createStringReader, createWriter } from '../src/index';
+import {
+	compile,
+	createRecord,
+	readValue,
+	readString,
+	writeValue,
+	writeString,
+	createReader,
+	createStringReader,
+	createWriter,
+} from '../src/index';
 
 const def = [
 	{ name: 'a', type: 'int8' },
@@ -44,9 +54,9 @@ const obj = {
 	e: 0x10004020,
 	f: 0x10004020,
 	g: 0x10004020,
-	h: BigInt("0x40400010004020"),
-	i: BigInt("0x40400010004020"),
-	j: BigInt("0x40400010004020"),
+	h: BigInt('0x40400010004020'),
+	i: BigInt('0x40400010004020'),
+	j: BigInt('0x40400010004020'),
 	k: 127,
 	l: 0x4020,
 	m: 0x4020,
@@ -54,9 +64,9 @@ const obj = {
 	o: 0x10004020,
 	p: 0x10004020,
 	q: 0x10004020,
-	r: BigInt("0x40400010004020"),
-	s: BigInt("0x40400010004020"),
-	t: BigInt("0x40400010004020"),
+	r: BigInt('0x40400010004020'),
+	s: BigInt('0x40400010004020'),
+	t: BigInt('0x40400010004020'),
 	u: 1.5,
 	v: 1.5,
 	w: 1.5,
@@ -132,21 +142,21 @@ describe('Test createReader accessors', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.h');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() int64_be', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.i');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() int64_le', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.j');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() uint8_t', () => {
@@ -202,21 +212,21 @@ describe('Test createReader accessors', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.r');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() uint64_be', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.s');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() uint64_le', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createReader(compiled, buf, '.t');
 
-		expect(read()).toBe(BigInt("0x40400010004020"));
+		expect(read()).toBe(BigInt('0x40400010004020'));
 	});
 
 	test('createReader() float', () => {

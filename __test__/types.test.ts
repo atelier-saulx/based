@@ -356,9 +356,9 @@ describe('Test that each type reads the correct value', () => {
 
 		const value = readValue(compiled, buf, '.a');
 		if (ENDIANNESS === 'BE') {
-			expect(value).toBe(BigInt("0xba55000000"));
+			expect(value).toBe(BigInt('0xba55000000'));
 		} else {
-			expect(value).toBe(BigInt("0x55ba000000"));
+			expect(value).toBe(BigInt('0x55ba000000'));
 		}
 	});
 
@@ -369,7 +369,7 @@ describe('Test that each type reads the correct value', () => {
 		expect(buf).toHaveLength(8);
 
 		const value = readValue(compiled, buf, '.a');
-		expect(value).toBe(BigInt("0xdeface0deadbeef"));
+		expect(value).toBe(BigInt('0xdeface0deadbeef'));
 	});
 
 	test('int64_le', () => {
@@ -379,7 +379,7 @@ describe('Test that each type reads the correct value', () => {
 		expect(buf).toHaveLength(8);
 
 		const value = readValue(compiled, buf, '.a');
-		expect(value).toBe(BigInt("0xdeface0deadbeef"));
+		expect(value).toBe(BigInt('0xdeface0deadbeef'));
 	});
 
 	test('uint8', () => {
@@ -468,9 +468,9 @@ describe('Test that each type reads the correct value', () => {
 
 		const value = readValue(compiled, buf, '.a');
 		if (ENDIANNESS === 'BE') {
-			expect(value).toBe(BigInt("0xdeface0deadbeef"));
+			expect(value).toBe(BigInt('0xdeface0deadbeef'));
 		} else {
-			expect(value).toBe(BigInt("0xefbeaddee0acef0d"));
+			expect(value).toBe(BigInt('0xefbeaddee0acef0d'));
 		}
 	});
 
@@ -481,7 +481,7 @@ describe('Test that each type reads the correct value', () => {
 		expect(buf).toHaveLength(8);
 
 		const value = readValue(compiled, buf, '.a');
-		expect(value).toBe(BigInt("0xdeface0deadbeef"));
+		expect(value).toBe(BigInt('0xdeface0deadbeef'));
 	});
 
 	test('uint64_le', () => {
@@ -491,6 +491,6 @@ describe('Test that each type reads the correct value', () => {
 		expect(buf).toHaveLength(8);
 
 		const value = readValue(compiled, buf, '.a');
-		expect(value).toBe(BigInt("0xefbeaddee0acef0d"));
+		expect(value).toBe(BigInt('0xefbeaddee0acef0d'));
 	});
 });
