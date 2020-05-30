@@ -97,46 +97,46 @@ export const TYPE_CODE2TYPE = new Map(Object.keys(TYPES).map((k) => [TYPES[k], k
  * A map from type code to type size.
  */
 export const SIZES: { [index: string]: number } = {
-	a: 1, // int8
-	b: 2, // int16_be
-	c: 2, // int16_le
-	d: 4, // int32_be
-	e: 4, // int32_le
-	f: 8, // int64_be
-	g: 8, // int64_le
-	h: 1, // uint8
-	i: 2, // uint16_be
-	j: 2, // uint16_le
-	k: 4, // uint32_be
-	l: 4, // uint32_le
-	m: 8, // uint64_be
-	n: 8, // uint64_le
-	o: 4, // float_be
-	p: 4, // float_le
-	q: 8, // double_be
-	r: 8, // double_le
-	pw: 2 * WORD_SIZE, // cstring_p
+	[TYPES.int8]: 1,
+	[TYPES.int16_be]: 2, // int16_be
+	[TYPES.int16_le]: 2, // int16_le
+	[TYPES.int32_be]: 4, // int32_be
+	[TYPES.int32_le]: 4, // int32_le
+	[TYPES.int64_be]: 8, // int64_be
+	[TYPES.int64_le]: 8, // int64_le
+	[TYPES.uint8]: 1, // uint8
+	[TYPES.uint16_be]: 2, // uint16_be
+	[TYPES.uint16_le]: 2, // uint16_le
+	[TYPES.uint32_be]: 4, // uint32_be
+	[TYPES.uint32_le]: 4, // uint32_le
+	[TYPES.uint64_be]: 8, // uint64_be
+	[TYPES.uint64_le]: 8, // uint64_le
+	[TYPES.float_be]: 4, // float_be
+	[TYPES.float_le]: 4, // float_le
+	[TYPES.double_be]: 8, // double_be
+	[TYPES.double_le]: 8, // double_le
+	[TYPES.cstring_p]: 2 * WORD_SIZE, // cstring_p
 };
 
 /**
  * Returns a boolean true if the given Field Type Code is a variable type.
  */
 export function isVarType(typeCode: FieldTypeCode): boolean {
-	return ['s', 't', 'u', 'v', 'w'].includes(typeCode);
+	return [TYPES.int_be, TYPES.int_le, TYPES.uint_be, TYPES.uint_le, TYPES.cstring].includes(typeCode);
 }
 
 /**
  * Returns a boolean true if the given Field Type Code is a virtual type.
  */
 export function isVirtualType(typeCode: FieldTypeCode): boolean {
-	return typeCode === 'z';
+	return typeCode === TYPES.record;
 }
 
 /**
  * Returns a boolean true if the given Field Type Code is a pointer type.
  */
 export function isPointerType(typeCode: FieldTypeCode): boolean {
-	return typeCode === 'pw';
+	return typeCode === TYPES.cstring_p;
 }
 
 /**
@@ -144,30 +144,30 @@ export function isPointerType(typeCode: FieldTypeCode): boolean {
  */
 export const C_TYPES = {
 	// Fixed size
-	a: 'int8_t',
-	b: 'int16_t',
-	c: 'int16_t',
-	d: 'int32_t',
-	e: 'int32_t',
-	f: 'int64_t',
-	g: 'int64_t',
-	h: 'uint8_t',
-	i: 'uint16_t',
-	j: 'uint16_t',
-	k: 'uint32_t',
-	l: 'uint32_t',
-	m: 'uint64_t',
-	n: 'uint64_t',
-	o: 'float',
-	p: 'float',
-	q: 'double',
-	r: 'double',
+	[TYPES.int8]: 'int8_t',
+	[TYPES.int16_be]: 'int16_t',
+	[TYPES.int16_le]: 'int16_t',
+	[TYPES.int32_be]: 'int32_t',
+	[TYPES.int32_le]: 'int32_t',
+	[TYPES.int64_be]: 'int64_t',
+	[TYPES.int64_le]: 'int64_t',
+	[TYPES.uint8]: 'uint8_t',
+	[TYPES.uint16_be]: 'uint16_t',
+	[TYPES.uint16_le]: 'uint16_t',
+	[TYPES.uint32_be]: 'uint32_t',
+	[TYPES.uint32_le]: 'uint32_t',
+	[TYPES.uint64_be]: 'uint64_t',
+	[TYPES.uint64_le]: 'uint64_t',
+	[TYPES.float_be]: 'float',
+	[TYPES.float_le]: 'float',
+	[TYPES.double_be]: 'double',
+	[TYPES.double_le]: 'double',
 	// Variable size
-	s: 'int8_t',
-	t: 'int8_t',
-	u: 'uint8_t',
-	v: 'uint8_t',
-	w: 'char',
+	[TYPES.int_be]: 'int8_t',
+	[TYPES.int_le]: 'int8_t',
+	[TYPES.uint_be]: 'uint8_t',
+	[TYPES.uint_le]: 'uint8_t',
+	[TYPES.cstring]: 'char',
 	// Pointer types
-	pw: 'char *',
+	[TYPES.cstring_p]: 'char *',
 };

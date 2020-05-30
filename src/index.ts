@@ -3,7 +3,7 @@ import { serialize, getNode } from './serializer';
 import { isPointerType } from './types';
 export { RecordDef, CompiledRecordDef, compile, generateRecordDef, generateCHeader } from './compiler';
 export { serialize, deserialize } from './serializer';
-export { readValue, writeValue, readString, writeString, createReader, createWriter } from './accessors';
+export { readValue, writeValue, readString, writeString, createReader, createStringReader, createWriter } from './accessors';
 
 export function allocRecord(compiledDef: CompiledRecordDef, opts?: { unpool?: boolean; heapSize?: number }): Buffer {
 	const heapSize = opts?.heapSize || 0;

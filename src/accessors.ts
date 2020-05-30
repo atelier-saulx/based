@@ -247,7 +247,7 @@ export function createStringReader(
 	compiledDef: CompiledRecordDef,
 	buf: Buffer,
 	path: string,
-	encoding: Encoding
+	encoding?: Encoding
 ): () => string | Buffer | null {
 	const funcs = getReadFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
