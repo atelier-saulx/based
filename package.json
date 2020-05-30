@@ -2,6 +2,16 @@
   "name": "data-record",
   "version": "0.3.0",
   "description": "Data records for Node.js",
+  "author": "Olli Vanhoja",
+  "license": "ISC",
+  "keywords": [
+    "buffer",
+    "c-language",
+    "cpp",
+    "record",
+    "struct"
+  ],
+  "repository": "turist-cloud/fetch",
   "main": "lib/index.js",
   "files": [
     "lib/"
@@ -14,8 +24,6 @@
     "test": "jest --runInBand --clearCache && jest --coverage",
     "prepublish": "npm run build"
   },
-  "author": "Olli Vanhoja",
-  "license": "ISC",
   "devDependencies": {
     "@types/jest": "25.2.3",
     "@types/node": "14.0.5",
