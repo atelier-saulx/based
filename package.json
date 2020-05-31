@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "build": "rm -rf ./lib && tsc",
-    "lint": "eslint --ext .ts ./src",
+    "lint": "eslint --ext .ts './{src,__test__,__perf__}/**/*.ts'",
     "perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
     "prettier": "prettier --write './{src,__test__,__perf__}/**/*.ts'",
     "test": "jest --runInBand --clearCache && jest --coverage",

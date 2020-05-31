@@ -59,7 +59,7 @@ function _compile(
 			}
 
 			size = SIZES[typeCode] || size;
-			if (!Number.isInteger(size) || size && size < 0) {
+			if (!Number.isInteger(size) || (size && size < 0)) {
 				throw new Error(`Size must be set to an integer for type: "${rawType}"`);
 			}
 

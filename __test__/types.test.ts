@@ -1,5 +1,5 @@
 import { ENDIANNESS, WORD_SIZE } from '../src/mach';
-import { compile, allocRecord, writeValue, readValue, readString, createRecord } from '../src/index';
+import { compile, allocRecord, writeValue, readValue, readString } from '../src/index';
 
 describe('Test that each type writes the correct value', () => {
 	test('int8', () => {

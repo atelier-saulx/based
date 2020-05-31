@@ -1,4 +1,3 @@
-import v8 from 'v8';
 import { performance } from 'perf_hooks';
 import gc from './util/gc';
 import { allocRecord, compile, serialize, createReader, createWriter } from '../src/index';
