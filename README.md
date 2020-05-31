@@ -365,6 +365,8 @@ dataRecordSerializeTest                       769.95 ms
 ```
 
 The performance tests are located under the `__perf__` directory and can be executed with `yarn perf`.
+The test modules can be run individually by giving one or more module names as an argument to the
+comman, e.g. `yarn perf serialization`.
 
 Each run will create a isolate file that can be parsed as follows:
 
