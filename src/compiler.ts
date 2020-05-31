@@ -59,7 +59,7 @@ function _compile(
 			}
 
 			size = SIZES[typeCode] || size;
-			if (!Number.isInteger(size)) {
+			if (!Number.isInteger(size) || size && size < 0) {
 				throw new Error(`Size must be set to an integer for type: "${rawType}"`);
 			}
 
@@ -89,6 +89,10 @@ function getAlignSize(typeCode: FieldTypeCode, size: number) {
 }
 
 export function compile(recordDef: RecordDef[], opts?: { align: boolean }): CompiledRecordDef {
+	if (!Array.isArray(recordDef)) {
+		throw new TypeError('recordDef must be an array');
+	}
+
 	const align = opts?.align ?? true;
 	const alignWord = align ? (len: number) => memalign_word(len) : (len: number) => len;
 	const arr = _compile(recordDef, '');

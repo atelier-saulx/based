@@ -503,6 +503,66 @@ describe('Test that each type reads the correct value', () => {
 		expect(value).toBe(BigInt('0xefbeaddee0acef0d'));
 	});
 
+	test('float', () => {
+		const def = [{ name: 'a', type: 'float' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from(ENDIANNESS === 'BE' ? '3fc00000' : '0000c03f', 'hex');
+		expect(buf).toHaveLength(4);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.5);
+	});
+
+	test('float_be', () => {
+		const def = [{ name: 'a', type: 'float_be' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('3fc00000', 'hex');
+		expect(buf).toHaveLength(4);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.5);
+	});
+
+	test('float_le', () => {
+		const def = [{ name: 'a', type: 'float_le' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('0000c03f', 'hex');
+		expect(buf).toHaveLength(4);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.5);
+	});
+
+	test('double', () => {
+		const def = [{ name: 'a', type: 'double' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from(ENDIANNESS === 'BE' ? '3ff3c083126e978d' : '8d976e1283c0f33f', 'hex');
+		expect(buf).toHaveLength(8);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.2345);
+	});
+
+	test('double_be', () => {
+		const def = [{ name: 'a', type: 'double_be' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('3ff3c083126e978d', 'hex');
+		expect(buf).toHaveLength(8);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.2345);
+	});
+
+	test('double_le', () => {
+		const def = [{ name: 'a', type: 'double_le' }];
+		const compiled = compile(def, { align: false });
+		const buf = Buffer.from('8d976e1283c0f33f', 'hex');
+		expect(buf).toHaveLength(8);
+
+		const value = readValue(compiled, buf, '.a');
+		expect(value).toBe(1.2345);
+	});
+
 	test('cstring', () => {
 		const def = [{ name: 'a', type: 'cstring', size: 5 }];
 		const compiled = compile(def, { align: false });
