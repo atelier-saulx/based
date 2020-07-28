@@ -1,5 +1,5 @@
 import CC from './util/cc';
-import { compile, generateCHeader, deserialize } from '../src';
+import { compile, generateCHeader, deserialize, createRecord } from '../src';
 
 const cc = new CC();
 
@@ -200,4 +200,60 @@ int main(void)
 	};
 
 	expect(obj).toEqual(expected);
+});
+
+test('Using string pointers produces expected results', async () => {
+	const def = [
+		{ name: 'flag', type: 'uint8' },
+		{ name: 'stra', type: 'cstring_p' },
+		{ name: 'strb', type: 'cstring_p' },
+		{ name: 'strc', type: 'cstring_p' },
+	];
+	const compiled = compile(def);
+	const cHeader = generateCHeader(compiled, 'record');
+
+	const code = `
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+${cHeader}
+
+struct record record;
+
+int main(void)
+{
+	fread(&record, sizeof(record), 1, stdin);
+
+	printf("%d\\n%zd\\n%zd\\n%zd\\n",
+		   record.flag,
+		   record.stra_len,
+		   record.strb_len,
+		   record.strc_len
+	);
+	printf("%p\\n%p\\n%p\\n",
+		   record.stra,
+		   record.strb,
+		   record.strc
+	);
+
+	return 0;
+}
+`;
+
+	await cc.compile(code);
+	const input = createRecord(compiled, {
+		flag: 1,
+		stra: null,
+		strc: 'abc',
+	});
+	const buf = await cc.run(input, 'utf8');
+	const res = buf.toString().split('\n');
+
+	expect(res[0]).toBe('1');
+	expect(res[1]).toBe('0');
+	expect(res[2]).toBe('0');
+	expect(res[3]).toBe('3');
+	expect(res[4]).toBe('(nil)');
+	expect(res[5]).toBe('(nil)');
+	expect(res[6]).toBe('0x38');
 });

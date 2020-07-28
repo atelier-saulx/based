@@ -27,11 +27,21 @@ export default class CC {
 		});
 	}
 
-	run(): Promise<Buffer> {
+	run(input?: Buffer, outputEncoding?: 'hex' | 'utf8'): Promise<Buffer> {
 		return new Promise((resolve, reject) => {
 			let out = '';
+			let prg;
 
-			const prg = spawn(this.#tmpFile);
+			try {
+				prg = spawn(this.#tmpFile);
+			} catch (err) {
+				return reject(err);
+			}
+
+			if (input) {
+				prg.stdin.write(input);
+				prg.stdin.end();
+			}
 
 			prg.stdout.on('data', (data: Buffer) => {
 				out += data.toString('utf8');
@@ -39,11 +49,16 @@ export default class CC {
 			prg.stderr.on('data', (data: Buffer) => {
 				console.error(data.toString('utf8'));
 			});
-			prg.on('close', (code) => {
+			prg.on('close', (code, signal) => {
 				if (code !== 0) {
-					return reject('Failed');
+					if (code !== null) {
+						reject(`Failed with code ${code}`);
+					} else {
+						reject(`Received signal ${signal}`);
+					}
+					return;
 				}
-				resolve(Buffer.from(out, 'hex'));
+				resolve(Buffer.from(out, outputEncoding || 'hex'));
 			});
 		});
 	}
