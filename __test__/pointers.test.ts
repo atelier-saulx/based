@@ -38,6 +38,19 @@ describe('Test that pointer types are serialized correctly', () => {
 		expect(str2).toBe('world');
 	});
 
+	test('a null pointer', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'int8_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: null,
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(0);
+	});
+
 	test('a pointer to an int8 array', () => {
 		const recordDef = [
 			{ name: 'numbers', type: 'int8_p' }

@@ -313,7 +313,12 @@ type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: num
 export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFunction } {
 	return {
 		a: (v: number, offset: number): number => buf.writeInt8(v, offset),
-		pa: (v: number[], offset: number, destOffset: number): number => {
+		pa: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -324,7 +329,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		b: (v: number, offset: number): number => buf.writeInt16BE(v, offset),
-		pb: (v: number[], offset: number, destOffset: number): number => {
+		pb: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 2 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -335,7 +345,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		c: (v: number, offset: number): number => buf.writeInt16LE(v, offset),
-		pc: (v: number[], offset: number, destOffset: number): number => {
+		pc: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 2 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -346,7 +361,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		d: (v: number, offset: number): number => buf.writeInt32BE(v, offset),
-		pd: (v: number[], offset: number, destOffset: number): number => {
+		pd: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -357,7 +377,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		e: (v: number, offset: number): number => buf.writeInt32LE(v, offset),
-		pe: (v: number[], offset: number, destOffset: number): number => {
+		pe: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -368,7 +393,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		f: (v: bigint, offset: number): number => buf.writeBigInt64BE(v, offset),
-		pf: (v: bigint[], offset: number, destOffset: number): number => {
+		pf: (v: bigint[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -379,7 +409,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		g: (v: bigint, offset: number): number => buf.writeBigInt64LE(v, offset),
-		pg: (v: bigint[], offset: number, destOffset: number): number => {
+		pg: (v: bigint[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -390,7 +425,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		h: (v: number, offset: number): number => buf.writeUInt8(v, offset),
-		ph: (v: number[], offset: number, destOffset: number): number => {
+		ph: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -401,7 +441,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		i: (v: number, offset: number): number => buf.writeUInt16BE(v, offset),
-		pi: (v: number[], offset: number, destOffset: number): number => {
+		pi: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 2 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -412,7 +457,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		j: (v: number, offset: number): number => buf.writeUInt16LE(v, offset),
-		pj: (v: number[], offset: number, destOffset: number): number => {
+		pj: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 2 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -423,7 +473,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		k: (v: number, offset: number): number => buf.writeUInt32BE(v, offset),
-		pk: (v: number[], offset: number, destOffset: number): number => {
+		pk: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -434,7 +489,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		l: (v: number, offset: number): number => buf.writeUInt32LE(v, offset),
-		pl: (v: number[], offset: number, destOffset: number): number => {
+		pl: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -445,7 +505,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		m: (v: bigint, offset: number): number => buf.writeBigUInt64BE(v, offset),
-		pm: (v: bigint[], offset: number, destOffset: number): number => {
+		pm: (v: bigint[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -456,7 +521,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		n: (v: bigint, offset: number): number => buf.writeBigUInt64LE(v, offset),
-		pn: (v: bigint[], offset: number, destOffset: number): number => {
+		pn: (v: bigint[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -467,7 +537,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		o: (v: number, offset: number): number => buf.writeFloatBE(v, offset),
-		po: (v: number[], offset: number, destOffset: number): number => {
+		po: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -478,7 +553,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		p: (v: number, offset: number): number => buf.writeFloatLE(v, offset),
-		pp: (v: number[], offset: number, destOffset: number): number => {
+		pp: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 4 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -489,7 +569,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		q: (v: number, offset: number): number => buf.writeDoubleBE(v, offset),
-		pq: (v: number[], offset: number, destOffset: number): number => {
+		pq: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -500,7 +585,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		r: (v: number, offset: number): number => buf.writeDoubleLE(v, offset),
-		pr: (v: number[], offset: number, destOffset: number): number => {
+		pr: (v: number[] | null, offset: number, destOffset: number): number => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = 8 * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -511,7 +601,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		s: (v: number, offset: number, len: number): number => buf.writeIntBE(v, offset, len),
-		ps: (v: number[], offset: number, len: number, destOffset: number) => {
+		ps: (v: number[] | null, offset: number, len: number, destOffset: number) => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = len * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -522,7 +617,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		t: (v: number, offset: number, len: number): number => buf.writeIntLE(v, offset, len),
-		pt: (v: number[], offset: number, len: number, destOffset: number) => {
+		pt: (v: number[] | null, offset: number, len: number, destOffset: number) => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = len * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -533,7 +633,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		u: (v: number, offset: number, len: number): number => buf.writeUIntBE(v, offset, len),
-		pu: (v: number[], offset: number, len: number, destOffset: number) => {
+		pu: (v: number[] | null, offset: number, len: number, destOffset: number) => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = len * v.length;
 
 			setPointer(buf, offset, destOffset, size);
@@ -544,7 +649,12 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		v: (v: number, offset: number, len: number): number => buf.writeUIntLE(v, offset, len),
-		pv: (v: number[], offset: number, len: number, destOffset: number) => {
+		pv: (v: number[] |null, offset: number, len: number, destOffset: number) => {
+			if (v === null) {
+				setPointer(buf, offset, 0, 0);
+				return 0;
+			}
+
 			const size = len * v.length;
 
 			setPointer(buf, offset, destOffset, size);
