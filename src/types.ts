@@ -44,7 +44,30 @@ export type FieldTypeCode =
 	| 'v'
 	| 'w'
 	| 'z'
-	| 'pw';
+	| 'pa'
+	| 'pb'
+    | 'pc'
+    | 'pd'
+    | 'pe'
+    | 'pf'
+    | 'pg'
+    | 'ph'
+    | 'pi'
+	| 'pj'
+	| 'pk'
+    | 'pl'
+    | 'pm'
+    | 'pn'
+    | 'po'
+    | 'pp'
+    | 'pq'
+    | 'pr'
+    | 'ps'
+    | 'pt'
+    | 'pu'
+    | 'pv'
+	| 'pw'
+;
 
 /**
  * A map from type names to Field Type Codes.
@@ -88,6 +111,38 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	// Virtual
 	record: 'z',
 	// Pointer types
+	int8_p: 'pa',
+	int16_be_p: 'pb',
+	int16_le_p: 'pc',
+	int32_p: ENDIANNESS === 'BE' ? 'pd' : 'pe',
+	int32_be_p: 'pd',
+	int32_le_p: 'pe',
+	int64_p: ENDIANNESS === 'BE' ? 'pf' : 'pg',
+	int64_be_p: 'pf',
+	int64_le_p: 'pg',
+	uint8_p: 'ph',
+	uint16_p: ENDIANNESS === 'BE' ? 'pi' : 'pj',
+	uint16_be_p: 'pi',
+	uint16_le_p: 'pj',
+	uint32_p: ENDIANNESS === 'BE' ? 'pk' : 'pl',
+	uint32_be_p: 'pk',
+	uint32_le_p: 'pl',
+	uint64_p: ENDIANNESS === 'BE' ? 'pm' : 'pn',
+	uint64_be_p: 'pm',
+	uint64_le_p: 'pn',
+	float_p: ENDIANNESS === 'BE' ? 'po' : 'pp',
+	float_be_p: 'po',
+	float_le_p: 'pp',
+	double_p: ENDIANNESS === 'BE' ? 'pq' : 'pr',
+	double_be_p: 'pq',
+	double_le_p: 'pr',
+	// Variable size pointer types
+	int_p: ENDIANNESS === 'BE' ? 'ps' : 'pt',
+	int_be_p: 'ps',
+	int_le_p: 'pt',
+	uint_p: ENDIANNESS === 'BE' ? 'pu' : 'pv',
+	uint_be_p: 'pu',
+	uint_le_p: 'pv',
 	cstring_p: 'pw',
 };
 
@@ -115,6 +170,28 @@ export const SIZES: { [index: string]: number } = {
 	[TYPES.float_le]: 4, // float_le
 	[TYPES.double_be]: 8, // double_be
 	[TYPES.double_le]: 8, // double_le
+	[TYPES.int8_p]: 2 * WORD_SIZE, // int8_p
+	[TYPES.int16_be_p]: 2 * WORD_SIZE, // int16_be_p
+	[TYPES.int16_le_p]: 2 * WORD_SIZE, // int16_le_p
+	[TYPES.int32_be_p]: 2 * WORD_SIZE, // int32_be_p
+	[TYPES.int32_le_p]: 2 * WORD_SIZE, // int32_le_p
+	[TYPES.int64_be_p]: 2 * WORD_SIZE, // int64_be_p
+	[TYPES.int64_le_p]: 2 * WORD_SIZE, // int64_le_p
+	[TYPES.uint8_p]: 2 * WORD_SIZE, // uint8_p
+	[TYPES.uint16_be_p]: 2 * WORD_SIZE, // uint16_be_p
+	[TYPES.uint16_le_p]: 2 * WORD_SIZE, // uint16_le_p
+	[TYPES.uint32_be_p]: 2 * WORD_SIZE, // uint32_be_p
+	[TYPES.uint32_le_p]: 2 * WORD_SIZE, // uint32_le_p
+	[TYPES.uint64_be_p]: 2 * WORD_SIZE, // uint64_be_p
+	[TYPES.uint64_le_p]: 2 * WORD_SIZE, // uint64_le_p
+	[TYPES.float_be_p]: 2 * WORD_SIZE, // float_be_p
+	[TYPES.float_le_p]: 2 * WORD_SIZE, // float_le_p
+	[TYPES.double_be_p]: 2 * WORD_SIZE, // double_be_p
+	[TYPES.double_le_p]: 2 * WORD_SIZE, // double_le_p
+	[TYPES.int_be_p]: 2 * WORD_SIZE, // int_be_p
+	[TYPES.int_le_p]: 2 * WORD_SIZE, // int_le_p
+	[TYPES.uint_be_p]: 2 * WORD_SIZE, // uint_be_p
+	[TYPES.uint_le_p]: 2 * WORD_SIZE, // uint_le_p
 	[TYPES.cstring_p]: 2 * WORD_SIZE, // cstring_p
 };
 
@@ -136,7 +213,7 @@ export function isVirtualType(typeCode: FieldTypeCode): boolean {
  * Returns a boolean true if the given Field Type Code is a pointer type.
  */
 export function isPointerType(typeCode: FieldTypeCode): boolean {
-	return typeCode === TYPES.cstring_p;
+	return typeCode.length == 2;
 }
 
 /**
@@ -169,5 +246,22 @@ export const C_TYPES = {
 	[TYPES.uint_le]: 'uint8_t',
 	[TYPES.cstring]: 'char',
 	// Pointer types
+	[TYPES.int8_p]: 'int8_t *',
+	[TYPES.int16_be_p]: 'int16_t *',
 	[TYPES.cstring_p]: 'char *',
+	[TYPES.int32_be_p]: 'int32_t *',
+	[TYPES.int32_le_p]: 'int32_t *',
+	[TYPES.int64_be_p]: 'int64_t *',
+	[TYPES.int64_le_p]: 'int64_t *',
+	[TYPES.uint8_p]: 'uint8_t *',
+	[TYPES.uint16_be_p]: 'uint16_t *',
+	[TYPES.uint16_le_p]: 'uint16_t *',
+	[TYPES.uint32_be_p]: 'uint32_t *',
+	[TYPES.uint32_le_p]: 'uint32_t *',
+	[TYPES.uint64_be_p]: 'uint64_t *',
+	[TYPES.uint64_le_p]: 'uint64_t *',
+	[TYPES.float_be_p]: 'float *',
+	[TYPES.float_le_p]: 'float *',
+	[TYPES.double_be_p]: 'double *',
+	[TYPES.double_le_p]: 'double *',
 };

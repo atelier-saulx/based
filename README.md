@@ -39,39 +39,71 @@ human-readable record definition object.
 
 **Types**
 
-- `int8` - 8-bit signed integer
-- `int16` - 16-bit signed integer in host byte order
-- `int16_be` 16-bit signed integer in big-endian order
-- `int16_le` - 16-bit signed integer in little-endian order
-- `int32` - 32-bit signed integer in host byte order
-- `int32_be` - 32-bit signed integer in big-endian order
-- `int32_le` 32-bit signed integer in little-endian order
-- `int64` - 64-bit signed integer in host byte order
-- `int64_be` - 64-bit signed integer in big-endian order
-- `int64_le` - 64-bit signed integer in little-endian order
-- `uint8` - 8-bit unsigned integer
-- `uint16` - 16-bit unsigned integer in host byte order
-- `uint16_be` - 16-bit unsigned integer in big-endian order
-- `uint16_le` - 16-bit unsigned integer in little-endian order
-- `uint32` - 32-bit unsigned integer in host byte order
-- `uint32_be` - 32-bit unsigned integer in big-endian order
-- `uint32_le` - 32-bit unsigned integer in little-endian order
-- `uint64` - 64-bit unsigned integer in host byte order
-- `uint64_be` - 64-bit unsigned integer in big-endian order
-- `uint64_le` - 64-bit unsigned integer in little-endian order
-- `float` - 32-bit single-precision floating-point in host byte order
-- `float_be` 32-bit single-precision floating-point in big-endian order
-- `float_le` - 32-bit single-precision floating-point in little-endian order
-- `double` - 64-bit double-precision floating-point in host byte order
-- `double_be` - 64-bit double-precision floating-point in big-endian order
-- `double_le` - 64-bit double-precision floating-point in little-endian order
-- `int_be` - 0 to 48 bit variable size big-endian signed integer
-- `int_le` - 0 to 48 bit variable size little-endian signed integer
-- `uint_be` - 0 to 48 bit variable size big-endian unsigned integer
-- `uint_le` - 0 to 48 bit variable size little-endian unsigned integer
-- `cstring` - null-terminated C-string (termination not enforced, same behavior as `strcpy()`)
-- `cstring_p` - A pointer to a C-string
-- `record` - defines a nested record
+| Type          | Description                                                                               |
+|---------------|-------------------------------------------------------------------------------------------|
+| `int8`	    | 8-bit signed integer							                                            |
+| `int16`       | 16-bit signed integer in host byte order                                                  |
+| `int16_be`    | 16-bit signed integer in big-endian order                                                 |
+| `int16_le`    | 16-bit signed integer in little-endian order                                              |
+| `int32`       | 32-bit signed integer in host byte order                                                  |
+| `int32_be`    | 32-bit signed integer in big-endian order                                                 |
+| `int32_le`    | 32-bit signed integer in little-endian order                                              |
+| `int64`       | 64-bit signed integer in host byte order                                                  |
+| `int64_be`    | 64-bit signed integer in big-endian order                                                 |
+| `int64_le`    | 64-bit signed integer in little-endian order                                              |
+| `uint8`       | 8-bit unsigned integer                                                                    |
+| `uint16`      | 16-bit unsigned integer in host byte order                                                |
+| `uint16_be`   | 16-bit unsigned integer in big-endian order                                               |
+| `uint16_le`   | 16-bit unsigned integer in little-endian order                                            |
+| `uint32`      | 32-bit unsigned integer in host byte order                                                |
+| `uint32_be`   | 32-bit unsigned integer in big-endian order                                               |
+| `uint32_le`   | 32-bit unsigned integer in little-endian order                                            |
+| `uint64`      | 64-bit unsigned integer in host byte order                                                |
+| `uint64_be`   | 64-bit unsigned integer in big-endian order                                               |
+| `uint64_le`   | 64-bit unsigned integer in little-endian order                                            |
+| `float`       | 32-bit single-precision floating-point in host byte order                                 |
+| `float_be`    | 32-bit single-precision floating-point in big-endian order                                |
+| `float_le`    | 32-bit single-precision floating-point in little-endian order                             |
+| `double`      | 64-bit double-precision floating-point in host byte order                                 |
+| `double_be`   | 64-bit double-precision floating-point in big-endian order                                |
+| `double_le`   | 64-bit double-precision floating-point in little-endian order                             |
+| `int_be`      | 0 to 48 bit variable size big-endian signed integer                                       |
+| `int_le`      | 0 to 48 bit variable size little-endian signed integer                                    |
+| `uint_be`     | 0 to 48 bit variable size big-endian unsigned integer                                     |
+| `uint_le`     | 0 to 48 bit variable size little-endian unsigned integer                                  |
+| `cstring`     | null-terminated C-string (termination not enforced, same behavior as `strcpy()`)          |
+| `record`      | A nested record                                                                           |
+| `int8_p`      | A pointer to an array of 8-bit signed integers                                            |
+| `int16_p`     | A pointer to an array of 16-bit signed integers in host byte order                        |
+| `int16_be_p`  | A pointer to an array of 16-bit signed integers in big-endian order                       |
+| `int16_le_p`  | A pointer to an array of 16-bit signed integers in little-endian order                    |
+| `int32_p`     | A pointer to an array of 32-bit signed integers in host byte order                        |
+| `int32_be_p`  | A pointer to an array of 32-bit signed integers in big-endian order                       |
+| `int32_le_p`  | A pointer to an array of 32-bit signed integers in little-endian order                    |
+| `int64_p`     | A pointer to an array of 64-bit signed integers in host byte order                        |
+| `int64_be_p`  | A pointer to an array of 64-bit signed integers in big-endian order                       |
+| `int64_le_p`  | A pointer to an array of 64-bit signed integers in little-endian order                    |
+| `uint8_p`     | A pointer to an array of 8-bit unsigned integers                                          |
+| `uint16_p`    | A pointer to an array of 16-bit unsigned integers in host byte order                      |
+| `uint16_be_p` | A pointer to an array of 16-bit unsigned integers in big-endian order                     |
+| `uint16_le_p` | A pointer to an array of 16-bit unsigned integers in little-endian order                  |
+| `uint32_p`    | A pointer to an array of 32-bit unsigned integers in host byte order                      |
+| `uint32_be_p` | A pointer to an array of 32-bit unsigned integers in big-endian order                     |
+| `uint32_le_p` | A pointer to an array of 32-bit unsigned integers in little-endian order                  |
+| `uint64_p`    | A pointer to an array of 64-bit unsigned integers in host byte order                      |
+| `uint64_be_p` | A pointer to an array of 64-bit unsigned integers in big-endian order                     |
+| `uint64_le_p` | A pointer to an array of 64-bit unsigned integers in little-endian order                  |
+| `float_p`     | A pointer to an array of 32-bit single-precision floating-points in host byte order       |
+| `float_be_p`  | A pointer to an array of 32-bit single-precision floating-points in big-endian order      |
+| `float_le_p`  | A pointer to an array of 32-bit single-precision floating-points in little-endian order   |
+| `double_p`    | A pointer to an array of 64-bit double-precision floating-points in host byte order       |
+| `double_be_p` | A pointer to an array of 64-bit double-precision floating-points in big-endian order      |
+| `double_le_p` | A pointer to an array of 64-bit double-precision floating-points in little-endian order   |
+| `int_be_p`    | A pointer to an array of 0 to 48 bit variable size big-endian signed integers             |
+| `int_le_p`    | A pointer to an array of 0 to 48 bit variable size little-endian signed integers          |
+| `uint_be_p`   | A pointer to an array of 0 to 48 bit variable size big-endian unsigned integers           |
+| `uint_le_p`   | A pointer to an array of 0 to 48 bit variable size little-endian unsigned integers        |
+| `cstring_p`   | A pointer to a C-string                                                                   |
 
 **Arrays**
 
@@ -92,13 +124,13 @@ The array notation is as follows:
 Pointer types can point to variable size data (at runtime) without need to
 recompile the record definition. This is different from variable size field
 types (`int_be`, `int_le`, `uint_be`, `uint_l`, `cstring`) as the size of those
-fields are locked in compilation and have a fixed position in the data
-structure.
+fields is locked in compilation (fixed size array) and have a fixed position in
+the data structure. Pointer types are marked with a `_p` suffix in the type name.
 
 For example a `cstring_p` pointer can point to the string `"Hello"` during one
-serialization and to the string `"world!!"` on the next call. The string is
-copied into a dynamic heap section of the resulting buffer which allows
-variable size payload to be stored.
+serialization call and to the string `"world!!"` on the next call. The string is
+copied into the dynamic heap section of the resulting buffer which is reserved
+for storing variable sized payloads.
 
 
 ### Data Structure
@@ -137,9 +169,9 @@ and a matching C struct.
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |                   .options                    |    PADDING    |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                            .data                              |
+   |                            .data_offset                       |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                            .data_le                           |
+   |                            .data_size                         |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+ HEAP
    |                             DATA                              |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+

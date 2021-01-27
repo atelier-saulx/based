@@ -1,40 +1,8 @@
 import { compile, createRecord, deserialize } from '../src/index';
+import { TYPES, SIZES } from '../src/types';
 import { WORD_SIZE } from '../src/mach';
 
 describe('Test that pointer types are serialized correctly', () => {
-	test('a cstring_p is written correctly', () => {
-		const recordDef = [{ name: 'str', type: 'cstring_p' }];
-		const compiled = compile(recordDef, { align: true });
-		const buf = createRecord(compiled, {
-			str: 'hello world!',
-		});
-
-		const offset = buf.readBigUInt64LE(0);
-		expect(offset).toBe(BigInt(2 * WORD_SIZE));
-
-		const size = buf.readBigUInt64LE(WORD_SIZE);
-		expect(size).toBe(BigInt('hello world!'.length));
-
-		const str = buf.subarray(Number(offset), Number(offset) + Number(size)).toString('utf8');
-		expect(str).toEqual('hello world!');
-	});
-
-	test('cstring_p NULL pointer', () => {
-		const recordDef = [{ name: 'str', type: 'cstring_p' }];
-		const compiled = compile(recordDef, { align: true });
-		const buf = createRecord(compiled, {
-			str: null,
-		});
-
-		const offset = buf.readBigUInt64LE(0);
-		expect(offset).toBe(BigInt(0));
-
-		const size = buf.readBigUInt64LE(WORD_SIZE);
-		expect(size).toBe(BigInt(0));
-
-		expect(buf.length).toBe(2 * WORD_SIZE);
-	});
-
 	test('a complex record with pointers is written correctly', () => {
 		const recordDef = [
 			{ name: 'str1', type: 'cstring_p' },
@@ -69,27 +37,208 @@ describe('Test that pointer types are serialized correctly', () => {
 		const str2 = buf.subarray(offset2, offset2 + size2).toString('utf8');
 		expect(str2).toBe('world');
 	});
+
+	test('a pointer to an int8 array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'int8_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [1, 2, 3],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(3);
+
+		const v1 = Number(buf.readInt8(2 * WORD_SIZE + 0));
+		expect(v1).toBe(1);
+
+		const v2 = Number(buf.readInt8(2 * WORD_SIZE + 1));
+		expect(v2).toBe(2);
+
+		const v3 = Number(buf.readInt8(2 * WORD_SIZE + 2));
+		expect(v3).toBe(3);
+	});
+
+	test('a pointer to an int16_be array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'int16_be_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [1, 2, 3],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(6);
+
+		const v1 = Number(buf.readInt16BE(2 * WORD_SIZE + 0));
+		expect(v1).toBe(1);
+
+		const v2 = Number(buf.readInt16BE(2 * WORD_SIZE + 2));
+		expect(v2).toBe(2);
+
+		const v3 = Number(buf.readInt16BE(2 * WORD_SIZE + 4));
+		expect(v3).toBe(3);
+	});
+
+	test('a pointer to an int32_le array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'int32_le_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [122355975, 244711950, 235050510],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(3 * SIZES[TYPES.int32_le]);
+
+		const v1 = Number(buf.readInt32LE(2 * WORD_SIZE + 0));
+		expect(v1).toBe(122355975);
+
+		const v2 = Number(buf.readInt32LE(2 * WORD_SIZE + 4));
+		expect(v2).toBe(244711950);
+
+		const v3 = Number(buf.readInt32LE(2 * WORD_SIZE + 8));
+		expect(v3).toBe(235050510);
+	});
+
+	test('a pointer to an uint32_le array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'uint32_le_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [122355975, 2392195598, 235050510],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(3 * SIZES[TYPES.uint32_le]);
+
+		const v1 = Number(buf.readUInt32LE(2 * WORD_SIZE + 0));
+		expect(v1).toBe(122355975);
+
+		const v2 = Number(buf.readUInt32LE(2 * WORD_SIZE + 4));
+		expect(v2).toBe(2392195598);
+
+		const v3 = Number(buf.readUInt32LE(2 * WORD_SIZE + 8));
+		expect(v3).toBe(235050510);
+	});
+
+	test('a pointer to an int64_le array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'uint64_le_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [BigInt('3122306873021878513'), BigInt('11665128381306721961')],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(2 * SIZES[TYPES.uint64_le]);
+
+		const v1 = buf.readBigUInt64LE(2 * WORD_SIZE + 0);
+		expect(v1).toBe(BigInt('3122306873021878513'));
+
+		const v2 = buf.readBigUInt64LE(2 * WORD_SIZE + 8);
+		expect(v2).toBe(BigInt('11665128381306721961'));
+	});
+
+	test('a pointer to an float_le array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'float_le_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [8.5, 6.5],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(2 * SIZES[TYPES.float_le]);
+
+		const v1 = buf.readFloatLE(2 * WORD_SIZE + 0);
+		expect(v1).toBe(8.5);
+
+		const v2 = buf.readFloatLE(2 * WORD_SIZE + 4);
+		expect(v2).toBe(6.5);
+	});
+
+	test('a pointer to an double_le array', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'double_le_p' }
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			numbers: [4.2, 6.9],
+		});
+
+		const offset = Number(buf.readBigUInt64LE(0));
+		expect(offset).toBe(2 * WORD_SIZE);
+
+		const size = Number(buf.readBigUInt64LE(WORD_SIZE));
+		expect(size).toBe(2 * SIZES[TYPES.double_le]);
+
+		const v1 = buf.readDoubleLE(2 * WORD_SIZE + 0);
+		expect(v1).toBe(4.2);
+
+		const v2 = buf.readDoubleLE(2 * WORD_SIZE + 8);
+		expect(v2).toBe(6.9);
+	});
+
+	test('a cstring_p is written correctly', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			str: 'hello world!',
+		});
+
+		const offset = buf.readBigUInt64LE(0);
+		expect(offset).toBe(BigInt(2 * WORD_SIZE));
+
+		const size = buf.readBigUInt64LE(WORD_SIZE);
+		expect(size).toBe(BigInt('hello world!'.length));
+
+		const str = buf.subarray(Number(offset), Number(offset) + Number(size)).toString('utf8');
+		expect(str).toEqual('hello world!');
+	});
+
+	test('cstring_p NULL pointer', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = createRecord(compiled, {
+			str: null,
+		});
+
+		const offset = buf.readBigUInt64LE(0);
+		expect(offset).toBe(BigInt(0));
+
+		const size = buf.readBigUInt64LE(WORD_SIZE);
+		expect(size).toBe(BigInt(0));
+
+		expect(buf.length).toBe(2 * WORD_SIZE);
+	});
 });
 
 describe('Test that pointer types are deserialized correctly', () => {
-	test('a cstring_p is deserialized', () => {
-		const recordDef = [{ name: 'str', type: 'cstring_p' }];
-		const compiled = compile(recordDef, { align: true });
-		const buf = Buffer.from('10000000000000000c0000000000000068656c6c6f20776f726c642100000000', 'hex');
-		const obj = deserialize(compiled, buf);
-
-		expect(obj).toEqual({ str: 'hello world!' });
-	});
-
-	test('a cstring_p null pointer is deserialized', () => {
-		const recordDef = [{ name: 'str', type: 'cstring_p' }];
-		const compiled = compile(recordDef, { align: true });
-		const buf = Buffer.from('00000000000000000000000000000000', 'hex');
-		const obj = deserialize(compiled, buf);
-
-		expect(obj).toEqual({ str: null });
-	});
-
 	test('a complex record with pointers is deserialized correctly', () => {
 		const recordDef = [
 			{ name: 'str1', type: 'cstring_p' },
@@ -108,5 +257,78 @@ describe('Test that pointer types are deserialized correctly', () => {
 			num: 13,
 			str2: 'world',
 		});
+	});
+
+	test('a pointer to a uint8 array is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'uint8_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('100000000000000003000000000000000102030000000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ numbers: [1, 2, 3]});
+	});
+
+	test('a pointer to a uint32_le array is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'uint32_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000000c0000000000000007014b070e02968e0e96020e00000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ numbers: [122355975, 2392195598, 235050510]});
+	});
+
+	test('a pointer to a uint64_le array is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'uint64_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000001000000000000000f1d03aee8ea9542ba9561d5375dce2a1', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ numbers: [BigInt('3122306873021878513'), BigInt('11665128381306721961')]});
+	});
+
+	test('a pointer to a float_le array is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'float_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000000800000000000000000008410000d040', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ numbers: [8.5, 6.5]});
+	});
+
+	test('a pointer to a double_le array is deserialized correctly', () => {
+		const recordDef = [
+			{ name: 'numbers', type: 'double_p' },
+		];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000001000000000000000cdcccccccccc10409a99999999991b40', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ numbers: [4.2, 6.9]});
+	});
+
+	test('a cstring_p is deserialized', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('10000000000000000c0000000000000068656c6c6f20776f726c642100000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ str: 'hello world!' });
+	});
+
+	test('a cstring_p null pointer is deserialized', () => {
+		const recordDef = [{ name: 'str', type: 'cstring_p' }];
+		const compiled = compile(recordDef, { align: true });
+		const buf = Buffer.from('00000000000000000000000000000000', 'hex');
+		const obj = deserialize(compiled, buf);
+
+		expect(obj).toEqual({ str: null });
 	});
 });

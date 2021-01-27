@@ -1,6 +1,6 @@
 import { CompiledRecordDef } from './compiler';
 import { serialize, getNode } from './serializer';
-import { isPointerType } from './types';
+import { isPointerType, SIZES } from './types';
 export { RecordDef, CompiledRecordDef, compile, generateRecordDef, generateCHeader } from './compiler';
 export { serialize, deserialize } from './serializer';
 export {
@@ -34,7 +34,8 @@ export function calcHeapSize(compiledDef: CompiledRecordDef, obj: any): number {
 		if (isPointerType(typeCode)) {
 			const node = getNode(obj, path, fullName);
 
-			size += node ? compiledDef.align(node.length) : 0;
+			const typeSize = SIZES[typeCode.charAt(1)] || 1;
+			size += node ? compiledDef.align(node.length * typeSize) : 0;
 		}
 	}
 
