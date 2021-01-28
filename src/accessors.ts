@@ -168,7 +168,6 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 				return null;
 			}
 
-			console.log('size', size, p);
 			return Array.from(Array(size)).map((_, i) => buf.readUInt8(p + i));
 		},
 		i: (offset: number): number => buf.readUInt16BE(offset),
@@ -304,7 +303,7 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 	};
 }
 
-type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: number, encoding?: Encoding) => void;
+type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: number, encoding?: Encoding) => number;
 
 /**
  * Get write functions for a data-record buffer.
@@ -313,7 +312,7 @@ type BufferWriteFunction = (v: any, offset: number, len: number, destOffset: num
 export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFunction } {
 	return {
 		a: (v: number, offset: number): number => buf.writeInt8(v, offset),
-		pa: (v: number[] | null, offset: number, destOffset: number): number => {
+		pa: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -329,7 +328,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		b: (v: number, offset: number): number => buf.writeInt16BE(v, offset),
-		pb: (v: number[] | null, offset: number, destOffset: number): number => {
+		pb: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -345,7 +344,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		c: (v: number, offset: number): number => buf.writeInt16LE(v, offset),
-		pc: (v: number[] | null, offset: number, destOffset: number): number => {
+		pc: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -361,7 +360,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		d: (v: number, offset: number): number => buf.writeInt32BE(v, offset),
-		pd: (v: number[] | null, offset: number, destOffset: number): number => {
+		pd: (v: number[] | null, offset: number,  _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -377,7 +376,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		e: (v: number, offset: number): number => buf.writeInt32LE(v, offset),
-		pe: (v: number[] | null, offset: number, destOffset: number): number => {
+		pe: (v: number[] | null, offset: number,  _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -393,7 +392,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		f: (v: bigint, offset: number): number => buf.writeBigInt64BE(v, offset),
-		pf: (v: bigint[] | null, offset: number, destOffset: number): number => {
+		pf: (v: bigint[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -409,7 +408,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		g: (v: bigint, offset: number): number => buf.writeBigInt64LE(v, offset),
-		pg: (v: bigint[] | null, offset: number, destOffset: number): number => {
+		pg: (v: bigint[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -425,7 +424,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		h: (v: number, offset: number): number => buf.writeUInt8(v, offset),
-		ph: (v: number[] | null, offset: number, destOffset: number): number => {
+		ph: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -441,7 +440,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		i: (v: number, offset: number): number => buf.writeUInt16BE(v, offset),
-		pi: (v: number[] | null, offset: number, destOffset: number): number => {
+		pi: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -457,7 +456,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		j: (v: number, offset: number): number => buf.writeUInt16LE(v, offset),
-		pj: (v: number[] | null, offset: number, destOffset: number): number => {
+		pj: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -473,7 +472,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		k: (v: number, offset: number): number => buf.writeUInt32BE(v, offset),
-		pk: (v: number[] | null, offset: number, destOffset: number): number => {
+		pk: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -489,7 +488,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		l: (v: number, offset: number): number => buf.writeUInt32LE(v, offset),
-		pl: (v: number[] | null, offset: number, destOffset: number): number => {
+		pl: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -505,7 +504,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		m: (v: bigint, offset: number): number => buf.writeBigUInt64BE(v, offset),
-		pm: (v: bigint[] | null, offset: number, destOffset: number): number => {
+		pm: (v: bigint[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -521,7 +520,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		n: (v: bigint, offset: number): number => buf.writeBigUInt64LE(v, offset),
-		pn: (v: bigint[] | null, offset: number, destOffset: number): number => {
+		pn: (v: bigint[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -537,7 +536,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		o: (v: number, offset: number): number => buf.writeFloatBE(v, offset),
-		po: (v: number[] | null, offset: number, destOffset: number): number => {
+		po: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -553,7 +552,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		p: (v: number, offset: number): number => buf.writeFloatLE(v, offset),
-		pp: (v: number[] | null, offset: number, destOffset: number): number => {
+		pp: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -569,7 +568,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		q: (v: number, offset: number): number => buf.writeDoubleBE(v, offset),
-		pq: (v: number[] | null, offset: number, destOffset: number): number => {
+		pq: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -585,7 +584,7 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		r: (v: number, offset: number): number => buf.writeDoubleLE(v, offset),
-		pr: (v: number[] | null, offset: number, destOffset: number): number => {
+		pr: (v: number[] | null, offset: number, _typeSize: number, destOffset: number): number => {
 			if (v === null) {
 				setPointer(buf, offset, 0, 0);
 				return 0;
@@ -729,7 +728,7 @@ export function writeString(
 	path: string,
 	value: string,
 	encoding?: Encoding
-): void {
+): number {
 	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -784,7 +783,7 @@ export function createStringReader(
 	return (): string | Buffer | null => funcs[type](offset, size, encoding);
 }
 
-export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string): (value: any) => void {
+export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: string): (value: any) => number {
 	const funcs = getWriteFuncs(buf);
 	const { offset, size, type } = compiledDef.fieldMap[path] || {};
 
@@ -797,5 +796,5 @@ export function createWriter(compiledDef: CompiledRecordDef, buf: Buffer, path: 
 	}
 
 	// 0 is a dummy value for headOffset
-	return (value: any): void => funcs[type](value, offset, size, 0);
+	return (value: any): number => funcs[type](value, offset, size, 0);
 }
