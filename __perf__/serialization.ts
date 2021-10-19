@@ -48,7 +48,7 @@ export default function serialization() {
 		}
 	}
 
-	const wrapped = [nativeV8SerializerTest, jsonTest, dataRecordSerializeTest].map(performance.timerify);
+	const wrapped = [nativeV8SerializerTest, jsonTest, dataRecordSerializeTest].map((fn) => performance.timerify(fn));
 
 	for (let i = 0; i < objs.length; i++) {
 		const [n, dataFile] = dataFiles[i];
@@ -56,6 +56,7 @@ export default function serialization() {
 		console.log(dataFile);
 		for (const test of wrapped) {
 			gc();
+			// @ts-ignore
 			test(i, n);
 		}
 		console.log('');

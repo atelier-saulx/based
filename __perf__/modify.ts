@@ -112,12 +112,11 @@ export default function modify() {
 		}
 	}
 
-	const wrapped = [nativeObjectTest, nativeV8SerializerTest, jsonTest, dataRecordTestSlow, dataRecordTestFast].map(
-		performance.timerify
-	);
+	const wrapped = [nativeObjectTest, nativeV8SerializerTest, jsonTest, dataRecordTestSlow, dataRecordTestFast].map((fn) => performance.timerify(fn));
 
 	for (const test of wrapped) {
 		gc();
+		// @ts-ignore
 		test();
 	}
 }

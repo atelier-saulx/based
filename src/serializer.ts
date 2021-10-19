@@ -44,7 +44,9 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 		const typeSize = z[1];
 		const type = z[3];
 		const incrHeap = isPointerType(type)
-			? (sz: number) => { heapOffset += compiledDef.align(sz); }
+			? (sz: number) => {
+					heapOffset += compiledDef.align(sz);
+			  }
 			: () => {};
 		const path = z[4];
 		const v = getNode(obj, path, z[5]);
@@ -63,7 +65,7 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 				// just a value
 				incrHeap(ops[type](v, z[0], typeSize, heapOffset));
 			}
-		} catch (err) {
+		} catch (err: any) {
 			err.name = path;
 			throw err;
 		}

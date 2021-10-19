@@ -48,10 +48,11 @@ export default function unroll() {
 		}
 	}
 
-	const wrapped = [serializer, unrolledSerialize].map(performance.timerify);
+	const wrapped = [serializer, unrolledSerialize].map((fn) => performance.timerify(fn));
 
 	for (const test of wrapped) {
 		gc();
+		// @ts-ignore
 		test();
 	}
 }

@@ -1,8 +1,7 @@
 module.exports = {
 	parser: '@typescript-eslint/parser',
 	extends: [
-		'plugin:@typescript-eslint/recommended',
-		'prettier/@typescript-eslint',
+		'prettier',
 		'plugin:prettier/recommended',
 	],
 	parserOptions: {
@@ -10,11 +9,11 @@ module.exports = {
 		sourceType: 'module',
 	},
 	rules:  {
-		"@typescript-eslint/camelcase": "off",
-		"@typescript-eslint/explicit-function-return-type": "off",
-		"@typescript-eslint/no-explicit-any": "off",
-		"@typescript-eslint/no-use-before-define": "off",
-		"@typescript-eslint/no-empty-function": "off",
-		"no-console": "error"
+		'@typescript-eslint/camelcase': 'off',
+		'@typescript-eslint/explicit-function-return-type': 'off',
+		'@typescript-eslint/no-explicit-any': 'off',
+		'@typescript-eslint/no-use-before-define': 'off',
+		'@typescript-eslint/no-empty-function': 'off',
+		'no-console': 'error'
 	}
 };

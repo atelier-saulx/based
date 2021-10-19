@@ -6,7 +6,7 @@ import tmp from 'tmp-promise';
 export default class CC {
 	#tmpFile: string = tmp.tmpNameSync({ tmpdir: __dirname, template: pathJoin(__dirname, `tmp-XXXXXX`) });
 
-	async compile(source: string): Promise<string> {
+	async compile(source: string): Promise<void> {
 		return new Promise((resolve, reject) => {
 			const cc = spawn('gcc', ['-xc', '-', '-o', this.#tmpFile]);
 

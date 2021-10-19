@@ -1,6 +1,4 @@
-import { performance } from 'perf_hooks';
-import fs from 'fs';
-import { join as pathJoin } from 'path';
+import { performance } from 'perf_hooks'; import fs from 'fs'; import { join as pathJoin } from 'path';
 import gc from './util/gc';
 import { compile, serialize, deserialize, generateRecordDef, createRecord } from '../src/index';
 
@@ -38,7 +36,7 @@ export default function deserialization() {
 		}
 	}
 
-	const wrapped = [jsonTest, dataRecordSerializeTest].map(performance.timerify);
+	const wrapped = [jsonTest, dataRecordSerializeTest].map((fn) => performance.timerify(fn));
 
 	for (let i = 0; i < data.length; i++) {
 		const [n, dataFile] = dataFiles[i];
@@ -46,6 +44,7 @@ export default function deserialization() {
 		console.log(dataFile);
 		for (const test of wrapped) {
 			gc();
+			// @ts-ignore
 			test(i, n);
 		}
 		console.log('');
