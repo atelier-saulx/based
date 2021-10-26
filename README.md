@@ -6,8 +6,8 @@ Record type for Node.js.
 Record Format
 -------------
 
-A record is consist of and array of field definitions, describing a physical data
-structure that can be mapped to a `struct` type in C or C++.
+A record is consist of an array of field definitions, describing a physical data
+structure in memory that can be mapped to a `struct` type in C or C++.
 
 The following array defines a simple fixed size record with some nested records.
 
@@ -214,7 +214,7 @@ readString(compiledDef, buf, path[, encoding])
 writeValue(compiledDef, buf, path, value)
 writeString(compiledDef, buf, path, value[, encoding])
 createReader(compiledDef, buf, path)
-createStringReader(compiledDef, buf, path[, encoding]);
+createStringReader(compiledDef, buf, path[, encoding])
 createWriter(compiledDef, buf, path)
 ```
 
