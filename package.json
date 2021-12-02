@@ -11,7 +11,7 @@
     "record",
     "struct"
   ],
-  "repository": "turist-cloud/fetch",
+  "repository": "OlliV/data-record",
   "main": "lib/index.js",
   "files": [
     "lib/"
