@@ -99,10 +99,6 @@ human-readable record definition object.
 | `double_p`    | A pointer to an array of 64-bit double-precision floating-points in host byte order       |
 | `double_be_p` | A pointer to an array of 64-bit double-precision floating-points in big-endian order      |
 | `double_le_p` | A pointer to an array of 64-bit double-precision floating-points in little-endian order   |
-| `int_be_p`    | A pointer to an array of 0 to 48 bit variable size big-endian signed integers             |
-| `int_le_p`    | A pointer to an array of 0 to 48 bit variable size little-endian signed integers          |
-| `uint_be_p`   | A pointer to an array of 0 to 48 bit variable size big-endian unsigned integers           |
-| `uint_le_p`   | A pointer to an array of 0 to 48 bit variable size little-endian unsigned integers        |
 | `cstring_p`   | A pointer to a C-string                                                                   |
 
 **Arrays**

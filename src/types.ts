@@ -62,10 +62,6 @@ export type FieldTypeCode =
 	| 'pp'
 	| 'pq'
 	| 'pr'
-	| 'ps'
-	| 'pt'
-	| 'pu'
-	| 'pv'
 	| 'pw';
 
 /**
@@ -137,12 +133,6 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	double_be_p: 'pq',
 	double_le_p: 'pr',
 	// Variable size pointer types
-	int_p: ENDIANNESS === 'BE' ? 'ps' : 'pt',
-	int_be_p: 'ps',
-	int_le_p: 'pt',
-	uint_p: ENDIANNESS === 'BE' ? 'pu' : 'pv',
-	uint_be_p: 'pu',
-	uint_le_p: 'pv',
 	cstring_p: 'pw',
 };
 
@@ -188,10 +178,6 @@ export const SIZES: { [index: string]: number } = {
 	[TYPES.float_le_p]: 2 * WORD_SIZE, // float_le_p
 	[TYPES.double_be_p]: 2 * WORD_SIZE, // double_be_p
 	[TYPES.double_le_p]: 2 * WORD_SIZE, // double_le_p
-	[TYPES.int_be_p]: 2 * WORD_SIZE, // int_be_p
-	[TYPES.int_le_p]: 2 * WORD_SIZE, // int_le_p
-	[TYPES.uint_be_p]: 2 * WORD_SIZE, // uint_be_p
-	[TYPES.uint_le_p]: 2 * WORD_SIZE, // uint_le_p
 	[TYPES.cstring_p]: 2 * WORD_SIZE, // cstring_p
 };
 

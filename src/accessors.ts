@@ -262,41 +262,9 @@ export function getReadFuncs(buf: Buffer): { [index: string]: BufferReadFunction
 			return Array.from(Array(size / 8)).map((_, i) => buf.readDoubleLE(p + 8 * i));
 		},
 		s: (offset: number, len: number): number => buf.readIntBE(offset, len),
-		ps: (offset: number, len: number): number[] | null => {
-			const [p, size] = derefPointer(buf, offset);
-			if (p === 0) {
-				return null;
-			}
-
-			return Array.from(Array(size / len)).map((_, i) => buf.readIntBE(p + len * i, len));
-		},
 		t: (offset: number, len: number): number => buf.readIntLE(offset, len),
-		pt: (offset: number, len: number): number[] | null => {
-			const [p, size] = derefPointer(buf, offset);
-			if (p === 0) {
-				return null;
-			}
-
-			return Array.from(Array(size / len)).map((_, i) => buf.readIntLE(p + len * i, len));
-		},
 		u: (offset: number, len: number): number => buf.readUIntBE(offset, len),
-		pu: (offset: number, len: number): number[] | null => {
-			const [p, size] = derefPointer(buf, offset);
-			if (p === 0) {
-				return null;
-			}
-
-			return Array.from(Array(size / len)).map((_, i) => buf.readUIntBE(p + len * i, len));
-		},
 		v: (offset: number, len: number): number => buf.readUIntLE(offset, len),
-		pv: (offset: number, len: number): number[] | null => {
-			const [p, size] = derefPointer(buf, offset);
-			if (p === 0) {
-				return null;
-			}
-
-			return Array.from(Array(size / len)).map((_, i) => buf.readUIntLE(p + len * i, len));
-		},
 		w: (offset: number, len: number, encoding: Encoding): Buffer | string =>
 			bufferReadCstring(buf, offset, len, encoding),
 		pw: (offset: number, len: number, encoding: Encoding): Buffer | string | null =>
@@ -601,69 +569,9 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 			return size;
 		},
 		s: (v: number, offset: number, len: number): number => buf.writeIntBE(v, offset, len),
-		ps: (v: number[] | null | undefined, offset: number, len: number, destOffset: number) => {
-			if (v == null) {
-				setPointer(buf, offset, 0, 0);
-				return 0;
-			}
-
-			const size = len * v.length;
-
-			setPointer(buf, offset, destOffset, size);
-			v.forEach((_, i) => {
-				buf.writeIntBE(v[i], destOffset + len * i, len);
-			});
-
-			return size;
-		},
 		t: (v: number, offset: number, len: number): number => buf.writeIntLE(v, offset, len),
-		pt: (v: number[] | null | undefined, offset: number, len: number, destOffset: number) => {
-			if (v == null) {
-				setPointer(buf, offset, 0, 0);
-				return 0;
-			}
-
-			const size = len * v.length;
-
-			setPointer(buf, offset, destOffset, size);
-			v.forEach((_, i) => {
-				buf.writeIntLE(v[i], destOffset + len * i, len);
-			});
-
-			return size;
-		},
 		u: (v: number, offset: number, len: number): number => buf.writeUIntBE(v, offset, len),
-		pu: (v: number[] | null | undefined, offset: number, len: number, destOffset: number) => {
-			if (v == null) {
-				setPointer(buf, offset, 0, 0);
-				return 0;
-			}
-
-			const size = len * v.length;
-
-			setPointer(buf, offset, destOffset, size);
-			v.forEach((_, i) => {
-				buf.writeUIntBE(v[i], destOffset + len * i, len);
-			});
-
-			return size;
-		},
 		v: (v: number, offset: number, len: number): number => buf.writeUIntLE(v, offset, len),
-		pv: (v: number[] | null | undefined, offset: number, len: number, destOffset: number) => {
-			if (v == null) {
-				setPointer(buf, offset, 0, 0);
-				return 0;
-			}
-
-			const size = len * v.length;
-
-			setPointer(buf, offset, destOffset, size);
-			v.forEach((_, i) => {
-				buf.writeUIntLE(v[i], destOffset + len * i, len);
-			});
-
-			return size;
-		},
 		w: (v: string | Buffer, offset: number, len: number, _destOffset: number, encoding: Encoding): number =>
 			// @ts-ignore
 			v.copy ? v.copy(buf, offset, 0, len) : buf.write(v, offset, len, encoding),
