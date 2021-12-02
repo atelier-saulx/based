@@ -659,13 +659,11 @@ describe('Test reading null pointers', () => {
 		expect(readValue(compiled, buf, '.x')).toBeNull();
 		expect(readValue(compiled, buf, '.y')).toBeNull();
 		expect(readValue(compiled, buf, '.z')).toBeNull();
-	})
+	});
 });
 
 describe('Test basic string pointer operations', () => {
-	const recordDef = [
-		{ name: 'str', type: 'cstring_p' },
-	];
+	const recordDef = [{ name: 'str', type: 'cstring_p' }];
 	const compiled = compile(recordDef);
 
 	test('Set string value', () => {

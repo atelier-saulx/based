@@ -1,4 +1,6 @@
-import { performance } from 'perf_hooks'; import fs from 'fs'; import { join as pathJoin } from 'path';
+import { performance } from 'perf_hooks';
+import fs from 'fs';
+import { join as pathJoin } from 'path';
 import gc from './util/gc';
 import { compile, serialize, deserialize, generateRecordDef, createRecord } from '../src/index';
 

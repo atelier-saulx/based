@@ -81,7 +81,8 @@ function bufferWriteCstringP(
 	_len: number,
 	encoding: Encoding
 ) {
-	if (!value) { // Writing an empty string has generally no value.
+	if (!value) {
+		// Writing an empty string has generally no value.
 		setPointer(buf, offset, 0, 0);
 		return 0;
 	}
@@ -575,8 +576,13 @@ export function getWriteFuncs(buf: Buffer): { [index: string]: BufferWriteFuncti
 		w: (v: string | Buffer, offset: number, len: number, _destOffset: number, encoding: Encoding): number =>
 			// @ts-ignore
 			v.copy ? v.copy(buf, offset, 0, len) : buf.write(v, offset, len, encoding),
-		pw: (v: string | Buffer | undefined, offset: number, len: number, destOffset: number, encoding: Encoding): number =>
-			bufferWriteCstringP(buf, offset, destOffset, v, len, encoding),
+		pw: (
+			v: string | Buffer | undefined,
+			offset: number,
+			len: number,
+			destOffset: number,
+			encoding: Encoding
+		): number => bufferWriteCstringP(buf, offset, destOffset, v, len, encoding),
 	};
 }
 
