@@ -506,6 +506,11 @@ describe('Test createReader error handling', () => {
 		expect(() => writeValue(compiled, buf, '.not_found', 100)).toThrowError(/Not found/);
 	});
 
+	test('writeValue() throws cannot write to a pointer', () => {
+		const buf = createRecord(compiled, obj);
+		expect(() => writeValue(compiled, buf, '.7', 100)).toThrowError(/Cannot write to a pointer/);
+	});
+
 	test('writeString() throws not found', () => {
 		const buf = createRecord(compiled, obj);
 		expect(() => writeString(compiled, buf, '.not_found', 'zyx')).toThrowError(/Not found/);
@@ -534,5 +539,10 @@ describe('Test createReader error handling', () => {
 	test('createWriter() throws not supported for cstring_p', () => {
 		const buf = createRecord(compiled, obj);
 		expect(() => createWriter(compiled, buf, '.7')).toThrowError(/not supported/);
+	});
+
+	test('createWriter() throws not found', () => {
+		const buf = createRecord(compiled, obj);
+		expect(() => createWriter(compiled, buf, '.not_found')).toThrowError(/Not found/);
 	});
 });
