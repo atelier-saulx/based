@@ -66,6 +66,7 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 				incrHeap(ops[type](v, z[0], typeSize, heapOffset));
 			}
 		} catch (err) {
+			// @ts-ignore
 			err.name = path;
 			throw err;
 		}
