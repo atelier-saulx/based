@@ -65,7 +65,7 @@ export function serialize(compiledDef: CompiledRecordDef, buf: Buffer, obj: any)
 				// just a value
 				incrHeap(ops[type](v, z[0], typeSize, heapOffset));
 			}
-		} catch (err: any) {
+		} catch (err) {
 			err.name = path;
 			throw err;
 		}
