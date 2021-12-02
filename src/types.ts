@@ -111,6 +111,7 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	record: 'z',
 	// Pointer types
 	int8_p: 'pa',
+	int16_p: ENDIANNESS === 'BE' ? 'pb' : 'pc',
 	int16_be_p: 'pb',
 	int16_le_p: 'pc',
 	int32_p: ENDIANNESS === 'BE' ? 'pd' : 'pe',
