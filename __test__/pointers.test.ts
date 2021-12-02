@@ -1,4 +1,4 @@
-import { compile, createRecord, createReader, deserialize, readString } from '../src/index';
+import { compile, createRecord, createReader, deserialize, readValue, readString } from '../src/index';
 import { TYPES, SIZES } from '../src/types';
 import { WORD_SIZE } from '../src/mach';
 
@@ -600,6 +600,68 @@ describe('Test pointer readers', () => {
 	});
 });
 
+describe('Test reading null pointers', () => {
+	const recordDef = [
+		{ type: 'int8_p', name: 'a' },
+		{ type: 'int16_p', name: 'b' },
+		{ type: 'int16_be_p', name: 'c' },
+		{ type: 'int16_le_p', name: 'd' },
+		{ type: 'int32_p', name: 'e' },
+		{ type: 'int32_be_p', name: 'f' },
+		{ type: 'int32_le_p', name: 'g' },
+		{ type: 'int64_p', name: 'h' },
+		{ type: 'int64_be_p', name: 'i' },
+		{ type: 'int64_le_p', name: 'j' },
+		{ type: 'uint8_p', name: 'k' },
+		{ type: 'uint16_p', name: 'l' },
+		{ type: 'uint16_be_p', name: 'm' },
+		{ type: 'uint16_le_p', name: 'n' },
+		{ type: 'uint32_p', name: 'o' },
+		{ type: 'uint32_be_p', name: 'p' },
+		{ type: 'uint32_le_p', name: 'q' },
+		{ type: 'uint64_p', name: 'r' },
+		{ type: 'uint64_be_p', name: 's' },
+		{ type: 'uint64_le_p', name: 't' },
+		{ type: 'float_p', name: 'u' },
+		{ type: 'float_be_p', name: 'v' },
+		{ type: 'float_le_p', name: 'w' },
+		{ type: 'double_p', name: 'x' },
+		{ type: 'double_be_p', name: 'y' },
+		{ type: 'double_le_p', name: 'z' },
+	];
+	const compiled = compile(recordDef);
+	const buf = createRecord(compiled, {});
+
+	test('Reader returns null pointer for every pointer in buf', () => {
+		expect(readValue(compiled, buf, '.a')).toBeNull();
+		expect(readValue(compiled, buf, '.b')).toBeNull();
+		expect(readValue(compiled, buf, '.c')).toBeNull();
+		expect(readValue(compiled, buf, '.d')).toBeNull();
+		expect(readValue(compiled, buf, '.e')).toBeNull();
+		expect(readValue(compiled, buf, '.f')).toBeNull();
+		expect(readValue(compiled, buf, '.g')).toBeNull();
+		expect(readValue(compiled, buf, '.h')).toBeNull();
+		expect(readValue(compiled, buf, '.i')).toBeNull();
+		expect(readValue(compiled, buf, '.j')).toBeNull();
+		expect(readValue(compiled, buf, '.k')).toBeNull();
+		expect(readValue(compiled, buf, '.l')).toBeNull();
+		expect(readValue(compiled, buf, '.m')).toBeNull();
+		expect(readValue(compiled, buf, '.n')).toBeNull();
+		expect(readValue(compiled, buf, '.o')).toBeNull();
+		expect(readValue(compiled, buf, '.p')).toBeNull();
+		expect(readValue(compiled, buf, '.q')).toBeNull();
+		expect(readValue(compiled, buf, '.r')).toBeNull();
+		expect(readValue(compiled, buf, '.s')).toBeNull();
+		expect(readValue(compiled, buf, '.t')).toBeNull();
+		expect(readValue(compiled, buf, '.u')).toBeNull();
+		expect(readValue(compiled, buf, '.v')).toBeNull();
+		expect(readValue(compiled, buf, '.w')).toBeNull();
+		expect(readValue(compiled, buf, '.x')).toBeNull();
+		expect(readValue(compiled, buf, '.y')).toBeNull();
+		expect(readValue(compiled, buf, '.z')).toBeNull();
+	})
+});
+
 describe('Test basic string pointer operations', () => {
 	const recordDef = [
 		{ name: 'str', type: 'cstring_p' },
@@ -617,4 +679,10 @@ describe('Test basic string pointer operations', () => {
 
 		expect(readString(compiled, buf, '.str', 'utf8')).toBe('hello');
 	});
-})
+
+	test('Null pointer', () => {
+		const buf = createRecord(compiled, { str: null });
+
+		expect(readString(compiled, buf, '.str', 'utf8')).toBeNull();
+	});
+});
