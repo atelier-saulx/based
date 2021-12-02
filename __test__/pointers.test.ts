@@ -1,4 +1,4 @@
-import { compile, createRecord, deserialize } from '../src/index';
+import { compile, createRecord, createReader, deserialize, readString } from '../src/index';
 import { TYPES, SIZES } from '../src/types';
 import { WORD_SIZE } from '../src/mach';
 
@@ -385,3 +385,236 @@ describe('Test that pointer types are deserialized correctly', () => {
 		});
 	});
 });
+
+describe('Test pointer readers', () => {
+	const recordDef = [
+		{ type: 'int8_p', name: 'a' },
+		{ type: 'int16_p', name: 'b' },
+		{ type: 'int16_be_p', name: 'c' },
+		{ type: 'int16_le_p', name: 'd' },
+		{ type: 'int32_p', name: 'e' },
+		{ type: 'int32_be_p', name: 'f' },
+		{ type: 'int32_le_p', name: 'g' },
+		{ type: 'int64_p', name: 'h' },
+		{ type: 'int64_be_p', name: 'i' },
+		{ type: 'int64_le_p', name: 'j' },
+		{ type: 'uint8_p', name: 'k' },
+		{ type: 'uint16_p', name: 'l' },
+		{ type: 'uint16_be_p', name: 'm' },
+		{ type: 'uint16_le_p', name: 'n' },
+		{ type: 'uint32_p', name: 'o' },
+		{ type: 'uint32_be_p', name: 'p' },
+		{ type: 'uint32_le_p', name: 'q' },
+		{ type: 'uint64_p', name: 'r' },
+		{ type: 'uint64_be_p', name: 's' },
+		{ type: 'uint64_le_p', name: 't' },
+		{ type: 'float_p', name: 'u' },
+		{ type: 'float_be_p', name: 'v' },
+		{ type: 'float_le_p', name: 'w' },
+		{ type: 'double_p', name: 'x' },
+		{ type: 'double_be_p', name: 'y' },
+		{ type: 'double_le_p', name: 'z' },
+	];
+	const compiled = compile(recordDef);
+
+	test('Set and read int8 pointer', () => {
+		const buf = createRecord(compiled, { a: [1] });
+		const reader = createReader(compiled, buf, '.a');
+
+		expect(reader()).toStrictEqual([1]);
+	});
+
+	test('Set and read int16 pointer', () => {
+		const buf = createRecord(compiled, { b: [1] });
+		const reader = createReader(compiled, buf, '.b');
+
+		expect(reader()).toStrictEqual([1]);
+	});
+
+	test('Set and read int16_be pointer', () => {
+		const buf = createRecord(compiled, { c: [1337] });
+		const reader = createReader(compiled, buf, '.c');
+
+		expect(reader()).toStrictEqual([1337]);
+	});
+
+	test('Set and read int16_le pointer', () => {
+		const buf = createRecord(compiled, { d: [1337] });
+		const reader = createReader(compiled, buf, '.d');
+
+		expect(reader()).toStrictEqual([1337]);
+	});
+
+	test('Set and read int32 pointer', () => {
+		const buf = createRecord(compiled, { e: [90000] });
+		const reader = createReader(compiled, buf, '.e');
+
+		expect(reader()).toStrictEqual([90000]);
+	});
+
+	test('Set and read int32_be pointer', () => {
+		const buf = createRecord(compiled, { f: [90000] });
+		const reader = createReader(compiled, buf, '.f');
+
+		expect(reader()).toStrictEqual([90000]);
+	});
+
+	test('Set and read int32_le pointer', () => {
+		const buf = createRecord(compiled, { g: [90000] });
+		const reader = createReader(compiled, buf, '.g');
+
+		expect(reader()).toStrictEqual([90000]);
+	});
+
+	test('Set and read int64 pointer', () => {
+		const buf = createRecord(compiled, { h: [BigInt('288230376151801744')] });
+		const reader = createReader(compiled, buf, '.h');
+
+		expect(reader()).toStrictEqual([BigInt('288230376151801744')]);
+	});
+
+	test('Set and read int64_be pointer', () => {
+		const buf = createRecord(compiled, { i: [BigInt('288230376151801744')] });
+		const reader = createReader(compiled, buf, '.i');
+
+		expect(reader()).toStrictEqual([BigInt('288230376151801744')]);
+	});
+
+	test('Set and read int64_le pointer', () => {
+		const buf = createRecord(compiled, { j: [BigInt('288230376151801744')] });
+		const reader = createReader(compiled, buf, '.j');
+
+		expect(reader()).toStrictEqual([BigInt('288230376151801744')]);
+	});
+
+	test('Set and read uint8 pointer', () => {
+		const buf = createRecord(compiled, { k: [136] });
+		const reader = createReader(compiled, buf, '.k');
+
+		expect(reader()).toStrictEqual([136]);
+	});
+
+	test('Set and read uint16 pointer', () => {
+		const buf = createRecord(compiled, { l: [32904] });
+		const reader = createReader(compiled, buf, '.l');
+
+		expect(reader()).toStrictEqual([32904]);
+	});
+
+	test('Set and read uint16_be pointer', () => {
+		const buf = createRecord(compiled, { m: [32904] });
+		const reader = createReader(compiled, buf, '.m');
+
+		expect(reader()).toStrictEqual([32904]);
+	});
+
+	test('Set and read uint16_le pointer', () => {
+		const buf = createRecord(compiled, { n: [32904] });
+		const reader = createReader(compiled, buf, '.n');
+
+		expect(reader()).toStrictEqual([32904]);
+	});
+
+	test('Set and read uint32 pointer', () => {
+		const buf = createRecord(compiled, { o: [2147483649] });
+		const reader = createReader(compiled, buf, '.o');
+
+		expect(reader()).toStrictEqual([2147483649]);
+	});
+
+	test('Set and read uint32_be pointer', () => {
+		const buf = createRecord(compiled, { p: [2147483649] });
+		const reader = createReader(compiled, buf, '.p');
+
+		expect(reader()).toStrictEqual([2147483649]);
+	});
+
+	test('Set and read uint32_le pointer', () => {
+		const buf = createRecord(compiled, { q: [2147483649] });
+		const reader = createReader(compiled, buf, '.q');
+
+		expect(reader()).toStrictEqual([2147483649]);
+	});
+
+	test('Set and read uint64 pointer', () => {
+		const buf = createRecord(compiled, { r: [BigInt('9223372041149743104')] });
+		const reader = createReader(compiled, buf, '.r');
+
+		expect(reader()).toStrictEqual([BigInt('9223372041149743104')]);
+	});
+
+	test('Set and read uint64_be pointer', () => {
+		const buf = createRecord(compiled, { s: [BigInt('9223372041149743104')] });
+		const reader = createReader(compiled, buf, '.s');
+
+		expect(reader()).toStrictEqual([BigInt('9223372041149743104')]);
+	});
+
+	test('Set and read uint64_le pointer', () => {
+		const buf = createRecord(compiled, { t: [BigInt('9223372041149743104')] });
+		const reader = createReader(compiled, buf, '.t');
+
+		expect(reader()).toStrictEqual([BigInt('9223372041149743104')]);
+	});
+
+	test('Set and read float pointer', () => {
+		const buf = createRecord(compiled, { u: [1.5] });
+		const reader = createReader(compiled, buf, '.u');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+
+	test('Set and read float_be pointer', () => {
+		const buf = createRecord(compiled, { v: [1.5] });
+		const reader = createReader(compiled, buf, '.v');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+
+	test('Set and read float_le pointer', () => {
+		const buf = createRecord(compiled, { w: [1.5] });
+		const reader = createReader(compiled, buf, '.w');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+
+	test('Set and read double pointer', () => {
+		const buf = createRecord(compiled, { x: [1.5] });
+		const reader = createReader(compiled, buf, '.x');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+
+	test('Set and read double_be pointer', () => {
+		const buf = createRecord(compiled, { y: [1.5] });
+		const reader = createReader(compiled, buf, '.y');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+
+	test('Set and read double_le pointer', () => {
+		const buf = createRecord(compiled, { z: [1.5] });
+		const reader = createReader(compiled, buf, '.z');
+
+		expect(reader()).toStrictEqual([1.5]);
+	});
+});
+
+describe('Test basic string pointer operations', () => {
+	const recordDef = [
+		{ name: 'str', type: 'cstring_p' },
+	];
+	const compiled = compile(recordDef);
+
+	test('Set string value', () => {
+		const buf = createRecord(compiled, { str: 'abc' });
+
+		expect(readString(compiled, buf, '.str', 'utf8')).toBe('abc');
+	});
+
+	test('Set string value as a buffer', () => {
+		const buf = createRecord(compiled, { str: Buffer.from('hello') });
+
+		expect(readString(compiled, buf, '.str', 'utf8')).toBe('hello');
+	});
+})
