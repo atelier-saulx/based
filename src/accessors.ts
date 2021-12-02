@@ -77,17 +77,18 @@ function bufferWriteCstringP(
 	buf: Buffer,
 	offset: number,
 	destOffset: number,
-	value: string,
+	value: string | Buffer | null | undefined,
 	_len: number,
 	encoding: Encoding
 ) {
-	if (!value) {
+	if (!value) { // Writing an empty string has generally no value.
 		setPointer(buf, offset, 0, 0);
 		return 0;
 	}
 
 	setPointer(buf, offset, destOffset, value.length);
-	return buf.write(value, destOffset, value.length, encoding);
+	// @ts-ignore
+	return value.copy ? value.copy(buf, destOffset, 0) : buf.write(value, destOffset, value.length, encoding);
 }
 
 type BufferReadFunction = (offset: number, len: number, encoding?: Encoding) => any;

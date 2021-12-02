@@ -464,6 +464,16 @@ describe('Test createWriter accessors', () => {
 		expect(read()).toBe('abllo');
 	});
 
+	test('createWriter() cstring buffer', () => {
+		const buf = createRecord(compiled, obj);
+		const read = createStringReader(compiled, buf, '.6', 'utf8');
+		const write = createWriter(compiled, buf, '.6');
+
+		// Note that the writer doesn't not clear the string
+		write(Buffer.from('buffero'));
+		expect(read()).toBe('buffero');
+	});
+
 	test('createWriter() cstring nul-terminating', () => {
 		const buf = createRecord(compiled, obj);
 		const read = createStringReader(compiled, buf, '.6', 'utf8');
