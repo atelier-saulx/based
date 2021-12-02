@@ -1,5 +1,18 @@
-import { compile, generateRecordDef } from '../src/index';
+import { allocRecord, compile, generateRecordDef } from '../src/index';
 import { ENDIANNESS } from '../src/mach';
+
+describe('Memory allocation', () => {
+	const def = [ { type: 'cstring_p', name: 's' } ];
+	const compiled = compile(def);
+
+	test('Throws if heapsize is not an integer', () => {
+		expect(() => allocRecord(compiled, { heapSize: 10.5 })).toThrowError(/heapSize must be an integer/);
+	});
+
+	test('Allocate unpooled', () => {
+		expect(allocRecord(compiled, { unpool: true })).toHaveProperty('copy');
+	});
+});
 
 describe('generateRecordDef()', () => {
 	test('Generates a somewhat sane definition', () => {
