@@ -214,7 +214,6 @@ function genHtonFn(compiledDef: CompiledRecordDef, alignMacro: string, recordNam
 		}
 
 		// TS doesn't understand a damn anything about typing
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		const cType = C_TYPES[typeCode];
 		const fullName = _fullName.slice(1);
@@ -249,7 +248,6 @@ function genNtohFn(compiledDef: CompiledRecordDef, alignMacro: string, recordNam
 		}
 
 		// TS doesn't understand a damn anything about typing
-		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
 		const fullName = _fullName.slice(1);
 
