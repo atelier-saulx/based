@@ -18,9 +18,7 @@
     "saulx"
   ],
   "workspaces": [
-    "apps/*",
-    "packages/*",
-    "examples/*"
+    "packages/*"
   ],
   "prettier": "@saulx/prettier-config",
   "eslintConfig": {
