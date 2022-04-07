@@ -7,10 +7,16 @@
   "repository": "https://github.com/atelier-saulx/based",
   "sideEffects": false,
   "main": "index.js",
+  "scripts": {
+    "clean": "rimraf {.turbo,dist,node_modules}"
+  },
   "files": [
     "src/base.json",
     "src/node14.json",
     "src/nextjs.json",
     "src/react-library.json"
-  ]
+  ],
+  "devDependencies": {
+    "rimraf": "^3.0.2"
+  }
 }

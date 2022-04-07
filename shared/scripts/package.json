@@ -15,9 +15,11 @@
     "lint": "run-p lint:*",
     "lint:typescript": "tsc --project ./tsconfig.json --noEmit",
     "lint:eslint": "eslint './**/*.{ts,tsx}' --fix",
-    "lint:prettier": "prettier --write './**/*.ts{,x}'"
+    "lint:prettier": "prettier --write './**/*.ts{,x}'",
+    "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "esno": "^0.14.1"
+    "esno": "^0.14.1",
+    "rimraf": "^3.0.2"
   }
 }

@@ -3,18 +3,12 @@
 
   "pipeline": {
     "build": {
-      "outputs": [
-        "dist/**"
-      ],
-      "dependsOn": [
-        "^build"
-      ]
+      "outputs": ["dist/**"],
+      "dependsOn": ["^build"]
     },
 
     "watch": {
-      "dependsOn": [
-        "^build"
-      ],
+      "dependsOn": ["^build"],
       "cache": false
     },
 
@@ -23,6 +17,10 @@
     },
 
     "release": {
+      "outputs": []
+    },
+
+    "clean": {
       "outputs": []
     }
   }

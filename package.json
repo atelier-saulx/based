@@ -26,6 +26,7 @@
     "extends": "@based/eslint-config"
   },
   "scripts": {
+    "prepare": "husky install",
     "postinstall": "[ -d '.husky' ] && (husky install && shx rm -rf .git/hooks && shx ln -s ../.husky .git/hooks) || true",
     "deduplicate": "yarn-deduplicate -s fewer yarn.lock",
     "deduplicate:check": "yarn-deduplicate -s fewer yarn.lock --list --fail",
@@ -35,9 +36,8 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "release": "esno shared/scripts/release",
-    "clean": "rimraf packages/*/{.turbo,dist,node_modules} && rimraf node_modules && yarn",
-    "prepare": "husky install"
+    "clean": "turbo run clean && rimraf node_modules",
+    "release": "esno shared/scripts/release"
   },
   "packageManager": "yarn@1.22.17",
   "publishConfig": {
@@ -62,7 +62,7 @@
     "@types/yargs": "^17.0.0",
     "chalk": "^5.0.0",
     "enquirer": "^2.3.6",
-    "esno": "^0.14.0",
+    "esno": "^0.14.1",
     "execa": "^6.0.0",
     "fs-extra": "^10.0.1",
     "husky": "^7.0.4",
@@ -74,7 +74,7 @@
     "shx": "^0.3.3",
     "simple-git": "^3.0.3",
     "syncpack": "^6.2.0",
-    "typescript": "4.5.4",
+    "typescript": "^4.3.5",
     "yargs": "^17.3.1",
     "yarn-deduplicate": "^4.0.0"
   }

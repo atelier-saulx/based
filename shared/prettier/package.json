@@ -7,7 +7,13 @@
   "repository": "https://github.com/atelier-saulx/based",
   "sideEffects": false,
   "main": "prettier.config.js",
+  "scripts": {
+    "clean": "rimraf {.turbo,dist,node_modules}"
+  },
   "dependencies": {
     "prettier": "2.5.1"
+  },
+  "devDependencies": {
+    "rimraf": "^3.0.2"
   }
 }
