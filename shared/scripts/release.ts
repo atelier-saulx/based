@@ -322,6 +322,7 @@ async function releaseProject() {
     // Add root package.json
     const addFiles = []
 
+    // Add target folder package.jsons
     addFiles.push(path.join(process.cwd(), './package.json'))
 
     targetFolders.forEach((folder) => {
