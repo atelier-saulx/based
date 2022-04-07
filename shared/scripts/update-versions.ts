@@ -1,5 +1,6 @@
 import path from 'path'
 import fs from 'fs-extra'
+import { cwd } from 'process'
 
 async function writeVersionToPackageJson({
   filePath,
@@ -19,19 +20,19 @@ async function writeVersionToModulesInFolder(
   inputFolder: string,
   version: string
 ) {
-  const sourceFolder = path.join(__dirname, `../${inputFolder}`)
+  const sourceFolder = path.join(cwd(), inputFolder)
 
   const targetFolders = (await fs.readdir(sourceFolder)).filter((folder) => {
     return fs.pathExistsSync(path.join(sourceFolder, folder, '/package.json'))
   })
 
   await Promise.all(
-    targetFolders.map((folder) =>
-      writeVersionToPackageJson({
+    targetFolders.map((folder) => {
+      return writeVersionToPackageJson({
         filePath: path.join(sourceFolder, folder, '/package.json'),
         version,
       })
-    )
+    })
   )
 }
 
@@ -62,7 +63,7 @@ export async function updatePackageVersionsInRepository({
    * Update root package version
    */
   await writeVersionToPackageJson({
-    filePath: path.join(__dirname, '../package.json'),
+    filePath: path.join(cwd(), './package.json'),
     version,
   })
 }

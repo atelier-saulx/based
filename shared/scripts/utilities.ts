@@ -114,7 +114,8 @@ export function validateReleaseType(input: ReleaseType): string {
     )}, it should be one of these values: ${INCREMENT_TYPES.join(', ')}`
 
     console.error(errorMessage)
-    throw 'Invalid release arguments'
+
+    throw new Error('Invalid release arguments')
   }
 
   return input

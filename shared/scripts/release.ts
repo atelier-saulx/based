@@ -109,17 +109,20 @@ const getBranch = async () => {
 
 async function releaseProject() {
   const currentBranch = await getBranch()
+
   if (currentBranch !== 'main') {
     throw new Error(
       `Incorrect branch: ${currentBranch}. We only release from main branch.`
     )
   }
 
+  const ignoreStatus = false
   const status = await git.status()
-  if (status.files.length !== 0) {
-    // throw new Error(
-    //   'You have unstaged changes in git. To release, commit or stash all changes.'
-    // )
+
+  if (status.files.length !== 0 && ignoreStatus) {
+    throw new Error(
+      'You have unstaged changes in git. To release, commit or stash all changes.'
+    )
   }
 
   const {
@@ -267,6 +270,8 @@ async function releaseProject() {
     try {
       await execa('yarn', ['build'], { stdio: 'inherit' })
     } catch (error) {
+      console.error({ error })
+
       throw new Error('Error encountered when building project.')
     }
   }
@@ -288,6 +293,8 @@ async function releaseProject() {
         folders: targetFolders,
       })
     } catch (error) {
+      console.error({ error })
+
       throw new Error('There was an error updating package versions')
     }
   }
@@ -299,7 +306,9 @@ async function releaseProject() {
     await publishAllPackagesInRepository({
       version: targetVersion,
       tag: releaseTag,
-    }).catch(() => {
+    }).catch((error) => {
+      console.error({ error })
+
       throw new Error('Publishing to NPM failed.')
     })
 
@@ -345,6 +354,7 @@ async function releaseProject() {
     await releaseProject()
   } catch (error) {
     console.error('Release failed. Error: %o. \n', getErrorMessage(error))
+
     return process.exit(1)
   }
 })()
