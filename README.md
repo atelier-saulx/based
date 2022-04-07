@@ -17,12 +17,16 @@
 
 Based packages:
 
-- Client
-- Server
-- CLI
-- GraphQL
-- Types
-- React
+- [cli](./packages/cli/README.md)
+- [client](./packages/client/README.md)
+- [get-service](./packages/get-service/README.md)
+- [graphql](./packages/graphql/README.md)
+- [ids](./packages/ids/README.md)
+- [react](./packages/react/README.md)
+- [server](./packages/server/README.md)
+- [types](./packages/types/README.md)
+- [uws](./packages/uws/README.md)
+- [vue](./packages/vue/README.md)
 
 ---
 
