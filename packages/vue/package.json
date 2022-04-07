@@ -1,0 +1,20 @@
+{
+  "name": "@based/vue",
+  "version": "0.0.2",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "watch": "npm run build -- --watch",
+    "clean": "rimraf {.turbo,dist,node_modules}"
+  },
+  "peerDependencies": {
+    "@based/client": "*",
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "vue": "^3.0.0",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5",
+    "rimraf": "^3.0.2"
+  }
+}
