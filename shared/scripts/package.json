@@ -1,7 +1,7 @@
 {
   "name": "@based/scripts",
   "description": "Based Scripts",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",

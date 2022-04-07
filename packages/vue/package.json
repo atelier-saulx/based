@@ -1,6 +1,6 @@
 {
   "name": "@based/vue",
-  "version": "0.0.2",
+  "version": "2.2.0",
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc",
