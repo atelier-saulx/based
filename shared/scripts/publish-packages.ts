@@ -8,11 +8,11 @@ import { execa } from 'execa'
  * Publish target package
  */
 export async function publishPackage({
-  path,
+  activePath,
   name,
   tag,
 }: {
-  path: string
+  activePath: string
   name: string
   tag: string
 }) {
@@ -22,7 +22,7 @@ export async function publishPackage({
       'npm',
       [
         'publish',
-        path,
+        activePath,
         '--registry',
         'https://registry.npmjs.org/',
         '--access',
@@ -32,7 +32,7 @@ export async function publishPackage({
       ],
       {
         stdio: 'inherit',
-        cwd: path,
+        cwd: activePath,
       }
     )
 
@@ -52,10 +52,9 @@ async function publishPackagesInFolder({
   tag,
 }: {
   inputFolder: string
-  version: string
   tag: string
 }) {
-  const sourceFolder = path.join(__dirname, `../${inputFolder}`)
+  const sourceFolder = path.join(process.cwd(), inputFolder)
 
   const targetFolders = (await fs.readdir(sourceFolder)).filter((folder) => {
     return fs.pathExistsSync(path.join(sourceFolder, folder, '/package.json'))
@@ -74,7 +73,7 @@ async function publishPackagesInFolder({
       }
 
       await publishPackage({
-        path: path.join(sourceFolder, folder),
+        activePath: path.join(sourceFolder, folder),
         name: packageJson.name,
         tag,
       })
@@ -86,27 +85,25 @@ async function publishPackagesInFolder({
  * Publish all packages in the project
  */
 export async function publishAllPackagesInRepository({
-  version,
+  targetFolders,
   tag,
 }: {
-  version: string
+  targetFolders: string[]
   tag: string
 }) {
   /**
-   * Publish all public packages
+   * Publish target packages
    */
-  await publishPackagesInFolder({
-    inputFolder: 'packages',
-    version,
-    tag,
+  const publishPackagesPromises: Promise<void>[] = []
+
+  targetFolders.forEach((inputFolder) => {
+    const writeVersionToFolderPromise = publishPackagesInFolder({
+      inputFolder,
+      tag,
+    })
+
+    publishPackagesPromises.push(writeVersionToFolderPromise)
   })
 
-  /**
-   * Publish all public apps
-   */
-  await publishPackagesInFolder({
-    inputFolder: 'apps',
-    version,
-    tag,
-  })
+  await Promise.all(publishPackagesPromises)
 }

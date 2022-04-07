@@ -289,8 +289,8 @@ async function releaseProject() {
 
     try {
       await updatePackageVersionsInRepository({
+        targetFolders,
         version: targetVersion,
-        folders: targetFolders,
       })
     } catch (error) {
       console.error({ error })
@@ -302,9 +302,9 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (shouldPublishChanges && false) {
+  if (shouldPublishChanges) {
     await publishAllPackagesInRepository({
-      version: targetVersion,
+      targetFolders,
       tag: releaseTag,
     }).catch((error) => {
       console.error({ error })
@@ -320,8 +320,8 @@ async function releaseProject() {
    */
   if (shouldCommitChanges && false) {
     await git.add([
-      path.join(__dirname, '../packages'),
-      path.join(__dirname, '../package.json'),
+      path.join(process.cwd(), '../packages'),
+      path.join(process.cwd(), '../package.json'),
     ])
 
     await git.commit(`[release] Version: ${targetVersion}`)

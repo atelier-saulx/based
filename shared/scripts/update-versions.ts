@@ -38,15 +38,15 @@ async function writeVersionToModulesInFolder(
 
 export async function updatePackageVersionsInRepository({
   version,
-  folders,
+  targetFolders: folders,
 }: {
   version: string
-  folders: string[]
+  targetFolders: string[]
 }) {
   /**
    * Update package version in target folders
    */
-  const writeVersionsPromises: any = []
+  const writeVersionsPromises: Promise<void>[] = []
 
   folders.forEach((folder) => {
     const writeVersionToFolderPromise = writeVersionToModulesInFolder(
