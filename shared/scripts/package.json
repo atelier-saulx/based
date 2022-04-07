@@ -1,0 +1,23 @@
+{
+  "name": "@based/scripts",
+  "description": "Based Scripts",
+  "version": "0.1.0",
+  "private": true,
+  "license": "MIT",
+  "repository": "https://github.com/atelier-saulx/based",
+  "sideEffects": false,
+  "prettier": "@based/prettier-config",
+  "eslintConfig": {
+    "extends": "@based/eslint-config"
+  },
+  "scripts": {
+    "release": "esno release",
+    "lint": "run-p lint:*",
+    "lint:typescript": "tsc --project ./tsconfig.json --noEmit",
+    "lint:eslint": "eslint './**/*.{ts,tsx}' --fix",
+    "lint:prettier": "prettier --write './**/*.ts{,x}'"
+  },
+  "dependencies": {
+    "esno": "^0.14.1"
+  }
+}

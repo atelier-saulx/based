@@ -1,7 +1,8 @@
-import path from "path";
-import chalk from "chalk";
-import fs from "fs-extra";
-import { execa } from "execa";
+/* eslint-disable no-console */
+import path from 'path'
+import chalk from 'chalk'
+import fs from 'fs-extra'
+import { execa } from 'execa'
 
 /**
  * Publish target package
@@ -11,35 +12,35 @@ export async function publishPackage({
   name,
   tag,
 }: {
-  path: string;
-  name: string;
-  tag: string;
+  path: string
+  name: string
+  tag: string
 }) {
   try {
     // Publish target package to NPM registry
     await execa(
-      "npm",
+      'npm',
       [
-        "publish",
+        'publish',
         path,
-        "--registry",
-        "https://registry.npmjs.org/",
-        "--access",
-        "public",
-        "--tag",
+        '--registry',
+        'https://registry.npmjs.org/',
+        '--access',
+        'public',
+        '--tag',
         tag,
       ],
       {
-        stdio: "inherit",
+        stdio: 'inherit',
         cwd: path,
       }
-    );
+    )
 
-    console.log(`- Package ${chalk.cyan(name)} was published`);
+    console.log(`- Package ${chalk.cyan(name)} was published`)
   } catch (error: any) {
-    console.error(`Failed to publish package ${chalk.red(name)}`);
-    console.error(chalk.red`${error?.message}\n`);
-    process.exit(1);
+    console.error(`Failed to publish package ${chalk.red(name)}`)
+    console.error(chalk.red`${error?.message}\n`)
+    process.exit(1)
   }
 }
 
@@ -48,38 +49,37 @@ export async function publishPackage({
  */
 async function publishPackagesInFolder({
   inputFolder,
-  version,
   tag,
 }: {
-  inputFolder: string;
-  version: string;
-  tag: string;
+  inputFolder: string
+  version: string
+  tag: string
 }) {
-  const sourceFolder = path.join(__dirname, `../${inputFolder}`);
+  const sourceFolder = path.join(__dirname, `../${inputFolder}`)
 
   const targetFolders = (await fs.readdir(sourceFolder)).filter((folder) => {
-    return fs.pathExistsSync(path.join(sourceFolder, folder, "/package.json"));
-  });
+    return fs.pathExistsSync(path.join(sourceFolder, folder, '/package.json'))
+  })
 
   await Promise.all(
     targetFolders.map(async (folder) => {
       const packageJson = await fs.readJSON(
-        path.join(sourceFolder, folder, "/package.json")
-      );
+        path.join(sourceFolder, folder, '/package.json')
+      )
 
       if (packageJson.private) {
         return console.log(
           `- Private package ${chalk.cyan(packageJson.name)} was skipped`
-        );
+        )
       }
 
       await publishPackage({
         path: path.join(sourceFolder, folder),
         name: packageJson.name,
         tag,
-      });
+      })
     })
-  );
+  )
 }
 
 /**
@@ -89,24 +89,24 @@ export async function publishAllPackagesInRepository({
   version,
   tag,
 }: {
-  version: string;
-  tag: string;
+  version: string
+  tag: string
 }) {
   /**
    * Publish all public packages
    */
   await publishPackagesInFolder({
-    inputFolder: "packages",
+    inputFolder: 'packages',
     version,
     tag,
-  });
+  })
 
   /**
    * Publish all public apps
    */
   await publishPackagesInFolder({
-    inputFolder: "apps",
+    inputFolder: 'apps',
     version,
     tag,
-  });
+  })
 }

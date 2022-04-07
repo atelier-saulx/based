@@ -21,9 +21,9 @@
     "shared/*",
     "packages/*"
   ],
-  "prettier": "@saulx/prettier-config",
+  "prettier": "@based/prettier-config",
   "eslintConfig": {
-    "extends": "@saulx/eslint-config"
+    "extends": "@based/eslint-config"
   },
   "scripts": {
     "postinstall": "[ -d '.husky' ] && (husky install && shx rm -rf .git/hooks && shx ln -s ../.husky .git/hooks) || true",
@@ -35,7 +35,7 @@
     "lint": "turbo run lint",
     "build": "turbo run build",
     "test": "turbo run test",
-    "release": "esno scripts/release",
+    "release": "esno shared/scripts/release",
     "clean": "rimraf packages/*/{.turbo,dist,node_modules} && rimraf node_modules && yarn",
     "prepare": "husky install"
   },
@@ -57,15 +57,18 @@
     "turbo": "^1.1.10"
   },
   "devDependencies": {
+    "@types/fs-extra": "^9.0.13",
     "@types/node": "^17.0.23",
     "@types/yargs": "^17.0.0",
     "chalk": "^5.0.0",
     "enquirer": "^2.3.6",
     "esno": "^0.14.0",
     "execa": "^6.0.0",
+    "fs-extra": "^10.0.1",
     "husky": "^7.0.4",
     "lint-staged": "^12.1.2",
     "new-github-release-url": "^2.0.0",
+    "npm-run-all": "^4.1.5",
     "open": "^8.4.0",
     "rimraf": "^3.0.2",
     "shx": "^0.3.3",
