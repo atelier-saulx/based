@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@based/client": "*",
-    "@based/graphql": "1.0.8",
+    "@based/graphql": "*",
     "@based/uws": "20.6.0",
     "@saulx/diff": "^1.1.3",
     "@saulx/hash": "^1.1.0",
