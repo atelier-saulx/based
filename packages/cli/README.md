@@ -1,5 +1,10 @@
 # Based CLI
 
+## 🔗 Links
+- [GitHub](https://github.com/atelier-saulx/based#readme)
+
+---
+
 ## Concept
 
 	- There should be two main modes: interactive and non-interactive.
@@ -54,3 +59,11 @@ Flow:
 	- ask for env name if not in based file or arguments
 	- create env
 	- (?)
+
+---
+
+## License
+
+Licensed under the MIT License.
+
+See [LICENSE](./LICENSE) for more information.

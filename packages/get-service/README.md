@@ -1,3 +1,4 @@
-# get-service
+# based get-service
 
-TODO: Add package description
+## 🔗 Links
+- [GitHub](https://github.com/atelier-saulx/based#readme)

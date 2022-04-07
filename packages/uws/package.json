@@ -1,7 +1,7 @@
 {
   "name": "@based/uws",
   "version": "2.2.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "main": "uws.js",
   "types": "./index.d.ts"
 }

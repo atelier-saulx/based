@@ -1,3 +1,10 @@
+# Based React
+
+## 🔗 Links
+- [GitHub](https://github.com/atelier-saulx/based#readme)
+
+---
+
 ## .subscribe(query, cb, err?)
 
 ```
@@ -28,3 +35,11 @@ const { id } = await b.set({
     title: 'Yes, the best'
 })
 ```
+
+---
+
+## License
+
+Licensed under the MIT License.
+
+See [LICENSE](./LICENSE) for more information.

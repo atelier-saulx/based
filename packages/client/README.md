@@ -1,5 +1,12 @@
 # based-client
 
+## 🔗 Links
+- [GitHub](https://github.com/atelier-saulx/based#readme)
+
+---
+
+## Description
+
 ## .observe(query, cb, err?)
 
 ```
@@ -67,3 +74,11 @@ try {
 
 }
 ```
+
+---
+
+## License
+
+Licensed under the MIT License.
+
+See [LICENSE](./LICENSE) for more information.
