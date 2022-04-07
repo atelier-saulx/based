@@ -318,11 +318,17 @@ async function releaseProject() {
   /**
    * Stage and commit + push target version
    */
-  if (shouldCommitChanges && false) {
-    await git.add([
-      path.join(process.cwd(), '../packages'),
-      path.join(process.cwd(), '../package.json'),
-    ])
+  if (shouldCommitChanges) {
+    // Add root package.json
+    const addFiles = []
+
+    addFiles.push(path.join(process.cwd(), './package.json'))
+
+    targetFolders.forEach((folder) => {
+      addFiles.push(path.join(process.cwd(), folder))
+    })
+
+    await git.add(addFiles)
 
     await git.commit(`[release] Version: ${targetVersion}`)
 
