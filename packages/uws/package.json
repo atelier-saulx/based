@@ -1,6 +1,6 @@
 {
   "name": "@based/uws",
-  "version": "20.6.0",
+  "version": "2.1.0",
   "license": "MIT",
   "main": "uws.js",
   "types": "./index.d.ts"
