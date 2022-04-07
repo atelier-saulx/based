@@ -17,8 +17,8 @@
   "sideEffects": false,
   "dependencies": {
     "@based/get-service": "0.2.8",
-    "@based/graphql": "^1.0.6",
-    "@based/types": "^1.0.1",
+    "@based/graphql": "1.0.8",
+    "@based/types": "1.0.1",
     "@saulx/diff": "^1.1.3",
     "@saulx/hash": "^1.1.0",
     "@saulx/utils": "^2.2.1",
