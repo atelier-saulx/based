@@ -35,7 +35,7 @@
     "build": "turbo run build",
     "test": "turbo run test",
     "release": "esno scripts/release",
-    "clean": "rimraf packages/*/{.turbo,dist,node_modules} apps/*/{.turbo,dist,node_modules} && rimraf node_modules && yarn",
+    "clean": "rimraf packages/*/{.turbo,dist,node_modules} && rimraf node_modules && yarn",
     "prepare": "husky install"
   },
   "packageManager": "yarn@1.22.17",
