@@ -1,7 +1,7 @@
 {
   "name": "@based/tsconfig",
   "description": "Based Shareable TSConfig",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",
