@@ -1,0 +1,12 @@
+{
+  "schema": {
+    "types": {
+      "things": {
+        "fields": {
+          "name": { "type": "string" },
+          "createdAt": { "type": "timestamp" }
+        }
+      }
+    }
+  }
+}

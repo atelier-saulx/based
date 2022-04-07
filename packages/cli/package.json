@@ -1,0 +1,38 @@
+{
+  "name": "@based/cli",
+  "version": "0.4.5",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "bin": {
+    "based": "bin/cmd.js"
+  },
+  "scripts": {
+    "watch": "npx tsc -w",
+    "build": "npx tsc"
+  },
+  "dependencies": {
+    "@based/client": "*",
+    "@based/ids": "*",
+    "@based/pretty-date": "^1.0.4",
+    "@based/pretty-number": "1.0.3",
+    "@root/walk": "^1.1.0",
+    "@saulx/hash": "^1.1.0",
+    "@saulx/utils": "^2.2.1",
+    "chalk": "^4.1.2",
+    "commander": "^8.1.0",
+    "cross-fetch": "^3.1.4",
+    "esbuild": "^0.12.26",
+    "find-up": "^5.0.0",
+    "fs-extra": "^10.0.0",
+    "glob": "7.2.0",
+    "inquirer": "8.2.0",
+    "ora": "^5.1.0",
+    "pretty-bytes": "^5.4.1"
+  },
+  "devDependencies": {
+    "@types/inquirer": "^8.1.3",
+    "@types/node": "^16.3.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
+  }
+}

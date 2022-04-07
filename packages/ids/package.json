@@ -1,0 +1,20 @@
+{
+  "name": "@based/ids",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {
+    "build": "npx tsc",
+    "watch": "npm run build -- --watch"
+  },
+  "sideEffects": false,
+  "main": "dist/index.js",
+  "module": "src/index.ts",
+  "dependencies": {
+    "@saulx/hash": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^16.3.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@based/get-service",
+  "version": "0.2.9",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "__module": "src/index.ts",
+  "scripts": {
+    "buildBundle": "node ./build/index.js",
+    "build": "npx tsc && npm run buildBundle",
+    "watch": "npm run build -- --watch"
+  },
+  "dependencies": {
+    "cross-fetch": "^3.1.4"
+  },
+  "devDependencies": {
+    "esbuild": "^0.14.29",
+    "@types/node": "^16.3.1",
+    "ts-node": "^10.1.0",
+    "typescript": "^4.3.5"
+  }
+}
