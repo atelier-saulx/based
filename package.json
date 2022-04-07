@@ -43,12 +43,12 @@
   },
   "lint-staged": {
     "*": [
-      "yarn lint"
+      "npm run lint"
     ]
   },
   "husky": {
     "hooks": {
-      "pre-push": "yarn lint"
+      "pre-push": "npm run lint"
     }
   },
   "dependencies": {

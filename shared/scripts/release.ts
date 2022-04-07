@@ -267,7 +267,7 @@ async function releaseProject() {
    */
   if (shouldTriggerBuild) {
     try {
-      await execa('npm', ['run build'], { stdio: 'inherit' })
+      await execa('yarn', ['build'], { stdio: 'inherit' })
     } catch (error) {
       console.error({ error })
 
