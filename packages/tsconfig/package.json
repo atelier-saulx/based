@@ -1,0 +1,15 @@
+{
+  "name": "@based/tsconfig",
+  "description": "Based Shareable TSConfig",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/atelier-saulx/based",
+  "sideEffects": false,
+  "main": "index.js",
+  "files": [
+    "src/base.json",
+    "src/node14.json",
+    "src/nextjs.json",
+    "src/react-library.json"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "@based/tsconfig/src/node14.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "./",
+  },
+  "include": [
+    "./**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}

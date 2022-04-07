@@ -1,0 +1,12 @@
+{
+  "name": "@based/prettier-config",
+  "description": "Based Shareable Prettier Config",
+  "version": "0.1.0",
+  "license": "MIT",
+  "repository": "https://github.com/atelier-saulx/based",
+  "sideEffects": false,
+  "main": "prettier.config.js",
+  "dependencies": {
+    "prettier": "2.5.1"
+  }
+}
