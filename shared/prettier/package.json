@@ -1,7 +1,7 @@
 {
   "name": "@based/prettier-config",
   "description": "Based Shareable Prettier Config",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",
