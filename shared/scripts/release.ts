@@ -116,10 +116,9 @@ async function releaseProject() {
     )
   }
 
-  const ignoreStatus = false
   const status = await git.status()
 
-  if (status.files.length !== 0 && ignoreStatus) {
+  if (status.files.length !== 0) {
     throw new Error(
       'You have unstaged changes in git. To release, commit or stash all changes.'
     )
@@ -268,7 +267,7 @@ async function releaseProject() {
    */
   if (shouldTriggerBuild) {
     try {
-      await execa('yarn', ['build'], { stdio: 'inherit' })
+      await execa('npm', ['run build'], { stdio: 'inherit' })
     } catch (error) {
       console.error({ error })
 
