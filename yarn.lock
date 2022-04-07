@@ -23,13 +23,6 @@
     chalk "^2.0.0"
     js-tokens "^4.0.0"
 
-"@based/get-service@0.2.8":
-  version "0.2.8"
-  resolved "https://registry.yarnpkg.com/@based/get-service/-/get-service-0.2.8.tgz#81c27114dd60ebd08cf1b99cc8b855a237511d67"
-  integrity sha512-aMC5gDSshqpSYpenxwTobnTY26jN5hUzXO/17MAew2a+4I8LS+KFNJcMdpuU4fgYoc1nxSUuKTF9HXAnr+WgYQ==
-  dependencies:
-    cross-fetch "^3.1.4"
-
 "@based/pretty-date@^1.0.4":
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/@based/pretty-date/-/pretty-date-1.0.4.tgz#fd755568db86aa2fcbac2278afc3c5db90acceb9"
@@ -39,11 +32,6 @@
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/@based/pretty-number/-/pretty-number-1.0.3.tgz#24b552ec12d7cc2a448a6d3e221bf1ed8b32d8a0"
   integrity sha512-DGeZzJCsrWyBbpIUvBPuaDhs+kYeXuw7zSZuAAwmcKmI8eSRDJwhYMiNO+RpGKQMycaKKi7rPt/7AjcC1xLsKQ==
-
-"@based/uws@20.6.0":
-  version "20.6.0"
-  resolved "https://registry.yarnpkg.com/@based/uws/-/uws-20.6.0.tgz#bf722cfd225625b4a9bd89cbb2e678f2a81abc19"
-  integrity sha512-D04qnnxEtzb8U6EbF4HvuMpbmTyhfAwt1GZPovUQakNIG9aH6lGwb+ryjpwGlbQdazjJY9Uwbbz9yk/fYEkI+w==
 
 "@concordance/react@^2.0.0":
   version "2.0.0"
