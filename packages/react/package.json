@@ -12,7 +12,8 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "react": "^17.0.2"
+    "react": "^17.0.2",
+    "@based/client": "*"
   },
   "dependencies": {
     "@based/client": "*",
