@@ -1,46 +1,48 @@
 {
-  "name": "data-record",
-  "version": "1.0.0",
-  "description": "Data records for Node.js",
-  "author": "Olli Vanhoja",
-  "license": "ISC",
-  "keywords": [
-    "buffer",
-    "c-language",
-    "cpp",
-    "record",
-    "struct"
-  ],
-  "repository": "OlliV/data-record",
-  "main": "lib/index.js",
-  "files": [
-    "lib/"
-  ],
-  "scripts": {
-    "build": "rm -rf ./lib && tsc",
-    "lint": "eslint --ext .ts './{src,__test__,__perf__}/**/*.ts'",
-    "perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
-    "prettier": "prettier --write './{src,__test__,__perf__}/**/*.ts'",
-    "test": "jest --runInBand --clearCache && jest --coverage",
-    "prepublish": "npm run build"
-  },
-  "devDependencies": {
-    "@types/jest": "27.0.3",
-    "@types/node": "16.11.11",
-    "@typescript-eslint/eslint-plugin": "5.5.0",
-    "@typescript-eslint/parser": "5.5.0",
-    "eslint": "8.3.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-plugin-prettier": "4.0.0",
-    "jest": "27.4.3",
-    "prettier": "2.5.0",
-    "tmp-promise": "3.0.3",
-    "ts-jest": "27.0.7",
-    "ts-node": "10.4.0",
-    "typescript": "4.5.2"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "verbose": true
-  }
+	"name": "data-record",
+	"version": "1.0.0",
+	"private": true,
+	"description": "Data records for Node.js",
+	"author": "Olli Vanhoja",
+	"license": "ISC",
+	"keywords": [
+		"buffer",
+		"c-language",
+		"cpp",
+		"record",
+		"struct"
+	],
+	"repository": "OlliV/data-record",
+	"main": "lib/index.js",
+	"files": [
+		"lib/"
+	],
+	"scripts": {
+		"build": "rm -rf ./lib && tsc",
+		"lint": "eslint --ext .ts './{src,__test__,__perf__}/**/*.ts'",
+		"perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
+		"prettier": "prettier --write './{src,__test__,__perf__}/**/*.ts'",
+		"test": "jest --runInBand --clearCache && jest --coverage",
+		"clean": "rimraf {.turbo,dist,node_modules}"
+	},
+	"devDependencies": {
+		"@types/jest": "27.0.3",
+		"@types/node": "16.11.11",
+		"@typescript-eslint/eslint-plugin": "5.5.0",
+		"@typescript-eslint/parser": "5.5.0",
+		"eslint": "8.3.0",
+		"eslint-config-prettier": "8.3.0",
+		"eslint-plugin-prettier": "4.0.0",
+		"jest": "27.4.3",
+		"prettier": "2.5.0",
+		"tmp-promise": "3.0.3",
+		"ts-jest": "27.0.7",
+		"ts-node": "10.4.0",
+		"typescript": "4.5.2",
+		"rimraf": "^3.0.2"
+	},
+	"jest": {
+		"preset": "ts-jest",
+		"verbose": true
+	}
 }
