@@ -19,6 +19,7 @@ Based packages:
 
 - [cli](./packages/cli/README.md)
 - [client](./packages/client/README.md)
+- [data-record](./packages/data-record/README.md)
 - [get-service](./packages/get-service/README.md)
 - [graphql](./packages/graphql/README.md)
 - [ids](./packages/ids/README.md)
