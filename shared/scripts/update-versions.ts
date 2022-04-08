@@ -13,6 +13,22 @@ async function writeVersionToPackageJson({
 
   packageJson.version = version
 
+  if (packageJson.peerDependencies) {
+    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
+      if (packageName.includes('@based/')) {
+        packageJson.peerDependencies[packageName] = version
+      }
+    })
+  }
+
+  if (packageJson.dependencies) {
+    Object.keys(packageJson.dependencies).forEach((packageName) => {
+      if (packageName.includes('@based/')) {
+        packageJson.dependencies[packageName] = version
+      }
+    })
+  }
+
   await fs.writeJSON(filePath, packageJson, { spaces: 2 })
 }
 
