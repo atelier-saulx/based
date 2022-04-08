@@ -1,6 +1,6 @@
 {
   "name": "@based/vue",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc",
@@ -8,7 +8,7 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "peerDependencies": {
-    "@based/client": "2.3.3",
+    "@based/client": "2.3.4",
     "vue": "^3.0.0"
   },
   "devDependencies": {

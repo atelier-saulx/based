@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "2.3.3",
+  "version": "2.3.4",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
@@ -12,8 +12,8 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "@based/client": "2.3.3",
-    "@based/ids": "2.3.3",
+    "@based/client": "2.3.4",
+    "@based/ids": "2.3.4",
     "@based/pretty-date": "^1.0.4",
     "@based/pretty-number": "1.0.3",
     "@root/walk": "^1.1.0",
