@@ -257,7 +257,7 @@ int main(void)
 	expect(res[1]).toBe('0');
 	expect(res[2]).toBe('0');
 	expect(res[3]).toBe(`${strc.length}`);
-	//expect(res[4]).toBe('(nil)');
-	//expect(res[5]).toBe('(nil)');
+	// expect(res[4]).toBe('(nil)');
+	// expect(res[5]).toBe('(nil)');
 	expect(res[6]).toBe('0x38');
 });

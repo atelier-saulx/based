@@ -2,7 +2,7 @@ import { allocRecord, compile, generateRecordDef } from '../src/index';
 import { ENDIANNESS } from '../src/mach';
 
 describe('Memory allocation', () => {
-	const def = [ { type: 'cstring_p', name: 's' } ];
+	const def = [{ type: 'cstring_p', name: 's' }];
 	const compiled = compile(def);
 
 	test('Throws if heapsize is not an integer', () => {

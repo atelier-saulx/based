@@ -43,7 +43,7 @@ export default function serialization() {
 		for (let i = 0; i < n; i++) {
 			const buf = allocRecord(compiled);
 
-			//deserialize(compiled, serialize(compiled, buf, o));
+			// deserialize(compiled, serialize(compiled, buf, o));
 			serialize(compiled, buf, o);
 		}
 	}
