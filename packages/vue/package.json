@@ -8,11 +8,12 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "peerDependencies": {
-    "@based/client": "2.3.4",
     "vue": "^3.0.0"
   },
+  "dependencies": {
+    "@based/client": "2.3.4"
+  },
   "devDependencies": {
-    "@based/client": "*",
     "vue": "^3.0.0",
     "ts-node": "^10.1.0",
     "typescript": "^4.3.5",

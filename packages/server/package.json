@@ -9,11 +9,6 @@
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
-  "peerDependencies": {
-    "@based/client": "2.3.4",
-    "@based/graphql": "2.3.4",
-    "@based/uws": "2.3.4"
-  },
   "dependencies": {
     "@based/client": "2.3.4",
     "@based/graphql": "2.3.4",
