@@ -196,7 +196,7 @@ async function releaseProject() {
   }
 
   /**
-   * Configure release interactively. Ignore by using `yarn release --force`
+   * Configure release interactively. Ignore by using `npm run release --force`
    */
   if (shouldShowQuestions) {
     await prompt<{ chosenReleaseType: ReleaseType }>([
@@ -267,7 +267,7 @@ async function releaseProject() {
    */
   if (shouldTriggerBuild) {
     try {
-      await execa('yarn', ['build'], { stdio: 'inherit' })
+      await execa('npm', ['run', 'build'], { stdio: 'inherit' })
     } catch (error) {
       console.error({ error })
 
