@@ -41,6 +41,17 @@ export enum RequestTypes {
   Token = 14,
   // eslint-disable-next-line
   Track = 15,
+  // eslint-disable-next-line
+  Auth = 16,
+}
+
+export enum AuthRequestTypes {
+  // eslint-disable-next-line
+  Login = 1,
+  // eslint-disable-next-line
+  Logout = 2,
+  // eslint-disable-next-line
+  RenewToken = 3,
 }
 
 export type FunctionConfig = {
@@ -104,6 +115,13 @@ export type RequestMessage<T = GenericObject> =
 // extra arg isBasedUser
 export type TokenMessage = [RequestTypes.Token, string?, boolean?]
 
+export type AuthMessage = [
+  RequestTypes.Auth,
+  AuthRequestTypes,
+  number,
+  GenericObject?
+]
+
 export type SubscribeMessage = [
   // request type
   RequestTypes.Subscription,
@@ -157,7 +175,11 @@ export type SubscriptionMessage =
   | UnsubscribeMessage
   | SendSubscriptionGetDataMessage
 
-export type Message = RequestMessage | SubscriptionMessage | FunctionCallMessage
+export type Message =
+  | RequestMessage
+  | SubscriptionMessage
+  | FunctionCallMessage
+  | AuthMessage
 
 // incoming data
 
@@ -203,11 +225,19 @@ export type RequestData = [
 // token is a string, de-authroized subcrption ids
 export type AuthorizedData = [RequestTypes.Token, number[], boolean?]
 
+export type AuthData = [
+  RequestTypes.Auth,
+  number,
+  GenericObject,
+  ErrorObject? // error
+]
+
 export type ResponseData =
   | SubscriptionDiffData
   | SubscriptionData
   | RequestData
   | AuthorizedData
+  | AuthData
 
 export type TrackPayload = {
   t: string
@@ -225,6 +255,7 @@ export type TrackOpts = {
 export type SendTokenOptions = {
   isBasedUser?: boolean
   isApiKey?: boolean
+  refreshToken?: string
 }
 
 export type AnalyticsResult = {
@@ -290,6 +321,14 @@ export type AnalyticsHistoryOpts = {
   params?: { [key: string]: number | string | boolean }
   $geo?: string[] | boolean
   $history: boolean | number
+}
+
+export type LoginOpts = {
+  email: string
+  password: string
+}
+export type RenewTokenOpts = {
+  refreshToken: string
 }
 
 export type FileUploadOptions = {

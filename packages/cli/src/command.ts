@@ -10,6 +10,7 @@ export type GlobalOptions = {
   debug?: boolean
   nonInteractive: boolean
   apiKey?: string
+  header: boolean
 }
 
 export const command = (command: Command) => {
@@ -22,6 +23,7 @@ export const command = (command: Command) => {
     .option('-d, --debug', 'Enable debug output')
     .option('--non-interactive', 'Non interactive mode', !process.stdout.isTTY)
     .option('-k, --api-key <apiKey>', 'Use apiKey from file')
+    .option('-H, --no-header', "Don't show header so you can chain commands.")
     .addOption(
       new Option('-o, --output <output>', 'Output type')
         .choices(['fancy', 'json', 'none'])

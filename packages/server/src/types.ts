@@ -36,6 +36,9 @@ export type CallFunction = {
 
 export type AuthorizeFn = (params: Params) => Promise<boolean>
 
+export type LoginFn = (params: Params) => Promise<GenericObject>
+export type LogoutFn = (params: Params) => Promise<GenericObject>
+export type RenewTokenFn = (params: Params) => Promise<GenericObject>
 export type FileOpts = {
   based: Based
   stream: Readable
@@ -104,8 +107,12 @@ export type Config = {
 
   // if functions have authorize then add an empty function for this that returns true
   authorize?: AuthorizeFn
+  defaultAuthorize?: AuthorizeFn
 
-  // has to be more then a string unforn
+  login?: LoginFn
+  logout?: LogoutFn
+  renewToken?: RenewTokenFn
+
   functions?: {
     [key: string]: ObservableFunction | CallFunction
   }

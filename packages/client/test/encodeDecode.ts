@@ -123,3 +123,44 @@ test.serial('Should decode a jwt using a secret', async (t) => {
   client.disconnect()
   await server.destroy()
 })
+
+test.serial('Should decode a jwt using a private key', async (t) => {
+  const payload = {
+    something: 'this is payload',
+  }
+
+  const encodedPayload = jwt.sign(payload, privateKey, {
+    expiresIn: '2d',
+    algorithm: 'RS256',
+  })
+
+  const server = await createServer({
+    port: 9101,
+    db: {
+      host: 'localhost',
+      port: 9299,
+    },
+    config: {
+      functions: {
+        decode: {
+          observable: false,
+          function: async ({ based, payload }) => {
+            return based.decode(payload, { publicKey })
+          },
+        },
+      },
+    },
+  })
+
+  const client = based({
+    url: async () => {
+      return 'ws://localhost:9101'
+    },
+  })
+
+  const result = await client.call('decode', encodedPayload)
+  t.like(result, payload)
+
+  client.disconnect()
+  await server.destroy()
+})

@@ -11,7 +11,12 @@ import {
 import RedisSelvaClient from '@saulx/selva/dist/src/redis'
 import { copy } from './handlers/copy'
 import { deleteEvent, trackEvent } from './handlers/track'
-import { getSecret, decodeValueBySecret, encodeValueBySecret } from './secrets'
+import {
+  getSecret,
+  decodeValueBySecret,
+  encodeValueBySecret,
+  decodeToken,
+} from './secrets'
 import { Params } from './Params'
 import { getFunction, getAuthorize } from './getFromConfig'
 import findPrefix from './findPrefix'
@@ -59,6 +64,7 @@ class BasedServerClient {
     // fix something for a token user.
     if (
       this._params.server.config?.authorize ||
+      this._params.server.config?.defaultAuthorize ||
       this._params.server.config?.functionConfig
     ) {
       const server = this._params.server
@@ -66,12 +72,14 @@ class BasedServerClient {
         // @ts-ignore
         (name && (await getFunction(server, name))?.authorize) ||
         (await getAuthorize(server))
+      const defaultAuthorize =
+        this._params.server.config?.defaultAuthorize || (() => null)
 
       if (!auth) {
         return true
       }
 
-      const authorized = await auth(
+      const authResult = await auth(
         new Params(
           server,
           payload,
@@ -83,6 +91,19 @@ class BasedServerClient {
           true
         )
       )
+      const defaultAuthorizeResult = await defaultAuthorize(
+        new Params(
+          server,
+          payload,
+          this._params.user,
+          this._params.callStack,
+          null,
+          name,
+          type,
+          true
+        )
+      )
+      const authorized = authResult === true || defaultAuthorizeResult === true
       if (!authorized) {
         const prettyType = type[0].toLocaleUpperCase() + type.slice(1)
         const err = new Error(
@@ -424,7 +445,7 @@ class BasedServerClient {
 
   public encode(
     payload: string | object,
-    privateKeySecret: string,
+    privateKeySecret: string | { secret: string } | { key: string },
     type: 'jwt' = 'jwt',
     signOptions?: SignOptions
   ): Promise<string> {
@@ -439,15 +460,21 @@ class BasedServerClient {
 
   public decode(
     payload: string,
-    publicKeySecret: string,
+    secretOrPublicKey: string | { publicKey: string },
     type: 'jwt' = 'jwt' // get more - can add audience  { audience: 'urn:foo' }
   ): Promise<any> {
-    return decodeValueBySecret(
-      this._params.server,
-      payload,
-      publicKeySecret,
-      type
-    )
+    if (typeof secretOrPublicKey === 'string') {
+      return decodeValueBySecret(
+        this._params.server,
+        payload,
+        secretOrPublicKey,
+        type
+      )
+    } else if (secretOrPublicKey.publicKey) {
+      return decodeToken(payload, secretOrPublicKey.publicKey)
+    } else {
+      throw new Error('Invalid secretOrPublicKey')
+    }
   }
 
   public async secret(secret: string): Promise<any> {

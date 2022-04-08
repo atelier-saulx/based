@@ -9,6 +9,7 @@ import {
   Configuration,
   TrackMessage,
   SendTokenOptions,
+  AuthMessage,
 } from '@based/types'
 import {
   incomingSubscription,
@@ -22,6 +23,7 @@ import { Based } from './'
 import { addToQueue, drainQueue, stopDrainQueue } from './queue'
 import { incomingRequest } from './request'
 import sendToken from './token'
+import { incomingAuthRequest } from './auth'
 
 export * from './types'
 
@@ -36,6 +38,9 @@ export class BasedClient {
   sendTokenOptions: SendTokenOptions
 
   beingAuth: boolean
+
+  // later make silky smooth.....
+  isLogginIn: boolean
 
   auth: ((x?: any) => void)[] = []
 
@@ -76,6 +81,27 @@ export class BasedClient {
     [reqId: string]: {
       resolve: (val?: any) => void
       reject: (err: Error) => void
+      // TODO: check with Jim
+      type?:
+        | RequestTypes.Set
+        | RequestTypes.Get
+        | RequestTypes.Configuration
+        | RequestTypes.GetConfiguration
+        | RequestTypes.Delete
+        | RequestTypes.Copy
+        | RequestTypes.Digest
+        | RequestTypes.Call
+      payload?: any
+      name?: string
+      isRetry?: boolean
+    }
+  } = {}
+
+  authCallbacks: {
+    // can do the same - resend
+    [reqId: string]: {
+      resolve: (val?: any) => void
+      reject: (err: Error) => void
     }
   } = {}
 
@@ -90,7 +116,8 @@ export class BasedClient {
   subscriptionQueue: SubscriptionMessage[] = []
 
   // and more
-  queue: (RequestMessage | FunctionCallMessage | TrackMessage)[] = []
+  queue: (RequestMessage | FunctionCallMessage | TrackMessage | AuthMessage)[] =
+    []
 
   drainInProgress: boolean = false
 
@@ -141,13 +168,13 @@ export class BasedClient {
         if (data[1].length) {
           logoutSubscriptions(this, data)
         }
-
-        // console.info(data, data[2])
         for (const fn of this.auth) {
           fn(!data[2])
         }
         this.beingAuth = false
         this.auth = []
+      } else if (data[0] === RequestTypes.Auth) {
+        incomingAuthRequest(this, data)
       } else if (
         data[0] === RequestTypes.Set ||
         data[0] === RequestTypes.Get ||

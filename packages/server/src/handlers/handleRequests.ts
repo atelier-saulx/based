@@ -13,9 +13,10 @@ export default (
   if (messages && messages.length) {
     if (
       server.config?.authorize ||
+      server.config?.defaultAuthorize ||
       (server.config?.functionConfig && !server.config?.noAuth)
     ) {
-      if (!server.config.authorize) {
+      if (!server.config.authorize && !server.config.defaultAuthorize) {
         getAuthorize(server).then((auth) => {
           if (auth) {
             if (client.authorizeInProgress) {

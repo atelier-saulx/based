@@ -50,10 +50,17 @@ export const getAuthorize = async (server: BasedServer): Promise<any> => {
         fn = r.function
         server.config.noAuth = false
       }
-    } else {
+    } else if (!server.config?.defaultAuthorize) {
       server.config.noAuth = true
     }
   }
 
+  return fn || null
+}
+
+export const getDefaultAuthorize = async (
+  server: BasedServer
+): Promise<any> => {
+  let fn = server.config?.defaultAuthorize
   return fn || null
 }

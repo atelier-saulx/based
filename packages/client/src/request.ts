@@ -1,7 +1,9 @@
 import { BasedClient } from '.'
 import { addToQueue } from './queue'
-import { RequestData, RequestTypes } from '@based/types'
+import { AuthRequestTypes, RequestData, RequestTypes } from '@based/types'
 import createError from './createError'
+import sendToken from './token'
+import { renewToken } from './auth'
 
 let requestIdCnt = 0
 
@@ -19,12 +21,18 @@ export const addRequest = (
   payload: any,
   resolve: (val?: any) => void,
   reject: (err: Error) => void,
-  name?: string
+  name?: string,
+  isRetry?: boolean
 ) => {
   const id = ++requestIdCnt
   client.requestCallbacks[id] = {
     resolve,
     reject,
+    // TODO: check this with Jim
+    type,
+    payload,
+    name,
+    isRetry,
   }
 
   if (type === RequestTypes.Call) {
@@ -49,7 +57,32 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
   if (cb) {
     delete client.requestCallbacks[reqId]
     if (err) {
-      cb.reject(createError(err))
+      if (
+        err.type === 'AuthorizationError' &&
+        err.message === 'token expired' &&
+        !cb.isRetry
+      ) {
+        const refreshToken = client.sendTokenOptions.refreshToken
+        renewToken(client, {
+          refreshToken,
+        })
+          .then((r: any) => {
+            addRequest(
+              client,
+              cb.type,
+              cb.payload,
+              cb.resolve,
+              cb.reject,
+              cb.name,
+              true
+            )
+          })
+          .catch((err) => {
+            console.error('renweToken error', err)
+          })
+      } else {
+        cb.reject(createError(err))
+      }
     } else {
       cb.resolve(payload)
     }

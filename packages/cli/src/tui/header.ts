@@ -30,7 +30,7 @@ export const printBasedCliLogoWithVersion = (version: string) => {
 }
 
 export const printHeader = (options: any, config: Config, action?: string) => {
-  if (options.output === 'fancy') {
+  if (options.output === 'fancy' && options.header) {
     // @ts-ignore
     printBasedCliLogoWithVersion(program._version)
     printEmptyLine(false)

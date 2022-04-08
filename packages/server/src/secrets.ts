@@ -35,9 +35,11 @@ export const getSecret = async (
   return cert || false
 }
 
+const cleanCarriageReturn = (value: string) => value.replace(/\n$/, '')
+
 export const decodeToken = (value: string, publicKey: string): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    jwt.verify(value, publicKey, (err, decoded) => {
+  return new Promise((resolve) => {
+    jwt.verify(cleanCarriageReturn(value), publicKey, (err, decoded) => {
       if (err) {
         resolve(false)
       } else {
@@ -50,12 +52,22 @@ export const decodeToken = (value: string, publicKey: string): Promise<any> => {
 export const encodeValueBySecret = (
   server: BasedServer,
   payload: string | object,
-  privateKeySecret: string,
+  privateKeySecretOrKey: string | { secret?: string; key?: string },
   type: 'jwt' = 'jwt',
   signOptions?: SignOptions
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
-    getSecret(server, privateKeySecret).then((privateKey) => {
+    new Promise((resolve, reject) => {
+      if (typeof privateKeySecretOrKey === 'string') {
+        resolve(getSecret(server, privateKeySecretOrKey))
+      } else if (privateKeySecretOrKey.secret) {
+        resolve(getSecret(server, privateKeySecretOrKey.secret))
+      } else if (privateKeySecretOrKey.key) {
+        resolve(privateKeySecretOrKey.key)
+      } else {
+        reject(new Error('Need to pass a secret name or a key'))
+      }
+    }).then((privateKey: string) => {
       if (privateKey) {
         const defaultOptions: SignOptions = {
           expiresIn: '2d',
@@ -78,7 +90,7 @@ export const encodeValueBySecret = (
           throw new Error(`Encode ${type} not implementedd yet`)
         }
       } else {
-        reject(new Error(`Secret does not exist ${privateKeySecret}`))
+        reject(new Error(`Secret does not exist ${privateKeySecretOrKey}`))
       }
     })
   })

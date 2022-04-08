@@ -222,6 +222,7 @@ export const add = async ({
     }
   } catch (err) {
     spinner && spinner.clear()
+    options.debug && printError(err)
     if (err.code === 'exists') {
       fail(
         `Cannot create environment, ${chalk.blue(
@@ -233,6 +234,5 @@ export const add = async ({
     } else {
       fail('Cannot create environment', output, options)
     }
-    options.debug && printError(err)
   }
 }
