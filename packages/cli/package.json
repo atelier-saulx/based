@@ -14,8 +14,8 @@
   "dependencies": {
     "@based/client": "2.3.3",
     "@based/ids": "2.3.3",
-    "@based/pretty-date": "2.3.3",
-    "@based/pretty-number": "2.3.3",
+    "@based/pretty-date": "^1.0.4",
+    "@based/pretty-number": "1.0.3",
     "@root/walk": "^1.1.0",
     "@saulx/hash": "^1.1.0",
     "@saulx/utils": "^2.2.1",
