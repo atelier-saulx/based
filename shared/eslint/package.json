@@ -1,7 +1,7 @@
 {
   "name": "@based/eslint-config",
   "description": "Based Shareable ESLint Config",
-  "version": "2.3.3",
+  "version": "2.3.5",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",

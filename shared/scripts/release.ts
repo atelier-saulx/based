@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable no-constant-condition */
 import path from 'path'
 import simpleGit from 'simple-git'
 import open from 'open'
@@ -24,16 +22,12 @@ import {
 import packageJson from '../../package.json'
 
 /**
- * Switch to root if running from project folder.
- * Exit if running from strange folder.
+ * Exit if running from non-root folder.
  */
-if (process.cwd().includes('/shared/scripts')) {
-  process.chdir('../../')
-} else {
-  const relativePath = process.cwd().split('/saulx')[1]
-  if (relativePath !== '/based') {
-    throw new Error('Please run this script from the root of the repository')
-  }
+const relativePath = process.cwd().split('/saulx')[1]
+
+if (relativePath !== '/based') {
+  throw new Error('Please run this script from the root of the repository')
 }
 
 const git = simpleGit()

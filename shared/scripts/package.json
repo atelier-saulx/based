@@ -1,7 +1,7 @@
 {
   "name": "@based/scripts",
   "description": "Based Scripts",
-  "version": "2.3.3",
+  "version": "2.3.5",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",
@@ -11,7 +11,6 @@
     "extends": "@based/eslint-config"
   },
   "scripts": {
-    "release": "esno release",
     "lint": "run-p lint:*",
     "lint:typescript": "tsc --project ./tsconfig.json --noEmit",
     "lint:eslint": "eslint './**/*.{ts,tsx}' --fix",

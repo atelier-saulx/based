@@ -1,6 +1,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
+import { getAllPackageNames } from './get-all-package-names'
 
 async function writeVersionToPackageJson({
   filePath,
@@ -10,6 +11,33 @@ async function writeVersionToPackageJson({
   version: string
 }) {
   const packageJson = await fs.readJSON(filePath)
+  const packageNamesInProject = await getAllPackageNames()
+
+  /**
+   * Match packages in peerDependencies, update version
+   */
+  if (packageJson.peerDependencies) {
+    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
+      const isPackageInRepo = packageNamesInProject.includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.peerDependencies[packageName] = version
+      }
+    })
+  }
+
+  /**
+   * Match packages in dependencies, update version
+   */
+  if (packageJson.dependencies) {
+    Object.keys(packageJson.dependencies).forEach((packageName) => {
+      const isPackageInRepo = packageNamesInProject.includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.dependencies[packageName] = version
+      }
+    })
+  }
 
   packageJson.version = version
 
