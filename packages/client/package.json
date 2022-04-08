@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "2.3.4",
+  "version": "2.3.5",
   "license": "MIT",
   "main": "dist/index.js",
   "browser": {
@@ -28,9 +28,9 @@
     ]
   },
   "dependencies": {
-    "@based/get-service": "2.3.4",
-    "@based/graphql": "2.3.4",
-    "@based/types": "2.3.4",
+    "@based/get-service": "2.3.5",
+    "@based/graphql": "2.3.5",
+    "@based/types": "2.3.5",
     "@saulx/diff": "^1.1.3",
     "@saulx/hash": "^1.1.0",
     "@saulx/utils": "^2.2.1",
