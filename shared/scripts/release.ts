@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-/* eslint-disable no-constant-condition */
 import path from 'path'
 import simpleGit from 'simple-git'
 import open from 'open'
