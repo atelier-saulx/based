@@ -1,6 +1,6 @@
 {
   "name": "@based/react",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "license": "MIT",
   "source": "src/index.tsx",
   "main": "dist/index.js",
@@ -13,10 +13,10 @@
   "sideEffects": false,
   "peerDependencies": {
     "react": "^17.0.2",
-    "@based/client": "*"
+    "@based/client": "2.3.3"
   },
   "dependencies": {
-    "@based/client": "*",
+    "@based/client": "2.3.3",
     "@saulx/hash": "^1.1.0"
   },
   "devDependencies": {

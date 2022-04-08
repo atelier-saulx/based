@@ -1,6 +1,6 @@
 {
   "name": "@based/uws",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "license": "Apache-2.0",
   "main": "uws.js",
   "types": "./index.d.ts"

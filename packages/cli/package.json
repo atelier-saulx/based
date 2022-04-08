@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
@@ -12,10 +12,10 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "@based/client": "*",
-    "@based/ids": "*",
-    "@based/pretty-date": "^1.0.4",
-    "@based/pretty-number": "1.0.3",
+    "@based/client": "2.3.3",
+    "@based/ids": "2.3.3",
+    "@based/pretty-date": "2.3.3",
+    "@based/pretty-number": "2.3.3",
     "@root/walk": "^1.1.0",
     "@saulx/hash": "^1.1.0",
     "@saulx/utils": "^2.2.1",
