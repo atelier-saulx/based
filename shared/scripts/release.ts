@@ -175,7 +175,7 @@ async function releaseProject() {
     (packageData) => packageData.name
   )
 
-  const allChoices = [ALL_PACKAGES_TAG, ...publicPackageNames]
+  const allChoices = [...publicPackageNames, ALL_PACKAGES_TAG]
 
   await prompt<{
     chosenPackage: string
