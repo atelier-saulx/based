@@ -2,11 +2,8 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
-import {
-  getAllPackages,
-  getPublicPackages,
-  PackageData,
-} from './get-package-data'
+import semver from 'semver'
+import { getAllPackages, PackageData } from './get-package-data'
 import { getIncrementedVersion } from './utilities'
 
 // @ts-ignore
@@ -52,13 +49,18 @@ export async function validateSemver({
 }: {
   targetVersion: string
 }) {
-  console.log('>>>>>> targetVersion: ', targetVersion)
+  const allPackages = await getAllPackages()
 
-  const publicPackages = await getPublicPackages()
-  console.log('>>>>>> publicPackages: ', publicPackages)
+  allPackages.forEach((packageData) => {
+    const isValid = semver.lte(packageData.version, targetVersion)
+    if (!isValid) {
+      throw new Error(
+        `Package ${packageData?.name} version ${packageData?.version} is higher than ${targetVersion}.`
+      )
+    }
 
-  const allPackage = await getAllPackages()
-  console.log('>>>>>> allPackage: ', allPackage)
+    return isValid
+  })
 }
 
 export async function updatePackageVersionsInRepository({
@@ -68,9 +70,10 @@ export async function updatePackageVersionsInRepository({
   targetVersion: string
   targetFolders: string[]
 }) {
+  /**
+   * Ensure no repository version is higher than the target version.
+   */
   await validateSemver({ targetVersion })
-
-  return
 
   /**
    * Update package version in target folders
