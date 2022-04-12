@@ -64,8 +64,6 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     ['$0 --dry-run', 'Only build, do nothing else.'],
   ])
 
-const shouldValidateBranchAndGit: boolean = true
-
 const ALL_PACKAGES_TAG = 'All packages'
 
 const getBranch = async () => {
@@ -74,22 +72,20 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  if (shouldValidateBranchAndGit) {
-    const currentBranch = await getBranch()
+  const currentBranch = await getBranch()
 
-    if (currentBranch !== 'main') {
-      throw new Error(
-        `Incorrect branch: ${currentBranch}. We only release from main branch.`
-      )
-    }
+  if (currentBranch !== 'main') {
+    throw new Error(
+      `Incorrect branch: ${currentBranch}. We only release from main branch.`
+    )
+  }
 
-    const status = await git.status()
+  const status = await git.status()
 
-    if (status.files.length !== 0) {
-      throw new Error(
-        'You have unstaged changes in git. To release, commit or stash all changes.'
-      )
-    }
+  if (status.files.length !== 0) {
+    throw new Error(
+      'You have unstaged changes in git. To release, commit or stash all changes.'
+    )
   }
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
@@ -142,7 +138,7 @@ async function releaseProject() {
   }>({
     message: 'Select a package',
     name: 'chosenPackage',
-    type: 'select',
+    type: 'autocomplete',
     choices: allChoices,
     initial: allChoices[0],
   } as any).then(({ chosenPackage }) => {
@@ -158,9 +154,8 @@ async function releaseProject() {
     }
   })
 
-  /**
-   * Configure release interactively. Ignore by using `npm run release --force`
-   */
+  return console.log('haha')
+
   await prompt<{ chosenReleaseType: ReleaseType }>([
     {
       type: 'select',
