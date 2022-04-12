@@ -307,7 +307,9 @@ async function releaseProject() {
         throw new Error('Publishing to NPM failed.')
       })
 
-      console.info(`\n  Released  version ${targetVersion} successfully! \n`)
+      console.info(
+        `\n  Released all public packages with version ${targetVersion} successfully! \n`
+      )
     } else {
       await publishTargetPackage({
         packageData: targetPackage,
