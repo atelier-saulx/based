@@ -153,7 +153,7 @@ async function releaseProject() {
   let targetVersion = packageJson.version
 
   let targetPackage: PackageData | undefined
-  let shouldTargetSpecificPackage = Boolean(releaseAllPackages) === true
+  let shouldTargetSpecificPackage = Boolean(releaseAllPackages) === false
 
   let incrementedVersion = getIncrementedVersion({
     version: packageJson.version,
