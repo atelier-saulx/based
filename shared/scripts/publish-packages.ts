@@ -17,8 +17,6 @@ export async function publishPackage({
   name: string
   tag: string
 }) {
-  return console.log('Publishing package:', { filePath, name, tag })
-
   try {
     // Publish target package to NPM registry
     await execa(
