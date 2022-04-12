@@ -20,5 +20,8 @@
   "dependencies": {
     "esno": "^0.14.1",
     "rimraf": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.3.9"
   }
 }
