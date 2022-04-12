@@ -51,8 +51,6 @@ export type ReleaseOptions = {
   dryRun: boolean
 }
 
-const ALL_PACKAGES_TAG = 'All packages'
-
 const { argv }: { argv: any } = yargs(hideBin(process.argv))
   .option('type', {
     type: 'string',
@@ -95,6 +93,8 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
   ])
 
 const shouldValidateBranchAndGit: boolean = true
+
+const ALL_PACKAGES_TAG = 'All packages'
 
 const getBranch = async () => {
   const currentBranch = await git.raw('rev-parse', '--abbrev-ref', 'HEAD')
