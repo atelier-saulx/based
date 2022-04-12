@@ -24,7 +24,7 @@ async function getPackageName({
     name: packageJson.name,
     version: packageJson.version,
     path: targetPath,
-    private: packageJson.private,
+    private: packageJson.private ?? false,
   }
 }
 
