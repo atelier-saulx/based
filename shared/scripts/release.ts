@@ -116,10 +116,10 @@ async function releaseProject() {
 
   const printReleaseOptions = () => {
     const printedOptions = {
-      targetPackage: targetPackage?.name ?? 'Unknown',
+      targetPackage: targetPackage?.name ?? '',
       releaseType: releaseType,
-      currentVersion: targetPackage?.version ?? '',
       targetVersion: targetVersion,
+      currentVersion: targetPackage?.version ?? '',
     }
 
     console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
