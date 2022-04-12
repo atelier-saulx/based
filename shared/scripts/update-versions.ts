@@ -3,7 +3,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
 import { PackageData } from './get-package-data'
-import { getIncrementedVersion } from 'utilities'
+import { getIncrementedVersion } from './utilities'
 
 // @ts-ignore
 import packageJson from '../../package.json'
