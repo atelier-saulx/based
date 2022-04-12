@@ -63,7 +63,7 @@ export async function updatePackageVersionsInRepository({
   await Promise.all(writeVersionsPromises)
 
   /**
-   * Update root package version
+   * Always update root package version
    */
   await writeVersionToPackageJson({
     filePath: path.join(cwd()),
@@ -82,13 +82,16 @@ export async function updateTargetPackageVersion({
     throw new Error("Can't update package version, package data is undefined")
   }
 
+  /**
+   * Update target package version
+   */
   await writeVersionToPackageJson({
     filePath: packageData.path,
     version,
   })
 
   /**
-   * Update root package version
+   * Always update root package version
    */
   await writeVersionToPackageJson({
     filePath: path.join(cwd()),
