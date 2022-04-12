@@ -12,39 +12,7 @@ async function writeVersionToPackageJson({
   version: string
 }) {
   const packageJSONPath = path.join(filePath, '/package.json')
-
   const packageJson = await fs.readJSON(packageJSONPath)
-  const packagesInProject = await getAllPackages()
-
-  const packageNamesInProject = packagesInProject.map(
-    (packageData) => packageData.name
-  )
-
-  /**
-   * Match packages in peerDependencies, update version
-   */
-  if (packageJson.peerDependencies) {
-    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
-      const isPackageInRepo = packageNamesInProject.includes(packageName)
-
-      if (isPackageInRepo) {
-        packageJson.peerDependencies[packageName] = `^${version}`
-      }
-    })
-  }
-
-  /**
-   * Match packages in dependencies, update version
-   */
-  if (packageJson.dependencies) {
-    Object.keys(packageJson.dependencies).forEach((packageName) => {
-      const isPackageInRepo = packageNamesInProject.includes(packageName)
-
-      if (isPackageInRepo) {
-        packageJson.dependencies[packageName] = version
-      }
-    })
-  }
 
   packageJson.version = version
 

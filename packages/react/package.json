@@ -13,7 +13,7 @@
   "sideEffects": false,
   "peerDependencies": {
     "react": "16||17||18",
-    "@based/client": "2.3.3"
+    "@based/client": "^2.3.3"
   },
   "dependencies": {
     "@based/client": "2.3.5",
