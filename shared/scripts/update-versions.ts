@@ -2,7 +2,11 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
-import { PackageData } from './get-package-data'
+import {
+  getAllPackages,
+  getPublicPackages,
+  PackageData,
+} from './get-package-data'
 import { getIncrementedVersion } from './utilities'
 
 // @ts-ignore
@@ -43,21 +47,37 @@ async function writeVersionToModulesInFolder(
   )
 }
 
-export async function validateSemver() {}
+export async function validateSemver({
+  targetVersion,
+}: {
+  targetVersion: string
+}) {
+  console.log('>>>>>> targetVersion: ', targetVersion)
+
+  const publicPackages = await getPublicPackages()
+  console.log('>>>>>> publicPackages: ', publicPackages)
+
+  const allPackage = await getAllPackages()
+  console.log('>>>>>> allPackage: ', allPackage)
+}
 
 export async function updatePackageVersionsInRepository({
   targetVersion,
-  targetFolders: folders,
+  targetFolders,
 }: {
   targetVersion: string
   targetFolders: string[]
 }) {
+  await validateSemver({ targetVersion })
+
+  return
+
   /**
    * Update package version in target folders
    */
   const writeVersionsPromises: Promise<void>[] = []
 
-  folders.forEach((folder) => {
+  targetFolders.forEach((folder) => {
     const writeVersionToFolderPromise = writeVersionToModulesInFolder(
       folder,
       targetVersion

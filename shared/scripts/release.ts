@@ -279,12 +279,12 @@ async function releaseProject() {
     if (targetPackage?.name === ALL_PACKAGES_TAG) {
       await updatePackageVersionsInRepository({
         targetFolders,
-        version: targetVersion,
+        targetVersion,
       })
     } else {
       await updateTargetPackageVersion({
         packageData: targetPackage,
-        version: targetVersion,
+        targetVersion: targetVersion,
       })
     }
   } catch (error) {

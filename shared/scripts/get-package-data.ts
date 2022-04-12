@@ -9,39 +9,29 @@ export interface PackageData {
   name: string
   path: string
   version: string
+  private?: boolean
 }
 
 async function getPackageName({
   targetPath,
-  includePrivatePackages = true,
 }: {
   targetPath: string
-  includePrivatePackages: boolean
-}): Promise<PackageData | null> {
+}): Promise<PackageData> {
   const packageJSONPath = path.join(targetPath, '/package.json')
   const packageJson = await fs.readJSON(packageJSONPath)
-
-  if (includePrivatePackages) {
-    return packageJson.name
-  }
-
-  if (!includePrivatePackages && packageJson.private) {
-    return null
-  }
 
   return {
     name: packageJson.name,
     version: packageJson.version,
     path: targetPath,
+    private: packageJson.private,
   }
 }
 
 async function getPackageNamesInFolder({
   targetFolder,
-  includePrivatePackages = true,
 }: {
   targetFolder: string
-  includePrivatePackages: boolean
 }): Promise<PackageData[]> {
   const sourceFolder = path.join(cwd(), targetFolder)
 
@@ -53,14 +43,11 @@ async function getPackageNamesInFolder({
     targetFolders.map((folder) =>
       getPackageName({
         targetPath: path.join(sourceFolder, folder),
-        includePrivatePackages,
       })
     )
   )
 
-  return packageNames.filter((packageName) => {
-    return packageName !== null
-  }) as PackageData[]
+  return packageNames
 }
 
 export async function getAllPackages(): Promise<PackageData[]> {
@@ -79,7 +66,6 @@ export async function getAllPackages(): Promise<PackageData[]> {
   const packageNamesPerFolderPromises = workspaceFolders.map((targetFolder) => {
     return getPackageNamesInFolder({
       targetFolder,
-      includePrivatePackages: true,
     })
   })
 
@@ -96,7 +82,7 @@ export async function getAllPackages(): Promise<PackageData[]> {
 }
 
 export async function getPublicPackages(): Promise<PackageData[]> {
-  let allPackageNames: PackageData[] = []
+  let allPackages: PackageData[] = []
 
   /**
    * Get all workspace folders. Filter out `/*`
@@ -111,7 +97,6 @@ export async function getPublicPackages(): Promise<PackageData[]> {
   const packageNamesPerFolderPromises = workspaceFolders.map((targetFolder) => {
     return getPackageNamesInFolder({
       targetFolder,
-      includePrivatePackages: false,
     })
   })
 
@@ -121,8 +106,13 @@ export async function getPublicPackages(): Promise<PackageData[]> {
   const packageNamesPerFolder = await Promise.all(packageNamesPerFolderPromises)
 
   packageNamesPerFolder.forEach((packageNames) => {
-    allPackageNames = [...allPackageNames, ...packageNames]
+    allPackages = [...allPackages, ...packageNames]
   })
 
-  return allPackageNames
+  /**
+   * Only return public packages
+   */
+  return allPackages.filter((packageData) => {
+    return !packageData.private
+  })
 }
