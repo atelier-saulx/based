@@ -1,3 +1,5 @@
+<img src="./assets/based.svg" style="width: 200px; padding-bottom: 10px;" />
+
 # How to release
 
 ### Pre-requisites
@@ -13,8 +15,6 @@
 2. Execute `npm run release`.
 3. Follow the interactive guide.
 
----
+### Visual
 
-#### Notes
-
-If you want to release without the interactive prompt, just execute `npm run release --force`.
+<img src="./assets/release.gif" style="width: 400px" />
