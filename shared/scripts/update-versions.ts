@@ -3,6 +3,10 @@ import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
 import { PackageData } from './get-package-data'
+import { getIncrementedVersion } from 'utilities'
+
+// @ts-ignore
+import packageJson from '../../package.json'
 
 async function writeVersionToPackageJson({
   filePath,
@@ -91,10 +95,15 @@ export async function updateTargetPackageVersion({
   })
 
   /**
-   * Always update root package version
+   * Always bump root package version with patch
    */
+  const repoVersion = getIncrementedVersion({
+    version: packageJson.version,
+    type: 'patch',
+  })
+
   await writeVersionToPackageJson({
     filePath: path.join(cwd()),
-    version,
+    version: repoVersion,
   })
 }
