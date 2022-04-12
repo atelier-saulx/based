@@ -10,22 +10,22 @@ import packageJson from '../../package.json'
 
 async function writeVersionToPackageJson({
   filePath,
-  version,
+  targetVersion,
 }: {
   filePath: string
-  version: string
+  targetVersion: string
 }) {
   const packageJSONPath = path.join(filePath, '/package.json')
   const packageJson = await fs.readJSON(packageJSONPath)
 
-  packageJson.version = version
+  packageJson.version = targetVersion
 
   await fs.writeJSON(packageJSONPath, packageJson, { spaces: 2 })
 }
 
 async function writeVersionToModulesInFolder(
   inputFolder: string,
-  version: string
+  targetVersion: string
 ) {
   const sourceFolder = path.join(cwd(), inputFolder)
 
@@ -37,17 +37,19 @@ async function writeVersionToModulesInFolder(
     targetFolders.map((folder) => {
       return writeVersionToPackageJson({
         filePath: path.join(sourceFolder, folder),
-        version,
+        targetVersion,
       })
     })
   )
 }
 
+export async function validateSemver() {}
+
 export async function updatePackageVersionsInRepository({
-  version,
+  targetVersion,
   targetFolders: folders,
 }: {
-  version: string
+  targetVersion: string
   targetFolders: string[]
 }) {
   /**
@@ -58,7 +60,7 @@ export async function updatePackageVersionsInRepository({
   folders.forEach((folder) => {
     const writeVersionToFolderPromise = writeVersionToModulesInFolder(
       folder,
-      version
+      targetVersion
     )
 
     writeVersionsPromises.push(writeVersionToFolderPromise)
@@ -71,16 +73,16 @@ export async function updatePackageVersionsInRepository({
    */
   await writeVersionToPackageJson({
     filePath: path.join(cwd()),
-    version,
+    targetVersion,
   })
 }
 
 export async function updateTargetPackageVersion({
   packageData,
-  version,
+  targetVersion,
 }: {
   packageData: PackageData | undefined
-  version: string
+  targetVersion: string
 }) {
   if (!packageData) {
     throw new Error("Can't update package version, package data is undefined")
@@ -91,7 +93,7 @@ export async function updateTargetPackageVersion({
    */
   await writeVersionToPackageJson({
     filePath: packageData.path,
-    version,
+    targetVersion,
   })
 
   /**
@@ -104,6 +106,6 @@ export async function updateTargetPackageVersion({
 
   await writeVersionToPackageJson({
     filePath: path.join(cwd()),
-    version: repoVersion,
+    targetVersion: repoVersion,
   })
 }
