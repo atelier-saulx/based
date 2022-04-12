@@ -122,7 +122,7 @@ const getBranch = async () => {
 async function releaseProject() {
   const currentBranch = await getBranch()
 
-  if (currentBranch === 'main') {
+  if (currentBranch !== 'main') {
     throw new Error(
       `Incorrect branch: ${currentBranch}. We only release from main branch.`
     )
@@ -130,7 +130,7 @@ async function releaseProject() {
 
   const status = await git.status()
 
-  if (status.files.length === 0) {
+  if (status.files.length !== 0) {
     throw new Error(
       'You have unstaged changes in git. To release, commit or stash all changes.'
     )
