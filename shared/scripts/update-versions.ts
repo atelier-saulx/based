@@ -21,7 +21,7 @@ async function writeVersionToPackageJson({
       const isPackageInRepo = packageNamesInProject.includes(packageName)
 
       if (isPackageInRepo) {
-        packageJson.peerDependencies[packageName] = version
+        packageJson.peerDependencies[packageName] = `^${version}`
       }
     })
   }
