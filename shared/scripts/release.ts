@@ -293,13 +293,11 @@ async function releaseProject() {
     throw new Error('There was an error updating package versions')
   }
 
-  return console.log('Stopping here')
-
   /**
    * Publish all public packages in repository
    */
   if (shouldPublishChanges) {
-    if (targetPackage?.name === 'All packages') {
+    if (targetPackage?.name === ALL_PACKAGES_TAG) {
       await publishAllPackagesInRepository({
         targetFolders,
         tag: 'latest',
