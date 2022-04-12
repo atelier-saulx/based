@@ -2,7 +2,7 @@
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
-import { getAllPackages, PackageData } from './get-package-data'
+import { PackageData } from './get-package-data'
 
 async function writeVersionToPackageJson({
   filePath,
