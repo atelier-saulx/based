@@ -35,6 +35,7 @@ const git = simpleGit()
 export type ReleaseOptions = {
   type: string
   tag: string
+  targetAllPackages: boolean
   skipBuild: boolean
   skipVersion: boolean
   skipPublish: boolean
@@ -63,6 +64,11 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     type: 'boolean',
     default: false,
     description: 'Skip version increment step',
+  })
+  .option('target-all-packages', {
+    type: 'boolean',
+    default: false,
+    description: 'Target all packages',
   })
   .option('skip-publish', {
     type: 'boolean',
@@ -110,13 +116,13 @@ async function releaseProject() {
     )
   }
 
-  const status = await git.status()
+  // const status = await git.status()
 
-  if (status.files.length !== 0) {
-    throw new Error(
-      'You have unstaged changes in git. To release, commit or stash all changes.'
-    )
-  }
+  // if (status.files.length !== 0) {
+  //   throw new Error(
+  //     'You have unstaged changes in git. To release, commit or stash all changes.'
+  //   )
+  // }
 
   const {
     type,
@@ -125,6 +131,7 @@ async function releaseProject() {
     skipVersion,
     skipPublish,
     skipCommit,
+    targetAllPackages,
     force: hideInteractivity,
     dryRun: isDryRun,
   } = argv as ReleaseOptions
@@ -142,6 +149,7 @@ async function releaseProject() {
   let shouldIncrementVersion = Boolean(skipVersion) === false
   let shouldPublishChanges = Boolean(skipPublish) === false
   let shouldCommitChanges = Boolean(skipCommit) === false
+  let shouldTargetAllPackages = Boolean(targetAllPackages) === false
   let shouldShowQuestions = hideInteractivity === false
 
   const targetFolders = packageJson.workspaces.map((folder: string) => {
@@ -155,6 +163,7 @@ async function releaseProject() {
       releaseType: shouldIncrementVersion ? releaseType : 'override',
       releaseTag,
       triggerBuild: shouldTriggerBuild,
+      releaseSinglePackage: shouldTargetAllPackages === false,
       incrementVersion: shouldIncrementVersion,
       publishChanges: shouldPublishChanges,
       commitChanges: shouldCommitChanges,
@@ -215,6 +224,7 @@ async function releaseProject() {
     })
 
     const Questions = MapPrompts({
+      releaseSinglePackage: 'Release specific package?',
       triggerBuild: 'Trigger full project build?',
       incrementVersion: `Increment project version from ${packageJson.version} to ${incrementedVersion}?`,
       publishChangesToNPM: 'Publish release to NPM?',
@@ -223,6 +233,7 @@ async function releaseProject() {
 
     await prompt<Answers>(Questions).then((answers) => {
       const {
+        releaseSinglePackage,
         triggerBuild,
         incrementVersion,
         publishChangesToNPM,
@@ -230,6 +241,7 @@ async function releaseProject() {
       } = answers
 
       shouldTriggerBuild = triggerBuild
+      shouldTargetAllPackages = releaseSinglePackage === false
       shouldIncrementVersion = incrementVersion
       shouldPublishChanges = publishChangesToNPM
       shouldCommitChanges = commitChanges
@@ -281,10 +293,16 @@ async function releaseProject() {
     targetVersion = incrementedVersion
 
     try {
-      await updatePackageVersionsInRepository({
-        targetFolders,
-        version: targetVersion,
-      })
+      if (shouldTargetAllPackages) {
+        return console.log('shouldTargetAllPackages')
+
+        await updatePackageVersionsInRepository({
+          targetFolders,
+          version: targetVersion,
+        })
+      } else {
+        console.log('Target specific package')
+      }
     } catch (error) {
       console.error({ error })
 
@@ -292,20 +310,26 @@ async function releaseProject() {
     }
   }
 
+  return
+
   /**
    * Publish all public packages in repository
    */
   if (shouldPublishChanges) {
-    await publishAllPackagesInRepository({
-      targetFolders,
-      tag: releaseTag,
-    }).catch((error) => {
-      console.error({ error })
+    if (shouldTargetAllPackages) {
+      await publishAllPackagesInRepository({
+        targetFolders,
+        tag: releaseTag,
+      }).catch((error) => {
+        console.error({ error })
 
-      throw new Error('Publishing to NPM failed.')
-    })
+        throw new Error('Publishing to NPM failed.')
+      })
 
-    console.info(`\n  Released version ${targetVersion} successfully! \n`)
+      console.info(`\n  Released version ${targetVersion} successfully! \n`)
+    } else {
+      console.log('Target specific package')
+    }
   }
 
   /**

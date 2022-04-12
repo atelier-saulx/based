@@ -1,5 +1,6 @@
 export type Question =
   | 'triggerBuild'
+  | 'releaseSinglePackage'
   | 'incrementVersion'
   | 'publishChangesToNPM'
   | 'commitChanges'
