@@ -12,7 +12,7 @@
   },
   "sideEffects": false,
   "peerDependencies": {
-    "react": "16||17||18",
+    "react": "17||18||16",
     "@based/client": "^2.3.3"
   },
   "dependencies": {
