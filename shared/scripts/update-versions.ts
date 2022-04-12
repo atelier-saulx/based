@@ -11,7 +11,9 @@ async function writeVersionToPackageJson({
   filePath: string
   version: string
 }) {
-  const packageJson = await fs.readJSON(filePath)
+  const packageJSONPath = path.join(filePath, '/package.json')
+
+  const packageJson = await fs.readJSON(packageJSONPath)
   const packagesInProject = await getAllPackages()
 
   const packageNamesInProject = packagesInProject.map(
@@ -46,7 +48,7 @@ async function writeVersionToPackageJson({
 
   packageJson.version = version
 
-  await fs.writeJSON(filePath, packageJson, { spaces: 2 })
+  await fs.writeJSON(packageJSONPath, packageJson, { spaces: 2 })
 }
 
 async function writeVersionToModulesInFolder(
@@ -62,7 +64,7 @@ async function writeVersionToModulesInFolder(
   await Promise.all(
     targetFolders.map((folder) => {
       return writeVersionToPackageJson({
-        filePath: path.join(sourceFolder, folder, '/package.json'),
+        filePath: path.join(sourceFolder, folder),
         version,
       })
     })
@@ -96,7 +98,7 @@ export async function updatePackageVersionsInRepository({
    * Update root package version
    */
   await writeVersionToPackageJson({
-    filePath: path.join(cwd(), './package.json'),
+    filePath: path.join(cwd()),
     version,
   })
 }
@@ -112,12 +114,16 @@ export async function updateTargetPackageVersion({
     throw new Error("Can't update package version, package data is undefined")
   }
 
-  const { name, path } = packageData
-
-  console.log('>>>>>> updateTargetPackageVersion: ', { name, path, version })
-
   await writeVersionToPackageJson({
-    filePath: path,
+    filePath: packageData.path,
+    version,
+  })
+
+  /**
+   * Update root package version
+   */
+  await writeVersionToPackageJson({
+    filePath: path.join(cwd()),
     version,
   })
 }
