@@ -154,8 +154,6 @@ async function releaseProject() {
     }
   })
 
-  return console.log('haha')
-
   await prompt<{ chosenReleaseType: ReleaseType }>([
     {
       type: 'select',
