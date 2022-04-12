@@ -7,6 +7,7 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
 import { prompt } from 'enquirer'
+import { getPublicPackageNames } from './get-all-package-names'
 
 import { publishAllPackagesInRepository } from './publish-packages'
 import { updatePackageVersionsInRepository } from './update-versions'
@@ -108,13 +109,13 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  const currentBranch = await getBranch()
+  // const currentBranch = await getBranch()
 
-  if (currentBranch !== 'main') {
-    throw new Error(
-      `Incorrect branch: ${currentBranch}. We only release from main branch.`
-    )
-  }
+  // if (currentBranch !== 'main') {
+  //   throw new Error(
+  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
+  //   )
+  // }
 
   // const status = await git.status()
 
@@ -139,6 +140,7 @@ async function releaseProject() {
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
   let targetVersion = packageJson.version
+  let targetPackage = 'all'
 
   let incrementedVersion = getIncrementedVersion({
     version: packageJson.version,
@@ -252,6 +254,27 @@ async function releaseProject() {
     printReleaseOptions()
   }
 
+  if (!shouldTargetAllPackages) {
+    const publicPackageNames = await getPublicPackageNames()
+
+    await prompt<{
+      chosenPackage: string
+    }>({
+      message: 'Select a package',
+      name: 'chosenPackage',
+      type: 'select',
+      choices: publicPackageNames,
+      initial: publicPackageNames[0],
+    } as any).then(({ chosenPackage }) => {
+      if (!chosenPackage) {
+        console.info('User aborted the release.')
+        process.exit(0)
+      }
+
+      targetPackage = chosenPackage
+    })
+  }
+
   await prompt<{
     shouldRelease: boolean
   }>({
@@ -293,7 +316,7 @@ async function releaseProject() {
     targetVersion = incrementedVersion
 
     try {
-      if (shouldTargetAllPackages) {
+      if (shouldTargetAllPackages || targetPackage === 'all') {
         return console.log('shouldTargetAllPackages')
 
         await updatePackageVersionsInRepository({
@@ -301,7 +324,7 @@ async function releaseProject() {
           version: targetVersion,
         })
       } else {
-        console.log('Target specific package')
+        console.log('Target specific package: ', targetPackage)
       }
     } catch (error) {
       console.error({ error })
@@ -315,7 +338,7 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (shouldPublishChanges) {
+  if (shouldPublishChanges || targetPackage === 'all') {
     if (shouldTargetAllPackages) {
       await publishAllPackagesInRepository({
         targetFolders,
