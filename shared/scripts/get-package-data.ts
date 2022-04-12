@@ -5,6 +5,12 @@ import { cwd } from 'process'
 // @ts-ignore
 import packageJson from '../../package.json'
 
+export interface PackageData {
+  name: string
+  path: string
+  version: string
+}
+
 async function getPackageName({
   targetPath,
   includePrivatePackages = true,
@@ -25,6 +31,7 @@ async function getPackageName({
 
   return {
     name: packageJson.name,
+    version: packageJson.version,
     path: targetPath,
   }
 }
@@ -54,11 +61,6 @@ async function getPackageNamesInFolder({
   return packageNames.filter((packageName) => {
     return packageName !== null
   }) as PackageData[]
-}
-
-export interface PackageData {
-  name: string
-  path: string
 }
 
 export async function getAllPackages(): Promise<PackageData[]> {

@@ -45,31 +45,19 @@ const git = simpleGit()
 
 export type ReleaseOptions = {
   type: string
-  tag: string
-  releaseAllPackages: boolean
   skipBuild: boolean
-  skipVersion: boolean
   skipPublish: boolean
   skipCommit: boolean
-  force: boolean
   dryRun: boolean
 }
+
+const ALL_PACKAGES_TAG = 'All packages'
 
 const { argv }: { argv: any } = yargs(hideBin(process.argv))
   .option('type', {
     type: 'string',
     default: 'patch',
     description: 'Type <patch|minor|major>',
-  })
-  .option('tag', {
-    type: 'string',
-    default: 'latest',
-    description: 'Release tag',
-  })
-  .option('release-all-packages', {
-    type: 'boolean',
-    default: false,
-    description: 'Release all packages',
   })
   .option('skip-build', {
     type: 'boolean',
@@ -91,11 +79,6 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     default: false,
     description: 'Skip commit step',
   })
-  .option('force', {
-    type: 'boolean',
-    default: false,
-    description: 'Ignore interactivity',
-  })
   .option('dry-run', {
     type: 'boolean',
     default: false,
@@ -104,15 +87,14 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
   .example([
     ['$0 minor', 'Release minor update.'],
     ['$0 --type minor', 'Release minor update.'],
-    ['$0 --tag latest', 'Release patch with latest tag.'],
-    ['$0 --release-all-packages', 'Release all packages.'],
     ['$0 --skip-build', 'Skip building packages.'],
     ['$0 --skip-publish', 'Skip publishing packages.'],
     ['$0 --skip-version', 'Skip incrementing package versions.'],
     ['$0 --skip-commit', 'Skip committing changes to Git.'],
-    ['$0 --force', 'Do not prompt while releasing.'],
     ['$0 --dry-run', 'Only build, do nothing else.'],
   ])
+
+const shouldValidateBranchAndGit: boolean = true
 
 const getBranch = async () => {
   const currentBranch = await git.raw('rev-parse', '--abbrev-ref', 'HEAD')
@@ -120,77 +102,64 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  const currentBranch = await getBranch()
+  if (shouldValidateBranchAndGit) {
+    const currentBranch = await getBranch()
 
-  if (currentBranch !== 'main') {
-    throw new Error(
-      `Incorrect branch: ${currentBranch}. We only release from main branch.`
-    )
-  }
+    if (currentBranch !== 'main') {
+      throw new Error(
+        `Incorrect branch: ${currentBranch}. We only release from main branch.`
+      )
+    }
 
-  const status = await git.status()
+    const status = await git.status()
 
-  if (status.files.length !== 0) {
-    throw new Error(
-      'You have unstaged changes in git. To release, commit or stash all changes.'
-    )
+    if (status.files.length !== 0) {
+      throw new Error(
+        'You have unstaged changes in git. To release, commit or stash all changes.'
+      )
+    }
   }
 
   const {
     type,
-    tag: releaseTag,
-    releaseAllPackages,
     skipBuild,
-    skipVersion,
     skipPublish,
     skipCommit,
-    force: hideInteractivity,
     dryRun: isDryRun,
   } = argv as ReleaseOptions
 
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
-  let targetVersion = packageJson.version
 
-  let targetPackage: PackageData | undefined
-  let shouldTargetSpecificPackage = Boolean(releaseAllPackages) === false
+  let targetPackage: PackageData | undefined = {
+    name: ALL_PACKAGES_TAG,
+    path: 'root',
+    version: packageJson.version,
+  }
 
-  let incrementedVersion = getIncrementedVersion({
+  let targetVersion = getIncrementedVersion({
     version: packageJson.version,
     type: releaseType,
   })
 
   let shouldTriggerBuild = Boolean(skipBuild) === false
-  let shouldIncrementVersion = Boolean(skipVersion) === false
   let shouldPublishChanges = Boolean(skipPublish) === false
   let shouldCommitChanges = Boolean(skipCommit) === false
-  let shouldShowQuestions = hideInteractivity === false
 
   const targetFolders = packageJson.workspaces.map((folder: string) => {
     return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
   })
 
-  const publicPackages = await getPublicPackages()
-
-  const publicPackageNames = publicPackages.map(
-    (packageData) => packageData.name
-  )
-
   console.info(`\n  Releasing Based...`)
 
   const printReleaseOptions = () => {
     const printedOptions = {
-      releaseType: shouldIncrementVersion ? releaseType : 'override',
-      releaseTag,
+      releaseType: releaseType,
       triggerBuild: shouldTriggerBuild,
-      releaseSinglePackage: shouldTargetSpecificPackage,
-      incrementVersion: shouldIncrementVersion,
       publishChanges: shouldPublishChanges,
       commitChanges: shouldCommitChanges,
-      currentVersion: packageJson.version,
-      targetVersion: shouldIncrementVersion
-        ? incrementedVersion
-        : packageJson.version,
+      currentVersion: targetPackage?.version ?? '',
+      targetVersion: targetVersion,
     }
 
     console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
@@ -200,98 +169,74 @@ async function releaseProject() {
     console.info(`\n`)
   }
 
-  /**
-   * Escape hatch: Do you want interactivity?
-   */
-  if (shouldShowQuestions) {
-    await prompt<{
-      makeInteractive: boolean
-    }>({
-      message: 'Configure release options?',
-      name: 'makeInteractive',
-      type: 'toggle',
-      initial: true,
-      enabled: 'Yes',
-      disabled: 'No',
-    } as any).then(({ makeInteractive }) => {
-      shouldShowQuestions = makeInteractive
-    })
-  }
+  const publicPackages = await getPublicPackages()
+
+  const publicPackageNames = publicPackages.map(
+    (packageData) => packageData.name
+  )
+
+  const allChoices = [ALL_PACKAGES_TAG, ...publicPackageNames]
+
+  await prompt<{
+    chosenPackage: string
+  }>({
+    message: 'Select a package',
+    name: 'chosenPackage',
+    type: 'select',
+    choices: allChoices,
+    initial: allChoices[0],
+  } as any).then(({ chosenPackage }) => {
+    if (!chosenPackage) {
+      console.info('User aborted the release.')
+      process.exit(0)
+    }
+
+    if (chosenPackage !== ALL_PACKAGES_TAG) {
+      targetPackage = publicPackages.find(
+        (packageData) => packageData.name === chosenPackage
+      )
+    }
+  })
 
   /**
    * Configure release interactively. Ignore by using `npm run release --force`
    */
-  if (shouldShowQuestions) {
-    await prompt<{ chosenReleaseType: ReleaseType }>([
-      {
-        type: 'select',
-        name: 'chosenReleaseType',
-        message: 'Select release type',
-        initial: 0,
-        choices: [
-          { name: 'patch', message: 'Patch' },
-          { name: 'minor', message: 'Minor' },
-          { name: 'major', message: 'Major' },
-        ],
-      },
-    ]).then(({ chosenReleaseType }) => {
-      releaseType = chosenReleaseType
-
-      incrementedVersion = getIncrementedVersion({
-        version: packageJson.version,
-        type: releaseType,
-      })
-    })
-
-    const Questions = MapPrompts({
-      releaseSinglePackage: 'Release specific package?',
-      triggerBuild: 'Trigger full project build?',
-      incrementVersion: `Increment project version from ${packageJson.version} to ${incrementedVersion}?`,
-      publishChangesToNPM: 'Publish release to NPM?',
-      commitChanges: 'Commit changes to Git?',
-    })
-
-    await prompt<Answers>(Questions).then((answers) => {
-      const {
-        releaseSinglePackage,
-        triggerBuild,
-        incrementVersion,
-        publishChangesToNPM,
-        commitChanges,
-      } = answers
-
-      shouldTriggerBuild = triggerBuild
-      shouldTargetSpecificPackage = releaseSinglePackage
-      shouldIncrementVersion = incrementVersion
-      shouldPublishChanges = publishChangesToNPM
-      shouldCommitChanges = commitChanges
-    })
-
-    printReleaseOptions()
-  } else {
-    printReleaseOptions()
-  }
-
-  if (shouldTargetSpecificPackage) {
-    await prompt<{
-      chosenPackage: string
-    }>({
-      message: 'Select a package',
-      name: 'chosenPackage',
+  await prompt<{ chosenReleaseType: ReleaseType }>([
+    {
       type: 'select',
-      choices: publicPackageNames,
-      initial: publicPackageNames[0],
-    } as any).then(({ chosenPackage }) => {
-      if (!chosenPackage) {
-        console.info('User aborted the release.')
-        process.exit(0)
-      }
+      name: 'chosenReleaseType',
+      message: 'Select release type',
+      initial: 0,
+      choices: [
+        { name: 'patch', message: 'Patch' },
+        { name: 'minor', message: 'Minor' },
+        { name: 'major', message: 'Major' },
+      ],
+    },
+  ]).then(({ chosenReleaseType }) => {
+    releaseType = chosenReleaseType
 
-      targetPackage = publicPackages.find(
-        (packageData) => packageData.name === chosenPackage
-      )
+    targetVersion = getIncrementedVersion({
+      version: targetPackage?.version ?? packageJson.version,
+      type: releaseType,
     })
-  }
+  })
+
+  const Questions = MapPrompts({
+    triggerBuild: 'Trigger full project build?',
+    publishChangesToNPM: 'Publish release to NPM?',
+    commitChanges: 'Commit changes to Git?',
+  })
+
+  await prompt<Answers>(Questions).then((answers) => {
+    const { triggerBuild, publishChangesToNPM, commitChanges } = answers
+
+    shouldTriggerBuild = triggerBuild
+    shouldPublishChanges = publishChangesToNPM
+    shouldCommitChanges = commitChanges
+  })
+
+  printReleaseOptions()
 
   await prompt<{
     shouldRelease: boolean
@@ -330,36 +275,45 @@ async function releaseProject() {
   /**
    * Increment all packages in project
    */
-  if (shouldIncrementVersion) {
-    targetVersion = incrementedVersion
-
-    try {
-      if (shouldTargetSpecificPackage) {
-        await updateTargetPackageVersion({
-          packageData: targetPackage,
-          version: targetVersion,
-        })
-      } else {
-        await updatePackageVersionsInRepository({
-          targetFolders,
-          version: targetVersion,
-        })
-      }
-    } catch (error) {
-      console.error({ error })
-
-      throw new Error('There was an error updating package versions')
+  try {
+    if (targetPackage?.name === ALL_PACKAGES_TAG) {
+      await updatePackageVersionsInRepository({
+        targetFolders,
+        version: targetVersion,
+      })
+    } else {
+      await updateTargetPackageVersion({
+        packageData: targetPackage,
+        version: targetVersion,
+      })
     }
+  } catch (error) {
+    console.error({ error })
+
+    throw new Error('There was an error updating package versions')
   }
+
+  return console.log('Stopping here')
 
   /**
    * Publish all public packages in repository
    */
   if (shouldPublishChanges) {
-    if (shouldTargetSpecificPackage) {
+    if (targetPackage?.name === 'All packages') {
+      await publishAllPackagesInRepository({
+        targetFolders,
+        tag: 'latest',
+      }).catch((error) => {
+        console.error({ error })
+
+        throw new Error('Publishing to NPM failed.')
+      })
+
+      console.info(`\n  Released  version ${targetVersion} successfully! \n`)
+    } else {
       await publishTargetPackage({
         packageData: targetPackage,
-        tag: releaseTag,
+        tag: 'latest',
       }).catch((error) => {
         console.error({ error })
 
@@ -369,17 +323,6 @@ async function releaseProject() {
       console.info(
         `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
       )
-    } else {
-      await publishAllPackagesInRepository({
-        targetFolders,
-        tag: releaseTag,
-      }).catch((error) => {
-        console.error({ error })
-
-        throw new Error('Publishing to NPM failed.')
-      })
-
-      console.info(`\n  Released  version ${targetVersion} successfully! \n`)
     }
   }
 
