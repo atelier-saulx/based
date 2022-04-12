@@ -10,7 +10,7 @@ import { execa } from 'execa'
 import { prompt } from 'enquirer'
 
 import { getPublicPackages, PackageData } from './get-package-data'
-import { Answers, ReleaseType } from './types'
+import { ReleaseType } from './types'
 
 import {
   publishAllPackagesInRepository,
@@ -25,7 +25,6 @@ import {
 import {
   FormatOptions,
   getIncrementedVersion,
-  MapPrompts,
   validateReleaseType,
 } from './utilities'
 
@@ -45,9 +44,6 @@ const git = simpleGit()
 
 export type ReleaseOptions = {
   type: string
-  skipBuild: boolean
-  skipPublish: boolean
-  skipCommit: boolean
   dryRun: boolean
 }
 
@@ -57,26 +53,6 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     default: 'patch',
     description: 'Type <patch|minor|major>',
   })
-  .option('skip-build', {
-    type: 'boolean',
-    default: false,
-    description: 'Skip build step',
-  })
-  .option('skip-version', {
-    type: 'boolean',
-    default: false,
-    description: 'Skip version increment step',
-  })
-  .option('skip-publish', {
-    type: 'boolean',
-    default: false,
-    description: 'Skip publish step',
-  })
-  .option('skip-commit', {
-    type: 'boolean',
-    default: false,
-    description: 'Skip commit step',
-  })
   .option('dry-run', {
     type: 'boolean',
     default: false,
@@ -85,10 +61,6 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
   .example([
     ['$0 minor', 'Release minor update.'],
     ['$0 --type minor', 'Release minor update.'],
-    ['$0 --skip-build', 'Skip building packages.'],
-    ['$0 --skip-publish', 'Skip publishing packages.'],
-    ['$0 --skip-version', 'Skip incrementing package versions.'],
-    ['$0 --skip-commit', 'Skip committing changes to Git.'],
     ['$0 --dry-run', 'Only build, do nothing else.'],
   ])
 
@@ -120,13 +92,7 @@ async function releaseProject() {
     }
   }
 
-  const {
-    type,
-    skipBuild,
-    skipPublish,
-    skipCommit,
-    dryRun: isDryRun,
-  } = argv as ReleaseOptions
+  const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
@@ -142,10 +108,6 @@ async function releaseProject() {
     type: releaseType,
   })
 
-  let shouldTriggerBuild = Boolean(skipBuild) === false
-  let shouldPublishChanges = Boolean(skipPublish) === false
-  let shouldCommitChanges = Boolean(skipCommit) === false
-
   const targetFolders = packageJson.workspaces.map((folder: string) => {
     return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
   })
@@ -154,10 +116,8 @@ async function releaseProject() {
 
   const printReleaseOptions = () => {
     const printedOptions = {
+      targetPackage: targetPackage?.name ?? 'Unknown',
       releaseType: releaseType,
-      triggerBuild: shouldTriggerBuild,
-      publishChanges: shouldPublishChanges,
-      commitChanges: shouldCommitChanges,
       currentVersion: targetPackage?.version ?? '',
       targetVersion: targetVersion,
     }
@@ -222,20 +182,6 @@ async function releaseProject() {
     })
   })
 
-  const Questions = MapPrompts({
-    triggerBuild: 'Trigger full project build?',
-    publishChangesToNPM: 'Publish release to NPM?',
-    commitChanges: 'Commit changes to Git?',
-  })
-
-  await prompt<Answers>(Questions).then((answers) => {
-    const { triggerBuild, publishChangesToNPM, commitChanges } = answers
-
-    shouldTriggerBuild = triggerBuild
-    shouldPublishChanges = publishChangesToNPM
-    shouldCommitChanges = commitChanges
-  })
-
   printReleaseOptions()
 
   await prompt<{
@@ -257,14 +203,12 @@ async function releaseProject() {
   /**
    * Build project to ensure latest changes are present
    */
-  if (shouldTriggerBuild) {
-    try {
-      await execa('npm', ['run', 'build'], { stdio: 'inherit' })
-    } catch (error) {
-      console.error({ error })
+  try {
+    await execa('npm', ['run', 'build'], { stdio: 'inherit' })
+  } catch (error) {
+    console.error({ error })
 
-      throw new Error('Error encountered when building project.')
-    }
+    throw new Error('Error encountered when building project.')
   }
 
   if (isDryRun) {
@@ -296,73 +240,69 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (shouldPublishChanges) {
-    if (targetPackage?.name === ALL_PACKAGES_TAG) {
-      await publishAllPackagesInRepository({
-        targetFolders,
-        tag: 'latest',
-      }).catch((error) => {
-        console.error({ error })
+  if (targetPackage?.name === ALL_PACKAGES_TAG) {
+    await publishAllPackagesInRepository({
+      targetFolders,
+      tag: 'latest',
+    }).catch((error) => {
+      console.error({ error })
 
-        throw new Error('Publishing to NPM failed.')
-      })
+      throw new Error('Publishing to NPM failed.')
+    })
 
-      console.info(
-        `\n  Released all public packages with version ${targetVersion} successfully! \n`
-      )
-    } else {
-      await publishTargetPackage({
-        packageData: targetPackage,
-        tag: 'latest',
-      }).catch((error) => {
-        console.error({ error })
+    console.info(
+      `\n  Released all public packages with version ${targetVersion} successfully! \n`
+    )
+  } else {
+    await publishTargetPackage({
+      packageData: targetPackage,
+      tag: 'latest',
+    }).catch((error) => {
+      console.error({ error })
 
-        throw new Error('Publishing to NPM failed.')
-      })
+      throw new Error('Publishing to NPM failed.')
+    })
 
-      console.info(
-        `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
-      )
-    }
+    console.info(
+      `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
+    )
   }
 
   /**
    * Stage and commit + push target version
    */
-  if (shouldCommitChanges) {
-    // Add root package.json
-    const addFiles = []
+  // Add root package.json
+  const addFiles = []
 
-    // Add target folder package.jsons
-    addFiles.push(path.join(process.cwd(), './package.json'))
+  // Add target folder package.jsons
+  addFiles.push(path.join(process.cwd(), './package.json'))
 
-    targetFolders.forEach((folder) => {
-      addFiles.push(path.join(process.cwd(), folder))
+  targetFolders.forEach((folder) => {
+    addFiles.push(path.join(process.cwd(), folder))
+  })
+
+  await git.add(addFiles)
+
+  await git.commit(`[release] Version: ${targetVersion}`)
+
+  await git.push()
+
+  await git.addAnnotatedTag(
+    targetVersion,
+    `[release] Version: ${targetVersion}`
+  )
+
+  /**
+   * Open up a browser tab within github to publish new release
+   */
+  open(
+    githubRelease({
+      user: 'atelier-saulx',
+      repo: 'based',
+      tag: targetVersion,
+      title: targetVersion,
     })
-
-    await git.add(addFiles)
-
-    await git.commit(`[release] Version: ${targetVersion}`)
-
-    await git.push()
-
-    await git.addAnnotatedTag(
-      targetVersion,
-      `[release] Version: ${targetVersion}`
-    )
-
-    /**
-     * Open up a browser tab within github to publish new release
-     */
-    open(
-      githubRelease({
-        user: 'atelier-saulx',
-        repo: 'based',
-        tag: targetVersion,
-        title: targetVersion,
-      })
-    )
-  }
+  )
 
   console.info(`\n  The release process has finished. \n`)
 }
