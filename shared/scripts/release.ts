@@ -8,14 +8,20 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
 import { prompt } from 'enquirer'
-import { getPublicPackages, PackageData } from './get-package-data'
 
-import { publishAllPackagesInRepository } from './publish-packages'
+import { getPublicPackages, PackageData } from './get-package-data'
+import { Answers, ReleaseType } from './types'
+
+import {
+  publishAllPackagesInRepository,
+  publishTargetPackage,
+} from './publish-packages'
+
 import {
   updatePackageVersionsInRepository,
   updateTargetPackageVersion,
 } from './update-versions'
-import { Answers, ReleaseType } from './types'
+
 import {
   FormatOptions,
   getIncrementedVersion,
@@ -40,7 +46,7 @@ const git = simpleGit()
 export type ReleaseOptions = {
   type: string
   tag: string
-  targetAllPackages: boolean
+  releaseAllPackages: boolean
   skipBuild: boolean
   skipVersion: boolean
   skipPublish: boolean
@@ -60,6 +66,11 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     default: 'latest',
     description: 'Release tag',
   })
+  .option('release-all-packages', {
+    type: 'boolean',
+    default: false,
+    description: 'Release all packages',
+  })
   .option('skip-build', {
     type: 'boolean',
     default: false,
@@ -69,11 +80,6 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     type: 'boolean',
     default: false,
     description: 'Skip version increment step',
-  })
-  .option('target-all-packages', {
-    type: 'boolean',
-    default: false,
-    description: 'Target all packages',
   })
   .option('skip-publish', {
     type: 'boolean',
@@ -99,6 +105,7 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     ['$0 minor', 'Release minor update.'],
     ['$0 --type minor', 'Release minor update.'],
     ['$0 --tag latest', 'Release patch with latest tag.'],
+    ['$0 --release-all-packages', 'Release all packages.'],
     ['$0 --skip-build', 'Skip building packages.'],
     ['$0 --skip-publish', 'Skip publishing packages.'],
     ['$0 --skip-version', 'Skip incrementing package versions.'],
@@ -132,11 +139,11 @@ async function releaseProject() {
   const {
     type,
     tag: releaseTag,
+    releaseAllPackages,
     skipBuild,
     skipVersion,
     skipPublish,
     skipCommit,
-    targetAllPackages,
     force: hideInteractivity,
     dryRun: isDryRun,
   } = argv as ReleaseOptions
@@ -146,6 +153,7 @@ async function releaseProject() {
   let targetVersion = packageJson.version
 
   let targetPackage: PackageData | undefined
+  let shouldTargetSpecificPackage = Boolean(releaseAllPackages) === true
 
   let incrementedVersion = getIncrementedVersion({
     version: packageJson.version,
@@ -156,7 +164,6 @@ async function releaseProject() {
   let shouldIncrementVersion = Boolean(skipVersion) === false
   let shouldPublishChanges = Boolean(skipPublish) === false
   let shouldCommitChanges = Boolean(skipCommit) === false
-  let shouldTargetAllPackages = Boolean(targetAllPackages) === false
   let shouldShowQuestions = hideInteractivity === false
 
   const targetFolders = packageJson.workspaces.map((folder: string) => {
@@ -176,7 +183,7 @@ async function releaseProject() {
       releaseType: shouldIncrementVersion ? releaseType : 'override',
       releaseTag,
       triggerBuild: shouldTriggerBuild,
-      releaseSinglePackage: shouldTargetAllPackages === false,
+      releaseSinglePackage: shouldTargetSpecificPackage,
       incrementVersion: shouldIncrementVersion,
       publishChanges: shouldPublishChanges,
       commitChanges: shouldCommitChanges,
@@ -254,7 +261,7 @@ async function releaseProject() {
       } = answers
 
       shouldTriggerBuild = triggerBuild
-      shouldTargetAllPackages = releaseSinglePackage === false
+      shouldTargetSpecificPackage = releaseSinglePackage
       shouldIncrementVersion = incrementVersion
       shouldPublishChanges = publishChangesToNPM
       shouldCommitChanges = commitChanges
@@ -265,7 +272,7 @@ async function releaseProject() {
     printReleaseOptions()
   }
 
-  if (!shouldTargetAllPackages) {
+  if (shouldTargetSpecificPackage) {
     await prompt<{
       chosenPackage: string
     }>({
@@ -327,14 +334,14 @@ async function releaseProject() {
     targetVersion = incrementedVersion
 
     try {
-      if (shouldTargetAllPackages) {
-        await updatePackageVersionsInRepository({
-          targetFolders,
+      if (shouldTargetSpecificPackage) {
+        await updateTargetPackageVersion({
+          packageData: targetPackage,
           version: targetVersion,
         })
       } else {
-        await updateTargetPackageVersion({
-          packageData: targetPackage,
+        await updatePackageVersionsInRepository({
+          targetFolders,
           version: targetVersion,
         })
       }
@@ -345,13 +352,24 @@ async function releaseProject() {
     }
   }
 
-  return
-
   /**
    * Publish all public packages in repository
    */
   if (shouldPublishChanges) {
-    if (shouldTargetAllPackages) {
+    if (shouldTargetSpecificPackage) {
+      await publishTargetPackage({
+        packageData: targetPackage,
+        tag: releaseTag,
+      }).catch((error) => {
+        console.error({ error })
+
+        throw new Error('Publishing to NPM failed.')
+      })
+
+      console.info(
+        `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
+      )
+    } else {
       await publishAllPackagesInRepository({
         targetFolders,
         tag: releaseTag,
@@ -361,9 +379,7 @@ async function releaseProject() {
         throw new Error('Publishing to NPM failed.')
       })
 
-      console.info(`\n  Released version ${targetVersion} successfully! \n`)
-    } else {
-      console.log('Target specific package')
+      console.info(`\n  Released  version ${targetVersion} successfully! \n`)
     }
   }
 
