@@ -6,13 +6,14 @@ import { cwd } from 'process'
 import packageJson from '../../package.json'
 
 async function getPackageName({
-  filePath,
+  targetPath,
   includePrivatePackages = true,
 }: {
-  filePath: string
+  targetPath: string
   includePrivatePackages: boolean
-}) {
-  const packageJson = await fs.readJSON(filePath)
+}): Promise<PackageData | null> {
+  const packageJSONPath = path.join(targetPath, '/package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
 
   if (includePrivatePackages) {
     return packageJson.name
@@ -22,7 +23,10 @@ async function getPackageName({
     return null
   }
 
-  return packageJson.name
+  return {
+    name: packageJson.name,
+    path: targetPath,
+  }
 }
 
 async function getPackageNamesInFolder({
@@ -31,7 +35,7 @@ async function getPackageNamesInFolder({
 }: {
   targetFolder: string
   includePrivatePackages: boolean
-}) {
+}): Promise<PackageData[]> {
   const sourceFolder = path.join(cwd(), targetFolder)
 
   const targetFolders = (await fs.readdir(sourceFolder)).filter((folder) => {
@@ -41,7 +45,7 @@ async function getPackageNamesInFolder({
   const packageNames = await Promise.all(
     targetFolders.map((folder) =>
       getPackageName({
-        filePath: path.join(sourceFolder, folder, '/package.json'),
+        targetPath: path.join(sourceFolder, folder),
         includePrivatePackages,
       })
     )
@@ -49,11 +53,16 @@ async function getPackageNamesInFolder({
 
   return packageNames.filter((packageName) => {
     return packageName !== null
-  })
+  }) as PackageData[]
 }
 
-export async function getAllPackageNames(): Promise<string[]> {
-  let allPackageNames: string[] = []
+export interface PackageData {
+  name: string
+  path: string
+}
+
+export async function getAllPackages(): Promise<PackageData[]> {
+  let allPackageNames: PackageData[] = []
 
   /**
    * Get all workspace folders. Filter out `/*`
@@ -84,8 +93,8 @@ export async function getAllPackageNames(): Promise<string[]> {
   return allPackageNames
 }
 
-export async function getPublicPackageNames(): Promise<string[]> {
-  let allPackageNames: string[] = []
+export async function getPublicPackages(): Promise<PackageData[]> {
+  let allPackageNames: PackageData[] = []
 
   /**
    * Get all workspace folders. Filter out `/*`

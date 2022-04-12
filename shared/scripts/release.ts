@@ -8,10 +8,13 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
 import { prompt } from 'enquirer'
-import { getPublicPackageNames } from './get-package-names'
+import { getPublicPackages, PackageData } from './get-package-data'
 
 import { publishAllPackagesInRepository } from './publish-packages'
-import { updatePackageVersionsInRepository } from './update-versions'
+import {
+  updatePackageVersionsInRepository,
+  updateTargetPackageVersion,
+} from './update-versions'
 import { Answers, ReleaseType } from './types'
 import {
   FormatOptions,
@@ -141,7 +144,8 @@ async function releaseProject() {
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
   let targetVersion = packageJson.version
-  let targetPackage = 'all'
+
+  let targetPackage: PackageData | undefined
 
   let incrementedVersion = getIncrementedVersion({
     version: packageJson.version,
@@ -158,6 +162,12 @@ async function releaseProject() {
   const targetFolders = packageJson.workspaces.map((folder: string) => {
     return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
   })
+
+  const publicPackages = await getPublicPackages()
+
+  const publicPackageNames = publicPackages.map(
+    (packageData) => packageData.name
+  )
 
   console.info(`\n  Releasing Based...`)
 
@@ -256,8 +266,6 @@ async function releaseProject() {
   }
 
   if (!shouldTargetAllPackages) {
-    const publicPackageNames = await getPublicPackageNames()
-
     await prompt<{
       chosenPackage: string
     }>({
@@ -272,7 +280,9 @@ async function releaseProject() {
         process.exit(0)
       }
 
-      targetPackage = chosenPackage
+      targetPackage = publicPackages.find(
+        (packageData) => packageData.name === chosenPackage
+      )
     })
   }
 
@@ -317,13 +327,16 @@ async function releaseProject() {
     targetVersion = incrementedVersion
 
     try {
-      if (shouldTargetAllPackages || targetPackage === 'all') {
+      if (shouldTargetAllPackages) {
         await updatePackageVersionsInRepository({
           targetFolders,
           version: targetVersion,
         })
       } else {
-        console.log('Target specific package: ', targetPackage)
+        await updateTargetPackageVersion({
+          packageData: targetPackage,
+          version: targetVersion,
+        })
       }
     } catch (error) {
       console.error({ error })
@@ -337,7 +350,7 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (shouldPublishChanges || targetPackage === 'all') {
+  if (shouldPublishChanges) {
     if (shouldTargetAllPackages) {
       await publishAllPackagesInRepository({
         targetFolders,

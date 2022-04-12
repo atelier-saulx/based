@@ -1,7 +1,8 @@
+/* eslint-disable no-console */
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
-import { getAllPackageNames } from './get-package-names'
+import { getAllPackages, PackageData } from './get-package-data'
 
 async function writeVersionToPackageJson({
   filePath,
@@ -11,7 +12,11 @@ async function writeVersionToPackageJson({
   version: string
 }) {
   const packageJson = await fs.readJSON(filePath)
-  const packageNamesInProject = await getAllPackageNames()
+  const packagesInProject = await getAllPackages()
+
+  const packageNamesInProject = packagesInProject.map(
+    (packageData) => packageData.name
+  )
 
   /**
    * Match packages in peerDependencies, update version
@@ -92,6 +97,27 @@ export async function updatePackageVersionsInRepository({
    */
   await writeVersionToPackageJson({
     filePath: path.join(cwd(), './package.json'),
+    version,
+  })
+}
+
+export async function updateTargetPackageVersion({
+  packageData,
+  version,
+}: {
+  packageData: PackageData | undefined
+  version: string
+}) {
+  if (!packageData) {
+    throw new Error("Can't update package version, package data is undefined")
+  }
+
+  const { name, path } = packageData
+
+  console.log('>>>>>> updateTargetPackageVersion: ', { name, path, version })
+
+  await writeVersionToPackageJson({
+    filePath: path,
     version,
   })
 }
