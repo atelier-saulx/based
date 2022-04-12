@@ -117,7 +117,7 @@ export async function publishTargetPackage({
   tag: string
 }) {
   if (!packageData) {
-    throw new Error("Can't update package version, package data is undefined")
+    throw new Error("Can't publish package, package data is undefined")
   }
 
   await publishPackage({
