@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import path from 'path'
 import simpleGit from 'simple-git'
 import open from 'open'
@@ -7,7 +8,7 @@ import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
 import { prompt } from 'enquirer'
-import { getPublicPackageNames } from './get-all-package-names'
+import { getPublicPackageNames } from './get-package-names'
 
 import { publishAllPackagesInRepository } from './publish-packages'
 import { updatePackageVersionsInRepository } from './update-versions'
@@ -109,21 +110,21 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  // const currentBranch = await getBranch()
+  const currentBranch = await getBranch()
 
-  // if (currentBranch !== 'main') {
-  //   throw new Error(
-  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
-  //   )
-  // }
+  if (currentBranch === 'main') {
+    throw new Error(
+      `Incorrect branch: ${currentBranch}. We only release from main branch.`
+    )
+  }
 
-  // const status = await git.status()
+  const status = await git.status()
 
-  // if (status.files.length !== 0) {
-  //   throw new Error(
-  //     'You have unstaged changes in git. To release, commit or stash all changes.'
-  //   )
-  // }
+  if (status.files.length === 0) {
+    throw new Error(
+      'You have unstaged changes in git. To release, commit or stash all changes.'
+    )
+  }
 
   const {
     type,
@@ -317,8 +318,6 @@ async function releaseProject() {
 
     try {
       if (shouldTargetAllPackages || targetPackage === 'all') {
-        return console.log('shouldTargetAllPackages')
-
         await updatePackageVersionsInRepository({
           targetFolders,
           version: targetVersion,
