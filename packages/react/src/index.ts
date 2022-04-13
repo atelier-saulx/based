@@ -6,6 +6,9 @@ import {
   removeSubscriber,
   generateSubscriptionId,
   BasedOpts,
+  AnalyticsHistoryOpts,
+  AnalyticsOpts,
+  AnalyticsTypesOpts,
 } from '@based/client'
 
 import { resultReducer } from './reducer'
@@ -102,6 +105,20 @@ export function useData(name: string): {
   checksum: number
 }
 
+export function useData(query: null): {
+  data: Data
+  error?: Error
+  loading: Loading
+  checksum: number
+}
+
+export function useData(): {
+  data: Data
+  error?: Error
+  loading: Loading
+  checksum: number
+}
+
 export function useData(
   name: string,
   payload: any,
@@ -109,7 +126,7 @@ export function useData(
 ): { data: Data; error?: Error; loading: Loading; checksum: number }
 
 export function useData(
-  a: string | Query,
+  a?: string | Query,
   payload?: any,
   clientSelector?: string | (BasedOpts & { key?: string })
 ): {
@@ -177,6 +194,62 @@ export function useData(
     useMemo(stubFn, [payload, a])
     useClient(clientSelector)
     useEffect(stubFn, [null, null])
+  }
+
+  return result
+}
+
+export function useAnalytics(
+  params?: AnalyticsHistoryOpts | AnalyticsTypesOpts | AnalyticsOpts,
+  clientSelector?: string | (BasedOpts & { key?: string })
+): { data: Data; error?: Error; loading: Loading } {
+  const [result, dispatch] = useReducer(resultReducer, {
+    loading: true,
+    data: {},
+    checksum: 0,
+  })
+
+  let subId, subscriberId
+
+  const selector = clientSelector || 'default'
+  const client = useClient(selector)
+
+  if (client && params) {
+    useEffect(() => {
+      dispatch({ error: null, loading: true, data: {} })
+      addSubscriber(
+        client.client,
+        params,
+        // onData:
+        (d, checksum) => {
+          // updateMeta(subKey, false, false) ??
+          dispatch({ data: d, checksum })
+        },
+        // onInitial:
+        (err, subscriptionId, subscriberIdInner, _data, isAuthError) => {
+          subId = subscriptionId
+          subscriberId = subscriberIdInner
+          if (err || isAuthError) {
+            console.error(err)
+            // updateMeta(subKey, false, err)
+            dispatch({ error: err, loading: false })
+          }
+        },
+        // onError:
+        (err) => {
+          console.error(err)
+          // updateMeta(subKey, false, err)
+          dispatch({ error: err })
+        },
+        undefined,
+        'analytics'
+      )
+      return () => {
+        removeSubscriber(client.client, subId, subscriberId)
+      }
+    }, [])
+  } else {
+    useEffect(stubFn, [])
   }
 
   return result
