@@ -1,4 +1,4 @@
-# based graphql
+# @based/graphql
 
 ## 🔗 Links
 - [GitHub](https://github.com/atelier-saulx/based#readme)
