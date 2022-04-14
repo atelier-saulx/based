@@ -17,7 +17,7 @@
     "@saulx/hash": "^1.1.0",
     "@saulx/selva": "10.6.2",
     "@saulx/utils": "^2.2.1",
-    "chalk": "^5.0.0",
+    "chalk": "^4.1.2",
     "graphql": "^16.3.0",
     "jsonexport": "^3.2.0",
     "jsonwebtoken": "^8.5.1",
