@@ -15,7 +15,7 @@
 
 ---
 
-Based packages:
+## Based packages:
 
 - [cli](./packages/cli/README.md)
 - [client](./packages/client/README.md)
@@ -28,6 +28,23 @@ Based packages:
 - [types](./packages/types/README.md)
 - [uws](./packages/uws/README.md)
 - [vue](./packages/vue/README.md)
+
+---
+
+## 📦 Public NPM Packages
+
+| Name                 | NPM                                                                                                         |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `@based/cli`         | [![npm](https://img.shields.io/npm/v/@based/cli)](https://www.npmjs.com/package/@based/cli)                 |
+| `@based/client`      | [![npm](https://img.shields.io/npm/v/@based/client)](https://www.npmjs.com/package/@based/client)           |
+| `data-record`        | [![npm](https://img.shields.io/npm/v/data-record)](https://www.npmjs.com/package/data-record)               |
+| `@based/get-service` | [![npm](https://img.shields.io/npm/v/@based/get-service)](https://www.npmjs.com/package/@based/get-service) |
+| `@based/ids`         | [![npm](https://img.shields.io/npm/v/@based/ids)](https://www.npmjs.com/package/@based/ids)                 |
+| `@based/react`       | [![npm](https://img.shields.io/npm/v/@based/react)](https://www.npmjs.com/package/@based/react)             |
+| `@based/server`      | [![npm](https://img.shields.io/npm/v/@based/server)](https://www.npmjs.com/package/@based/server)           |
+| `@based/types`       | [![npm](https://img.shields.io/npm/v/@based/types)](https://www.npmjs.com/package/@based/types)             |
+| `@based/uws`         | [![npm](https://img.shields.io/npm/v/@based/uws)](https://www.npmjs.com/package/@based/uws)                 |
+| `@based/vue`         | [![npm](https://img.shields.io/npm/v/@based/vue)](https://www.npmjs.com/package/@based/vue)                 |
 
 ---
 
