@@ -10,7 +10,7 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 let activeTimer: NodeJS.Timeout
 
 if (typeof window !== 'undefined') {
-  document.addEventListener('visibilitychange', function (event) {
+  document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
     if (document.hidden) {
       activeTimer = setTimeout(() => {

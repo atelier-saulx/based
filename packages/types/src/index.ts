@@ -41,6 +41,8 @@ export enum RequestTypes {
   Token = 14,
   // eslint-disable-next-line
   Track = 15,
+  // eslint-disable-next-line
+  RemoveType = 16,
 }
 
 export type FunctionConfig = {
@@ -96,6 +98,7 @@ export type RequestMessage<T = GenericObject> =
         | RequestTypes.Delete
         | RequestTypes.Copy
         | RequestTypes.Digest
+        | RequestTypes.RemoveType
       ),
       number,
       T
@@ -191,6 +194,7 @@ export type RequestData = [
     | RequestTypes.Delete
     | RequestTypes.Copy
     | RequestTypes.Digest
+    | RequestTypes.RemoveType
   ),
   // callback id
   number,

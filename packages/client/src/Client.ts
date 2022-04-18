@@ -23,7 +23,7 @@ import { addToQueue, drainQueue, stopDrainQueue } from './queue'
 import { incomingRequest } from './request'
 import sendToken from './token'
 
-export * from './types'
+export * from '@based/types'
 
 export class BasedClient {
   public based: Based

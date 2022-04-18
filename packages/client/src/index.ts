@@ -736,6 +736,21 @@ export class Based extends Emitter {
     })
   }
 
+  public removeType(
+    type: string,
+    db: string = 'default'
+  ): Promise<{ nodesRemoved: number }> {
+    return new Promise((resolve, reject) => {
+      addRequest(
+        this.client,
+        RequestTypes.RemoveType,
+        { type, db },
+        resolve,
+        reject
+      )
+    })
+  }
+
   public updateSchema(
     configuration:
       | {
