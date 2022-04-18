@@ -16,7 +16,8 @@ export const addRequest = (
     | RequestTypes.Copy
     | RequestTypes.Digest
     | RequestTypes.Call
-    | RequestTypes.RemoveType,
+    | RequestTypes.RemoveType
+    | RequestTypes.RemoveField,
   payload: any,
   resolve: (val?: any) => void,
   reject: (err: Error) => void,

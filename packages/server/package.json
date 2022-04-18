@@ -10,9 +10,9 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "@based/client": "2.3.5",
-    "@based/graphql": "2.3.5",
-    "@based/uws": "2.3.5",
+    "@based/client": "2.4.0",
+    "@based/graphql": "2.4.0",
+    "@based/uws": "2.4.0",
     "@saulx/diff": "^1.1.3",
     "@saulx/hash": "^1.1.0",
     "@saulx/selva": "10.6.2",
