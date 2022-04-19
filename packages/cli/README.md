@@ -1,4 +1,4 @@
-# @based/cli
+# Based CLI
 
 ## 🔗 Links
 - [GitHub](https://github.com/atelier-saulx/based#readme)

@@ -97,7 +97,7 @@ export const servicesAddCommand = new Command('add')
       memoryChoices.map((v) => String(v.name))
     )
   )
-  .action(async (options) => {
+  .action(async (options: ServicesAddOptions) => {
     const config = await makeConfig(options)
     printHeader(options, config)
     options.output === 'fancy' && printAction('Add service')
@@ -163,7 +163,7 @@ export const servicesAddCommand = new Command('add')
       let name: string
       if (options.name) {
         name = options.name
-      } else {
+      } else if (!options.nonInteractive) {
         ;({ name } = await inquirer.prompt({
           ...inquirerConfig,
           type: 'input',
@@ -239,7 +239,7 @@ export const servicesAddCommand = new Command('add')
       const result = await client.call('addService', {
         env: envId,
         amount: instances,
-        name,
+        name: template.name,
         args: name ? { name } : {},
         // TODO: select service
         dist: template.dists[0]?.id,
@@ -262,7 +262,10 @@ export const servicesAddCommand = new Command('add')
       if (options.output === 'fancy') {
         printEmptyLine()
         console.info(
-          prefixSuccess + 'Created service ' + chalk.blue(name) + '.'
+          prefixSuccess +
+            'Created service ' +
+            chalk.blue(template.name + (name ? ` (${name})` : '')) +
+            '.'
         )
       } else if (options.output === 'json') {
         console.info(JSON.stringify(output, null, 2))

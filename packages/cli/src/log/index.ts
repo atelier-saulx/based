@@ -19,9 +19,6 @@ import { LogData, LogLine, parseLog } from './parseLog'
 import readline from 'readline'
 import chalk from 'chalk'
 
-readline.emitKeypressEvents(process.stdin)
-if (process.stdin.isTTY) process.stdin.setRawMode(true)
-
 export type LogOptions = GlobalOptions & {
   template?: string[]
   name?: string[]
@@ -36,6 +33,9 @@ const logCommand = new Command('log')
   .option('--template <template...>', 'Service template')
   .option('--name <name...>', 'Name the service')
   .action(async (options: LogOptions) => {
+    readline.emitKeypressEvents(process.stdin)
+    if (process.stdin.isTTY) process.stdin.setRawMode(true)
+
     const config = await makeConfig(options)
     printHeader(options, config)
     options.output === 'fancy' && printAction('Log services')
