@@ -167,7 +167,7 @@ close()
 
 It's also possible to simply get the data once, instead of observing it, using the `based.get()` method, which accepts a query or data function name as argument.
 
-##### Example:
+###### Example:
 
 ```js
 // Gets every child of `root`
