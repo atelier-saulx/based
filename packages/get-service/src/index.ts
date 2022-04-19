@@ -1,5 +1,6 @@
 import fetch from 'cross-fetch'
 
+// PRODUCTION
 const DEFAULT_CLUSTER = 'https://d15p61sp2f2oaj.cloudfront.net'
 
 const parsUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/

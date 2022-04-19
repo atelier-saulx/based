@@ -16,7 +16,7 @@
     "@based/client": "^2.3.3"
   },
   "dependencies": {
-    "@based/client": "2.3.5",
+    "@based/client": "2.5.0",
     "@saulx/hash": "^1.1.0"
   },
   "devDependencies": {
