@@ -4,6 +4,8 @@ This package allows to interact with a Based environment, set and observe data, 
 
 This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
+###### Example:
+
 ```js
 import based from '@based/client'
 
@@ -30,7 +32,7 @@ await client.updateSchema({
   },
 })
 
-// observe some data!
+// observe some data
 await client.observe(
   { $id: 'root', children: { $all: true, $list: true } },
   (data) => {
@@ -52,18 +54,20 @@ await client.set({
 
 ### `set`
 
-The `based.set()` method allows us to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
+The `based.set()` method allows to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
+
+###### Example:
 
 <!-- prettier-ignore-start -->
 ```js
 /*
 Let's assume the following node in database:
 {
-    id: 'maASxsd3',
+  id: 'maASxsd3',
   type: 'match',
   value: 10,
   title: {
-      en: 'yes'
+    en: 'yes'
   }
 }
 */
@@ -88,7 +92,9 @@ Omitting the `$id` field would **create a new node instead**.
 
 ### `delete`
 
-A node can be removed using `client.delete()`, by passing the node's ID.
+A node can be removed using `client.delete()`, by passing an object with a property named `$id` containing the node's ID.
+
+###### Example:
 
 ```js
 await client.delete({
@@ -100,11 +106,13 @@ await client.delete({
 
 > Read more about `observe` and the query language [here](docs/get.md)
 
-Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows us to pass an `onData` function that will get called any time the data that the query points to changes.
+Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows to pass an `onData` function that will get called any time the data that the query points to changes.
 
 Using this same method, it is also possible to observe a data function.
 
 This method returns a `close` function that must be called in order to allow the subscription to close gracefully.
+
+###### Example:
 
 ```js
 // This query observes all nodes of type `thing` and counts how many times any of them
@@ -141,6 +149,8 @@ close()
 
 **To observe a data function instead**, one can simply replace the query with the name of the function:
 
+###### Example:
+
 ```js
 let receivedCnt = 0
 
@@ -156,6 +166,16 @@ close()
 #### `get`
 
 It's also possible to simply get the data once, instead of observing it, using the `based.get()` method, which accepts a query or data function name as argument.
+
+##### Example:
+
+```js
+// Gets every child of `root`
+const data = await client.get({
+  $id: 'root',
+  children: { $all: true, $list: true },
+})
+```
 
 ## Upload files
 
@@ -197,6 +217,34 @@ data = {
   updatedAt: 1650360882865,
 }
 */
+```
+
+## Schema
+
+> Read more about schemas [here](docs/schema.md)
+
+The schema describes what types of nodes can exist on the database. Each `type` can have several named `fields`, each with its own data type (i.e. `string`, `number`, `object`, and so on). Based on the data type, Based will validate the value passed.
+
+One of the first things a Based user will have to do is set a schema for its database. This is done using the `client.updateSchema()` method.
+
+###### Example:
+
+```js
+await client.updateSchema({
+  types: {
+    thing: {
+      fields: {
+        name: { type: 'string' },
+        nested: {
+          type: 'object',
+          properties: {
+            something: { type: 'string' },
+          },
+        },
+      },
+    },
+  },
+})
 ```
 
 ## License
