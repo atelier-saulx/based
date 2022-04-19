@@ -1,6 +1,6 @@
 {
   "name": "@based/graphql",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -11,7 +11,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@based/types": "2.4.1",
+    "@based/types": "2.4.3",
     "graphql": "^16.3.0"
   },
   "ava": {

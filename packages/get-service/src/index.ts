@@ -1,6 +1,7 @@
 import fetch from 'cross-fetch'
 
-const DEFAULT_CLUSTER = 'https://d3gdtpkyvlxeve.cloudfront.net'
+// PRODUCTION
+const DEFAULT_CLUSTER = 'https://d15p61sp2f2oaj.cloudfront.net'
 
 const parsUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
 const wait = (t = 1e3) =>
