@@ -2,7 +2,7 @@
 
 Based CLI allows to control your based account from the command line.
 
-- [Global Arguments]()
+- [Global Arguments]('#global_arguments')
 - [Configuration file]()
 - [Authentication]()
 - Commands
