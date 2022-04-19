@@ -4,13 +4,13 @@ Based provides a way to upload and serve user content without hassle using the `
 Assets uploaded through this tool are then served through a global CDN network, which allows for caching and fast content-delivery.
 
 An additional optimization step is executed when the user uploads a video or an image.
-Images are optimized and compressed, and served through a image specific CDN, while videos get transcoded to multiple reolutions, in HLS format.
+Images are optimized and compressed, and served through an image specific CDN, while videos get transcoded to multiple resolutions, in HLS format.
 
 ### Introduction
 
 Files can be uploaded using the Based client, which in addition to uploading the file, also sets a node of type `file` on the database, which can then be queried and referenced, like you would for any other node.
 
-This default type has several fields describing the file, including its size, mime-type, timestamps for creation and update, progress status, and more. A crucial field is `src`, which contains a link that points to the file (through the appropriate CDN).
+This default type has several fields describing the file, including it's size, mime-type, timestamps for creation and update, progress status, and more. A crucial field is `src`, which contains a link that points to the file (through the appropriate CDN).
 
 > :exclamation: Video files will take longer to become available due to the transcoding process.
 
@@ -39,7 +39,7 @@ The upload progress of the file can then be tracked by _observing_ the `progress
 
 #### Accessing the file
 
-The file can be accesed by querying the database.
+The file can be accessed by querying the database.
 
 ```js
 const data = await client.get({
