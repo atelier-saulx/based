@@ -2,7 +2,7 @@
 
 This package allows to interact with a Based environment, to set and observe data, to upload files, track and see analytics, and authenticate users.
 
-This page provide a quick first look to the main methods thi package offers. Detailed information about each method is linked in the appropriate paragraph.
+This page provide a quick first look to the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
 ## Set data
 
