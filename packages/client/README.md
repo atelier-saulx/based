@@ -1,7 +1,5 @@
 # @based/client
 
----
-
 ### Index
 
 - [Modify data](#modify-data)
