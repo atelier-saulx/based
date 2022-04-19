@@ -173,6 +173,21 @@ $ npx based deploy
 ### `apiKeys`
 
 Manages apiKeys.
+ApiKeys are offered as an alternative to email login. They are ideal for scripted CLI commands.
+After generating an apiKey any command can be used with the `-k, --apiKey` argument.
+
+Example:
+```Text
+$ npx based deploy --schema --no-header --api-key ./apiKey.key
+
+┃ Deploying environment and/or schema
+┃
+┃ Schema at path ./schema/schema.based.ts
+┃
+┃ Succesfully updated schema(s) on hello/dev in 26ms
+
+```
+
 
 | Subcommand                      | Description         |
 |---------------------------------|---------------------|
@@ -207,9 +222,9 @@ Example:
 
 #### `apiKeys add`
 
-Generates a new apiKey or renews an existing one if an apiKey with the same name already exists.
-Can be used as an interactive command or non-interactive when the `--name` argument is passed.
-The generated key can be immediatelly downloaded and saved to a file with the `--file` argument, or retrieved latter using the [`apikeys download`](#apikeys-download) subcommand.
+The `add` subcommand adds a new apiKey or renews an existing one if an apiKey with the same name already exists.
+It can be used as an interactive command or non-interactive when the `--name` argument is passed.
+The generated key can be downloaded immediately and saved to a file with the `--file` argument or retrieved later using the [`apikeys download`](#apikeys-download) subcommand.
 
 | Argument | Description                     |
 |----------|---------------------------------|
@@ -274,10 +289,35 @@ $ npx based apiKeys download --name aKey --file my_key.key
 
 ### `secrets`
 
-Manages your secrets feature in based.
+Manages [based secrets]() for your organization.
+Using the `secrets` command without any arguments will list all the secrets.
+Secrets are added when a name is passed as the first argument, and the `-f` or `-v` arguments are used.
+If the secret with the specified name already exists, it will be updated.
+Secrets are organization-wide, so they are shared across all projects and environments.
 
 | Argument              | Description                                          |
 |-----------------------|------------------------------------------------------|
+| `<name>`              | Name of the secret to add or delete.                 |
 | `-f, --file <file>`   | Add a secret to an organization from a file.         |
 | `-v, --value <value>` | Add a secret to an organization from a value inline. |
 | `-D, --delete`        | Delete a secret from an organization. (Interactive)  |
+
+Example:
+```text
+❯ npx based secrets aSecret --value "My super secret stuff"
+ _                        _
+| |                      | |
+| |__   __ _ ___  ___  __| |
+| '_ \ / _` / __|/ _ \/ _` |
+| |_) | (_| \__ \  __/ (_| |
+|_.__/ \__,_|___/\___|\__,_|
+                  CLI v2.5.3
+
+┃ Org: saulx Project: hello Env: dev
+┃
+┃ Manage secrets
+┃
+┃ Succesfully updated secret aSecret to saulx
+┃ in 37ms
+
+```
