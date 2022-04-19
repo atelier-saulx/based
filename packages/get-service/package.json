@@ -1,6 +1,6 @@
 {
   "name": "@based/get-service",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "license": "MIT",
   "main": "dist/index.js",
   "__module": "src/index.ts",

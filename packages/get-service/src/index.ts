@@ -18,7 +18,7 @@ let registryIndex = 0
 
 export const getClusterUrl = (cluster?: string): string => {
   if (!cluster) {
-    return SELECTOR_LIST || DEFAULT_CLUSTER
+    return process?.env?.SERVICE_SELECTOR_LIST ? SELECTOR_LIST : DEFAULT_CLUSTER
   }
   if (cluster === 'local') {
     return 'http://localhost:7022'

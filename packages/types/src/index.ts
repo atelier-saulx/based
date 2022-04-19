@@ -200,7 +200,6 @@ export type RequestData = [
     | RequestTypes.RemoveType
     | RequestTypes.RemoveField
   ),
-
   // callback id
   number,
   // payload
