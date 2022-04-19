@@ -72,12 +72,12 @@ const result = await client.set({        // Value of result: maASxsd3
   $id: 'maASxsd3',                       // Resulting node in database:
   type: 'match',                         // { id: 'maASxsd3',
   title: {                               //   type: 'match',
-    en: 'hello',                         //   value: 10, // value remains
+    en: 'hello',                         //   value: 10,     // existing value remains
     de: 'hallo',                         //   title: {
   },                                     //     en: 'hello', // .en is overwritten
-  name: 'match',                         //     de: 'hallo' // .de is added
+  name: 'match',                         //     de: 'hallo'  // .de is added
                                          //   },
-                                         //   name: 'match' // name is added
+                                         //   name: 'match'  // name is added
 })
 ```
 <!-- prettier-ignore-end -->
