@@ -216,7 +216,7 @@ Example:
 ┃ List apiKeys
 ┃
 ┃ name
-┃ tally-dev-key
+┃ project-dev-key
 
 ```
 
