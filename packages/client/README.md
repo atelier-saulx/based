@@ -4,18 +4,6 @@ This package allows to interact with a Based environment, to set and observe dat
 
 This page provide a quick first look to the main methods thi package offers. Detailed information about each method is linked in the appropriate paragraph.
 
-In summary, the main methods the Based client offers are
-
-| Name                             | Args                                                                 | Function                                        |
-| -------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------- |
-| [`based.set()`](set.md)          | `query`                                                              | Add or modify data on the database              |
-| [`based.get()`](get.md)          | `query`                                                              | Extract and shape data from the database.       |
-| `based.observe()`                | `query, onData: (data: any, checksum: number), onErr?: (err: Error)` | Subscribe to a query or server-side method.     |
-| `based.delete()`                 | `id`                                                                 | Remove a node from the database                 |
-| [`based.configure()`](schema.md) | `schema query`                                                       | Change schema.                                  |
-| `based.digest()`                 | `string`                                                             | Hash the input string, returning sha-64 digest. |
-| [`based.call()`](functions.md)   | `string`                                                             | Executes a server-side function.                |
-
 ## Set data
 
 The `based.set()` method allows us to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
@@ -57,9 +45,11 @@ Based is built from the ground up with realtime updates in mind. This is why the
 
 Using this same method, it is also possible to observe a data function.
 
+This method returns a `close` function that must be called in order to allow the subscription to close gracefully.
+
 ```js
-// This query observes all nodes of type `thing` and counts how many time any of them
-// changes, is removed, or is added
+// This query observes all nodes of type `thing` and counts how many times any of them
+// changes, is removed, or is added, while also logging all the entries every time.
 let receivedCnt = 0
 
 const close = await client.observe(
@@ -80,7 +70,8 @@ const close = await client.observe(
       },
     },
   },
-  () => {
+  (data) => {
+    console.log(data)
     receivedCnt++
   }
 )
@@ -94,7 +85,8 @@ close()
 ```js
 let receivedCnt = 0
 
-const close = await client.observe('observeAllThings', () => {
+const close = await client.observe('observeAllThings', (data) => {
+  console.log(data)
   receivedCnt++
 })
 
@@ -104,7 +96,7 @@ close()
 
 #### `get`
 
-It's also possible to simply get the data, instead of observing it, using the same
+It's also possible to simply get the data once, instead of observing it, using the `based.get` method, which accepts a query or data function name as argument.
 
 ## License
 
