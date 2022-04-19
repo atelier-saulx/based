@@ -10,7 +10,7 @@ Images are optimized and compressed, and served through an image specific CDN, w
 
 Files can be uploaded using the Based client, which in addition to uploading the file, also sets a node of type `file` on the database, which can then be queried and referenced, like you would for any other node.
 
-This default type has several fields describing the file, including its size, mime-type, timestamps for creation and update, progress status, and more. A crucial field is `src`, which contains a link that points to the file (through the appropriate CDN).
+This default type has several fields describing the file, including it's size, mime-type, timestamps for creation and update, progress status, and more. A crucial field is `src`, which contains a link that points to the file (through the appropriate CDN).
 
 > :exclamation: Video files will take longer to become available due to the transcoding process.
 
