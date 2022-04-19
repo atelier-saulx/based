@@ -98,7 +98,7 @@ $ npx based login your@email.com
 
 ### `logout`
 
-Logout the CLI from your accout.
+Logout the CLI from your account.
 
 Example:
 ```bash
