@@ -33,7 +33,9 @@ await client.updateSchema({
 // observe some data!
 await client.observe(
   { $id: 'root', children: { $all: true, $list: true } },
-  (data) => {}
+  (data) => {
+    console.log(data)
+  }
 )
 
 // set data
