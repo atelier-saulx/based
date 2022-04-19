@@ -39,7 +39,7 @@ The upload progress of the file can then be tracked by _observing_ the `progress
 
 #### Accessing the file
 
-The file can be accesed by querying the database.
+The file can be accessed by querying the database.
 
 ```js
 const data = await client.get({
