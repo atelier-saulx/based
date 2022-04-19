@@ -31,7 +31,7 @@ Based CLI allows control of features available in the Based dashboard UI account
 
 Based CLI tries to find a configuration file named `based.json` or `based.js` in your current folder. It will walk up to the root folder of your project or up to your home folder if it cannot find it.
 If a based file does not exist, the CLI will offer to save a new file.
-The configuration file stores the organization, project, and env that the CLI connects. The config file can be a JSON file or a javascript file, in which case it will execute it, expecting to export an object with the properties below.
+The configuration file stores the organisation, project, and env that the CLI connects. The config file can be a JSON file or a javascript file, in which case it will execute it, expecting to export an object with the properties below.
 
 #### Example:
 ```json
