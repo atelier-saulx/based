@@ -1,10 +1,12 @@
 # @based/client
 
-This package allows to interact with a Based environment, to set and observe data, to upload files, track and see analytics, and authenticate users.
+This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
 
-This page provide a quick first look to the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
+This page provides a quick first look to the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
-## Set data
+## Set and remove data
+
+### `set`
 
 The `based.set()` method allows us to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
 
@@ -38,6 +40,10 @@ const result = await client.set({        // Value of result: maASxsd3
 Omitting the `$id` field would **create a new node instead**.
 
 > :exclamation: **All set operations must still respect the schema, otherwise the set won't take effect.**
+
+### `delete`
+
+A node can be removed using `client.delete(id)`, by passing the node's ID.
 
 ## Observe data
 
@@ -96,7 +102,7 @@ close()
 
 #### `get`
 
-It's also possible to simply get the data once, instead of observing it, using the `based.get` method, which accepts a query or data function name as argument.
+It's also possible to simply get the data once, instead of observing it, using the `based.get()` method, which accepts a query or data function name as argument.
 
 ## Upload files
 
@@ -136,10 +142,10 @@ data = {
   updatedAt: 1650360882865,
 }
 */
+```
 
 ## License
 
 Licensed under the MIT License.
 
 See [LICENSE](./LICENSE) for more information.
-```
