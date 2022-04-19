@@ -46,7 +46,7 @@ await client.set({
 })
 ```
 
-## Set and remove data
+## Modify data
 
 > Read more about `set` and its operators [here](docs/set.md)
 
@@ -88,7 +88,13 @@ Omitting the `$id` field would **create a new node instead**.
 
 ### `delete`
 
-A node can be removed using `client.delete(id)`, by passing the node's ID.
+A node can be removed using `client.delete()`, by passing the node's ID.
+
+```js
+await client.delete({
+  $id: 'maASxsd3',
+})
+```
 
 ## Observe data
 
