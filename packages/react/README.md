@@ -2,7 +2,9 @@
 
 React hooks for the based data platform
 
-> Read more about the [@based/client](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md)
+> [Example react project here](https://github.com/atelier-saulx/based-react-sample)
+
+> Read more about [based](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md)
 
 ---
 
@@ -17,6 +19,7 @@ const client = based({ env: "prod", project: "someproject", org: "a-org" })
 const Things = () => {
   const client = useClient()
 
+  // automatically observes data when components get rendered
   const { data, loading, error } = useData({
     things: {
       id: true,
