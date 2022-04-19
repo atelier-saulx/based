@@ -111,7 +111,7 @@ The command searches your project folder for files that match the standard schem
 
 Schema files are JSON files with an object containing a `schema` property with a [schema definition](https://github.com/atelier-saulx/based-docs/blob/main/docs/schema.md). Multiple databases can be updated simultaneously using an array of objects containing the `schema` property and an additional `db` property with the database name.
 Javascript or typescript files can also be used. In this case, they should export an object or array just like the JSON file.
-By standard, schema files should be named `based.schema.json` (or `.js`/`.ts` in the case of javascript or typescript). The deploy command will search your project folders for these files, but you can also specify the location and name of your schema file using the `-f` variadic argument.
+By default, schema files should be named `based.schema.json` (or `.js`/`.ts` in the case of javascript or typescript). The deploy command will search your project folders for these files, but you can also specify the location and name of your schema file using the `-f` variadic argument.
 
 Data functions should be located in their own folder with a `based.config.js` file. The deploy command will search for this pattern to find the data functions to be deployed.
 If you use dependencies, there should also be a `package.json` file alongside the data function index so it can be correctly bundled.
