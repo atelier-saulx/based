@@ -45,7 +45,7 @@ The configuration file stores the organisation, project, and env that the CLI co
 #### Configuration object properties
 | Property  | Description             |
 |-----------|-------------------------|
-| `org`     | Organization name.      |
+| `org`     | Organisation name.      |
 | `project` | Project name.           |
 | `env`     | Environment name.       |
 
