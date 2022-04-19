@@ -14,17 +14,17 @@ Based CLI allows control of features available in the Based dashboard UI account
 
 ## Global Arguments
 
-| Argument                       | Description                                          |       |                                  |
-|--------------------------------|------------------------------------------------------|-------|----------------------------------|
-| `--help`                       | Display global help or help for a command.           |       |                                  |
-| `--org <org>`                  | Organization name overide.                           |       |                                  |
-| `-p, --project <project>`      | Project name overide.                                |       |                                  |
-| `-e, --env <env>`              | Environment name overide.                            |       |                                  |
-| `-b, --based-file <basedFile>` | Location of your [configuration file]().             |       |                                  |
-| `-d, --debug`                  | Show more descriptive errors and debug information.   |       |                                  |
-| `-k, --api-key <apiKey>`       | Authenticate using an [apiKey]() from file.          |       |                                  |
-| `-H, --no-header`              | Don't show the header. Useful for chaining commands. |       |                                  |
-| `-o, --output fancy            | json                                                 | none` | Output type. Defaults to `fancy` |
+| Argument                         | Description                                          |
+|----------------------------------|------------------------------------------------------|
+| `--help`                         | Display global help or help for a command.           |
+| `--org <org>`                    | Organization name overide.                           |
+| `-p, --project <project>`        | Project name overide.                                |
+| `-e, --env <env>`                | Environment name overide.                            |
+| `-b, --based-file <basedFile>`   | Location of your [configuration file]().             |
+| `-d, --debug`                    | Show more descriptive errors and debug information.  |
+| `-k, --api-key <apiKey>`         | Authenticate using an [apiKey]() from file.          |
+| `-H, --no-header`                | Don't show the header. Useful for chaining commands. |
+| `-o, --output [fancy,json,none]` | Output type. Defaults to `fancy`                     |
 
 
 ## Configuration file
