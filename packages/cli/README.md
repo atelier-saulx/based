@@ -2,14 +2,14 @@
 
 Based CLI allows to control your based account from the command line.
 
-- [Global Arguments]('#global_arguments')
-- [Configuration file]()
-- [Authentication]()
+- [Global Arguments](#global-arguments)
+- [Configuration file](#configuration-file)
+- [Authentication](#authentication)
 - Commands
-	- [`login`]()
-	- [`deploy`]()
-	- [`logs`]()
-	- [`envs`]()
+	- [`login`](#login)
+	- [`deploy`](#deploy)
+	- [`logs`](#logs)
+	- [`envs`](#envs)
 
 ## Global Arguments
 
@@ -86,7 +86,7 @@ After clicking the link the cli will log you in authomatically and save a token 
 ### `login`
 
 Authenticates the CLI with your project.
-See [Authentication]() for more details.
+See [Authentication](#authentication) for more details.
 
 | Argument  | Description |
 |-----------|-------------|
