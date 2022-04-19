@@ -6,6 +6,8 @@ This page provides a quick first look to the main methods this package offers. D
 
 ## Set and remove data
 
+> Read more about `set` and its operators [here](docs/set.md)
+
 ### `set`
 
 The `based.set()` method allows us to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
@@ -46,6 +48,8 @@ Omitting the `$id` field would **create a new node instead**.
 A node can be removed using `client.delete(id)`, by passing the node's ID.
 
 ## Observe data
+
+> Read more about `observe` and the query language [here](docs/get.md)
 
 Based is built from the ground up with realtime updates in mind. This is why the best way retrieve data for the database is to _observe_ it. This allows us to pass a `onData` function that will get called any time the data the query points to changes.
 
@@ -105,6 +109,8 @@ close()
 It's also possible to simply get the data once, instead of observing it, using the `based.get()` method, which accepts a query or data function name as argument.
 
 ## Upload files
+
+> Details [here](docs/files.md)
 
 Based provides a way to upload and serve user content without hassle using the `client.file()` API.
 
