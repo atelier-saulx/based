@@ -1,4 +1,4 @@
-# Based CLI
+# @based/cli
 
 Based CLI allows control of features available in the Based dashboard UI account from the convenience of the command line and script repetitive actions like deploying functions and schema changes.
 
