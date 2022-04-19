@@ -1,6 +1,6 @@
 # Based CLI
 
-Based CLI allows control of functions available in the Based dashboard UI account from the convenience of the command line and script repetitive actions like deploying functions and schema changes.
+Based CLI allows control of features available in the Based dashboard UI account from the convenience of the command line and script repetitive actions like deploying functions and schema changes.
 
 - [Global Arguments](#global-arguments)
 - [Configuration file](#configuration-file)
@@ -106,15 +106,15 @@ $ npx based logout
 ```
 ### `deploy`
 
-The `deploy` command updates your schema changes and functions in one go.
-The command searches your project folder for files that match the standard schema file name and function folder format and shows you a summary of the changes updates about to happen. By default, it will show you the files found and ask if you want to update the schema, the functions, or both. It can also be non-interactive when the `--schema` and `--functions` arguments are used.
+The `deploy` command updates your schema changes and data functions in one go.
+The command searches your project folder for files that match the standard schema file name and data function folder format and shows you a summary of the changes updates about to happen. By default, it will show you the files found and ask if you want to update the schema, the data functions, or both. It can also be non-interactive when the `--schema` and `--functions` arguments are used.
 
 Schema files are JSON files with an object containing a `schema` property with a [schema definition](https://github.com/atelier-saulx/based-docs/blob/main/docs/schema.md). Multiple databases can be updated simultaneously using an array of objects containing the `schema` property and an additional `db` property with the database name.
 Javascript or typescript files can also be used. In this case, they should export an object or array just like the JSON file.
 By standard, schema files should be named `based.schema.json` (or `.js`/`.ts` in the case of javascript or typescript). The deploy command will search your project folders for these files, but you can also specify the location and name of your schema file using the `-f` variadic argument.
 
-Functions should be located in their own folder with a `based.config.js` file. The deploy command will search for this pattern to find the functions to be deployed.
-If you use dependencies, there should also be a `package.json` file alongside the function so it can be correctly bundled.
+Data functions should be located in their own folder with a `based.config.js` file. The deploy command will search for this pattern to find the data functions to be deployed.
+If you use dependencies, there should also be a `package.json` file alongside the data function index so it can be correctly bundled.
 
 ```
  ── functions
@@ -137,20 +137,140 @@ If you use dependencies, there should also be a `package.json` file alongside th
 | `--functions`             | Sets deploy functions option.           |
 
 Example:
-```bash
-$ npx based deploy --functions --schema -f ./schema.json
+```text
+$ npx based deploy
+ _                        _
+| |                      | |
+| |__   __ _ ___  ___  __| |
+| '_ \ / _` / __|/ _ \/ _` |
+| |_) | (_| \__ \  __/ (_| |
+|_.__/ \__,_|___/\___|\__,_|
+                  CLI v2.5.3
+
+┃ Org: saulx Project: hello Env: dev
+┃
+┃ Deploying environment and/or schema
+┃
+┃ Function(s) built in 188ms
+┃ name                ┃  observable ┃  shared ┃  status ┃  path
+┃ aFunction           ┃             ┃         ┃  new    ┃  ./based/functions/aFunctionn/index.ts
+┃ anotherFunction     ┃  ✔          ┃  ✔      ┃  new    ┃  ./based/functions/live/anotherFunction.ts
+┃ functionWithDepe... ┃             ┃         ┃  new    ┃  ./based/functions/functionWithDependencies/index.ts
+┃ and 30 unchanged function(s).
+┃
+┃ Schema at path ./based.schema.ts
+┃
+? What would you like to deploy? (Ctrl+C to abort) both
+┃
+┃ Succesfully updated schema(s) on hello/dev in 46ms
+┃
+┃ Succesfully deployed function aFunction to hello/dev in 266ms
+┃ Succesfully deployed function anotherFunction to hello/dev in 270ms
+┃ Succesfully deployed function functionWithDependencies to hello/dev in 270ms
+
 ```
 
 ### `apiKeys`
 
 Manages apiKeys.
 
-| Subcommand | Description         |
-|------------|---------------------|
-| `ls`       | List apiKeys.       |
-| `add`      | Add apiKey.         |
-| `remove`   | Remove an apiKey.   |
-| `download` | Download an apiKey. |
+| Subcommand                      | Description         |
+|---------------------------------|---------------------|
+| [`ls`](#apikeys-ls)             | List apiKeys.       |
+| [`add`](#apikeys-add)           | Add apiKey.         |
+| [`remove`](#apikeys-remove)     | Remove an apiKey.   |
+| [`download`](#apikeys-download) | Download an apiKey. |
+
+#### `apiKeys ls`
+
+Lists the apiKeys
+
+Example:
+```text
+❯ npx based apiKeys ls
+ _                        _
+| |                      | |
+| |__   __ _ ___  ___  __| |
+| '_ \ / _` / __|/ _ \/ _` |
+| |_) | (_| \__ \  __/ (_| |
+|_.__/ \__,_|___/\___|\__,_|
+                  CLI v2.5.3
+
+┃ Org: saulx Project: hello Env: dev
+┃
+┃ List apiKeys
+┃
+┃ name
+┃ tally-dev-key
+
+```
+
+#### `apiKeys add`
+
+Generates a new apiKey or renews an existing one if an apiKey with the same name already exists.
+Can be used as an interactive command or non-interactive when the `--name` argument is passed.
+The generated key can be immediatelly downloaded and saved to a file with the `--file` argument, or retrieved latter using the [`apikeys download`](#apikeys-download) subcommand.
+
+| Argument | Description                     |
+|----------|---------------------------------|
+| `--name` | Name or the apiKey to generate. |
+| `--file` | Path to save the generated key. |
+
+Example:
+```text
+❯ npx based apiKeys add
+ _                        _
+| |                      | |
+| |__   __ _ ___  ___  __| |
+| '_ \ / _` / __|/ _ \/ _` |
+| |_) | (_| \__ \  __/ (_| |
+|_.__/ \__,_|___/\___|\__,_|
+                  CLI v2.5.3
+
+┃ Org: saulx Project: hello Env: dev
+┃
+┃ Add apiKey
+┃
+? What is the apiKey name? aKey
+┃
+┃ Added key aKey
+```
+
+#### `apiKeys remove`
+
+Removes an apiKey.
+Can be used as an interactive command or non-interactive when the `--name` argument is passed.
+
+| Argument | Description                     |
+|----------|---------------------------------|
+| `--name` | Name or the apiKey to generate. |
+
+#### `apiKeys download`
+
+Downloads an existing apiKey.
+Can be used as an interactive command or non-interactive when the `--name` and `--file`  arguments are passed.
+
+Example:
+```text
+$ npx based apiKeys download --name aKey --file my_key.key
+ _                        _
+| |                      | |
+| |__   __ _ ___  ___  __| |
+| '_ \ / _` / __|/ _ \/ _` |
+| |_) | (_| \__ \  __/ (_| |
+|_.__/ \__,_|___/\___|\__,_|
+                  CLI v2.5.3
+
+┃ Org: saulx Project: hello Env: dev
+┃
+┃ Download apiKey
+┃
+┃
+┃ Downloaded key aKey
+┃ to file my_key.key
+
+```
+
 
 ### `secrets`
 
