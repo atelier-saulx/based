@@ -4,6 +4,46 @@ This package allows to interact with a Based environment, set and observe data, 
 
 This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
+```js
+import based from '@based/client'
+
+const client = based({
+  org: 'my-org',
+  project: 'someproject',
+  env: 'production',
+})
+
+// create a schema
+await client.updateSchema({
+  schema: {
+    types: {
+      thing: {
+        fields: {
+          name: { type: 'string' },
+          quantity: { type: 'number' },
+          reason: { type: 'string' },
+          otherThings: { type: 'references' },
+          favouriteThing: { type: 'reference' },
+        },
+      },
+    },
+  },
+})
+
+// observe some data!
+await client.observe(
+  { $id: 'root', children: { $all: true, $list: true } },
+  (data) => {}
+)
+
+// set data
+await client.set({
+  type: 'thing',
+  name: 'book',
+  quantity: 3,
+})
+```
+
 ## Set and remove data
 
 > Read more about `set` and its operators [here](docs/set.md)
@@ -12,6 +52,7 @@ This page provides a quick first look at the main methods this package offers. D
 
 The `based.set()` method allows us to create new nodes or modify data on existing nodes. To change an existing one, one can do the following:
 
+<!-- prettier-ignore-start -->
 ```js
 /*
 Let's assume the following node in database:
@@ -25,7 +66,6 @@ Let's assume the following node in database:
 }
 */
 
-// prettier-ignore
 const result = await client.set({        // Value of result: maASxsd3
   $id: 'maASxsd3',                       // Resulting node in database:
   type: 'match',                         // { id: 'maASxsd3',
@@ -38,6 +78,7 @@ const result = await client.set({        // Value of result: maASxsd3
                                          //   name: 'match' // name is added
 })
 ```
+<!-- prettier-ignore-end -->
 
 Omitting the `$id` field would **create a new node instead**.
 
@@ -51,7 +92,7 @@ A node can be removed using `client.delete(id)`, by passing the node's ID.
 
 > Read more about `observe` and the query language [here](docs/get.md)
 
-Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows us to pass an `onData` function that will get called any time the data the query points to changes.
+Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows us to pass an `onData` function that will get called any time the data that the query points to changes.
 
 Using this same method, it is also possible to observe a data function.
 
