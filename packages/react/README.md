@@ -19,7 +19,7 @@ const client = based({ env: "prod", project: "someproject", org: "a-org" })
 const Things = () => {
   const client = useClient()
 
-  // automaticly observes data when components get rendered
+  // automatically observes data when components get rendered
   const { data, loading, error } = useData({
     things: {
       id: true,
