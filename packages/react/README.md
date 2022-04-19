@@ -1,40 +1,61 @@
-# Based React
+# @based/react
 
-## 🔗 Links
-- [GitHub](https://github.com/atelier-saulx/based#readme)
+React hooks for the based data platform
+
+> Read more about the [@based/client](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md)
 
 ---
 
-## .subscribe(query, cb, err?)
+```js
+import based from "@based/client"
+import { Provider, useData, useClient } from "@based/react"
+import React from "react"
+import ReactDom from "react-dom"
 
+const client = based({ env: "prod", project: "someproject", org: "a-org" })
+
+const Things = () => {
+  const client = useClient()
+
+  const { data, loading, error } = useData({
+    things: {
+      id: true,
+      name: true,
+      $list: true,
+    },
+  })
+
+  if (loading) {
+    return <div>loading...</div>
+  }
+
+  return (
+    <div>
+      {data.things.map((thing) => (
+        <div
+          key={thing.id}
+          onClick={(e) => {
+            client.set({ $id: thing.id, name: "Some random name!" })
+          }}
+        >
+          {thing.name}
+        </div>
+      ))}
+    </div>
+  )
+}
+
+const App = () => {
+  return (
+    <Provider client={client}>
+      <Things />
+    </Provider>
+  )
+}
+
+ReactDom.render(<App />, document.body)
 ```
-const unsubscribe = await b.subscribe({
-    $id: 'sp1',
-    title: true
-}, (data) => {
 
-}, (err) => {
-
-})
-```
-
-## .get(query)
-
-```
-const result = await b.get({
-    $id: 'sp1',
-    title: true
-})
-```
-
-## .set(payload)
-
-```
-const { id } = await b.set({
-    $id: 'sp1',
-    title: 'Yes, the best'
-})
-```
 
 ---
 
