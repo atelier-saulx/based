@@ -98,8 +98,48 @@ close()
 
 It's also possible to simply get the data once, instead of observing it, using the `based.get` method, which accepts a query or data function name as argument.
 
+## Upload files
+
+Based provides a way to upload and serve user content without hassle using the `client.file()` API.
+
+This sets a new node of type `file` in the database, which contains all its relevant information
+
+###### Example:
+
+```js
+const fileId = await client.file({
+  contents: 'This is a string I want to store as plain text!',
+  mimeType: 'text/plain',
+  name: 'my-file-name',
+})
+```
+
+###### Retrieve the file node:
+
+```js
+const data = await client.get({
+  $id: fileId,
+  $all: true,
+})
+/*
+data = {
+  id: "fi6a535226",
+  name: "eb3f67a3bc65325bf739ebddd94403e5",
+  mimeType: "text/plain",
+  version: "eb3f67a3bc65325bf739ebddd94403e5",
+  origin: "https://based-env-files-do-usproduction-enb-xz-apz--orn-t-v-...98446afcb87d",
+  src: "https://based-2129034536588.imgix.net/fi6a535226/84e62df3-75...98446afcb87d",
+  progress: 1,
+  size: 31,
+  type: "file",
+  createdAt: 1650360875043,
+  updatedAt: 1650360882865,
+}
+*/
+
 ## License
 
 Licensed under the MIT License.
 
 See [LICENSE](./LICENSE) for more information.
+```
