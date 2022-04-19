@@ -1,14 +1,20 @@
 # @based/client
 
-This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
+---
 
-This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
+### Index
 
 - [Modify data](#modify-data)
 - [Observe data](#observe-data)
 - [Upload files](#upload-files)
 - [Schema](#schema)
 - [Analytics](#analytics)
+
+---
+
+This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
+
+This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
 ###### Example:
 
