@@ -247,6 +247,28 @@ await client.updateSchema({
 })
 ```
 
+## Analytics
+
+Based is capable of tracking a client using the include `client.track()` method (and `client.untrack()`).  
+This method allows to track any user defined event, a payload to it. The client stops being tracked when `client.untrack()` is called, or when the connection is closed.
+
+###### Example:
+
+```js
+client.track('view', {
+  edition: '2022',
+  language: 'en',
+})
+
+// when the event is no longer happening (i.e. the user moves to a different view)...
+client.untrack('view', {
+  edition: '2022', // The payload needs to be specified again, since it defines a unique event type
+  language: 'en',
+})
+```
+
+---
+
 ## License
 
 Licensed under the MIT License.
