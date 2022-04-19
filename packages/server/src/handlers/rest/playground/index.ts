@@ -190,6 +190,9 @@ export default async (
       Promise.all([server.db.getSchema(db), server.based.get('$configuration')])
         .then(([schemaResp, cfg]) => {
           const gqlSchema = genSchema(schemaResp.schema, cfg?.functions)
+
+          console.info(gqlSchema)
+
           const typeDefs = buildSchema(gqlSchema)
           return graphql({ schema: typeDefs, source: body.query })
         })
