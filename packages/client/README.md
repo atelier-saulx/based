@@ -4,6 +4,12 @@ This package allows to interact with a Based environment, set and observe data, 
 
 This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
+- [Modify data](#modify-data)
+- [Observe data](#observe-data)
+- [Upload files](#upload-files)
+- [Schema](#schema)
+- [Analytics](#analytics)
+
 ###### Example:
 
 ```js
@@ -266,6 +272,22 @@ client.untrack('view', {
   language: 'en',
 })
 ```
+
+Analytics can be queried with `client.observe()` and `client.get()` using a special endpoint:
+
+###### Example:
+
+<!-- prettier-ignore-start -->
+
+```js
+const data = await client.get('analytics', {   // The resulting object has 
+  type: 'view',                                // { active, all, unique }
+})                                             // counts, at the moment the method was called.
+                                               // It is also possible to explore historical values using the $history operator, or observe the live count.
+                                                
+
+```
+<!-- prettier-ignore-end -->
 
 ---
 
