@@ -2,7 +2,7 @@
 
 This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
 
-This page provides a quick first look to the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
+This page provides a quick first look at the main methods this package offers. Detailed information about each method is linked in the appropriate paragraph.
 
 ## Set and remove data
 
@@ -51,7 +51,7 @@ A node can be removed using `client.delete(id)`, by passing the node's ID.
 
 > Read more about `observe` and the query language [here](docs/get.md)
 
-Based is built from the ground up with realtime updates in mind. This is why the best way retrieve data for the database is to _observe_ it. This allows us to pass a `onData` function that will get called any time the data the query points to changes.
+Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows us to pass an `onData` function that will get called any time the data the query points to changes.
 
 Using this same method, it is also possible to observe a data function.
 
