@@ -4,7 +4,7 @@ Based provides a way to upload and serve user content without hassle using the `
 Assets uploaded through this tool are then served through a global CDN network, which allows for caching and fast content-delivery.
 
 An additional optimization step is executed when the user uploads a video or an image.
-Images are optimized and compressed, and served through a image specific CDN, while videos get transcoded to multiple reolutions, in HLS format.
+Images are optimized and compressed, and served through an image specific CDN, while videos get transcoded to multiple resolutions, in HLS format.
 
 ### Introduction
 
