@@ -61,7 +61,7 @@ export default async function (
       }
     }
 
-    if (payload.length > 0) {
+    if (typeof payload === 'object' && payload !== null) {
       const spinner = ora(`Updating schema(s)...`).start()
       try {
         await Promise.race([

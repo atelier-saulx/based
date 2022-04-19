@@ -84,10 +84,6 @@ command(
     fail(`More than one schema file found, aborting.`, output, options)
   }
 
-  if (fns.length < 1) {
-    fail('No functions found', output, options)
-  }
-
   // check double names
   const dup = hasDuplicate(fns.map((el) => el.name))
   if (dup) {
