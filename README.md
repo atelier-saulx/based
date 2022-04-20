@@ -15,6 +15,12 @@
 
 ---
 
+## Getting started
+
+[Click here](./packages/client/docs/get-started.md) to get started with Based.
+
+---
+
 ## 📦 Public NPM Packages
 
 | Name                                                   | NPM                                                                                                         |
