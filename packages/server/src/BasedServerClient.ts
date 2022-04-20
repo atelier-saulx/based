@@ -377,8 +377,8 @@ class BasedServerClient {
     $db?: string
   }): Promise<{ isDeleted: boolean }> {
     await this._authorize('delete', payload)
-    const v = await this._params.server.db.delete(payload)
-    return { isDeleted: v }
+    await this._params.server.db.delete(payload)
+    return { isDeleted: true }
   }
 
   public async set(payload: SetOptions): Promise<{ id: string }> {
