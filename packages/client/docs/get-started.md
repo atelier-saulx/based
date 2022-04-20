@@ -1,6 +1,6 @@
 <div align="center">
   <a href="javascript:void(0);" style="pointer-events: none;">
-    <img src="../../../.docs/assets/based-logo-black.svg" style="width: 200px; padding-bottom: 10px;" />
+    <img src="../../../.docs/assets/based-logo-black.svg" style="width: 350px; padding-bottom: 10px;" />
   </a>
 </div>
 
