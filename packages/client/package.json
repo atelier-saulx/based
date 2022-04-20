@@ -41,6 +41,7 @@
   "devDependencies": {
     "esbuild": "^0.14.29",
     "@saulx/hash": "^1.1.0",
+    "@based/server": "^2.5.0",
     "@saulx/selva": "11.0.0",
     "@saulx/utils": "^2.2.1",
     "@saulx/selva-server": "11.0.0",

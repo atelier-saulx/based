@@ -74,7 +74,10 @@ test.serial('file', async (t) => {
           })
           stream.on('end', () => {
             console.info('chunks', c, 'size', size)
-            resolve()
+            resolve({
+              src: 'flap',
+              origin: 'hello',
+            })
           })
         })
       },
