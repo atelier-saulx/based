@@ -206,16 +206,12 @@ test.serial('observable functions', async (t) => {
   })
 
   try {
-    await client.observe('flappie', (x) => {
-      console.info(x)
-    })
+    await client.observe('flappie', () => {})
   } catch (err) {
     console.error(err)
   }
 
-  const close = await client.observe('counter', (x) => {
-    console.info(x)
-  })
+  const close = await client.observe('counter', () => {})
 
   await wait(3e3)
 
@@ -226,13 +222,13 @@ test.serial('observable functions', async (t) => {
   t.is(closedCnt, 1)
 
   try {
-    await client.observe('advanced', query, (x) => {})
+    await client.observe('advanced', query, () => {})
   } catch (err) {
     console.error(err)
   }
 
   try {
-    await client.observe('advanced', { x: 'nurky' }, (x) => {})
+    await client.observe('advanced', { x: 'nurky' }, () => {})
   } catch (err) {
     console.error(err)
   }
@@ -275,7 +271,7 @@ test.serial('observable functions + get', async (t) => {
           advanced: {
             shared: true,
             observable: true,
-            function: async ({ payload, update, based, callStack }) => {
+            function: async ({ payload, update, based }) => {
               return based.observe(payload, update)
             },
           },
@@ -329,14 +325,14 @@ test.serial('observable functions + get', async (t) => {
   let getReceived = 0
   let subReceived = 0
 
-  client.get('advanced', query).then((v) => {
+  client.get('advanced', query).then(() => {
     getReceived++
   })
 
   let close
 
   client
-    .observe('advanced', query, (d) => {
+    .observe('advanced', query, () => {
       subReceived++
     })
     .then((c) => {
@@ -355,14 +351,14 @@ test.serial('observable functions + get', async (t) => {
   await server3.destroy()
   close()
 
-  client.get('advanced', query).then((v) => {
+  client.get('advanced', query).then(() => {
     getReceived++
   })
 
   await wait(500)
 
   client
-    .observe('advanced', query, (d) => {
+    .observe('advanced', query, () => {
       subReceived++
     })
     .then((c) => {
@@ -383,7 +379,7 @@ test.serial('observable functions + get', async (t) => {
 
   await server4.destroy()
 
-  client.get('slow').then((v) => {
+  client.get('slow').then(() => {
     getReceived++
   })
 
@@ -391,7 +387,7 @@ test.serial('observable functions + get', async (t) => {
 
   await wait(500)
 
-  client.observe('slow', (d) => {
+  client.observe('slow', () => {
     subReceived++
   })
 
@@ -417,10 +413,8 @@ test.serial.only('nested observable', async (t) => {
           advanced: {
             shared: true,
             observable: true,
-            function: async ({ payload, update, based, callStack }) => {
-              console.log('abvanced before', callStack)
+            function: async ({ payload, update, based }) => {
               return based.observe(payload, (res) => {
-                console.log('advanced update', res, callStack)
                 update(res)
               })
             },
@@ -429,9 +423,7 @@ test.serial.only('nested observable', async (t) => {
             shared: true,
             observable: true,
             function: async ({ payload, based, update }) => {
-              console.log('nestedObservable before')
               return based.observe('advanced', payload, (res) => {
-                console.log('nestedObservable update', res) // <<--------- this never gets triggered
                 update(res)
               })
             },
@@ -454,9 +446,7 @@ test.serial.only('nested observable', async (t) => {
     name: 'snurk',
   })
 
-  await client.observe('nestedObservable', query, (d) => {
-    console.info('snurx', d)
-  })
+  await client.observe('nestedObservable', query, () => {})
 
   const x = await client.get('nestedObservable', query)
 
@@ -489,7 +479,6 @@ test.serial('observable functions + get + internal', async (t) => {
                 })
               }, 500)
               return () => {
-                console.info('HELLO CLOSE')
                 clearInterval(int)
               }
             },

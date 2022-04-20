@@ -63,7 +63,7 @@ test.serial('rest call request', async (t) => {
         },
         hello: {
           observable: false,
-          function: async ({ payload, user }) => {
+          function: async ({ payload }) => {
             // payload can also be the next segment in the url
 
             if (payload) {
@@ -167,11 +167,7 @@ test.serial('rest call request', async (t) => {
         },
       },
     }),
-  })
-    .then((r) => r.json())
-    .catch((err) => {
-      console.error(err)
-    })
+  }).then((r) => r.json())
 
   t.true(!!h.things)
 
@@ -284,7 +280,7 @@ test.serial('rest authorization', async (t) => {
         },
         hello: {
           observable: false,
-          function: async ({ payload, user }) => {
+          function: async ({ payload }) => {
             if (payload) {
               return {
                 yes: '!',

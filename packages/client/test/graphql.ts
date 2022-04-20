@@ -193,8 +193,6 @@ test.serial('Get', async (t) => {
     },
   }
 
-  console.log('CONFIG', server.config)
-
   const client = based({
     url: async () => {
       return 'ws://localhost:9910'
@@ -204,12 +202,9 @@ test.serial('Get', async (t) => {
   await client.schema()
 
   // FIXME start
-  const firstCfg = await client.get('$configuration')
-  console.log('FIRST CONFIG', firstCfg)
+  await client.get('$configuration')
 
-  const cfgCleanup = await client.observe('$configuration', (cfg) => {
-    console.log('---> SUB CONFIGURATION', cfg)
-  })
+  const cfgCleanup = await client.observe('$configuration', () => {})
   // FIXME end
 
   const setQuery = `
@@ -240,7 +235,6 @@ test.serial('Get', async (t) => {
     },
   } = await client.graphql.query(setQuery)
 
-  console.log('PING', ping)
   t.deepEqual(type, 'match')
   t.deepEqual(ping, {
     hello: 'hello',
@@ -345,7 +339,6 @@ test.serial('Get', async (t) => {
   let cnt1 = 0
   const obs1 = await client.graphql.live(getQuery, { id })
   const sub1 = obs1.subscribe((resp) => {
-    console.log('RAW 1', resp)
     const d = resp.data.match
 
     if (cnt1 === 0) {
@@ -377,7 +370,6 @@ test.serial('Get', async (t) => {
     { id }
   )
   const sub2 = obs2.subscribe((resp) => {
-    console.log('RAW 2', resp)
     const d = resp.data.hello
 
     if (cnt2 === 0) {
@@ -426,7 +418,6 @@ test.serial('Get', async (t) => {
   let hello = {}
   let helloEvents = 0
   const sub3 = obs3.subscribe((resp) => {
-    console.log('HELLO', resp)
     hello = resp
 
     if (helloEvents === 0) {
@@ -488,8 +479,7 @@ test.serial('Get', async (t) => {
      }
    }
    `
-  const descs = await client.graphql.query(traverseQuery)
-  console.log('HELLO', JSON.stringify(descs, null, 2))
+  await client.graphql.query(traverseQuery)
 
   client.disconnect()
   await server.destroy()

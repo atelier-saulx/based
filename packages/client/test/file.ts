@@ -15,12 +15,14 @@ test.before(async () => {
       file: {
         prefix: 'fi',
         fields: {
+          version: { type: 'string' },
           src: { type: 'url' },
           createdAt: { type: 'string' },
           progress: { type: 'number' },
           origin: { type: 'url' },
           size: { type: 'number' },
           mime: { type: 'string' },
+          mimeType: { type: 'string' },
           status: { type: 'number' },
           renditions: {
             type: 'object',
@@ -66,23 +68,17 @@ test.serial('file', async (t) => {
     config: {
       storeFile: ({ stream }) => {
         return new Promise((resolve) => {
-          let c = 0
-          let size = 0
-          stream.on('data', (chunk) => {
-            c++
-            size += chunk.byteLength
-          })
+          stream.on('data', () => {})
           stream.on('end', () => {
-            console.info('chunks', c, 'size', size)
             resolve({
-              src: 'flap',
-              origin: 'hello',
+              version: 'x',
+              src: 'http://www.hello.com/flap',
+              origin: 'http://www.hello.com/flap',
             })
           })
         })
       },
       authorize: async () => {
-        console.info('auth!')
         return true
       },
     },
@@ -107,24 +103,17 @@ test.serial('file', async (t) => {
     name: 'myfile',
   })
 
-  console.info(id)
-
-  const d = Date.now()
-
   await client.observeUntil(
     {
       $id: id,
       progress: true,
     },
     (d) => {
-      console.info(d)
       if (d.progress === 1) {
         return true
       }
     }
   )
-
-  console.info('RDY', Date.now() - d, 'ms')
 
   await server.destroy()
 
