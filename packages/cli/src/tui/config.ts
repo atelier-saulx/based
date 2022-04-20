@@ -10,12 +10,12 @@ export const printConfig = (config: Config) => {
   console.info(
     prefix +
       chalk.gray('Org: ') +
-      config.org +
+      (config.org || chalk.gray('-')) +
       ' ' +
       chalk.gray('Project: ') +
-      config.project +
+      (config.project || chalk.gray('-')) +
       ' ' +
       chalk.gray('Env: ') +
-      config.env
+      (config.env || chalk.gray('-'))
   )
 }

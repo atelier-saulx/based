@@ -3,6 +3,8 @@ import set from './set'
 import copy from './copy'
 import track from './track'
 import get from './get'
+import removeType from './removeType'
+import removeField from './removeField'
 import digest from './digest'
 import del from './delete'
 import configure from './configure'
@@ -21,7 +23,11 @@ export default (
   messages: (Message | TrackMessage)[]
 ) => {
   for (const msg of messages) {
-    if (msg[0] === RequestTypes.Copy) {
+    if (msg[0] === RequestTypes.RemoveField) {
+      removeField(server, client, msg)
+    } else if (msg[0] === RequestTypes.RemoveType) {
+      removeType(server, client, msg)
+    } else if (msg[0] === RequestTypes.Copy) {
       copy(server, client, msg)
     } else if (msg[0] === RequestTypes.Digest) {
       digest(server, client, msg)
@@ -51,7 +57,6 @@ export default (
       }
     } else if (msg[0] === RequestTypes.Subscription) {
       if (msg[5] === '$configuration') {
-        console.log('$configuration subscription')
         cfg.subscribeObservable(server, client, msg)
       } else if (msg[5]) {
         fns.subscribeObservable(server, client, msg)

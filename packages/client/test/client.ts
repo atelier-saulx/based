@@ -142,7 +142,7 @@ test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
 
   y()
 
-  await wait(2000)
+  await wait(8000)
 
   t.deepEqual(server2.subscriptions, {})
 

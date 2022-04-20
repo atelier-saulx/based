@@ -1,52 +1,32 @@
+/* eslint-disable no-console */
 import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
-import { getAllPackageNames } from './get-all-package-names'
+import semver from 'semver'
+import { getAllPackages, PackageData } from './get-package-data'
+import { getIncrementedVersion } from './utilities'
+
+// @ts-ignore
+import packageJson from '../../package.json'
 
 async function writeVersionToPackageJson({
   filePath,
-  version,
+  targetVersion,
 }: {
   filePath: string
-  version: string
+  targetVersion: string
 }) {
-  const packageJson = await fs.readJSON(filePath)
-  const packageNamesInProject = await getAllPackageNames()
+  const packageJSONPath = path.join(filePath, '/package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
 
-  /**
-   * Match packages in peerDependencies, update version
-   */
-  if (packageJson.peerDependencies) {
-    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
-      const isPackageInRepo = packageNamesInProject.includes(packageName)
+  packageJson.version = targetVersion
 
-      if (isPackageInRepo) {
-        packageJson.peerDependencies[packageName] = version
-      }
-    })
-  }
-
-  /**
-   * Match packages in dependencies, update version
-   */
-  if (packageJson.dependencies) {
-    Object.keys(packageJson.dependencies).forEach((packageName) => {
-      const isPackageInRepo = packageNamesInProject.includes(packageName)
-
-      if (isPackageInRepo) {
-        packageJson.dependencies[packageName] = version
-      }
-    })
-  }
-
-  packageJson.version = version
-
-  await fs.writeJSON(filePath, packageJson, { spaces: 2 })
+  await fs.writeJSON(packageJSONPath, packageJson, { spaces: 2 })
 }
 
 async function writeVersionToModulesInFolder(
   inputFolder: string,
-  version: string
+  targetVersion: string
 ) {
   const sourceFolder = path.join(cwd(), inputFolder)
 
@@ -57,29 +37,53 @@ async function writeVersionToModulesInFolder(
   await Promise.all(
     targetFolders.map((folder) => {
       return writeVersionToPackageJson({
-        filePath: path.join(sourceFolder, folder, '/package.json'),
-        version,
+        filePath: path.join(sourceFolder, folder),
+        targetVersion,
       })
     })
   )
 }
 
-export async function updatePackageVersionsInRepository({
-  version,
-  targetFolders: folders,
+export async function validateSemver({
+  targetVersion,
 }: {
-  version: string
+  targetVersion: string
+}) {
+  const allPackages = await getAllPackages()
+
+  allPackages.forEach((packageData) => {
+    const isValid = semver.lte(packageData.version, targetVersion)
+    if (!isValid) {
+      throw new Error(
+        `Package ${packageData?.name} version ${packageData?.version} is higher than ${targetVersion}.`
+      )
+    }
+
+    return isValid
+  })
+}
+
+export async function updatePackageVersionsInRepository({
+  targetVersion,
+  targetFolders,
+}: {
+  targetVersion: string
   targetFolders: string[]
 }) {
+  /**
+   * Ensure no repository version is higher than the target version.
+   */
+  await validateSemver({ targetVersion })
+
   /**
    * Update package version in target folders
    */
   const writeVersionsPromises: Promise<void>[] = []
 
-  folders.forEach((folder) => {
+  targetFolders.forEach((folder) => {
     const writeVersionToFolderPromise = writeVersionToModulesInFolder(
       folder,
-      version
+      targetVersion
     )
 
     writeVersionsPromises.push(writeVersionToFolderPromise)
@@ -88,10 +92,43 @@ export async function updatePackageVersionsInRepository({
   await Promise.all(writeVersionsPromises)
 
   /**
-   * Update root package version
+   * Always update root package version
    */
   await writeVersionToPackageJson({
-    filePath: path.join(cwd(), './package.json'),
-    version,
+    filePath: path.join(cwd()),
+    targetVersion,
+  })
+}
+
+export async function updateTargetPackageVersion({
+  packageData,
+  targetVersion,
+}: {
+  packageData: PackageData | undefined
+  targetVersion: string
+}) {
+  if (!packageData) {
+    throw new Error("Can't update package version, package data is undefined")
+  }
+
+  /**
+   * Update target package version
+   */
+  await writeVersionToPackageJson({
+    filePath: packageData.path,
+    targetVersion,
+  })
+
+  /**
+   * Always bump root package version with patch
+   */
+  const repoVersion = getIncrementedVersion({
+    version: packageJson.version,
+    type: 'patch',
+  })
+
+  await writeVersionToPackageJson({
+    filePath: path.join(cwd()),
+    targetVersion: repoVersion,
   })
 }

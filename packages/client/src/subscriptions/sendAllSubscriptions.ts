@@ -1,5 +1,5 @@
 import { BasedClient } from '..'
-import { RequestTypes } from '../types'
+import { RequestTypes } from '@based/types'
 import { addToQueue } from '../queue'
 
 export const sendAllSubscriptions = (

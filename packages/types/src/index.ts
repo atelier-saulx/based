@@ -42,7 +42,11 @@ export enum RequestTypes {
   // eslint-disable-next-line
   Track = 15,
   // eslint-disable-next-line
-  Auth = 16,
+  RemoveType = 16,
+  // eslint-disable-next-line
+  RemoveField = 17,
+  // eslint-disable-next-line
+  Auth = 18,
 }
 
 export enum AuthRequestTypes {
@@ -107,6 +111,8 @@ export type RequestMessage<T = GenericObject> =
         | RequestTypes.Delete
         | RequestTypes.Copy
         | RequestTypes.Digest
+        | RequestTypes.RemoveType
+        | RequestTypes.RemoveField
       ),
       number,
       T
@@ -213,6 +219,8 @@ export type RequestData = [
     | RequestTypes.Delete
     | RequestTypes.Copy
     | RequestTypes.Digest
+    | RequestTypes.RemoveType
+    | RequestTypes.RemoveField
   ),
   // callback id
   number,

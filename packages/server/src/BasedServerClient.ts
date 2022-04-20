@@ -292,7 +292,7 @@ class BasedServerClient {
     return new Promise((resolve, reject) => {
       if (typeof a === 'string') {
         this._authorize('get', payload, a)
-          .then(async (x) => {
+          .then(async () => {
             let isFired = false
             // eslint-disable-next-line
             let subscription
@@ -341,7 +341,7 @@ class BasedServerClient {
           })
       } else {
         this._authorize('get', a)
-          .then((x) => {
+          .then(() => {
             resolve(this._params.server.db.get(a))
           })
           .catch((err) => {
@@ -398,8 +398,8 @@ class BasedServerClient {
     $db?: string
   }): Promise<{ isDeleted: boolean }> {
     await this._authorize('delete', payload)
-    const v = await this._params.server.db.delete(payload)
-    return { isDeleted: v }
+    await this._params.server.db.delete(payload)
+    return { isDeleted: true }
   }
 
   public async set(payload: SetOptions): Promise<{ id: string }> {

@@ -1,7 +1,7 @@
 {
   "name": "@based/scripts",
   "description": "Based Scripts",
-  "version": "2.3.5",
+  "version": "2.4.0",
   "private": true,
   "license": "MIT",
   "repository": "https://github.com/atelier-saulx/based",
@@ -20,5 +20,8 @@
   "dependencies": {
     "esno": "^0.14.1",
     "rimraf": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/semver": "^7.3.9"
   }
 }

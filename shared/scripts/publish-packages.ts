@@ -3,16 +3,17 @@ import path from 'path'
 import chalk from 'chalk'
 import fs from 'fs-extra'
 import { execa } from 'execa'
+import { PackageData } from './get-package-data'
 
 /**
  * Publish target package
  */
 export async function publishPackage({
-  activePath,
+  filePath,
   name,
   tag,
 }: {
-  activePath: string
+  filePath: string
   name: string
   tag: string
 }) {
@@ -22,7 +23,7 @@ export async function publishPackage({
       'npm',
       [
         'publish',
-        activePath,
+        filePath,
         '--registry',
         'https://registry.npmjs.org/',
         '--access',
@@ -32,7 +33,7 @@ export async function publishPackage({
       ],
       {
         stdio: 'inherit',
-        cwd: activePath,
+        cwd: filePath,
       }
     )
 
@@ -73,7 +74,7 @@ async function publishPackagesInFolder({
       }
 
       await publishPackage({
-        activePath: path.join(sourceFolder, folder),
+        filePath: path.join(sourceFolder, folder),
         name: packageJson.name,
         tag,
       })
@@ -106,4 +107,22 @@ export async function publishAllPackagesInRepository({
   })
 
   await Promise.all(publishPackagesPromises)
+}
+
+export async function publishTargetPackage({
+  packageData,
+  tag,
+}: {
+  packageData: PackageData | undefined
+  tag: string
+}) {
+  if (!packageData) {
+    throw new Error("Can't publish package, package data is undefined")
+  }
+
+  await publishPackage({
+    filePath: packageData.path,
+    name: packageData.name,
+    tag,
+  })
 }

@@ -1,8 +1,4 @@
-export type Question =
-  | 'triggerBuild'
-  | 'incrementVersion'
-  | 'publishChangesToNPM'
-  | 'commitChanges'
+export type Question = 'triggerBuild' | 'publishChangesToNPM' | 'commitChanges'
 
 export type Prompts = {
   [key in Question]: string

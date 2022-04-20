@@ -25,7 +25,7 @@ import { incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest } from './auth'
 
-export * from './types'
+export * from '@based/types'
 
 export class BasedClient {
   public based: Based
@@ -183,7 +183,9 @@ export class BasedClient {
         data[0] === RequestTypes.Call ||
         data[0] === RequestTypes.Delete ||
         data[0] === RequestTypes.Copy ||
-        data[0] === RequestTypes.Digest
+        data[0] === RequestTypes.Digest ||
+        data[0] === RequestTypes.RemoveType ||
+        data[0] === RequestTypes.RemoveField
       ) {
         incomingRequest(this, data)
       } else if (data[0] === RequestTypes.Subscription) {

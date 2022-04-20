@@ -738,6 +738,45 @@ export class Based extends Emitter {
     })
   }
 
+  public removeType(
+    type: string,
+    db: string = 'default'
+  ): Promise<{ removed: boolean }> {
+    return new Promise((resolve, reject) => {
+      addRequest(
+        this.client,
+        RequestTypes.RemoveType,
+        { type, db },
+        resolve,
+        reject
+      )
+    })
+  }
+
+  public removeField(
+    type: string,
+    path: string | string[],
+    db: string = 'default'
+  ): Promise<{ removed: boolean }> {
+    return new Promise((resolve, reject) => {
+      if (!path || path.length === 0) {
+        reject(new Error('Path cannot be empty'))
+      } else {
+        if (!Array.isArray(path)) {
+          path = [path]
+        }
+
+        addRequest(
+          this.client,
+          RequestTypes.RemoveField,
+          { type, db, path },
+          resolve,
+          reject
+        )
+      }
+    })
+  }
+
   public updateSchema(
     configuration:
       | {
