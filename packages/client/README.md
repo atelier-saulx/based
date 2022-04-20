@@ -205,6 +205,26 @@ const fileId = await client.file({
 })
 ```
 
+Also supports browser file objects
+
+```jsx
+<input
+  type="file"
+  onChange={async (e) => {
+    const id = await client.file(e.target.files[0]);
+    // const id = await client.file({ contents: e.target.files[0], name: 'custom name' });
+  }}
+/>
+```
+
+Or streams in node
+
+```js
+import fs from 'fs'
+
+const id = await client.file(fs.createReadStream(aFile)); 
+```
+
 ###### Retrieve the file node:
 
 ```js
