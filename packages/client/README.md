@@ -297,21 +297,16 @@ client.untrack('view', {
 })
 ```
 
-Analytics can be queried with `client.observe()` and `client.get()` using a special endpoint:
-
-###### Example:
-
-<!-- prettier-ignore-start -->
-
 ```js
-const data = await client.get('analytics', {   // The resulting object has 
-  type: 'view',                                // { active, all, unique }
-})                                             // counts, at the moment the method was called.
-                                               // It is also possible to explore historical values using the $history operator, or observe the live count.
-                                                
-
+  const data = await client.analytics({ type: 'view' })
+  console.log(data) // prints an object { all, unique, active }
+  
+  const close = await client.analytics(
+    { type: 'view' }, 
+    // keeps updating analytics
+    (analyticsInfo) => console.log(analyticsInfo)
+  )
 ```
-<!-- prettier-ignore-end -->
 
 ---
 
