@@ -25,3 +25,5 @@ Next, it's time to add some content! This can be done through the Dashboard usin
 <!-- add-content video -->
 
 https://user-images.githubusercontent.com/16743760/164229707-bc9652a2-0823-44b7-825d-1efdcc080ce6.mov
+
+Once the environment is up and running, it is time to jump into the code side of things. [Click here to read more about the Based SDK](../README.md)
