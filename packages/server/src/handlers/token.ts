@@ -3,7 +3,7 @@ import { RequestTypes } from '@based/client'
 import Client from '../Client'
 import { FunctionObservable } from './functions/observable'
 import { Params } from '../Params'
-import { getFunction, getAuthorize } from '../getFromConfig'
+import { getFunction, getDefaultFunction } from '../getFromConfig'
 import { SendTokenOptions } from '../types'
 
 export default async (
@@ -14,7 +14,7 @@ export default async (
 ) => {
   client.setToken(token, options)
 
-  const authorize = await getAuthorize(server)
+  const authorize = await getDefaultFunction(server, 'authorize')
 
   if (authorize) {
     const q = []

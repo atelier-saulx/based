@@ -1,11 +1,7 @@
 import { BasedServer } from '..'
 import { RequestTypes, Message, TrackMessage } from '@based/client'
 import { Params } from '../Params'
-import {
-  getFunction,
-  getAuthorize,
-  getDefaultAuthorize,
-} from '../getFromConfig'
+import { getFunction, getDefaultFunction } from '../getFromConfig'
 import { Client } from '../Client'
 
 export default async (
@@ -15,8 +11,7 @@ export default async (
 ): Promise<(Message | TrackMessage)[] | false> => {
   const q = []
   const user = client
-  const authorize = await getAuthorize(server)
-  const defaultAuthorize = (await getDefaultAuthorize(server)) || (() => null)
+  const authorize = await getDefaultFunction(server, 'authorize')
 
   for (const msg of messages) {
     if (
@@ -83,29 +78,13 @@ export default async (
 
     if (customAuth) {
       q.push(
-        Promise.all([
-          customAuth(
-            new Params(server, payload, user, null, null, name, type, true)
-          ),
-          defaultAuthorize(
-            new Params(server, payload, user, null, null, name, type, true)
-          ),
-        ]).then((results) => results.some((value) => value === true))
-      )
-    } else if (authorize) {
-      q.push(
-        Promise.all([
-          authorize(
-            new Params(server, payload, user, null, null, name, type, true)
-          ),
-          defaultAuthorize(
-            new Params(server, payload, user, null, null, name, type, true)
-          ),
-        ]).then((results) => results.some((value) => value === true))
+        customAuth(
+          new Params(server, payload, user, null, null, name, type, true)
+        )
       )
     } else {
       q.push(
-        defaultAuthorize(
+        authorize(
           new Params(server, payload, user, null, null, name, type, true)
         )
       )

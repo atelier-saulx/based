@@ -82,7 +82,7 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
         renewToken(client, {
           refreshToken,
         })
-          .then((r: any) => {
+          .then((_r: any) => {
             addRequest(
               client,
               cb.type,
@@ -94,7 +94,7 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
             )
           })
           .catch((err) => {
-            console.error('renweToken error', err)
+            console.error('renewToken error', err)
           })
       } else {
         cb.reject(createError(err))

@@ -18,7 +18,7 @@ import {
   decodeToken,
 } from './secrets'
 import { Params } from './Params'
-import { getFunction, getAuthorize } from './getFromConfig'
+import { getFunction, getDefaultFunction } from './getFromConfig'
 import findPrefix from './findPrefix'
 import { hashCompact } from '@saulx/hash'
 import { subscribeFunction } from './handlers/functions/observable'
@@ -64,22 +64,19 @@ class BasedServerClient {
     // fix something for a token user.
     if (
       this._params.server.config?.authorize ||
-      this._params.server.config?.defaultAuthorize ||
       this._params.server.config?.functionConfig
     ) {
       const server = this._params.server
       const auth =
         // @ts-ignore
         (name && (await getFunction(server, name))?.authorize) ||
-        (await getAuthorize(server))
-      const defaultAuthorize =
-        this._params.server.config?.defaultAuthorize || (() => null)
+        (await getDefaultFunction(server, 'authorize'))
 
       if (!auth) {
         return true
       }
 
-      const authResult = await auth(
+      const authorized = await auth(
         new Params(
           server,
           payload,
@@ -91,19 +88,6 @@ class BasedServerClient {
           true
         )
       )
-      const defaultAuthorizeResult = await defaultAuthorize(
-        new Params(
-          server,
-          payload,
-          this._params.user,
-          this._params.callStack,
-          null,
-          name,
-          type,
-          true
-        )
-      )
-      const authorized = authResult === true || defaultAuthorizeResult === true
       if (!authorized) {
         const prettyType = type[0].toLocaleUpperCase() + type.slice(1)
         const err = new Error(
@@ -176,7 +160,8 @@ class BasedServerClient {
           .then(async () => {
             let initial = false
 
-            const f = (data, checksum, err) => {
+            // TODO: types
+            const f = (data: any, checksum: any, err: any) => {
               if (!initial) {
                 if (err) {
                   reject(new Error(err.message))
@@ -198,7 +183,7 @@ class BasedServerClient {
               }
             }
 
-            let subscription
+            let subscription: any
             try {
               if (a === '$configuration') {
                 subscription = await subscribeConfiguration(this._params, f)
@@ -295,8 +280,9 @@ class BasedServerClient {
           .then(async () => {
             let isFired = false
             // eslint-disable-next-line
-            let subscription
-            const f = (data, checksum, err) => {
+            let subscription: any
+            // TODO: types
+            const f = (data: any, _checksum: any, err: any) => {
               if (err) {
                 reject(new Error(err.message))
               } else {
@@ -483,7 +469,7 @@ class BasedServerClient {
 
   public async digest(payload: string): Promise<string> {
     // authorize or nah?
-    const v = await this._params.server.db.digest(payload)
+    const v = this._params.server.db.digest(payload)
     return v
   }
 }
