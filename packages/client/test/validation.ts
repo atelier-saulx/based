@@ -29,7 +29,7 @@ test.serial('incorrrect payload', async (t) => {
       functions: {
         gurk: {
           observable: false,
-          function: async ({ payload, based }) => {
+          function: async () => {
             return { flap: 'x' }
           },
         },
@@ -47,11 +47,9 @@ test.serial('incorrrect payload', async (t) => {
     await client.observe('{{query}}', () => {})
     t.fail('need to throw')
   } catch (err) {
-    console.info(err)
+    console.error(err)
     t.is(err.message, 'Observable {{query}} does not exist')
   }
-
-  // t.is(result, null)
 
   await server.destroy()
   client.disconnect()
