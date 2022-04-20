@@ -15,9 +15,6 @@
 
 ---
 
-<div align="center">
-<video src='./.docs/assets/video.mov' width=500/>
-</div>
 ## 📦 Public NPM Packages
 
 | Name                                                   | NPM                                                                                                         |
