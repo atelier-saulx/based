@@ -332,7 +332,7 @@ Based analytics can provide more specific data by using the `$geo` and `$history
   const data = await client.analytics({ type: 'view', $geo: true, $history: 30 })
   console.log(data)           // prints an object containing all the information as the normal 
                               // client.analytics call, but with a geo property containig ISO value counts,
-                              // and with the counts turned into an array of max 30 tuples, 
+                              // and with the total counts turned into an array of max 30 tuples, 
                               // with the first item in the tuple being a timestamp and the second one being the value at the time
                               
   

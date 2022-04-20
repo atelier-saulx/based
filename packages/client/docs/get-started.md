@@ -26,4 +26,31 @@ Next, it's time to add some content! This can be done through the Dashboard usin
 
 https://user-images.githubusercontent.com/16743760/164229707-bc9652a2-0823-44b7-825d-1efdcc080ce6.mov
 
-Once the environment is up and running, it is time to jump into the code side of things. [Click here to read more about the Based SDK](../README.md)
+Once the environment is up and running, it is time to jump into the code side of things.
+
+```js
+import based from '@based/client'
+
+const client = based({
+  org: 'my-org',
+  project: 'chat',
+  env: 'production',
+})
+
+// observe some data
+await client.observe(
+  { $id: 'root', children: { $all: true, $list: true } },
+  (data) => {
+    console.log(data)
+  }
+)
+
+// set data
+await client.set({
+  type: 'user',
+  email: 'francesco@example.com',
+  favoriteThing: 'pizza',
+})
+```
+
+> [Click here to read more about the Javascript Based SDK](../README.md)
