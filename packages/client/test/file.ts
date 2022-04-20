@@ -15,12 +15,14 @@ test.before(async () => {
       file: {
         prefix: 'fi',
         fields: {
+          version: { type: 'string' },
           src: { type: 'url' },
           createdAt: { type: 'string' },
           progress: { type: 'number' },
           origin: { type: 'url' },
           size: { type: 'number' },
           mime: { type: 'string' },
+          mimeType: { type: 'string' },
           status: { type: 'number' },
           renditions: {
             type: 'object',
@@ -69,8 +71,9 @@ test.serial('file', async (t) => {
           stream.on('data', () => {})
           stream.on('end', () => {
             resolve({
-              src: 'flap',
-              origin: 'hello',
+              version: 'x',
+              src: 'http://www.hello.com/flap',
+              origin: 'http://www.hello.com/flap',
             })
           })
         })
