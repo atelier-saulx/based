@@ -82,15 +82,16 @@ export class BasedClient {
       resolve: (val?: any) => void
       reject: (err: Error) => void
       // TODO: check with Jim
-      type?:
-        | RequestTypes.Set
-        | RequestTypes.Get
-        | RequestTypes.Configuration
-        | RequestTypes.GetConfiguration
-        | RequestTypes.Delete
-        | RequestTypes.Copy
-        | RequestTypes.Digest
-        | RequestTypes.Call
+      type?: Exclude<
+        RequestTypes,
+        | RequestTypes.Subscription
+        | RequestTypes.SubscriptionDiff
+        | RequestTypes.SendSubscriptionData
+        | RequestTypes.Unsubscribe
+        | RequestTypes.GetSubscription
+        | RequestTypes.Token
+        | RequestTypes.Track
+      >
       payload?: any
       name?: string
       isRetry?: boolean
