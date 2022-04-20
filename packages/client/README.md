@@ -279,10 +279,8 @@ await client.updateSchema({
 
 ## Analytics
 
-Based is capable of tracking a client using the include `client.track()` method (and `client.untrack()`).  
+Based is capable of tracking a client in realtime using the include `client.track()` method (and `client.untrack()`).  
 This method allows to track any user defined event, a payload to it. The client stops being tracked when `client.untrack()` is called, or when the connection is closed.
-
-###### Example:
 
 ```js
 client.track('view', {
@@ -300,6 +298,7 @@ client.untrack('view', {
 ```js
   const data = await client.analytics({ type: 'view' })
   console.log(data) // prints an object { all, unique, active }
+  // active are the users that are active right now (real time visitors)
   
   const close = await client.analytics(
     { type: 'view' }, 
