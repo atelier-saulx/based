@@ -211,7 +211,7 @@ Also supports browser file objects
 <input
   type="file"
   onChange={async (e) => {
-    const id = await client.file(e.target.files[0]);
+    const id = await client.file(e.target.files[0])
     // const id = await client.file({ contents: e.target.files[0], name: 'custom name' });
   }}
 />
@@ -222,7 +222,7 @@ Or streams in node
 ```js
 import fs from 'fs'
 
-const id = await client.file(fs.createReadStream(aFile)); 
+const id = await client.file(fs.createReadStream(aFile))
 ```
 
 ###### Retrieve the file node:
@@ -279,33 +279,70 @@ await client.updateSchema({
 
 ## Analytics
 
-Based is capable of tracking a client in realtime using the include `client.track()` method (and `client.untrack()`).  
-This method allows to track any user defined event, a payload to it. The client stops being tracked when `client.untrack()` is called, or when the connection is closed.
+Based is capable of tracking a client in realtime using the included `client.track()` method (and `client.untrack()`).  
+This method allows to track any user defined event, attaching a payload to it. The client stops being tracked when `client.untrack()` is called, or when the connection is closed.
 
+###### Example:
+
+<!-- prettier-ignore-start -->
 ```js
 client.track('view', {
   edition: '2022',
   language: 'en',
 })
 
-// when the event is no longer happening (i.e. the user moves to a different view)...
+// when the event is no longer happening (e.g. the user moves to a different view)...
 client.untrack('view', {
   edition: '2022', // The payload needs to be specified again, since it defines a unique event type
   language: 'en',
 })
 ```
+<!-- prettier-ignore-end -->
 
+To then retrieve the analytics data, Based provides the `client.analytics()` method, which takes as argument an object containg the event type and its payload.  
+This method can also take a `onData` function as a second argument, which turns it into an observer.
+
+###### Example:
+
+<!-- prettier-ignore-start -->
 ```js
   const data = await client.analytics({ type: 'view' })
-  console.log(data) // prints an object { all, unique, active }
-  // active are the users that are active right now (real time visitors)
+  console.log(data)           // prints an object { all, unique, active }
+                              // `all` represents the total count of how many times the event was fired overall
+                              // `unique` represents the total count of unique users that fired the event
+                              // `active` are the users that are active right now (real time visitors)
+                              
   
+  // it's also possible to observe the analytics by passing an onData function to it
   const close = await client.analytics(
-    { type: 'view' }, 
-    // keeps updating analytics
+    { type: 'view' },
     (analyticsInfo) => console.log(analyticsInfo)
   )
 ```
+<!-- prettier-ignore-end -->
+
+### `$geo` and `$history`
+
+Based analytics can provide more specific data by using the `$geo` and `$history` operators, which give information about the location of the user and the historical values of the event tracked, respectively.
+
+###### Example:
+
+<!-- prettier-ignore-start -->
+```js
+  const data = await client.analytics({ type: 'view', $geo: true, $history: 30 })
+  console.log(data)           // prints an object containing all the information as the normal 
+                              // client.analytics call, but with a geo property containig ISO value counts,
+                              // and with the counts turned into an array of max 30 tuples, 
+                              // with the first item in the tuple being a timestamp and the second one being the value at the time
+                              
+  
+  // it's also possible to observe the analytics by passing an onData function to it
+  const close = await client.analytics(
+    { type: 'view' },
+    (analyticsInfo) => console.log(analyticsInfo)
+  )
+```
+<!-- prettier-ignore-end -->
 
 ---
 
