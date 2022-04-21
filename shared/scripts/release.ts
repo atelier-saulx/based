@@ -1,9 +1,11 @@
+/* eslint-disable no-unused-vars */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
+
 import path from 'path'
 import simpleGit from 'simple-git'
 import open from 'open'
 import githubRelease from 'new-github-release-url'
-import chalk from 'chalk'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
@@ -12,15 +14,8 @@ import { prompt } from 'enquirer'
 import { getPublicPackages, PackageData } from './get-package-data'
 import { ReleaseType } from './types'
 
-import {
-  publishAllPackagesInRepository,
-  publishTargetPackage,
-} from './publish-packages'
-
-import {
-  updatePackageVersionsInRepository,
-  updateTargetPackageVersion,
-} from './update-versions'
+import { publishTargetPackage } from './publish-packages'
+import { updateTargetPackageVersion } from './update-versions'
 
 import {
   FormatOptions,
@@ -30,15 +25,6 @@ import {
 
 // @ts-ignore
 import packageJson from '../../package.json'
-
-/**
- * Exit if running from non-root folder.
- */
-const relativePath = process.cwd().split('/saulx')[1]
-
-if (relativePath !== '/based') {
-  throw new Error('Please run this script from the root of the repository')
-}
 
 const git = simpleGit()
 
@@ -53,19 +39,10 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     default: 'patch',
     description: 'Type <patch|minor|major>',
   })
-  .option('dry-run', {
-    type: 'boolean',
-    default: false,
-    description: 'Dry-run release',
-  })
   .example([
     ['$0 minor', 'Release minor update.'],
     ['$0 --type minor', 'Release minor update.'],
-    ['$0 --dry-run', 'Only build, do nothing else.'],
   ])
-
-const ALL_PACKAGES_TAG = 'All packages'
-let isTargetingAllPackages = false
 
 const getBranch = async () => {
   const currentBranch = await git.raw('rev-parse', '--abbrev-ref', 'HEAD')
@@ -73,58 +50,32 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  const currentBranch = await getBranch()
+  // const currentBranch = await getBranch()
+  // if (currentBranch !== 'main') {
+  //   throw new Error(
+  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
+  //   )
+  // }
 
-  if (currentBranch !== 'main') {
-    throw new Error(
-      `Incorrect branch: ${currentBranch}. We only release from main branch.`
-    )
-  }
+  // const status = await git.status()
+  // if (status.files.length !== 0) {
+  //   throw new Error(
+  //     'You have unstaged changes in git. To release, commit or stash all changes.'
+  //   )
+  // }
 
-  const status = await git.status()
-
-  if (status.files.length !== 0) {
-    throw new Error(
-      'You have unstaged changes in git. To release, commit or stash all changes.'
-    )
-  }
-
-  const { type, dryRun: isDryRun } = argv as ReleaseOptions
+  const { type } = argv as ReleaseOptions
 
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
 
-  let targetPackage: PackageData | undefined = {
-    name: ALL_PACKAGES_TAG,
-    path: 'root',
-    version: packageJson.version,
-  }
-
-  let targetVersion = getIncrementedVersion({
-    version: packageJson.version,
-    type: releaseType,
-  })
+  const targetPackages: PackageData[] = []
 
   const targetFolders = packageJson.workspaces.map((folder: string) => {
     return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
   })
 
-  console.info(`\n  Releasing Based...`)
-
-  const printReleaseOptions = () => {
-    const printedOptions = {
-      targetPackage: targetPackage?.name ?? '',
-      releaseType: releaseType,
-      targetVersion: targetVersion,
-      currentVersion: targetPackage?.version ?? '',
-    }
-
-    console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
-    FormatOptions(printedOptions).forEach(([message, value]) => {
-      console.info(`  ${chalk.white(message)}: ${chalk.bold.yellow(value)}`)
-    })
-    console.info(`\n`)
-  }
+  console.info(`\n  Releasing Based\n`)
 
   const publicPackages = await getPublicPackages()
 
@@ -132,35 +83,29 @@ async function releaseProject() {
     (packageData) => packageData.name
   )
 
-  const allChoices = [...publicPackageNames, ALL_PACKAGES_TAG]
-
   await prompt<{
-    chosenPackage: string
+    chosenPackages: string[]
   }>({
-    message: 'Select a package',
-    name: 'chosenPackage',
-    type: 'autocomplete',
-    choices: allChoices,
-    initial: allChoices[0],
-  } as any).then(({ chosenPackage }) => {
-    if (!chosenPackage) {
+    message: 'Select packages you want to release',
+    name: 'chosenPackages',
+    type: 'multiselect',
+    choices: publicPackageNames,
+    initial: publicPackageNames[0],
+  } as any).then(({ chosenPackages }) => {
+    if (!chosenPackages) {
       console.info('User aborted the release.')
       process.exit(0)
     }
 
-    if (chosenPackage === ALL_PACKAGES_TAG) {
-      isTargetingAllPackages = true
-    } else {
-      targetPackage = publicPackages.find(
-        (packageData) => packageData.name === chosenPackage
-      )
-    }
+    targetPackages.push(
+      ...publicPackages.filter(({ name }) => {
+        return chosenPackages.includes(name)
+      })
+    )
   })
 
-  if (isTargetingAllPackages) {
-    throw new Error(
-      'We do not support releasing all packages yet. We need to consider edge cases.'
-    )
+  if (targetPackages.length === 0) {
+    throw new Error("You didn't select any packages to release.")
   }
 
   await prompt<{ chosenReleaseType: ReleaseType }>([
@@ -177,14 +122,7 @@ async function releaseProject() {
     },
   ]).then(({ chosenReleaseType }) => {
     releaseType = chosenReleaseType
-
-    targetVersion = getIncrementedVersion({
-      version: targetPackage?.version ?? packageJson.version,
-      type: releaseType,
-    })
   })
-
-  printReleaseOptions()
 
   await prompt<{
     shouldRelease: boolean
@@ -213,23 +151,18 @@ async function releaseProject() {
     throw new Error('Error encountered when building project.')
   }
 
-  if (isDryRun) {
-    console.info('Aborted. This was a dry run release.')
-    process.exit(0)
-  }
-
   /**
    * Increment all packages in project
    */
   try {
-    if (isTargetingAllPackages) {
-      await updatePackageVersionsInRepository({
-        targetFolders,
-        targetVersion,
+    for (const packageData of targetPackages) {
+      const targetVersion = getIncrementedVersion({
+        version: packageData?.version,
+        type: releaseType,
       })
-    } else {
+
       await updateTargetPackageVersion({
-        packageData: targetPackage,
+        packageData: packageData,
         targetVersion: targetVersion,
       })
     }
@@ -242,33 +175,18 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (isTargetingAllPackages) {
-    await publishAllPackagesInRepository({
-      targetFolders,
-      tag: 'latest',
-    }).catch((error) => {
-      console.error({ error })
+  // await publishTargetPackage({
+  //   packageData: targetPackage,
+  //   tag: 'latest',
+  // }).catch((error) => {
+  //   console.error({ error })
 
-      throw new Error('Publishing to NPM failed.')
-    })
+  //   throw new Error('Publishing to NPM failed.')
+  // })
 
-    console.info(
-      `\n  Released all public packages with version ${targetVersion} successfully! \n`
-    )
-  } else {
-    await publishTargetPackage({
-      packageData: targetPackage,
-      tag: 'latest',
-    }).catch((error) => {
-      console.error({ error })
-
-      throw new Error('Publishing to NPM failed.')
-    })
-
-    console.info(
-      `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
-    )
-  }
+  // console.info(
+  //   `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
+  // )
 
   /**
    * Stage and commit + push target version
@@ -283,7 +201,7 @@ async function releaseProject() {
     addFiles.push(path.join(process.cwd(), folder))
   })
 
-  const targetTag = isTargetingAllPackages ? targetVersion : packageJson.version
+  const targetTag = packageJson.version
 
   await git.add(addFiles)
 

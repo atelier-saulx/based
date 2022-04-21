@@ -118,9 +118,11 @@ export async function updateTargetPackageVersion({
     filePath: packageData.path,
     targetVersion,
   })
+}
 
+export async function patchRepositoryVersion() {
   /**
-   * Always bump root package version with patch
+   * Bump root package version with patch
    */
   const repoVersion = getIncrementedVersion({
     version: packageJson.version,
