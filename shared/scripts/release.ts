@@ -60,6 +60,40 @@ const getBranch = async () => {
   return currentBranch.trim()
 }
 
+const printReleaseOptions = ({
+  releaseType,
+  targetPackages,
+}: {
+  releaseType: string
+  targetPackages: PackageData[]
+}) => {
+  const printedOptions = {
+    releaseType: releaseType,
+  }
+
+  console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
+
+  getFormattedObject(printedOptions).forEach(([message, value]) => {
+    console.info(`  ${chalk.white(message)}: ${chalk.bold.yellow(value)}`)
+  })
+
+  console.info(`\n  ${chalk.bold('Target packages:')} \n`)
+  targetPackages.forEach(({ name, version }) => {
+    const incrementedVersion = getIncrementedVersion({
+      version: version,
+      type: releaseType,
+    })
+
+    console.info(
+      `  ${chalk.green(name)}: ${chalk.gray.strikethrough(
+        version
+      )} ${chalk.bold.yellow(incrementedVersion)}`
+    )
+  })
+
+  console.info(`\n`)
+}
+
 async function releaseProject() {
   const currentBranch = await getBranch()
   if (currentBranch !== 'main') {
@@ -135,35 +169,10 @@ async function releaseProject() {
     releaseType = chosenReleaseType
   })
 
-  const printReleaseOptions = () => {
-    const printedOptions = {
-      releaseType: releaseType,
-    }
-
-    console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
-
-    getFormattedObject(printedOptions).forEach(([message, value]) => {
-      console.info(`  ${chalk.white(message)}: ${chalk.bold.yellow(value)}`)
-    })
-
-    console.info(`\n  ${chalk.bold('Target packages:')} \n`)
-    targetPackages.forEach(({ name, version }) => {
-      const incrementedVersion = getIncrementedVersion({
-        version: version,
-        type: releaseType,
-      })
-
-      console.info(
-        `  ${chalk.green(name)}: ${chalk.gray.strikethrough(
-          version
-        )} ${chalk.bold.yellow(incrementedVersion)}`
-      )
-    })
-
-    console.info(`\n`)
-  }
-
-  printReleaseOptions()
+  printReleaseOptions({
+    releaseType,
+    targetPackages,
+  })
 
   await prompt<{
     shouldRelease: boolean
