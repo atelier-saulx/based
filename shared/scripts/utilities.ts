@@ -139,6 +139,7 @@ export async function getWorkspaceFolders(): Promise<string[]> {
 
 export interface DependencyData extends PackageData {
   legacyVersion: string
+  type: string
 }
 
 export interface DependencyTree {
@@ -164,24 +165,24 @@ export function findOutdatedDependencies({
       const peerDependencies = packageJSON?.peerDependencies ?? {}
       const devDependencies = packageJSON?.devDependencies ?? {}
 
-      const peerDependenciesArray = Object.entries(peerDependencies).filter(
-        ([peerDependency]) => {
+      const peerDependenciesArray = Object.entries(peerDependencies)
+        .filter(([peerDependency]) => {
           return allPackageNames.includes(peerDependency)
-        }
-      )
+        })
+        .map(([peerDependency, version]) => [peerDependency, version, 'peer'])
 
-      const devDependenciesArray = Object.entries(devDependencies).filter(
-        ([devDependency]) => {
+      const devDependenciesArray = Object.entries(devDependencies)
+        .filter(([devDependency]) => {
           return allPackageNames.includes(devDependency)
-        }
-      )
+        })
+        .map(([peerDependency, version]) => [peerDependency, version, 'dev'])
 
       const allDependencies = [
         ...peerDependenciesArray,
         ...devDependenciesArray,
       ]
 
-      allDependencies.forEach(([peerDependency, version]) => {
+      allDependencies.forEach(([peerDependency, version, dependencyType]) => {
         const peerVersion = (version ?? '') as string
         const cleanedVersion = peerVersion.replace('^', '')
         const isPackageInRepo = targetPackage.name === peerDependency
@@ -191,15 +192,20 @@ export function findOutdatedDependencies({
         if (isPackageInRepo && isOutdated) {
           const outdatedDependency: DependencyTree = {
             targetPackage: targetPackage,
+
             dependencyPackage: {
               ...referencePackage,
               legacyVersion: version as string,
+              type: dependencyType as string,
             },
           }
 
           const dependencyExists = packagesWithDependencies.find(
             ({ dependencyPackage }) => {
-              return dependencyPackage.name === referencePackage.name
+              return (
+                dependencyPackage.name === referencePackage.name &&
+                dependencyPackage.type === dependencyType
+              )
             }
           )
 

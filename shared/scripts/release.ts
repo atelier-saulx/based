@@ -99,7 +99,7 @@ const checkReleaseOptions = async ({
     })
 
     console.info(
-      `  ${chalk.green(packageData.name)}: ${chalk.gray.strikethrough(
+      `  ${chalk.green(packageData.name)}: ${chalk.white.strikethrough(
         currentVersion
       )} ${chalk.bold.yellow(packageData.version)}`
     )
@@ -112,52 +112,37 @@ const checkReleaseOptions = async ({
 
   const hasOutdatedDependencies = outdatedDependencies.length > 0
   if (hasOutdatedDependencies) {
-    console.info(
-      `\n  ${chalk.bold.white(
-        '-------------------------------------------------------'
-      )}`
-    )
-
     console.info(`\n  ${chalk.bold.yellow('[ Notice ]')} \n`)
 
     console.info(
       `  ${chalk.bold.white(
-        'The following packages has outdated peer-dependencies:'
+        'The following packages has outdated peer- and dev-dependencies:'
       )} \n`
     )
 
     outdatedDependencies.forEach(({ targetPackage, dependencyPackage }) => {
+      const { type } = dependencyPackage
+
+      const dependencyString =
+        type === 'peer' ? 'peer-dependency' : 'dev-dependency'
+
       console.info(
         `  ${chalk.yellow.bold(
           dependencyPackage.name
-        )} depends on ${chalk.yellow.bold(
+        )} has ${dependencyString} to ${chalk.yellow.bold(
           targetPackage.name
-        )} version ${chalk.yellow.bold(dependencyPackage.legacyVersion)}.`
-      )
-
-      console.info(
-        `  Consider updating it to ${chalk.yellow.bold.underline(
-          targetPackage.version
-        )}. \n`
+        )} with version ${chalk.yellow.bold(
+          dependencyPackage.legacyVersion
+        )}, not ${chalk.yellow.bold(targetPackage.version)}.`
       )
     })
 
-    console.info(
-      `\n  ${chalk.bold.white(
-        'We recommend updating peer-deps for those packages.'
-      )}`
-    )
-
-    console.info(
-      `\n  ${chalk.bold.white(
-        '-------------------------------------------------------'
-      )} \n`
-    )
+    console.info(`\n`)
 
     await prompt<{
       shouldAutoUpdate: boolean
     }>({
-      message: 'Do you want to to auto-update?',
+      message: 'Do you want to to auto-update peer- and dev-dependencies?',
       name: 'shouldAutoUpdate',
       type: 'toggle',
       initial: true,
