@@ -118,7 +118,7 @@ const printReleaseOptions = ({
 
     console.info(
       `  ${chalk.bold.white(
-        'The following packages has peer-dependencies:'
+        'The following packages has outdated peer-dependencies:'
       )} \n`
     )
 
@@ -126,7 +126,13 @@ const printReleaseOptions = ({
       console.info(
         `  ${chalk.yellow.bold(dependency.name)} depends on ${chalk.yellow.bold(
           targetPackage.name
-        )} version ${dependency.legacyVersion}`
+        )} version ${chalk.yellow.bold(dependency.legacyVersion)}.`
+      )
+
+      console.info(
+        `  Consider updating it to ${chalk.yellow.bold.underline(
+          targetPackage.version
+        )}. \n`
       )
     })
 
