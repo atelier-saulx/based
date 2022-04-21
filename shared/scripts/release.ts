@@ -61,19 +61,19 @@ const getBranch = async () => {
 }
 
 async function releaseProject() {
-  // const currentBranch = await getBranch()
-  // if (currentBranch !== 'main') {
-  //   throw new Error(
-  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
-  //   )
-  // }
+  const currentBranch = await getBranch()
+  if (currentBranch !== 'main') {
+    throw new Error(
+      `Incorrect branch: ${currentBranch}. We only release from main branch.`
+    )
+  }
 
-  // const status = await git.status()
-  // if (status.files.length !== 0) {
-  //   throw new Error(
-  //     'You have unstaged changes in git. To release, commit or stash all changes.'
-  //   )
-  // }
+  const status = await git.status()
+  if (status.files.length !== 0) {
+    throw new Error(
+      'You have unstaged changes in git. To release, commit or stash all changes.'
+    )
+  }
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
