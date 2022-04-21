@@ -44,9 +44,15 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
     default: 'patch',
     description: 'Type <patch|minor|major>',
   })
+  .option('dry-run', {
+    type: 'boolean',
+    default: false,
+    description: 'Dry-run release',
+  })
   .example([
     ['$0 minor', 'Release minor update.'],
     ['$0 --type minor', 'Release minor update.'],
+    ['$0 --dry-run', 'Test CLI interaction, nothing else.'],
   ])
 
 const getBranch = async () => {
@@ -69,7 +75,7 @@ async function releaseProject() {
   //   )
   // }
 
-  const { type } = argv as ReleaseOptions
+  const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
@@ -174,6 +180,11 @@ async function releaseProject() {
       process.exit(0)
     }
   })
+
+  if (isDryRun) {
+    console.info('Aborted. This was a dry run release.')
+    process.exit(0)
+  }
 
   /**
    * Build project to ensure latest changes are present
