@@ -49,6 +49,9 @@ async function getPackageNamesInFolder({
   return packageNames
 }
 
+/**
+ * Get all packages in repository
+ */
 export async function getAllPackages(): Promise<PackageData[]> {
   let allPackageNames: PackageData[] = []
 
@@ -78,35 +81,12 @@ export async function getAllPackages(): Promise<PackageData[]> {
   return allPackageNames
 }
 
+/**
+ * Get public packages in repository
+ */
 export async function getPublicPackages(): Promise<PackageData[]> {
-  let allPackages: PackageData[] = []
+  const allPackages: PackageData[] = await getAllPackages()
 
-  /**
-   * Get all workspace folders. Filter out `/*`
-   */
-  const workspaceFolders = await getWorkspaceFolders()
-
-  /**
-   * Get all package names in workspace folders
-   */
-  const packageNamesPerFolderPromises = workspaceFolders.map((targetFolder) => {
-    return getPackageNamesInFolder({
-      targetFolder,
-    })
-  })
-
-  /**
-   * Merge package-names into one array
-   */
-  const packageNamesPerFolder = await Promise.all(packageNamesPerFolderPromises)
-
-  packageNamesPerFolder.forEach((packageNames) => {
-    allPackages = [...allPackages, ...packageNames]
-  })
-
-  /**
-   * Only return public packages
-   */
   return allPackages.filter((packageData) => {
     return !packageData.private
   })
