@@ -1,5 +1,3 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable no-console */
 
 import path from 'path'
@@ -22,7 +20,6 @@ import { ReleaseType } from './types'
 import { publishTargetPackage } from './publish-packages'
 import {
   patchRepositoryVersion,
-  updatePeerAndDevDependency,
   updateTargetPackageVersion,
 } from './update-versions'
 
@@ -69,7 +66,6 @@ const checkReleaseOptions = async ({
   releaseType,
   targetPackages,
   allPackages,
-  isDryRun,
 }: {
   releaseType: string
   targetPackages: PackageData[]
@@ -91,6 +87,7 @@ const checkReleaseOptions = async ({
   console.info(`\n  ${chalk.bold('Target packages:')} \n`)
 
   for (const packageData of clonedTargetPackages) {
+    const { name, version } = packageData
     const currentVersion = `${packageData.version}`
 
     packageData.version = getIncrementedVersion({
@@ -99,9 +96,9 @@ const checkReleaseOptions = async ({
     })
 
     console.info(
-      `  ${chalk.green(packageData.name)}: ${chalk.white.strikethrough(
+      `  ${chalk.green(name)} ~ Current version: ${chalk.bold.yellow(
         currentVersion
-      )} ${chalk.bold.yellow(packageData.version)}`
+      )}. New version: ${chalk.bold.yellow(version)}.`
     )
   }
 
@@ -127,62 +124,37 @@ const checkReleaseOptions = async ({
         type === 'peer' ? 'peer-dependency' : 'dev-dependency'
 
       console.info(
-        `  ${chalk.yellow.bold(
+        `  ${chalk.green.bold(
           dependencyPackage.name
         )} has ${dependencyString} to ${chalk.yellow.bold(
           targetPackage.name
-        )} with version ${chalk.yellow.bold(
+        )} with version ${chalk.red.bold(
           dependencyPackage.legacyVersion
         )}, not ${chalk.yellow.bold(targetPackage.version)}.`
       )
     })
-
-    console.info(`\n`)
-
-    await prompt<{
-      shouldAutoUpdate: boolean
-    }>({
-      message: 'Do you want to to auto-update peer- and dev-dependencies?',
-      name: 'shouldAutoUpdate',
-      type: 'toggle',
-      initial: true,
-      enabled: 'Yes',
-      disabled: 'No',
-    } as any).then(async ({ shouldAutoUpdate }) => {
-      if (shouldAutoUpdate && !isDryRun) {
-        for (const {
-          targetPackage,
-          dependencyPackage,
-        } of outdatedDependencies) {
-          await updatePeerAndDevDependency({
-            outdatedDependency: dependencyPackage,
-            targetDependency: targetPackage,
-          })
-        }
-      }
-    })
-  } else {
-    /**
-     * Allow us to abort the release
-     */
-    console.info(`\n`)
-
-    await prompt<{
-      shouldRelease: boolean
-    }>({
-      message: 'Do you want to to release?',
-      name: 'shouldRelease',
-      type: 'toggle',
-      initial: true,
-      enabled: 'Yes',
-      disabled: 'No',
-    } as any).then(({ shouldRelease }) => {
-      if (!shouldRelease) {
-        console.info('You aborted the release.')
-        process.exit(0)
-      }
-    })
   }
+
+  /**
+   * Allow us to abort the release
+   */
+  console.info(`\n`)
+
+  await prompt<{
+    shouldRelease: boolean
+  }>({
+    message: 'Do you want to to release?',
+    name: 'shouldRelease',
+    type: 'toggle',
+    initial: true,
+    enabled: 'Yes',
+    disabled: 'No',
+  } as any).then(({ shouldRelease }) => {
+    if (!shouldRelease) {
+      console.info('You aborted the release.')
+      process.exit(0)
+    }
+  })
 }
 
 const performGitStatus = async () => {
