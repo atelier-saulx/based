@@ -148,14 +148,20 @@ async function releaseProject() {
       process.exit(0)
     }
 
-    if (chosenPackage !== ALL_PACKAGES_TAG) {
+    if (chosenPackage === ALL_PACKAGES_TAG) {
+      isTargetingAllPackages = true
+    } else {
       targetPackage = publicPackages.find(
         (packageData) => packageData.name === chosenPackage
       )
-    } else {
-      isTargetingAllPackages = true
     }
   })
+
+  if (isTargetingAllPackages) {
+    throw new Error(
+      'We do not support releasing all packages yet. We need to consider edge cases'
+    )
+  }
 
   await prompt<{ chosenReleaseType: ReleaseType }>([
     {
