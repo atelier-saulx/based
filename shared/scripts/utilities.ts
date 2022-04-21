@@ -1,5 +1,10 @@
 import chalk from 'chalk'
-import { ReleaseType, Inquiry, Prompts, Question } from 'types'
+import path from 'path'
+import fs from 'fs-extra'
+import semverDiff from 'semver-diff'
+
+import { ReleaseType, Inquiry, Prompts, Question } from './types'
+import { PackageData } from 'get-package-data'
 
 /**
  * Bump / incrememt version with patch, minor or major.
@@ -92,7 +97,7 @@ export const ToReadable = (input: string | boolean) => {
 
 type FormattedOptions = [string, string]
 
-export const FormatOptions = (printedOptions: {
+export const getFormattedObject = (printedOptions: {
   [key: string]: string | boolean
 }): FormattedOptions[] => {
   return Object.entries(printedOptions).map((option) => {
@@ -119,4 +124,98 @@ export function validateReleaseType(input: ReleaseType): string {
   }
 
   return input
+}
+
+export async function getWorkspaceFolders(): Promise<string[]> {
+  const packageJSONPath = path.join(process.cwd(), './package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
+
+  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
+    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
+  })
+
+  return workspaceFolders
+}
+
+export interface DependencyData extends PackageData {
+  legacyVersion: string
+  type: string
+}
+
+export interface DependencyTree {
+  targetPackage: PackageData
+  dependencyPackage: DependencyData
+}
+
+export function findOutdatedDependencies({
+  targetPackages,
+  allPackages,
+}: {
+  targetPackages: PackageData[]
+  allPackages: PackageData[]
+}): DependencyTree[] {
+  const packagesWithDependencies: DependencyTree[] = []
+
+  const allPackageNames = allPackages.map(({ name }) => name)
+
+  targetPackages.forEach((targetPackage) => {
+    allPackages.forEach((referencePackage) => {
+      const { packageJSON } = referencePackage
+
+      const peerDependencies = packageJSON?.peerDependencies ?? {}
+      const devDependencies = packageJSON?.devDependencies ?? {}
+
+      const peerDependenciesArray = Object.entries(peerDependencies)
+        .filter(([peerDependency]) => {
+          return allPackageNames.includes(peerDependency)
+        })
+        .map(([peerDependency, version]) => [peerDependency, version, 'peer'])
+
+      const devDependenciesArray = Object.entries(devDependencies)
+        .filter(([devDependency]) => {
+          return allPackageNames.includes(devDependency)
+        })
+        .map(([peerDependency, version]) => [peerDependency, version, 'dev'])
+
+      const allDependencies = [
+        ...peerDependenciesArray,
+        ...devDependenciesArray,
+      ]
+
+      allDependencies.forEach(([peerDependency, version, dependencyType]) => {
+        const peerVersion = (version ?? '') as string
+        const cleanedVersion = peerVersion.replace('^', '')
+        const isPackageInRepo = targetPackage.name === peerDependency
+        const diffed = semverDiff(cleanedVersion, targetPackage.version)
+        const isOutdated = diffed !== undefined
+
+        if (isPackageInRepo && isOutdated) {
+          const outdatedDependency: DependencyTree = {
+            targetPackage: targetPackage,
+
+            dependencyPackage: {
+              ...referencePackage,
+              legacyVersion: version as string,
+              type: dependencyType as string,
+            },
+          }
+
+          const dependencyExists = packagesWithDependencies.find(
+            ({ dependencyPackage }) => {
+              return (
+                dependencyPackage.name === referencePackage.name &&
+                dependencyPackage.type === dependencyType
+              )
+            }
+          )
+
+          if (!dependencyExists) {
+            packagesWithDependencies.push(outdatedDependency)
+          }
+        }
+      })
+    })
+  })
+
+  return packagesWithDependencies
 }
