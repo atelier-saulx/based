@@ -5,6 +5,7 @@
 import path from 'path'
 import simpleGit from 'simple-git'
 import open from 'open'
+import fs from 'fs-extra'
 import githubRelease from 'new-github-release-url'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
@@ -249,7 +250,10 @@ async function releaseProject() {
     addFiles.push(path.join(process.cwd(), folder))
   })
 
-  const targetTag = packageJson.version
+  const packageJSONPath = path.join(process.cwd(), './package.json')
+  const upToDatePackageJSON = await fs.readJSON(packageJSONPath)
+
+  const targetTag = upToDatePackageJSON.version
 
   await git.add(addFiles)
 
