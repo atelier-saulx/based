@@ -3,7 +3,7 @@ import authorize from './authorize'
 import { BasedServer } from '..'
 import { Message, TrackMessage } from '@based/client'
 import Client from '../Client'
-import { getDefaultFunction } from '../getFromConfig'
+import { getAuthorize } from '../getFromConfig'
 
 export default (
   server: BasedServer,
@@ -16,7 +16,7 @@ export default (
       (server.config?.functionConfig && !server.config?.noAuth)
     ) {
       if (!server.config.authorize) {
-        getDefaultFunction(server, 'authorize').then((auth) => {
+        getAuthorize(server).then((auth) => {
           if (auth) {
             if (client.authorizeInProgress) {
               client.authorizeInProgress.then(() => {

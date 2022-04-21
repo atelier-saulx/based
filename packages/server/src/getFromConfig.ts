@@ -27,14 +27,15 @@ export const getFunction = async (
   return fn || null
 }
 
-export const getDefaultFunction = async (
-  server: BasedServer,
-  name: string
-): Promise<any> => {
-  let fn = server.config?.[name]
+export const getAuthorize = async (server: BasedServer): Promise<any> => {
+  let fn = server.config?.authorize
+
+  // if from the env 'defaultAuth' call defaultAuth function as well or something?
+
+  // console.info('GET AUTHORIZE CONFIG')
 
   if (!fn && server.config?.functionConfig) {
-    const r = await server.config.functionConfig.getInitial(server, name)
+    const r = await server.config.functionConfig.getInitial(server, 'authorize')
 
     // console.info('GET AUTH-->', r)
 
@@ -43,60 +44,17 @@ export const getDefaultFunction = async (
         server.config.functions = {}
       }
       // @ts-ignore
-      server.config.functions[name] = fn
+      server.config.functions.authorize = fn
 
       if (r.observable === false) {
-        server.config[name] = r.function
+        server.config.authorize = r.function
         fn = r.function
-        if (name === 'authorize') {
-          server.config.noAuth = false
-        }
+        server.config.noAuth = false
       }
-      // TODO: Remove after getting rid of defaultAuthorize
-    } else {
+    } else if (!server.config?.defaultAuthorize) {
       server.config.noAuth = true
     }
   }
 
-  return fn || null
-}
-
-// export const getAuthorize = async (server: BasedServer): Promise<any> => {
-//   let fn = server.config?.authorize
-
-//   // if from the env 'defaultAuth' call defaultAuth function as well or something?
-
-//   // console.info('GET AUTHORIZE CONFIG')
-
-//   if (!fn && server.config?.functionConfig) {
-//     const r = await server.config.functionConfig.getInitial(server, 'authorize')
-
-//     // console.info('GET AUTH-->', r)
-
-//     if (r) {
-//       if (!server.config.functions) {
-//         server.config.functions = {}
-//       }
-//       // @ts-ignore
-//       server.config.functions.authorize = fn
-
-//       if (r.observable === false) {
-//         server.config.authorize = r.function
-//         fn = r.function
-//         server.config.noAuth = false
-//       }
-//     } else if (!server.config?.defaultAuthorize) {
-//       server.config.noAuth = true
-//     }
-//   }
-
-//   return fn || null
-// }
-
-// TODO: Remove after getting rid of defaultAuthorize
-export const getDefaultAuthorize = async (
-  server: BasedServer
-): Promise<any> => {
-  let fn = server.config?.defaultAuthorize
   return fn || null
 }

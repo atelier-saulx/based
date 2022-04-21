@@ -18,7 +18,7 @@ import {
   decodeToken,
 } from './secrets'
 import { Params } from './Params'
-import { getFunction, getDefaultFunction } from './getFromConfig'
+import { getFunction, getAuthorize } from './getFromConfig'
 import findPrefix from './findPrefix'
 import { hashCompact } from '@saulx/hash'
 import { subscribeFunction } from './handlers/functions/observable'
@@ -70,7 +70,7 @@ class BasedServerClient {
       const auth =
         // @ts-ignore
         (name && (await getFunction(server, name))?.authorize) ||
-        (await getDefaultFunction(server, 'authorize'))
+        (await getAuthorize(server))
 
       if (!auth) {
         return true

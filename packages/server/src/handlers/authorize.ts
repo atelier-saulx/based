@@ -1,7 +1,7 @@
 import { BasedServer } from '..'
 import { RequestTypes, Message, TrackMessage } from '@based/client'
 import { Params } from '../Params'
-import { getFunction, getDefaultFunction } from '../getFromConfig'
+import { getFunction, getAuthorize } from '../getFromConfig'
 import { Client } from '../Client'
 
 export default async (
@@ -11,7 +11,7 @@ export default async (
 ): Promise<(Message | TrackMessage)[] | false> => {
   const q = []
   const user = client
-  const authorize = await getDefaultFunction(server, 'authorize')
+  const authorize = await getAuthorize(server)
 
   for (const msg of messages) {
     if (
