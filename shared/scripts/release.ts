@@ -12,7 +12,11 @@ import { hideBin } from 'yargs/helpers'
 import { execa } from 'execa'
 import { prompt } from 'enquirer'
 
-import { getPublicPackages, PackageData } from './get-package-data'
+import {
+  getAllPackages,
+  getPublicPackages,
+  PackageData,
+} from './get-package-data'
 import { ReleaseType } from './types'
 
 import { publishTargetPackage } from './publish-packages'
@@ -22,6 +26,7 @@ import {
 } from './update-versions'
 
 import {
+  findAllDependencies,
   getFormattedObject,
   getIncrementedVersion,
   getWorkspaceFolders,
@@ -62,9 +67,11 @@ const getBranch = async () => {
 const printReleaseOptions = ({
   releaseType,
   targetPackages,
+  allPackages,
 }: {
   releaseType: string
   targetPackages: PackageData[]
+  allPackages: PackageData[]
 }) => {
   const printedOptions = {
     releaseType: releaseType,
@@ -90,23 +97,46 @@ const printReleaseOptions = ({
     )
   })
 
+  const dependencies = findAllDependencies({
+    targetPackages,
+    allPackages,
+  })
+
+  if (dependencies.length > 0) {
+    console.info(`\n  ${chalk.bold.underline.yellow('IMPORTANT')} \n`)
+
+    console.info(
+      `  ${chalk.bold.yellow(
+        'The following packages has peer-dependencies:'
+      )} \n`
+    )
+
+    dependencies.forEach(({ targetPackage, dependency }) => {
+      console.info(
+        `  ${chalk.yellow.bold(dependency.name)} depends on ${chalk.yellow.bold(
+          targetPackage.name
+        )} version ${dependency.legacyVersion}`
+      )
+    })
+  }
+
   console.info(`\n`)
 }
 
 async function releaseProject() {
-  const currentBranch = await getBranch()
-  if (currentBranch !== 'main') {
-    throw new Error(
-      `Incorrect branch: ${currentBranch}. We only release from main branch.`
-    )
-  }
+  // const currentBranch = await getBranch()
+  // if (currentBranch !== 'main') {
+  //   throw new Error(
+  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
+  //   )
+  // }
 
-  const status = await git.status()
-  if (status.files.length !== 0) {
-    throw new Error(
-      'You have unstaged changes in git. To release, commit or stash all changes.'
-    )
-  }
+  // const status = await git.status()
+  // if (status.files.length !== 0) {
+  //   throw new Error(
+  //     'You have unstaged changes in git. To release, commit or stash all changes.'
+  //   )
+  // }
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
@@ -118,6 +148,7 @@ async function releaseProject() {
 
   console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
+  const allPackages = await getAllPackages()
   const publicPackages = await getPublicPackages()
 
   const publicPackageNames = publicPackages.map(
@@ -165,11 +196,20 @@ async function releaseProject() {
     releaseType = chosenReleaseType
   })
 
+  /**
+   * Print release options
+   */
   printReleaseOptions({
     releaseType,
     targetPackages,
+    allPackages,
   })
 
+  return false
+
+  /**
+   * Allow us to abort the release
+   */
   await prompt<{
     shouldRelease: boolean
   }>({

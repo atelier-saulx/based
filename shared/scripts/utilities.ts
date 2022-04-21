@@ -3,6 +3,7 @@ import path from 'path'
 import fs from 'fs-extra'
 
 import { ReleaseType, Inquiry, Prompts, Question } from './types'
+import { PackageData } from 'get-package-data'
 
 /**
  * Bump / incrememt version with patch, minor or major.
@@ -133,4 +134,45 @@ export async function getWorkspaceFolders(): Promise<string[]> {
   })
 
   return workspaceFolders
+}
+
+export interface DependencyData extends PackageData {
+  legacyVersion: string
+}
+
+export interface DependencyTree {
+  targetPackage: PackageData
+  dependency: DependencyData
+}
+
+export function findAllDependencies({
+  targetPackages,
+  allPackages,
+}: {
+  targetPackages: PackageData[]
+  allPackages: PackageData[]
+}): DependencyTree[] {
+  const packagesWithDependencies: DependencyTree[] = []
+
+  targetPackages.forEach((targetPackage) => {
+    allPackages.forEach((referencePackage) => {
+      const { packageJSON } = referencePackage
+      const peerDeps = packageJSON?.peerDependencies ?? {}
+
+      Object.entries(peerDeps).forEach(([peerDependency, version]) => {
+        const isPackageInRepo = targetPackage.name === peerDependency
+        if (isPackageInRepo) {
+          return packagesWithDependencies.push({
+            targetPackage: targetPackage,
+            dependency: {
+              ...referencePackage,
+              legacyVersion: version as string,
+            },
+          })
+        }
+      })
+    })
+  })
+
+  return packagesWithDependencies
 }

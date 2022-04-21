@@ -4,10 +4,15 @@ import { cwd } from 'process'
 
 import { getWorkspaceFolders } from './utilities'
 
+interface PackageJSON {
+  [key: string]: any
+}
+
 export interface PackageData {
   name: string
   path: string
   version: string
+  packageJSON: PackageJSON
   private?: boolean
 }
 
@@ -17,13 +22,14 @@ async function getPackageName({
   targetPath: string
 }): Promise<PackageData> {
   const packageJSONPath = path.join(targetPath, '/package.json')
-  const packageJson = await fs.readJSON(packageJSONPath)
+  const packageJSON = await fs.readJSON(packageJSONPath)
 
   return {
-    name: packageJson.name,
-    version: packageJson.version,
+    name: packageJSON.name,
+    version: packageJSON.version,
     path: targetPath,
-    private: packageJson.private ?? false,
+    private: packageJSON.private ?? false,
+    packageJSON,
   }
 }
 
