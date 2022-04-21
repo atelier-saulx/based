@@ -182,7 +182,9 @@ async function releaseProject() {
   })
 
   if (isDryRun) {
-    console.info('Aborted. This was a dry run release.')
+    console.info(
+      `\n  ${chalk.bold('[ Aborted. This was a dry run release. ]')} \n`
+    )
     process.exit(0)
   }
 
