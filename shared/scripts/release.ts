@@ -183,6 +183,10 @@ async function releaseProject() {
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
+  if (isDryRun) {
+    console.info(`${chalk.bold('~ This is a dry run release ~')} \n`)
+  }
+
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
 
@@ -203,7 +207,6 @@ async function releaseProject() {
     name: 'chosenPackages',
     type: 'multiselect',
     choices: publicPackageNames,
-    initial: publicPackageNames[0],
   } as any).then(({ chosenPackages }) => {
     if (!chosenPackages) {
       console.info('User aborted the release.')
