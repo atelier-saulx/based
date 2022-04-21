@@ -105,12 +105,12 @@ const checkReleaseOptions = async ({
     )
   }
 
-  const outdatedDepenencies = findOutdatedDependencies({
+  const outdatedDependencies = findOutdatedDependencies({
     targetPackages: clonedTargetPackages,
     allPackages,
   })
 
-  const hasOutdatedDependencies = outdatedDepenencies.length > 0
+  const hasOutdatedDependencies = outdatedDependencies.length > 0
   if (hasOutdatedDependencies) {
     console.info(
       `\n  ${chalk.bold.white(
@@ -118,7 +118,7 @@ const checkReleaseOptions = async ({
       )}`
     )
 
-    console.info(`\n  ${chalk.bold.underline.yellow('IMPORTANT')} \n`)
+    console.info(`\n  ${chalk.bold.yellow('[ Notice ]')} \n`)
 
     console.info(
       `  ${chalk.bold.white(
@@ -126,7 +126,7 @@ const checkReleaseOptions = async ({
       )} \n`
     )
 
-    outdatedDepenencies.forEach(({ targetPackage, dependency }) => {
+    outdatedDependencies.forEach(({ targetPackage, dependency }) => {
       console.info(
         `  ${chalk.yellow.bold(dependency.name)} depends on ${chalk.yellow.bold(
           targetPackage.name
@@ -163,7 +163,7 @@ const checkReleaseOptions = async ({
       disabled: 'No',
     } as any).then(async ({ shouldAutoUpdate }) => {
       if (shouldAutoUpdate && !isDryRun) {
-        for (const { targetPackage, dependency } of outdatedDepenencies) {
+        for (const { targetPackage, dependency } of outdatedDependencies) {
           await updatePeerDependency({
             outdatedDependency: dependency,
             targetDependency: targetPackage,
@@ -171,9 +171,28 @@ const checkReleaseOptions = async ({
         }
       }
     })
-  }
+  } else {
+    /**
+     * Allow us to abort the release
+     */
+    console.info(`\n`)
 
-  console.info(`\n`)
+    await prompt<{
+      shouldRelease: boolean
+    }>({
+      message: 'Do you want to to release?',
+      name: 'shouldRelease',
+      type: 'toggle',
+      initial: true,
+      enabled: 'Yes',
+      disabled: 'No',
+    } as any).then(({ shouldRelease }) => {
+      if (!shouldRelease) {
+        console.info('You aborted the release.')
+        process.exit(0)
+      }
+    })
+  }
 }
 
 async function releaseProject() {
@@ -252,30 +271,11 @@ async function releaseProject() {
   /**
    * Print release options
    */
-  checkReleaseOptions({
+  await checkReleaseOptions({
     releaseType,
     targetPackages,
     allPackages,
     isDryRun,
-  })
-
-  /**
-   * Allow us to abort the release
-   */
-  await prompt<{
-    shouldRelease: boolean
-  }>({
-    message: 'Do you want to to release?',
-    name: 'shouldRelease',
-    type: 'toggle',
-    initial: true,
-    enabled: 'Yes',
-    disabled: 'No',
-  } as any).then(({ shouldRelease }) => {
-    if (!shouldRelease) {
-      console.info('You aborted the release.')
-      process.exit(0)
-    }
   })
 
   if (isDryRun) {
