@@ -57,9 +57,12 @@ test.serial.only('call functions from db schema', async (t) => {
     // you can get functions from your org?
     config: {
       functionConfig: {
+        subscribeFunctions: async (cb: (err: Error, d?: any) => void) => {
+          cb(new Error('hello'))
+          return () => undefined
+        },
         idleTimeout: 1e3,
         clear: async (server, name) => {
-          console.info('CLEAR', name)
           clears.push(name)
         },
         getInitial: async (server, name) => {
@@ -78,8 +81,6 @@ test.serial.only('call functions from db schema', async (t) => {
     },
   })
   const bla = await client.call('schematimes')
-
-  console.info('--->', bla)
 
   await wait(1e3)
 
@@ -133,9 +134,12 @@ test.serial('call functions from db', async (t) => {
     // you can get functions from your org?
     config: {
       functionConfig: {
+        subscribeFunctions: async (cb: (err: Error, d?: any) => void) => {
+          cb(new Error('hello'))
+          return () => undefined
+        },
         idleTimeout: 1e3,
         clear: async (server, name) => {
-          console.info('CLEAR', name)
           clears.push(name)
         },
         getInitial: async (server, name) => {
@@ -223,9 +227,12 @@ test.serial('update active observables', async (t) => {
     // you can get functions from your org?
     config: {
       functionConfig: {
+        subscribeFunctions: async (cb: (err: Error, d?: any) => void) => {
+          cb(new Error('hello'))
+          return () => undefined
+        },
         idleTimeout: 1e3,
         clear: async (server, name) => {
-          // console.info('CLEAR', name)
           clears.push(name)
         },
         getInitial: async (server, name) => {
@@ -311,7 +318,7 @@ test.serial('update active observables', async (t) => {
 })
 
 // make clearing of secrets a thing later - implement better in hub
-test.serial.skip('get secrets', async (t) => {
+test.serial('get secrets', async (t) => {
   let clearCnt = 0
 
   const server = await createServer({
@@ -334,10 +341,10 @@ test.serial.skip('get secrets', async (t) => {
 
       secretsConfig: {
         idleTimeout: 1e3,
-        getInitial: async (server, name: string) => {
+        getInitial: async () => {
           return 'flappiepants'
         },
-        clear: async (server) => {
+        clear: async () => {
           clearCnt++
         },
       },

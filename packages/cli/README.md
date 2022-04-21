@@ -118,7 +118,7 @@ If you use dependencies, there should also be a `package.json` file alongside th
 
 ```
  ── functions
-    ├── aFunction
+    ├── authorize
     │   ├── based.config.js
     │   └── index.ts
     ├── anotherFunction
@@ -129,6 +129,9 @@ If you use dependencies, there should also be a `package.json` file alongside th
         ├── index.ts
         └── package.json
 ```
+
+The `authorize` function is a special function that authorizes based client to call other functions or queries. It's the place to add access logic and authentication.
+More information about it in the [`authorize data function`](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/authorize.md) documentation.
 
 | Argument                  | Description                             |
 |---------------------------|-----------------------------------------|
@@ -153,7 +156,7 @@ $ npx based deploy
 ┃
 ┃ Function(s) built in 188ms
 ┃ name                ┃  observable ┃  shared ┃  status ┃  path
-┃ aFunction           ┃             ┃         ┃  new    ┃  ./based/functions/aFunctionn/index.ts
+┃ authorize           ┃             ┃         ┃  new    ┃  ./based/functions/authorize/index.ts
 ┃ anotherFunction     ┃  ✔          ┃  ✔      ┃  new    ┃  ./based/functions/live/anotherFunction.ts
 ┃ functionWithDepe... ┃             ┃         ┃  new    ┃  ./based/functions/functionWithDependencies/index.ts
 ┃ and 30 unchanged function(s).
@@ -164,7 +167,7 @@ $ npx based deploy
 ┃
 ┃ Succesfully updated schema(s) on hello/dev in 46ms
 ┃
-┃ Succesfully deployed function aFunction to hello/dev in 266ms
+┃ Succesfully deployed function authorize to hello/dev in 266ms
 ┃ Succesfully deployed function anotherFunction to hello/dev in 270ms
 ┃ Succesfully deployed function functionWithDependencies to hello/dev in 270ms
 

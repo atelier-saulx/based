@@ -99,8 +99,7 @@ test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
 
   client.set({ type: 'thing', name: 'blap' })
 
-  const y = await client.observe(query, (d, checksum) => {
-    // console.info('LISTENER', d, checksum)
+  const y = await client.observe(query, (d) => {
     subsResults[3].push(deepCopy(d))
   })
 
@@ -142,7 +141,7 @@ test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
 
   y()
 
-  await wait(2000)
+  await wait(8000)
 
   t.deepEqual(server2.subscriptions, {})
 
@@ -199,7 +198,7 @@ test.serial('Corrupt data in subscriptions', async (t) => {
   // client.observe('x,)
   // client.observe('xxx',)
 
-  await client.observe(query, (d, checksum) => {
+  await client.observe(query, (d) => {
     // deepCopy as an extra thing in here?
     data = d
   })
@@ -261,12 +260,11 @@ test.serial('Error handling', async (t) => {
           flerp: 'xxx',
         },
       },
-      (d, checksum) => {
+      () => {
         // deepCopy as an extra thing in here?
       }
     )
-  } catch (err) {
-    console.error(err)
+  } catch (e) {
     errorCnt++
   }
 
@@ -275,8 +273,7 @@ test.serial('Error handling', async (t) => {
       type: 'snurfels',
       name: 'x',
     })
-  } catch (err) {
-    console.error(err)
+  } catch (e) {
     errorCnt++
   }
 

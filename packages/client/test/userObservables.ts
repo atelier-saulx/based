@@ -55,7 +55,6 @@ test.serial('observable functions not shared', async (t) => {
             let cnt = 0
             const token = await user.token('tally-jwt')
             initCnt++
-            // console.info('Init function', token)
             const interval = setInterval(() => {
               cnt++
               update({
@@ -64,15 +63,13 @@ test.serial('observable functions not shared', async (t) => {
               })
             }, 1e3)
             return () => {
-              // console.info('hello remove it for', token)
               return clearInterval(interval)
             }
           },
         },
       },
-      authorize: async ({ user, callStack }) => {
+      authorize: async ({ user }) => {
         const token = user && (await user.token('tally-jwt'))
-        console.info(' authorize function -> token', token, callStack)
         if (token && token.user === 'snurp') {
           return false
         }
@@ -102,7 +99,7 @@ test.serial('observable functions not shared', async (t) => {
 
   client.auth(token)
 
-  client.observe('smurk', (x) => {
+  client.observe('smurk', () => {
     incomingCnt++
   })
 
@@ -116,12 +113,11 @@ test.serial('observable functions not shared', async (t) => {
 
   client2.observe(
     'smurk',
-    (x) => {
+    () => {
       incomingCnt++
     },
-    (err) => {
+    () => {
       errorCnt++
-      console.error(err)
     }
   )
 
@@ -144,8 +140,6 @@ test.serial('observable functions not shared', async (t) => {
 
   t.is(initCnt, 4)
 
-  console.info('go wrong token')
-
   client2.auth(wrongToken)
 
   await wait(2e3)
@@ -163,7 +157,7 @@ test.serial('observable functions not shared', async (t) => {
   try {
     x = await client2.get('smurk')
   } catch (err) {
-    console.error('----->', err)
+    console.error(err)
   }
 
   t.is(x?.token?.user, 'jurbal')
@@ -209,9 +203,8 @@ test.serial('observable functions not shared call nested', async (t) => {
         smurk: {
           shared: false,
           observable: true,
-          function: async ({ update, user, callStack }) => {
+          function: async ({ update }) => {
             let cnt = 0
-            console.info('Init function', callStack)
             const interval = setInterval(() => {
               cnt++
               update({
@@ -226,8 +219,7 @@ test.serial('observable functions not shared call nested', async (t) => {
         flap: {
           shared: false,
           observable: true,
-          function: async ({ update, user, callStack, based }) => {
-            console.info('init', callStack)
+          function: async ({ update, based }) => {
             return based.observe('smurk', (d) => {
               update({
                 flap: 'yes',
@@ -237,14 +229,6 @@ test.serial('observable functions not shared call nested', async (t) => {
           },
         },
       },
-      // authorize: async ({ user, callStack }) => {
-      //   const token = user && (await user.token('tally-jwt'))
-      //   console.info(' authorize function -> token', token, callStack)
-      //   if (token && token.user === 'snurp') {
-      //     return false
-      //   }
-      //   return true
-      // },
     },
   })
 
@@ -254,9 +238,7 @@ test.serial('observable functions not shared call nested', async (t) => {
     },
   })
 
-  const close = await client.observe('flap', (d) => {
-    console.info(d)
-  })
+  const close = await client.observe('flap', () => {})
 
   await wait(2e3)
 

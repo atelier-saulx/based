@@ -119,9 +119,7 @@ test.serial('remove field', async (t) => {
 
   const ids = await Promise.all(q)
 
-  console.info('gurk')
-
-  const remove = await client.removeField('flap', 'nurk')
+  await client.removeField('flap', 'nurk')
 
   const result = await Promise.all(
     ids.map(({ id }) => client.get({ $id: id, nurk: true }))
