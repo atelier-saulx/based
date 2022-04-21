@@ -35,10 +35,9 @@ export default async (
   } else if (authRequestType === AuthRequestTypes.Logout) {
     try {
       const { function: fn } = (await getFunction(server, 'logout')) || {}
-      if (!fn) {
-        throw new Error('logout function is not implemented')
-      }
-      const result = await fn(new Params(server, payload, client, ['logout']))
+      const result = fn
+        ? await fn(new Params(server, payload, client, ['logout']))
+        : {}
       client.send([RequestTypes.Auth, reqId, result])
     } catch (err) {
       client.send([

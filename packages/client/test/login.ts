@@ -61,10 +61,9 @@ test.serial(
       client.disconnect()
     })
 
-    const error = await t.throwsAsync(async () => {
+    await t.throwsAsync(async () => {
       await client.login({ email: 'me', password: 'smurk' })
     })
-    t.log('No login function error:', error)
   }
 )
 
@@ -136,11 +135,10 @@ test.serial('should login and logout', async (t) => {
   })
 
   const error = await t.throwsAsync(async () => {
-    const result = await client.get({
+    await client.get({
       $id: 'root',
       id: true,
     })
-    t.log(result)
   })
   t.regex(error.name, /^AuthorizationError/)
 
@@ -150,6 +148,68 @@ test.serial('should login and logout', async (t) => {
       password: 'smurk',
     })
   })
-  console.log(errorLogin)
   t.regex(errorLogin.name, /^LoginError/)
+})
+
+test.serial('should not fail logout function does not exist', async (t) => {
+  t.timeout(5000)
+
+  const server = await createServer({
+    port: 9333,
+    db: {
+      host: 'localhost',
+      port: 9401,
+    },
+    config: {
+      authorize: async ({ user }) => {
+        return Boolean(user._token)
+      },
+      functions: {
+        login: {
+          observable: false,
+          function: async ({}): Promise<AuthLoginFunctionResponse> => {
+            return {
+              id: 'wawa',
+              email: 'wawa',
+              name: 'wawa',
+              token: 'fakeToken',
+              refreshToken: 'fakeRefreshToken',
+            }
+          },
+        },
+      },
+    },
+  })
+  const client = based({
+    url: async () => {
+      return 'ws://localhost:9333'
+    },
+  })
+  t.teardown(async () => {
+    await server.destroy()
+    client.disconnect()
+  })
+
+  await client.login({
+    email: 'existing@user.com',
+    password: 'smurk',
+  })
+
+  const x = await client.get({
+    $id: 'root',
+    id: true,
+  })
+  t.is(x.id, 'root')
+
+  await t.notThrowsAsync(async () => {
+    await client.logout()
+  })
+
+  const error = await t.throwsAsync(async () => {
+    await client.get({
+      $id: 'root',
+      id: true,
+    })
+  })
+  t.regex(error.name, /^AuthorizationError/)
 })
