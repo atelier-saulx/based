@@ -1,6 +1,6 @@
 {
   "name": "@based/ids",
-  "version": "2.4.2",
+  "version": "2.5.1",
   "license": "MIT",
   "scripts": {
     "build": "npx tsc",

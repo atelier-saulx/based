@@ -65,6 +65,7 @@ const { argv }: { argv: any } = yargs(hideBin(process.argv))
   ])
 
 const ALL_PACKAGES_TAG = 'All packages'
+let isTargetingAllPackages = false
 
 const getBranch = async () => {
   const currentBranch = await git.raw('rev-parse', '--abbrev-ref', 'HEAD')
@@ -147,12 +148,20 @@ async function releaseProject() {
       process.exit(0)
     }
 
-    if (chosenPackage !== ALL_PACKAGES_TAG) {
+    if (chosenPackage === ALL_PACKAGES_TAG) {
+      isTargetingAllPackages = true
+    } else {
       targetPackage = publicPackages.find(
         (packageData) => packageData.name === chosenPackage
       )
     }
   })
+
+  if (isTargetingAllPackages) {
+    throw new Error(
+      'We do not support releasing all packages yet. We need to consider edge cases'
+    )
+  }
 
   await prompt<{ chosenReleaseType: ReleaseType }>([
     {
@@ -213,7 +222,7 @@ async function releaseProject() {
    * Increment all packages in project
    */
   try {
-    if (targetPackage?.name === ALL_PACKAGES_TAG) {
+    if (isTargetingAllPackages) {
       await updatePackageVersionsInRepository({
         targetFolders,
         targetVersion,
@@ -233,7 +242,7 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  if (targetPackage?.name === ALL_PACKAGES_TAG) {
+  if (isTargetingAllPackages) {
     await publishAllPackagesInRepository({
       targetFolders,
       tag: 'latest',
@@ -274,16 +283,15 @@ async function releaseProject() {
     addFiles.push(path.join(process.cwd(), folder))
   })
 
+  const targetTag = isTargetingAllPackages ? targetVersion : packageJson.version
+
   await git.add(addFiles)
 
-  await git.commit(`[release] Version: ${targetVersion}`)
+  await git.commit(`[release] Version: ${targetTag}`)
 
   await git.push()
 
-  await git.addAnnotatedTag(
-    targetVersion,
-    `[release] Version: ${targetVersion}`
-  )
+  await git.addAnnotatedTag(targetTag, `[release] Version: ${targetTag}`)
 
   /**
    * Open up a browser tab within github to publish new release
@@ -292,8 +300,8 @@ async function releaseProject() {
     githubRelease({
       user: 'atelier-saulx',
       repo: 'based',
-      tag: targetVersion,
-      title: targetVersion,
+      tag: targetTag,
+      title: targetTag,
     })
   )
 
