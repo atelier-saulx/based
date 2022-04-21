@@ -65,14 +65,16 @@ const getBranch = async () => {
   return currentBranch.trim()
 }
 
-const printReleaseOptions = async ({
+const checkReleaseOptions = async ({
   releaseType,
   targetPackages,
   allPackages,
+  isDryRun,
 }: {
   releaseType: string
   targetPackages: PackageData[]
   allPackages: PackageData[]
+  isDryRun: boolean
 }) => {
   const clonedTargetPackages = [...targetPackages]
 
@@ -160,7 +162,7 @@ const printReleaseOptions = async ({
       enabled: 'Yes',
       disabled: 'No',
     } as any).then(async ({ shouldAutoUpdate }) => {
-      if (shouldAutoUpdate) {
+      if (shouldAutoUpdate && !isDryRun) {
         for (const { targetPackage, dependency } of outdatedDepenencies) {
           await updatePeerDependency({
             outdatedDependency: dependency,
@@ -175,19 +177,19 @@ const printReleaseOptions = async ({
 }
 
 async function releaseProject() {
-  // const currentBranch = await getBranch()
-  // if (currentBranch !== 'main') {
-  //   throw new Error(
-  //     `Incorrect branch: ${currentBranch}. We only release from main branch.`
-  //   )
-  // }
+  const currentBranch = await getBranch()
+  if (currentBranch !== 'main') {
+    throw new Error(
+      `Incorrect branch: ${currentBranch}. We only release from main branch.`
+    )
+  }
 
-  // const status = await git.status()
-  // if (status.files.length !== 0) {
-  //   throw new Error(
-  //     'You have unstaged changes in git. To release, commit or stash all changes.'
-  //   )
-  // }
+  const status = await git.status()
+  if (status.files.length !== 0) {
+    throw new Error(
+      'You have unstaged changes in git. To release, commit or stash all changes.'
+    )
+  }
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
@@ -250,13 +252,12 @@ async function releaseProject() {
   /**
    * Print release options
    */
-  printReleaseOptions({
+  checkReleaseOptions({
     releaseType,
     targetPackages,
     allPackages,
+    isDryRun,
   })
-
-  return false
 
   /**
    * Allow us to abort the release
