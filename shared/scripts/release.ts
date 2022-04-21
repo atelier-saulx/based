@@ -183,18 +183,26 @@ async function releaseProject() {
   /**
    * Publish all public packages in repository
    */
-  // await publishTargetPackage({
-  //   packageData: targetPackage,
-  //   tag: 'latest',
-  // }).catch((error) => {
-  //   console.error({ error })
+  for (const packageData of targetPackages) {
+    await publishTargetPackage({
+      packageData,
+      tag: 'latest',
+    }).catch((error) => {
+      console.error({ error })
 
-  //   throw new Error('Publishing to NPM failed.')
-  // })
+      throw new Error(
+        `Publishing to NPM failed for package: ${packageData.name}.`
+      )
+    })
+  }
 
-  // console.info(
-  //   `\n  Released package ${targetPackage?.name} version ${targetVersion} successfully! \n`
-  // )
+  console.info(`\n  Released the following packages successfully: \n`)
+
+  for (const packageData of targetPackages) {
+    console.info(`  - ${packageData.name} version ${packageData.version}`)
+  }
+
+  return
 
   /**
    * Stage and commit + push target version
