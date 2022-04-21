@@ -295,7 +295,7 @@ async function releaseProject() {
   try {
     await releaseProject()
   } catch (error) {
-    console.error('Release failed. Error: %o. \n', getErrorMessage(error))
+    console.error('\nRelease failed. Error: %o. \n', getErrorMessage(error))
 
     return process.exit(1)
   }
