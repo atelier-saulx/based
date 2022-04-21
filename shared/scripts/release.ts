@@ -179,6 +179,8 @@ async function releaseProject() {
    */
   await performGitStatus()
 
+  console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
+
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
   const inputType = argv._[0] ?? type
@@ -186,8 +188,6 @@ async function releaseProject() {
 
   const targetPackages: PackageData[] = []
   const targetFolders = await getWorkspaceFolders()
-
-  console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
   const allPackages = await getAllPackages()
   const publicPackages = await getPublicPackages()
