@@ -92,7 +92,7 @@ export const ToReadable = (input: string | boolean) => {
 
 type FormattedOptions = [string, string]
 
-export const FormatOptions = (printedOptions: {
+export const getFormattedObject = (printedOptions: {
   [key: string]: string | boolean
 }): FormattedOptions[] => {
   return Object.entries(printedOptions).map((option) => {

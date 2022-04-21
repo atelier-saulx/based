@@ -21,13 +21,14 @@ import {
 } from './update-versions'
 
 import {
-  FormatOptions,
+  getFormattedObject,
   getIncrementedVersion,
   validateReleaseType,
 } from './utilities'
 
 // @ts-ignore
 import packageJson from '../../package.json'
+import chalk from 'chalk'
 
 const git = simpleGit()
 
@@ -127,6 +128,36 @@ async function releaseProject() {
     releaseType = chosenReleaseType
   })
 
+  const printReleaseOptions = () => {
+    const printedOptions = {
+      releaseType: releaseType,
+    }
+
+    console.info(`\n  ${chalk.bold('[ Release Options ]')} \n`)
+
+    getFormattedObject(printedOptions).forEach(([message, value]) => {
+      console.info(`  ${chalk.white(message)}: ${chalk.bold.yellow(value)}`)
+    })
+
+    console.info(`\n  ${chalk.bold('Target packages:')} \n`)
+    targetPackages.forEach(({ name, version }) => {
+      const incrementedVersion = getIncrementedVersion({
+        version: version,
+        type: releaseType,
+      })
+
+      console.info(
+        `  ${chalk.green(name)}: ${chalk.gray.strikethrough(
+          version
+        )} ${chalk.bold.yellow(incrementedVersion)}`
+      )
+    })
+
+    console.info(`\n`)
+  }
+
+  printReleaseOptions()
+
   await prompt<{
     shouldRelease: boolean
   }>({
@@ -159,14 +190,14 @@ async function releaseProject() {
    */
   try {
     for (const packageData of targetPackages) {
-      const targetVersion = getIncrementedVersion({
+      packageData.version = getIncrementedVersion({
         version: packageData?.version,
         type: releaseType,
       })
 
       await updateTargetPackageVersion({
         packageData: packageData,
-        targetVersion: targetVersion,
+        targetVersion: packageData.version,
       })
     }
 
@@ -189,20 +220,21 @@ async function releaseProject() {
       tag: 'latest',
     }).catch((error) => {
       console.error({ error })
-
       throw new Error(
         `Publishing to NPM failed for package: ${packageData.name}.`
       )
     })
   }
 
-  console.info(`\n  Released the following packages successfully: \n`)
-
-  for (const packageData of targetPackages) {
-    console.info(`  - ${packageData.name} version ${packageData.version}`)
-  }
-
-  return
+  console.info(
+    `\n  ${chalk.bold('Released the following packages successfully:')} \n`
+  )
+  targetPackages.forEach(({ name, version }) => {
+    console.info(
+      `  ${chalk.white(name)}: version ${chalk.bold.yellow(version)}`
+    )
+  })
+  console.info(`\n`)
 
   /**
    * Stage and commit + push target version
