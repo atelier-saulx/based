@@ -2,6 +2,7 @@ import { BasedServer } from '../..'
 import Client from '../../Client'
 import { AuthMessage, RequestTypes, AuthRequestTypes } from '@based/client'
 import { Params } from '../../Params'
+import { getFunction } from '../../getFromConfig'
 
 export default async (
   server: BasedServer,
@@ -12,9 +13,11 @@ export default async (
     if (typeof payload === 'string')
       throw new Error('payload cannot be a string')
     try {
-      const token = await server.config.login(
-        new Params(server, payload, client, ['login'])
-      )
+      const { function: fn } = (await getFunction(server, 'login')) || {}
+      if (!fn) {
+        throw new Error('login function is not implemented')
+      }
+      const token = await fn(new Params(server, payload, client, ['login']))
       client.send([RequestTypes.Auth, reqId, token])
     } catch (err) {
       client.send([
@@ -31,9 +34,11 @@ export default async (
     }
   } else if (authRequestType === AuthRequestTypes.Logout) {
     try {
-      const result = await server.config.logout(
-        new Params(server, payload, client, ['logout'])
-      )
+      const { function: fn } = (await getFunction(server, 'logout')) || {}
+      if (!fn) {
+        throw new Error('logout function is not implemented')
+      }
+      const result = await fn(new Params(server, payload, client, ['logout']))
       client.send([RequestTypes.Auth, reqId, result])
     } catch (err) {
       client.send([
@@ -50,8 +55,12 @@ export default async (
     }
   } else if (authRequestType === AuthRequestTypes.RenewToken) {
     try {
-      const result = await server.config.renewToken(
-        new Params(server, payload, client, ['refreshToken'])
+      const { function: fn } = (await getFunction(server, 'renewToken')) || {}
+      if (!fn) {
+        throw new Error('renewToken function is not implemented')
+      }
+      const result = await fn(
+        new Params(server, payload, client, ['renewToken'])
       )
       client.send([RequestTypes.Auth, reqId, result])
     } catch (err) {
@@ -60,8 +69,8 @@ export default async (
         reqId,
         0,
         {
-          type: 'RefreshTokenError',
-          name: 'refreshToken',
+          type: 'RenewTokenError',
+          name: 'renewToken',
           message: err.message,
           payload,
         },

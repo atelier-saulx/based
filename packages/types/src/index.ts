@@ -383,3 +383,13 @@ export type FileUploadSrc = {
   parents?: string[]
   size?: number
 }
+
+export type AuthLoginFunctionResponse = {
+  id: string
+  email: string
+  name: string
+  token: string
+  tokenExpiresIn?: number
+  refreshToken: string
+  refreshTokenExpiresIn?: number
+}
