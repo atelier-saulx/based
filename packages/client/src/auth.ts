@@ -60,7 +60,6 @@ export const incomingAuthRequest = (client: BasedClient, data: AuthData) => {
   if (cb) {
     delete client.authCallbacks[reqId]
     if (err) {
-      console.log('wawa')
       cb.reject(createError(err))
     } else {
       cb.resolve(payload)

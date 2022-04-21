@@ -175,7 +175,6 @@ export class BasedClient {
         this.beingAuth = false
         this.auth = []
       } else if (data[0] === RequestTypes.Auth) {
-        console.log('>>>> incomingAuthRequest')
         incomingAuthRequest(this, data)
       } else if (
         data[0] === RequestTypes.Set ||
@@ -189,7 +188,6 @@ export class BasedClient {
         data[0] === RequestTypes.RemoveType ||
         data[0] === RequestTypes.RemoveField
       ) {
-        console.log('>>>> incomingRequest')
         incomingRequest(this, data)
       } else if (data[0] === RequestTypes.Subscription) {
         incomingSubscription(this, data)

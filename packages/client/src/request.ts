@@ -1,6 +1,6 @@
 import { BasedClient } from '.'
 import { addToQueue } from './queue'
-import { AuthRequestTypes, RequestData, RequestTypes } from '@based/types'
+import { RequestData, RequestTypes } from '@based/types'
 import createError from './createError'
 import sendToken from './token'
 import { renewToken } from './auth'
@@ -94,7 +94,7 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
             )
           })
           .catch((err) => {
-            console.error('renewToken error', err)
+            cb.reject(err)
           })
       } else {
         cb.reject(createError(err))
