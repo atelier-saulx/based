@@ -199,7 +199,7 @@ async function releaseProject() {
   await prompt<{
     chosenPackages: string[]
   }>({
-    message: 'Select packages you want to release',
+    message: 'Select the packages you want to release',
     name: 'chosenPackages',
     type: 'multiselect',
     choices: publicPackageNames,
