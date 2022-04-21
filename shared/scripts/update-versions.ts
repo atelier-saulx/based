@@ -134,3 +134,28 @@ export async function patchRepositoryVersion() {
     targetVersion: repoVersion,
   })
 }
+
+export async function updatePeerDependency({
+  outdatedDependency,
+  targetDependency,
+}: {
+  outdatedDependency: PackageData
+  targetDependency: PackageData
+}) {
+  const packageJSONPath = path.join(outdatedDependency.path, '/package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
+
+  if (packageJson.peerDependencies) {
+    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
+      const isPackageInRepo = [targetDependency.name].includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.peerDependencies[
+          packageName
+        ] = `^${targetDependency.version}`
+      }
+    })
+  }
+
+  await fs.writeJSON(packageJSONPath, packageJson, { spaces: 2 })
+}

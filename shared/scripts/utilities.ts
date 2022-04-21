@@ -146,7 +146,7 @@ export interface DependencyTree {
   dependency: DependencyData
 }
 
-export function findAllDependencies({
+export function findOutdatedDependencies({
   targetPackages,
   allPackages,
 }: {

@@ -22,11 +22,12 @@ import { ReleaseType } from './types'
 import { publishTargetPackage } from './publish-packages'
 import {
   patchRepositoryVersion,
+  updatePeerDependency,
   updateTargetPackageVersion,
 } from './update-versions'
 
 import {
-  findAllDependencies,
+  findOutdatedDependencies,
   getFormattedObject,
   getIncrementedVersion,
   getWorkspaceFolders,
@@ -64,7 +65,7 @@ const getBranch = async () => {
   return currentBranch.trim()
 }
 
-const printReleaseOptions = ({
+const printReleaseOptions = async ({
   releaseType,
   targetPackages,
   allPackages,
@@ -102,12 +103,13 @@ const printReleaseOptions = ({
     )
   }
 
-  const dependencies = findAllDependencies({
+  const outdatedDepenencies = findOutdatedDependencies({
     targetPackages: clonedTargetPackages,
     allPackages,
   })
 
-  if (dependencies.length > 0) {
+  const hasOutdatedDependencies = outdatedDepenencies.length > 0
+  if (hasOutdatedDependencies) {
     console.info(
       `\n  ${chalk.bold.white(
         '-------------------------------------------------------'
@@ -122,7 +124,7 @@ const printReleaseOptions = ({
       )} \n`
     )
 
-    dependencies.forEach(({ targetPackage, dependency }) => {
+    outdatedDepenencies.forEach(({ targetPackage, dependency }) => {
       console.info(
         `  ${chalk.yellow.bold(dependency.name)} depends on ${chalk.yellow.bold(
           targetPackage.name
@@ -145,8 +147,28 @@ const printReleaseOptions = ({
     console.info(
       `\n  ${chalk.bold.white(
         '-------------------------------------------------------'
-      )}`
+      )} \n`
     )
+
+    await prompt<{
+      shouldAutoUpdate: boolean
+    }>({
+      message: 'Do you want to to auto-update?',
+      name: 'shouldAutoUpdate',
+      type: 'toggle',
+      initial: true,
+      enabled: 'Yes',
+      disabled: 'No',
+    } as any).then(async ({ shouldAutoUpdate }) => {
+      if (shouldAutoUpdate) {
+        for (const { targetPackage, dependency } of outdatedDepenencies) {
+          await updatePeerDependency({
+            outdatedDependency: dependency,
+            targetDependency: targetPackage,
+          })
+        }
+      }
+    })
   }
 
   console.info(`\n`)
