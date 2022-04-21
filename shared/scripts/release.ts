@@ -159,7 +159,7 @@ async function releaseProject() {
 
   if (isTargetingAllPackages) {
     throw new Error(
-      'We do not support releasing all packages yet. We need to consider edge cases'
+      'We do not support releasing all packages yet. We need to consider edge cases.'
     )
   }
 
