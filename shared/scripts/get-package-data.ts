@@ -2,8 +2,7 @@ import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
 
-// @ts-ignore
-import packageJson from '../../package.json'
+import { getWorkspaceFolders } from './utilities'
 
 export interface PackageData {
   name: string
@@ -56,9 +55,7 @@ export async function getAllPackages(): Promise<PackageData[]> {
   /**
    * Get all workspace folders. Filter out `/*`
    */
-  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
-    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
-  })
+  const workspaceFolders = await getWorkspaceFolders()
 
   /**
    * Get all package names in workspace folders
@@ -87,9 +84,7 @@ export async function getPublicPackages(): Promise<PackageData[]> {
   /**
    * Get all workspace folders. Filter out `/*`
    */
-  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
-    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
-  })
+  const workspaceFolders = await getWorkspaceFolders()
 
   /**
    * Get all package names in workspace folders

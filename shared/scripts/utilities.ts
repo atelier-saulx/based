@@ -1,5 +1,8 @@
 import chalk from 'chalk'
-import { ReleaseType, Inquiry, Prompts, Question } from 'types'
+import path from 'path'
+import fs from 'fs-extra'
+
+import { ReleaseType, Inquiry, Prompts, Question } from './types'
 
 /**
  * Bump / incrememt version with patch, minor or major.
@@ -119,4 +122,15 @@ export function validateReleaseType(input: ReleaseType): string {
   }
 
   return input
+}
+
+export async function getWorkspaceFolders(): Promise<string[]> {
+  const packageJSONPath = path.join(process.cwd(), './package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
+
+  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
+    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
+  })
+
+  return workspaceFolders
 }

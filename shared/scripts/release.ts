@@ -24,11 +24,10 @@ import {
 import {
   getFormattedObject,
   getIncrementedVersion,
+  getWorkspaceFolders,
   validateReleaseType,
 } from './utilities'
 
-// @ts-ignore
-import packageJson from '../../package.json'
 import chalk from 'chalk'
 
 const git = simpleGit()
@@ -115,10 +114,7 @@ async function releaseProject() {
   let releaseType = validateReleaseType(inputType)
 
   const targetPackages: PackageData[] = []
-
-  const targetFolders = packageJson.workspaces.map((folder: string) => {
-    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
-  })
+  const targetFolders = await getWorkspaceFolders()
 
   console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
