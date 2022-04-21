@@ -1,6 +1,7 @@
 import chalk from 'chalk'
 import path from 'path'
 import fs from 'fs-extra'
+import semverDiff from 'semver-diff'
 
 import { ReleaseType, Inquiry, Prompts, Question } from './types'
 import { PackageData } from 'get-package-data'
@@ -154,14 +155,25 @@ export function findAllDependencies({
 }): DependencyTree[] {
   const packagesWithDependencies: DependencyTree[] = []
 
+  const allPackageNames = allPackages.map(({ name }) => name)
+
   targetPackages.forEach((targetPackage) => {
     allPackages.forEach((referencePackage) => {
       const { packageJSON } = referencePackage
       const peerDeps = packageJSON?.peerDependencies ?? {}
 
-      Object.entries(peerDeps).forEach(([peerDependency, version]) => {
+      const entryArray = Object.entries(peerDeps).filter(([peerDependency]) => {
+        return allPackageNames.includes(peerDependency)
+      })
+
+      entryArray.forEach(([peerDependency, version]) => {
+        const peerVersion = (version ?? '') as string
+        const cleanedVersion = peerVersion.replace('^', '')
         const isPackageInRepo = targetPackage.name === peerDependency
-        if (isPackageInRepo) {
+        const diffed = semverDiff(cleanedVersion, targetPackage.version)
+        const isOutdated = diffed !== undefined
+
+        if (isPackageInRepo && isOutdated) {
           return packagesWithDependencies.push({
             targetPackage: targetPackage,
             dependency: {

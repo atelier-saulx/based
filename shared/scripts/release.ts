@@ -73,6 +73,8 @@ const printReleaseOptions = ({
   targetPackages: PackageData[]
   allPackages: PackageData[]
 }) => {
+  const clonedTargetPackages = [...targetPackages]
+
   const printedOptions = {
     releaseType: releaseType,
   }
@@ -84,29 +86,38 @@ const printReleaseOptions = ({
   })
 
   console.info(`\n  ${chalk.bold('Target packages:')} \n`)
-  targetPackages.forEach(({ name, version }) => {
-    const incrementedVersion = getIncrementedVersion({
-      version: version,
+
+  for (const packageData of clonedTargetPackages) {
+    const currentVersion = `${packageData.version}`
+
+    packageData.version = getIncrementedVersion({
+      version: packageData.version,
       type: releaseType,
     })
 
     console.info(
-      `  ${chalk.green(name)}: ${chalk.gray.strikethrough(
-        version
-      )} ${chalk.bold.yellow(incrementedVersion)}`
+      `  ${chalk.green(packageData.name)}: ${chalk.gray.strikethrough(
+        currentVersion
+      )} ${chalk.bold.yellow(packageData.version)}`
     )
-  })
+  }
 
   const dependencies = findAllDependencies({
-    targetPackages,
+    targetPackages: clonedTargetPackages,
     allPackages,
   })
 
   if (dependencies.length > 0) {
+    console.info(
+      `\n  ${chalk.bold.white(
+        '-------------------------------------------------------'
+      )}`
+    )
+
     console.info(`\n  ${chalk.bold.underline.yellow('IMPORTANT')} \n`)
 
     console.info(
-      `  ${chalk.bold.yellow(
+      `  ${chalk.bold.white(
         'The following packages has peer-dependencies:'
       )} \n`
     )
@@ -118,6 +129,18 @@ const printReleaseOptions = ({
         )} version ${dependency.legacyVersion}`
       )
     })
+
+    console.info(
+      `\n  ${chalk.bold.white(
+        'We recommend updating peer-deps for those packages.'
+      )}`
+    )
+
+    console.info(
+      `\n  ${chalk.bold.white(
+        '-------------------------------------------------------'
+      )}`
+    )
   }
 
   console.info(`\n`)
