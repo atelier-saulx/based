@@ -15,7 +15,10 @@ import { getPublicPackages, PackageData } from './get-package-data'
 import { ReleaseType } from './types'
 
 import { publishTargetPackage } from './publish-packages'
-import { updateTargetPackageVersion } from './update-versions'
+import {
+  patchRepositoryVersion,
+  updateTargetPackageVersion,
+} from './update-versions'
 
 import {
   FormatOptions,
@@ -135,7 +138,7 @@ async function releaseProject() {
     disabled: 'No',
   } as any).then(({ shouldRelease }) => {
     if (!shouldRelease) {
-      console.info('User aborted the release.')
+      console.info('You aborted the release.')
       process.exit(0)
     }
   })
@@ -152,7 +155,7 @@ async function releaseProject() {
   }
 
   /**
-   * Increment all packages in project
+   * Update version of all target packages
    */
   try {
     for (const packageData of targetPackages) {
@@ -166,6 +169,11 @@ async function releaseProject() {
         targetVersion: targetVersion,
       })
     }
+
+    /**
+     * Keep track of releases by patching workspace version
+     */
+    await patchRepositoryVersion()
   } catch (error) {
     console.error({ error })
 
