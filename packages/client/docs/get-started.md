@@ -9,6 +9,8 @@
 The first step in getting started with using Based is creating a new project. To do so, after logging in, click the `+ New Project` button and type in a new project name.  
 Each project can have multiple environments (e.g. development and production).
 
+Go to the based [dashboard](https://based-website.vercel.app/dashboard)
+
 <!-- create-new-project video -->
 
 https://user-images.githubusercontent.com/16743760/164229679-0555beb5-4c56-4843-8fc6-266fa7f15ee4.mov
