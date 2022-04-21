@@ -87,10 +87,11 @@ const checkReleaseOptions = async ({
   console.info(`\n  ${chalk.bold('Target packages:')} \n`)
 
   for (const packageData of clonedTargetPackages) {
-    const { name } = packageData
-    const currentVersion = `${packageData.version}`
+    const { name, version } = packageData
 
-    packageData.version = getIncrementedVersion({
+    const currentVersion = `${version}`
+
+    const targetVersion = getIncrementedVersion({
       version: packageData.version,
       type: releaseType,
     })
@@ -98,7 +99,7 @@ const checkReleaseOptions = async ({
     console.info(
       `  ${chalk.green(name)} ~ Current version: ${chalk.bold.yellow(
         currentVersion
-      )}. New version: ${chalk.bold.yellow(packageData.version)}.`
+      )}. New version: ${chalk.bold.yellow(targetVersion)}.`
     )
   }
 
@@ -273,14 +274,14 @@ async function releaseProject() {
    */
   try {
     for (const packageData of targetPackages) {
-      packageData.version = getIncrementedVersion({
+      const targetVersion = getIncrementedVersion({
         version: packageData?.version,
         type: releaseType,
       })
 
       await updateTargetPackageVersion({
         packageData: packageData,
-        targetVersion: packageData.version,
+        targetVersion: targetVersion,
       })
     }
 
