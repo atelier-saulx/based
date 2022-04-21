@@ -9,7 +9,7 @@
   "scripts": {
     "buildBundle": "node ./build/index.js",
     "build": "npx tsc && npm run buildBundle",
-    "watch": "npm run build -- --watch",
+    "watch": "npx tsc --watch && npm run buildBundle -- --watch",
     "test": "ava --timeout 1m --verbose",
     "watchTest": "ava --color --watch --verbose",
     "clean": "rimraf {.turbo,dist,node_modules}"
