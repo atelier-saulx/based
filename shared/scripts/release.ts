@@ -87,7 +87,7 @@ const checkReleaseOptions = async ({
   console.info(`\n  ${chalk.bold('Target packages:')} \n`)
 
   for (const packageData of clonedTargetPackages) {
-    const { name, version } = packageData
+    const { name } = packageData
     const currentVersion = `${packageData.version}`
 
     packageData.version = getIncrementedVersion({
@@ -98,7 +98,7 @@ const checkReleaseOptions = async ({
     console.info(
       `  ${chalk.green(name)} ~ Current version: ${chalk.bold.yellow(
         currentVersion
-      )}. New version: ${chalk.bold.yellow(version)}.`
+      )}. New version: ${chalk.bold.yellow(packageData.version)}.`
     )
   }
 
