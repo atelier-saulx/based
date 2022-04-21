@@ -143,7 +143,7 @@ export interface DependencyData extends PackageData {
 
 export interface DependencyTree {
   targetPackage: PackageData
-  dependency: DependencyData
+  dependencyPackage: DependencyData
 }
 
 export function findOutdatedDependencies({
@@ -160,13 +160,28 @@ export function findOutdatedDependencies({
   targetPackages.forEach((targetPackage) => {
     allPackages.forEach((referencePackage) => {
       const { packageJSON } = referencePackage
-      const peerDeps = packageJSON?.peerDependencies ?? {}
 
-      const entryArray = Object.entries(peerDeps).filter(([peerDependency]) => {
-        return allPackageNames.includes(peerDependency)
-      })
+      const peerDependencies = packageJSON?.peerDependencies ?? {}
+      const devDependencies = packageJSON?.devDependencies ?? {}
 
-      entryArray.forEach(([peerDependency, version]) => {
+      const peerDependenciesArray = Object.entries(peerDependencies).filter(
+        ([peerDependency]) => {
+          return allPackageNames.includes(peerDependency)
+        }
+      )
+
+      const devDependenciesArray = Object.entries(devDependencies).filter(
+        ([devDependency]) => {
+          return allPackageNames.includes(devDependency)
+        }
+      )
+
+      const allDependencies = [
+        ...peerDependenciesArray,
+        ...devDependenciesArray,
+      ]
+
+      allDependencies.forEach(([peerDependency, version]) => {
         const peerVersion = (version ?? '') as string
         const cleanedVersion = peerVersion.replace('^', '')
         const isPackageInRepo = targetPackage.name === peerDependency
@@ -174,13 +189,23 @@ export function findOutdatedDependencies({
         const isOutdated = diffed !== undefined
 
         if (isPackageInRepo && isOutdated) {
-          return packagesWithDependencies.push({
+          const outdatedDependency: DependencyTree = {
             targetPackage: targetPackage,
-            dependency: {
+            dependencyPackage: {
               ...referencePackage,
               legacyVersion: version as string,
             },
-          })
+          }
+
+          const dependencyExists = packagesWithDependencies.find(
+            ({ dependencyPackage }) => {
+              return dependencyPackage.name === referencePackage.name
+            }
+          )
+
+          if (!dependencyExists) {
+            packagesWithDependencies.push(outdatedDependency)
+          }
         }
       })
     })

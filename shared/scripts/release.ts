@@ -22,7 +22,7 @@ import { ReleaseType } from './types'
 import { publishTargetPackage } from './publish-packages'
 import {
   patchRepositoryVersion,
-  updatePeerDependency,
+  updatePeerAndDevDependency,
   updateTargetPackageVersion,
 } from './update-versions'
 
@@ -126,11 +126,13 @@ const checkReleaseOptions = async ({
       )} \n`
     )
 
-    outdatedDependencies.forEach(({ targetPackage, dependency }) => {
+    outdatedDependencies.forEach(({ targetPackage, dependencyPackage }) => {
       console.info(
-        `  ${chalk.yellow.bold(dependency.name)} depends on ${chalk.yellow.bold(
+        `  ${chalk.yellow.bold(
+          dependencyPackage.name
+        )} depends on ${chalk.yellow.bold(
           targetPackage.name
-        )} version ${chalk.yellow.bold(dependency.legacyVersion)}.`
+        )} version ${chalk.yellow.bold(dependencyPackage.legacyVersion)}.`
       )
 
       console.info(
@@ -163,9 +165,12 @@ const checkReleaseOptions = async ({
       disabled: 'No',
     } as any).then(async ({ shouldAutoUpdate }) => {
       if (shouldAutoUpdate && !isDryRun) {
-        for (const { targetPackage, dependency } of outdatedDependencies) {
-          await updatePeerDependency({
-            outdatedDependency: dependency,
+        for (const {
+          targetPackage,
+          dependencyPackage,
+        } of outdatedDependencies) {
+          await updatePeerAndDevDependency({
+            outdatedDependency: dependencyPackage,
             targetDependency: targetPackage,
           })
         }
@@ -195,7 +200,7 @@ const checkReleaseOptions = async ({
   }
 }
 
-async function releaseProject() {
+const performGitStatus = async () => {
   const currentBranch = await getBranch()
   if (currentBranch !== 'main') {
     throw new Error(
@@ -209,6 +214,13 @@ async function releaseProject() {
       'You have unstaged changes in git. To release, commit or stash all changes.'
     )
   }
+}
+
+async function releaseProject() {
+  /**
+   * Ensure we are on correct branch with clean git status.
+   */
+  await performGitStatus()
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 

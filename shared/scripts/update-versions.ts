@@ -135,7 +135,7 @@ export async function patchRepositoryVersion() {
   })
 }
 
-export async function updatePeerDependency({
+export async function updatePeerAndDevDependency({
   outdatedDependency,
   targetDependency,
 }: {
@@ -151,6 +151,18 @@ export async function updatePeerDependency({
 
       if (isPackageInRepo) {
         packageJson.peerDependencies[
+          packageName
+        ] = `^${targetDependency.version}`
+      }
+    })
+  }
+
+  if (packageJson.devDependencies) {
+    Object.keys(packageJson.devDependencies).forEach((packageName) => {
+      const isPackageInRepo = [targetDependency.name].includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.devDependencies[
           packageName
         ] = `^${targetDependency.version}`
       }
