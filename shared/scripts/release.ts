@@ -86,7 +86,7 @@ async function releaseProject() {
     return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
   })
 
-  console.info(`\n  Releasing Based\n`)
+  console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
   const publicPackages = await getPublicPackages()
 
