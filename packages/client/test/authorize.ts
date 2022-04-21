@@ -47,17 +47,14 @@ test.serial('authorize functions', async (t) => {
       secrets: {
         'tally-jwt': publicKey,
       },
-      authorizeConnection: async (req, ctx) => {
-        console.info('authorizeConnection', ctx)
+      authorizeConnection: async () => {
         return true
       },
 
       // this will be different
-      authorize: async ({ user, payload, name, type, callStack }) => {
+      authorize: async ({ user, payload, name, type }) => {
         // extra option is URN audience checks
         // timeout etc can also be automatic
-
-        console.info('--->', callStack, name, type)
 
         const token = user && (await user.token('tally-jwt'))
 
@@ -97,17 +94,15 @@ test.serial('authorize functions', async (t) => {
         jim: {
           observable: false,
           authorize: async () => {
-            console.info('jim function never works!')
             return false
           },
-          function: async ({ based, callStack }) => {
+          function: async () => {
             return { x: true }
           },
         },
         ale: {
           observable: false,
-          function: async ({ based, callStack }) => {
-            console.info(callStack)
+          function: async ({ based }) => {
             return based.get({
               $id: 'root',
               $all: true,
@@ -135,8 +130,6 @@ test.serial('authorize functions', async (t) => {
 
   const token = jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' })
 
-  console.info(token)
-
   const client = based({
     url: async () => {
       return 'ws://localhost:9100'
@@ -151,7 +144,6 @@ test.serial('authorize functions', async (t) => {
     await client.call('jim')
     t.fail('Unauthorized request "jim" did not throw!')
   } catch (err) {
-    console.info(err)
     t.is(err.name, 'AuthorizationError from call "jim"')
   }
 
@@ -161,7 +153,6 @@ test.serial('authorize functions', async (t) => {
     await client.call('ale', { wrong: true })
     t.fail('Unauthorized request did not throw!')
   } catch (err) {
-    console.info(err)
     t.true(err.message.includes('very wrong yes'))
     t.is(err.name, 'AuthorizationError from call "ale"')
   }
@@ -179,7 +170,6 @@ test.serial('authorize functions', async (t) => {
     await client.call('hello', { flap: true })
     t.fail('Unauthorized request did not throw!')
   } catch (err) {
-    console.info(err)
     t.true(err.message.includes('Function ale unauthorized request'))
     t.is(err.name, 'AuthorizationError from hello')
   }
@@ -188,7 +178,6 @@ test.serial('authorize functions', async (t) => {
     await client.call('hello', { no: true })
     t.fail('Unauthorized request did not throw!')
   } catch (err) {
-    console.info(err)
     t.is(err.name, 'AuthorizationError from call "hello"')
   }
 
@@ -210,7 +199,7 @@ test.serial('authorize functions', async (t) => {
         },
       },
     },
-    (x) => {}
+    () => {}
   )
 
   unsub()
@@ -219,7 +208,7 @@ test.serial('authorize functions', async (t) => {
     {
       gurdy: {},
     },
-    (x) => {},
+    () => {},
     () => {
       errCnt++
     }
@@ -244,7 +233,7 @@ test.serial('authorize functions', async (t) => {
         },
       },
     },
-    (x) => {}
+    () => {}
   )
 
   unsub2()
@@ -254,7 +243,7 @@ test.serial('authorize functions', async (t) => {
     {
       flappie: true,
     },
-    (x) => {},
+    () => {},
     () => {
       errCnt++
     }
@@ -266,7 +255,6 @@ test.serial('authorize functions', async (t) => {
     })
     t.fail('Unauthorized observe advanced request did not throw!')
   } catch (err) {
-    console.error(err)
     t.is(err.name, 'AuthorizationError from observe "advanced"')
   }
 
@@ -276,7 +264,7 @@ test.serial('authorize functions', async (t) => {
     {
       gurdy: {},
     },
-    (x) => {},
+    () => {},
     () => {
       errCnt++
     }
@@ -290,7 +278,6 @@ test.serial('authorize functions', async (t) => {
     await client.get({ $id: 'root', $all: true })
     t.fail('No token not working')
   } catch (err) {
-    console.error(err)
     t.true(err.message.includes('Unauthorized request'))
   }
 
@@ -309,15 +296,14 @@ test.serial('authorize login / out functions', async (t) => {
       secrets: {
         'tally-jwt': publicKey,
       },
-      authorizeConnection: async (req, ctx) => {
-        console.info('authorizeConnection', ctx)
+      authorizeConnection: async () => {
         return true
       },
       functions: {
         advanced: {
           observable: true,
           shared: true,
-          function: async ({ payload, update, based, callStack }) => {
+          function: async ({ payload, update, based }) => {
             return based.observe(payload, (data) => {
               update(data)
             })
@@ -325,8 +311,6 @@ test.serial('authorize login / out functions', async (t) => {
         },
       },
       authorize: async ({ user, payload, name, type, callStack }) => {
-        console.info(name, type)
-
         if (!user && callStack.length === 0) {
           return false
         }
@@ -384,7 +368,7 @@ test.serial('authorize login / out functions', async (t) => {
       $id: 'root',
       $all: true,
     },
-    (x) => {
+    () => {
       publicSub++
     }
   )
@@ -465,11 +449,10 @@ test.serial('authorize login / out functions', async (t) => {
       $id: 'root',
       id: true,
     },
-    (x) => {
+    () => {
       receivedCnt2++
     },
-    (err) => {
-      console.error(err)
+    () => {
       errorCnt2++
     }
   )
@@ -477,14 +460,13 @@ test.serial('authorize login / out functions', async (t) => {
   t.is(errorCnt2, 1, 'received 1 error for strict')
   t.is(receivedCnt2, 0, 'received data 0 times for strict')
 
-  console.info('go advanced')
   await client.observe(
     'advanced',
     {
       $id: 'root',
       id: true,
     },
-    (x) => {
+    () => {
       receivedCnt2++
     }
   )

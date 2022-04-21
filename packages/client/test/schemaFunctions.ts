@@ -1,13 +1,10 @@
 import test from 'ava'
 import createServer from '@based/server'
 import based from '../src'
-import { wait, deepCopy } from '@saulx/utils'
 
 test.serial(
   'subscribe schema - get function names and get updates when functions get added/removed',
   async (t) => {
-    // maybe make a small selva helper as well (can go into a function)
-
     let initCnt = 0
 
     const store = {
@@ -49,13 +46,13 @@ test.serial(
         functionConfig: {
           idleTimeout: 1e3,
           clear: async (server, name) => {
-            // console.info('CLEAR', name)
             clears.push(name)
           },
 
-          //   getInitalFunctionConfig: async () => {
-          //       return a function config
-          //   },
+          subscribeFunctions: async (cb: (err: Error, d?: any) => void) => {
+            cb(new Error('hello'))
+            return () => undefined
+          },
 
           getInitial: async (server, name) => {
             // update it
@@ -69,19 +66,15 @@ test.serial(
       },
     })
 
-    // server.updateFunctionConfig({})
-
     const client = based({
       url: async () => {
         return 'ws://localhost:9101'
       },
     })
 
-    const x = await client.observeSchema((d) => {
-      console.info(d)
-    })
-
     await server.destroy()
     client.disconnect()
+
+    t.pass()
   }
 )
