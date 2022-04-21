@@ -118,9 +118,11 @@ export async function updateTargetPackageVersion({
     filePath: packageData.path,
     targetVersion,
   })
+}
 
+export async function patchRepositoryVersion() {
   /**
-   * Always bump root package version with patch
+   * Bump root package version with patch
    */
   const repoVersion = getIncrementedVersion({
     version: packageJson.version,
@@ -131,4 +133,41 @@ export async function updateTargetPackageVersion({
     filePath: path.join(cwd()),
     targetVersion: repoVersion,
   })
+}
+
+export async function updatePeerAndDevDependency({
+  outdatedDependency,
+  targetDependency,
+}: {
+  outdatedDependency: PackageData
+  targetDependency: PackageData
+}) {
+  const packageJSONPath = path.join(outdatedDependency.path, '/package.json')
+  const packageJson = await fs.readJSON(packageJSONPath)
+
+  if (packageJson.peerDependencies) {
+    Object.keys(packageJson.peerDependencies).forEach((packageName) => {
+      const isPackageInRepo = [targetDependency.name].includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.peerDependencies[
+          packageName
+        ] = `^${targetDependency.version}`
+      }
+    })
+  }
+
+  if (packageJson.devDependencies) {
+    Object.keys(packageJson.devDependencies).forEach((packageName) => {
+      const isPackageInRepo = [targetDependency.name].includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.devDependencies[
+          packageName
+        ] = `^${targetDependency.version}`
+      }
+    })
+  }
+
+  await fs.writeJSON(packageJSONPath, packageJson, { spaces: 2 })
 }

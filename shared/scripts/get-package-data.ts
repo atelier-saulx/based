@@ -2,13 +2,17 @@ import path from 'path'
 import fs from 'fs-extra'
 import { cwd } from 'process'
 
-// @ts-ignore
-import packageJson from '../../package.json'
+import { getWorkspaceFolders } from './utilities'
+
+interface PackageJSON {
+  [key: string]: any
+}
 
 export interface PackageData {
   name: string
   path: string
   version: string
+  packageJSON: PackageJSON
   private?: boolean
 }
 
@@ -18,13 +22,14 @@ async function getPackageName({
   targetPath: string
 }): Promise<PackageData> {
   const packageJSONPath = path.join(targetPath, '/package.json')
-  const packageJson = await fs.readJSON(packageJSONPath)
+  const packageJSON = await fs.readJSON(packageJSONPath)
 
   return {
-    name: packageJson.name,
-    version: packageJson.version,
+    name: packageJSON.name,
+    version: packageJSON.version,
     path: targetPath,
-    private: packageJson.private ?? false,
+    private: packageJSON.private ?? false,
+    packageJSON,
   }
 }
 
@@ -50,15 +55,16 @@ async function getPackageNamesInFolder({
   return packageNames
 }
 
+/**
+ * Get all packages in repository
+ */
 export async function getAllPackages(): Promise<PackageData[]> {
   let allPackageNames: PackageData[] = []
 
   /**
    * Get all workspace folders. Filter out `/*`
    */
-  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
-    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
-  })
+  const workspaceFolders = await getWorkspaceFolders()
 
   /**
    * Get all package names in workspace folders
@@ -81,37 +87,12 @@ export async function getAllPackages(): Promise<PackageData[]> {
   return allPackageNames
 }
 
+/**
+ * Get public packages in repository
+ */
 export async function getPublicPackages(): Promise<PackageData[]> {
-  let allPackages: PackageData[] = []
+  const allPackages: PackageData[] = await getAllPackages()
 
-  /**
-   * Get all workspace folders. Filter out `/*`
-   */
-  const workspaceFolders = packageJson.workspaces.map((folder: string) => {
-    return folder.replace(/[`~!@#$%^&*()_|+\-=?;:'",.<>{}[\]\\/]/gi, '')
-  })
-
-  /**
-   * Get all package names in workspace folders
-   */
-  const packageNamesPerFolderPromises = workspaceFolders.map((targetFolder) => {
-    return getPackageNamesInFolder({
-      targetFolder,
-    })
-  })
-
-  /**
-   * Merge package-names into one array
-   */
-  const packageNamesPerFolder = await Promise.all(packageNamesPerFolderPromises)
-
-  packageNamesPerFolder.forEach((packageNames) => {
-    allPackages = [...allPackages, ...packageNames]
-  })
-
-  /**
-   * Only return public packages
-   */
   return allPackages.filter((packageData) => {
     return !packageData.private
   })

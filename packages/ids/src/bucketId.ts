@@ -1,4 +1,4 @@
-import { envId } from '.'
+import { envId as getEnvId } from '.'
 
 export default (opts: {
   type: 'files' | 'backups' | 'dists'
@@ -7,15 +7,16 @@ export default (opts: {
   envId: string | { org: string; proj: string; env: string }
   service?: string
 }): string => {
-  let envValue
+  if (!opts.envId) throw new Error('No endId')
+  let envValue: string
   if (typeof opts.envId === 'object') {
     const { org, proj, env } = opts.envId
-    envValue = envId(env, org, proj).replaceAll(
+    envValue = getEnvId(env, org, proj)?.replaceAll(
       /([A-Z])/g,
-      (x) => x.toLowerCase() + '-'
+      (x: string) => x.toLowerCase() + '-'
     )
   } else {
-    envValue = opts.envId.replaceAll(/([A-Z])/g, (x) => x.toLowerCase() + '-')
+    envValue = opts.envId?.replaceAll(/([A-Z])/g, (x) => x.toLowerCase() + '-')
   }
   return `based-${opts.type}-${opts.cloudProvider}-${
     opts.clusterName
