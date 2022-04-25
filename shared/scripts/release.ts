@@ -88,9 +88,10 @@ const checkReleaseOptions = async ({
 
   for (const packageData of clonedTargetPackages) {
     const { name, version } = packageData
-    const currentVersion = `${packageData.version}`
 
-    packageData.version = getIncrementedVersion({
+    const currentVersion = `${version}`
+
+    const targetVersion = getIncrementedVersion({
       version: packageData.version,
       type: releaseType,
     })
@@ -98,7 +99,7 @@ const checkReleaseOptions = async ({
     console.info(
       `  ${chalk.green(name)} ~ Current version: ${chalk.bold.yellow(
         currentVersion
-      )}. New version: ${chalk.bold.yellow(version)}.`
+      )}. New version: ${chalk.bold.yellow(targetVersion)}.`
     )
   }
 
@@ -183,6 +184,10 @@ async function releaseProject() {
 
   const { type, dryRun: isDryRun } = argv as ReleaseOptions
 
+  if (isDryRun) {
+    console.info(`${chalk.bold('~ This is a dry run release ~')} \n`)
+  }
+
   const inputType = argv._[0] ?? type
   let releaseType = validateReleaseType(inputType)
 
@@ -203,7 +208,6 @@ async function releaseProject() {
     name: 'chosenPackages',
     type: 'multiselect',
     choices: publicPackageNames,
-    initial: publicPackageNames[0],
   } as any).then(({ chosenPackages }) => {
     if (!chosenPackages) {
       console.info('User aborted the release.')
@@ -270,14 +274,14 @@ async function releaseProject() {
    */
   try {
     for (const packageData of targetPackages) {
-      packageData.version = getIncrementedVersion({
+      const targetVersion = getIncrementedVersion({
         version: packageData?.version,
         type: releaseType,
       })
 
       await updateTargetPackageVersion({
         packageData: packageData,
-        targetVersion: packageData.version,
+        targetVersion: targetVersion,
       })
     }
 
