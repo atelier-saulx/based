@@ -33,6 +33,7 @@ const b = async () => {
     platform: 'node',
     entryPoints: [join(__dirname, '../src/index.ts')],
     plugins: [makeAllPackagesExternalPlugin],
+    watch: process.argv.includes('--watch'),
   })
 }
 

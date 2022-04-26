@@ -1,6 +1,8 @@
 <div align="center">
   <a href="javascript:void(0);" style="pointer-events: none;">
-    <img src="../../../.docs/assets/based-logo-black.svg" style="width: 350px; padding-bottom: 10px;" />
+        <img src="../../../.docs/assets/based-logo-black.svg#gh-light-mode-only" style="width: 350px; padding-bottom: 10px;" />
+        <img src="../../../.docs/assets/based.svg#gh-dark-mode-only" style="width: 350px; padding-bottom: 10px;" />
+
   </a>
 </div>
 
@@ -8,6 +10,8 @@
 
 The first step in getting started with using Based is creating a new project. To do so, after logging in, click the `+ New Project` button and type in a new project name.  
 Each project can have multiple environments (e.g. development and production).
+
+Go to the based [dashboard](https://based-website.vercel.app/dashboard)
 
 <!-- create-new-project video -->
 

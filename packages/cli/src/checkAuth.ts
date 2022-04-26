@@ -23,22 +23,34 @@ export default async (
 ): Promise<string | null> => {
   if (options.apiKey) {
     let apiKey: string
-    const filePath = path.join(process.cwd(), options.apiKey)
-    try {
-      apiKey = await new Promise((resolve, reject) => {
-        fs.readFile(filePath, 'utf8', (err, data) => {
-          if (err) {
-            reject(err)
-          }
-          resolve(data)
+    if (typeof options.apiKey === 'boolean') {
+      if (!process.env.BASED_APIKEY) {
+        printEmptyLine()
+        console.info(
+          prefixError +
+            `Use --api-key with the apiKey file as a value or set the environment variable BASED_APIKEY with the key.`
+        )
+        process.exit(1)
+      }
+      apiKey = process.env.BASED_APIKEY
+    } else {
+      const filePath = path.join(process.cwd(), options.apiKey)
+      try {
+        apiKey = await new Promise((resolve, reject) => {
+          fs.readFile(filePath, 'utf8', (err, data) => {
+            if (err) {
+              reject(err)
+            }
+            resolve(data)
+          })
         })
-      })
-    } catch (error) {
-      printEmptyLine()
-      console.info(
-        prefixError + `Cannot find apiKey file ${chalk.blue(filePath)}`
-      )
-      process.exit(1)
+      } catch (error) {
+        printEmptyLine()
+        console.info(
+          prefixError + `Cannot find apiKey file ${chalk.blue(filePath)}`
+        )
+        process.exit(1)
+      }
     }
 
     return apiKey
