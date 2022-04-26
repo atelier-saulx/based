@@ -22,7 +22,10 @@ export const command = (command: Command) => {
     .option('-b, --based-file <basedFile>', 'Path to based config file')
     .option('-d, --debug', 'Enable debug output')
     .option('--non-interactive', 'Non interactive mode', !process.stdout.isTTY)
-    .option('-k, --api-key <apiKey>', 'Use apiKey from file')
+    .option(
+      '-k, --api-key [apiKey]',
+      'Use apiKey from file or env variable if value is empty.'
+    )
     .option('-H, --no-header', "Don't show header so you can chain commands.")
     .addOption(
       new Option('-o, --output <output>', 'Output type')
