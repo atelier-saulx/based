@@ -333,7 +333,8 @@ client.set({
 
 #### `$delete` : _boolean_
 
-This unsets the node's field.
+This unsets the node's field.  
+It can also be used on a field of a `record` in order to remove it.
 
 ```js
 client.set({
