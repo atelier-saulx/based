@@ -38,10 +38,19 @@ export const getSecret = async (
 const cleanCarriageReturn = (value: string) => value.replace(/\n$/, '')
 
 export const decodeToken = (value: string, publicKey: string): Promise<any> => {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
+    console.info('---------gur gur')
+
     jwt.verify(cleanCarriageReturn(value), publicKey, (err, decoded) => {
       if (err) {
-        resolve(false)
+        if (err instanceof jwt.TokenExpiredError) {
+          console.info('flap flap', err)
+          // @ts-ignore
+          err.code = 'expired'
+          reject(err)
+        } else {
+          resolve(false)
+        }
       } else {
         resolve(decoded)
       }
@@ -109,7 +118,14 @@ export const decodeValueBySecret = (
         if (type === 'jwt') {
           jwt.verify(value, publicKey, (err, decoded) => {
             if (err) {
-              resolve(false)
+              if (err instanceof jwt.TokenExpiredError) {
+                console.info('222 flap flap')
+                // @ts-ignore
+                err.code = 'expired' // 0 - 1 - any other with nuni?
+                reject(err)
+              } else {
+                resolve(false)
+              }
             } else {
               resolve(decoded)
             }

@@ -12,7 +12,10 @@ const test = anyTest as TestInterface<{
 
 const authorize: AuthorizeFn = async ({ user }) => {
   if (user._token === 'expiredToken') {
-    throw new Error('token expired')
+    const err = new Error('token expired')
+    // @ts-ignore
+    err.code = 'expiredToken'
+    throw err
   } else if (user._token === 'validToken') {
     return true
   }

@@ -73,6 +73,8 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
   if (cb) {
     delete client.requestCallbacks[reqId]
     if (err) {
+      console.info('hello', err)
+
       if (
         err.type === 'AuthorizationError' &&
         err.message === 'token expired' &&
@@ -82,7 +84,7 @@ export const incomingRequest = (client: BasedClient, data: RequestData) => {
         renewToken(client, {
           refreshToken,
         })
-          .then((_r: any) => {
+          .then(() => {
             addRequest(
               client,
               cb.type,
