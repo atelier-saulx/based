@@ -50,7 +50,8 @@ command(program.command('restart'))
     const client = makeClient(config.cluster)
     try {
       if (options.apiKey) {
-        await client.auth(token, { isApiKey: true })
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
       } else {
         await client.auth(token)
       }

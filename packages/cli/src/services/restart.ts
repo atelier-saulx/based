@@ -41,7 +41,8 @@ export const servicesRestartCommand = new Command('restart')
     const client = makeClient(config.cluster)
     try {
       if (options.apiKey) {
-        await client.auth(token, { isApiKey: true })
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
       } else {
         await client.auth(token)
       }
@@ -55,8 +56,7 @@ export const servicesRestartCommand = new Command('restart')
 
     if (
       options.output === 'none' ||
-      (options.nonInteractive &&
-        (!options.name || !options.template))
+      (options.nonInteractive && (!options.name || !options.template))
     ) {
       fail(
         'name or template argument must be suplied in non interactive mode.',
@@ -79,7 +79,7 @@ export const servicesRestartCommand = new Command('restart')
       }
       await client.call('sendEventToAllInstances', {
         id: service.id,
-				type: 'restart'
+        type: 'restart',
       })
       spinner && spinner.stop()
 

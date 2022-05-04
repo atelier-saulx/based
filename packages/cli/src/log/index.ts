@@ -62,7 +62,8 @@ const logCommand = new Command('log')
     })
     try {
       if (options.apiKey) {
-        await client.auth(token, { isApiKey: true })
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
         await statsClient.auth(token, { isApiKey: true })
       } else {
         await client.auth(token)
