@@ -118,6 +118,8 @@ await client.delete({
 
 Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows to pass an `onData` function that will get called any time the data that the query points to changes.
 
+> ❗ Warning: The `data` object that gets passed to the onData function should **NOT** be modified in place since, due to performance reasons, the object gets reused between calls.
+
 Using this same method, it is also possible to observe a data function.
 
 This method returns a `close` function that must be called in order to allow the subscription to close gracefully.

@@ -19,9 +19,10 @@ import {
 import { GenericOutput } from '../types'
 import { findService, FindServiceOptions } from './findService'
 
-export type ServicesRemoveOptions = GlobalOptions & FindServiceOptions & {
-  force?: boolean
-}
+export type ServicesRemoveOptions = GlobalOptions &
+  FindServiceOptions & {
+    force?: boolean
+  }
 
 type ServicesRemoveOutput = GenericOutput & {
   data: {
@@ -43,7 +44,8 @@ export const servicesRemoveCommand = new Command('remove')
     const client = makeClient(config.cluster)
     try {
       if (options.apiKey) {
-        await client.auth(token, { isApiKey: true })
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
       } else {
         await client.auth(token)
       }
@@ -68,8 +70,13 @@ export const servicesRemoveCommand = new Command('remove')
     }
 
     try {
-
-      const service = await findService(client, spinner, config, output, options)
+      const service = await findService(
+        client,
+        spinner,
+        config,
+        output,
+        options
+      )
 
       if (!options.force) {
         printEmptyLine()
