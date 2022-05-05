@@ -1,6 +1,6 @@
 import { BasedServer } from '.'
 import jwt, { SignOptions } from 'jsonwebtoken'
-import { BasedError, BasedErrorCodes } from '@based/client'
+import { BasedError, BasedErrorCodes } from '@based/types'
 
 const jwtDecode = (
   resolve: (value: any) => void,

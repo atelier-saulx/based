@@ -1,6 +1,6 @@
 import anyTest, { TestInterface } from 'ava'
 import createServer from '@based/server'
-import { start, startOrigin } from '@saulx/selva-server'
+import { start } from '@saulx/selva-server'
 import based, { AuthLoginFunctionResponse } from '@based/client'
 import { SelvaClient } from '@saulx/selva'
 
@@ -70,6 +70,8 @@ test.serial(
 test.serial('should login and logout', async (t) => {
   t.timeout(5000)
 
+  let logoutFnCallCount = 0
+
   const server = await createServer({
     port: 9333,
     db: {
@@ -100,6 +102,7 @@ test.serial('should login and logout', async (t) => {
         logout: {
           observable: false,
           function: async ({}) => {
+            logoutFnCallCount++
             return {}
           },
         },
@@ -141,6 +144,7 @@ test.serial('should login and logout', async (t) => {
     })
   })
   t.regex(error.name, /^AuthorizationError/)
+  t.is(logoutFnCallCount, 1)
 
   const errorLogin = await t.throwsAsync(async () => {
     await client.login({
