@@ -108,8 +108,6 @@ export default async (
         // @ts-ignore
         authorized[i].status === 'rejected' && authorized[i].reason.message
 
-      console.log(authorized)
-
       // @ts-ignore
       const code = err ? authorized[i].reason?.code || 0 : 0
 

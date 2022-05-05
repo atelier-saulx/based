@@ -10,6 +10,9 @@ import {
   TrackMessage,
   SendTokenOptions,
   AuthMessage,
+  BasedErrorCodes,
+  BasedError,
+  ErrorObject,
 } from '@based/types'
 import {
   incomingSubscription,
@@ -21,9 +24,10 @@ import {
 } from './subscriptions'
 import { Based } from './'
 import { addToQueue, drainQueue, stopDrainQueue } from './queue'
-import { incomingRequest } from './request'
+import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest } from './auth'
+import { renewToken } from './auth'
 
 export * from '@based/types'
 
@@ -36,6 +40,7 @@ export class BasedClient {
 
   token: string
   sendTokenOptions: SendTokenOptions
+  retryingRenewToken: boolean
 
   beingAuth: boolean
 
@@ -164,35 +169,64 @@ export class BasedClient {
   onData(d) {
     try {
       const data: ResponseData = JSON.parse(d.data)
-      if (data[0] === RequestTypes.Token) {
+      const [type, reqId, payload, err] = data
+      if (type === RequestTypes.Token) {
+        this.retryingRenewToken = false
         // means stomething got de-auth wrong
-        if (data[1].length) {
+        if (reqId.length) {
           logoutSubscriptions(this, data)
         }
         for (const fn of this.auth) {
-          fn(!data[2])
+          fn(!payload)
         }
         this.beingAuth = false
         this.auth = []
-      } else if (data[0] === RequestTypes.Auth) {
+      } else if (type === RequestTypes.Auth) {
         incomingAuthRequest(this, data)
-      } else if (
-        data[0] === RequestTypes.Set ||
-        data[0] === RequestTypes.Get ||
-        data[0] === RequestTypes.Configuration ||
-        data[0] === RequestTypes.GetConfiguration ||
-        data[0] === RequestTypes.Call ||
-        data[0] === RequestTypes.Delete ||
-        data[0] === RequestTypes.Copy ||
-        data[0] === RequestTypes.Digest ||
-        data[0] === RequestTypes.RemoveType ||
-        data[0] === RequestTypes.RemoveField
-      ) {
-        incomingRequest(this, data)
-      } else if (data[0] === RequestTypes.Subscription) {
-        incomingSubscription(this, data)
-      } else if (data[0] === RequestTypes.SubscriptionDiff) {
-        incomingSubscriptionDiff(this, data)
+      } else {
+        if (
+          (err as BasedError)?.code === BasedErrorCodes.TokenExpired &&
+          !this.retryingRenewToken
+        ) {
+          this.retryingRenewToken = true
+          const refreshToken = this.sendTokenOptions?.refreshToken
+          renewToken(this, {
+            refreshToken,
+          })
+            .then((result) => {
+              sendToken(this, result.token, this.sendTokenOptions)
+              addRequest(
+                this,
+                // @ts-ignore
+                type,
+                (err as ErrorObject)?.payload,
+                this.requestCallbacks[reqId].resolve,
+                this.requestCallbacks[reqId].reject
+              )
+            })
+            .catch((err) => {
+              this.requestCallbacks[reqId].reject(err)
+            })
+        } else {
+          if (
+            type === RequestTypes.Set ||
+            type === RequestTypes.Get ||
+            type === RequestTypes.Configuration ||
+            type === RequestTypes.GetConfiguration ||
+            type === RequestTypes.Call ||
+            type === RequestTypes.Delete ||
+            type === RequestTypes.Copy ||
+            type === RequestTypes.Digest ||
+            type === RequestTypes.RemoveType ||
+            type === RequestTypes.RemoveField
+          ) {
+            incomingRequest(this, data)
+          } else if (type === RequestTypes.Subscription) {
+            incomingSubscription(this, data)
+          } else if (type === RequestTypes.SubscriptionDiff) {
+            incomingSubscriptionDiff(this, data)
+          }
+        }
       }
     } catch (err) {
       console.error('Received incorrect data ', d)

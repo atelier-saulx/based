@@ -1,10 +1,8 @@
 import anyTest, { TestInterface } from 'ava'
 import createServer, { AuthorizeFn } from '@based/server'
 import { start } from '@saulx/selva-server'
-import based from '@based/client'
+import based, { BasedError, BasedErrorCodes } from '@based/client'
 import { SelvaClient } from '@saulx/selva'
-// import renewToken from '../../../env-services/hub/src/auth/functions/renewToken'
-// import { TokenBody } from '../../../env-services/hub/src/auth/functions/types'
 
 const test = anyTest as TestInterface<{
   db: SelvaClient
@@ -12,10 +10,9 @@ const test = anyTest as TestInterface<{
 
 const authorize: AuthorizeFn = async ({ user }) => {
   if (user._token === 'expiredToken') {
-    const err = new Error('token expired')
-    // @ts-ignore
-    err.code = 'expiredToken'
-    throw err
+    const basedError = new BasedError('Token expired')
+    basedError.code = BasedErrorCodes.TokenExpired
+    throw basedError
   } else if (user._token === 'validToken') {
     return true
   }
@@ -122,7 +119,7 @@ test.serial('should throw with invalid refreshToken', async (t) => {
           function: async () => {
             return {
               token: 'expiredToken',
-              refreshToken: 'validdRefreshToken',
+              refreshToken: 'invalid refreshToken',
             }
           },
         },

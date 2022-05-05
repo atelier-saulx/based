@@ -1,5 +1,28 @@
 import { BasedServer } from '.'
 import jwt, { SignOptions } from 'jsonwebtoken'
+import { BasedError, BasedErrorCodes } from '@based/client'
+
+const jwtDecode = (
+  resolve: (value: any) => void,
+  reject: (reason: any) => void,
+  value: string,
+  publicKey: string
+) => {
+  jwt.verify(value, publicKey, (err, decoded) => {
+    if (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        const basedError = new BasedError('Token expired')
+        basedError.code = BasedErrorCodes.TokenExpired
+        basedError.stack = err.stack
+        reject(basedError)
+      } else {
+        resolve(false)
+      }
+    } else {
+      resolve(decoded)
+    }
+  })
+}
 
 export const getSecret = async (
   server: BasedServer,
@@ -39,22 +62,7 @@ const cleanCarriageReturn = (value: string) => value.replace(/\n$/, '')
 
 export const decodeToken = (value: string, publicKey: string): Promise<any> => {
   return new Promise((resolve, reject) => {
-    console.info('---------gur gur')
-
-    jwt.verify(cleanCarriageReturn(value), publicKey, (err, decoded) => {
-      if (err) {
-        if (err instanceof jwt.TokenExpiredError) {
-          console.info('flap flap', err)
-          // @ts-ignore
-          err.code = 'expired'
-          reject(err)
-        } else {
-          resolve(false)
-        }
-      } else {
-        resolve(decoded)
-      }
-    })
+    jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
   })
 }
 
@@ -116,20 +124,7 @@ export const decodeValueBySecret = (
     getSecret(server, publicKeySecret).then((publicKey) => {
       if (publicKey) {
         if (type === 'jwt') {
-          jwt.verify(value, publicKey, (err, decoded) => {
-            if (err) {
-              if (err instanceof jwt.TokenExpiredError) {
-                console.info('222 flap flap')
-                // @ts-ignore
-                err.code = 'expired' // 0 - 1 - any other with nuni?
-                reject(err)
-              } else {
-                resolve(false)
-              }
-            } else {
-              resolve(decoded)
-            }
-          })
+          jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
         } else {
           console.error(`decode ${type} not implementedd yet`)
         }

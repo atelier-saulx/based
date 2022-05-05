@@ -86,6 +86,21 @@ export type Copy = {
   excludeFields?: string[]
 }
 
+export enum BasedErrorCodes {
+  TokenExpired = 401,
+}
+
+export class BasedError extends Error {
+  public type: string
+  public query?: GenericObject
+  public payload?: any
+  public auth?: boolean
+  public code?: BasedErrorCodes
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export type ErrorObject = {
   type: string
   message: string
@@ -93,7 +108,7 @@ export type ErrorObject = {
   query?: GenericObject
   payload?: any
   auth?: boolean
-  code?: string
+  code?: BasedErrorCodes
 }
 
 // outgoing data
@@ -206,7 +221,7 @@ export type SubscriptionData = [
   number, // id
   GenericObject, // data
   number?, // checksum
-  ErrorObject? // error
+  (BasedError | ErrorObject)? // error
 ]
 
 export type RequestData = [
@@ -227,7 +242,7 @@ export type RequestData = [
   // payload
   any,
   // error
-  ErrorObject? // error
+  (BasedError | ErrorObject)? // error
 ]
 
 // token is a string, de-authroized subcrption ids
@@ -237,7 +252,7 @@ export type AuthData = [
   RequestTypes.Auth,
   number,
   GenericObject,
-  ErrorObject? // error
+  (BasedError | ErrorObject)? // error
 ]
 
 export type ResponseData =
