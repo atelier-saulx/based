@@ -283,6 +283,9 @@ async function releaseProject() {
         packageData: packageData,
         targetVersion: targetVersion,
       })
+
+      // Set version for future use
+      packageData.version = targetVersion
     }
 
     /**
