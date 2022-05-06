@@ -245,12 +245,10 @@ async function compareRemoteFns(
 ): Promise<'update' | 'new' | 'unchanged' | 'err'> {
   const version = hash(code).toString(16)
   const id = await client.id('function', name + envid)
-  console.log('>>>1')
   const remote = await client.get({
     $id: id,
     current: true,
   })
-  console.log('>>>2')
 
   if (remote.$isNull) return 'new'
   if (remote.current === version) return 'unchanged'
