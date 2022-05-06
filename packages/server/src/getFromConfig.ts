@@ -2,6 +2,7 @@ import { BasedServer, CallFunction, ObservableFunction } from '.'
 
 // ....
 
+// TODO: does the same as getDefaultFunction?
 export const getFunction = async (
   server: BasedServer,
   name: string
@@ -50,7 +51,7 @@ export const getAuthorize = async (server: BasedServer): Promise<any> => {
         fn = r.function
         server.config.noAuth = false
       }
-    } else {
+    } else if (!server.config?.defaultAuthorize) {
       server.config.noAuth = true
     }
   }

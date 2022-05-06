@@ -23,6 +23,7 @@ import {
   FileUploadStream,
   AnalyticsHistoryResult,
   GetOptions,
+  LoginOpts,
 } from '@based/types'
 import {
   addSubscriber,
@@ -38,6 +39,7 @@ import { hashCompact } from '@saulx/hash'
 import sendToken from './token'
 import track, { genKey as generateTrackingKey } from './track'
 import { CompoundObservable, IObservable, Observable } from './observable'
+import { login, logout } from './auth'
 import file from './file'
 import getService, { getClusterUrl } from '@based/get-service'
 import { deepCopy } from '@saulx/utils'
@@ -822,6 +824,14 @@ export class Based extends Emitter {
         this.emit('auth', token)
       }
     })
+  }
+
+  public async login(opts: LoginOpts): Promise<GenericObject> {
+    return login(this.client, opts)
+  }
+
+  public logout(): Promise<GenericObject> {
+    return logout(this.client)
   }
 }
 

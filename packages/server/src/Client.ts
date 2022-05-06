@@ -44,7 +44,8 @@ export class Client {
 
   private _ip: string
 
-  private _token: string
+  public _token: string
+  public _refreshToken: string
 
   private _server: BasedServer
 
@@ -188,6 +189,9 @@ export class Client {
         this.isBasedUser = false
       }
       this._token = token
+      if (opts?.refreshToken) {
+        this._refreshToken = opts.refreshToken
+      }
     } else {
       this.isApiKey = false
       this.isBasedUser = false
@@ -196,6 +200,9 @@ export class Client {
       }
       if (this._token) {
         delete this._token
+      }
+      if (this._refreshToken) {
+        delete this._refreshToken
       }
     }
   }
@@ -217,17 +224,21 @@ export class Client {
     }
   }
 
-  public async token(secret?: string, type: 'jwt' = 'jwt'): Promise<any> {
+  public async token(
+    secret?: string | { publicKey: string },
+    type: 'jwt' = 'jwt'
+  ): Promise<any> {
     if (this._unpackedToken) {
       return this._unpackedToken
     }
     if (this._token) {
       if (this.isApiKey) {
-        const getApiTokensPublicKey = this._server?.config?.getApiKeysPublicKey
-        if (getApiTokensPublicKey) {
+        const getApiKeysPublicKey = this._server?.config?.getApiKeysPublicKey
+        if (getApiKeysPublicKey) {
+          const apiTokensPublicKey = await getApiKeysPublicKey()
           this._unpackedToken = await decodeToken(
             this._token,
-            await getApiTokensPublicKey()
+            apiTokensPublicKey
           )
         }
       } else if (this.isBasedUser) {
@@ -241,7 +252,7 @@ export class Client {
             await getBasedKey()
           )
         }
-      } else {
+      } else if (typeof secret === 'string') {
         if (!secret) {
           return this._token
         }
@@ -252,6 +263,10 @@ export class Client {
           secret,
           type
         )
+      } else if (typeof secret === 'object' && secret.publicKey) {
+        this._unpackedToken = await decodeToken(this._token, secret.publicKey)
+      } else {
+        throw new Error('invalid arguments')
       }
     }
     return this._unpackedToken

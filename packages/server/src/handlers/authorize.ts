@@ -15,6 +15,7 @@ export default async (
 
   for (const msg of messages) {
     if (
+      msg[0] === RequestTypes.Auth ||
       msg[0] === RequestTypes.Unsubscribe ||
       msg[0] === RequestTypes.SendSubscriptionData
     ) {
@@ -107,6 +108,9 @@ export default async (
         // @ts-ignore
         authorized[i].status === 'rejected' && authorized[i].reason.message
 
+      // @ts-ignore
+      const code = err ? authorized[i].reason?.code || 0 : 0
+
       if (msg[0] === RequestTypes.GetSubscription) {
         const [, id, payload, , name] = msg
         client.send([
@@ -119,6 +123,7 @@ export default async (
             name: name ? `get "${name}"` : 'get',
             message: err || 'Unauthorized request',
             payload,
+            code,
             auth: true,
           },
         ])
@@ -134,6 +139,7 @@ export default async (
             name: name ? `observe "${name}"` : 'observe',
             message: err || 'Unauthorized request',
             payload,
+            code,
             auth: true,
           },
         ])
@@ -149,6 +155,7 @@ export default async (
             auth: true,
             message: err || 'Unauthorized request',
             payload,
+            code,
           },
         ])
       } else if (
@@ -170,6 +177,7 @@ export default async (
             name: RequestTypes[msg[0]].toLowerCase(),
             message: err || 'Unauthorized request',
             auth: true,
+            code,
             payload: msg[2], // if observe or get without name call it query
           },
         ])
