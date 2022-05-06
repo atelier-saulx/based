@@ -299,7 +299,7 @@ async function releaseProject() {
   }
 
   /**
-   * Publish all public packages in repository
+   * Publish chosen target packages in repository
    */
   for (const packageData of targetPackages) {
     await publishTargetPackage({
