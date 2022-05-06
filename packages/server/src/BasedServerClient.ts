@@ -41,6 +41,13 @@ class BasedServerClient {
     this._noAuth = noAuth
   }
 
+  public opts = {
+    cluster: process.env.SERVICE_SELECTOR_LIST,
+    org: process.env.ORG,
+    project: process.env.PROJECT,
+    env: process.env.ENV,
+  }
+
   get state() {
     return this._params.server.state
   }
