@@ -326,12 +326,12 @@ async function releaseProject() {
   /**
    * Stage and commit + push target version
    */
-  // Add root package.json
   const addFiles = []
 
-  // Add target folder package.jsons
+  // Add root package.json
   addFiles.push(path.join(process.cwd(), './package.json'))
 
+  // Add target folder package.jsons
   targetFolders.forEach((folder) => {
     addFiles.push(path.join(process.cwd(), folder))
   })
