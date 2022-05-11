@@ -1,10 +1,22 @@
 import findUp from 'find-up'
+import { resolve } from 'path'
 
 export default async (basedFile?: false | string) => {
   // OR BASED FIELD IN PKG.json
 
   if (basedFile === false) {
     return
+  }
+
+  if (typeof basedFile === 'string') {
+    const path = resolve(basedFile)
+    try {
+      const x = require(path)
+      return x
+    } catch (err) {
+      console.error(`invalid based config path ${path}`)
+      return
+    }
   }
 
   const x = await findUp(['based.js', 'based.json'])
