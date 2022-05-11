@@ -251,6 +251,8 @@ export class Client {
             this._token,
             await getBasedKey()
           )
+        } else {
+          console.warn('No getBasedKey defined')
         }
       } else if (typeof secret === 'string') {
         if (!secret) {

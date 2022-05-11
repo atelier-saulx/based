@@ -74,6 +74,14 @@ export default async (
       return false
     }
 
+    if (user?.isBasedUser) {
+      const token = await user.token()
+      if (token) {
+        q.push(true)
+        continue
+      }
+    }
+
     const customAuth = name && (await getFunction(server, name))?.authorize
 
     if (customAuth) {
