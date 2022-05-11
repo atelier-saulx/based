@@ -52,7 +52,7 @@
     }
   },
   "dependencies": {
-    "turbo": "^1.1.10"
+    "turbo": "^1.2.8"
   },
   "devDependencies": {
     "@types/fs-extra": "^9.0.13",

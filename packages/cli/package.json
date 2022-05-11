@@ -12,7 +12,7 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "@based/client": "2.5.1",
+    "@based/client": "2.6.1",
     "@based/ids": "2.4.2",
     "@based/pretty-date": "^1.0.4",
     "@based/pretty-number": "1.0.3",
