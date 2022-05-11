@@ -11,7 +11,12 @@ import {
 import RedisSelvaClient from '@saulx/selva/dist/src/redis'
 import { copy } from './handlers/copy'
 import { deleteEvent, trackEvent } from './handlers/track'
-import { getSecret, decodeValueBySecret, encodeValueBySecret } from './secrets'
+import {
+  getSecret,
+  decodeValueBySecret,
+  encodeValueBySecret,
+  decodeToken,
+} from './secrets'
 import { Params } from './Params'
 import { getFunction, getAuthorize } from './getFromConfig'
 import findPrefix from './findPrefix'
@@ -162,7 +167,8 @@ class BasedServerClient {
           .then(async () => {
             let initial = false
 
-            const f = (data, checksum, err) => {
+            // TODO: types
+            const f = (data: any, checksum: any, err: any) => {
               if (!initial) {
                 if (err) {
                   reject(new Error(err.message))
@@ -184,7 +190,7 @@ class BasedServerClient {
               }
             }
 
-            let subscription
+            let subscription: any
             try {
               if (a === '$configuration') {
                 subscription = await subscribeConfiguration(this._params, f)
@@ -281,8 +287,9 @@ class BasedServerClient {
           .then(async () => {
             let isFired = false
             // eslint-disable-next-line
-            let subscription
-            const f = (data, checksum, err) => {
+            let subscription: any
+            // TODO: types
+            const f = (data: any, _checksum: any, err: any) => {
               if (err) {
                 reject(new Error(err.message))
               } else {
@@ -431,7 +438,7 @@ class BasedServerClient {
 
   public encode(
     payload: string | object,
-    privateKeySecret: string,
+    privateKeySecret: string | { secret: string } | { key: string },
     type: 'jwt' = 'jwt',
     signOptions?: SignOptions
   ): Promise<string> {
@@ -446,15 +453,21 @@ class BasedServerClient {
 
   public decode(
     payload: string,
-    publicKeySecret: string,
+    secretOrPublicKey: string | { publicKey: string },
     type: 'jwt' = 'jwt' // get more - can add audience  { audience: 'urn:foo' }
   ): Promise<any> {
-    return decodeValueBySecret(
-      this._params.server,
-      payload,
-      publicKeySecret,
-      type
-    )
+    if (typeof secretOrPublicKey === 'string') {
+      return decodeValueBySecret(
+        this._params.server,
+        payload,
+        secretOrPublicKey,
+        type
+      )
+    } else if (secretOrPublicKey.publicKey) {
+      return decodeToken(payload, secretOrPublicKey.publicKey)
+    } else {
+      throw new Error('Invalid secretOrPublicKey')
+    }
   }
 
   public async secret(secret: string): Promise<any> {
@@ -463,7 +476,7 @@ class BasedServerClient {
 
   public async digest(payload: string): Promise<string> {
     // authorize or nah?
-    const v = await this._params.server.db.digest(payload)
+    const v = this._params.server.db.digest(payload)
     return v
   }
 }

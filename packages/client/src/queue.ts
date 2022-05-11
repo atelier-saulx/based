@@ -1,10 +1,10 @@
 import { BasedClient, TrackMessage } from '.'
-import { Message, RequestTypes } from '@based/types'
+import { AuthMessage, Message, RequestTypes } from '@based/types'
 import idleTimeout from './idleTimeout'
 
 export const addToQueue = (
   client: BasedClient,
-  msg: Message | TrackMessage
+  msg: Message | TrackMessage | AuthMessage
 ) => {
   if (
     msg[0] === RequestTypes.Unsubscribe ||
@@ -25,7 +25,8 @@ export const drainQueue = (client: BasedClient) => {
   if (
     client.connected &&
     !client.drainInProgress &&
-    (client.queue.length || client.subscriptionQueue.length)
+    (client.queue.length || client.subscriptionQueue.length) &&
+    !client.isLogginIn
   ) {
     client.drainInProgress = true
     client.drainTimeout = setTimeout(() => {

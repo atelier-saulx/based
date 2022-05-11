@@ -1,5 +1,28 @@
 import { BasedServer } from '.'
 import jwt, { SignOptions } from 'jsonwebtoken'
+import { BasedError, BasedErrorCodes } from '@based/types'
+
+const jwtDecode = (
+  resolve: (value: any) => void,
+  reject: (reason: any) => void,
+  value: string,
+  publicKey: string
+) => {
+  jwt.verify(value, publicKey, (err, decoded) => {
+    if (err) {
+      if (err instanceof jwt.TokenExpiredError) {
+        const basedError = new BasedError('Token expired')
+        basedError.code = BasedErrorCodes.TokenExpired
+        basedError.stack = err.stack
+        reject(basedError)
+      } else {
+        resolve(false)
+      }
+    } else {
+      resolve(decoded)
+    }
+  })
+}
 
 export const getSecret = async (
   server: BasedServer,
@@ -35,27 +58,33 @@ export const getSecret = async (
   return cert || false
 }
 
+const cleanCarriageReturn = (value: string) => value.replace(/\n$/, '')
+
 export const decodeToken = (value: string, publicKey: string): Promise<any> => {
   return new Promise((resolve, reject) => {
-    jwt.verify(value, publicKey, (err, decoded) => {
-      if (err) {
-        resolve(false)
-      } else {
-        resolve(decoded)
-      }
-    })
+    jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
   })
 }
 
 export const encodeValueBySecret = (
   server: BasedServer,
   payload: string | object,
-  privateKeySecret: string,
+  privateKeySecretOrKey: string | { secret?: string; key?: string },
   type: 'jwt' = 'jwt',
   signOptions?: SignOptions
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
-    getSecret(server, privateKeySecret).then((privateKey) => {
+    new Promise((resolve, reject) => {
+      if (typeof privateKeySecretOrKey === 'string') {
+        resolve(getSecret(server, privateKeySecretOrKey))
+      } else if (privateKeySecretOrKey.secret) {
+        resolve(getSecret(server, privateKeySecretOrKey.secret))
+      } else if (privateKeySecretOrKey.key) {
+        resolve(privateKeySecretOrKey.key)
+      } else {
+        reject(new Error('Need to pass a secret name or a key'))
+      }
+    }).then((privateKey: string) => {
       if (privateKey) {
         const defaultOptions: SignOptions = {
           expiresIn: '2d',
@@ -78,7 +107,7 @@ export const encodeValueBySecret = (
           throw new Error(`Encode ${type} not implementedd yet`)
         }
       } else {
-        reject(new Error(`Secret does not exist ${privateKeySecret}`))
+        reject(new Error(`Secret does not exist ${privateKeySecretOrKey}`))
       }
     })
   })
@@ -95,13 +124,7 @@ export const decodeValueBySecret = (
     getSecret(server, publicKeySecret).then((publicKey) => {
       if (publicKey) {
         if (type === 'jwt') {
-          jwt.verify(value, publicKey, (err, decoded) => {
-            if (err) {
-              resolve(false)
-            } else {
-              resolve(decoded)
-            }
-          })
+          jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
         } else {
           console.error(`decode ${type} not implementedd yet`)
         }

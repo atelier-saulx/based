@@ -45,6 +45,17 @@ export enum RequestTypes {
   RemoveType = 16,
   // eslint-disable-next-line
   RemoveField = 17,
+  // eslint-disable-next-line
+  Auth = 18,
+}
+
+export enum AuthRequestTypes {
+  // eslint-disable-next-line
+  Login = 1,
+  // eslint-disable-next-line
+  Logout = 2,
+  // eslint-disable-next-line
+  RenewToken = 3,
 }
 
 export type FunctionConfig = {
@@ -75,6 +86,21 @@ export type Copy = {
   excludeFields?: string[]
 }
 
+export enum BasedErrorCodes {
+  TokenExpired = 401,
+}
+
+export class BasedError extends Error {
+  public type: string
+  public query?: GenericObject
+  public payload?: any
+  public auth?: boolean
+  public code?: BasedErrorCodes
+  constructor(message: string) {
+    super(message)
+  }
+}
+
 export type ErrorObject = {
   type: string
   message: string
@@ -82,7 +108,7 @@ export type ErrorObject = {
   query?: GenericObject
   payload?: any
   auth?: boolean
-  code?: string
+  code?: BasedErrorCodes
 }
 
 // outgoing data
@@ -109,6 +135,13 @@ export type RequestMessage<T = GenericObject> =
 
 // extra arg isBasedUser
 export type TokenMessage = [RequestTypes.Token, string?, boolean?]
+
+export type AuthMessage = [
+  RequestTypes.Auth,
+  AuthRequestTypes,
+  number,
+  GenericObject?
+]
 
 export type SubscribeMessage = [
   // request type
@@ -163,7 +196,11 @@ export type SubscriptionMessage =
   | UnsubscribeMessage
   | SendSubscriptionGetDataMessage
 
-export type Message = RequestMessage | SubscriptionMessage | FunctionCallMessage
+export type Message =
+  | RequestMessage
+  | SubscriptionMessage
+  | FunctionCallMessage
+  | AuthMessage
 
 // incoming data
 
@@ -184,7 +221,7 @@ export type SubscriptionData = [
   number, // id
   GenericObject, // data
   number?, // checksum
-  ErrorObject? // error
+  (BasedError | ErrorObject)? // error
 ]
 
 export type RequestData = [
@@ -205,17 +242,25 @@ export type RequestData = [
   // payload
   any,
   // error
-  ErrorObject? // error
+  (BasedError | ErrorObject)? // error
 ]
 
 // token is a string, de-authroized subcrption ids
 export type AuthorizedData = [RequestTypes.Token, number[], boolean?]
+
+export type AuthData = [
+  RequestTypes.Auth,
+  number,
+  GenericObject,
+  (BasedError | ErrorObject)? // error
+]
 
 export type ResponseData =
   | SubscriptionDiffData
   | SubscriptionData
   | RequestData
   | AuthorizedData
+  | AuthData
 
 export type TrackPayload = {
   t: string
@@ -233,6 +278,7 @@ export type TrackOpts = {
 export type SendTokenOptions = {
   isBasedUser?: boolean
   isApiKey?: boolean
+  refreshToken?: string
 }
 
 export type AnalyticsResult = {
@@ -300,6 +346,14 @@ export type AnalyticsHistoryOpts = {
   $history: boolean | number
 }
 
+export type LoginOpts = {
+  email: string
+  password: string
+}
+export type RenewTokenOpts = {
+  refreshToken: string
+}
+
 export type FileUploadOptions = {
   contents: Buffer | ArrayBuffer | string | File | Blob
   mimeType?: string
@@ -343,4 +397,14 @@ export type FileUploadSrc = {
   id?: string
   parents?: string[]
   size?: number
+}
+
+export type AuthLoginFunctionResponse = {
+  id: string
+  email: string
+  name: string
+  token: string
+  tokenExpiresIn?: number
+  refreshToken: string
+  refreshTokenExpiresIn?: number
 }

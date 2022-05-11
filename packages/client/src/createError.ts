@@ -1,8 +1,8 @@
-import { ErrorObject } from '@based/types'
+import { ErrorObject, BasedError } from '@based/types'
 import printBasedObject, { color } from './printBasedObject'
 
-export default (err: ErrorObject): Error & { code?: string } => {
-  const x: Error & { code?: string } = new Error(err.message)
+export default (err: ErrorObject): BasedError => {
+  const x = new BasedError(err.message)
   x.name = err.name ? `${err.type} from ${err.name}` : err.type
   x.stack = null
 

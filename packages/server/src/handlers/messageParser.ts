@@ -15,6 +15,7 @@ import * as cfg from './configuration'
 import { subscribe, sendSubscriptionData, unsubscribe } from './subscription'
 import { RequestTypes, Message, TrackMessage } from '@based/client'
 import { Client } from '../Client'
+import userAuth from './userAuth'
 
 export default (
   server: BasedServer,
@@ -32,6 +33,8 @@ export default (
       digest(server, client, msg)
     } else if (msg[0] === RequestTypes.Call) {
       call(server, client, msg)
+    } else if (msg[0] === RequestTypes.Auth) {
+      userAuth(server, client, msg)
     } else if (msg[0] === RequestTypes.GetConfiguration) {
       getConfig(server, client, msg)
     } else if (msg[0] === RequestTypes.Configuration) {
