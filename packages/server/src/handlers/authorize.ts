@@ -54,6 +54,12 @@ export default async (
         name = msg[4]
       }
       payload = msg[2]
+    } else if (msg[0] === RequestTypes.RemoveField) {
+      type = 'removeField'
+      payload = msg[2]
+    } else if (msg[0] === RequestTypes.RemoveType) {
+      type = 'removeType'
+      payload = msg[2]
     } else if (msg[0] === RequestTypes.Delete) {
       type = 'delete'
       payload = msg[2]
