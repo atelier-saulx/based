@@ -121,16 +121,20 @@ export const decodeValueBySecret = (
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
     // make this better
-    getSecret(server, publicKeySecret).then((publicKey) => {
-      if (publicKey) {
-        if (type === 'jwt') {
-          jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+    getSecret(server, publicKeySecret)
+      .then((publicKey) => {
+        if (publicKey) {
+          if (type === 'jwt') {
+            jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+          } else {
+            console.error(`decode ${type} not implementedd yet`)
+          }
         } else {
-          console.error(`decode ${type} not implementedd yet`)
+          reject(new Error(`Secret does not exist ${publicKeySecret}`))
         }
-      } else {
-        reject(new Error(`Secret does not exist ${publicKeySecret}`))
-      }
-    })
+      })
+      .catch((err) => {
+        reject(err)
+      })
   })
 }
