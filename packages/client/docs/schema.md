@@ -110,6 +110,7 @@ The possible types and their properties are described here:
 | `reference`  | Holds a node ID.                                                                                                                                                                                                                                                                                   |
 | `references` | Holds an array of node IDs                                                                                                                                                                                                                                                                         |
 | `object`     | This type allows for nested structures, and its fields are then indexed, meaning they can then be referenced directly in a query, later.                                                                                                                                                           |
+| `array`     | A list of items of one type, which must be specified in the schema. Special operators such as `$push`, `$assing` `$insert`, `$remove` can be used to manipulate the array. |
 | `record`     | A record works similarly to an Hashmap, as in, the schema specify what type of value the record can take, and if the user tries to set a different one, it throws an error. See later for more examples.                                                                                           |
 | `set`        | A mathematical set. Holds a list of **unique** values of a single basic type (meaning it can't hold objects or arrays), specified in the `item` field.                                                                                                                                             |
 | `json`       | This can hold anything and formats it to JSON, returning it in the most appropriate type when queried. Unlike the `oject` type, you can't query the fields if you decide to store a structure in it. Equivalent to storing something with `JSON.stringify()` and returning it with `JSON.parse()`. |
@@ -170,9 +171,32 @@ myType: {
 }
 ```
 
+#### `array` type
+
+When setting a field type to `array`, the schema must include another special field called `items` where the type of the array is specified. This can be any other schema type, defined appropriately (i.e. `object`s must have `properties` and so on).
+
+```js
+thing: {
+  prefix: 'th',
+  fields: {
+    title: { type: 'text' },
+    myarray: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          title: { type: 'text' },
+          name: { type: 'string' },          
+        },
+      },
+    },
+  },
+}
+```
+
 #### `set` type
 
-When setting a field type to `set`, the schema must include another special field called `items` where the type of the set is specified.
+When setting a field type to `set`, the schema must include another special field called `items` where the type of the set is specified. 
 
 ```js
 myType: {
