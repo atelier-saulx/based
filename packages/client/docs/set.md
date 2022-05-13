@@ -26,6 +26,10 @@ Operators can act at the **node** level or at the **individual field** level.
   - [`object` and `record` type field operators](#object-and-record-type-field-operators)
     - `$merge`
   - [`array` type field operators](#array-type-field-operators)
+    - `$push`
+    - `$insert`
+    - `$assign`
+    - `$remove`
 
 ---
 
