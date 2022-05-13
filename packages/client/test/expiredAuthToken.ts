@@ -3,8 +3,8 @@ import createServer from '@based/server'
 import based from '../src'
 import { start } from '@saulx/selva-server'
 import jwt from 'jsonwebtoken'
-import { deepEqual, wait } from '@saulx/utils'
 import { publicKey, privateKey } from './shared/keys'
+import { wait } from '@saulx/utils'
 
 let db
 
@@ -28,6 +28,8 @@ test.before(async () => {
       },
     },
   })
+
+  await db.set({ type: 'thing' })
 })
 
 test.after(async () => {
@@ -50,9 +52,22 @@ test.serial('authorize expired token', async (t) => {
       },
       authorize: async ({ user, payload, name, type }) => {
         const token = await user.token('tally-jwt')
-        return false
+        return true
       },
       functions: {
+        counter: {
+          observable: true,
+          shared: true,
+          function: async ({ based, update }) => {
+            return based.observe(
+              {
+                $id: 'root',
+                id: true,
+              },
+              update
+            )
+          },
+        },
         xhello: {
           observable: false,
           function: async ({ based, payload }) => {
@@ -80,6 +95,12 @@ test.serial('authorize expired token', async (t) => {
     },
   })
 
+  const client2 = based({
+    url: async () => {
+      return 'ws://localhost:9100'
+    },
+  })
+
   await client.auth(mySnurx)
 
   try {
@@ -89,5 +110,37 @@ test.serial('authorize expired token', async (t) => {
     console.info(err)
   }
 
+  await client2.observe(
+    {
+      $id: 'root',
+      id: true,
+      children: true,
+    },
+    () => {
+      console.info('FIRE')
+    }
+  )
+
+  await wait(2e3)
+
+  await client.observe(
+    {
+      $id: 'root',
+      id: true,
+    },
+    () => {
+      console.info('fire')
+    }
+  )
+
+  await client.observe('counter', () => {
+    console.info('fire 2')
+  })
+
+  await wait(1e3)
+
   t.pass('does not crash')
+
+  client.disconnect()
+  await server.destroy()
 })
