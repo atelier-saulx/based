@@ -125,7 +125,11 @@ export const decodeValueBySecret = (
       .then((publicKey) => {
         if (publicKey) {
           if (type === 'jwt') {
-            jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+            try {
+              jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+            } catch (err) {
+              reject(err)
+            }
           } else {
             console.error(`decode ${type} not implementedd yet`)
           }
