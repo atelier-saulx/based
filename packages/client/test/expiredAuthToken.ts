@@ -50,8 +50,8 @@ test.serial('authorize expired token', async (t) => {
       authorizeConnection: async () => {
         return true
       },
-      authorize: async ({ user, payload, name, type }) => {
-        const token = await user.token('tally-jwt')
+      authorize: async ({ user }) => {
+        await user.token('tally-jwt')
         return true
       },
       functions: {
