@@ -26,6 +26,7 @@ test.serial('redis set', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async () => true,
       functions: {
         redisSet: {
           observable: false,
@@ -66,6 +67,7 @@ test.serial('redis get', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async () => true,
       functions: {
         redisGet: {
           observable: false,
@@ -106,6 +108,7 @@ test.serial('redis delete', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async () => true,
       functions: {
         redisDelete: {
           observable: false,

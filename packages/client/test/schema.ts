@@ -34,11 +34,15 @@ test.after(async () => {
 })
 
 test.serial('observeSchema', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9200,
     db: {
       host: 'localhost',
       port: 9201,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 

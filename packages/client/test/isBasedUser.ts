@@ -37,6 +37,7 @@ test.after(async () => {
 test.serial(
   'auth with isBasedUser with existing authorize function',
   async (t) => {
+    t.timeout(5000)
     const server = await createServer({
       port: 9101,
       db: {
@@ -88,6 +89,7 @@ test.serial(
 )
 
 test.serial('auth with isBasedUser with expired token', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9101,
     db: {

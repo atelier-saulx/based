@@ -11,10 +11,7 @@ export default (
   messages: (Message | TrackMessage)[]
 ) => {
   if (messages && messages.length) {
-    if (
-      server.config?.authorize ||
-      (server.config?.functionConfig && !server.config?.noAuth)
-    ) {
+    if (server.config?.authorize) {
       if (!server.config.authorize) {
         getAuthorize(server).then((auth) => {
           if (auth) {
@@ -71,7 +68,7 @@ export default (
         }
       }
     } else {
-      messageParser(server, client, messages)
+      console.warn('No authorize function found.')
     }
   }
 }

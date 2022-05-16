@@ -35,6 +35,7 @@ test.after(async () => {
 })
 
 test.serial('auth with apiKey', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9101,
     db: {

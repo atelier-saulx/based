@@ -41,6 +41,7 @@ test.after(async (t) => {
 test.serial(
   'should throw if loggin in without setting login function',
   async (t) => {
+    t.timeout(5000)
     const server = await createServer({
       port: 9333,
       db: {
@@ -48,6 +49,7 @@ test.serial(
         port: 9401,
       },
       config: {
+        authorize: async () => true,
         functions: {},
       },
     })

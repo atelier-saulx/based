@@ -56,6 +56,7 @@ test.after(async () => {
 })
 
 test.serial('file', async (t) => {
+  t.timeout(5000)
   // also start a file upload server else its a bit hard to test
 
   const server = await createServer({

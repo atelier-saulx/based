@@ -61,7 +61,6 @@ export type Geo = {
 }
 
 export type Config = {
-  noAuth?: boolean
   getBasedKey?: () => Promise<string>
 
   getApiKeysPublicKey?: () => Promise<string>

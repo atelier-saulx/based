@@ -52,6 +52,7 @@ test.after(async () => {
 })
 
 test.serial('createObservable', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9100,
     db: {
@@ -59,6 +60,7 @@ test.serial('createObservable', async (t) => {
       port: 9099,
     },
     config: {
+      authorize: async () => true,
       functions: {
         rootInfo: {
           observable: true,

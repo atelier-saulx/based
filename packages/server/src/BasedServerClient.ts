@@ -34,11 +34,9 @@ import { SignOptions } from 'jsonwebtoken'
 class BasedServerClient {
   // must be private probaly
   private _params: Params
-  private _noAuth: boolean
 
-  constructor(params: Params, noAuth: boolean = false) {
+  constructor(params: Params) {
     this._params = params
-    this._noAuth = noAuth
   }
 
   public opts = {
@@ -65,9 +63,6 @@ class BasedServerClient {
     payload?: any,
     name?: string
   ): Promise<boolean> => {
-    if (this._noAuth) {
-      return true
-    }
     // fix something for a token user.
     if (
       this._params.server.config?.authorize ||

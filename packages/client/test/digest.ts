@@ -28,11 +28,15 @@ test.after(async () => {
 
 // need to add 'salt' for the hashing function in the db for passwords - can be a config in based server
 test.serial('digest', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9333,
     db: {
       host: 'localhost',
       port: 9401,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 

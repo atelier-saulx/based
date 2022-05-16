@@ -37,6 +37,7 @@ test.after(async () => {
 })
 
 test.serial('authorize expired token', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9100,
     db: {

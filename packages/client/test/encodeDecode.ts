@@ -42,6 +42,7 @@ test.after(async () => {
 })
 
 test.serial('Should encode a payload into a jwt using a secret', async (t) => {
+  t.timeout(5000)
   const payload = {
     something: 'this is payload',
   }
@@ -53,6 +54,7 @@ test.serial('Should encode a payload into a jwt using a secret', async (t) => {
       port: 9299,
     },
     config: {
+      authorize: async () => true,
       secrets: {
         aPrivateKey: privateKey,
       },
@@ -81,6 +83,7 @@ test.serial('Should encode a payload into a jwt using a secret', async (t) => {
 })
 
 test.serial('Should decode a jwt using a secret', async (t) => {
+  t.timeout(5000)
   const payload = {
     something: 'this is payload',
   }
@@ -97,6 +100,7 @@ test.serial('Should decode a jwt using a secret', async (t) => {
       port: 9299,
     },
     config: {
+      authorize: async () => true,
       secrets: {
         aPublicKey: publicKey,
       },
@@ -125,6 +129,7 @@ test.serial('Should decode a jwt using a secret', async (t) => {
 })
 
 test.serial('Should decode a jwt using a private key', async (t) => {
+  t.timeout(5000)
   const payload = {
     something: 'this is payload',
   }
@@ -141,6 +146,7 @@ test.serial('Should decode a jwt using a private key', async (t) => {
       port: 9299,
     },
     config: {
+      authorize: async () => true,
       functions: {
         decode: {
           observable: false,

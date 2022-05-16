@@ -33,6 +33,7 @@ test.after(async () => {
 })
 
 test.serial('id', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9333,
     db: {
@@ -40,6 +41,7 @@ test.serial('id', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async () => true,
       functions: {
         hello: {
           observable: false,

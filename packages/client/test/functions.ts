@@ -53,6 +53,7 @@ test.after(async () => {
 
 // need to add 'salt' for the hashing function in the db for passwords
 test.serial('call functions', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9100,
     db: {
@@ -60,6 +61,7 @@ test.serial('call functions', async (t) => {
       port: 9099,
     },
     config: {
+      authorize: async () => true,
       // give me based public key for admin validation
       functions: {
         ale: {
@@ -156,6 +158,7 @@ test.serial('call functions', async (t) => {
 
 // need to add 'salt' for the hashing function in the db for passwords
 test.serial('observable functions', async (t) => {
+  t.timeout(5000)
   let closedCnt = 0
 
   const server = await createServer({
@@ -165,6 +168,7 @@ test.serial('observable functions', async (t) => {
       port: 9099,
     },
     config: {
+      authorize: async () => true,
       functions: {
         x: {
           observable: false,
@@ -248,6 +252,7 @@ test.serial('observable functions', async (t) => {
 })
 
 test.serial('observable functions + get', async (t) => {
+  t.timeout(5000)
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -256,6 +261,7 @@ test.serial('observable functions + get', async (t) => {
         port: 9099,
       },
       config: {
+        authorize: async () => true,
         functions: {
           slow: {
             shared: true,
@@ -400,7 +406,9 @@ test.serial('observable functions + get', async (t) => {
   await server5.destroy()
 })
 
+// TODO: Only this test is set to run. Is this on purpose?
 test.serial.only('nested observable', async (t) => {
+  t.timeout(5000)
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -409,6 +417,7 @@ test.serial.only('nested observable', async (t) => {
         port: 9099,
       },
       config: {
+        authorize: async () => true,
         functions: {
           advanced: {
             shared: true,
@@ -457,6 +466,7 @@ test.serial.only('nested observable', async (t) => {
 })
 
 test.serial('observable functions + get + internal', async (t) => {
+  t.timeout(5000)
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -465,6 +475,7 @@ test.serial('observable functions + get + internal', async (t) => {
         port: 9099,
       },
       config: {
+        authorize: async () => true,
         functions: {
           a: {
             shared: true,
@@ -534,6 +545,7 @@ test.serial('observable functions + get + internal', async (t) => {
 test.serial(
   'observable functions + get + internal hard dc of client',
   async (t) => {
+    t.timeout(5000)
     const makeServer = async () => {
       return createServer({
         port: 9100,
@@ -542,6 +554,7 @@ test.serial(
           port: 9099,
         },
         config: {
+          authorize: async () => true,
           functions: {
             a: {
               shared: true,
@@ -609,6 +622,7 @@ test.serial(
 )
 
 test.serial('observable functions + internal + normal', async (t) => {
+  t.timeout(5000)
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -617,6 +631,7 @@ test.serial('observable functions + internal + normal', async (t) => {
         port: 9099,
       },
       config: {
+        authorize: async () => true,
         functions: {
           a: {
             shared: true,
@@ -694,6 +709,7 @@ test.serial('observable functions + internal + normal', async (t) => {
 })
 
 test.serial('observable functions + get observable', async (t) => {
+  t.timeout(5000)
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -702,6 +718,7 @@ test.serial('observable functions + get observable', async (t) => {
         port: 9099,
       },
       config: {
+        authorize: async () => true,
         functions: {
           a: {
             shared: true,

@@ -26,6 +26,7 @@ test.serial('incorrrect payload', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async () => true,
       functions: {
         gurk: {
           observable: false,

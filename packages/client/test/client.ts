@@ -26,7 +26,7 @@ const query = {
   },
 }
 
-test.before(async () => {
+test.before(async (t) => {
   const selvaServer = await start({
     port: 9091,
   })
@@ -53,11 +53,15 @@ test.after(async () => {
 })
 
 test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
       host: 'localhost',
       port: 9091,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
@@ -135,6 +139,9 @@ test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
       host: 'localhost',
       port: 9091,
     },
+    config: {
+      authorize: async () => true,
+    },
   })
 
   await wait(2e3)
@@ -171,11 +178,15 @@ test.serial('Dc/Rc mixed subscribe/unsubscribe', async (t) => {
 })
 
 test.serial('Corrupt data in subscriptions', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
       host: 'localhost',
       port: 9091,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
@@ -235,11 +246,15 @@ test.serial('Corrupt data in subscriptions', async (t) => {
 })
 
 test.serial('Error handling', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
       host: 'localhost',
       port: 9091,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
@@ -287,11 +302,15 @@ test.serial('Error handling', async (t) => {
 })
 
 test.serial('Get', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
       host: 'localhost',
       port: 9091,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
@@ -340,11 +359,15 @@ test.serial('Get', async (t) => {
 })
 
 test.serial('Configure', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
       host: 'localhost',
       port: 9091,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 

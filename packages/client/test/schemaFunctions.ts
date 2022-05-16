@@ -5,6 +5,7 @@ import based from '../src'
 test.serial(
   'subscribe schema - get function names and get updates when functions get added/removed',
   async (t) => {
+    t.timeout(5000)
     let initCnt = 0
 
     const store = {

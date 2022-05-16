@@ -36,6 +36,7 @@ test.after(async () => {
 
 // need to add 'salt' for the hashing function in the db for passwords
 test.serial('rest call request', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9200,
     db: {
@@ -43,6 +44,7 @@ test.serial('rest call request', async (t) => {
       port: 9201,
     },
     config: {
+      authorize: async () => true,
       functions: {
         a: {
           shared: true,
@@ -243,6 +245,7 @@ test.serial('rest call request', async (t) => {
 })
 
 test.serial('rest authorization', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9200,
     db: {

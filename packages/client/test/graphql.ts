@@ -125,6 +125,7 @@ test.after(async () => {
 })
 
 test.serial('Get', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9910,
     db: {
@@ -132,6 +133,7 @@ test.serial('Get', async (t) => {
       port: 9091,
     },
     config: {
+      authorize: async () => true,
       functions: {
         hello: {
           shared: true,

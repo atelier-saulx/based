@@ -49,10 +49,9 @@ export const getAuthorize = async (server: BasedServer): Promise<any> => {
       if (r.observable === false) {
         server.config.authorize = r.function
         fn = r.function
-        server.config.noAuth = false
       }
-    } else if (!server.config?.defaultAuthorize) {
-      server.config.noAuth = true
+    } else {
+      console.warn('No authorize function found')
     }
   }
 

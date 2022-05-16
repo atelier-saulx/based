@@ -167,8 +167,7 @@ export class BasedServer extends EventEmitter {
         new Params(this, {
           payload: {},
           callStack: ['server'],
-        }),
-        true
+        })
       )
 
       this.based = based

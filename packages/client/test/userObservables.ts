@@ -35,6 +35,7 @@ test.after(async () => {
 })
 
 test.serial('observable functions not shared', async (t) => {
+  t.timeout(15000)
   let initCnt = 0
 
   const server = await createServer({
@@ -171,6 +172,7 @@ test.serial('observable functions not shared', async (t) => {
 })
 
 test.serial('observable functions not shared call nested', async (t) => {
+  t.timeout(5000)
   // let initCnt = 0
   const server = await createServer({
     port: 9100,
@@ -179,6 +181,7 @@ test.serial('observable functions not shared call nested', async (t) => {
       port: 9099,
     },
     config: {
+      authorize: async () => true,
       // secrets: {
       //   'tally-jwt': publicKey,
       // },

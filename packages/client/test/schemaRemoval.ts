@@ -42,11 +42,15 @@ test.before(async () => {
 })
 
 test.serial('remove type', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9200,
     db: {
       host: 'localhost',
       port: 9201,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
@@ -88,11 +92,15 @@ test.serial('remove type', async (t) => {
 })
 
 test.serial('remove field', async (t) => {
+  t.timeout(5000)
   const server = await createServer({
     port: 9200,
     db: {
       host: 'localhost',
       port: 9201,
+    },
+    config: {
+      authorize: async () => true,
     },
   })
 
