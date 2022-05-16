@@ -52,8 +52,6 @@ import {
 
 export * from '@based/types'
 
-console.log('xxx')
-
 export {
   BasedGraphQL,
   createOperations as createGraphqlOperations,

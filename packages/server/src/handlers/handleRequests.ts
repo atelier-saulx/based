@@ -20,18 +20,26 @@ export default (
           if (auth) {
             if (client.authorizeInProgress) {
               client.authorizeInProgress.then(() => {
-                authorize(server, client, messages).then((messages) => {
+                authorize(server, client, messages)
+                  .then((messages) => {
+                    if (messages) {
+                      messageParser(server, client, messages)
+                    }
+                  })
+                  .catch((err) => {
+                    console.error('Error with authorize', err)
+                  })
+              })
+            } else {
+              authorize(server, client, messages)
+                .then((messages) => {
                   if (messages) {
                     messageParser(server, client, messages)
                   }
                 })
-              })
-            } else {
-              authorize(server, client, messages).then((messages) => {
-                if (messages) {
-                  messageParser(server, client, messages)
-                }
-              })
+                .catch((err) => {
+                  console.error('Error with authorize', err)
+                })
             }
           } else {
             messageParser(server, client, messages)
@@ -40,18 +48,26 @@ export default (
       } else {
         if (client.authorizeInProgress) {
           client.authorizeInProgress.then(() => {
-            authorize(server, client, messages).then((messages) => {
+            authorize(server, client, messages)
+              .then((messages) => {
+                if (messages) {
+                  messageParser(server, client, messages)
+                }
+              })
+              .catch((err) => {
+                console.error('Error with authorize', err)
+              })
+          })
+        } else {
+          authorize(server, client, messages)
+            .then((messages) => {
               if (messages) {
                 messageParser(server, client, messages)
               }
             })
-          })
-        } else {
-          authorize(server, client, messages).then((messages) => {
-            if (messages) {
-              messageParser(server, client, messages)
-            }
-          })
+            .catch((err) => {
+              console.error('Error with authorize', err)
+            })
         }
       }
     } else {
