@@ -564,7 +564,7 @@ Item to insert. This must conform to the `items` type described in the schema.
 ```js
 // in the case of the `items` type being an object with name, value, and status field
 client.set({
-  $id: ar165415,
+  $id: 'ar165415',
   myobjectarray: {
     $insert: {
       $idx: 25,
@@ -580,7 +580,7 @@ client.set({
 
 // in the case of the `items` type being 'number'
 client.set({
-  $id: ar542875421,
+  $id: 'ar542875421',
   mynumberarray: {
     $insert: {
       $idx: 21,
@@ -608,7 +608,7 @@ Item to insert. This must conform to the `items` type described in the schema.
 ```js
 // in the case of the `items` type being an object with name, value, and status field
 client.set({
-  $id: ar165415,
+  $id: 'ar165415',
   myobjectarray: {
     $assing: {
       $idx: 25,
@@ -624,7 +624,7 @@ client.set({
 
 // in the case of the `items` type being 'number'
 client.set({
-  $id: ar542875421,
+  $id: 'ar542875421',
   mynumberarray: {
     $assign: {
       $idx: 21,
@@ -642,7 +642,7 @@ This object must have the `$idx` field.
 
 ```js
 client.set({
-  $id: ar654984,
+  $id: 'ar654984',
   mynumberarray: {
     $remove: {
       $idx: 1,
