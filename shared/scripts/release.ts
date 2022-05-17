@@ -166,7 +166,7 @@ const checkReleaseOptions = async ({
   })
 }
 
-const performGitStatus = async () => {
+const performGitStatusCheck = async () => {
   const currentBranch = await getBranch()
   if (currentBranch !== 'main') {
     throw new Error(
@@ -186,7 +186,7 @@ async function releaseProject() {
   /**
    * Ensure we are on correct branch with clean git status.
    */
-  await performGitStatus()
+  await performGitStatusCheck()
 
   console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
