@@ -56,7 +56,7 @@ export default async (
     try {
       const { function: fn } = (await getFunction(server, 'renewToken')) || {}
       if (!fn) {
-        throw new Error('renewToken function is not implemented')
+        throw new Error('Token expired and needs to be renewed.')
       }
       const result = await fn(
         new Params(server, payload, client, ['renewToken'])

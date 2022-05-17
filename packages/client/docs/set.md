@@ -25,6 +25,13 @@ Operators can act at the **node** level or at the **individual field** level.
     - `$delete`
   - [`object` and `record` type field operators](#object-and-record-type-field-operators)
     - `$merge`
+  - [`array` type field operators](#array-type-field-operators)
+    - `$push`
+    - `$insert`
+    - `$assign`
+    - `$remove`
+
+---
 
 ## Node level operators
 
@@ -106,9 +113,9 @@ This allows to later _get_ the node by using the alias instead of the ID.
 {
   aliases: []
  }
- ```
-or
-```js
+
+// or
+
 {
   aliases: { $delete: true }
 }
@@ -314,6 +321,8 @@ If the node does not exist, value of `const result`: `undefined`. In this case n
 */
 ```
 
+---
+
 ## Field type specific operators
 
 ### Basic operators
@@ -505,4 +514,139 @@ Resulting node in database:
   }
 }
 */
+```
+
+
+### `array` type field operators
+
+#### `$push`: _array type_
+
+Used to append an item at the end of the array. The type of `$push` must conform to the `items` field described in the schema.
+
+```js
+// in the case of the `items` type being an object with name, value, and status field
+client.set({
+  $id: ar165415,
+  myobjectarray: {
+    $push: {
+      name: 'match ' + i,
+      value: i,
+      status: i < 5 ? 100 : 300,
+    },
+  },
+})
+
+// in the case of the `items` type being 'number'
+client.set({
+  $id: ar165415,
+  mynumberarray: {
+    $push: 4.2
+  },
+})
+
+```
+
+#### `$insert`: _object_
+
+Used to insert an item at a specific index of the array. The item at the index and after get shifted appropriately.  
+The object must have fields `$idx` and `$value`. 
+
+##### `$idx`: _integer_
+
+Index at which to insert the item. If the index is bigger than the size of the array, `null` items get added between the last item and the `$idx`.
+
+
+##### `$value`: _array type_
+
+Item to insert. This must conform to the `items` type described in the schema.
+
+
+```js
+// in the case of the `items` type being an object with name, value, and status field
+client.set({
+  $id: 'ar165415',
+  myobjectarray: {
+    $insert: {
+      $idx: 25,
+      $value: {
+        name: 'match ' + i,
+        value: i,
+        status: i < 5 ? 100 : 300, 
+      }
+    },
+  },
+})
+
+
+// in the case of the `items` type being 'number'
+client.set({
+  $id: 'ar542875421',
+  mynumberarray: {
+    $insert: {
+      $idx: 21,
+      $value: 58
+    },
+  },
+})
+```
+
+#### `$assign`: _object_
+
+Used to change a value at a specific index of the array. Unlike `$insert`, this does not create a new node unless the index is past the size of the array. In that case it creates `null` items between the end of the array and the new item, just like `$insert`.
+The object must have fields `$idx` and `$value`. 
+
+##### `$idx`: _integer_
+
+Index at which to insert the item. If the index is bigger than the size of the array, `null` items get added between the last item and the `$idx`.
+
+
+##### `$value`: _array type_
+
+Item to insert. This must conform to the `items` type described in the schema.
+
+
+```js
+// in the case of the `items` type being an object with name, value, and status field
+client.set({
+  $id: 'ar165415',
+  myobjectarray: {
+    $assing: {
+      $idx: 25,
+      $value: {
+        name: 'match ' + i,
+        value: i,
+        status: i < 5 ? 100 : 300, 
+      }
+    },
+  },
+})
+
+
+// in the case of the `items` type being 'number'
+client.set({
+  $id: 'ar542875421',
+  mynumberarray: {
+    $assign: {
+      $idx: 21,
+      $value: 58
+    },
+  },
+})
+```
+
+
+#### `$remove`: _object_
+
+This removes an item from the array at the specified index.  
+This object must have the `$idx` field.
+
+```js
+client.set({
+  $id: 'ar654984',
+  mynumberarray: {
+    $remove: {
+      $idx: 1,
+   },
+ },
+})
 ```

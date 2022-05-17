@@ -12,7 +12,7 @@
     "@based/client": "^2.3.3"
   },
   "dependencies": {
-    "@based/client": "2.5.0"
+    "@based/client": "2.7.1"
   },
   "devDependencies": {
     "vue": "^3.0.0",

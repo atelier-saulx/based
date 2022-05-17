@@ -8,20 +8,24 @@ const jwtDecode = (
   value: string,
   publicKey: string
 ) => {
-  jwt.verify(value, publicKey, (err, decoded) => {
-    if (err) {
-      if (err instanceof jwt.TokenExpiredError) {
-        const basedError = new BasedError('Token expired')
-        basedError.code = BasedErrorCodes.TokenExpired
-        basedError.stack = err.stack
-        reject(basedError)
+  try {
+    jwt.verify(value, publicKey, (err, decoded) => {
+      if (err) {
+        if (err instanceof jwt.TokenExpiredError) {
+          const basedError = new BasedError('Token expired')
+          basedError.code = BasedErrorCodes.TokenExpired
+          basedError.stack = err.stack
+          reject(basedError)
+        } else {
+          resolve(false)
+        }
       } else {
-        resolve(false)
+        resolve(decoded)
       }
-    } else {
-      resolve(decoded)
-    }
-  })
+    })
+  } catch (err) {
+    reject(err)
+  }
 }
 
 export const getSecret = async (
@@ -58,7 +62,8 @@ export const getSecret = async (
   return cert || false
 }
 
-const cleanCarriageReturn = (value: string) => value.replace(/\n$/, '')
+const cleanCarriageReturn = (value: string) =>
+  typeof value === 'string' ? value.replace(/\n$/, '') : value
 
 export const decodeToken = (value: string, publicKey: string): Promise<any> => {
   return new Promise((resolve, reject) => {
@@ -84,32 +89,36 @@ export const encodeValueBySecret = (
       } else {
         reject(new Error('Need to pass a secret name or a key'))
       }
-    }).then((privateKey: string) => {
-      if (privateKey) {
-        const defaultOptions: SignOptions = {
-          expiresIn: '2d',
-          algorithm: 'RS256',
-        }
-        if (type === 'jwt') {
-          jwt.sign(
-            payload,
-            privateKey,
-            { ...defaultOptions, ...signOptions },
-            (err, decoded) => {
-              if (err) {
-                resolve(false)
-              } else {
-                resolve(decoded)
-              }
-            }
-          )
-        } else {
-          throw new Error(`Encode ${type} not implementedd yet`)
-        }
-      } else {
-        reject(new Error(`Secret does not exist ${privateKeySecretOrKey}`))
-      }
     })
+      .then((privateKey: string) => {
+        if (privateKey) {
+          const defaultOptions: SignOptions = {
+            expiresIn: '2d',
+            algorithm: 'RS256',
+          }
+          if (type === 'jwt') {
+            jwt.sign(
+              payload,
+              privateKey,
+              { ...defaultOptions, ...signOptions },
+              (err, decoded) => {
+                if (err) {
+                  resolve(false)
+                } else {
+                  resolve(decoded)
+                }
+              }
+            )
+          } else {
+            reject(new Error(`Encode ${type} not implementedd yet`))
+          }
+        } else {
+          reject(new Error(`Secret does not exist ${privateKeySecretOrKey}`))
+        }
+      })
+      .catch((err) => {
+        reject(err)
+      })
   })
 }
 
@@ -121,16 +130,24 @@ export const decodeValueBySecret = (
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
     // make this better
-    getSecret(server, publicKeySecret).then((publicKey) => {
-      if (publicKey) {
-        if (type === 'jwt') {
-          jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+    getSecret(server, publicKeySecret)
+      .then((publicKey) => {
+        if (publicKey) {
+          if (type === 'jwt') {
+            try {
+              jwtDecode(resolve, reject, cleanCarriageReturn(value), publicKey)
+            } catch (err) {
+              reject(err)
+            }
+          } else {
+            console.error(`decode ${type} not implemented yet`)
+          }
         } else {
-          console.error(`decode ${type} not implementedd yet`)
+          reject(new Error(`Secret does not exist ${publicKeySecret}`))
         }
-      } else {
-        reject(new Error(`Secret does not exist ${publicKeySecret}`))
-      }
-    })
+      })
+      .catch((err) => {
+        reject(err)
+      })
   })
 }

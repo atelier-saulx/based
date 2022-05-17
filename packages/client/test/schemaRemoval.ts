@@ -131,15 +131,14 @@ test.serial('remove field', async (t) => {
     }
   }
 
-  try {
-    await client.set({
+  await t.throwsAsync(
+    client.set({
       type: 'flap',
       nurk: 'no no name no no  - ',
     })
-    t.fail('should throw')
-  } catch (err) {}
+  )
 
-  await client.removeField('flap', 'name')
+  await t.notThrowsAsync(client.removeField('flap', 'name'))
 
   const result2 = await Promise.all(
     ids.map(({ id }) => client.get({ $id: id, name: true }))
@@ -151,17 +150,16 @@ test.serial('remove field', async (t) => {
     }
   }
 
-  try {
-    await client.set({
+  await t.throwsAsync(
+    client.set({
       type: 'flap',
       name: 'no no name no no  - ',
     })
-    t.fail('should throw')
-  } catch (err) {
-    console.info(err)
-  }
+  )
 
-  await client.removeField('flap', ['nested', 'properties', 'something'])
+  await t.notThrowsAsync(async () => {
+    await client.removeField('flap', ['nested', 'properties', 'something'])
+  })
 
   const result3 = await Promise.all(
     ids.map(({ id }) => client.get({ $id: id, nested: { something: true } }))
@@ -173,19 +171,15 @@ test.serial('remove field', async (t) => {
     }
   }
 
-  try {
-    await client.set({
+  await t.throwsAsync(
+    client.set({
       type: 'flap',
       nested: {
         something: 'something - ',
       },
     })
-    t.fail('should throw')
-  } catch (err) {
-    console.info(err)
-  }
+  )
 
-  t.pass('All seems good')
   await server.destroy()
   client.disconnect()
 })

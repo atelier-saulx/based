@@ -26,8 +26,7 @@ import { Based } from './'
 import { addToQueue, drainQueue, stopDrainQueue } from './queue'
 import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
-import { incomingAuthRequest } from './auth'
-import { renewToken } from './auth'
+import { incomingAuthRequest, renewToken } from './auth'
 
 export * from '@based/types'
 
@@ -229,9 +228,8 @@ export class BasedClient {
         }
       }
     } catch (err) {
+      console.log(err)
       console.error('Received incorrect data ', d)
     }
   }
 }
-
-console.log('???')
