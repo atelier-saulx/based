@@ -72,8 +72,6 @@ export type Config = {
   storeFile?: (opts: FileOpts) => Promise<{
     src: string
     origin: string
-    status: number
-    statusText?: string
     thumb?: string
     version?: string
     mimeType?: string
