@@ -142,9 +142,9 @@ export interface DependencyData extends PackageData {
   type: string
 }
 
-export interface DependencyTree {
+export interface OutdatedDependencyTree {
   targetPackage: PackageData
-  dependencyPackage: DependencyData
+  outdatedDependency: DependencyData
 }
 
 export function findOutdatedDependencies({
@@ -153,8 +153,8 @@ export function findOutdatedDependencies({
 }: {
   targetPackages: PackageData[]
   allPackages: PackageData[]
-}): DependencyTree[] {
-  const packagesWithDependencies: DependencyTree[] = []
+}): OutdatedDependencyTree[] {
+  const packagesWithDependencies: OutdatedDependencyTree[] = []
 
   const allPackageNames = allPackages.map(({ name }) => name)
 
@@ -190,10 +190,10 @@ export function findOutdatedDependencies({
         const isOutdated = diffed !== undefined
 
         if (isPackageInRepo && isOutdated) {
-          const outdatedDependency: DependencyTree = {
+          const outdatedDependency: OutdatedDependencyTree = {
             targetPackage: targetPackage,
 
-            dependencyPackage: {
+            outdatedDependency: {
               ...referencePackage,
               legacyVersion: version as string,
               type: dependencyType as string,
@@ -201,7 +201,7 @@ export function findOutdatedDependencies({
           }
 
           const dependencyExists = packagesWithDependencies.find(
-            ({ dependencyPackage }) => {
+            ({ outdatedDependency: dependencyPackage }) => {
               return (
                 dependencyPackage.name === referencePackage.name &&
                 dependencyPackage.type === dependencyType

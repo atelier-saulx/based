@@ -136,35 +136,42 @@ export async function patchRepositoryVersion() {
 }
 
 export async function updatePeerAndDevDependency({
+  targetPackage,
   outdatedDependency,
-  targetDependency,
 }: {
+  targetPackage: PackageData
   outdatedDependency: PackageData
-  targetDependency: PackageData
 }) {
   const packageJSONPath = path.join(outdatedDependency.path, '/package.json')
   const packageJson = await fs.readJSON(packageJSONPath)
+  const versionString = `${targetPackage.version}`
 
   if (packageJson.peerDependencies) {
     Object.keys(packageJson.peerDependencies).forEach((packageName) => {
-      const isPackageInRepo = [targetDependency.name].includes(packageName)
+      const isPackageInRepo = [targetPackage.name].includes(packageName)
 
       if (isPackageInRepo) {
-        packageJson.peerDependencies[
-          packageName
-        ] = `^${targetDependency.version}`
+        packageJson.peerDependencies[packageName] = versionString
       }
     })
   }
 
   if (packageJson.devDependencies) {
     Object.keys(packageJson.devDependencies).forEach((packageName) => {
-      const isPackageInRepo = [targetDependency.name].includes(packageName)
+      const isPackageInRepo = [targetPackage.name].includes(packageName)
 
       if (isPackageInRepo) {
-        packageJson.devDependencies[
-          packageName
-        ] = `^${targetDependency.version}`
+        packageJson.devDependencies[packageName] = versionString
+      }
+    })
+  }
+
+  if (packageJson.dependencies) {
+    Object.keys(packageJson.dependencies).forEach((packageName) => {
+      const isPackageInRepo = [targetPackage.name].includes(packageName)
+
+      if (isPackageInRepo) {
+        packageJson.dependencies[packageName] = versionString
       }
     })
   }
