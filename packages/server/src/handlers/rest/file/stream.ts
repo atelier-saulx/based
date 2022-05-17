@@ -20,6 +20,8 @@ const smallFile = (
         $id: opts.id,
         progress: 1,
         size: opts.size,
+        status: 3,
+        statusText: 'ready',
       }
       if (opts.name) {
         payload.name = opts.name
@@ -46,6 +48,8 @@ const largeFile = (
     $id: opts.id,
     progress: 0,
     size: opts.size,
+    status: 1,
+    statusText: 'uploading',
   }
 
   if (opts.name) {
@@ -61,6 +65,10 @@ const largeFile = (
         const payload: any = {
           $id: opts.id,
           progress,
+        }
+        if (progress === 1) {
+          payload.status = 3
+          payload.statusText = 'ready'
         }
         server.based.set(payload)
         setInProgress = false
