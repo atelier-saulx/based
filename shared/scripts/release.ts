@@ -20,7 +20,7 @@ import { ReleaseType } from './types'
 import { publishTargetPackage } from './publish-packages'
 import {
   patchRepositoryVersion,
-  updatePeerAndDevDependency,
+  updateDependenciesOfPackage,
   updateTargetPackageVersion,
 } from './update-versions'
 
@@ -299,7 +299,7 @@ async function releaseProject() {
 
       if (outdatedPackages.length > 0) {
         outdatedPackages.forEach(({ targetPackage, outdatedDependency }) => {
-          updatePeerAndDevDependency({ targetPackage, outdatedDependency })
+          updateDependenciesOfPackage({ targetPackage, outdatedDependency })
         })
       }
 
