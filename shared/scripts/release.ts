@@ -317,8 +317,6 @@ async function releaseProject() {
     throw new Error('There was an error updating package versions')
   }
 
-  return console.log('Stopping here')
-
   /**
    * Publish chosen target packages in repository
    */
