@@ -66,10 +66,6 @@ const largeFile = (
           $id: opts.id,
           progress,
         }
-        if (progress === 1) {
-          payload.status = 3
-          payload.statusText = 'ready'
-        }
         server.based.set(payload)
         setInProgress = false
       }, 250)
@@ -101,8 +97,6 @@ export default async (
   } else {
     smallFile(server, res, stream, opts)
   }
-
-  console.info('go go go', opts.functionName)
 
   const fnName = opts.functionName
 
