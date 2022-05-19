@@ -39,7 +39,7 @@ export class BasedClient {
 
   token: string
   sendTokenOptions: SendTokenOptions
-  retryingRenewToken: boolean
+  retryingRenewToken: any
 
   beingAuth: boolean
 
@@ -168,9 +168,9 @@ export class BasedClient {
   onData(d) {
     try {
       const data: ResponseData = JSON.parse(d.data)
-      const [type, reqId, payload, err] = data
+      const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
-        this.retryingRenewToken = false
+        this.retryingRenewToken = null
         // means stomething got de-auth wrong
         if (reqId.length) {
           logoutSubscriptions(this, data)
@@ -184,24 +184,38 @@ export class BasedClient {
         incomingAuthRequest(this, data)
       } else {
         if (
-          (err as BasedError)?.code === BasedErrorCodes.TokenExpired &&
+          // TODO: Find where expired token is not returning a code
+          (((subscriptionErr || err) as BasedError)?.code ===
+            BasedErrorCodes.TokenExpired ||
+            ((subscriptionErr || err) as BasedError)?.message ===
+              'Token expired') &&
           !this.retryingRenewToken
         ) {
-          this.retryingRenewToken = true
+          this.retryingRenewToken = data
           const refreshToken = this.sendTokenOptions?.refreshToken
           renewToken(this, {
             refreshToken,
           })
             .then((result) => {
               sendToken(this, result.token, this.sendTokenOptions)
-              addRequest(
-                this,
-                // @ts-ignore
-                type,
-                (err as ErrorObject)?.payload,
-                this.requestCallbacks[reqId].resolve,
-                this.requestCallbacks[reqId].reject
-              )
+              if (
+                type === RequestTypes.Subscription ||
+                type === RequestTypes.SubscriptionDiff
+              ) {
+                // TODO: Check this with Jim
+                // should it be the individual subscription?
+                sendAllSubscriptions(this)
+              } else {
+                addRequest(
+                  this,
+                  // @ts-ignore
+                  type,
+                  (err as ErrorObject)?.payload,
+                  this.requestCallbacks[reqId].resolve,
+                  this.requestCallbacks[reqId].reject
+                )
+              }
+              this.based.emit('renewToken', result)
             })
             .catch((err) => {
               this.requestCallbacks[reqId].reject(err)
@@ -228,7 +242,6 @@ export class BasedClient {
         }
       }
     } catch (err) {
-      console.log(err)
       console.error('Received incorrect data ', d)
     }
   }

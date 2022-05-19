@@ -73,11 +73,13 @@ export declare interface Based {
   on(event: 'connect', listener: Function): this
   on(event: 'disconnect', listener: Function): this
   on(event: 'reconnect', listener: Function): this
+  on(event: 'renewToken', listener: Function): this
   once(event: 'schema', listener: Function): this
   once(event: 'auth', listener: Function): this
   once(event: 'connect', listener: Function): this
   once(event: 'disconnect', listener: Function): this
   once(event: 'reconnect', listener: Function): this
+  once(event: 'renewToken', listener: Function): this
 }
 
 export class Based extends Emitter {
