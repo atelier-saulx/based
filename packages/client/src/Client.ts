@@ -39,7 +39,7 @@ export class BasedClient {
 
   token: string
   sendTokenOptions: SendTokenOptions
-  retryingRenewToken: any
+  retryingRenewToken: boolean
 
   beingAuth: boolean
 
@@ -170,7 +170,7 @@ export class BasedClient {
       const data: ResponseData = JSON.parse(d.data)
       const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
-        this.retryingRenewToken = null
+        this.retryingRenewToken = false
         // means stomething got de-auth wrong
         if (reqId.length) {
           logoutSubscriptions(this, data)
@@ -191,7 +191,7 @@ export class BasedClient {
               'Token expired') &&
           !this.retryingRenewToken
         ) {
-          this.retryingRenewToken = data
+          this.retryingRenewToken = true
           const refreshToken = this.sendTokenOptions?.refreshToken
           renewToken(this, {
             refreshToken,
