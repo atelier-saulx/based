@@ -151,8 +151,7 @@ The text type is a structure that contains for each key the same string localize
 When setting a field type to `object`, the schema must include another special field called `properties` where the values of the object are specified.
 
 ```js
-myType: {
-{
+types: {
   // ...
   movie: {
     prefix: 'mo',
@@ -176,17 +175,20 @@ myType: {
 When setting a field type to `array`, the schema must include another special field called `items` where the type of the array is specified. This can be any other schema type, defined appropriately (i.e. `object`s must have `properties` and so on).
 
 ```js
-thing: {
-  prefix: 'th',
-  fields: {
-    title: { type: 'text' },
-    myarray: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          title: { type: 'text' },
-          name: { type: 'string' },          
+types: {
+  // ...
+  thing: {
+    prefix: 'th',
+    fields: {
+      title: { type: 'text' },
+      myarray: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            title: { type: 'text' },
+            name: { type: 'string' },          
+          },
         },
       },
     },
@@ -199,7 +201,7 @@ thing: {
 When setting a field type to `set`, the schema must include another special field called `items` where the type of the set is specified. 
 
 ```js
-myType: {
+types: {
   // ...
   company:{
     prefix: 'na',
@@ -218,9 +220,9 @@ myType: {
 When setting a field type to `record`, the schema must include another special field called `values` where the type of value the record can hold is specified.
 
 ```js
-myType: {
+types: {
   // ...
-  company:{
+  company: {
     prefix: 'na',
     fields: {
       employees: {

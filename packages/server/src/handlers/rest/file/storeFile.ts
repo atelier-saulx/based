@@ -28,12 +28,17 @@ export default async (
     $id: opts.id,
     src: result.src,
     origin: result.origin,
+    status: result.status,
     version: result.version,
     mimeType: result.mimeType || opts.type,
   }
 
   if (result.thumb) {
     setObj.thumb = result.thumb
+  }
+
+  if (result.statusText) {
+    setObj.statusText = result.statusText
   }
 
   // add version

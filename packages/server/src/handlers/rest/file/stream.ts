@@ -20,6 +20,8 @@ const smallFile = (
         $id: opts.id,
         progress: 1,
         size: opts.size,
+        status: 3,
+        statusText: 'ready',
       }
       if (opts.name) {
         payload.name = opts.name
@@ -46,6 +48,8 @@ const largeFile = (
     $id: opts.id,
     progress: 0,
     size: opts.size,
+    status: 1,
+    statusText: 'uploading',
   }
 
   if (opts.name) {
@@ -93,8 +97,6 @@ export default async (
   } else {
     smallFile(server, res, stream, opts)
   }
-
-  console.info('go go go', opts.functionName)
 
   const fnName = opts.functionName
 

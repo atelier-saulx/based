@@ -20,10 +20,12 @@ import { ReleaseType } from './types'
 import { publishTargetPackage } from './publish-packages'
 import {
   patchRepositoryVersion,
+  updateDependenciesOfPackage,
   updateTargetPackageVersion,
 } from './update-versions'
 
 import {
+  OutdatedDependencyTree,
   findOutdatedDependencies,
   getFormattedObject,
   getIncrementedVersion,
@@ -39,6 +41,8 @@ export type ReleaseOptions = {
   type: string
   dryRun: boolean
 }
+
+let outdatedDependencies: OutdatedDependencyTree[] = []
 
 const { argv }: { argv: any } = yargs(hideBin(process.argv))
   .option('type', {
@@ -103,7 +107,7 @@ const checkReleaseOptions = async ({
     )
   }
 
-  const outdatedDependencies = findOutdatedDependencies({
+  outdatedDependencies = findOutdatedDependencies({
     targetPackages: clonedTargetPackages,
     allPackages,
   })
@@ -118,22 +122,26 @@ const checkReleaseOptions = async ({
       )} \n`
     )
 
-    outdatedDependencies.forEach(({ targetPackage, dependencyPackage }) => {
-      const { type } = dependencyPackage
+    outdatedDependencies.forEach(
+      ({ targetPackage, outdatedDependency: dependencyPackage }) => {
+        const { type } = dependencyPackage
 
-      const dependencyString =
-        type === 'peer' ? 'peer-dependency' : 'dev-dependency'
+        const dependencyString =
+          type === 'peer' ? 'peer-dependency' : 'dev-dependency'
 
-      console.info(
-        `  ${chalk.green.bold(
-          dependencyPackage.name
-        )} has ${dependencyString} to ${chalk.yellow.bold(
-          targetPackage.name
-        )} with version ${chalk.red.bold(
-          dependencyPackage.legacyVersion
-        )}, not ${chalk.yellow.bold(targetPackage.version)}.`
-      )
-    })
+        console.info(
+          `  ${chalk.green.bold(
+            dependencyPackage.name
+          )} has ${dependencyString} to ${chalk.yellow.bold(
+            targetPackage.name
+          )} with version ${chalk.red.bold(
+            dependencyPackage.legacyVersion
+          )}, not ${chalk.yellow.bold(targetPackage.version)}.`
+        )
+      }
+    )
+
+    console.info(`\n  ${chalk.bold.green('This will be auto-updated.')}`)
   }
 
   /**
@@ -158,7 +166,7 @@ const checkReleaseOptions = async ({
   })
 }
 
-const performGitStatus = async () => {
+const performGitStatusCheck = async () => {
   const currentBranch = await getBranch()
   if (currentBranch !== 'main') {
     throw new Error(
@@ -178,7 +186,7 @@ async function releaseProject() {
   /**
    * Ensure we are on correct branch with clean git status.
    */
-  await performGitStatus()
+  await performGitStatusCheck()
 
   console.info(`\n${chalk.white.underline.bold('[ Releasing Based ]')} \n`)
 
@@ -283,6 +291,17 @@ async function releaseProject() {
         packageData: packageData,
         targetVersion: targetVersion,
       })
+
+      const outdatedPackages = outdatedDependencies.filter((dependencyTree) => {
+        const { targetPackage } = dependencyTree
+        return targetPackage.name === packageData.name
+      })
+
+      if (outdatedPackages.length > 0) {
+        outdatedPackages.forEach(({ targetPackage, outdatedDependency }) => {
+          updateDependenciesOfPackage({ targetPackage, outdatedDependency })
+        })
+      }
 
       // Set version for future use
       packageData.version = targetVersion
