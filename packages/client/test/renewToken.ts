@@ -155,3 +155,163 @@ test.serial('should throw with invalid refreshToken', async (t) => {
   t.regex(error.name, /^RenewTokenError/)
   t.is(refreshTokenCallCount, 1)
 })
+
+test.serial('should renew a token with subscription', async (t) => {
+  t.plan(2)
+  t.timeout(15000)
+  let refreshTokenCallCount = 0
+
+  const server = await createServer({
+    port: 9333,
+    db: {
+      host: 'localhost',
+      port: 9401,
+    },
+    config: {
+      authorize,
+      functions: {
+        login: {
+          observable: false,
+          function: async () => {
+            return {
+              token: 'expiredToken',
+              // token: 'validToken',
+              refreshToken: 'validRefreshToken',
+            }
+          },
+        },
+        renewToken: {
+          observable: false,
+          function: async ({ payload }) => {
+            refreshTokenCallCount++
+            const { refreshToken } = payload
+            if (refreshToken === 'validRefreshToken') {
+              return { token: 'validToken' }
+            }
+            throw new Error('invalid refreshToken')
+          },
+        },
+        wawa: {
+          shared: false,
+          observable: true,
+          function: async ({ based, update }) => {
+            return based.observe(
+              {
+                $id: 'thWawa',
+                name: true,
+              },
+              (d) => {
+                update({
+                  d,
+                })
+              }
+            )
+          },
+        },
+      },
+    },
+  })
+
+  const client = based({
+    url: async () => {
+      return 'ws://localhost:9333'
+    },
+  })
+  t.teardown(async () => {
+    await server.destroy()
+    client.disconnect()
+  })
+
+  await client.login({ email: 'existing@user.com', password: 'smurk' })
+  await client.observe('wawa', (r) => {
+    if (r?.d?.name === 'yeye') {
+      t.pass()
+    }
+  })
+  await t.context.db.set({
+    $id: 'thWawa',
+    name: 'yeye',
+  })
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  t.is(refreshTokenCallCount, 1)
+})
+
+test.serial.only('should renew a token with subscription2', async (t) => {
+  t.plan(2)
+  t.timeout(15000)
+  let refreshTokenCallCount = 0
+
+  const server = await createServer({
+    port: 9333,
+    db: {
+      host: 'localhost',
+      port: 9401,
+    },
+    config: {
+      authorize,
+      functions: {
+        login: {
+          observable: false,
+          function: async () => {
+            return {
+              token: 'expiredToken',
+              // token: 'validToken',
+              refreshToken: 'validRefreshToken',
+            }
+          },
+        },
+        renewToken: {
+          observable: false,
+          function: async ({ payload }) => {
+            refreshTokenCallCount++
+            const { refreshToken } = payload
+            if (refreshToken === 'validRefreshToken') {
+              return { token: 'validToken' }
+            }
+            throw new Error('invalid refreshToken')
+          },
+        },
+        wawa: {
+          shared: false,
+          observable: true,
+          function: async ({ based, update }) => {
+            return based.observe(
+              {
+                $id: 'thWawa',
+                name: true,
+              },
+              (d) => {
+                update({
+                  d,
+                })
+              }
+            )
+          },
+        },
+      },
+    },
+  })
+
+  const client = based({
+    url: async () => {
+      return 'ws://localhost:9333'
+    },
+  })
+  t.teardown(async () => {
+    await server.destroy()
+    client.disconnect()
+  })
+
+  await client.auth('expiredToken', { refreshToken: 'validRefreshToken' })
+  await client.observe('wawa', (r) => {
+    if (r?.d?.name === 'yeye') {
+      t.pass()
+    }
+  })
+  await t.context.db.set({
+    $id: 'thWawa',
+    name: 'yeye',
+  })
+  await new Promise((resolve) => setTimeout(resolve, 1000))
+  t.is(refreshTokenCallCount, 1)
+})
