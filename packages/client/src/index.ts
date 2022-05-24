@@ -817,7 +817,18 @@ export class Based extends Emitter {
         (token === false && this.client.token)
       ) {
         if (typeof token === 'string') {
-          sendToken(this.client, token, options)
+          const { renewOptions, refreshToken, ...redactedOptions } =
+            options || {}
+          if (renewOptions) {
+            this.client.renewOptions = renewOptions
+          }
+          if (refreshToken) {
+            this.client.renewOptions = {
+              ...this.client.renewOptions,
+              refreshToken,
+            }
+          }
+          sendToken(this.client, token, redactedOptions)
         } else {
           // this is very important
           // may need to add a req Id (and a timer how long it takes)

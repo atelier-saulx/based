@@ -279,6 +279,9 @@ export type SendTokenOptions = {
   isBasedUser?: boolean
   isApiKey?: boolean
   refreshToken?: string
+  renewOptions?: {
+    refreshToken?: string
+  } & { [key: string]: any }
 }
 
 export type AnalyticsResult = {
@@ -351,8 +354,8 @@ export type LoginOpts = {
   password: string
 }
 export type RenewTokenOpts = {
-  refreshToken: string
-}
+  refreshToken?: string
+} & { [key: string]: any }
 
 export type FileUploadOptions = {
   contents: Buffer | ArrayBuffer | string | File | Blob
