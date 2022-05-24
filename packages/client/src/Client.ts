@@ -38,6 +38,9 @@ export class BasedClient {
   }
 
   token: string
+  renewOptions: {
+    refreshToken?: string
+  } & { [key: string]: any }
   sendTokenOptions: SendTokenOptions
   retryingRenewToken: boolean
 
@@ -192,10 +195,7 @@ export class BasedClient {
           !this.retryingRenewToken
         ) {
           this.retryingRenewToken = true
-          const refreshToken = this.sendTokenOptions?.refreshToken
-          renewToken(this, {
-            refreshToken,
-          })
+          renewToken(this, this.renewOptions)
             .then((result) => {
               sendToken(this, result.token, this.sendTokenOptions)
               if (
@@ -218,7 +218,7 @@ export class BasedClient {
               this.based.emit('renewToken', result)
             })
             .catch((err) => {
-              this.requestCallbacks[reqId].reject(err)
+              this.requestCallbacks[reqId]?.reject(err)
             })
         } else {
           if (
