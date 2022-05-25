@@ -74,6 +74,7 @@ export type ServicesAddOptions = GlobalOptions & {
   cores?: string
   memory?: string
   name?: string
+  wait?: boolean
 }
 
 type ServicesAddOutput = GenericOutput & {
@@ -87,6 +88,7 @@ export const servicesAddCommand = new Command('add')
   .option('--template <template>', 'Service template')
   .option('--instances <instances>', 'Amount of instances')
   .option('--name <name>', 'Name the service')
+  .option('--wait', 'Wait for service to be ready')
   .addOption(
     new Option('--cores <cores>', 'Amount of cores in machine').choices(
       coresChoices.map((v) => String(v.value))
@@ -260,6 +262,55 @@ export const servicesAddCommand = new Command('add')
         org: config.org,
         message: 'Created service.',
       })
+
+      if (options.wait) {
+        if (options.output === 'fancy') {
+          spinner = ora('Waiting for service to be ready.').start()
+        }
+        try {
+          await new Promise((resolve, reject) => {
+            client
+              .observe(
+                {
+                  $id: result.id,
+                  id: true,
+                  serviceInstances: {
+                    id: true,
+                    status: true,
+                    $list: {
+                      $find: {
+                        $traverse: 'children',
+                        $filter: {
+                          $operator: '=',
+                          $field: 'type',
+                          $value: 'serviceInstance',
+                        },
+                      },
+                    },
+                  },
+                },
+                (d) => {
+                  if (
+                    d.serviceInstances.every(
+                      (si: { status: number }) => si.status === 1
+                    )
+                  ) {
+                    resolve(true)
+                  }
+                }
+              )
+              .catch((err) => {
+                reject(err)
+              })
+          })
+          spinner && spinner.stop()
+        } catch (error) {
+          spinner && spinner.stop()
+          options.debug && printError(error)
+          fail('Error waiting for service status.', output, options)
+        }
+      }
+
       if (options.output === 'fancy') {
         printEmptyLine()
         console.info(
