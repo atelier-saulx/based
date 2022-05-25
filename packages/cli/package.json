@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "2.7.5",
+  "version": "2.7.6",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {

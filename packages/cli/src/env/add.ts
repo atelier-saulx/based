@@ -15,6 +15,7 @@ import {
 import { Config, GenericOutput } from '../types'
 import { Based } from '@based/client'
 import { GlobalOptions } from '../command'
+import { envId as getEnvId } from '@based/ids'
 
 type EnvsAddOutput = GenericOutput & {
   data: {
@@ -169,6 +170,7 @@ export const add = async ({
 
     // spinner.text = 'Environment created starting machines'
 
+    const envId = getEnvId(envObj.env, envObj.org, envObj.project)
     await new Promise((resolve, reject) => {
       let close: any
       // close needs to be there as first
@@ -176,8 +178,41 @@ export const add = async ({
       // await client.until({}, d => d// is)
       client
         .observe(
-          'envMachineStatus',
-          { env: envObj },
+          {
+            $id: envId,
+            machines: {
+              id: true,
+              status: true,
+              serviceInstances: {
+                $list: {
+                  $find: {
+                    $traverse: 'children',
+                    $filter: [
+                      {
+                        $operator: '=',
+                        $field: 'type',
+                        $value: 'serviceInstance',
+                      },
+                    ],
+                  },
+                },
+                status: true,
+                id: true,
+              },
+              $list: {
+                $find: {
+                  $traverse: 'children',
+                  $filter: [
+                    {
+                      $operator: '=',
+                      $field: 'type',
+                      $value: 'machine',
+                    },
+                  ],
+                },
+              },
+            },
+          },
           (d) => {
             let rdy = 0
 
@@ -188,7 +223,7 @@ export const add = async ({
             }
 
             if (spinner) {
-              spinner.text = `Deploying ${rdy}/${d.machines.length}`
+              spinner.text = `Deploying services ${rdy}/${d.machines.length}`
             }
 
             if (rdy === d.machines.length) {
