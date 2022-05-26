@@ -5,6 +5,7 @@ import { servicesLsCommand } from './ls'
 import { servicesRemoveCommand } from './remove'
 import { servicesScaleCommand } from './scale'
 import { servicesRestartCommand } from './restart'
+import { servicesWaitCommand } from './wait'
 
 program
   .command('services')
@@ -14,3 +15,4 @@ program
   .addCommand(addGlobalOptions(servicesRemoveCommand))
   .addCommand(addGlobalOptions(servicesScaleCommand))
   .addCommand(addGlobalOptions(servicesRestartCommand))
+  .addCommand(addGlobalOptions(servicesWaitCommand))
