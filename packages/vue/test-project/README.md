@@ -3,19 +3,19 @@
 ## Project setup
 
 ```
-npx install
+npm run install
 ```
 
 ### Compiles and hot-reloads for development
 
 ```
-npx serve
+npm run dev
 ```
 
 ### Compiles and minifies for production
 
 ```
-npx build
+npm run build
 ```
 
 ### Customize configuration

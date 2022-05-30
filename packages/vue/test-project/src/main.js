@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { createClient } from '../../'
+import { createClient } from '@based/vue'
 import App from './Main.vue'
 
 const app = createApp(App)

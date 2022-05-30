@@ -25,8 +25,9 @@
 <script>
 import HelloWorld from './components/HelloWorld.vue'
 import InputText from './components/InputText.vue'
-import { useData, useClient } from '../../'
-import { ref } from 'vue'
+import { useData, useClient } from '@based/vue'
+
+console.log(useData)
 
 export default {
   name: 'App',
