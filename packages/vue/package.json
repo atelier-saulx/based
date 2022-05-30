@@ -1,6 +1,6 @@
 {
   "name": "@based/vue",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc",
@@ -10,9 +10,6 @@
   "peerDependencies": {
     "vue": "^3.0.0",
     "@based/client": "^2.3.3"
-  },
-  "dependencies": {
-    "@based/client": "2.7.4"
   },
   "devDependencies": {
     "vue": "^3.0.0",
