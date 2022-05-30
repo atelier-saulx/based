@@ -34,6 +34,7 @@ export const BasedContext = createContext<BasedContextType>({
 export const defaultCreateClient: CreateClient = (selector) => {
   if (typeof selector === 'object') {
     if (
+      typeof process !== 'undefined' &&
       process.env.CLUSTER &&
       process.env.CLUSTER.startsWith('local') &&
       !selector.cluster

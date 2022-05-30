@@ -10,7 +10,9 @@ const wait = (t = 1e3) =>
   })
 
 const SELECTOR_LIST =
-  process?.env?.CLOUD === 'local'
+  typeof process === 'undefined'
+    ? undefined
+    : process?.env?.CLOUD === 'local'
     ? `http://${process?.env?.SERVICE_SELECTOR_LIST}`
     : `https://${process?.env?.SERVICE_SELECTOR_LIST}`
 
@@ -18,7 +20,9 @@ let registryIndex = 0
 
 export const getClusterUrl = (cluster?: string): string => {
   if (!cluster) {
-    return process?.env?.SERVICE_SELECTOR_LIST ? SELECTOR_LIST : DEFAULT_CLUSTER
+    return typeof process !== 'undefined' && process?.env?.SERVICE_SELECTOR_LIST
+      ? SELECTOR_LIST
+      : DEFAULT_CLUSTER
   }
   if (cluster === 'local') {
     return 'http://localhost:7022'
@@ -77,9 +81,9 @@ export default async function getService(
     }
 
     const {
-      org = process?.env?.ORG,
-      project = process?.env?.PROJECT,
-      env = process?.env?.ENV,
+      org = typeof process !== 'undefined' && process?.env?.ORG,
+      project = typeof process !== 'undefined' && process?.env?.PROJECT,
+      env = typeof process !== 'undefined' && process?.env?.ENV,
       name,
       key,
       optionalKey,
