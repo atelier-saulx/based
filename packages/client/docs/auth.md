@@ -10,6 +10,36 @@ Along with the `authorize` function, these templates also implement more optiona
 
 The *Based* client also catches exceptions triggered by token expiration. When this happens, it tries to call a `renewToken` function sending it a renew payload that includes, for example, the "refreshToken" used for JWT authorization flow. If that's successful and it returns a new token, it will re-request the data with the new token for transparent renewal.
 
+## Auth data functions
+
+### `authorize`
+
+This data function runs every time the based client tries to call, get, modify or observe data.
+It approves or denies the request depending on its context. See [`authorize`](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/authorize.md)
+Returns boolean value allowing or disallowing the connection.
+
+Example: see [here]()
+
+### `login`
+
+Called then the client [login()]() method is called. It should authenticate the user and generate the tokens. Authentication flow is up to the user.
+For example, in a JWT flow, this function will validate the user in the data, sign a token and refreshToken returning them to the client.
+
+Example: see [here]()
+
+### `logout`
+
+When your app logs out a user, it should call the `client.logout()` method. This method calls this data function if it exists. It is meant to have token invalidation and any cleanup that should happen when a user logs out.
+
+Example: see [here]()
+
+### `renewToken`
+
+For auth flows that rely on token renewal. This data function runs when a specific error is triggered in the `authorize` function.
+The result is returned to the client using the `renewToken` client event.
+
+Example: see [here]()
+
 ## Based client methods
 
 ### `client.auth()`
@@ -29,8 +59,8 @@ await client.auth(token, {
 
 ### `client.login()`
 
-Sends email and password to the `login` data function for authentication.
-Returns tokens if successful. Also will authomaticaly set the returned token for the current client.
+This data function sends the email and password to the `login` data function for authentication.
+Returns tokens if successful. Also, it will automatically set the returned token on the current client connection.
 
 #### Usage
 ```javascript
@@ -39,10 +69,23 @@ const tokens = await client.login({email, password})
 
 ### `client.logout()`
 
-Clears the tokens hold by the client and calls the `logout` data function if it exists.
-
+Clears the tokens stored by the client and calls the `logout` data function if it exists.
 
 #### Usage
 ```javascript
 await client.logout() 
 ```
+
+### `client.on('renewToken', fn)`
+
+This event is called when the renewToken data function is run. It is used to handle and persist the newly generated tokens.
+
+#### Usage
+```javascript
+	client.on('renewToken', (renewTokenResult) => {})
+```
+
+
+## How to use
+
+Check [this guide]() for an example of how the use.
