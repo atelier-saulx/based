@@ -18,27 +18,27 @@ This data function runs every time the based client tries to call, get, modify o
 It approves or denies the request depending on its context. See [`authorize`](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/authorize.md)
 Returns boolean value allowing or disallowing the connection.
 
-Example: see [here]()
+Example: see [here](https://github.com/atelier-saulx/based/blob/main/packages/auth-templates/jwt/authorize/authorize.ts)
 
 ### `login`
 
 Called then the client [login()]() method is called. It should authenticate the user and generate the tokens. Authentication flow is up to the user.
 For example, in a JWT flow, this function will validate the user in the data, sign a token and refreshToken returning them to the client.
 
-Example: see [here]()
+Example: see [here](https://github.com/atelier-saulx/based/blob/main/packages/auth-templates/jwt/login/login.ts)
 
 ### `logout`
 
 When your app logs out a user, it should call the `client.logout()` method. This method calls this data function if it exists. It is meant to have token invalidation and any cleanup that should happen when a user logs out.
 
-Example: see [here]()
+Example: see [here](https://github.com/atelier-saulx/based/blob/main/packages/auth-templates/jwt/logout/logout.ts)
 
 ### `renewToken`
 
 For auth flows that rely on token renewal. This data function runs when a specific error is triggered in the `authorize` function.
 The result is returned to the client using the `renewToken` client event.
 
-Example: see [here]()
+Example: see [here](https://github.com/atelier-saulx/based/blob/main/packages/auth-templates/jwt/renewToken/renewToken.ts)
 
 ## Based client methods
 
@@ -88,4 +88,4 @@ This event is called when the renewToken data function is run. It is used to han
 
 ## How to use
 
-Check [this guide]() for an example of how the use.
+Check [this guide](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-howto.md) for an example of how the use.
