@@ -5,7 +5,7 @@ An example with the info on this guide can be foud [here](https://github.com/ate
 
 If you created an environment using the based website, the JWT auth flow template is installed by default. This template includes the `user` type schema, the public and private keys, and the default `authorize`, `login`, `logout`, and `renewToken` data functions.
 
-These default data functions can be customized to your needs. Add them to your project from [here]() and deploy with the based cli `deploy` command.
+These default data functions can be customized to your needs. Add them to your project from [here](https://github.com/atelier-saulx/based/tree/main/packages/auth-templates/jwt) and deploy with the [based cli `deploy` command](https://github.com/atelier-saulx/based/tree/main/packages/cli#deploy).
 
 ### Adding a user to the database
 
@@ -35,13 +35,13 @@ Let's create a user from a script.
 #### Setting up an apiKey 
 
 If we try to add a user now from a script, we get into a chicken and the egg issue. We don't have an authenticated user to add the user itself. You can work around this while developing using the apiKey functionality.
-This feature lets us create an apikey so we can use based in utility scripts and commands using the _based cli_.
+This feature lets us create an apikey so we can use based in utility scripts and commands using the [based cli](https://github.com/atelier-saulx/based/tree/main/packages/cli).
 
 ```bash
 $ npx based apiKeys add --name auth-demo-api-key --file ./apiKey.key
 ```
 
-This command will create an apiKey called "auth-demo-api-key" and saves its value to a file we can load from the script or use as an argument in the _based cli_.
+This command will create an apiKey called "auth-demo-api-key" and saves its value to a file we can load from the script or use as an argument in the [based cli](https://github.com/atelier-saulx/based/tree/main/packages/cli).
 
 **Note:** You should never store apiKeys as plain text in repositories or use them to make based connections client side.
 
