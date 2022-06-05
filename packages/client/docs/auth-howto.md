@@ -16,17 +16,17 @@ We'll add it through a script from the developer's computer environment as it al
 The `user` type installed by default as the following schema:
 
 ```
-	...
-	types: {
-		user: {
-			prefix: 'us',
-			fields: {
-				name: { type: 'string' },
-				email: { type: 'email' },
-				password: { type: 'digest' },
-			},
-		},
-	},
+  ...
+  types: {
+    user: {
+      prefix: 'us',
+      fields: {
+        name: { type: 'string' },
+        email: { type: 'email' },
+        password: { type: 'digest' },
+      },
+    },
+  },
 ```
 
 It is ready to accept users with an email, name string, and hashed password.
@@ -100,18 +100,18 @@ import based from '@based/client'
 // ...
 
 
-	<button
-		onClick={async () => {
-			const { token, refreshToken } = await client.login({
-				email,
-				password,
-			})
-			setToken(token)
-			setRefreshToken(refreshToken)
-		}}
-	>
-		Login
-	</button>
+  <button
+    onClick={async () => {
+      const { token, refreshToken } = await client.login({
+        email,
+        password,
+      })
+      setToken(token)
+      setRefreshToken(refreshToken)
+    }}
+  >
+    Login
+  </button>
 ```
 
 The `.login()` method takes the email and password supplied by the user, passes it to the `login` data function, and returns the result. Usually, a token and refreshToken if it was successful.
@@ -122,10 +122,10 @@ You should also store your token and refreshToken if you want the session to per
 If your user already logged in and you persisted the tokens, you can authenticate it with the still valid token instead of login in.
 Example:
 ```javascript
-	// ...
-	if (token) {
-		await client.auth(token, { refreshToken })
-	}
+  // ...
+  if (token) {
+    await client.auth(token, { refreshToken })
+  }
 ```
 
 The `refreshToken` is also stored by the based client so it can be requested by the based servers if the token is expired and it tries to renew the token automatically.
@@ -136,16 +136,16 @@ You should run the based client `.logout()` method to explicitly log out a user.
 
 Example:
 ```javascript
-	// ...
-	<button
-		onClick={async () => {
-			await client.logout()
-			setToken(null)
-			setRefreshToken(null)
-		}}
-	>
-		Logout
-	</button>
+  // ...
+  <button
+    onClick={async () => {
+      await client.logout()
+      setToken(null)
+      setRefreshToken(null)
+    }}
+  >
+    Logout
+  </button>
 ```
 
 You should also clean the stored token and refreshToken from the browser.
@@ -157,10 +157,10 @@ For this we have the `renewToken` based client event that we can listen.
 Example:
 
 ```javascript
-	// ...
+  // ...
   const renewHandler = ({ token: newToken }: { token: string }) => {
     setToken(newToken)
   }
 
-	client.on('renewToken', renewHandler)
+  client.on('renewToken', renewHandler)
 ```
