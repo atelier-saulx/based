@@ -66,7 +66,7 @@ const apiKey = fs.readFileSync('../apiKey.key', 'utf8')
   // Create a based client
   const client = based(basedConfig)
 
-  // Autheicate client with an apiKey
+  // Authenticate client with an apiKey
   await client.auth(apiKey, { isApiKey: true })
 
   // Add our user
