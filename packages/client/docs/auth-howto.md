@@ -13,7 +13,7 @@ You now need to add a user to the database so that he can log in.
 There are several ways to do this, including the data editor in the Based website admin area.
 We'll add it through a script from the developer's computer environment as it also shows how you can add this functionality from your own apps.
 
-The `user` type installed by default as the following schema:
+The `user` type installed by default has the following schema:
 
 ```
   ...
