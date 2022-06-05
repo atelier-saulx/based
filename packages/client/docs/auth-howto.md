@@ -1,6 +1,7 @@
 ## JWT Auth Flow HowTo
 
 A short guide to setting up the JWT authentication flow using based.
+An example with the info on this guide can be foud [here](https://github.com/atelier-saulx/auth-demo)
 
 If you created an environment using the based website, the JWT auth flow template is installed by default. This template includes the `user` type schema, the public and private keys, and the default `authorize`, `login`, `logout`, and `renewToken` data functions.
 
