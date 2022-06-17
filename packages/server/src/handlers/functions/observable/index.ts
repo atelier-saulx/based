@@ -12,6 +12,7 @@ import { DataListener, ObservableFunction } from '../../../types'
 import { getFunction } from '../../../getFromConfig'
 import { Params } from '../../../Params'
 import { Subscription } from '../../subscription'
+import { SharedConfigurationObservable } from '../../configuration/observable'
 
 export { SharedFunctionObservable } from './SharedObservable'
 export { FunctionObservable } from './Observable'
@@ -64,7 +65,11 @@ export const subscribeFunction = async (
   payload: any,
   dataListener: DataListener
 ): Promise<
-  SharedFunctionObservable | FunctionObservable | Subscription | void
+  | SharedFunctionObservable
+  | FunctionObservable
+  | Subscription
+  | void
+  | SharedConfigurationObservable
 > => {
   const id = generateSubscriptionId(payload, name)
   let subscription = params.server.subscriptions[id]
@@ -109,7 +114,11 @@ export const subscribeFunction = async (
 }
 
 const subscriptionExists = (
-  subscription: SharedFunctionObservable | FunctionObservable | Subscription,
+  subscription:
+    | SharedFunctionObservable
+    | FunctionObservable
+    | Subscription
+    | SharedConfigurationObservable,
   client: Client,
   allwaysSend: 0 | 1 | 2,
   checksum: number

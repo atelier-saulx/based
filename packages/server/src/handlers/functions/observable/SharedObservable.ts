@@ -4,8 +4,10 @@ import {
   RequestTypes,
   SubscriptionData,
   ErrorObject,
-  SubscriptionDiffData,
+  // SubscriptionDiffData,
 } from '@based/client'
+
+import { deepCopy } from '@saulx/utils'
 
 import { createPatch } from '@saulx/diff'
 import { DataListener, ObservableFunction } from '../../../types'
@@ -17,7 +19,10 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 type GenericObject = { [key: string]: any }
 
 export class SharedFunctionObservable {
-  public lastDiff: [GenericObject, number]
+  public lastDiff: number
+  public jsonDiffCache: string
+  public jsonCache: string
+
   public server: BasedServer
   public removeTimer: NodeJS.Timeout
   public id: number
@@ -32,6 +37,7 @@ export class SharedFunctionObservable {
   public errorState: ErrorObject
   public payload: GenericObject
   public state: GenericObject
+
   public checksum: number
   public close: () => void
   public isClosed: boolean
@@ -132,76 +138,81 @@ export class SharedFunctionObservable {
       if (!version) {
         version = !data ? 0 : hashObjectIgnoreKeyOrder(data)
       }
-      let payload: SubscriptionData | SubscriptionDiffData
 
-      if (this.state) {
-        const s = this.state
-        const checksum = this.checksum
-        try {
-          const diff = createPatch(s, data)
+      if (version && version !== this.checksum) {
+        let payload: string // SubscriptionData | SubscriptionDiffData
 
-          this.lastDiff = [diff, checksum]
-          payload = [
-            RequestTypes.SubscriptionDiff,
-            this.id,
-            diff,
-            [checksum, version],
-          ]
-        } catch (err) {
-          // cannot create patch
-          console.error('cannot create patch', err)
-        }
-      }
-      if (!payload) {
-        if (this.lastDiff) {
-          delete this.lastDiff
-        }
-        payload = [RequestTypes.Subscription, this.id, data, version]
-      }
-      // only do this is you see that it is the same data object (so first diff will not be a diff)
-      // remove deep copy here -- way too heavy...
-
-      // lets see...
-
-      // deepCopy
-      // this is such a big waste...
-      // find something for this...
-
-      if (!data) {
-        console.warn(
-          'No data supplied - default to empty object',
-          this.name,
-          this.payload
-        )
-      }
-
-      this.state = data || {}
-
-      this.checksum = version
-
-      if (this.dataListeners) {
-        for (const id in this.dataListeners) {
-          this.dataListeners[id].forEach((fn) => {
-            fn(this.state, this.checksum)
-          })
-        }
-      }
-
-      for (const id in this.clients) {
-        const c = this.clients[id]
-        if (version !== c[1]) {
-          c[1] = version
-
-          c[0].send(payload)
-          if (c[2] === 1) {
-            // have to make it different if it converts to a subscription
-            this.unsubscribe(c[0])
+        if (this.state) {
+          const s = this.state
+          const checksum = this.checksum
+          try {
+            const diff = createPatch(s, data)
+            this.lastDiff = checksum
+            payload =
+              this.jsonDiffCache = `[2,${this.id},${diff},[${checksum},${version}]]`
+          } catch (err) {
+            // cannot create patch
+            console.error('cannot create patch', err)
           }
-        } else if (c[2]) {
-          c[1] = version
-          c[0].send([RequestTypes.Subscription, this.id, null, version])
-          if (c[2] === 1) {
-            this.unsubscribe(c[0])
+        }
+
+        if (!payload) {
+          if (this.lastDiff) {
+            delete this.lastDiff
+          }
+          payload = `[1,${this.id},${JSON.stringify(data)},${version}]`
+          this.jsonCache = payload
+        } else {
+          this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
+        }
+        // only do this is you see that it is the same data object (so first diff will not be a diff)
+        // remove deep copy here -- way too heavy...
+
+        // lets see...
+
+        // deepCopy
+        // this is such a big waste...
+        // find something for this...
+
+        if (!data) {
+          console.warn(
+            'No data supplied - default to empty object',
+            this.name,
+            this.payload
+          )
+        }
+
+        this.state = deepCopy(data) || {}
+
+        if (this.dataListeners) {
+          for (const id in this.dataListeners) {
+            this.dataListeners[id].forEach((fn) => {
+              fn(this.state, this.checksum)
+            })
+          }
+        }
+
+        let sameVersion: string
+
+        for (const id in this.clients) {
+          const c = this.clients[id]
+          if (version !== c[1]) {
+            c[1] = version
+
+            c[0].send(payload)
+            if (c[2] === 1) {
+              // have to make it different if it converts to a subscription
+              this.unsubscribe(c[0])
+            }
+          } else if (c[2]) {
+            if (!sameVersion) {
+              sameVersion = `[1,${this.id},null,${version}]`
+            }
+            c[1] = version
+            c[0].send(sameVersion)
+            if (c[2] === 1) {
+              this.unsubscribe(c[0])
+            }
           }
         }
       }
@@ -304,7 +315,6 @@ export class SharedFunctionObservable {
       client.send(payload)
     } else if (this.state) {
       if (checksum === this.checksum) {
-        // console.info('got version dont re-send')
         if (get) {
           const payload: SubscriptionData = [
             RequestTypes.Subscription,
@@ -321,24 +331,27 @@ export class SharedFunctionObservable {
           this.clients[client.id][1] = this.checksum
         }
         // this send has to be checked dont want to resend if it immediatly updates from the sub
-        if (this.lastDiff && this.lastDiff[1] === checksum) {
-          const payload: SubscriptionDiffData = [
-            RequestTypes.SubscriptionDiff,
-            this.id,
-            this.lastDiff[0],
-            [this.lastDiff[1], checksum],
-          ]
+        if (this.lastDiff === checksum) {
+          //
+
+          // const payload: SubscriptionDiffData = [
+          //   RequestTypes.SubscriptionDiff,
+          //   this.id,
+          //   this.lastDiff[0],
+          //   [this.lastDiff[1], checksum],
+          // ]
           isSend = true
-          client.send(payload)
+          // cache this
+          client.send(this.jsonDiffCache)
         } else {
-          const payload: SubscriptionData = [
-            RequestTypes.Subscription,
-            this.id,
-            this.state,
-            this.checksum,
-          ]
+          // const payload: SubscriptionData = [
+          //   RequestTypes.Subscription,
+          //   this.id,
+          //   this.state,
+          //   this.checksum,
+          // ]
           isSend = true
-          client.send(payload)
+          client.send(this.jsonCache)
         }
       }
     }
@@ -360,13 +373,13 @@ export class SharedFunctionObservable {
       const store = this.clients[client.id]
       if (store) {
         store[1] = this.checksum
-        const payload: SubscriptionData = [
-          RequestTypes.Subscription,
-          this.id,
-          this.state,
-          this.checksum,
-        ]
-        client.send(payload)
+        // const payload: SubscriptionData = [
+        //   RequestTypes.Subscription,
+        //   this.id,
+        //   this.state,
+        //   this.checksum,
+        // ]
+        client.send(this.jsonCache)
       }
     }
   }

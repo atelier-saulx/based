@@ -17,6 +17,7 @@ type GenericObject = { [key: string]: any }
 
 export class SharedConfigurationObservable {
   public lastDiff: [GenericObject, number]
+
   public server: BasedServer
   public removeTimer: NodeJS.Timeout
   public id: number

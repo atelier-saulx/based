@@ -120,6 +120,7 @@ export function useData(
 
   onUnmounted(() => {
     if (subscriberId.value) {
+      // @ts-ignore
       removeSubscriber(client.client, subId.value, subscriberId.value)
     }
   })

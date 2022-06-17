@@ -12,6 +12,7 @@ import parseResponse from './handlers/rest/parseResponse'
 import { Geo } from './types'
 
 import UAParser from 'ua-parser-js'
+import { SharedConfigurationObservable } from './handlers/configuration/observable'
 
 let clientId = 0
 
@@ -56,7 +57,11 @@ export class Client {
   private _ua: Ua
 
   public subscriptions: {
-    [id: string]: Subscription | SharedFunctionObservable | FunctionObservable
+    [id: string]:
+      | Subscription
+      | SharedFunctionObservable
+      | FunctionObservable
+      | SharedConfigurationObservable
   }
 
   public bpTimestamp: number
@@ -317,7 +322,6 @@ export class Client {
         if (!this.backpressureQueue) {
           this.backpressureQueue = []
         }
-
         if (this.backpressureQueue.length) {
           const time = this.backpressureQueue[0][1]
           if (Date.now() - time > 10e3) {
@@ -327,31 +331,29 @@ export class Client {
             return
           }
         }
-
         totalBp++
-
         if (totalBp > 5e3) {
           console.info('Too much bp EXIT process')
           process.exit()
         }
-
         this.backpressureQueue.push([payload, Date.now()])
-
         if (this.backpressureQueue.length > 50) {
           this.backpressureQueue = []
           console.info('too large bp destroy client')
           this.destroy()
           return
         }
-
         console.info(
           'add to bp queue',
           this.backpressureQueue.length,
           this.socket.getBufferedAmount()
         )
       } else {
-        if (!this.socket.send(JSON.stringify(payload))) {
-          // console.info('drain build bp')
+        // buffer directly?
+        if (typeof payload === 'string') {
+          this.socket.send(payload)
+        } else {
+          this.socket.send(JSON.stringify(payload))
         }
       }
     } else {
