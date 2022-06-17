@@ -25,6 +25,8 @@ export * from './meta'
 export * from './clients'
 export * from './gql'
 
+export { InfiniteList } from './components/InfiniteList'
+
 export function useAuth(
   clientSelector?: string | (BasedOpts & { key?: string })
 ): string | false {
