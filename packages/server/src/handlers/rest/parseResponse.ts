@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { RequestTypes, ResponseData } from '@based/client'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import zlib from 'zlib'
 
 import jsonexport from 'jsonexport'
@@ -24,61 +24,107 @@ const ok = (res: uws.HttpResponse) => {
   res.writeHeader('Access-Control-Allow-Headers', 'content-type')
 }
 
-export default (res: uws.HttpResponse, payload: ResponseData, type: 0 | 1) => {
+export default (
+  res: uws.HttpResponse,
+  payload: ResponseData | string,
+  type: 0 | 1,
+  version?: number
+) => {
   if (res.aborted) {
     return
   }
 
   let result: any
-  const reqType = payload[0]
+  let reqType: number
+  let isParsed = false
 
-  if (reqType === RequestTypes.Get) {
-    if (payload[3]) {
-      invalid(res, payload[3], 'Invalid Query')
-      return
-    } else {
-      const r = payload[2]
-      const checksum = hashObjectIgnoreKeyOrder(r)
-      ok(res)
-      res.writeHeader('ETag', String(checksum))
-      res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-      result = r
+  if (typeof payload === 'string') {
+    let secondIndex = 0
+    let lastIndex = 0
+    const len = payload.length - 1
+    for (let i = 4; i < 20; i++) {
+      const s = payload[i]
+
+      if (!secondIndex && s === ',') {
+        secondIndex = i
+        if (lastIndex) {
+          break
+        }
+      }
+
+      if (!lastIndex) {
+        if (payload[len - i] === ',') {
+          lastIndex = len - i
+          if (secondIndex) {
+            break
+          }
+        }
+      }
     }
-  } else if (
-    reqType === RequestTypes.Set ||
-    reqType === RequestTypes.Copy ||
-    reqType === RequestTypes.Configuration ||
-    reqType === RequestTypes.Digest ||
-    reqType === RequestTypes.GetConfiguration ||
-    reqType === RequestTypes.Delete
-  ) {
-    if (payload[3]) {
-      invalid(res, payload[3])
+
+    if (!secondIndex && !lastIndex) {
+      invalid(res, 'Invalid Request')
       return
-    } else {
-      ok(res)
-      result = payload[2]
     }
-  } else if (reqType === RequestTypes.Call) {
-    if (payload[3]) {
-      invalid(res, payload[3])
-      return
-    } else {
-      ok(res)
-      result = payload[2]
-    }
-  } else if (reqType === RequestTypes.Subscription) {
-    if (payload[4]) {
-      invalid(res, payload[4])
-      return
-    } else {
-      ok(res)
-      res.writeHeader('ETag', String(payload[3]))
-      res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-      result = payload[2]
-    }
+
+    result = payload.slice(secondIndex + 1, lastIndex)
+
+    const checksum = version || hash(result)
+    ok(res)
+    res.writeHeader('ETag', String(checksum))
+    res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+    isParsed = true
   } else {
-    invalid(res, 'Invalid Request')
+    reqType = payload[0]
+
+    if (reqType === RequestTypes.Get) {
+      if (payload[3]) {
+        invalid(res, payload[3], 'Invalid Query')
+        return
+      } else {
+        const r = payload[2]
+        const checksum = hashObjectIgnoreKeyOrder(r)
+        ok(res)
+        res.writeHeader('ETag', String(checksum))
+        res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+        result = r
+      }
+    } else if (
+      reqType === RequestTypes.Set ||
+      reqType === RequestTypes.Copy ||
+      reqType === RequestTypes.Configuration ||
+      reqType === RequestTypes.Digest ||
+      reqType === RequestTypes.GetConfiguration ||
+      reqType === RequestTypes.Delete
+    ) {
+      if (payload[3]) {
+        invalid(res, payload[3])
+        return
+      } else {
+        ok(res)
+        result = payload[2]
+      }
+    } else if (reqType === RequestTypes.Call) {
+      if (payload[3]) {
+        invalid(res, payload[3])
+        return
+      } else {
+        ok(res)
+        result = payload[2]
+      }
+    } else if (reqType === RequestTypes.Subscription) {
+      if (payload[4]) {
+        invalid(res, payload[4])
+        return
+      } else {
+        ok(res)
+        res.writeHeader('ETag', String(payload[3]))
+        res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+        result = payload[2]
+      }
+    } else {
+      invalid(res, 'Invalid Request')
+    }
   }
 
   if (reqType === RequestTypes.Digest) {
@@ -96,7 +142,7 @@ export default (res: uws.HttpResponse, payload: ResponseData, type: 0 | 1) => {
     let csvParser
 
     if (type === 0) {
-      parsed = JSON.stringify(result)
+      parsed = isParsed ? result : JSON.stringify(result)
     } else {
       csvParser = jsonexport()
     }
@@ -133,7 +179,9 @@ export default (res: uws.HttpResponse, payload: ResponseData, type: 0 | 1) => {
         if (csvParser) {
           if (!res.aborted) {
             csvParser.pipe(compressor)
-            csvParser.write(Buffer.from(JSON.stringify(result)))
+            csvParser.write(
+              Buffer.from(isParsed ? result : JSON.stringify(result))
+            )
             csvParser.end()
           }
         } else {
@@ -163,7 +211,7 @@ export default (res: uws.HttpResponse, payload: ResponseData, type: 0 | 1) => {
         }
       })
       if (!res.aborted) {
-        csvParser.write(Buffer.from(JSON.stringify(result)))
+        csvParser.write(Buffer.from(isParsed ? result : JSON.stringify(result)))
         csvParser.end()
       }
     } else {

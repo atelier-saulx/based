@@ -74,6 +74,7 @@ test.serial('file', async (t) => {
               version: 'x',
               src: 'http://www.hello.com/flap',
               origin: 'http://www.hello.com/flap',
+              status: 3,
             })
           })
         })

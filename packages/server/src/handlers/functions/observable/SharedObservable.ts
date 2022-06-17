@@ -18,6 +18,8 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 type GenericObject = { [key: string]: any }
 
+console.info('xxx!#@#!!@#!@#')
+
 export class SharedFunctionObservable {
   public lastDiff: number
   public jsonDiffCache: string
@@ -288,6 +290,8 @@ export class SharedFunctionObservable {
 
   // get 0 = normal sub, 1 = get, 2 = sub but force get
   subscribe(client: Client, checksum?: number, get: 0 | 1 | 2 = 0) {
+    console.log('👻 get', get, typeof get, '???')
+
     if (!client.subscriptions) {
       client.subscriptions = {}
     }
@@ -298,12 +302,14 @@ export class SharedFunctionObservable {
     let isSend = false
 
     if (get !== 1) {
+      console.log('2121212', get)
       this.clients[client.id] = [client, checksum, get]
       client.subscriptions[this.id] = this
       this.clientsCnt++
     }
 
     if (this.errorState) {
+      console.log('21123123', 'EWRROR')
       const payload: SubscriptionData = [
         RequestTypes.Subscription,
         this.id,
@@ -314,8 +320,12 @@ export class SharedFunctionObservable {
       isSend = true
       client.send(payload)
     } else if (this.state) {
-      if (checksum === this.checksum) {
+      console.log('👻 2222 xDONE')
+
+      if (checksum && checksum === this.checksum) {
         if (get) {
+          console.log('XXX??')
+
           const payload: SubscriptionData = [
             RequestTypes.Subscription,
             this.id,
@@ -331,7 +341,7 @@ export class SharedFunctionObservable {
           this.clients[client.id][1] = this.checksum
         }
         // this send has to be checked dont want to resend if it immediatly updates from the sub
-        if (this.lastDiff === checksum) {
+        if (checksum && this.lastDiff === checksum) {
           //
 
           // const payload: SubscriptionDiffData = [
@@ -356,7 +366,10 @@ export class SharedFunctionObservable {
       }
     }
 
+    console.log('xxxx', get)
+
     if (get === 1) {
+      console.log('ehhlo')
       if (isSend) {
         this.destroyIfEmpty()
       } else {
@@ -365,6 +378,8 @@ export class SharedFunctionObservable {
         this.clientsCnt++
       }
     }
+
+    console.log('👻 DONE')
   }
 
   sendData(client: Client) {

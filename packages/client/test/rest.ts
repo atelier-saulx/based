@@ -35,7 +35,7 @@ test.after(async () => {
 })
 
 // need to add 'salt' for the hashing function in the db for passwords
-test.serial('rest call request', async (t) => {
+test.serial.only('rest call request', async (t) => {
   const server = await createServer({
     port: 9200,
     db: {
@@ -48,6 +48,8 @@ test.serial('rest call request', async (t) => {
           shared: true,
           observable: true,
           function: async ({ update }) => {
+            console.log('xxx')
+
             update({
               rando: Math.random(),
             })
@@ -173,6 +175,8 @@ test.serial('rest call request', async (t) => {
 
   const i = await fetch('http://localhost:9200/get/a').then((r) => r.json())
 
+  console.log('xxx', i)
+
   t.true(!!i.rando)
 
   const j = await fetch('http://localhost:9200/schema').then((r) => r.json())
@@ -183,7 +187,11 @@ test.serial('rest call request', async (t) => {
   const k = await fetch('http://localhost:9200/digest', {
     method: 'POST',
     body: 'flap',
-  }).then((r) => r.json())
+  })
+    .then((r) => r.json())
+    .catch((err) => {
+      console.info('ERROR', err)
+    })
 
   t.is(k, 'cdae30e6ee84a00994cf3f3e0872c1a3a34d8adaf34b40e613b66d9a591bde72')
 
