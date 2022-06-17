@@ -96,14 +96,7 @@ export function InfiniteList({
         const subId = generateSubscriptionId(payload)
         subs[subId] =
           current.subs[subId] ||
-          addScrollSub(
-            client,
-            subId,
-            payload,
-            offset + limit * i,
-            current,
-            setChecksum
-          )
+          addScrollSub(client, subId, payload, start, current, setChecksum)
       }
 
       for (const subId in current.subs) {
@@ -115,7 +108,7 @@ export function InfiniteList({
 
       current.subs = subs
     }
-  }, [target, client, offset, limit, blocks, query, current])
+  }, [target, client, offset, blocks, query, current]) // dont include limit
 
   useEffect(update, [
     blockHeight,
