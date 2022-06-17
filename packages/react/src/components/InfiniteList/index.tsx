@@ -75,7 +75,7 @@ export function InfiniteList({
         setTimeout(() => {
           for (const subId in subs) {
             const subscriberId = current.subs[subId]
-            removeSubscriber(client.client, subId, subscriberId)
+            removeSubscriber(client.client, Number(subId), subscriberId)
           }
         })
       }
@@ -102,7 +102,7 @@ export function InfiniteList({
       for (const subId in current.subs) {
         if (!(subId in subs)) {
           const subscriberId = current.subs[subId]
-          removeSubscriber(client.client, subId, subscriberId)
+          removeSubscriber(client.client, Number(subId), subscriberId)
         }
       }
 
