@@ -8,14 +8,19 @@ import {
   UnsubscribeMessage,
   SubscriptionData,
   ErrorObject,
-  SubscriptionDiffData,
+  // SubscriptionDiffData,
 } from '@based/client'
 import { DataListener } from '../../types'
 
-type GenericObject = { [key: string]: any }
+// type GenericObject = { [key: string]: any }
 
 export class Subscription {
-  public lastDiff: [GenericObject, number]
+  // public lastDiff: [GenericObject, number]
+
+  public lastDiff: number
+  public jsonDiffCache: string
+  public jsonCache: string
+
   public checksum: number
   public server: BasedServer
   public removeTimer: NodeJS.Timeout
@@ -24,7 +29,6 @@ export class Subscription {
   public clients: { [id: string]: [Client, number] } = {}
   public clientsCnt: number = 0
   public errorState: ErrorObject
-
   public retryTimer: NodeJS.Timeout
 
   initSubscription(query, isSchemaSubscription) {
@@ -45,20 +49,31 @@ export class Subscription {
         if (this.errorState) {
           delete this.errorState
         }
-        let payload: SubscriptionData | SubscriptionDiffData
+        let payload: string
         if (diff) {
-          this.lastDiff = [diff, this.checksum]
-          payload = [
-            RequestTypes.SubscriptionDiff,
-            this.id,
-            diff,
-            [this.checksum, checksum],
-          ]
+          this.lastDiff = this.checksum // [diff, ]
+
+          payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
+            diff
+          )},[${this.checksum},${checksum}]]`
+
+          // payload = [
+          //   RequestTypes.SubscriptionDiff,
+          //   this.id,
+          //   diff,
+          //   [this.checksum, checksum],
+          // ]
+
+          this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${checksum}]`
         } else {
           if (this.lastDiff) {
             delete this.lastDiff
           }
-          payload = [RequestTypes.Subscription, this.id, data, checksum]
+          // payload = [RequestTypes.Subscription, this.id, data, checksum]
+
+          payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
+            data
+          )},${checksum}]`
         }
         for (const id in this.clients) {
           const c = this.clients[id]
@@ -170,24 +185,24 @@ export class Subscription {
       } else {
         this.clients[client.id][1] = this.observable.version
         // this send has to be checked dont want to resend if it immediatly updates from the sub
-        if (this.lastDiff && this.lastDiff[1] === checksum) {
-          const payload: SubscriptionDiffData = [
-            RequestTypes.SubscriptionDiff,
-            this.id,
-            this.lastDiff[0],
-            [this.lastDiff[1], this.observable.version],
-          ]
+        if (this.lastDiff && this.lastDiff === checksum) {
+          // const payload: SubscriptionDiffData = [
+          //   RequestTypes.SubscriptionDiff,
+          //   this.id,
+          //   this.lastDiff[0],
+          //   [this.lastDiff[1], this.observable.version],
+          // ]
 
-          client.send(payload)
+          client.send(this.jsonDiffCache)
         } else {
-          const payload: SubscriptionData = [
-            RequestTypes.Subscription,
-            this.id,
-            this.observable.cache,
-            this.observable.version,
-          ]
+          // const payload: SubscriptionData = [
+          //   RequestTypes.Subscription,
+          //   this.id,
+          //   this.observable.cache,
+          //   this.observable.version,
+          // ]
 
-          client.send(payload)
+          client.send(this.jsonCache)
         }
       }
     } else {
@@ -200,13 +215,13 @@ export class Subscription {
       const store = this.clients[client.id]
       if (store) {
         store[1] = this.observable.version
-        const payload: SubscriptionData = [
-          RequestTypes.Subscription,
-          this.id,
-          this.observable.cache,
-          this.observable.version,
-        ]
-        client.send(payload)
+        // const payload: SubscriptionData = [
+        //   RequestTypes.Subscription,
+        //   this.id,
+        //   this.observable.cache,
+        //   this.observable.version,
+        // ]
+        client.send(this.jsonCache)
       }
     }
   }

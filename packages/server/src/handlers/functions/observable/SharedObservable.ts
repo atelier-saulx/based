@@ -150,8 +150,9 @@ export class SharedFunctionObservable {
           try {
             const diff = createPatch(s, data)
             this.lastDiff = checksum
-            payload =
-              this.jsonDiffCache = `[2,${this.id},${diff},[${checksum},${version}]]`
+            payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
+              diff
+            )},[${checksum},${version}]]`
           } catch (err) {
             // cannot create patch
             console.error('cannot create patch', err)
@@ -290,8 +291,6 @@ export class SharedFunctionObservable {
 
   // get 0 = normal sub, 1 = get, 2 = sub but force get
   subscribe(client: Client, checksum?: number, get: 0 | 1 | 2 = 0) {
-    console.log('👻 get', get, typeof get, '???')
-
     if (!client.subscriptions) {
       client.subscriptions = {}
     }
@@ -302,14 +301,12 @@ export class SharedFunctionObservable {
     let isSend = false
 
     if (get !== 1) {
-      console.log('2121212', get)
       this.clients[client.id] = [client, checksum, get]
       client.subscriptions[this.id] = this
       this.clientsCnt++
     }
 
     if (this.errorState) {
-      console.log('21123123', 'EWRROR')
       const payload: SubscriptionData = [
         RequestTypes.Subscription,
         this.id,
@@ -320,12 +317,8 @@ export class SharedFunctionObservable {
       isSend = true
       client.send(payload)
     } else if (this.state) {
-      console.log('👻 2222 xDONE')
-
       if (checksum && checksum === this.checksum) {
         if (get) {
-          console.log('XXX??')
-
           const payload: SubscriptionData = [
             RequestTypes.Subscription,
             this.id,
