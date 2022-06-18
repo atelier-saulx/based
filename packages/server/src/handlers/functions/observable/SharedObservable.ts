@@ -18,8 +18,6 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 type GenericObject = { [key: string]: any }
 
-console.info('xxx!#@#!!@#!@#')
-
 export class SharedFunctionObservable {
   public lastDiff: number
   public jsonDiffCache: string
@@ -162,6 +160,7 @@ export class SharedFunctionObservable {
         if (!payload) {
           if (this.lastDiff) {
             delete this.lastDiff
+            delete this.jsonDiffCache
           }
           payload = `[1,${this.id},${JSON.stringify(data)},${version}]`
           this.jsonCache = payload
@@ -359,10 +358,7 @@ export class SharedFunctionObservable {
       }
     }
 
-    console.log('xxxx', get)
-
     if (get === 1) {
-      console.log('ehhlo')
       if (isSend) {
         this.destroyIfEmpty()
       } else {
@@ -371,8 +367,6 @@ export class SharedFunctionObservable {
         this.clientsCnt++
       }
     }
-
-    console.log('👻 DONE')
   }
 
   sendData(client: Client) {

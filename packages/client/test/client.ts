@@ -33,6 +33,11 @@ test.before(async () => {
   db = selvaServer.selvaClient
   await selvaServer.selvaClient.updateSchema({
     types: {
+      somethingElse: {
+        fields: {
+          name: { type: 'string' },
+        },
+      },
       thing: {
         fields: {
           name: { type: 'string' },
@@ -232,6 +237,67 @@ test.serial('Corrupt data in subscriptions', async (t) => {
 
   client.disconnect()
   await server.destroy()
+})
+
+test.serial.only('subscription + diffs', async (t) => {
+  const server = await createServer({
+    port: 9910,
+    db: {
+      host: 'localhost',
+      port: 9091,
+    },
+  })
+
+  const client = based({
+    url: async () => {
+      await wait(200)
+      return 'ws://localhost:9910'
+    },
+  })
+
+  const subsResults = []
+
+  client.observe(
+    {
+      things: {
+        name: true,
+        id: true,
+        nested: true,
+        $list: {
+          $find: {
+            $traverse: 'children',
+            $filter: {
+              $operator: '=',
+              $value: 'somethingElse',
+              $field: 'type',
+            },
+          },
+        },
+      },
+    },
+    (d) => {
+      subsResults.push(deepCopy(d))
+    }
+  )
+
+  await wait(100)
+
+  const { id } = await client.set({
+    type: 'somethingElse',
+    name: 'mysnurx',
+  })
+
+  console.info(id)
+
+  await wait(100)
+
+  console.info(subsResults)
+
+  await wait(1000)
+
+  client.disconnect()
+  await server.destroy()
+  t.deepEqual(server.listenSocket, null)
 })
 
 test.serial('Error handling', async (t) => {

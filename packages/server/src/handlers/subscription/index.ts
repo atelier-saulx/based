@@ -68,6 +68,7 @@ export class Subscription {
         } else {
           if (this.lastDiff) {
             delete this.lastDiff
+            delete this.jsonDiffCache
           }
           // payload = [RequestTypes.Subscription, this.id, data, checksum]
 
@@ -81,6 +82,8 @@ export class Subscription {
             c[1] = checksum
             c[0].send(payload)
           }
+          // else if waiting for initial get... ?
+          // TODO: may need fix
         }
         this.checksum = checksum
       },
