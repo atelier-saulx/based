@@ -9,7 +9,7 @@
   },
   "peerDependencies": {
     "vue": "^3.0.0",
-    "@based/client": "^2.3.3"
+    "@based/client": "^2.8.0"
   },
   "devDependencies": {
     "vue": "^3.0.0",
