@@ -27,6 +27,7 @@ import { addToQueue, drainQueue, stopDrainQueue } from './queue'
 import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest, renewToken } from './auth'
+import defaultDebug from './debug'
 
 export * from '@based/types'
 
@@ -37,7 +38,19 @@ export class BasedClient {
     this.based = based
   }
 
-  debug?: (message: any, type: 'incoming' | 'outgoing') => void
+  debugInternal?: (message: any, type: 'incoming' | 'outgoing') => void
+
+  get debug() {
+    return this.debugInternal
+  }
+
+  set debug(v: true | ((message: any, type: 'incoming' | 'outgoing') => void)) {
+    if (v === true) {
+      this.debugInternal = defaultDebug
+    } else {
+      this.debugInternal = v
+    }
+  }
 
   token: string
 
@@ -174,12 +187,13 @@ export class BasedClient {
   }
 
   onData(d) {
-    if (this.debug) {
-      this.debug(d, 'incoming')
-    }
-
     try {
       const data: ResponseData = JSON.parse(d.data)
+
+      if (this.debugInternal) {
+        this.debugInternal(data, 'incoming')
+      }
+
       const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
         this.retryingRenewToken = false

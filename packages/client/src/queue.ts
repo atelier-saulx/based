@@ -36,8 +36,8 @@ export const drainQueue = (client: BasedClient) => {
         client.queue = []
         client.subscriptionQueue = []
 
-        if (client.debug) {
-          client.debug(queue, 'outgoing')
+        if (client.debugInternal) {
+          client.debugInternal(queue, 'outgoing')
         }
 
         client.connection.ws.send(JSON.stringify(queue))

@@ -137,8 +137,10 @@ export class Subscription {
     this.initSubscription(query, isSchemaSubscription)
   }
 
+  // eslint-disable-next-line
   unsubscribeDataListener(client: Client, fn: DataListener, id?: string) {}
 
+  // eslint-disable-next-line
   subscribeDataListener(client: Client, fn: DataListener, id?: string) {}
 
   unsubscribe(client: Client) {

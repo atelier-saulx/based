@@ -5,6 +5,7 @@ export const color = (
   color: 'white' | 'blue' | 'red' | 'green' | 'brightBlue' | 'brightRed'
 ): string => {
   if (typeof window !== 'undefined') {
+    // can also add colors / styling in console
     return str
   }
   const colors = {

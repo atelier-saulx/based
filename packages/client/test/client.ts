@@ -255,14 +255,22 @@ test.serial.only('subscription + diffs', async (t) => {
     },
   })
 
+  let lastIncoming: any
+
+  client.client.debug = (msg, type) => {
+    if (type === 'incoming') {
+      lastIncoming = msg
+    }
+  }
+
+  // client.client.debug = true
+
   const subsResults = []
 
   client.observe(
     {
       somethingElse: {
         name: true,
-        id: true,
-        nested: true,
         $list: {
           $find: {
             $traverse: 'children',
@@ -280,28 +288,47 @@ test.serial.only('subscription + diffs', async (t) => {
     }
   )
 
-  await wait(100)
+  await wait(500)
 
   const { id } = await client.set({
     type: 'somethingElse',
     name: 'a',
   })
 
-  console.info(id)
+  await wait(500)
 
-  await wait(100)
-
-  t.is(subsResults.length, 1)
-  t.is(subsResults[0].somethingElse[0].name, 'a')
+  t.is(subsResults.length, 2)
+  t.is(subsResults[1].somethingElse[0].name, 'a')
 
   await client.set({ $id: id, name: 'b' })
 
   // check if diff
 
-  await wait(100)
+  await wait(300)
 
-  t.is(subsResults.length, 2)
-  t.is(subsResults[0].somethingElse[0].name, 'b')
+  t.deepEqual(lastIncoming, [
+    2,
+    1037856915581,
+    {
+      somethingElse: [
+        2,
+        [
+          1,
+          [
+            2,
+            0,
+            {
+              name: [0, 'b'],
+            },
+          ],
+        ],
+      ],
+    },
+    [7097562109153, 1425197002754],
+  ])
+
+  t.is(subsResults.length, 3)
+  t.is(subsResults[2].somethingElse[0].name, 'b')
 
   await wait(1000)
 
