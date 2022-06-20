@@ -265,7 +265,7 @@ export class BasedClient {
         }
       }
     } catch (err) {
-      console.error('Received incorrect data ', d)
+      console.error('Received incorrect data ', d.data)
     }
   }
 }

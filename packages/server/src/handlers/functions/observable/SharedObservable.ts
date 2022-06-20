@@ -81,7 +81,7 @@ export class SharedFunctionObservable {
           payload,
           auth: err.name === 'AuthorizationError',
         }
-        console.error('Make observable error', this.name, err)
+        // console.error('Make observable error', this.name, err)
 
         if (fn) {
           fn(null, 0, errObject)
@@ -140,10 +140,11 @@ export class SharedFunctionObservable {
       }
 
       if (version && version !== this.checksum) {
-        let payload: string // SubscriptionData | SubscriptionDiffData
+        let payload: string
 
         if (this.state) {
           const s = this.state
+
           const checksum = this.checksum
           try {
             const diff = createPatch(s, data)
@@ -157,6 +158,8 @@ export class SharedFunctionObservable {
           }
         }
 
+        this.checksum = version
+
         if (!payload) {
           if (this.lastDiff) {
             delete this.lastDiff
@@ -167,14 +170,6 @@ export class SharedFunctionObservable {
         } else {
           this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
         }
-        // only do this is you see that it is the same data object (so first diff will not be a diff)
-        // remove deep copy here -- way too heavy...
-
-        // lets see...
-
-        // deepCopy
-        // this is such a big waste...
-        // find something for this...
 
         if (!data) {
           console.warn(
@@ -334,24 +329,9 @@ export class SharedFunctionObservable {
         }
         // this send has to be checked dont want to resend if it immediatly updates from the sub
         if (checksum && this.lastDiff === checksum) {
-          //
-
-          // const payload: SubscriptionDiffData = [
-          //   RequestTypes.SubscriptionDiff,
-          //   this.id,
-          //   this.lastDiff[0],
-          //   [this.lastDiff[1], checksum],
-          // ]
           isSend = true
-          // cache this
           client.send(this.jsonDiffCache)
         } else {
-          // const payload: SubscriptionData = [
-          //   RequestTypes.Subscription,
-          //   this.id,
-          //   this.state,
-          //   this.checksum,
-          // ]
           isSend = true
           client.send(this.jsonCache)
         }
@@ -370,17 +350,10 @@ export class SharedFunctionObservable {
   }
 
   sendData(client: Client) {
-    // this is easy to emulate
     if (this.checksum && !this.errorState) {
       const store = this.clients[client.id]
       if (store) {
         store[1] = this.checksum
-        // const payload: SubscriptionData = [
-        //   RequestTypes.Subscription,
-        //   this.id,
-        //   this.state,
-        //   this.checksum,
-        // ]
         client.send(this.jsonCache)
       }
     }

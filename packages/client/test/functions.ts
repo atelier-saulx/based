@@ -190,6 +190,7 @@ test.serial('observable functions', async (t) => {
               })
             }, 500)
             return () => {
+              console.info('CLOSE CLOSE CLOSE')
               closedCnt++
               clearInterval(interval)
             }
@@ -205,11 +206,18 @@ test.serial('observable functions', async (t) => {
     },
   })
 
+  let lastIncoming: any
+
+  client.client.debug = (msg, type) => {
+    if (type === 'incoming') {
+      lastIncoming = msg
+    }
+  }
+
   try {
     await client.observe('flappie', () => {})
-  } catch (err) {
-    console.error(err)
-  }
+    t.fail('Non existing observable fn should throw')
+  } catch (err) {}
 
   const close = await client.observe('counter', () => {})
 
@@ -217,21 +225,19 @@ test.serial('observable functions', async (t) => {
 
   await close()
 
-  await wait(3250)
-
+  await wait(5250)
   t.is(closedCnt, 1)
 
   try {
     await client.observe('advanced', query, () => {})
   } catch (err) {
-    console.error(err)
+    t.fail('correct payload should not throw')
   }
 
   try {
     await client.observe('advanced', { x: 'nurky' }, () => {})
-  } catch (err) {
-    console.error(err)
-  }
+    t.fail('Wrong payload for observe - needs to throw')
+  } catch (err) {}
 
   await client.set({
     type: 'thing',
@@ -244,7 +250,7 @@ test.serial('observable functions', async (t) => {
 
   client.disconnect()
 
-  t.pass()
+  t.pass('everything clear')
 })
 
 test.serial('observable functions + get', async (t) => {
@@ -400,7 +406,7 @@ test.serial('observable functions + get', async (t) => {
   await server5.destroy()
 })
 
-test.serial.only('nested observable', async (t) => {
+test.serial('nested observable', async (t) => {
   const makeServer = async () => {
     return createServer({
       port: 9100,
