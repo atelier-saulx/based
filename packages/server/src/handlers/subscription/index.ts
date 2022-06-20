@@ -51,30 +51,42 @@ export class Subscription {
         }
         let payload: string
         if (diff) {
-          this.lastDiff = this.checksum // [diff, ]
+          this.lastDiff = this.checksum
 
-          payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
-            diff
-          )},[${this.checksum},${checksum}]]`
+          if (isSchemaSubscription) {
+            payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
+              diff
+            )},["${this.checksum}","${checksum}"]]`
+          } else {
+            payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
+              diff
+            )},[${this.checksum},${checksum}]]`
+          }
 
-          // payload = [
-          //   RequestTypes.SubscriptionDiff,
-          //   this.id,
-          //   diff,
-          //   [this.checksum, checksum],
-          // ]
-
-          this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${checksum}]`
+          if (isSchemaSubscription) {
+            this.jsonCache = `[1,${this.id},${JSON.stringify(
+              data
+            )},"${checksum}"]`
+          } else {
+            this.jsonCache = `[1,${this.id},${JSON.stringify(
+              data
+            )},${checksum}]`
+          }
         } else {
           if (this.lastDiff) {
             delete this.lastDiff
             delete this.jsonDiffCache
           }
-          // payload = [RequestTypes.Subscription, this.id, data, checksum]
 
-          payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
-            data
-          )},${checksum}]`
+          if (isSchemaSubscription) {
+            payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
+              data
+            )},"${checksum}"]`
+          } else {
+            payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
+              data
+            )},${checksum}]`
+          }
         }
         for (const id in this.clients) {
           const c = this.clients[id]
