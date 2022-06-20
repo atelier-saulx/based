@@ -228,6 +228,8 @@ test.serial('observable functions', async (t) => {
   await wait(5250)
   t.is(closedCnt, 1)
 
+  // lastIncoming
+
   try {
     await client.observe('advanced', query, () => {})
   } catch (err) {
@@ -253,7 +255,7 @@ test.serial('observable functions', async (t) => {
   t.pass('everything clear')
 })
 
-test.serial('observable functions + get', async (t) => {
+test.serial.only('observable functions + get', async (t) => {
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -310,7 +312,7 @@ test.serial('observable functions + get', async (t) => {
 
   t.true(!!x.things.find((v) => v.name === 'snurk'))
 
-  await wait(3250)
+  await wait(5250)
 
   t.is(Object.keys(server.subscriptions).length, 0)
 
@@ -322,7 +324,7 @@ test.serial('observable functions + get', async (t) => {
 
   t.true(!!y.things.find((v) => v.name === 'snurk'))
 
-  await wait(3250)
+  await wait(5250)
 
   t.is(Object.keys(server2.subscriptions).length, 0)
 
@@ -361,7 +363,7 @@ test.serial('observable functions + get', async (t) => {
     getReceived++
   })
 
-  await wait(500)
+  await wait(5000)
 
   client
     .observe('advanced', query, () => {
@@ -373,14 +375,14 @@ test.serial('observable functions + get', async (t) => {
 
   const server4 = await makeServer()
 
-  await wait(500)
+  await wait(1000)
   t.is(Object.keys(server4.subscriptions).length, 1)
   close()
 
   t.is(getReceived, 2)
   t.is(subReceived, 2)
 
-  await wait(3250)
+  await wait(6000)
   t.is(Object.keys(server4.subscriptions).length, 0)
 
   await server4.destroy()
