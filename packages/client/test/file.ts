@@ -18,6 +18,7 @@ test.before(async () => {
           version: { type: 'string' },
           src: { type: 'url' },
           createdAt: { type: 'string' },
+          statusText: { type: 'string' },
           progress: { type: 'number' },
           origin: { type: 'url' },
           size: { type: 'number' },
