@@ -259,7 +259,7 @@ test.serial.only('subscription + diffs', async (t) => {
 
   client.observe(
     {
-      things: {
+      somethingElse: {
         name: true,
         id: true,
         nested: true,
@@ -293,6 +293,8 @@ test.serial.only('subscription + diffs', async (t) => {
 
   await client.set({ $id: id, name: 'b' })
 
+  // check if diff
+
   await wait(100)
 
   console.info(JSON.stringify(subsResults, null, 2))
@@ -301,6 +303,7 @@ test.serial.only('subscription + diffs', async (t) => {
 
   client.disconnect()
   await server.destroy()
+
   t.deepEqual(server.listenSocket, null)
 })
 
