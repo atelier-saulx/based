@@ -223,12 +223,21 @@ test.serial('observable functions', async (t) => {
 
   await wait(3e3)
 
-  await close()
+  console.info(JSON.stringify(lastIncoming, null, 2))
+
+  t.deepEqual(lastIncoming, [
+    2,
+    1625053507847,
+    {
+      cnt: [0, 6],
+    },
+    [6513385587101, 5622279198622],
+  ])
+
+  close()
 
   await wait(5250)
   t.is(closedCnt, 1)
-
-  // lastIncoming
 
   try {
     await client.observe('advanced', query, () => {})
@@ -255,7 +264,7 @@ test.serial('observable functions', async (t) => {
   t.pass('everything clear')
 })
 
-test.serial.only('observable functions + get', async (t) => {
+test.serial('observable functions + get', async (t) => {
   const makeServer = async () => {
     return createServer({
       port: 9100,
@@ -529,7 +538,7 @@ test.serial('observable functions + get + internal', async (t) => {
 
   close()
 
-  await wait(8e3)
+  await wait(12e3)
 
   t.is(Object.keys(server.subscriptions).length, 0)
 
@@ -606,7 +615,7 @@ test.serial(
 
     client.disconnect()
 
-    await wait(8e3)
+    await wait(12e3)
 
     t.is(Object.keys(server.subscriptions).length, 0)
 
@@ -691,7 +700,7 @@ test.serial('observable functions + internal + normal', async (t) => {
 
   close()
 
-  await wait(8e3)
+  await wait(12e3)
 
   t.is(Object.keys(server.subscriptions).length, 0)
 
@@ -756,7 +765,7 @@ test.serial('observable functions + get observable', async (t) => {
 
   t.true(!!x.a.rando)
 
-  await wait(8e3)
+  await wait(12e3)
 
   t.is(Object.keys(server.subscriptions).length, 0)
 
