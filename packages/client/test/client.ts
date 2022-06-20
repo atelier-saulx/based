@@ -239,7 +239,7 @@ test.serial('Corrupt data in subscriptions', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('subscription + diffs', async (t) => {
+test.serial('subscription + diffs', async (t) => {
   const server = await createServer({
     port: 9910,
     db: {
@@ -262,8 +262,6 @@ test.serial.only('subscription + diffs', async (t) => {
       lastIncoming = msg
     }
   }
-
-  // client.client.debug = true
 
   const subsResults = []
 
