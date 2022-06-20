@@ -284,14 +284,18 @@ test.serial.only('subscription + diffs', async (t) => {
 
   const { id } = await client.set({
     type: 'somethingElse',
-    name: 'mysnurx',
+    name: 'a',
   })
 
   console.info(id)
 
   await wait(100)
 
-  console.info(subsResults)
+  await client.set({ $id: id, name: 'b' })
+
+  await wait(100)
+
+  console.info(JSON.stringify(subsResults, null, 2))
 
   await wait(1000)
 
