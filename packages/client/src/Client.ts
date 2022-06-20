@@ -37,11 +37,16 @@ export class BasedClient {
     this.based = based
   }
 
+  debug?: (message: any, type: 'incoming' | 'outgoing') => void
+
   token: string
+
   renewOptions: {
     refreshToken?: string
   } & { [key: string]: any }
+
   sendTokenOptions: SendTokenOptions
+
   retryingRenewToken: boolean
 
   beingAuth: boolean
@@ -169,6 +174,10 @@ export class BasedClient {
   }
 
   onData(d) {
+    if (this.debug) {
+      this.debug(d, 'incoming')
+    }
+
     try {
       const data: ResponseData = JSON.parse(d.data)
       const [type, reqId, payload, err, subscriptionErr] = data

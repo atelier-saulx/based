@@ -291,13 +291,17 @@ test.serial.only('subscription + diffs', async (t) => {
 
   await wait(100)
 
+  t.is(subsResults.length, 1)
+  t.is(subsResults[0].somethingElse[0].name, 'a')
+
   await client.set({ $id: id, name: 'b' })
 
   // check if diff
 
   await wait(100)
 
-  console.info(JSON.stringify(subsResults, null, 2))
+  t.is(subsResults.length, 2)
+  t.is(subsResults[0].somethingElse[0].name, 'b')
 
   await wait(1000)
 
