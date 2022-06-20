@@ -32,7 +32,7 @@ test.after(async () => {
   await db.destroy()
 })
 
-test.serial.only('call functions from db schema', async (t) => {
+test.serial('call functions from db schema', async (t) => {
   // maybe make a small selva helper as well (can go into a function)
   const store = {
     schematimes: {
