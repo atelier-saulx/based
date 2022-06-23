@@ -21,13 +21,39 @@ const init = async () => {
       },
     },
   })
+
+  let i = 0
+
   await createServer.default({
     port: 9101,
     db: {
       host: 'localhost',
       port: 9099,
     },
+    config: {
+      functions: {
+        bla: {
+          observable: true,
+          function: async ({ update }) => {
+            const interval = setInterval(() => {
+              update({ cnt: i++ })
+            }, 0)
+            return () => {
+              clearInterval(interval)
+            }
+          },
+        },
+      },
+    },
   })
+
+  let p = i
+  setInterval(() => {
+    console.info('send', i, i - p, '/sec')
+    p = i
+  }, 1e3)
+
+  // server
 
   console.info('Started server!')
 }
