@@ -349,6 +349,8 @@ export class Client {
           this.socket.getBufferedAmount()
         )
       } else {
+        // lets do better with backpressure
+
         // buffer directly?
         if (typeof payload === 'string') {
           this.socket.send(payload)
