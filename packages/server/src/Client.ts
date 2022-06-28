@@ -313,6 +313,8 @@ export class Client {
   }
 
   send(payload: any) {
+    // this has to become different...
+
     // here we are going to add checksum ALLWAYS
     if (this.res) {
       parseResponse(this.res, payload, this.type)
@@ -351,8 +353,15 @@ export class Client {
       } else {
         // lets do better with backpressure
 
+        // if client.protocol = 'binary'
+        // avro-js
+
+        if (payload instanceof Uint8Array || payload instanceof Buffer) {
+          this.socket.send(payload, true)
+        }
+
         // buffer directly?
-        if (typeof payload === 'string') {
+        else if (typeof payload === 'string') {
           this.socket.send(payload)
         } else {
           this.socket.send(JSON.stringify(payload))

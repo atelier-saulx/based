@@ -28,6 +28,28 @@ import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest, renewToken } from './auth'
 import defaultDebug from './debug'
+// import avro from 'avro-js'
+
+// const subType = avro.parse({
+//   name: 'Subscription',
+//   type: 'record',
+//   fields: [
+//     { name: 'id', type: 'long' },
+//     { name: 'version', type: 'long' },
+//     { name: 'data', type: 'string' }, // can type it for queries
+//   ],
+// })
+
+// const subDiffType = avro.parse({
+//   name: 'SubscriptionDiff',
+//   type: 'record',
+//   fields: [
+//     { name: 'id', type: 'long' },
+//     { name: 'version', type: 'long' },
+//     { name: 'fromVersion', type: 'long' },
+//     { name: 'data', type: 'string' }, // can type it for queries - which is AMAZING
+//   ],
+// })
 
 export * from '@based/types'
 
@@ -188,6 +210,12 @@ export class BasedClient {
 
   onData(d) {
     try {
+      // if (d.)
+
+      if (d.data instanceof Blob) {
+        // console.log(subType.fromBuffer(d.data))
+      }
+
       const data: ResponseData = JSON.parse(d.data)
 
       if (this.debugInternal) {

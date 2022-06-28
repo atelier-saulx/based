@@ -9,7 +9,10 @@ const init = async () => {
     },
   })
 
-  client.client.debug = true
+  // client.client.debug = true
+  client.observe('bla', () => {})
+
+  // client.observe({ id: true }, () => {})
 }
 
 init()

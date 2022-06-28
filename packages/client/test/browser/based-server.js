@@ -33,11 +33,12 @@ const init = async () => {
     config: {
       functions: {
         bla: {
+          shared: true,
           observable: true,
           function: async ({ update }) => {
             const interval = setInterval(() => {
               update({ cnt: i++ })
-            }, 0)
+            }, 1000)
             return () => {
               clearInterval(interval)
             }
@@ -51,7 +52,7 @@ const init = async () => {
   setInterval(() => {
     console.info('send', i, i - p, '/sec')
     p = i
-  }, 1e3)
+  }, 10e3)
 
   // server
 
