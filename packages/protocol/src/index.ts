@@ -3,6 +3,9 @@ import { RequestTypes } from '@based/types'
 import zlib from 'node:zlib'
 
 import jsonpack from 'jsonpack'
+const createCompress = require('compress-brotli')
+
+import fflate from 'fflate'
 
 import {
   MsgPackEncoderFast,
@@ -13,47 +16,87 @@ export const incomingTypes = {}
 
 export const outGoingTypes = {}
 
+// fflate.inflateSync
+
 const decompress = require('brotli/decompress')
 // const compress = require('brotli/compress')
 
 const encoder = new MsgPackEncoderFast()
 const msgDecode = new MsgPackDecoderFast()
 
-const bigObject = []
+// const bigObject = []
+// for (let i = 0; i < 1000; i++) {
+//   bigObject.push({ x: i })
+// }
 
-for (let i = 0; i < 100000; i++) {
-  bigObject.push({ x: i })
-}
+const bigObject = require('./tmp.json')
 
-export function encodeSubData(
+// 0 = JSON
+// 1 = brotli
+// 2 = MSGPACK
+
+let COMPRESSION_TYPE = 1
+
+export async function encodeSubData(
   id: number,
   checksum: number,
   d: Object
-): Uint8Array {
+): Promise<Uint8Array> {
   // now size
 
   // 16777216 MAX SIZE OF PAYLOAD
 
   // first is type, second is id, third is checksum, 3rd is size of payload
 
-  const data = bigObject // { hello: 'flap' }
+  const data = bigObject
+  // const data = {
+  //   name: [0, 'This is something'],
+  //   updatedAt: [0, 1656430322719],
+  // }
+  // will add types based on size if super small just json
 
-  // var packed = jsonpack.pack(data)
+  const originalSize = Buffer.from(JSON.stringify(data)).length
 
-  // console.info('???', packed)
+  let buffer
   let now = Date.now()
-  let buffer = encoder.encode(data)
-  console.info('MSGPACK', Date.now() - now, 'ms')
 
   // now = Date.now()
-  // const buf2 = zlib.brotliCompressSync(JSON.stringify(data)) // 15x smaller for brotli on large objects
-  // console.log('BROTLI', Date.now() - now, 'ms')
+  // buffer = encoder.encode(data)
+  // console.info('MSGPACK', Date.now() - now, 'ms')
+
+  // or just json for small
+  // now = Date.now()
+  // buffer = Buffer.from(JSON.stringify(data))
+  // console.info('JSON', Date.now() - now, 'ms')
+
+  // now = Date.now()
+  // // let x = Buffer.from(JSON.stringify(data))
+  // buffer = zlib.brotliCompressSync(JSON.stringify(data), {
+  //   // [zlib.constants.BROTLI_PARAM_MODE]: zlib.constants.BROTLI_MODE_TEXT,
+  //   // [zlib.constants.BROTLI_PARAM_QUALITY]: 9,
+  //   // [zlib.constants.BROTLI_PARAM_SIZE_HINT]: x.length,
+  // }) // 15x smaller for brotli on large objects
+  // console.log('BROTLI CREATE', Date.now() - now, 'ms')
+
+  // now = Date.now()
+  // buffer = zlib.gzipSync(JSON.stringify(data), {}) // 2.83x smaller then msg pack / prob not worth it
+  // console.log('GZIP', Date.now() - now, 'ms')
+
+  // 100 byte is cutoff
 
   now = Date.now()
-  buffer = zlib.gzipSync(JSON.stringify(data)) // 2.83x smaller then msg pack / prob not worth it
-  console.log('GZIP', Date.now() - now, 'ms')
+  // buffer = zlib.deflateRawSync(buffer, {})
+  buffer = zlib.deflateRawSync(JSON.stringify(data), {}) // 2.83x smaller then msg pack / prob not worth it
+  console.log('DEFLATE', Date.now() - now, 'ms')
 
-  console.info('BUFFER LEN', buffer.length)
+  console.info(
+    'BUFFER LEN',
+    buffer.length,
+    Math.round((originalSize / buffer.length) * 100) / 100,
+    'COMPRESSION RATIO'
+  )
+
+  // add extra (Can mask it in the first)
 
   const basicLen = 1 + 1 + 1 + 1 + 8 + 8
 
@@ -127,25 +170,40 @@ export function decodeSubData(buff: Uint8Array) {
 
       const arr = [buff[0], id, checksum]
 
-      let now = Date.now()
-      const datax = msgDecode.decode(buff.slice(basicLength))
-      console.log(Date.now() - now, 'ms')
-
-      //  xxxx = Date.now()
-      // const d = zlib.brotliDecompressSync(
-      //   buff.slice(basicLength)
-      //   // buff.length - basicLength
+      // let now = Date.now()
+      // const datax = JSON.parse(
+      //   new TextDecoder().decode(buff.slice(basicLength))
       // )
+      // console.info('EXTRACT JSON', Date.now() - now, 'ms')
+
+      // let now = Date.now()
+      // const datax = msgDecode.decode(buff.slice(basicLength))
+      // console.info('EXTRACT MSGPACK', Date.now() - now, 'ms')
+
+      // let now = Date.now()
+      // const d = zlib.brotliDecompressSync(buff.slice(basicLength))
       // let y = JSON.parse(d.toString())
+      // console.info('BROTLI NODE', Date.now() - now, 'ms')
 
-      // console.log(Date.now() - xxxx, 'ms')
-
-      // xxxx = Date.now()
+      // let now = Date.now()
       // const x = decompress(buff.slice(basicLength), buff.length - basicLength)
       // var str = new TextDecoder().decode(x)
-      // y = JSON.parse(str)
-      // console.log(Date.now() - xxxx, 'ms')
+      // let y = JSON.parse(str)
+      // console.info('BROTLI BROWSER', Date.now() - now, 'ms')
 
+      // let now = Date.now()
+      // const d = zlib.gunzipSync(buff.slice(basicLength))
+      // let y = JSON.parse(d.toString())
+      // console.info('ZLIB NODE', Date.now() - now, 'ms')
+
+      let now = Date.now()
+      const d = fflate.inflateSync(buff.slice(basicLength))
+      var str = new TextDecoder().decode(d)
+      let y = JSON.parse(str)
+      // let y = JSON.parse(fflate.strFromU8(d))
+      console.info('ZLIB BROWSER', Date.now() - now, 'ms')
+
+      // console.info(y)
       // console.log(JSON.parse(d.toString()))
     }
 
