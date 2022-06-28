@@ -1,78 +1,21 @@
 import { BasedServer } from '../../..'
 import Client from '../../../Client'
-import {
-  RequestTypes,
-  SubscriptionData,
-  ErrorObject,
-  // SubscriptionDiffData,
-} from '@based/client'
-
+import { RequestTypes, SubscriptionData, ErrorObject } from '@based/client'
 import { deepCopy } from '@saulx/utils'
-
-import * as tb from 'typed-bytes'
 
 import { createPatch } from '@saulx/diff'
 import { DataListener, ObservableFunction } from '../../../types'
 import { Params } from '../../../Params'
 import { getFunction } from '../../../getFromConfig'
-import Tbjson from 'typed-binary-json'
 
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
-import UTP from './utp'
+// binary custom protocol for the actual protocol
+// gzip for the body -- allow chunked
+
+// add util to put bin code at the start
 
 type GenericObject = { [key: string]: any }
-
-const subType = tb.Object({
-  data: tb.string,
-  id: tb.number,
-  version: tb.number,
-})
-
-UTP.addSchema('subType', [
-  { name: 'id', type: UTP.TYPE.UINT32 },
-  { name: 'version', type: UTP.TYPE.UINT32 },
-  { name: 'data', type: UTP.TYPE.STRING },
-])
-
-class SubType {}
-let tbjson = new Tbjson()
-// make "A" a known class type
-// @ts-ignore
-// SubType.tbjson = {
-//   definition: {
-//     id: Tbjson.TYPES.UINT64,
-//     version: Tbjson.TYPES.UINT64,
-//     data: Tbjson.TYPES.STRING,
-//   },
-// }
-
-// const subType = avro.parse({
-//   name: 'Subscription',
-//   type: 'record',
-//   fields: [
-//     { name: 'id', type: 'long' },
-//     { name: 'version', type: 'long' },
-//     { name: 'data', type: 'string' }, // can type it for queries
-//   ],
-// })
-
-// const subDiffType = avro.parse({
-//   name: 'SubscriptionDiff',
-//   type: 'record',
-//   fields: [
-//     { name: 'id', type: 'long' },
-//     { name: 'version', type: 'long' },
-//     { name: 'fromVersion', type: 'long' },
-//     { name: 'data', type: 'string' }, // can type it for queries - which is AMAZING
-//   ],
-// })
-
-// this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
-
-// console.log('hello', subType)
-
-// type diffs - also a nice upgrade
 
 export class SharedFunctionObservable {
   public lastDiff: number
