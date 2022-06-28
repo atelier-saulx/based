@@ -196,11 +196,11 @@ export function decodeSubData(buff: Uint8Array) {
       // let y = JSON.parse(d.toString())
       // console.info('ZLIB NODE', Date.now() - now, 'ms')
 
-      let now = Date.now()
+      const now = Date.now()
       const d = fflate.inflateSync(buff.slice(basicLength))
-      var str = new TextDecoder().decode(d)
-      let y = JSON.parse(str)
-      // let y = JSON.parse(fflate.strFromU8(d))
+      const str = new TextDecoder().decode(d)
+      const y = JSON.parse(str)
+      // const y = JSON.parse(fflate.strFromU8(d))
       console.info('ZLIB BROWSER', Date.now() - now, 'ms')
 
       // console.info(y)
@@ -210,3 +210,5 @@ export function decodeSubData(buff: Uint8Array) {
     console.info('correct')
   }
 }
+
+// https://github.com/uNetworking/uWebSockets.js/blob/61fa4bd06cf9db078716dc0c70bc5e8274d742f6/examples/PubSub.js
