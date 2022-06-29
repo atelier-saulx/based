@@ -1,5 +1,5 @@
-import zlib from 'node:zlib'
 import fflate from 'fflate'
+let zlib
 
 export function decodeSubData(
   chunks: number,
@@ -23,6 +23,9 @@ export function decodeSubData(
     data = JSON.parse(new TextDecoder().decode(buff.slice(basicLength)))
   } else {
     if (typeof window === 'undefined') {
+      if (!zlib) {
+        zlib = require('node:zlib')
+      }
       const buffer = zlib.inflateRawSync(buff.slice(basicLength))
       data = JSON.parse(buffer.toString())
     } else {
