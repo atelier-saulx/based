@@ -28,6 +28,8 @@ import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest, renewToken } from './auth'
 import defaultDebug from './debug'
+import { decode } from '@based/protocol/dist/decode'
+
 // import avro from 'avro-js'
 
 // const subType = avro.parse({
@@ -212,11 +214,12 @@ export class BasedClient {
     try {
       // if (d.)
 
+      let data: ResponseData
       if (d.data instanceof Blob) {
-        // console.log(subType.fromBuffer(d.data))
+        data = decode(d.data)
+      } else {
+        data = JSON.parse(d.data)
       }
-
-      const data: ResponseData = JSON.parse(d.data)
 
       if (this.debugInternal) {
         this.debugInternal(data, 'incoming')

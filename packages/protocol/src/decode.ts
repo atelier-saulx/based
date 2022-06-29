@@ -1,11 +1,11 @@
 import { decodeSubData } from './decodeSubData'
-import { RequestTypes } from '@based/types'
+import { RequestTypes, ResponseData } from '@based/types'
 import { decodeSubDiffData } from './decodeSubDiffData'
 
 const DIFF_TYPE = RequestTypes.SubscriptionDiff
 const SUB_DATA_TYPE = RequestTypes.Subscription
 
-export function decode(buff: Uint8Array) {
+export function decode(buff: Uint8Array): ResponseData {
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 |
   const requestType = buff[0] >> 2
   const encodingType = buff[0] & 3

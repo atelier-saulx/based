@@ -1,5 +1,5 @@
 import fflate from 'fflate'
-import { RequestTypes } from '@based/types'
+import { RequestTypes, SubscriptionData } from '@based/types'
 
 let zlib
 
@@ -9,7 +9,7 @@ export function decodeSubData(
   chunks: number,
   encodingType: number,
   buff: Uint8Array
-) {
+): SubscriptionData {
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 |
   // SUB-DATA PROTOCOL
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 | ID 8 | CHECKSUM 8 | DATA |
