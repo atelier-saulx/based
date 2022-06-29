@@ -2,25 +2,19 @@ import { BasedServer } from '../../..'
 import Client from '../../../Client'
 import { RequestTypes, SubscriptionData, ErrorObject } from '@based/client'
 import { deepCopy } from '@saulx/utils'
-
 import { createPatch } from '@saulx/diff'
 import { DataListener, ObservableFunction } from '../../../types'
 import { Params } from '../../../Params'
 import { getFunction } from '../../../getFromConfig'
-
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-
-// binary custom protocol for the actual protocol
-// gzip for the body -- allow chunked
-
-// add util to put bin code at the start
+import { encodeSubData, encodeSubDiffData } from '@based/protocol'
 
 type GenericObject = { [key: string]: any }
 
 export class SharedFunctionObservable {
   public lastDiff: number
-  public jsonDiffCache: Uint8Array | Buffer | string
-  public jsonCache: Uint8Array | Buffer | string
+  public jsonDiffCache: Uint8Array
+  public jsonCache: Uint8Array
 
   public server: BasedServer
   public removeTimer: NodeJS.Timeout
@@ -85,6 +79,7 @@ export class SharedFunctionObservable {
         if (fn) {
           fn(null, 0, errObject)
         } else if (client) {
+          // handle the error as well... (in bin)
           client.send([RequestTypes.Subscription, id, {}, 0, errObject])
         }
       })
@@ -139,33 +134,25 @@ export class SharedFunctionObservable {
       }
 
       if (version && version !== this.checksum) {
-        let payload: Uint8Array | Buffer | string
+        let payload: Uint8Array
 
-        // if (this.state && this.checksum) {
-        //   const s = this.state
-
-        //   const checksum = this.checksum
-        //   try {
-        //     const diff = createPatch(s, data)
-        //     this.lastDiff = checksum
-        //     console.info('hell233')
-
-        //     payload = this.jsonDiffCache = subDiffType.toBuffer({
-        //       version,
-        //       fromVersion: checksum,
-        //       data: JSON.stringify(diff),
-        //     })
-
-        //     // var buf = type.toBuffer(pet);
-
-        //     // payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
-        //     //   diff
-        //     // )},[${checksum},${version}]]`
-        //   } catch (err) {
-        //     // cannot create patch
-        //     console.error('cannot create patch', err)
-        //   }
-        // }
+        if (this.state && this.checksum) {
+          const s = this.state
+          const checksum = this.checksum
+          try {
+            const diff = createPatch(s, data)
+            this.lastDiff = checksum
+            payload = this.jsonDiffCache = encodeSubDiffData(
+              this.id,
+              version,
+              checksum,
+              diff
+            )
+          } catch (err) {
+            // cannot create patch
+            console.error('cannot create patch', err)
+          }
+        }
 
         this.checksum = version
 
@@ -174,45 +161,8 @@ export class SharedFunctionObservable {
             delete this.lastDiff
             delete this.jsonDiffCache
           }
-
-          // const x = new SubType()
-
-          // // @ts-ignore
-          // x.version = version
-          // // @ts-ignore
-          // x.data = JSON.stringify(data)
-          // // @ts-ignore
-          // x.id = this.id
-          // try {
-          //   payload = this.jsonCache = tbjson.serializeToBuffer(x)
-          // } catch (err) {
-          //   console.error('!!@!', err)
-          // }
-
-          // payload = `[1,${this.id},${JSON.stringify(data)},${version}]`
-          // this.jsonCache = payload
-
-          //   payload = this.jsonCache = subType.encode({
-          //     version,
-          //     id: this.id,
-          //     data: JSON.stringify(data),
-          //   })
-
-          // payload = this.jsonCache = UTP.encode('subType', {
-          //   version,
-          //   id: this.id,
-          //   data: JSON.stringify(data),
-          // })
-
-          payload = this.jsonCache = subType.encode({
-            version,
-            id: this.id,
-            data: JSON.stringify(data),
-          })
-          // this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
+          payload = this.jsonCache = encodeSubData(this.id, version, data)
         }
-
-        console.info(this.jsonCache)
 
         if (!data) {
           console.warn(

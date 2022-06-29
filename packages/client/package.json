@@ -29,7 +29,7 @@
     ]
   },
   "dependencies": {
-    "typed-bytes": "^0.2.1",
+    "@based/protocol": "^1.0.0",
     "@based/get-service": "2.4.3",
     "@based/graphql": "2.4.2",
     "@based/types": "^2.6.0",

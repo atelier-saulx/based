@@ -1,18 +1,19 @@
 import zlib from 'node:zlib'
 import { RequestTypes } from '@based/types'
 
-const SUB_DATA_TYPE = RequestTypes.Subscription
+const DIFF_TYPE = RequestTypes.SubscriptionDiff
 
-export function encodeSubData(
+export function encodeSubDiffData(
   id: number,
   checksum: number,
-  data: Object,
+  fromChecksum: number,
+  diff: Object,
   maxChunkSize?: number
 ): Uint8Array {
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 |
   // SUB-DATA PROTOCOL
-  // | TYPE 1 | CHUNKS 2 | SIZE? 4 | ID 8 | CHECKSUM 8 | DATA |
-  let buffer = Buffer.from(JSON.stringify(data))
+  // | TYPE 1 | CHUNKS 2 | SIZE? 4 | ID 8 | CHECKSUM 8 | FROMCHECKSUM 8 | DIFF |
+  let buffer = Buffer.from(JSON.stringify(diff))
   let encodingType = 0
   let chunks = 1
   if (buffer.length > 100) {
@@ -24,10 +25,10 @@ export function encodeSubData(
     chunks = 1000
   }
   if (chunks === 1) {
-    const protocolSize = 19
+    const protocolSize = 27
     const array = new Uint8Array(protocolSize + buffer.length)
     array.set(buffer, protocolSize)
-    const requestType = SUB_DATA_TYPE
+    const requestType = DIFF_TYPE
     array[0] = (requestType << 2) + encodingType
     array[1] = 1
     array[2] = 0
@@ -40,6 +41,11 @@ export function encodeSubData(
       const byte = checksum & 0xff
       array[index] = byte
       checksum = (checksum - byte) / 256
+    }
+    for (let index = 3 + 8 + 8; index < 3 + 8 + 8 + 8; index++) {
+      const byte = fromChecksum & 0xff
+      array[index] = byte
+      fromChecksum = (fromChecksum - byte) / 256
     }
     return array
   } else {
