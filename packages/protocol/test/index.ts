@@ -1,15 +1,19 @@
 import test from 'ava'
 import { encodeSubData, decodeSubData } from '../src'
+import tallyData from './tmp.json'
+
 test.serial('encode / decode', async (t) => {
-  const x = await encodeSubData(123123123, 12312323, {
-    bla: 'my bla',
-  })
+  t.deepEqual(
+    decodeSubData(
+      await encodeSubData(123123123, 12312323, {
+        bla: 'my bla',
+      })
+    ),
+    [1, 123123123, { bla: 'my bla' }, 12312323]
+  )
 
-  console.log(x)
-
-  // const view = new Uint8Array(x)
-
-  decodeSubData(x)
-
-  t.pass('yes')
+  t.deepEqual(
+    decodeSubData(await encodeSubData(4232342344, 324234234, tallyData)),
+    [1, 4232342344, tallyData, 324234234]
+  )
 })
