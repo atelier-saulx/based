@@ -210,13 +210,15 @@ export class BasedClient {
     drainQueue(this)
   }
 
-  onData(d) {
+  async onData(d) {
     try {
       // if (d.)
 
       let data: ResponseData
       if (d.data instanceof Blob) {
-        data = decode(d.data)
+        // Uint8Array
+        const x = await d.data.arrayBuffer()
+        data = decode(new Uint8Array(x))
       } else {
         data = JSON.parse(d.data)
       }

@@ -67,7 +67,6 @@ const connect = (
         console.error(err)
       }
       ws.onmessage = (d) => {
-        console.info(d)
         client.onData(d)
       }
       ws.onopen = () => {

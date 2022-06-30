@@ -28,7 +28,9 @@ export function decodeSubData(
   } else {
     if (typeof window === 'undefined') {
       if (!zlib) {
-        zlib = require('node:zlib')
+        try {
+          zlib = require('node:zlib')
+        } catch (err) {}
       }
       const buffer = zlib.inflateRawSync(buff.slice(basicLength))
       data = JSON.parse(buffer.toString())

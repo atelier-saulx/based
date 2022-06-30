@@ -1,6 +1,8 @@
 const createServer = require('@based/server')
 const { start } = require('@saulx/selva-server')
 
+const json = require('./tmp.json')
+
 const init = async () => {
   const selvaServer = await start({
     port: 9099,
@@ -37,8 +39,18 @@ const init = async () => {
           observable: true,
           function: async ({ update }) => {
             const interval = setInterval(() => {
-              update({ cnt: i++ })
-            }, 1000)
+              const snurx = {
+                cnt: i++,
+                Sadsadsdas: '1212312312321',
+                cczxxzccxzxcz: Math.random() * 11221,
+              }
+
+              if (Math.random() * 2 > 1) {
+                snurx.json = json
+              }
+
+              update(snurx)
+            }, 0)
             return () => {
               clearInterval(interval)
             }

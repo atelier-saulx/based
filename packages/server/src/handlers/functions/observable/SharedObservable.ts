@@ -13,8 +13,8 @@ type GenericObject = { [key: string]: any }
 
 export class SharedFunctionObservable {
   public lastDiff: number
-  public jsonDiffCache: Uint8Array
-  public jsonCache: Uint8Array
+  public jsonDiffCache: Uint8Array | string
+  public jsonCache: Uint8Array | string
 
   public server: BasedServer
   public removeTimer: NodeJS.Timeout
@@ -134,7 +134,7 @@ export class SharedFunctionObservable {
       }
 
       if (version && version !== this.checksum) {
-        let payload: Uint8Array
+        let payload: Uint8Array | string
 
         if (this.state && this.checksum) {
           const s = this.state
@@ -148,6 +148,10 @@ export class SharedFunctionObservable {
               checksum,
               diff
             )
+
+            // payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
+            //   diff
+            // )},[${checksum},${version}]]`
           } catch (err) {
             // cannot create patch
             console.error('cannot create patch', err)
@@ -162,6 +166,13 @@ export class SharedFunctionObservable {
             delete this.jsonDiffCache
           }
           payload = this.jsonCache = encodeSubData(this.id, version, data)
+
+          // payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
+          //   data
+          // )},${version}]`
+        } else {
+          this.jsonCache = encodeSubData(this.id, version, data)
+          // this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
         }
 
         if (!data) {

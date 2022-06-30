@@ -10,7 +10,6 @@ import { BasedServer } from '.'
 import { deepMerge } from '@saulx/utils'
 import parseResponse from './handlers/rest/parseResponse'
 import { Geo } from './types'
-
 import UAParser from 'ua-parser-js'
 import { SharedConfigurationObservable } from './handlers/configuration/observable'
 
@@ -351,17 +350,9 @@ export class Client {
           this.socket.getBufferedAmount()
         )
       } else {
-        // lets do better with backpressure
-
-        // if client.protocol = 'binary'
-        // avro-js
-
         if (payload instanceof Uint8Array || payload instanceof Buffer) {
           this.socket.send(payload, true)
-        }
-
-        // buffer directly?
-        else if (typeof payload === 'string') {
+        } else if (typeof payload === 'string') {
           this.socket.send(payload)
         } else {
           this.socket.send(JSON.stringify(payload))

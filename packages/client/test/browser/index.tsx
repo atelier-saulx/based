@@ -9,8 +9,10 @@ const init = async () => {
     },
   })
 
-  // client.client.debug = true
-  client.observe('bla', () => {})
+  client.client.debug = true
+  client.observe('bla', (d) => {
+    console.info(d)
+  })
 
   // client.observe({ id: true }, () => {})
 }
