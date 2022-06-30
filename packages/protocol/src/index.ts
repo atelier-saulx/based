@@ -12,3 +12,21 @@ if (chunk === 0) & SIZE -> ERROR
 export { encodeSubData } from './encodeSubData'
 export { decode } from './decode'
 export { encodeSubDiffData } from './encodeSubDiffData'
+
+/*
+TODO
+- chunk encoding
+- chunk reciever - and helper
+- sending binary to subscribe from client
+- binary ping (empty byte)
+
+- global clients / av outgoing bytes 
+- max bytes 300mb outgoing 8k users max
+
+- 37500 / 10 maybe? (3.7kb max) 
+- lets first just do chunks allways on this size - later we do more variable
+
+- number and methods in observables to change chunk size
+- more shared things between shared and normal subscribe (and configuration)
+
+*/

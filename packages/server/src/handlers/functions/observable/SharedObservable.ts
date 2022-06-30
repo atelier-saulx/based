@@ -132,7 +132,7 @@ export class SharedFunctionObservable {
 
       const buffer = Buffer.from(JSON.stringify(data))
 
-      if (version && version !== this.checksum && buffer.length > 100) {
+      if (version && version !== this.checksum) {
         let payload: Uint8Array | string
 
         if (this.state && this.checksum) {
