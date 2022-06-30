@@ -74,7 +74,6 @@ export class SharedFunctionObservable {
           payload,
           auth: err.name === 'AuthorizationError',
         }
-        // console.error('Make observable error', this.name, err)
 
         if (fn) {
           fn(null, 0, errObject)
@@ -117,8 +116,6 @@ export class SharedFunctionObservable {
       // TODO: empty and destroy !!
       // this.destroyIfEmpty()
     }
-
-    // nessecary for updating functions
   }
 
   update(data: GenericObject, version?: number) {
@@ -133,14 +130,16 @@ export class SharedFunctionObservable {
         version = !data ? 0 : hashObjectIgnoreKeyOrder(data)
       }
 
-      if (version && version !== this.checksum) {
+      const buffer = Buffer.from(JSON.stringify(data))
+
+      if (version && version !== this.checksum && buffer.length > 100) {
         let payload: Uint8Array | string
 
         if (this.state && this.checksum) {
           const s = this.state
           const checksum = this.checksum
           try {
-            const diff = createPatch(s, data)
+            const diff = Buffer.from(JSON.stringify(createPatch(s, data)))
             this.lastDiff = checksum
             payload = this.jsonDiffCache = encodeSubDiffData(
               this.id,
@@ -148,12 +147,7 @@ export class SharedFunctionObservable {
               checksum,
               diff
             )
-
-            // payload = this.jsonDiffCache = `[2,${this.id},${JSON.stringify(
-            //   diff
-            // )},[${checksum},${version}]]`
           } catch (err) {
-            // cannot create patch
             console.error('cannot create patch', err)
           }
         }
@@ -165,14 +159,9 @@ export class SharedFunctionObservable {
             delete this.lastDiff
             delete this.jsonDiffCache
           }
-          payload = this.jsonCache = encodeSubData(this.id, version, data)
-
-          // payload = this.jsonCache = `[1,${this.id},${JSON.stringify(
-          //   data
-          // )},${version}]`
+          payload = this.jsonCache = encodeSubData(this.id, version, buffer)
         } else {
-          this.jsonCache = encodeSubData(this.id, version, data)
-          // this.jsonCache = `[1,${this.id},${JSON.stringify(data)},${version}]`
+          this.jsonCache = encodeSubData(this.id, version, buffer)
         }
 
         if (!data) {

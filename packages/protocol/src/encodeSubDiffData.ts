@@ -7,18 +7,17 @@ export function encodeSubDiffData(
   id: number,
   checksum: number,
   fromChecksum: number,
-  diff: Object,
+  diff: Buffer,
   maxChunkSize?: number
 ): Uint8Array {
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 |
   // SUB-DATA PROTOCOL
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 | ID 8 | CHECKSUM 8 | FROMCHECKSUM 8 | DIFF |
-  let buffer = Buffer.from(JSON.stringify(diff))
   let encodingType = 0
   let chunks = 1
-  if (buffer.length > 100) {
+  if (diff.length > 100) {
     encodingType = 1
-    buffer = zlib.deflateRawSync(buffer, {})
+    diff = zlib.deflateRawSync(diff, {})
   }
   if (maxChunkSize) {
     console.info('maxChunkSize do later')
@@ -26,8 +25,8 @@ export function encodeSubDiffData(
   }
   if (chunks === 1) {
     const protocolSize = 27
-    const array = new Uint8Array(protocolSize + buffer.length)
-    array.set(buffer, protocolSize)
+    const array = new Uint8Array(protocolSize + diff.length)
+    array.set(diff, protocolSize)
     const requestType = DIFF_TYPE
     array[0] = (requestType << 2) + encodingType
     array[1] = 1

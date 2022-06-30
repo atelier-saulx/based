@@ -3,16 +3,17 @@ import { RequestTypes } from '@based/types'
 
 const SUB_DATA_TYPE = RequestTypes.Subscription
 
+// allow error
+
 export function encodeSubData(
   id: number,
   checksum: number,
-  data: Object,
+  buffer: Buffer,
   maxChunkSize?: number
 ): Uint8Array {
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 |
   // SUB-DATA PROTOCOL
   // | TYPE 1 | CHUNKS 2 | SIZE? 4 | ID 8 | CHECKSUM 8 | DATA |
-  let buffer = Buffer.from(JSON.stringify(data))
   let encodingType = 0
   let chunks = 1
   if (buffer.length > 100) {
