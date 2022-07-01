@@ -75,7 +75,7 @@ export default async (
   if (handler === 'file') {
     return file(server, req, res, url)
   } else if (handler === 'playground') {
-    let format: 0 | 1 = 0
+    const format: 0 | 1 = 0
     const client = new Client(server, undefined, res, format)
     return playground(server, client, req, res, url)
   }

@@ -78,16 +78,28 @@ test.serial('rest call request', async (t) => {
             }
           },
         },
+        customHeaders: {
+          observable: false,
+          headers: async () => {
+            return {
+              'Content-Type': 'text/html',
+            }
+          },
+          function: async () => {
+            return '<div>hello</div>'
+          },
+        },
       },
     },
   })
 
   const a = await fetch('http://localhost:9200')
   const b = await fetch('http://localhost:9200/')
-  const c = await fetch('http://localhost:9200/flurp')
 
   t.is(a.status, 400)
   t.is(b.status, 400)
+
+  const c = await fetch('http://localhost:9200/call/')
   t.is(c.status, 400)
 
   const d = await fetch('http://localhost:9200/call/hello').then((r) =>
@@ -240,6 +252,11 @@ test.serial('rest call request', async (t) => {
   )
 
   t.is(o, 'snapje\nja')
+
+  const p = await fetch('http://localhost:9200/call/customHeaders')
+
+  t.is(p.headers.get('content-type'), 'text/html')
+  t.is(await p.text(), '<div>hello</div>')
 
   await server.destroy()
 
