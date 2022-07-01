@@ -29,4 +29,8 @@ TODO
 - number and methods in observables to change chunk size
 - more shared things between shared and normal subscribe (and configuration)
 
+- support string requests on the server / write client = string  - also nessecary for rest
+- can read the binary (and also clear if its gzip or not)
+
+make nice
 */
