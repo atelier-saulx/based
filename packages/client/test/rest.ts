@@ -35,7 +35,7 @@ test.after(async () => {
 })
 
 // need to add 'salt' for the hashing function in the db for passwords
-test.serial.only('rest call request', async (t) => {
+test.serial('rest call request', async (t) => {
   const server = await createServer({
     port: 9200,
     db: {
@@ -255,7 +255,8 @@ test.serial.only('rest call request', async (t) => {
 
   const p = await fetch('http://localhost:9200/call/customHeaders')
 
-  console.info('>>>>>>', await p.text(), p)
+  t.is(p.headers.get('content-type'), 'text/html')
+  t.is(await p.text(), '<div>hello</div>')
 
   await server.destroy()
 

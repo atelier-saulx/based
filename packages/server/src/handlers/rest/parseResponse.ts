@@ -39,15 +39,19 @@ export default (
   let isParsed = false
 
   if (headers) {
-    result = payload[3]
+    result = payload[2]
     if (headers['Content-Type']) {
       isParsed = true
     } else if (typeof result === 'string') {
-      headers['Content-Type'] = 'text/plain'
+      res.writeHeader('Content-Type', 'text/plain')
       isParsed = true
     }
     if (!headers['Cache-Control']) {
       res.writeHeader('Cache-Control', 'max-age=10')
+    }
+
+    for (const key in headers) {
+      res.writeHeader(key, headers[key])
     }
   } else if (typeof payload === 'string') {
     let secondIndex = 0
