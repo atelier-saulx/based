@@ -68,6 +68,29 @@ export type Config = {
 
   getGeo?: (ip: string) => Geo
 
+  /*
+       sendEmail: async ({ to, subject, body, from }) => {
+        // add validation later
+        return {
+          status: 1,
+          message: `Send email to ${to} from ${from} subject ${subject} body ${body}`,
+        }
+      },
+  */
+
+  sendEmail?: (payload: {
+    to: string
+    subject: string
+    body: string
+    from?: string
+  }) => Promise<
+    | {
+        status: 'ok'
+        message?: string
+      }
+    | { status: 'error'; message: string }
+  >
+
   // allow overwrite of this function (from a function then if that function gets access to the 'default')
   storeFile?: (opts: FileOpts) => Promise<{
     src: string

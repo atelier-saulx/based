@@ -479,6 +479,25 @@ class BasedServerClient {
     const v = this._params.server.db.digest(payload)
     return v
   }
+
+  public async sendEmail(payload: {
+    to: string
+    subject: string
+    body: string
+    from?: string
+  }): Promise<
+    | {
+        status: 'ok'
+        message?: string
+      }
+    | { status: 'error'; message: string }
+  > {
+    if (this._params.server.config.sendEmail) {
+      return this._params.server.config.sendEmail(payload)
+    } else {
+      throw new Error('send email not configured...')
+    }
+  }
 }
 
 export default BasedServerClient
