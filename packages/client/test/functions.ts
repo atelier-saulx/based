@@ -526,7 +526,7 @@ test.serial('observable functions + get + internal', async (t) => {
     },
   })
 
-  const x = []
+  const x: any[] = []
 
   const close = await client.observe('b', (d) => {
     x.push(d)
@@ -603,7 +603,7 @@ test.serial(
       },
     })
 
-    const x = []
+    const x: any[] = []
 
     await client.observe('b', (d) => {
       x.push(d)
@@ -678,7 +678,7 @@ test.serial('observable functions + internal + normal', async (t) => {
     },
   })
 
-  const x = []
+  const x: any[] = []
 
   const close = await client.observe('b', (d) => {
     x.push(d)

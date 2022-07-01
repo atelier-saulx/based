@@ -47,7 +47,16 @@ export class Params {
 
   public name?: string
 
-  public update?: (value: any, checksum?: number) => void
+  public update: (value: any, checksum?: number) => void = (
+    value: any,
+    checksum?: number
+  ) => {
+    console.warn(
+      'cannot use update on a non-observable function',
+      value,
+      checksum
+    )
+  }
 
   public callStack: string[] // this can be re-used
 
