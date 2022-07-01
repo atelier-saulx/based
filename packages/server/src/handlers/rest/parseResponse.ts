@@ -2,7 +2,6 @@ import uws from '@based/uws'
 import { RequestTypes, ResponseData } from '@based/client'
 import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import zlib from 'zlib'
-
 import jsonexport from 'jsonexport'
 
 const invalid = (
@@ -28,7 +27,8 @@ export default (
   res: uws.HttpResponse,
   payload: ResponseData | string,
   type: 0 | 1,
-  version?: number
+  version?: number,
+  headers?: { [key: string]: string }
 ) => {
   if (res.aborted) {
     return
@@ -38,7 +38,18 @@ export default (
   let reqType: number
   let isParsed = false
 
-  if (typeof payload === 'string') {
+  if (headers) {
+    result = payload[3]
+    if (headers['Content-Type']) {
+      isParsed = true
+    } else if (typeof result === 'string') {
+      headers['Content-Type'] = 'text/plain'
+      isParsed = true
+    }
+    if (!headers['Cache-Control']) {
+      res.writeHeader('Cache-Control', 'max-age=10')
+    }
+  } else if (typeof payload === 'string') {
     let secondIndex = 0
     let lastIndex = 0
     const len = payload.length - 1
@@ -127,13 +138,15 @@ export default (
     }
   }
 
-  if (reqType === RequestTypes.Digest) {
-    res.writeHeader('Content-Type', 'text/plain')
-  } else {
-    if (type === 1) {
-      res.writeHeader('Content-Type', 'text/csv')
+  if (!headers) {
+    if (reqType === RequestTypes.Digest) {
+      res.writeHeader('Content-Type', 'text/plain')
     } else {
-      res.writeHeader('Content-Type', 'application/json')
+      if (type === 1) {
+        res.writeHeader('Content-Type', 'text/csv')
+      } else {
+        res.writeHeader('Content-Type', 'application/json')
+      }
     }
   }
 

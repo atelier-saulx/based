@@ -49,4 +49,5 @@ test.serial('call functions', async (t) => {
   })
 
   client.disconnect()
+  server.destroy()
 })

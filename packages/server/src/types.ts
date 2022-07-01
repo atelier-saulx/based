@@ -32,6 +32,24 @@ export type CallFunction = {
   function: (params: CallParams) => Promise<any>
   cnt?: number
   worker?: boolean
+  headers?: (
+    params: CallParams,
+    result: any
+  ) => Promise<{
+    [key: string]: string
+  }>
+}
+
+export const isCallFunction = (
+  fn: CallFunction | ObservableFunction
+): fn is CallFunction => {
+  return fn.observable === false
+}
+
+export const isObservableFunction = (
+  fn: CallFunction | ObservableFunction
+): fn is ObservableFunction => {
+  return fn.observable === true
 }
 
 export type AuthorizeFn = (params: Params) => Promise<boolean>

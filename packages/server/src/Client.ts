@@ -312,10 +312,10 @@ export class Client {
     }
   }
 
-  send(payload: any) {
+  send(payload: any, headers?: { [key: string]: string }) {
     // here we are going to add checksum ALLWAYS
     if (this.res) {
-      parseResponse(this.res, payload, this.type)
+      parseResponse(this.res, payload, this.type, undefined, headers)
       this.destroy()
     } else if (!this.closed && this.socket) {
       if (this.socket.getBufferedAmount()) {
