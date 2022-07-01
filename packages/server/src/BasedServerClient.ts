@@ -485,15 +485,16 @@ class BasedServerClient {
     subject: string
     body: string
     from?: string
-  }): Promise<
-    | {
-        status: 'ok'
-        message?: string
-      }
-    | { status: 'error'; message: string }
-  > {
+  }): Promise<{
+    status: 'ok'
+    message?: string
+  }> {
     if (this._params.server.config.sendEmail) {
-      return this._params.server.config.sendEmail(payload)
+      const res = await this._params.server.config.sendEmail(payload)
+      if (res.status === 'error') {
+        throw new Error(res.message)
+      }
+      return res
     } else {
       throw new Error('send email not configured...')
     }
