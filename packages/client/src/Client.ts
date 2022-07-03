@@ -59,6 +59,8 @@ export class BasedClient {
 
   token: string
 
+  tokenToLocalStorage: boolean = false
+
   renewOptions: {
     refreshToken?: string
   } & { [key: string]: any }
@@ -92,6 +94,7 @@ export class BasedClient {
           'based-' + this.optsId + '-uid'
         )
         if (userString) {
+          this.tokenToLocalStorage = true
           try {
             const [id, token, refreshToken] = JSON.parse(userString)
             if (token && id) {
@@ -111,6 +114,13 @@ export class BasedClient {
     refreshToken?: string
   ) {
     this.user = id
+
+    if (!this.tokenToLocalStorage && typeof window !== 'undefined') {
+      try {
+        global.localStorage.removeItem('based-' + this.optsId + '-uid')
+      } catch (err) {}
+    }
+
     if (token) {
       if (refreshToken) {
         this.renewOptions = { refreshToken }
@@ -128,17 +138,21 @@ export class BasedClient {
         if (isValid) {
           if (typeof window !== 'undefined') {
             try {
-              global.localStorage.setItem(
-                'based-' + this.optsId + '-uid',
-                JSON.stringify([id, token, refreshToken])
-              )
+              if (this.tokenToLocalStorage) {
+                global.localStorage.setItem(
+                  'based-' + this.optsId + '-uid',
+                  JSON.stringify([id, token, refreshToken])
+                )
+              }
             } catch (err) {}
           }
           this.based.emit('auth', token)
         } else {
           if (typeof window !== 'undefined') {
             try {
-              global.localStorage.removeItem('based-' + this.optsId + '-uid')
+              if (this.tokenToLocalStorage) {
+                global.localStorage.removeItem('based-' + this.optsId + '-uid')
+              }
             } catch (err) {}
           }
           this.based.emit('auth', false)
@@ -148,7 +162,9 @@ export class BasedClient {
       if (typeof window !== 'undefined') {
         this.user = false
         try {
-          global.localStorage.removeItem('based-' + this.optsId + '-uid')
+          if (this.tokenToLocalStorage) {
+            global.localStorage.removeItem('based-' + this.optsId + '-uid')
+          }
         } catch (err) {}
       }
       sendToken(this)

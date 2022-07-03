@@ -840,11 +840,25 @@ export class Based extends Emitter {
 
   // observeAuth
 
-  public async login(opts: LoginOpts): Promise<GenericObject> {
+  public async login(
+    opts: LoginOpts & { localStorage?: boolean }
+  ): Promise<GenericObject> {
+    if (opts.localStorage === false) {
+      this.client.tokenToLocalStorage = false
+    } else {
+      this.client.tokenToLocalStorage = true
+    }
     return login(this.client, opts)
   }
 
-  public async register(opts: RegisterOpts): Promise<GenericObject> {
+  public async register(
+    opts: RegisterOpts & { localStorage?: boolean }
+  ): Promise<GenericObject> {
+    if (opts.localStorage === false) {
+      this.client.tokenToLocalStorage = false
+    } else {
+      this.client.tokenToLocalStorage = true
+    }
     return register(this.client, opts)
   }
 

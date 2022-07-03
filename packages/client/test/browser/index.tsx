@@ -21,6 +21,7 @@ const init = async () => {
     client.login({
       password: 'bla',
       email: 'bla@bla.com',
+      localStorage: false,
     })
   }
 
