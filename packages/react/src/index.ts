@@ -38,6 +38,9 @@ export function useAuth(
       if (d) {
         setId(client.client.user)
         setToken(d)
+      } else {
+        setId(false)
+        setToken(false)
       }
     }
     client.on('auth', t)
