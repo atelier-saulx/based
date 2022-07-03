@@ -24,7 +24,7 @@ const init = async () => {
     })
   }
 
-  client.observeUser((d) => {
+  client.observeAuth((d) => {
     loginStatus.innerHTML = d ? d.id : 'not logged in!'
   })
 

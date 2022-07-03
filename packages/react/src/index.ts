@@ -29,17 +29,21 @@ export { InfiniteList } from './components/InfiniteList'
 
 export function useAuth(
   clientSelector?: string | (BasedOpts & { key?: string })
-): string | false {
+): { id: string | false; token: string } | false {
   const client = useClient(clientSelector)
   const [token, setToken] = useState<false | string>(false)
+  const [id, setId] = useState<false | string>('')
   useEffect(() => {
-    const t = () => setToken(client.getToken())
+    const t = () => {
+      setId(client.client.user)
+      setToken(client.getToken())
+    }
     client.on('auth', t)
     return () => {
       client.removeListener('auth', t)
     }
   }, [])
-  return token
+  return token ? { token, id } : false
 }
 
 export function useSchema(

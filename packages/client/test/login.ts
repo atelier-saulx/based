@@ -301,7 +301,7 @@ test.serial('register', async (t) => {
 
   const results: any[] = []
 
-  const close = await client.observeUser((user) => {
+  const close = await client.observeAuth((user) => {
     results.push(user)
   })
 

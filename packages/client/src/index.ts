@@ -852,7 +852,7 @@ export class Based extends Emitter {
     return logout(this.client)
   }
 
-  public observeUser(
+  public observeAuth(
     userDataListener: (
       data:
         | {
