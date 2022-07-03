@@ -128,6 +128,39 @@ class BasedServerClient {
     return deleteEvent(this._params.server, key)
   }
 
+  public observeUntil(
+    query: Query,
+    condition: (data: GenericObject, checksum: number) => boolean,
+    onData?: (data: any, checksum: number) => void
+  ): Promise<GenericObject> {
+    return new Promise((resolve, reject) => {
+      let close
+      let isResolved = false
+      this.observe(query, (d, checksum) => {
+        if (onData) {
+          onData(d, checksum)
+        }
+        if (condition(d, checksum)) {
+          isResolved = true
+          if (close) {
+            close()
+          }
+          resolve(d)
+        }
+      })
+        .then((c) => {
+          if (isResolved) {
+            close()
+          } else {
+            close = c
+          }
+        })
+        .catch((err) => {
+          reject(err)
+        })
+    })
+  }
+
   public observe(
     query: Query,
     onData: (data: any, checksum: number) => void,
