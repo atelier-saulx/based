@@ -875,7 +875,6 @@ export class Based extends Emitter {
       }
 
       const authListener = (d) => {
-        console.info('INCOMING AUTH LISTEBNER', d)
         if (d && this.client.user && this.client.token) {
           userDataListener({
             id: this.client.user,
