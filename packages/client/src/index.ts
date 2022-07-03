@@ -840,6 +840,8 @@ export class Based extends Emitter {
     })
   }
 
+  // observeAuth
+
   public async login(opts: LoginOpts): Promise<GenericObject> {
     return login(this.client, opts)
   }

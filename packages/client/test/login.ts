@@ -218,7 +218,7 @@ test.serial('should not fail logout function does not exist', async (t) => {
   t.regex(error.name, /^AuthorizationError/)
 })
 
-test.serial('register', async (t) => {
+test.serial.only('register', async (t) => {
   const server = await createServer({
     port: 9333,
     db: {
@@ -226,6 +226,9 @@ test.serial('register', async (t) => {
       port: 9401,
     },
     config: {
+      authorize: async ({ user }) => {
+        return (await user?.token()) === 'bla'
+      },
       functions: {
         registerUser: {
           observable: false,
@@ -243,6 +246,8 @@ test.serial('register', async (t) => {
   })
 
   await client.register({ email: 'me@me.com', password: 'smurk' })
+
+  // observeAuth
 
   t.is(client.getToken(), 'bla')
 
