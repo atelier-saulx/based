@@ -246,5 +246,5 @@ test.serial('register', async (t) => {
     client.disconnect()
   })
 
-  await client.register({ email: 'me@me.com', password: 'smurk' })
+  const x = await client.register({ email: 'me@me.com', password: 'smurk' })
 })
