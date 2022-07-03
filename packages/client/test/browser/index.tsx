@@ -10,6 +10,28 @@ const init = async () => {
   })
 
   client.client.debug = true
+
+  const but = document.createElement('button')
+
+  const loginStatus = document.createElement('div')
+
+  but.innerHTML = 'LOGIN'
+
+  but.onclick = () => {
+    client.login({
+      password: 'bla',
+      email: 'bla@bla.com',
+    })
+  }
+
+  client.observeUser((d) => {
+    loginStatus.innerHTML = d ? d.id : 'not logged in!'
+  })
+
+  client.get({ $id: 'root', id: true })
+
+  document.body.appendChild(but)
+  document.body.appendChild(loginStatus)
 }
 
 init()

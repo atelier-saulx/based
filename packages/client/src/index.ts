@@ -858,7 +858,6 @@ export class Based extends Emitter {
     userDataListener: (
       data:
         | {
-            email?: string
             id: string
             token: string
           }
@@ -870,7 +869,7 @@ export class Based extends Emitter {
 
       if (this.client.user && this.client.token) {
         userDataListener({
-          ...this.client.user,
+          id: this.client.user,
           token: this.client.token,
         })
       } else {
@@ -878,11 +877,10 @@ export class Based extends Emitter {
       }
 
       const authListener = (d) => {
-        console.info('something happening to auth...', d)
-
-        if (d && this.client.user) {
+        console.info('INCOMING AUTH LISTEBNER', d)
+        if (d && this.client.user && this.client.token) {
           userDataListener({
-            ...this.client.user,
+            id: this.client.user,
             token: this.client.token,
           })
         } else {
@@ -967,6 +965,7 @@ const based = (opts: BasedOpts, BasedClass = Based): Based => {
   if (url) {
     const client = new BasedClass()
     client.opts = opts
+    client.client.initUserState()
     client.connect(url)
     return client
   }

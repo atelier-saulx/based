@@ -10,7 +10,6 @@ import {
   RequestTypes,
 } from '@based/types'
 import createError from './createError'
-import sendToken from './token'
 import { addRequest } from './request'
 
 let loginCbId = 0
@@ -24,11 +23,18 @@ export const login = (
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
-        client.updateUserState(
-          { email: response.email, id: response.id },
-          response.token,
-          response.refreshToken
-        )
+        if (response.id && response.token) {
+          console.log('call from login')
+          client.updateUserState(
+            response.id,
+            response.token,
+            response.refreshToken
+          )
+        } else {
+          console.log('call from login empty')
+
+          client.updateUserState(false)
+        }
         resolve(response)
       },
       reject,
@@ -46,11 +52,19 @@ export const register = (
       RequestTypes.Call,
       opts,
       (response) => {
-        client.updateUserState(
-          { email: response.email, id: response.id },
-          response.token,
-          response.refreshToken
-        )
+        if (response.id && response.token) {
+          console.log('call from register')
+
+          client.updateUserState(
+            response.id,
+            response.token,
+            response.refreshToken
+          )
+        } else {
+          console.log('call from register empty')
+
+          client.updateUserState(false)
+        }
         resolve(response)
       },
       reject,
@@ -69,13 +83,10 @@ export const renewToken = (
     reqId,
     opts,
   ])
+
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
-      resolve: (response) => {
-        // call state
-        sendToken(client, response.token)
-        resolve(response)
-      },
+      resolve,
       reject,
     }
   })
@@ -100,7 +111,9 @@ export const logout = (client: BasedClient): Promise<GenericObject> => {
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
-        client.updateUserState(false, false)
+        console.log('call from logout ')
+
+        client.updateUserState(false)
         resolve(response)
       },
       reject,

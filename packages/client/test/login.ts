@@ -346,9 +346,9 @@ test.serial('register', async (t) => {
 
   t.deepEqual(results, [
     false,
-    { email: 'me@me.com', id: myUserId, token: 'bla' },
+    { id: myUserId, token: 'bla' },
     false,
-    { email: 'me@me.com', id: myUserId, token: 'bla' },
+    { id: myUserId, token: 'bla' },
     false,
   ])
 

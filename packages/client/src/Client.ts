@@ -28,6 +28,7 @@ import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest, renewToken } from './auth'
 import defaultDebug from './debug'
+import { hash } from '@saulx/hash'
 
 export * from '@based/types'
 
@@ -52,12 +53,9 @@ export class BasedClient {
     }
   }
 
-  public user:
-    | {
-        email: string
-        id: string
-      }
-    | false
+  public user: string | false
+
+  optsId: number
 
   token: string
 
@@ -76,20 +74,79 @@ export class BasedClient {
 
   auth: ((x?: any) => void)[] = []
 
+  public initUserState() {
+    if (typeof window !== 'undefined') {
+      if (this.based.opts) {
+        const optsId = hash({
+          cluster: this.based.opts.cluster,
+          project: this.based.opts.project,
+          env: this.based.opts.project,
+          org: this.based.opts.org,
+        })
+        this.optsId = optsId
+      } else {
+        this.optsId = hash('un-specified-env')
+      }
+      const userString = global.localStorage.getItem(
+        'based-' + this.optsId + '-uid'
+      )
+      if (userString) {
+        try {
+          const [id, token, refreshToken] = JSON.parse(userString)
+          if (token && id) {
+            console.info('call from init')
+            this.updateUserState(id, token, refreshToken)
+          }
+        } catch (err) {
+          global.localStorage.removeItem('based-' + this.optsId + '-uid')
+        }
+      }
+    }
+  }
+
   public updateUserState(
-    userObject: { email: string; id: string } | false,
-    token: string | false,
+    id: string | false,
+    token?: string,
     refreshToken?: string
   ) {
-    this.user = userObject
+    this.user = id
     if (token) {
+      if (refreshToken) {
+        this.renewOptions = { refreshToken }
+      }
+      if (refreshToken) {
+        this.renewOptions = {
+          ...this.renewOptions,
+          refreshToken,
+        }
+      }
       sendToken(this, token, {
         refreshToken: refreshToken,
       })
+      this.auth.push((isValid) => {
+        if (isValid) {
+          if (typeof window !== 'undefined') {
+            global.localStorage.setItem(
+              'based-' + this.optsId + '-uid',
+              JSON.stringify([id, token, refreshToken])
+            )
+          }
+          this.based.emit('auth', token)
+        } else {
+          if (typeof window !== 'undefined') {
+            global.localStorage.removeItem('based-' + this.optsId + '-uid')
+          }
+          this.based.emit('auth', false)
+        }
+      })
     } else {
+      if (typeof window !== 'undefined') {
+        this.user = false
+        global.localStorage.removeItem('based-' + this.optsId + '-uid')
+      }
       sendToken(this)
     }
-    this.based.emit('auth', token)
+    // handle dat localstorage
   }
 
   subscriptions: {
@@ -224,6 +281,7 @@ export class BasedClient {
         if (reqId.length) {
           logoutSubscriptions(this, data)
         }
+
         for (const fn of this.auth) {
           fn(!payload)
         }
@@ -241,6 +299,8 @@ export class BasedClient {
           !this.retryingRenewToken
         ) {
           this.retryingRenewToken = true
+          const userId = this.user
+
           renewToken(this, this.renewOptions)
             .then((result) => {
               sendToken(this, result.token, this.sendTokenOptions)
@@ -262,6 +322,16 @@ export class BasedClient {
                 )
               }
               this.based.emit('renewToken', result)
+              if (result) {
+                console.info('CALL FROM RENEW =>')
+
+                this.updateUserState(
+                  userId,
+                  result.token,
+                  this.renewOptions.refreshToken,
+                  true
+                )
+              }
             })
             .catch((err) => {
               this.requestCallbacks[reqId]?.reject(err)
