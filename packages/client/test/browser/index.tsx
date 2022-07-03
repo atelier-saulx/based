@@ -28,10 +28,17 @@ const init = async () => {
     loginStatus.innerHTML = d ? d.id : 'not logged in!'
   })
 
-  client.get({ $id: 'root', id: true })
+  //
+
+  const butget = document.createElement('button')
+  butget.innerHTML = 'GET'
+  butget.onclick = () => {
+    client.get({ $id: 'root', id: true })
+  }
 
   document.body.appendChild(but)
   document.body.appendChild(loginStatus)
+  document.body.appendChild(butget)
 }
 
 init()

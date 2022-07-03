@@ -273,12 +273,24 @@ export class BasedClient {
         this.debugInternal(data, 'incoming')
       }
 
+      // @ts-ignore
       const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
+        console.info(err)
+
         this.retryingRenewToken = false
         // means stomething got de-auth wrong
         if (reqId.length) {
           logoutSubscriptions(this, data)
+        }
+
+        if (
+          !payload &&
+          typeof err === 'string' &&
+          this.user &&
+          this.renewOptions.refreshToken
+        ) {
+          this.token = err
         }
 
         for (const fn of this.auth) {

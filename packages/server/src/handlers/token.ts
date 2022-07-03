@@ -6,6 +6,17 @@ import { Params } from '../Params'
 import { getFunction, getAuthorize } from '../getFromConfig'
 import { SendTokenOptions } from '../types'
 
+const renewOnInitial = async (client, server, refreshToken) => {
+  const { function: fn } = (await getFunction(server, 'renewToken')) || {}
+  if (!fn) {
+    throw new Error('Token expired and needs to be renewed.')
+  }
+  const result = await fn(
+    new Params(server, { refreshToken }, client, ['renewToken'])
+  )
+  return result
+}
+
 export default async (
   client: Client,
   server: BasedServer,
@@ -84,27 +95,83 @@ export default async (
       const sendErrors = []
       let hasErrored = false
 
+      let letsTryToRenew = false
+
       if (v[0].status === 'rejected' || v[0].value === false) {
         hasErrored = true
-      }
+        if (
+          options &&
+          // @ts-ignore
+          options.refreshToken &&
+          v[0].reason.message.includes('Token expired')
+        ) {
+          letsTryToRenew = true
+          console.info('LETS TRY REFRESH', options)
+          // @ts-ignore
+          renewOnInitial(client, server, options.refreshToken)
+            .then((v) => {
+              console.info('ok got new token', v)
 
-      for (let i = 1; i < v.length; i++) {
-        const x = v[i]
-
-        if (x.status === 'rejected' || x.value === false) {
-          // send back deAuth
-
-          sendErrors.push(Number(ids[i]))
-        } else if (client.subscriptions[ids[i]] instanceof FunctionObservable) {
-          const s = <FunctionObservable>client.subscriptions[ids[i]]
-          s.clients[client.id]?.init()
+              if (v.token) {
+                client.send([RequestTypes.Token, [], false, v.token])
+              } else {
+                for (let i = 1; i < v.length; i++) {
+                  const x = v[i]
+                  if (x.status === 'rejected' || x.value === false) {
+                    // send back deAuth
+                    sendErrors.push(Number(ids[i]))
+                  } else if (
+                    client.subscriptions[ids[i]] instanceof FunctionObservable
+                  ) {
+                    const s = <FunctionObservable>client.subscriptions[ids[i]]
+                    s.clients[client.id]?.init()
+                  }
+                }
+                for (const sub of sendErrors) {
+                  client.subscriptions?.[sub].unsubscribe(client)
+                }
+                client.send([RequestTypes.Token, sendErrors, hasErrored])
+              }
+            })
+            .catch(() => {
+              for (let i = 1; i < v.length; i++) {
+                const x = v[i]
+                if (x.status === 'rejected' || x.value === false) {
+                  // send back deAuth
+                  sendErrors.push(Number(ids[i]))
+                } else if (
+                  client.subscriptions[ids[i]] instanceof FunctionObservable
+                ) {
+                  const s = <FunctionObservable>client.subscriptions[ids[i]]
+                  s.clients[client.id]?.init()
+                }
+              }
+              for (const sub of sendErrors) {
+                client.subscriptions?.[sub].unsubscribe(client)
+              }
+              client.send([RequestTypes.Token, sendErrors, hasErrored])
+            })
         }
       }
-      for (const sub of sendErrors) {
-        client.subscriptions?.[sub].unsubscribe(client)
-      }
 
-      client.send([RequestTypes.Token, sendErrors, hasErrored])
+      if (!letsTryToRenew) {
+        for (let i = 1; i < v.length; i++) {
+          const x = v[i]
+          if (x.status === 'rejected' || x.value === false) {
+            // send back deAuth
+            sendErrors.push(Number(ids[i]))
+          } else if (
+            client.subscriptions[ids[i]] instanceof FunctionObservable
+          ) {
+            const s = <FunctionObservable>client.subscriptions[ids[i]]
+            s.clients[client.id]?.init()
+          }
+        }
+        for (const sub of sendErrors) {
+          client.subscriptions?.[sub].unsubscribe(client)
+        }
+        client.send([RequestTypes.Token, sendErrors, hasErrored])
+      }
     })
   }
 }
