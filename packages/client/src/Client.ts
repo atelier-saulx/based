@@ -152,6 +152,7 @@ export class BasedClient {
         } catch (err) {}
       }
       sendToken(this)
+      this.based.emit('auth', false)
     }
     // handle dat localstorage
   }
