@@ -273,7 +273,7 @@ export class Client {
       } else if (typeof secret === 'object' && secret.publicKey) {
         this._unpackedToken = await decodeToken(this._token, secret.publicKey)
       } else {
-        throw new Error('invalid arguments')
+        return this._token
       }
     }
     return this._unpackedToken

@@ -18,6 +18,14 @@ test.before(async (t) => {
   // @ts-ignore
   await t.context.db.updateSchema({
     types: {
+      user: {
+        fields: {
+          name: { type: 'string' },
+          email: { type: 'string' },
+          password: { type: 'digest' },
+          status: { type: 'string' },
+        },
+      },
       thing: {
         prefix: 'th',
         fields: {
@@ -226,13 +234,21 @@ test.serial.only('register', async (t) => {
       port: 9401,
     },
     config: {
-      authorize: async ({ user }) => {
+      authorize: async ({ user, name, callStack }) => {
+        if (name === 'registerUser' || callStack.length) {
+          return true
+        }
         return (await user?.token()) === 'bla'
       },
       functions: {
         registerUser: {
           observable: false,
-          function: async () => {
+          function: async ({ based, payload }) => {
+            await based.set({
+              type: 'user',
+              email: payload.email,
+              password: payload.password,
+            })
             return { token: 'bla', refreshToken: 'bla' }
           },
         },
@@ -250,6 +266,24 @@ test.serial.only('register', async (t) => {
   // observeAuth
 
   t.is(client.getToken(), 'bla')
+
+  const users = await client.get({
+    users: {
+      $all: true,
+      $list: {
+        $find: {
+          $traverse: 'children',
+          $filter: {
+            $field: 'type',
+            $operator: '=',
+            $value: 'user',
+          },
+        },
+      },
+    },
+  })
+
+  console.log(users)
 
   t.teardown(async () => {
     await server.destroy()
