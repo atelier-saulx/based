@@ -34,11 +34,16 @@ export function useAuth(
   const [token, setToken] = useState<false | string>(false)
   const [id, setId] = useState<false | string>('')
   useEffect(() => {
-    const t = () => {
-      setId(client.client.user)
-      setToken(client.getToken())
+    const t = (d) => {
+      if (d) {
+        setId(client.client.user)
+        setToken(d)
+      }
     }
     client.on('auth', t)
+    if (client.client.token) {
+      t(client.client.token)
+    }
     return () => {
       client.removeListener('auth', t)
     }
