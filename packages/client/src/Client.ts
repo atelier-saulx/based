@@ -87,19 +87,21 @@ export class BasedClient {
       } else {
         this.optsId = hash('un-specified-env')
       }
-      const userString = global.localStorage.getItem(
-        'based-' + this.optsId + '-uid'
-      )
-      if (userString) {
-        try {
-          const [id, token, refreshToken] = JSON.parse(userString)
-          if (token && id) {
-            this.updateUserState(id, token, refreshToken)
+      try {
+        const userString = global.localStorage.getItem(
+          'based-' + this.optsId + '-uid'
+        )
+        if (userString) {
+          try {
+            const [id, token, refreshToken] = JSON.parse(userString)
+            if (token && id) {
+              this.updateUserState(id, token, refreshToken)
+            }
+          } catch (err) {
+            global.localStorage.removeItem('based-' + this.optsId + '-uid')
           }
-        } catch (err) {
-          global.localStorage.removeItem('based-' + this.optsId + '-uid')
         }
-      }
+      } catch (err) {}
     }
   }
 
@@ -125,15 +127,19 @@ export class BasedClient {
       this.auth.push((isValid) => {
         if (isValid) {
           if (typeof window !== 'undefined') {
-            global.localStorage.setItem(
-              'based-' + this.optsId + '-uid',
-              JSON.stringify([id, token, refreshToken])
-            )
+            try {
+              global.localStorage.setItem(
+                'based-' + this.optsId + '-uid',
+                JSON.stringify([id, token, refreshToken])
+              )
+            } catch (err) {}
           }
           this.based.emit('auth', token)
         } else {
           if (typeof window !== 'undefined') {
-            global.localStorage.removeItem('based-' + this.optsId + '-uid')
+            try {
+              global.localStorage.removeItem('based-' + this.optsId + '-uid')
+            } catch (err) {}
           }
           this.based.emit('auth', false)
         }
@@ -141,7 +147,9 @@ export class BasedClient {
     } else {
       if (typeof window !== 'undefined') {
         this.user = false
-        global.localStorage.removeItem('based-' + this.optsId + '-uid')
+        try {
+          global.localStorage.removeItem('based-' + this.optsId + '-uid')
+        } catch (err) {}
       }
       sendToken(this)
     }
