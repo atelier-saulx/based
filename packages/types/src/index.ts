@@ -355,6 +355,7 @@ export type RegisterOpts = {
   email: string
   password: string
   name?: string
+  redirectUrl?: string
 }
 
 export type RenewTokenOpts = {
