@@ -52,6 +52,13 @@ export class BasedClient {
     }
   }
 
+  public user:
+    | {
+        email: string
+        id: string
+      }
+    | false
+
   token: string
 
   renewOptions: {
@@ -68,6 +75,22 @@ export class BasedClient {
   isLogginIn: boolean
 
   auth: ((x?: any) => void)[] = []
+
+  public updateUserState(
+    userObject: { email: string; id: string } | false,
+    token: string | false,
+    refreshToken?: string
+  ) {
+    this.user = userObject
+    if (token) {
+      sendToken(this, token, {
+        refreshToken: refreshToken,
+      })
+    } else {
+      sendToken(this)
+    }
+    this.based.emit('auth', token)
+  }
 
   subscriptions: {
     [subscriptionId: string]: {

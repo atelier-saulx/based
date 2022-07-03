@@ -24,9 +24,11 @@ export const login = (
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
-        sendToken(client, response.token, {
-          refreshToken: response.refreshToken,
-        })
+        client.updateUserState(
+          { email: response.email, id: response.id },
+          response.token,
+          response.refreshToken
+        )
         resolve(response)
       },
       reject,
@@ -44,9 +46,11 @@ export const register = (
       RequestTypes.Call,
       opts,
       (response) => {
-        sendToken(client, response.token, {
-          refreshToken: response.refreshToken,
-        })
+        client.updateUserState(
+          { email: response.email, id: response.id },
+          response.token,
+          response.refreshToken
+        )
         resolve(response)
       },
       reject,
@@ -68,6 +72,7 @@ export const renewToken = (
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
+        // call state
         sendToken(client, response.token)
         resolve(response)
       },
@@ -95,7 +100,7 @@ export const logout = (client: BasedClient): Promise<GenericObject> => {
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
-        sendToken(client)
+        client.updateUserState(false, false)
         resolve(response)
       },
       reject,

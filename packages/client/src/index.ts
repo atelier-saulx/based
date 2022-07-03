@@ -853,6 +853,50 @@ export class Based extends Emitter {
   public logout(): Promise<GenericObject> {
     return logout(this.client)
   }
+
+  public observeUser(
+    userDataListener: (
+      data:
+        | {
+            email?: string
+            id: string
+            token: string
+          }
+        | false
+    ) => void
+  ): Promise<() => void> {
+    return new Promise((resolve) => {
+      // store a user state somehwere..
+
+      if (this.client.user && this.client.token) {
+        userDataListener({
+          ...this.client.user,
+          token: this.client.token,
+        })
+      } else {
+        userDataListener(false)
+      }
+
+      const authListener = (d) => {
+        console.info('something happening to auth...', d)
+
+        if (d && this.client.user) {
+          userDataListener({
+            ...this.client.user,
+            token: this.client.token,
+          })
+        } else {
+          userDataListener(false)
+        }
+      }
+
+      this.on('auth', authListener)
+
+      resolve(() => {
+        this.removeListener('auth', authListener)
+      })
+    })
+  }
 }
 
 // auth as admin // auth as based

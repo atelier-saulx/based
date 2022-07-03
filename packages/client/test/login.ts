@@ -3,6 +3,7 @@ import createServer from '@based/server'
 import { start } from '@saulx/selva-server'
 import based, { AuthLoginFunctionResponse } from '@based/client'
 import { SelvaClient } from '@saulx/selva'
+import { wait } from '@saulx/utils'
 
 const test = anyTest as TestInterface<{
   db: SelvaClient
@@ -19,6 +20,7 @@ test.before(async (t) => {
   await t.context.db.updateSchema({
     types: {
       user: {
+        prefix: 'us',
         fields: {
           name: { type: 'string' },
           email: { type: 'string' },
@@ -244,12 +246,30 @@ test.serial.only('register', async (t) => {
         registerUser: {
           observable: false,
           function: async ({ based, payload }) => {
-            await based.set({
-              type: 'user',
+            const { id } = await based.set({
+              $id: await based.id('user', payload.email),
               email: payload.email,
+              $alias: payload.email,
               password: payload.password,
             })
-            return { token: 'bla', refreshToken: 'bla' }
+            return {
+              token: 'bla',
+              refreshToken: 'bla',
+              email: payload.email,
+              id,
+            }
+          },
+        },
+        login: {
+          observable: false,
+          function: async ({ based, payload }) => {
+            const { id } = await based.get({ $alias: payload.email, id: true })
+            return {
+              token: 'bla',
+              refreshToken: 'bla',
+              email: payload.email,
+              id,
+            }
           },
         },
       },
@@ -261,9 +281,31 @@ test.serial.only('register', async (t) => {
     },
   })
 
-  await client.register({ email: 'me@me.com', password: 'smurk' })
+  t.throwsAsync(
+    client.get({
+      users: {
+        $all: true,
+        $list: {
+          $find: {
+            $traverse: 'children',
+            $filter: {
+              $field: 'type',
+              $operator: '=',
+              $value: 'user',
+            },
+          },
+        },
+      },
+    })
+  )
 
-  // observeAuth
+  const results: any[] = []
+
+  const close = await client.observeUser((user) => {
+    results.push(user)
+  })
+
+  await client.register({ email: 'me@me.com', password: 'smurk' })
 
   t.is(client.getToken(), 'bla')
 
@@ -283,7 +325,32 @@ test.serial.only('register', async (t) => {
     },
   })
 
-  console.log(users)
+  t.is(users.users.length, 1)
+
+  await client.logout()
+
+  await client.login({
+    email: 'me@me.com',
+    password: 'smurk',
+  })
+
+  await client.logout()
+
+  close()
+
+  await client.register({ email: 'me222@me.com', password: 'smurk' })
+
+  await wait(200)
+
+  const myUserId = await client.id('user', 'me@me.com')
+
+  t.deepEqual(results, [
+    false,
+    { email: 'me@me.com', id: myUserId, token: 'bla' },
+    false,
+    { email: 'me@me.com', id: myUserId, token: 'bla' },
+    false,
+  ])
 
   t.teardown(async () => {
     await server.destroy()
