@@ -301,8 +301,6 @@ export class BasedClient {
       // @ts-ignore
       const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
-        console.info(err)
-
         this.retryingRenewToken = false
         // means stomething got de-auth wrong
         if (reqId.length) {
