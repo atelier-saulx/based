@@ -23,6 +23,7 @@ import {
   FileUploadStream,
   AnalyticsHistoryResult,
   GetOptions,
+  RegisterOpts,
   LoginOpts,
 } from '@based/types'
 import {
@@ -841,6 +842,10 @@ export class Based extends Emitter {
 
   public async login(opts: LoginOpts): Promise<GenericObject> {
     return login(this.client, opts)
+  }
+
+  public async register(opts: RegisterOpts): Promise<GenericObject> {
+    return register(this.client, opts)
   }
 
   public logout(): Promise<GenericObject> {

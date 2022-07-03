@@ -96,9 +96,6 @@ export class BasedError extends Error {
   public payload?: any
   public auth?: boolean
   public code?: BasedErrorCodes
-  constructor(message: string) {
-    super(message)
-  }
 }
 
 export type ErrorObject = {
@@ -353,6 +350,13 @@ export type LoginOpts = {
   email: string
   password: string
 }
+
+export type RegisterOpts = {
+  email: string
+  password: string
+  name: string
+}
+
 export type RenewTokenOpts = {
   refreshToken?: string
 } & { [key: string]: any }
