@@ -228,7 +228,7 @@ test.serial('should not fail logout function does not exist', async (t) => {
   t.regex(error.name, /^AuthorizationError/)
 })
 
-test.serial.only('register', async (t) => {
+test.serial('register', async (t) => {
   const server = await createServer({
     port: 9333,
     db: {
