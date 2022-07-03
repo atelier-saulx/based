@@ -106,12 +106,9 @@ export default async (
           v[0].reason.message.includes('Token expired')
         ) {
           letsTryToRenew = true
-          console.info('LETS TRY REFRESH', options)
           // @ts-ignore
           renewOnInitial(client, server, options.refreshToken)
             .then((v) => {
-              console.info('ok got new token', v)
-
               if (v.token) {
                 client.send([RequestTypes.Token, [], false, v.token])
               } else {
