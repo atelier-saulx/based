@@ -24,15 +24,12 @@ export const login = (
     client.authCallbacks[reqId] = {
       resolve: (response) => {
         if (response.id && response.token) {
-          console.log('call from login')
           client.updateUserState(
             response.id,
             response.token,
             response.refreshToken
           )
         } else {
-          console.log('call from login empty')
-
           client.updateUserState(false)
         }
         resolve(response)
@@ -53,16 +50,12 @@ export const register = (
       opts,
       (response) => {
         if (response.id && response.token) {
-          console.log('call from register')
-
           client.updateUserState(
             response.id,
             response.token,
             response.refreshToken
           )
         } else {
-          console.log('call from register empty')
-
           client.updateUserState(false)
         }
         resolve(response)
@@ -111,8 +104,6 @@ export const logout = (client: BasedClient): Promise<GenericObject> => {
   return new Promise((resolve, reject) => {
     client.authCallbacks[reqId] = {
       resolve: (response) => {
-        console.log('call from logout ')
-
         client.updateUserState(false)
         resolve(response)
       },

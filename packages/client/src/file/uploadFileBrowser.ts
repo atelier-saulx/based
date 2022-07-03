@@ -48,10 +48,9 @@ const drainQueue = (url: string, authorization: string) => {
           console.error('on timeout', p)
         }
         xhr.onload = () => {
-          let res: any = {}
+          // let res: any = {}
           try {
-            res = JSON.parse(xhr.response)
-            console.info('SUCCESS', res)
+            JSON.parse(xhr.response)
           } catch (err) {
             console.error('something wrong with file upload', err)
           }

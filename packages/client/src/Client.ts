@@ -94,7 +94,6 @@ export class BasedClient {
         try {
           const [id, token, refreshToken] = JSON.parse(userString)
           if (token && id) {
-            console.info('call from init')
             this.updateUserState(id, token, refreshToken)
           }
         } catch (err) {
@@ -323,13 +322,10 @@ export class BasedClient {
               }
               this.based.emit('renewToken', result)
               if (result) {
-                console.info('CALL FROM RENEW =>')
-
                 this.updateUserState(
                   userId,
                   result.token,
-                  this.renewOptions.refreshToken,
-                  true
+                  this.renewOptions.refreshToken
                 )
               }
             })

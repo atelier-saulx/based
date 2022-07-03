@@ -342,10 +342,8 @@ export class Based extends Emitter {
             } as any // TODO: FIX
           }
 
-          // console.info('hello', this.client.configuration)
           this.client.configuration.schema[db] = data
           onData(data, checksum)
-          // this.client.configuration.schema
         },
         (err, subscriptionId, subscriberId, _data, isAuthError) => {
           if (err && !isAuthError) {
