@@ -241,10 +241,13 @@ test.serial('register', async (t) => {
       return 'ws://localhost:9333'
     },
   })
+
+  await client.register({ email: 'me@me.com', password: 'smurk' })
+
+  t.is(client.getToken(), 'bla')
+
   t.teardown(async () => {
     await server.destroy()
     client.disconnect()
   })
-
-  const x = await client.register({ email: 'me@me.com', password: 'smurk' })
 })
