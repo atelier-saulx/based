@@ -5,11 +5,13 @@ import {
   AuthRequestTypes,
   GenericObject,
   LoginOpts,
+  RegisterOpts,
   RenewTokenOpts,
   RequestTypes,
 } from '@based/types'
 import createError from './createError'
 import sendToken from './token'
+import { addRequest } from './request'
 
 let loginCbId = 0
 
@@ -31,6 +33,26 @@ export const login = (
     }
   })
 }
+
+export const register = (
+  client: BasedClient,
+  opts: RegisterOpts
+): Promise<{ token: string }> =>
+  new Promise((resolve, reject) => {
+    addRequest(
+      client,
+      RequestTypes.Call,
+      opts,
+      (response) => {
+        sendToken(client, response.token, {
+          refreshToken: response.refreshToken,
+        })
+        resolve(response)
+      },
+      reject,
+      'registerUser'
+    )
+  })
 
 export const renewToken = (
   client: BasedClient,
