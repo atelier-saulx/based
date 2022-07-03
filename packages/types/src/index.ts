@@ -354,7 +354,7 @@ export type LoginOpts = {
 export type RegisterOpts = {
   email: string
   password: string
-  name: string
+  name?: string
 }
 
 export type RenewTokenOpts = {

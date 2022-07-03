@@ -80,7 +80,7 @@ test.serial('should login and logout', async (t) => {
     },
     config: {
       authorize: async ({ user }) => {
-        return Boolean(user._token)
+        return Boolean(user?._token)
       },
       functions: {
         login: {
@@ -101,7 +101,7 @@ test.serial('should login and logout', async (t) => {
         },
         logout: {
           observable: false,
-          function: async ({}) => {
+          function: async () => {
             logoutFnCallCount++
             return {}
           },
@@ -166,12 +166,12 @@ test.serial('should not fail logout function does not exist', async (t) => {
     },
     config: {
       authorize: async ({ user }) => {
-        return Boolean(user._token)
+        return Boolean(user?._token)
       },
       functions: {
         login: {
           observable: false,
-          function: async ({}): Promise<AuthLoginFunctionResponse> => {
+          function: async (): Promise<AuthLoginFunctionResponse> => {
             return {
               id: 'wawa',
               email: 'wawa',
@@ -216,4 +216,35 @@ test.serial('should not fail logout function does not exist', async (t) => {
     })
   })
   t.regex(error.name, /^AuthorizationError/)
+})
+
+test.serial('register', async (t) => {
+  const server = await createServer({
+    port: 9333,
+    db: {
+      host: 'localhost',
+      port: 9401,
+    },
+    config: {
+      functions: {
+        registerUser: {
+          observable: false,
+          function: async () => {
+            return { token: 'bla', refreshToken: 'bla' }
+          },
+        },
+      },
+    },
+  })
+  const client = based({
+    url: async () => {
+      return 'ws://localhost:9333'
+    },
+  })
+  t.teardown(async () => {
+    await server.destroy()
+    client.disconnect()
+  })
+
+  await client.register({ email: 'me@me.com', password: 'smurk' })
 })
