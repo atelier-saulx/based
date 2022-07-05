@@ -60,7 +60,7 @@ export class Params {
 
   public callStack: string[] // this can be re-used
 
-  public user?: Client
+  public user: Client
 
   public payload?: any
 

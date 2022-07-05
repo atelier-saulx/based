@@ -810,30 +810,44 @@ export class Based extends Emitter {
     options?: SendTokenOptions
   ): Promise<false | string | number> {
     return new Promise((resolve) => {
-      this.client.auth.push(resolve)
-      if (
-        (token && token !== this.client.token) ||
-        (token === false && this.client.token)
-      ) {
-        if (typeof token === 'string') {
-          const { renewOptions, refreshToken, ...redactedOptions } =
-            options || {}
-          if (renewOptions) {
-            this.client.renewOptions = renewOptions
-          }
-          if (refreshToken) {
-            this.client.renewOptions = {
-              ...this.client.renewOptions,
-              refreshToken,
-            }
-          }
-          sendToken(this.client, token, redactedOptions)
+      if (token && token === this.client.token) {
+        if (!this.client.beingAuth) {
+          resolve(token)
         } else {
-          // this is very important
-          // may need to add a req Id (and a timer how long it takes)
-          sendToken(this.client)
+          this.client.auth.push((v) => {
+            if (v) {
+              resolve(token)
+            } else {
+              resolve(false)
+            }
+          })
         }
-        this.emit('auth', token)
+      } else {
+        this.client.auth.push(resolve)
+        if (
+          (token && token !== this.client.token) ||
+          (token === false && this.client.token)
+        ) {
+          if (typeof token === 'string') {
+            const { renewOptions, refreshToken, ...redactedOptions } =
+              options || {}
+            if (renewOptions) {
+              this.client.renewOptions = renewOptions
+            }
+            if (refreshToken) {
+              this.client.renewOptions = {
+                ...this.client.renewOptions,
+                refreshToken,
+              }
+            }
+            sendToken(this.client, token, redactedOptions)
+          } else {
+            // this is very important
+            // may need to add a req Id (and a timer how long it takes)
+            sendToken(this.client)
+          }
+          this.emit('auth', token)
+        }
       }
     })
   }

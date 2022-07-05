@@ -15,6 +15,8 @@ export { Client }
 
 export type CallParams = Omit<Params, 'update'>
 
+export type ObservableParams = Omit<Params, 'user'>
+
 export type DataListener = (
   data: GenericObject,
   checksum: number,
@@ -22,7 +24,7 @@ export type DataListener = (
 ) => void
 
 export type ObservableFunction = {
-  function: (params: Params) => Promise<() => void>
+  function: (params: ObservableParams) => Promise<() => void>
   authorize?: (params: CallParams) => Promise<boolean>
   observable: true
   shared: boolean
