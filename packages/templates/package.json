@@ -2,7 +2,7 @@
   "name": "@based/templates",
   "version": "0.1.0",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/",
   "scripts": {
     "build": "npx tsc && npm run build-functions",
     "watch": "npm run build -- --watch",
@@ -22,7 +22,11 @@
       "ts-node/register"
     ]
   },
+  "dependencies": {
+    "@based/server": "^3.1.0"
+  },
   "devDependencies": {
+    "@based/server": "^3.1.0",
     "esbuild": "^0.14.29",
     "@types/node": "^17.0.25",
     "ava": "3.15.0",
