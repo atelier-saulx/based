@@ -1,7 +1,6 @@
 import { BasedServerClient } from '@based/server'
 
 export default async ({
-  payload,
   based,
   user,
 }: {

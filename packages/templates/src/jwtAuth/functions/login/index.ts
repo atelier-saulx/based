@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import crypto from 'crypto'
 import { BasedServerClient } from '@based/server'
 
