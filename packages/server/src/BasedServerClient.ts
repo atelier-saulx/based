@@ -5,6 +5,7 @@ import {
   GenericObject,
   Copy,
   Configuration,
+  Based as BasedAdminClient,
   TrackOpts,
   generateTrackingKey,
 } from '@based/client'
@@ -159,6 +160,14 @@ class BasedServerClient {
           reject(err)
         })
     })
+  }
+
+  public async admin(key: string): Promise<BasedAdminClient> {
+    if (!key) {
+      throw new Error('Based admin client needs a key')
+    } else {
+      return this._params.server.config.getAdmin(key)
+    }
   }
 
   public observe(

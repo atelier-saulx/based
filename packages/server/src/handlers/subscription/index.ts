@@ -13,7 +13,7 @@ import {
 import { DataListener } from '../../types'
 
 // type GenericObject = { [key: string]: any }
-
+console.info('xxx')
 export class Subscription {
   // public lastDiff: [GenericObject, number]
 
@@ -191,7 +191,7 @@ export class Subscription {
         this.errorState,
       ]
       client.send(payload)
-    } else if (this.observable.cache) {
+    } else if (this.jsonCache) {
       if (checksum === this.observable.version) {
         // console.info(
         //   'got version dont re-send',

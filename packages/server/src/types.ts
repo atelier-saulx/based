@@ -4,7 +4,11 @@ import { ConnectOptions } from '@saulx/selva'
 import Based from './BasedServerClient'
 import { Params } from './Params'
 import { BasedServer } from '.'
-import { ErrorObject, GenericObject } from '@based/client'
+import {
+  ErrorObject,
+  GenericObject,
+  Based as BasedAdminClient,
+} from '@based/client'
 import { Readable } from 'stream'
 
 export { Client }
@@ -125,6 +129,8 @@ export type Config = {
     id: string
     db?: string
   }) => Promise<boolean>
+
+  getAdmin?: (key: string) => Promise<BasedAdminClient>
 
   functionConfig?: {
     idleTimeout: number
