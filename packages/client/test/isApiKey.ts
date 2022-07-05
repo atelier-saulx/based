@@ -90,6 +90,23 @@ test.serial('auth with apiKey', async (t) => {
   })
   t.is(z?.id, 'root')
 
+  await client.auth(false)
+
+  console.info('multi')
+  await Promise.all([
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+  ])
+
+  const a = await client.get({
+    $id: 'root',
+    id: true,
+    name: true,
+  })
+  t.is(a?.id, 'root')
+
   await server.destroy()
   client.disconnect()
 })

@@ -811,7 +811,17 @@ export class Based extends Emitter {
   ): Promise<false | string | number> {
     return new Promise((resolve) => {
       if (token && token === this.client.token) {
-        resolve(token)
+        if (!this.client.beingAuth) {
+          resolve(token)
+        } else {
+          this.client.auth.push((v) => {
+            if (v) {
+              resolve(token)
+            } else {
+              resolve(false)
+            }
+          })
+        }
       } else {
         this.client.auth.push(resolve)
         if (
