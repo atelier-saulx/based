@@ -75,11 +75,17 @@ export async function findSchemaAndFunctions(
         })
         indexesFound = indexesFound.flat()
 
-        const basedConfig: {
+        let basedConfig: {
           name: string
           observable: boolean
           shared: boolean
-        } = require(fnConfigFile)
+        }
+        try {
+          basedConfig = require(fnConfigFile)
+        } catch (e) {
+          const configBody = await fs.readFile(fnConfigFile, 'utf8')
+          basedConfig = eval(configBody)
+        }
         for (const prop of configMandatoryFields) {
           if (!(prop in basedConfig)) {
             throw new Error(
