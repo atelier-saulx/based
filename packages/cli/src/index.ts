@@ -13,6 +13,7 @@ import './deploy'
 import './apiKeys'
 import './services'
 import './log'
+import './templates'
 
 const pkg = require('../package.json')
 
