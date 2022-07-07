@@ -1,4 +1,3 @@
-import fetch from 'cross-fetch'
 import { Command } from 'commander'
 import ora from 'ora'
 import { GlobalOptions } from '../command'
@@ -12,9 +11,7 @@ import {
 } from '../tui'
 import chalk from 'chalk'
 import { makeConfig } from '../makeConfig'
-
-const TEMPLATES_URL =
-  'https://api.github.com/repos/atelier-saulx/based/contents/packages/templates'
+import { gitHubFetch, GitHubItem } from './gitHubFetch'
 
 export type TemplatesLsOptions = GlobalOptions & {}
 
@@ -29,7 +26,7 @@ export const templateLsCommand = new Command('ls')
   .action(async (options: TemplatesLsOptions) => {
     const config = await makeConfig(options)
     printHeader(options, config)
-    options.output === 'fancy' && printAction('List services')
+    options.output === 'fancy' && printAction('List templates')
 
     const output: TemplatesLsOutput = { data: null }
 
@@ -39,12 +36,12 @@ export const templateLsCommand = new Command('ls')
       if (options.output === 'fancy') {
         spinner = ora('Getting templates').start()
       }
-      const result = await fetch(TEMPLATES_URL, {
-        headers: {
-          Accept: 'application/vnd.github+json',
-          // Authorization: 'token <token>',
-        },
-      }).then((r) => r.json())
+      const result = (await gitHubFetch(
+        '/packages/templates',
+        output,
+        options
+      )) as GitHubItem[]
+
       const availableTemplates = result
         .filter((r: { type: string }) => r.type === 'dir')
         .map((r: { name: string }) => r.name)
