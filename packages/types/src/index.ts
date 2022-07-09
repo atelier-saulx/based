@@ -96,9 +96,6 @@ export class BasedError extends Error {
   public payload?: any
   public auth?: boolean
   public code?: BasedErrorCodes
-  constructor(message: string) {
-    super(message)
-  }
 }
 
 export type ErrorObject = {
