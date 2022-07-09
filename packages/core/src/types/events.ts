@@ -1,8 +1,7 @@
-import { Schema } from './schema'
 import { Auth } from './auth'
 
 export type EventMap = {
-  connect: boolean
+  connection: boolean
   debug: {
     type: string
     direction: 'up' | 'down'
@@ -10,7 +9,8 @@ export type EventMap = {
     data: any
   }
   auth: Auth
-  schema: Schema
 }
 
 export type Event = keyof EventMap
+
+export type Listener<T> = (data: T) => void

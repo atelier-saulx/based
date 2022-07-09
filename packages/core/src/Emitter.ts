@@ -1,6 +1,4 @@
-import { EventMap, Event } from './types'
-
-export type Listener<T> = (data: T) => void
+import { EventMap, Event, Listener } from './types'
 
 class Emitter {
   constructor() {

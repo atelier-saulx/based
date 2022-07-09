@@ -7,6 +7,8 @@ import {
   observeErrorListener,
   closeSchemaObserve,
   Schema,
+  Auth,
+  Listener,
 } from './types'
 
 import Emitter from './Emitter'
@@ -28,6 +30,7 @@ client.disconnect
 client.connect
 client.debug (allows you to listen on messages)
 -------------------
+client.authState
 client.auth
 client.observeAuth
 -------------------
@@ -41,13 +44,8 @@ export class BasedCoreClient extends Emitter {
     this.opts = opts
   }
 
-  disconnect() {}
-
-  // -------- Schema
-  schema: Schema
-
-  observeSchema(onSchema: observeSchemaListener): closeSchemaObserve {
-    return () => {}
+  disconnect() {
+    this.emit('connection', false)
   }
 
   // -------- Observe
@@ -68,6 +66,21 @@ export class BasedCoreClient extends Emitter {
   // -------- Function
   async function(name: string, payload?: GenericObject): Promise<any> {
     // any is better
+  }
+
+  // -------- Auth
+  authState: Auth = { token: false }
+  // more things prob have to make it better then this
+  // renewtoken in here as well
+  // or start of the cookie based auth
+  authInProgress: Promise<Auth>
+  async auth(token: string | false): Promise<any> {
+    if (token === false) {
+      this.authState = { token: false }
+      this.emit('auth', this.authState)
+    } else if (typeof token === 'string') {
+      // do actual authentication
+    }
   }
 }
 
