@@ -1,11 +1,15 @@
 import type { BasedServer } from './server'
+import type uws from '@based/uws'
 
 export type ServerOptions = {
   port?: number
   key?: string
   cert?: string
   functions?: FunctionConfig
+  authorizeConnection?: AuthorizeConnection
 }
+
+export type AuthorizeConnection = (req: uws.HttpRequest) => Promise<boolean>
 
 export type ObservableUpdateFunction = (
   data: any,

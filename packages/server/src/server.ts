@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import initNetwork from './network'
-import type { ServerOptions } from './types'
+import type { AuthorizeConnection, ServerOptions } from './types'
 import { BasedFunctions } from './functions'
 import { BasedObservableFunction } from './observable'
 
@@ -12,6 +12,8 @@ export class BasedServer {
   public uwsApp: uws.TemplatedApp
 
   public listenSocket: any
+
+  public authorizeConnection: AuthorizeConnection
 
   public activeObservables: {
     [name: string]: {
@@ -26,6 +28,9 @@ export class BasedServer {
   constructor(opts: ServerOptions) {
     initNetwork(this, opts)
     this.functions = new BasedFunctions(this, opts.functions)
+    if (opts.authorizeConnection) {
+      this.authorizeConnection = opts.authorizeConnection
+    }
   }
 
   start(port?: number): Promise<BasedServer> {

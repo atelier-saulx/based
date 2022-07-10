@@ -1,7 +1,7 @@
 import type { ServerOptions } from '../types'
 import type { BasedServer } from '../server'
 import uws from '@based/uws'
-import upgrade from './upgrade'
+import { upgradeAuthorize, upgrade } from './upgrade'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -23,18 +23,18 @@ app.publish('all',message)
 */
 
   app.ws('/*', {
-    // make this lower
-    // chunks from client as well
-    maxPayloadLength: 1024 * 1024 * 5, // 5mb should be more then enough
+    maxPayloadLength: 1024 * 1024 * 5,
     idleTimeout: 100,
     maxBackpressure: 1024, //
     compression: uws.SHARED_COMPRESSOR, // 1,
-    upgrade: (res, req, ctx) => {
-      upgrade(server, res, req, ctx)
-    },
+    upgrade: server.authorizeConnection
+      ? (res, req, ctx) => {
+          upgradeAuthorize(server.authorizeConnection, res, req, ctx)
+        }
+      : upgrade,
     message: (ws, msg) => {
       console.info('msg', msg)
-
+      // here we handle getting a sub directly
       // message(this, ws, msg)
     },
     open: (ws) => {
