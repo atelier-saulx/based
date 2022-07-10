@@ -1,22 +1,13 @@
-// very big difference is using funcitons for everything - and creating a robust interface for it
-// totally seperate from each other
-// observableFunctions
-// functions
-// add cache as option for observables
-// diff in update handler
-// way more low level interface then we expose in hub
-// 2 bytes to encode the type OR just using the name
-// subscribe - GET / RESEND (no sub) - SUBSCRIBE + SEND IF CHECKSUM
-// going to start with observables
-// pkg for selva functionality ( on the same )
-/*
-open:ws=>ws.subscribe('all')
-app.publish('all',message)
-*/
+import { BasedServer } from '..'
+import { BasedObservableFunction } from './functions/observable'
+import { BasedFunction } from './functions/function'
 
-// no more concept of clients just an id ? or make clients
-
-// what do we want to do with clients?
+export type ServerOptions = {
+  port: number
+  key?: string
+  cert?: string
+  functions?: FunctionConfig
+}
 
 export type ObservableUpdateFunction = (
   data: any,
@@ -25,20 +16,52 @@ export type ObservableUpdateFunction = (
   fromChecksum?: number
 ) => {}
 
-// make into a class?
-export type ObservableFunctionSpec = {
+export type BasedObservableFunctionSpec = {
   name: string
   checksum: number
+  observable: true
+  function: (payload: any, update: ObservableUpdateFunction) => () => void
   memCache?: number // in seconds
   idleTimeout?: number // in seconss
   worker?: string | true | false
-  function?: (payload: any, update: ObservableUpdateFunction) => () => void
 }
 
-export type FunctionSpec = {
+export type BasedFunctionSpec = {
   name: string
   checksum: number
+  function: (payload: any) => Promise<any>
   idleTimeout?: number // in seconss
   worker?: boolean | true | false
-  function?: (payload: any) => Promise<any>
+}
+
+export function isObservableFunctionSpec(
+  fn: BasedObservableFunctionSpec | BasedFunctionSpec
+): fn is BasedObservableFunctionSpec {
+  return (fn as BasedObservableFunctionSpec).observable
+}
+
+export type FunctionConfig = {
+  memCache?: number
+  idleTimeout?: number
+  maxWorkers?: number
+
+  register: (opts: {
+    server: BasedServer
+    name: string
+    observable: boolean
+  }) => Promise<boolean>
+
+  unRegister: (opts: {
+    server: BasedServer
+    name: string
+    function: BasedObservableFunction | BasedFunction
+  }) => Promise<boolean>
+
+  log?: (opts: {
+    server: BasedServer
+    type: 'error' | 'warn' | 'info' | 'log'
+    name: string
+    message: string
+    callstack: string[]
+  }) => boolean
 }

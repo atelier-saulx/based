@@ -49,6 +49,9 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Observe
+
+  // state!
+
   observe(
     name: string,
     onData: observeDataListener,
