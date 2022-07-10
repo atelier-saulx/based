@@ -6,7 +6,6 @@ import {
   FunctionConfig,
   isObservableFunctionSpec,
 } from '../types'
-import { BasedObservableFunction } from './observable'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 
 export class BasedFunctions {
@@ -15,14 +14,6 @@ export class BasedFunctions {
   config: FunctionConfig
 
   unRegisterTimeout: NodeJS.Timeout
-
-  activeObservables: {
-    [id: string]: BasedObservableFunction
-  }
-
-  activeObservablesByName: {
-    [key: string]: BasedObservableFunction
-  }
 
   observables: {
     [key: string]: BasedObservableFunctionSpec
@@ -50,7 +41,7 @@ export class BasedFunctions {
       }
       for (const name in this.observables) {
         const spec = this.observables[name]
-        if (this.activeObservablesByName[name]) {
+        if (this.server.activeObservables[name]) {
           updateTimeoutCounter(spec, this.config.idleTimeout)
         } else if (fnIsTimedOut(spec)) {
           q.push(this.unRegister(name, spec))
@@ -126,13 +117,16 @@ export class BasedFunctions {
       }
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {
-          console.info('was function clear it!', spec.name)
           this.remove(spec.name)
         }
         this.observables[spec.name] = spec
+        if (this.server.activeObservables[spec.name]) {
+          for (const id in this.server.activeObservables[spec.name]) {
+            this.server.activeObservables[spec.name][id].updateObservableCode()
+          }
+        }
       } else {
         if (this.observables[spec.name]) {
-          console.info('was observable clear it!', spec.name)
           this.remove(spec.name)
         }
         this.functions[spec.name] = spec
@@ -156,7 +150,7 @@ export class BasedFunctions {
           name,
         })
       ) {
-        this.remove(name)
+        return this.remove(name)
       }
     }
     return false
@@ -166,6 +160,13 @@ export class BasedFunctions {
     // Does not call unregister!
     if (this.observables[name]) {
       delete this.observables[name]
+      const active = this.server.activeObservables[name]
+      if (active) {
+        for (const id in active) {
+          active[id].destroy()
+        }
+        delete this.server.activeObservables[name]
+      }
     } else if (this.functions[name]) {
       delete this.functions[name]
       return true

@@ -24,7 +24,7 @@ app.publish('all',message)
   app.ws('/*', {
     // make this lower
     // chunks from client as well
-    maxPayloadLength: 1024, // 5mb should be more then enough
+    maxPayloadLength: 1024 * 1024 * 5, // 5mb should be more then enough
     idleTimeout: 100,
     maxBackpressure: 1024, //
     compression: uws.SHARED_COMPRESSOR, // 1,
