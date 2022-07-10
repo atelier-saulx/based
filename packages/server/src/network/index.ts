@@ -39,6 +39,12 @@ app.publish('all',message)
     },
     open: (ws) => {
       console.info('open')
+      // ws.token = 'x' token - only on upgrade does make it super easy
+
+      console.info(ws)
+
+      // broadcast will only do diffs except when its a new sub
+      // send is used to send a current value
       // open(this, ws)
     },
     close: (ws) => {

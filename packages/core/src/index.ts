@@ -13,39 +13,16 @@ import connectWebsocket from './websocket'
 import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
 
-/* 
--------------------
-Allways starts with observing schema this is used to map types - also fits well with gql
--------------------
-client.schema
-client.observeSchema
--------------------
-client.observe
-client.get
--------------------
-client.function 
--------------------
-client.opts
-client.disconnect
-client.connect
-client.debug (allows you to listen on messages)
--------------------
-client.authState
-client.auth
-client.observeAuth
--------------------
-*/
-
 export class BasedCoreClient extends Emitter {
-  // --------Generic options
   opts: BasedOpts
 
   connected: boolean = false
 
-  connection: Connection // needs to be a class
+  connection: Connection
 
-  private _url: string | (() => Promise<string>)
+  url: string | (() => Promise<string>)
 
+  // -------------------
   onClose() {
     this.connected = false
     this.emit('disconnect', true)
@@ -68,7 +45,7 @@ export class BasedCoreClient extends Emitter {
   // -------------------
   public async connect(opts?: BasedOpts) {
     if (opts) {
-      this._url = await getUrlFromOpts(opts)
+      this.url = await getUrlFromOpts(opts)
       if (this.opts) {
         console.warn('replace client connect opts')
         this.disconnect()
@@ -79,8 +56,8 @@ export class BasedCoreClient extends Emitter {
       console.error('Configure opts to connect')
       return
     }
-    if (this._url && !this.connection) {
-      this.connection = connectWebsocket(this, this._url)
+    if (this.url && !this.connection) {
+      this.connection = connectWebsocket(this, this.url)
     }
   }
 
@@ -99,8 +76,7 @@ export class BasedCoreClient extends Emitter {
     this.connected = false
   }
 
-  // -------------------
-
+  // --------- Observe
   observe(
     name: string,
     onData: observeDataListener,
@@ -113,13 +89,11 @@ export class BasedCoreClient extends Emitter {
   }
 
   async get(name: string, payload?: GenericObject): Promise<any> {
-    // any is better
     console.info(name, payload)
   }
 
   // -------- Function
   async function(name: string, payload?: GenericObject): Promise<any> {
-    // any is better
     console.info(name, payload)
   }
 
