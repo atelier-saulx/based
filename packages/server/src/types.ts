@@ -1,6 +1,4 @@
 import { BasedServer } from '..'
-import { BasedObservableFunction } from './functions/observable'
-import { BasedFunction } from './functions/function'
 
 export type ServerOptions = {
   port: number
@@ -21,17 +19,19 @@ export type BasedObservableFunctionSpec = {
   checksum: number
   observable: true
   function: (payload: any, update: ObservableUpdateFunction) => () => void
-  memCache?: number // in seconds
-  idleTimeout?: number // in seconss
+  memCacheTimeout?: number // in seconds
+  idleTimeout?: number // in 3 seconds
   worker?: string | true | false
+  timeoutCounter?: number // bit harder have to add
 }
 
 export type BasedFunctionSpec = {
   name: string
   checksum: number
   function: (payload: any) => Promise<any>
-  idleTimeout?: number // in seconss
+  idleTimeout?: number // in 3 seconds
   worker?: boolean | true | false
+  timeoutCounter?: number
 }
 
 export function isObservableFunctionSpec(
@@ -40,21 +40,21 @@ export function isObservableFunctionSpec(
   return (fn as BasedObservableFunctionSpec).observable
 }
 
+// first byte has to encode the length
+// type + length ? ;/
+// return type is a lot better 256 options (max functions) maybe 2 bytes
+
 export type FunctionConfig = {
-  memCache?: number
-  idleTimeout?: number
+  memCacheTimeout?: number // in seconds
+  idleTimeout?: number // in 3 seconds
   maxWorkers?: number
 
-  register: (opts: {
-    server: BasedServer
-    name: string
-    observable: boolean
-  }) => Promise<boolean>
+  register: (opts: { server: BasedServer; name: string }) => Promise<boolean>
 
   unRegister: (opts: {
     server: BasedServer
     name: string
-    function: BasedObservableFunction | BasedFunction
+    function: BasedObservableFunctionSpec | BasedFunctionSpec
   }) => Promise<boolean>
 
   log?: (opts: {
@@ -63,5 +63,5 @@ export type FunctionConfig = {
     name: string
     message: string
     callstack: string[]
-  }) => boolean
+  }) => void
 }
