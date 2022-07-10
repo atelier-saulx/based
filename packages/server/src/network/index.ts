@@ -18,9 +18,9 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   }
 
   /*
-open:ws=>ws.subscribe('all')
-app.publish('all',message)
-*/
+  open:ws=>ws.subscribe('all')
+  app.publish('all',message)
+  */
 
   app.ws('/*', {
     maxPayloadLength: 1024 * 1024 * 5,

@@ -6,8 +6,11 @@ import {
   ObserveDataListener,
   ObserveErrorListener,
   Auth,
+  FunctionResponseListeners,
   Settings,
+  FunctionQueue,
   ObserveState,
+  Cache,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
@@ -36,16 +39,15 @@ export class BasedCoreClient extends Emitter {
   localStorage: boolean = false
   maxCacheSize: number = 4e6 // in bytes
   maxCacheTime: number = 2630e3 // in seconds (1 month default)
+  cache: Cache = {}
+  // --------- Functions State
+  functionResponseListeners: FunctionResponseListeners = {}
+  functionQueue: FunctionQueue = []
   // --------- Observe State
   observeState: ObserveState = {}
-
   // -------- Auth state
   authState: Auth = { token: false }
-  // more things prob have to make it better then this
-  // renewtoken in here as well
-  // or start of the cookie based auth
   authInProgress: Promise<Auth>
-
   // --------- Events
   onClose() {
     this.connected = false
