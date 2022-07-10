@@ -1,3 +1,5 @@
+import { GenericObject } from './generic'
+
 export type ObserveMetaInfo = {
   id: string
   checksum: number
@@ -5,12 +7,26 @@ export type ObserveMetaInfo = {
 }
 
 export type ObserveOpts = {
-  maxCacheSize?: number // in bytes
   localStorage?: boolean
+  maxCacheTime?: number
 }
 
-export type observeDataListener = (data?: any, opts?: ObserveMetaInfo) => void
+export type ObserveDataListener = (data?: any, opts?: ObserveMetaInfo) => void
 
-export type observeErrorListener = (err: Error, opts?: ObserveMetaInfo) => void
+export type ObserveErrorListener = (err: Error, opts?: ObserveMetaInfo) => void
 
-export type closeObserve = (opts?: ObserveMetaInfo) => void
+export type CloseObserve = (opts?: ObserveMetaInfo) => void
+
+export type ObserveState = {
+  [id: string]: {
+    cnt: number
+    query: GenericObject
+    name: string
+    subscribers: {
+      [cnt: string]: {
+        onError?: ObserveErrorListener
+        onData: ObserveDataListener
+      }
+    }
+  }
+}

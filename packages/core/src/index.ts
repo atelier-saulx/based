@@ -1,28 +1,52 @@
 import {
   GenericObject,
   BasedOpts,
-  closeObserve,
+  CloseObserve,
   ObserveOpts,
-  observeDataListener,
-  observeErrorListener,
+  ObserveDataListener,
+  ObserveErrorListener,
   Auth,
+  Settings,
+  ObserveState,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
-
 import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
 
 export class BasedCoreClient extends Emitter {
+  constructor(opts?: BasedOpts, settings?: Settings) {
+    super()
+    if (settings) {
+      for (const k in settings) {
+        this[k] = settings[k]
+      }
+    }
+    if (opts) {
+      this.connect(opts)
+    }
+  }
+
+  // --------- Connection State
   opts: BasedOpts
-
   connected: boolean = false
-
   connection: Connection
-
   url: string | (() => Promise<string>)
+  // --------- Cache State
+  localStorage: boolean = false
+  maxCacheSize: number = 4e6 // in bytes
+  maxCacheTime: number = 2630e3 // in seconds (1 month default)
+  // --------- Observe State
+  observeState: ObserveState = {}
 
-  // -------------------
+  // -------- Auth state
+  authState: Auth = { token: false }
+  // more things prob have to make it better then this
+  // renewtoken in here as well
+  // or start of the cookie based auth
+  authInProgress: Promise<Auth>
+
+  // --------- Events
   onClose() {
     this.connected = false
     this.emit('disconnect', true)
@@ -42,7 +66,7 @@ export class BasedCoreClient extends Emitter {
     console.info('yes', data)
   }
 
-  // -------------------
+  // --------- Connect
   public async connect(opts?: BasedOpts) {
     if (opts) {
       this.url = await getUrlFromOpts(opts)
@@ -79,11 +103,11 @@ export class BasedCoreClient extends Emitter {
   // --------- Observe
   observe(
     name: string,
-    onData: observeDataListener,
+    onData: ObserveDataListener,
     payload?: GenericObject,
-    onErr?: observeErrorListener,
+    onErr?: ObserveErrorListener,
     observeOpts?: ObserveOpts
-  ): closeObserve {
+  ): CloseObserve {
     console.info(name, onData, payload, onErr, observeOpts)
     return () => {}
   }
@@ -98,11 +122,7 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Auth
-  authState: Auth = { token: false }
-  // more things prob have to make it better then this
-  // renewtoken in here as well
-  // or start of the cookie based auth
-  authInProgress: Promise<Auth>
+  // maybe only send token on connect / upgrade
   async auth(token: string | false): Promise<any> {
     if (token === false) {
       this.authState = { token: false }

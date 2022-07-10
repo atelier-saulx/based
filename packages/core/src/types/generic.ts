@@ -16,3 +16,9 @@ export type BasedOpts = {
     [key: string]: string | number
   }
 }
+
+export type Settings = {
+  maxCacheSize?: number
+  maxCacheTime?: number
+  localStorage?: boolean
+}
