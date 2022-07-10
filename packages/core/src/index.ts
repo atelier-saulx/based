@@ -5,10 +5,7 @@ import {
   ObserveOpts,
   observeDataListener,
   observeErrorListener,
-  closeSchemaObserve,
-  Schema,
   Auth,
-  Listener,
 } from './types'
 
 import Emitter from './Emitter'

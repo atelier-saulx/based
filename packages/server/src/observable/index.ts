@@ -21,9 +21,8 @@ export class BasedObservableFunction {
   destroy() {
     console.info('destroy observable!')
     // also need to send info to clients that its gone (e.g. does not exist anymore)
-    if (this.server.activeObservables[this.name]?.[this.id]) {
-      delete this.server.activeObservables[this.name][this.id]
-    }
+    delete this.server.activeObservables[this.name][this.id]
+    delete this.server.activeObservablesById[this.id]
   }
 
   async updateObservableCode(): Promise<void> {

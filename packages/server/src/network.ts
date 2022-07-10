@@ -33,7 +33,7 @@ app.publish('all',message)
       // upgrade(this, res, req, ctx)
     },
     message: (ws, msg) => {
-      console.info('msg')
+      console.info('msg', msg)
 
       // message(this, ws, msg)
     },

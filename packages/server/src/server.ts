@@ -19,6 +19,10 @@ export class BasedServer {
     }
   } = {}
 
+  public activeObservablesById: {
+    [id: string]: BasedObservableFunction
+  } = {}
+
   constructor(opts: ServerOptions) {
     initNetwork(this, opts)
     this.functions = new BasedFunctions(this, opts.functions)
