@@ -1,4 +1,4 @@
-import { BasedServer } from '..'
+import type { BasedServer } from '../server'
 
 export class BasedObservableFunction {
   server: BasedServer

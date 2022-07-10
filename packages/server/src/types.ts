@@ -1,7 +1,7 @@
-import { BasedServer } from '..'
+import type { BasedServer } from './server'
 
 export type ServerOptions = {
-  port: number
+  port?: number
   key?: string
   cert?: string
   functions?: FunctionConfig
@@ -34,12 +34,6 @@ export type BasedFunctionSpec = {
   timeoutCounter?: number
 }
 
-export function isObservableFunctionSpec(
-  fn: BasedObservableFunctionSpec | BasedFunctionSpec
-): fn is BasedObservableFunctionSpec {
-  return (fn as BasedObservableFunctionSpec).observable
-}
-
 // first byte has to encode the length
 // type + length ? ;/
 // return type is a lot better 256 options (max functions) maybe 2 bytes
@@ -64,4 +58,10 @@ export type FunctionConfig = {
     message: string
     callstack: string[]
   }) => void
+}
+
+export function isObservableFunctionSpec(
+  fn: BasedObservableFunctionSpec | BasedFunctionSpec
+): fn is BasedObservableFunctionSpec {
+  return (fn as BasedObservableFunctionSpec).observable
 }

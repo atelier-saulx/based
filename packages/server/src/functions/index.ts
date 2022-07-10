@@ -1,12 +1,14 @@
-import { deepMerge } from '@saulx/utils'
-import { BasedServer } from '..'
+import type { BasedServer } from '../server'
 import {
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
   isObservableFunctionSpec,
 } from '../types'
+import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
+
+export { isObservableFunctionSpec }
 
 export class BasedFunctions {
   server: BasedServer

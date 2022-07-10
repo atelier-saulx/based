@@ -1,5 +1,5 @@
-import { ServerOptions } from './types'
-import { BasedServer } from '.'
+import type { ServerOptions } from './types'
+import type { BasedServer } from './server'
 import uws from '@based/uws'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
