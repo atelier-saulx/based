@@ -1,7 +1,9 @@
 import { Auth } from './auth'
 
 export type EventMap = {
-  connection: boolean
+  reconnect: true
+  disconnect: true
+  connect: true
   debug: {
     type: string
     direction: 'up' | 'down'
@@ -13,4 +15,4 @@ export type EventMap = {
 
 export type Event = keyof EventMap
 
-export type Listener<T> = (data: T) => void
+export type Listener<T> = (data?: T) => void

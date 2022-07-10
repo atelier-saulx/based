@@ -180,7 +180,6 @@ export class BasedClient {
     stopDrainQueue(this)
     removeUnsubscribesFromQueue(this)
     removeSendSubsriptionDataFromQueue(this)
-    // removeSendSubsriptionDataFromQueue
     if (this.based.listeners.disconnect) {
       this.based.listeners.disconnect.forEach((val) => val())
     }

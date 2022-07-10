@@ -1,6 +1,7 @@
-import type { ServerOptions } from './types'
-import type { BasedServer } from './server'
+import type { ServerOptions } from '../types'
+import type { BasedServer } from '../server'
 import uws from '@based/uws'
+import upgrade from './upgrade'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -29,8 +30,7 @@ app.publish('all',message)
     maxBackpressure: 1024, //
     compression: uws.SHARED_COMPRESSOR, // 1,
     upgrade: (res, req, ctx) => {
-      console.info('upgrade')
-      // upgrade(this, res, req, ctx)
+      upgrade(server, res, req, ctx)
     },
     message: (ws, msg) => {
       console.info('msg', msg)

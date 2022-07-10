@@ -109,9 +109,7 @@ export class BasedFunctions {
     return false
   }
 
-  async update(
-    spec: BasedObservableFunctionSpec | BasedFunctionSpec
-  ): Promise<boolean> {
+  update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
     if (spec) {
       if (spec.timeoutCounter === undefined) {
         const idleTimeout = spec.idleTimeout || this.config.idleTimeout
@@ -137,6 +135,24 @@ export class BasedFunctions {
     return false
   }
 
+  remove(name: string): boolean {
+    // Does not call unregister!
+    if (this.observables[name]) {
+      delete this.observables[name]
+      const active = this.server.activeObservables[name]
+      if (active) {
+        for (const id in active) {
+          active[id].destroy()
+        }
+        delete this.server.activeObservables[name]
+      }
+    } else if (this.functions[name]) {
+      delete this.functions[name]
+      return true
+    }
+    return false
+  }
+
   async unRegister(
     name: string,
     spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
@@ -154,24 +170,6 @@ export class BasedFunctions {
       ) {
         return this.remove(name)
       }
-    }
-    return false
-  }
-
-  remove(name: string): boolean {
-    // Does not call unregister!
-    if (this.observables[name]) {
-      delete this.observables[name]
-      const active = this.server.activeObservables[name]
-      if (active) {
-        for (const id in active) {
-          active[id].destroy()
-        }
-        delete this.server.activeObservables[name]
-      }
-    } else if (this.functions[name]) {
-      delete this.functions[name]
-      return true
     }
     return false
   }
