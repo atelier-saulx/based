@@ -1,6 +1,5 @@
 import { BasedCoreClient } from '../'
 import { GenericObject } from '../types'
-import { functionId } from '@based/ids'
 
 const encoder = new TextEncoder() // always utf-8
 
@@ -21,8 +20,57 @@ export const idleTimeout = (client: BasedCoreClient) => {
   }, updateTime)
 }
 
+const readUint8 = (buff: Uint8Array, start: number, len: number): number => {
+  let n = 0
+  const s = len - 1 + start
+  for (let i = s; i >= start; i--) {
+    n = n * 256 + buff[i]
+  }
+  return n
+}
+
+const storeUint8 = (
+  buff: Uint8Array,
+  n: number,
+  start: number,
+  len: number
+) => {
+  for (let index = start; index < start + len; index++) {
+    const byte = n & 0xff
+    buff[index] = byte
+    n = (n - byte) / 256
+  }
+}
+
+const decodeHeader = (
+  nr: number
+): { type: number; isDeflate: boolean; len: number } => {
+  const len = nr >> 4
+  const meta = nr & 15
+  const type = meta >> 1
+  const isDeflate = meta & 1
+  return {
+    type,
+    isDeflate: isDeflate === 1,
+    len,
+  }
+}
+
+const encodeHeader = (
+  type: number,
+  isDeflate: boolean,
+  len: number
+): number => {
+  // type (3 bits) (8 options) 0=function, 1=get sub, 2=get sub allways return
+  // isDeflate (1 bit)
+  // len (28 bits)
+  const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
+  const nr = (len << 4) + encodedMeta
+  return nr
+}
+
 export const drainQueue = (client: BasedCoreClient) => {
-  console.log('>hello', client.connected)
+  console.info('>hello', client.connected)
 
   if (
     client.connected &&
@@ -35,39 +83,45 @@ export const drainQueue = (client: BasedCoreClient) => {
       if (client.functionQueue.length || client.observeQueue.length) {
         const fn = client.functionQueue
         // const ob = client.observeQueue
-
         client.functionQueue = []
         client.observeQueue = []
-
-        const buff = new Uint8Array()
-
+        const buffs = []
+        let l = 0
         // bit types
         // 000 => fn
         // 001 => subNoReply
         // 002 => subReply
-
+        // 1 bit for isGzip or not
+        // HEADER 4 bytes (4 bits for type + isGzip or not) 28 bits for length of the payload
         for (const f of fn) {
-          // id 3 | name 8
-          let len = 3 + 8
+          // id 3 | name len Encode 1 + var | payload
+          let len = 3
           const [id, name, payload] = f
-
-          const n = encoder.encode(functionId(name, client.envId).slice(2))
-
-          // encode length in 1 bytes (1-255 bytes)
-          // then there is no max length
-          // 3 bytes flag
-          // 5e+6
+          const n = encoder.encode(name)
+          const nameLenByte = n.length
+          len += nameLenByte + 1
           let p
           if (payload) {
             p = encoder.encode(JSON.stringify(payload))
           }
-
           len += p.length
-
-          console.info(len, ~~(50000 / 8) + 1)
+          const header = encodeHeader(0, false, len)
+          len += 4 // header size
+          const buff = new Uint8Array(4 + 3 + 1)
+          storeUint8(buff, header, 0, 4)
+          storeUint8(buff, id, 4, 3)
+          storeUint8(buff, id, 8, 1)
+          buff[8] = p.length
+          buffs.push(buff, n, p)
+          l += len
         }
-
-        // client.connection.ws.send(JSON.stringify(queue))
+        const n = new Uint8Array(l)
+        let c = 0
+        buffs.forEach((b) => {
+          n.set(b, c)
+          c += b.length
+        })
+        client.connection.ws.send(n)
         idleTimeout(client)
       }
     }, 0)

@@ -15,7 +15,7 @@ export class BasedFunctions {
 
   config: FunctionConfig
 
-  unRegisterTimeout: NodeJS.Timeout
+  unregisterTimeout: NodeJS.Timeout
 
   observables: {
     [key: string]: BasedObservableFunctionSpec
@@ -32,13 +32,13 @@ export class BasedFunctions {
     }
   }
 
-  unRegisterLoop() {
-    this.unRegisterTimeout = setTimeout(async () => {
+  unregisterLoop() {
+    this.unregisterTimeout = setTimeout(async () => {
       const q = []
       for (const name in this.functions) {
         const spec = this.functions[name]
         if (fnIsTimedOut(spec)) {
-          q.push(this.unRegister(name, spec))
+          q.push(this.unregister(name, spec))
         }
       }
       for (const name in this.observables) {
@@ -46,11 +46,11 @@ export class BasedFunctions {
         if (this.server.activeObservables[name]) {
           updateTimeoutCounter(spec, this.config.idleTimeout)
         } else if (fnIsTimedOut(spec)) {
-          q.push(this.unRegister(name, spec))
+          q.push(this.unregister(name, spec))
         }
       }
       await Promise.all(q)
-      this.unRegisterLoop()
+      this.unregisterLoop()
     }, 3e3)
   }
 
@@ -74,25 +74,25 @@ export class BasedFunctions {
         console.info(opts)
       }
     }
-    if (this.unRegisterTimeout) {
-      clearTimeout(this.unRegisterTimeout)
+    if (this.unregisterTimeout) {
+      clearTimeout(this.unregisterTimeout)
     }
-    this.unRegisterLoop()
+    this.unregisterLoop()
   }
 
   async get(
     name: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
-    const spec = this.getFromStore(name)
+    let spec = this.getFromStore(name)
     if (spec) {
       return spec
     }
-    if (
-      await this.config.register({
-        server: this.server,
-        name,
-      })
-    ) {
+    spec = await this.config.register({
+      server: this.server,
+      name,
+    })
+    if (spec) {
+      this.update(spec)
       return this.getFromStore(name)
     }
     return false
@@ -153,7 +153,7 @@ export class BasedFunctions {
     return false
   }
 
-  async unRegister(
+  async unregister(
     name: string,
     spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
   ): Promise<boolean> {
@@ -162,7 +162,7 @@ export class BasedFunctions {
     }
     if (spec) {
       if (
-        await this.config.unRegister({
+        await this.config.unregister({
           server: this.server,
           function: spec,
           name,

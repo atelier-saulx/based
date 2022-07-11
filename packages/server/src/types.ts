@@ -47,9 +47,12 @@ export type FunctionConfig = {
   idleTimeout?: number // in 3 seconds
   maxWorkers?: number
 
-  register: (opts: { server: BasedServer; name: string }) => Promise<boolean>
+  register: (opts: {
+    server: BasedServer
+    name: string
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
-  unRegister: (opts: {
+  unregister: (opts: {
     server: BasedServer
     name: string
     function: BasedObservableFunctionSpec | BasedFunctionSpec

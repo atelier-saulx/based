@@ -21,19 +21,18 @@ test.serial('connection', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
-      unRegister: async (opts) => {
+      unregister: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
-      register: async ({ server, name }) => {
-        console.info(name)
+      register: async ({ name }) => {
+        console.info('name -->', name)
         if (store[name]) {
-          server.functions.update({
+          return {
             name,
             checksum: 1,
             function: store[name],
-          })
-          return true
+          }
         } else {
           return false
         }
