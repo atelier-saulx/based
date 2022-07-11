@@ -10,9 +10,8 @@ test.serial('connection', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const store = {
-    hello: async ({ payload }) => {
-      console.info(payload)
-      return 'hello this is a repsonse...'
+    hello: async (payload) => {
+      return 'hello this is a repsonse with len (in bytes) ' + payload.length
     },
   }
 

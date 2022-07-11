@@ -19,6 +19,7 @@ import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
 import { addToFunctionQueue, drainQueue } from './outgoing'
 import { envId } from '@based/ids'
+import { incoming } from './incoming'
 
 export class BasedCoreClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -76,7 +77,7 @@ export class BasedCoreClient extends Emitter {
   }
 
   onData(data) {
-    console.info('yes', data)
+    incoming(this, data)
   }
 
   // --------- Connect

@@ -33,7 +33,9 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
           upgradeAuthorize(server.authorizeConnection, res, req, ctx)
         }
       : upgrade,
-    message,
+    message: (ws, data, isBinary) => {
+      message(server, ws, data, isBinary)
+    },
     open: (ws) => {
       console.info('open')
       // ws.token = 'x' token - only on upgrade does make it super easy
