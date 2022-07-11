@@ -53,9 +53,19 @@ test.serial('connection', async (t) => {
     console.info('connect', isConnected)
   })
 
-  const x = await coreClient.function('hello', {
-    bla: true,
-  })
+  let str = ''
+  for (let i = 0; i < 200; i++) {
+    str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+  }
+
+  const x = Promise.all([
+    coreClient.function('hello', {
+      bla: true,
+    }),
+    coreClient.function('hello', {
+      bla: str,
+    }),
+  ])
 
   console.info(x)
 

@@ -1,5 +1,6 @@
 import { BasedCoreClient } from '../'
 import { GenericObject } from '../types'
+import fflate from 'fflate'
 
 const encoder = new TextEncoder() // always utf-8
 
@@ -94,6 +95,7 @@ export const drainQueue = (client: BasedCoreClient) => {
         for (const f of fn) {
           // id 3 | name len Encode 1 + var | payload
           let len = 3
+          let isDeflate = false
           const [id, name, payload] = f
           const n = encoder.encode(name)
           const nameLenByte = n.length
@@ -101,9 +103,13 @@ export const drainQueue = (client: BasedCoreClient) => {
           let p
           if (payload) {
             p = encoder.encode(JSON.stringify(payload))
+            if (p.length > 200) {
+              p = fflate.deflateSync(p)
+              isDeflate = true
+            }
           }
           len += p.length
-          const header = encodeHeader(0, false, len)
+          const header = encodeHeader(0, isDeflate, len)
           len += 4 // header size
           const buff = new Uint8Array(4 + 3 + 1)
           storeUint8(buff, header, 0, 4)
