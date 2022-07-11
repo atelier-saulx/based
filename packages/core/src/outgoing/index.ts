@@ -103,7 +103,7 @@ export const drainQueue = (client: BasedCoreClient) => {
           let p
           if (payload) {
             p = encoder.encode(JSON.stringify(payload))
-            if (p.length > 200) {
+            if (p.length > 150) {
               p = fflate.deflateSync(p)
               isDeflate = true
             }
