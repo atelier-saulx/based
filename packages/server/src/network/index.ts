@@ -2,6 +2,7 @@ import type { ServerOptions } from '../types'
 import type { BasedServer } from '../server'
 import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
+import { message } from './message'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -32,11 +33,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
           upgradeAuthorize(server.authorizeConnection, res, req, ctx)
         }
       : upgrade,
-    message: (ws, msg) => {
-      console.info('msg', msg)
-      // here we handle getting a sub directly
-      // message(this, ws, msg)
-    },
+    message,
     open: (ws) => {
       console.info('open')
       // ws.token = 'x' token - only on upgrade does make it super easy

@@ -98,9 +98,8 @@ export const drainQueue = (client: BasedCoreClient) => {
           let isDeflate = false
           const [id, name, payload] = f
           const n = encoder.encode(name)
-          const nameLenByte = n.length
-          len += nameLenByte + 1
-          let p
+          len += n.length + 1
+          let p: Uint8Array
           if (payload) {
             p = encoder.encode(JSON.stringify(payload))
             if (p.length > 150) {
@@ -109,14 +108,17 @@ export const drainQueue = (client: BasedCoreClient) => {
             }
           }
           len += p.length
+
           const header = encodeHeader(0, isDeflate, len)
           len += 4 // header size
           const buff = new Uint8Array(4 + 3 + 1)
           storeUint8(buff, header, 0, 4)
           storeUint8(buff, id, 4, 3)
-          storeUint8(buff, id, 8, 1)
-          buff[8] = p.length
+          buff[7] = n.length
+
           buffs.push(buff, n, p)
+          console.log('PAYLOADLEN', p.length, len)
+
           l += len
         }
         const n = new Uint8Array(l)
