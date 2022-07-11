@@ -1,11 +1,8 @@
 import { BasedCoreClient } from '..'
 
 export const incoming = (client: BasedCoreClient, data) => {
-  console.log(data.data)
-
   try {
     const x = JSON.parse(data.data)
-
     if (x.id) {
       if (client.functionResponseListeners[x.id]) {
         client.functionResponseListeners[x.id][0](x.msg)
