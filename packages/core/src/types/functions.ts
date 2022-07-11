@@ -1,11 +1,8 @@
 import { GenericObject } from './generic'
 
 export type FunctionResponseListeners = {
-  // can do the same - resend
-  [reqId: string]: {
-    resolve: (val?: any) => void
-    reject: (err: Error) => void
-  }
+  [reqId: string]: [(val?: any) => void, (err: Error) => void]
 }
 
-export type FunctionQueue = { name: string; payload: GenericObject }[]
+// string can also be hashed then we can store it in 32bits
+export type FunctionQueue = [number, string, GenericObject][]

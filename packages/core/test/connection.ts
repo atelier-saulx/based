@@ -54,6 +54,12 @@ test.serial('connection', async (t) => {
     console.info('connect', isConnected)
   })
 
+  const x = await coreClient.function('hello', {
+    bla: true,
+  })
+
+  console.info(x)
+
   await wait(15e3)
 
   t.pass('yes')

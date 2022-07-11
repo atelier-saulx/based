@@ -10,12 +10,15 @@ import {
   Settings,
   FunctionQueue,
   ObserveState,
+  ObserveQueue,
   Cache,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
 import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
+import { addToFunctionQueue, drainQueue } from './outgoing'
+import { envId } from '@based/ids'
 
 export class BasedCoreClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -32,23 +35,30 @@ export class BasedCoreClient extends Emitter {
 
   // --------- Connection State
   opts: BasedOpts
+  envId: string
   connected: boolean = false
   connection: Connection
   url: string | (() => Promise<string>)
+  // --------- Queue
+  functionQueue: FunctionQueue = []
+  observeQueue: ObserveQueue = []
+  drainInProgress: boolean = false
+  drainTimeout: ReturnType<typeof setTimeout>
+  idlePing: ReturnType<typeof setTimeout>
   // --------- Cache State
   localStorage: boolean = false
   maxCacheSize: number = 4e6 // in bytes
   maxCacheTime: number = 2630e3 // in seconds (1 month default)
   cache: Cache = {}
-  // --------- Functions State
+  // --------- Function State
   functionResponseListeners: FunctionResponseListeners = {}
-  functionQueue: FunctionQueue = []
+  requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Observe State
   observeState: ObserveState = {}
   // -------- Auth state
   authState: Auth = { token: false }
   authInProgress: Promise<Auth>
-  // --------- Events
+  // --------- Internal Events
   onClose() {
     this.connected = false
     this.emit('disconnect', true)
@@ -62,6 +72,7 @@ export class BasedCoreClient extends Emitter {
   onOpen() {
     this.connected = true
     this.emit('connect', true)
+    drainQueue(this)
   }
 
   onData(data) {
@@ -77,6 +88,10 @@ export class BasedCoreClient extends Emitter {
         this.disconnect()
       }
       this.opts = opts
+      this.envId =
+        opts.env && opts.org && opts.project
+          ? envId(opts.env, opts.org, opts.project)
+          : undefined
     }
     if (!this.opts) {
       console.error('Configure opts to connect')
@@ -119,8 +134,10 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Function
-  async function(name: string, payload?: GenericObject): Promise<any> {
-    console.info(name, payload)
+  function(name: string, payload?: GenericObject): Promise<any> {
+    return new Promise((resolve, reject) => {
+      addToFunctionQueue(this, payload, name, resolve, reject)
+    })
   }
 
   // -------- Auth

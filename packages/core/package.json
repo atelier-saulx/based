@@ -25,6 +25,7 @@
     ]
   },
   "dependencies": {
+    "@based/ids": "^2.6.2",
     "@based/protocol": "^1.0.0",
     "@based/get-service": "2.4.3",
     "@saulx/diff": "^1.1.3",

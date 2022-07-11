@@ -30,3 +30,13 @@ export type ObserveState = {
     }
   }
 }
+
+// allways reply OR wait
+export type ObserveType = 0 | 1
+
+export type ObserveQueue = [
+  ObserveType,
+  string, // name
+  number, // checksum
+  GenericObject // payload
+][]
