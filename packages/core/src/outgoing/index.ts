@@ -70,8 +70,6 @@ const encodeHeader = (
 }
 
 export const drainQueue = (client: BasedCoreClient) => {
-  console.info('>hello', client.connected)
-
   if (
     client.connected &&
     !client.drainInProgress &&
@@ -117,10 +115,10 @@ export const drainQueue = (client: BasedCoreClient) => {
         }
         const n = new Uint8Array(l)
         let c = 0
-        buffs.forEach((b) => {
+        for (const b of buffs) {
           n.set(b, c)
           c += b.length
-        })
+        }
         client.connection.ws.send(n)
         idleTimeout(client)
       }
