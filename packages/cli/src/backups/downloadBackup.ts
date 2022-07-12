@@ -9,6 +9,7 @@ import inquirer from 'inquirer'
 import { fail, inquirerConfig, prefixSuccess } from '../tui'
 import { Config } from '../types'
 import chalk from 'chalk'
+import { bucketId } from '@based/ids'
 
 export async function downloadBackup(
   client: Based,
@@ -16,11 +17,12 @@ export async function downloadBackup(
   config: Config
 ) {
   Object.assign(options, config)
-  const { cluster, org, project, env, database, backupName } = options
+  const { org, project, env, database } = options
 
-  let bucketName = `${cluster}-${org}-${project}-${env}-db-env-${
-    database || 'default'
-  }/${backupName}`
+  const folderName = database
+    ? `${org}-${project}-${env}-db-env-${database}`
+    : `${org}-${project}-${env}-db-env-default`
+
   const filename = 'dump.rdb'
 
   if (options.nonInteractive) {
@@ -32,7 +34,7 @@ export async function downloadBackup(
           options
         )
       const { url } = await client.call('getBackupLink', options)
-      await downloadUrl(url, bucketName, filename)
+      await downloadUrl(url, folderName, filename)
     } catch (err) {
       fail(err.message, { data: [], errors: [err] }, options)
     }
@@ -63,15 +65,12 @@ export async function downloadBackup(
     })
     const { downloadName } = answers
 
-    bucketName = `${cluster}-${org}-${project}-${env}-db-env-${
-      database || 'default'
-    }/${mapOfChoices.get(downloadName).Key}`
     Object.assign(options, {
       backupName: mapOfChoices.get(downloadName).Key,
     })
     try {
       const { url } = await client.call('getBackupLink', options)
-      await downloadUrl(url, bucketName, filename)
+      await downloadUrl(url, folderName, filename)
     } catch (err) {
       fail(err.message, { data: [] }, options)
     }
@@ -79,6 +78,8 @@ export async function downloadBackup(
 }
 
 async function downloadUrl(url: string, path: string, filename: string) {
+  // console.log(url)
+  // return
   return new Promise<void>((resolve, reject) => {
     const spinner = ora('Downloading backup...').start()
     const fullPath = `${path}/${filename}`
@@ -120,7 +121,7 @@ async function downloadUrl(url: string, path: string, filename: string) {
 function getMapOfChoices(list): Map<string, any> {
   const mapOfChoices = new Map()
   for (const [index, value] of list.entries()) {
-    const date = prettyDate(Date.parse(value.LastModified), 'date-time-human')
+    const date = prettyDate(value.LastModified, 'date-time-human')
     const size = prettyNumber(value.Size, 'number-bytes')
     const name: string = value.Key
 

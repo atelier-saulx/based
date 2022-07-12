@@ -41,34 +41,36 @@ export async function listBackups(
     let maxDate: number = null
     let maxSize: number = null
     for (const el of res) {
-      const date = prettyDate(Date.parse(el.LastModified), 'date-time-human')
+      const date = prettyDate(el.LastModified, 'date-time-human')
       const size = prettyNumber(el.Size, 'number-bytes')
       if (size.length > maxSize) maxSize = size.length
       if (date.length > maxDate) maxDate = date.length
       list.push([size, date, el.Key])
     }
 
-    let whitespace1: number = maxSize - 'Size'.length
-    let whitespace2: number = maxDate - 'Date'.length
+    let whitespace1: number = maxDate - 'Date'.length
+    let whitespace2: number = maxSize - 'Size'.length
+
+    if (whitespace1 < 0) whitespace1 = 0
+    if (whitespace2 < 0) whitespace2 = 0
+
     console.info(
       prefix +
         chalk.blueBright(
-          'Date',
-          Array(whitespace2).fill(' ').join(''),
-          'Size',
-          Array(whitespace1).fill(' ').join(''),
+          'Date' + ' '.repeat(whitespace1),
+          'Size' + ' '.repeat(whitespace2),
           'Key'
         )
     )
     list.forEach((value) => {
       const [size, date, key] = value
-      whitespace1 = maxSize - size.length
-      whitespace2 = maxDate - date.length
+      whitespace2 = maxSize - size.length
+      whitespace1 = maxDate - date.length
+      if (whitespace2 < 0) whitespace2 = 0
+      if (whitespace1 < 0) whitespace1 = 0
       console.info(
-        prefix + chalk.green(`${date}`),
-        Array(whitespace2).fill(' ').join(''),
-        chalk.magenta(`${size}`),
-        Array(whitespace1).fill(' ').join(''),
+        prefix + chalk.green(`${date}`) + ' '.repeat(whitespace1),
+        chalk.magenta(`${size}`) + ' '.repeat(whitespace2),
         chalk.yellow(`${key}`)
       )
     })
