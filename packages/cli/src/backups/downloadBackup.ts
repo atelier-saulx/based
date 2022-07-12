@@ -9,7 +9,6 @@ import inquirer from 'inquirer'
 import { fail, inquirerConfig, prefixSuccess } from '../tui'
 import { Config } from '../types'
 import chalk from 'chalk'
-import { bucketId } from '@based/ids'
 
 export async function downloadBackup(
   client: Based,
