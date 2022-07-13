@@ -47,6 +47,10 @@ export default async ({
 
     const code = crypto.randomBytes(16).toString('hex')
     based.redis.set(
+      {
+        name: 'default',
+        type: 'origin',
+      },
       code,
       JSON.stringify({
         token,

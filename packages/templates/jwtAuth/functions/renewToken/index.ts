@@ -10,7 +10,14 @@ export default async ({ based, payload }: Params) => {
   const publicKey = await based.secret(`users-public-key-${project}-${env}`)
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
 
-  if ((await based.redis.get(refreshToken)) === 'invalidated') {
+  if (
+    (await based.redis.get(
+      {
+        name: 'default',
+      },
+      refreshToken
+    )) === 'invalidated'
+  ) {
     throw new Error('invalid refreshToken')
   }
 
