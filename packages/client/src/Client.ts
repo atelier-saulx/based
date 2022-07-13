@@ -378,7 +378,8 @@ export class BasedClient {
             type === RequestTypes.Copy ||
             type === RequestTypes.Digest ||
             type === RequestTypes.RemoveType ||
-            type === RequestTypes.RemoveField
+            type === RequestTypes.RemoveField ||
+            type === RequestTypes.BulkUpdate
           ) {
             incomingRequest(this, data)
           } else if (type === RequestTypes.Subscription) {
