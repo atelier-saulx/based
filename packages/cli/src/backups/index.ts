@@ -1,12 +1,13 @@
 import { Argument, program } from 'commander'
 import { command, GlobalOptions } from '../command'
-import chalk from 'chalk'
 import checkAuth from '../checkAuth'
 import makeClient from '../makeClient'
 import { downloadBackup } from './downloadBackup'
 import { listBackups } from './listBackups'
 import { makeBackup } from './makeBackup'
 import { makeConfig } from '../makeConfig'
+import { deleteAllBackups } from './deleteAllBackups'
+import { deleteBackup } from './deleteBackup'
 import { fail, printHeader } from '../tui'
 
 export { downloadBackup, listBackups, makeBackup }
@@ -25,26 +26,22 @@ command(
       'Name of backup to remove or download. Required for those two actions'
     )
     .addArgument(
-      new Argument('<command>', 'backup commands').choices([
+      new Argument('<action>', 'backup action').choices([
         'list',
         'make',
         'download',
         'remove',
+        'remove-all',
       ])
     )
     .description('Manage remote backups')
 ).action(
   async (
-    command: 'list' | 'make' | 'download' | 'remove',
+    action: 'list' | 'make' | 'download' | 'remove' | 'remove-all',
     options: BackupOptions
   ) => {
-    let { database } = options
     const config = await makeConfig(options)
     printHeader(options, config)
-
-    if (!database) {
-      database = 'default'
-    }
 
     const token = await checkAuth(options)
     const client = makeClient(config.cluster)
@@ -60,24 +57,16 @@ command(
       fail(error, { data: [] }, options)
     }
 
-    if (command === 'list') {
+    if (action === 'list') {
       await listBackups(client, options, config)
-    }
-    if (command === 'download') {
-      await downloadBackup(client, options, config).catch((e) => {
-        console.error(chalk.red(e.message))
-      })
-      process.exit()
-    }
-    if (command === 'make') {
-      try {
-        await makeBackup(client, options, config)
-      } catch (e) {
-        console.error(e)
-      }
-    }
-    if (command === 'remove') {
-      // removeBackup(client, options)
+    } else if (action === 'download') {
+      await downloadBackup(client, options, config)
+    } else if (action === 'make') {
+      await makeBackup(client, options, config)
+    } else if (action === 'remove-all') {
+      await deleteAllBackups(client, options, config)
+    } else if (action === 'remove') {
+      await deleteBackup(client, options, config)
     }
     process.exit()
   }

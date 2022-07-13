@@ -27,7 +27,7 @@ export async function listBackups(
 
   Object.assign(options, config)
   const res: BackupInfo[] = await client.call('listBackups', options)
-  if (!res) {
+  if (!res || res.length === 0) {
     fail('No backups found', output, options)
   }
 
