@@ -31,6 +31,9 @@ export default async (
     } else if (msg[0] === RequestTypes.Copy) {
       type = 'copy'
       payload = msg[2]
+    } else if (msg[0] === RequestTypes.BulkUpdate) {
+      type = 'bulkUpdate'
+      payload = msg[2]
     } else if (msg[0] === RequestTypes.Digest) {
       type = 'digest'
       payload = msg[2]
