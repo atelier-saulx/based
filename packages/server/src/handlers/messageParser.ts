@@ -1,5 +1,6 @@
 import { BasedServer } from '..'
 import set from './set'
+import bulkUpdate from './bulkUpdate'
 import copy from './copy'
 import track from './track'
 import get from './get'
@@ -45,6 +46,8 @@ export default (
       del(server, client, msg)
     } else if (msg[0] === RequestTypes.Set) {
       set(server, client, msg)
+    } else if (msg[0] === RequestTypes.BulkUpdate) {
+      bulkUpdate(server, client, msg)
     } else if (msg[0] === RequestTypes.Track) {
       track(server, client, msg)
     } else if (msg[0] === RequestTypes.GetSubscription) {

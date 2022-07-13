@@ -450,6 +450,18 @@ export class Based extends Emitter {
     })
   }
 
+  public bulkUpdate(payload: SetOptions, query: any): Promise<{ id: string }> {
+    return new Promise((resolve, reject) => {
+      addRequest(
+        this.client,
+        RequestTypes.BulkUpdate,
+        { payload, query },
+        resolve,
+        reject
+      )
+    })
+  }
+
   public copy(payload: Copy): Promise<{ ids: string[] }> {
     return new Promise((resolve, reject) => {
       addRequest(this.client, RequestTypes.Copy, payload, resolve, reject)
