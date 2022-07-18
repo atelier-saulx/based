@@ -11,14 +11,17 @@
     "build": "npx tsc",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
     "@based/client": "^3.0.2",
     "@based/ids": "2.6.2",
     "@based/pretty-date": "^1.0.4",
     "@based/pretty-number": "1.0.3",
-    "@root/walk": "^1.1.0",
+    "@saulx/fs-walker": "^1.0.1",
     "@saulx/hash": "^1.1.0",
-    "@saulx/utils": "^2.2.1",
+    "@saulx/utils": "^2.3.2",
     "chalk": "^4.1.2",
     "commander": "^8.1.0",
     "node-fetch": "^2.6.7",
