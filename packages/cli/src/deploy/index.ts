@@ -1,4 +1,5 @@
 import { program } from 'commander'
+import fs from 'fs/promises'
 import { command, GlobalOptions } from '../command'
 import chalk from 'chalk'
 import ora from 'ora'
@@ -8,7 +9,7 @@ import makeClient from '../makeClient'
 import { envId } from '@based/ids'
 import path from 'path'
 import { Based } from '@based/client'
-import { Config, GenericOutput } from '../types'
+import { GenericOutput } from '../types'
 import {
   fail,
   prefix,
@@ -39,6 +40,7 @@ export type DeployOptions = {
   schema: boolean
   functions: boolean
   name: string[]
+  bundle: boolean
 } & GlobalOptions
 
 export const output: DeployOutput = { data: [] }
@@ -52,6 +54,7 @@ command(
     .option('--schema', 'Deploy schema')
     .option('--functions', 'Deploy functions')
     .option('-n, --name  [names...]', 'Deploy functions by name/s')
+    .option('--no-bundle', "Don't bundle the functions before deploying")
 ).action(async (options: DeployOptions) => {
   const config = await makeConfig(options)
 
@@ -116,18 +119,23 @@ command(
     spinner.start()
     await Promise.all(
       fns.map(async (fun) => {
-        const x = await build({
-          bundle: true,
-          outdir: 'out',
-          incremental: false,
-          publicPath: '/',
-          target: 'node14',
-          entryPoints: [fun.path],
-          minify: true,
-          platform: 'node',
-          write: false,
-        })
-        fun.code = x.outputFiles[0].text
+        if (options.bundle) {
+          const x = await build({
+            bundle: true,
+            outdir: 'out',
+            incremental: false,
+            publicPath: '/',
+            target: 'node14',
+            entryPoints: [fun.path],
+            minify: true,
+            platform: 'node',
+            write: false,
+          })
+          fun.code = x.outputFiles[0].text
+        } else {
+          fun.code = await fs.readFile(fun.path, 'utf8')
+          fun.fromFile = false
+        }
         fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
         if (fun.status === 'unchanged') {
           unchangedFns++

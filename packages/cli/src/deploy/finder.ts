@@ -11,6 +11,7 @@ export type BasedFunctionConfig = {
   shared: boolean
   code?: string
   status?: 'update' | 'new' | 'unchanged' | 'err'
+  fromFile?: boolean
 }
 /**
  * Recursively finds schema files and functions that conform to the Based project file structure.

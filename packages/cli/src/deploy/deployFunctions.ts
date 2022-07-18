@@ -27,7 +27,8 @@ export default async function (
               shared: fun.shared,
               name: fun.name,
               code: fun.code,
-              fromFile: true,
+              fromFile:
+                typeof fun.fromFile !== 'undefined' ? fun.fromFile : true,
             })
 
             spinner.stop()
