@@ -5,7 +5,7 @@ import { join } from 'path'
 import { promises as fs } from 'fs'
 import based from '@based/client'
 import checkAuth from './checkAuth'
-import { fail, prefixSuccess, printError, printHeader } from './tui'
+import { fail, prefixSuccess, prefixWarn, printError, printHeader } from './tui'
 import { GenericOutput } from './types'
 import ora from 'ora'
 import { makeConfig } from './makeConfig'
@@ -31,6 +31,11 @@ command(
   const config = await makeConfig(options)
 
   printHeader(options, config, 'Update schema.')
+
+  console.info(
+    prefixWarn +
+      '`schema` command is deprecated and will be removed soon. Please use `deploy` command instead.'
+  )
 
   const output: SchemaOutput = { data: [] }
 
