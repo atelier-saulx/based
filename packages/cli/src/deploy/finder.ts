@@ -14,6 +14,8 @@ type BasedFunctionConfigFile = {
 export type BasedFunctionConfig = BasedFunctionConfigFile & {
   path: string
   code?: string
+  status?: 'update' | 'new' | 'unchanged' | 'err'
+  fromFile?: boolean
 }
 
 /**
