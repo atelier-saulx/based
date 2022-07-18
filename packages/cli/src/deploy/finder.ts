@@ -12,6 +12,7 @@ export type BasedFunctionConfig = {
   code?: string
   status?: 'update' | 'new' | 'unchanged' | 'err'
   fromFile?: boolean
+  bundle?: boolean
 }
 /**
  * Recursively finds schema files and functions that conform to the Based project file structure.
@@ -67,20 +68,13 @@ export async function findSchemaAndFunctions(
   await fsWalk(
     startDir,
     async (fnConfigFile, _info) => {
-      const pathname = path.parse(path.resolve(fnConfigFile)).dir
-      const configMandatoryFields = ['name', 'observable']
-      let indexesFound = []
-      const dir = await fs.readdir(pathname)
-      ;['index.js', 'index.ts'].forEach((indexFileName) => {
-        if (dir.includes(indexFileName)) {
-          indexesFound.push(path.join(pathname, indexFileName))
-        }
-      })
+      const folder = path.parse(path.resolve(fnConfigFile)).dir
 
       let basedConfig: {
         name: string
         observable: boolean
         shared: boolean
+        bundle: boolean
       }
       try {
         basedConfig = require(fnConfigFile)
@@ -88,18 +82,28 @@ export async function findSchemaAndFunctions(
         const configBody: string = await fs.readFile(fnConfigFile, 'utf8')
         basedConfig = eval(configBody)
       }
+      const configMandatoryFields = ['name', 'observable']
       for (const prop of configMandatoryFields) {
         if (!(prop in basedConfig)) {
           throw new Error(
-            `Missing mandatory field "${prop}" for function at "./${pathname}/based.config.js"`
+            `Missing mandatory field "${prop}" for function at "./${folder}/based.config.js"`
           )
         }
       }
+
+      let indexesFound = []
+      const dir = await fs.readdir(folder)
+      ;['index.js', 'index.ts'].forEach((indexFileName) => {
+        if (dir.includes(indexFileName)) {
+          indexesFound.push(path.join(folder, indexFileName))
+        }
+      })
+
       if (indexesFound.length > 1) {
-        throw new Error(`Multiple indexes found for function at ${pathname}/`)
+        throw new Error(`Multiple indexes found for function at ${folder}/`)
       }
       if (indexesFound.length < 1) {
-        throw new Error(`No index file found for function at ${pathname}/`)
+        throw new Error(`No index file found for function at ${folder}/`)
       }
       fns.push({
         path: indexesFound[0],

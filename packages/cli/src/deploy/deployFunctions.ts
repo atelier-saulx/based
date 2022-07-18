@@ -28,7 +28,11 @@ export default async function (
               name: fun.name,
               code: fun.code,
               fromFile:
-                typeof fun.fromFile !== 'undefined' ? fun.fromFile : true,
+                fun.bundle === false
+                  ? false
+                  : typeof fun.fromFile !== 'undefined'
+                  ? fun.fromFile
+                  : true,
             })
 
             spinner.stop()

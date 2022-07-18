@@ -119,7 +119,10 @@ command(
     spinner.start()
     await Promise.all(
       fns.map(async (fun) => {
-        if (options.bundle) {
+        if (!options.bundle || fun.bundle === false) {
+          fun.code = await fs.readFile(fun.path, 'utf8')
+          fun.fromFile = false
+        } else {
           const x = await build({
             bundle: true,
             outdir: 'out',
@@ -132,9 +135,6 @@ command(
             write: false,
           })
           fun.code = x.outputFiles[0].text
-        } else {
-          fun.code = await fs.readFile(fun.path, 'utf8')
-          fun.fromFile = false
         }
         fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
         if (fun.status === 'unchanged') {
