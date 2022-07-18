@@ -1,7 +1,6 @@
-import glob from 'glob'
+import fs from 'fs/promises'
 import path from 'path'
-import { walk } from '@root/walk'
-import fs from 'fs-extra'
+import { fsWalk } from '@saulx/fs-walker'
 import { GlobalOptions } from '../command'
 import { DeployOptions } from '.'
 
@@ -35,77 +34,83 @@ export async function findSchemaAndFunctions(
 
   if (options.file?.length) {
     options.file.forEach((file) => {
-      if (!fs.existsSync(file)) {
+      if (
+        !fs
+          .access(file)
+          .then(() => true)
+          .catch(() => false)
+      ) {
         throw new Error(`File ${file} does not exist`)
       }
     })
     schemaFiles = options.file
+  } else {
+    await fsWalk(
+      startDir,
+      async (pathname, _info) => {
+        schemaFiles.push(pathname)
+      },
+      {
+        itemMatchFn: async (item) =>
+          item.type === 'file' &&
+          ['based.schema.ts', 'based.schema.js', 'based.schema.json'].includes(
+            item.name
+          ),
+        recurseFn: async (item) =>
+          item.type === 'dir' &&
+          !['node_modules', 'tmp', 'dists', 'dist', '.git'].includes(item.name),
+      }
+    )
   }
 
-  // walk: traverse all subfolders, call the function for every fs entity
-  await walk(
+  await fsWalk(
     startDir,
-    async (err: Error, pathname: string, dirent: fs.Dirent) => {
+    async (fnConfigFile, _info) => {
+      const pathname = path.parse(path.resolve(fnConfigFile)).dir
       const configMandatoryFields = ['name', 'observable']
-      const fnConfigFile = path.resolve(path.join(pathname, 'based.config.js'))
-      const indexFileNames = ['index.js', 'index.ts']
-      const schemaFileNames = [
-        'based.schema.ts',
-        'based.schema.js',
-        'based.schema.json',
-      ]
+      let indexesFound = []
+      const dir = await fs.readdir(pathname)
+      ;['index.js', 'index.ts'].forEach((indexFileName) => {
+        if (dir.includes(indexFileName)) {
+          indexesFound.push(path.join(pathname, indexFileName))
+        }
+      })
 
-      // find schema file(s)
-      if (
-        !options.file?.length &&
-        dirent.isDirectory() &&
-        !pathname.includes('dist')
-      ) {
-        schemaFileNames.forEach((value) => {
-          schemaFiles.push(glob.sync(`${path.resolve(pathname)}/${value}`))
-        })
-        schemaFiles = schemaFiles.flat()
+      let basedConfig: {
+        name: string
+        observable: boolean
+        shared: boolean
       }
-
-      // find index files and based.config.js files
-      if (dirent.isDirectory() && fs.pathExistsSync(fnConfigFile)) {
-        let indexesFound = []
-        indexFileNames.forEach((value) => {
-          indexesFound.push(glob.sync(`${path.resolve(pathname)}/${value}`))
-        })
-        indexesFound = indexesFound.flat()
-
-        let basedConfig: {
-          name: string
-          observable: boolean
-          shared: boolean
-        }
-        try {
-          basedConfig = require(fnConfigFile)
-        } catch (e) {
-          const configBody = await fs.readFile(fnConfigFile, 'utf8')
-          basedConfig = eval(configBody)
-        }
-        for (const prop of configMandatoryFields) {
-          if (!(prop in basedConfig)) {
-            throw new Error(
-              `Missing mandatory field "${prop}" for function at "./${pathname}/based.config.js"`
-            )
-          }
-        }
-        if (indexesFound.length > 1) {
-          throw new Error(`Multiple indexes found for function at ${pathname}/`)
-        }
-        if (indexesFound.length < 1) {
-          throw new Error(`No index file found for function at ${pathname}/`)
-        }
-        fns.push({
-          path: indexesFound[0],
-          ...basedConfig,
-        })
+      try {
+        basedConfig = require(fnConfigFile)
+      } catch (e) {
+        const configBody: string = await fs.readFile(fnConfigFile, 'utf8')
+        basedConfig = eval(configBody)
       }
-
-      if (err) throw err
+      for (const prop of configMandatoryFields) {
+        if (!(prop in basedConfig)) {
+          throw new Error(
+            `Missing mandatory field "${prop}" for function at "./${pathname}/based.config.js"`
+          )
+        }
+      }
+      if (indexesFound.length > 1) {
+        throw new Error(`Multiple indexes found for function at ${pathname}/`)
+      }
+      if (indexesFound.length < 1) {
+        throw new Error(`No index file found for function at ${pathname}/`)
+      }
+      fns.push({
+        path: indexesFound[0],
+        ...basedConfig,
+      })
+    },
+    {
+      itemMatchFn: async (item) =>
+        item.type === 'file' && item.name == 'based.config.js',
+      recurseFn: async (item) =>
+        item.type === 'dir' &&
+        !['node_modules', 'tmp', 'dists', 'dist', '.git'].includes(item.name),
     }
   )
 
