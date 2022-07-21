@@ -58,7 +58,7 @@ export const valueToBuffer = (payload: any): Buffer => {
   if (payload === undefined) {
     return Buffer.from([])
   }
-  Buffer.from(payload)
+  return Buffer.from(payload)
 }
 
 export const encodeFunctionResponse = (

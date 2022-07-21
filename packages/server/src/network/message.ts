@@ -2,7 +2,12 @@ import uws from '@based/uws'
 import zlib from 'zlib'
 import { isObservableFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
-import { decodeHeader, readUint8 } from '../utils'
+import {
+  decodeHeader,
+  readUint8,
+  valueToBuffer,
+  encodeFunctionResponse,
+} from '../protocol'
 
 const textDecoder = new TextDecoder()
 
@@ -19,7 +24,6 @@ const reader = (
     const namelen = arr[7]
     const name = new Uint8Array(arr.slice(start + 8, start + 8 + namelen))
     const nameParsed = textDecoder.decode(name)
-
     const payload = new Uint8Array(
       arr.slice(start + 8 + namelen, start + len + 4)
     )
@@ -30,7 +34,6 @@ const reader = (
       const buffer = zlib.inflateRawSync(payload)
       p = textDecoder.decode(buffer)
     }
-
     server.functions
       .get(nameParsed)
       .then((spec) => {
@@ -38,14 +41,10 @@ const reader = (
           spec
             .function(p)
             .then((v) => {
-              ws.send(
-                JSON.stringify({
-                  id: reqId,
-                  msg: v,
-                })
-              )
+              ws.send(encodeFunctionResponse(reqId, valueToBuffer(v)), true)
             })
             .catch((err) => {
+              // error handling nice
               console.error('bad fn', err)
             })
         } else {
