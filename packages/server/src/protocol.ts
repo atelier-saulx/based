@@ -3,6 +3,14 @@ import zlib from 'node:zlib'
 export const decodeHeader = (
   nr: number
 ): { type: number; isDeflate: boolean; len: number } => {
+  // 4 bytes
+  // type (3 bits)
+  //   0 = function
+  //   1 = subscribe
+  //   2 = unsubscribe
+  //   3 = get from observable
+  // isDeflate (1 bit)
+  // len (28 bits)
   const len = nr >> 4
   const meta = nr & 15
   const type = meta >> 1
@@ -47,10 +55,9 @@ export const encodeHeader = (
 ): number => {
   // 4 bytes
   // type (3 bits)
-  //   0 = function
-  //   1 = subscribe
-  //   2 = unsubscribe
-  //   3 = get from observable
+  //   0 = functionData
+  //   1 = subscriptionData
+  //   2 = subscriptionDiffData
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)

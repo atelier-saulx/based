@@ -4,6 +4,13 @@ import fflate from 'fflate'
 export const decodeHeader = (
   nr: number
 ): { type: number; isDeflate: boolean; len: number } => {
+  // 4 bytes
+  // type (3 bits)
+  //   0 = functionData
+  //   1 = subscriptionData
+  //   2 = subscriptionDiffData
+  // isDeflate (1 bit)
+  // len (28 bits)
   const len = nr >> 4
   const meta = nr & 15
   const type = meta >> 1
@@ -49,7 +56,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
     // reader so we can batch stuff
 
-    // ------- Function responses ---------
+    // ------- Function
     if (type === 0) {
       const id = readUint8(buffer, 4, 3)
       const start = 7
@@ -68,6 +75,12 @@ export const incoming = async (client: BasedCoreClient, data) => {
         client.functionResponseListeners[id][0](payload)
         delete client.functionResponseListeners[id]
       }
+    }
+    // ---------------------------------
+
+    // ------- Subscription data
+    if (type === 1) {
+      // handle data!
     }
     // ---------------------------------
   } catch (err) {
