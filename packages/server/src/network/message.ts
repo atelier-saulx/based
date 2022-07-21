@@ -37,6 +37,7 @@ const reader = (
     server.functions
       .get(nameParsed)
       .then((spec) => {
+        console.log(ws)
         if (spec && !isObservableFunctionSpec(spec)) {
           spec
             .function(p)

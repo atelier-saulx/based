@@ -77,10 +77,9 @@ export const encodeFunctionResponse = (
   if (chunks === 1) {
     const headerSize = 4
     const idSize = 3
-
-    const header = encodeHeader(0, isDeflate, idSize + buffer.length)
-
-    const array = new Uint8Array(headerSize + idSize + buffer.length)
+    const msgSize = idSize + buffer.length
+    const header = encodeHeader(0, isDeflate, msgSize)
+    const array = new Uint8Array(headerSize + msgSize)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 3)
     if (buffer.length) {
