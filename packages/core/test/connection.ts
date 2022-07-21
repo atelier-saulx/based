@@ -71,8 +71,8 @@ test.serial('functions', async (t) => {
     }),
   ])
 
-  t.true(helloResponses[0].length < 20)
-  t.true(helloResponses[1].length > 5e6)
+  t.true(helloResponses[0] < 20)
+  t.true(helloResponses[1] > 5e6)
 
   const bigString = await coreClient.function('lotsOfData')
 
