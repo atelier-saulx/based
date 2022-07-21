@@ -13,8 +13,12 @@ test.serial('connection', async (t) => {
     hello: async (payload) => {
       return 'hello this is a repsonse with len (in bytes) ' + payload.length
     },
-    bigResponse: async (payload) => {
-      return 'hello this is a repsonse with len (in bytes) ' + payload.length
+    lotsOfData: async () => {
+      let str = ''
+      for (let i = 0; i < 200000; i++) {
+        str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+      }
+      return str
     },
   }
 
@@ -70,7 +74,11 @@ test.serial('connection', async (t) => {
     }),
   ])
 
-  console.info('??', x, Date.now() - d, 'ms')
+  console.info('parse and send time', x, Date.now() - d, 'ms')
+
+  const bigString = await coreClient.function('lotsOfData')
+
+  console.log(bigString)
 
   await wait(15e3)
 
