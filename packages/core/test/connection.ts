@@ -13,6 +13,9 @@ test.serial('connection', async (t) => {
     hello: async (payload) => {
       return 'hello this is a repsonse with len (in bytes) ' + payload.length
     },
+    bigResponse: async (payload) => {
+      return 'hello this is a repsonse with len (in bytes) ' + payload.length
+    },
   }
 
   createServer({

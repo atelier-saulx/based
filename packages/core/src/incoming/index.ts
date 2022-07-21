@@ -1,4 +1,5 @@
 import { BasedCoreClient } from '..'
+import fflate from 'fflate'
 
 export const decodeHeader = (
   nr: number
@@ -27,9 +28,51 @@ export const readUint8 = (
   return n
 }
 
-export const incoming = (client: BasedCoreClient, data) => {
-  console.info(data)
+const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
+  if (typeof window === 'undefined') {
+    if (d instanceof Buffer) {
+      return new Uint8Array(d)
+    }
+  } else {
+    if (d instanceof Blob) {
+      const buffer = await d.arrayBuffer()
+      return <Uint8Array>buffer
+    }
+  }
+  throw new Error('Recieved incorrect data')
+}
 
+export const incoming = async (client: BasedCoreClient, data) => {
+  try {
+    const d = data.data
+    const buffer = await parseArrayBuffer(d)
+    const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
+    // reader so we can batch stuff
+
+    // ------- Function responses ---------
+    if (type === 0) {
+      const id = readUint8(buffer, 4, 3)
+      const start = 7
+      const end = len + 4
+      let payload: any
+      if (len - 3 !== 0) {
+        payload = JSON.parse(
+          new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+        )
+      }
+      if (client.functionResponseListeners[id]) {
+        client.functionResponseListeners[id][0](payload)
+        delete client.functionResponseListeners[id]
+      }
+    }
+    // ---------------------------------
+  } catch (err) {
+    console.error('Error parsing incoming data', err)
+  }
   // try {
   //   const x = JSON.parse(data.data)
   //   if (x.id) {
