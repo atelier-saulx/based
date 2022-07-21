@@ -57,6 +57,7 @@ test.serial('connection', async (t) => {
     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
   }
 
+  const d = Date.now()
   const x = await Promise.all([
     coreClient.function('hello', {
       bla: true,
@@ -66,7 +67,7 @@ test.serial('connection', async (t) => {
     }),
   ])
 
-  console.info('??', x)
+  console.info('??', x, Date.now() - d, 'ms')
 
   await wait(15e3)
 

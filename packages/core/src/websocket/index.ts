@@ -9,6 +9,7 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
+// disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
