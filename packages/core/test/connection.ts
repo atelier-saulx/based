@@ -14,6 +14,7 @@ test.serial('connection', async (t) => {
       return 'hello this is a repsonse with len (in bytes) ' + payload.length
     },
     lotsOfData: async () => {
+      console.info('hello lots of data')
       let str = ''
       for (let i = 0; i < 200000; i++) {
         str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
@@ -65,7 +66,7 @@ test.serial('connection', async (t) => {
   }
 
   const d = Date.now()
-  const x = await Promise.all([
+  const helloResponses = await Promise.all([
     coreClient.function('hello', {
       bla: true,
     }),
@@ -74,11 +75,11 @@ test.serial('connection', async (t) => {
     }),
   ])
 
-  console.info('parse and send time', x, Date.now() - d, 'ms')
+  console.info('parse and send time', helloResponses, Date.now() - d, 'ms')
 
   const bigString = await coreClient.function('lotsOfData')
 
-  console.log(bigString)
+  t.true(bigString.length > 5e6)
 
   await wait(15e3)
 

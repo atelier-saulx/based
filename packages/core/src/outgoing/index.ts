@@ -84,8 +84,8 @@ export const drainQueue = (client: BasedCoreClient) => {
               p = fflate.deflateSync(p)
               isDeflate = true
             }
+            len += p.length
           }
-          len += p.length
 
           const header = encodeHeader(0, isDeflate, len)
           len += 4 // header size
@@ -93,10 +93,11 @@ export const drainQueue = (client: BasedCoreClient) => {
           storeUint8(buff, header, 0, 4)
           storeUint8(buff, id, 4, 3)
           buff[7] = n.length
-
-          buffs.push(buff, n, p)
-          console.log('PAYLOADLEN', p.length, len)
-
+          if (p) {
+            buffs.push(buff, n, p)
+          } else {
+            buffs.push(buff, n)
+          }
           l += len
         }
         const n = new Uint8Array(l)
