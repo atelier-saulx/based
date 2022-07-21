@@ -43,9 +43,8 @@ const encodeHeader = (
   // type (3 bits)
   //   0 = function
   //   1 = subscribe
-  //   2 = subscribe force reply
-  //   3 = get from subscription, no subscribe
-  //   4 = unsubscribe
+  //   2 = unsubscribe
+  //   3 = get from observable
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
@@ -87,7 +86,7 @@ export const drainQueue = (client: BasedCoreClient) => {
         const buffs = []
         let l = 0
 
-        // ------- Functions -------------
+        // ------- Function
         for (const f of fn) {
           // | 4 header | 3 id | 1 name length | * name | * payload |
           let len = 7
@@ -111,7 +110,7 @@ export const drainQueue = (client: BasedCoreClient) => {
           l += len
         }
 
-        // ------- Observe -------------
+        // ------- Observe
         for (const [id, o] of ob) {
           let len = 4
           const [type, name, checksum, payload] = o
@@ -119,16 +118,10 @@ export const drainQueue = (client: BasedCoreClient) => {
           // Type 1 = subscribe
           // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
-          // Type 2 = subscribe force reply
-          // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
+          // Type 2 = unsubscribe
+          // | 4 header | 8 id | * name
 
-          // Type 3 = get from subscription, no subscribe
-          // | 4 header | 8 id | 1 name length | * name | * payload |
-
-          // Type 4 = unsubscribe
-          // | 4 header | 8 id | * name |
-
-          if (type === 4) {
+          if (type === 2) {
             const n = encoder.encode(name)
             len += n.length
             const header = encodeHeader(type, false, len)
@@ -143,18 +136,14 @@ export const drainQueue = (client: BasedCoreClient) => {
             if (p) {
               len += p.length
             }
-            const buffLen = type === 3 ? 8 : 16
+            const buffLen = 16
             len += buffLen
             const header = encodeHeader(type, isDeflate, len)
             const buff = new Uint8Array(1 + 4 + buffLen)
             storeUint8(buff, header, 0, 4)
             storeUint8(buff, id, 4, 8)
-            if (type === 3) {
-              buff[12] = n.length
-            } else {
-              storeUint8(buff, checksum, 12, 8)
-              buff[20] = n.length
-            }
+            storeUint8(buff, checksum, 12, 8)
+            buff[20] = n.length
             if (p) {
               buffs.push(buff, n, p)
             } else {
@@ -204,17 +193,32 @@ export const addToFunctionQueue = (
   drainQueue(client)
 }
 
-export const addSubscriptionToQueue = (
+export const addUnsubToQueue = (
+  client: BasedCoreClient,
+  name: string,
+  id: number
+) => {
+  const type = client.observeQueue.get(id)?.[0]
+  if (type === 2) {
+    return
+  }
+  client.observeQueue.set(id, [2, name])
+  drainQueue(client)
+}
+
+export const addSubToQueue = (
   client: BasedCoreClient,
   payload: GenericObject,
   name: string,
   id: number,
   checksum: number = 0
 ) => {
-  // TODO: clean queue
-  // what about we make it an object instead {id: [] }
-  // and then we can combine things
-  // [type, name, id, checksum, payload]
+  const type = client.observeQueue.get(id)?.[0]
+  if (type === 1) {
+    return
+  }
   client.observeQueue.set(id, [1, name, checksum, payload])
   drainQueue(client)
 }
+
+// sub get queue

@@ -12,6 +12,7 @@ import {
   ObserveState,
   ObserveQueue,
   Cache,
+  GetObserveQueue,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
@@ -43,6 +44,7 @@ export class BasedCoreClient extends Emitter {
   // --------- Queue
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
+  getObserveQueue: GetObserveQueue = new Map()
   drainInProgress: boolean = false
   drainTimeout: ReturnType<typeof setTimeout>
   idlePing: ReturnType<typeof setTimeout>

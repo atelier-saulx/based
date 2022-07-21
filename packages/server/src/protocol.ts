@@ -49,9 +49,8 @@ export const encodeHeader = (
   // type (3 bits)
   //   0 = function
   //   1 = subscribe
-  //   2 = subscribe force reply
-  //   3 = get from subscription, no subscribe
-  //   4 =  unsubscribe
+  //   2 = unsubscribe
+  //   3 = get from observable
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)

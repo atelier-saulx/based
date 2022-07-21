@@ -33,17 +33,41 @@ export type ObserveState = {
 
 // Type of subscriptions
 // 1 = subscribe
-// 2 = subscribe force reply
-// 3 = get from subscription, no subscribe
-// 4 = unsubscribe
-export type ObserveType = 1 | 2 | 3 | 4
+// 2 = unsubscribe
+export type ObserveType = 1 | 2
 
 export type ObserveQueue = Map<
   number, // id
-  [
-    ObserveType,
-    string, // name
-    number, // checksum
-    GenericObject | undefined // payload
-  ]
+  | [
+      1,
+      string, // name
+      number, // checksum
+      GenericObject // payload
+    ]
+  | [
+      1,
+      string, // name
+      number // checksum
+    ]
+  | [
+      2,
+      string // name
+    ]
+>
+
+// Type of subscriptions
+// 3 = get
+export type GetObserveQueue = Map<
+  number, // id
+  | [
+      3,
+      string, // name
+      number, // checksum
+      GenericObject // payload
+    ]
+  | [
+      3,
+      string, // name
+      number // checksum
+    ]
 >
