@@ -1,6 +1,22 @@
 import { BasedCoreClient } from '..'
 
+export const decodeHeader = (
+  nr: number
+): { type: number; isDeflate: boolean; len: number } => {
+  const len = nr >> 4
+  const meta = nr & 15
+  const type = meta >> 1
+  const isDeflate = meta & 1
+  return {
+    type,
+    isDeflate: isDeflate === 1,
+    len,
+  }
+}
+
 export const incoming = (client: BasedCoreClient, data) => {
+  console.info(data)
+
   try {
     const x = JSON.parse(data.data)
     if (x.id) {

@@ -15,7 +15,6 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
   if (type === 0) {
     // make this into a function
-
     const reqId = readUint8(arr, start + 4, 3)
     const namelen = arr[7]
     const name = new Uint8Array(arr.slice(start + 8, start + 8 + namelen))
