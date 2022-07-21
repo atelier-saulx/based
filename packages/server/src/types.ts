@@ -32,7 +32,7 @@ export type BasedObservableFunctionSpec = {
 export type BasedFunctionSpec = {
   name: string
   checksum: number
-  function: (payload: any) => Promise<any>
+  function: (payload: any, ws: uws.WebSocket) => Promise<any>
   idleTimeout?: number // in 3 seconds
   worker?: boolean | true | false
   timeoutCounter?: number

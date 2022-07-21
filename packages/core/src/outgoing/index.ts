@@ -39,7 +39,13 @@ const encodeHeader = (
   isDeflate: boolean,
   len: number
 ): number => {
-  // type (3 bits) (8 options) 0=function, 1=get sub, 2=get sub allways return
+  // 4 bytes
+  // type (3 bits)
+  //   0 = function
+  //   1 = subscribe
+  //   2 = subscribe force reply
+  //   3 = get from subscription, no subscribe
+  //   4 = unsubscribe
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
@@ -47,48 +53,52 @@ const encodeHeader = (
   return nr
 }
 
+const encodePayload = (payload: any): [boolean, Uint8Array] | [boolean] => {
+  let p: Uint8Array
+  let isDeflate = false
+  if (payload !== undefined) {
+    p = encoder.encode(JSON.stringify(payload))
+    if (p.length > 150) {
+      p = fflate.deflateSync(p)
+      isDeflate = true
+    }
+    return [isDeflate, p]
+  }
+  return [false]
+}
+
 export const drainQueue = (client: BasedCoreClient) => {
   if (
     client.connected &&
     !client.drainInProgress &&
-    (client.functionQueue.length || client.observeQueue.length)
+    (client.functionQueue.length || client.observeQueue.size)
   ) {
     client.drainInProgress = true
     client.drainTimeout = setTimeout(() => {
       client.drainInProgress = false
-      if (client.functionQueue.length || client.observeQueue.length) {
+
+      if (client.functionQueue.length || client.observeQueue.size) {
         const fn = client.functionQueue
-        // const ob = client.observeQueue
+        const ob = client.observeQueue
+
         client.functionQueue = []
-        client.observeQueue = []
+        client.observeQueue = new Map()
+
         const buffs = []
         let l = 0
-        // bit types
-        // 000 => fn
-        // 001 => subNoReply
-        // 002 => subReply
-        // 1 bit for isGzip or not
-        // HEADER 4 bytes (4 bits for type + isGzip or not) 28 bits for length of the payload
+
+        // ------- Functions -------------
         for (const f of fn) {
-          // id 3 | name len Encode 1 + var | payload
-          let len = 3
-          let isDeflate = false
+          // | 4 header | 3 id | 1 name length | * name | * payload |
+          let len = 7
           const [id, name, payload] = f
           const n = encoder.encode(name)
-          len += n.length + 1
-          let p: Uint8Array
-          if (payload) {
-            p = encoder.encode(JSON.stringify(payload))
-            if (p.length > 150) {
-              // use gzip as well here if node
-              p = fflate.deflateSync(p)
-              isDeflate = true
-            }
+          len += 1 + n.length
+          const [isDeflate, p] = encodePayload(payload)
+          if (p) {
             len += p.length
           }
-
           const header = encodeHeader(0, isDeflate, len)
-          len += 4 // header size
           const buff = new Uint8Array(4 + 3 + 1)
           storeUint8(buff, header, 0, 4)
           storeUint8(buff, id, 4, 3)
@@ -100,6 +110,60 @@ export const drainQueue = (client: BasedCoreClient) => {
           }
           l += len
         }
+
+        // ------- Observe -------------
+        for (const [id, o] of ob) {
+          let len = 4
+          const [type, name, checksum, payload] = o
+
+          // Type 1 = subscribe
+          // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
+
+          // Type 2 = subscribe force reply
+          // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
+
+          // Type 3 = get from subscription, no subscribe
+          // | 4 header | 8 id | 1 name length | * name | * payload |
+
+          // Type 4 = unsubscribe
+          // | 4 header | 8 id | * name |
+
+          if (type === 4) {
+            const n = encoder.encode(name)
+            len += n.length
+            const header = encodeHeader(type, false, len)
+            const buff = new Uint8Array(4 + 8)
+            storeUint8(buff, header, 0, 4)
+            storeUint8(buff, id, 4, 8)
+            buffs.push(buff, n)
+          } else {
+            const n = encoder.encode(name)
+            len += 1 + n.length
+            const [isDeflate, p] = encodePayload(payload)
+            if (p) {
+              len += p.length
+            }
+            const buffLen = type === 3 ? 8 : 16
+            len += buffLen
+            const header = encodeHeader(type, isDeflate, len)
+            const buff = new Uint8Array(1 + 4 + buffLen)
+            storeUint8(buff, header, 0, 4)
+            storeUint8(buff, id, 4, 8)
+            if (type === 3) {
+              buff[12] = n.length
+            } else {
+              storeUint8(buff, checksum, 12, 8)
+              buff[20] = n.length
+            }
+            if (p) {
+              buffs.push(buff, n, p)
+            } else {
+              buffs.push(buff, n)
+            }
+            l += len
+          }
+        }
+
         const n = new Uint8Array(l)
         let c = 0
         for (const b of buffs) {
@@ -137,9 +201,20 @@ export const addToFunctionQueue = (
   client.functionResponseListeners[id] = [resolve, reject]
   client.functionQueue.push([id, name, payload])
 
-  //   let x = encoder.encode(name)
-  //   console.info(x)
   drainQueue(client)
 }
 
-// export const addToObserveQueue = (client: BasedCoreClient) => {}
+export const addSubscriptionToQueue = (
+  client: BasedCoreClient,
+  payload: GenericObject,
+  name: string,
+  id: number,
+  checksum: number = 0
+) => {
+  // TODO: clean queue
+  // what about we make it an object instead {id: [] }
+  // and then we can combine things
+  // [type, name, id, checksum, payload]
+  client.observeQueue.set(id, [1, name, checksum, payload])
+  drainQueue(client)
+}

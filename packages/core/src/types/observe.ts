@@ -31,12 +31,19 @@ export type ObserveState = {
   }
 }
 
-// allways reply OR wait
-export type ObserveType = 0 | 1
+// Type of subscriptions
+// 1 = subscribe
+// 2 = subscribe force reply
+// 3 = get from subscription, no subscribe
+// 4 = unsubscribe
+export type ObserveType = 1 | 2 | 3 | 4
 
-export type ObserveQueue = [
-  ObserveType,
-  string, // name
-  number, // checksum
-  GenericObject // payload
-][]
+export type ObserveQueue = Map<
+  number, // id
+  [
+    ObserveType,
+    string, // name
+    number, // checksum
+    GenericObject | undefined // payload
+  ]
+>

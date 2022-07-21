@@ -42,7 +42,7 @@ export class BasedCoreClient extends Emitter {
   url: string | (() => Promise<string>)
   // --------- Queue
   functionQueue: FunctionQueue = []
-  observeQueue: ObserveQueue = []
+  observeQueue: ObserveQueue = new Map()
   drainInProgress: boolean = false
   drainTimeout: ReturnType<typeof setTimeout>
   idlePing: ReturnType<typeof setTimeout>

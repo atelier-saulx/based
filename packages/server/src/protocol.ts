@@ -45,7 +45,13 @@ export const encodeHeader = (
   isDeflate: boolean,
   len: number
 ): number => {
-  // type (3 bits) (8 options) 0=function, 1=get sub, 2=get sub allways return
+  // 4 bytes
+  // type (3 bits)
+  //   0 = function
+  //   1 = subscribe
+  //   2 = subscribe force reply
+  //   3 = get from subscription, no subscribe
+  //   4 =  unsubscribe
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
