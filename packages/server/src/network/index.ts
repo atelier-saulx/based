@@ -52,6 +52,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
     },
     drain: (ws) => {
       console.info('drain')
+      // lets handle drain efficiently (or more efficiently at least)
+
       // call client.drain can be much more efficient
       // if (ws.client && ws.client.backpressureQueue) {
       //   ws.client.drain()
