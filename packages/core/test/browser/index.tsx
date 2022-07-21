@@ -1,20 +1,23 @@
-import based from '@based/client'
+import { BasedCoreClient } from '@based/core-client'
 
 console.info('browser')
 
 const init = async () => {
-  const client = based({
+  const coreClient = new BasedCoreClient()
+
+  coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9101'
+      return 'ws://localhost:9910'
     },
   })
 
-  client.client.debug = true
-  client.observe('bla', (d) => {
-    console.info(d)
+  coreClient.once('connect', (isConnected) => {
+    console.info('connect', isConnected)
   })
 
-  // client.observe({ id: true }, () => {})
+  const iqTest = await coreClient.function('iqTest')
+
+  console.info(iqTest)
 }
 
 init()

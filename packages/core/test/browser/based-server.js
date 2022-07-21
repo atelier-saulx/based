@@ -1,72 +1,36 @@
-const createServer = require('@based/server')
-const { start } = require('@saulx/selva-server')
+const createServer = require('@based/server').default
 
 const json = require('./tmp.json')
 
 const init = async () => {
-  const selvaServer = await start({
-    port: 9099,
-    pipeRedisLogs: { stdout: false, stderr: false },
-  })
-  await selvaServer.selvaClient.updateSchema({
-    types: {
-      thing: {
-        fields: {
-          name: { type: 'string' },
-          nested: {
-            type: 'object',
-            properties: {
-              something: { type: 'string' },
-            },
-          },
-        },
+  const store = {
+    iqTest: async () => json,
+  }
+
+  await createServer({
+    port: 9910,
+    functions: {
+      memCacheTimeout: 3e3,
+      idleTimeout: 1e3,
+      unregister: async () => {
+        return true
+      },
+      register: async ({ name }) => {
+        if (store[name]) {
+          return {
+            name,
+            checksum: 1,
+            function: store[name],
+          }
+        } else {
+          return false
+        }
+      },
+      log: (opts) => {
+        console.info('log from fn', opts)
       },
     },
   })
-
-  let i = 0
-
-  await createServer.default({
-    port: 9101,
-    db: {
-      host: 'localhost',
-      port: 9099,
-    },
-    config: {
-      functions: {
-        bla: {
-          shared: true,
-          observable: true,
-          function: async ({ update }) => {
-            const interval = setInterval(() => {
-              const snurx = {
-                cnt: i++,
-                Sadsadsdas: '1212312312321',
-                cczxxzccxzxcz: Math.random() * 11221,
-              }
-
-              if (Math.random() * 2 > 1) {
-                snurx.json = json
-              }
-
-              update(snurx)
-            }, 0)
-            return () => {
-              clearInterval(interval)
-            }
-          },
-        },
-      },
-    },
-  })
-
-  let p = i
-  setInterval(() => {
-    console.info('send', i, i - p, '/sec')
-    p = i
-  }, 10e3)
-
-  // server
 
   console.info('Started server!')
 }

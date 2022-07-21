@@ -36,7 +36,7 @@ const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
   } else {
     if (d instanceof Blob) {
       const buffer = await d.arrayBuffer()
-      return <Uint8Array>buffer
+      return new Uint8Array(buffer)
     }
   }
   throw new Error('Recieved incorrect data')
