@@ -4,10 +4,10 @@ export const fnIsTimedOut = (
   spec: BasedObservableFunctionSpec | BasedFunctionSpec
 ): boolean => {
   if (spec.timeoutCounter !== -1) {
-    if (spec.idleTimeout > 0) {
-      spec.idleTimeout--
+    if (spec.idleTimeout > 0 && spec.timeoutCounter > 0) {
+      spec.timeoutCounter--
     }
-    if (spec.idleTimeout === 0) {
+    if (spec.timeoutCounter === 0) {
       return true
     }
   }
@@ -15,11 +15,10 @@ export const fnIsTimedOut = (
 }
 
 export const updateTimeoutCounter = (
-  spec: BasedObservableFunctionSpec | BasedFunctionSpec,
-  idleTimeoutDefault: number
+  spec: BasedObservableFunctionSpec | BasedFunctionSpec
 ) => {
   if (spec.timeoutCounter !== -1) {
-    const idleTimeout = spec.idleTimeout || idleTimeoutDefault
-    spec.timeoutCounter = idleTimeout === 0 ? -1 : idleTimeout
+    spec.timeoutCounter =
+      spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
   }
 }

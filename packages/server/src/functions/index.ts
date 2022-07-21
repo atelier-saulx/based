@@ -44,7 +44,7 @@ export class BasedFunctions {
       for (const name in this.observables) {
         const spec = this.observables[name]
         if (this.server.activeObservables[name]) {
-          updateTimeoutCounter(spec, this.config.idleTimeout)
+          updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
           q.push(this.unregister(name, spec))
         }
@@ -103,7 +103,7 @@ export class BasedFunctions {
   ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
     const spec = this.observables[name] || this.functions[name]
     if (spec) {
-      updateTimeoutCounter(spec, this.config.idleTimeout)
+      updateTimeoutCounter(spec)
       return spec
     }
     return false
@@ -111,9 +111,12 @@ export class BasedFunctions {
 
   update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
     if (spec) {
+      if (!spec.idleTimeout) {
+        spec.idleTimeout = this.config.idleTimeout
+      }
       if (spec.timeoutCounter === undefined) {
-        const idleTimeout = spec.idleTimeout || this.config.idleTimeout
-        spec.timeoutCounter = idleTimeout === 0 ? -1 : idleTimeout
+        spec.timeoutCounter =
+          spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
       }
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {

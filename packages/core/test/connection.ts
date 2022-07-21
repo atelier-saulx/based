@@ -3,15 +3,12 @@ import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 
-// import basedCoreClient from '../src'
-// // import { start } from '@saulx/selva-server'
-
-test.serial('connection', async (t) => {
+test.serial('functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const store = {
     hello: async (payload) => {
-      return 'hello this is a repsonse with len (in bytes) ' + payload.length
+      return payload.length
     },
     lotsOfData: async () => {
       console.info('hello lots of data')
@@ -23,7 +20,7 @@ test.serial('connection', async (t) => {
     },
   }
 
-  createServer({
+  const server = await createServer({
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,
@@ -65,7 +62,6 @@ test.serial('connection', async (t) => {
     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
   }
 
-  const d = Date.now()
   const helloResponses = await Promise.all([
     coreClient.function('hello', {
       bla: true,
@@ -75,13 +71,14 @@ test.serial('connection', async (t) => {
     }),
   ])
 
-  console.info('parse and send time', helloResponses, Date.now() - d, 'ms')
+  t.true(helloResponses[0].length < 20)
+  t.true(helloResponses[1].length > 5e6)
 
   const bigString = await coreClient.function('lotsOfData')
 
   t.true(bigString.length > 5e6)
 
-  await wait(15e3)
+  await wait(3e3)
 
-  t.pass('yes')
+  t.is(Object.keys(server.functions.functions).length, 0)
 })

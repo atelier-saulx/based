@@ -46,11 +46,11 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       // send is used to send a current value
       // open(this, ws)
     },
-    close: (ws) => {
+    close: () => {
       console.info('close')
       // close(this, ws)
     },
-    drain: (ws) => {
+    drain: () => {
       console.info('drain')
       // lets handle drain efficiently (or more efficiently at least)
 
