@@ -1,6 +1,7 @@
-export type Cache = {
-  [queryId: string]: {
+export type Cache = Map<
+  number,
+  {
     value: any
     checksum: number
   }
-}
+>

@@ -38,10 +38,6 @@ export type BasedFunctionSpec = {
   timeoutCounter?: number
 }
 
-// first byte has to encode the length
-// type + length ? ;/
-// return type is a lot better 256 options (max functions) maybe 2 bytes
-
 export type FunctionConfig = {
   memCacheTimeout?: number // in seconds
   idleTimeout?: number // in 3 seconds

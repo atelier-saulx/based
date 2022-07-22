@@ -81,7 +81,7 @@ export const drainQueue = (client: BasedCoreClient) => {
         const ob = client.observeQueue
 
         client.functionQueue = []
-        client.observeQueue = new Map()
+        client.observeQueue.clear()
 
         const buffs = []
         let l = 0
@@ -193,7 +193,7 @@ export const addToFunctionQueue = (
   drainQueue(client)
 }
 
-export const addUnsubToQueue = (
+export const addObsCloseToQueue = (
   client: BasedCoreClient,
   name: string,
   id: number
@@ -206,11 +206,11 @@ export const addUnsubToQueue = (
   drainQueue(client)
 }
 
-export const addSubToQueue = (
+export const addObsToQueue = (
   client: BasedCoreClient,
-  payload: GenericObject,
   name: string,
   id: number,
+  payload: GenericObject,
   checksum: number = 0
 ) => {
   const type = client.observeQueue.get(id)?.[0]

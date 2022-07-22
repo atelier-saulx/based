@@ -4,6 +4,7 @@ export class BasedObservableFunction {
   server: BasedServer
   name: string
   id: number
+  // cache: SharedArrayBuffer this will be it
 
   constructor(server: BasedServer, name: string, id: number) {
     this.server = server

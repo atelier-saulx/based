@@ -1,26 +1,19 @@
-import { GenericObject } from './generic'
-
-export type ObserveMetaInfo = {
-  id: string
-  checksum: number
-  name: string
-}
-
 export type ObserveOpts = {
   localStorage?: boolean
   maxCacheTime?: number
 }
 
-export type ObserveDataListener = (data?: any, opts?: ObserveMetaInfo) => void
+export type ObserveDataListener = (data: any, checksum: number) => void
 
-export type ObserveErrorListener = (err: Error, opts?: ObserveMetaInfo) => void
+export type ObserveErrorListener = (err: Error) => void
 
-export type CloseObserve = (opts?: ObserveMetaInfo) => void
+export type CloseObserve = () => void
 
-export type ObserveState = {
-  [id: string]: {
+export type ObserveState = Map<
+  number,
+  {
     cnt: number
-    query: GenericObject
+    payload: any
     name: string
     subscribers: {
       [cnt: string]: {
@@ -29,7 +22,7 @@ export type ObserveState = {
       }
     }
   }
-}
+>
 
 // Type of subscriptions
 // 1 = subscribe
@@ -42,7 +35,7 @@ export type ObserveQueue = Map<
       1,
       string, // name
       number, // checksum
-      GenericObject // payload
+      any // payload
     ]
   | [
       1,
@@ -63,7 +56,7 @@ export type GetObserveQueue = Map<
       3,
       string, // name
       number, // checksum
-      GenericObject // payload
+      any // payload
     ]
   | [
       3,

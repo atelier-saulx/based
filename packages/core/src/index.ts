@@ -18,9 +18,15 @@ import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
 import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
-import { addToFunctionQueue, drainQueue } from './outgoing'
+import {
+  addObsToQueue,
+  addToFunctionQueue,
+  addObsCloseToQueue,
+  drainQueue,
+} from './outgoing'
 import { envId } from '@based/ids'
 import { incoming } from './incoming'
+import { genObserveId } from './genObserveId'
 
 export class BasedCoreClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -52,12 +58,12 @@ export class BasedCoreClient extends Emitter {
   localStorage: boolean = false
   maxCacheSize: number = 4e6 // in bytes
   maxCacheTime: number = 2630e3 // in seconds (1 month default)
-  cache: Cache = {}
+  cache: Cache = new Map()
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = {}
   requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Observe State
-  observeState: ObserveState = {}
+  observeState: ObserveState = new Map()
   // -------- Auth state
   authState: Auth = { token: false }
   authInProgress: Promise<Auth>
@@ -69,6 +75,21 @@ export class BasedCoreClient extends Emitter {
 
   onReconnect() {
     this.connected = true
+
+    // --------- Resend all subscriptions
+    for (const [id, obs] of this.observeState) {
+      if (!this.observeQueue.has(id)) {
+        const cachedData = this.cache.get(id)
+        addObsToQueue(
+          this,
+          obs.name,
+          id,
+          obs.payload,
+          cachedData?.checksum || 0
+        )
+      }
+    }
+
     this.emit('reconnect', true)
   }
 
@@ -125,14 +146,50 @@ export class BasedCoreClient extends Emitter {
     name: string,
     onData: ObserveDataListener,
     payload?: GenericObject,
-    onErr?: ObserveErrorListener,
+    onError?: ObserveErrorListener,
     observeOpts?: ObserveOpts
   ): CloseObserve {
-    console.info(name, onData, payload, onErr, observeOpts)
-    return () => {}
+    const id = genObserveId(name, payload)
+    let subscriberId: number
+    const cachedData = this.cache.get(id)
+    // cache options observeOpts
+    if (!this.observeState.has(id)) {
+      this.observeState.set(id, {
+        cnt: 1,
+        payload,
+        name,
+        subscribers: {
+          1: {
+            onError,
+            onData,
+          },
+        },
+      })
+      subscriberId = 1
+      addObsToQueue(this, name, id, payload, cachedData?.checksum || 0)
+    } else {
+      const obs = this.observeState.get(id)
+      subscriberId = ++obs.cnt
+      obs.subscribers[subscriberId] = {
+        onError,
+        onData,
+      }
+    }
+    if (cachedData) {
+      onData(cachedData.value, cachedData.checksum)
+    }
+    return () => {
+      const obs = this.observeState.get(id)
+      obs.cnt--
+      if (obs.cnt === 0) {
+        this.observeState.delete(id)
+        addObsCloseToQueue(this, name, id)
+      }
+    }
   }
 
   async get(name: string, payload?: GenericObject): Promise<any> {
+    // not impelemted yet
     console.info(name, payload)
   }
 
