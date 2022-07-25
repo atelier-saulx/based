@@ -277,12 +277,14 @@ export type TrackOpts = {
 }
 
 export type SendTokenOptions = {
+  id?: string
   isBasedUser?: boolean
   isApiKey?: boolean
   refreshToken?: string
   renewOptions?: {
     refreshToken?: string
   } & { [key: string]: any }
+  localStorage?: boolean
 }
 
 export type AnalyticsResult = {
