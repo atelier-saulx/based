@@ -42,74 +42,77 @@ const generateTokens = async ({ based, id, privateKey }) => {
 
 export default async ({ based, payload }: Params) => {
   // TODO: Add validation
-  const { code, redirect, state } = payload
+  const { code, redirect, state, codeVerifier } = payload
   let response: any
 
   //rlet keys = JSON.parse(await based.secret('google-keys'))
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const googleClientId = await based.secret('google-client-id')
-  const googleClientSecret = await based.secret('google-client-secret')
+  const microsoftClientId = await based.secret('microsoft-client-id')
 
   if (payload.getClientId === true) {
-    return { clientId: googleClientId }
-  }
-
-  try {
-    response = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        client_id: googleClientId,
-        client_secret: googleClientSecret,
-        code,
-        grant_type: 'authorization_code',
-        redirect_uri: redirect,
-      }),
-    }).then((response) => response.json())
-
-    if (response.error) {
-      throw new Error(response.error)
+    return {
+      clientId: microsoftClientId,
     }
-  } catch (error) {
-    throw new Error(error)
   }
 
-  const url =
-    'https://people.googleapis.com/v1/people/me?personFields=names,emailAddresses,photos'
-
+  if (!codeVerifier) {
+    throw new Error('Need codeVerifier')
+  }
   try {
-    response = await fetch(url, {
-      headers: {
-        Authorization: 'Bearer ' + response.access_token,
-      },
-    }).then((response) => response.json())
-
-    if (response.error) {
-      throw new Error(response.error)
+    const details = {
+      client_id: microsoftClientId,
+      scope: 'openid email profile User.Read',
+      code,
+      redirect_uri: redirect,
+      grant_type: 'authorization_code',
+      code_verifier: codeVerifier,
+      reponse_type: 'code',
     }
-  } catch (error) {
-    console.error(error)
-    throw new Error('error decoding thirdparty')
+
+    const formBody = []
+    for (const property in details) {
+      const encodedKey = encodeURIComponent(property)
+      const encodedValue = encodeURIComponent(details[property])
+      formBody.push(encodedKey + '=' + encodedValue)
+    }
+
+    response = await fetch(
+      'https://login.microsoftonline.com/common/oauth2/v2.0/token',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          // TODO send this dinalically
+          // Required for CORS in Microsoft Authentication
+          Origin: 'http://localhost:8005',
+        },
+        body: formBody.join('&'),
+      }
+    ).then((r) => r.json())
+  } catch (err) {
+    throw new Error(err)
   }
 
-  const {
-    resourceName,
-    names: [{ displayName: name }],
-    emailAddresses: [{ value: email }],
-    photos: [{ url: photo }],
-  } = response
+  const Authorization = `Bearer ${response.access_token}`
+  const user = await fetch('https://graph.microsoft.com/v1.0/me', {
+    headers: {
+      Authorization,
+      'Content-Type': 'application/json',
+      // TODO check why we need this
+      Origin: 'http://localhost:8005',
+    },
+  }).then((r) => r.json())
 
-  console.log({
-    resourceName,
-    name,
-    email,
-    photo,
-  })
+  if (user.error) {
+    console.error(user.error)
+    throw new Error(user.error.message)
+  }
 
-  const alias = 'google-' + resourceName.split('/')[1]
+  const { id, displayName: name, userPrincipalName, mail } = user
+  const email = mail || userPrincipalName
+
+  const alias = 'ms-' + id
 
   const { existingUser } = await based.get({
     existingUser: {
@@ -135,7 +138,6 @@ export default async ({ based, payload }: Params) => {
     },
   })
 
-  console.log({ existingUser })
   if (!existingUser) {
     // it's a register
     const userWithGoogleId = await based.get({ $alias: alias, id: true })
@@ -151,7 +153,6 @@ export default async ({ based, payload }: Params) => {
       // TODO: add avatar?
       // avatar: photo
     })
-    console.log({ id })
 
     const { token, refreshToken, code } = await generateTokens({
       based,
