@@ -59,6 +59,10 @@ export default async ({ based, payload }: Params) => {
   if (!codeVerifier) {
     throw new Error('Need codeVerifier')
   }
+  const origin = redirect.includes('?')
+    ? redirect.slice(0, redirect.indexOf('?'))
+    : redirect
+
   try {
     const details = {
       client_id: microsoftClientId,
@@ -85,7 +89,7 @@ export default async ({ based, payload }: Params) => {
           'Content-Type': 'application/x-www-form-urlencoded',
           // TODO send this dinalically
           // Required for CORS in Microsoft Authentication
-          Origin: 'http://localhost:8005',
+          Origin: origin,
         },
         body: formBody.join('&'),
       }
@@ -100,7 +104,7 @@ export default async ({ based, payload }: Params) => {
       Authorization,
       'Content-Type': 'application/json',
       // TODO check why we need this
-      Origin: 'http://localhost:8005',
+      Origin: origin,
     },
   }).then((r) => r.json())
 
