@@ -70,6 +70,8 @@ export class Params {
 
   public server: BasedServer
 
+  public path?: string
+
   get based(): BasedServerClient {
     if (this.useGlobalBased) {
       return this.server.based

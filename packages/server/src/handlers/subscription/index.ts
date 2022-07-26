@@ -13,7 +13,6 @@ import {
 import { DataListener } from '../../types'
 
 // type GenericObject = { [key: string]: any }
-console.info('xxx')
 export class Subscription {
   // public lastDiff: [GenericObject, number]
 

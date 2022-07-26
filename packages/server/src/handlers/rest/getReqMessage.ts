@@ -47,7 +47,11 @@ const getReqType = (name: string[]): RequestTypes => {
 export default (name: string[], payload?: any): Message | TrackMessage => {
   const type = getReqType(name)
   if (type === RequestTypes.Call) {
-    return [type, name[2], 0, payload]
+    let path = ''
+    for (let i = 3; i < name.length; i++) {
+      path += `/${name[i]}`
+    }
+    return [type, name[2], 0, payload, path || '/']
   } else if (type === RequestTypes.Set) {
     return [type, 0, payload]
   } else if (type === RequestTypes.Track) {
