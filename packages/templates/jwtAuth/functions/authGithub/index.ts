@@ -41,14 +41,21 @@ const generateTokens = async ({ based, id, privateKey }) => {
 }
 
 export default async ({ based, payload }: Params) => {
-  // TODO: Add validation
   const { code, redirect, state } = payload
 
-  //rlet keys = JSON.parse(await based.secret('google-keys'))
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const githubClientId = await based.secret('github-client-id')
-  const githubClientSecret = await based.secret('github-client-secret')
+  const githubClientId = await based.secret(
+    `github-client-id-${project}-${env}`
+  )
+  const githubClientSecret = await based.secret(
+    `github-client-secret-${project}-${env}`
+  )
+  if (!githubClientId || !githubClientSecret) {
+    throw new Error(
+      `GitHub Client Id and Client Secret should be configured as secrets with the names github-client-id-${project}-${env} and github-client-secret-${project}-${env}`
+    )
+  }
 
   if (payload.getClientId === true) {
     return { clientId: githubClientId }

@@ -41,14 +41,19 @@ const generateTokens = async ({ based, id, privateKey }) => {
 }
 
 export default async ({ based, payload }: Params) => {
-  // TODO: Add validation
   const { code, redirect, state, codeVerifier } = payload
   let response: any
 
-  //rlet keys = JSON.parse(await based.secret('google-keys'))
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const microsoftClientId = await based.secret('microsoft-client-id')
+  const microsoftClientId = await based.secret(
+    `microsoft-client-id-${project}-${env}`
+  )
+  if (!microsoftClientId) {
+    throw new Error(
+      `Microsoft Client Id should be configured as a secret with the name microsoft-client-id-${project}-${env}`
+    )
+  }
 
   if (payload.getClientId === true) {
     return {
@@ -87,7 +92,6 @@ export default async ({ based, payload }: Params) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          // TODO send this dinalically
           // Required for CORS in Microsoft Authentication
           Origin: origin,
         },
@@ -103,7 +107,6 @@ export default async ({ based, payload }: Params) => {
     headers: {
       Authorization,
       'Content-Type': 'application/json',
-      // TODO check why we need this
       Origin: origin,
     },
   }).then((r) => r.json())
