@@ -2,10 +2,11 @@ import crypto from 'crypto'
 import { Params } from '@based/server'
 import getService from '@based/get-service'
 import registerEmailHtml from './registerEmailHtml'
-
-// DRY
-const tokenExpiresIn = '30m'
-const refreshTokenExpiresIn = '7d'
+import {
+  generateTokens,
+  refreshTokenExpiresIn,
+  tokenExpiresIn,
+} from '../shared'
 
 const generateConfirmToken = (): Promise<string> =>
   new Promise((resolve) =>
@@ -80,18 +81,11 @@ export default async ({ based, payload }: Params) => {
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
 
-  const token = await based.encode(
-    { sub: id, id },
-    { key: privateKey },
-    'jwt',
-    { expiresIn: tokenExpiresIn }
-  )
-  const refreshToken = await based.encode(
-    { sub: id, id, refreshToken: true },
-    { key: privateKey },
-    'jwt',
-    { expiresIn: refreshTokenExpiresIn }
-  )
+  const { token, refreshToken } = await generateTokens({
+    based,
+    id,
+    privateKey,
+  })
 
   await based.observeUntil(
     {
@@ -101,5 +95,12 @@ export default async ({ based, payload }: Params) => {
     (r) => r.status === 'confirmedEmail'
   )
 
-  return { id, token, refreshToken, email }
+  return {
+    id,
+    token,
+    tokenExpiresIn,
+    refreshToken,
+    refreshTokenExpiresIn,
+    email,
+  }
 }

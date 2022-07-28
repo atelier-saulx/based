@@ -1,8 +1,9 @@
-import crypto from 'crypto'
 import { BasedServerClient } from '@based/server'
-
-const tokenExpiresIn = '30m'
-const refreshTokenExpiresIn = '7d'
+import {
+  generateTokens,
+  refreshTokenExpiresIn,
+  tokenExpiresIn,
+} from '../shared'
 
 export default async ({
   payload,
@@ -32,35 +33,11 @@ export default async ({
   if (dbUser && dbUser.password === hashedPassword) {
     const privateKey = await based.secret(`users-private-key-${project}-${env}`)
 
-    const token = await based.encode(
-      { sub: dbUser.id, id: dbUser.id },
-      { key: privateKey },
-      'jwt',
-      { expiresIn: tokenExpiresIn }
-    )
-    const refreshToken = await based.encode(
-      { sub: dbUser.id, id: dbUser.id, refreshToken: true },
-      { key: privateKey },
-      'jwt',
-      { expiresIn: refreshTokenExpiresIn }
-    )
-
-    const code = crypto.randomBytes(16).toString('hex')
-    based.redis.set(
-      {
-        name: 'default',
-        type: 'origin',
-      },
-      code,
-      JSON.stringify({
-        token,
-        tokenExpiresIn,
-        refreshToken,
-        refreshTokenExpiresIn,
-      }),
-      'EX',
-      60 * 5
-    ) // expire in 5m
+    const { token, refreshToken, code } = await generateTokens({
+      based,
+      id: dbUser.id,
+      privateKey,
+    })
 
     return {
       id: dbUser.id,

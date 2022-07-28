@@ -1,44 +1,10 @@
-import crypto from 'crypto'
 import { Params } from '@based/server'
 import fetch from 'node-fetch'
-
-const tokenExpiresIn = '30m'
-const refreshTokenExpiresIn = '7d'
-
-// TODO: DRY
-const generateTokens = async ({ based, id, privateKey }) => {
-  const token = await based.encode(
-    { sub: id, id },
-    { key: privateKey },
-    'jwt',
-    { expiresIn: tokenExpiresIn }
-  )
-  const refreshToken = await based.encode(
-    { sub: id, id, refreshToken: true },
-    { key: privateKey },
-    'jwt',
-    { expiresIn: refreshTokenExpiresIn }
-  )
-
-  const code = crypto.randomBytes(16).toString('hex')
-  based.redis.set(
-    {
-      name: 'default',
-      type: 'origin',
-    },
-    code,
-    JSON.stringify({
-      token,
-      tokenExpiresIn,
-      refreshToken,
-      refreshTokenExpiresIn,
-    }),
-    'EX',
-    60 * 5
-  ) // expire in 5m
-
-  return { token, refreshToken, code }
-}
+import {
+  generateTokens,
+  refreshTokenExpiresIn,
+  tokenExpiresIn,
+} from '../shared'
 
 export default async ({ based, payload }: Params) => {
   const { code, redirect, state } = payload

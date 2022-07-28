@@ -1,5 +1,5 @@
 import { Params } from '@based/server'
-import jwt from 'jsonwebtoken'
+import { generateTokens, tokenExpiresIn } from '../shared'
 
 type RefreshTokenBody = { id: string; refreshToken: true }
 
@@ -30,17 +30,12 @@ export default async ({ based, payload }: Params) => {
     refreshTokenBody.refreshToken === true &&
     refreshTokenBody.id
   ) {
-    const newToken = jwt.sign(
-      {
-        id: refreshTokenBody.id,
-      },
+    const { token } = await generateTokens({
+      based,
+      id: refreshTokenBody.id,
       privateKey,
-      {
-        expiresIn: '30m',
-        algorithm: 'RS256',
-      }
-    )
-    return { token: newToken }
+    })
+    return { token, tokenExpiresIn }
   }
 
   throw new Error('invalid refreshToken')
