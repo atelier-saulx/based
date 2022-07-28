@@ -9,10 +9,10 @@ export default async function app({ based, payload, path }) {
   return `<html>
   <head>
     <meta charset="UTF-8" />
-    ${js.map((path) => `<script src="${path}"/>`)}
+    ${css.map((path) => `<link rel="stylesheet" href="${path}">`)}
   </head>
   <body>
-  ${js.map((path) => `<script src="${path}"/>`)}
+    ${js.map((path) => `<script src="${path}"></script>`)}
   </body>
 </html>`
 }

@@ -2,7 +2,7 @@ import { program } from 'commander'
 import { command } from '../command'
 import build from '@saulx/aristotle-build'
 import { isAbsolute, join } from 'path'
-import { writeFile, ensureDir } from 'fs-extra'
+import { writeJSON, copy, ensureDir, pathExists, writeFile } from 'fs-extra'
 
 const resolvePath = (path: string): string => {
   if (!isAbsolute(path)) {
@@ -11,8 +11,6 @@ const resolvePath = (path: string): string => {
   return path
 }
 
-console.log('WTF IS THIS?')
-
 command(
   program
     .command('build-app')
@@ -20,9 +18,14 @@ command(
     .requiredOption('-t, --target <target>', 'Target to build')
     .requiredOption('-d, --dest <dest>', 'Build Destination')
 ).action(async ({ target, dest }) => {
-  console.log('SUCCESS')
   target = resolvePath(target)
   dest = resolvePath(dest)
+  const indexPath = join(dest, 'index.ts')
+  const filesPath = join(dest, 'files.json')
+  const headersPath = join(dest, 'headers.json')
+  const pathsPath = join(dest, 'paths.json')
+  const configPath = join(dest, 'based.config.js')
+  const templatePath = join(__dirname, 'template.ts')
   const res = await build({
     entryPoints: [target],
     minify: true,
@@ -30,9 +33,15 @@ command(
     production: true,
     gzip: true,
   })
-  const { css, js, files } = res
+
+  const { css = [], js = [], files = {} } = res
   const filesJson = {}
   const headersJson = {}
+  const pathsJson = {
+    css: css.map(({ url }) => url),
+    js: js.map(({ url }) => url),
+  }
+
   for (const key in files) {
     const file = files[key]
     filesJson[key] = file.contents.toString()
@@ -45,12 +54,21 @@ command(
     }
   }
 
-  console.log('---------->', js)
-
   await ensureDir(dest)
   await Promise.all([
-    writeFile(join(dest, 'files.json'), JSON.stringify(filesJson, null, 2)),
-    writeFile(join(dest, 'headers.json'), JSON.stringify(headersJson, null, 2)),
+    pathExists(indexPath).then(
+      (exists) => !exists && copy(templatePath, indexPath)
+    ),
+    writeJSON(filesPath, filesJson),
+    writeJSON(headersPath, headersJson),
+    writeJSON(pathsPath, pathsJson),
+    writeFile(
+      configPath,
+      `module.exports = {
+      name: '${dest.split('/').at(-1)}',
+      observable: false,
+    }`
+    ),
   ])
 
   // printHeader(options, config)

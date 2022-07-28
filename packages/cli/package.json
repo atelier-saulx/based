@@ -7,8 +7,9 @@
     "based": "bin/cmd.js"
   },
   "scripts": {
-    "watch": "npx tsc -w",
-    "build": "npx tsc",
+    "postbuild": "cp ./src/buildApp/template.ts ./dist/buildApp",
+    "watch": "npx tsc-watch --onSuccess 'npm run postbuild'",
+    "build": "npx tsc && npm run postbuild",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "engines": {
@@ -40,6 +41,7 @@
     "@types/node-fetch": "^2.6.2",
     "rimraf": "^3.0.2",
     "ts-node": "^10.1.0",
+    "tsc-watch": "^5.0.3",
     "typescript": "^4.3.5"
   }
 }
