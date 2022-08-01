@@ -7,24 +7,17 @@ import {
 } from '../shared'
 
 export default async ({ based, payload }: Params) => {
-  const { code, redirect, state } = payload
+  const { code, redirect, state, clientId } = payload
 
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const githubClientId = await based.secret(
-    `github-client-id-${project}-${env}`
-  )
   const githubClientSecret = await based.secret(
     `github-client-secret-${project}-${env}`
   )
-  if (!githubClientId || !githubClientSecret) {
+  if (!clientId || !githubClientSecret) {
     throw new Error(
-      `GitHub Client Id and Client Secret should be configured as secrets with the names github-client-id-${project}-${env} and github-client-secret-${project}-${env}`
+      `GitHub clientId should be sent in the payload and Client Secret should be configured as a secret with the name github-client-secret-${project}-${env}`
     )
-  }
-
-  if (payload.getClientId === true) {
-    return { clientId: githubClientId }
   }
 
   let accessTokenResponse: any
@@ -38,7 +31,7 @@ export default async ({ based, payload }: Params) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          client_id: githubClientId,
+          client_id: clientId,
           client_secret: githubClientSecret,
           code,
           redirect_uri: redirect,

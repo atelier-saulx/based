@@ -7,24 +7,13 @@ import {
 } from '../shared'
 
 export default async ({ based, payload }: Params) => {
-  const { code, redirect, state, codeVerifier } = payload
+  const { code, redirect, state, clientId, codeVerifier } = payload
   let response: any
 
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const microsoftClientId = await based.secret(
-    `microsoft-client-id-${project}-${env}`
-  )
-  if (!microsoftClientId) {
-    throw new Error(
-      `Microsoft Client Id should be configured as a secret with the name microsoft-client-id-${project}-${env}`
-    )
-  }
-
-  if (payload.getClientId === true) {
-    return {
-      clientId: microsoftClientId,
-    }
+  if (!clientId) {
+    throw new Error(`Microsoft clientId should be sent in the payload`)
   }
 
   if (!codeVerifier) {
@@ -36,7 +25,7 @@ export default async ({ based, payload }: Params) => {
 
   try {
     const details = {
-      client_id: microsoftClientId,
+      client_id: clientId,
       scope: 'openid email profile User.Read',
       code,
       redirect_uri: redirect,

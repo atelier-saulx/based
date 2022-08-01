@@ -7,25 +7,18 @@ import {
 } from '../shared'
 
 export default async ({ based, payload }: Params) => {
-  const { code, redirect, state } = payload
+  const { code, redirect, state, clientId } = payload
   let response: any
 
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
-  const googleClientId = await based.secret(
-    `google-client-id-${project}-${env}`
-  )
   const googleClientSecret = await based.secret(
     `google-client-secret-${project}-${env}`
   )
-  if (!googleClientId || !googleClientSecret) {
+  if (!clientId || !googleClientSecret) {
     throw new Error(
-      `Google Client Id and Client Secret should be configured as secrets with the names google-client-id-${project}-${env} and google-client-secret-${project}-${env}`
+      `Google clientId needs to be sent in the payload and Client Secret should be configured as a secret with the name google-client-secret-${project}-${env}`
     )
-  }
-
-  if (payload.getClientId === true) {
-    return { clientId: googleClientId }
   }
 
   try {
@@ -35,7 +28,7 @@ export default async ({ based, payload }: Params) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        client_id: googleClientId,
+        client_id: clientId,
         client_secret: googleClientSecret,
         code,
         grant_type: 'authorization_code',
