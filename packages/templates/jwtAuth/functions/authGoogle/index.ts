@@ -70,36 +70,57 @@ export default async ({ based, payload }: Params) => {
 
   const alias = 'google-' + resourceName.split('/')[1]
 
-  const { existingUser } = await based.get({
-    existingUser: {
-      id: true,
-      email: true,
-      name: true,
-      aliases: true,
-      $find: {
-        $traverse: 'children',
-        $filter: [
-          {
-            $field: 'type',
-            $operator: '=',
-            $value: 'user',
-          },
-          {
-            $operator: '=',
-            $field: 'email',
-            $value: email,
-          },
-        ],
-      },
-    },
+  const user = await based.get({
+    $alias: alias,
+    id: true,
+    email: true,
   })
 
-  console.log({ existingUser })
-  if (!existingUser) {
+  if (user?.id) {
+    // it's a signin
+    const { token, refreshToken, code } = await generateTokens({
+      based,
+      id: user.id,
+      privateKey,
+    })
+
+    return {
+      id: user.id,
+      code,
+      email,
+      token,
+      tokenExpiresIn,
+      refreshToken,
+      refreshTokenExpiresIn,
+      state,
+    }
+  } else {
     // it's a register
-    const userWithGoogleId = await based.get({ $alias: alias, id: true })
-    if (userWithGoogleId.id) {
-      throw new Error('User already registered with another email')
+    const { existingUser } = await based.get({
+      existingUser: {
+        id: true,
+        email: true,
+        name: true,
+        aliases: true,
+        $find: {
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'user',
+            },
+            {
+              $operator: '=',
+              $field: 'email',
+              $value: email,
+            },
+          ],
+        },
+      },
+    })
+    if (existingUser?.id) {
+      throw new Error('User already registered with this email')
     }
 
     const { id } = await based.set({
@@ -110,7 +131,6 @@ export default async ({ based, payload }: Params) => {
       // TODO: add avatar?
       // avatar: photo
     })
-    console.log({ id })
 
     const { token, refreshToken, code } = await generateTokens({
       based,
@@ -129,30 +149,5 @@ export default async ({ based, payload }: Params) => {
       state,
       newUser: true,
     }
-  } else {
-    // it's a signin
-    if (!existingUser.aliases.includes(alias)) {
-      throw new Error('Email and third party authenticator mismatch')
-    }
-    if (existingUser.id) {
-      const { token, refreshToken, code } = await generateTokens({
-        based,
-        id: existingUser.id,
-        privateKey,
-      })
-
-      return {
-        id: existingUser.id,
-        code,
-        email,
-        token,
-        tokenExpiresIn,
-        refreshToken,
-        refreshTokenExpiresIn,
-        state,
-      }
-    }
-
-    throw new Error('user not found')
   }
 }

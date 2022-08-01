@@ -58,7 +58,7 @@ export default async ({ based, payload }: Params) => {
   }
 
   const Authorization = `Bearer ${response.access_token}`
-  const user = await fetch('https://graph.microsoft.com/v1.0/me', {
+  const profileResponse = await fetch('https://graph.microsoft.com/v1.0/me', {
     headers: {
       Authorization,
       'Content-Type': 'application/json',
@@ -66,45 +66,67 @@ export default async ({ based, payload }: Params) => {
     },
   }).then((r) => r.json())
 
-  if (user.error) {
-    console.error(user.error)
-    throw new Error(user.error.message)
+  if (profileResponse.error) {
+    console.error(profileResponse.error)
+    throw new Error(profileResponse.error.message)
   }
 
-  const { id, displayName: name, userPrincipalName, mail } = user
+  const { id, displayName: name, userPrincipalName, mail } = profileResponse
   const email = mail || userPrincipalName
 
   const alias = 'ms-' + id
 
-  const { existingUser } = await based.get({
-    existingUser: {
-      id: true,
-      email: true,
-      name: true,
-      aliases: true,
-      $find: {
-        $traverse: 'children',
-        $filter: [
-          {
-            $field: 'type',
-            $operator: '=',
-            $value: 'user',
-          },
-          {
-            $operator: '=',
-            $field: 'email',
-            $value: email,
-          },
-        ],
-      },
-    },
+  const user = await based.get({
+    $alias: alias,
+    id: true,
+    email: true,
   })
 
-  if (!existingUser) {
+  if (user?.id) {
+    // it's a signin
+    const { token, refreshToken, code } = await generateTokens({
+      based,
+      id: user.id,
+      privateKey,
+    })
+
+    return {
+      id: user.id,
+      code,
+      email,
+      token,
+      tokenExpiresIn,
+      refreshToken,
+      refreshTokenExpiresIn,
+      state,
+    }
+  } else {
     // it's a register
-    const userWithGoogleId = await based.get({ $alias: alias, id: true })
-    if (userWithGoogleId.id) {
-      throw new Error('User already registered with another email')
+    const { existingUser } = await based.get({
+      existingUser: {
+        id: true,
+        email: true,
+        name: true,
+        aliases: true,
+        $find: {
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'user',
+            },
+            {
+              $operator: '=',
+              $field: 'email',
+              $value: email,
+            },
+          ],
+        },
+      },
+    })
+    if (existingUser?.id) {
+      throw new Error('User already registered with this email')
     }
 
     const { id } = await based.set({
@@ -133,30 +155,5 @@ export default async ({ based, payload }: Params) => {
       state,
       newUser: true,
     }
-  } else {
-    // it's a signin
-    if (!existingUser.aliases.includes(alias)) {
-      throw new Error('Email and third party authenticator mismatch')
-    }
-    if (existingUser.id) {
-      const { token, refreshToken, code } = await generateTokens({
-        based,
-        id: existingUser.id,
-        privateKey,
-      })
-
-      return {
-        id: existingUser.id,
-        code,
-        email,
-        token,
-        tokenExpiresIn,
-        refreshToken,
-        refreshTokenExpiresIn,
-        state,
-      }
-    }
-
-    throw new Error('user not found')
   }
 }
