@@ -8,13 +8,14 @@ import { isCallFunction } from '../../types'
 const call = async (
   server: BasedServer,
   client: Client,
-  [, name, reqId, payload]: FunctionCallMessage,
+  [, name, reqId, payload, path]: FunctionCallMessage,
   params?: Params // in authorize this is a bit awkard
 ) => {
   const fn = await getFunction(server, name)
   if (fn && isCallFunction(fn)) {
     if (!params) {
       params = new Params(server, payload, client, [name])
+      params.path = path
     }
     try {
       const result = await fn.function(params)
