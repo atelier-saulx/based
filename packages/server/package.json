@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "3.2.3",
+  "version": "3.3.0",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "src/index.ts",

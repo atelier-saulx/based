@@ -31,7 +31,7 @@ command(
     minify: true,
     platform: 'browser',
     production: true,
-    gzip: true,
+    gzip: false,
   })
 
   const { css = [], js = [], files = {} } = res
@@ -47,10 +47,10 @@ command(
     filesJson[key] = file.contents.toString()
     headersJson[key] = {
       // do we actually need this?
-      'Content-Length': file.contents.byteLength,
+      'Content-Length': String(file.contents.byteLength),
       'Content-Type': file.mime,
-      'Content-Encoding': 'gzip',
-      ETag: file.checksum,
+      // 'Content-Encoding': 'gzip',
+      ETag: String(file.checksum),
     }
   }
 
