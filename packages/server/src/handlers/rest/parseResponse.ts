@@ -164,7 +164,7 @@ export default (
       csvParser = jsonexport()
     }
 
-    if (res.acceptEncoding) {
+    if (!headers?.['Content-Encoding'] && res.acceptEncoding) {
       const acceptEncoding = res.acceptEncoding
       let compressor
       if (acceptEncoding.includes('deflate')) {
