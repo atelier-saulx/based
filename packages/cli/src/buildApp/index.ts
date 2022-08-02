@@ -31,7 +31,7 @@ command(
     minify: true,
     platform: 'browser',
     production: true,
-    gzip: false,
+    gzip: true,
   })
 
   const { css = [], js = [], files = {} } = res
@@ -44,12 +44,10 @@ command(
 
   for (const key in files) {
     const file = files[key]
-    filesJson[key] = file.contents.toString()
+    filesJson[key] = file.contents.toString('base64')
     headersJson[key] = {
-      // do we actually need this?
-      'Content-Length': String(file.contents.byteLength),
       'Content-Type': file.mime,
-      // 'Content-Encoding': 'gzip',
+      'Content-Encoding': 'gzip',
       ETag: String(file.checksum),
     }
   }

@@ -111,7 +111,13 @@ export type ErrorObject = {
 }
 
 // outgoing data
-export type FunctionCallMessage = [RequestTypes.Call, string, number, any?]
+export type FunctionCallMessage = [
+  RequestTypes.Call,
+  string,
+  number,
+  any?,
+  any?
+]
 
 export type TrackMessage = [RequestTypes.Track, TrackPayload]
 
