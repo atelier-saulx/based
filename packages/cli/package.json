@@ -1,6 +1,6 @@
 {
   "name": "@based/cli",
-  "version": "2.13.0",
+  "version": "2.13.1",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
@@ -16,7 +16,7 @@
     "node": ">=10.0.0"
   },
   "dependencies": {
-    "@based/client": "^3.0.2",
+    "@based/client": "^3.2.1",
     "@based/ids": "2.6.2",
     "@based/pretty-date": "^1.0.4",
     "@based/pretty-number": "1.0.3",
