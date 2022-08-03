@@ -318,7 +318,7 @@ test.serial('update active observables', async (t) => {
 })
 
 // make clearing of secrets a thing later - implement better in hub
-test.serial('get secrets', async (t) => {
+test.serial.skip('get secrets', async (t) => {
   let clearCnt = 0
 
   const server = await createServer({
