@@ -103,7 +103,7 @@ export default async (
           options &&
           // @ts-ignore
           options.refreshToken &&
-          v[0].reason?.message.includes('Token expired')
+          v[0]?.reason?.message.includes('Token expired')
         ) {
           letsTryToRenew = true
           // @ts-ignore

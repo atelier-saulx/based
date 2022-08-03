@@ -7,6 +7,9 @@ const unrestrictedFunctions = [
   'resetPassword',
   'resetPasswordForm',
   'resetPasswordRequest',
+  'authGoogle',
+  'authMicrosoft',
+  'authGithub',
 ]
 
 export default async ({ based, user, callStack, name }: Params) => {
