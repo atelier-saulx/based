@@ -10,6 +10,7 @@ const unrestrictedFunctions = [
   'authGoogle',
   'authMicrosoft',
   'authGithub',
+  'authApple',
 ]
 
 export default async ({ based, user, callStack, name }: Params) => {
