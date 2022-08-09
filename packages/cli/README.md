@@ -9,22 +9,22 @@ Based CLI allows control of features available in the Based dashboard UI account
 	- [`login`](#login)
 	- [`logout`](#logout)
 	- [`deploy`](#deploy)
-	- [`apiKeys`](#apiKeys)
+	- [`api-keys`](#api-keys)
 	- [`secrets`](#secrets)
 
 ## Global Arguments
 
-| Argument                         | Description                                          |
-|----------------------------------|------------------------------------------------------|
-| `--help`                         | Display global help or help for a command.           |
-| `--org <org>`                    | Organization name overide.                           |
-| `-p, --project <project>`        | Project name overide.                                |
-| `-e, --env <env>`                | Environment name overide.                            |
-| `-b, --based-file <basedFile>`   | Location of your [configuration file]().             |
-| `-d, --debug`                    | Show more descriptive errors and debug information.  |
-| `-k, --api-key <apiKey>`         | Authenticate using an [apiKey]() from file.          |
-| `-H, --no-header`                | Don't show the header. Useful for chaining commands. |
-| `-o, --output [fancy,json,none]` | Output type. Defaults to `fancy`                     |
+| Argument                         | Description                                                 |
+|----------------------------------|-------------------------------------------------------------|
+| `--help`                         | Display global help or help for a command.                  |
+| `--org <org>`                    | Organization name overide.                                  |
+| `-p, --project <project>`        | Project name overide.                                       |
+| `-e, --env <env>`                | Environment name overide.                                   |
+| `-b, --based-file <basedFile>`   | Location of your [configuration file](@configuration-file). |
+| `-d, --debug`                    | Show more descriptive errors and debug information.         |
+| `-k, --api-key <apiKey>`         | Authenticate using an [api-key](#api-keys) from file.       |
+| `-H, --no-header`                | Don't show the header. Useful for chaining commands.        |
+| `-o, --output [fancy,json,none]` | Output type. Defaults to `fancy`                            |
 
 
 ## Configuration file
@@ -173,11 +173,11 @@ $ npx based deploy
 
 ```
 
-### `apiKeys`
+### `api-keys`
 
 Manages apiKeys.
 ApiKeys are offered as an alternative to email login. They are ideal for scripted CLI commands.
-After generating an apiKey any command can be used with the `-k, --apiKey` argument.
+After generating an apiKey any command can be used with the `-k, --api-key` argument.
 
 Example:
 ```Text
@@ -192,20 +192,20 @@ $ npx based deploy --schema --no-header --api-key ./apiKey.key
 ```
 
 
-| Subcommand                      | Description         |
-|---------------------------------|---------------------|
-| [`ls`](#apikeys-ls)             | List apiKeys.       |
-| [`add`](#apikeys-add)           | Add apiKey.         |
-| [`remove`](#apikeys-remove)     | Remove an apiKey.   |
-| [`download`](#apikeys-download) | Download an apiKey. |
+| Subcommand                       | Description         |
+|----------------------------------|---------------------|
+| [`ls`](#api-keys-ls)             | List apiKeys.       |
+| [`add`](#api-keys-add)           | Add apiKey.         |
+| [`remove`](#api-keys-remove)     | Remove an apiKey.   |
+| [`download`](#api-keys-download) | Download an apiKey. |
 
-#### `apiKeys ls`
+#### `api-keys ls`
 
 Lists the apiKeys
 
 Example:
 ```text
-❯ npx based apiKeys ls
+❯ npx based api-keys ls
  _                        _
 | |                      | |
 | |__   __ _ ___  ___  __| |
@@ -223,11 +223,11 @@ Example:
 
 ```
 
-#### `apiKeys add`
+#### `api-keys add`
 
 The `add` subcommand adds a new apiKey or renews an existing one if an apiKey with the same name already exists.
 It can be used as an interactive command or non-interactive when the `--name` argument is passed.
-The generated key can be downloaded immediately and saved to a file with the `--file` argument or retrieved later using the [`apikeys download`](#apikeys-download) subcommand.
+The generated key can be downloaded immediately and saved to a file with the `--file` argument or retrieved later using the [`api-keys download`](#api-keys-download) subcommand.
 
 | Argument | Description                     |
 |----------|---------------------------------|
@@ -236,7 +236,7 @@ The generated key can be downloaded immediately and saved to a file with the `--
 
 Example:
 ```text
-❯ npx based apiKeys add
+❯ npx based api-keys add
  _                        _
 | |                      | |
 | |__   __ _ ___  ___  __| |
@@ -254,7 +254,7 @@ Example:
 ┃ Added key aKey
 ```
 
-#### `apiKeys remove`
+#### `api-keys remove`
 
 Removes an apiKey.
 Can be used as an interactive command or non-interactive when the `--name` argument is passed.
@@ -263,14 +263,14 @@ Can be used as an interactive command or non-interactive when the `--name` argum
 |----------|---------------------------------|
 | `--name` | Name or the apiKey to generate. |
 
-#### `apiKeys download`
+#### `api-keys download`
 
 Downloads an existing apiKey.
 Can be used as an interactive command or non-interactive when the `--name` and `--file`  arguments are passed.
 
 Example:
 ```text
-$ npx based apiKeys download --name aKey --file my_key.key
+$ npx based api-keys download --name aKey --file my_key.key
  _                        _
 | |                      | |
 | |__   __ _ ___  ___  __| |
