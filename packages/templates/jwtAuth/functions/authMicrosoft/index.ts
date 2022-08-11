@@ -13,7 +13,9 @@ export default async ({ based, payload }: Params) => {
   const { project, env } = based.opts
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
   if (!clientId) {
-    throw new Error(`Microsoft clientId should be sent in the payload`)
+    throw new Error(
+      `Microsoft clientId should be sent in the payload. Check this page for help: https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-based-ui-howto.md`
+    )
   }
 
   if (!codeVerifier) {

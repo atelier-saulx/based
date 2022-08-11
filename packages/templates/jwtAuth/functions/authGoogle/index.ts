@@ -17,7 +17,7 @@ export default async ({ based, payload }: Params) => {
   )
   if (!clientId || !googleClientSecret) {
     throw new Error(
-      `Google clientId needs to be sent in the payload and Client Secret should be configured as a secret with the name google-client-secret-${project}-${env}`
+      `Google clientId needs to be sent in the payload and Client Secret should be configured as a secret with the name google-client-secret-${project}-${env}. Check this page for help: https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-based-ui-howto.md`
     )
   }
 

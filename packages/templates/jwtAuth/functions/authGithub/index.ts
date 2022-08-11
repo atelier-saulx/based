@@ -16,7 +16,7 @@ export default async ({ based, payload }: Params) => {
   )
   if (!clientId || !githubClientSecret) {
     throw new Error(
-      `GitHub clientId should be sent in the payload and Client Secret should be configured as a secret with the name github-client-secret-${project}-${env}`
+      `GitHub clientId should be sent in the payload and Client Secret should be configured as a secret with the name github-client-secret-${project}-${env}. Check this page for help: https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-based-ui-howto.md`
     )
   }
 
