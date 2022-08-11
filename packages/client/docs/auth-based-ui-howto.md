@@ -3,6 +3,17 @@
 This guide shows how to implement authentication using [based/ui](https://github.com/atelier-saulx/ui) UI library and its authentication components.
 The tutorial example files can be found in [this repository](https://github.com/atelier-saulx/auth-demo).
 
+### Imports
+
+Components can be imported or required from the [`@based/ui`](https://www.npmjs.com/package/@based/ui) npm package.
+```bash
+$ npm install @based/ui
+```
+
+```javascript
+import { Provider, Authorize } from '@based/ui'
+```
+
 ### Provider
 
 The first step is to wrap the app with a `<Provider />` component. This will set up the app to handle third-party auth provider callbacks and handle overlays and themes from the `based/ui` library.
