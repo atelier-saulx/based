@@ -7,7 +7,7 @@
 - [Upload files](#upload-files)
 - [Schema](#schema)
 - [Analytics](#analytics)
-- [Auth Systen](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth.md)
+- [Auth System](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth.md)
 
 ---
 
