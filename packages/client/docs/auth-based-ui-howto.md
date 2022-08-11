@@ -6,7 +6,7 @@ The tutorial example files can be found in [this repository](https://github.com/
 ### Provider
 
 The first step is to wrap the app with a `<Provider />` component. This will set up the app to handle third-party auth provider callbacks and handle overlays and themes from the `based/ui` library.
-The `<Provider /> component expects the main app component as a child and a [based client](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md) as the `client` argument.
+The `<Provider />` component expects the main app component as a child and a [based client](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md) as the `client` argument.
 
 ```javascript
 const client = based(basedConfig)
