@@ -1,6 +1,6 @@
 ## JWT Auth Flow HowTo using based/ui
 
-This guide shows how to implement authentication using [based/ui]() UI library and its authentication components.
+This guide shows how to implement authentication using [based/ui](https://github.com/atelier-saulx/ui) UI library and its authentication components.
 The tutorial example files can be found in [this repository](https://github.com/atelier-saulx/auth-demo).
 
 ### Provider
