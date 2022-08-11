@@ -24,12 +24,12 @@ The Authorize component renders other components only when a user is authenticat
 Email, Google, Microsoft, and Github provider handler functions are installed in new environments by default. We encourage you to check these [templates](https://github.com/atelier-saulx/based/tree/main/packages/templates/jwtAuth/functions) and adapt them to your needs by adding the [data functions](https://github.com/atelier-saulx/based/tree/main/packages/templates/jwtAuth/functions) to your project and [deploying](https://github.com/atelier-saulx/based/blob/main/packages/cli/README.md#deploy) them with the [based CLI](https://github.com/atelier-saulx/based/blob/main/packages/cli/README.md).
 
 ```javascript
-	<Authorize
-		// googleClientId="<your_google_client_id>"
-		// microsoftClientId="<your_microsoft_client_id>"
-		// githubClientId="<your_github_client_id>"
-		app={LoggedinBody}
-	/>
+  <Authorize
+    // googleClientId="<your_google_client_id>"
+    // microsoftClientId="<your_microsoft_client_id>"
+    // githubClientId="<your_github_client_id>"
+    app={LoggedinBody}
+  />
 ```
 
 The protected sections of your site should be wrapped in a component passed to the `app` argument. 
@@ -37,7 +37,7 @@ The component is passed as an argument instead of `children`, so the protected c
 
 ### Email provider
 
-New environments came by default, with a `user` type ready to receive email registrations. The [`register user data function](https://github.com/atelier-saulx/based/blob/main/packages/templates/jwtAuth/functions/registerUser/index.ts) registers new users using the name and email address, sends a confirmation email, and waits for the new user to click the email message he received confirming the email address.
+New environments came by default, with a `user` type ready to receive email registrations. The [`register` user data function](https://github.com/atelier-saulx/based/blob/main/packages/templates/jwtAuth/functions/registerUser/index.ts) registers new users using the name and email address, sends a confirmation email, and waits for the new user to click the email message he received confirming the email address.
 
 ### Google provider
 
