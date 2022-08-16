@@ -6,16 +6,16 @@ Based CLI allows control of features available in the Based dashboard UI account
 - [Configuration file](#configuration-file)
 - [Authentication](#authentication)
 - Commands
-	- [`login`](#login)
-	- [`logout`](#logout)
-	- [`deploy`](#deploy)
-	- [`api-keys`](#api-keys)
-	- [`secrets`](#secrets)
+  - [`login`](#login)
+  - [`logout`](#logout)
+  - [`deploy`](#deploy)
+  - [`api-keys`](#api-keys)
+  - [`secrets`](#secrets)
 
 ## Global Arguments
 
 | Argument                         | Description                                                 |
-|----------------------------------|-------------------------------------------------------------|
+| -------------------------------- | ----------------------------------------------------------- |
 | `--help`                         | Display global help or help for a command.                  |
 | `--org <org>`                    | Organization name overide.                                  |
 | `-p, --project <project>`        | Project name overide.                                       |
@@ -26,7 +26,6 @@ Based CLI allows control of features available in the Based dashboard UI account
 | `-H, --no-header`                | Don't show the header. Useful for chaining commands.        |
 | `-o, --output [fancy,json,none]` | Output type. Defaults to `fancy`                            |
 
-
 ## Configuration file
 
 Based CLI tries to find a configuration file named `based.json` or `based.js` in your current folder. It will walk up to the root folder of your project or up to your home folder if it cannot find it.
@@ -34,6 +33,7 @@ If a based file does not exist, the CLI will offer to save a new file.
 The configuration file stores the organisation, project, and env that the CLI connects. The config file can be a JSON file or a javascript file, in which case it will execute it, expecting to export an object with the properties below.
 
 #### Example:
+
 ```json
 {
   "org": "saulx",
@@ -43,12 +43,12 @@ The configuration file stores the organisation, project, and env that the CLI co
 ```
 
 #### Configuration object properties
-| Property  | Description             |
-|-----------|-------------------------|
-| `org`     | Organisation name.      |
-| `project` | Project name.           |
-| `env`     | Environment name.       |
 
+| Property  | Description        |
+| --------- | ------------------ |
+| `org`     | Organisation name. |
+| `project` | Project name.      |
+| `env`     | Environment name.  |
 
 ## Authentication
 
@@ -57,7 +57,7 @@ Two options are available: email authentication or API Key authentication. The f
 
 Use the `login` command with your email as the argument to authenticate. The command will pause, and an email with an authentication link will be sent to your address. From any device, you need to click the link in the confirmation email you receive. It will notify the CLI and authenticate you automatically. No password is involved.
 
-*NOTE: Based authentication emails use a three-word token in the message subject as a security feature. Make sure the words in the prompt match the ones in the email subject. Never click the link on an authentication email that does not match these three words.*
+_NOTE: Based authentication emails use a three-word token in the message subject as a security feature. Make sure the words in the prompt match the ones in the email subject. Never click the link on an authentication email that does not match these three words._
 
 ```text
 $ npx based login my@email.com
@@ -88,10 +88,11 @@ Authenticates the CLI with your project.
 See [Authentication](#authentication) for more details.
 
 | Argument  | Description |
-|-----------|-------------|
+| --------- | ----------- |
 | `<email>` | Your email. |
 
 Example:
+
 ```bash
 $ npx based login your@email.com
 ```
@@ -101,9 +102,11 @@ $ npx based login your@email.com
 Logout the CLI from your account.
 
 Example:
+
 ```bash
 $ npx based logout
 ```
+
 ### `deploy`
 
 The `deploy` command updates your schema changes and data functions in one go.
@@ -134,12 +137,13 @@ The `authorize` function is a special function that authorizes based client to c
 More information about it in the [`authorize data function`](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/authorize.md) documentation.
 
 | Argument                  | Description                             |
-|---------------------------|-----------------------------------------|
+| ------------------------- | --------------------------------------- |
 | `--schema`                | Sets deploy shema option.               |
 | `-f, --file <schemaFile>` | Location of the schema file. (Variadic) |
 | `--functions`             | Sets deploy functions option.           |
 
 Example:
+
 ```text
 $ npx based deploy
  _                        _
@@ -180,6 +184,7 @@ ApiKeys are offered as an alternative to email login. They are ideal for scripte
 After generating an apiKey any command can be used with the `-k, --api-key` argument.
 
 Example:
+
 ```Text
 $ npx based deploy --schema --no-header --api-key ./apiKey.key
 
@@ -191,9 +196,8 @@ $ npx based deploy --schema --no-header --api-key ./apiKey.key
 
 ```
 
-
 | Subcommand                       | Description         |
-|----------------------------------|---------------------|
+| -------------------------------- | ------------------- |
 | [`ls`](#api-keys-ls)             | List apiKeys.       |
 | [`add`](#api-keys-add)           | Add apiKey.         |
 | [`remove`](#api-keys-remove)     | Remove an apiKey.   |
@@ -204,6 +208,7 @@ $ npx based deploy --schema --no-header --api-key ./apiKey.key
 Lists the apiKeys
 
 Example:
+
 ```text
 ❯ npx based api-keys ls
  _                        _
@@ -230,11 +235,12 @@ It can be used as an interactive command or non-interactive when the `--name` ar
 The generated key can be downloaded immediately and saved to a file with the `--file` argument or retrieved later using the [`api-keys download`](#api-keys-download) subcommand.
 
 | Argument | Description                     |
-|----------|---------------------------------|
+| -------- | ------------------------------- |
 | `--name` | Name or the apiKey to generate. |
 | `--file` | Path to save the generated key. |
 
 Example:
+
 ```text
 ❯ npx based api-keys add
  _                        _
@@ -260,15 +266,16 @@ Removes an apiKey.
 Can be used as an interactive command or non-interactive when the `--name` argument is passed.
 
 | Argument | Description                     |
-|----------|---------------------------------|
+| -------- | ------------------------------- |
 | `--name` | Name or the apiKey to generate. |
 
 #### `api-keys download`
 
 Downloads an existing apiKey.
-Can be used as an interactive command or non-interactive when the `--name` and `--file`  arguments are passed.
+Can be used as an interactive command or non-interactive when the `--name` and `--file` arguments are passed.
 
 Example:
+
 ```text
 $ npx based api-keys download --name aKey --file my_key.key
  _                        _
@@ -289,7 +296,6 @@ $ npx based api-keys download --name aKey --file my_key.key
 
 ```
 
-
 ### `secrets`
 
 Manages [based secrets]() for your organization.
@@ -299,13 +305,14 @@ If the secret with the specified name already exists, it will be updated.
 Secrets are organization-wide, so they are shared across all projects and environments.
 
 | Argument              | Description                                          |
-|-----------------------|------------------------------------------------------|
+| --------------------- | ---------------------------------------------------- |
 | `<name>`              | Name of the secret to add or delete.                 |
 | `-f, --file <file>`   | Add a secret to an organization from a file.         |
 | `-v, --value <value>` | Add a secret to an organization from a value inline. |
 | `-D, --delete`        | Delete a secret from an organization. (Interactive)  |
 
 Example:
+
 ```text
 ❯ npx based secrets aSecret --value "My super secret stuff"
  _                        _
@@ -324,3 +331,61 @@ Example:
 ┃ in 37ms
 
 ```
+
+### `backup`
+
+This is used to manage remote backups for your environment. Using this tool a user can **create**, **list**, **delete**, or **download** a backup file for any specific database of an environment.
+
+| Subcommand                         | Description                    |
+| ---------------------------------- | ------------------------------ |
+| [`make`](#backup-make)             | Make a new remote backup.      |
+| [`download`](#backup-download)     | Download a remote backup file. |
+| [`list`](#backup-list)             | List remote backups.           |
+| [`delete`](#backup-delete)         | Delete a remote backup.        |
+| [`delete-all`](#backup-delete-all) | Delete all remote backups      |
+
+#### `backup make`
+
+This command requests the server to create a new remote backup with the current contents of the database.  
+Depending on the size of the database, this may take a while.
+
+| Argument                | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `-db --database [name]` | Name of the database to target. Defaults to `default`. |
+
+#### `backup download`
+
+This command is used to download a backup file to your computer.  
+Depending on the size of the file, this may take a while.
+
+| Argument                | Description                                                                            |
+| ----------------------- | -------------------------------------------------------------------------------------- |
+| `-db --database [name]` | Name of the database to target. Defaults to `default`.                                 |
+| `-f --filename [name]`  | Name of the file to download. This option is only available in `non-interactive` mode. |
+
+#### `backup list`
+
+This command is used to list all existing backup files for a specific database.
+
+| Argument                | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `-db --database [name]` | Name of the database to target. Defaults to `default`. |
+
+#### `backup delete`
+
+This command is used to permanently delete a remote backup file.  
+:exclamation: **_This action is irreversible._**
+
+| Argument                | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `-f --filename <name>`  | Name of the file to delete.                            |
+| `-db --database [name]` | Name of the database to target. Defaults to `default`. |
+
+#### `backup remove-all`
+
+This command is used to permanently delete all remote backups for a specific database.  
+:exclamation: **_This action is irreversible._**
+
+| Argument                | Description                                            |
+| ----------------------- | ------------------------------------------------------ |
+| `-db --database [name]` | Name of the database to target. Defaults to `default`. |
