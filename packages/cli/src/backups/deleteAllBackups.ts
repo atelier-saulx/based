@@ -1,8 +1,11 @@
-import { Based } from '@based/client'
 import inquirer from 'inquirer'
-import { fail, inquirerConfig, prefixSuccess } from '../tui'
+import { fail, inquirerConfig, prefixSuccess, printHeader } from '../tui'
 import { BackupOptions } from '.'
-import { Config, GenericOutput } from '../types'
+import { GenericOutput } from '../types'
+import { Command } from 'commander'
+import checkAuth from '../checkAuth'
+import makeClient from '../makeClient'
+import { makeConfig } from '../makeConfig'
 
 type BackupInfo = {
   Key: string
@@ -16,46 +19,64 @@ type BackupListOutput = GenericOutput & {
   data: BackupInfo[]
 }
 
-export async function deleteAllBackups(
-  client: Based,
-  options: BackupOptions,
-  config: Config
-) {
-  const output: BackupListOutput = { data: [] }
-  let { database } = options
+export const backupDeleteAllCommand = new Command('delete-all')
+  .description('‼️ Permanently delete all remote backup')
+  .option(
+    '-db --database <name>',
+    "Name of the database, defaults to 'default'"
+  )
+  .action(async (options: BackupOptions) => {
+    const config = await makeConfig(options)
+    printHeader(options, config)
 
-  if (!database) database = 'default'
+    const token = await checkAuth(options)
+    const client = makeClient(config.cluster)
 
-  Object.assign(options, config)
-  const backups: BackupInfo[] = await client.call('listBackups', options)
-  if (!backups || backups.length === 0) {
-    fail('No backups found', output, options)
-  }
+    try {
+      if (options.apiKey) {
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
+      } else {
+        await client.auth(token)
+      }
+    } catch (error) {
+      fail(error, { data: [] }, options)
+    }
+    const output: BackupListOutput = { data: [] }
+    let { database } = options
 
-  if (options.output === 'fancy') {
-    const { sure } = await inquirer.prompt({
-      ...inquirerConfig,
-      type: 'confirm',
-      name: 'sure',
-      message: `Are you sure you want to delete all ${String(
-        backups.length
-      )} remote backups for the ${database} database? This action is irreversible.`,
-    })
+    if (!database) database = 'default'
 
-    if (!sure) {
-      fail('Aborted.', output, options)
+    Object.assign(options, config)
+    const backups: BackupInfo[] = await client.call('listBackups', options)
+    if (!backups || backups.length === 0) {
+      fail('No backups found', output, options)
     }
 
-    await client.call('removeAllBackups', {
-      ...config,
-      database,
-    })
+    if (options.output === 'fancy') {
+      const { sure } = await inquirer.prompt({
+        ...inquirerConfig,
+        type: 'confirm',
+        name: 'sure',
+        message: `Are you sure you want to delete all ${String(
+          backups.length
+        )} remote backups for the ${database} database? This action is irreversible.`,
+      })
 
-    console.info(prefixSuccess + 'Backups deleted.')
-  } else if (options.output === 'json') {
-    // output.data = res
-    // console.info(JSON.stringify(output, null, 2))
-  }
+      if (!sure) {
+        fail('Aborted.', output, options)
+      }
 
-  process.exit()
-}
+      await client.call('removeAllBackups', {
+        ...config,
+        database,
+      })
+
+      console.info(prefixSuccess + 'Backups deleted.')
+    } else if (options.output === 'json') {
+      // output.data = res
+      // console.info(JSON.stringify(output, null, 2))
+    }
+
+    process.exit(0)
+  })
