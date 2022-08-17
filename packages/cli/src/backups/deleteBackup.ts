@@ -26,7 +26,7 @@ type BackupListOutput = GenericOutput & {
 }
 
 export const backupDeleteCommand = new Command('delete')
-  .description('Permanently delete remote backup')
+  .description('‼️ Permanently delete remote backup')
   .option(
     '-db --database <name>',
     "Name of the database, defaults to 'default'"
