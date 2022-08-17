@@ -88,4 +88,6 @@ This event is called when the renewToken data function is run. It is used to han
 
 ## How to use
 
-Check [this guide](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-howto.md) for an example of how the use.
+Check the guides bellow for examples of how the use:
+- [React](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-howto.md)
+- [React with based/ui library](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth-based-ui-howto.md)

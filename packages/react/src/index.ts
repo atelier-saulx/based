@@ -29,12 +29,12 @@ export { InfiniteList } from './components/InfiniteList'
 
 export function useAuth(
   clientSelector?: string | (BasedOpts & { key?: string })
-): { id: string | false; token: string } | false {
+): { id: string | false; token: string } {
   const client = useClient(clientSelector)
   const [token, setToken] = useState<false | string>(false)
   const [id, setId] = useState<false | string>('')
   useEffect(() => {
-    const t = (d) => {
+    const t = (d: string) => {
       if (d) {
         setId(client.client.user)
         setToken(d)
@@ -51,7 +51,7 @@ export function useAuth(
       client.removeListener('auth', t)
     }
   }, [])
-  return token ? { token, id } : false
+  return token ? { token, id } : null
 }
 
 export function useSchema(

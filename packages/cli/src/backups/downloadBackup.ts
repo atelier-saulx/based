@@ -2,79 +2,101 @@ import fs from 'fs-extra'
 import https from 'https'
 import ora from 'ora'
 import { BackupOptions } from '.'
-import { Based } from '@based/client'
 import { prettyDate } from '@based/pretty-date'
 import { prettyNumber } from '@based/pretty-number'
 import inquirer from 'inquirer'
-import { fail, inquirerConfig, prefixSuccess } from '../tui'
-import { Config } from '../types'
+import { fail, inquirerConfig, prefixSuccess, printHeader } from '../tui'
 import chalk from 'chalk'
+import { Command } from 'commander'
+import checkAuth from '../checkAuth'
+import makeClient from '../makeClient'
+import { makeConfig } from '../makeConfig'
 
-export async function downloadBackup(
-  client: Based,
-  options: BackupOptions,
-  config: Config
-) {
-  Object.assign(options, config)
-  const { org, project, env, database } = options
+export const backupDownloadCommand = new Command('download')
+  .description('Download remote backup file')
+  .option(
+    '-db --database <name>',
+    "Name of the database, defaults to 'default'"
+  )
+  .option('-f --filename <name>', 'Name of the remote file to download')
+  .action(async (options: BackupOptions) => {
+    const config = await makeConfig(options)
+    printHeader(options, config)
 
-  const folderName = database
-    ? `${org}-${project}-${env}-db-env-${database}`
-    : `${org}-${project}-${env}-db-env-default`
+    const token = await checkAuth(options)
+    const client = makeClient(config.cluster)
 
-  const filename = 'dump.rdb'
-
-  if (options.nonInteractive) {
     try {
-      if (!options.backupName)
+      if (options.apiKey) {
+        const result = await client.auth(token, { isApiKey: true })
+        if (!result) fail('Invalid apiKey.', { data: [] }, options)
+      } else {
+        await client.auth(token)
+      }
+    } catch (error) {
+      fail(error, { data: [] }, options)
+    }
+    Object.assign(options, config)
+    const { org, project, env, database } = options
+
+    const folderName = database
+      ? `${org}-${project}-${env}-db-env-${database}`
+      : `${org}-${project}-${env}-db-env-default`
+
+    const filename = 'dump.rdb'
+
+    if (options.nonInteractive) {
+      try {
+        if (!options.filename)
+          fail(
+            'Please specify backup name, syntax: --backup-name <name>',
+            { data: [] },
+            options
+          )
+        const { url } = await client.call('getBackupLink', options)
+        await downloadUrl(url, folderName, filename)
+      } catch (err) {
+        fail(err.message, { data: [], errors: [err] }, options)
+      }
+    } else {
+      if (options.filename)
         fail(
-          'Please specify backup name, syntax: --backup-name <name>',
+          'Option --backup-name can only be used in non-interactive mode',
           { data: [] },
           options
         )
-      const { url } = await client.call('getBackupLink', options)
-      await downloadUrl(url, folderName, filename)
-    } catch (err) {
-      fail(err.message, { data: [], errors: [err] }, options)
+      const res = await client.call('listBackups', options)
+      if (!res) fail('No backup found', { data: [] }, options)
+
+      // sort results based on lastModified, most recent first
+      res.sort((a, b) => {
+        return Date.parse(b.LastModified) - Date.parse(a.LastModified)
+      })
+
+      const mapOfChoices = getMapOfChoices(res)
+
+      const answers = await inquirer.prompt({
+        ...inquirerConfig,
+        type: 'list',
+        name: 'downloadName',
+        loop: false,
+        message: 'Which backup would you like to download?',
+        choices: [...mapOfChoices.keys()],
+      })
+      const { downloadName } = answers
+
+      Object.assign(options, {
+        backupName: mapOfChoices.get(downloadName).Key,
+      })
+      try {
+        const { url } = await client.call('getBackupLink', options)
+        await downloadUrl(url, folderName, filename)
+      } catch (err) {
+        fail(err.message, { data: [] }, options)
+      }
     }
-  } else {
-    if (options.backupName)
-      fail(
-        'Option --backup-name can only be used in non-interactive mode',
-        { data: [] },
-        options
-      )
-    const res = await client.call('listBackups', options)
-    if (!res) fail('No backup found', { data: [] }, options)
-
-    // sort results based on lastModified, most recent first
-    res.sort((a, b) => {
-      return Date.parse(b.LastModified) - Date.parse(a.LastModified)
-    })
-
-    const mapOfChoices = getMapOfChoices(res)
-
-    const answers = await inquirer.prompt({
-      ...inquirerConfig,
-      type: 'list',
-      name: 'downloadName',
-      loop: false,
-      message: 'Which backup would you like to download?',
-      choices: [...mapOfChoices.keys()],
-    })
-    const { downloadName } = answers
-
-    Object.assign(options, {
-      backupName: mapOfChoices.get(downloadName).Key,
-    })
-    try {
-      const { url } = await client.call('getBackupLink', options)
-      await downloadUrl(url, folderName, filename)
-    } catch (err) {
-      fail(err.message, { data: [] }, options)
-    }
-  }
-}
+    process.exit(0)
+  })
 
 async function downloadUrl(url: string, path: string, filename: string) {
   // console.log(url)
