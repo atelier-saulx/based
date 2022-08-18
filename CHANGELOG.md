@@ -6,7 +6,7 @@
 
 **@based/server**
 
-- add acceptLanguage to res (for use in REST endpoints)
+- add acceptLanguage and host headers to res (for use in REST endpoints)
 
 ### `@based/client v3.2.2`, 18 Aug 2022
 

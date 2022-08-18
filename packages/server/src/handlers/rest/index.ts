@@ -98,8 +98,9 @@ export default async (
 
   res.ua = req.getHeader('user-agent')
 
-  // TODO also: how do we do want to do this?
+  // TODO also: how do we do want to do this? (why dont we just give access to the request object or the headers?)
   res.acceptLanguage = req.getHeader('accept-language')
+  res.host = req.getHeader('host')
 
   if (method === 'post') {
     readBody(res, handler === 'digest' ? 'text/plain' : contentType, (d) => {
