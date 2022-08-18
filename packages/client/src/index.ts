@@ -1004,6 +1004,7 @@ const based = (opts: BasedOpts, BasedClass = Based): Based => {
           org,
           key,
           name,
+          optionalKey: true,
         },
         0,
         cluster
