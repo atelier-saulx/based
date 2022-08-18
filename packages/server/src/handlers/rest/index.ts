@@ -98,6 +98,9 @@ export default async (
 
   res.ua = req.getHeader('user-agent')
 
+  // TODO also: how do we do want to do this?
+  res.acceptLanguage = req.getHeader('accept-language')
+
   if (method === 'post') {
     readBody(res, handler === 'digest' ? 'text/plain' : contentType, (d) => {
       const message = getReqMessage(fn, d)

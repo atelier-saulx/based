@@ -4,7 +4,9 @@
 
 <!-- Put unrelease changes here, then when releasing, move them to a new entry with the correct date and list of changes. -->
 
-\-
+**@based/server**
+
+- add acceptLanguage to res (for use in REST endpoints)
 
 ### `@based/client v3.2.2`, 12 Aug 2022
 
