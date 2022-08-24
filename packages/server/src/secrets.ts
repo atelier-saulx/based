@@ -9,20 +9,27 @@ const jwtDecode = (
   publicKey: string
 ) => {
   try {
-    jwt.verify(value, publicKey, (err, decoded) => {
-      if (err) {
-        if (err instanceof jwt.TokenExpiredError) {
-          const basedError = new BasedError('Token expired')
-          basedError.code = BasedErrorCodes.TokenExpired
-          basedError.stack = err.stack
-          reject(basedError)
+    jwt.verify(
+      value,
+      publicKey,
+      {
+        algorithms: ['RS256'],
+      },
+      (err, decoded) => {
+        if (err) {
+          if (err instanceof jwt.TokenExpiredError) {
+            const basedError = new BasedError('Token expired')
+            basedError.code = BasedErrorCodes.TokenExpired
+            basedError.stack = err.stack
+            reject(basedError)
+          } else {
+            resolve(false)
+          }
         } else {
-          resolve(false)
+          resolve(decoded)
         }
-      } else {
-        resolve(decoded)
       }
-    })
+    )
   } catch (err) {
     reject(err)
   }
