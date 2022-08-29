@@ -70,6 +70,7 @@ export const valueToBuffer = (payload: any): Buffer => {
   if (payload === undefined) {
     return Buffer.from([])
   }
+  // only stringify if not string...
   return Buffer.from(JSON.stringify(payload))
 }
 

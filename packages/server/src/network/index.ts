@@ -27,7 +27,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
     maxPayloadLength: 1024 * 1024 * 5,
     idleTimeout: 100,
     maxBackpressure: 1024, //
-    compression: uws.SHARED_COMPRESSOR, // 1,
+    compression: 0,
     upgrade: server.authorizeConnection
       ? (res, req, ctx) => {
           upgradeAuthorize(server.authorizeConnection, res, req, ctx)
