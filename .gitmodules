@@ -1,0 +1,3 @@
+[submodule "packages/cpp-client/include/websocketpp"]
+	path = packages/cpp-client/include/websocketpp
+	url = https://github.com/atelier-saulx/websocketpp.git
