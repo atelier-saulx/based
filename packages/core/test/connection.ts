@@ -63,8 +63,6 @@ test.serial('functions', async (t) => {
     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
   }
 
-  console.log('step 0')
-
   const helloResponses = await Promise.all([
     coreClient.function('hello', {
       bla: true,
@@ -74,12 +72,8 @@ test.serial('functions', async (t) => {
     }),
   ])
 
-  console.log('step 1')
-
   t.true(helloResponses[0] < 20)
   t.true(helloResponses[1] > 5e6)
-
-  console.log('step 2')
 
   const bigString = await coreClient.function('lotsOfData')
 
