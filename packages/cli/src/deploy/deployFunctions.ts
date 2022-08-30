@@ -22,7 +22,9 @@ export default async function (
       (previous, fun, index) =>
         previous.then(async () => {
           spinner.start(
-            `Deploying function ${fun.name} (${index + 1}/${fns.length})`
+            `Deploying function ${fun.name} (${index + 1}/${
+              fns.filter((fun) => fun.status !== 'unchanged').length
+            })`
           )
           if (fun.status !== 'unchanged') {
             try {

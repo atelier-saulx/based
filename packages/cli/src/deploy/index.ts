@@ -255,7 +255,7 @@ command(
       console.info(
         prefixSuccess +
           `Successfully deployed ${chalk.blue(
-            fns.length
+            fns.filter((fun) => fun.status !== 'unchanged').length
           )} functions to ${chalk.blue(config.project + '/' + config.env)}`
       )
     }
