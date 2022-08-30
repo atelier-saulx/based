@@ -12,15 +12,15 @@ export type CloseObserve = () => void
 export type ObserveState = Map<
   number,
   {
-    cnt: number
     payload: any
     name: string
-    subscribers: {
-      [cnt: string]: {
+    subscribers: Map<
+      number,
+      {
         onError?: ObserveErrorListener
         onData: ObserveDataListener
       }
-    }
+    >
   }
 >
 
@@ -29,6 +29,7 @@ export type ObserveState = Map<
 // 2 = unsubscribe
 export type ObserveType = 1 | 2
 
+// fix this format dont need an array ay all object makes more sense...
 export type ObserveQueue = Map<
   number, // id
   | [

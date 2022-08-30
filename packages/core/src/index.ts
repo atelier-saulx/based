@@ -150,41 +150,40 @@ export class BasedCoreClient extends Emitter {
     observeOpts?: ObserveOpts
   ): CloseObserve {
     if (observeOpts) {
+      // cache options observeOpts
       console.warn('observe opts not implemented yet...', observeOpts)
     }
     const id = genObserveId(name, payload)
     let subscriberId: number
     const cachedData = this.cache.get(id)
-    // cache options observeOpts
     if (!this.observeState.has(id)) {
+      subscriberId = 1
+      const subscribers = new Map()
+      subscribers.set(subscriberId, {
+        onError,
+        onData,
+      })
       this.observeState.set(id, {
-        cnt: 1,
         payload,
         name,
-        subscribers: {
-          1: {
-            onError,
-            onData,
-          },
-        },
+        subscribers,
       })
-      subscriberId = 1
       addObsToQueue(this, name, id, payload, cachedData?.checksum || 0)
     } else {
       const obs = this.observeState.get(id)
-      subscriberId = ++obs.cnt
-      obs.subscribers[subscriberId] = {
+      subscriberId = obs.subscribers.size + 1
+      obs.subscribers.set(subscriberId, {
         onError,
         onData,
-      }
+      })
     }
     if (cachedData) {
       onData(cachedData.value, cachedData.checksum)
     }
     return () => {
       const obs = this.observeState.get(id)
-      obs.cnt--
-      if (obs.cnt === 0) {
+      obs.subscribers.delete(subscriberId)
+      if (obs.subscribers.size === 0) {
         this.observeState.delete(id)
         addObsCloseToQueue(this, name, id)
       }

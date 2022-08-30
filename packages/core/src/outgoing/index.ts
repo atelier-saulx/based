@@ -73,15 +73,12 @@ export const drainQueue = (client: BasedCoreClient) => {
     (client.functionQueue.length || client.observeQueue.size)
   ) {
     client.drainInProgress = true
-    client.drainTimeout = setTimeout(() => {
+    const drainOutgoing = () => {
       client.drainInProgress = false
 
       if (client.functionQueue.length || client.observeQueue.size) {
         const fn = client.functionQueue
         const ob = client.observeQueue
-
-        client.functionQueue = []
-        client.observeQueue.clear()
 
         const buffs = []
         let l = 0
@@ -112,8 +109,6 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         // ------- Observe
         for (const [id, o] of ob) {
-          console.info('go go go')
-
           let len = 4
           const [type, name, checksum, payload] = o
 
@@ -121,17 +116,19 @@ export const drainQueue = (client: BasedCoreClient) => {
           // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
           // Type 2 = unsubscribe
-          // | 4 header | 8 id | * name
+          // | 4 header | 8 id | 1 name length | * name
 
           if (type === 2) {
-            const n = encoder.encode(name)
-            len += n.length
+            // const n = encoder.encode(name)
+            // len += n.length
             const header = encodeHeader(type, false, len)
             const buff = new Uint8Array(4 + 8)
             storeUint8(buff, header, 0, 4)
             storeUint8(buff, id, 4, 8)
-            buffs.push(buff, n)
-          } else if (type === 1) {
+            // buffs.push(buff, n)
+            buffs.push(buff)
+            l += 12
+          } else {
             const n = encoder.encode(name)
             len += 1 + n.length
             const [isDeflate, p] = encodePayload(payload)
@@ -157,14 +154,23 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         const n = new Uint8Array(l)
         let c = 0
+
+        console.log(c, buffs, l)
+
         for (const b of buffs) {
           n.set(b, c)
           c += b.length
         }
+
+        client.functionQueue = []
+        client.observeQueue.clear()
+
         client.connection.ws.send(n)
         idleTimeout(client)
       }
-    }, 0)
+    }
+
+    client.drainTimeout = setTimeout(drainOutgoing, 0)
   }
 }
 
