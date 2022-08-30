@@ -54,7 +54,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
     const d = data.data
     const buffer = await parseArrayBuffer(d)
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
-    // reader so we can batch stuff
+    // reader for batched replies
 
     // ------- Function
     if (type === 0) {
@@ -62,6 +62,8 @@ export const incoming = async (client: BasedCoreClient, data) => {
       const start = 7
       const end = len + 4
       let payload: any
+
+      // if not empty response, parse it
       if (len - 3 !== 0) {
         payload = JSON.parse(
           new TextDecoder().decode(
@@ -71,6 +73,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
           )
         )
       }
+
       if (client.functionResponseListeners[id]) {
         client.functionResponseListeners[id][0](payload)
         delete client.functionResponseListeners[id]

@@ -11,7 +11,6 @@ test.serial('functions', async (t) => {
       return payload.length
     },
     lotsOfData: async () => {
-      console.info('hello lots of data')
       let str = ''
       for (let i = 0; i < 200000; i++) {
         str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i

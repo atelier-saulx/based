@@ -1,5 +1,7 @@
 import zlib from 'node:zlib'
 
+const textDecoder = new TextDecoder()
+
 export const decodeHeader = (
   nr: number
 ): { type: number; isDeflate: boolean; len: number } => {
@@ -72,6 +74,24 @@ export const valueToBuffer = (payload: any): Buffer => {
   }
   // only stringify if not string...
   return Buffer.from(JSON.stringify(payload))
+}
+
+export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
+  if (!isDeflate) {
+    return textDecoder.decode(payload)
+  }
+
+  const buffer = zlib.inflateRawSync(payload)
+  return textDecoder.decode(buffer)
+}
+
+export const decodeName = (
+  arr: Uint8Array,
+  start: number,
+  end: number
+): string => {
+  const name = new Uint8Array(arr.slice(start, end))
+  return textDecoder.decode(name)
 }
 
 export const encodeFunctionResponse = (
