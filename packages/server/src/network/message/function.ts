@@ -31,8 +31,6 @@ export const functionMessage = (
     p = textDecoder.decode(buffer)
   }
 
-  console.info(nameParsed, isDeflate, p)
-
   server.functions
     .get(nameParsed)
     .then((spec) => {
