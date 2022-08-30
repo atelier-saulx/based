@@ -57,13 +57,21 @@ test.serial('observables', async (t) => {
     console.info('connect', isConnected)
   })
 
-  const close = coreClient.observe('counter', (d) => console.info(d), {
+  const close = coreClient.observe('counter', (d) => console.info('👻', d), {
     myQuery: 123,
   })
 
-  await wait(3e3)
+  const close2 = coreClient.observe('counter', (d) => console.info('🌈', d), {
+    myQuery: 123,
+  })
+
+  await wait(500)
 
   close()
+
+  await wait(3e3)
+
+  close2()
 
   t.pass()
 
