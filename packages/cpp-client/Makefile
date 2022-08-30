@@ -1,6 +1,6 @@
 .PHONY: clean
 
-IDIR=include
+IDIR=include/websocketpp
 CXX = clang++
 
 ODIR=obj
@@ -22,7 +22,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 
 client: $(OBJ) $(ODIR)/client.o
 	@echo $(SRCS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) -lboost_system $(LIBS)
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 clean:
 	rm -r $(ODIR)
