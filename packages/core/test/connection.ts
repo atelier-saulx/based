@@ -6,8 +6,6 @@ import { wait } from '@saulx/utils'
 test.serial('functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  console.log('??? go go go')
-
   const store = {
     hello: async (payload) => {
       return payload.length
