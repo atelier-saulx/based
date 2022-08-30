@@ -106,6 +106,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
 
+        // handle max size etc
         client.cache.set(id, {
           value: payload,
           checksum,
