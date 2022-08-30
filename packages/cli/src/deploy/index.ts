@@ -251,6 +251,14 @@ command(
   }
   if (action === 'functions' || action === 'both') {
     await deployFunctions(client, envid, config, fns, unchangedFns)
+    if (options.output === 'fancy') {
+      console.info(
+        prefixSuccess +
+          `Successfully deployed ${chalk.blue(
+            fns.length
+          )} functions to ${chalk.blue(config.project + '/' + config.env)}`
+      )
+    }
   }
 
   process.exit()
