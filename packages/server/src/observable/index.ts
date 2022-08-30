@@ -20,6 +20,8 @@ export class BasedObservableFunction {
   constructor(server: BasedServer, name: string, payload: any, id: number) {
     this.server = server
     this.payload = payload
+    this.clients = new Set()
+
     if (!this.server.activeObservables[name]) {
       this.server.activeObservables[name] = {}
     }

@@ -154,7 +154,7 @@ export const encodeObservableResponse = (
     const array = new Uint8Array(headerSize + msgSize)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 8)
-    storeUint8(array, checksum, 8, 8)
+    storeUint8(array, checksum, 12, 8)
     if (buffer.length) {
       array.set(buffer, 20)
     }

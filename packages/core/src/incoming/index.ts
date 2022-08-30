@@ -85,23 +85,38 @@ export const incoming = async (client: BasedCoreClient, data) => {
     // ------- Subscription data
     if (type === 1) {
       // | 4 header | 8 id | 8 checksum | * payload |
+      const id = readUint8(buffer, 4, 8)
+      const checksum = readUint8(buffer, 8, 8)
 
-      console.info('Sub data!')
+      const start = 20
+      const end = len + 4
+      let payload: any
+
+      // if not empty response, parse it
+      if (len - 3 !== 0) {
+        payload = JSON.parse(
+          new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+        )
+      }
+
+      if (client.observeState.has(id)) {
+        const observable = client.observeState.get(id)
+        for (const [, handlers] of observable.subscribers) {
+          handlers.onData(payload, checksum)
+        }
+      } else {
+        console.warn('Cannot find observable ->', id)
+      }
+
       // handle data!
     }
+
     // ---------------------------------
   } catch (err) {
     console.error('Error parsing incoming data', err)
   }
-  // try {
-  //   const x = JSON.parse(data.data)
-  //   if (x.id) {
-  //     if (client.functionResponseListeners[x.id]) {
-  //       client.functionResponseListeners[x.id][0](x.msg)
-  //       delete client.functionResponseListeners[x.id]
-  //     }
-  //   }
-  // } catch (err) {
-  //   console.error('cannot parse dat json', err)
-  // }
 }
