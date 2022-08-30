@@ -25,3 +25,6 @@ export const subscribeMessage = (
 
   console.info('subscribe -->', name, payload)
 }
+
+// Unsubscribe
+// | 4 header | 8 id |

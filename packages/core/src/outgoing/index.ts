@@ -116,7 +116,7 @@ export const drainQueue = (client: BasedCoreClient) => {
           // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
           // Type 2 = unsubscribe
-          // | 4 header | 8 id | 1 name length | * name
+          // | 4 header | 8 id |
 
           if (type === 2) {
             // const n = encoder.encode(name)
