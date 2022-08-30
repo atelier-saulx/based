@@ -38,7 +38,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
     },
     open: (ws) => {
       console.info('open')
-      // ws.token = 'x' token - only on upgrade does make it super easy
+      // ws.token = 'x' token - only on upgrade does make it super easy (for auth)
+      // does add overhead when reconn
 
       console.info(ws)
 

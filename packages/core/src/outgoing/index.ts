@@ -112,6 +112,8 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         // ------- Observe
         for (const [id, o] of ob) {
+          console.info('go go go')
+
           let len = 4
           const [type, name, checksum, payload] = o
 
@@ -129,7 +131,7 @@ export const drainQueue = (client: BasedCoreClient) => {
             storeUint8(buff, header, 0, 4)
             storeUint8(buff, id, 4, 8)
             buffs.push(buff, n)
-          } else {
+          } else if (type === 1) {
             const n = encoder.encode(name)
             len += 1 + n.length
             const [isDeflate, p] = encodePayload(payload)
