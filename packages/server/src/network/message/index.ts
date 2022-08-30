@@ -40,7 +40,6 @@ const reader = (
     return next
   }
 
-  // error if not correct type!
   console.warn('Unsupported incoming message with type', type)
 }
 
@@ -57,11 +56,10 @@ export const message = (
   const uint8View = new Uint8Array(msg)
   const len = uint8View.length
   let next = 0
-  console.info('--->', msg)
   while (next < len) {
     const n = reader(server, ws, uint8View, next)
     if (n === undefined) {
-      console.error('Cannot read message close client')
+      // Malformed message close client
       ws.close()
       return
     }

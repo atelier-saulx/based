@@ -119,13 +119,10 @@ export const drainQueue = (client: BasedCoreClient) => {
           // | 4 header | 8 id |
 
           if (type === 2) {
-            // const n = encoder.encode(name)
-            // len += n.length
-            const header = encodeHeader(type, false, 8)
+            const header = encodeHeader(type, false, 12)
             const buff = new Uint8Array(4 + 8)
             storeUint8(buff, header, 0, 4)
             storeUint8(buff, id, 4, 8)
-            // buffs.push(buff, n)
             buffs.push(buff)
             l += 12
           } else {

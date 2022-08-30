@@ -15,7 +15,9 @@ export const subscribeMessage = (
 
   const nameLen = arr[start + 20]
 
-  //   const id = readUint8(arr)
+  const id = readUint8(arr, start + 4, 8)
+  const checksum = readUint8(arr, start + 12, 8)
+
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
   if (!name) {
@@ -27,7 +29,7 @@ export const subscribeMessage = (
     isDeflate
   )
 
-  console.info('subscribe -->', name, payload)
+  console.info('subscribe -->', name, payload, id, checksum)
 
   return true
 }
