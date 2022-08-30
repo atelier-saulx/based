@@ -18,12 +18,18 @@ export const subscribeMessage = (
   //   const id = readUint8(arr)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
+  if (!name) {
+    return false
+  }
+
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
     isDeflate
   )
 
   console.info('subscribe -->', name, payload)
+
+  return true
 }
 
 // Unsubscribe

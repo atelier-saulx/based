@@ -13,15 +13,15 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
   const next = len + start
 
+  console.info('incoming ->', type, len)
+
   // type 0 = function
-  if (type === 0) {
-    functionMessage(arr, start, len, isDeflate, ws, server)
+  if (type === 0 && functionMessage(arr, start, len, isDeflate, ws, server)) {
     return next
   }
 
   // type 1 = subscribe
-  if (type === 1) {
-    subscribeMessage(arr, start, len, isDeflate, ws, server)
+  if (type === 1 && subscribeMessage(arr, start, len, isDeflate, ws, server)) {
     return next
   }
 
@@ -42,7 +42,6 @@ const reader = (
 
   // error if not correct type!
   console.warn('Unsupported incoming message with type', type)
-  return next
 }
 
 export const message = (
@@ -58,10 +57,12 @@ export const message = (
   const uint8View = new Uint8Array(msg)
   const len = uint8View.length
   let next = 0
+  console.info('--->', msg)
   while (next < len) {
     const n = reader(server, ws, uint8View, next)
     if (n === undefined) {
-      console.error('Cannot read header!')
+      console.error('Cannot read message close client')
+      ws.close()
       return
     }
     next = n

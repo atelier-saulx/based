@@ -16,7 +16,7 @@ export const functionMessage = (
   isDeflate: boolean,
   ws: uws.WebSocket,
   server: BasedServer
-) => {
+): boolean => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
 
   const reqId = readUint8(arr, start + 4, 3)
@@ -26,6 +26,10 @@ export const functionMessage = (
     new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
     isDeflate
   )
+
+  if (!name || !reqId) {
+    return false
+  }
 
   server.functions
     .get(name)
@@ -47,4 +51,6 @@ export const functionMessage = (
     .catch((err) => {
       console.error('fn does not exist', err)
     })
+
+  return true
 }

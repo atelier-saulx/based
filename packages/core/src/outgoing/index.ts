@@ -2,7 +2,7 @@ import { BasedCoreClient } from '../'
 import { GenericObject } from '../types'
 import fflate from 'fflate'
 
-const encoder = new TextEncoder() // always utf-8
+const encoder = new TextEncoder()
 
 const ping = new Uint8Array(0)
 
@@ -121,7 +121,7 @@ export const drainQueue = (client: BasedCoreClient) => {
           if (type === 2) {
             // const n = encoder.encode(name)
             // len += n.length
-            const header = encodeHeader(type, false, len)
+            const header = encodeHeader(type, false, 8)
             const buff = new Uint8Array(4 + 8)
             storeUint8(buff, header, 0, 4)
             storeUint8(buff, id, 4, 8)
@@ -154,8 +154,6 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         const n = new Uint8Array(l)
         let c = 0
-
-        console.log(c, buffs, l)
 
         for (const b of buffs) {
           n.set(b, c)
