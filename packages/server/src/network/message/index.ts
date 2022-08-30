@@ -2,7 +2,7 @@ import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { decodeHeader, readUint8 } from '../../protocol'
 import { functionMessage } from './function'
-import { subscribeMessage } from './observable'
+import { subscribeMessage, unsubscribeMessage } from './observable'
 
 const reader = (
   server: BasedServer,
@@ -12,8 +12,6 @@ const reader = (
 ): number => {
   const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
   const next = len + start
-
-  console.info('incoming ->', type, len)
 
   // type 0 = function
   if (type === 0 && functionMessage(arr, start, len, isDeflate, ws, server)) {
@@ -25,20 +23,15 @@ const reader = (
     return next
   }
 
-  // type 2 = subscribe force reply
-  if (type === 2) {
+  // type 2 = unsubscribe
+  if (type === 2 && unsubscribeMessage(arr, start, ws, server)) {
     return next
   }
 
-  // type 3 = get from subscription, no subscribe
-  if (type === 3) {
-    return next
-  }
-
-  // type 4 =  unsubscribe
-  if (type === 4) {
-    return next
-  }
+  // // type 3 = get from subscription, no subscribe
+  // if (type === 3) {
+  //   return next
+  // }
 
   console.warn('Unsupported incoming message with type', type)
 }

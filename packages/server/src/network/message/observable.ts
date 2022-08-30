@@ -17,10 +17,9 @@ export const subscribeMessage = (
 
   const id = readUint8(arr, start + 4, 8)
   const checksum = readUint8(arr, start + 12, 8)
-
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
-  if (!name) {
+  if (!name || !id) {
     return false
   }
 
@@ -34,5 +33,21 @@ export const subscribeMessage = (
   return true
 }
 
-// Unsubscribe
-// | 4 header | 8 id |
+export const unsubscribeMessage = (
+  arr: Uint8Array,
+  start: number,
+  ws: uws.WebSocket,
+  server: BasedServer
+) => {
+  // | 4 header | 8 id |
+
+  const id = readUint8(arr, start + 4, 8)
+
+  if (!id) {
+    return false
+  }
+
+  console.info('unsubscribe -->', id)
+
+  return true
+}
