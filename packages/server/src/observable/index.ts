@@ -2,6 +2,7 @@ import type { BasedServer } from '../server'
 import { ObservableUpdateFunction } from '../types'
 import { valueToBuffer, encodeObservableResponse } from '../protocol'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { check } from 'yargs'
 
 // maybe dont use this class..
 
@@ -57,8 +58,6 @@ export class BasedObservableFunction {
       diff?: any,
       fromChecksum?: number
     ) => {
-      const buff = valueToBuffer(data)
-
       if (checksum === undefined) {
         if (data === undefined) {
           checksum = 0
@@ -72,12 +71,13 @@ export class BasedObservableFunction {
         }
       }
 
-      const encodedData = encodeObservableResponse(id, checksum, buff)
-
-      this.cache = encodedData
-      this.checksum = checksum
-
-      server.uwsApp.publish(String(id), encodedData, true, false)
+      if (checksum !== this.checksum) {
+        const buff = valueToBuffer(data)
+        const encodedData = encodeObservableResponse(id, checksum, buff)
+        this.cache = encodedData
+        this.checksum = checksum
+        server.uwsApp.publish(String(id), encodedData, true, false)
+      }
     }
 
     spec

@@ -105,6 +105,12 @@ export const incoming = async (client: BasedCoreClient, data) => {
 
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
+
+        client.cache.set(id, {
+          value: payload,
+          checksum,
+        })
+
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }
