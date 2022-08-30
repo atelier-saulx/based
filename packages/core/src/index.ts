@@ -149,6 +149,9 @@ export class BasedCoreClient extends Emitter {
     onError?: ObserveErrorListener,
     observeOpts?: ObserveOpts
   ): CloseObserve {
+    if (observeOpts) {
+      console.warn('observe opts not implemented yet...', observeOpts)
+    }
     const id = genObserveId(name, payload)
     let subscriberId: number
     const cachedData = this.cache.get(id)
