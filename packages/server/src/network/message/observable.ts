@@ -45,7 +45,7 @@ export const subscribeMessage = (
     if (obs.cache && obs.checksum !== checksum) {
       // check checksum
       console.info('has cache send it')
-      ws.send(obs.cache)
+      ws.send(obs.cache, true, false)
     }
   } else {
     server.functions
@@ -65,7 +65,7 @@ export const subscribeMessage = (
             if (obs.cache && obs.checksum !== checksum) {
               // check checksum
               console.info('has cache send it')
-              ws.send(obs.cache)
+              ws.send(obs.cache, true, false)
             }
           }
         } else {

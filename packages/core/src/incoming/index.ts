@@ -93,7 +93,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       let payload: any
 
       // if not empty response, parse it
-      if (len - 3 !== 0) {
+      if (len - 16 !== 0) {
         payload = JSON.parse(
           new TextDecoder().decode(
             isDeflate

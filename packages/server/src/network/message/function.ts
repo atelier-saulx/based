@@ -38,7 +38,11 @@ export const functionMessage = (
         spec
           .function(payload, ws)
           .then((v) => {
-            ws.send(encodeFunctionResponse(reqId, valueToBuffer(v)), true)
+            ws.send(
+              encodeFunctionResponse(reqId, valueToBuffer(v)),
+              true,
+              false
+            )
           })
           .catch((err) => {
             // error handling nice

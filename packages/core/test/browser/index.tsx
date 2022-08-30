@@ -18,6 +18,10 @@ const init = async () => {
   const iqTest = await coreClient.function('iqTest')
 
   console.info(iqTest)
+
+  const close = await coreClient.observe('counter', (data) => {
+    console.log('incoming', data)
+  })
 }
 
 init()
