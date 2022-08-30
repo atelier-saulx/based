@@ -48,7 +48,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       // open(this, ws)
     },
     close: () => {
-      console.info('close')
+      console.info('close', 'remove from subs')
       // close(this, ws)
     },
     drain: () => {

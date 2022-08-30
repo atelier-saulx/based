@@ -1,6 +1,8 @@
 import uws from '@based/uws'
 import { AuthorizeConnection } from '../types'
 
+let clientId = 0
+
 export const upgrade = (
   res: uws.HttpResponse,
   req: uws.HttpRequest,
@@ -24,6 +26,8 @@ export const upgrade = (
       query,
       ua,
       ip,
+      id: ++clientId,
+      obs: new Set(),
     },
     secWebSocketKey,
     secWebSocketProtocol,

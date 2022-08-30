@@ -13,10 +13,10 @@ export type AuthorizeConnection = (req: uws.HttpRequest) => Promise<boolean>
 
 export type ObservableUpdateFunction = (
   data: any,
-  checksum: number,
+  checksum?: number,
   diff?: any,
   fromChecksum?: number
-) => {}
+) => void
 
 export type BasedObservableFunctionSpec = {
   name: string

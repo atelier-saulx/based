@@ -18,11 +18,11 @@ export class BasedFunctions {
   unregisterTimeout: NodeJS.Timeout
 
   observables: {
-    [key: string]: BasedObservableFunctionSpec
+    [name: string]: BasedObservableFunctionSpec
   } = {}
 
   functions: {
-    [key: string]: BasedFunctionSpec
+    [name: string]: BasedFunctionSpec
   } = {}
 
   constructor(server: BasedServer, config?: FunctionConfig) {

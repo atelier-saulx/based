@@ -58,6 +58,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
 
     // ------- Function
     if (type === 0) {
+      // | 4 header | 3 id | * payload |
       const id = readUint8(buffer, 4, 3)
       const start = 7
       const end = len + 4
@@ -83,6 +84,9 @@ export const incoming = async (client: BasedCoreClient, data) => {
 
     // ------- Subscription data
     if (type === 1) {
+      // | 4 header | 8 id | 8 checksum | * payload |
+
+      console.info('Sub data!')
       // handle data!
     }
     // ---------------------------------

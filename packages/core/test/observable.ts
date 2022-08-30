@@ -6,17 +6,17 @@ import { wait } from '@saulx/utils'
 test.serial('observables', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    // hello: async (payload) => {
-    //   return payload.length
-    // },
-    // lotsOfData: async () => {
-    //   let str = ''
-    //   for (let i = 0; i < 200000; i++) {
-    //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-    //   }
-    //   return str
-    // },
+  const obsStore = {
+    counter: async (payload, update) => {
+      console.info('init counter', payload)
+      let cnt = 0
+      const counter = setInterval(() => {
+        update(++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
   }
 
   const server = await createServer({
@@ -30,11 +30,12 @@ test.serial('observables', async (t) => {
       },
       register: async ({ name }) => {
         console.info('name -->', name)
-        if (store[name]) {
+        if (obsStore[name]) {
           return {
+            observable: true,
             name,
             checksum: 1,
-            function: store[name],
+            function: obsStore[name],
           }
         } else {
           return false

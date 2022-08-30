@@ -98,6 +98,9 @@ export const encodeFunctionResponse = (
   id: number,
   buffer: Buffer
 ): Uint8Array => {
+  // Type 0
+  // | 4 header | 3 id | * payload |
+
   let isDeflate = false
   // implement later
   const chunks = 1
@@ -117,6 +120,43 @@ export const encodeFunctionResponse = (
     storeUint8(array, id, 4, 3)
     if (buffer.length) {
       array.set(buffer, 7)
+    }
+    return array
+  } else {
+    console.warn('chunk not implemented yet')
+    return new Uint8Array(0)
+  }
+}
+
+export const encodeObservableResponse = (
+  id: number,
+  checksum: number,
+  buffer: Buffer
+): Uint8Array => {
+  // Type 1
+  // | 4 header | 8 id | 8 checksum | * payload |
+
+  let isDeflate = false
+  // implement later
+  const chunks = 1
+
+  if (buffer.length > 100) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+
+  if (chunks === 1) {
+    const headerSize = 4
+    const idSize = 8
+    const checksumSize = 8
+    const msgSize = idSize + checksumSize + buffer.length
+    const header = encodeHeader(1, isDeflate, msgSize)
+    const array = new Uint8Array(headerSize + msgSize)
+    storeUint8(array, header, 0, 4)
+    storeUint8(array, id, 4, 8)
+    storeUint8(array, checksum, 8, 8)
+    if (buffer.length) {
+      array.set(buffer, 20)
     }
     return array
   } else {

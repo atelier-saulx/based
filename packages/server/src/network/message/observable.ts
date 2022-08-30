@@ -1,7 +1,8 @@
 import uws from '@based/uws'
-// import { isObservableFunctionSpec } from '../../functions'
+import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
+import { BasedObservableFunction } from '../../observable'
 
 export const subscribeMessage = (
   arr: Uint8Array,
@@ -23,12 +24,52 @@ export const subscribeMessage = (
     return false
   }
 
+  if (ws.obs.has(id)) {
+    // allready subscribed to this id
+    return true
+  }
+
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
     isDeflate
   )
 
-  console.info('subscribe -->', name, payload, id, checksum)
+  console.info('subscribe -->', name, payload, id, checksum, ws.id)
+
+  ws.subscribe(String(id))
+  ws.obs.add(id)
+
+  const obs = server.activeObservablesById[id]
+  if (obs) {
+    obs.clients.add(ws.id)
+    if (obs.cache && obs.checksum !== checksum) {
+      // check checksum
+      console.info('has cache send it')
+      ws.send(obs.cache)
+    }
+  } else {
+    server.functions
+      .get(name)
+      .then((spec) => {
+        if (spec && isObservableFunctionSpec(spec)) {
+          const obs =
+            server.activeObservablesById[id] ||
+            new BasedObservableFunction(server, name, payload, id)
+
+          obs.clients.add(ws.id)
+          if (obs.cache && obs.checksum !== checksum) {
+            // check checksum
+            console.info('has cache send it')
+            ws.send(obs.cache)
+          }
+        } else {
+          console.error('No function for you', name)
+        }
+      })
+      .catch((err) => {
+        console.error('fn does not exist', err)
+      })
+  }
 
   return true
 }
