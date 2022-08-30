@@ -10,6 +10,7 @@ const reader = (
   start: number
 ): number => {
   const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
+
   // type 0 = function
   if (type === 0) {
     functionMessage(arr, start, len, isDeflate, ws, server)
@@ -21,7 +22,7 @@ const reader = (
   // type 3 = get from subscription, no subscribe
 
   // type 4 =  unsubscribe
-  return len + 4 + start
+  return len + start
 }
 
 export const message = (

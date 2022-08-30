@@ -18,14 +18,11 @@ export const functionMessage = (
   ws: uws.WebSocket,
   server: BasedServer
 ) => {
-  // make this into a function
   const reqId = readUint8(arr, start + 4, 3)
   const namelen = arr[7]
   const name = new Uint8Array(arr.slice(start + 8, start + 8 + namelen))
   const nameParsed = textDecoder.decode(name)
-  const payload = new Uint8Array(
-    arr.slice(start + 8 + namelen, start + len + 4)
-  )
+  const payload = new Uint8Array(arr.slice(start + 8 + namelen, start + len))
   let p
   if (!isDeflate) {
     p = textDecoder.decode(payload)
@@ -33,6 +30,9 @@ export const functionMessage = (
     const buffer = zlib.inflateRawSync(payload)
     p = textDecoder.decode(buffer)
   }
+
+  console.info(nameParsed, isDeflate, p)
+
   server.functions
     .get(nameParsed)
     .then((spec) => {
