@@ -56,11 +56,17 @@ export const subscribeMessage = (
             server.activeObservablesById[id] ||
             new BasedObservableFunction(server, name, payload, id)
 
-          obs.clients.add(ws.id)
-          if (obs.cache && obs.checksum !== checksum) {
-            // check checksum
-            console.info('has cache send it')
-            ws.send(obs.cache)
+          if (!ws.obs.has(id)) {
+            if (obs.clients.size === 0) {
+              obs.destroy()
+            }
+          } else {
+            obs.clients.add(ws.id)
+            if (obs.cache && obs.checksum !== checksum) {
+              // check checksum
+              console.info('has cache send it')
+              ws.send(obs.cache)
+            }
           }
         } else {
           console.error('No function for you', name)
@@ -88,7 +94,22 @@ export const unsubscribeMessage = (
     return false
   }
 
-  console.info('unsubscribe -->', id)
+  if (!ws.obs.has(id)) {
+    return true
+  }
+
+  const obs = server.activeObservablesById[id]
+
+  if (!obs) {
+    return true
+  }
+
+  obs.clients.delete(ws.id)
+  ws.obs.delete(id)
+
+  if (obs.clients.size === 0) {
+    obs.destroy()
+  }
 
   return true
 }

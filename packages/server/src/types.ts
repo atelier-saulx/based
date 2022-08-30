@@ -22,7 +22,10 @@ export type BasedObservableFunctionSpec = {
   name: string
   checksum: number
   observable: true
-  function: (payload: any, update: ObservableUpdateFunction) => () => void
+  function: (
+    payload: any,
+    update: ObservableUpdateFunction
+  ) => Promise<() => void>
   memCacheTimeout?: number // in seconds
   idleTimeout?: number // in 3 seconds
   worker?: string | true | false
