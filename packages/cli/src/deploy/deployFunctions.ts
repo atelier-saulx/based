@@ -16,10 +16,10 @@ export default async function (
     printEmptyLine()
     const spinner = ora('Deploying function(s)...').start()
     const changedFns = fns.filter((fun) => fun.status !== 'unchanged')
-    let i = changedFns.length
+    let i = 0
 
     const deployFunctions = async () => {
-      while (i--) {
+      for (; i < changedFns.length; i++) {
         const fun = changedFns[i]
 
         spinner.start(
