@@ -19,6 +19,6 @@ export const updateTimeoutCounter = (
 ) => {
   if (spec.timeoutCounter !== -1) {
     spec.timeoutCounter =
-      spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
+      spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3 / 3)
   }
 }

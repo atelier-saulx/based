@@ -26,8 +26,8 @@ export type BasedObservableFunctionSpec = {
     payload: any,
     update: ObservableUpdateFunction
   ) => Promise<() => void>
-  memCacheTimeout?: number // in seconds
-  idleTimeout?: number // in 3 seconds
+  memCacheTimeout?: number // in ms
+  idleTimeout?: number // in ms
   worker?: string | true | false
   timeoutCounter?: number // bit harder have to add
 }
@@ -36,14 +36,14 @@ export type BasedFunctionSpec = {
   name: string
   checksum: number
   function: (payload: any, ws: uws.WebSocket) => Promise<any>
-  idleTimeout?: number // in 3 seconds
+  idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number
 }
 
 export type FunctionConfig = {
-  memCacheTimeout?: number // in seconds
-  idleTimeout?: number // in 3 seconds
+  memCacheTimeout?: number // in ms
+  idleTimeout?: number // in ms
   maxWorkers?: number
 
   register: (opts: {

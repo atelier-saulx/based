@@ -17,6 +17,20 @@ export const destroy = (server: BasedServer, id: number) => {
     return
   }
 
+  const spec = server.functions.observables[obs.name]
+
+  if (!spec) {
+    console.warn('Cannot find observable function spec!', obs.name)
+    return
+  }
+
+  const memCacheTimeout =
+    spec.memCacheTimeout !== undefined
+      ? spec.memCacheTimeout
+      : server.functions.config.memCacheTimeout
+
+  console.info('memCacheit', memCacheTimeout)
+
   server.activeObservables[obs.name].delete(id)
   if (server.activeObservables[obs.name].size === 0) {
     delete server.activeObservables[obs.name]

@@ -62,7 +62,7 @@ export class BasedFunctions {
       this.config = config
     }
     if (this.config.idleTimeout === undefined) {
-      this.config.idleTimeout = 20e3 // 1 min
+      this.config.idleTimeout = 60e3 // 1 min
     }
     if (this.config.memCacheTimeout === undefined) {
       this.config.memCacheTimeout = 3e3

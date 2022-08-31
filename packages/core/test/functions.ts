@@ -23,13 +23,11 @@ test.serial('functions', async (t) => {
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,
-      idleTimeout: 1e3,
-      unregister: async (opts) => {
-        console.info('unRegister', opts.name)
+      idleTimeout: 3e3,
+      unregister: async () => {
         return true
       },
       register: async ({ name }) => {
-        console.info('name -->', name)
         if (store[name]) {
           return {
             name,
