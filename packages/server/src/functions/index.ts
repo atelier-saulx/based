@@ -119,6 +119,7 @@ export class BasedFunctions {
         spec.timeoutCounter =
           spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
       }
+
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {
           this.remove(spec.name)

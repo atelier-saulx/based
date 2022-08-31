@@ -69,6 +69,22 @@ test.serial('observables', async (t) => {
 
   close()
 
+  server.functions.update({
+    observable: true,
+    name: 'counter',
+    checksum: 2,
+    function: async (payload, update) => {
+      console.info('init counter', payload)
+      let cnt = 0
+      const counter = setInterval(() => {
+        update('This is the new stuffff!' + ++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
+  })
+
   await wait(3e3)
 
   close2()
