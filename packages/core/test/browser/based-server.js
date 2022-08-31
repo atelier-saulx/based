@@ -13,9 +13,8 @@ const init = async () => {
         for (let i = 0; i < 1000; i++) {
           x += ++cnt + 'Hello numm ' + i
         }
-
         update(x)
-      }, 100)
+      }, 2000)
       return () => {
         clearInterval(counter)
       }
