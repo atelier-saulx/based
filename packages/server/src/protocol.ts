@@ -11,6 +11,7 @@ export const decodeHeader = (
   //   1 = subscribe
   //   2 = unsubscribe
   //   3 = get from observable
+  //   4 = auth
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4

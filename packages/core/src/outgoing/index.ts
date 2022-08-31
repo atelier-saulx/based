@@ -1,5 +1,5 @@
 import { BasedCoreClient } from '../'
-import { GenericObject } from '../types'
+import { AuthState, GenericObject } from '../types'
 import fflate from 'fflate'
 
 const encoder = new TextEncoder()
@@ -45,6 +45,7 @@ const encodeHeader = (
   //   1 = subscribe
   //   2 = unsubscribe
   //   3 = get from observable
+  //   4 = auth
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
@@ -70,15 +71,22 @@ export const drainQueue = (client: BasedCoreClient) => {
   if (
     client.connected &&
     !client.drainInProgress &&
-    (client.functionQueue.length || client.observeQueue.size)
+    (client.functionQueue.length ||
+      client.observeQueue.size ||
+      client.authQueue.length)
   ) {
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
 
-      if (client.functionQueue.length || client.observeQueue.size) {
+      if (
+        client.functionQueue.length ||
+        client.observeQueue.size ||
+        client.authQueue.length
+      ) {
         const fn = client.functionQueue
         const ob = client.observeQueue
+        const au = client.authQueue
 
         const buffs = []
         let l = 0
@@ -149,6 +157,28 @@ export const drainQueue = (client: BasedCoreClient) => {
           }
         }
 
+        // ------- Auth
+        for (const a of au) {
+          // | 4 header | 3 id | * payload |
+          let len = 7
+          const [id, authState] = a
+          const [isDeflate, as] = encodePayload(authState)
+          if (as) {
+            len += as.length
+          }
+          const header = encodeHeader(4, isDeflate, len)
+          const buff = new Uint8Array(4 + 3)
+          storeUint8(buff, header, 0, 4)
+          storeUint8(buff, id, 4, 3)
+          buff[7] = as.length
+          if (as) {
+            buffs.push(buff, as)
+          } else {
+            buffs.push(buff)
+          }
+          l += len
+        }
+
         const n = new Uint8Array(l)
         let c = 0
 
@@ -159,6 +189,7 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         client.functionQueue = []
         client.observeQueue.clear()
+        client.authQueue = []
 
         client.connection.ws.send(n)
         idleTimeout(client)
@@ -221,6 +252,23 @@ export const addObsToQueue = (
     return
   }
   client.observeQueue.set(id, [1, name, checksum, payload])
+  drainQueue(client)
+}
+
+export const addAuthToQueue = (
+  client: BasedCoreClient,
+  authState: AuthState,
+  resolve: (response: any) => void,
+  reject: (err: Error) => void
+) => {
+  client.requestId++
+  if (client.requestId > 16777215) {
+    client.requestId = 0
+  }
+  const id = client.requestId
+  client.authResponseListeners[id] = [resolve, reject]
+  client.authQueue.push([id, authState])
+
   drainQueue(client)
 }
 

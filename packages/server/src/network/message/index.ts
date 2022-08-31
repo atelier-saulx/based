@@ -3,6 +3,7 @@ import { BasedServer } from '../../server'
 import { decodeHeader, readUint8 } from '../../protocol'
 import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
+import { authMessage } from './auth'
 
 const reader = (
   server: BasedServer,
@@ -32,6 +33,11 @@ const reader = (
   // if (type === 3) {
   //   return next
   // }
+
+  // type 4 = auth
+  if (type === 4 && authMessage(arr, start, len, isDeflate, ws, server)) {
+    return next
+  }
 
   console.warn('Unsupported incoming message with type', type)
 }

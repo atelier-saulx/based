@@ -5,7 +5,7 @@ import {
   ObserveOpts,
   ObserveDataListener,
   ObserveErrorListener,
-  Auth,
+  AuthState,
   FunctionResponseListeners,
   Settings,
   FunctionQueue,
@@ -13,6 +13,7 @@ import {
   ObserveQueue,
   Cache,
   GetObserveQueue,
+  AuthQueue,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
@@ -23,6 +24,7 @@ import {
   addToFunctionQueue,
   addObsCloseToQueue,
   drainQueue,
+  addAuthToQueue,
 } from './outgoing'
 import { envId } from '@based/ids'
 import { incoming } from './incoming'
@@ -51,6 +53,7 @@ export class BasedCoreClient extends Emitter {
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
   getObserveQueue: GetObserveQueue = new Map()
+  authQueue: AuthQueue = []
   drainInProgress: boolean = false
   drainTimeout: ReturnType<typeof setTimeout>
   idlePing: ReturnType<typeof setTimeout>
@@ -65,8 +68,9 @@ export class BasedCoreClient extends Emitter {
   // --------- Observe State
   observeState: ObserveState = new Map()
   // -------- Auth state
-  authState: Auth = { token: false }
-  authInProgress: Promise<Auth>
+  authState: AuthState = { token: false }
+  authInProgress: Promise<AuthState>
+  authResponseListeners: FunctionResponseListeners = {}
   // --------- Internal Events
   onClose() {
     this.connected = false
@@ -99,7 +103,7 @@ export class BasedCoreClient extends Emitter {
     drainQueue(this)
   }
 
-  onData(data) {
+  onData(data: any) {
     incoming(this, data)
   }
 
@@ -205,12 +209,16 @@ export class BasedCoreClient extends Emitter {
   // -------- Auth
   // maybe only send token on connect / upgrade
   async auth(token: string | false): Promise<any> {
-    if (token === false) {
-      this.authState = { token: false }
-      this.emit('auth', this.authState)
-    } else if (typeof token === 'string') {
-      // do actual authentication
-    }
+    return new Promise((resolve, reject) => {
+      if (token === false) {
+        this.authState = { token: false }
+        this.emit('auth', this.authState)
+        resolve(true)
+      } else if (typeof token === 'string') {
+        // do actual authentication
+        addAuthToQueue(this, { token }, resolve, reject)
+      }
+    })
   }
 }
 
