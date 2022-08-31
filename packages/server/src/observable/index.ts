@@ -10,15 +10,15 @@ export const destroy = (server: BasedServer, id: number) => {
 
   // TODO: have to implement memCache here
 
-  const obs = server.activeObservablesById[id]
+  const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
     console.error('Observable', id, 'does not exists')
     return
   }
 
-  delete server.activeObservables[obs.name][id]
-  delete server.activeObservablesById[id]
+  server.activeObservables[obs.name].delete(id)
+  server.activeObservablesById.delete(id)
 
   obs.isDestroyed = true
   obs.isDestroyed = true
@@ -36,7 +36,7 @@ export const unsubscribe = (
     return
   }
 
-  const obs = server.activeObservablesById[id]
+  const obs = server.activeObservablesById.get(id)
   ws.obs.delete(id)
 
   if (!obs) {
@@ -54,7 +54,7 @@ export const initFunction = async (
   server: BasedServer,
   id: number
 ): Promise<void> => {
-  const obs = server.activeObservablesById[id]
+  const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {
     obs.closeFunction()
@@ -117,8 +117,8 @@ export const create = (
   id: number,
   payload: any
 ): ActiveObservable => {
-  if (server.activeObservablesById[id]) {
-    return server.activeObservablesById[id]
+  if (server.activeObservablesById.has(id)) {
+    return server.activeObservablesById.get(id)
   }
 
   const obs: ActiveObservable = {
@@ -129,13 +129,12 @@ export const create = (
     isDestroyed: false,
   }
 
-  // use map for this like client
   if (!server.activeObservables[name]) {
-    server.activeObservables[name] = {}
+    server.activeObservables[name] = new Map()
   }
 
-  server.activeObservables[name][id] = obs
-  server.activeObservablesById[id] = obs
+  server.activeObservables[name].set(id, obs)
+  server.activeObservablesById.set(id, obs)
 
   initFunction(server, id)
 

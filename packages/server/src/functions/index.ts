@@ -7,6 +7,7 @@ import {
 } from '../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
+import { destroy, initFunction } from '../observable'
 
 export { isObservableFunctionSpec }
 
@@ -124,8 +125,8 @@ export class BasedFunctions {
         }
         this.observables[spec.name] = spec
         if (this.server.activeObservables[spec.name]) {
-          for (const id in this.server.activeObservables[spec.name]) {
-            this.server.activeObservables[spec.name][id].updateObservableCode()
+          for (const [id] of this.server.activeObservables[spec.name]) {
+            initFunction(this.server, id)
           }
         }
       } else {
@@ -142,10 +143,10 @@ export class BasedFunctions {
     // Does not call unregister!
     if (this.observables[name]) {
       delete this.observables[name]
-      const active = this.server.activeObservables[name]
-      if (active) {
-        for (const id in active) {
-          active[id].destroy()
+      const activeObs = this.server.activeObservables[name]
+      if (activeObs) {
+        for (const [id] of activeObs) {
+          destroy(this.server, id)
         }
         delete this.server.activeObservables[name]
       }

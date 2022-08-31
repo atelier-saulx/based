@@ -37,9 +37,8 @@ export const subscribeMessage = (
   ws.subscribe(String(id))
   ws.obs.add(id)
 
-  const obs = server.activeObservablesById[id]
-
-  if (obs) {
+  if (server.activeObservablesById.has(id)) {
+    const obs = server.activeObservablesById.get(id)
     obs.clients.add(ws.id)
     if (obs.cache && obs.checksum !== checksum) {
       // check checksum

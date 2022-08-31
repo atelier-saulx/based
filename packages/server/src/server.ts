@@ -19,14 +19,10 @@ export class BasedServer {
   public authorizeConnection: AuthorizeConnection
 
   public activeObservables: {
-    [name: string]: {
-      [id: string]: ActiveObservable
-    }
+    [name: string]: Map<number, ActiveObservable>
   } = {}
 
-  public activeObservablesById: {
-    [id: string]: ActiveObservable
-  } = {}
+  public activeObservablesById: Map<number, ActiveObservable> = new Map()
 
   constructor(opts: ServerOptions) {
     initNetwork(this, opts)
