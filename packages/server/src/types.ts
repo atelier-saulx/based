@@ -71,3 +71,14 @@ export function isObservableFunctionSpec(
 ): fn is BasedObservableFunctionSpec {
   return (fn as BasedObservableFunctionSpec).observable
 }
+
+export type ActiveObservable = {
+  name: string
+  id: number
+  clients: Set<number>
+  payload: any
+  isDestroyed: boolean
+  cache?: Uint8Array // will become SharedArrayBuffer
+  checksum?: number
+  closeFunction?: () => void
+}

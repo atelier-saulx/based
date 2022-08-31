@@ -1,8 +1,11 @@
 import uws from '@based/uws'
 import initNetwork from './network'
-import type { AuthorizeConnection, ServerOptions } from './types'
+import type {
+  AuthorizeConnection,
+  ServerOptions,
+  ActiveObservable,
+} from './types'
 import { BasedFunctions } from './functions'
-import { BasedObservableFunction } from './observable'
 
 export class BasedServer {
   public functions: BasedFunctions
@@ -17,12 +20,12 @@ export class BasedServer {
 
   public activeObservables: {
     [name: string]: {
-      [id: string]: BasedObservableFunction
+      [id: string]: ActiveObservable
     }
   } = {}
 
   public activeObservablesById: {
-    [id: string]: BasedObservableFunction
+    [id: string]: ActiveObservable
   } = {}
 
   constructor(opts: ServerOptions) {

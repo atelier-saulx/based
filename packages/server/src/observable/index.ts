@@ -1,116 +1,139 @@
-import type { BasedServer } from '../server'
-import { ObservableUpdateFunction } from '../types'
+import uws from '@based/uws'
 import { valueToBuffer, encodeObservableResponse } from '../protocol'
+import { BasedServer } from '../server'
+import { ActiveObservable, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
-import { check } from 'yargs'
 
-// maybe dont use this class..
+export const destroy = (server: BasedServer, id: number) => {
+  console.info('destroy observable!')
+  // also need to send info to clients that its gone (e.g. does not exist anymore)
 
-export class BasedObservableFunction {
-  server: BasedServer
-  name: string
+  // TODO: have to implement memCache here
+
+  const obs = server.activeObservablesById[id]
+
+  if (!obs) {
+    console.error('Observable', id, 'does not exists')
+    return
+  }
+
+  delete server.activeObservables[obs.name][id]
+  delete server.activeObservablesById[id]
+
+  obs.isDestroyed = true
+  obs.isDestroyed = true
+  if (obs.closeFunction) {
+    obs.closeFunction()
+  }
+}
+
+export const unsubscribe = (
+  server: BasedServer,
+  id: number,
+  ws: uws.WebSocket
+) => {
+  if (!ws.obs.has(id)) {
+    return
+  }
+
+  const obs = server.activeObservablesById[id]
+  ws.obs.delete(id)
+
+  if (!obs) {
+    return
+  }
+
+  obs.clients.delete(ws.id)
+
+  if (obs.clients.size === 0) {
+    destroy(server, id)
+  }
+}
+
+export const initFunction = async (
+  server: BasedServer,
   id: number
-  clients: Set<number>
-  payload: any
-  cache: Uint8Array // SharedArrayBuffer this will be it
-  checksum: number
+): Promise<void> => {
+  const obs = server.activeObservablesById[id]
 
-  isDestroyed: boolean = false
+  if (obs.closeFunction) {
+    obs.closeFunction()
+    delete obs.closeFunction
+  }
 
-  closeFunction: () => void
-  // add subscribe / unsub here
+  const spec = server.functions.observables[obs.name]
 
-  // diff
-  // diffchecksum
+  if (!spec) {
+    console.warn('Cannot find observable function spec!', obs.name)
+    return
+  }
 
-  constructor(server: BasedServer, name: string, payload: any, id: number) {
-    this.server = server
-    this.payload = payload
-    this.clients = new Set()
-    this.id = id
-    this.name = name
-
-    if (!this.server.activeObservables[name]) {
-      this.server.activeObservables[name] = {}
+  const update: ObservableUpdateFunction = (
+    data: any,
+    checksum?: number,
+    diff?: any,
+    fromChecksum?: number
+  ) => {
+    if (checksum === undefined) {
+      if (data === undefined) {
+        checksum = 0
+      } else {
+        // do something
+        if (typeof data === 'object' && data !== null) {
+          checksum = hashObjectIgnoreKeyOrder(data)
+        } else {
+          checksum = hash(data)
+        }
+      }
     }
+    if (checksum !== obs.checksum) {
+      const buff = valueToBuffer(data)
+      const encodedData = encodeObservableResponse(id, checksum, buff)
+      obs.cache = encodedData
+      obs.checksum = checksum
+      server.uwsApp.publish(String(id), encodedData, true, false)
+    }
+  }
 
-    if (this.server.activeObservables[name][id]) {
-      console.error('OBSERVABLE ALLRDY EXISTS', id, name)
-      // make all this with fns
-      return this.server.activeObservables[name][id]
+  try {
+    const close = await spec.function(obs.payload, update)
+    if (obs.isDestroyed) {
+      close()
     } else {
-      this.server.activeObservables[name][id] = this
+      obs.closeFunction = close
     }
+  } catch (err) {
+    console.error('Error starting', err)
+  }
+}
 
-    this.server.activeObservablesById[id] = this
-
-    const spec = this.server.functions.observables[name]
-
-    if (!spec) {
-      console.error('Cannot find observable spec!', name)
-      this.destroy()
-      return
-    }
-
-    const update: ObservableUpdateFunction = (
-      data: any,
-      checksum?: number,
-      diff?: any,
-      fromChecksum?: number
-    ) => {
-      if (checksum === undefined) {
-        if (data === undefined) {
-          checksum = 0
-        } else {
-          // do something
-          if (typeof data === 'object' && data !== null) {
-            checksum = hashObjectIgnoreKeyOrder(data)
-          } else {
-            checksum = hash(data)
-          }
-        }
-      }
-
-      if (checksum !== this.checksum) {
-        const buff = valueToBuffer(data)
-        const encodedData = encodeObservableResponse(id, checksum, buff)
-        this.cache = encodedData
-        this.checksum = checksum
-        server.uwsApp.publish(String(id), encodedData, true, false)
-      }
-    }
-
-    spec
-      .function(payload, update)
-      .then((close) => {
-        if (this.isDestroyed) {
-          close()
-        } else {
-          this.closeFunction = close
-        }
-      })
-      .catch((err) => {
-        console.error('Error starting', err)
-        // this.destroy()
-      })
+export const create = (
+  server: BasedServer,
+  name: string,
+  id: number,
+  payload: any
+): ActiveObservable => {
+  if (server.activeObservablesById[id]) {
+    return server.activeObservablesById[id]
   }
 
-  destroy() {
-    console.info('destroy observable!')
-    // also need to send info to clients that its gone (e.g. does not exist anymore)
-
-    // TODO: have to implement memCache here
-
-    delete this.server.activeObservables[this.name][this.id]
-    delete this.server.activeObservablesById[this.id]
-
-    this.isDestroyed = true
-    if (this.closeFunction) {
-      this.closeFunction()
-    }
+  const obs: ActiveObservable = {
+    payload,
+    clients: new Set(),
+    id,
+    name,
+    isDestroyed: false,
   }
 
-  async updateObservableCode(): Promise<void> {
-    console.info('update observable code!', this.id, this.name)
+  // use map for this like client
+  if (!server.activeObservables[name]) {
+    server.activeObservables[name] = {}
   }
+
+  server.activeObservables[name][id] = obs
+  server.activeObservablesById[id] = obs
+
+  initFunction(server, id)
+
+  return obs
 }

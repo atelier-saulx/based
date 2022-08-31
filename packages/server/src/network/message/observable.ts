@@ -2,7 +2,7 @@ import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { BasedObservableFunction } from '../../observable'
+import { create, unsubscribe, destroy } from '../../observable'
 
 export const subscribeMessage = (
   arr: Uint8Array,
@@ -34,17 +34,15 @@ export const subscribeMessage = (
     isDeflate
   )
 
-  console.info('subscribe -->', name, payload, id, checksum, ws.id)
-
   ws.subscribe(String(id))
   ws.obs.add(id)
 
   const obs = server.activeObservablesById[id]
+
   if (obs) {
     obs.clients.add(ws.id)
     if (obs.cache && obs.checksum !== checksum) {
       // check checksum
-      console.info('has cache send it')
       ws.send(obs.cache, true, false)
     }
   } else {
@@ -52,13 +50,11 @@ export const subscribeMessage = (
       .get(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
-          const obs =
-            server.activeObservablesById[id] ||
-            new BasedObservableFunction(server, name, payload, id)
+          const obs = create(server, name, id, payload)
 
           if (!ws.obs.has(id)) {
             if (obs.clients.size === 0) {
-              obs.destroy()
+              destroy(server, id)
             }
           } else {
             obs.clients.add(ws.id)
@@ -94,22 +90,7 @@ export const unsubscribeMessage = (
     return false
   }
 
-  if (!ws.obs.has(id)) {
-    return true
-  }
-
-  const obs = server.activeObservablesById[id]
-
-  if (!obs) {
-    return true
-  }
-
-  obs.clients.delete(ws.id)
-  ws.obs.delete(id)
-
-  if (obs.clients.size === 0) {
-    obs.destroy()
-  }
+  unsubscribe(server, id, ws)
 
   return true
 }
