@@ -104,13 +104,18 @@ test.serial('observables', async (t) => {
   close2()
 
   t.true(obs1Results.length < obs2Results.length)
-
   t.true(typeof obs2Results[obs2Results.length - 1] === 'string')
 
   await wait(100)
 
+  t.is(Object.keys(server.activeObservables).length, 1)
+  t.is(server.activeObservablesById.size, 1)
+
+  await wait(1000)
+
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  // test diffs
+  await wait(3e3)
+  t.is(Object.keys(server.functions.observables).length, 0)
 })

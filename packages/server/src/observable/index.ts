@@ -29,20 +29,19 @@ export const destroy = (server: BasedServer, id: number) => {
       ? spec.memCacheTimeout
       : server.functions.config.memCacheTimeout
 
-  console.info('memCacheit', memCacheTimeout)
-
-  server.activeObservables[obs.name].delete(id)
-  if (server.activeObservables[obs.name].size === 0) {
-    delete server.activeObservables[obs.name]
-  }
-
-  server.activeObservablesById.delete(id)
-
-  obs.isDestroyed = true
-  obs.isDestroyed = true
-  if (obs.closeFunction) {
-    obs.closeFunction()
-  }
+  obs.beingDestroyed = setTimeout(() => {
+    console.info('memCacheit', memCacheTimeout)
+    server.activeObservables[obs.name].delete(id)
+    if (server.activeObservables[obs.name].size === 0) {
+      delete server.activeObservables[obs.name]
+    }
+    server.activeObservablesById.delete(id)
+    obs.isDestroyed = true
+    obs.isDestroyed = true
+    if (obs.closeFunction) {
+      obs.closeFunction()
+    }
+  }, memCacheTimeout)
 }
 
 export const subscribe = (
