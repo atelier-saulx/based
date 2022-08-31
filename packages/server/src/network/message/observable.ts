@@ -2,7 +2,7 @@ import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { create, unsubscribe, destroy } from '../../observable'
+import { create, unsubscribe, destroy, subscribe } from '../../observable'
 
 export const subscribeMessage = (
   arr: Uint8Array,
@@ -38,30 +38,19 @@ export const subscribeMessage = (
   ws.obs.add(id)
 
   if (server.activeObservablesById.has(id)) {
-    const obs = server.activeObservablesById.get(id)
-    obs.clients.add(ws.id)
-    if (obs.cache && obs.checksum !== checksum) {
-      // check checksum
-      ws.send(obs.cache, true, false)
-    }
+    subscribe(server, id, checksum, ws)
   } else {
     server.functions
       .get(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
           const obs = create(server, name, id, payload)
-
           if (!ws.obs.has(id)) {
             if (obs.clients.size === 0) {
               destroy(server, id)
             }
           } else {
-            obs.clients.add(ws.id)
-            if (obs.cache && obs.checksum !== checksum) {
-              // check checksum
-              console.info('has cache send it')
-              ws.send(obs.cache, true, false)
-            }
+            subscribe(server, id, checksum, ws)
           }
         } else {
           console.error('No function for you', name)
@@ -88,6 +77,8 @@ export const unsubscribeMessage = (
   if (!id) {
     return false
   }
+
+  ws.unsubscribe(String(id))
 
   unsubscribe(server, id, ws)
 

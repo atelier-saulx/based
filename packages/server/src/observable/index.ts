@@ -45,6 +45,24 @@ export const destroy = (server: BasedServer, id: number) => {
   }
 }
 
+export const subscribe = (
+  server: BasedServer,
+  id: number,
+  checksum: number,
+  ws: uws.WebSocket
+) => {
+  const obs = server.activeObservablesById.get(id)
+  ws.obs.add(id)
+  if (obs.beingDestroyed) {
+    clearTimeout(obs.beingDestroyed)
+    obs.beingDestroyed = null
+  }
+  obs.clients.add(ws.id)
+  if (obs.cache && obs.checksum !== checksum) {
+    ws.send(obs.cache, true, false)
+  }
+}
+
 export const unsubscribe = (
   server: BasedServer,
   id: number,

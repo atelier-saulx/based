@@ -81,4 +81,5 @@ export type ActiveObservable = {
   cache?: Uint8Array // will become SharedArrayBuffer
   checksum?: number
   closeFunction?: () => void
+  beingDestroyed?: NodeJS.Timeout
 }
