@@ -8,7 +8,6 @@ test.serial('observables', async (t) => {
 
   const obsStore = {
     counter: async (payload, update) => {
-      console.info('init counter', payload)
       let cnt = 0
       const counter = setInterval(() => {
         update(++cnt)
@@ -29,7 +28,6 @@ test.serial('observables', async (t) => {
         return true
       },
       register: async ({ name }) => {
-        console.info('name -->', name)
         if (obsStore[name]) {
           return {
             observable: true,
@@ -57,13 +55,30 @@ test.serial('observables', async (t) => {
     console.info('connect', isConnected)
   })
 
-  const close = coreClient.observe('counter', (d) => console.info('👻', d), {
-    myQuery: 123,
-  })
+  const obs1Results: any[] = []
+  const obs2Results: any[] = []
 
-  const close2 = coreClient.observe('counter', (d) => console.info('🌈', d), {
-    myQuery: 123,
-  })
+  const close = coreClient.observe(
+    'counter',
+    (d) => {
+      obs1Results.push(d)
+      console.info('👻', d)
+    },
+    {
+      myQuery: 123,
+    }
+  )
+
+  const close2 = coreClient.observe(
+    'counter',
+    (d) => {
+      obs2Results.push(d)
+      console.info('🌈', d)
+    },
+    {
+      myQuery: 123,
+    }
+  )
 
   await wait(500)
 
@@ -74,10 +89,9 @@ test.serial('observables', async (t) => {
     name: 'counter',
     checksum: 2,
     function: async (payload, update) => {
-      console.info('init counter', payload)
       let cnt = 0
       const counter = setInterval(() => {
-        update('This is the new stuffff!' + ++cnt)
+        update('UpdatedFn' + ++cnt)
       }, 100)
       return () => {
         clearInterval(counter)
@@ -88,6 +102,10 @@ test.serial('observables', async (t) => {
   await wait(3e3)
 
   close2()
+
+  t.true(obs1Results.length < obs2Results.length)
+
+  t.true(typeof obs2Results[obs2Results.length - 1] === 'string')
 
   t.pass()
 
