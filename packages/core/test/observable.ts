@@ -62,7 +62,6 @@ test.serial('observables', async (t) => {
     'counter',
     (d) => {
       obs1Results.push(d)
-      console.info('👻', d)
     },
     {
       myQuery: 123,
@@ -73,7 +72,6 @@ test.serial('observables', async (t) => {
     'counter',
     (d) => {
       obs2Results.push(d)
-      console.info('🌈', d)
     },
     {
       myQuery: 123,
@@ -108,8 +106,6 @@ test.serial('observables', async (t) => {
   t.true(typeof obs2Results[obs2Results.length - 1] === 'string')
 
   await wait(100)
-
-  console.info(server.activeObservables)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)

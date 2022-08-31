@@ -154,7 +154,6 @@ export class BasedCoreClient extends Emitter {
       console.warn('observe opts not implemented yet...', observeOpts)
     }
     const id = genObserveId(name, payload)
-    console.info('OBS', id)
     let subscriberId: number
     const cachedData = this.cache.get(id)
     if (!this.observeState.has(id)) {
