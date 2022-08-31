@@ -37,12 +37,10 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       message(server, ws, data, isBinary)
     },
     open: (ws) => {
-      console.info('open')
+      // console.info('open')
       // ws.token = 'x' token - only on upgrade does make it super easy (for auth)
       // does add overhead when reconn
-
-      console.info(ws)
-
+      // console.info(ws)
       // broadcast will only do diffs except when its a new sub
       // send is used to send a current value
       // open(this, ws)

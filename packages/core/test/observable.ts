@@ -107,7 +107,10 @@ test.serial('observables', async (t) => {
 
   t.true(typeof obs2Results[obs2Results.length - 1] === 'string')
 
-  t.pass()
+  await wait(100)
 
-  // t.is(Object.keys(server.functions.functions).length, 0)
+  console.info(server.activeObservables)
+
+  t.is(Object.keys(server.activeObservables).length, 0)
+  t.is(server.activeObservablesById.size, 0)
 })

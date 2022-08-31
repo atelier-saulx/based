@@ -18,6 +18,10 @@ export const destroy = (server: BasedServer, id: number) => {
   }
 
   server.activeObservables[obs.name].delete(id)
+  if (server.activeObservables[obs.name].size === 0) {
+    delete server.activeObservables[obs.name]
+  }
+
   server.activeObservablesById.delete(id)
 
   obs.isDestroyed = true
