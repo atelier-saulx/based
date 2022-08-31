@@ -74,6 +74,10 @@ export const initFunction = async (
     diff?: any,
     fromChecksum?: number
   ) => {
+    if (diff && fromChecksum) {
+      // fix later
+    }
+
     if (checksum === undefined) {
       if (data === undefined) {
         checksum = 0
