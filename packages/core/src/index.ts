@@ -212,7 +212,9 @@ export class BasedCoreClient extends Emitter {
 
       const cachedData = this.cache.get(id)
 
-      if (this.observeState.get(id)) {
+      console.info(id, this.observeState.has(id))
+
+      if (this.observeState.has(id)) {
         if (this.observeQueue.has(id)) {
           const [type] = this.observeQueue.get(id)
           if (type === 1) {

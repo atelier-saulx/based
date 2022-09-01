@@ -70,19 +70,27 @@ export const drainQueue = (client: BasedCoreClient) => {
   if (
     client.connected &&
     !client.drainInProgress &&
-    (client.functionQueue.length || client.observeQueue.size)
+    (client.functionQueue.length ||
+      client.observeQueue.size ||
+      client.getObserveQueue.size)
   ) {
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
 
-      if (client.functionQueue.length || client.observeQueue.size) {
+      if (
+        client.functionQueue.length ||
+        client.observeQueue.size ||
+        client.getObserveQueue.size
+      ) {
         const fn = client.functionQueue
         const obs = client.observeQueue
         const get = client.getObserveQueue
 
         const buffs = []
         let l = 0
+
+        console.info('---', get)
 
         // ------- GetObserve
         for (const [id, o] of get) {
@@ -265,8 +273,7 @@ export const addGetToQueue = (
   payload: GenericObject,
   checksum: number = 0
 ) => {
-  const type = client.observeQueue.get(id)?.[0]
-  if (type === 1) {
+  if (client.getObserveQueue.has(id)) {
     return
   }
   client.getObserveQueue.set(id, [3, name, checksum, payload])

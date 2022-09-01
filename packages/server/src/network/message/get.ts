@@ -44,6 +44,12 @@ export const getMessage = (
       }
     } else {
       ws.subscribe(String(id))
+      if (!obs.onNextData) {
+        obs.onNextData = new Set()
+      }
+      obs.onNextData.add(() => {
+        ws.unsubscribe(String(id))
+      })
     }
   } else {
     ws.subscribe(String(id))
@@ -53,10 +59,15 @@ export const getMessage = (
         if (spec && isObservableFunctionSpec(spec)) {
           const obs = create(server, name, id, payload)
           if (!ws.obs.has(id)) {
-            ws.unsubscribe(String(id))
-            if (obs.clients.size === 0) {
-              destroy(server, id)
+            if (!obs.onNextData) {
+              obs.onNextData = new Set()
             }
+            obs.onNextData.add(() => {
+              ws.unsubscribe(String(id))
+              if (obs.clients.size === 0) {
+                destroy(server, id)
+              }
+            })
           }
         } else {
           console.error('No function for you', name)

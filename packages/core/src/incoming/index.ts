@@ -90,6 +90,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
         for (const [resolve] of get) {
           resolve(client.cache.get(id).value)
         }
+        client.getState.delete(id)
       }
     }
 
@@ -132,6 +133,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
         for (const [resolve] of get) {
           resolve(payload)
         }
+        client.getState.delete(id)
       }
     }
 

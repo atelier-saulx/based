@@ -131,6 +131,13 @@ export const initFunction = async (
       obs.cache = encodedData
       obs.checksum = checksum
       server.uwsApp.publish(String(id), encodedData, true, false)
+      if (obs.onNextData) {
+        const setObs = obs.onNextData
+        delete obs.onNextData
+        setTimeout(() => {
+          setObs.forEach((fn) => fn())
+        }, 0)
+      }
     }
   }
 

@@ -55,9 +55,11 @@ test.serial('get', async (t) => {
     console.info('connect', isConnected)
   })
 
-  const cnt = await coreClient.get('counter')
+  console.info('Cnt', await coreClient.get('counter'))
 
-  console.info('Cnt', cnt)
+  await wait(1000)
+
+  console.info('Cnt2', await coreClient.get('counter'))
 
   await wait(1000)
 
