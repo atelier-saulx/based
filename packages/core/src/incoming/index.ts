@@ -75,9 +75,9 @@ export const incoming = async (client: BasedCoreClient, data) => {
         )
       }
 
-      if (client.functionResponseListeners[id]) {
-        client.functionResponseListeners[id][0](payload)
-        delete client.functionResponseListeners[id]
+      if (client.functionResponseListeners.has(id)) {
+        client.functionResponseListeners.get(id)[0](payload)
+        client.functionResponseListeners.delete(id)
       }
     }
 

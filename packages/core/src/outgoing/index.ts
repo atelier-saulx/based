@@ -230,7 +230,7 @@ export const addToFunctionQueue = (
   }
 
   const id = client.requestId
-  client.functionResponseListeners[id] = [resolve, reject]
+  client.functionResponseListeners.set(id, [resolve, reject])
   client.functionQueue.push([id, name, payload])
 
   drainQueue(client)

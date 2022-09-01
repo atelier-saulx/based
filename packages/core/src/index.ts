@@ -62,7 +62,7 @@ export class BasedCoreClient extends Emitter {
   maxCacheTime: number = 2630e3 // in seconds (1 month default)
   cache: Cache = new Map()
   // --------- Function State
-  functionResponseListeners: FunctionResponseListeners = {}
+  functionResponseListeners: FunctionResponseListeners = new Map()
   requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Observe State
   observeState: ObserveState = new Map()
