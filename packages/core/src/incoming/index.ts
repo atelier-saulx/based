@@ -80,7 +80,18 @@ export const incoming = async (client: BasedCoreClient, data) => {
         delete client.functionResponseListeners[id]
       }
     }
-    // ---------------------------------
+
+    // ------- Get checksum is up to date
+    if (type === 3) {
+      // | 4 header | 8 id |
+      const id = readUint8(buffer, 4, 8)
+      if (client.getState.has(id) && client.cache.has(id)) {
+        const get = client.getState.get(id)
+        for (const [resolve] of get) {
+          resolve(client.cache.get(id).value)
+        }
+      }
+    }
 
     // ------- Subscription data
     if (type === 1) {
@@ -103,23 +114,25 @@ export const incoming = async (client: BasedCoreClient, data) => {
         )
       }
 
+      // handle max size etc / localstorage etc
+      client.cache.set(id, {
+        value: payload,
+        checksum,
+      })
+
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
-
-        // handle max size etc
-        client.cache.set(id, {
-          value: payload,
-          checksum,
-        })
-
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }
-      } else {
-        console.warn('Cannot find observable ->', id)
       }
 
-      // handle data!
+      if (client.getState.has(id)) {
+        const get = client.getState.get(id)
+        for (const [resolve] of get) {
+          resolve(payload)
+        }
+      }
     }
 
     // ---------------------------------

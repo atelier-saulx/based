@@ -13,6 +13,7 @@ import {
   ObserveQueue,
   Cache,
   GetObserveQueue,
+  GetState,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
@@ -23,6 +24,7 @@ import {
   addToFunctionQueue,
   addObsCloseToQueue,
   drainQueue,
+  addGetToQueue,
 } from './outgoing'
 import { envId } from '@based/ids'
 import { incoming } from './incoming'
@@ -64,6 +66,8 @@ export class BasedCoreClient extends Emitter {
   requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Observe State
   observeState: ObserveState = new Map()
+  // --------- Get State
+  getState: GetState = new Map()
   // -------- Auth state
   authState: Auth = { token: false }
   authInProgress: Promise<Auth>
@@ -147,11 +151,11 @@ export class BasedCoreClient extends Emitter {
     onData: ObserveDataListener,
     payload?: GenericObject,
     onError?: ObserveErrorListener,
-    observeOpts?: ObserveOpts
+    opts?: ObserveOpts
   ): CloseObserve {
-    if (observeOpts) {
-      // cache options observeOpts
-      console.warn('observe opts not implemented yet...', observeOpts)
+    if (opts) {
+      // cache options
+      console.warn('observe opts not implemented yet...', opts)
     }
     const id = genObserveId(name, payload)
     let subscriberId: number
@@ -190,9 +194,42 @@ export class BasedCoreClient extends Emitter {
     }
   }
 
-  async get(name: string, payload?: GenericObject): Promise<any> {
-    // not impelemted yet
-    console.info(name, payload)
+  get(name: string, payload?: GenericObject, opts?: ObserveOpts): Promise<any> {
+    if (opts) {
+      // cache options
+      console.warn('get opts not implemented yet...', opts)
+    }
+
+    return new Promise((resolve, reject) => {
+      const id = genObserveId(name, payload)
+
+      if (this.getState.has(id)) {
+        this.getState.get(id).push([resolve, reject])
+        return
+      }
+
+      this.getState.set(id, [])
+
+      const cachedData = this.cache.get(id)
+
+      if (this.observeState.get(id)) {
+        if (this.observeQueue.has(id)) {
+          const [type] = this.observeQueue.get(id)
+          if (type === 1) {
+            // add listener
+            this.getState.get(id).push([resolve, reject])
+            return
+          }
+        }
+        if (cachedData) {
+          resolve(cachedData.value)
+          return
+        }
+      }
+
+      this.getState.get(id).push([resolve, reject])
+      addGetToQueue(this, name, id, payload, cachedData?.checksum || 0)
+    })
   }
 
   // -------- Function
