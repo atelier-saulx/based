@@ -55,13 +55,13 @@ test.serial('get', async (t) => {
     console.info('connect', isConnected)
   })
 
-  console.info('Cnt', await coreClient.get('counter'))
+  t.is(await coreClient.get('counter'), 1)
 
-  await wait(1000)
+  await wait(100)
 
-  console.info('Cnt2', await coreClient.get('counter'))
+  t.is(await coreClient.get('counter'), 1)
 
-  await wait(1000)
+  await wait(100)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
