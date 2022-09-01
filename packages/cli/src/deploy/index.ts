@@ -117,6 +117,9 @@ command(
     const d = Date.now()
     const spinner = ora(`Building function(s)...`)
     spinner.start()
+    // TODO: should not need to get schema (ask nunofrade)
+    await client.schema()
+
     await Promise.all(
       fns.map(async (fun) => {
         if (!options.bundle || fun.bundle === false) {
@@ -136,6 +139,11 @@ command(
           })
           fun.code = x.outputFiles[0].text
         }
+      })
+    ).catch((err) => fail(err.message, output, options))
+
+    await Promise.all(
+      fns.map(async (fun) => {
         fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
         if (fun.status === 'unchanged') {
           unchangedFns++
@@ -144,6 +152,7 @@ command(
           throw new Error("Error checking function's remote version")
       })
     ).catch((err) => fail(err.message, output, options))
+
     spinner.stop()
     console.info(
       chalk.grey(prefixSuccess + `Function(s) built in ${Date.now() - d}ms`)
@@ -251,6 +260,14 @@ command(
   }
   if (action === 'functions' || action === 'both') {
     await deployFunctions(client, envid, config, fns, unchangedFns)
+    if (options.output === 'fancy') {
+      console.info(
+        prefixSuccess +
+          `Successfully deployed ${chalk.blue(
+            fns.filter((fun) => fun.status !== 'unchanged').length
+          )} functions to ${chalk.blue(config.project + '/' + config.env)}`
+      )
+    }
   }
 
   process.exit()
