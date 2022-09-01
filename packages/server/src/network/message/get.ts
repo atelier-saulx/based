@@ -8,6 +8,24 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
+import { ActiveObservable } from '../../types'
+
+const sendGetData = (
+  server: BasedServer,
+  id: number,
+  obs: ActiveObservable,
+  checksum: number,
+  ws: uws.WebSocket
+) => {
+  if (checksum !== 0 && checksum === obs.checksum) {
+    ws.send(encodeGetResponse(id), true, false)
+  } else {
+    ws.send(obs.cache, true, false)
+  }
+  if (obs.clients.size === 0) {
+    destroy(server, id)
+  }
+}
 
 export const getMessage = (
   arr: Uint8Array,
@@ -41,27 +59,13 @@ export const getMessage = (
       obs.beingDestroyed = null
     }
     if (obs.cache) {
-      if (checksum !== 0 && checksum === obs.checksum) {
-        ws.send(encodeGetResponse(id), true, false)
-      } else {
-        ws.send(obs.cache, true, false)
-      }
-      if (obs.clients.size === 0) {
-        destroy(server, id)
-      }
+      sendGetData(server, id, obs, checksum, ws)
     } else {
       if (!obs.onNextData) {
         obs.onNextData = new Set()
       }
       obs.onNextData.add(() => {
-        if (checksum !== 0 && checksum === obs.checksum) {
-          ws.send(encodeGetResponse(id), true, false)
-        } else {
-          ws.send(obs.cache, true, false)
-        }
-        if (obs.clients.size === 0) {
-          destroy(server, id)
-        }
+        sendGetData(server, id, obs, checksum, ws)
       })
     }
   } else {
@@ -75,14 +79,7 @@ export const getMessage = (
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              if (checksum !== 0 && checksum === obs.checksum) {
-                ws.send(encodeGetResponse(id), true, false)
-              } else {
-                ws.send(obs.cache, true, false)
-              }
-              if (obs.clients.size === 0) {
-                destroy(server, id)
-              }
+              sendGetData(server, id, obs, checksum, ws)
             })
           }
         } else {
