@@ -76,7 +76,6 @@ test.serial('get', async (t) => {
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  console.info('---------------')
   t.is(await coreClient.get('counter-cached'), 1)
   t.is(await coreClient.get('counter-cached'), 1)
 
