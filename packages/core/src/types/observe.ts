@@ -24,6 +24,11 @@ export type ObserveState = Map<
   }
 >
 
+export type GetState = Map<
+  number,
+  [(data: any) => void, ObserveErrorListener][]
+>
+
 // Type of subscriptions
 // 1 = subscribe
 // 2 = unsubscribe

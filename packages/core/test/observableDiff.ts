@@ -3,14 +3,26 @@ import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial('get', async (t) => {
+test.serial('observablesDiff', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const obsStore = {
     counter: async (payload, update) => {
-      let cnt = 0
+      const largeThing: any = { bla: [] }
+      for (let i = 0; i < 10; i++) {
+        largeThing.bla.push({
+          title: 'snurp',
+          cnt: i,
+          snurp: ~~(Math.random() * 19999),
+        })
+      }
+      update(largeThing)
       const counter = setInterval(() => {
-        update(++cnt)
+        largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup = ~~(
+          Math.random() * 19999
+        )
+        // diff has to be made on an extra cache layer
+        update(largeThing)
       }, 1000)
       return () => {
         clearInterval(counter)
@@ -21,23 +33,13 @@ test.serial('get', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 0,
+      memCacheTimeout: 1e3,
       idleTimeout: 1e3,
       unregister: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
       register: async ({ name }) => {
-        if (name === 'counter-cached') {
-          return {
-            observable: true,
-            name: 'counter-cached',
-            checksum: 1,
-            function: obsStore.counter,
-            memCacheTimeout: 1e3,
-          }
-        }
-
         if (obsStore[name]) {
           return {
             observable: true,
@@ -49,9 +51,7 @@ test.serial('get', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
+      log: () => {},
     },
   })
 
@@ -65,26 +65,33 @@ test.serial('get', async (t) => {
     console.info('connect', isConnected)
   })
 
-  t.is(await coreClient.get('counter'), 1)
+  coreClient.on('debug', (d) => {
+    // make this nice
+    console.info(d)
+  })
 
-  await wait(100)
+  const results: any[] = []
 
-  t.is(await coreClient.get('counter'), 1)
+  const close = coreClient.observe(
+    'counter',
+    (d) => {
+      console.info('\nincoming', d)
+      results.push(d)
+    },
+    {
+      myQuery: 123,
+    }
+  )
 
-  await wait(100)
+  await wait(3e3)
+
+  close()
+
+  await wait(3e3)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  t.is(await coreClient.get('counter-cached'), 1)
-  t.is(await coreClient.get('counter-cached'), 1)
-
-  await wait(1500)
-
-  t.is(Object.keys(server.activeObservables).length, 0)
-  t.is(server.activeObservablesById.size, 0)
-
-  await wait(3000)
-
+  await wait(3e3)
   t.is(Object.keys(server.functions.observables).length, 0)
 })

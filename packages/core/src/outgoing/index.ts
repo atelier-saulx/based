@@ -73,45 +73,59 @@ export const drainQueue = (client: BasedCoreClient) => {
     !client.drainInProgress &&
     (client.functionQueue.length ||
       client.observeQueue.size ||
-      client.authRequestId)
+      client.authRequestId ||
+      client.getObserveQueue.size)
   ) {
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
 
-      if (client.functionQueue.length || client.observeQueue.size) {
+      if (
+        client.functionQueue.length ||
+        client.observeQueue.size ||
+        client.getObserveQueue.size
+      ) {
         const fn = client.functionQueue
-        const ob = client.observeQueue
+        const obs = client.observeQueue
+        const get = client.getObserveQueue
 
         const buffs = []
         let l = 0
 
-        // ------- Function
-        for (const f of fn) {
-          // | 4 header | 3 id | 1 name length | * name | * payload |
-          let len = 7
-          const [id, name, payload] = f
-          const n = encoder.encode(name)
-          len += 1 + n.length
-          const [isDeflate, p] = encodePayload(payload)
-          if (p) {
-            len += p.length
+        // ------- GetObserve
+        for (const [id, o] of get) {
+          let len = 4
+          const [type, name, checksum, payload] = o
+
+          // Type 3 = get
+          // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
+
+          if (type === 3) {
+            const n = encoder.encode(name)
+            len += 1 + n.length
+            const [isDeflate, p] = encodePayload(payload)
+            if (p) {
+              len += p.length
+            }
+            const buffLen = 16
+            len += buffLen
+            const header = encodeHeader(type, isDeflate, len)
+            const buff = new Uint8Array(1 + 4 + buffLen)
+            storeUint8(buff, header, 0, 4)
+            storeUint8(buff, id, 4, 8)
+            storeUint8(buff, checksum, 12, 8)
+            buff[20] = n.length
+            if (p) {
+              buffs.push(buff, n, p)
+            } else {
+              buffs.push(buff, n)
+            }
+            l += len
           }
-          const header = encodeHeader(0, isDeflate, len)
-          const buff = new Uint8Array(4 + 3 + 1)
-          storeUint8(buff, header, 0, 4)
-          storeUint8(buff, id, 4, 3)
-          buff[7] = n.length
-          if (p) {
-            buffs.push(buff, n, p)
-          } else {
-            buffs.push(buff, n)
-          }
-          l += len
         }
 
         // ------- Observe
-        for (const [id, o] of ob) {
+        for (const [id, o] of obs) {
           let len = 4
           const [type, name, checksum, payload] = o
 
@@ -152,6 +166,30 @@ export const drainQueue = (client: BasedCoreClient) => {
           }
         }
 
+        // ------- Function
+        for (const f of fn) {
+          // | 4 header | 3 id | 1 name length | * name | * payload |
+          let len = 7
+          const [id, name, payload] = f
+          const n = encoder.encode(name)
+          len += 1 + n.length
+          const [isDeflate, p] = encodePayload(payload)
+          if (p) {
+            len += p.length
+          }
+          const header = encodeHeader(0, isDeflate, len)
+          const buff = new Uint8Array(4 + 3 + 1)
+          storeUint8(buff, header, 0, 4)
+          storeUint8(buff, id, 4, 3)
+          buff[7] = n.length
+          if (p) {
+            buffs.push(buff, n, p)
+          } else {
+            buffs.push(buff, n)
+          }
+          l += len
+        }
+
         const n = new Uint8Array(l)
         let c = 0
 
@@ -162,6 +200,7 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         client.functionQueue = []
         client.observeQueue.clear()
+        client.getObserveQueue.clear()
 
         client.connection.ws.send(n)
         idleTimeout(client)
@@ -219,7 +258,7 @@ export const addToFunctionQueue = (
   }
 
   const id = client.requestId
-  client.functionResponseListeners[id] = [resolve, reject]
+  client.functionResponseListeners.set(id, [resolve, reject])
   client.functionQueue.push([id, name, payload])
 
   drainQueue(client)
@@ -253,6 +292,21 @@ export const addObsToQueue = (
   drainQueue(client)
 }
 
+// sub get queue
+export const addGetToQueue = (
+  client: BasedCoreClient,
+  name: string,
+  id: number,
+  payload: GenericObject,
+  checksum: number = 0
+) => {
+  if (client.getObserveQueue.has(id)) {
+    return
+  }
+  client.getObserveQueue.set(id, [3, name, checksum, payload])
+  drainQueue(client)
+}
+
 export const sendAuth = (
   client: BasedCoreClient,
   authState: AuthState,
@@ -270,5 +324,3 @@ export const sendAuth = (
 
   drainQueue(client)
 }
-
-// sub get queue

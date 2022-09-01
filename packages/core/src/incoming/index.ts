@@ -76,18 +76,48 @@ export const incoming = async (client: BasedCoreClient, data) => {
         )
       }
 
-      if (client.functionResponseListeners[id]) {
-        client.functionResponseListeners[id][0](payload)
-        delete client.functionResponseListeners[id]
+      if (client.functionResponseListeners.has(id)) {
+        client.functionResponseListeners.get(id)[0](payload)
+        client.functionResponseListeners.delete(id)
+      }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: { id, payload },
+          type: 'function',
+        })
       }
     }
-    // ---------------------------------
+
+    // ------- Get checksum is up to date
+    if (type === 3) {
+      // | 4 header | 8 id |
+      const id = readUint8(buffer, 4, 8)
+      if (client.getState.has(id) && client.cache.has(id)) {
+        const get = client.getState.get(id)
+        for (const [resolve] of get) {
+          resolve(client.cache.get(id).value)
+        }
+        client.getState.delete(id)
+      }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: { id },
+          type: 'get',
+        })
+      }
+    }
 
     // ------- Subscription data
     if (type === 1) {
       // | 4 header | 8 id | 8 checksum | * payload |
       const id = readUint8(buffer, 4, 8)
-      const checksum = readUint8(buffer, 8, 8)
+      const checksum = readUint8(buffer, 12, 8)
 
       const start = 20
       const end = len + 4
@@ -104,23 +134,41 @@ export const incoming = async (client: BasedCoreClient, data) => {
         )
       }
 
+      // handle max size etc / localstorage etc
+      client.cache.set(id, {
+        value: payload,
+        checksum,
+      })
+
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
-
-        // handle max size etc
-        client.cache.set(id, {
-          value: payload,
-          checksum,
-        })
-
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }
-      } else {
-        console.warn('Cannot find observable ->', id)
       }
 
-      // handle data!
+      if (client.getState.has(id)) {
+        const get = client.getState.get(id)
+        for (const [resolve] of get) {
+          resolve(payload)
+        }
+        client.getState.delete(id)
+      }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: {
+            name: client.observeState.get(id).name,
+            query: client.observeState.get(id).payload,
+            id,
+            checksum,
+            payload,
+          },
+          type: 'subscription',
+        })
+      }
     }
 
     // ------- Auth

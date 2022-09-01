@@ -7,7 +7,7 @@ export type EventMap = {
   debug: {
     type: string
     direction: 'up' | 'down'
-    binary: Uint8Array
+    binary?: Uint8Array
     data: any
   }
   auth: AuthState

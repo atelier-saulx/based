@@ -82,4 +82,5 @@ export type ActiveObservable = {
   checksum?: number
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
+  onNextData?: Set<() => void>
 }

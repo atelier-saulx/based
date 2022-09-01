@@ -5,7 +5,6 @@ import { ActiveObservable, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 
 export const destroy = (server: BasedServer, id: number) => {
-  console.info('destroy observable!')
   // also need to send info to clients that its gone (e.g. does not exist anymore)
 
   // TODO: have to implement memCache here
@@ -30,7 +29,6 @@ export const destroy = (server: BasedServer, id: number) => {
       : server.functions.config.memCacheTimeout
 
   obs.beingDestroyed = setTimeout(() => {
-    console.info('memCacheit', memCacheTimeout)
     server.activeObservables[obs.name].delete(id)
     if (server.activeObservables[obs.name].size === 0) {
       delete server.activeObservables[obs.name]
@@ -131,6 +129,11 @@ export const initFunction = async (
       obs.cache = encodedData
       obs.checksum = checksum
       server.uwsApp.publish(String(id), encodedData, true, false)
+      if (obs.onNextData) {
+        const setObs = obs.onNextData
+        delete obs.onNextData
+        setObs.forEach((fn) => fn())
+      }
     }
   }
 

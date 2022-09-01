@@ -130,6 +130,16 @@ export const encodeFunctionResponse = (
   }
 }
 
+export const encodeGetResponse = (id: number): Uint8Array => {
+  // Type 4
+  // | 4 header | 8 id |
+  const header = encodeHeader(3, false, 8)
+  const array = new Uint8Array(12)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 4, 8)
+  return array
+}
+
 export const encodeObservableResponse = (
   id: number,
   checksum: number,
