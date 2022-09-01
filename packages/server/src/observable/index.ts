@@ -5,7 +5,6 @@ import { ActiveObservable, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 
 export const destroy = (server: BasedServer, id: number) => {
-  console.info('destroy observable!')
   // also need to send info to clients that its gone (e.g. does not exist anymore)
 
   // TODO: have to implement memCache here
@@ -30,6 +29,7 @@ export const destroy = (server: BasedServer, id: number) => {
       : server.functions.config.memCacheTimeout
 
   obs.beingDestroyed = setTimeout(() => {
+    console.info('destroy observable!')
     console.info('memCacheit', memCacheTimeout)
     server.activeObservables[obs.name].delete(id)
     if (server.activeObservables[obs.name].size === 0) {

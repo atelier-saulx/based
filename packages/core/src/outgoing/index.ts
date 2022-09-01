@@ -90,8 +90,6 @@ export const drainQueue = (client: BasedCoreClient) => {
         const buffs = []
         let l = 0
 
-        console.info('---', get)
-
         // ------- GetObserve
         for (const [id, o] of get) {
           let len = 4

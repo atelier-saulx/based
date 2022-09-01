@@ -11,7 +11,7 @@ test.serial('get', async (t) => {
       let cnt = 0
       const counter = setInterval(() => {
         update(++cnt)
-      }, 100)
+      }, 1000)
       return () => {
         clearInterval(counter)
       }
@@ -28,6 +28,16 @@ test.serial('get', async (t) => {
         return true
       },
       register: async ({ name }) => {
+        if (name === 'counter-cached') {
+          return {
+            observable: true,
+            name: 'counter-cached',
+            checksum: 1,
+            function: obsStore.counter,
+            memCacheTimeout: 1e3,
+          }
+        }
+
         if (obsStore[name]) {
           return {
             observable: true,
@@ -62,6 +72,15 @@ test.serial('get', async (t) => {
   t.is(await coreClient.get('counter'), 1)
 
   await wait(100)
+
+  t.is(Object.keys(server.activeObservables).length, 0)
+  t.is(server.activeObservablesById.size, 0)
+
+  console.info('---------------')
+  t.is(await coreClient.get('counter-cached'), 1)
+  t.is(await coreClient.get('counter-cached'), 1)
+
+  await wait(1500)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)

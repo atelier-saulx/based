@@ -81,6 +81,8 @@ export const incoming = async (client: BasedCoreClient, data) => {
       }
     }
 
+    console.info('incoming -> ', type)
+
     // ------- Get checksum is up to date
     if (type === 3) {
       // | 4 header | 8 id |
@@ -98,7 +100,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
     if (type === 1) {
       // | 4 header | 8 id | 8 checksum | * payload |
       const id = readUint8(buffer, 4, 8)
-      const checksum = readUint8(buffer, 8, 8)
+      const checksum = readUint8(buffer, 12, 8)
 
       const start = 20
       const end = len + 4
