@@ -9,7 +9,7 @@ test.serial('observablesDiff', async (t) => {
   const obsStore = {
     counter: async (payload, update) => {
       const largeThing: any = { bla: [] }
-      for (let i = 0; i < 1000; i++) {
+      for (let i = 0; i < 10; i++) {
         largeThing.bla.push({
           title: 'snurp',
           cnt: i,
@@ -65,12 +65,17 @@ test.serial('observablesDiff', async (t) => {
     console.info('connect', isConnected)
   })
 
+  coreClient.on('debug', (d) => {
+    // make this nice
+    console.info(d)
+  })
+
   const results: any[] = []
 
   const close = coreClient.observe(
     'counter',
     (d) => {
-      console.info('incoming', d)
+      console.info('\nincoming', d)
       results.push(d)
     },
     {

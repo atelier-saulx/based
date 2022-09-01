@@ -79,6 +79,15 @@ export const incoming = async (client: BasedCoreClient, data) => {
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
       }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: { id, payload },
+          type: 'function',
+        })
+      }
     }
 
     // ------- Get checksum is up to date
@@ -91,6 +100,15 @@ export const incoming = async (client: BasedCoreClient, data) => {
           resolve(client.cache.get(id).value)
         }
         client.getState.delete(id)
+      }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: { id },
+          type: 'get',
+        })
       }
     }
 
@@ -134,6 +152,21 @@ export const incoming = async (client: BasedCoreClient, data) => {
           resolve(payload)
         }
         client.getState.delete(id)
+      }
+
+      if (client.listeners.debug) {
+        client.emit('debug', {
+          direction: 'down',
+          binary: data.data,
+          data: {
+            name: client.observeState.get(id).name,
+            query: client.observeState.get(id).payload,
+            id,
+            checksum,
+            payload,
+          },
+          type: 'subscription',
+        })
       }
     }
 
