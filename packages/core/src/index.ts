@@ -13,7 +13,6 @@ import {
   ObserveQueue,
   Cache,
   GetObserveQueue,
-  AuthQueue,
 } from './types'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
@@ -24,7 +23,7 @@ import {
   addToFunctionQueue,
   addObsCloseToQueue,
   drainQueue,
-  addAuthToQueue,
+  sendAuth,
 } from './outgoing'
 import { envId } from '@based/ids'
 import { incoming } from './incoming'
@@ -53,7 +52,6 @@ export class BasedCoreClient extends Emitter {
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
   getObserveQueue: GetObserveQueue = new Map()
-  authQueue: AuthQueue = []
   drainInProgress: boolean = false
   drainTimeout: ReturnType<typeof setTimeout>
   idlePing: ReturnType<typeof setTimeout>
@@ -69,7 +67,9 @@ export class BasedCoreClient extends Emitter {
   observeState: ObserveState = new Map()
   // -------- Auth state
   authState: AuthState = { token: false }
-  authInProgress: Promise<AuthState>
+  authRequestId: number
+  authRequest: AuthState
+  authInProgress: Promise<AuthState> // TODO: check if needed
   authResponseListeners: FunctionResponseListeners = {}
   // --------- Internal Events
   onClose() {
@@ -214,9 +214,11 @@ export class BasedCoreClient extends Emitter {
         this.authState = { token: false }
         this.emit('auth', this.authState)
         resolve(true)
+        sendAuth(this, { token: false }, resolve, reject)
       } else if (typeof token === 'string') {
-        // do actual authentication
-        addAuthToQueue(this, { token }, resolve, reject)
+        // this.authInProgress = true
+
+        sendAuth(this, { token }, resolve, reject)
       }
     })
   }

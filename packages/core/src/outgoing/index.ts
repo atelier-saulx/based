@@ -73,20 +73,15 @@ export const drainQueue = (client: BasedCoreClient) => {
     !client.drainInProgress &&
     (client.functionQueue.length ||
       client.observeQueue.size ||
-      client.authQueue.length)
+      client.authRequestId)
   ) {
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
 
-      if (
-        client.functionQueue.length ||
-        client.observeQueue.size ||
-        client.authQueue.length
-      ) {
+      if (client.functionQueue.length || client.observeQueue.size) {
         const fn = client.functionQueue
         const ob = client.observeQueue
-        const au = client.authQueue
 
         const buffs = []
         let l = 0
@@ -157,28 +152,6 @@ export const drainQueue = (client: BasedCoreClient) => {
           }
         }
 
-        // ------- Auth
-        for (const a of au) {
-          // | 4 header | 3 id | * payload |
-          let len = 7
-          const [id, authState] = a
-          const [isDeflate, as] = encodePayload(authState)
-          if (as) {
-            len += as.length
-          }
-          const header = encodeHeader(4, isDeflate, len)
-          const buff = new Uint8Array(4 + 3)
-          storeUint8(buff, header, 0, 4)
-          storeUint8(buff, id, 4, 3)
-          buff[7] = as.length
-          if (as) {
-            buffs.push(buff, as)
-          } else {
-            buffs.push(buff)
-          }
-          l += len
-        }
-
         const n = new Uint8Array(l)
         let c = 0
 
@@ -189,13 +162,38 @@ export const drainQueue = (client: BasedCoreClient) => {
 
         client.functionQueue = []
         client.observeQueue.clear()
-        client.authQueue = []
 
         client.connection.ws.send(n)
         idleTimeout(client)
       }
     }
 
+    const sendAuth = (id: number, authState: AuthState) => {
+      // ------- Auth
+      // | 4 header | 3 id | * payload |
+      let len = 7
+      const [isDeflate, as] = encodePayload(authState)
+      if (as) {
+        len += as.length
+      }
+      const header = encodeHeader(4, isDeflate, len)
+      const buff = new Uint8Array(4 + 3)
+      storeUint8(buff, header, 0, 4)
+      storeUint8(buff, id, 4, 3)
+      buff[7] = as.length
+      const n = new Uint8Array(len)
+      n.set(buff)
+      if (as) {
+        n.set(as, 7)
+      }
+      client.connection.ws.send(n)
+    }
+
+    if (client.authRequestId) {
+      // TODO: add authInProgress?
+      sendAuth(client.authRequestId, client.authRequest)
+      client.authRequestId = null
+    }
     client.drainTimeout = setTimeout(drainOutgoing, 0)
   }
 }
@@ -255,7 +253,7 @@ export const addObsToQueue = (
   drainQueue(client)
 }
 
-export const addAuthToQueue = (
+export const sendAuth = (
   client: BasedCoreClient,
   authState: AuthState,
   resolve: (response: any) => void,
@@ -267,7 +265,8 @@ export const addAuthToQueue = (
   }
   const id = client.requestId
   client.authResponseListeners[id] = [resolve, reject]
-  client.authQueue.push([id, authState])
+  client.authRequestId = id
+  client.authRequest = authState
 
   drainQueue(client)
 }

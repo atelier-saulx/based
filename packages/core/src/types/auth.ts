@@ -8,8 +8,6 @@ export type AuthState =
       user?: string
     }
 
-export type AuthQueue = [number, AuthState][]
-
 export type AuthResponseListeners = {
   [reqId: string]: [(val?: any) => void, (err: Error) => void]
 }

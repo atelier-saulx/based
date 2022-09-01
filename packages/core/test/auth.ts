@@ -66,7 +66,11 @@ test.serial('auth', async (t) => {
     },
   })
 
-  await coreClient.auth('mock_token')
+  const token = 'mock_token'
+  const result = await coreClient.auth(token)
+  t.true(result)
+  t.is(coreClient.authState.token, token)
+  // t.false(coreClient.authInProgress)
 
   // console.log(
   //   'hello',
@@ -74,6 +78,4 @@ test.serial('auth', async (t) => {
   //     bla: true,
   //   })
   // )
-
-  t.fail()
 })
