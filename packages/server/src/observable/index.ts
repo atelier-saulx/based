@@ -29,8 +29,6 @@ export const destroy = (server: BasedServer, id: number) => {
       : server.functions.config.memCacheTimeout
 
   obs.beingDestroyed = setTimeout(() => {
-    console.info('destroy observable!')
-    console.info('memCacheit', memCacheTimeout)
     server.activeObservables[obs.name].delete(id)
     if (server.activeObservables[obs.name].size === 0) {
       delete server.activeObservables[obs.name]
