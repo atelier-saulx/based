@@ -50,19 +50,21 @@ export const getMessage = (
         destroy(server, id)
       }
     } else {
-      ws.subscribe(String(id))
       if (!obs.onNextData) {
         obs.onNextData = new Set()
       }
       obs.onNextData.add(() => {
-        ws.unsubscribe(String(id))
+        if (checksum !== 0 && checksum === obs.checksum) {
+          ws.send(encodeGetResponse(id), true, false)
+        } else {
+          ws.send(obs.cache, true, false)
+        }
         if (obs.clients.size === 0) {
           destroy(server, id)
         }
       })
     }
   } else {
-    ws.subscribe(String(id))
     server.functions
       .get(name)
       .then((spec) => {
@@ -73,7 +75,11 @@ export const getMessage = (
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              ws.unsubscribe(String(id))
+              if (checksum !== 0 && checksum === obs.checksum) {
+                ws.send(encodeGetResponse(id), true, false)
+              } else {
+                ws.send(obs.cache, true, false)
+              }
               if (obs.clients.size === 0) {
                 destroy(server, id)
               }

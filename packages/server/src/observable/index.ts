@@ -134,9 +134,7 @@ export const initFunction = async (
       if (obs.onNextData) {
         const setObs = obs.onNextData
         delete obs.onNextData
-        setTimeout(() => {
-          setObs.forEach((fn) => fn())
-        }, 0)
+        setObs.forEach((fn) => fn())
       }
     }
   }
