@@ -11,6 +11,7 @@ export const decodeHeader = (
   //   1 = subscribe
   //   2 = unsubscribe
   //   3 = get from observable
+  //   4 = auth
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -60,6 +61,7 @@ export const encodeHeader = (
   //   0 = functionData
   //   1 = subscriptionData
   //   2 = subscriptionDiffData
+  //   4 = authData
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
@@ -173,4 +175,28 @@ export const encodeObservableResponse = (
     console.warn('chunk not implemented yet')
     return new Uint8Array(0)
   }
+}
+
+export const encodeAuthResponse = (id: number, buffer: Buffer): Uint8Array => {
+  // Type 4
+  // | 4 header | 3 id | * payload |
+
+  let isDeflate = false
+
+  if (buffer.length > 100) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+
+  const headerSize = 4
+  const idSize = 3
+  const msgSize = idSize + buffer.length
+  const header = encodeHeader(4, isDeflate, msgSize)
+  const array = new Uint8Array(headerSize + msgSize)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 4, 3)
+  if (buffer.length) {
+    array.set(buffer, 7)
+  }
+  return array
 }

@@ -5,7 +5,7 @@ import {
   ObserveOpts,
   ObserveDataListener,
   ObserveErrorListener,
-  Auth,
+  AuthState,
   FunctionResponseListeners,
   Settings,
   FunctionQueue,
@@ -13,8 +13,8 @@ import {
   ObserveQueue,
   Cache,
   GetObserveQueue,
-  GetState,
 } from './types'
+import { GetState } from './types/observe'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
 import Emitter from './Emitter'
@@ -24,6 +24,7 @@ import {
   addToFunctionQueue,
   addObsCloseToQueue,
   drainQueue,
+  sendAuth,
   addGetToQueue,
 } from './outgoing'
 import { envId } from '@based/ids'
@@ -69,8 +70,11 @@ export class BasedCoreClient extends Emitter {
   // --------- Get State
   getState: GetState = new Map()
   // -------- Auth state
-  authState: Auth = { token: false }
-  authInProgress: Promise<Auth>
+  authState: AuthState = { token: false }
+  authRequestId: number
+  authRequest: AuthState
+  authInProgress: Promise<AuthState> // TODO: check if needed
+  authResponseListeners: FunctionResponseListeners = new Map()
   // --------- Internal Events
   onClose() {
     this.connected = false
@@ -103,7 +107,7 @@ export class BasedCoreClient extends Emitter {
     drainQueue(this)
   }
 
-  onData(data) {
+  onData(data: any) {
     incoming(this, data)
   }
 
@@ -242,12 +246,18 @@ export class BasedCoreClient extends Emitter {
   // -------- Auth
   // maybe only send token on connect / upgrade
   async auth(token: string | false): Promise<any> {
-    if (token === false) {
-      this.authState = { token: false }
-      this.emit('auth', this.authState)
-    } else if (typeof token === 'string') {
-      // do actual authentication
-    }
+    return new Promise((resolve, reject) => {
+      if (token === false) {
+        this.authState = { token: false }
+        this.emit('auth', this.authState)
+        resolve(true)
+        sendAuth(this, { token: false }, resolve, reject)
+      } else if (typeof token === 'string') {
+        // this.authInProgress = true
+
+        sendAuth(this, { token }, resolve, reject)
+      }
+    })
   }
 }
 
