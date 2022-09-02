@@ -1,5 +1,7 @@
+#ifndef BASED_WS_CONNECTION_H
+#define BASED_WS_CONNECTION_H
+
 #include <iostream>
-#include <map>
 #include <string>
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
@@ -8,18 +10,11 @@ typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
 
 enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 
-struct ObservableOpts {
-    ObservableOpts(bool ls, int mct) : local_storage(ls), max_cache_time(mct){};
-
-    bool local_storage;
-    int max_cache_time;
-};
-
-class HandlerStore {};
-
 class WsConnection {
+    // eventually there should be some logic here to handle inactivity.
    public:
-    WsConnection(std::string_view uri) {
+    WsConnection(std::string_view uri) : m_uri(uri) {
+        std::cout << "Created a new WsConnection, uri = " << m_uri << std::endl;
         // set the endpoint logging behavior to silent by clearing all of the access and error
         // logging channels
         m_ws.clear_access_channels(websocketpp::log::alevel::all);
@@ -48,15 +43,17 @@ class WsConnection {
         }
 
         m_thread->join();
+        std::cout << "Destroyed WsConnection obj" << std::endl;
     };
-    int connect(std::string const& uri) {
+    int connect() {
         websocketpp::lib::error_code ec;
 
         // create connection request to uri
-        ws_client::connection_ptr con = m_ws.get_connection(uri, ec);
+        ws_client::connection_ptr con = m_ws.get_connection(m_uri, ec);
 
         if (ec) {
             std::cout << "> Connect initialization error: " << ec.message() << std::endl;
+            m_status = ConnectionStatus::FAILED;
             return -1;
         }
 
@@ -66,6 +63,9 @@ class WsConnection {
         // arguments (hence the placeholders) these handlers must be set before calling connect, and
         // can't be changed after (i think)
         con->set_message_handler([](websocketpp::connection_hdl hdl, ws_client::message_ptr msg) {
+            // here we will pass the message to the decoder, which, based on the header, will call
+            // the appropriate callback
+
             if (msg->get_opcode() == websocketpp::frame::opcode::text) {
                 std::cout << "[MSG::TEXT] " << msg->get_payload() << std::endl;
             } else {
@@ -75,54 +75,47 @@ class WsConnection {
         });
 
         m_ws.connect(con);
+        std::cout << "Connected to ws" << std::endl;
+        return 0;
     };
-    void disconnect(){};
-    void send(std::string_view message){};
+    void disconnect() {
+        // this is the same as the destructor: change?
+        m_ws.stop_perpetual();
+
+        if (m_status == ConnectionStatus::OPEN) {
+            // Only close open connections
+            std::cout << "> Closing connection" << std::endl;
+
+            websocketpp::lib::error_code ec;
+            m_ws.close(m_con->get_handle(), websocketpp::close::status::going_away, "", ec);
+            if (ec) {
+                std::cout << "> Error closing connection: " << ec.message() << std::endl;
+                return;
+            }
+            m_status = ConnectionStatus::CLOSED;
+        }
+
+        m_thread->join();
+    };
+    void send(std::string const& message) {
+        std::cout << "Sending message to ws" << std::endl;
+
+        websocketpp::lib::error_code ec;
+
+        m_ws.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
+        if (ec) {
+            std::cout << "> Error sending message: " << ec.message() << std::endl;
+            return;
+        }
+    };
 
    private:
     ws_client m_ws;
     ConnectionStatus m_status;
     ws_client::connection_ptr m_con;
+    std::string m_uri;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
-    HandlerStore m_store;
+    // HandlerStore m_store;
 };
 
-class BasedClient {
-   public:
-    BasedClient(std::string_view uri) : m_connection(uri) {}
-
-    void connect(std::string_view uri) {}
-
-    /**
-     * Observe a function. This returns the observe ID used to
-     * unsubscribe with .unobserve
-     */
-    int observe(std::string name,
-                void (*onData)(std::string_view /*data*/, int /*checksum*/),
-                std::string_view payload,
-                void (*onError)(std::string_view /*error*/),
-                ObservableOpts obs_opts) {}
-
-    void unobserve(int id){};
-
-    void function(void (*cb)(std::string_view name, std::string_view payload)) {}
-
-    void get() {}
-
-    void auth(std::string token) {}
-
-   private:
-    WsConnection m_connection;
-};
-
-int main() {
-    std::cout << "hello yes" << std::endl;
-
-    BasedClient client("ws://localhost:9101");
-
-    client.observe(
-        "based_observe",
-        [](std::string_view data, int checksum) { std::cout << data << std::endl; },
-        "{$id: \"flurp\", $all: true}",
-        [](std::string_view error) { std::cerr << error << std::endl; }, ObservableOpts(true, 100));
-}
+#endif

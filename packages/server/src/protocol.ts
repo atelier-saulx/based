@@ -11,7 +11,6 @@ export const decodeHeader = (
   //   1 = subscribe
   //   2 = unsubscribe
   //   3 = get from observable
-  //   4 = auth
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -61,7 +60,6 @@ export const encodeHeader = (
   //   0 = functionData
   //   1 = subscriptionData
   //   2 = subscriptionDiffData
-  //   4 = authData
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
@@ -145,7 +143,7 @@ export const encodeObservableResponse = (
   checksum: number,
   buffer: Buffer
 ): Uint8Array => {
-  // Type 1
+  // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
 
   let isDeflate = false
@@ -158,17 +156,50 @@ export const encodeObservableResponse = (
   }
 
   if (chunks === 1) {
-    const headerSize = 4
-    const idSize = 8
-    const checksumSize = 8
-    const msgSize = idSize + checksumSize + buffer.length
+    const msgSize = 16 + buffer.length
     const header = encodeHeader(1, isDeflate, msgSize)
-    const array = new Uint8Array(headerSize + msgSize)
+    const array = new Uint8Array(4 + msgSize)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 8)
     storeUint8(array, checksum, 12, 8)
     if (buffer.length) {
       array.set(buffer, 20)
+    }
+    return array
+  } else {
+    console.warn('chunk not implemented yet')
+    return new Uint8Array(0)
+  }
+}
+
+export const encodeObservableDiffResponse = (
+  id: number,
+  checksum: number,
+  previousChecksum: number,
+  buffer: Buffer
+): Uint8Array => {
+  // Type 2 (diff data)
+  // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
+
+  let isDeflate = false
+  // implement later
+  const chunks = 1
+
+  if (buffer.length > 100) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+
+  if (chunks === 1) {
+    const msgSize = 24 + buffer.length
+    const header = encodeHeader(2, isDeflate, msgSize)
+    const array = new Uint8Array(4 + msgSize)
+    storeUint8(array, header, 0, 4)
+    storeUint8(array, id, 4, 8)
+    storeUint8(array, checksum, 12, 8)
+    storeUint8(array, previousChecksum, 20, 8)
+    if (buffer.length) {
+      array.set(buffer, 28)
     }
     return array
   } else {

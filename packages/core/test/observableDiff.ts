@@ -67,7 +67,8 @@ test.serial('observablesDiff', async (t) => {
 
   coreClient.on('debug', (d) => {
     // make this nice
-    console.info(d)
+    // @ts-ignore
+    console.info(d.data)
   })
 
   const results: any[] = []
