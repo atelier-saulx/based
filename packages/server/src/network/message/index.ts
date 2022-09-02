@@ -3,6 +3,7 @@ import { BasedServer } from '../../server'
 import { decodeHeader, readUint8 } from '../../protocol'
 import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
+import { authMessage } from './auth'
 import { getMessage } from './get'
 
 const reader = (
@@ -31,6 +32,11 @@ const reader = (
 
   // type 3 = get
   if (type === 3 && getMessage(arr, start, len, isDeflate, ws, server)) {
+    return next
+  }
+
+  // type 4 = auth
+  if (type === 4 && authMessage(arr, start, len, isDeflate, ws, server)) {
     return next
   }
 

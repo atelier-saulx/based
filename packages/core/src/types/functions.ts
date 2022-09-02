@@ -5,4 +5,5 @@ export type FunctionResponseListeners = Map<
   [(val?: any) => void, (err: Error) => void]
 >
 
-export type FunctionQueue = [number, string, GenericObject][]
+export type FunctionQueueItem = [number, string, GenericObject]
+export type FunctionQueue = FunctionQueueItem[]

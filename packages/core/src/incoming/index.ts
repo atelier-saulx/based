@@ -10,6 +10,7 @@ export const decodeHeader = (
   //   0 = functionData
   //   1 = subscriptionData
   //   2 = subscriptionDiffData
+  //   4 = authData
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -200,6 +201,31 @@ export const incoming = async (client: BasedCoreClient, data) => {
       }
     }
 
+    // ------- Auth
+    if (type === 4) {
+      // | 4 header | 3 id | * payload |
+      const id = readUint8(buffer, 4, 3)
+      const start = 7
+      const end = len + 4
+      let payload: any
+
+      // if not empty response, parse it
+      if (len - 3 !== 0) {
+        payload = JSON.parse(
+          new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+        )
+      }
+
+      if (client.authResponseListeners[id]) {
+        client.authResponseListeners[id][0](payload)
+        delete client.authResponseListeners[id]
+        client.authState = client.authRequest
+      }
+    }
     // ---------------------------------
   } catch (err) {
     console.error('Error parsing incoming data', err)
