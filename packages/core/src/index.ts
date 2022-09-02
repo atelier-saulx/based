@@ -86,6 +86,7 @@ export class BasedCoreClient extends Emitter {
     reject: null,
     inProgress: false,
   }
+
   // --------- Internal Events
   onClose() {
     this.connected = false

@@ -99,9 +99,10 @@ test.serial('observablesDiff', async (t) => {
 
   await wait(5e3)
 
+  console.info('close it now')
   close()
 
-  await wait(10e3)
+  await wait(6e3)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
