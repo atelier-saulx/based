@@ -78,6 +78,10 @@ export type ActiveObservable = {
   clients: Set<number>
   payload: any
   isDestroyed: boolean
+  rawData?: any // deepCopy
+  rawDataSize?: number
+  diffCache?: Uint8Array
+  previousChecksum?: number
   cache?: Uint8Array // will become SharedArrayBuffer
   checksum?: number
   closeFunction?: () => void

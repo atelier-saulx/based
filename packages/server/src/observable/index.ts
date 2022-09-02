@@ -1,8 +1,14 @@
 import uws from '@based/uws'
-import { valueToBuffer, encodeObservableResponse } from '../protocol'
+import {
+  valueToBuffer,
+  encodeObservableResponse,
+  encodeObservableDiffResponse,
+} from '../protocol'
 import { BasedServer } from '../server'
 import { ActiveObservable, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { deepCopy } from '@saulx/utils'
+import createPatch from '@saulx/diff'
 
 export const destroy = (server: BasedServer, id: number) => {
   // also need to send info to clients that its gone (e.g. does not exist anymore)
@@ -24,9 +30,7 @@ export const destroy = (server: BasedServer, id: number) => {
   }
 
   const memCacheTimeout =
-    spec.memCacheTimeout !== undefined
-      ? spec.memCacheTimeout
-      : server.functions.config.memCacheTimeout
+    spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
 
   obs.beingDestroyed = setTimeout(() => {
     server.activeObservables[obs.name].delete(id)
@@ -34,7 +38,6 @@ export const destroy = (server: BasedServer, id: number) => {
       delete server.activeObservables[obs.name]
     }
     server.activeObservablesById.delete(id)
-    obs.isDestroyed = true
     obs.isDestroyed = true
     if (obs.closeFunction) {
       obs.closeFunction()
@@ -56,7 +59,11 @@ export const subscribe = (
   }
   obs.clients.add(ws.id)
   if (obs.cache && obs.checksum !== checksum) {
-    ws.send(obs.cache, true, false)
+    if (obs.diffCache && obs.previousChecksum === checksum) {
+      ws.send(obs.diffCache, true, false)
+    } else {
+      ws.send(obs.cache, true, false)
+    }
   }
 }
 
@@ -105,12 +112,8 @@ export const initFunction = async (
     data: any,
     checksum?: number,
     diff?: any,
-    fromChecksum?: number
+    previousChecksum?: number
   ) => {
-    if (diff && fromChecksum) {
-      // fix later
-    }
-
     if (checksum === undefined) {
       if (data === undefined) {
         checksum = 0
@@ -123,12 +126,65 @@ export const initFunction = async (
         }
       }
     }
+
     if (checksum !== obs.checksum) {
       const buff = valueToBuffer(data)
+
+      if (obs.cache) {
+        server.cacheSize -= obs.cache.byteLength
+      }
+
+      if (obs.rawData) {
+        server.cacheSize -= obs.rawDataSize
+      }
+
+      if (previousChecksum === undefined) {
+        // if buff > 1mb then dont store deepcopy
+        /*
+        // also have to be aware that there is an 8byte increase
+        // if ratio of diff repsonse is 75% of full just send the full
+        // if (diff && previousChecksum) {
+        //   fix later
+        // }
+        */
+
+        if (typeof data === 'object' && data !== null) {
+          if (obs.rawData) {
+            diff = createPatch(obs.rawData, data)
+            obs.previousChecksum = obs.checksum
+          }
+
+          obs.rawData = deepCopy(data)
+          const size = buff.byteLength
+          server.cacheSize += size
+          obs.rawDataSize = size
+        } else if (obs.rawData) {
+          delete obs.rawData
+          delete obs.rawDataSize
+        }
+      }
+
+      // keep track globally of total mem usage
       const encodedData = encodeObservableResponse(id, checksum, buff)
       obs.cache = encodedData
+      server.cacheSize += obs.cache.byteLength
       obs.checksum = checksum
-      server.uwsApp.publish(String(id), encodedData, true, false)
+
+      if (diff) {
+        const diffBuff = valueToBuffer(diff)
+        const encodedDiffData = encodeObservableDiffResponse(
+          id,
+          checksum,
+          obs.previousChecksum,
+          diffBuff
+        )
+        obs.diffCache = encodedDiffData
+        // add to cache size
+        server.uwsApp.publish(String(id), encodedDiffData, true, false)
+      } else {
+        server.uwsApp.publish(String(id), encodedData, true, false)
+      }
+
       if (obs.onNextData) {
         const setObs = obs.onNextData
         delete obs.onNextData

@@ -17,11 +17,16 @@ const sendGetData = (
   checksum: number,
   ws: uws.WebSocket
 ) => {
-  if (checksum !== 0 && checksum === obs.checksum) {
+  if (checksum === 0) {
+    ws.send(obs.cache, true, false)
+  } else if (checksum === obs.checksum) {
     ws.send(encodeGetResponse(id), true, false)
+  } else if (obs.diffCache && obs.previousChecksum === checksum) {
+    ws.send(obs.diffCache, true, false)
   } else {
     ws.send(obs.cache, true, false)
   }
+
   if (obs.clients.size === 0) {
     destroy(server, id)
   }

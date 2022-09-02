@@ -1,5 +1,6 @@
 import { BasedCoreClient } from '..'
 import fflate from 'fflate'
+import { applyPatch } from '@saulx/diff'
 
 export const decodeHeader = (
   nr: number
@@ -79,19 +80,10 @@ export const incoming = async (client: BasedCoreClient, data) => {
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
       }
-
-      if (client.listeners.debug) {
-        client.emit('debug', {
-          direction: 'down',
-          binary: data.data,
-          data: { id, payload },
-          type: 'function',
-        })
-      }
     }
 
     // ------- Get checksum is up to date
-    if (type === 3) {
+    else if (type === 3) {
       // | 4 header | 8 id |
       const id = readUint8(buffer, 4, 8)
       if (client.getState.has(id) && client.cache.has(id)) {
@@ -101,19 +93,72 @@ export const incoming = async (client: BasedCoreClient, data) => {
         }
         client.getState.delete(id)
       }
+    }
 
-      if (client.listeners.debug) {
-        client.emit('debug', {
-          direction: 'down',
-          binary: data.data,
-          data: { id },
-          type: 'get',
-        })
+    // ------- Subscription diff data
+    else if (type === 2) {
+      // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
+      const id = readUint8(buffer, 4, 8)
+
+      const cachedData = client.cache.get(id)
+
+      if (!cachedData) {
+        console.info('dont have cache data o no')
+        return
+      }
+
+      const checksum = readUint8(buffer, 12, 8)
+      const previousChecksum = readUint8(buffer, 20, 8)
+
+      if (cachedData.checksum !== previousChecksum) {
+        console.info('o no it it wrong!')
+        return
+      }
+
+      const start = 28
+      const end = len + 4
+      let diff: any
+
+      // if not empty response, parse it
+      if (len - 24 !== 0) {
+        diff = JSON.parse(
+          new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+        )
+      }
+
+      console.info('MASTERFUL DIFF', diff)
+
+      try {
+        applyPatch(cachedData.value, diff)
+        cachedData.checksum = checksum
+      } catch (err) {
+        // o no cannot apply diff for you!
+        console.info('o no wrong diffiy diff diff', err)
+        return
+      }
+
+      if (client.observeState.has(id)) {
+        const observable = client.observeState.get(id)
+        for (const [, handlers] of observable.subscribers) {
+          handlers.onData(cachedData.value, checksum)
+        }
+      }
+
+      if (client.getState.has(id)) {
+        const get = client.getState.get(id)
+        for (const [resolve] of get) {
+          resolve(cachedData.value)
+        }
+        client.getState.delete(id)
       }
     }
 
     // ------- Subscription data
-    if (type === 1) {
+    else if (type === 1) {
       // | 4 header | 8 id | 8 checksum | * payload |
       const id = readUint8(buffer, 4, 8)
       const checksum = readUint8(buffer, 12, 8)
@@ -152,21 +197,6 @@ export const incoming = async (client: BasedCoreClient, data) => {
           resolve(payload)
         }
         client.getState.delete(id)
-      }
-
-      if (client.listeners.debug) {
-        client.emit('debug', {
-          direction: 'down',
-          binary: data.data,
-          data: {
-            name: client.observeState.get(id).name,
-            query: client.observeState.get(id).payload,
-            id,
-            checksum,
-            payload,
-          },
-          type: 'subscription',
-        })
       }
     }
 

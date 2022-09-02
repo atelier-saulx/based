@@ -16,6 +16,9 @@ export class BasedServer {
 
   public listenSocket: any
 
+  // in bytes
+  public cacheSize: number = 0
+
   public authorizeConnection: AuthorizeConnection
 
   public activeObservables: {
