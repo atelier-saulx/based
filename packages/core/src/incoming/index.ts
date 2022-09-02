@@ -63,7 +63,10 @@ const requestFullData = (client: BasedCoreClient, id: number) => {
   addGetToQueue(client, sub.name, id, sub.payload)
 }
 
-export const incoming = async (client: BasedCoreClient, data) => {
+export const incoming = async (
+  client: BasedCoreClient,
+  data: any /* TODO: type */
+) => {
   try {
     const d = data.data
     const buffer = await parseArrayBuffer(d)
@@ -234,10 +237,9 @@ export const incoming = async (client: BasedCoreClient, data) => {
         )
       }
 
-      if (client.authResponseListeners[id]) {
-        client.authResponseListeners[id][0](payload)
-        delete client.authResponseListeners[id]
-        client.authState = client.authRequest
+      if (client.authRequest.requestId === id) {
+        client.authState = client.authRequest.authState
+        client.authRequest.resolve(payload)
       }
     }
     // ---------------------------------

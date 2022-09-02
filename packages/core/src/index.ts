@@ -71,10 +71,21 @@ export class BasedCoreClient extends Emitter {
   getState: GetState = new Map()
   // -------- Auth state
   authState: AuthState = { token: false }
-  authRequestId: number
-  authRequest: AuthState
-  authInProgress: Promise<AuthState> // TODO: check if needed
-  authResponseListeners: FunctionResponseListeners = new Map()
+  authRequest: {
+    requestId: number
+    authState: AuthState
+    promise: Promise<AuthState>
+    resolve: (result: AuthState) => void
+    reject: (err: Error) => void
+    inProgress: boolean
+  } = {
+    requestId: null,
+    authState: null,
+    promise: null,
+    resolve: null,
+    reject: null,
+    inProgress: false,
+  }
   // --------- Internal Events
   onClose() {
     this.connected = false
@@ -249,18 +260,13 @@ export class BasedCoreClient extends Emitter {
   // -------- Auth
   // maybe only send token on connect / upgrade
   async auth(token: string | false): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (token === false) {
-        this.authState = { token: false }
-        this.emit('auth', this.authState)
-        resolve(true)
-        sendAuth(this, { token: false }, resolve, reject)
-      } else if (typeof token === 'string') {
-        // this.authInProgress = true
-
-        sendAuth(this, { token }, resolve, reject)
-      }
-    })
+    if (token === false) {
+      this.authState = { token: false }
+      this.emit('auth', this.authState)
+      return sendAuth(this, this.authState)
+    } else if (typeof token === 'string') {
+      return sendAuth(this, { token })
+    }
   }
 }
 

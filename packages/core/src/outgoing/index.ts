@@ -1,3 +1,4 @@
+import util from 'util'
 import { BasedCoreClient } from '../'
 import { AuthState, GenericObject } from '../types'
 import {
@@ -30,7 +31,6 @@ export const drainQueue = (client: BasedCoreClient) => {
     !client.drainInProgress &&
     (client.functionQueue.length ||
       client.observeQueue.size ||
-      client.authRequestId ||
       client.getObserveQueue.size)
   ) {
     client.drainInProgress = true
@@ -87,14 +87,20 @@ export const drainQueue = (client: BasedCoreClient) => {
       }
     }
 
-    if (client.authRequestId) {
-      // TODO: add authInProgress?
-      client.connection.ws.send(
-        encodeAuthMessage(client.authRequestId, client.authRequest)
-      )
-      client.authRequestId = null
+    // if (client.authRequestId) {
+    //   // TODO: add authInProgress?
+    //   client.connection.ws.send(
+    //     encodeAuthMessage(client.authRequestId, client.authRequest)
+    //   )
+    //   client.authRequestId = null
+    // }
+    if (client.authRequest?.inProgress) {
+      client.authRequest.promise.then(() => {
+        drainQueue(client)
+      })
+    } else {
+      client.drainTimeout = setTimeout(drainOutgoing, 0)
     }
-    client.drainTimeout = setTimeout(drainOutgoing, 0)
   }
 }
 
@@ -168,20 +174,42 @@ export const addGetToQueue = (
   drainQueue(client)
 }
 
-export const sendAuth = (
-  client: BasedCoreClient,
-  authState: AuthState,
-  resolve: (response: any) => void,
-  reject: (err: Error) => void
-) => {
-  client.requestId++
-  if (client.requestId > 16777215) {
-    client.requestId = 0
+export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
+  if (client.authRequest?.inProgress) {
+    return client.authRequest.promise
   }
-  const id = client.requestId
-  client.authResponseListeners[id] = [resolve, reject]
-  client.authRequestId = id
-  client.authRequest = authState
 
-  drainQueue(client)
+  client.authRequest.promise = new Promise<AuthState>((resolve, reject) => {
+    client.authRequest.inProgress = true
+    client.authRequest.resolve = resolve
+    client.authRequest.reject = reject
+
+    client.requestId++
+    if (client.requestId > 16777215) {
+      client.requestId = 0
+    }
+    client.authRequest.requestId = client.requestId
+    client.authRequest.authState = authState
+
+    const send = () => {
+      if (!client.connected) {
+        setTimeout(send, 0)
+      } else {
+        client.connection.ws.send(
+          encodeAuthMessage(
+            client.authRequest.requestId,
+            client.authRequest.authState
+          )
+        )
+      }
+    }
+    send()
+  }).finally(() => {
+    client.authRequest.requestId = null
+    client.authRequest.authState = null
+    client.authRequest.resolve = null
+    client.authRequest.reject = null
+    client.authRequest.inProgress = false
+  })
+  return client.authRequest.promise
 }
