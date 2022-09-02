@@ -1,4 +1,4 @@
-import { Auth } from './auth'
+import { AuthState } from './auth'
 
 export type EventMap = {
   reconnect: true
@@ -10,7 +10,7 @@ export type EventMap = {
     binary?: Uint8Array
     data: any
   }
-  auth: Auth
+  auth: AuthState
 }
 
 export type Event = keyof EventMap
