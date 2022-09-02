@@ -202,7 +202,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
     }
 
     // ------- Auth
-    if (type === 4) {
+    else if (type === 4) {
       // | 4 header | 3 id | * payload |
       const id = readUint8(buffer, 4, 3)
       const start = 7
