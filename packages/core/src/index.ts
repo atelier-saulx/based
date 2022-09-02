@@ -84,8 +84,17 @@ export class BasedCoreClient extends Emitter {
   onReconnect() {
     this.connected = true
 
+    this.emit('reconnect', true)
+  }
+
+  onOpen() {
+    this.connected = true
+    this.emit('connect', true)
+
     // --------- Resend all subscriptions
     for (const [id, obs] of this.observeState) {
+      console.info('RESEND sub', id)
+
       if (!this.observeQueue.has(id)) {
         const cachedData = this.cache.get(id)
         addObsToQueue(
@@ -98,12 +107,6 @@ export class BasedCoreClient extends Emitter {
       }
     }
 
-    this.emit('reconnect', true)
-  }
-
-  onOpen() {
-    this.connected = true
-    this.emit('connect', true)
     drainQueue(this)
   }
 

@@ -38,6 +38,15 @@ export const destroy = (server: BasedServer, id: number) => {
       delete server.activeObservables[obs.name]
     }
     server.activeObservablesById.delete(id)
+
+    if (obs.cache) {
+      server.cacheSize -= obs.cache.byteLength
+    }
+
+    if (obs.rawData) {
+      server.cacheSize -= obs.rawDataSize
+    }
+
     obs.isDestroyed = true
     if (obs.closeFunction) {
       obs.closeFunction()
@@ -78,6 +87,24 @@ export const unsubscribe = (
 
   const obs = server.activeObservablesById.get(id)
   ws.obs.delete(id)
+
+  if (!obs) {
+    return
+  }
+
+  obs.clients.delete(ws.id)
+
+  if (obs.clients.size === 0) {
+    destroy(server, id)
+  }
+}
+
+export const unsubscribeIgnoreClient = (
+  server: BasedServer,
+  id: number,
+  ws: uws.WebSocket
+) => {
+  const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
     return

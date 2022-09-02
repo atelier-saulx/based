@@ -1,6 +1,7 @@
 import { BasedCoreClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
+import { addGetToQueue } from '../outgoing'
 
 export const decodeHeader = (
   nr: number
@@ -51,6 +52,17 @@ const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
   throw new Error('Recieved incorrect data')
 }
 
+const requestFullData = (client: BasedCoreClient, id: number) => {
+  const sub = client.observeState[id]
+  if (!sub) {
+    console.error('Cannot find name for id from diff', id)
+    return
+  }
+  console.info('dont have cache data o no')
+  // and prob need to add an extra arg (type 4 msg) to enfore sending the data back
+  addGetToQueue(client, sub.name, id, sub.payload)
+}
+
 export const incoming = async (client: BasedCoreClient, data) => {
   try {
     const d = data.data
@@ -67,7 +79,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       let payload: any
 
       // if not empty response, parse it
-      if (len - 3 !== 0) {
+      if (len !== 3) {
         payload = JSON.parse(
           new TextDecoder().decode(
             isDeflate
@@ -104,7 +116,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       const cachedData = client.cache.get(id)
 
       if (!cachedData) {
-        console.info('dont have cache data o no')
+        requestFullData(client, 0)
         return
       }
 
@@ -112,7 +124,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       const previousChecksum = readUint8(buffer, 20, 8)
 
       if (cachedData.checksum !== previousChecksum) {
-        console.info('o no it it wrong!')
+        requestFullData(client, checksum)
         return
       }
 
@@ -121,7 +133,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       let diff: any
 
       // if not empty response, parse it
-      if (len - 24 !== 0) {
+      if (len !== 24) {
         diff = JSON.parse(
           new TextDecoder().decode(
             isDeflate
@@ -139,6 +151,8 @@ export const incoming = async (client: BasedCoreClient, data) => {
       } catch (err) {
         // o no cannot apply diff for you!
         console.info('o no wrong diffiy diff diff', err)
+        requestFullData(client, checksum)
+
         return
       }
 
@@ -169,7 +183,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       let payload: any
 
       // if not empty response, parse it
-      if (len - 16 !== 0) {
+      if (len !== 16) {
         payload = JSON.parse(
           new TextDecoder().decode(
             isDeflate
@@ -210,7 +224,7 @@ export const incoming = async (client: BasedCoreClient, data) => {
       let payload: any
 
       // if not empty response, parse it
-      if (len - 3 !== 0) {
+      if (len !== 3) {
         payload = JSON.parse(
           new TextDecoder().decode(
             isDeflate

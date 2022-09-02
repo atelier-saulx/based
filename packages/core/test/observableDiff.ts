@@ -33,7 +33,7 @@ test.serial('observablesDiff', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 1e3,
+      memCacheTimeout: 5e3,
       idleTimeout: 1e3,
       unregister: async (opts) => {
         console.info('unRegister', opts.name)
@@ -86,13 +86,26 @@ test.serial('observablesDiff', async (t) => {
 
   await wait(3e3)
 
-  close()
+  coreClient.disconnect()
 
   await wait(3e3)
+
+  console.info('------------------>')
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await wait(5e3)
+
+  close()
+
+  await wait(10e3)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  await wait(3e3)
+  await wait(6e3)
   t.is(Object.keys(server.functions.observables).length, 0)
 })

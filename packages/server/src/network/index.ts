@@ -3,6 +3,7 @@ import type { BasedServer } from '../server'
 import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './message'
+import { unsubscribeIgnoreClient } from '../observable'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -48,9 +49,11 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       // send is used to send a current value
       // open(this, ws)
     },
-    close: () => {
+    close: (ws) => {
       console.info('close', 'remove from subs')
-      // close(this, ws)
+      ws.obs.forEach((id) => {
+        unsubscribeIgnoreClient(server, id, ws)
+      })
     },
     drain: () => {
       console.info('drain')
