@@ -1,4 +1,3 @@
-import util from 'util'
 import { BasedCoreClient } from '../'
 import { AuthState, GenericObject } from '../types'
 import {

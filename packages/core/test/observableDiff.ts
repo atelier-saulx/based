@@ -23,7 +23,7 @@ test.serial('observablesDiff', async (t) => {
         )
         // diff has to be made on an extra cache layer
         update(largeThing)
-      }, 1000)
+      }, 100)
       return () => {
         clearInterval(counter)
       }
@@ -75,8 +75,8 @@ test.serial('observablesDiff', async (t) => {
 
   const close = coreClient.observe(
     'counter',
-    (d) => {
-      console.info('\nincoming', d)
+    (d, c) => {
+      console.info('\nincoming', c)
       results.push(d)
     },
     {
@@ -96,6 +96,11 @@ test.serial('observablesDiff', async (t) => {
       return 'ws://localhost:9910'
     },
   })
+
+  await wait(1e3)
+
+  console.log('hekllo')
+  coreClient.cache.clear()
 
   await wait(5e3)
 

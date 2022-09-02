@@ -53,7 +53,7 @@ const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
 }
 
 const requestFullData = (client: BasedCoreClient, id: number) => {
-  const sub = client.observeState[id]
+  const sub = client.observeState.get(id)
   if (!sub) {
     console.error('Cannot find name for id from diff', id)
     return
@@ -119,7 +119,7 @@ export const incoming = async (
       const cachedData = client.cache.get(id)
 
       if (!cachedData) {
-        requestFullData(client, 0)
+        requestFullData(client, id)
         return
       }
 
@@ -127,7 +127,7 @@ export const incoming = async (
       const previousChecksum = readUint8(buffer, 20, 8)
 
       if (cachedData.checksum !== previousChecksum) {
-        requestFullData(client, checksum)
+        requestFullData(client, id)
         return
       }
 
@@ -146,15 +146,13 @@ export const incoming = async (
         )
       }
 
-      console.info('MASTERFUL DIFF', diff)
-
       try {
         applyPatch(cachedData.value, diff)
         cachedData.checksum = checksum
       } catch (err) {
         // o no cannot apply diff for you!
         console.info('o no wrong diffiy diff diff', err)
-        requestFullData(client, checksum)
+        requestFullData(client, id)
 
         return
       }
