@@ -1,4 +1,4 @@
-import { Authorize } from '../../types'
+import { Authorize } from '../types'
 
 export const authorize: Authorize = async (
   _server,

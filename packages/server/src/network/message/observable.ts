@@ -40,7 +40,7 @@ export const subscribeMessage = (
   )
 
   server.auth.config
-    .authorizeAdvanced(server, ws, 'observe', name, payload)
+    .authorize(server, ws, 'observe', name, payload)
     .then((ok) => {
       if (!ok) {
         fail(server, id)

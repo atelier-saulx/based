@@ -40,7 +40,7 @@ export const functionMessage = (
   }
 
   server.auth.config
-    .authorizeAdvanced(server, ws, 'function', name, payload)
+    .authorize(server, ws, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
         fail(ws, reqId)

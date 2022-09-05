@@ -46,7 +46,7 @@ test.serial('authorize functions', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorizeAdvanced: async (_server, ws) => {
+    authorize: async (_server, ws) => {
       return ws.authState === token
     },
   })

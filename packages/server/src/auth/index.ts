@@ -2,7 +2,7 @@ import uws from '@based/uws'
 import { deepMerge } from '@saulx/utils'
 import { BasedServer } from '../server'
 import { AuthConfig } from '../types'
-import { authorize, authorizeAdvanced } from './defaults'
+import { authorize } from './authorize'
 
 // has an authorize config
 
@@ -22,7 +22,6 @@ export class BasedAuth {
     this.server = server
     this.config = {
       authorize,
-      authorizeAdvanced,
     }
     this.updateConfig(config)
   }
