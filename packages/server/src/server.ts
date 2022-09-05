@@ -1,10 +1,6 @@
 import uws from '@based/uws'
 import initNetwork from './network'
-import type {
-  AuthorizeConnection,
-  ServerOptions,
-  ActiveObservable,
-} from './types'
+import type { ServerOptions, ActiveObservable } from './types'
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
 
@@ -22,8 +18,6 @@ export class BasedServer {
   // in bytes
   public cacheSize: number = 0
 
-  public authorizeConnection: AuthorizeConnection
-
   public activeObservables: {
     [name: string]: Map<number, ActiveObservable>
   } = {}
@@ -31,12 +25,9 @@ export class BasedServer {
   public activeObservablesById: Map<number, ActiveObservable> = new Map()
 
   constructor(opts: ServerOptions) {
-    initNetwork(this, opts)
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
-    if (opts.authorizeConnection) {
-      this.authorizeConnection = opts.authorizeConnection
-    }
+    initNetwork(this, opts)
   }
 
   start(port?: number): Promise<BasedServer> {

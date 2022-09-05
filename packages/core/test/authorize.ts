@@ -90,7 +90,7 @@ test.serial.skip('authorize observe', async (t) => {
     name: 'counter',
     // memCacheTimeout: 2e3,
     checksum: 2,
-    function: async (payload, update) => {
+    function: async (_payload: any, update: any) => {
       let cnt = 0
       const counter = setInterval(() => {
         update('UpdatedFn' + ++cnt)
@@ -102,7 +102,7 @@ test.serial.skip('authorize observe', async (t) => {
   })
 
   server.auth.updateConfig({
-    authorizeAdvanced: async (_server, ws) => {
+    authorize: async (_server, ws) => {
       return ws.authState === token
     },
   })

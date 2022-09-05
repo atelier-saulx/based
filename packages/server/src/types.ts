@@ -3,8 +3,8 @@ import type uws from '@based/uws'
 
 export type AuthConfig = {
   authorize?: Authorize
-  authorizeAdvanced?: Authorize
   authHandshake?: AuthorizeHandshake
+  authorizeConnection?: AuthorizeConnection
 }
 
 export type Authorize = (
@@ -14,8 +14,6 @@ export type Authorize = (
   name: string,
   payload?: any
 ) => Promise<boolean>
-
-export type AuthorizeAvanced = Authorize
 
 export type AuthorizeHandshake = (
   server: BasedServer,
@@ -35,7 +33,6 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   auth?: AuthConfig
-  authorizeConnection?: AuthorizeConnection // TODO: Should this go to auth type?
 }
 
 export type ObservableUpdateFunction = (
