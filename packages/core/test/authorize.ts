@@ -38,7 +38,7 @@ const setup = async () => {
   return { coreClient, server }
 }
 
-test.serial('authorize', async (t) => {
+test.serial('authorizeAdvanced', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'
@@ -47,7 +47,7 @@ test.serial('authorize', async (t) => {
 
   server.auth.updateConfig({
     authorizeAdvanced: async (_server, ws) => {
-      return ws.authState === true
+      return ws.authState === token
     },
   })
 
@@ -62,15 +62,20 @@ test.serial('authorize', async (t) => {
     },
   })
 
-  await t.throwsAsync(async () => {
-    await coreClient.function('hello', {
-      bla: true,
-    })
+  // TODO: Change when throws on error
+  // await t.throwsAsync(async () => {
+  const result = await coreClient.function('hello', {
+    bla: true,
   })
+  console.log({ result })
+  t.true(!!result.error)
+  // })
   await coreClient.auth(token)
-  await t.notThrowsAsync(async () => {
-    await coreClient.function('hello', {
-      bla: true,
-    })
+  // await t.notThrowsAsync(async () => {
+  const result2 = await coreClient.function('hello', {
+    bla: true,
   })
+  console.log({ result2 })
+  t.false(!!result2.error)
+  // })
 })

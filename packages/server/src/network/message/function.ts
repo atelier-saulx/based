@@ -9,6 +9,14 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 
+const fail = (ws: uws.WebSocket, reqId: number) => {
+  ws.send(
+    encodeFunctionResponse(reqId, valueToBuffer({ error: 'this is an error' })),
+    true,
+    false
+  )
+}
+
 export const functionMessage = (
   arr: Uint8Array,
   start: number,
@@ -31,36 +39,42 @@ export const functionMessage = (
     return false
   }
 
-  console.log('wawa')
-  if (
-    !server.auth.config.authorizeAdvanced(server, ws, 'function', name, payload)
-  ) {
-    return false
-  }
-
-  server.functions
-    .get(name)
-    .then((spec) => {
-      if (spec && !isObservableFunctionSpec(spec)) {
-        spec
-          .function(payload, ws)
-          .then((v) => {
-            ws.send(
-              encodeFunctionResponse(reqId, valueToBuffer(v)),
-              true,
-              false
-            )
-          })
-          .catch((err) => {
-            // error handling nice
-            console.error('bad fn', err)
-          })
-      } else {
-        console.error('No function for you')
+  server.auth.config
+    .authorizeAdvanced(server, ws, 'function', name, payload)
+    .then((ok) => {
+      if (!ok) {
+        fail(ws, reqId)
+        return false
       }
+      server.functions
+        .get(name)
+        .then((spec) => {
+          if (spec && !isObservableFunctionSpec(spec)) {
+            spec
+              .function(payload, ws)
+              .then((v) => {
+                ws.send(
+                  encodeFunctionResponse(reqId, valueToBuffer(v)),
+                  true,
+                  false
+                )
+              })
+              .catch((err) => {
+                // error handling nice
+                console.error('bad fn', err)
+              })
+          } else {
+            console.error('No function for you')
+          }
+        })
+        .catch((err) => {
+          console.error('fn does not exist', err)
+        })
     })
     .catch((err) => {
-      console.error('fn does not exist', err)
+      console.log({ err })
+      fail(ws, reqId)
+      return false
     })
 
   return true
