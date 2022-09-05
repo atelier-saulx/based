@@ -31,7 +31,12 @@ export const functionMessage = (
     return false
   }
 
-  // authorize here
+  console.log('wawa')
+  if (
+    !server.auth.config.authorizeAdvanced(server, ws, 'function', name, payload)
+  ) {
+    return false
+  }
 
   server.functions
     .get(name)

@@ -6,9 +6,12 @@ import type {
   ActiveObservable,
 } from './types'
 import { BasedFunctions } from './functions'
+import { BasedAuth } from './auth'
 
 export class BasedServer {
   public functions: BasedFunctions
+
+  public auth: BasedAuth
 
   public port: number
 
@@ -30,6 +33,7 @@ export class BasedServer {
   constructor(opts: ServerOptions) {
     initNetwork(this, opts)
     this.functions = new BasedFunctions(this, opts.functions)
+    this.auth = new BasedAuth(this, opts.auth)
     if (opts.authorizeConnection) {
       this.authorizeConnection = opts.authorizeConnection
     }

@@ -1,6 +1,12 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
+export type AuthConfig = {
+  authorize?: Authorize
+  authorizeAdvanced?: Authorize
+  authHandshake?: AuthorizeHandshake
+}
+
 export type Authorize = (
   server: BasedServer,
   ws: uws.WebSocket,
@@ -8,6 +14,8 @@ export type Authorize = (
   name: string,
   payload?: any
 ) => Promise<boolean>
+
+export type AuthorizeAvanced = Authorize
 
 export type AuthorizeHandshake = (
   server: BasedServer,
@@ -26,9 +34,8 @@ export type ServerOptions = {
   key?: string
   cert?: string
   functions?: FunctionConfig
-  authorize?: Authorize
-  authHandshake?: AuthorizeHandshake
-  authorizeConnection?: AuthorizeConnection
+  auth?: AuthConfig
+  authorizeConnection?: AuthorizeConnection // TODO: Should this go to auth type?
 }
 
 export type ObservableUpdateFunction = (
