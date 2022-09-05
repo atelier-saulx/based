@@ -31,6 +31,8 @@ export const functionMessage = (
     return false
   }
 
+  // authorize here
+
   server.functions
     .get(name)
     .then((spec) => {
