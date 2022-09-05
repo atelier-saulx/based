@@ -4,6 +4,11 @@ import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
 
+const fail = (server: BasedServer, reqId: number) => {
+  console.log('Handle sending error')
+  destroy(server, reqId)
+}
+
 export const subscribeMessage = (
   arr: Uint8Array,
   start: number,
@@ -34,34 +39,45 @@ export const subscribeMessage = (
     isDeflate
   )
 
-  // authorize here
+  server.auth.config
+    .authorizeAdvanced(server, ws, 'observe', name, payload)
+    .then((ok) => {
+      if (!ok) {
+        fail(server, id)
+        return false
+      }
 
-  ws.subscribe(String(id))
-  ws.obs.add(id)
+      ws.subscribe(String(id))
+      ws.obs.add(id)
 
-  if (server.activeObservablesById.has(id)) {
-    subscribe(server, id, checksum, ws)
-  } else {
-    server.functions
-      .get(name)
-      .then((spec) => {
-        if (spec && isObservableFunctionSpec(spec)) {
-          const obs = create(server, name, id, payload)
-          if (!ws.obs.has(id)) {
-            if (obs.clients.size === 0) {
-              destroy(server, id)
+      if (server.activeObservablesById.has(id)) {
+        subscribe(server, id, checksum, ws)
+      } else {
+        server.functions
+          .get(name)
+          .then((spec) => {
+            if (spec && isObservableFunctionSpec(spec)) {
+              const obs = create(server, name, id, payload)
+              if (!ws.obs.has(id)) {
+                if (obs.clients.size === 0) {
+                  destroy(server, id)
+                }
+              } else {
+                subscribe(server, id, checksum, ws)
+              }
+            } else {
+              console.error('No function for you', name)
             }
-          } else {
-            subscribe(server, id, checksum, ws)
-          }
-        } else {
-          console.error('No function for you', name)
-        }
-      })
-      .catch((err) => {
-        console.error('fn does not exist', err)
-      })
-  }
+          })
+          .catch((err) => {
+            console.error('fn does not exist', err)
+          })
+      }
+    })
+    .catch((err) => {
+      console.log({ err })
+      destroy(server, id)
+    })
 
   return true
 }

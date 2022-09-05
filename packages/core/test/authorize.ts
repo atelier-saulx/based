@@ -38,7 +38,7 @@ const setup = async () => {
   return { coreClient, server }
 }
 
-test.serial('authorizeAdvanced', async (t) => {
+test.serial('authorize functions', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'
@@ -67,7 +67,6 @@ test.serial('authorizeAdvanced', async (t) => {
   const result = await coreClient.function('hello', {
     bla: true,
   })
-  console.log({ result })
   t.true(!!result.error)
   // })
   await coreClient.auth(token)
@@ -75,7 +74,62 @@ test.serial('authorizeAdvanced', async (t) => {
   const result2 = await coreClient.function('hello', {
     bla: true,
   })
-  console.log({ result2 })
   t.false(!!result2.error)
   // })
+})
+
+test.serial.skip('authorize observe', async (t) => {
+  t.timeout(4000)
+
+  const token = 'mock_token'
+
+  const { coreClient, server } = await setup()
+
+  server.functions.update({
+    observable: true,
+    name: 'counter',
+    // memCacheTimeout: 2e3,
+    checksum: 2,
+    function: async (payload, update) => {
+      let cnt = 0
+      const counter = setInterval(() => {
+        update('UpdatedFn' + ++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
+  })
+
+  server.auth.updateConfig({
+    authorizeAdvanced: async (_server, ws) => {
+      return ws.authState === token
+    },
+  })
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  const close = coreClient.observe(
+    'counter',
+    (d) => {
+      console.log({ d })
+    },
+    {
+      myQuery: 123,
+    }
+  )
+
+  await new Promise((resolve) => setTimeout(resolve, 3e3))
+
+  close()
+  t.fail()
 })
