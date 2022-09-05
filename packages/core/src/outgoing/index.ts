@@ -86,13 +86,6 @@ export const drainQueue = (client: BasedCoreClient) => {
       }
     }
 
-    // if (client.authRequestId) {
-    //   // TODO: add authInProgress?
-    //   client.connection.ws.send(
-    //     encodeAuthMessage(client.authRequestId, client.authRequest)
-    //   )
-    //   client.authRequestId = null
-    // }
     if (client.authRequest?.inProgress) {
       client.authRequest.promise.then(() => {
         drainQueue(client)

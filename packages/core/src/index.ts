@@ -260,13 +260,15 @@ export class BasedCoreClient extends Emitter {
 
   // -------- Auth
   // maybe only send token on connect / upgrade
-  async auth(token: string | false): Promise<any> {
-    if (token === false) {
-      this.authState = { token: false }
+  async auth(authState): Promise<any> {
+    if (authState === false) {
+      this.authState = false
       this.emit('auth', this.authState)
       return sendAuth(this, this.authState)
-    } else if (typeof token === 'string') {
-      return sendAuth(this, { token })
+    } else if (typeof authState === 'string' || typeof authState === 'object') {
+      return sendAuth(this, authState)
+    } else {
+      throw new Error('Invalid auth() arguments')
     }
   }
 }
