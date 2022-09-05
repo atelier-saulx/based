@@ -208,9 +208,9 @@ export const encodeObservableDiffResponse = (
   }
 }
 
-export const encodeAuthResponse = (id: number, buffer: Buffer): Uint8Array => {
+export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
   // Type 4
-  // | 4 header | 3 id | * payload |
+  // | 4 header | * payload |
 
   let isDeflate = false
 
@@ -220,14 +220,12 @@ export const encodeAuthResponse = (id: number, buffer: Buffer): Uint8Array => {
   }
 
   const headerSize = 4
-  const idSize = 3
-  const msgSize = idSize + buffer.length
+  const msgSize = buffer.length
   const header = encodeHeader(4, isDeflate, msgSize)
   const array = new Uint8Array(headerSize + msgSize)
   storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 4, 3)
   if (buffer.length) {
-    array.set(buffer, 7)
+    array.set(buffer, 4)
   }
   return array
 }

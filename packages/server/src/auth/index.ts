@@ -1,5 +1,7 @@
 import uws from '@based/uws'
 import { deepMerge } from '@saulx/utils'
+import { AuthState } from '../network/message/auth'
+import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
 import { AuthConfig } from '../types'
 import { authorize } from './authorize'
@@ -16,7 +18,6 @@ import { authorize } from './authorize'
 export class BasedAuth {
   server: BasedServer
   config: AuthConfig
-  // sendAuthUpdate
 
   constructor(server: BasedServer, config?: AuthConfig) {
     this.server = server
@@ -28,5 +29,9 @@ export class BasedAuth {
 
   updateConfig(config: AuthConfig) {
     deepMerge(this.config, config)
+  }
+
+  sendAuthUpdate(ws: uws.WebSocket, authState: AuthState) {
+    ws.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
   }
 }

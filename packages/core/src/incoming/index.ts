@@ -218,9 +218,8 @@ export const incoming = async (
 
     // ------- Auth
     else if (type === 4) {
-      // | 4 header | 3 id | * payload |
-      const id = readUint8(buffer, 4, 3)
-      const start = 7
+      // | 4 header | * payload |
+      const start = 4
       const end = len + 4
       let payload: any
 
@@ -235,11 +234,13 @@ export const incoming = async (
         )
       }
 
-      if (client.authRequest.requestId === id) {
+      if (payload === true) {
         client.authState = client.authRequest.authState
-        client.authRequest.resolve(payload)
-        client.emit('auth', client.authState)
+      } else {
+        client.authState = payload
       }
+      if (client.authRequest.resolve) client.authRequest.resolve(payload)
+      client.emit('auth', client.authState)
     }
     // ---------------------------------
   } catch (err) {

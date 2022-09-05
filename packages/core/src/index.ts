@@ -72,14 +72,12 @@ export class BasedCoreClient extends Emitter {
   // -------- Auth state
   authState: AuthState = { token: false }
   authRequest: {
-    requestId: number
     authState: AuthState
     promise: Promise<AuthState>
     resolve: (result: AuthState) => void
     reject: (err: Error) => void
     inProgress: boolean
   } = {
-    requestId: null,
     authState: null,
     promise: null,
     resolve: null,

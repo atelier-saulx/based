@@ -176,11 +176,6 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
     client.authRequest.resolve = resolve
     client.authRequest.reject = reject
 
-    client.requestId++
-    if (client.requestId > 16777215) {
-      client.requestId = 0
-    }
-    client.authRequest.requestId = client.requestId
     client.authRequest.authState = authState
 
     const send = () => {
@@ -188,16 +183,12 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
         setTimeout(send, 0)
       } else {
         client.connection.ws.send(
-          encodeAuthMessage(
-            client.authRequest.requestId,
-            client.authRequest.authState
-          )
+          encodeAuthMessage(client.authRequest.authState)
         )
       }
     }
     send()
   }).finally(() => {
-    client.authRequest.requestId = null
     client.authRequest.authState = null
     client.authRequest.resolve = null
     client.authRequest.reject = null

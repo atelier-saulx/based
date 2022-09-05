@@ -177,3 +177,34 @@ test.serial('auth out', async (t) => {
 
   t.is(coreClient.authState, false)
 })
+
+test.serial('authState update', async (t) => {
+  t.timeout(4000)
+  const { coreClient, server } = await setup()
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await coreClient.auth('mock_token')
+
+  const result = await coreClient.function('hello')
+  t.false(!!result.error) // TODO: Change to test throw
+  server.auth.updateConfig({
+    authorize: async (server, ws) => {
+      const authState = 'second_token'
+      ws.authState = authState
+      server.auth.sendAuthUpdate(ws, authState)
+      return true
+    },
+  })
+  await coreClient.function('hello')
+  t.deepEqual(coreClient.authState, 'second_token')
+})
