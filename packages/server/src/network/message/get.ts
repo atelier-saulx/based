@@ -57,6 +57,8 @@ export const getMessage = (
     isDeflate
   )
 
+  // authorize here
+
   if (server.activeObservablesById.has(id)) {
     const obs = server.activeObservablesById.get(id)
     if (obs.beingDestroyed) {

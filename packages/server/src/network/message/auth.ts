@@ -37,8 +37,12 @@ export const authMessage = (
     return false
   }
 
-  let authState: AuthState
+  // authorizeHandshake here
+
+  // auth state is not a type!
+  let authState: AuthState // TODO: gone!
   try {
+    // this has to be part of the handshake
     authState = JSON.parse(authPayload)
   } catch (err) {
     console.error("can't decode auth payload", err)

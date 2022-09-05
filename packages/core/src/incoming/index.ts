@@ -239,6 +239,7 @@ export const incoming = async (
       if (client.authRequest.requestId === id) {
         client.authState = client.authRequest.authState
         client.authRequest.resolve(payload)
+        client.emit('auth', client.authState)
       }
     }
     // ---------------------------------

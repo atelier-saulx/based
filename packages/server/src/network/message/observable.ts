@@ -34,6 +34,8 @@ export const subscribeMessage = (
     isDeflate
   )
 
+  // authorize here
+
   ws.subscribe(String(id))
   ws.obs.add(id)
 

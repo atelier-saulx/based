@@ -2,8 +2,7 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 
-test.serial('auth', async (t) => {
-  t.timeout(4000)
+const setup = async () => {
   const coreClient = new BasedCoreClient()
 
   const store = {
@@ -43,6 +42,14 @@ test.serial('auth', async (t) => {
       },
     },
   })
+  return { coreClient, server }
+}
+test.serial('simple auth', async (t) => {
+  t.timeout(4000)
+
+  const token = 'mock_token'
+
+  const { coreClient, server } = await setup()
 
   t.teardown(() => {
     coreClient.disconnect()
@@ -50,14 +57,17 @@ test.serial('auth', async (t) => {
   })
 
   coreClient.once('connect', () => {
-    console.info('connect')
+    t.log('connect')
   })
-  coreClient.once('disconnect', (isConnected) => {
-    console.info('disconnect')
+  coreClient.once('disconnect', () => {
+    t.log('disconnect')
   })
 
-  coreClient.once('auth', (authData) => {
-    console.info('auth', { authData })
+  let authEventCount = 0
+  coreClient.once('auth', (result: any) => {
+    t.log('log', { result })
+    t.is(result.token, token)
+    authEventCount++
   })
 
   await coreClient.connect({
@@ -66,16 +76,61 @@ test.serial('auth', async (t) => {
     },
   })
 
-  const token = 'mock_token'
   const result = await coreClient.auth(token)
   t.true(result)
   t.is(coreClient.authState.token, token)
-  // t.false(coreClient.authInProgress)
+  t.false(coreClient.authRequest.inProgress)
+  t.is(authEventCount, 1)
+})
 
-  // console.log(
-  //   'hello',
-  //   await coreClient.function('hello', {
-  //     bla: true,
-  //   })
-  // )
+test.serial('multiple auth calls', async (t) => {
+  t.timeout(4000)
+  const { coreClient, server } = await setup()
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  let authEventCount = 0
+  coreClient.once('auth', () => {
+    authEventCount++
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await t.notThrowsAsync(async () => {
+    await coreClient.auth('first_token')
+    await coreClient.auth('second_token')
+  })
+
+  t.is(coreClient.authState?.token, 'second_token')
+  t.is(authEventCount, 2)
+})
+
+test.serial('auth out', async (t) => {
+  t.timeout(4000)
+  const { coreClient, server } = await setup()
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await t.notThrowsAsync(async () => {
+    await coreClient.auth('mock_token')
+    await coreClient.auth(false)
+  })
+
+  t.is(coreClient.authState?.token, false)
 })
