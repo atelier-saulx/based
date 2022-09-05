@@ -11,6 +11,7 @@ export const decodeHeader = (
   //   0 = functionData
   //   1 = subscriptionData
   //   2 = subscriptionDiffData
+  //   3 = get
   //   4 = authData
   // isDeflate (1 bit)
   // len (28 bits)

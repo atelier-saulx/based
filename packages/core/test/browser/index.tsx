@@ -16,12 +16,18 @@ const init = async () => {
   })
 
   const iqTest = await coreClient.function('iqTest')
+  const small = await coreClient.function('small')
 
   console.info(iqTest)
+  console.info(small)
 
   const close = await coreClient.observe('counter', (data) => {
     console.log('incoming', data)
   })
+
+  // await new Promise((resolve, reject) => setTimeout(resolve, 2500))
+
+  // close()
 }
 
 init()
