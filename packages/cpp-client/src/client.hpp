@@ -22,7 +22,7 @@ class BasedClient {
    private:
     Encoder m_encoder;
     WsConnection m_con;
-    int m_request_id = 0;
+    int32_t m_request_id = 0;
     // std::map<int, void (*)(std::string_view /*data*/, int /*checksum*/)> m_observe_handlers;
     std::map<int, void (*)(std::string_view)> m_function_listeners;
     std::vector<std::string> m_function_queue;
