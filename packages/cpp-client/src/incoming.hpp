@@ -44,7 +44,7 @@ class Incoming {
                 break;
             default:
                 std::cerr << "Unknown payload type \"" << type << "\" received." << std::endl;
-                break;
+                return;
         }
         // std::string header = msg->get_header();
         // std ::string payload = msg->get_payload();

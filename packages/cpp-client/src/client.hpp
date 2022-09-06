@@ -3,10 +3,11 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
-#include "cb_store.hpp"
+// #include "cb_store.hpp"
 #include "connection.hpp"
-#include "incoming.hpp"
+// #include "incoming.hpp"
 #include "outgoing.hpp"
 
 struct ObservableOpts {
@@ -17,8 +18,17 @@ struct ObservableOpts {
 };
 
 class BasedClient {
+    // members
+   private:
+    Encoder m_encoder;
+    WsConnection m_con;
+    int m_request_id = 0;
+    // std::map<int, void (*)(std::string_view /*data*/, int /*checksum*/)> m_observe_handlers;
+    std::map<int, void (*)(std::string_view)> m_function_listeners;
+    std::vector<std::string> m_function_queue;
+
    public:
-    BasedClient() : m_in(m_cb_store), m_con(m_in), m_out(m_con) {}
+    BasedClient() {}
 
     void connect(std::string uri) {
         m_con.connect(uri);
@@ -47,13 +57,8 @@ class BasedClient {
         std::cout << "unobserve not implemented yet" << std::endl;
     };
 
-    void function(std::string name, std::string_view payload, void (*cb)(std::string_view name)) {
-        // create a unique ID that identifies this request
-        int new_id = m_request_id++;
-        // store the listener in the listeners map
-        m_function_handlers[new_id] = cb;
-        // add the request to the outgoing queue
-        // m_function_req_queue.add(name, payload);
+    void function(std::string name, std::string payload, void (*cb)(std::string_view name)) {
+        add_to_fn_queue(name, payload, cb);
     }
 
     void get() {
@@ -65,13 +70,19 @@ class BasedClient {
     }
 
    private:
-    CallbackStore m_cb_store;
-    Incoming m_in;
-    WsConnection m_con;
-    Outgoing m_out;
-    int m_request_id = 0;
-    std::map<int, void (*)(std::string_view /*data*/, int /*checksum*/)> m_observe_handlers;
-    std::map<int, void (*)(std::string_view)> m_function_handlers;
+    // methods
+    void add_to_fn_queue(std::string name, std::string payload, void (*cb)(std::string_view)) {
+        m_request_id++;
+        if (m_request_id > 16777215) {
+            m_request_id = 0;
+        }
+        int id = m_request_id;
+        m_function_listeners[id] = cb;
+        // encode the message
+        m_encoder.encode_function_message(id, name, payload);
+
+        // m_function_queue.push_back(msg);
+    };
 };
 
 #endif

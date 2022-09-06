@@ -35,7 +35,7 @@ int main() {
 
     // std::cout << "OBS started, id = " << id << std::endl;
 
-    client.function("small", "",
+    client.function("small", "{\"hello\":\"yes\"}",
                     [](std::string_view data) { std::cout << "[RES] " << data << std::endl; });
 
     while (true) {

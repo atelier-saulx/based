@@ -1,6 +1,7 @@
 .PHONY: clean
 
-IDIR=include/websocketpp
+WEBSOCKETPPDIR=include/websocketpp
+JSONDIR=include
 CXX = clang++
 
 ODIR=obj
@@ -12,7 +13,7 @@ SRCS = $(filter-out $(SRCDIR)/main.cpp, $(_SRCS))
 _OBJ = $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(SRCS:.c=.o))
 OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
 
-CXXFLAGS +=-I$(IDIR) -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
+CXXFLAGS +=-I$(WEBSOCKETPPDIR) -I$(JSONDIR) -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
 all: main
 

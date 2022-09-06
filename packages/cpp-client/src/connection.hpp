@@ -6,7 +6,7 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 
-#include "incoming.hpp"
+#include "client.hpp"
 
 typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
 
@@ -15,7 +15,7 @@ enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 class WsConnection {
     // eventually there should be some logic here to handle inactivity.
    public:
-    WsConnection(Incoming& in) : m_in(in) {
+    WsConnection() {
         std::cout << "Created a new WsConnection" << std::endl;
         // set the endpoint logging behavior to silent by clearing all of the access and error
         // logging channels
@@ -120,7 +120,6 @@ class WsConnection {
     ws_client::connection_ptr m_con;
     std::string m_uri;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
-    Incoming& m_in;
 };
 
 #endif
