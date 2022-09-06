@@ -1,6 +1,12 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
+export type AuthConfig = {
+  authorize?: Authorize
+  authHandshake?: AuthorizeHandshake
+  authorizeConnection?: AuthorizeConnection
+}
+
 export type Authorize = (
   server: BasedServer,
   ws: uws.WebSocket,
@@ -26,9 +32,7 @@ export type ServerOptions = {
   key?: string
   cert?: string
   functions?: FunctionConfig
-  authorize?: Authorize
-  authHandshake?: AuthorizeHandshake
-  authorizeConnection?: AuthorizeConnection
+  auth?: AuthConfig
 }
 
 export type ObservableUpdateFunction = (

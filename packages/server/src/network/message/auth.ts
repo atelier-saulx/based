@@ -7,15 +7,7 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 
-export type AuthState =
-  | {
-      token: false
-    }
-  | {
-      token: string
-      refreshToken?: string
-      user?: string
-    }
+export type AuthState = any
 
 export const authMessage = (
   arr: Uint8Array,
@@ -25,22 +17,16 @@ export const authMessage = (
   ws: uws.WebSocket,
   server: BasedServer
 ): boolean => {
-  // | 4 header | 3 id | * payload |
+  // | 4 header | * payload |
 
-  const reqId = readUint8(arr, start + 4, 3)
   const authPayload = decodePayload(
-    new Uint8Array(arr.slice(start + 7, start + len)),
+    new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate
   )
 
-  if (!reqId) {
-    return false
-  }
-
   // authorizeHandshake here
 
-  // auth state is not a type!
-  let authState: AuthState // TODO: gone!
+  let authState: AuthState
   try {
     // this has to be part of the handshake
     authState = JSON.parse(authPayload)
@@ -49,7 +35,7 @@ export const authMessage = (
   }
 
   ws.authState = authState
-  ws.send(encodeAuthResponse(reqId, valueToBuffer(true)), true, false)
+  ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 
   return true
 }
