@@ -4,6 +4,7 @@ const json = require('./tmp.json')
 
 const init = async () => {
   const store = {
+    small: async () => 'he',
     iqTest: async () => json,
     counter: async (payload, update) => {
       console.info('init counter', payload)

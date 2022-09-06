@@ -6,6 +6,8 @@
 #include <websocketpp/client.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 
+#include "incoming.hpp"
+
 typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
 
 enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
@@ -13,8 +15,8 @@ enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 class WsConnection {
     // eventually there should be some logic here to handle inactivity.
    public:
-    WsConnection(std::string_view uri) : m_uri(uri) {
-        std::cout << "Created a new WsConnection, uri = " << m_uri << std::endl;
+    WsConnection(Incoming& in) : m_in(in) {
+        std::cout << "Created a new WsConnection" << std::endl;
         // set the endpoint logging behavior to silent by clearing all of the access and error
         // logging channels
         m_ws.clear_access_channels(websocketpp::log::alevel::all);
@@ -45,7 +47,8 @@ class WsConnection {
         m_thread->join();
         std::cout << "Destroyed WsConnection obj" << std::endl;
     };
-    int connect() {
+    int connect(std::string uri) {
+        m_uri = uri;
         websocketpp::lib::error_code ec;
 
         // create connection request to uri
@@ -66,6 +69,8 @@ class WsConnection {
             // here we will pass the message to the decoder, which, based on the header, will call
             // the appropriate callback
 
+            // m_data_handler->incoming(msg);
+
             if (msg->get_opcode() == websocketpp::frame::opcode::text) {
                 std::cout << "[MSG::TEXT] " << msg->get_payload() << std::endl;
             } else {
@@ -75,7 +80,7 @@ class WsConnection {
         });
 
         m_ws.connect(con);
-        std::cout << "Connected to ws" << std::endl;
+        std::cout << "Connected to ws, uri = " << m_uri << std::endl;
         return 0;
     };
     void disconnect() {
@@ -115,7 +120,7 @@ class WsConnection {
     ws_client::connection_ptr m_con;
     std::string m_uri;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
-    // HandlerStore m_store;
+    Incoming& m_in;
 };
 
 #endif
