@@ -29,9 +29,14 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
     idleTimeout: 100,
     maxBackpressure: 1024,
     // compression: uws.SHARED_COMPRESSOR,
-    upgrade: server.authorizeConnection
+    upgrade: server.auth?.config?.authorizeConnection
       ? (res, req, ctx) => {
-          upgradeAuthorize(server.authorizeConnection, res, req, ctx)
+          upgradeAuthorize(
+            server.auth.config.authorizeConnection,
+            res,
+            req,
+            ctx
+          )
         }
       : upgrade,
     message: (ws, data, isBinary) => {

@@ -44,7 +44,7 @@ const setup = async () => {
   })
   return { coreClient, server }
 }
-test.serial('simple auth', async (t) => {
+test.serial('auth string authState', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'
@@ -66,7 +66,7 @@ test.serial('simple auth', async (t) => {
   let authEventCount = 0
   coreClient.once('auth', (result: any) => {
     t.log('log', { result })
-    t.is(result.token, token)
+    t.is(result, token)
     authEventCount++
   })
 
@@ -78,7 +78,50 @@ test.serial('simple auth', async (t) => {
 
   const result = await coreClient.auth(token)
   t.true(result)
-  t.is(coreClient.authState.token, token)
+  t.is(coreClient.authState, token)
+  t.false(coreClient.authRequest.inProgress)
+  t.is(authEventCount, 1)
+})
+
+test.serial('auth object authState', async (t) => {
+  t.timeout(4000)
+
+  const authState = {
+    token: 'mock_token',
+    renewToken: 'mock_renew_token',
+    userId: 'usUser',
+  }
+
+  const { coreClient, server } = await setup()
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  coreClient.once('connect', () => {
+    t.log('connect')
+  })
+  coreClient.once('disconnect', () => {
+    t.log('disconnect')
+  })
+
+  let authEventCount = 0
+  coreClient.once('auth', (result: any) => {
+    t.log('log', { result })
+    t.deepEqual(result, authState)
+    authEventCount++
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  const result = await coreClient.auth(authState)
+  t.true(result)
+  t.is(coreClient.authState, authState)
   t.false(coreClient.authRequest.inProgress)
   t.is(authEventCount, 1)
 })
@@ -108,7 +151,7 @@ test.serial('multiple auth calls', async (t) => {
     await coreClient.auth('second_token')
   })
 
-  t.is(coreClient.authState?.token, 'second_token')
+  t.is(coreClient.authState, 'second_token')
   t.is(authEventCount, 2)
 })
 
@@ -132,5 +175,36 @@ test.serial('auth out', async (t) => {
     await coreClient.auth(false)
   })
 
-  t.is(coreClient.authState?.token, false)
+  t.is(coreClient.authState, false)
+})
+
+test.serial('authState update', async (t) => {
+  t.timeout(4000)
+  const { coreClient, server } = await setup()
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await coreClient.auth('mock_token')
+
+  const result = await coreClient.function('hello')
+  t.false(!!result.error) // TODO: Change to test throw
+  server.auth.updateConfig({
+    authorize: async (server, ws) => {
+      const authState = 'second_token'
+      ws.authState = authState
+      server.auth.sendAuthUpdate(ws, authState)
+      return true
+    },
+  })
+  await coreClient.function('hello')
+  t.deepEqual(coreClient.authState, 'second_token')
 })

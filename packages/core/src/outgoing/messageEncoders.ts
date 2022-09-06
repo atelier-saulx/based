@@ -150,22 +150,21 @@ export const encodeFunctionMessage = (
   // l += len
 }
 
-export const encodeAuthMessage = (id: number, authState: AuthState) => {
-  // | 4 header | 3 id | * payload |
-  let len = 7
+export const encodeAuthMessage = (authState: AuthState) => {
+  // | 4 header | * payload |
+  let len = 4
   const [isDeflate, as] = encodePayload(authState)
   if (as) {
     len += as.length
   }
   const header = encodeHeader(4, isDeflate, len)
-  const buff = new Uint8Array(4 + 3)
+  const buff = new Uint8Array(4)
   storeUint8(buff, header, 0, 4)
-  storeUint8(buff, id, 4, 3)
-  buff[7] = as.length
+  buff[4] = as.length
   const n = new Uint8Array(len)
   n.set(buff)
   if (as) {
-    n.set(as, 7)
+    n.set(as, 4)
   }
   return n
 }
