@@ -264,14 +264,16 @@ One of the first things a Based user will have to do is set a schema for its dat
 
 ```js
 await client.updateSchema({
-  types: {
-    thing: {
-      fields: {
-        name: { type: 'string' },
-        nested: {
-          type: 'object',
-          properties: {
-            something: { type: 'string' },
+  schema: {
+    types: {
+      thing: {
+        fields: {
+          name: { type: 'string' },
+          nested: {
+            type: 'object',
+            properties: {
+              something: { type: 'string' },
+            },
           },
         },
       },
