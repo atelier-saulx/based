@@ -271,6 +271,14 @@ export const incoming = async (
           client.functionResponseListeners.delete(payload.requestId)
         }
       }
+      if (payload.observableId) {
+        if (client.observeState.has(payload.observableId)) {
+          const observable = client.observeState.get(payload.observableId)
+          for (const [, handlers] of observable.subscribers) {
+            handlers.onError(error)
+          }
+        }
+      }
       // if (client.authRequest.resolve) client.authRequest.resolve(payload)
       // client.emit('auth', client.authState)
     }

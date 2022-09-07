@@ -1,11 +1,15 @@
 export enum BasedErrorCode {
   FunctionError = 50001,
+  FunctionNotFound = 40401,
+  AuthorizeError = 50002,
+  AuthorizeRejectedError = 40301,
 }
 
 export type BasedErrorData = {
   message: string
   stack: string
   requestId?: number
+  observableId?: number
   basedCode: BasedErrorCode
   statusCode?: number
 }

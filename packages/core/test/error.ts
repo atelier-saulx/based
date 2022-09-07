@@ -2,6 +2,7 @@ import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { wait } from '@saulx/utils'
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
@@ -10,6 +11,9 @@ const setup = async (t: ExecutionContext) => {
   const store = {
     throwingFunction: async () => {
       throw new Error('This is error message')
+    },
+    counter: async (_payload, update) => {
+      update({ yeye: 'yeye' })
     },
   }
 
@@ -24,6 +28,7 @@ const setup = async (t: ExecutionContext) => {
       register: async ({ name }) => {
         if (store[name]) {
           return {
+            observable: name === 'counter',
             name,
             checksum: 1,
             function: store[name],
@@ -60,4 +65,57 @@ test.serial('function error', async (t) => {
     coreClient.function('throwingFunction')
   )) as BasedError
   t.is(error.basedCode, BasedErrorCode.FunctionError)
+})
+
+test.serial('function authorize error', async (t) => {
+  const { coreClient, server } = await setup(t)
+
+  server.auth.updateConfig({
+    authorize: async (_server) => {
+      throw new Error('Error inside authrorize')
+    },
+  })
+
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  // TODO: Check error instance of
+  const error = (await t.throwsAsync(
+    coreClient.function('throwingFunction')
+  )) as BasedError
+  t.is(error.basedCode, BasedErrorCode.AuthorizeError)
+})
+
+test.serial('observable authorize error', async (t) => {
+  const { coreClient, server } = await setup(t)
+
+  server.auth.updateConfig({
+    authorize: async (_server) => {
+      throw new Error('Error inside authrorize')
+    },
+  })
+
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  // TODO: Check error instance of
+  const error = (await new Promise((resolve) => {
+    coreClient.observe(
+      'counter',
+      (v) => {
+        console.log({ v })
+      },
+      {},
+      (err) => {
+        resolve(err)
+      }
+    )
+  })) as BasedError
+  t.is(error.basedCode, BasedErrorCode.AuthorizeError)
 })

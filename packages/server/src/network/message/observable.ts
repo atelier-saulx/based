@@ -3,11 +3,7 @@ import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
-
-const fail = (server: BasedServer, reqId: number) => {
-  console.log('Handle sending error')
-  destroy(server, reqId)
-}
+import { sendError, BasedErrorCode } from '../../error'
 
 export const subscribeMessage = (
   arr: Uint8Array,
@@ -43,7 +39,10 @@ export const subscribeMessage = (
     .authorize(server, ws, 'observe', name, payload)
     .then((ok) => {
       if (!ok) {
-        fail(server, id)
+        sendError(ws, 'Not authorized', {
+          basedCode: BasedErrorCode.AuthorizeRejectedError,
+          observableId: id,
+        })
         return false
       }
 
@@ -75,7 +74,10 @@ export const subscribeMessage = (
       }
     })
     .catch((err) => {
-      console.log({ err })
+      sendError(ws, err, {
+        basedCode: BasedErrorCode.AuthorizeError,
+        observableId: id,
+      })
       destroy(server, id)
     })
 

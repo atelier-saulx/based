@@ -10,15 +10,6 @@ import {
 import { BasedServer } from '../../server'
 import { sendError, BasedErrorCode } from '../../error'
 
-// TMP
-const fail = (ws: uws.WebSocket, reqId: number) => {
-  ws.send(
-    encodeFunctionResponse(reqId, valueToBuffer({ error: 'this is an error' })),
-    true,
-    false
-  )
-}
-
 export const functionMessage = (
   arr: Uint8Array,
   start: number,
@@ -45,7 +36,10 @@ export const functionMessage = (
     .authorize(server, ws, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
-        fail(ws, reqId)
+        sendError(ws, 'Not authorized', {
+          basedCode: BasedErrorCode.AuthorizeRejectedError,
+          requestId: reqId,
+        })
         return false
       }
       server.functions
@@ -83,8 +77,10 @@ export const functionMessage = (
         })
     })
     .catch((err) => {
-      console.log({ err })
-      fail(ws, reqId)
+      sendError(ws, err, {
+        basedCode: BasedErrorCode.AuthorizeError,
+        requestId: reqId,
+      })
       return false
     })
 
