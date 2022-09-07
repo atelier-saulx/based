@@ -11,7 +11,10 @@ export const rest = (
   res: uws.HttpResponse
 ) => {
   // no make a type 'context'
-
+  res.onAborted(() => {
+    client.isAborted = true
+    console.info('abort...', client.id)
+  })
   // if no handler for path will try to read / get from functions/obs (not by name but by path)
 
   // default routes
@@ -31,7 +34,6 @@ export const rest = (
   const path = url.split('/')
 
   const client: RestClient = {
-    req,
     res,
     query,
     ua,
@@ -41,20 +43,11 @@ export const rest = (
 
   // have to allow "get" as well
   if (path[1] === 'function' && path[2]) {
-    res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...')
-    })
-
     functionRest(path[2], undefined, false, client, server)
     return
   }
 
   if (server.functions.config.registerByPath) {
-    res.onAborted(() => {
-      console.info('abort...')
-    })
-
     server.functions.getByPath(url).then((spec) => {
       if (client.isAborted) {
         return

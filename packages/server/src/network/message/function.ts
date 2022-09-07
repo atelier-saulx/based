@@ -54,6 +54,7 @@ export const functionMessage = (
             spec
               .function(payload, ws)
               .then((v) => {
+                // have to check if its closed.. EVERYWHERE
                 ws.send(
                   encodeFunctionResponse(reqId, valueToBuffer(v)),
                   true,

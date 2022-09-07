@@ -2,7 +2,6 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
 export type RestClient = {
-  req: uws.HttpRequest
   res: uws.HttpResponse
 } & { [contextField: string]: any }
 

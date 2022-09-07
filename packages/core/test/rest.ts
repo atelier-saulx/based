@@ -16,12 +16,15 @@ test.serial('functions (over rest)', async (t) => {
       // customHttpRequest
       // get query prams -> payload
       // post DATA
-      customHttpResponse: async (result, payload, { res, req, isAborted }) => {
+      customHttpResponse: async (result, payload, client) => {
+        const { res, isAborted, id } = client
+        console.info('okidoki?', isAborted, id)
+
         if (isAborted) {
           return
         }
         res.writeStatus('200 OkiDoki')
-        res.end('yesh ' + result + ' ' + req.getUrl())
+        res.end('yesh ' + result)
         return true
       },
     },

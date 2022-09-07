@@ -35,6 +35,7 @@ export const functionRest = (
                     return
                   }
                   if (spec.customHttpResponse) {
+                    console.log(client)
                     if (
                       await spec.customHttpResponse(result, payload, client)
                     ) {
@@ -57,7 +58,7 @@ export const functionRest = (
                     return
                   }
                   // error handling nice
-                  console.error('bad fn', err)
+                  console.error('bad fn', client.id, client.isAborted, err)
                   client.res.end('wrong!')
                 })
             }

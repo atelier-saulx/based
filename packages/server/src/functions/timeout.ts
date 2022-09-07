@@ -5,7 +5,6 @@ export const fnIsTimedOut = (
 ): boolean => {
   if (spec.timeoutCounter !== -1) {
     if (spec.timeoutCounter === 0) {
-      console.log('fnIsTimedOut', spec.name)
       return true
     }
     if (spec.idleTimeout > 0 && spec.timeoutCounter > 0) {
@@ -19,8 +18,6 @@ export const updateTimeoutCounter = (
   spec: BasedObservableFunctionSpec | BasedFunctionSpec
 ) => {
   if (spec.timeoutCounter !== -1) {
-    console.log('UPDATE', Math.ceil(spec.idleTimeout / 1e3 / 3), spec.name)
-
     spec.timeoutCounter =
       spec.idleTimeout === -1 ? -1 : Math.ceil(spec.idleTimeout / 1e3 / 3)
   }
