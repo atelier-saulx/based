@@ -68,6 +68,9 @@ export const subscribe = (
   }
   obs.clients.add(ws.id)
   if (obs.cache && obs.checksum !== checksum) {
+    if (ws.closed) {
+      return
+    }
     if (obs.diffCache && obs.previousChecksum === checksum) {
       ws.send(obs.diffCache, true, false)
     } else {

@@ -36,10 +36,12 @@ export const functionMessage = (
     .authorize(server, ws, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
-        sendError(ws, 'Not authorized', {
-          basedCode: BasedErrorCode.AuthorizeRejectedError,
-          requestId: reqId,
-        })
+        if (!ws.closed) {
+          sendError(ws, 'Not authorized', {
+            basedCode: BasedErrorCode.AuthorizeRejectedError,
+            requestId: reqId,
+          })
+        }
         return false
       }
       server.functions
@@ -49,11 +51,15 @@ export const functionMessage = (
             spec
               .function(payload, ws)
               .then((v) => {
-                ws.send(
-                  encodeFunctionResponse(reqId, valueToBuffer(v)),
-                  true,
-                  false
-                )
+                // have to check if its closed.. EVERYWHERE
+
+                if (!ws.closed) {
+                  ws.send(
+                    encodeFunctionResponse(reqId, valueToBuffer(v)),
+                    true,
+                    false
+                  )
+                }
               })
               .catch((err) => {
                 sendError(ws, err, {
@@ -77,10 +83,12 @@ export const functionMessage = (
         })
     })
     .catch((err) => {
-      sendError(ws, err, {
-        basedCode: BasedErrorCode.AuthorizeError,
-        requestId: reqId,
-      })
+      if (!ws.closed) {
+        sendError(ws, err, {
+          basedCode: BasedErrorCode.AuthorizeError,
+          requestId: reqId,
+        })
+      }
       return false
     })
 

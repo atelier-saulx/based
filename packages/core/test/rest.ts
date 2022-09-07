@@ -1,7 +1,7 @@
 import test from 'ava'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
-// import fetch from 'cross-fetch'
+import fetch from 'cross-fetch'
 
 test.serial('functions (over rest)', async (t) => {
   const store = {
@@ -10,7 +10,22 @@ test.serial('functions (over rest)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        return payload.length
+        return payload?.length ?? 0
+      },
+
+      // customHttpRequest
+      // get query prams -> payload
+      // post DATA
+      customHttpResponse: async (result, payload, client) => {
+        const { res, isAborted, id } = client
+        console.info('okidoki?', isAborted, id)
+
+        if (isAborted) {
+          return
+        }
+        res.writeStatus('200 OkiDoki')
+        res.end('yesh ' + result)
+        return true
       },
     },
   }
@@ -21,9 +36,17 @@ test.serial('functions (over rest)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       unregister: async () => {
+        console.info('--- wait wait unreg')
+        await wait(5e3)
+        console.info('--- wait wait unreg DONE')
+        console.info('UNREGISTERT...')
         return true
       },
       registerByPath: async ({ path }) => {
+        console.info('--- wait wait unreg')
+        await wait(3e3)
+        console.info('--- wait wait unreg DONE')
+
         for (const name in store) {
           if (store[name].path === path) {
             return store[name]
@@ -44,9 +67,16 @@ test.serial('functions (over rest)', async (t) => {
     },
   })
 
-  const result = (await fetch('http://localhost:9910/flap')).text()
+  const result = await (await fetch('http://localhost:9910/flap')).text()
 
   console.info(result)
+
+  const result2 = await (
+    await fetch('http://localhost:9910/flap?flurp=1')
+  ).text()
+
+  console.info(result2)
+
   //   let str = ''
   //   for (let i = 0; i < 200000; i++) {
   //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
@@ -68,7 +98,15 @@ test.serial('functions (over rest)', async (t) => {
 
   //   t.true(bigString.length > 5e6)
 
-  await wait(3e3)
+  await wait(23e3)
+
+  // GET
+
+  // custom headers
+
+  // payload
+
+  // deflate
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })

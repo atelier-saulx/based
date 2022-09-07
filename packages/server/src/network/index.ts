@@ -61,6 +61,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         ws.obs.forEach((id) => {
           unsubscribeIgnoreClient(server, id, ws)
         })
+        ws.closed = true
       },
       drain: () => {
         console.info('drain')
