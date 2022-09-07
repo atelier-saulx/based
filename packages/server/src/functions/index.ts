@@ -110,20 +110,13 @@ export class BasedFunctions {
   async getByPath(
     path: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
-    console.log(this.config)
-
     if (!this.config.registerByPath) {
-      console.log('no registerByPath')
       return false
     }
     const name = this.getNameFromPath(path)
     if (name) {
-      console.log('got name', name)
-
       return this.get(name)
     } else {
-      console.log('???')
-
       const spec = await this.config.registerByPath({
         server: this.server,
         path,
