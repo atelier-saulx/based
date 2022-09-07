@@ -42,6 +42,10 @@ export const subscribeMessage = (
   server.auth.config
     .authorize(server, ws, 'observe', name, payload)
     .then((ok) => {
+      if (ws.closed) {
+        return
+      }
+
       if (!ok) {
         fail(server, id)
         return false
@@ -94,6 +98,10 @@ export const unsubscribeMessage = (
 
   if (!id) {
     return false
+  }
+
+  if (ws.closed) {
+    return
   }
 
   ws.unsubscribe(String(id))

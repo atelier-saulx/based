@@ -1,6 +1,5 @@
 import uws from '@based/uws'
 import {
-  readUint8,
   valueToBuffer,
   decodePayload,
   encodeAuthResponse,
@@ -34,9 +33,8 @@ export const authMessage = (
   } catch (err) {
     console.error("can't decode auth payload", err)
   }
-
-  ws.authState = authState
   if (!ws.closed) {
+    ws.authState = authState
     ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   }
 
