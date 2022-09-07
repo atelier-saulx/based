@@ -1,11 +1,12 @@
 #ifndef BASED_OUTGOING_H
 #define BASED_OUTGOING_H
 
+#include <zlib.h>  //https://panthema.net/2007/0328-ZLibString.html
+
 #include <cstdint>
 #include <iostream>
 #include <string>
 #include <vector>
-#include "zlib.h"
 
 #include <json.hpp>
 
