@@ -23,6 +23,14 @@ test.serial('functions (over rest)', async (t) => {
       unregister: async () => {
         return true
       },
+      registerByPath: async ({ path }) => {
+        for (const name in store) {
+          if (store[name].path === path) {
+            return store[name]
+          }
+        }
+        return false
+      },
       register: async ({ name }) => {
         if (store[name]) {
           return store[name]

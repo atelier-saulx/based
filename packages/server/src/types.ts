@@ -75,17 +75,15 @@ export type FunctionConfig = {
   idleTimeout?: number // in ms
   maxWorkers?: number
 
-  register: (
-    opts:
-      | {
-          server: BasedServer
-          name: string
-        }
-      | {
-          server: BasedServer
-          path: string
-        }
-  ) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+  registerByPath?: (opts: {
+    server: BasedServer
+    path: string
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+
+  register: (opts: {
+    server: BasedServer
+    name: string
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
   unregister: (opts: {
     server: BasedServer
