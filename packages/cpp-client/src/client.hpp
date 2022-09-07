@@ -5,10 +5,16 @@
 #include <string>
 #include <vector>
 
-// #include "cb_store.hpp"
 #include "connection.hpp"
-// #include "incoming.hpp"
-#include "outgoing.hpp"
+#include "utility.hpp"
+
+enum IncomingType {
+    FUNCTION_DATA = 0,
+    SUBSCRIPTION_DATA = 1,
+    SUBSCRIPTION_DIFF_DATA = 2,
+    GET_DATA = 3,
+    AUTH_DATA = 4
+};
 
 struct ObservableOpts {
     ObservableOpts(bool ls, int mct) : local_storage(ls), max_cache_time(mct){};
@@ -20,18 +26,30 @@ struct ObservableOpts {
 class BasedClient {
     // members
    private:
-    Encoder m_encoder;
     WsConnection m_con;
     int32_t m_request_id = 0;
     // std::map<int, void (*)(std::string_view /*data*/, int /*checksum*/)> m_observe_handlers;
-    std::map<int, void (*)(std::string_view)> m_function_listeners;
+    std::map<int, std::function<void(std::string_view)>> m_function_listeners;
     std::vector<std::string> m_function_queue;
 
    public:
-    BasedClient() {}
+    BasedClient() {
+        // m_con.set_message_handler([](std::string msg) {
+        //     int32_t header = Utility::read_header(msg);
+        //     std::cout << "type = " << Utility::get_payload_type(header) << std::endl;
+        //     std::cout << "len = " << Utility::get_payload_len(header) << std::endl;
+        //     std::cout << "is_deflate = " << Utility::get_payload_is_deflate(header) << std::endl;
+        // });
+
+        m_con.set_message_handler([&](std::string msg) { on_message(msg); });
+    }
 
     void connect(std::string uri) {
         m_con.connect(uri);
+    }
+
+    void disconnect() {
+        m_con.disconnect();
     }
 
     /**
@@ -57,7 +75,7 @@ class BasedClient {
         std::cout << "unobserve not implemented yet" << std::endl;
     };
 
-    void function(std::string name, std::string payload, void (*cb)(std::string_view name)) {
+    void function(std::string name, std::string payload, std::function<void(std::string_view)> cb) {
         add_to_fn_queue(name, payload, cb);
     }
 
@@ -71,7 +89,10 @@ class BasedClient {
 
    private:
     // methods
-    void add_to_fn_queue(std::string name, std::string payload, void (*cb)(std::string_view)) {
+    void add_to_fn_queue(std::string name,
+                         std::string payload,
+                         std::function<void(std::string_view)> cb) {
+        // TODO: these must be sent in order
         m_request_id++;
         if (m_request_id > 16777215) {
             m_request_id = 0;
@@ -79,9 +100,46 @@ class BasedClient {
         int id = m_request_id;
         m_function_listeners[id] = cb;
         // encode the message
-        m_encoder.encode_function_message(id, name, payload);
+        std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
+        m_con.sendBinary(msg);
 
         // m_function_queue.push_back(msg);
+    };
+
+    void on_message(std::string message) {
+        if (message.length() <= 4) {
+            std::cerr << ">> Payload is too small, wrong data: " << message << std::endl;
+            return;
+        }
+        int32_t header = Utility::read_header(message);
+        int32_t type = Utility::get_payload_type(header);
+        int32_t len = Utility::get_payload_len(header);
+        int32_t is_deflate = Utility::get_payload_is_deflate(header);
+
+        switch (type) {
+            case IncomingType::FUNCTION_DATA: {
+                int32_t id = Utility::read_id(message);
+                if (m_function_listeners.find(id) != m_function_listeners.end()) {
+                    std::function<void(std::string_view)> fn = m_function_listeners.at(id);
+                    fn("");
+                }
+                break;
+            }
+            case IncomingType::SUBSCRIPTION_DATA:
+                break;
+            case IncomingType::SUBSCRIPTION_DIFF_DATA:
+                break;
+            case IncomingType::GET_DATA:
+                break;
+            case IncomingType::AUTH_DATA:
+                break;
+            default:
+                std::cerr << ">> Unknown payload type \"" << type << "\" received." << std::endl;
+                return;
+        }
+        // std::string header = msg->get_header();
+        // std ::string payload = msg->get_payload();
+        // std::cout << "[MSG] \n\t[HEADER]" << header << "\n\t[PAYLOAD]" << payload << std::endl;
     };
 };
 

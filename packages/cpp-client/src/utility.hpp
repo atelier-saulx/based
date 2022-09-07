@@ -5,12 +5,13 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "zlib.h"
 
 #include <json.hpp>
 
 using json = nlohmann::json;
 
-namespace Encoder {
+namespace Utility {
 void append_string(std::vector<uint8_t>& buff, std::string payload) {
     char const* data = payload.data();
     for (int i = 0; i < payload.length(); i++) {
@@ -22,7 +23,6 @@ std::string encode_payload(json obj) {
 };
 void encode_header(std::vector<uint8_t>& buff, int32_t type, int32_t is_deflate, int32_t len) {
     // must do int32_t arithmetics because of the js client
-    std::cout << "len " << len << std::endl;
     int32_t meta = (type << 1) + is_deflate;
     int32_t value = (len << 4) + meta;
     for (int i = 0; i < 4; i++) {
@@ -36,16 +36,16 @@ void encode_id(std::vector<uint8_t>& buff, int32_t id) {
         buff.push_back(byte);
     }
 }
-std::string encode_get_observe_message(int id,
-                                       int type,
-                                       std::string name,
-                                       int checksum,
-                                       std::string payload) {}
-std::string encode_observe_message(int id,
-                                   int type,
-                                   std::string name,
-                                   int checksum,
-                                   std::string payload) {}
+// std::string encode_get_observe_message(int id,
+//                                        int type,
+//                                        std::string name,
+//                                        int checksum,
+//                                        std::string payload) {}
+// std::string encode_observe_message(int id,
+//                                    int type,
+//                                    std::string name,
+//                                    int checksum,
+//                                    std::string payload) {}
 
 std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::string payload) {
     std::vector<uint8_t> buff;
@@ -65,14 +65,49 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
     if (p.length()) {
         append_string(buff, payload);
     }
-    for (int i = 0; i < buff.size(); i++) {
-        std::cout << "buff " << i << " = " << (int)buff.at(i) << ",\t 0x" << std::hex << +buff.at(i)
-                  << std::dec << std::endl;
-    }
+    // for (int i = 0; i < buff.size(); i++) {
+    //     std::cout << "buff " << i << " = " << (int)buff.at(i) << ",\t 0x" << std::hex <<
+    //     +buff.at(i)
+    //               << std::dec << std::endl;
+    // }
 
     return buff;
 }
-std::string encode_auth_message(int id, std::string payload) {}
-};  // namespace Encoder
+// std::string encode_auth_message(int id, std::string payload) {}
+
+int32_t get_payload_type(int32_t header) {
+    int32_t meta = header & 15;
+    int32_t type = meta >> 1;
+    return type;
+}
+int32_t get_payload_len(int32_t header) {
+    int32_t len = header >> 4;
+    return len;
+}
+int32_t get_payload_is_deflate(int32_t header) {
+    int32_t meta = header & 15;
+    int32_t is_deflate = meta & 1;
+    return is_deflate;
+}
+int32_t read_header(std::string buff) {
+    char const* data = buff.data();
+    int32_t res = 0;
+    size_t s = 3;
+    for (int i = s; i >= 0; i--) {
+        res = res * 256 + (uint8_t)data[i];
+    }
+    return res;
+}
+int32_t read_id(std::string buff) {
+    char const* data = buff.data();
+    int32_t res = 0;
+    size_t s = 2 + 4;  // len - 1 + start;
+    for (int i = s; i >= 4; i--) {
+        res = res * 256 + (uint8_t)data[i];
+    }
+    return res;
+}
+
+};  // namespace Utility
 
 #endif
