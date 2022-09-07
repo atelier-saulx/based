@@ -4,12 +4,11 @@ import {
   readUint8,
   valueToBuffer,
   encodeFunctionResponse,
-  encodeErrorResponse,
   decodePayload,
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { generateErrorData, BasedErrorCode } from '../../error'
+import { sendError, BasedErrorCode } from '../../error'
 
 // TMP
 const fail = (ws: uws.WebSocket, reqId: number) => {
@@ -63,25 +62,24 @@ export const functionMessage = (
                 )
               })
               .catch((err) => {
-                const errorData = generateErrorData(
-                  err,
-                  BasedErrorCode.FunctionError,
-                  {
-                    requestId: reqId,
-                  }
-                )
-                ws.send(
-                  encodeErrorResponse(valueToBuffer(errorData)),
-                  true,
-                  false
-                )
+                sendError(ws, err, {
+                  basedCode: BasedErrorCode.FunctionError,
+                  requestId: reqId,
+                })
               })
           } else {
-            console.error('No function for you')
+            sendError(ws, 'No function for you', {
+              basedCode: BasedErrorCode.FunctionNotFound,
+              requestId: reqId,
+            })
           }
         })
-        .catch((err) => {
-          console.error('fn does not exist', err)
+        .catch((_err) => {
+          // console.error('fn does not exist', err)
+          sendError(ws, 'fn does not exist', {
+            basedCode: BasedErrorCode.FunctionNotFound,
+            requestId: reqId,
+          })
         })
     })
     .catch((err) => {

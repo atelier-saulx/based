@@ -12,17 +12,19 @@ export type BasedErrorData = {
 
 // TODO: Bellow functions should go to the fluffy client
 export class BasedError extends Error {
-  public message: string
-  public stack: string
   public code?: string
   public basedCode?: BasedErrorCode
+
+  constructor(message: string) {
+    super(message)
+  }
 }
 
 export const convertDataToBasedError = (
   payload: BasedErrorData
 ): BasedError => {
-  const { message, requestId, ...otherProps } = payload
-  const error = new BasedError(payload.message)
+  const { message, /*requestId,*/ ...otherProps } = payload
+  const error = new BasedError(message)
   Object.keys(otherProps).forEach((key) => {
     error[key] = otherProps[key]
   })
