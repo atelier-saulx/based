@@ -1,6 +1,5 @@
 import uws from '@based/uws'
 import {
-  readUint8,
   valueToBuffer,
   decodePayload,
   encodeAuthResponse,
@@ -15,6 +14,7 @@ export const authMessage = (
   len: number,
   isDeflate: boolean,
   ws: uws.WebSocket,
+  // eslint-disable-next-line
   server: BasedServer
 ): boolean => {
   // | 4 header | * payload |
@@ -33,9 +33,10 @@ export const authMessage = (
   } catch (err) {
     console.error("can't decode auth payload", err)
   }
-
-  ws.authState = authState
-  ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  if (!ws.closed) {
+    ws.authState = authState
+    ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  }
 
   return true
 }

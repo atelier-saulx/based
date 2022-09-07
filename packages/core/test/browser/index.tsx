@@ -15,15 +15,19 @@ const init = async () => {
     console.info('connect', isConnected)
   })
 
-  const iqTest = await coreClient.function('iqTest')
-  const small = await coreClient.function('small')
+  // const iqTest = await coreClient.function('iqTest')
+  // const small = await coreClient.function('small')
 
-  console.info(iqTest)
-  console.info(small)
+  // console.info(iqTest)
+  // console.info(small)
 
-  const close = await coreClient.observe('counter', (data) => {
-    console.log('incoming', data)
-  })
+  const flap = await coreClient.function('flap')
+
+  console.info('GOT FLAP', flap)
+
+  // const close = await coreClient.observe('counter', (data) => {
+  //   console.log('incoming', data)
+  // })
 
   // await new Promise((resolve, reject) => setTimeout(resolve, 2500))
 

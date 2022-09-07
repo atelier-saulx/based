@@ -116,6 +116,6 @@ test.serial('observables', async (t) => {
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  await wait(3e3)
+  await wait(6e3)
   t.is(Object.keys(server.functions.observables).length, 0)
 })

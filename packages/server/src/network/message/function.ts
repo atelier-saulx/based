@@ -8,14 +8,7 @@ import {
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-
-const fail = (ws: uws.WebSocket, reqId: number) => {
-  ws.send(
-    encodeFunctionResponse(reqId, valueToBuffer({ error: 'this is an error' })),
-    true,
-    false
-  )
-}
+import { sendError, BasedErrorCode } from '../../error'
 
 export const functionMessage = (
   arr: Uint8Array,
@@ -43,7 +36,12 @@ export const functionMessage = (
     .authorize(server, ws, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
-        fail(ws, reqId)
+        if (!ws.closed) {
+          sendError(ws, 'Not authorized', {
+            basedCode: BasedErrorCode.AuthorizeRejectedError,
+            requestId: reqId,
+          })
+        }
         return false
       }
       server.functions
@@ -53,27 +51,44 @@ export const functionMessage = (
             spec
               .function(payload, ws)
               .then((v) => {
-                ws.send(
-                  encodeFunctionResponse(reqId, valueToBuffer(v)),
-                  true,
-                  false
-                )
+                // have to check if its closed.. EVERYWHERE
+
+                if (!ws.closed) {
+                  ws.send(
+                    encodeFunctionResponse(reqId, valueToBuffer(v)),
+                    true,
+                    false
+                  )
+                }
               })
               .catch((err) => {
-                // error handling nice
-                console.error('bad fn', err)
+                sendError(ws, err, {
+                  basedCode: BasedErrorCode.FunctionError,
+                  requestId: reqId,
+                })
               })
           } else {
-            console.error('No function for you')
+            sendError(ws, 'No function for you', {
+              basedCode: BasedErrorCode.FunctionNotFound,
+              requestId: reqId,
+            })
           }
         })
-        .catch((err) => {
-          console.error('fn does not exist', err)
+        .catch((_err) => {
+          // console.error('fn does not exist', err)
+          sendError(ws, 'fn does not exist', {
+            basedCode: BasedErrorCode.FunctionNotFound,
+            requestId: reqId,
+          })
         })
     })
     .catch((err) => {
-      console.log({ err })
-      fail(ws, reqId)
+      if (!ws.closed) {
+        sendError(ws, err, {
+          basedCode: BasedErrorCode.AuthorizeError,
+          requestId: reqId,
+        })
+      }
       return false
     })
 
