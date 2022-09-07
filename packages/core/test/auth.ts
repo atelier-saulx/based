@@ -1,4 +1,5 @@
 import test from 'ava'
+import uws from '@based/uws'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 
@@ -195,13 +196,12 @@ test.serial('authState update', async (t) => {
 
   await coreClient.auth('mock_token')
 
-  const result = await coreClient.function('hello')
-  t.false(!!result.error) // TODO: Change to test throw
+  await t.notThrowsAsync(coreClient.function('hello'))
   server.auth.updateConfig({
     authorize: async (server, ws) => {
       const authState = 'second_token'
       ws.authState = authState
-      server.auth.sendAuthUpdate(ws, authState)
+      server.auth.sendAuthUpdate(ws as uws.WebSocket, authState)
       return true
     },
   })

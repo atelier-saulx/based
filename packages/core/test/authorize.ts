@@ -62,20 +62,17 @@ test.serial('authorize functions', async (t) => {
     },
   })
 
-  // TODO: Change when throws on error
-  // await t.throwsAsync(async () => {
-  const result = await coreClient.function('hello', {
-    bla: true,
-  })
-  t.true(!!result.error)
-  // })
+  await t.throwsAsync(
+    coreClient.function('hello', {
+      bla: true,
+    })
+  )
   await coreClient.auth(token)
-  // await t.notThrowsAsync(async () => {
-  const result2 = await coreClient.function('hello', {
-    bla: true,
-  })
-  t.false(!!result2.error)
-  // })
+  await t.notThrowsAsync(
+    coreClient.function('hello', {
+      bla: true,
+    })
+  )
 })
 
 test.serial.skip('authorize observe', async (t) => {
