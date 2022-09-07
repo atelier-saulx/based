@@ -14,10 +14,16 @@ export const functionRest = (
   server.functions
     .get(name)
     .then((spec) => {
+      if (client.isAborted) {
+        return
+      }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.auth.config
           .authorize(server, client, 'function', name, payload)
           .then((ok) => {
+            if (client.isAborted) {
+              return
+            }
             if (!ok) {
               client.res.writeStatus('401 Unauthorized')
               client.res.end('WRONG AUTH')
@@ -25,11 +31,17 @@ export const functionRest = (
               spec
                 .function(payload, client)
                 .then(async (result) => {
+                  if (client.isAborted) {
+                    return
+                  }
                   if (spec.customHttpResponse) {
                     if (
                       await spec.customHttpResponse(result, payload, client)
                     ) {
                       // if true all is handled
+                      return
+                    }
+                    if (client.isAborted) {
                       return
                     }
                   }
@@ -41,6 +53,9 @@ export const functionRest = (
                   }
                 })
                 .catch((err) => {
+                  if (client.isAborted) {
+                    return
+                  }
                   // error handling nice
                   console.error('bad fn', err)
                   client.res.end('wrong!')
@@ -48,15 +63,24 @@ export const functionRest = (
             }
           })
           .catch((err) => {
+            if (client.isAborted) {
+              return
+            }
             console.error('no auth', err)
             client.res.end('wrong!')
           })
       } else {
         console.error('No function for you')
+        if (client.isAborted) {
+          return
+        }
         client.res.end('wrong!')
       }
     })
     .catch((err) => {
+      if (client.isAborted) {
+        return
+      }
       console.error('fn does not exist', err)
       client.res.end('wrong!')
     })

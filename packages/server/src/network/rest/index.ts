@@ -42,6 +42,7 @@ export const rest = (
   // have to allow "get" as well
   if (path[1] === 'function' && path[2]) {
     res.onAborted(() => {
+      client.isAborted = true
       console.info('abort...')
     })
 
@@ -55,6 +56,9 @@ export const rest = (
     })
 
     server.functions.getByPath(url).then((spec) => {
+      if (client.isAborted) {
+        return
+      }
       if (!spec) {
         res.end('invalid enpoints')
       } else {

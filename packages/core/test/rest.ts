@@ -16,7 +16,10 @@ test.serial('functions (over rest)', async (t) => {
       // customHttpRequest
       // get query prams -> payload
       // post DATA
-      customHttpResponse: async (result, payload, { res, req }) => {
+      customHttpResponse: async (result, payload, { res, req, isAborted }) => {
+        if (isAborted) {
+          return
+        }
         res.writeStatus('200 OkiDoki')
         res.end('yesh ' + result + ' ' + req.getUrl())
         return true
@@ -37,6 +40,10 @@ test.serial('functions (over rest)', async (t) => {
         return true
       },
       registerByPath: async ({ path }) => {
+        console.info('--- wait wait unreg')
+        await wait(3e3)
+        console.info('--- wait wait unreg DONE')
+
         for (const name in store) {
           if (store[name].path === path) {
             return store[name]
