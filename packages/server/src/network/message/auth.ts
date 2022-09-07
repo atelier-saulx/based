@@ -15,6 +15,7 @@ export const authMessage = (
   len: number,
   isDeflate: boolean,
   ws: uws.WebSocket,
+  // eslint-disable-next-line
   server: BasedServer
 ): boolean => {
   // | 4 header | * payload |
