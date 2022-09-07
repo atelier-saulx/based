@@ -12,6 +12,15 @@ test.serial('functions (over rest)', async (t) => {
       function: async (payload) => {
         return payload?.length ?? 0
       },
+
+      // customHttpRequest
+      // get query prams -> payload
+      // post DATA
+      customHttpResponse: async (result, payload, { res, req }) => {
+        res.writeStatus('200 OkiDoki')
+        res.end('yesh ' + result + ' ' + req.getUrl())
+        return true
+      },
     },
   }
 
@@ -21,6 +30,10 @@ test.serial('functions (over rest)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       unregister: async () => {
+        console.info('--- wait wait unreg')
+        await wait(5e3)
+        console.info('--- wait wait unreg DONE')
+        console.info('UNREGISTERT...')
         return true
       },
       registerByPath: async ({ path }) => {
@@ -75,7 +88,15 @@ test.serial('functions (over rest)', async (t) => {
 
   //   t.true(bigString.length > 5e6)
 
-  await wait(3e3)
+  await wait(23e3)
+
+  // GET
+
+  // custom headers
+
+  // payload
+
+  // deflate
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })

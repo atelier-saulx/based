@@ -11,51 +11,53 @@ export const functionRest = (
 ): void => {
   console.info('go fn', isDeflate)
 
-  server.auth.config
-    .authorize(server, client, 'function', name, payload)
-    .then((ok) => {
-      if (!ok) {
-        client.res.writeStatus('401 Unauthorized')
-        client.res.end('WRONG AUTH')
-      } else {
-        server.functions
-          .get(name)
-          .then((spec) => {
-            if (spec && !isObservableFunctionSpec(spec)) {
+  server.functions
+    .get(name)
+    .then((spec) => {
+      if (spec && !isObservableFunctionSpec(spec)) {
+        server.auth.config
+          .authorize(server, client, 'function', name, payload)
+          .then((ok) => {
+            if (!ok) {
+              client.res.writeStatus('401 Unauthorized')
+              client.res.end('WRONG AUTH')
+            } else {
               spec
                 .function(payload, client)
-                .then((v) => {
-                  // typeof v === object
-
-                  if (typeof v === 'string') {
-                    client.res.end(v)
-                  } else {
-                    client.res.end(JSON.stringify(v))
+                .then(async (result) => {
+                  if (spec.customHttpResponse) {
+                    if (
+                      await spec.customHttpResponse(result, payload, client)
+                    ) {
+                      // if true all is handled
+                      return
+                    }
                   }
-
-                  // ws.send(
-                  //   encodeFunctionResponse(reqId, valueToBuffer(v)),
-                  //   true,
-                  //   false
-                  // )
+                  // handle response
+                  if (typeof result === 'string') {
+                    client.res.end(result)
+                  } else {
+                    client.res.end(JSON.stringify(result))
+                  }
                 })
                 .catch((err) => {
                   // error handling nice
                   console.error('bad fn', err)
+                  client.res.end('wrong!')
                 })
-            } else {
-              console.error('No function for you')
-              client.res.end('wrong!')
             }
           })
           .catch((err) => {
-            console.error('fn does not exist', err)
+            console.error('no auth', err)
             client.res.end('wrong!')
           })
+      } else {
+        console.error('No function for you')
+        client.res.end('wrong!')
       }
     })
-    .catch(() => {
-      client.res.end('no auth for rest function')
-      return false
+    .catch((err) => {
+      console.error('fn does not exist', err)
+      client.res.end('wrong!')
     })
 }

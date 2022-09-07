@@ -30,6 +30,10 @@ export class BasedFunctions {
     [name: string]: BasedFunctionSpec
   } = {}
 
+  beingUnregisterd: {
+    [name: string]: boolean
+  } = {}
+
   constructor(server: BasedServer, config?: FunctionConfig) {
     this.server = server
     if (config) {
@@ -92,6 +96,7 @@ export class BasedFunctions {
     if (spec) {
       return spec
     }
+
     spec = await this.config.register({
       server: this.server,
       name,
@@ -123,7 +128,7 @@ export class BasedFunctions {
       })
       if (spec) {
         this.update(spec)
-        return this.getFromStore(name)
+        return this.getFromStore(spec.name)
       }
       return false
     }
@@ -134,6 +139,12 @@ export class BasedFunctions {
   ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
     const spec = this.observables[name] || this.functions[name]
     if (spec) {
+      if (this.beingUnregisterd[name]) {
+        console.info('getFromStore is being unreg', name)
+
+        delete this.beingUnregisterd[name]
+      }
+
       updateTimeoutCounter(spec)
       return spec
     }
@@ -204,10 +215,16 @@ export class BasedFunctions {
     name: string,
     spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
   ): Promise<boolean> {
+    if (this.beingUnregisterd[name]) {
+      console.error('Allready being unregistered...', name)
+    }
+
     if (!spec && spec !== false) {
       spec = this.getFromStore(name)
     }
     if (spec) {
+      this.beingUnregisterd[name] = true
+      console.info('start...')
       if (
         await this.config.unregister({
           server: this.server,
@@ -215,7 +232,13 @@ export class BasedFunctions {
           name,
         })
       ) {
-        return this.remove(name)
+        if (this.beingUnregisterd[name]) {
+          console.info('--> unreg', name)
+          delete this.beingUnregisterd[name]
+          return this.remove(name)
+        } else {
+          console.info('got requested while being unregistered', name)
+        }
       }
     }
     return false

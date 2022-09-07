@@ -47,6 +47,12 @@ export type ObservableUpdateFunction = (
   fromChecksum?: number
 ) => void
 
+export type CustomHttpResponse = (
+  result: any,
+  payload: any,
+  client: RestClient
+) => Promise<boolean>
+
 export type BasedObservableFunctionSpec = {
   name: string
   checksum: number
@@ -56,6 +62,7 @@ export type BasedObservableFunctionSpec = {
     payload: any,
     update: ObservableUpdateFunction
   ) => Promise<() => void>
+  customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   worker?: string | true | false
@@ -65,6 +72,7 @@ export type BasedObservableFunctionSpec = {
 export type BasedFunctionSpec = {
   name: string
   path?: string
+  customHttpResponse?: CustomHttpResponse
   checksum: number
   function: (payload: any, client: uws.WebSocket | RestClient) => Promise<any>
   idleTimeout?: number // in ms

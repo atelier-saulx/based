@@ -10,8 +10,6 @@ export const rest = (
   req: uws.HttpRequest,
   res: uws.HttpResponse
 ) => {
-  console.info('RRRRRRESSSSSTTTTT')
-
   // no make a type 'context'
 
   // if no handler for path will try to read / get from functions/obs (not by name but by path)
@@ -26,8 +24,6 @@ export const rest = (
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   const url = req.getUrl()
-
-  console.log(url)
 
   // function/:name
   // get/:name
