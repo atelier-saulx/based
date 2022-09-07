@@ -35,6 +35,17 @@ const init = async () => {
       unregister: async () => {
         return true
       },
+      registerByPath: async ({ path }) => {
+        if (path === '/') {
+          return {
+            name: 'flap',
+            checksum: 1,
+            function: store.flap,
+            observable: false,
+          }
+        }
+        return false
+      },
       register: async ({ name }) => {
         if (store[name]) {
           return {
