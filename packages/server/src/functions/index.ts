@@ -18,6 +18,10 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
+  paths: {
+    [path: string]: string
+  }
+
   observables: {
     [name: string]: BasedObservableFunctionSpec
   } = {}
@@ -97,6 +101,29 @@ export class BasedFunctions {
       return this.getFromStore(name)
     }
     return false
+  }
+
+  getNameFromPath(path: string): string {
+    return this.paths[path]
+  }
+
+  async getByPath(
+    path: string
+  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+    const name = this.getNameFromPath(path)
+    if (name) {
+      return this.get(name)
+    } else {
+      const spec = await this.config.register({
+        server: this.server,
+        path,
+      })
+      if (spec) {
+        this.update(spec)
+        return this.getFromStore(name)
+      }
+      return false
+    }
   }
 
   getFromStore(

@@ -9,6 +9,7 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 
+// TMP
 const fail = (ws: uws.WebSocket, reqId: number) => {
   ws.send(
     encodeFunctionResponse(reqId, valueToBuffer({ error: 'this is an error' })),

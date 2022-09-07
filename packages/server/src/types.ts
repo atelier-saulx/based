@@ -1,6 +1,11 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
+export type RestClient = {
+  req: uws.HttpRequest
+  res: uws.HttpResponse
+} & { [contextField: string]: any }
+
 export type AuthConfig = {
   authorize?: Authorize
   authHandshake?: AuthorizeHandshake
@@ -9,7 +14,7 @@ export type AuthConfig = {
 
 export type Authorize = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: uws.WebSocket | RestClient,
   type: 'observe' | 'function',
   name: string,
   payload?: any
@@ -17,7 +22,7 @@ export type Authorize = (
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: uws.WebSocket | RestClient,
   payload?: any
 ) => Promise<boolean>
 
@@ -59,7 +64,7 @@ export type BasedObservableFunctionSpec = {
 export type BasedFunctionSpec = {
   name: string
   checksum: number
-  function: (payload: any, ws: uws.WebSocket) => Promise<any>
+  function: (payload: any, client: uws.WebSocket | RestClient) => Promise<any>
   idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number
@@ -70,10 +75,17 @@ export type FunctionConfig = {
   idleTimeout?: number // in ms
   maxWorkers?: number
 
-  register: (opts: {
-    server: BasedServer
-    name: string
-  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+  register: (
+    opts:
+      | {
+          server: BasedServer
+          name: string
+        }
+      | {
+          server: BasedServer
+          path: string
+        }
+  ) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
   unregister: (opts: {
     server: BasedServer

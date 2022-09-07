@@ -36,10 +36,13 @@ test.serial('functions (over rest)', async (t) => {
     },
   })
 
-  let str = ''
-  for (let i = 0; i < 200000; i++) {
-    str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-  }
+  const result = (await fetch('http://localhost:9910/flap')).text()
+
+  console.info(result)
+  //   let str = ''
+  //   for (let i = 0; i < 200000; i++) {
+  //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+  //   }
 
   //   const helloResponses = await Promise.all([
   //     fetch(('hello', {
