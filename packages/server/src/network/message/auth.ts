@@ -35,7 +35,9 @@ export const authMessage = (
   }
 
   ws.authState = authState
-  ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  if (!ws.closed) {
+    ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  }
 
   return true
 }

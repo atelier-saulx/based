@@ -32,6 +32,8 @@ export class BasedAuth {
   }
 
   sendAuthUpdate(ws: uws.WebSocket, authState: AuthState) {
-    ws.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
+    if (!ws.closed) {
+      ws.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
+    }
   }
 }

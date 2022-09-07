@@ -44,7 +44,9 @@ export const functionMessage = (
     .authorize(server, ws, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
-        fail(ws, reqId)
+        if (!ws.closed) {
+          fail(ws, reqId)
+        }
         return false
       }
       server.functions
@@ -55,11 +57,14 @@ export const functionMessage = (
               .function(payload, ws)
               .then((v) => {
                 // have to check if its closed.. EVERYWHERE
-                ws.send(
-                  encodeFunctionResponse(reqId, valueToBuffer(v)),
-                  true,
-                  false
-                )
+
+                if (!ws.closed) {
+                  ws.send(
+                    encodeFunctionResponse(reqId, valueToBuffer(v)),
+                    true,
+                    false
+                  )
+                }
               })
               .catch((err) => {
                 // error handling nice
@@ -75,7 +80,9 @@ export const functionMessage = (
     })
     .catch((err) => {
       console.log({ err })
-      fail(ws, reqId)
+      if (!ws.closed) {
+        fail(ws, reqId)
+      }
       return false
     })
 

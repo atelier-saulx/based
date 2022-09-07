@@ -1,9 +1,14 @@
 const createServer = require('@based/server').default
+const { wait } = require('@saulx/utils')
 
 const json = require('./tmp.json')
 
 const init = async () => {
   const store = {
+    flap: async () => {
+      await wait(3e3)
+      return 'FLAP'
+    },
     small: async () => 'he',
     iqTest: async () => json,
     counter: async (payload, update) => {
