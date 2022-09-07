@@ -24,10 +24,7 @@ test.serial('functions (over rest)', async (t) => {
         return true
       },
       registerByPath: async ({ path }) => {
-        console.log('---->>>', store)
         for (const name in store) {
-          console.info('!!! -->', path, store[name].path)
-
           if (store[name].path === path) {
             return store[name]
           }
