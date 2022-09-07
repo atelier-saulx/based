@@ -51,6 +51,7 @@ export type BasedObservableFunctionSpec = {
   name: string
   checksum: number
   observable: true
+  path?: string
   function: (
     payload: any,
     update: ObservableUpdateFunction
@@ -63,6 +64,7 @@ export type BasedObservableFunctionSpec = {
 
 export type BasedFunctionSpec = {
   name: string
+  path?: string
   checksum: number
   function: (payload: any, client: uws.WebSocket | RestClient) => Promise<any>
   idleTimeout?: number // in ms

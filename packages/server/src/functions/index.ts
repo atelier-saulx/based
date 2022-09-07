@@ -20,7 +20,7 @@ export class BasedFunctions {
 
   paths: {
     [path: string]: string
-  }
+  } = {}
 
   observables: {
     [name: string]: BasedObservableFunctionSpec
@@ -110,13 +110,20 @@ export class BasedFunctions {
   async getByPath(
     path: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+    console.log(this.config)
+
     if (!this.config.registerByPath) {
+      console.log('no registerByPath')
       return false
     }
     const name = this.getNameFromPath(path)
     if (name) {
+      console.log('got name', name)
+
       return this.get(name)
     } else {
+      console.log('???')
+
       const spec = await this.config.registerByPath({
         server: this.server,
         path,
@@ -150,6 +157,10 @@ export class BasedFunctions {
           spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
       }
 
+      if (spec.path) {
+        this.paths[spec.path] = spec.name
+      }
+
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {
           this.remove(spec.name)
@@ -173,6 +184,9 @@ export class BasedFunctions {
   remove(name: string): boolean {
     // Does not call unregister!
     if (this.observables[name]) {
+      if (this.observables[name].path) {
+        delete this.paths[this.observables[name].path]
+      }
       delete this.observables[name]
       const activeObs = this.server.activeObservables[name]
       if (activeObs) {
@@ -181,10 +195,15 @@ export class BasedFunctions {
         }
         delete this.server.activeObservables[name]
       }
+      return true
     } else if (this.functions[name]) {
+      if (this.functions[name].path) {
+        delete this.paths[this.functions[name].path]
+      }
       delete this.functions[name]
       return true
     }
+
     return false
   }
 

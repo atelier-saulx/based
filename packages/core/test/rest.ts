@@ -1,7 +1,7 @@
 import test from 'ava'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
-// import fetch from 'cross-fetch'
+import fetch from 'cross-fetch'
 
 test.serial('functions (over rest)', async (t) => {
   const store = {
@@ -10,7 +10,7 @@ test.serial('functions (over rest)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        return payload.length
+        return payload?.length ?? 0
       },
     },
   }
@@ -24,7 +24,10 @@ test.serial('functions (over rest)', async (t) => {
         return true
       },
       registerByPath: async ({ path }) => {
+        console.log('---->>>', store)
         for (const name in store) {
+          console.info('!!! -->', path, store[name].path)
+
           if (store[name].path === path) {
             return store[name]
           }
@@ -44,9 +47,16 @@ test.serial('functions (over rest)', async (t) => {
     },
   })
 
-  const result = (await fetch('http://localhost:9910/flap')).text()
+  const result = await (await fetch('http://localhost:9910/flap')).text()
 
   console.info(result)
+
+  const result2 = await (
+    await fetch('http://localhost:9910/flap?flurp=1')
+  ).text()
+
+  console.info(result2)
+
   //   let str = ''
   //   for (let i = 0; i < 200000; i++) {
   //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
