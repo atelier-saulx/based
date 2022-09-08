@@ -17,7 +17,7 @@ using json = nlohmann::json;
 
 namespace Utility {
 std::string inflate_string(const std::string& str) {
-    // found on  https://panthema.net/2007/0328-ZLibString.html
+    // Found on  https://panthema.net/2007/0328-ZLibString.html
     // Copyright 2007 Timo Bingmann <tb@panthema.net>
     // Distributed under the Boost Software License, Version 1.0.
     // (See http://www.boost.org/LICENSE_1_0.txt)
@@ -60,11 +60,18 @@ std::string inflate_string(const std::string& str) {
 }
 
 std::string deflate_string(const std::string& str) {
+    // Found on  https://panthema.net/2007/0328-ZLibString.html
+    // Copyright 2007 Timo Bingmann <tb@panthema.net>
+    // Distributed under the Boost Software License, Version 1.0.
+    // (See http://www.boost.org/LICENSE_1_0.txt)
+
     int compressionlevel =
         Z_DEFAULT_COMPRESSION;  // this is to match the compression level on the js client
     z_stream zs;                // z_stream is zlib's control structure
     memset(&zs, 0, sizeof(zs));
 
+    // See https://www.zlib.net/manual.html#Advanced for details. Must match inflate_string
+    // and the js client
     if (deflateInit2(&zs, compressionlevel, Z_DEFLATED, -MAX_WBITS, 8, Z_DEFAULT_STRATEGY) != Z_OK)
         throw(std::runtime_error("deflateInit failed while compressing."));
 
@@ -105,16 +112,7 @@ void append_string(std::vector<uint8_t>& buff, std::string payload) {
         buff.push_back(data[i]);
     }
 }
-// std::string encode_payload(std::string& payload) {
-//     if (payload.length() <= 150) {
-//         std::string p;
-//         std::cout << "> Deflating payload..." << std::endl;
-//         p = deflate_string(payload);
-//         return p;
-//     }
-//     return payload;
-// };
-void encode_header(std::vector<uint8_t>& buff, int32_t type, int32_t is_deflate, int32_t len) {
+void append_header(std::vector<uint8_t>& buff, int32_t type, int32_t is_deflate, int32_t len) {
     // must do int32_t arithmetics because of the js client
     int32_t meta = (type << 1) + is_deflate;
     int32_t value = (len << 4) + meta;
@@ -123,7 +121,7 @@ void encode_header(std::vector<uint8_t>& buff, int32_t type, int32_t is_deflate,
         buff.push_back(byte);
     }
 }
-void encode_id(std::vector<uint8_t>& buff, int32_t id) {
+void append_id(std::vector<uint8_t>& buff, int32_t id) {
     for (int i = 0; i < 3; i++) {
         uint8_t byte = (id >> (8 * i)) & 0xff;
         buff.push_back(byte);
@@ -169,8 +167,8 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
 
         len += p.length();
     }
-    encode_header(buff, 0, is_deflate, len);
-    encode_id(buff, id);
+    append_header(buff, 0, is_deflate, len);
+    append_id(buff, id);
     buff.push_back(name.length());
     append_string(buff, name);
     if (p.length()) {
