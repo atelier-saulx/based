@@ -15,6 +15,11 @@ const setup = async (t: ExecutionContext) => {
     counter: async (_payload, update) => {
       update({ yeye: 'yeye' })
     },
+    errorFunction: async () => {
+      const wawa = [1, 2]
+      // @ts-ignore
+      return wawa[3].yeye
+    },
   }
 
   const server = await createServer({
@@ -118,4 +123,21 @@ test.serial('observable authorize error', async (t) => {
     )
   })) as BasedError
   t.is(error.basedCode, BasedErrorCode.AuthorizeError)
+})
+
+test.serial('type error in function', async (t) => {
+  const { coreClient } = await setup(t)
+
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  // TODO: Check error instance of
+  const error = (await t.throwsAsync(
+    coreClient.function('errorFunction')
+  )) as BasedError
+  console.error(error)
+  t.is(error.basedCode, BasedErrorCode.FunctionError)
 })
