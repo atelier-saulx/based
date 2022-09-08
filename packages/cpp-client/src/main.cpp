@@ -65,7 +65,11 @@ int main() {
 
     // std::cout << "OBS started, id = " << id << std::endl;
 
-    client.function("small", "{\"amICpp\":\"yes\"}",
+    client.function("small",
+                    "{\"hello\":"
+                    "\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeee"
+                    "eeeeeeeeeeeeeeeeeeeeeeeeee\"}",
                     [](std::string_view data) { std::cout << "[POOP] " << data << std::endl; });
 
     std::cin.get();
