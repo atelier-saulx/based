@@ -17,7 +17,8 @@ using json = nlohmann::json;
 
 namespace Utility {
 std::string inflate_string(const std::string& str) {
-    // Found on  https://panthema.net/2007/0328-ZLibString.html
+    // Original version of this function found on  https://panthema.net/2007/0328-ZLibString.html,
+    // adapted here for our usage.
     // Copyright 2007 Timo Bingmann <tb@panthema.net>
     // Distributed under the Boost Software License, Version 1.0.
     // (See http://www.boost.org/LICENSE_1_0.txt)
@@ -60,7 +61,9 @@ std::string inflate_string(const std::string& str) {
 }
 
 std::string deflate_string(const std::string& str) {
-    // Found on  https://panthema.net/2007/0328-ZLibString.html
+    // Original version of this function found on  https://panthema.net/2007/0328-ZLibString.html,
+    // adapted here for our usage.
+
     // Copyright 2007 Timo Bingmann <tb@panthema.net>
     // Distributed under the Boost Software License, Version 1.0.
     // (See http://www.boost.org/LICENSE_1_0.txt)
