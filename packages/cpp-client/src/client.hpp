@@ -107,7 +107,7 @@ class BasedClient {
     };
 
     void on_message(std::string message) {
-        if (message.length() <= 4) {
+        if (message.length() <= 7) {
             std::cerr << ">> Payload is too small, wrong data: " << message << std::endl;
             return;
         }
@@ -116,13 +116,31 @@ class BasedClient {
         int32_t len = Utility::get_payload_len(header);
         int32_t is_deflate = Utility::get_payload_is_deflate(header);
 
+        std::cout << "type = " << type << std::endl;
+        std::cout << "len = " << len << std::endl;
+        std::cout << "is_deflate = " << is_deflate << std::endl;
+
         switch (type) {
             case IncomingType::FUNCTION_DATA: {
                 int32_t id = Utility::read_id(message);
+
                 if (m_function_listeners.find(id) != m_function_listeners.end()) {
                     std::function<void(std::string_view)> fn = m_function_listeners.at(id);
-                    fn("");
+                    if (len != 3) {
+                        int32_t start = 7;
+                        int32_t end = len + 4;
+                        std::cout << "there's a payload" << std::endl;
+                        // decode payload
+                        std::string payload =
+                            is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                       : message.substr(start, end);
+                        fn(payload);
+                    } else {
+                        std::cout << "no payload" << std::endl;
+                        fn("");
+                    }
                 }
+
                 break;
             }
             case IncomingType::SUBSCRIPTION_DATA:

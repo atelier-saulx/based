@@ -4,7 +4,10 @@
 #include <zlib.h>  //https://panthema.net/2007/0328-ZLibString.html
 
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
@@ -48,7 +51,7 @@ void encode_id(std::vector<uint8_t>& buff, int32_t id) {
 //                                    int checksum,
 //                                    std::string payload) {}
 
-std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::string payload) {
+std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::string& payload) {
     std::vector<uint8_t> buff;
     int32_t len = 7;
     char const* data = name.data();
@@ -107,6 +110,47 @@ int32_t read_id(std::string buff) {
         res = res * 256 + (uint8_t)data[i];
     }
     return res;
+}
+
+std::string inflate_string(const std::string& str) {
+    // Copyright 2007 Timo Bingmann <tb@panthema.net>
+    // Distributed under the Boost Software License, Version 1.0.
+    // (See http://www.boost.org/LICENSE_1_0.txt)
+    z_stream zs;  // z_stream is zlib's control structure
+    memset(&zs, 0, sizeof(zs));
+
+    if (inflateInit2(&zs, -MAX_WBITS) != Z_OK)
+        throw(std::runtime_error("inflateInit failed while decompressing."));
+
+    zs.next_in = (Bytef*)str.data();
+    zs.avail_in = str.size();
+
+    int ret;
+    char outbuffer[32768];
+    std::string outstring;
+
+    // get the decompressed bytes blockwise using repeated calls to inflate
+    do {
+        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+        zs.avail_out = sizeof(outbuffer);
+
+        ret = inflate(&zs, 0);
+
+        if (outstring.size() < zs.total_out) {
+            outstring.append(outbuffer, zs.total_out - outstring.size());
+        }
+
+    } while (ret == Z_OK);
+
+    inflateEnd(&zs);
+
+    if (ret != Z_STREAM_END) {  // an error occurred that was not EOF
+        std::ostringstream oss;
+        oss << "Exception during zlib decompression: (" << ret << ") " << zs.msg;
+        throw(std::runtime_error(oss.str()));
+    }
+
+    return outstring;
 }
 
 };  // namespace Utility
