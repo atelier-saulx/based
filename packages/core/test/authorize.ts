@@ -91,7 +91,7 @@ test.serial('authorize functions', async (t) => {
   )
 })
 
-test.serial('authorize observe', async (t) => {
+test.serial.only('authorize observe', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'

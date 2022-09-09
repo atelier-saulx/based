@@ -177,6 +177,8 @@ export class BasedCoreClient extends Emitter {
     const id = genObserveId(name, payload)
     let subscriberId: number
     const cachedData = this.cache.get(id)
+    console.log('???', name, id, cachedData, this.cache)
+
     if (!this.observeState.has(id)) {
       subscriberId = 1
       const subscribers = new Map()
