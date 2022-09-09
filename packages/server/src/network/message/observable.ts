@@ -43,6 +43,8 @@ export const subscribeMessage = (
       }
 
       if (!ok) {
+        if (!ws.unauthorizedObs) ws.unauthorizedObs = new Set()
+        ws.unauthorizedObs.add(id)
         sendError(ws, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
           observableId: id,

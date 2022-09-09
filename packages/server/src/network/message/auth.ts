@@ -35,6 +35,19 @@ export const authMessage = (
   }
   if (!ws.closed) {
     ws.authState = authState
+
+    if (ws.unauthorizedObs) {
+      ws.unauthorizedObs.forEach((observableId: number) => {
+        ws.subscribe(String(observableId))
+        if (!ws.obs) ws.obs = new Set()
+        ws.obs.add(observableId)
+        ws.unauthorizedObs.delete(observableId)
+      })
+      // TODO: how to trigger update observable
+    }
+
+    // TODO:: handle change authState when observables exist
+
     ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   }
 

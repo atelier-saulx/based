@@ -91,7 +91,7 @@ test.serial('authorize functions', async (t) => {
   )
 })
 
-test.serial('authorize observe', async (t) => {
+test.serial.only('authorize observe', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'
@@ -148,22 +148,23 @@ test.serial('authorize observe', async (t) => {
   })
 
   await coreClient.auth(token)
+  await new Promise((resolve) => setTimeout(resolve, 2000))
 
-  await new Promise((resolve) => {
-    console.info('go go go')
-    coreClient.observe(
-      'counter',
-      (d) => {
-        console.log({ d })
-        resolve(d)
-      },
-      {
-        myQuery: 123,
-      },
-      (err: BasedError) => {
-        t.fail('Should not error when authed')
-        resolve(err)
-      }
-    )
-  })
+  // await new Promise((resolve) => {
+  //   console.info('go go go')
+  //   coreClient.observe(
+  //     'counter',
+  //     (d) => {
+  //       console.log({ d })
+  //       resolve(d)
+  //     },
+  //     {
+  //       myQuery: 123,
+  //     },
+  //     (err: BasedError) => {
+  //       t.fail('Should not error when authed')
+  //       resolve(err)
+  //     }
+  //   )
+  // })
 })

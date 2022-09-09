@@ -2,7 +2,7 @@ import { BasedCoreClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
-import { convertDataToBasedError } from '../types/error'
+import { BasedErrorCode, convertDataToBasedError } from '../types/error'
 
 export const decodeHeader = (
   nr: number
@@ -272,6 +272,8 @@ export const incoming = async (
         }
       }
       if (payload.observableId) {
+        client.cache.delete(payload.observableId)
+
         if (client.observeState.has(payload.observableId)) {
           const observable = client.observeState.get(payload.observableId)
           for (const [, handlers] of observable.subscribers) {
@@ -279,8 +281,6 @@ export const incoming = async (
           }
         }
       }
-      // if (client.authRequest.resolve) client.authRequest.resolve(payload)
-      // client.emit('auth', client.authState)
     }
     // ---------------------------------
   } catch (err) {
