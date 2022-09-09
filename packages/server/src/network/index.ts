@@ -4,7 +4,7 @@ import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
-import { rest } from './rest'
+import { httpHandler } from './http'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -74,9 +74,9 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       },
     })
     // REST
-    .get('/*', (res, req) => rest(server, req, res))
-    .post('/*', (res, req) => rest(server, req, res))
-    .options('/*', (res, req) => rest(server, req, res))
+    .get('/*', (res, req) => httpHandler(server, req, res))
+    .post('/*', (res, req) => httpHandler(server, req, res))
+    .options('/*', (res, req) => httpHandler(server, req, res))
 
   server.uwsApp = app
 }

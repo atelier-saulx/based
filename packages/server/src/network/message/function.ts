@@ -57,7 +57,6 @@ export const functionMessage = (
               .function(payload, ws)
               .then((v) => {
                 // have to check if its closed.. EVERYWHERE
-
                 if (!ws.closed) {
                   ws.send(
                     encodeFunctionResponse(reqId, valueToBuffer(v)),

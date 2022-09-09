@@ -5,7 +5,7 @@ import { functionRest } from './function'
 
 let clientId = 0
 
-export const rest = (
+export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
   res: uws.HttpResponse

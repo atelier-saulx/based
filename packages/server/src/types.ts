@@ -1,8 +1,12 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
+export type WebsocketClient = {
+  ws?: uws.WebSocket
+}
+
 export type RestClient = {
-  res: uws.HttpResponse
+  res?: uws.HttpResponse
 } & { [contextField: string]: any }
 
 export type AuthConfig = {
