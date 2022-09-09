@@ -198,9 +198,12 @@ export class BasedCoreClient extends Emitter {
         onData,
       })
     }
+
     if (cachedData) {
+      console.log('got cached data make it nice')
       onData(cachedData.value, cachedData.checksum)
     }
+
     return () => {
       const obs = this.observeState.get(id)
       obs.subscribers.delete(subscriberId)

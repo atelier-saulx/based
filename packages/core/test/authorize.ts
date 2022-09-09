@@ -150,6 +150,7 @@ test.serial('authorize observe', async (t) => {
   await coreClient.auth(token)
 
   await new Promise((resolve) => {
+    console.info('go go go')
     coreClient.observe(
       'counter',
       (d) => {
@@ -157,7 +158,7 @@ test.serial('authorize observe', async (t) => {
         resolve(d)
       },
       {
-        myQuery: 456,
+        myQuery: 123,
       },
       (err: BasedError) => {
         t.fail('Should not error when authed')
