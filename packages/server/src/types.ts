@@ -1,6 +1,18 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
+export type WebsocketClient = {
+  ws?: uws.WebSocket
+}
+
+export type HttpClient = {
+  res?: uws.HttpResponse
+} & { [contextField: string]: any }
+
+export const isHttpClient = () => {
+  // make it typecasty
+}
+
 export type AuthConfig = {
   authorize?: Authorize
   authHandshake?: AuthorizeHandshake
@@ -9,7 +21,7 @@ export type AuthConfig = {
 
 export type Authorize = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: uws.WebSocket | HttpClient,
   type: 'observe' | 'function',
   name: string,
   payload?: any
@@ -17,7 +29,7 @@ export type Authorize = (
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: uws.WebSocket | HttpClient,
   payload?: any
 ) => Promise<boolean>
 
@@ -42,14 +54,22 @@ export type ObservableUpdateFunction = (
   fromChecksum?: number
 ) => void
 
+export type CustomHttpResponse = (
+  result: any,
+  payload: any,
+  client: HttpClient
+) => Promise<boolean>
+
 export type BasedObservableFunctionSpec = {
   name: string
   checksum: number
   observable: true
+  path?: string
   function: (
     payload: any,
     update: ObservableUpdateFunction
   ) => Promise<() => void>
+  customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   worker?: string | true | false
@@ -58,8 +78,10 @@ export type BasedObservableFunctionSpec = {
 
 export type BasedFunctionSpec = {
   name: string
+  path?: string
+  customHttpResponse?: CustomHttpResponse
   checksum: number
-  function: (payload: any, ws: uws.WebSocket) => Promise<any>
+  function: (payload: any, client: uws.WebSocket | HttpClient) => Promise<any>
   idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number
@@ -69,6 +91,11 @@ export type FunctionConfig = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   maxWorkers?: number
+
+  registerByPath?: (opts: {
+    server: BasedServer
+    path: string
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
   register: (opts: {
     server: BasedServer

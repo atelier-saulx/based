@@ -75,7 +75,7 @@ test.serial('functions', async (t) => {
 
   t.true(bigString.length > 5e6)
 
-  await wait(3e3)
+  await wait(6e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })

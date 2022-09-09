@@ -1,9 +1,14 @@
 const createServer = require('@based/server').default
+const { wait } = require('@saulx/utils')
 
 const json = require('./tmp.json')
 
 const init = async () => {
   const store = {
+    flap: async () => {
+      await wait(3e3)
+      return 'FLAP'
+    },
     small: async () => 'he',
     iqTest: async () => json,
     counter: async (payload, update) => {
@@ -29,6 +34,17 @@ const init = async () => {
       idleTimeout: 1e3,
       unregister: async () => {
         return true
+      },
+      registerByPath: async ({ path }) => {
+        if (path === '/') {
+          return {
+            name: 'flap',
+            checksum: 1,
+            function: store.flap,
+            observable: false,
+          }
+        }
+        return false
       },
       register: async ({ name }) => {
         if (store[name]) {

@@ -18,12 +18,20 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
+  paths: {
+    [path: string]: string
+  } = {}
+
   observables: {
     [name: string]: BasedObservableFunctionSpec
   } = {}
 
   functions: {
     [name: string]: BasedFunctionSpec
+  } = {}
+
+  beingUnregisterd: {
+    [name: string]: boolean
   } = {}
 
   constructor(server: BasedServer, config?: FunctionConfig) {
@@ -88,6 +96,7 @@ export class BasedFunctions {
     if (spec) {
       return spec
     }
+
     spec = await this.config.register({
       server: this.server,
       name,
@@ -99,11 +108,43 @@ export class BasedFunctions {
     return false
   }
 
+  getNameFromPath(path: string): string {
+    return this.paths[path]
+  }
+
+  async getByPath(
+    path: string
+  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+    if (!this.config.registerByPath) {
+      return false
+    }
+    const name = this.getNameFromPath(path)
+    if (name) {
+      return this.get(name)
+    } else {
+      const spec = await this.config.registerByPath({
+        server: this.server,
+        path,
+      })
+      if (spec) {
+        this.update(spec)
+        return this.getFromStore(spec.name)
+      }
+      return false
+    }
+  }
+
   getFromStore(
     name: string
   ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
     const spec = this.observables[name] || this.functions[name]
     if (spec) {
+      if (this.beingUnregisterd[name]) {
+        console.info('getFromStore is being unreg', name)
+
+        delete this.beingUnregisterd[name]
+      }
+
       updateTimeoutCounter(spec)
       return spec
     }
@@ -118,6 +159,10 @@ export class BasedFunctions {
       if (spec.timeoutCounter === undefined) {
         spec.timeoutCounter =
           spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
+      }
+
+      if (spec.path) {
+        this.paths[spec.path] = spec.name
       }
 
       if (isObservableFunctionSpec(spec)) {
@@ -143,6 +188,9 @@ export class BasedFunctions {
   remove(name: string): boolean {
     // Does not call unregister!
     if (this.observables[name]) {
+      if (this.observables[name].path) {
+        delete this.paths[this.observables[name].path]
+      }
       delete this.observables[name]
       const activeObs = this.server.activeObservables[name]
       if (activeObs) {
@@ -151,10 +199,15 @@ export class BasedFunctions {
         }
         delete this.server.activeObservables[name]
       }
+      return true
     } else if (this.functions[name]) {
+      if (this.functions[name].path) {
+        delete this.paths[this.functions[name].path]
+      }
       delete this.functions[name]
       return true
     }
+
     return false
   }
 
@@ -162,10 +215,16 @@ export class BasedFunctions {
     name: string,
     spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
   ): Promise<boolean> {
+    if (this.beingUnregisterd[name]) {
+      console.error('Allready being unregistered...', name)
+    }
+
     if (!spec && spec !== false) {
       spec = this.getFromStore(name)
     }
     if (spec) {
+      this.beingUnregisterd[name] = true
+      console.info('start...')
       if (
         await this.config.unregister({
           server: this.server,
@@ -173,7 +232,13 @@ export class BasedFunctions {
           name,
         })
       ) {
-        return this.remove(name)
+        if (this.beingUnregisterd[name]) {
+          console.info('--> unreg', name)
+          delete this.beingUnregisterd[name]
+          return this.remove(name)
+        } else {
+          console.info('got requested while being unregistered', name)
+        }
       }
     }
     return false

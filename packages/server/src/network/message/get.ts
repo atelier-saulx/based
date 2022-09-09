@@ -17,6 +17,10 @@ const sendGetData = (
   checksum: number,
   ws: uws.WebSocket
 ) => {
+  if (ws.closed) {
+    return
+  }
+
   if (checksum === 0) {
     ws.send(obs.cache, true, false)
   } else if (checksum === obs.checksum) {

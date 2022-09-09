@@ -1,3 +1,6 @@
 [submodule "packages/cpp-client/include/websocketpp"]
 	path = packages/cpp-client/include/websocketpp
 	url = https://github.com/atelier-saulx/websocketpp.git
+[submodule "packages/cpp-client/include/zlib"]
+	path = packages/cpp-client/include/zlib
+	url = git@github.com:madler/zlib.git

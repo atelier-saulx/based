@@ -2,6 +2,7 @@ import { BasedCoreClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
+import { convertDataToBasedError } from '../types/error'
 
 export const decodeHeader = (
   nr: number
@@ -13,6 +14,7 @@ export const decodeHeader = (
   //   2 = subscriptionDiffData
   //   3 = get
   //   4 = authData
+  //   5 = errorData
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -242,6 +244,43 @@ export const incoming = async (
       }
       if (client.authRequest.resolve) client.authRequest.resolve(payload)
       client.emit('auth', client.authState)
+    }
+
+    // ------- Errors
+    else if (type === 5) {
+      // | 4 header | * payload |
+      const start = 4
+      const end = len + 4
+      let payload: any
+
+      // if not empty response, parse it
+      if (len !== 3) {
+        payload = JSON.parse(
+          new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+        )
+      }
+
+      const error = convertDataToBasedError(payload)
+      if (payload.requestId) {
+        if (client.functionResponseListeners.has(payload.requestId)) {
+          client.functionResponseListeners.get(payload.requestId)[1](error)
+          client.functionResponseListeners.delete(payload.requestId)
+        }
+      }
+      if (payload.observableId) {
+        if (client.observeState.has(payload.observableId)) {
+          const observable = client.observeState.get(payload.observableId)
+          for (const [, handlers] of observable.subscribers) {
+            handlers.onError(error)
+          }
+        }
+      }
+      // if (client.authRequest.resolve) client.authRequest.resolve(payload)
+      // client.emit('auth', client.authState)
     }
     // ---------------------------------
   } catch (err) {
