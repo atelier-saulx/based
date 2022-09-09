@@ -73,8 +73,7 @@ export const functionMessage = (
             })
           }
         })
-        .catch((_err) => {
-          // console.error('fn does not exist', err)
+        .catch(() => {
           sendError(ws, 'fn does not exist', {
             basedCode: BasedErrorCode.FunctionNotFound,
             requestId: reqId,

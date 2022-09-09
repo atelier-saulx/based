@@ -1,12 +1,12 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { RestClient } from '../../types'
+import { HttpClient } from '../../types'
 
 export const functionRest = (
   name: string,
   payload: any,
   isDeflate: boolean, // lets add this ad well...
-  client: RestClient,
+  client: HttpClient,
   server: BasedServer
 ): void => {
   console.info('go fn', isDeflate)
@@ -35,7 +35,6 @@ export const functionRest = (
                     return
                   }
                   if (spec.customHttpResponse) {
-                    console.log(client)
                     if (
                       await spec.customHttpResponse(result, payload, client)
                     ) {
