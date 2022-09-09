@@ -11,6 +11,8 @@ export const decodeHeader = (
   //   1 = subscribe
   //   2 = unsubscribe
   //   3 = get from observable
+  //   4 = auth
+  //   5 = error
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -208,10 +210,8 @@ export const encodeObservableDiffResponse = (
   }
 }
 
-export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
-  // Type 4
+const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   // | 4 header | * payload |
-
   let isDeflate = false
 
   if (buffer.length > 100) {
@@ -221,11 +221,22 @@ export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
 
   const headerSize = 4
   const msgSize = buffer.length
-  const header = encodeHeader(4, isDeflate, msgSize)
+  const header = encodeHeader(type, isDeflate, msgSize)
   const array = new Uint8Array(headerSize + msgSize)
   storeUint8(array, header, 0, 4)
   if (buffer.length) {
     array.set(buffer, 4)
   }
   return array
+}
+export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
+  // Type 4
+
+  return encodeSimpleResponse(4, buffer)
+}
+
+export const encodeErrorResponse = (buffer: Buffer): Uint8Array => {
+  // Type 5
+
+  return encodeSimpleResponse(5, buffer)
 }

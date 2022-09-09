@@ -1,16 +1,46 @@
 #include <iostream>
 #include <string>
-#include <websocketpp/client.hpp>
-#include <websocketpp/config/asio_no_tls_client.hpp>
+
+#include <sstream>
 
 #include "client.hpp"
-#include "connection.hpp"
-#include "incoming.hpp"
-
-class HandlerStore {};
+// #include "connection.hpp"
+// #include "incoming.hpp"
 
 int main() {
     std::cout << "hello yes" << std::endl;
+
+    // WsConnection endpoint;
+
+    // endpoint.connect("ws://localhost:9001");
+
+    // endpoint.sendText("hello");
+
+    // bool done = false;
+    // std::string input;
+
+    // while (!done) {
+    //     std::cout << "Enter Command: ";
+    //     std::getline(std::cin, input);
+
+    //     if (input == "quit") {
+    //         done = true;
+    //     } else if (input.substr(0, 4) == "send") {
+    //         std::stringstream ss(input);
+
+    //         std::string cmd;
+    //         std::string message;
+
+    //         ss >> cmd;
+    //         std::getline(ss, message);
+
+    //         endpoint.sendText(message);
+    //     } else {
+    //         std::cout << "> Unrecognized Command" << std::endl;
+    //     }
+    // }
+
+    // return 0;
 
     // Decoder dec;
 
@@ -35,9 +65,13 @@ int main() {
 
     // std::cout << "OBS started, id = " << id << std::endl;
 
-    client.function("small", "{\"hello\":\"yes\"}",
-                    [](std::string_view data) { std::cout << "[RES] " << data << std::endl; });
+    client.function("small",
+                    "{\"hello\":"
+                    "\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+                    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeee"
+                    "eeeeeeeeeeeeeeeeeeeeeeeeee\"}",
+                    [](std::string_view data) { std::cout << "[POOP] " << data << std::endl; });
 
-    while (true) {
-    }
+    std::cin.get();
+    // client.disconnect();
 }

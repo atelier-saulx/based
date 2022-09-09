@@ -1,13 +1,29 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
+import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
 
   const store = {
-    hello: async (payload: any) => {
-      return payload.length
+    hello: {
+      observable: false,
+      function: async (payload: any) => {
+        return payload.length
+      },
+    },
+    counter: {
+      observable: true,
+      function: async (_payload: any, update: any) => {
+        let cnt = 0
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 100)
+        return () => {
+          clearInterval(counter)
+        }
+      },
     },
   }
 
@@ -24,7 +40,7 @@ const setup = async () => {
           return {
             name,
             checksum: 1,
-            function: store[name],
+            ...store[name],
           }
         } else {
           return false
@@ -62,23 +78,20 @@ test.serial('authorize functions', async (t) => {
     },
   })
 
-  // TODO: Change when throws on error
-  // await t.throwsAsync(async () => {
-  const result = await coreClient.function('hello', {
-    bla: true,
-  })
-  t.true(!!result.error)
-  // })
+  await t.throwsAsync(
+    coreClient.function('hello', {
+      bla: true,
+    })
+  )
   await coreClient.auth(token)
-  // await t.notThrowsAsync(async () => {
-  const result2 = await coreClient.function('hello', {
-    bla: true,
-  })
-  t.false(!!result2.error)
-  // })
+  await t.notThrowsAsync(
+    coreClient.function('hello', {
+      bla: true,
+    })
+  )
 })
 
-test.serial.skip('authorize observe', async (t) => {
+test.serial('authorize observe', async (t) => {
   t.timeout(4000)
 
   const token = 'mock_token'
@@ -118,18 +131,38 @@ test.serial.skip('authorize observe', async (t) => {
     },
   })
 
-  const close = coreClient.observe(
-    'counter',
-    (d) => {
-      console.log({ d })
-    },
-    {
-      myQuery: 123,
-    }
-  )
+  await new Promise((resolve) => {
+    coreClient.observe(
+      'counter',
+      (d) => {
+        console.log({ d })
+      },
+      {
+        myQuery: 123,
+      },
+      (err: BasedError) => {
+        t.is(err.basedCode, BasedErrorCode.AuthorizeRejectedError)
+        resolve(err)
+      }
+    )
+  })
 
-  await new Promise((resolve) => setTimeout(resolve, 3e3))
+  await coreClient.auth(token)
 
-  close()
-  t.fail()
+  await new Promise((resolve) => {
+    coreClient.observe(
+      'counter',
+      (d) => {
+        console.log({ d })
+        resolve(d)
+      },
+      {
+        myQuery: 456,
+      },
+      (err: BasedError) => {
+        t.fail('Should not error when authed')
+        resolve(err)
+      }
+    )
+  })
 })

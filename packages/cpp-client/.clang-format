@@ -7,3 +7,5 @@ PointerAlignment: Left
 ColumnLimit: 100
 AllowShortFunctionsOnASingleLine: Empty
 PackConstructorInitializers: CurrentLine
+AllowShortIfStatementsOnASingleLine: AllIfsAndElse
+AllowShortBlocksOnASingleLine: Empty

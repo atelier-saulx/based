@@ -8,15 +8,7 @@ import {
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-
-// TMP
-const fail = (ws: uws.WebSocket, reqId: number) => {
-  ws.send(
-    encodeFunctionResponse(reqId, valueToBuffer({ error: 'this is an error' })),
-    true,
-    false
-  )
-}
+import { sendError, BasedErrorCode } from '../../error'
 
 export const functionMessage = (
   arr: Uint8Array,
@@ -45,7 +37,10 @@ export const functionMessage = (
     .then((ok) => {
       if (!ok) {
         if (!ws.closed) {
-          fail(ws, reqId)
+          sendError(ws, 'Not authorized', {
+            basedCode: BasedErrorCode.AuthorizeRejectedError,
+            requestId: reqId,
+          })
         }
         return false
       }
@@ -66,21 +61,32 @@ export const functionMessage = (
                 }
               })
               .catch((err) => {
-                // error handling nice
-                console.error('bad fn', err)
+                sendError(ws, err, {
+                  basedCode: BasedErrorCode.FunctionError,
+                  requestId: reqId,
+                })
               })
           } else {
-            console.error('No function for you')
+            sendError(ws, 'No function for you', {
+              basedCode: BasedErrorCode.FunctionNotFound,
+              requestId: reqId,
+            })
           }
         })
-        .catch((err) => {
-          console.error('fn does not exist', err)
+        .catch((_err) => {
+          // console.error('fn does not exist', err)
+          sendError(ws, 'fn does not exist', {
+            basedCode: BasedErrorCode.FunctionNotFound,
+            requestId: reqId,
+          })
         })
     })
     .catch((err) => {
-      console.log({ err })
       if (!ws.closed) {
-        fail(ws, reqId)
+        sendError(ws, err, {
+          basedCode: BasedErrorCode.AuthorizeError,
+          requestId: reqId,
+        })
       }
       return false
     })
