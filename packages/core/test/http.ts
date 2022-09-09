@@ -3,7 +3,7 @@ import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
-test.serial('functions (over rest)', async (t) => {
+test.serial('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap', // observables and functions will have a path configuration
