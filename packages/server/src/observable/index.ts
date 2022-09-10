@@ -1,11 +1,14 @@
-import uws from '@based/uws'
 import {
   valueToBuffer,
   encodeObservableResponse,
   encodeObservableDiffResponse,
 } from '../protocol'
 import { BasedServer } from '../server'
-import { ActiveObservable, ObservableUpdateFunction } from '../types'
+import {
+  ActiveObservable,
+  ObservableUpdateFunction,
+  WebsocketClient,
+} from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
@@ -58,23 +61,23 @@ export const subscribe = (
   server: BasedServer,
   id: number,
   checksum: number,
-  ws: uws.WebSocket
+  client: WebsocketClient
 ) => {
+  if (!client.ws) {
+    return
+  }
   const obs = server.activeObservablesById.get(id)
-  ws.obs.add(id)
+  client.ws.obs.add(id)
   if (obs.beingDestroyed) {
     clearTimeout(obs.beingDestroyed)
     obs.beingDestroyed = null
   }
-  obs.clients.add(ws.id)
+  obs.clients.add(client.ws.id)
   if (obs.cache && obs.checksum !== checksum) {
-    if (ws.closed) {
-      return
-    }
     if (obs.diffCache && obs.previousChecksum === checksum) {
-      ws.send(obs.diffCache, true, false)
+      client.ws.send(obs.diffCache, true, false)
     } else {
-      ws.send(obs.cache, true, false)
+      client.ws.send(obs.cache, true, false)
     }
   }
 }
@@ -82,20 +85,24 @@ export const subscribe = (
 export const unsubscribe = (
   server: BasedServer,
   id: number,
-  ws: uws.WebSocket
+  client: WebsocketClient
 ) => {
-  if (!ws.obs.has(id)) {
+  if (!client.ws) {
+    return
+  }
+
+  if (!client.ws.obs.has(id)) {
     return
   }
 
   const obs = server.activeObservablesById.get(id)
-  ws.obs.delete(id)
+  client.ws.obs.delete(id)
 
   if (!obs) {
     return
   }
 
-  obs.clients.delete(ws.id)
+  obs.clients.delete(client.ws.id)
 
   if (obs.clients.size === 0) {
     destroy(server, id)
@@ -105,15 +112,19 @@ export const unsubscribe = (
 export const unsubscribeIgnoreClient = (
   server: BasedServer,
   id: number,
-  ws: uws.WebSocket
+  client: WebsocketClient
 ) => {
+  if (!client.ws) {
+    return
+  }
+
   const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
     return
   }
 
-  obs.clients.delete(ws.id)
+  obs.clients.delete(client.ws.id)
 
   if (obs.clients.size === 0) {
     destroy(server, id)

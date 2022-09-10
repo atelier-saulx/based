@@ -1,16 +1,16 @@
-import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
 import { sendError, BasedErrorCode } from '../../error'
+import { WebsocketClient } from '../../types'
 
 export const subscribeMessage = (
   arr: Uint8Array,
   start: number,
   len: number,
   isDeflate: boolean,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   server: BasedServer
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
@@ -25,7 +25,7 @@ export const subscribeMessage = (
     return false
   }
 
-  if (ws.obs.has(id)) {
+  if (client.ws?.obs.has(id)) {
     // allready subscribed to this id
     return true
   }
@@ -36,37 +36,37 @@ export const subscribeMessage = (
   )
 
   server.auth.config
-    .authorize(server, ws, 'observe', name, payload)
+    .authorize(server, client, 'observe', name, payload)
     .then((ok) => {
-      if (ws.closed) {
+      if (!client.ws) {
         return
       }
 
       if (!ok) {
-        sendError(ws, 'Not authorized', {
+        sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
           observableId: id,
         })
         return false
       }
 
-      ws.subscribe(String(id))
-      ws.obs.add(id)
+      client.ws.subscribe(String(id))
+      client.ws.obs.add(id)
 
       if (server.activeObservablesById.has(id)) {
-        subscribe(server, id, checksum, ws)
+        subscribe(server, id, checksum, client)
       } else {
         server.functions
           .get(name)
           .then((spec) => {
             if (spec && isObservableFunctionSpec(spec)) {
               const obs = create(server, name, id, payload)
-              if (!ws.obs.has(id)) {
+              if (!client.ws?.obs.has(id)) {
                 if (obs.clients.size === 0) {
                   destroy(server, id)
                 }
               } else {
-                subscribe(server, id, checksum, ws)
+                subscribe(server, id, checksum, client)
               }
             } else {
               console.error('No function for you', name)
@@ -78,7 +78,7 @@ export const subscribeMessage = (
       }
     })
     .catch((err) => {
-      sendError(ws, err, {
+      sendError(client, err, {
         basedCode: BasedErrorCode.AuthorizeError,
         observableId: id,
       })
@@ -91,7 +91,7 @@ export const subscribeMessage = (
 export const unsubscribeMessage = (
   arr: Uint8Array,
   start: number,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   server: BasedServer
 ) => {
   // | 4 header | 8 id |
@@ -102,13 +102,13 @@ export const unsubscribeMessage = (
     return false
   }
 
-  if (ws.closed) {
+  if (!client.ws) {
     return
   }
 
-  ws.unsubscribe(String(id))
+  client.ws.unsubscribe(String(id))
 
-  unsubscribe(server, id, ws)
+  unsubscribe(server, id, client)
 
   return true
 }

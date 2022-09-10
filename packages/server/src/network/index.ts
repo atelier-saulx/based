@@ -42,11 +42,12 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
           }
         : upgrade,
       message: (ws, data, isBinary) => {
-        message(server, ws, data, isBinary)
+        message(server, ws.c, data, isBinary)
       },
       open: (ws) => {
         if (ws) {
-          // console.info('open')
+          const client = { ws }
+          ws.c = client
         }
         //
         // ws.token = 'x' token - only on upgrade does make it super easy (for auth)
@@ -59,9 +60,10 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       close: (ws) => {
         console.info('close', 'remove from subs')
         ws.obs.forEach((id) => {
-          unsubscribeIgnoreClient(server, id, ws)
+          unsubscribeIgnoreClient(server, id, ws.c)
         })
-        ws.closed = true
+        ws.c.ws = null
+        ws.c = null
       },
       drain: () => {
         console.info('drain')

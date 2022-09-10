@@ -1,4 +1,3 @@
-import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import {
   decodePayload,

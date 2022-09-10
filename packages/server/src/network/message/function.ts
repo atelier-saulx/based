@@ -1,4 +1,3 @@
-import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import {
   readUint8,
@@ -9,13 +8,14 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { sendError, BasedErrorCode } from '../../error'
+import { WebsocketClient } from '../../types'
 
 export const functionMessage = (
   arr: Uint8Array,
   start: number,
   len: number,
   isDeflate: boolean,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   server: BasedServer
 ): boolean => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
@@ -33,15 +33,14 @@ export const functionMessage = (
   }
 
   server.auth.config
-    .authorize(server, ws, 'function', name, payload)
+    .authorize(server, client, 'function', name, payload)
     .then((ok) => {
       if (!ok) {
-        if (!ws.closed) {
-          sendError(ws, 'Not authorized', {
-            basedCode: BasedErrorCode.AuthorizeRejectedError,
-            requestId: reqId,
-          })
-        }
+        sendError(client, 'Not authorized', {
+          basedCode: BasedErrorCode.AuthorizeRejectedError,
+          requestId: reqId,
+        })
+
         return false
       }
       server.functions
@@ -49,44 +48,40 @@ export const functionMessage = (
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec)) {
             spec
-              .function(payload, ws)
+              .function(payload, client)
               .then((v) => {
                 // have to check if its closed.. EVERYWHERE
-                if (!ws.closed) {
-                  ws.send(
-                    encodeFunctionResponse(reqId, valueToBuffer(v)),
-                    true,
-                    false
-                  )
-                }
+                client.ws?.send(
+                  encodeFunctionResponse(reqId, valueToBuffer(v)),
+                  true,
+                  false
+                )
               })
               .catch((err) => {
-                sendError(ws, err, {
+                sendError(client, err, {
                   basedCode: BasedErrorCode.FunctionError,
                   requestId: reqId,
                 })
               })
           } else {
-            sendError(ws, 'No function for you', {
+            sendError(client, 'No function for you', {
               basedCode: BasedErrorCode.FunctionNotFound,
               requestId: reqId,
             })
           }
         })
         .catch(() => {
-          sendError(ws, 'fn does not exist', {
+          sendError(client, 'fn does not exist', {
             basedCode: BasedErrorCode.FunctionNotFound,
             requestId: reqId,
           })
         })
     })
     .catch((err) => {
-      if (!ws.closed) {
-        sendError(ws, err, {
-          basedCode: BasedErrorCode.AuthorizeError,
-          requestId: reqId,
-        })
-      }
+      sendError(client, err, {
+        basedCode: BasedErrorCode.AuthorizeError,
+        requestId: reqId,
+      })
       return false
     })
 
