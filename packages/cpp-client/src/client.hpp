@@ -32,13 +32,28 @@ class BasedClient {
     int32_t m_request_id = 0;
     bool m_draining = false;
 
-    // std::map<int, void (*)(std::string_view /*data*/, int /*checksum*/)> m_observe_handlers;
     std::map<int, std::function<void(std::string_view)>> m_function_listeners;
-    std::map<int, std::vector<std::function<void(std::string_view)>>> m_observe_listeners;
     std::map<int, std::function<void(std::string_view)>> m_error_listeners;
     std::vector<std::vector<uint8_t>> m_function_queue;
-    std::vector<std::vector<uint8_t>> m_observe_queue;
-    std::vector<std::vector<uint8_t>> m_get_observe_queue;
+
+    /**
+     * Each observable must be stored in memory, in case the connection drops.
+     * So there's a queue, which is emptied on drain, but is refilled with the observables
+     * stored in memory in the event of a reconnection.
+     *
+     * When the client calls .observe, we must both queue the request and also store
+     * the observable in memory.
+     *
+     * These observables all have a list of listeners. Each listener has a on_data callback
+     * and and optional on_error callback.
+     */
+
+    std::vector<std::vector<uint8_t>> m_observe_queue;       // <list of encoded_requests>
+    std::map<int, std::vector<uint8_t>> m_observe_requests;  // <obs_hash, encoded_request>
+    std::map<int, std::vector<int>> m_observe_subs;          // <obs_hash, list of sub_ids>
+    std::map<int, std::function<void(std::string, int64_t)>>
+        m_sub_on_data;                                               // <sub_id, on_data callback>
+    std::map<int, std::function<void(std::string)>> m_sub_on_error;  // <sub_id, on_error callback>
 
    public:
     BasedClient() {
@@ -55,22 +70,67 @@ class BasedClient {
     }
 
     /**
-     * Observe a function. This returns the observe ID used to
+     * Observe a function. This returns the sub_id used to
      * unsubscribe with .unobserve(id)
      */
     int observe(std::string name,
-                std::string_view payload,
-                void (*onData)(std::string_view /*data*/, int /*checksum*/),
-                void (*onError)(std::string_view /*error*/),
+                std::string payload,
+                /**
+                 * Callback that the observable will trigger.
+                 */
+                std::function<void(std::string /*data*/, int64_t /*checksum*/)> on_data,
+                /**
+                 * This is optional. Can be set to NULL if no onError callback is required.
+                 */
+                std::function<void(std::string /*error*/)> on_error,
                 ObservableOpts obs_opts) {
         json p = json::parse(payload);
         int32_t payload_hash = (int32_t)std::hash<json>{}(p);
         int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+
         int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
 
-        if (m_observe_listeners.find(obs_id) != m_observe_listeners.end()) {}
+        int sub_id;
 
-        return 1;
+        if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
+            // first time this query is observed
+            sub_id = 1;
+            // encode request
+            std::vector<uint8_t> msg = Utility::encode_observe_message(
+                obs_id, name, payload, 0);  // TODO: remove hardcoded checksum
+
+            // add encoded request to queue
+            m_observe_queue.push_back(msg);
+
+            // add encoded request to map of observables
+            m_observe_requests[obs_id] = msg;
+
+            // add subscriber to list of subs for this observable
+            m_observe_subs[obs_id] = std::vector<int>{sub_id};
+
+            // add on_data for this sub
+            m_sub_on_data[sub_id] = on_data;
+
+            // add on_error for this sub if on_error is present (overload?)
+            if (on_error) m_sub_on_error[sub_id] = on_error;
+        } else {
+            // this query has already been requested once, only add subscriber
+            sub_id = m_sub_on_data.size() + 1;
+
+            // add subscriber to that observable
+            m_observe_subs.at(obs_id).push_back(sub_id);
+
+            // add on_data for this new sub
+            m_sub_on_data[sub_id] = on_data;
+
+            // add on_error for this new sub if it exists
+
+            if (on_error) m_sub_on_error[sub_id] = on_error;
+        }
+
+        drain_queues();
+
+        return sub_id;
     }
 
     void unobserve(int id) {
@@ -97,7 +157,7 @@ class BasedClient {
             return;
         }
         if (m_con.status() == ConnectionStatus::CLOSED ||
-            m_con.status() != ConnectionStatus::FAILED) {
+            m_con.status() == ConnectionStatus::FAILED) {
             std::cerr << "Connection is dead, status = " << m_con.status() << std::endl;
             return;
         }
@@ -108,12 +168,13 @@ class BasedClient {
 
         std::vector<uint8_t> buff;
 
-        if (m_get_observe_queue.size() > 0) {
-            for (auto msg : m_get_observe_queue) {
-                buff.insert(buff.end(), msg.begin(), msg.end());
-            }
-            m_get_observe_queue.clear();
-        }
+        // if (m_get_observe_queue.size() > 0) {
+        //     for (auto msg : m_get_observe_queue) {
+        //         buff.insert(buff.end(), msg.begin(), msg.end());
+        //     }
+        //     m_get_observe_queue.clear();
+        // }
+
         if (m_observe_queue.size() > 0) {
             for (auto msg : m_observe_queue) {
                 buff.insert(buff.end(), msg.begin(), msg.end());
@@ -205,8 +266,13 @@ class BasedClient {
 
                 break;
             }
-            case IncomingType::SUBSCRIPTION_DATA:
-                break;
+            case IncomingType::SUBSCRIPTION_DATA: {
+                std::cout << "got sub data!!!" << std::endl;
+                std::cout << "type = " << type << std::endl;
+                std::cout << "len = " << len << std::endl;
+                std::cout << "is_deflate = " << is_deflate << std::endl;
+
+            } break;
             case IncomingType::SUBSCRIPTION_DIFF_DATA:
                 break;
             case IncomingType::GET_DATA:

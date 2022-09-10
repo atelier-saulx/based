@@ -65,13 +65,12 @@ int main() {
         // client.function("small", "", [](std::string_view data) {
         //     std::cout << "hello i received this data = " << data << std::endl;
         // });
-        // "{\"$id\": \"flurp\", \"$all\": true}"
-        // "{ \"$all\": true, \"$id\": \"flurp\"}"
-
         int id = client.observe(
-            "based_observe", "{\"b\":\"a\",\"a\":\"b\"}",
-            [](std::string_view data, int checksum) { std::cout << data << std::endl; },
-            [](std::string_view error) { std::cerr << error << std::endl; },
+            "counter", "{\"b\":\"a\",\"a\":\"b\"}",
+            [](std::string_view data, int checksum) {
+                std::cout << "hello im observable data = " << data << std::endl;
+            },
+            [](std::string_view error) { std::cerr << "obs error" << error << std::endl; },
             ObservableOpts(true, 100));
 
         std::getline(std::cin, cmd);

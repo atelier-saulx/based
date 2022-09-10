@@ -110,6 +110,13 @@ std::string deflate_string(const std::string& str) {
     return outstring;
 }
 
+void append_bytes(std::vector<uint8_t>& buff, int64_t src, size_t size) {
+    for (int i = 0; i < size; i++) {
+        uint8_t byte = (src >> (8 * i)) & 0xff;
+        buff.push_back(byte);
+    }
+}
+
 void append_string(std::vector<uint8_t>& buff, std::string payload) {
     char const* data = payload.data();
     for (int i = 0; i < payload.length(); i++) {
@@ -125,22 +132,6 @@ void append_header(std::vector<uint8_t>& buff, int32_t type, int32_t is_deflate,
         buff.push_back(byte);
     }
 }
-void append_id(std::vector<uint8_t>& buff, int32_t id) {
-    for (int i = 0; i < 3; i++) {
-        uint8_t byte = (id >> (8 * i)) & 0xff;
-        buff.push_back(byte);
-    }
-}
-// std::string encode_get_observe_message(int id,
-//                                        int type,
-//                                        std::string name,
-//                                        int checksum,
-//                                        std::string payload) {}
-// std::string encode_observe_message(int id,
-//                                    int type,
-//                                    std::string name,
-//                                    int checksum,
-//                                    std::string payload) {}
 
 std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::string& payload) {
     std::vector<uint8_t> buff;
@@ -172,7 +163,7 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
         len += p.length();
     }
     append_header(buff, 0, is_deflate, len);
-    append_id(buff, id);
+    append_bytes(buff, id, 3);
     buff.push_back(name.length());
     append_string(buff, name);
     if (p.length()) {
@@ -188,6 +179,51 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
 
     return buff;
 }
+
+std::vector<uint8_t> encode_observe_message(int64_t id,
+                                            std::string name,
+                                            std::string& payload,
+                                            int64_t checksum) {
+    // Type 1 = subscribe
+    // | 4 header | 8 id | 8 checksum | 1 name length | * name | [* payload]
+
+    std::vector<uint8_t> buff;
+
+    /**
+     * Length in bytes. 4 B header + 8 B id + 8 B checksum,
+     * add the rest later based on payload and name.
+     */
+    int32_t len = 20;
+    len += 1 + name.length();
+
+    int32_t is_deflate = 0;
+
+    std::string p;
+    if (payload.length() > 0) {
+        std::cout << "> Encoding payload... " << std::endl;
+
+        if (payload.length() > 150) {
+            is_deflate = 1;
+            std::cout << "> Deflating payload..." << std::endl;
+            p = deflate_string(payload);
+        } else {
+            p = payload;
+        }
+
+        len += p.length();
+    }
+    append_header(buff, 1, is_deflate, len);
+    append_bytes(buff, id, 8);
+    append_bytes(buff, checksum, 8);
+    buff.push_back(name.length());
+    append_string(buff, name);
+    if (p.length()) {
+        append_string(buff, p);
+    }
+
+    return buff;
+}
+
 // std::string encode_auth_message(int id, std::string payload) {}
 
 int32_t get_payload_type(int32_t header) {
@@ -214,6 +250,10 @@ int32_t read_header(std::string buff) {
     }
     return res;
 }
+
+// int64_t read_bytes_from_string(){
+
+}
 int32_t read_id(std::string buff) {
     // id starts at index[4] and is 3 bytes long
     char const* data = buff.data();
@@ -224,7 +264,7 @@ int32_t read_id(std::string buff) {
     }
     return res;
 }
-
-};  // namespace Utility
+}
+;  // namespace Utility
 
 #endif
