@@ -245,13 +245,13 @@ class BasedClient {
 
         switch (type) {
             case IncomingType::FUNCTION_DATA: {
-                int32_t id = Utility::read_id(message);
+                int id = Utility::read_bytes_from_string(message, 4, 3);
 
                 if (m_function_listeners.find(id) != m_function_listeners.end()) {
                     std::function<void(std::string_view)> fn = m_function_listeners.at(id);
                     if (len != 3) {
-                        int32_t start = 7;
-                        int32_t end = len + 4;
+                        int start = 7;
+                        int end = len + 4;
                         std::string payload =
                             is_deflate ? Utility::inflate_string(message.substr(start, end))
                                        : message.substr(start, end);
@@ -264,13 +264,25 @@ class BasedClient {
                     m_function_listeners.erase(id);
                 }
 
-                break;
+                return;
             }
             case IncomingType::SUBSCRIPTION_DATA: {
-                std::cout << "got sub data!!!" << std::endl;
-                std::cout << "type = " << type << std::endl;
-                std::cout << "len = " << len << std::endl;
-                std::cout << "is_deflate = " << is_deflate << std::endl;
+                int obs_id = Utility::read_bytes_from_string(message, 4, 8);
+                int checksum = Utility::read_bytes_from_string(message, 12, 8);
+
+                if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
+                    int start = 20;  // size of header
+                    int end = len + 4;
+                    std::string payload = "";
+                    if (len != 16) {
+                        payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                             : message.substr(start, end);
+                    }
+                    for (auto sub_id : m_observe_subs.at(obs_id)) {
+                        auto fn = m_sub_on_data.at(sub_id);
+                        fn(payload, checksum);
+                    }
+                }
 
             } break;
             case IncomingType::SUBSCRIPTION_DIFF_DATA:

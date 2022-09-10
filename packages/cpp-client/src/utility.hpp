@@ -251,20 +251,16 @@ int32_t read_header(std::string buff) {
     return res;
 }
 
-// int64_t read_bytes_from_string(){
-
-}
-int32_t read_id(std::string buff) {
-    // id starts at index[4] and is 3 bytes long
+int64_t read_bytes_from_string(std::string& buff, int start, int len) {
     char const* data = buff.data();
     int32_t res = 0;
-    size_t s = 2 + 4;  // len - 1 + start;
-    for (int i = s; i >= 4; i--) {
+    size_t s = len - 1 + start;  // len - 1 + start;
+    for (int i = s; i >= start; i--) {
         res = res * 256 + (uint8_t)data[i];
     }
     return res;
 }
-}
-;  // namespace Utility
+
+};  // namespace Utility
 
 #endif

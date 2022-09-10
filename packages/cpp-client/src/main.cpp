@@ -59,6 +59,7 @@ int main() {
 
     // std::cout << "OBS started, id = " << id << std::endl;
     bool done = false;
+    int i = 0;
     std::string cmd;
 
     while (!done) {
@@ -67,12 +68,13 @@ int main() {
         // });
         int id = client.observe(
             "counter", "{\"b\":\"a\",\"a\":\"b\"}",
-            [](std::string_view data, int checksum) {
-                std::cout << "hello im observable data = " << data << std::endl;
+            [i](std::string_view data, int checksum) {
+                std::cout << "observable n " << i << " data = " << data
+                          << ", checksum = " << checksum << std::endl;
             },
             [](std::string_view error) { std::cerr << "obs error" << error << std::endl; },
             ObservableOpts(true, 100));
-
+        i++;
         std::getline(std::cin, cmd);
         if (cmd == "q") done = true;
     }
