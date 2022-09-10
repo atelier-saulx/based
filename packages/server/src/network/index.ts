@@ -6,6 +6,14 @@ import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 
+// const genLargeMemBlock = (): string => {
+//   let str = ''
+//   for (let i = 0; i < 10000; i++) {
+//     str += Math.random() * 99999 + ' xxxx'
+//   }
+//   return str
+// }
+
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
     key && cert
@@ -48,6 +56,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       },
       open: (ws) => {
         if (ws) {
+          // ws.bla = genLargeMemBlock()
           const client = { ws }
           ws.c = client
         }

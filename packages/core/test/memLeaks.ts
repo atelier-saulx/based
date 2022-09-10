@@ -39,7 +39,7 @@ test.serial('get', async (t) => {
 
   const cl: Set<BasedCoreClient> = new Set()
 
-  for (let i = 0; i < 100000; i++) {
+  for (let i = 0; i < 10000; i++) {
     const client = new BasedCoreClient()
     client.connect({
       url: async () => {
@@ -61,12 +61,12 @@ test.serial('get', async (t) => {
     cl.delete(client)
   }
 
-  await wait(6000)
+  await wait(10000)
 
   const used2 = process.memoryUsage().heapUsed / 1024 / 1024
   console.info(
     `Mem after disconnect approximately ${Math.round(used2 * 100) / 100} MB`
   )
 
-  t.true(used2 < 16000, 'Does not use too much mem')
+  t.true(used2 < 160, 'Does not use too much mem')
 })
