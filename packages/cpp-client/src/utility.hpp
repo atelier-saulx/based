@@ -224,6 +224,21 @@ std::vector<uint8_t> encode_observe_message(int64_t id,
     return buff;
 }
 
+std::vector<uint8_t> encode_unobserve_message(int64_t obs_id) {
+    // Type 2 = unsubscribe
+    // | 4 header | 8 id |
+
+    std::vector<uint8_t> buff;
+
+    /**
+     * Length in bytes. 4 B header + 8 B id
+     */
+    int32_t len = 12;
+
+    append_header(buff, 2, 0, len);
+    append_bytes(buff, obs_id, 8);
+    return buff;
+}
 // std::string encode_auth_message(int id, std::string payload) {}
 
 int32_t get_payload_type(int32_t header) {

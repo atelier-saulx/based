@@ -2,6 +2,7 @@
 #define BASED_CLIENT_H
 
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -15,7 +16,8 @@ enum IncomingType {
     SUBSCRIPTION_DATA = 1,
     SUBSCRIPTION_DIFF_DATA = 2,
     GET_DATA = 3,
-    AUTH_DATA = 4
+    AUTH_DATA = 4,
+    ERROR_DATA = 5
 };
 
 struct ObservableOpts {
@@ -30,11 +32,13 @@ class BasedClient {
    private:
     WsConnection m_con;
     int32_t m_request_id = 0;
+    int32_t m_sub_id = 0;
     bool m_draining = false;
 
     std::map<int, std::function<void(std::string_view)>> m_function_listeners;
     std::map<int, std::function<void(std::string_view)>> m_error_listeners;
     std::vector<std::vector<uint8_t>> m_function_queue;
+    std::vector<std::vector<uint8_t>> m_unobserve_queue;
 
     /**
      * Each observable must be stored in memory, in case the connection drops.
@@ -48,9 +52,20 @@ class BasedClient {
      * and and optional on_error callback.
      */
 
-    std::vector<std::vector<uint8_t>> m_observe_queue;       // <list of encoded_requests>
+    /**
+     * Requests should be added to this queue when a new observable is created,
+     * and when the client recconects.
+     *
+     * Never when a new sub is added to the same obs_id.
+     */
+    std::vector<std::vector<uint8_t>> m_observe_queue;  // <list of encoded_requests>
+    /**
+     * The list of all the requests. These should only be deleted when
+     * there are no active subs for it.
+     */
     std::map<int, std::vector<uint8_t>> m_observe_requests;  // <obs_hash, encoded_request>
-    std::map<int, std::vector<int>> m_observe_subs;          // <obs_hash, list of sub_ids>
+    std::map<int, std::set<int>> m_observe_subs;             // <obs_hash, list of sub_ids>
+    std::map<int, int> m_sub_to_obs;                         // <sub_id, obs_hash>
     std::map<int, std::function<void(std::string, int64_t)>>
         m_sub_on_data;                                               // <sub_id, on_data callback>
     std::map<int, std::function<void(std::string)>> m_sub_on_error;  // <sub_id, on_error callback>
@@ -89,15 +104,13 @@ class BasedClient {
         int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
 
         int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
-
-        int sub_id;
+        int32_t sub_id = m_sub_id++;
 
         if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
             // first time this query is observed
-            sub_id = 1;
             // encode request
-            std::vector<uint8_t> msg = Utility::encode_observe_message(
-                obs_id, name, payload, 0);  // TODO: remove hardcoded checksum
+            // TODO: remove hardcoded checksum after implementing cache
+            std::vector<uint8_t> msg = Utility::encode_observe_message(obs_id, name, payload, 0);
 
             // add encoded request to queue
             m_observe_queue.push_back(msg);
@@ -106,7 +119,10 @@ class BasedClient {
             m_observe_requests[obs_id] = msg;
 
             // add subscriber to list of subs for this observable
-            m_observe_subs[obs_id] = std::vector<int>{sub_id};
+            m_observe_subs[obs_id] = std::set<int>{sub_id};
+
+            // record what obs this sub is for, to delete it later
+            m_sub_to_obs[sub_id] = obs_id;
 
             // add on_data for this sub
             m_sub_on_data[sub_id] = on_data;
@@ -114,17 +130,19 @@ class BasedClient {
             // add on_error for this sub if on_error is present (overload?)
             if (on_error) m_sub_on_error[sub_id] = on_error;
         } else {
-            // this query has already been requested once, only add subscriber
-            sub_id = m_sub_on_data.size() + 1;
+            // this query has already been requested once, only add subscriber,
+            // dont send a new request.
 
             // add subscriber to that observable
-            m_observe_subs.at(obs_id).push_back(sub_id);
+            m_observe_subs.at(obs_id).insert(sub_id);
+
+            // record what obs this sub is for, to delete it later
+            m_sub_to_obs[sub_id] = obs_id;
 
             // add on_data for this new sub
             m_sub_on_data[sub_id] = on_data;
 
             // add on_error for this new sub if it exists
-
             if (on_error) m_sub_on_error[sub_id] = on_error;
         }
 
@@ -133,12 +151,49 @@ class BasedClient {
         return sub_id;
     }
 
-    void unobserve(int id) {
-        std::cout << "unobserve not implemented yet" << std::endl;
+    void unobserve(int sub_id) {
+        std::cout << "> Removing sub_id " << sub_id << std::endl;
+        if (m_sub_to_obs.find(sub_id) == m_sub_to_obs.end()) {
+            std::cerr << "No subscription found with sub_id " << sub_id << std::endl;
+            return;
+        }
+        auto obs_id = m_sub_to_obs.at(sub_id);
+
+        // remove sub from list of subs for that observable
+        m_observe_subs.at(obs_id).erase(sub_id);
+
+        // remove on_data callback
+        m_sub_on_data.erase(sub_id);
+
+        // remove on_error callback
+        m_sub_on_error.erase(sub_id);
+
+        // remove sub to obs mapping for removed sub
+        m_sub_to_obs.erase(sub_id);
+
+        // if the list is now empty, add request to unobserve to queue
+        if (m_observe_subs.at(obs_id).empty()) {
+            std::vector<uint8_t> msg = Utility::encode_unobserve_message(obs_id);
+            m_unobserve_queue.push_back(msg);
+            // and remove the obs from the map of active ones.
+            m_observe_requests.erase(obs_id);
+            // and the vector of listeners, since it's now empty we can free the memory
+            m_observe_subs.erase(obs_id);
+        }
+        drain_queues();
     }
 
     void function(std::string name, std::string payload, std::function<void(std::string_view)> cb) {
-        add_to_fn_queue(name, payload, cb);
+        m_request_id++;
+        if (m_request_id > 16777215) {
+            m_request_id = 0;
+        }
+        int id = m_request_id;
+        m_function_listeners[id] = cb;
+        // encode the message
+        std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
+        m_function_queue.push_back(msg);
+        drain_queues();
     }
 
     void get() {
@@ -168,18 +223,18 @@ class BasedClient {
 
         std::vector<uint8_t> buff;
 
-        // if (m_get_observe_queue.size() > 0) {
-        //     for (auto msg : m_get_observe_queue) {
-        //         buff.insert(buff.end(), msg.begin(), msg.end());
-        //     }
-        //     m_get_observe_queue.clear();
-        // }
-
         if (m_observe_queue.size() > 0) {
             for (auto msg : m_observe_queue) {
                 buff.insert(buff.end(), msg.begin(), msg.end());
             }
             m_observe_queue.clear();
+        }
+
+        if (m_unobserve_queue.size() > 0) {
+            for (auto msg : m_unobserve_queue) {
+                buff.insert(buff.end(), msg.begin(), msg.end());
+            }
+            m_unobserve_queue.clear();
         }
 
         if (m_function_queue.size() > 0) {
@@ -189,44 +244,14 @@ class BasedClient {
             m_function_queue.clear();
         }
 
-        m_con.send(buff);
+        if (buff.size() > 0) m_con.send(buff);
 
         m_draining = false;
     }
 
-    void add_to_fn_queue(std::string name,
-                         std::string payload,
-                         std::function<void(std::string_view)> cb) {
-        m_request_id++;
-        if (m_request_id > 16777215) {
-            m_request_id = 0;
-        }
-        int id = m_request_id;
-        m_function_listeners[id] = cb;
-        // encode the message
-        std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
-        m_function_queue.push_back(msg);
-        drain_queues();
-    };
-
-    void add_to_obs_queue(std::string name,
-                          std::string payload,
-                          std::function<void(std::string_view)> cb) {
-        m_request_id++;
-        if (m_request_id > 16777215) {
-            m_request_id = 0;
-        }
-        int id = m_request_id;
-        m_function_listeners[id] = cb;
-        // encode the message
-        std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
-        m_function_queue.push_back(msg);
-        drain_queues();
-    };
-
     void on_open() {
-        // Resend all subscriptions
-        // for (auto const& [key, val] : m_observe_list){}
+        // TODO: Resend all subscriptions
+        // for (auto const& [key, val] : m_observe_requests) {}
     }
 
     void on_message(std::string message) {
@@ -263,9 +288,8 @@ class BasedClient {
                     // Listener has fired, remove it from the map.
                     m_function_listeners.erase(id);
                 }
-
-                return;
             }
+                return;
             case IncomingType::SUBSCRIPTION_DATA: {
                 int obs_id = Utility::read_bytes_from_string(message, 4, 8);
                 int checksum = Utility::read_bytes_from_string(message, 12, 8);
@@ -283,8 +307,8 @@ class BasedClient {
                         fn(payload, checksum);
                     }
                 }
-
-            } break;
+            }
+                return;
             case IncomingType::SUBSCRIPTION_DIFF_DATA:
                 break;
             case IncomingType::GET_DATA:
