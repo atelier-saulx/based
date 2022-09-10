@@ -25,6 +25,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   app.publish('all',message)
   */
 
+  // WeakMap for clients
+
   app
     .ws('/*', {
       maxPayloadLength: 1024 * 1024 * 5,
@@ -58,7 +60,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         // open(this, ws)
       },
       close: (ws) => {
-        console.info('close', 'remove from subs')
+        // console.info('close', 'remove from subs')
         ws.obs.forEach((id) => {
           unsubscribeIgnoreClient(server, id, ws.c)
         })
