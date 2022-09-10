@@ -197,6 +197,7 @@ export const incoming = async (
         )
       }
 
+      console.info('SET CACJE DATA', payload, id)
       // handle max size etc / localstorage etc
       client.cache.set(id, {
         value: payload,

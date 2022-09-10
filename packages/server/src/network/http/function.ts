@@ -1,12 +1,12 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { RestClient } from '../../types'
+import { HttpClient } from '../../types'
 
 export const functionRest = (
   name: string,
   payload: any,
   isDeflate: boolean, // lets add this ad well...
-  client: RestClient,
+  client: HttpClient,
   server: BasedServer
 ): void => {
   console.info('go fn', isDeflate)
@@ -25,8 +25,8 @@ export const functionRest = (
               return
             }
             if (!ok) {
-              client.res.writeStatus('401 Unauthorized')
-              client.res.end('WRONG AUTH')
+              client.res?.writeStatus('401 Unauthorized')
+              client.res?.end('WRONG AUTH')
             } else {
               spec
                 .function(payload, client)
@@ -35,7 +35,6 @@ export const functionRest = (
                     return
                   }
                   if (spec.customHttpResponse) {
-                    console.log(client)
                     if (
                       await spec.customHttpResponse(result, payload, client)
                     ) {
@@ -48,9 +47,9 @@ export const functionRest = (
                   }
                   // handle response
                   if (typeof result === 'string') {
-                    client.res.end(result)
+                    client.res?.end(result)
                   } else {
-                    client.res.end(JSON.stringify(result))
+                    client.res?.end(JSON.stringify(result))
                   }
                 })
                 .catch((err) => {
@@ -59,7 +58,7 @@ export const functionRest = (
                   }
                   // error handling nice
                   console.error('bad fn', client.id, client.isAborted, err)
-                  client.res.end('wrong!')
+                  client.res?.end('wrong!')
                 })
             }
           })
@@ -68,21 +67,15 @@ export const functionRest = (
               return
             }
             console.error('no auth', err)
-            client.res.end('wrong!')
+            client.res?.end('wrong!')
           })
       } else {
         console.error('No function for you')
-        if (client.isAborted) {
-          return
-        }
-        client.res.end('wrong!')
+        client.res?.end('wrong!')
       }
     })
     .catch((err) => {
-      if (client.isAborted) {
-        return
-      }
       console.error('fn does not exist', err)
-      client.res.end('wrong!')
+      client.res?.end('wrong!')
     })
 }

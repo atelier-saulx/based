@@ -1,19 +1,9 @@
-import uws from '@based/uws'
 import { deepMerge } from '@saulx/utils'
 import { AuthState } from '../network/message/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
-import { AuthConfig } from '../types'
+import { AuthConfig, WebsocketClient } from '../types'
 import { authorize } from './authorize'
-
-// has an authorize config
-
-// 'authorize'
-// 'authorize-advanced'
-
-// class here this is where you store all the authorize stuff
-
-//  sendAuthUpdate: (ws: uws.WebSocket, payload: any) {}
 
 export class BasedAuth {
   server: BasedServer
@@ -31,9 +21,7 @@ export class BasedAuth {
     deepMerge(this.config, config)
   }
 
-  sendAuthUpdate(ws: uws.WebSocket, authState: AuthState) {
-    if (!ws.closed) {
-      ws.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
-    }
+  sendAuthUpdate(client: WebsocketClient, authState: AuthState) {
+    client.ws?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
   }
 }

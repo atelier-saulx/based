@@ -177,6 +177,7 @@ export class BasedCoreClient extends Emitter {
     const id = genObserveId(name, payload)
     let subscriberId: number
     const cachedData = this.cache.get(id)
+
     if (!this.observeState.has(id)) {
       subscriberId = 1
       const subscribers = new Map()
@@ -198,9 +199,11 @@ export class BasedCoreClient extends Emitter {
         onData,
       })
     }
+
     if (cachedData) {
       onData(cachedData.value, cachedData.checksum)
     }
+
     return () => {
       const obs = this.observeState.get(id)
       obs.subscribers.delete(subscriberId)

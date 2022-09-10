@@ -1,14 +1,14 @@
-import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { decodeHeader, readUint8 } from '../../protocol'
 import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
+import { WebsocketClient } from '../../types'
 
 const reader = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   arr: Uint8Array,
   start: number
 ): number => {
@@ -16,27 +16,33 @@ const reader = (
   const next = len + start
 
   // type 0 = function
-  if (type === 0 && functionMessage(arr, start, len, isDeflate, ws, server)) {
+  if (
+    type === 0 &&
+    functionMessage(arr, start, len, isDeflate, client, server)
+  ) {
     return next
   }
 
   // type 1 = subscribe
-  if (type === 1 && subscribeMessage(arr, start, len, isDeflate, ws, server)) {
+  if (
+    type === 1 &&
+    subscribeMessage(arr, start, len, isDeflate, client, server)
+  ) {
     return next
   }
 
   // type 2 = unsubscribe
-  if (type === 2 && unsubscribeMessage(arr, start, ws, server)) {
+  if (type === 2 && unsubscribeMessage(arr, start, client, server)) {
     return next
   }
 
   // type 3 = get
-  if (type === 3 && getMessage(arr, start, len, isDeflate, ws, server)) {
+  if (type === 3 && getMessage(arr, start, len, isDeflate, client, server)) {
     return next
   }
 
   // type 4 = auth
-  if (type === 4 && authMessage(arr, start, len, isDeflate, ws, server)) {
+  if (type === 4 && authMessage(arr, start, len, isDeflate, client, server)) {
     return next
   }
 
@@ -45,22 +51,27 @@ const reader = (
 
 export const message = (
   server: BasedServer,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   msg: ArrayBuffer,
   isBinary: boolean
 ) => {
+  if (!client.ws) {
+    return
+  }
+
   if (!isBinary) {
-    ws.close()
+    // TODO: add a hook here for illegal requests
+    client.ws.close()
     return
   }
   const uint8View = new Uint8Array(msg)
   const len = uint8View.length
   let next = 0
   while (next < len) {
-    const n = reader(server, ws, uint8View, next)
+    const n = reader(server, client, uint8View, next)
     if (n === undefined) {
       // Malformed message close client
-      ws.close()
+      client.ws.close()
       return
     }
     next = n

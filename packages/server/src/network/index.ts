@@ -4,7 +4,7 @@ import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
-import { rest } from './rest'
+import { httpHandler } from './http'
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -25,6 +25,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   app.publish('all',message)
   */
 
+  // WeakMap for clients
+
   app
     .ws('/*', {
       maxPayloadLength: 1024 * 1024 * 5,
@@ -42,11 +44,12 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
           }
         : upgrade,
       message: (ws, data, isBinary) => {
-        message(server, ws, data, isBinary)
+        message(server, ws.c, data, isBinary)
       },
       open: (ws) => {
         if (ws) {
-          // console.info('open')
+          const client = { ws }
+          ws.c = client
         }
         //
         // ws.token = 'x' token - only on upgrade does make it super easy (for auth)
@@ -57,11 +60,12 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         // open(this, ws)
       },
       close: (ws) => {
-        console.info('close', 'remove from subs')
+        // console.info('close', 'remove from subs')
         ws.obs.forEach((id) => {
-          unsubscribeIgnoreClient(server, id, ws)
+          unsubscribeIgnoreClient(server, id, ws.c)
         })
-        ws.closed = true
+        ws.c.ws = null
+        ws.c = null
       },
       drain: () => {
         console.info('drain')
@@ -74,9 +78,9 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       },
     })
     // REST
-    .get('/*', (res, req) => rest(server, req, res))
-    .post('/*', (res, req) => rest(server, req, res))
-    .options('/*', (res, req) => rest(server, req, res))
+    .get('/*', (res, req) => httpHandler(server, req, res))
+    .post('/*', (res, req) => httpHandler(server, req, res))
+    .options('/*', (res, req) => httpHandler(server, req, res))
 
   server.uwsApp = app
 }

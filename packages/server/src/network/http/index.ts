@@ -1,11 +1,11 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { RestClient, isObservableFunctionSpec } from '../../types'
+import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
 
 let clientId = 0
 
-export const rest = (
+export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
   res: uws.HttpResponse
@@ -30,7 +30,7 @@ export const rest = (
 
   const path = url.split('/')
 
-  const client: RestClient = {
+  const client: HttpClient = {
     res,
     query,
     ua,

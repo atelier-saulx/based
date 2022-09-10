@@ -1,9 +1,17 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
-export type RestClient = {
-  res: uws.HttpResponse
+export type WebsocketClient = {
+  ws?: uws.WebSocket
+}
+
+export type HttpClient = {
+  res?: uws.HttpResponse
 } & { [contextField: string]: any }
+
+export const isHttpClient = () => {
+  // make it typecasty
+}
 
 export type AuthConfig = {
   authorize?: Authorize
@@ -13,7 +21,7 @@ export type AuthConfig = {
 
 export type Authorize = (
   server: BasedServer,
-  client: uws.WebSocket | RestClient,
+  client: WebsocketClient | HttpClient,
   type: 'observe' | 'function',
   name: string,
   payload?: any
@@ -21,7 +29,7 @@ export type Authorize = (
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  client: uws.WebSocket | RestClient,
+  client: WebsocketClient | HttpClient,
   payload?: any
 ) => Promise<boolean>
 
@@ -49,7 +57,7 @@ export type ObservableUpdateFunction = (
 export type CustomHttpResponse = (
   result: any,
   payload: any,
-  client: RestClient
+  client: HttpClient
 ) => Promise<boolean>
 
 export type BasedObservableFunctionSpec = {
@@ -73,7 +81,7 @@ export type BasedFunctionSpec = {
   path?: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  function: (payload: any, client: uws.WebSocket | RestClient) => Promise<any>
+  function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
   idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number

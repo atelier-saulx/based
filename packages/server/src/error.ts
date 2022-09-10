@@ -1,5 +1,5 @@
-import uws from '@based/uws'
 import { valueToBuffer, encodeErrorResponse } from './protocol'
+import { WebsocketClient } from './types'
 
 export enum BasedErrorCode {
   FunctionError = 50001,
@@ -17,14 +17,14 @@ export type BasedErrorData = {
 }
 
 export const sendError = (
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   error: Error | string,
   props: Partial<BasedErrorData> & { basedCode: BasedErrorCode }
 ): void => {
   const errorData = { message: null, stack: null, basedCode: null }
   if (typeof error === 'string') {
     errorData.message = error
-    let captureTarget = { stack: null }
+    const captureTarget = { stack: null }
     Error.captureStackTrace(captureTarget, sendError)
     errorData.stack = captureTarget.stack
   } else {
@@ -33,7 +33,7 @@ export const sendError = (
     })
   }
 
-  ws.send(
+  client.ws?.send(
     encodeErrorResponse(valueToBuffer({ ...errorData, ...props })),
     true,
     false
