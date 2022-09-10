@@ -177,7 +177,6 @@ export class BasedCoreClient extends Emitter {
     const id = genObserveId(name, payload)
     let subscriberId: number
     const cachedData = this.cache.get(id)
-    console.log('???', name, id, cachedData, this.cache)
 
     if (!this.observeState.has(id)) {
       subscriberId = 1
@@ -202,7 +201,6 @@ export class BasedCoreClient extends Emitter {
     }
 
     if (cachedData) {
-      console.log('got cached data make it nice')
       onData(cachedData.value, cachedData.checksum)
     }
 

@@ -21,7 +21,7 @@ export type AuthConfig = {
 
 export type Authorize = (
   server: BasedServer,
-  client: uws.WebSocket | HttpClient,
+  client: WebsocketClient | HttpClient,
   type: 'observe' | 'function',
   name: string,
   payload?: any
@@ -29,7 +29,7 @@ export type Authorize = (
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  client: uws.WebSocket | HttpClient,
+  client: WebsocketClient | HttpClient,
   payload?: any
 ) => Promise<boolean>
 
@@ -81,7 +81,7 @@ export type BasedFunctionSpec = {
   path?: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  function: (payload: any, client: uws.WebSocket | HttpClient) => Promise<any>
+  function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
   idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number
