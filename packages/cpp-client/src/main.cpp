@@ -57,21 +57,25 @@ int main() {
 
     client.connect("ws://localhost:9910");
 
-    // int id = client.observe(
-    //     "based_observe", "{$id: \"flurp\", $all: true}",
-    //     [](std::string_view data, int checksum) { std::cout << data << std::endl; },
-    //     [](std::string_view error) { std::cerr << error << std::endl; }, ObservableOpts(true,
-    //     100));
-
     // std::cout << "OBS started, id = " << id << std::endl;
+    bool done = false;
+    std::string cmd;
 
-    client.function("small",
-                    "{\"hello\":"
-                    "\"eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
-                    "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeheeeeeeeeeeeeeeeeeeeeeeeeeee"
-                    "eeeeeeeeeeeeeeeeeeeeeeeeee\"}",
-                    [](std::string_view data) { std::cout << "[POOP] " << data << std::endl; });
+    while (!done) {
+        // client.function("small", "", [](std::string_view data) {
+        //     std::cout << "hello i received this data = " << data << std::endl;
+        // });
+        // "{\"$id\": \"flurp\", \"$all\": true}"
+        // "{ \"$all\": true, \"$id\": \"flurp\"}"
 
-    std::cin.get();
+        int id = client.observe(
+            "based_observe", "{\"b\":\"a\",\"a\":\"b\"}",
+            [](std::string_view data, int checksum) { std::cout << data << std::endl; },
+            [](std::string_view error) { std::cerr << error << std::endl; },
+            ObservableOpts(true, 100));
+
+        std::getline(std::cin, cmd);
+        if (cmd == "q") done = true;
+    }
     // client.disconnect();
 }

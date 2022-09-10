@@ -17,8 +17,9 @@ using json = nlohmann::json;
 
 namespace Utility {
 std::string inflate_string(const std::string& str) {
-    // Original version of this function found on  https://panthema.net/2007/0328-ZLibString.html,
+    // Original version of this function found on https://panthema.net/2007/0328-ZLibString.html,
     // adapted here for our usage.
+
     // Copyright 2007 Timo Bingmann <tb@panthema.net>
     // Distributed under the Boost Software License, Version 1.0.
     // (See http://www.boost.org/LICENSE_1_0.txt)
@@ -61,21 +62,21 @@ std::string inflate_string(const std::string& str) {
 }
 
 std::string deflate_string(const std::string& str) {
-    // Original version of this function found on  https://panthema.net/2007/0328-ZLibString.html,
+    // Original version of this function found on https://panthema.net/2007/0328-ZLibString.html,
     // adapted here for our usage.
 
     // Copyright 2007 Timo Bingmann <tb@panthema.net>
     // Distributed under the Boost Software License, Version 1.0.
     // (See http://www.boost.org/LICENSE_1_0.txt)
 
-    int compressionlevel =
-        Z_DEFAULT_COMPRESSION;  // this is to match the compression level on the js client
-    z_stream zs;                // z_stream is zlib's control structure
+    z_stream zs;  // z_stream is zlib's control structure
     memset(&zs, 0, sizeof(zs));
 
-    // See https://www.zlib.net/manual.html#Advanced for details. Must match inflate_string
-    // and the js client
-    if (deflateInit2(&zs, compressionlevel, Z_DEFLATED, -MAX_WBITS, 8, Z_DEFAULT_STRATEGY) != Z_OK)
+    // See https://www.zlib.net/manual.html#Advanced for details.
+    // The windowBits argument Must match inflate_string and the js client
+
+    if (deflateInit2(&zs, Z_DEFAULT_COMPRESSION, Z_DEFLATED, -MAX_WBITS, 8, Z_DEFAULT_STRATEGY) !=
+        Z_OK)
         throw(std::runtime_error("deflateInit failed while compressing."));
 
     zs.next_in = (Bytef*)str.data();
@@ -204,6 +205,7 @@ int32_t get_payload_is_deflate(int32_t header) {
     return is_deflate;
 }
 int32_t read_header(std::string buff) {
+    // header starts at index[0] and is 4 bytes long
     char const* data = buff.data();
     int32_t res = 0;
     size_t s = 3;
@@ -213,6 +215,7 @@ int32_t read_header(std::string buff) {
     return res;
 }
 int32_t read_id(std::string buff) {
+    // id starts at index[4] and is 3 bytes long
     char const* data = buff.data();
     int32_t res = 0;
     size_t s = 2 + 4;  // len - 1 + start;
