@@ -39,7 +39,7 @@ test.serial('get', async (t) => {
 
   const cl: Set<BasedCoreClient> = new Set()
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 100; i++) {
     const client = new BasedCoreClient()
     client.connect({
       url: async () => {

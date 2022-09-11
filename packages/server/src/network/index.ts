@@ -6,13 +6,22 @@ import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 
-const genLargeMemBlock = (): string => {
-  let str = ''
-  for (let i = 0; i < 100000; i++) {
-    str += Math.random() * 99999 + ' xxxx'
-  }
-  return str
-}
+// ----------------- mem test code -------------------
+// let cl = 0
+// const genLargeMemBlock = (): string => {
+//   ++cl
+//   let str = ''
+//   for (let i = 0; i < 100000; i++) {
+//     str += Math.random() * 99999 + ' xxxx'
+//   }
+//   return str
+// }
+// let cnt = 0
+// setInterval(() => {
+//   ++cnt
+//   console.info('Amount of clients', cl, 'after', cnt, 'seconds')
+// }, 1e3)
+// -----------------------------------------------------
 
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
@@ -27,13 +36,6 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   if (port) {
     server.port = port
   }
-
-  /*
-  open:ws=>ws.subscribe('all')
-  app.publish('all',message)
-  */
-
-  // WeakMap for clients
 
   app
     .ws('/*', {
@@ -56,30 +58,24 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
       },
       open: (ws) => {
         if (ws) {
-          ws.bla = genLargeMemBlock()
+          // ws.bla = genLargeMemBlock()
           const client = { ws }
           ws.c = client
         }
-        //
-        // ws.token = 'x' token - only on upgrade does make it super easy (for auth)
-        // does add overhead when reconn
-        // console.info(ws)
-        // broadcast will only do diffs except when its a new sub
-        // send is used to send a current value
-        // open(this, ws)
       },
       close: (ws) => {
-        // console.info('close', 'remove from subs')
+        // cl--
         ws.obs.forEach((id) => {
           unsubscribeIgnoreClient(server, id, ws.c)
         })
+        // Looks really ugly but same impact on memory and GC as using the ws directly
+        // and better for dc's when functions etc are in progress
         ws.c.ws = null
         ws.c = null
       },
       drain: () => {
-        console.info('drain')
+        // console.info('drain')
         // lets handle drain efficiently (or more efficiently at least)
-
         // call client.drain can be much more efficient
         // if (ws.client && ws.client.backpressureQueue) {
         //   ws.client.drain()
