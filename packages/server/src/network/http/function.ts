@@ -14,14 +14,14 @@ export const functionRest = (
   server.functions
     .get(name)
     .then((spec) => {
-      if (client.isAborted) {
+      if (!client.res) {
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.auth.config
           .authorize(server, client, 'function', name, payload)
           .then((ok) => {
-            if (client.isAborted) {
+            if (!client.res) {
               return
             }
             if (!ok) {
@@ -31,7 +31,7 @@ export const functionRest = (
               spec
                 .function(payload, client)
                 .then(async (result) => {
-                  if (client.isAborted) {
+                  if (!client.res) {
                     return
                   }
                   if (spec.customHttpResponse) {
@@ -41,7 +41,7 @@ export const functionRest = (
                       // if true all is handled
                       return
                     }
-                    if (client.isAborted) {
+                    if (!client.res) {
                       return
                     }
                   }
@@ -52,18 +52,17 @@ export const functionRest = (
                     client.res?.end(JSON.stringify(result))
                   }
                 })
-                .catch((err) => {
-                  if (client.isAborted) {
+                .catch(() => {
+                  if (!client.res) {
                     return
                   }
                   // error handling nice
-                  console.error('bad fn', client.id, client.isAborted, err)
                   client.res?.end('wrong!')
                 })
             }
           })
           .catch((err) => {
-            if (client.isAborted) {
+            if (!client.res) {
               return
             }
             console.error('no auth', err)

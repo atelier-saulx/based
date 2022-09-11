@@ -2,15 +2,25 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
 export type WebsocketClient = {
-  ws?: uws.WebSocket
+  ws: uws.WebSocket | null
 }
 
 export type HttpClient = {
-  res?: uws.HttpResponse
-} & { [contextField: string]: any }
+  res: uws.HttpResponse | null
+  context?: {
+    ua: string
+    ip: string
+    id: number
+  } & { [contextField: string]: any }
+}
 
-export const isHttpClient = () => {
-  // make it typecasty
+export const isHttpClient = (
+  client: HttpClient | WebsocketClient
+): client is HttpClient => {
+  if ('res' in client) {
+    return true
+  }
+  return false
 }
 
 export type AuthConfig = {

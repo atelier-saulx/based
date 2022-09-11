@@ -25,24 +25,28 @@ export const httpHandler = (
 
   const url = req.getUrl()
 
-  // function/:name
-  // get/:name
-
   const path = url.split('/')
 
   const client: HttpClient = {
     res,
-    query,
-    ua,
-    ip,
-    id: ++clientId,
+    context: {
+      query,
+      ua,
+      ip,
+      id: ++clientId,
+    },
   }
 
-  // have to allow "get" as well
+  //   if (path[1] === 'get') {
+
+  // }
+
   if (path[1] === 'function' && path[2]) {
+    // if (query)
+
     res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
+      client.context = null
+      client.res = null
     })
 
     functionRest(path[2], undefined, false, client, server)
@@ -51,12 +55,11 @@ export const httpHandler = (
 
   if (server.functions.config.registerByPath) {
     res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
+      client.context = null
+      client.res = null
     })
-
     server.functions.getByPath(url).then((spec) => {
-      if (client.isAborted) {
+      if (client.res) {
         return
       }
       if (!spec) {
@@ -72,10 +75,6 @@ export const httpHandler = (
     })
     return
   }
-
-  //   if (path[1] === 'get') {
-
-  // }
 
   res.end('invalid endpoint')
 }
