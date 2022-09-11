@@ -3,13 +3,13 @@ import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial('get', async (t) => {
+test.serial('mem tests', async (t) => {
   const store = {
     hello: {
-      observable: true,
       name: 'hello',
       checksum: 1,
       function: async () => {
+        await wait(3e3)
         return 'hello'
       },
     },
@@ -26,7 +26,7 @@ test.serial('get', async (t) => {
       },
       register: async ({ name }) => {
         if (store[name]) {
-          return store[name]
+          return { ...store[name] }
         } else {
           return false
         }
@@ -48,6 +48,12 @@ test.serial('get', async (t) => {
     })
     cl.add(client)
   }
+
+  Promise.all(
+    [...cl.values()].map((c) => {
+      return c.function('hello')
+    })
+  )
 
   await wait(2000)
 

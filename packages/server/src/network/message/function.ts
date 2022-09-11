@@ -50,7 +50,6 @@ export const functionMessage = (
             spec
               .function(payload, client)
               .then((v) => {
-                // have to check if its closed.. EVERYWHERE
                 client.ws?.send(
                   encodeFunctionResponse(reqId, valueToBuffer(v)),
                   true,
