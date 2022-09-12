@@ -1,14 +1,15 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
+import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import zlib from 'node:zlib'
 
 const sendResponse = (
   client: HttpClient,
   encoding: string,
   result: any,
-  checksum?: number,
-  checkHeaders: boolean
+  checkHeaders: boolean,
+  checksum?: number
 ) => {
   if (!client.res) {
     return
@@ -19,36 +20,47 @@ const sendResponse = (
   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
   client.res?.writeHeader('Cache-Control', 'max-age=10')
 
-  /*  
-    const ch
-    const checksum = version || hash(result)ecksum = hashObjectIgnoreKeyOrder(r)
-    ok(res)
-    res.writeHeader('ETag', String(checksum))
-    res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-  */
-
   let parsed: string
 
   // handle response
   if (typeof result === 'string') {
     client.res?.writeHeader('Content-Type', 'text/plain')
-
     parsed = result
+    if (parsed.length > 30) {
+      client.res?.writeHeader('ETag', String(checksum || hash(parsed)))
+    }
   } else {
     client.res?.writeHeader('Content-Type', 'application/json')
     parsed = JSON.stringify(result)
+
+    if (parsed.length > 30) {
+      // depends on size
+      client.res?.writeHeader(
+        'ETag',
+        String(
+          checksum || (typeof result === 'object' && result !== null)
+            ? hashObjectIgnoreKeyOrder(result)
+            : hash(result)
+        )
+      )
+    }
   }
 
+  client.res?.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+
+  // clean this up... just use promises
   let compressor
-  if (encoding.includes('deflate')) {
-    client.res.writeHeader('Content-Encoding', 'deflate')
-    compressor = zlib.createDeflate()
-  } else if (encoding.includes('gzip')) {
-    client.res.writeHeader('Content-Encoding', 'gzip')
-    compressor = zlib.createGzip()
-  } else if (encoding.includes('br')) {
-    client.res.writeHeader('Content-Encoding', 'br')
-    compressor = zlib.createBrotliCompress()
+  if (encoding) {
+    if (encoding.includes('deflate')) {
+      client.res.writeHeader('Content-Encoding', 'deflate')
+      compressor = zlib.createDeflate()
+    } else if (encoding.includes('gzip')) {
+      client.res.writeHeader('Content-Encoding', 'gzip')
+      compressor = zlib.createGzip()
+    } else if (encoding.includes('br')) {
+      client.res.writeHeader('Content-Encoding', 'br')
+      compressor = zlib.createBrotliCompress()
+    }
   }
 
   if (compressor) {
@@ -65,8 +77,6 @@ const sendResponse = (
     compressor.on('end', () => {
       client.res?.end()
     })
-
-    // can make this a bit more smooth maybe?
     compressor.write(Buffer.from(parsed))
     compressor.end()
   } else {
