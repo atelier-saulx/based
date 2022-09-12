@@ -1,26 +1,26 @@
-import uws from '@based/uws'
+import { HttpClient } from '../../types'
+import end from './end'
 
 const MAX_BODY_SIZE = 4 ** 20 // 2MB
 
 export default (
-  res: uws.HttpResponse,
+  client: HttpClient,
   contentType: string,
   // add more later...
   onData: (data: any | void) => void
 ) => {
   let data = Buffer.from([])
-  res.onData(async (chunk, isLast) => {
-    if (res.aborted) {
+  client.res.onData(async (chunk, isLast) => {
+    if (!client.res) {
       return
     }
     data = Buffer.concat([data, Buffer.from(chunk)])
     // data += Buffer.from(chunk).toString('utf8')
     if (data.length > MAX_BODY_SIZE) {
-      res.writeStatus('413 Payload Too Large')
-      res.writeHeader('Access-Control-Allow-Origin', '*')
-      res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-      res.end(`{"code":413,"error":"Payload Too Large"}`)
-      res.aborted = true
+      client.res.writeStatus('413 Payload Too Large')
+      client.res.writeHeader('Access-Control-Allow-Origin', '*')
+      client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+      end(client, `{"code":413,"error":"Payload Too Large"}`)
       return
     }
     if (isLast) {
@@ -32,11 +32,10 @@ export default (
           onData(params)
         } catch (e) {
           console.error(e, str)
-          res.aborted = true
-          res.writeStatus('400 Invalid Request')
-          res.writeHeader('Access-Control-Allow-Origin', '*')
-          res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-          res.end(`{"code":400,"error":"Invalid payload"}`)
+          client.res.writeStatus('400 Invalid Request')
+          client.res.writeHeader('Access-Control-Allow-Origin', '*')
+          client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+          end(client, `{"code":400,"error":"Invalid payload"}`)
         }
       } else {
         onData(str)

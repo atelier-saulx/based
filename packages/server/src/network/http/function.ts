@@ -1,6 +1,7 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
+import end from './end'
 // import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import zlib from 'node:zlib'
 
@@ -76,13 +77,12 @@ const sendResponse = (
       }
     })
     compressor.on('end', () => {
-      client.res?.end()
+      end(client)
     })
     compressor.write(Buffer.from(parsed))
     compressor.end()
   } else {
-    client.res?.end(parsed)
-    // res.end()
+    end(client, parsed)
   }
 }
 
@@ -114,8 +114,8 @@ export const functionRest = (
               return
             }
             if (!ok) {
-              client.res?.writeStatus('401 Unauthorized')
-              client.res?.end('WRONG AUTH')
+              // client.res?.writeStatus('401 Unauthorized')
+              // client.res?.end('WRONG AUTH')
             } else {
               spec
                 .function(payload, client)

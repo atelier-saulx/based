@@ -2,6 +2,7 @@ import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
+import end from './end'
 
 let clientId = 0
 
@@ -10,12 +11,6 @@ export const httpHandler = (
   req: uws.HttpRequest,
   res: uws.HttpResponse
 ) => {
-  // no make a type 'context'
-
-  // if no handler for path will try to read / get from functions/obs (not by name but by path)
-
-  // default routes
-
   res.onAborted(() => {
     console.info('ABORT')
     client.context = null
@@ -31,11 +26,10 @@ export const httpHandler = (
 
   const encoding = req.getHeader('accept-encoding')
 
+  // Parse body
   // const method = req.getMethod()
   // const acceptEncoding
   // const contentType = req.getHeader('content-type') || 'application/json'
-
-  console.log(encoding)
 
   const url = req.getUrl()
 
@@ -69,11 +63,11 @@ export const httpHandler = (
         return
       }
       if (!spec) {
-        res.end('invalid enpoints')
+        end(client, 'invalid enpoints')
       } else {
         if (isObservableFunctionSpec(spec)) {
           // get!
-          res.end('get time')
+          end(client, 'get time')
         } else {
           functionRest(spec.name, undefined, encoding, client, server)
         }
