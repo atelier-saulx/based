@@ -19,6 +19,8 @@ const sendResponse = (
   client.res.writeStatus('200 OK')
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+
+  // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
   client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
 
   let parsed: string
@@ -46,6 +48,10 @@ const sendResponse = (
     //   )
     // )
     // }
+
+    // HTTP status code 304 (Not Modified).  if none match
+
+    // The If-Match dont rly know
   }
 
   // expose compress repsonse etc (for handling)
