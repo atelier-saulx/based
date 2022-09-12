@@ -1,15 +1,15 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
-import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
+// import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import zlib from 'node:zlib'
 
 const sendResponse = (
   client: HttpClient,
   encoding: string,
-  result: any,
-  checkHeaders: boolean,
-  checksum?: number
+  result: any
+  // checkHeaders: boolean
+  // checksum?: number
 ) => {
   if (!client.res) {
     return
@@ -18,35 +18,36 @@ const sendResponse = (
   client.res.writeStatus('200 OK')
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  client.res?.writeHeader('Cache-Control', 'max-age=10')
+  client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
 
   let parsed: string
 
   // handle response
   if (typeof result === 'string') {
-    client.res?.writeHeader('Content-Type', 'text/plain')
+    client.res.writeHeader('Content-Type', 'text/plain')
     parsed = result
-    if (parsed.length > 30) {
-      client.res?.writeHeader('ETag', String(checksum || hash(parsed)))
-    }
+    // if (parsed.length > 30) {
+    // client.res.writeHeader('ETag', String(checksum || hash(parsed)))
+    // }
   } else {
-    client.res?.writeHeader('Content-Type', 'application/json')
+    client.res.writeHeader('Content-Type', 'application/json')
     parsed = JSON.stringify(result)
 
-    if (parsed.length > 30) {
-      // depends on size
-      client.res?.writeHeader(
-        'ETag',
-        String(
-          checksum || (typeof result === 'object' && result !== null)
-            ? hashObjectIgnoreKeyOrder(result)
-            : hash(result)
-        )
-      )
-    }
+    // for observe and get
+    // if (parsed.length > 30) {
+    // depends on size
+    // client.res.writeHeader(
+    //   'ETag',
+    //   String(
+    //     checksum || (typeof result === 'object' && result !== null)
+    //       ? hashObjectIgnoreKeyOrder(result)
+    //       : hash(result)
+    //   )
+    // )
+    // }
   }
 
-  client.res?.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+  // expose compress repsonse etc (for handling)
 
   // clean this up... just use promises
   let compressor
@@ -131,9 +132,10 @@ export const functionRest = (
                       // if true all is handled
                       return
                     }
-                    sendResponse(client, encoding, result, true)
+                    // do something with headers...
+                    sendResponse(client, encoding, result)
                   } else {
-                    sendResponse(client, encoding, result, false)
+                    sendResponse(client, encoding, result)
                   }
                 })
                 .catch(() => {

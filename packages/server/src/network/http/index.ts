@@ -52,7 +52,8 @@ export const httpHandler = (
   }
 
   //   if (path[1] === 'get') {
-
+  // Sending either If-Match or If-None-Match
+  // only relevant for get
   // }
 
   if (path[1] === 'function' && path[2]) {
