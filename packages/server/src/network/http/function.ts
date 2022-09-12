@@ -7,12 +7,9 @@ const sendResponse = (
   client: HttpClient,
   encoding: string,
   result: any,
+  checksum?: number,
   checkHeaders: boolean
 ) => {
-  // or export this fn
-
-  console.log('hello', encoding)
-
   if (!client.res) {
     return
   }
@@ -20,26 +17,26 @@ const sendResponse = (
   client.res.writeStatus('200 OK')
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  // lets add the headers before
+  client.res?.writeHeader('Cache-Control', 'max-age=10')
 
-  //  res.writeHeader('Content-Type', 'application/json')
+  /*  
+    const ch
+    const checksum = version || hash(result)ecksum = hashObjectIgnoreKeyOrder(r)
+    ok(res)
+    res.writeHeader('ETag', String(checksum))
+    res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+  */
+
+  let parsed: string
 
   // handle response
   if (typeof result === 'string') {
-    // res.writeHeader('Content-Type', 'application/json')
-    // res.writeHeader('Content-Type', 'text/plain')
-    // res.writeHeader('Cache-Control', 'max-age=10')
-    // const checksum = version || hash(result)
-    /*  
-        const checksum = hashObjectIgnoreKeyOrder(r)
-        ok(res)
-        res.writeHeader('ETag', String(checksum))
-        res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-    */
+    client.res?.writeHeader('Content-Type', 'text/plain')
 
-    client.res?.end(result)
+    parsed = result
   } else {
-    client.res?.end(JSON.stringify(result))
+    client.res?.writeHeader('Content-Type', 'application/json')
+    parsed = JSON.stringify(result)
   }
 
   let compressor
@@ -68,7 +65,12 @@ const sendResponse = (
     compressor.on('end', () => {
       client.res?.end()
     })
+
+    // can make this a bit more smooth maybe?
+    compressor.write(Buffer.from(parsed))
+    compressor.end()
   } else {
+    client.res?.end(parsed)
     // res.end()
   }
 }
@@ -119,9 +121,9 @@ export const functionRest = (
                       // if true all is handled
                       return
                     }
-                    // sendResponse(client, encoding, result, true)
+                    sendResponse(client, encoding, result, true)
                   } else {
-                    // sendResponse(client, encoding, result, false)
+                    sendResponse(client, encoding, result, false)
                   }
                 })
                 .catch(() => {
