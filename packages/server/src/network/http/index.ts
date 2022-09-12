@@ -23,6 +23,22 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
+  const encoding = req.getHeader('content-encoding')
+
+  /*
+  Content-Encoding: gzip
+  Content-Encoding: compress
+  Content-Encoding: deflate
+  Content-Encoding: br
+  */
+
+  /*
+  Content-Encoding: gzip
+Content-Encoding: compress
+Content-Encoding: deflate
+
+  */
+
   const url = req.getUrl()
 
   const path = url.split('/')
@@ -49,7 +65,7 @@ export const httpHandler = (
       client.res = null
     })
 
-    functionRest(path[2], undefined, false, client, server)
+    functionRest(path[2], undefined, encoding, client, server)
     return
   }
 
@@ -69,7 +85,7 @@ export const httpHandler = (
           // get!
           res.end('get time')
         } else {
-          functionRest(spec.name, undefined, false, client, server)
+          functionRest(spec.name, undefined, encoding, client, server)
         }
       }
     })
