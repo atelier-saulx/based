@@ -25,6 +25,10 @@ export const destroy = (server: BasedServer, id: number) => {
     return
   }
 
+  if (obs.isDestroyed) {
+    return
+  }
+
   const spec = server.functions.observables[obs.name]
 
   if (!spec) {
@@ -35,26 +39,35 @@ export const destroy = (server: BasedServer, id: number) => {
   const memCacheTimeout =
     spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
 
-  obs.beingDestroyed = setTimeout(() => {
-    server.activeObservables[obs.name].delete(id)
-    if (server.activeObservables[obs.name].size === 0) {
-      delete server.activeObservables[obs.name]
-    }
-    server.activeObservablesById.delete(id)
+  //   clearTimeout(obs.beingDestroyed)
 
-    if (obs.cache) {
-      server.cacheSize -= obs.cache.byteLength
-    }
+  if (!obs.beingDestroyed) {
+    obs.beingDestroyed = setTimeout(() => {
+      if (!server.activeObservables[obs.name]) {
+        console.info('Trying to destroy a removed observable function')
+        return
+      }
+      obs.beingDestroyed = null
+      server.activeObservables[obs.name].delete(id)
+      if (server.activeObservables[obs.name].size === 0) {
+        delete server.activeObservables[obs.name]
+      }
+      server.activeObservablesById.delete(id)
 
-    if (obs.rawData) {
-      server.cacheSize -= obs.rawDataSize
-    }
+      if (obs.cache) {
+        server.cacheSize -= obs.cache.byteLength
+      }
 
-    obs.isDestroyed = true
-    if (obs.closeFunction) {
-      obs.closeFunction()
-    }
-  }, memCacheTimeout)
+      if (obs.rawData) {
+        server.cacheSize -= obs.rawDataSize
+      }
+
+      obs.isDestroyed = true
+      if (obs.closeFunction) {
+        obs.closeFunction()
+      }
+    }, memCacheTimeout)
+  }
 }
 
 export const subscribe = (
