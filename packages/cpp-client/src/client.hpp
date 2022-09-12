@@ -35,40 +35,73 @@ class BasedClient {
     int32_t m_sub_id = 0;
     bool m_draining = false;
 
-    std::map<int, std::function<void(std::string_view)>> m_function_listeners;
-    std::map<int, std::function<void(std::string_view)>> m_error_listeners;
-    std::vector<std::vector<uint8_t>> m_function_queue;
-    std::vector<std::vector<uint8_t>> m_unobserve_queue;
-
-    /**
-     * Each observable must be stored in memory, in case the connection drops.
-     * So there's a queue, which is emptied on drain, but is refilled with the observables
-     * stored in memory in the event of a reconnection.
-     *
-     * When the client calls .observe, we must both queue the request and also store
-     * the observable in memory.
-     *
-     * These observables all have a list of listeners. Each listener has a on_data callback
-     * and and optional on_error callback.
-     */
+    std::map<int, std::function<void(std::string)>> m_function_listeners;
+    std::map<int, std::function<void(std::string)>> m_error_listeners;
 
     /**
      * Requests should be added to this queue when a new observable is created,
-     * and when the client recconects.
+     * and when the client reconnects.
      *
      * Never when a new sub is added to the same obs_id.
      */
-    std::vector<std::vector<uint8_t>> m_observe_queue;  // <list of encoded_requests>
+    std::vector<std::vector<uint8_t>> m_observe_queue;
+    std::vector<std::vector<uint8_t>> m_function_queue;
+    std::vector<std::vector<uint8_t>> m_unobserve_queue;
+    std::vector<std::vector<uint8_t>> m_get_queue;
+
+    /////////////////////
+    // observables
+    /////////////////////
+
     /**
-     * The list of all the requests. These should only be deleted when
-     * there are no active subs for it.
+     * map<obs_hash, encoded_request>
+     * The list of all the active observables. These should only be deleted when
+     * there are no active subs for it. It's used in the event of a reconnection.
      */
-    std::map<int, std::vector<uint8_t>> m_observe_requests;  // <obs_hash, encoded_request>
-    std::map<int, std::set<int>> m_observe_subs;             // <obs_hash, list of sub_ids>
-    std::map<int, int> m_sub_to_obs;                         // <sub_id, obs_hash>
-    std::map<int, std::function<void(std::string, int64_t)>>
-        m_sub_on_data;                                               // <sub_id, on_data callback>
-    std::map<int, std::function<void(std::string)>> m_sub_on_error;  // <sub_id, on_error callback>
+    std::map<int, std::vector<uint8_t>> m_observe_requests;
+
+    /**
+     * map<obs_hash, list of sub_ids>
+     * The list of subsribers to the observable. These are tied to a on_data function
+     * and an optional on_error function, which should be fired appropriately.
+     */
+    std::map<int, std::set<int>> m_observe_subs;
+
+    /**
+     * <sub_id, obs_hash>
+     *  Mapping of which observable a sub_id refers to. Necessary for .unobserve.
+     */
+    std::map<int, int> m_sub_to_obs;
+
+    /**
+     * map<sub_id, on_data callback>
+     * List of on_data callback to call when receiving the data.
+     */
+    std::map<int, std::function<void(std::string, int64_t)>> m_sub_on_data;
+
+    /**
+     * map<sub_id, on_error callback>
+     * List of on_data callback to call when receiving an error for that obs_id.
+     */
+
+    std::map<int, std::function<void(std::string)>> m_sub_on_error;
+
+    ////////////////
+    // gets
+    ////////////////
+
+    /**
+     * map<obs_hash, list of sub_ids>
+     * The list of getters to the observable. These should be fired once, when receiving
+     * the sub data, and immediatly cleaned up.
+     */
+    std::map<int, std::set<int>> m_get_subs;
+
+    /**
+     * map<sub_id, on_data callback>
+     * List of on_data callback to call when receiving the data. Should be deleted after firing.
+     */
+    std::map<int, std::function<void(std::string)>> m_get_sub_on_data;
 
    public:
     BasedClient() {
@@ -99,12 +132,22 @@ class BasedClient {
                  */
                 std::function<void(std::string /*error*/)> on_error,
                 ObservableOpts obs_opts) {
-        json p = json::parse(payload);
-        int32_t payload_hash = (int32_t)std::hash<json>{}(p);
-        int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+        /**
+         * Each observable must be stored in memory, in case the connection drops.
+         * So there's a queue, which is emptied on drain, but is refilled with the observables
+         * stored in memory in the event of a reconnection.
+         *
+         * These observables all have a list of listeners. Each listener has a on_data callback
+         * and and optional on_error callback.
+         *
+         * When all listeners are removed with .unobserve, the observable should be removed
+         * and the unobserve request should be queued, to let the server know.
+         */
 
-        int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
+        int32_t obs_id = make_obs_id(name, payload);
         int32_t sub_id = m_sub_id++;
+
+        std::cout << "obs_id sent = " << obs_id << std::endl;
 
         if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
             // first time this query is observed
@@ -151,6 +194,34 @@ class BasedClient {
         return sub_id;
     }
 
+    void get(std::string name, std::string payload, std::function<void(std::string)> cb) {
+        // state objects:
+        // std::map<obs_id, std::set<int>> m_get_subs;
+        // std::map<int, std::function<void(std::string, int64_t)>> m_get_sub_on_data;
+
+        int32_t obs_id = make_obs_id(name, payload);
+        int32_t sub_id = m_sub_id++;
+
+        // if obs_id exists in get_subs, add new sub to list
+        std::cout << "obs_id sent = " << obs_id << std::endl;
+        if (m_get_subs.find(obs_id) != m_get_subs.end()) {
+            std::cout << "obs_id already exists on m_get_subs" << std::endl;
+            m_get_subs.at(obs_id).insert(sub_id);
+        } else {  // else create it and then add it
+            std::cout << "obs_id did not exists on m_get_subs, making new one" << std::endl;
+            m_get_subs[obs_id] = std::set<int>{sub_id};
+        }
+        m_get_sub_on_data[sub_id] = cb;
+        // is there an acrive obs? if so, do nothing (get will trigger on next update)
+        // if there isnt, queue request
+        if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
+            // TODO: remove hardcoded checksum when cache is implemented
+            std::vector<uint8_t> msg = Utility::encode_get_message(obs_id, name, payload, 0);
+            m_get_queue.push_back(msg);
+            drain_queues();
+        }
+    }
+
     void unobserve(int sub_id) {
         std::cout << "> Removing sub_id " << sub_id << std::endl;
         if (m_sub_to_obs.find(sub_id) == m_sub_to_obs.end()) {
@@ -183,7 +254,7 @@ class BasedClient {
         drain_queues();
     }
 
-    void function(std::string name, std::string payload, std::function<void(std::string_view)> cb) {
+    void function(std::string name, std::string payload, std::function<void(std::string)> cb) {
         m_request_id++;
         if (m_request_id > 16777215) {
             m_request_id = 0;
@@ -196,16 +267,29 @@ class BasedClient {
         drain_queues();
     }
 
-    void get() {
-        std::cout << "get not implemented yet" << std::endl;
-    }
-
     void auth(std::string token) {
         std::cout << "auth not implemented yet" << std::endl;
     }
 
    private:
     // methods
+    int32_t make_obs_id(std::string& name, std::string& payload) {
+        if (payload.length() == 0) {
+            int32_t payload_hash = (int32_t)std::hash<json>{}("");
+            int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+
+            int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
+
+            return obs_id;
+        }
+        json p = json::parse(payload);
+        int32_t payload_hash = (int32_t)std::hash<json>{}(p);
+        int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+
+        int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
+        return obs_id;
+    }
+
     void drain_queues() {
         if (m_draining || (m_con.status() == ConnectionStatus::CONNECTING)) {
             drain_queues();
@@ -244,6 +328,13 @@ class BasedClient {
             m_function_queue.clear();
         }
 
+        if (m_get_queue.size() > 0) {
+            for (auto msg : m_get_queue) {
+                buff.insert(buff.end(), msg.begin(), msg.end());
+            }
+            m_get_queue.clear();
+        }
+
         if (buff.size() > 0) m_con.send(buff);
 
         m_draining = false;
@@ -273,7 +364,7 @@ class BasedClient {
                 int id = Utility::read_bytes_from_string(message, 4, 3);
 
                 if (m_function_listeners.find(id) != m_function_listeners.end()) {
-                    std::function<void(std::string_view)> fn = m_function_listeners.at(id);
+                    std::function<void(std::string)> fn = m_function_listeners.at(id);
                     if (len != 3) {
                         int start = 7;
                         int end = len + 4;
@@ -291,27 +382,42 @@ class BasedClient {
             }
                 return;
             case IncomingType::SUBSCRIPTION_DATA: {
-                int obs_id = Utility::read_bytes_from_string(message, 4, 8);
+                uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
                 int checksum = Utility::read_bytes_from_string(message, 12, 8);
 
+                int start = 20;  // size of header
+                int end = len + 4;
+                std::string payload = "";
+                if (len != 16) {
+                    payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                         : message.substr(start, end);
+                }
+
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
-                    int start = 20;  // size of header
-                    int end = len + 4;
-                    std::string payload = "";
-                    if (len != 16) {
-                        payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
-                                             : message.substr(start, end);
-                    }
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         auto fn = m_sub_on_data.at(sub_id);
                         fn(payload, checksum);
                     }
                 }
+
+                if (m_get_subs.find(obs_id) != m_get_subs.end()) {
+                    for (auto sub_id : m_get_subs.at(obs_id)) {
+                        std::cout << "firing sub id = " << sub_id << std::endl;
+                        auto fn = m_get_sub_on_data.at(sub_id);
+                        fn(payload);
+                        m_get_sub_on_data.erase(sub_id);
+                    }
+                    m_get_subs.at(obs_id).clear();
+                } else {
+                    std::cout << "No such obs_id in the get_subs, obs_id = " << obs_id << std::endl;
+                }
             }
                 return;
-            case IncomingType::SUBSCRIPTION_DIFF_DATA:
-                break;
+            case IncomingType::SUBSCRIPTION_DIFF_DATA: {
+                std::cerr << "Diffing not implemented yet, should never happen." << std::endl;
+            } break;
             case IncomingType::GET_DATA:
+                std::cout << "received get data?" << std::endl;
                 break;
             case IncomingType::AUTH_DATA:
                 break;

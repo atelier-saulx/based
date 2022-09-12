@@ -110,7 +110,7 @@ std::string deflate_string(const std::string& str) {
     return outstring;
 }
 
-void append_bytes(std::vector<uint8_t>& buff, int64_t src, size_t size) {
+void append_bytes(std::vector<uint8_t>& buff, uint64_t src, size_t size) {
     for (int i = 0; i < size; i++) {
         uint8_t byte = (src >> (8 * i)) & 0xff;
         buff.push_back(byte);
@@ -180,7 +180,7 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
     return buff;
 }
 
-std::vector<uint8_t> encode_observe_message(int64_t id,
+std::vector<uint8_t> encode_observe_message(uint64_t id,
                                             std::string name,
                                             std::string& payload,
                                             int64_t checksum) {
@@ -239,8 +239,49 @@ std::vector<uint8_t> encode_unobserve_message(int64_t obs_id) {
     append_bytes(buff, obs_id, 8);
     return buff;
 }
-// std::string encode_auth_message(int id, std::string payload) {}
+std::vector<uint8_t> encode_get_message(uint64_t id,
+                                        std::string name,
+                                        std::string& payload,
+                                        int64_t checksum) {
+    // Type 3 = get
+    // | 4 header | 8 id | 8 checksum | 1 name length | * name | [* payload]
 
+    std::vector<uint8_t> buff;
+
+    /**
+     * Length in bytes. 4 B header + 8 B id + 8 B checksum,
+     * add the rest later based on payload and name.
+     */
+    int32_t len = 20;
+    len += 1 + name.length();
+
+    int32_t is_deflate = 0;
+
+    std::string p;
+    if (payload.length() > 0) {
+        std::cout << "> Encoding payload... " << std::endl;
+
+        if (payload.length() > 150) {
+            is_deflate = 1;
+            std::cout << "> Deflating payload..." << std::endl;
+            p = deflate_string(payload);
+        } else {
+            p = payload;
+        }
+
+        len += p.length();
+    }
+    append_header(buff, 3, is_deflate, len);
+    append_bytes(buff, id, 8);
+    append_bytes(buff, checksum, 8);
+    buff.push_back(name.length());
+    append_string(buff, name);
+    if (p.length() > 0) {
+        append_string(buff, p);
+    }
+
+    return buff;
+}
 int32_t get_payload_type(int32_t header) {
     int32_t meta = header & 15;
     int32_t type = meta >> 1;

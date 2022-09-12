@@ -64,6 +64,7 @@ class WsConnection {
         // arguments (hence the placeholders) these handlers must be set before calling connect, and
         // can't be changed after (i think)
         con->set_open_handler([this](websocketpp::connection_hdl) {
+            std::cout << ">> Received OPEN event" << std::endl;
             m_status = ConnectionStatus::OPEN;
             if (m_on_open) {
                 std::cout << "> Calling custom on_open handler" << std::endl;
@@ -71,25 +72,24 @@ class WsConnection {
             }
         });
 
-        con->set_message_handler(
-            [this](websocketpp::connection_hdl hdl, ws_client::message_ptr msg) {
-                // here we will pass the message to the decoder, which, based on the header, will
-                // call the appropriate callback
+        con->set_message_handler([this](websocketpp::connection_hdl hdl,
+                                        ws_client::message_ptr msg) {
+            // here we will pass the message to the decoder, which, based on the header, will
+            // call the appropriate callback
 
-                // m_data_handler->incoming(msg);
+            // m_data_handler->incoming(msg);
 
-                std::string payload = msg->get_payload();
+            std::string payload = msg->get_payload();
 
-                // if (msg->get_opcode() == websocketpp::frame::opcode::text) {
-                //     std::cout << " [MSG::TEXT] " << payload << std::endl;
-                // } else {
-                //     std::cout << " [MSG::HEX]" << websocketpp::utility::to_hex(payload) <<
-                //     std::endl;
-                // }
-                if (m_on_message) {
-                    m_on_message(payload);
-                }
-            });
+            if (msg->get_opcode() == websocketpp::frame::opcode::text) {
+                std::cout << " [MSG::TEXT] " << payload << std::endl;
+            } else {
+                std::cout << " [MSG::HEX]" << websocketpp::utility::to_hex(payload) << std::endl;
+            }
+            if (m_on_message) {
+                m_on_message(payload);
+            }
+        });
 
         con->set_close_handler([this](websocketpp::connection_hdl) {
             std::cout << ">> Received CLOSE event" << std::endl;
@@ -154,20 +154,6 @@ class WsConnection {
             return;
         }
     };
-
-    // void sendText(std::string message) {
-    //     std::cout << "Sending message to ws" << std::endl;
-
-    //     websocketpp::lib::error_code ec;
-
-    //     while (m_status != ConnectionStatus::OPEN) {}
-
-    //     m_endpoint.send(m_hdl, message, websocketpp::frame::opcode::text, ec);
-    //     if (ec) {
-    //         std::cout << "> Error sending message: " << ec.message() << std::endl;
-    //         return;
-    //     }
-    // };
 
     ConnectionStatus status() {
         return m_status;
