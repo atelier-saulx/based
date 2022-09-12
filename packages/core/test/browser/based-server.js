@@ -5,8 +5,9 @@ const json = require('./tmp.json')
 
 const init = async () => {
   const store = {
+    // custom thing
     flap: async () => {
-      await wait(3e3)
+      await wait(100)
       return 'FLAP'
     },
     small: async () => 'he',

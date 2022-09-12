@@ -3,13 +3,13 @@ import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial('get', async (t) => {
+test.serial('mem tests', async (t) => {
   const store = {
     hello: {
-      observable: true,
       name: 'hello',
       checksum: 1,
       function: async () => {
+        await wait(3e3)
         return 'hello'
       },
     },
@@ -26,7 +26,7 @@ test.serial('get', async (t) => {
       },
       register: async ({ name }) => {
         if (store[name]) {
-          return store[name]
+          return { ...store[name] }
         } else {
           return false
         }
@@ -39,7 +39,7 @@ test.serial('get', async (t) => {
 
   const cl: Set<BasedCoreClient> = new Set()
 
-  for (let i = 0; i < 100000; i++) {
+  for (let i = 0; i < 100; i++) {
     const client = new BasedCoreClient()
     client.connect({
       url: async () => {
@@ -48,6 +48,12 @@ test.serial('get', async (t) => {
     })
     cl.add(client)
   }
+
+  Promise.all(
+    [...cl.values()].map((c) => {
+      return c.function('hello')
+    })
+  )
 
   await wait(2000)
 
@@ -61,12 +67,12 @@ test.serial('get', async (t) => {
     cl.delete(client)
   }
 
-  await wait(6000)
+  await wait(10000)
 
   const used2 = process.memoryUsage().heapUsed / 1024 / 1024
   console.info(
     `Mem after disconnect approximately ${Math.round(used2 * 100) / 100} MB`
   )
 
-  t.true(used2 < 16000, 'Does not use too much mem')
+  t.true(used2 < 160, 'Does not use too much mem')
 })

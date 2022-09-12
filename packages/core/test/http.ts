@@ -10,6 +10,7 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
+        console.info(payload)
         return payload?.length ?? 0
       },
 

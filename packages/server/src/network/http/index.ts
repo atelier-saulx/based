@@ -2,6 +2,7 @@ import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
+import end from './end'
 
 let clientId = 0
 
@@ -10,11 +11,11 @@ export const httpHandler = (
   req: uws.HttpRequest,
   res: uws.HttpResponse
 ) => {
-  // no make a type 'context'
-
-  // if no handler for path will try to read / get from functions/obs (not by name but by path)
-
-  // default routes
+  res.onAborted(() => {
+    console.info('ABORT')
+    client.context = null
+    client.res = null
+  })
 
   const query = req.getQuery()
   const ua = req.getHeader('user-agent')
@@ -23,59 +24,57 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  const url = req.getUrl()
+  const encoding = req.getHeader('accept-encoding')
 
-  // function/:name
-  // get/:name
+  // Parse body
+  // const method = req.getMethod()
+  // const acceptEncoding
+  // const contentType = req.getHeader('content-type') || 'application/json'
+
+  const url = req.getUrl()
 
   const path = url.split('/')
 
   const client: HttpClient = {
     res,
-    query,
-    ua,
-    ip,
-    id: ++clientId,
+    context: {
+      query,
+      ua,
+      ip,
+      id: ++clientId,
+    },
   }
 
-  // have to allow "get" as well
-  if (path[1] === 'function' && path[2]) {
-    res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
-    })
+  //   if (path[1] === 'get') {
+  // Sending either If-Match or If-None-Match
+  // only relevant for get
+  // }
 
-    functionRest(path[2], undefined, false, client, server)
+  if (path[1] === 'function' && path[2]) {
+    // if (query)
+
+    functionRest(path[2], undefined, encoding, client, server)
     return
   }
 
   if (server.functions.config.registerByPath) {
-    res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
-    })
-
     server.functions.getByPath(url).then((spec) => {
-      if (client.isAborted) {
+      if (client.res) {
         return
       }
       if (!spec) {
-        res.end('invalid enpoints')
+        end(client, 'invalid enpoints')
       } else {
         if (isObservableFunctionSpec(spec)) {
           // get!
-          res.end('get time')
+          end(client, 'get time')
         } else {
-          functionRest(spec.name, undefined, false, client, server)
+          functionRest(spec.name, undefined, encoding, client, server)
         }
       }
     })
     return
   }
-
-  //   if (path[1] === 'get') {
-
-  // }
 
   res.end('invalid endpoint')
 }

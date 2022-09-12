@@ -229,6 +229,7 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   }
   return array
 }
+
 export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
   // Type 4
 
