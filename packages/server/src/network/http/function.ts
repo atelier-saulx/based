@@ -11,6 +11,8 @@ const sendResponse = (
 ) => {
   // or export this fn
 
+  console.log('hello', encoding)
+
   if (!client.res) {
     return
   }
@@ -117,15 +119,13 @@ export const functionRest = (
                       // if true all is handled
                       return
                     }
-                    sendResponse(client, encoding, result, true)
+                    // sendResponse(client, encoding, result, true)
                   } else {
-                    sendResponse(client, encoding, result, false)
+                    // sendResponse(client, encoding, result, false)
                   }
                 })
                 .catch(() => {
-                  if (!client.res) {
-                    return
-                  }
+                  console.error('wrong fn', client)
                   // error handling nice
                   // SEND ERROR sendResponse(client, encoding, result)
                   // and auth
@@ -140,19 +140,19 @@ export const functionRest = (
             console.error('no auth', err)
             // SEND ERROR sendResponse(client, encoding, result)
 
-            client.res?.end('wrong!')
+            // client.res?.end('wrong!')
           })
       } else {
         console.error('No function for you')
         // SEND ERROR sendResponse(client, encoding, result)
 
-        client.res?.end('wrong!')
+        // client.res?.end('wrong!')
       }
     })
     .catch((err) => {
       console.error('fn does not exist', err)
       // SEND ERROR sendResponse(client, encoding, result)
 
-      client.res?.end('wrong!')
+      // client.res?.end('wrong!')
     })
 }

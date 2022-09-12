@@ -16,6 +16,12 @@ export const httpHandler = (
 
   // default routes
 
+  res.onAborted(() => {
+    console.info('ABORT')
+    client.context = null
+    client.res = null
+  })
+
   const query = req.getQuery()
   const ua = req.getHeader('user-agent')
   // ip is 39 bytes - (adds 312kb for 8k clients to mem)
@@ -23,21 +29,13 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  const encoding = req.getHeader('content-encoding')
+  const encoding = req.getHeader('accept-encoding')
 
-  /*
-  Content-Encoding: gzip
-  Content-Encoding: compress
-  Content-Encoding: deflate
-  Content-Encoding: br
-  */
+  // const method = req.getMethod()
+  // const acceptEncoding
+  // const contentType = req.getHeader('content-type') || 'application/json'
 
-  /*
-  Content-Encoding: gzip
-Content-Encoding: compress
-Content-Encoding: deflate
-
-  */
+  console.log(encoding)
 
   const url = req.getUrl()
 
@@ -60,20 +58,11 @@ Content-Encoding: deflate
   if (path[1] === 'function' && path[2]) {
     // if (query)
 
-    res.onAborted(() => {
-      client.context = null
-      client.res = null
-    })
-
     functionRest(path[2], undefined, encoding, client, server)
     return
   }
 
   if (server.functions.config.registerByPath) {
-    res.onAborted(() => {
-      client.context = null
-      client.res = null
-    })
     server.functions.getByPath(url).then((spec) => {
       if (client.res) {
         return
