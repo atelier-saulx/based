@@ -38,15 +38,15 @@ test.serial('functions (over http)', async (t) => {
       idleTimeout: 3e3,
       unregister: async () => {
         console.info('--- wait wait unreg')
-        await wait(5e3)
+        await wait(3e3)
         console.info('--- wait wait unreg DONE')
         console.info('UNREGISTERT...')
         return true
       },
       registerByPath: async ({ path }) => {
-        console.info('--- wait wait unreg')
-        await wait(3e3)
-        console.info('--- wait wait unreg DONE')
+        console.info('--- wait wait path')
+        await wait(1e3)
+        console.info('--- wait wait  path')
 
         for (const name in store) {
           if (store[name].path === path) {
@@ -68,6 +68,7 @@ test.serial('functions (over http)', async (t) => {
     },
   })
 
+  console.info('START')
   const result = await (await fetch('http://localhost:9910/flap')).text()
 
   console.info(result)
@@ -76,9 +77,9 @@ test.serial('functions (over http)', async (t) => {
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
 
-  console.info('xxx', result2)
+  console.info('flap', result2)
 
-  await wait(23e3)
+  await wait(5e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })
