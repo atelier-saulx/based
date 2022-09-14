@@ -7,11 +7,13 @@ export type WebsocketClient = {
 
 export type HttpClient = {
   res: uws.HttpResponse | null
-  context?: {
-    ua: string
-    ip: string
-    id: number
-  } & { [contextField: string]: any }
+  context:
+    | ({
+        ua: string
+        ip: string
+        id: number
+      } & { [contextField: string]: any })
+    | null
 }
 
 export const isHttpClient = (

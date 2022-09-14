@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer, { isHttpClient } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const setup = async () => {
@@ -62,8 +62,17 @@ test.serial('authorize functions', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorize: async (_server, ws) => {
-      return ws.authState === token
+    authorize: async (_server, client) => {
+      if (isHttpClient(client)) {
+        if (client.context) {
+          return client.context.authState === token
+        }
+      } else {
+        if (client.ws) {
+          return client.ws.authState === token
+        }
+      }
+      return false
     },
   })
 
@@ -115,8 +124,17 @@ test.serial.only('authorize observe', async (t) => {
   })
 
   server.auth.updateConfig({
-    authorize: async (_server, ws) => {
-      return ws.authState === token
+    authorize: async (_server, client) => {
+      if (isHttpClient(client)) {
+        if (client.context) {
+          return client.context.authState === token
+        }
+      } else {
+        if (client.ws) {
+          return client.ws.authState === token
+        }
+      }
+      return false
     },
   })
 
@@ -135,7 +153,7 @@ test.serial.only('authorize observe', async (t) => {
     coreClient.observe(
       'counter',
       (d) => {
-        console.log({ d })
+        console.info({ d })
       },
       {
         myQuery: 123,
@@ -154,7 +172,7 @@ test.serial.only('authorize observe', async (t) => {
     coreClient.observe(
       'counter',
       (d) => {
-        console.log({ d })
+        console.info({ d })
         resolve(d)
       },
       {

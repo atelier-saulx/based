@@ -201,10 +201,14 @@ test.serial('authState update', async (t) => {
       const authState = 'second_token'
 
       if (isHttpClient(client)) {
-        client.context.authState = authState
+        if (client.context) {
+          client.context.authState = authState
+        }
       } else {
-        client.ws.authState = authState
-        server.auth.sendAuthUpdate(client, authState)
+        if (client.ws) {
+          client.ws.authState = authState
+          server.auth.sendAuthUpdate(client, authState)
+        }
       }
       return true
     },
