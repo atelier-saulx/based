@@ -3,8 +3,16 @@ import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
 import end from './end'
+import readPostData from './readPostData'
 
 let clientId = 0
+
+const readQuery = (query: string): any => {
+  if (query) {
+    console.log('go go go query', query)
+  }
+  // x
+}
 
 export const httpHandler = (
   server: BasedServer,
@@ -25,10 +33,10 @@ export const httpHandler = (
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   const encoding = req.getHeader('accept-encoding')
-
+  const contentType = req.getHeader('content-type') || 'application/json'
   const url = req.getUrl()
-
   const path = url.split('/')
+  const method = req.getMethod()
 
   const client: HttpClient = {
     res,
@@ -45,15 +53,22 @@ export const httpHandler = (
   // only relevant for get
 
   // Parse body
-  // const method = req.getMethod()
+  //
   // const acceptEncoding
-  // const contentType = req.getHeader('content-type') || 'application/json'
+  //
   // }
 
   // parse payload
 
   if (path[1] === 'function' && path[2]) {
-    functionRest(path[2], undefined, encoding, client, server)
+    if (method === 'post') {
+      readPostData(client, contentType, (payload) => {
+        functionRest(path[2], payload, encoding, client, server)
+      })
+    } else {
+      functionRest(path[2], readQuery(query), encoding, client, server)
+    }
+
     return
   }
 
@@ -69,7 +84,13 @@ export const httpHandler = (
           // get!
           end(client, 'get time')
         } else {
-          functionRest(spec.name, undefined, encoding, client, server)
+          if (method === 'post') {
+            readPostData(client, contentType, (payload) => {
+              functionRest(path[2], payload, encoding, client, server)
+            })
+          } else {
+            functionRest(path[2], readQuery(query), encoding, client, server)
+          }
         }
       }
     })
