@@ -15,7 +15,6 @@ export default (
       return
     }
     data = Buffer.concat([data, Buffer.from(chunk)])
-    // data += Buffer.from(chunk).toString('utf8')
     if (data.length > MAX_BODY_SIZE) {
       client.res.writeStatus('413 Payload Too Large')
       client.res.writeHeader('Access-Control-Allow-Origin', '*')
@@ -26,6 +25,8 @@ export default (
     if (isLast) {
       let params
       const str = data.toString()
+      // also check for buffer / binary daya
+      // may want to do this differently....
       if (contentType === 'application/json') {
         try {
           params = data.length ? JSON.parse(str) : undefined

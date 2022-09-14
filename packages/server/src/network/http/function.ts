@@ -106,7 +106,7 @@ export const functionRest = (
             // client.res?.end('wrong!')
           })
       } else {
-        console.error('No function for you')
+        console.error('No function for you', name)
         // SEND ERROR sendResponse(client, encoding, result)
 
         // client.res?.end('wrong!')

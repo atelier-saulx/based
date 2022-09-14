@@ -4,14 +4,45 @@ import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
 import end from './end'
 import readPostData from './readPostData'
+import qs from 'node:querystring'
 
 let clientId = 0
 
+type QueryValue = string | number | boolean
+
+const parseQueryValue = (q: any): QueryValue | QueryValue[] => {
+  if (Array.isArray(q)) {
+    for (let i = 0; i < q.length; i++) {
+      q[i] = parseQueryValue(q[i])
+    }
+    return q
+  }
+  if (q === 'null') {
+    return null
+  } else if (q === 'true') {
+    return true
+  } else if (q === 'false') {
+    return false
+    // @ts-ignore doing a typecheck...
+  } else if (typeof q === 'string' && /^\d+$/.test(q)) {
+    return Number(q)
+  }
+
+  return q
+}
+
 const readQuery = (query: string): any => {
   if (query) {
-    console.log('go go go query', query)
+    try {
+      const r: { [key: string]: QueryValue | QueryValue[] } = {}
+      // TODO parse it yourself - way faster!
+      const p = qs.parse(query)
+      for (const k in p) {
+        r[k] = parseQueryValue(p[k])
+      }
+      return r
+    } catch (_e) {}
   }
-  // x
 }
 
 export const httpHandler = (
@@ -52,14 +83,6 @@ export const httpHandler = (
   // Sending either If-Match or If-None-Match
   // only relevant for get
 
-  // Parse body
-  //
-  // const acceptEncoding
-  //
-  // }
-
-  // parse payload
-
   if (path[1] === 'function' && path[2]) {
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
@@ -86,10 +109,10 @@ export const httpHandler = (
         } else {
           if (method === 'post') {
             readPostData(client, contentType, (payload) => {
-              functionRest(path[2], payload, encoding, client, server)
+              functionRest(spec.name, payload, encoding, client, server)
             })
           } else {
-            functionRest(path[2], readQuery(query), encoding, client, server)
+            functionRest(spec.name, readQuery(query), encoding, client, server)
           }
         }
       }
