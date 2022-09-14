@@ -26,11 +26,6 @@ export const httpHandler = (
 
   const encoding = req.getHeader('accept-encoding')
 
-  // Parse body
-  // const method = req.getMethod()
-  // const acceptEncoding
-  // const contentType = req.getHeader('content-type') || 'application/json'
-
   const url = req.getUrl()
 
   const path = url.split('/')
@@ -45,25 +40,25 @@ export const httpHandler = (
     },
   }
 
-  //   if (path[1] === 'get') {
+  // if (path[1] === 'get') {
   // Sending either If-Match or If-None-Match
   // only relevant for get
-  // }
 
-  console.info('go go go')
+  // Parse body
+  // const method = req.getMethod()
+  // const acceptEncoding
+  // const contentType = req.getHeader('content-type') || 'application/json'
+  // }
 
   // parse payload
 
   if (path[1] === 'function' && path[2]) {
-    // if (query)
-
     functionRest(path[2], undefined, encoding, client, server)
     return
   }
 
   if (server.functions.config.registerByPath) {
     server.functions.getByPath(url).then((spec) => {
-      console.info('go go g1')
       if (client.res) {
         return
       }
@@ -74,6 +69,8 @@ export const httpHandler = (
           // get!
           end(client, 'get time')
         } else {
+          console.info('go go g1')
+
           functionRest(spec.name, undefined, encoding, client, server)
         }
       }
