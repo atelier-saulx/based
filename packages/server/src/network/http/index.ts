@@ -59,7 +59,7 @@ export const httpHandler = (
 
   if (server.functions.config.registerByPath) {
     server.functions.getByPath(url).then((spec) => {
-      if (client.res) {
+      if (!client.res) {
         return
       }
       if (!spec) {
@@ -69,8 +69,6 @@ export const httpHandler = (
           // get!
           end(client, 'get time')
         } else {
-          console.info('go go g1')
-
           functionRest(spec.name, undefined, encoding, client, server)
         }
       }

@@ -10,7 +10,7 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        console.info(payload)
+        console.info('XXXX', payload)
         return payload?.length ?? 0
       },
 
@@ -46,10 +46,11 @@ test.serial('functions (over http)', async (t) => {
       registerByPath: async ({ path }) => {
         console.info('--- wait wait path')
         await wait(1e3)
-        console.info('--- wait wait  path')
+        console.info('--- wait wait  path', path)
 
         for (const name in store) {
           if (store[name].path === path) {
+            console.info('FN', store[name])
             return store[name]
           }
         }
