@@ -31,9 +31,14 @@ class BasedClient {
     // members
    private:
     WsConnection m_con;
-    int32_t m_request_id = 0;
-    int32_t m_sub_id = 0;
-    bool m_draining = false;
+    int32_t m_request_id;
+    int32_t m_sub_id;
+    bool m_draining;
+
+    bool m_auth_in_progress;
+    std::string m_auth_state;
+    std::string m_auth_request_state;
+    std::function<void(std::string)> m_auth_callback;
 
     std::map<int, std::function<void(std::string)>> m_function_listeners;
     std::map<int, std::function<void(std::string)>> m_error_listeners;
@@ -104,9 +109,9 @@ class BasedClient {
     std::map<int, std::function<void(std::string)>> m_get_sub_on_data;
 
    public:
-    BasedClient() {
+    BasedClient() : m_request_id(0), m_sub_id(0), m_draining(false), m_auth_in_progress(false) {
         m_con.set_message_handler([&](std::string msg) { on_message(msg); });
-        m_con.set_open_handler([&]() { on_open(); });
+        // m_con.set_open_handler([&]() { on_open(); });
     }
 
     void connect(std::string uri) {
@@ -267,8 +272,16 @@ class BasedClient {
         drain_queues();
     }
 
-    void auth(std::string token) {
-        std::cout << "auth not implemented yet" << std::endl;
+    void auth(std::string state, std::function<void(std::string)> cb) {
+        // std::cout << "auth not implemented yet" << std::endl;
+        if (m_auth_in_progress) return;
+
+        m_auth_request_state = state;
+        m_auth_in_progress = true;
+        m_auth_callback = cb;
+
+        std::vector<uint8_t> msg = Utility::encode_auth_message(state);
+        m_con.send(msg);
     }
 
    private:
@@ -417,17 +430,51 @@ class BasedClient {
                 std::cerr << "Diffing not implemented yet, should never happen." << std::endl;
             } break;
             case IncomingType::GET_DATA:
-                std::cout << "received get data?" << std::endl;
+                std::cout << "GET DATA CACHE NOT IMPLEMENTED YET" << std::endl;
                 break;
-            case IncomingType::AUTH_DATA:
-                break;
+            case IncomingType::AUTH_DATA: {
+                int32_t start = 4;
+                int32_t end = len + 4;
+                std::string payload = "";
+                if (len != 3) {
+                    payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                         : message.substr(start, end);
+                }
+                if (payload == "true") {
+                    m_auth_state = m_auth_request_state;
+                    m_auth_request_state = "";
+                } else {
+                    m_auth_state = payload;
+                }
+                m_auth_callback(payload);
+
+                m_auth_in_progress = false;
+            }
+                return;
+            case IncomingType::ERROR_DATA: {
+                // std::cout << "Error received. Error handling not implemented yet" << std::endl;
+                int32_t start = 4;
+                int32_t end = len + 4;
+                std::string payload = "";
+                if (len != 3) {
+                    payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                         : message.substr(start, end);
+                }
+                if (payload == "true") {
+                    m_auth_state = m_auth_request_state;
+                    m_auth_request_state = "";
+                } else {
+                    m_auth_state = payload;
+                }
+                m_auth_callback(payload);
+
+                m_auth_in_progress = false;
+            }
+                return;
             default:
                 std::cerr << ">> Unknown payload type \"" << type << "\" received." << std::endl;
                 return;
         }
-        // std::string header = msg->get_header();
-        // std ::string payload = msg->get_payload();
-        // std::cout << "[MSG] \n\t[HEADER]" << header << "\n\t[PAYLOAD]" << payload << std::endl;
     };
 };
 
