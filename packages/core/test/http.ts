@@ -10,17 +10,14 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        console.info('XXXX', payload)
-        return payload?.length ?? 0
+        return 'flap'
       },
 
       // customHttpRequest
       // get query prams -> payload
       // post DATA
       customHttpResponse: async (result, payload, client) => {
-        const { res, isAborted, id } = client
-        console.info('okidoki?', isAborted, id)
-
+        const { res, isAborted } = client
         if (isAborted) {
           return
         }
@@ -37,20 +34,13 @@ test.serial('functions (over http)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       unregister: async () => {
-        console.info('--- wait wait unreg')
-        await wait(3e3)
-        console.info('--- wait wait unreg DONE')
-        console.info('UNREGISTERT...')
+        await wait(1e3)
         return true
       },
       registerByPath: async ({ path }) => {
-        console.info('--- wait wait path')
         await wait(1e3)
-        console.info('--- wait wait  path', path)
-
         for (const name in store) {
           if (store[name].path === path) {
-            console.info('FN', store[name])
             return store[name]
           }
         }
@@ -72,7 +62,7 @@ test.serial('functions (over http)', async (t) => {
   console.info('START')
   const result = await (await fetch('http://localhost:9910/flap')).text()
 
-  console.info(result)
+  t.is(result, 'yesh flap')
 
   const result2 = await (
     await fetch('http://localhost:9910/flap?flurp=1')
@@ -80,7 +70,7 @@ test.serial('functions (over http)', async (t) => {
 
   console.info('flap', result2)
 
-  await wait(5e3)
+  await wait(6e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })
