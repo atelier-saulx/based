@@ -455,20 +455,31 @@ class BasedClient {
                 // std::cout << "Error received. Error handling not implemented yet" << std::endl;
                 int32_t start = 4;
                 int32_t end = len + 4;
-                std::string payload = "";
+                std::string payload = "{}";
                 if (len != 3) {
                     payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
                                          : message.substr(start, end);
                 }
-                if (payload == "true") {
-                    m_auth_state = m_auth_request_state;
-                    m_auth_request_state = "";
-                } else {
-                    m_auth_state = payload;
-                }
-                m_auth_callback(payload);
 
-                m_auth_in_progress = false;
+                json error(payload);
+                if (error.find("requestId") != error.end()) {
+                    auto id = error.at("requestId");
+                    if (m_error_listeners.find(id) != m_error_listeners.end()) {
+                        auto fn = m_error_listeners.at(id);
+                        fn(payload);
+                    }
+                }
+                if (error.find("observableId") != error.end()) {
+                    auto obs_id = error.at("observableId");
+                    if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
+                        for (auto sub_id : m_observe_subs.at(obs_id)) {
+                            if (m_sub_on_error.find(sub_id) != m_sub_on_error.end()) {
+                                auto fn = m_sub_on_error.at(sub_id);
+                                fn(payload);
+                            }
+                        }
+                    }
+                }
             }
                 return;
             default:
