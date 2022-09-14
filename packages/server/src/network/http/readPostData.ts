@@ -27,7 +27,7 @@ export default (
       const str = data.toString()
       // also check for buffer / binary daya
       // may want to do this differently....
-      if (contentType === 'application/json') {
+      if (contentType === 'application/json' || !contentType) {
         try {
           params = data.length ? JSON.parse(str) : undefined
           onData(params)

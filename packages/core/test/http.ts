@@ -10,7 +10,9 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        console.info(payload)
+        if (payload) {
+          return payload
+        }
         return 'flap'
       },
 
@@ -23,6 +25,10 @@ test.serial('functions (over http)', async (t) => {
           return
         }
         res.writeStatus('200 OkiDoki')
+        if (typeof result === 'object') {
+          res.end(JSON.stringify(result))
+          return true
+        }
         res.end('yesh ' + result)
         return true
       },
@@ -68,7 +74,19 @@ test.serial('functions (over http)', async (t) => {
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
 
-  console.info('flap --->', result2)
+  t.is(result2, '{"flurp":1}')
+
+  const result3 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ flurp: 1 }),
+    })
+  ).text()
+
+  t.is(result3, '{"flurp":1}')
 
   await wait(6e3)
 

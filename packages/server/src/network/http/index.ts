@@ -32,10 +32,10 @@ const parseQueryValue = (q: any): QueryValue | QueryValue[] => {
 }
 
 const readQuery = (query: string): any => {
+  // TODO parse it yourself - and improve PERF!
   if (query) {
     try {
       const r: { [key: string]: QueryValue | QueryValue[] } = {}
-      // TODO parse it yourself - way faster!
       const p = qs.parse(query)
       for (const k in p) {
         r[k] = parseQueryValue(p[k])
