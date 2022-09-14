@@ -1,7 +1,6 @@
 import test from 'ava'
-import uws from '@based/uws'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer, { isHttpClient } from '@based/server'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
@@ -198,10 +197,15 @@ test.serial('authState update', async (t) => {
 
   await t.notThrowsAsync(coreClient.function('hello'))
   server.auth.updateConfig({
-    authorize: async (server, ws) => {
+    authorize: async (server, client) => {
       const authState = 'second_token'
-      ws.authState = authState
-      server.auth.sendAuthUpdate(ws as uws.WebSocket, authState)
+
+      if (isHttpClient(client)) {
+        client.context.authState = authState
+      } else {
+        client.ws.authState = authState
+        server.auth.sendAuthUpdate(client, authState)
+      }
       return true
     },
   })

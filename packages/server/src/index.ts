@@ -9,3 +9,5 @@ const createServer = async (props: ServerOptions): Promise<BasedServer> => {
 }
 
 export default createServer
+
+export * from './types'
