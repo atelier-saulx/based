@@ -282,6 +282,43 @@ std::vector<uint8_t> encode_get_message(uint64_t id,
 
     return buff;
 }
+
+std::vector<uint8_t> encode_auth_message(std::string& auth_state) {
+    // Type 4 = auth
+    // | 4 header | * payload
+
+    std::vector<uint8_t> buff;
+
+    /**
+     * Length in bytes. 4 B header + 8 B id + 8 B checksum,
+     * add the rest later based on payload and name.
+     */
+    int32_t len = 4;
+    int32_t is_deflate = 0;
+
+    std::string p;
+    if (auth_state.length() > 0) {
+        std::cout << "> Encoding payload... " << std::endl;
+
+        if (auth_state.length() > 150) {
+            is_deflate = 1;
+            std::cout << "> Deflating payload..." << std::endl;
+            p = deflate_string(auth_state);
+        } else {
+            p = auth_state;
+        }
+
+        len += p.length();
+    }
+    append_header(buff, 4, is_deflate, len);
+    // append_bytes(buff, p.length, )
+    if (p.length() > 0) {
+        append_string(buff, p);
+    }
+
+    return buff;
+}
+
 int32_t get_payload_type(int32_t header) {
     int32_t meta = header & 15;
     int32_t type = meta >> 1;
