@@ -76,38 +76,9 @@ test.serial('functions (over http)', async (t) => {
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
 
-  console.info(result2)
-
-  //   let str = ''
-  //   for (let i = 0; i < 200000; i++) {
-  //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-  //   }
-
-  //   const helloResponses = await Promise.all([
-  //     fetch(('hello', {
-  //       bla: true,
-  //     })),
-  //     fetch(function('hello', {
-  //       bla: str,
-  //     )
-  //   ])
-
-  //   t.true(helloResponses[0] < 20)
-  //   t.true(helloResponses[1] > 5e6)
-
-  //   const bigString = await coreClient.function('lotsOfData')
-
-  //   t.true(bigString.length > 5e6)
+  console.info('xxx', result2)
 
   await wait(23e3)
-
-  // GET
-
-  // custom headers
-
-  // payload
-
-  // deflate
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })
