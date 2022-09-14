@@ -62,6 +62,8 @@ test.serial('functions (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/flap')).text()
 
+  t.is(result, 'yesh flap')
+
   const result2 = await (
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
