@@ -10,6 +10,7 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
+        console.info(payload)
         return 'flap'
       },
 
@@ -59,16 +60,13 @@ test.serial('functions (over http)', async (t) => {
     },
   })
 
-  console.info('START')
   const result = await (await fetch('http://localhost:9910/flap')).text()
-
-  t.is(result, 'yesh flap')
 
   const result2 = await (
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
 
-  console.info('flap', result2)
+  console.info('flap --->', result2)
 
   await wait(6e3)
 
