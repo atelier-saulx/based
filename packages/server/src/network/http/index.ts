@@ -50,6 +50,10 @@ export const httpHandler = (
   // only relevant for get
   // }
 
+  console.info('go go go')
+
+  // parse payload
+
   if (path[1] === 'function' && path[2]) {
     // if (query)
 
@@ -59,6 +63,7 @@ export const httpHandler = (
 
   if (server.functions.config.registerByPath) {
     server.functions.getByPath(url).then((spec) => {
+      console.info('go go g1')
       if (client.res) {
         return
       }

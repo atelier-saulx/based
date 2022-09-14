@@ -2,16 +2,9 @@ import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
 import end from './end'
-// import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import zlib from 'node:zlib'
+import { compress } from './compress'
 
-const sendResponse = (
-  client: HttpClient,
-  encoding: string,
-  result: any
-  // checkHeaders: boolean
-  // checksum?: number
-) => {
+const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   if (!client.res) {
     return
   }
@@ -35,61 +28,11 @@ const sendResponse = (
   } else {
     client.res.writeHeader('Content-Type', 'application/json')
     parsed = JSON.stringify(result)
-
-    // for observe and get
-    // if (parsed.length > 30) {
-    // depends on size
-    // client.res.writeHeader(
-    //   'ETag',
-    //   String(
-    //     checksum || (typeof result === 'object' && result !== null)
-    //       ? hashObjectIgnoreKeyOrder(result)
-    //       : hash(result)
-    //   )
-    // )
-    // }
-
-    // HTTP status code 304 (Not Modified).  if none match
-
-    // The If-Match dont rly know
   }
 
-  // expose compress repsonse etc (for handling)
-
-  // clean this up... just use promises
-  let compressor
-  if (encoding) {
-    if (encoding.includes('deflate')) {
-      client.res.writeHeader('Content-Encoding', 'deflate')
-      compressor = zlib.createDeflate()
-    } else if (encoding.includes('gzip')) {
-      client.res.writeHeader('Content-Encoding', 'gzip')
-      compressor = zlib.createGzip()
-    } else if (encoding.includes('br')) {
-      client.res.writeHeader('Content-Encoding', 'br')
-      compressor = zlib.createBrotliCompress()
-    }
-  }
-
-  if (compressor) {
-    compressor.on('data', (buffer) => {
-      if (client.res) {
-        client.res.write(
-          buffer.buffer.slice(
-            buffer.byteOffset,
-            buffer.byteOffset + buffer.byteLength
-          )
-        )
-      }
-    })
-    compressor.on('end', () => {
-      end(client)
-    })
-    compressor.write(Buffer.from(parsed))
-    compressor.end()
-  } else {
-    end(client, parsed)
-  }
+  compress(parsed, encoding).then((p) => {
+    end(client, p)
+  })
 }
 
 export const functionRest = (
