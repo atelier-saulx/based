@@ -4,46 +4,9 @@ import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
 import end from './end'
 import readPostData from './readPostData'
-import qs from 'node:querystring'
+import { parseQuery } from './parseQuery'
 
 let clientId = 0
-
-type QueryValue = string | number | boolean
-
-const parseQueryValue = (q: any): QueryValue | QueryValue[] => {
-  if (Array.isArray(q)) {
-    for (let i = 0; i < q.length; i++) {
-      q[i] = parseQueryValue(q[i])
-    }
-    return q
-  }
-  if (q === 'null') {
-    return null
-  } else if (q === 'true') {
-    return true
-  } else if (q === 'false') {
-    return false
-    // @ts-ignore doing a typecheck...
-  } else if (typeof q === 'string' && /^\d+$/.test(q)) {
-    return Number(q)
-  }
-
-  return q
-}
-
-const readQuery = (query: string): any => {
-  // TODO parse it yourself - and improve PERF!
-  if (query) {
-    try {
-      const r: { [key: string]: QueryValue | QueryValue[] } = {}
-      const p = qs.parse(query)
-      for (const k in p) {
-        r[k] = parseQueryValue(p[k])
-      }
-      return r
-    } catch (_e) {}
-  }
-}
 
 export const httpHandler = (
   server: BasedServer,
@@ -89,7 +52,7 @@ export const httpHandler = (
         functionRest(path[2], payload, encoding, client, server)
       })
     } else {
-      functionRest(path[2], readQuery(query), encoding, client, server)
+      functionRest(path[2], parseQuery(query), encoding, client, server)
     }
 
     return
@@ -112,7 +75,7 @@ export const httpHandler = (
               functionRest(spec.name, payload, encoding, client, server)
             })
           } else {
-            functionRest(spec.name, readQuery(query), encoding, client, server)
+            functionRest(spec.name, parseQuery(query), encoding, client, server)
           }
         }
       }
