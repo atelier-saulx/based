@@ -28,12 +28,11 @@ struct ObservableOpts {
 };
 
 class BasedClient {
-    // members
    private:
     WsConnection m_con;
+
     int32_t m_request_id;
     int32_t m_sub_id;
-    bool m_draining;
 
     bool m_auth_in_progress;
     std::string m_auth_state;
@@ -41,18 +40,18 @@ class BasedClient {
     std::function<void(std::string)> m_auth_callback;
 
     std::map<int, std::function<void(std::string)>> m_function_listeners;
-    std::map<int, std::function<void(std::string)>> m_error_listeners;
+    // std::map<int, std::function<void(std::string)>> m_error_listeners;
 
-    /**
-     * Requests should be added to this queue when a new observable is created,
-     * and when the client reconnects.
-     *
-     * Never when a new sub is added to the same obs_id.
-     */
+    /////////////////////
+    // queues
+    /////////////////////
+
     std::vector<std::vector<uint8_t>> m_observe_queue;
     std::vector<std::vector<uint8_t>> m_function_queue;
     std::vector<std::vector<uint8_t>> m_unobserve_queue;
     std::vector<std::vector<uint8_t>> m_get_queue;
+
+    bool m_draining;
 
     /////////////////////
     // observables
@@ -82,14 +81,7 @@ class BasedClient {
      * map<sub_id, on_data callback>
      * List of on_data callback to call when receiving the data.
      */
-    std::map<int, std::function<void(std::string, int64_t)>> m_sub_on_data;
-
-    /**
-     * map<sub_id, on_error callback>
-     * List of on_data callback to call when receiving an error for that obs_id.
-     */
-
-    std::map<int, std::function<void(std::string)>> m_sub_on_error;
+    std::map<int, std::function<void(std::string, int64_t, std::string)>> m_sub_callback;
 
     ////////////////
     // gets
@@ -126,17 +118,15 @@ class BasedClient {
      * Observe a function. This returns the sub_id used to
      * unsubscribe with .unobserve(id)
      */
-    int observe(std::string name,
-                std::string payload,
-                /**
-                 * Callback that the observable will trigger.
-                 */
-                std::function<void(std::string /*data*/, int64_t /*checksum*/)> on_data,
-                /**
-                 * This is optional. Can be set to NULL if no onError callback is required.
-                 */
-                std::function<void(std::string /*error*/)> on_error,
-                ObservableOpts obs_opts) {
+    int observe(
+        std::string name,
+        std::string payload,
+        /**
+         * Callback that the observable will trigger.
+         */
+        std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)>
+            on_data,
+        ObservableOpts obs_opts) {
         /**
          * Each observable must be stored in memory, in case the connection drops.
          * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -173,10 +163,9 @@ class BasedClient {
             m_sub_to_obs[sub_id] = obs_id;
 
             // add on_data for this sub
-            m_sub_on_data[sub_id] = on_data;
+            m_sub_callback[sub_id] = on_data;
 
             // add on_error for this sub if on_error is present (overload?)
-            if (on_error) m_sub_on_error[sub_id] = on_error;
         } else {
             // this query has already been requested once, only add subscriber,
             // dont send a new request.
@@ -188,10 +177,8 @@ class BasedClient {
             m_sub_to_obs[sub_id] = obs_id;
 
             // add on_data for this new sub
-            m_sub_on_data[sub_id] = on_data;
-
+            m_sub_callback[sub_id] = on_data;
             // add on_error for this new sub if it exists
-            if (on_error) m_sub_on_error[sub_id] = on_error;
         }
 
         drain_queues();
@@ -239,10 +226,7 @@ class BasedClient {
         m_observe_subs.at(obs_id).erase(sub_id);
 
         // remove on_data callback
-        m_sub_on_data.erase(sub_id);
-
-        // remove on_error callback
-        m_sub_on_error.erase(sub_id);
+        m_sub_callback.erase(sub_id);
 
         // remove sub to obs mapping for removed sub
         m_sub_to_obs.erase(sub_id);
@@ -386,7 +370,6 @@ class BasedClient {
                                        : message.substr(start, end);
                         fn(payload);
                     } else {
-                        std::cout << "no payload" << std::endl;
                         fn("");
                     }
                     // Listener has fired, remove it from the map.
@@ -408,8 +391,8 @@ class BasedClient {
 
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
-                        auto fn = m_sub_on_data.at(sub_id);
-                        fn(payload, checksum);
+                        auto fn = m_sub_callback.at(sub_id);
+                        fn(payload, checksum, "");
                     }
                 }
 
@@ -462,20 +445,20 @@ class BasedClient {
                 }
 
                 json error(payload);
-                if (error.find("requestId") != error.end()) {
-                    auto id = error.at("requestId");
-                    if (m_error_listeners.find(id) != m_error_listeners.end()) {
-                        auto fn = m_error_listeners.at(id);
-                        fn(payload);
-                    }
-                }
+                // if (error.find("requestId") != error.end()) {
+                //     auto id = error.at("requestId");
+                //     if (m_error_listeners.find(id) != m_error_listeners.end()) {
+                //         auto fn = m_error_listeners.at(id);
+                //         fn(payload);
+                //     }
+                // }
                 if (error.find("observableId") != error.end()) {
                     auto obs_id = error.at("observableId");
                     if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                         for (auto sub_id : m_observe_subs.at(obs_id)) {
-                            if (m_sub_on_error.find(sub_id) != m_sub_on_error.end()) {
-                                auto fn = m_sub_on_error.at(sub_id);
-                                fn(payload);
+                            if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {
+                                auto fn = m_sub_callback.at(sub_id);
+                                fn("", 0, payload);
                             }
                         }
                     }
