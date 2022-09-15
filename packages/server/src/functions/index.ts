@@ -231,7 +231,6 @@ export class BasedFunctions {
         })
       ) {
         if (this.beingUnregisterd[name]) {
-          console.info('--> unreg', name)
           delete this.beingUnregisterd[name]
           return this.remove(name)
         } else {
