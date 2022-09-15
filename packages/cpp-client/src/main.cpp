@@ -25,11 +25,21 @@ int main() {
             continue;
         }
 
-        client.auth("{\"b\":\"a\",\"a\":\"bababa\"}",
-                    [](std::string data) { std::cout << "got auth data = " << data << std::endl; });
+        // client.auth("{\"b\":\"a\",\"a\":\"bababa\"}",
+        //             [](std::string data) { std::cout << "got auth data = " << data << std::endl;
+        //             });
 
-        // client.get("counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
-        //            [](std::string data) { std::cout << "I GOT data = " << data << std::endl; });
+        client.observe(
+            "dklasjfh", "{\"b\":\"a\",\"a\":\"bababa\"}",
+            [](std::string data, int checksum, std::string error) {
+                if (data.length() > 0) {
+                    std::cout << "DATA = " << data << std::endl;
+                }
+                if (error.length() > 0) {
+                    std::cout << "ERROR = " << data << std::endl;
+                }
+            },
+            ObservableOpts(true, 100));
         // client.get("counter", "",
         //            [](std::string data) { std::cout << "I GOT data 2 = " << data << std::endl;
         //            });
