@@ -4,14 +4,15 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
 test.serial.only('query parser', async (t) => {
-  const q = 'bla=1&flap=true'
+  const q = 'bla=1&flap=true&q={"bla":"flap=x&v2!"}'
 
-  const d = Date.now()
-  for (let i = 0; i < 100e3; i++) {
-    parseQuery(q)
-  }
+  console.log(parseQuery(q))
 
-  console.log(Date.now() - d, 'ms')
+  // const d = Date.now()
+  // for (let i = 0; i < 100e3; i++) {
+  //   parseQuery(q)
+  // }
+  // console.log(Date.now() - d, 'ms')
 
   t.pass()
 })
