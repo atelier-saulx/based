@@ -1,21 +1,7 @@
 import test from 'ava'
-import createServer, { parseQuery } from '@based/server'
+import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
-
-test.serial.only('query parser', async (t) => {
-  const q = 'bla=1&flap=true&q={"bla":"flap=x&v2!"}'
-
-  console.log(parseQuery(q))
-
-  // const d = Date.now()
-  // for (let i = 0; i < 100e3; i++) {
-  //   parseQuery(q)
-  // }
-  // console.log(Date.now() - d, 'ms')
-
-  t.pass()
-})
 
 test.serial('functions (over http)', async (t) => {
   const store = {

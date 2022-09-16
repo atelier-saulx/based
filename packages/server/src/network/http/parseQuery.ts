@@ -1,3 +1,5 @@
+// move to utils
+
 type QueryValue = string | number | boolean
 
 type QueryParams = {
