@@ -91,6 +91,8 @@ test.serial('functions (over http)', async (t) => {
   await wait(6e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
+
+  server.destroy()
 })
 
 test.serial('get (over http)', async (t) => {
@@ -154,4 +156,6 @@ test.serial('get (over http)', async (t) => {
   await wait(10e3)
 
   t.is(Object.keys(server.functions.observables).length, 0)
+
+  server.destroy()
 })
