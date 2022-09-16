@@ -40,30 +40,30 @@ import { sendError } from './sendError'
 
 */
 
-const sendResponse = (client: HttpClient, encoding: string, result: any) => {
-  if (!client.res) {
-    return
-  }
+// const sendResponse = (client: HttpClient, encoding: string, result: any) => {
+//   if (!client.res) {
+//     return
+//   }
 
-  client.res.writeStatus('200 OK')
-  client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+//   client.res.writeStatus('200 OK')
+//   client.res.writeHeader('Access-Control-Allow-Origin', '*')
+//   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
 
-  // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
-  client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+//   // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
+//   client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
 
-  let parsed: string
+//   let parsed: string
 
-  if (typeof result === 'string') {
-    client.res.writeHeader('Content-Type', 'text/plain')
-    parsed = result
-  } else {
-    client.res.writeHeader('Content-Type', 'application/json')
-    parsed = JSON.stringify(result)
-  }
+//   if (typeof result === 'string') {
+//     client.res.writeHeader('Content-Type', 'text/plain')
+//     parsed = result
+//   } else {
+//     client.res.writeHeader('Content-Type', 'application/json')
+//     parsed = JSON.stringify(result)
+//   }
 
-  compress(parsed, encoding).then((p) => end(client, p))
-}
+//   compress(parsed, encoding).then((p) => end(client, p))
+// }
 
 export const getRest = (
   name: string,

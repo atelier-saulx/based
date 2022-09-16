@@ -2,6 +2,7 @@ import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
+import { getRest } from './get'
 import end from './end'
 import readPostData from './readPostData'
 import { parseQuery } from '@saulx/utils'
@@ -46,10 +47,10 @@ export const httpHandler = (
   if (path[1] === 'get') {
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
-        functionRest(path[2], payload, encoding, client, server)
+        getRest(path[2], payload, encoding, client, server)
       })
     } else {
-      functionRest(path[2], parseQuery(query), encoding, client, server)
+      getRest(path[2], parseQuery(query), encoding, client, server)
     }
     return
   }
@@ -74,8 +75,7 @@ export const httpHandler = (
         end(client, 'invalid enpoints')
       } else {
         if (isObservableFunctionSpec(spec)) {
-          // get!
-          end(client, 'get time')
+          getRest(spec.name, parseQuery(query), encoding, client, server)
         } else {
           if (method === 'post') {
             readPostData(client, contentType, (payload) => {
