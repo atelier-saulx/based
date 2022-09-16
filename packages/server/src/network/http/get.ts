@@ -94,8 +94,6 @@ export const httpGet = (
             } else {
               const id = hashObjectIgnoreKeyOrder([name, payload])
 
-              console.info('go go go GET', checksum)
-
               if (server.activeObservablesById.has(id)) {
                 const obs = server.activeObservablesById.get(id)
                 if (obs.beingDestroyed) {

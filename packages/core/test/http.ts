@@ -93,7 +93,7 @@ test.serial('functions (over http)', async (t) => {
   t.is(Object.keys(server.functions.functions).length, 0)
 })
 
-test.serial.only('get (over http)', async (t) => {
+test.serial('get (over http)', async (t) => {
   const store = {
     hello: {
       path: '/counter',
