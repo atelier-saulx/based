@@ -54,7 +54,8 @@ export const functionRest = (
               sendError(
                 client,
                 `${name} unauthorized request`,
-                '401 Unauthorized'
+                401,
+                'Unauthorized'
               )
             } else {
               spec
@@ -79,18 +80,19 @@ export const functionRest = (
                 })
             }
           })
-          .catch((err) => sendError(client, err.message, '401 Unauthorized'))
+          .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
       } else if (spec && isObservableFunctionSpec(spec)) {
         sendError(
           client,
           `function is observable - use /get/${name} instead`,
-          '404 Not Found'
+          404,
+          'Not Found'
         )
       } else {
-        sendError(client, `function does not exist ${name}`, '404 Not Found')
+        sendError(client, `function does not exist ${name}`, 404, 'Not Found')
       }
     })
     .catch(() =>
-      sendError(client, `function does not exist ${name}`, '404 Not Found')
+      sendError(client, `function does not exist ${name}`, 404, 'Not Found')
     )
 }

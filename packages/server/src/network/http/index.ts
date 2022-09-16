@@ -72,7 +72,7 @@ export const httpHandler = (
         return
       }
       if (!spec) {
-        end(client, 'invalid enpoints')
+        sendError(client, `'${url}' does not exist`, 404, 'Not Found')
       } else {
         if (isObservableFunctionSpec(spec)) {
           getRest(spec.name, parseQuery(query), encoding, client, server)

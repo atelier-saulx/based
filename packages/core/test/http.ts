@@ -88,6 +88,10 @@ test.serial('functions (over http)', async (t) => {
 
   t.is(result3, '{"flurp":1}')
 
+  const x = await (await fetch('http://localhost:9910/gurk')).text()
+
+  t.is(x, `{"error":"'/gurk' does not exist","code":404}`)
+
   await wait(6e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
