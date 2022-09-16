@@ -27,13 +27,13 @@ export const compress = async (
       payload = Buffer.from(payload)
     }
     if (encoding.includes('deflate')) {
-      client.res.writeHeader('content-encoding', 'deflate')
+      client.res.writeHeader('Content-Encoding', 'deflate')
       compressed = await deflate(payload)
     } else if (encoding.includes('gzip')) {
-      client.res.writeHeader('content-encoding', 'gzip')
+      client.res.writeHeader('Content-Encoding', 'gzip')
       compressed = await gzip(payload)
     } else if (encoding.includes('br')) {
-      client.res.writeHeader('content-encoding', 'br')
+      client.res.writeHeader('Content-Encoding', 'br')
       compressed = await br(payload)
     }
     if (compressed) {

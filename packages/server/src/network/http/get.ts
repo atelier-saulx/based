@@ -32,7 +32,7 @@ const sendGetResponse = (
         if (obs.isDeflate) {
           if (encoding.includes('deflate')) {
             // send it
-            client.res.writeHeader('content-encoding', 'deflate')
+            client.res.writeHeader('Content-Encoding', 'deflate')
             end(client, obs.cache.slice(4 + 8 + 8))
           } else if (obs.rawData) {
             compress(client, JSON.stringify(obs.rawData), encoding).then((p) =>

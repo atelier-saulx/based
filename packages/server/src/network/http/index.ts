@@ -15,7 +15,6 @@ export const httpHandler = (
   res: uws.HttpResponse
 ) => {
   res.onAborted(() => {
-    console.info('ABORT')
     client.context = null
     client.res = null
   })
