@@ -6,7 +6,7 @@ import fetch from 'cross-fetch'
 test.serial('functions (over http)', async (t) => {
   const store = {
     hello: {
-      path: '/flap', // observables and functions will have a path configuration
+      path: '/flap',
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
@@ -15,10 +15,6 @@ test.serial('functions (over http)', async (t) => {
         }
         return 'flap'
       },
-
-      // customHttpRequest
-      // get query prams -> payload
-      // post DATA
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
@@ -93,6 +89,65 @@ test.serial('functions (over http)', async (t) => {
   t.is(x, `{"error":"'/gurk' does not exist","code":404}`)
 
   await wait(6e3)
+
+  t.is(Object.keys(server.functions.functions).length, 0)
+})
+
+test.serial.only('get (over http)', async (t) => {
+  const store = {
+    hello: {
+      path: '/counter',
+      name: 'counter',
+      checksum: 1,
+      observable: true,
+      function: async (payload, update) => {
+        let cnt = 0
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
+        }
+      },
+    },
+  }
+
+  const server = await createServer({
+    port: 9910,
+    functions: {
+      memCacheTimeout: 3e3,
+      idleTimeout: 3e3,
+      unregister: async () => {
+        return true
+      },
+      registerByPath: async ({ path }) => {
+        for (const name in store) {
+          if (store[name].path === path) {
+            return store[name]
+          }
+        }
+        return false
+      },
+      register: async ({ name }) => {
+        if (store[name]) {
+          return store[name]
+        } else {
+          return false
+        }
+      },
+      log: (opts) => {
+        console.info('-->', opts)
+      },
+    },
+  })
+
+  const result = await (await fetch('http://localhost:9910/counter')).text()
+
+  console.info(result)
+
+  t.is(result, 'yesh flap')
+
+  await wait(3e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })
