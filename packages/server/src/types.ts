@@ -9,6 +9,7 @@ export type HttpClient = {
   res: uws.HttpResponse | null
   context:
     | ({
+        authorization: string
         ua: string
         ip: string
         id: number
