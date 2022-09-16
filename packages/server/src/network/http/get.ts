@@ -19,4 +19,12 @@
 // if (parsed.length > 30) {
     // client.res.writeHeader('ETag', String(checksum || hash(parsed)))
     // }
+
+
+        // if (/^<!DOCTYPE/.test(result)) {
+    //   // maybe a bit more checks...
+    //   client.res.writeHeader('Content-Type', 'text/html')
+    // } else {
+            // }
+
 */

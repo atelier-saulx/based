@@ -3,6 +3,7 @@ import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
 import end from './end'
 import { compress } from './compress'
+import { sendError } from './sendError'
 
 const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   if (!client.res) {
@@ -18,14 +19,8 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
 
   let parsed: string
 
-  // handle response
   if (typeof result === 'string') {
-    if (/^<!DOCTYPE/.test(result)) {
-      // maybe a bit more checks...
-      client.res.writeHeader('Content-Type', 'text/html')
-    } else {
-      client.res.writeHeader('Content-Type', 'text/plain')
-    }
+    client.res.writeHeader('Content-Type', 'text/plain')
     parsed = result
   } else {
     client.res.writeHeader('Content-Type', 'application/json')
@@ -42,13 +37,6 @@ export const functionRest = (
   client: HttpClient,
   server: BasedServer
 ): void => {
-  // handle deflate
-  // handle query
-  // handle data from get
-  // set correct headers
-  // error
-  // auth
-
   server.functions
     .get(name)
     .then((spec) => {
@@ -63,8 +51,11 @@ export const functionRest = (
               return
             }
             if (!ok) {
-              // client.res?.writeStatus('401 Unauthorized')
-              // client.res?.end('WRONG AUTH')
+              sendError(
+                client,
+                `${name} unauthorized request`,
+                '401 Unauthorized'
+              )
             } else {
               spec
                 .function(payload, client)
@@ -74,48 +65,32 @@ export const functionRest = (
                   }
                   if (spec.customHttpResponse) {
                     if (
-                      // add send (for encoding and stuff)
                       await spec.customHttpResponse(result, payload, client)
                     ) {
-                      // eval headers here
-                      // if true all is handled
                       return
                     }
-                    // do something with headers...
                     sendResponse(client, encoding, result)
                   } else {
                     sendResponse(client, encoding, result)
                   }
                 })
-                .catch(() => {
-                  console.error('wrong fn', client)
-                  // error handling nice
-                  // SEND ERROR sendResponse(client, encoding, result)
-                  // and auth
-                  client.res?.end('wrong!')
+                .catch((err) => {
+                  sendError(client, err.message)
                 })
             }
           })
-          .catch((err) => {
-            if (!client.res) {
-              return
-            }
-            console.error('no auth', err)
-            // SEND ERROR sendResponse(client, encoding, result)
-
-            // client.res?.end('wrong!')
-          })
+          .catch((err) => sendError(client, err.message, '401 Unauthorized'))
+      } else if (spec && isObservableFunctionSpec(spec)) {
+        sendError(
+          client,
+          `function is observable - use /get/${name} instead`,
+          '404 Not Found'
+        )
       } else {
-        console.error('No function for you', name)
-        // SEND ERROR sendResponse(client, encoding, result)
-
-        // client.res?.end('wrong!')
+        sendError(client, `function does not exist ${name}`, '404 Not Found')
       }
     })
-    .catch((err) => {
-      console.error('fn does not exist', err)
-      // SEND ERROR sendResponse(client, encoding, result)
-
-      // client.res?.end('wrong!')
-    })
+    .catch(() =>
+      sendError(client, `function does not exist ${name}`, '404 Not Found')
+    )
 }
