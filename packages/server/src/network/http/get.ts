@@ -4,6 +4,7 @@ import { HttpClient } from '../../types'
 import end from './end'
 import { compress } from './compress'
 import { sendError } from './sendError'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 // for observe and get
 // if (parsed.length > 30) {
@@ -65,6 +66,48 @@ import { sendError } from './sendError'
 //   compress(parsed, encoding).then((p) => end(client, p))
 // }
 
+/*
+ if (server.activeObservablesById.has(id)) {
+    const obs = server.activeObservablesById.get(id)
+    if (obs.beingDestroyed) {
+      clearTimeout(obs.beingDestroyed)
+      obs.beingDestroyed = null
+    }
+    if (obs.cache) {
+      sendGetData(server, id, obs, checksum, client)
+    } else {
+      if (!obs.onNextData) {
+        obs.onNextData = new Set()
+      }
+      obs.onNextData.add(() => {
+        sendGetData(server, id, obs, checksum, client)
+      })
+    }
+  } else {
+    server.functions
+      .get(name)
+      .then((spec) => {
+        if (spec && isObservableFunctionSpec(spec)) {
+          const obs = create(server, name, id, payload)
+          if (!client.ws?.obs.has(id)) {
+            if (!obs.onNextData) {
+              obs.onNextData = new Set()
+            }
+            obs.onNextData.add(() => {
+              sendGetData(server, id, obs, checksum, client)
+            })
+          }
+        } else {
+          console.error('No function for you', name)
+        }
+      })
+      .catch((err) => {
+        console.error('fn does not exist', err)
+      })
+  }
+
+*/
+
 export const getRest = (
   name: string,
   payload: any,
@@ -93,7 +136,11 @@ export const getRest = (
               )
             } else {
               console.info('go go go GET')
+              console.info(name, payload)
 
+              const id = hashObjectIgnoreKeyOrder([name, payload])
+
+              end(client, 'bla! ' + id)
               // do something get!
             }
           })
