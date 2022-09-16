@@ -14,3 +14,9 @@
 
 // HTTP status code 304 (Not Modified).  if none match
 // The If-Match dont rly know
+
+/*
+// if (parsed.length > 30) {
+    // client.res.writeHeader('ETag', String(checksum || hash(parsed)))
+    // }
+*/

@@ -20,19 +20,19 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
 
   // handle response
   if (typeof result === 'string') {
-    client.res.writeHeader('Content-Type', 'text/plain')
+    if (/^<!DOCTYPE/.test(result)) {
+      // maybe a bit more checks...
+      client.res.writeHeader('Content-Type', 'text/html')
+    } else {
+      client.res.writeHeader('Content-Type', 'text/plain')
+    }
     parsed = result
-    // if (parsed.length > 30) {
-    // client.res.writeHeader('ETag', String(checksum || hash(parsed)))
-    // }
   } else {
     client.res.writeHeader('Content-Type', 'application/json')
     parsed = JSON.stringify(result)
   }
 
-  compress(parsed, encoding).then((p) => {
-    end(client, p)
-  })
+  compress(parsed, encoding).then((p) => end(client, p))
 }
 
 export const functionRest = (
