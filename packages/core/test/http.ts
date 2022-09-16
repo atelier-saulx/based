@@ -143,9 +143,13 @@ test.serial.only('get (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  console.info(result)
-
   t.is(result, '1')
+
+  await wait(1e3)
+
+  const result2 = await (await fetch('http://localhost:9910/counter')).text()
+
+  t.is(result2, '2')
 
   await wait(10e3)
 
