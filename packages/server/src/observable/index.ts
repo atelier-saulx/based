@@ -219,7 +219,13 @@ export const initFunction = async (
       }
 
       // keep track globally of total mem usage
-      const encodedData = encodeObservableResponse(id, checksum, buff)
+      const [encodedData, isDeflate] = encodeObservableResponse(
+        id,
+        checksum,
+        buff
+      )
+      // add deflate info
+      obs.isDeflate = isDeflate
       obs.cache = encodedData
       server.cacheSize += obs.cache.byteLength
       obs.checksum = checksum

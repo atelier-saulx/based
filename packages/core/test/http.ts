@@ -145,9 +145,9 @@ test.serial.only('get (over http)', async (t) => {
 
   console.info(result)
 
-  t.is(result, 'yesh flap')
+  t.is(result, '1')
 
-  await wait(3e3)
+  await wait(10e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.observables).length, 0)
 })

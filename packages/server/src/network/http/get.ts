@@ -1,112 +1,67 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../types'
+import { HttpClient, ActiveObservable } from '../../types'
 import end from './end'
-// import { compress } from './compress'
+import { compress } from './compress'
 import { sendError } from './sendError'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { create, destroy } from '../../observable'
+import zlib from 'node:zlib'
 
-// for observe and get
-// if (parsed.length > 30) {
-// depends on size
-// client.res.writeHeader(
-//   'ETag',
-//   String(
-//     checksum || (typeof result === 'object' && result !== null)
-//       ? hashObjectIgnoreKeyOrder(result)
-//       : hash(result)
-//   )
-// )
-// }
-// import { hash, hashObjectIgnoreKeyOrder } from '@saulx/hash'
-
-// HTTP status code 304 (Not Modified).  if none match
-// The If-Match dont rly know
-
-// if (path[1] === 'get') {
-// Sending either If-Match or If-None-Match
-// only relevant for get
-
-/*
-// if (parsed.length > 30) {
-    // client.res.writeHeader('ETag', String(checksum || hash(parsed)))
-    // }
-
-
-        // if (/^<!DOCTYPE/.test(result)) {
-    //   // maybe a bit more checks...
-    //   client.res.writeHeader('Content-Type', 'text/html')
-    // } else {
-            // }
-
-*/
-
-// const sendResponse = (client: HttpClient, encoding: string, result: any) => {
-//   if (!client.res) {
-//     return
-//   }
-
-//   client.res.writeStatus('200 OK')
-//   client.res.writeHeader('Access-Control-Allow-Origin', '*')
-//   client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-
-//   // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
-//   client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-
-//   let parsed: string
-
-//   if (typeof result === 'string') {
-//     client.res.writeHeader('Content-Type', 'text/plain')
-//     parsed = result
-//   } else {
-//     client.res.writeHeader('Content-Type', 'application/json')
-//     parsed = JSON.stringify(result)
-//   }
-
-//   compress(parsed, encoding).then((p) => end(client, p))
-// }
-
-/*
- if (server.activeObservablesById.has(id)) {
-    const obs = server.activeObservablesById.get(id)
-    if (obs.beingDestroyed) {
-      clearTimeout(obs.beingDestroyed)
-      obs.beingDestroyed = null
-    }
-    if (obs.cache) {
-      sendGetData(server, id, obs, checksum, client)
-    } else {
-      if (!obs.onNextData) {
-        obs.onNextData = new Set()
-      }
-      obs.onNextData.add(() => {
-        sendGetData(server, id, obs, checksum, client)
-      })
-    }
-  } else {
-    server.functions
-      .get(name)
-      .then((spec) => {
-        if (spec && isObservableFunctionSpec(spec)) {
-          const obs = create(server, name, id, payload)
-          if (!client.ws?.obs.has(id)) {
-            if (!obs.onNextData) {
-              obs.onNextData = new Set()
-            }
-            obs.onNextData.add(() => {
-              sendGetData(server, id, obs, checksum, client)
-            })
-          }
-        } else {
-          console.error('No function for you', name)
-        }
-      })
-      .catch((err) => {
-        console.error('fn does not exist', err)
-      })
+const sendGetResponse = (
+  server: BasedServer,
+  id: number,
+  obs: ActiveObservable,
+  encoding: string,
+  checksum: number,
+  client: HttpClient
+) => {
+  if (!client.res) {
+    return
   }
 
-*/
+  try {
+    if (checksum === 0 || checksum !== obs.checksum) {
+      if (!obs.cache) {
+        // ERROR
+        throw new Error('Observable does not have a value...')
+      } else {
+        // client.res.writeHeader('Cache-Control', 'max-age=10')
+
+        client.res.writeHeader('ETag', String(obs.checksum))
+        if (obs.isDeflate) {
+          if (encoding.includes('deflate')) {
+            // send it
+            client.res.writeHeader('content-encoding', 'deflate')
+            end(client, obs.cache.slice(4 + 8 + 8))
+          } else if (obs.rawData) {
+            compress(client, JSON.stringify(obs.rawData), encoding).then((p) =>
+              end(client, p)
+            )
+          } else {
+            compress(
+              client,
+              zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8)),
+              encoding
+            ).then((p) => end(client, p))
+          }
+        } else {
+          end(client, obs.cache.slice(4 + 8 + 8))
+        }
+      }
+    } else {
+      console.info('not modified')
+      client.res.writeStatus('304 Not Modified')
+      end(client)
+    }
+  } catch (err) {
+    sendError(client, err.message)
+  }
+
+  if (obs.clients.size === 0) {
+    destroy(server, id)
+  }
+}
 
 export const httpGet = (
   name: string,
@@ -137,14 +92,35 @@ export const httpGet = (
                 'Unauthorized'
               )
             } else {
-              console.info('go go go GET', checksum)
-              console.info(name, payload)
-
               const id = hashObjectIgnoreKeyOrder([name, payload])
-              // HTTP status code 304 (Not Modified).  if none match
 
-              end(client, 'bla! ' + id + '  ' + checksum)
-              // do something get!
+              console.info('go go go GET', checksum)
+
+              if (server.activeObservablesById.has(id)) {
+                const obs = server.activeObservablesById.get(id)
+                if (obs.beingDestroyed) {
+                  clearTimeout(obs.beingDestroyed)
+                  obs.beingDestroyed = null
+                }
+                if (obs.cache) {
+                  sendGetResponse(server, id, obs, encoding, checksum, client)
+                } else {
+                  if (!obs.onNextData) {
+                    obs.onNextData = new Set()
+                  }
+                  obs.onNextData.add(() => {
+                    sendGetResponse(server, id, obs, encoding, checksum, client)
+                  })
+                }
+              } else {
+                const obs = create(server, name, id, payload)
+                if (!obs.onNextData) {
+                  obs.onNextData = new Set()
+                }
+                obs.onNextData.add(() => {
+                  sendGetResponse(server, id, obs, encoding, checksum, client)
+                })
+              }
             }
           })
           .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))

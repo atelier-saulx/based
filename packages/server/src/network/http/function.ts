@@ -27,7 +27,7 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
     parsed = JSON.stringify(result)
   }
 
-  compress(parsed, encoding).then((p) => end(client, p))
+  compress(client, parsed, encoding).then((p) => end(client, p))
 }
 
 export const httpFunction = (
