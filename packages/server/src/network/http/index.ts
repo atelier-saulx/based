@@ -5,6 +5,7 @@ import { functionRest } from './function'
 import end from './end'
 import readPostData from './readPostData'
 import { parseQuery } from '@saulx/utils'
+import { sendError } from './sendError'
 
 let clientId = 0
 
@@ -42,9 +43,16 @@ export const httpHandler = (
     },
   }
 
-  // if (path[1] === 'get') {
-  // Sending either If-Match or If-None-Match
-  // only relevant for get
+  if (path[1] === 'get') {
+    if (method === 'post') {
+      readPostData(client, contentType, (payload) => {
+        functionRest(path[2], payload, encoding, client, server)
+      })
+    } else {
+      functionRest(path[2], parseQuery(query), encoding, client, server)
+    }
+    return
+  }
 
   if (path[1] === 'function' && path[2]) {
     if (method === 'post') {
@@ -54,7 +62,6 @@ export const httpHandler = (
     } else {
       functionRest(path[2], parseQuery(query), encoding, client, server)
     }
-
     return
   }
 
@@ -83,5 +90,5 @@ export const httpHandler = (
     return
   }
 
-  res.end('invalid endpoint')
+  sendError(client, 'Bad request')
 }
