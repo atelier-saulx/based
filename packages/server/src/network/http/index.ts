@@ -47,12 +47,16 @@ export const httpHandler = (
   }
 
   if (path[1] === 'get') {
+    const checksumRaw = req.getHeader('if-none-match')
+    // @ts-ignore use isnan to cast string to number
+    const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
-        httpGet(path[2], payload, encoding, client, server)
+        httpGet(path[2], payload, encoding, client, server, checksum)
       })
     } else {
-      httpGet(path[2], parseQuery(query), encoding, client, server)
+      httpGet(path[2], parseQuery(query), encoding, client, server, checksum)
     }
     return
   }
@@ -77,7 +81,17 @@ export const httpHandler = (
         sendError(client, `'${url}' does not exist`, 404, 'Not Found')
       } else {
         if (isObservableFunctionSpec(spec)) {
-          httpGet(spec.name, parseQuery(query), encoding, client, server)
+          const checksumRaw = req.getHeader('if-none-match')
+          // @ts-ignore use isnan to cast string to number
+          const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+          httpGet(
+            spec.name,
+            parseQuery(query),
+            encoding,
+            client,
+            server,
+            checksum
+          )
         } else {
           if (method === 'post') {
             readPostData(client, contentType, (payload) => {

@@ -113,7 +113,8 @@ export const httpGet = (
   payload: any,
   encoding: string,
   client: HttpClient,
-  server: BasedServer
+  server: BasedServer,
+  checksum: number
 ): void => {
   server.functions
     .get(name)
@@ -136,12 +137,13 @@ export const httpGet = (
                 'Unauthorized'
               )
             } else {
-              console.info('go go go GET')
+              console.info('go go go GET', checksum)
               console.info(name, payload)
 
               const id = hashObjectIgnoreKeyOrder([name, payload])
+              // HTTP status code 304 (Not Modified).  if none match
 
-              end(client, 'bla! ' + id)
+              end(client, 'bla! ' + id + '  ' + checksum)
               // do something get!
             }
           })
