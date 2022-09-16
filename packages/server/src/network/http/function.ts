@@ -30,7 +30,7 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   compress(parsed, encoding).then((p) => end(client, p))
 }
 
-export const functionRest = (
+export const httpFunction = (
   name: string,
   payload: any,
   encoding: string,

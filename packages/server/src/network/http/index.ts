@@ -1,8 +1,8 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
-import { functionRest } from './function'
-import { getRest } from './get'
+import { httpFunction } from './function'
+import { httpGet } from './get'
 import readPostData from './readPostData'
 import { parseQuery } from '@saulx/utils'
 import { sendError } from './sendError'
@@ -29,6 +29,8 @@ export const httpHandler = (
 
   const encoding = req.getHeader('accept-encoding')
   const contentType = req.getHeader('content-type') || 'application/json'
+  const authorization = req.getHeader('authorization')
+
   const url = req.getUrl()
   const path = url.split('/')
   const method = req.getMethod()
@@ -36,6 +38,7 @@ export const httpHandler = (
   const client: HttpClient = {
     res,
     context: {
+      authorization,
       query,
       ua,
       ip,
@@ -46,10 +49,10 @@ export const httpHandler = (
   if (path[1] === 'get') {
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
-        getRest(path[2], payload, encoding, client, server)
+        httpGet(path[2], payload, encoding, client, server)
       })
     } else {
-      getRest(path[2], parseQuery(query), encoding, client, server)
+      httpGet(path[2], parseQuery(query), encoding, client, server)
     }
     return
   }
@@ -57,10 +60,10 @@ export const httpHandler = (
   if (path[1] === 'function' && path[2]) {
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
-        functionRest(path[2], payload, encoding, client, server)
+        httpFunction(path[2], payload, encoding, client, server)
       })
     } else {
-      functionRest(path[2], parseQuery(query), encoding, client, server)
+      httpFunction(path[2], parseQuery(query), encoding, client, server)
     }
     return
   }
@@ -74,14 +77,14 @@ export const httpHandler = (
         sendError(client, `'${url}' does not exist`, 404, 'Not Found')
       } else {
         if (isObservableFunctionSpec(spec)) {
-          getRest(spec.name, parseQuery(query), encoding, client, server)
+          httpGet(spec.name, parseQuery(query), encoding, client, server)
         } else {
           if (method === 'post') {
             readPostData(client, contentType, (payload) => {
-              functionRest(spec.name, payload, encoding, client, server)
+              httpFunction(spec.name, payload, encoding, client, server)
             })
           } else {
-            functionRest(spec.name, parseQuery(query), encoding, client, server)
+            httpFunction(spec.name, parseQuery(query), encoding, client, server)
           }
         }
       }

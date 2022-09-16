@@ -2,7 +2,7 @@ import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
 import end from './end'
-import { compress } from './compress'
+// import { compress } from './compress'
 import { sendError } from './sendError'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
@@ -108,7 +108,7 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 */
 
-export const getRest = (
+export const httpGet = (
   name: string,
   payload: any,
   encoding: string,
@@ -132,7 +132,8 @@ export const getRest = (
               sendError(
                 client,
                 `${name} unauthorized request`,
-                '401 Unauthorized'
+                401,
+                'Unauthorized'
               )
             } else {
               console.info('go go go GET')
@@ -144,18 +145,20 @@ export const getRest = (
               // do something get!
             }
           })
-          .catch((err) => sendError(client, err.message, '401 Unauthorized'))
+          .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
       } else if (spec && isObservableFunctionSpec(spec)) {
         sendError(
           client,
           `function is not observable - use /function/${name} instead`,
-          '404 Not Found'
+          404,
+          'Not Found'
         )
       } else {
         sendError(
           client,
           `observable function does not exist ${name}`,
-          '404 Not Found'
+          404,
+          'Not Found'
         )
       }
     })
@@ -163,7 +166,8 @@ export const getRest = (
       sendError(
         client,
         `observable function does not exist ${name}`,
-        '404 Not Found'
+        404,
+        'Not Found'
       )
     )
 }
