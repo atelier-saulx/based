@@ -4,7 +4,7 @@ import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { functionRest } from './function'
 import end from './end'
 import readPostData from './readPostData'
-import { parseQuery } from './parseQuery'
+import { parseQuery } from '@saulx/utils'
 
 let clientId = 0
 
