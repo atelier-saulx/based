@@ -27,7 +27,7 @@ const sendGetResponse = (
         throw new Error('Observable does not have a value...')
       } else {
         // client.res.writeHeader('Cache-Control', 'max-age=10')
-
+        client.res.writeStatus('200 OK')
         client.res.writeHeader('ETag', String(obs.checksum))
         if (obs.isDeflate) {
           if (encoding.includes('deflate')) {

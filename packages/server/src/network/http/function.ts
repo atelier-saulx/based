@@ -11,8 +11,6 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   }
 
   client.res.writeStatus('200 OK')
-  client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
 
   // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
   client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
