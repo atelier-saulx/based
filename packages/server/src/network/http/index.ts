@@ -51,6 +51,10 @@ export const httpHandler = (
     'Content-Encoding, If-None-Match, Content-Type, Authorization, Content-Length, File-Is-Raw, File-Extension, File-Name, File-Id'
   )
 
+  // check for headers
+  // add a function updateStream or something
+  // maybe make a special 'stream' function ? < - think this is the best
+
   if (path[1] === 'get') {
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isnan to cast string to number

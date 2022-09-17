@@ -13,13 +13,6 @@ export default async (
   res: uws.HttpResponse,
   url: string
 ) => {
-  res.writeHeader('Access-Control-Allow-Origin', '*')
-
-  res.writeHeader(
-    'Access-Control-Allow-Headers',
-    'File-Extension, File-Name, File-Id, Function-Name, Content-Length, File-Is-Raw, Content-Type, Authorization'
-  )
-
   const method = req.getMethod()
 
   if (method !== 'post') {
@@ -44,6 +37,7 @@ export default async (
   // const authorization = req.getHeader('authorization')
   // console.info('go auth', authorization)
 
+  // from header only...
   if (type === 'multipart/form-data') {
     formStream(server, res)
     return
@@ -52,7 +46,7 @@ export default async (
   const opts: FileOptions = {
     raw: !!req.getHeader('file-is-raw'),
     name: req.getHeader('file-name') || '',
-    functionName: req.getHeader('function-name') || '',
+    // functionName: req.getHeader('function-name') || '', from stream and getbypath
     id: req.getHeader('file-id'),
     size: Number(req.getHeader('content-length')),
     type,
