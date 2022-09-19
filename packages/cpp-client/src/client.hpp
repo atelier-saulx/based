@@ -104,7 +104,7 @@ class BasedClient {
    public:
     BasedClient() : m_request_id(0), m_sub_id(0), m_draining(false), m_auth_in_progress(false) {
         m_con.set_message_handler([&](std::string msg) { on_message(msg); });
-        // m_con.set_open_handler([&]() { on_open(); });
+        m_con.set_open_handler([&]() { on_open(); });
     }
 
     void connect(std::string uri) {
@@ -286,12 +286,9 @@ class BasedClient {
     }
 
     void drain_queues() {
-        if (m_draining || (m_con.status() == ConnectionStatus::CONNECTING)) {
-            drain_queues();
-            return;
-        }
-        if (m_con.status() == ConnectionStatus::CLOSED ||
-            m_con.status() == ConnectionStatus::FAILED) {
+        if (m_draining || m_con.status() == ConnectionStatus::CLOSED ||
+            m_con.status() == ConnectionStatus::FAILED ||
+            m_con.status() == ConnectionStatus::CONNECTING) {
             std::cerr << "Connection is dead, status = " << m_con.status() << std::endl;
             return;
         }
@@ -338,6 +335,7 @@ class BasedClient {
     void on_open() {
         // TODO: Resend all subscriptions
         // for (auto const& [key, val] : m_observe_requests) {}
+        drain_queues();
     }
 
     void on_message(std::string message) {
