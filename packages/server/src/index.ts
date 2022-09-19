@@ -13,5 +13,3 @@ export default createServer
 export * from './types'
 
 export { compress } from './network/http/compress'
-
-export { parseQuery } from './network/http/parseQuery'

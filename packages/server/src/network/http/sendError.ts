@@ -1,15 +1,19 @@
-/*
+import { HttpClient } from '../../types'
+import end from './end'
 
-const invalid = (
-  res: uws.HttpResponse,
+export const sendError = (
+  client: HttpClient,
   error: any,
-  statusMsg: string = 'Invald request'
+  code: number = 400,
+  status: string = 'Bad Request'
 ) => {
-  res.aborted = true
-  res.writeStatus('400 ' + statusMsg)
-  res.writeHeader('Access-Control-Allow-Origin', '*')
-  res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  res.writeHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify({ error, code: 400 }))
+  if (!client.res) {
+    return
+  }
+
+  client.res.writeStatus(`${code} ${status}`)
+  client.res.writeHeader('Access-Control-Allow-Origin', '*')
+  client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+  client.res.writeHeader('Content-Type', 'application/json')
+  end(client, JSON.stringify({ error, code }))
 }
-*/

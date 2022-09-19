@@ -1,10 +1,11 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
-import { functionRest } from './function'
-import end from './end'
+import { httpFunction } from './function'
+import { httpGet } from './get'
 import readPostData from './readPostData'
-import { parseQuery } from './parseQuery'
+import { parseQuery } from '@saulx/utils'
+import { sendError } from './sendError'
 
 let clientId = 0
 
@@ -14,7 +15,6 @@ export const httpHandler = (
   res: uws.HttpResponse
 ) => {
   res.onAborted(() => {
-    console.info('ABORT')
     client.context = null
     client.res = null
   })
@@ -28,6 +28,8 @@ export const httpHandler = (
 
   const encoding = req.getHeader('accept-encoding')
   const contentType = req.getHeader('content-type') || 'application/json'
+  const authorization = req.getHeader('authorization')
+
   const url = req.getUrl()
   const path = url.split('/')
   const method = req.getMethod()
@@ -35,6 +37,7 @@ export const httpHandler = (
   const client: HttpClient = {
     res,
     context: {
+      authorization,
       query,
       ua,
       ip,
@@ -42,19 +45,39 @@ export const httpHandler = (
     },
   }
 
-  // if (path[1] === 'get') {
-  // Sending either If-Match or If-None-Match
-  // only relevant for get
+  client.res.writeHeader('Access-Control-Allow-Origin', '*')
+  client.res.writeHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Encoding, If-None-Match, Content-Type, Authorization, Content-Length, File-Is-Raw, File-Extension, File-Name, File-Id'
+  )
+
+  // check for headers
+  // add a function updateStream or something
+  // maybe make a special 'stream' function ? < - think this is the best
+
+  if (path[1] === 'get') {
+    const checksumRaw = req.getHeader('if-none-match')
+    // @ts-ignore use isnan to cast string to number
+    const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+
+    if (method === 'post') {
+      readPostData(client, contentType, (payload) => {
+        httpGet(path[2], payload, encoding, client, server, checksum)
+      })
+    } else {
+      httpGet(path[2], parseQuery(query), encoding, client, server, checksum)
+    }
+    return
+  }
 
   if (path[1] === 'function' && path[2]) {
     if (method === 'post') {
       readPostData(client, contentType, (payload) => {
-        functionRest(path[2], payload, encoding, client, server)
+        httpFunction(path[2], payload, encoding, client, server)
       })
     } else {
-      functionRest(path[2], parseQuery(query), encoding, client, server)
+      httpFunction(path[2], parseQuery(query), encoding, client, server)
     }
-
     return
   }
 
@@ -64,18 +87,27 @@ export const httpHandler = (
         return
       }
       if (!spec) {
-        end(client, 'invalid enpoints')
+        sendError(client, `'${url}' does not exist`, 404, 'Not Found')
       } else {
         if (isObservableFunctionSpec(spec)) {
-          // get!
-          end(client, 'get time')
+          const checksumRaw = req.getHeader('if-none-match')
+          // @ts-ignore use isnan to cast string to number
+          const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+          httpGet(
+            spec.name,
+            parseQuery(query),
+            encoding,
+            client,
+            server,
+            checksum
+          )
         } else {
           if (method === 'post') {
             readPostData(client, contentType, (payload) => {
-              functionRest(spec.name, payload, encoding, client, server)
+              httpFunction(spec.name, payload, encoding, client, server)
             })
           } else {
-            functionRest(spec.name, parseQuery(query), encoding, client, server)
+            httpFunction(spec.name, parseQuery(query), encoding, client, server)
           }
         }
       }
@@ -83,5 +115,5 @@ export const httpHandler = (
     return
   }
 
-  res.end('invalid endpoint')
+  sendError(client, 'Bad request')
 }

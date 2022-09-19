@@ -60,7 +60,7 @@ export const getMessage = (
     isDeflate
   )
 
-  // authorize here
+  // TODO: authorize here
 
   if (server.activeObservablesById.has(id)) {
     const obs = server.activeObservablesById.get(id)

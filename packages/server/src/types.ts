@@ -9,6 +9,7 @@ export type HttpClient = {
   res: uws.HttpResponse | null
   context:
     | ({
+        authorization: string
         ua: string
         ip: string
         id: number
@@ -146,6 +147,7 @@ export type ActiveObservable = {
   diffCache?: Uint8Array
   previousChecksum?: number
   cache?: Uint8Array // will become SharedArrayBuffer
+  isDeflate?: boolean
   checksum?: number
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
