@@ -366,9 +366,9 @@ class BasedClient {
                         std::string payload =
                             is_deflate ? Utility::inflate_string(message.substr(start, end))
                                        : message.substr(start, end);
-                        fn(payload, NULL);
+                        fn(payload, "");
                     } else {
-                        fn("", NULL);
+                        fn("", "");
                     }
                     // Listener has fired, remove it from the map.
                     m_function_callbacks.erase(id);
@@ -390,19 +390,17 @@ class BasedClient {
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         auto fn = m_sub_callback.at(sub_id);
-                        fn(payload, checksum, NULL);
+                        fn(payload, checksum, "");
                     }
                 }
 
                 if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                     for (auto sub_id : m_get_subs.at(obs_id)) {
                         auto fn = m_get_sub_callbacks.at(sub_id);
-                        fn(payload, NULL);
+                        fn(payload, "");
                         m_get_sub_callbacks.erase(sub_id);
                     }
                     m_get_subs.at(obs_id).clear();
-                } else {
-                    std::cout << "No such obs_id in the get_subs, obs_id = " << obs_id << std::endl;
                 }
             }
                 return;
@@ -432,6 +430,8 @@ class BasedClient {
             }
                 return;
             case IncomingType::ERROR_DATA: {
+                // TODO: test this when errors get implemented in the server
+
                 // std::cout << "Error received. Error handling not implemented yet" << std::endl;
                 int32_t start = 4;
                 int32_t end = len + 4;
@@ -447,13 +447,13 @@ class BasedClient {
                     auto id = error.at("requestId");
                     if (m_function_callbacks.find(id) != m_function_callbacks.end()) {
                         auto fn = m_function_callbacks.at(id);
-                        fn(NULL, payload);
+                        fn("", payload);
                         m_function_callbacks.erase(id);
                     }
                     if (m_get_subs.find(id) != m_get_subs.end()) {
                         for (auto get_id : m_get_subs.at(id)) {
                             auto fn = m_get_sub_callbacks.at(id);
-                            fn(NULL, payload);
+                            fn("", payload);
                             m_get_sub_callbacks.erase(id);
                         }
                         m_get_subs.erase(id);
@@ -466,7 +466,7 @@ class BasedClient {
                         for (auto sub_id : m_observe_subs.at(obs_id)) {
                             if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {
                                 auto fn = m_sub_callback.at(sub_id);
-                                fn(NULL, 0, payload);
+                                fn("", 0, payload);
                             }
                         }
                     }
