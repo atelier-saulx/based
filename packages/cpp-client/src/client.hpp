@@ -200,7 +200,7 @@ class BasedClient {
             m_get_subs[obs_id] = std::set<int>{sub_id};
         }
         m_get_sub_callbacks[sub_id] = cb;
-        // is there an acrive obs? if so, do nothing (get will trigger on next update)
+        // is there an active obs? if so, do nothing (get will trigger on next update)
         // if there isnt, queue request
         if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
             // TODO: remove hardcoded checksum when cache is implemented
@@ -289,7 +289,7 @@ class BasedClient {
         if (m_draining || m_con.status() == ConnectionStatus::CLOSED ||
             m_con.status() == ConnectionStatus::FAILED ||
             m_con.status() == ConnectionStatus::CONNECTING) {
-            std::cerr << "Connection is dead, status = " << m_con.status() << std::endl;
+            std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
             return;
         }
 
@@ -333,8 +333,9 @@ class BasedClient {
     }
 
     void on_open() {
-        // TODO: Resend all subscriptions
-        // for (auto const& [key, val] : m_observe_requests) {}
+        for (auto obs : m_observe_requests) {
+            m_observe_queue.push_back(obs.second);
+        }
         drain_queues();
     }
 
