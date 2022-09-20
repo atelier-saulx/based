@@ -9,7 +9,7 @@
 
 typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
 
-enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED, TERMINATED };
+enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 
 class WsConnection {
     // eventually there should be some logic here to handle inactivity.
@@ -18,7 +18,8 @@ class WsConnection {
         : m_status(ConnectionStatus::CLOSED),
           m_on_open(NULL),
           m_on_message(NULL),
-          m_reconnect_attempts(0) {
+          m_reconnect_attempts(0),
+          m_terminating(false) {
         std::cout << "> Created a new WsConnection" << std::endl;
         // set the endpoint logging behavior to silent by clearing all of the access and error
         // logging channels
@@ -33,8 +34,8 @@ class WsConnection {
         m_thread = std::make_shared<std::thread>(&ws_client::run, &m_endpoint);
     };
     ~WsConnection() {
+        m_terminating = true;
         m_endpoint.stop_perpetual();
-
         if (m_status == ConnectionStatus::OPEN) {
             // Only close open connections
             std::cout << "> Closing connection" << std::endl;
@@ -46,7 +47,6 @@ class WsConnection {
                           << std::endl;
             }
         }
-        m_status = ConnectionStatus::TERMINATED;
         m_thread->join();
         std::cout << "> Destroyed WsConnection obj" << std::endl;
     };
@@ -122,15 +122,14 @@ class WsConnection {
    private:
     std::shared_future<void> reconnect() {
         return std::async(std::launch::async, [&]() {
-            std::cout << "in reconn thread" << std::endl;
-            if (m_status != ConnectionStatus::OPEN && m_status != ConnectionStatus::TERMINATED) {
-                int timeout = m_reconnect_attempts > 5 ? 2500 : m_reconnect_attempts * 500;
+            if (m_status != ConnectionStatus::OPEN && !m_terminating) {
+                // maximum timeout between attempts, in ms
+                int timeout = m_reconnect_attempts > 15 ? 1500 : m_reconnect_attempts * 100;
                 if (m_reconnect_attempts > 0) {
                     std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
                 }
                 m_reconnect_attempts++;
                 connect(m_uri);
-                std::cout << "done waiting " << timeout << std::endl;
             }
         });
     }
@@ -171,7 +170,6 @@ class WsConnection {
             m_status = ConnectionStatus::CLOSED;
             if (!m_reconnect_future.valid() ||
                 m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                std::cout << "making a new reconnect future haha" << std::endl;
                 m_reconnect_future = reconnect();
             }
             // m_reconnect_thread->join();
@@ -182,7 +180,6 @@ class WsConnection {
             m_status = ConnectionStatus::FAILED;
             if (!m_reconnect_future.valid() ||
                 m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-                std::cout << "making a new reconnect future haha" << std::endl;
                 m_reconnect_future = reconnect();
             }
             // m_reconnect_thread->join();
@@ -198,6 +195,8 @@ class WsConnection {
     std::shared_future<void> m_reconnect_future;
     std::function<void()> m_on_open;
     std::function<void(std::string)> m_on_message;
+    // set this when destroying connecion object to prevent reconneciton attempt
+    bool m_terminating;
     int m_reconnect_attempts;
 };
 

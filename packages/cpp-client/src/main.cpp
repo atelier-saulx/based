@@ -29,8 +29,10 @@ int main() {
         //             [](std::string data) { std::cout << "got auth data = " << data << std::endl;
         //             });
 
+        std::cout << "adding an observe request" << std::endl;
+
         client.observe(
-            "dklasjfh", "{\"b\":\"a\",\"a\":\"bababa\"}",
+            "counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
             [](std::string data, int checksum, std::string error) {
                 if (data.length() > 0) {
                     std::cout << "DATA = " << data << std::endl;
@@ -40,9 +42,9 @@ int main() {
                 }
             },
             ObservableOpts(true, 100));
-        // client.get("counter", "",
-        //            [](std::string data) { std::cout << "I GOT data 2 = " << data << std::endl;
-        //            });
+        // client.get("counter", "", [](std::string data, std::string error) {
+        //     std::cout << "I GOT data 2 = " << data << std::endl;
+        // });
 
         // if (cmd.substr(0, 1) == "r") {
         //     int rem_id = atoi(cmd.substr(2).c_str());
