@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "3.3.5-alpha.2",
+  "version": "3.3.7",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "src/index.ts",
@@ -10,7 +10,7 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "peerDependencies": {
-    "@saulx/selva": "10||11||12||13||14||15"
+    "@saulx/selva": "10||11||12||13||14||15||16||17||18||19||20"
   },
   "dependencies": {
     "@based/client": "^3.2.1",
