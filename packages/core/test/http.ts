@@ -6,24 +6,25 @@ import fetch from 'cross-fetch'
 test.serial('functions (over http)', async (t) => {
   const store = {
     hello: {
-      path: '/flap', // observables and functions will have a path configuration
+      path: '/flap',
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
-        return payload?.length ?? 0
+        if (payload) {
+          return payload
+        }
+        return 'flap'
       },
-
-      // customHttpRequest
-      // get query prams -> payload
-      // post DATA
       customHttpResponse: async (result, payload, client) => {
-        const { res, isAborted, id } = client
-        console.info('okidoki?', isAborted, id)
-
+        const { res, isAborted } = client
         if (isAborted) {
           return
         }
         res.writeStatus('200 OkiDoki')
+        if (typeof result === 'object') {
+          res.end(JSON.stringify(result))
+          return true
+        }
         res.end('yesh ' + result)
         return true
       },
@@ -36,17 +37,11 @@ test.serial('functions (over http)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       unregister: async () => {
-        console.info('--- wait wait unreg')
-        await wait(5e3)
-        console.info('--- wait wait unreg DONE')
-        console.info('UNREGISTERT...')
+        await wait(1e3)
         return true
       },
       registerByPath: async ({ path }) => {
-        console.info('--- wait wait unreg')
-        await wait(3e3)
-        console.info('--- wait wait unreg DONE')
-
+        await wait(1e3)
         for (const name in store) {
           if (store[name].path === path) {
             return store[name]
@@ -69,44 +64,98 @@ test.serial('functions (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/flap')).text()
 
-  console.info(result)
+  t.is(result, 'yesh flap')
 
   const result2 = await (
     await fetch('http://localhost:9910/flap?flurp=1')
   ).text()
 
-  console.info(result2)
+  t.is(result2, '{"flurp":1}')
 
-  //   let str = ''
-  //   for (let i = 0; i < 200000; i++) {
-  //     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-  //   }
+  const result3 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ flurp: 1 }),
+    })
+  ).text()
 
-  //   const helloResponses = await Promise.all([
-  //     fetch(('hello', {
-  //       bla: true,
-  //     })),
-  //     fetch(function('hello', {
-  //       bla: str,
-  //     )
-  //   ])
+  t.is(result3, '{"flurp":1}')
 
-  //   t.true(helloResponses[0] < 20)
-  //   t.true(helloResponses[1] > 5e6)
+  const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  //   const bigString = await coreClient.function('lotsOfData')
+  t.is(x, `{"error":"'/gurk' does not exist","code":404}`)
 
-  //   t.true(bigString.length > 5e6)
-
-  await wait(23e3)
-
-  // GET
-
-  // custom headers
-
-  // payload
-
-  // deflate
+  await wait(6e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
+
+  server.destroy()
+})
+
+test.serial('get (over http)', async (t) => {
+  const store = {
+    hello: {
+      path: '/counter',
+      name: 'counter',
+      checksum: 1,
+      observable: true,
+      function: async (payload, update) => {
+        let cnt = 0
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
+        }
+      },
+    },
+  }
+
+  const server = await createServer({
+    port: 9910,
+    functions: {
+      memCacheTimeout: 3e3,
+      idleTimeout: 3e3,
+      unregister: async () => {
+        return true
+      },
+      registerByPath: async ({ path }) => {
+        for (const name in store) {
+          if (store[name].path === path) {
+            return store[name]
+          }
+        }
+        return false
+      },
+      register: async ({ name }) => {
+        if (store[name]) {
+          return store[name]
+        } else {
+          return false
+        }
+      },
+      log: (opts) => {
+        console.info('-->', opts)
+      },
+    },
+  })
+
+  const result = await (await fetch('http://localhost:9910/counter')).text()
+
+  t.is(result, '1')
+
+  await wait(1e3)
+
+  const result2 = await (await fetch('http://localhost:9910/counter')).text()
+
+  t.is(result2, '2')
+
+  await wait(10e3)
+
+  t.is(Object.keys(server.functions.observables).length, 0)
+
+  server.destroy()
 })

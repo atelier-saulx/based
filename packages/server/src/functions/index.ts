@@ -218,13 +218,11 @@ export class BasedFunctions {
     if (this.beingUnregisterd[name]) {
       console.error('Allready being unregistered...', name)
     }
-
     if (!spec && spec !== false) {
       spec = this.getFromStore(name)
     }
     if (spec) {
       this.beingUnregisterd[name] = true
-      console.info('start...')
       if (
         await this.config.unregister({
           server: this.server,
@@ -233,7 +231,6 @@ export class BasedFunctions {
         })
       ) {
         if (this.beingUnregisterd[name]) {
-          console.info('--> unreg', name)
           delete this.beingUnregisterd[name]
           return this.remove(name)
         } else {

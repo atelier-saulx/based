@@ -1,81 +1,96 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { HttpClient } from '../../types'
+import end from './end'
+import { compress } from './compress'
+import { sendError } from './sendError'
 
-export const functionRest = (
+const sendResponse = (client: HttpClient, encoding: string, result: any) => {
+  if (!client.res) {
+    return
+  }
+
+  client.res.writeStatus('200 OK')
+
+  // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
+  client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+
+  let parsed: string
+
+  if (typeof result === 'string') {
+    client.res.writeHeader('Content-Type', 'text/plain')
+    parsed = result
+  } else {
+    client.res.writeHeader('Content-Type', 'application/json')
+    parsed = JSON.stringify(result)
+  }
+
+  compress(client, parsed, encoding).then((p) => end(client, p))
+}
+
+export const httpFunction = (
   name: string,
   payload: any,
-  isDeflate: boolean, // lets add this ad well...
+  encoding: string,
   client: HttpClient,
   server: BasedServer
 ): void => {
-  console.info('go fn', isDeflate)
-
   server.functions
     .get(name)
     .then((spec) => {
-      if (client.isAborted) {
+      if (!client.res) {
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.auth.config
           .authorize(server, client, 'function', name, payload)
           .then((ok) => {
-            if (client.isAborted) {
+            if (!client.res) {
               return
             }
             if (!ok) {
-              client.res?.writeStatus('401 Unauthorized')
-              client.res?.end('WRONG AUTH')
+              sendError(
+                client,
+                `${name} unauthorized request`,
+                401,
+                'Unauthorized'
+              )
             } else {
               spec
                 .function(payload, client)
                 .then(async (result) => {
-                  if (client.isAborted) {
+                  if (!client.res) {
                     return
                   }
                   if (spec.customHttpResponse) {
                     if (
                       await spec.customHttpResponse(result, payload, client)
                     ) {
-                      // if true all is handled
                       return
                     }
-                    if (client.isAborted) {
-                      return
-                    }
-                  }
-                  // handle response
-                  if (typeof result === 'string') {
-                    client.res?.end(result)
+                    sendResponse(client, encoding, result)
                   } else {
-                    client.res?.end(JSON.stringify(result))
+                    sendResponse(client, encoding, result)
                   }
                 })
                 .catch((err) => {
-                  if (client.isAborted) {
-                    return
-                  }
-                  // error handling nice
-                  console.error('bad fn', client.id, client.isAborted, err)
-                  client.res?.end('wrong!')
+                  sendError(client, err.message)
                 })
             }
           })
-          .catch((err) => {
-            if (client.isAborted) {
-              return
-            }
-            console.error('no auth', err)
-            client.res?.end('wrong!')
-          })
+          .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
+      } else if (spec && isObservableFunctionSpec(spec)) {
+        sendError(
+          client,
+          `function is observable - use /get/${name} instead`,
+          404,
+          'Not Found'
+        )
       } else {
-        console.error('No function for you')
-        client.res?.end('wrong!')
+        sendError(client, `function does not exist ${name}`, 404, 'Not Found')
       }
     })
-    .catch((err) => {
-      console.error('fn does not exist', err)
-      client.res?.end('wrong!')
-    })
+    .catch(() =>
+      sendError(client, `function does not exist ${name}`, 404, 'Not Found')
+    )
 }

@@ -1,4 +1,3 @@
-import uws from '@based/uws'
 import { isObservableFunctionSpec } from '../../functions'
 import {
   decodePayload,
@@ -8,27 +7,27 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
-import { ActiveObservable } from '../../types'
+import { ActiveObservable, WebsocketClient } from '../../types'
 
 const sendGetData = (
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  ws: uws.WebSocket
+  client: WebsocketClient
 ) => {
-  if (ws.closed) {
+  if (!client.ws) {
     return
   }
 
   if (checksum === 0) {
-    ws.send(obs.cache, true, false)
+    client.ws.send(obs.cache, true, false)
   } else if (checksum === obs.checksum) {
-    ws.send(encodeGetResponse(id), true, false)
+    client.ws.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
-    ws.send(obs.diffCache, true, false)
+    client.ws.send(obs.diffCache, true, false)
   } else {
-    ws.send(obs.cache, true, false)
+    client.ws.send(obs.cache, true, false)
   }
 
   if (obs.clients.size === 0) {
@@ -41,7 +40,7 @@ export const getMessage = (
   start: number,
   len: number,
   isDeflate: boolean,
-  ws: uws.WebSocket,
+  client: WebsocketClient,
   server: BasedServer
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
@@ -61,7 +60,7 @@ export const getMessage = (
     isDeflate
   )
 
-  // authorize here
+  // TODO: authorize here
 
   if (server.activeObservablesById.has(id)) {
     const obs = server.activeObservablesById.get(id)
@@ -70,13 +69,13 @@ export const getMessage = (
       obs.beingDestroyed = null
     }
     if (obs.cache) {
-      sendGetData(server, id, obs, checksum, ws)
+      sendGetData(server, id, obs, checksum, client)
     } else {
       if (!obs.onNextData) {
         obs.onNextData = new Set()
       }
       obs.onNextData.add(() => {
-        sendGetData(server, id, obs, checksum, ws)
+        sendGetData(server, id, obs, checksum, client)
       })
     }
   } else {
@@ -85,12 +84,12 @@ export const getMessage = (
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
           const obs = create(server, name, id, payload)
-          if (!ws.obs.has(id)) {
+          if (!client.ws?.obs.has(id)) {
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              sendGetData(server, id, obs, checksum, ws)
+              sendGetData(server, id, obs, checksum, client)
             })
           }
         } else {

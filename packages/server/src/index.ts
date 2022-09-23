@@ -9,3 +9,7 @@ const createServer = async (props: ServerOptions): Promise<BasedServer> => {
 }
 
 export default createServer
+
+export * from './types'
+
+export { compress } from './network/http/compress'

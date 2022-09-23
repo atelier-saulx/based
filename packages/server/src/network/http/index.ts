@@ -1,7 +1,11 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
-import { functionRest } from './function'
+import { httpFunction } from './function'
+import { httpGet } from './get'
+import readPostData from './readPostData'
+import { parseQuery } from '@saulx/utils'
+import { sendError } from './sendError'
 
 let clientId = 0
 
@@ -10,11 +14,10 @@ export const httpHandler = (
   req: uws.HttpRequest,
   res: uws.HttpResponse
 ) => {
-  // no make a type 'context'
-
-  // if no handler for path will try to read / get from functions/obs (not by name but by path)
-
-  // default routes
+  res.onAborted(() => {
+    client.context = null
+    client.res = null
+  })
 
   const query = req.getQuery()
   const ua = req.getHeader('user-agent')
@@ -23,59 +26,94 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
+  const encoding = req.getHeader('accept-encoding')
+  const contentType = req.getHeader('content-type') || 'application/json'
+  const authorization = req.getHeader('authorization')
+
   const url = req.getUrl()
-
-  // function/:name
-  // get/:name
-
   const path = url.split('/')
+  const method = req.getMethod()
 
   const client: HttpClient = {
     res,
-    query,
-    ua,
-    ip,
-    id: ++clientId,
+    context: {
+      authorization,
+      query,
+      ua,
+      ip,
+      id: ++clientId,
+    },
   }
 
-  // have to allow "get" as well
-  if (path[1] === 'function' && path[2]) {
-    res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
-    })
+  client.res.writeHeader('Access-Control-Allow-Origin', '*')
+  client.res.writeHeader(
+    'Access-Control-Allow-Headers',
+    'Content-Encoding, If-None-Match, Content-Type, Authorization, Content-Length, File-Is-Raw, File-Extension, File-Name, File-Id'
+  )
 
-    functionRest(path[2], undefined, false, client, server)
+  // check for headers
+  // add a function updateStream or something
+  // maybe make a special 'stream' function ? < - think this is the best
+
+  if (path[1] === 'get') {
+    const checksumRaw = req.getHeader('if-none-match')
+    // @ts-ignore use isnan to cast string to number
+    const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+
+    if (method === 'post') {
+      readPostData(client, contentType, (payload) => {
+        httpGet(path[2], payload, encoding, client, server, checksum)
+      })
+    } else {
+      httpGet(path[2], parseQuery(query), encoding, client, server, checksum)
+    }
+    return
+  }
+
+  if (path[1] === 'function' && path[2]) {
+    if (method === 'post') {
+      readPostData(client, contentType, (payload) => {
+        httpFunction(path[2], payload, encoding, client, server)
+      })
+    } else {
+      httpFunction(path[2], parseQuery(query), encoding, client, server)
+    }
     return
   }
 
   if (server.functions.config.registerByPath) {
-    res.onAborted(() => {
-      client.isAborted = true
-      console.info('abort...', client.id)
-    })
-
     server.functions.getByPath(url).then((spec) => {
-      if (client.isAborted) {
+      if (!client.res) {
         return
       }
       if (!spec) {
-        res.end('invalid enpoints')
+        sendError(client, `'${url}' does not exist`, 404, 'Not Found')
       } else {
         if (isObservableFunctionSpec(spec)) {
-          // get!
-          res.end('get time')
+          const checksumRaw = req.getHeader('if-none-match')
+          // @ts-ignore use isnan to cast string to number
+          const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+          httpGet(
+            spec.name,
+            parseQuery(query),
+            encoding,
+            client,
+            server,
+            checksum
+          )
         } else {
-          functionRest(spec.name, undefined, false, client, server)
+          if (method === 'post') {
+            readPostData(client, contentType, (payload) => {
+              httpFunction(spec.name, payload, encoding, client, server)
+            })
+          } else {
+            httpFunction(spec.name, parseQuery(query), encoding, client, server)
+          }
         }
       }
     })
     return
   }
 
-  //   if (path[1] === 'get') {
-
-  // }
-
-  res.end('invalid endpoint')
+  sendError(client, 'Bad request')
 }

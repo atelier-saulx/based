@@ -144,7 +144,7 @@ export const encodeObservableResponse = (
   id: number,
   checksum: number,
   buffer: Buffer
-): Uint8Array => {
+): [Uint8Array, boolean] => {
   // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
 
@@ -167,10 +167,10 @@ export const encodeObservableResponse = (
     if (buffer.length) {
       array.set(buffer, 20)
     }
-    return array
+    return [array, isDeflate]
   } else {
     console.warn('chunk not implemented yet')
-    return new Uint8Array(0)
+    return [new Uint8Array(0), false]
   }
 }
 
@@ -229,6 +229,7 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   }
   return array
 }
+
 export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
   // Type 4
 

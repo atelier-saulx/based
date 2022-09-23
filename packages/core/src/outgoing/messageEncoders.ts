@@ -158,13 +158,10 @@ export const encodeAuthMessage = (authState: AuthState) => {
     len += as.length
   }
   const header = encodeHeader(4, isDeflate, len)
-  const buff = new Uint8Array(4)
+  const buff = new Uint8Array(len)
   storeUint8(buff, header, 0, 4)
-  buff[4] = as.length
-  const n = new Uint8Array(len)
-  n.set(buff)
   if (as) {
-    n.set(as, 4)
+    buff.set(as, 4)
   }
-  return n
+  return buff
 }

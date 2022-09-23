@@ -14,16 +14,28 @@ enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 class WsConnection {
     // eventually there should be some logic here to handle inactivity.
    public:
-    WsConnection() : m_status(ConnectionStatus::CLOSED), m_on_open(NULL), m_on_message(NULL) {
+    WsConnection()
+        : m_status(ConnectionStatus::CLOSED),
+          m_on_open(NULL),
+          m_on_message(NULL),
+          m_reconnect_attempts(0),
+          m_terminating(false) {
         std::cout << "> Created a new WsConnection" << std::endl;
         // set the endpoint logging behavior to silent by clearing all of the access and error
         // logging channels
         m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
+
+        m_endpoint.init_asio();
+        // perpetual mode the endpoint's processing loop will not exit automatically when it has no
+        // connections
+        m_endpoint.start_perpetual();
+        // // run perpetually in a thread
+        m_thread = std::make_shared<std::thread>(&ws_client::run, &m_endpoint);
     };
     ~WsConnection() {
+        m_terminating = true;
         m_endpoint.stop_perpetual();
-
         if (m_status == ConnectionStatus::OPEN) {
             // Only close open connections
             std::cout << "> Closing connection" << std::endl;
@@ -35,19 +47,13 @@ class WsConnection {
                           << std::endl;
             }
         }
-
         m_thread->join();
         std::cout << "> Destroyed WsConnection obj" << std::endl;
     };
     int connect(std::string uri) {
-        m_endpoint.init_asio();
-        // perpetual mode the endpoint's processing loop will not exit automatically when it has no
-        // connections
-        m_endpoint.start_perpetual();
+        std::cout << "running connect" << std::endl;
         m_uri = uri;
         websocketpp::lib::error_code ec;
-
-        // create connection request to uri
         ws_client::connection_ptr con = m_endpoint.get_connection(m_uri, ec);
 
         if (ec) {
@@ -56,46 +62,13 @@ class WsConnection {
             return -1;
         }
 
+        m_status = ConnectionStatus::CONNECTING;
         m_hdl = con->get_handle();
 
-        // bind must be used if the function we're binding to doest have the right number of
-        // arguments (hence the placeholders) these handlers must be set before calling connect, and
-        // can't be changed after (i think)
-        con->set_open_handler([this](websocketpp::connection_hdl) {
-            m_status = ConnectionStatus::OPEN;
-            if (m_on_open) {
-                m_on_open();
-            }
-        });
+        set_handlers(con);
 
-        con->set_message_handler([this](websocketpp::connection_hdl hdl,
-                                        ws_client::message_ptr msg) {
-            // here we will pass the message to the decoder, which, based on the header, will
-            // call the appropriate callback
-
-            // m_data_handler->incoming(msg);
-
-            std::string payload = msg->get_payload();
-
-            if (msg->get_opcode() == websocketpp::frame::opcode::text) {
-                std::cout << " [MSG::TEXT] " << payload << std::endl;
-            } else {
-                std::cout << " [MSG::HEX]" << websocketpp::utility::to_hex(payload) << std::endl;
-            }
-            if (m_on_message) {
-                m_on_message(payload);
-            }
-        });
-
-        m_status = ConnectionStatus::CONNECTING;
         m_endpoint.connect(con);
         std::cout << "> Connecting to ws, uri = " << m_uri << std::endl;
-
-        // // run perpetually in a thread
-        m_thread =
-            websocketpp::lib::make_shared<websocketpp::lib::thread>(&ws_client::run, &m_endpoint);
-
-        // m_endpoint.run();
 
         return 0;
     };
@@ -126,13 +99,13 @@ class WsConnection {
 
         m_thread->join();
     };
-    void sendBinary(std::vector<uint8_t> message) {
+    void send(std::vector<uint8_t> message) {
         std::cout << "> Sending message to ws" << std::endl;
 
         websocketpp::lib::error_code ec;
 
-        while (m_status != ConnectionStatus::OPEN) {
-        }
+        if (m_status != ConnectionStatus::OPEN)
+            throw(std::runtime_error("Connection is not open."));
 
         m_endpoint.send(m_hdl, message.data(), message.size(), websocketpp::frame::opcode::binary,
                         ec);
@@ -142,29 +115,89 @@ class WsConnection {
         }
     };
 
-    void sendText(std::string message) {
-        std::cout << "Sending message to ws" << std::endl;
-
-        websocketpp::lib::error_code ec;
-
-        while (m_status != ConnectionStatus::OPEN) {
-        }
-
-        m_endpoint.send(m_hdl, message, websocketpp::frame::opcode::text, ec);
-        if (ec) {
-            std::cout << "> Error sending message: " << ec.message() << std::endl;
-            return;
-        }
+    ConnectionStatus status() {
+        return m_status;
     };
+
+   private:
+    std::shared_future<void> reconnect() {
+        return std::async(std::launch::async, [&]() {
+            if (m_status != ConnectionStatus::OPEN && !m_terminating) {
+                // maximum timeout between attempts, in ms
+                int timeout = m_reconnect_attempts > 15 ? 1500 : m_reconnect_attempts * 100;
+                if (m_reconnect_attempts > 0) {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
+                }
+                m_reconnect_attempts++;
+                connect(m_uri);
+            }
+        });
+    }
+    void set_handlers(ws_client::connection_ptr con) {
+        // bind must be used if the function we're binding to doest have the right number of
+        // arguments (hence the placeholders) these handlers must be set before calling connect, and
+        // can't be changed after (i think)
+        con->set_open_handler([this](websocketpp::connection_hdl) {
+            std::cout << ">> Received OPEN event" << std::endl;
+            m_status = ConnectionStatus::OPEN;
+            m_reconnect_attempts = 0;
+            if (m_on_open) {
+                m_on_open();
+            }
+        });
+
+        con->set_message_handler([this](websocketpp::connection_hdl hdl,
+                                        ws_client::message_ptr msg) {
+            // here we will pass the message to the decoder, which, based on the header, will
+            // call the appropriate callback
+
+            // m_data_handler->incoming(msg);
+
+            std::string payload = msg->get_payload();
+
+            if (msg->get_opcode() == websocketpp::frame::opcode::text) {
+                std::cout << " [MSG::TEXT] " << payload << std::endl;
+            } else {
+                std::cout << " [MSG::HEX]" << websocketpp::utility::to_hex(payload) << std::endl;
+            }
+            if (m_on_message) {
+                m_on_message(payload);
+            }
+        });
+
+        con->set_close_handler([this](websocketpp::connection_hdl) {
+            std::cout << ">> Received CLOSE event" << std::endl;
+            m_status = ConnectionStatus::CLOSED;
+            if (!m_reconnect_future.valid() ||
+                m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                m_reconnect_future = reconnect();
+            }
+            // m_reconnect_thread->join();
+        });
+
+        con->set_fail_handler([this](websocketpp::connection_hdl) {
+            std::cout << ">> Received FAIL event" << std::endl;
+            m_status = ConnectionStatus::FAILED;
+            if (!m_reconnect_future.valid() ||
+                m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                m_reconnect_future = reconnect();
+            }
+            // m_reconnect_thread->join();
+        });
+    }
 
    private:
     ws_client m_endpoint;
     ConnectionStatus m_status;
     websocketpp::connection_hdl m_hdl;
     std::string m_uri;
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    std::shared_ptr<std::thread> m_thread;
+    std::shared_future<void> m_reconnect_future;
     std::function<void()> m_on_open;
     std::function<void(std::string)> m_on_message;
+    // set this when destroying connecion object to prevent reconneciton attempt
+    bool m_terminating;
+    int m_reconnect_attempts;
 };
 
 #endif

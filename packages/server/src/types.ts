@@ -2,15 +2,28 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
 export type WebsocketClient = {
-  ws?: uws.WebSocket
+  ws: uws.WebSocket | null
 }
 
 export type HttpClient = {
-  res?: uws.HttpResponse
-} & { [contextField: string]: any }
+  res: uws.HttpResponse | null
+  context:
+    | ({
+        authorization: string
+        ua: string
+        ip: string
+        id: number
+      } & { [contextField: string]: any })
+    | null
+}
 
-export const isHttpClient = () => {
-  // make it typecasty
+export const isHttpClient = (
+  client: HttpClient | WebsocketClient
+): client is HttpClient => {
+  if ('res' in client) {
+    return true
+  }
+  return false
 }
 
 export type AuthConfig = {
@@ -21,7 +34,7 @@ export type AuthConfig = {
 
 export type Authorize = (
   server: BasedServer,
-  client: uws.WebSocket | HttpClient,
+  client: WebsocketClient | HttpClient,
   type: 'observe' | 'function',
   name: string,
   payload?: any
@@ -29,7 +42,7 @@ export type Authorize = (
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  client: uws.WebSocket | HttpClient,
+  client: WebsocketClient | HttpClient,
   payload?: any
 ) => Promise<boolean>
 
@@ -81,7 +94,7 @@ export type BasedFunctionSpec = {
   path?: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  function: (payload: any, client: uws.WebSocket | HttpClient) => Promise<any>
+  function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
   idleTimeout?: number // in ms
   worker?: boolean | true | false
   timeoutCounter?: number
@@ -134,6 +147,7 @@ export type ActiveObservable = {
   diffCache?: Uint8Array
   previousChecksum?: number
   cache?: Uint8Array // will become SharedArrayBuffer
+  isDeflate?: boolean
   checksum?: number
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
