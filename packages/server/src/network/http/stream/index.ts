@@ -1,15 +1,17 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../..'
 import stream from './stream'
-// import formStream from './multipartFormStream'
-import getExtenstion from './getExtenstion'
-import mimeTypes from 'mime-types'
 
 export const invalidReqNoCors = (res: uws.HttpResponse) => {
   res.aborted = true
   res
     .writeStatus('400 Invalid Request')
     .end(`{"code":400,"error":"Invalid Request"}`)
+}
+
+export type StreamOptions = {
+  type: string
+  size: number
 }
 
 export default async (
@@ -26,39 +28,23 @@ export default async (
     return
   }
 
-  let type = req.getHeader('content-type')
+  const type = req.getHeader('content-type')
 
-  if (!type) {
-    const ext = req.getHeader('file-extension')
-    if (ext) {
-      type = mimeTypes.lookup(ext)
-      console.info(type)
-    } else {
-      invalidReqNoCors(res)
-      return
-    }
-  }
-
-  // from header only...
   if (type === 'multipart/form-data') {
     // formStream(server, res)
     return
   }
 
-  //
-
   const size = Number(req.getHeader('content-length'))
 
-  // custom header parsing
+  if (!type) {
+    invalidReqNoCors(res)
+    return
+  }
 
-  // stream
-  const opts = {
-    raw: !!req.getHeader('file-is-raw'),
-    name: req.getHeader('file-name') || '',
-    id: req.getHeader('file-id'),
+  const opts: StreamOptions = {
     size,
     type,
-    extension: getExtenstion(type),
   }
 
   if (!opts.size) {
