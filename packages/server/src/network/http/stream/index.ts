@@ -1,17 +1,24 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../..'
-import { invalidReqNoCors } from '../invalidReq'
 import stream from './stream'
-import formStream from './formStream'
-import { FileOptions } from './types'
-import getExtenstion from './getExtenstion'
-import mimeTypes from 'mime-types'
+
+export const invalidReqNoCors = (res: uws.HttpResponse) => {
+  res.aborted = true
+  res
+    .writeStatus('400 Invalid Request')
+    .end(`{"code":400,"error":"Invalid Request"}`)
+}
+
+export type StreamOptions = {
+  type: string
+  size: number
+}
 
 export default async (
   server: BasedServer,
+  name: string,
   req: uws.HttpRequest,
-  res: uws.HttpResponse,
-  url: string
+  res: uws.HttpResponse
 ) => {
   const method = req.getMethod()
 
@@ -21,42 +28,29 @@ export default async (
     return
   }
 
-  let type = req.getHeader('content-type')
+  const type = req.getHeader('content-type')
 
-  if (!type) {
-    const ext = req.getHeader('file-extension')
-    if (ext) {
-      type = mimeTypes.lookup(ext)
-      console.info(type)
-    } else {
-      invalidReqNoCors(res)
-      return
-    }
-  }
-
-  // const authorization = req.getHeader('authorization')
-  // console.info('go auth', authorization)
-
-  // from header only...
   if (type === 'multipart/form-data') {
-    formStream(server, res)
+    // formStream(server, res)
     return
   }
 
-  const opts: FileOptions = {
-    raw: !!req.getHeader('file-is-raw'),
-    name: req.getHeader('file-name') || '',
-    // functionName: req.getHeader('function-name') || '', from stream and getbypath
-    id: req.getHeader('file-id'),
-    size: Number(req.getHeader('content-length')),
-    type,
-    extension: getExtenstion(type),
-  }
+  const size = Number(req.getHeader('content-length'))
 
-  if (!opts.type || !opts.id || !opts.size) {
+  if (!type) {
     invalidReqNoCors(res)
     return
   }
 
-  stream(server, res, opts)
+  const opts: StreamOptions = {
+    size,
+    type,
+  }
+
+  if (!opts.size) {
+    invalidReqNoCors(res)
+    return
+  }
+
+  stream(res, size)
 }

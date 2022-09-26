@@ -46,18 +46,13 @@ export const httpHandler = (
   }
 
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  client.res.writeHeader(
-    'Access-Control-Allow-Headers',
-    'Content-Encoding, If-None-Match, Content-Type, Authorization, Content-Length, File-Is-Raw, File-Extension, File-Name, File-Id'
-  )
+  client.res.writeHeader('Access-Control-Allow-Headers', '*')
 
-  // check for headers
-  // add a function updateStream or something
-  // maybe make a special 'stream' function ? < - think this is the best
+  // check for header for 'is-stream'
 
   if (path[1] === 'get') {
     const checksumRaw = req.getHeader('if-none-match')
-    // @ts-ignore use isnan to cast string to number
+    // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
 
     if (method === 'post') {

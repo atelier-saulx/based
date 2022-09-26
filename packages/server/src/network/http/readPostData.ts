@@ -3,6 +3,9 @@ import end from './end'
 
 const MAX_BODY_SIZE = 4 ** 20 // 2MB
 
+// make this and add max_body_size as config
+// and fn content-size
+
 export default (
   client: HttpClient,
   contentType: string,
