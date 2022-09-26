@@ -3,7 +3,7 @@ import { BasedServer } from '../../server'
 import { HttpClient, isObservableFunctionSpec } from '../../types'
 import { httpFunction } from './function'
 import { httpGet } from './get'
-import readPostData from './readPostData'
+import { readStream } from './stream'
 import { parseQuery } from '@saulx/utils'
 import { sendError } from './sendError'
 
@@ -56,7 +56,7 @@ export const httpHandler = (
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
 
     if (method === 'post') {
-      readPostData(client, contentType, (payload) => {
+      readStream(false, client, contentType, (payload) => {
         httpGet(path[2], payload, encoding, client, server, checksum)
       })
     } else {
@@ -67,7 +67,7 @@ export const httpHandler = (
 
   if (path[1] === 'function' && path[2]) {
     if (method === 'post') {
-      readPostData(client, contentType, (payload) => {
+      readStream(true, client, contentType, (payload, stream) => {
         httpFunction(path[2], payload, encoding, client, server)
       })
     } else {
@@ -88,17 +88,24 @@ export const httpHandler = (
           const checksumRaw = req.getHeader('if-none-match')
           // @ts-ignore use isnan to cast string to number
           const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-          httpGet(
-            spec.name,
-            parseQuery(query),
-            encoding,
-            client,
-            server,
-            checksum
-          )
+
+          if (method === 'post') {
+            readStream(false, client, contentType, (payload) => {
+              httpGet(spec.name, payload, encoding, client, server, checksum)
+            })
+          } else {
+            httpGet(
+              spec.name,
+              parseQuery(query),
+              encoding,
+              client,
+              server,
+              checksum
+            )
+          }
         } else {
           if (method === 'post') {
-            readPostData(client, contentType, (payload) => {
+            readStream(true, client, contentType, (payload, stream) => {
               httpFunction(spec.name, payload, encoding, client, server)
             })
           } else {
