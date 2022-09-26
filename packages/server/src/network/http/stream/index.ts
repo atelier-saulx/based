@@ -1,17 +1,22 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../..'
-import { invalidReqNoCors } from '../invalidReq'
 import stream from './stream'
-import formStream from './formStream'
-import { FileOptions } from './types'
+// import formStream from './multipartFormStream'
 import getExtenstion from './getExtenstion'
 import mimeTypes from 'mime-types'
 
+export const invalidReqNoCors = (res: uws.HttpResponse) => {
+  res.aborted = true
+  res
+    .writeStatus('400 Invalid Request')
+    .end(`{"code":400,"error":"Invalid Request"}`)
+}
+
 export default async (
   server: BasedServer,
+  name: string,
   req: uws.HttpRequest,
-  res: uws.HttpResponse,
-  url: string
+  res: uws.HttpResponse
 ) => {
   const method = req.getMethod()
 
@@ -34,29 +39,32 @@ export default async (
     }
   }
 
-  // const authorization = req.getHeader('authorization')
-  // console.info('go auth', authorization)
-
   // from header only...
   if (type === 'multipart/form-data') {
-    formStream(server, res)
+    // formStream(server, res)
     return
   }
 
-  const opts: FileOptions = {
+  //
+
+  const size = Number(req.getHeader('content-length'))
+
+  // custom header parsing
+
+  // stream
+  const opts = {
     raw: !!req.getHeader('file-is-raw'),
     name: req.getHeader('file-name') || '',
-    // functionName: req.getHeader('function-name') || '', from stream and getbypath
     id: req.getHeader('file-id'),
-    size: Number(req.getHeader('content-length')),
+    size,
     type,
     extension: getExtenstion(type),
   }
 
-  if (!opts.type || !opts.id || !opts.size) {
+  if (!opts.size) {
     invalidReqNoCors(res)
     return
   }
 
-  stream(server, res, opts)
+  stream(res, size)
 }
