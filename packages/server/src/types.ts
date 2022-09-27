@@ -2,7 +2,21 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
 export type WebsocketClient = {
-  ws: uws.WebSocket | null
+  ws:
+    | (uws.WebSocket & {
+        query: string
+        ua: string
+        ip: string
+        id: number
+        obs: Set<number>
+        unauthorizedObs: Set<{
+          id: number
+          checksum: number
+          name: string
+          payload: any
+        }>
+      })
+    | null
 }
 
 export type HttpClient = {

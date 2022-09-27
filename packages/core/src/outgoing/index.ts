@@ -91,6 +91,7 @@ export const drainQueue = (client: BasedCoreClient) => {
         drainQueue(client)
       })
     } else {
+      console.log('>>><<<<', client.observeQueue)
       client.drainTimeout = setTimeout(drainOutgoing, 0)
     }
   }

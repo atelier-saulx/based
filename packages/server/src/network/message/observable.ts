@@ -26,6 +26,7 @@ export const subscribeMessage = (
   }
 
   if (client.ws?.obs.has(id)) {
+    console.log('sub already exists')
     // allready subscribed to this id
     return true
   }
@@ -43,6 +44,7 @@ export const subscribeMessage = (
       }
 
       if (!ok) {
+        client.ws.unauthorizedObs.add({ id, checksum, name, payload })
         sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
           observableId: id,

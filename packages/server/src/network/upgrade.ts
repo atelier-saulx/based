@@ -28,6 +28,7 @@ export const upgrade = (
       ip,
       id: ++clientId,
       obs: new Set(),
+      unauthorizedObs: new Set(),
     },
     secWebSocketKey,
     secWebSocketProtocol,

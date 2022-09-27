@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer, { isHttpClient } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { wait } from '@saulx/utils'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
@@ -18,9 +19,11 @@ const setup = async () => {
       function: async (_payload: any, update: any) => {
         let cnt = 0
         const counter = setInterval(() => {
+          console.log({ counter })
           update(++cnt)
         }, 100)
         return () => {
+          console.log('clear')
           clearInterval(counter)
         }
       },
@@ -55,7 +58,7 @@ const setup = async () => {
 }
 
 test.serial('authorize functions', async (t) => {
-  t.timeout(4000)
+  t.timeout(1000)
 
   const token = 'mock_token'
 
@@ -100,8 +103,8 @@ test.serial('authorize functions', async (t) => {
   )
 })
 
-test.serial.only('authorize observe', async (t) => {
-  t.timeout(4000)
+test.serial('authorize observe', async (t) => {
+  t.timeout(12000)
 
   const token = 'mock_token'
 
@@ -149,8 +152,9 @@ test.serial.only('authorize observe', async (t) => {
     },
   })
 
+  let clear: () => void
   await new Promise((resolve) => {
-    coreClient.observe(
+    clear = coreClient.observe(
       'counter',
       (d) => {
         console.info({ d })
@@ -164,6 +168,9 @@ test.serial.only('authorize observe', async (t) => {
       }
     )
   })
+
+  // TODO: won't work if we don't clear the observable
+  clear()
 
   await coreClient.auth(token)
   await new Promise((resolve) => setTimeout(resolve, 2000))
@@ -180,9 +187,89 @@ test.serial.only('authorize observe', async (t) => {
         myQuery: 123,
       },
       (err: BasedError) => {
+        console.log('>>>>', err)
         t.fail('Should not error when authed')
         resolve(err)
       }
     )
   })
+})
+
+test.serial.only('authorize after observe', async (t) => {
+  t.timeout(12000)
+
+  const token = 'mock_token'
+
+  const { coreClient, server } = await setup()
+
+  server.functions.update({
+    observable: true,
+    name: 'counter',
+    // memCacheTimeout: 2e3,
+    checksum: 2,
+    function: async (_payload: any, update: any) => {
+      let cnt = 0
+      const counter = setInterval(() => {
+        console.log({ cnt })
+        update('UpdatedFn' + ++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
+  })
+
+  server.auth.updateConfig({
+    authorize: async (_server, client) => {
+      if (isHttpClient(client)) {
+        if (client.context) {
+          return client.context.authState === token
+        }
+      } else {
+        if (client.ws) {
+          return client.ws.authState === token
+        }
+      }
+      return false
+    },
+  })
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  await wait(500)
+
+  let receiveCnt = 0
+
+  console.log('setting')
+  /* const clear = */ coreClient.observe(
+    'counter',
+    (d) => {
+      console.info({ d })
+      receiveCnt++
+    },
+    {
+      myQuery: 123,
+    },
+    (err: BasedError) => {
+      t.is(err.basedCode, BasedErrorCode.AuthorizeRejectedError)
+    }
+  )
+
+  await wait(2000)
+  console.log('wawa')
+  await coreClient.auth(token)
+  await wait(2000)
+
+  t.true(receiveCnt > 0)
+
+  // TODO: causes an exception
+  // clear()
 })
