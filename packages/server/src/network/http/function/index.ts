@@ -1,9 +1,10 @@
-import { isObservableFunctionSpec } from '../../functions'
-import { BasedServer } from '../../server'
-import { HttpClient } from '../../types'
-import end from './end'
-import { compress } from './compress'
-import { sendError } from './sendError'
+import { isObservableFunctionSpec } from '../../../functions'
+import { BasedServer } from '../../../server'
+import { HttpClient } from '../../../types'
+import end from '../end'
+import { compress } from '../compress'
+import { sendError } from '../sendError'
+import { parseQuery } from '@saulx/utils'
 
 const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   if (!client.res) {
@@ -30,11 +31,15 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
 
 export const httpFunction = (
   name: string,
-  payload: any,
   encoding: string,
   client: HttpClient,
-  server: BasedServer
+  server: BasedServer,
+  method: string
 ): void => {
+  // fix max payload from spec..
+
+  // parse payload
+
   server.functions
     .get(name)
     .then((spec) => {
@@ -42,6 +47,15 @@ export const httpFunction = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
+        //
+
+        let payload: any
+        if (method === 'post') {
+          console.info('GO PARSE STREAM')
+        } else {
+          payload = client.context.query
+        }
+
         server.auth.config
           .authorize(server, client, 'function', name, payload)
           .then((ok) => {
