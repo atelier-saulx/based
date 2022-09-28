@@ -176,3 +176,14 @@ export type ActiveObservable = {
   beingDestroyed?: NodeJS.Timeout
   onNextData?: Set<() => void>
 }
+
+export type EventMap = {
+  doesNotExist: string
+}
+
+export type Event = keyof EventMap
+
+export type Listener<T> = (
+  client: HttpClient | WebsocketClient,
+  data?: T
+) => void

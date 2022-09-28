@@ -8,6 +8,25 @@ import { sendError } from './sendError'
 
 let clientId = 0
 
+// these can be stored on context
+const allowedHeaders = [
+  'x-forwarded-for',
+  'user-agent',
+  'authorization',
+  'accept',
+  'accept-language',
+  'accept-encoding',
+  'referer',
+  'connection',
+  'upgrade-insecure-requests',
+  'if-modified-since',
+  'if-none-match',
+  'cache-control',
+  'host',
+  'origin',
+  'pragma',
+]
+
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
