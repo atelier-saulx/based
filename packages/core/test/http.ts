@@ -171,6 +171,10 @@ test.serial('get (over http)', async (t) => {
 
   t.is(result2, '2')
 
+  const result3 = await (await fetch('http://localhost:9910/hello')).text()
+
+  t.is(result3, '2')
+
   await wait(10e3)
 
   t.is(Object.keys(server.functions.observables).length, 0)
