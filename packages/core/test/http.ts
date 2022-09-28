@@ -3,7 +3,7 @@ import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
-test.serial('functions (over http)', async (t) => {
+test.serial.only('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -66,6 +66,7 @@ test.serial('functions (over http)', async (t) => {
           return false
         }
       },
+
       log: (opts) => {
         console.info('-->', opts)
       },
