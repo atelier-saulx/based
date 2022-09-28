@@ -24,6 +24,8 @@ export class BasedServer {
 
   public listenSocket: any
 
+  public blocked: Set<string> = new Set()
+
   // in bytes
   public cacheSize: number = 0
 

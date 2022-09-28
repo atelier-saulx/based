@@ -66,16 +66,13 @@ const sendGetResponse = (
 export const httpGet = (
   name: string,
   encoding: string,
+  payload: any,
   client: HttpClient,
   server: BasedServer,
-  checksum: number,
-  method: string
+  checksum: number
 ): void => {
-  // wrong!
-  const payload: any = ''
-
   server.functions
-    .get(name)
+    .install(name)
     .then((spec) => {
       if (!client.res) {
         return

@@ -34,7 +34,8 @@ export const functionMessage = (
 
   const route = server.functions.route(name)
 
-  if (!route || route.observable === true) {
+  if (!route || route.observable === true || route.stream === true) {
+    // stream not with ws for now...
     return false
   }
 

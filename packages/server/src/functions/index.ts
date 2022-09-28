@@ -1,6 +1,6 @@
 import type { BasedServer } from '../server'
 import {
-  BasedFunctionRouteConfig,
+  BasedFunctionRoute,
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
@@ -113,7 +113,7 @@ export class BasedFunctions {
     return this.paths[path]
   }
 
-  route(name?: string, path?: string): BasedFunctionRouteConfig | false {
+  route(name?: string, path?: string): BasedFunctionRoute | false {
     return this.config.route({ server: this.server, name, path })
   }
 
