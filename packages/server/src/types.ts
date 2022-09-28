@@ -7,6 +7,7 @@ export type WebsocketClient = {
 
 export type HttpClient = {
   res: uws.HttpResponse | null
+  req: uws.HttpRequest | null
   context:
     | ({
         authorization: string

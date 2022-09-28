@@ -8,6 +8,7 @@ export default (client: HttpClient, payload?: string | Buffer | Uint8Array) => {
       client.res.end(payload)
     }
     client.res = null
+    client.req = null
     client.context = null
   }
 }

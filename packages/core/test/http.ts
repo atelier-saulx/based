@@ -20,6 +20,10 @@ test.serial('functions (over http)', async (t) => {
         if (isAborted) {
           return
         }
+        // just make a return thing
+        // { headers: {} , status: , reply }
+        // send() can be wrapped in the based fn header
+
         res.writeStatus('200 OkiDoki')
         if (typeof result === 'object') {
           res.end(JSON.stringify(result))
