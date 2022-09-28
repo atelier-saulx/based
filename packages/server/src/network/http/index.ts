@@ -28,6 +28,29 @@ let clientId = 0
 //   'pragma',
 // ]
 
+const authorizeRequest = (
+  server: BasedServer,
+  client: HttpClient,
+  payload: any,
+  type: 'function' | 'observe',
+  name: string,
+  authorized: () => void
+) => {
+  server.auth.config
+    .authorize(server, client, type, name, payload)
+    .then((ok) => {
+      if (!client.res) {
+        return
+      }
+      if (!ok) {
+        sendError(client, `${name} unauthorized request`, 401, 'Unauthorized')
+      } else {
+        authorized()
+      }
+    })
+    .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
+}
+
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
@@ -95,21 +118,18 @@ export const httpHandler = (
     if (method === 'post') {
       readBody(
         client,
-        (d) => {
-          httpGet(name, encoding, d, client, server, checksum)
-          // go time
+        (payload) => {
+          authorizeRequest(server, client, payload, 'observe', name, () =>
+            httpGet(name, encoding, payload, client, server, checksum)
+          )
         },
         incomingEncoding,
         route.maxPayloadSize
       )
     } else {
-      httpGet(
-        name,
-        encoding,
-        parseQuery(client.context.query),
-        client,
-        server,
-        checksum
+      const payload = parseQuery(client.context.query)
+      authorizeRequest(server, client, payload, 'observe', name, () =>
+        httpGet(name, encoding, payload, client, server, checksum)
       )
     }
   } else {
@@ -120,20 +140,24 @@ export const httpHandler = (
       if (method === 'post') {
         readBody(
           client,
-          (d) => {
-            httpFunction(name, encoding, d, client, server)
-            // go time
+          (payload) => {
+            authorizeRequest(server, client, payload, 'function', name, () =>
+              httpFunction(name, encoding, payload, client, server)
+            )
           },
           incomingEncoding,
           route.maxPayloadSize
         )
       } else {
-        httpFunction(
-          name,
-          encoding,
-          parseQuery(client.context.query),
-          client,
-          server
+        const payload = parseQuery(client.context.query)
+        authorizeRequest(server, client, payload, 'function', name, () =>
+          httpFunction(
+            name,
+            encoding,
+            parseQuery(client.context.query),
+            client,
+            server
+          )
         )
       }
     }

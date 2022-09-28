@@ -19,6 +19,7 @@ const sendGetResponse = (
   if (!client.res) {
     return
   }
+
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
@@ -62,14 +63,14 @@ const sendGetResponse = (
   }
 }
 
-const httpGetAuthorized = (
+export const httpGet = (
   name: string,
   encoding: string,
   payload: any,
   client: HttpClient,
   server: BasedServer,
   checksum: number
-) => {
+): void => {
   server.functions
     .install(name)
     .then((spec) => {
@@ -128,27 +129,4 @@ const httpGetAuthorized = (
         'Not Found'
       )
     )
-}
-
-export const httpGet = (
-  name: string,
-  encoding: string,
-  payload: any,
-  client: HttpClient,
-  server: BasedServer,
-  checksum: number
-): void => {
-  server.auth.config
-    .authorize(server, client, 'observe', name, payload)
-    .then((ok) => {
-      if (!client.res) {
-        return
-      }
-      if (!ok) {
-        sendError(client, `${name} unauthorized request`, 401, 'Unauthorized')
-      } else {
-        httpGetAuthorized(name, encoding, payload, client, server, checksum)
-      }
-    })
-    .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
 }
