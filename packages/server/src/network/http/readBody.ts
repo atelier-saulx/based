@@ -13,6 +13,15 @@ export const readBody = (
       return
     }
 
+    /*
+    Content-Encoding: gzip
+    Content-Encoding: compress
+    Content-Encoding: deflate
+    Content-Encoding: br
+    // Multiple, in the order in which they were applied
+    Content-Encoding: deflate, gzip
+    */
+
     // if encoding lets defalte!
 
     data = Buffer.concat([data, Buffer.from(chunk)])

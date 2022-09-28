@@ -34,7 +34,7 @@ const authorizeRequest = (
   payload: any,
   type: 'function' | 'observe',
   name: string,
-  authorized: () => void
+  authorized: (payload: any) => void
 ) => {
   server.auth.config
     .authorize(server, client, type, name, payload)
@@ -45,10 +45,33 @@ const authorizeRequest = (
       if (!ok) {
         sendError(client, `${name} unauthorized request`, 401, 'Unauthorized')
       } else {
-        authorized()
+        authorized(payload)
       }
     })
     .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
+}
+
+const handleRequest = (
+  server: BasedServer,
+  method: string,
+  client: HttpClient,
+  name: string,
+  contentEncoding: string,
+  maxPayloadSize: number,
+  authorized: (payload: any) => void
+) => {
+  if (method === 'post') {
+    readBody(
+      client,
+      (payload) =>
+        authorizeRequest(server, client, payload, 'observe', name, authorized),
+      contentEncoding,
+      maxPayloadSize
+    )
+  } else {
+    const payload = parseQuery(client.context.query)
+    authorizeRequest(server, client, payload, 'observe', name, authorized)
+  }
 }
 
 export const httpHandler = (
@@ -83,9 +106,8 @@ export const httpHandler = (
   }
 
   // add all headers in context that are specialy defined for the route
-
   const method = req.getMethod()
-  const incomingEncoding = req.getHeader('content-encoding')
+  const contentEncoding = req.getHeader('content-encoding')
   const encoding = req.getHeader('accept-encoding')
 
   const client: HttpClient = {
@@ -115,51 +137,29 @@ export const httpHandler = (
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-    if (method === 'post') {
-      readBody(
-        client,
-        (payload) => {
-          authorizeRequest(server, client, payload, 'observe', name, () =>
-            httpGet(name, encoding, payload, client, server, checksum)
-          )
-        },
-        incomingEncoding,
-        route.maxPayloadSize
-      )
-    } else {
-      const payload = parseQuery(client.context.query)
-      authorizeRequest(server, client, payload, 'observe', name, () =>
-        httpGet(name, encoding, payload, client, server, checksum)
-      )
-    }
+    handleRequest(
+      server,
+      method,
+      client,
+      name,
+      contentEncoding,
+      route.maxPayloadSize,
+      (payload) => httpGet(name, encoding, payload, client, server, checksum)
+    )
   } else {
     if (route.stream === true) {
       // only for streams
       //   fix this nice
     } else {
-      if (method === 'post') {
-        readBody(
-          client,
-          (payload) => {
-            authorizeRequest(server, client, payload, 'function', name, () =>
-              httpFunction(name, encoding, payload, client, server)
-            )
-          },
-          incomingEncoding,
-          route.maxPayloadSize
-        )
-      } else {
-        const payload = parseQuery(client.context.query)
-        authorizeRequest(server, client, payload, 'function', name, () =>
-          httpFunction(
-            name,
-            encoding,
-            parseQuery(client.context.query),
-            client,
-            server
-          )
-        )
-      }
+      handleRequest(
+        server,
+        method,
+        client,
+        name,
+        contentEncoding,
+        route.maxPayloadSize,
+        (payload) => httpFunction(name, encoding, payload, client, server)
+      )
     }
   }
 }
