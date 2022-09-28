@@ -50,6 +50,10 @@ export const httpHandler = (
   // If-None-Match: "c561c68d0ba92bbeb8b0fff2a9199f722e3a621a"
   // Cache-Control: max-age=0
 
+  // RATE LIMIT
+  // emitter for unsecure attempts
+  // blocked ip table
+
   const url = req.getUrl()
   const path = url.split('/')
   const method = req.getMethod()
