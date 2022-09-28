@@ -271,7 +271,7 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
     },
   })
 
-  const result3 = await (
+  const result1 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
@@ -279,6 +279,32 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
         'content-type': 'application/json',
       },
       body: await deflate(JSON.stringify({ flurp: 1 })),
+    })
+  ).text()
+
+  t.is(result1, '{"flurp":1}')
+
+  const result2 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'gzip',
+        'content-type': 'application/json',
+      },
+      body: await gzip(JSON.stringify({ flurp: 1 })),
+    })
+  ).text()
+
+  t.is(result2, '{"flurp":1}')
+
+  const result3 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'br',
+        'content-type': 'application/json',
+      },
+      body: await br(JSON.stringify({ flurp: 1 })),
     })
   ).text()
 

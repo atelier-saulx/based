@@ -9,16 +9,10 @@ export const readBody = (
   maxSize: number
 ) => {
   let data = Buffer.from([])
+  let size = 0
 
   const readData = (chunk: Buffer, isLast: boolean) => {
     data = Buffer.concat([data, chunk])
-    if (data.length > maxSize) {
-      sendError(client, 'Payload Too Large', 413)
-      return
-    }
-
-    console.info('reading data from', data.length, maxSize)
-
     if (isLast) {
       const contentType = client.context.contentType
       if (contentType === 'application/json' || !contentType) {
@@ -43,13 +37,29 @@ export const readBody = (
   }
 
   if (contentEncoding) {
+    /*
+    Content-Encoding: gzip
+    Content-Encoding: deflate
+    Content-Encoding: br
+    */
     let uncompressStream: zlib.Deflate | zlib.Gunzip
     if (contentEncoding === 'deflate') {
       uncompressStream = zlib.createInflate()
+    } else if (contentEncoding === 'gzip') {
+      uncompressStream = zlib.createGunzip()
+    } else if (contentEncoding === 'br') {
+      uncompressStream = zlib.createBrotliDecompress()
     }
+
     if (uncompressStream) {
       let last = false
       client.res.onData((c, isLast) => {
+        size += c.byteLength
+        if (size > maxSize) {
+          sendError(client, 'Payload Too Large', 413)
+          uncompressStream.close()
+          return
+        }
         const buf = Buffer.from(c)
         last = isLast
         if (isLast) {
@@ -65,6 +75,13 @@ export const readBody = (
       sendError(client, 'Unsupported Content-Encoding', 400)
     }
   } else {
-    client.res.onData((c, isLast) => readData(Buffer.from(c), isLast))
+    client.res.onData((c, isLast) => {
+      size += c.byteLength
+      if (size > maxSize) {
+        sendError(client, 'Payload Too Large', 413)
+        return
+      }
+      readData(Buffer.from(c), isLast)
+    })
   }
 }
