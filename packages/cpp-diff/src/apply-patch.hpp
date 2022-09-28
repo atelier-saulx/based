@@ -77,7 +77,6 @@ json apply_array_patch(json& value, json patch) {
 
     for (auto& patch : patches) {
         // if nested patch MAP has a struct on index use that one <index, {j, op}>
-
         int index = (int)patch.at(0);
         int j = (int)patch.at(1);
         auto operation = patch.at(2);
@@ -96,7 +95,13 @@ int nested_apply_patch(json& value, std::string key, json patch) {
         if (type == 0) {
             value[key] = patch.at(1);
         } else if (type == 1) {
-            value.erase(key);
+            if (value.is_array()) {
+                int idx = std::stoi(key);
+                value.erase(idx);
+            } else {
+                // std::cout << "key = " << key << std::endl;
+                value.erase(key);
+            }
         } else if (type == 2) {
             json res = apply_array_patch(value.at(key), patch.at(1));
             value[key] = res;
@@ -112,13 +117,29 @@ int nested_apply_patch(json& value, std::string key, json patch) {
 }
 json apply_patch(json value, json patch) {
     if (patch.is_array()) {
-        std::cout << "array diff not supported yet" << std::endl;
-        return value;
+        json type = patch.at(0);
+        if (type == 0) {
+            return patch.at(1);
+        } else if (type == 1) {
+            return nullptr;
+        } else if (type == 2) {
+            return apply_array_patch(value, patch.at(1));
+        }
+        return 0;
     }
     if (patch.is_object()) {
+        if (patch.contains("___$toObject")) {
+            json v = json::object();
+            for (int i = 0; i < value.size(); i++) {
+                v[std::to_string(i)] = value.at(i);
+            }
+            value = v;
+        }
         for (auto& el : patch.items()) {
-            int r = nested_apply_patch(value, el.key(), patch[el.key()]);
-            if (r != 0) return -1;
+            if (el.key() != "___$toObject") {
+                int r = nested_apply_patch(value, el.key(), patch[el.key()]);
+                if (r != 0) return -1;
+            }
         }
     }
     return value;
