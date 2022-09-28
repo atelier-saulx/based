@@ -19,11 +19,9 @@ const setup = async () => {
       function: async (_payload: any, update: any) => {
         let cnt = 0
         const counter = setInterval(() => {
-          console.log({ counter })
           update(++cnt)
         }, 100)
         return () => {
-          console.log('clear')
           clearInterval(counter)
         }
       },
@@ -110,6 +108,7 @@ test.serial('authorize observe', async (t) => {
 
   const { coreClient, server } = await setup()
 
+  let counter: NodeJS.Timer
   server.functions.update({
     observable: true,
     name: 'counter',
@@ -117,7 +116,7 @@ test.serial('authorize observe', async (t) => {
     checksum: 2,
     function: async (_payload: any, update: any) => {
       let cnt = 0
-      const counter = setInterval(() => {
+      counter = setInterval(() => {
         update('UpdatedFn' + ++cnt)
       }, 100)
       return () => {
@@ -152,12 +151,11 @@ test.serial('authorize observe', async (t) => {
     },
   })
 
-  let clear: () => void
   await new Promise((resolve) => {
-    clear = coreClient.observe(
+    coreClient.observe(
       'counter',
-      (d) => {
-        console.info({ d })
+      (_d) => {
+        // console.info({ d })
       },
       {
         myQuery: 123,
@@ -169,38 +167,34 @@ test.serial('authorize observe', async (t) => {
     )
   })
 
-  // TODO: won't work if we don't clear the observable
-  clear()
-
   await coreClient.auth(token)
-  await new Promise((resolve) => setTimeout(resolve, 2000))
+  await wait(500)
 
   await new Promise((resolve) => {
-    console.info('go go go')
     coreClient.observe(
       'counter',
       (d) => {
-        console.info({ d })
         resolve(d)
       },
       {
         myQuery: 123,
       },
       (err: BasedError) => {
-        console.log('>>>>', err)
         t.fail('Should not error when authed')
         resolve(err)
       }
     )
   })
+  clearInterval(counter)
 })
 
-test.serial.only('authorize after observe', async (t) => {
+test.serial('authorize after observe', async (t) => {
   t.timeout(12000)
 
   const token = 'mock_token'
 
   const { coreClient, server } = await setup()
+  let counter: NodeJS.Timer
 
   server.functions.update({
     observable: true,
@@ -209,8 +203,7 @@ test.serial.only('authorize after observe', async (t) => {
     checksum: 2,
     function: async (_payload: any, update: any) => {
       let cnt = 0
-      const counter = setInterval(() => {
-        console.log({ cnt })
+      counter = setInterval(() => {
         update('UpdatedFn' + ++cnt)
       }, 100)
       return () => {
@@ -248,11 +241,9 @@ test.serial.only('authorize after observe', async (t) => {
 
   let receiveCnt = 0
 
-  console.log('setting')
-  /* const clear = */ coreClient.observe(
+  coreClient.observe(
     'counter',
-    (d) => {
-      console.info({ d })
+    (_d) => {
       receiveCnt++
     },
     {
@@ -263,13 +254,11 @@ test.serial.only('authorize after observe', async (t) => {
     }
   )
 
-  await wait(2000)
-  console.log('wawa')
+  await wait(500)
+  t.is(receiveCnt, 0)
   await coreClient.auth(token)
-  await wait(2000)
+  await wait(500)
+  clearInterval(counter)
 
   t.true(receiveCnt > 0)
-
-  // TODO: causes an exception
-  // clear()
 })
