@@ -47,9 +47,9 @@ export const functionMessage = (
           basedCode: BasedErrorCode.AuthorizeRejectedError,
           requestId: reqId,
         })
-
         return false
       }
+
       server.functions
         .install(name)
         .then((spec) => {
