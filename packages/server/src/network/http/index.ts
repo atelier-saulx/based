@@ -5,7 +5,7 @@ import { httpFunction } from './function'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
-import { sendError } from './sendError'
+import { sendError, sendErrorRaw } from './sendError'
 
 let clientId = 0
 
@@ -45,11 +45,7 @@ export const httpHandler = (
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   if (server.blocked.has(ip)) {
-    res.writeStatus(`429 Too Many Requests`)
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-    res.writeHeader('Content-Type', 'text/plain')
-    res.end('Too Many Requests')
+    sendErrorRaw(res, 'Too Many Requests', 429, 'Too Many Requests')
     return
   }
 
@@ -59,11 +55,7 @@ export const httpHandler = (
   const route = server.functions.route(path[1], url)
 
   if (route === false) {
-    res.writeStatus(`404 Not Found`)
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-    res.writeHeader('Content-Type', 'text/plain')
-    res.end('404 Not Found')
+    sendErrorRaw(res, 'Not found', 404, 'Not found')
     return
   }
 

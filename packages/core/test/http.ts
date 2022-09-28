@@ -3,7 +3,7 @@ import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
-test.serial.only('functions (over http)', async (t) => {
+test.serial('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -51,7 +51,9 @@ test.serial.only('functions (over http)', async (t) => {
               }
             }
           }
-        } else if (name && store[name]) {
+        }
+
+        if (name && store[name]) {
           return { name }
         }
         return false
@@ -109,11 +111,11 @@ test.serial.only('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('get (over http)', async (t) => {
+test.serial.only('get (over http)', async (t) => {
   const store = {
     hello: {
       path: '/counter',
-      name: 'counter',
+      name: 'hello',
       checksum: 1,
       observable: true,
       function: async (payload, update) => {
@@ -134,13 +136,20 @@ test.serial('get (over http)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       route: ({ name, path }) => {
+        console.info(name, path)
+
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
-              return { name: store[name], observable: store[name].observable }
+              return {
+                name: store[name].name,
+                observable: store[name].observable,
+              }
             }
           }
-        } else if (name && store[name]) {
+        }
+
+        if (name && store[name]) {
           return { name, observable: store[name].observable }
         }
         return false
