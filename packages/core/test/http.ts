@@ -196,7 +196,7 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('functions (over http + contentEncoding)', async (t) => {
+test.serial('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -291,11 +291,11 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
       },
-      body: await gzip(JSON.stringify({ flurp: 1 })),
+      body: await gzip(JSON.stringify({ flurp: 2 })),
     })
   ).text()
 
-  t.is(result2, '{"flurp":1}')
+  t.is(result2, '{"flurp":2}')
 
   const result3 = await (
     await fetch('http://localhost:9910/flap', {
@@ -304,11 +304,11 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
         'content-encoding': 'br',
         'content-type': 'application/json',
       },
-      body: await br(JSON.stringify({ flurp: 1 })),
+      body: await br(JSON.stringify({ flurp: 3 })),
     })
   ).text()
 
-  t.is(result3, '{"flurp":1}')
+  t.is(result3, '{"flurp":3}')
 
   await wait(10e3)
 
