@@ -5,6 +5,7 @@ import {
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { WebsocketClient } from '../../types'
+import { enableSubscribe } from './observable'
 
 export type AuthState = any
 
@@ -35,6 +36,16 @@ export const authMessage = (
   }
   if (client.ws) {
     client.ws.authState = authState
+
+    if (client.ws.unauthorizedObs.size) {
+      client.ws.unauthorizedObs.forEach((obs) => {
+        const { id, name, checksum, payload } = obs
+        enableSubscribe(server, client, id, checksum, name, payload)
+      })
+      //
+      client.ws.unauthorizedObs.clear()
+    }
+
     client.ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   }
 
