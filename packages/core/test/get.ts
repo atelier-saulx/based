@@ -1,13 +1,14 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer, { isHttpClient } from '@based/server'
 import { wait } from '@saulx/utils'
+import { BasedError, BasedErrorCode } from '../src/types/error'
 
-test.serial('get', async (t) => {
+const setup = async (t: ExecutionContext) => {
   const coreClient = new BasedCoreClient()
 
   const obsStore = {
-    counter: async (payload, update) => {
+    counter: async (_payload: any, update: any) => {
       let cnt = 0
       const counter = setInterval(() => {
         update(++cnt)
@@ -68,6 +69,16 @@ test.serial('get', async (t) => {
       },
     },
   })
+  return { coreClient, server }
+}
+
+test.serial('get', async (t) => {
+  const { coreClient, server } = await setup(t)
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
 
   coreClient.connect({
     url: async () => {
@@ -101,4 +112,46 @@ test.serial('get', async (t) => {
   await wait(6000)
 
   t.is(Object.keys(server.functions.observables).length, 0)
+})
+
+test.serial('authorize get', async (t) => {
+  const { coreClient, server } = await setup(t)
+
+  const token = 'mock_token'
+
+  server.auth.updateConfig({
+    authorize: async (_server, client) => {
+      if (isHttpClient(client)) {
+        if (client.context) {
+          return client.context.authState === token
+        }
+      } else {
+        if (client.ws) {
+          return client.ws.authState === token
+        }
+      }
+      return false
+    },
+  })
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  // coreClient.once('connect', (isConnected) => {
+  //   t.log('connect', isConnected)
+  // })
+
+  const error: BasedError = await t.throwsAsync(coreClient.get('counter'))
+  t.is(error.basedCode, BasedErrorCode.AuthorizeRejectedError)
+
+  await coreClient.auth(token)
+  const result = await t.notThrowsAsync(coreClient.get('counter'))
 })

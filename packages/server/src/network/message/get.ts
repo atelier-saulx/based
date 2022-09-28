@@ -8,6 +8,7 @@ import {
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
 import { ActiveObservable, WebsocketClient } from '../../types'
+import { sendError, BasedErrorCode } from '../../error'
 
 const sendGetData = (
   server: BasedServer,
@@ -66,46 +67,63 @@ export const getMessage = (
     isDeflate
   )
 
-  // TODO: authorize here
-
-  if (server.activeObservablesById.has(id)) {
-    const obs = server.activeObservablesById.get(id)
-    if (obs.beingDestroyed) {
-      clearTimeout(obs.beingDestroyed)
-      obs.beingDestroyed = null
-    }
-    if (obs.cache) {
-      sendGetData(server, id, obs, checksum, client)
-    } else {
-      if (!obs.onNextData) {
-        obs.onNextData = new Set()
+  server.auth.config
+    .authorize(server, client, 'observe', name, payload)
+    .then((ok) => {
+      if (!client.ws) {
+        return false
       }
-      obs.onNextData.add(() => {
-        sendGetData(server, id, obs, checksum, client)
-      })
-    }
-  } else {
-    server.functions
-      .install(name)
-      .then((spec) => {
-        if (spec && isObservableFunctionSpec(spec)) {
-          const obs = create(server, name, id, payload)
-          if (!client.ws?.obs.has(id)) {
-            if (!obs.onNextData) {
-              obs.onNextData = new Set()
-            }
-            obs.onNextData.add(() => {
-              sendGetData(server, id, obs, checksum, client)
-            })
-          }
-        } else {
-          console.error('No function for you', name)
+
+      if (!ok) {
+        sendError(client, 'Not authorized', {
+          basedCode: BasedErrorCode.AuthorizeRejectedError,
+          observableId: id,
+        })
+        return false
+      }
+
+      if (server.activeObservablesById.has(id)) {
+        const obs = server.activeObservablesById.get(id)
+        if (obs.beingDestroyed) {
+          clearTimeout(obs.beingDestroyed)
+          obs.beingDestroyed = null
         }
-      })
-      .catch((err) => {
-        console.error('fn does not exist', err)
-      })
-  }
+        if (obs.cache) {
+          sendGetData(server, id, obs, checksum, client)
+        } else {
+          if (!obs.onNextData) {
+            obs.onNextData = new Set()
+          }
+          obs.onNextData.add(() => {
+            sendGetData(server, id, obs, checksum, client)
+          })
+        }
+      } else {
+        server.functions
+          .install(name)
+          .then((spec) => {
+            if (spec && isObservableFunctionSpec(spec)) {
+              const obs = create(server, name, id, payload)
+              if (!client.ws?.obs.has(id)) {
+                if (!obs.onNextData) {
+                  obs.onNextData = new Set()
+                }
+                obs.onNextData.add(() => {
+                  sendGetData(server, id, obs, checksum, client)
+                })
+              }
+            } else {
+              console.error('No function for you', name)
+            }
+          })
+          .catch((err) => {
+            console.error('fn does not exist', err)
+          })
+      }
+    })
+    .catch((err) => {
+      console.log('>>>>> errr', err)
+    })
 
   return true
 }
