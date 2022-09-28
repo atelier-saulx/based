@@ -35,11 +35,18 @@ test.serial('observablesDiff', async (t) => {
     functions: {
       memCacheTimeout: 5e3,
       idleTimeout: 1e3,
-      unregister: async (opts) => {
+      // add some defaults here...
+      route: ({ name }) => {
+        if (name && obsStore[name]) {
+          return { name, observable: true }
+        }
+        return false
+      },
+      uninstall: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (obsStore[name]) {
           return {
             observable: true,
@@ -99,7 +106,7 @@ test.serial('observablesDiff', async (t) => {
 
   await wait(1e3)
 
-  console.log('hekllo')
+  console.info('hekllo')
   coreClient.cache.clear()
 
   await wait(5e3)

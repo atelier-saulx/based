@@ -1,9 +1,18 @@
 import uws from '@based/uws'
 import initNetwork from './network'
-import type { ServerOptions, ActiveObservable } from './types'
+import type {
+  ServerOptions,
+  ActiveObservable,
+  Listener,
+  EventMap,
+  Event,
+  HttpClient,
+  WebsocketClient,
+} from './types'
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
 
+// extend emitter
 export class BasedServer {
   public functions: BasedFunctions
 
@@ -15,6 +24,8 @@ export class BasedServer {
 
   public listenSocket: any
 
+  public blocked: Set<string> = new Set()
+
   // in bytes
   public cacheSize: number = 0
 
@@ -24,10 +35,61 @@ export class BasedServer {
 
   public activeObservablesById: Map<number, ActiveObservable> = new Map()
 
+  public listeners: {
+    [E in Event]?: Listener<EventMap[E]>[]
+  } = {}
+
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
     initNetwork(this, opts)
+  }
+
+  emit(
+    type: Event,
+    client: HttpClient | WebsocketClient,
+    val: EventMap[Event]
+  ) {
+    if (this.listeners[type]) {
+      this.listeners[type].forEach((fn) => fn(client, val))
+    }
+  }
+
+  on(type: Event, fn: Listener<EventMap[Event]>) {
+    if (!this.listeners[type]) {
+      this.listeners[type] = []
+    }
+    this.listeners[type].push(fn)
+  }
+
+  removeAllListeners() {
+    this.listeners = {}
+  }
+
+  once(type: Event, fn: Listener<EventMap[Event]>) {
+    this.on(type, (v) => {
+      fn(v)
+      this.off(type, fn)
+    })
+  }
+
+  off(type: Event, fn: Listener<EventMap[Event]>) {
+    const listeners = this.listeners[type]
+    if (listeners) {
+      if (!fn) {
+        delete this.listeners[type]
+      } else {
+        for (let i = 0, len = listeners.length; i < len; i++) {
+          if (listeners[i] === fn) {
+            listeners.splice(i, 1)
+            break
+          }
+        }
+        if (listeners.length === 0) {
+          delete this.listeners[type]
+        }
+      }
+    }
   }
 
   start(port?: number): Promise<BasedServer> {

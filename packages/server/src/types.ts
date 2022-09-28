@@ -2,7 +2,21 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 
 export type WebsocketClient = {
-  ws: uws.WebSocket | null
+  ws:
+    | (uws.WebSocket & {
+        query: string
+        ua: string
+        ip: string
+        id: number
+        obs: Set<number>
+        unauthorizedObs: Set<{
+          id: number
+          checksum: number
+          name: string
+          payload: any
+        }>
+      })
+    | null
 }
 
 export type HttpClient = {
@@ -74,11 +88,19 @@ export type CustomHttpResponse = (
   client: HttpClient
 ) => Promise<boolean>
 
-export type BasedObservableFunctionSpec = {
+export type BasedFunctionRoute = {
+  name: string
+  observable?: boolean
+  maxPayloadSize?: number
+  headers?: string[]
+  path?: string
+  stream?: boolean
+}
+
+export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string
   checksum: number
   observable: true
-  path?: string
   function: (
     payload: any,
     update: ObservableUpdateFunction
@@ -90,9 +112,8 @@ export type BasedObservableFunctionSpec = {
   timeoutCounter?: number // bit harder have to add
 }
 
-export type BasedFunctionSpec = {
+export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string
-  path?: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
   function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
@@ -106,17 +127,18 @@ export type FunctionConfig = {
   idleTimeout?: number // in ms
   maxWorkers?: number
 
-  registerByPath?: (opts: {
+  route: (opts: {
     server: BasedServer
-    path: string
-  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+    name?: string
+    path?: string
+  }) => false | BasedFunctionRoute
 
-  register: (opts: {
+  install: (opts: {
     server: BasedServer
     name: string
   }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
-  unregister: (opts: {
+  uninstall: (opts: {
     server: BasedServer
     name: string
     function: BasedObservableFunctionSpec | BasedFunctionSpec
@@ -154,3 +176,14 @@ export type ActiveObservable = {
   beingDestroyed?: NodeJS.Timeout
   onNextData?: Set<() => void>
 }
+
+export type EventMap = {
+  doesNotExist: string
+}
+
+export type Event = keyof EventMap
+
+export type Listener<T> = (
+  client: HttpClient | WebsocketClient,
+  data?: T
+) => void

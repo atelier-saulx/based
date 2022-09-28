@@ -46,6 +46,7 @@ const reader = (
     return next
   }
 
+  // emit whats wrong
   console.warn('Unsupported incoming message with type', type)
 }
 
@@ -60,10 +61,13 @@ export const message = (
   }
 
   if (!isBinary) {
-    // TODO: add a hook here for illegal requests
+    // TODO: add an event here for illegal requests
     client.ws.close()
     return
   }
+
+  // check if msg if empty (0) then it idle timeout
+
   const uint8View = new Uint8Array(msg)
   const len = uint8View.length
   let next = 0

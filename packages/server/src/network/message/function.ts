@@ -32,6 +32,13 @@ export const functionMessage = (
     return false
   }
 
+  const route = server.functions.route(name)
+
+  if (!route || route.observable === true || route.stream === true) {
+    // stream not with ws for now...
+    return false
+  }
+
   server.auth.config
     .authorize(server, client, 'function', name, payload)
     .then((ok) => {
@@ -44,7 +51,7 @@ export const functionMessage = (
         return false
       }
       server.functions
-        .get(name)
+        .install(name)
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec)) {
             spec

@@ -3,7 +3,7 @@ import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
-test.serial('functions (over http)', async (t) => {
+test.serial.only('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -40,26 +40,36 @@ test.serial('functions (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
-        await wait(1e3)
-        return true
-      },
-      registerByPath: async ({ path }) => {
-        await wait(1e3)
-        for (const name in store) {
-          if (store[name].path === path) {
-            return store[name]
+
+      route: ({ name, path }) => {
+        if (path) {
+          for (const name in store) {
+            if (store[name].path === path) {
+              return {
+                name: store[name].name,
+                observable: store[name].observable,
+              }
+            }
           }
+        } else if (name && store[name]) {
+          return { name }
         }
         return false
       },
-      register: async ({ name }) => {
+
+      uninstall: async () => {
+        await wait(1e3)
+        return true
+      },
+
+      install: async ({ name }) => {
         if (store[name]) {
           return store[name]
         } else {
           return false
         }
       },
+
       log: (opts) => {
         console.info('-->', opts)
       },
@@ -90,9 +100,9 @@ test.serial('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `{"error":"'/gurk' does not exist","code":404}`)
+  t.is(x, `404 Not Found`)
 
-  await wait(6e3)
+  await wait(10e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 
@@ -123,18 +133,22 @@ test.serial('get (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
-        return true
-      },
-      registerByPath: async ({ path }) => {
-        for (const name in store) {
-          if (store[name].path === path) {
-            return store[name]
+      route: ({ name, path }) => {
+        if (path) {
+          for (const name in store) {
+            if (store[name].path === path) {
+              return { name: store[name], observable: store[name].observable }
+            }
           }
+        } else if (name && store[name]) {
+          return { name, observable: store[name].observable }
         }
         return false
       },
-      register: async ({ name }) => {
+      uninstall: async () => {
+        return true
+      },
+      install: async ({ name }) => {
         if (store[name]) {
           return store[name]
         } else {
@@ -156,6 +170,10 @@ test.serial('get (over http)', async (t) => {
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
   t.is(result2, '2')
+
+  const result3 = await (await fetch('http://localhost:9910/hello')).text()
+
+  t.is(result3, '2')
 
   await wait(10e3)
 

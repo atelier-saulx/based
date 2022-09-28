@@ -23,11 +23,20 @@ test.serial('observables', async (t) => {
     functions: {
       memCacheTimeout: 1e3,
       idleTimeout: 1e3,
-      unregister: async (opts) => {
+
+      route: ({ name }) => {
+        if (name && obsStore[name]) {
+          return { name, observable: true }
+        }
+        return false
+      },
+
+      uninstall: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
-      register: async ({ name }) => {
+
+      install: async ({ name }) => {
         if (obsStore[name]) {
           return {
             observable: true,

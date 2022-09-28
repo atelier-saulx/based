@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer, { isHttpClient } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { wait } from '@saulx/utils'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
@@ -32,10 +33,19 @@ const setup = async () => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
+      route: ({ name }) => {
+        if (name && store[name]) {
+          return {
+            name,
+            observable: store[name].observable,
+          }
+        }
+        return false
+      },
+      uninstall: async () => {
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return {
             name,
@@ -55,7 +65,7 @@ const setup = async () => {
 }
 
 test.serial('authorize functions', async (t) => {
-  t.timeout(4000)
+  t.timeout(1000)
 
   const token = 'mock_token'
 
@@ -100,12 +110,14 @@ test.serial('authorize functions', async (t) => {
   )
 })
 
-test.serial.only('authorize observe', async (t) => {
-  t.timeout(4000)
+test.serial('authorize observe', async (t) => {
+  t.timeout(12000)
 
   const token = 'mock_token'
 
   const { coreClient, server } = await setup()
+
+  let counter: NodeJS.Timer
 
   server.functions.update({
     observable: true,
@@ -114,7 +126,7 @@ test.serial.only('authorize observe', async (t) => {
     checksum: 2,
     function: async (_payload: any, update: any) => {
       let cnt = 0
-      const counter = setInterval(() => {
+      counter = setInterval(() => {
         update('UpdatedFn' + ++cnt)
       }, 100)
       return () => {
@@ -152,8 +164,8 @@ test.serial.only('authorize observe', async (t) => {
   await new Promise((resolve) => {
     coreClient.observe(
       'counter',
-      (d) => {
-        console.info({ d })
+      () => {
+        // console.info({ d })
       },
       {
         myQuery: 123,
@@ -166,13 +178,12 @@ test.serial.only('authorize observe', async (t) => {
   })
 
   await coreClient.auth(token)
+  await wait(500)
 
   await new Promise((resolve) => {
-    console.info('go go go')
     coreClient.observe(
       'counter',
       (d) => {
-        console.info({ d })
         resolve(d)
       },
       {
@@ -184,4 +195,83 @@ test.serial.only('authorize observe', async (t) => {
       }
     )
   })
+
+  // @ts-ignore - totally incorrect typescript error...
+  clearInterval(counter)
+})
+
+test.serial('authorize after observe', async (t) => {
+  t.timeout(12000)
+
+  const token = 'mock_token'
+
+  const { coreClient, server } = await setup()
+  let counter: NodeJS.Timer
+
+  server.functions.update({
+    observable: true,
+    name: 'counter',
+    checksum: 2,
+    function: async (_payload: any, update: any) => {
+      let cnt = 0
+      counter = setInterval(() => {
+        update('UpdatedFn' + ++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
+  })
+
+  server.auth.updateConfig({
+    authorize: async (_server, client) => {
+      if (isHttpClient(client)) {
+        if (client.context) {
+          return client.context.authState === token
+        }
+      } else {
+        if (client.ws) {
+          return client.ws.authState === token
+        }
+      }
+      return false
+    },
+  })
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  await coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  await wait(500)
+
+  let receiveCnt = 0
+
+  coreClient.observe(
+    'counter',
+    () => {
+      receiveCnt++
+    },
+    {
+      myQuery: 123,
+    },
+    (err: BasedError) => {
+      t.is(err.basedCode, BasedErrorCode.AuthorizeRejectedError)
+    }
+  )
+
+  await wait(500)
+  t.is(receiveCnt, 0)
+  await coreClient.auth(token)
+  await wait(500)
+
+  // @ts-ignore - totally incorrect typescript error...
+  clearInterval(counter)
+
+  t.true(receiveCnt > 0)
 })
