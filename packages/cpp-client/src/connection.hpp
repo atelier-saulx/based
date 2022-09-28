@@ -51,7 +51,6 @@ class WsConnection {
         std::cout << "> Destroyed WsConnection obj" << std::endl;
     };
     int connect(std::string uri) {
-        std::cout << "running connect" << std::endl;
         m_uri = uri;
         websocketpp::lib::error_code ec;
         ws_client::connection_ptr con = m_endpoint.get_connection(m_uri, ec);
@@ -81,7 +80,6 @@ class WsConnection {
     };
 
     void disconnect() {
-        // this is the same as the destructor: change?
         m_endpoint.stop_perpetual();
 
         if (m_status == ConnectionStatus::OPEN) {
@@ -195,7 +193,7 @@ class WsConnection {
     std::shared_future<void> m_reconnect_future;
     std::function<void()> m_on_open;
     std::function<void(std::string)> m_on_message;
-    // set this when destroying connecion object to prevent reconneciton attempt
+    // set this when destroying the connection object to prevent a reconnection attempt
     bool m_terminating;
     int m_reconnect_attempts;
 };
