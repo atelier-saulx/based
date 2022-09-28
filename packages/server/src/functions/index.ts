@@ -114,7 +114,19 @@ export class BasedFunctions {
   }
 
   route(name?: string, path?: string): BasedFunctionRoute | false {
-    return this.config.route({ server: this.server, name, path })
+    const result = this.config.route({ server: this.server, name, path })
+    if (result && !result.maxPayloadSize) {
+      if (result.observable) {
+        // 50kb
+        result.maxPayloadSize = 50000
+      } else {
+        if (result.observable) {
+          // 250kb
+          result.maxPayloadSize = 250000
+        }
+      }
+    }
+    return result
   }
 
   getFromStore(

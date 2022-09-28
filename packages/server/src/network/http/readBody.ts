@@ -1,16 +1,12 @@
 import { HttpClient } from '../../types'
 import end from './end'
 
-const MAX_BODY_SIZE = 200000 // 200kb
-
 export const readBody = (
   client: HttpClient,
   onData: (data: any | void) => void,
   encoding: string,
-  maxSize = MAX_BODY_SIZE
+  maxSize: number
 ) => {
-  console.info('--->', maxSize)
-
   let data = Buffer.from([])
   client.res.onData(async (chunk, isLast) => {
     if (!client.res) {
@@ -27,6 +23,9 @@ export const readBody = (
       end(client, `{"code":413,"error":"Payload Too Large"}`)
       return
     }
+
+    console.info('reading data from', data.length, maxSize)
+
     if (isLast) {
       const contentType = client.context.contentType
       if (contentType === 'application/json' || !contentType) {

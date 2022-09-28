@@ -4,8 +4,8 @@ import { HttpClient } from '../../types'
 import { httpFunction } from './function'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
-import { sendError } from './sendError'
 import { readBody } from './readBody'
+import { sendError } from './sendError'
 
 let clientId = 0
 
@@ -72,15 +72,13 @@ export const httpHandler = (
   const method = req.getMethod()
   const incomingEncoding = req.getHeader('content-encoding')
   const encoding = req.getHeader('accept-encoding')
-  const contentType = req.getHeader('content-type')
-  const authorization = req.getHeader('authorization')
 
   const client: HttpClient = {
     res,
     req,
     context: {
-      authorization,
-      contentType,
+      authorization: req.getHeader('authorization'),
+      contentType: req.getHeader('content-type'),
       query: req.getQuery(),
       ua: req.getHeader('user-agent'),
       ip,
@@ -88,19 +86,20 @@ export const httpHandler = (
     },
   }
 
-  // only allowed headers
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  // maybe a bit more specific
+  // only allowed headers
   client.res.writeHeader('Access-Control-Allow-Headers', '*')
 
   const name = route.name
 
   if (route.observable === true) {
+    if (route.stream) {
+      sendError(client, 'Cannot stream to observable functions', 400)
+      return
+    }
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-
-    // can allready check before reading the whole body...
     if (method === 'post') {
       readBody(
         client,
@@ -121,10 +120,10 @@ export const httpHandler = (
         checksum
       )
     }
-    // never stream to observable!
   } else {
     if (route.stream === true) {
       // only for streams
+      //   fix this nice
     } else {
       if (method === 'post') {
         readBody(
@@ -146,11 +145,5 @@ export const httpHandler = (
         )
       }
     }
-    // this is an fn
   }
-
-  console.info('request go go go')
-  // make it different
-
-  sendError(client, 'Bad request')
 }

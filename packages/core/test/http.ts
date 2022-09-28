@@ -45,7 +45,10 @@ test.serial.only('functions (over http)', async (t) => {
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
-              return { name: store[name], observable: store[name].observable }
+              return {
+                name: store[name].name,
+                observable: store[name].observable,
+              }
             }
           }
         } else if (name && store[name]) {
@@ -97,9 +100,9 @@ test.serial.only('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `{"error":"'/gurk' does not exist","code":404}`)
+  t.is(x, `404 Not Found`)
 
-  await wait(6e3)
+  await wait(10e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 
