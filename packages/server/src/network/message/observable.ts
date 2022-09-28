@@ -5,6 +5,42 @@ import { create, unsubscribe, destroy, subscribe } from '../../observable'
 import { sendError, BasedErrorCode } from '../../error'
 import { WebsocketClient } from '../../types'
 
+export const enableSubscribe = (
+  server: BasedServer,
+  client: WebsocketClient,
+  id: number,
+  checksum: number,
+  name: string,
+  payload: any
+) => {
+  client.ws.subscribe(String(id))
+  client.ws.obs.add(id)
+
+  if (server.activeObservablesById.has(id)) {
+    subscribe(server, id, checksum, client)
+  } else {
+    server.functions
+      .get(name)
+      .then((spec) => {
+        if (spec && isObservableFunctionSpec(spec)) {
+          const obs = create(server, name, id, payload)
+          if (!client.ws?.obs.has(id)) {
+            if (obs.clients.size === 0) {
+              destroy(server, id)
+            }
+          } else {
+            subscribe(server, id, checksum, client)
+          }
+        } else {
+          console.error('No function for you', name)
+        }
+      })
+      .catch((err) => {
+        console.error('fn does not exist', err)
+      })
+  }
+}
+
 export const subscribeMessage = (
   arr: Uint8Array,
   start: number,
@@ -26,6 +62,7 @@ export const subscribeMessage = (
   }
 
   if (client.ws?.obs.has(id)) {
+    console.log('sub already exists')
     // allready subscribed to this id
     return true
   }
@@ -43,6 +80,7 @@ export const subscribeMessage = (
       }
 
       if (!ok) {
+        client.ws.unauthorizedObs.add({ id, checksum, name, payload })
         sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
           observableId: id,
@@ -50,32 +88,7 @@ export const subscribeMessage = (
         return false
       }
 
-      client.ws.subscribe(String(id))
-      client.ws.obs.add(id)
-
-      if (server.activeObservablesById.has(id)) {
-        subscribe(server, id, checksum, client)
-      } else {
-        server.functions
-          .get(name)
-          .then((spec) => {
-            if (spec && isObservableFunctionSpec(spec)) {
-              const obs = create(server, name, id, payload)
-              if (!client.ws?.obs.has(id)) {
-                if (obs.clients.size === 0) {
-                  destroy(server, id)
-                }
-              } else {
-                subscribe(server, id, checksum, client)
-              }
-            } else {
-              console.error('No function for you', name)
-            }
-          })
-          .catch((err) => {
-            console.error('fn does not exist', err)
-          })
-      }
+      enableSubscribe(server, client, id, checksum, name, payload)
     })
     .catch((err) => {
       sendError(client, err, {
