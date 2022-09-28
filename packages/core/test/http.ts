@@ -40,20 +40,26 @@ test.serial('functions (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
-        await wait(1e3)
-        return true
-      },
-      registerByPath: async ({ path }) => {
-        await wait(1e3)
-        for (const name in store) {
-          if (store[name].path === path) {
-            return store[name]
+
+      route: ({ name, path }) => {
+        if (path) {
+          for (const name in store) {
+            if (store[name].path === path) {
+              return { name: store[name], observable: store[name].observable }
+            }
           }
+        } else if (name && store[name]) {
+          return { name }
         }
         return false
       },
-      register: async ({ name }) => {
+
+      uninstall: async () => {
+        await wait(1e3)
+        return true
+      },
+
+      install: async ({ name }) => {
         if (store[name]) {
           return store[name]
         } else {
@@ -123,18 +129,22 @@ test.serial('get (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
-        return true
-      },
-      registerByPath: async ({ path }) => {
-        for (const name in store) {
-          if (store[name].path === path) {
-            return store[name]
+      route: ({ name, path }) => {
+        if (path) {
+          for (const name in store) {
+            if (store[name].path === path) {
+              return { name: store[name], observable: store[name].observable }
+            }
           }
+        } else if (name && store[name]) {
+          return { name, observable: store[name].observable }
         }
         return false
       },
-      register: async ({ name }) => {
+      uninstall: async () => {
+        return true
+      },
+      install: async ({ name }) => {
         if (store[name]) {
           return store[name]
         } else {

@@ -33,10 +33,19 @@ const setup = async () => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
+      route: ({ name }) => {
+        if (name && store[name]) {
+          return {
+            name,
+            observable: store[name].observable,
+          }
+        }
+        return false
+      },
+      uninstall: async () => {
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return {
             name,
@@ -109,6 +118,7 @@ test.serial('authorize observe', async (t) => {
   const { coreClient, server } = await setup()
 
   let counter: NodeJS.Timer
+
   server.functions.update({
     observable: true,
     name: 'counter',
@@ -154,7 +164,7 @@ test.serial('authorize observe', async (t) => {
   await new Promise((resolve) => {
     coreClient.observe(
       'counter',
-      (_d) => {
+      () => {
         // console.info({ d })
       },
       {
@@ -185,6 +195,8 @@ test.serial('authorize observe', async (t) => {
       }
     )
   })
+
+  // @ts-ignore - totally incorrect typescript error...
   clearInterval(counter)
 })
 
@@ -199,7 +211,6 @@ test.serial('authorize after observe', async (t) => {
   server.functions.update({
     observable: true,
     name: 'counter',
-    // memCacheTimeout: 2e3,
     checksum: 2,
     function: async (_payload: any, update: any) => {
       let cnt = 0
@@ -243,7 +254,7 @@ test.serial('authorize after observe', async (t) => {
 
   coreClient.observe(
     'counter',
-    (_d) => {
+    () => {
       receiveCnt++
     },
     {
@@ -258,6 +269,8 @@ test.serial('authorize after observe', async (t) => {
   t.is(receiveCnt, 0)
   await coreClient.auth(token)
   await wait(500)
+
+  // @ts-ignore - totally incorrect typescript error...
   clearInterval(counter)
 
   t.true(receiveCnt > 0)

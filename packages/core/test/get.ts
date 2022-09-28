@@ -23,11 +23,25 @@ test.serial('get', async (t) => {
     functions: {
       memCacheTimeout: 0,
       idleTimeout: 1e3,
-      unregister: async (opts) => {
+
+      route: ({ name }) => {
+        if (name === 'counter-cached') {
+          return {
+            observable: true,
+            name: 'counter-cached',
+          }
+        }
+        if (name && obsStore[name]) {
+          return { name, observable: true }
+        }
+        return false
+      },
+
+      uninstall: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (name === 'counter-cached') {
           return {
             observable: true,

@@ -1,7 +1,7 @@
 import uws from '@based/uws'
 // import nodeStream from './stream'
-import { HttpClient } from '../../../../types'
-import end from '../../end'
+import { HttpClient } from '../../types'
+import end from './end'
 
 export const invalidReqNoCors = (res: uws.HttpResponse) => {
   res.aborted = true
@@ -15,6 +15,7 @@ export type StreamOptions = {
   size: number
 }
 
+// setting maybe from function def
 const MAX_BODY_SIZE = 4 ** 20 // 2MB
 
 export const readStream = (

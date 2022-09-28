@@ -23,10 +23,18 @@ const setup = async () => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
+      route: ({ name }) => {
+        if (name && store[name]) {
+          return {
+            name,
+          }
+        }
+        return false
+      },
+      uninstall: async () => {
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return {
             name,
@@ -44,6 +52,7 @@ const setup = async () => {
   })
   return { coreClient, server }
 }
+
 test.serial('auth string authState', async (t) => {
   t.timeout(4000)
 

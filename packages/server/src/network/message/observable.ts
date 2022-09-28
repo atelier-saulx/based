@@ -20,7 +20,7 @@ export const enableSubscribe = (
     subscribe(server, id, checksum, client)
   } else {
     server.functions
-      .get(name)
+      .install(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
           const obs = create(server, name, id, payload)
@@ -61,8 +61,13 @@ export const subscribeMessage = (
     return false
   }
 
+  const route = server.functions.route(name)
+
+  if (!route || !route.observable) {
+    return false
+  }
+
   if (client.ws?.obs.has(id)) {
-    console.log('sub already exists')
     // allready subscribed to this id
     return true
   }
@@ -117,6 +122,10 @@ export const unsubscribeMessage = (
 
   if (!client.ws) {
     return
+  }
+
+  if (!client.ws.obs.has(id)) {
+    return true
   }
 
   client.ws.unsubscribe(String(id))

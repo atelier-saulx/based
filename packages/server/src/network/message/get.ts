@@ -55,6 +55,12 @@ export const getMessage = (
     return false
   }
 
+  const route = server.functions.route(name)
+
+  if (!route || !route.observable) {
+    return false
+  }
+
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
     isDeflate
@@ -80,7 +86,7 @@ export const getMessage = (
     }
   } else {
     server.functions
-      .get(name)
+      .install(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
           const obs = create(server, name, id, payload)

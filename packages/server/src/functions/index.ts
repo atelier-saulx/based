@@ -1,5 +1,6 @@
 import type { BasedServer } from '../server'
 import {
+  BasedFunctionRouteConfig,
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
@@ -30,7 +31,7 @@ export class BasedFunctions {
     [name: string]: BasedFunctionSpec
   } = {}
 
-  beingUnregisterd: {
+  beingUninstalled: {
     [name: string]: boolean
   } = {}
 
@@ -41,13 +42,13 @@ export class BasedFunctions {
     }
   }
 
-  unregisterLoop() {
+  uninstallLoop() {
     this.unregisterTimeout = setTimeout(async () => {
       const q = []
       for (const name in this.functions) {
         const spec = this.functions[name]
         if (fnIsTimedOut(spec)) {
-          q.push(this.unregister(name, spec))
+          q.push(this.uninstall(name, spec))
         }
       }
       for (const name in this.observables) {
@@ -55,11 +56,11 @@ export class BasedFunctions {
         if (this.server.activeObservables[name]) {
           updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
-          q.push(this.unregister(name, spec))
+          q.push(this.uninstall(name, spec))
         }
       }
       await Promise.all(q)
-      this.unregisterLoop()
+      this.uninstallLoop()
     }, 3e3)
   }
 
@@ -86,10 +87,10 @@ export class BasedFunctions {
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
-    this.unregisterLoop()
+    this.uninstallLoop()
   }
 
-  async get(
+  async install(
     name: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
     let spec = this.getFromStore(name)
@@ -97,7 +98,7 @@ export class BasedFunctions {
       return spec
     }
 
-    spec = await this.config.register({
+    spec = await this.config.install({
       server: this.server,
       name,
     })
@@ -112,26 +113,8 @@ export class BasedFunctions {
     return this.paths[path]
   }
 
-  async getByPath(
-    path: string
-  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
-    if (!this.config.registerByPath) {
-      return false
-    }
-    const name = this.getNameFromPath(path)
-    if (name) {
-      return this.get(name)
-    } else {
-      const spec = await this.config.registerByPath({
-        server: this.server,
-        path,
-      })
-      if (spec) {
-        this.update(spec)
-        return this.getFromStore(spec.name)
-      }
-      return false
-    }
+  route(name?: string, path?: string): BasedFunctionRouteConfig | false {
+    return this.config.route({ server: this.server, name, path })
   }
 
   getFromStore(
@@ -139,10 +122,10 @@ export class BasedFunctions {
   ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
     const spec = this.observables[name] || this.functions[name]
     if (spec) {
-      if (this.beingUnregisterd[name]) {
-        console.info('getFromStore is being unreg', name)
+      if (this.beingUninstalled[name]) {
+        console.info('getFromStore is being uninstalled', name)
 
-        delete this.beingUnregisterd[name]
+        delete this.beingUninstalled[name]
       }
 
       updateTimeoutCounter(spec)
@@ -211,27 +194,27 @@ export class BasedFunctions {
     return false
   }
 
-  async unregister(
+  async uninstall(
     name: string,
     spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
   ): Promise<boolean> {
-    if (this.beingUnregisterd[name]) {
+    if (this.beingUninstalled[name]) {
       console.error('Allready being unregistered...', name)
     }
     if (!spec && spec !== false) {
       spec = this.getFromStore(name)
     }
     if (spec) {
-      this.beingUnregisterd[name] = true
+      this.beingUninstalled[name] = true
       if (
-        await this.config.unregister({
+        await this.config.uninstall({
           server: this.server,
           function: spec,
           name,
         })
       ) {
-        if (this.beingUnregisterd[name]) {
-          delete this.beingUnregisterd[name]
+        if (this.beingUninstalled[name]) {
+          delete this.beingUninstalled[name]
           return this.remove(name)
         } else {
           console.info('got requested while being unregistered', name)

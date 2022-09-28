@@ -20,11 +20,19 @@ test.serial('mem tests', async (t) => {
     functions: {
       memCacheTimeout: 0,
       idleTimeout: 1e3,
-      unregister: async (opts) => {
+
+      route: ({ name }) => {
+        if (name && store[name]) {
+          return { name, observable: store[name].observable }
+        }
+        return false
+      },
+
+      uninstall: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return { ...store[name] }
         } else {

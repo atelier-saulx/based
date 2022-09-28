@@ -2,7 +2,6 @@ import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
-import { wait } from '@saulx/utils'
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
@@ -27,10 +26,19 @@ const setup = async (t: ExecutionContext) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      unregister: async () => {
+      route: ({ name }) => {
+        if (name && store[name]) {
+          return {
+            name,
+            observable: name === 'counter',
+          }
+        }
+        return false
+      },
+      uninstall: async () => {
         return true
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return {
             observable: name === 'counter',
@@ -76,7 +84,7 @@ test.serial('function authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorize: async (_server) => {
+    authorize: async () => {
       throw new Error('Error inside authrorize')
     },
   })
@@ -98,7 +106,7 @@ test.serial('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorize: async (_server) => {
+    authorize: async () => {
       throw new Error('Error inside authrorize')
     },
   })
@@ -114,7 +122,7 @@ test.serial('observable authorize error', async (t) => {
     coreClient.observe(
       'counter',
       (v) => {
-        console.log({ v })
+        console.info({ v })
       },
       {},
       (err) => {
