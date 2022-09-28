@@ -102,7 +102,7 @@ test.serial('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `404 Not Found`)
+  t.is(x, `{"error":"Not found","code":404}`)
 
   await wait(10e3)
 
@@ -111,7 +111,7 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('get (over http)', async (t) => {
+test.serial('get (over http)', async (t) => {
   const store = {
     hello: {
       path: '/counter',
@@ -136,8 +136,6 @@ test.serial.only('get (over http)', async (t) => {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       route: ({ name, path }) => {
-        console.info(name, path)
-
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
