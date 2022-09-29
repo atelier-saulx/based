@@ -122,7 +122,8 @@ export const getMessage = (
       }
     })
     .catch((err) => {
-      console.log('>>>>> errr', err)
+      // send error?
+      console.info('>>>>>  auth errr', err)
     })
 
   return true
