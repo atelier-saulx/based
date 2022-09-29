@@ -281,6 +281,13 @@ export const incoming = async (
             handlers.onError(error)
           }
         }
+        if (client.getState.has(payload.observableId)) {
+          const get = client.getState.get(payload.observableId)
+          for (const [, reject] of get) {
+            reject(error)
+          }
+          client.getState.delete(payload.observableId)
+        }
       }
     }
     // ---------------------------------
