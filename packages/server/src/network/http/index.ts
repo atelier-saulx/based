@@ -1,11 +1,13 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../types'
+import { BasedFunctionRoute, HttpClient } from '../../types'
 import { httpFunction } from './function'
+import { httpStreamFunction } from './streamFunction'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
-import { sendError } from './sendError'
+import { sendHttpError, sendErrorRaw } from './send'
+import { authorizeRequest } from './authorize'
 
 let clientId = 0
 
@@ -28,6 +30,25 @@ let clientId = 0
 //   'pragma',
 // ]
 
+const handleRequest = (
+  server: BasedServer,
+  method: string,
+  client: HttpClient,
+  route: BasedFunctionRoute,
+  authorized: (payload: any) => void
+) => {
+  if (method === 'post') {
+    readBody(
+      client,
+      (payload) => authorizeRequest(server, client, payload, route, authorized),
+      route.maxPayloadSize
+    )
+  } else {
+    const payload = parseQuery(client.context.query)
+    authorizeRequest(server, client, payload, route, authorized)
+  }
+}
+
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
@@ -39,17 +60,12 @@ export const httpHandler = (
     client.req = null
   })
 
-  // ip is 39 bytes - (adds 312kb for 8k clients to mem)
   const ip =
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   if (server.blocked.has(ip)) {
-    res.writeStatus(`429 Too Many Requests`)
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-    res.writeHeader('Content-Type', 'text/plain')
-    res.end('Too Many Requests')
+    sendErrorRaw(res, 'Too Many Requests', 429)
     return
   }
 
@@ -59,91 +75,81 @@ export const httpHandler = (
   const route = server.functions.route(path[1], url)
 
   if (route === false) {
-    res.writeStatus(`404 Not Found`)
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-    res.writeHeader('Content-Type', 'text/plain')
-    res.end('404 Not Found')
+    sendErrorRaw(res, 'Not found', 404)
     return
   }
 
   // add all headers in context that are specialy defined for the route
-
   const method = req.getMethod()
-  const incomingEncoding = req.getHeader('content-encoding')
-  const encoding = req.getHeader('accept-encoding')
 
   const client: HttpClient = {
     res,
     req,
     context: {
-      authorization: req.getHeader('authorization'),
-      contentType: req.getHeader('content-type'),
       query: req.getQuery(),
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
+      headers: {
+        authorization: req.getHeader('authorization'),
+        'content-type': req.getHeader('content-type'),
+        'content-encoding': req.getHeader('content-encoding'),
+        encoding: req.getHeader('accept-encoding'),
+      },
     },
+  }
+
+  const len = req.getHeader('content-length')
+  // @ts-ignore
+  if (len && !isNaN(len)) {
+    client.context.headers['content-length'] = Number(len)
+  }
+
+  if (route.headers) {
+    for (const header of route.headers) {
+      const v = req.getHeader(header)
+      if (v) {
+        client.context[header] = v
+      }
+    }
   }
 
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
   // only allowed headers
   client.res.writeHeader('Access-Control-Allow-Headers', '*')
 
-  const name = route.name
-
   if (route.observable === true) {
     if (route.stream) {
-      sendError(client, 'Cannot stream to observable functions', 400)
+      sendHttpError(client, 'Cannot stream to observable functions', 400)
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-    if (method === 'post') {
-      readBody(
-        client,
-        (d) => {
-          httpGet(name, encoding, d, client, server, checksum)
-          // go time
-        },
-        incomingEncoding,
-        route.maxPayloadSize
-      )
-    } else {
-      httpGet(
-        name,
-        encoding,
-        parseQuery(client.context.query),
-        client,
-        server,
-        checksum
-      )
-    }
+    handleRequest(server, method, client, route, (payload) =>
+      httpGet(route, payload, client, server, checksum)
+    )
   } else {
     if (route.stream === true) {
-      // only for streams
-      //   fix this nice
-    } else {
-      if (method === 'post') {
-        readBody(
-          client,
-          (d) => {
-            httpFunction(name, encoding, d, client, server)
-            // go time
-          },
-          incomingEncoding,
-          route.maxPayloadSize
-        )
-      } else {
-        httpFunction(
-          name,
-          encoding,
-          parseQuery(client.context.query),
-          client,
-          server
-        )
+      if (method !== 'post') {
+        sendHttpError(client, 'Method not allowed', 405)
+        return
       }
+      if (!client.context.headers['content-length']) {
+        // zero is also not allowed
+        sendHttpError(client, 'Length required', 411)
+        return
+      }
+      httpStreamFunction(
+        server,
+        client,
+        parseQuery(client.context.query),
+        route
+      )
+    } else {
+      handleRequest(server, method, client, route, (payload) =>
+        httpFunction(route, payload, client, server)
+      )
     }
   }
 }

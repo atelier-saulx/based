@@ -120,8 +120,9 @@ export class BasedFunctions {
         // 50kb
         result.maxPayloadSize = 50000
       } else {
-        if (result.observable) {
-          // 250kb
+        if (result.stream) {
+          result.maxPayloadSize = -1
+        } else {
           result.maxPayloadSize = 250000
         }
       }

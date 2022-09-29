@@ -1,9 +1,9 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { HttpClient, ActiveObservable } from '../../types'
+import { HttpClient, ActiveObservable, BasedFunctionRoute } from '../../types'
 import end from './end'
 import { compress } from './compress'
-import { sendError } from './sendError'
+import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
@@ -55,7 +55,7 @@ const sendGetResponse = (
       end(client)
     }
   } catch (err) {
-    sendError(client, err.message)
+    sendHttpError(client, err.message)
   }
 
   if (obs.clients.size === 0) {
@@ -64,13 +64,19 @@ const sendGetResponse = (
 }
 
 export const httpGet = (
-  name: string,
-  encoding: string,
+  route: BasedFunctionRoute,
   payload: any,
   client: HttpClient,
   server: BasedServer,
   checksum: number
 ): void => {
+  if (!client.res) {
+    return
+  }
+
+  const encoding = client.context.encoding
+  const name = route.name
+
   server.functions
     .install(name)
     .then((spec) => {
@@ -78,59 +84,42 @@ export const httpGet = (
         return
       }
       if (spec && isObservableFunctionSpec(spec)) {
-        server.auth.config
-          .authorize(server, client, 'observe', name, payload)
-          .then((ok) => {
-            if (!client.res) {
-              return
-            }
-            if (!ok) {
-              sendError(
-                client,
-                `${name} unauthorized request`,
-                401,
-                'Unauthorized'
-              )
-            } else {
-              const id = hashObjectIgnoreKeyOrder([name, payload])
+        const id = hashObjectIgnoreKeyOrder([name, payload])
 
-              if (server.activeObservablesById.has(id)) {
-                const obs = server.activeObservablesById.get(id)
-                if (obs.beingDestroyed) {
-                  clearTimeout(obs.beingDestroyed)
-                  obs.beingDestroyed = null
-                }
-                if (obs.cache) {
-                  sendGetResponse(server, id, obs, encoding, checksum, client)
-                } else {
-                  if (!obs.onNextData) {
-                    obs.onNextData = new Set()
-                  }
-                  obs.onNextData.add(() => {
-                    sendGetResponse(server, id, obs, encoding, checksum, client)
-                  })
-                }
-              } else {
-                const obs = create(server, name, id, payload)
-                if (!obs.onNextData) {
-                  obs.onNextData = new Set()
-                }
-                obs.onNextData.add(() => {
-                  sendGetResponse(server, id, obs, encoding, checksum, client)
-                })
-              }
+        if (server.activeObservablesById.has(id)) {
+          const obs = server.activeObservablesById.get(id)
+          if (obs.beingDestroyed) {
+            clearTimeout(obs.beingDestroyed)
+            obs.beingDestroyed = null
+          }
+          if (obs.cache) {
+            sendGetResponse(server, id, obs, encoding, checksum, client)
+          } else {
+            if (!obs.onNextData) {
+              obs.onNextData = new Set()
             }
+            obs.onNextData.add(() => {
+              sendGetResponse(server, id, obs, encoding, checksum, client)
+            })
+          }
+        } else {
+          const obs = create(server, name, id, payload)
+          if (!obs.onNextData) {
+            obs.onNextData = new Set()
+          }
+          obs.onNextData.add(() => {
+            sendGetResponse(server, id, obs, encoding, checksum, client)
           })
-          .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
+        }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendError(
+        sendHttpError(
           client,
           `function is not observable - use /function/${name} instead`,
           404,
           'Not Found'
         )
       } else {
-        sendError(
+        sendHttpError(
           client,
           `observable function does not exist ${name}`,
           404,
@@ -139,7 +128,7 @@ export const httpGet = (
       }
     })
     .catch(() =>
-      sendError(
+      sendHttpError(
         client,
         `observable function does not exist ${name}`,
         404,

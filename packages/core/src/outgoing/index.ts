@@ -36,6 +36,10 @@ export const drainQueue = (client: BasedCoreClient) => {
     const drainOutgoing = () => {
       client.drainInProgress = false
 
+      if (!client.connected) {
+        return
+      }
+
       if (
         client.functionQueue.length ||
         client.observeQueue.size ||

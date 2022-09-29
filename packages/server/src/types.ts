@@ -7,6 +7,7 @@ export type WebsocketClient = {
         query: string
         ua: string
         ip: string
+        authState?: any
         id: number
         obs: Set<number>
         unauthorizedObs: Set<{
@@ -24,7 +25,14 @@ export type HttpClient = {
   req: uws.HttpRequest | null
   context:
     | ({
-        authorization: string
+        authState?: any
+        headers: {
+          'content-length'?: number
+          authorization?: string
+          'content-type'?: string
+          'content-encoding'?: string
+          encoding?: string
+        } & { [key: string]: string }
         ua: string
         ip: string
         id: number
@@ -50,7 +58,6 @@ export type AuthConfig = {
 export type Authorize = (
   server: BasedServer,
   client: WebsocketClient | HttpClient,
-  type: 'observe' | 'function',
   name: string,
   payload?: any
 ) => Promise<boolean>

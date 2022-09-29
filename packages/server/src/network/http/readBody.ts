@@ -1,31 +1,22 @@
 import { HttpClient } from '../../types'
-import end from './end'
+import zlib from 'node:zlib'
+import { sendHttpError } from './send'
 
 export const readBody = (
   client: HttpClient,
   onData: (data: any | void) => void,
-  encoding: string,
   maxSize: number
 ) => {
+  if (!client.res) {
+    return
+  }
+
+  const contentEncoding = client.context.contentEncoding
   let data = Buffer.from([])
-  client.res.onData(async (chunk, isLast) => {
-    if (!client.res) {
-      return
-    }
+  let size = 0
 
-    // if encoding lets defalte!
-
-    data = Buffer.concat([data, Buffer.from(chunk)])
-    if (data.length > maxSize) {
-      client.res.writeStatus('413 Payload Too Large')
-      client.res.writeHeader('Access-Control-Allow-Origin', '*')
-      client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-      end(client, `{"code":413,"error":"Payload Too Large"}`)
-      return
-    }
-
-    console.info('reading data from', data.length, maxSize)
-
+  const readData = (chunk: Buffer, isLast: boolean) => {
+    data = Buffer.concat([data, chunk])
     if (isLast) {
       const contentType = client.context.contentType
       if (contentType === 'application/json' || !contentType) {
@@ -36,10 +27,7 @@ export const readBody = (
           onData(params)
         } catch (e) {
           console.error(e, str)
-          client.res.writeStatus('400 Invalid Request')
-          client.res.writeHeader('Access-Control-Allow-Origin', '*')
-          client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-          end(client, `{"code":400,"error":"Invalid payload"}`)
+          sendHttpError(client, 'Invalid Payload', 400)
         }
       } else if (
         contentType.startsWith('text') ||
@@ -50,5 +38,54 @@ export const readBody = (
         onData(data)
       }
     }
-  })
+  }
+
+  if (contentEncoding) {
+    /*
+    Content-Encoding: gzip
+    Content-Encoding: deflate
+    Content-Encoding: br
+    */
+    let uncompressStream: zlib.Deflate | zlib.Gunzip
+    if (contentEncoding === 'deflate') {
+      uncompressStream = zlib.createInflate()
+    } else if (contentEncoding === 'gzip') {
+      uncompressStream = zlib.createGunzip()
+    } else if (contentEncoding === 'br') {
+      uncompressStream = zlib.createBrotliDecompress()
+    }
+
+    if (uncompressStream) {
+      let last = false
+      client.res.onData((c, isLast) => {
+        size += c.byteLength
+        if (size > maxSize) {
+          sendHttpError(client, 'Payload Too Large', 413)
+          uncompressStream.destroy()
+          return
+        }
+        const buf = Buffer.from(c)
+        last = isLast
+        if (isLast) {
+          uncompressStream.end(buf)
+        } else {
+          uncompressStream.push(buf)
+        }
+      })
+      uncompressStream.on('data', (d) => {
+        readData(d, last)
+      })
+    } else {
+      sendHttpError(client, 'Unsupported Content-Encoding', 400)
+    }
+  } else {
+    client.res.onData((c, isLast) => {
+      size += c.byteLength
+      if (size > maxSize) {
+        sendHttpError(client, 'Payload Too Large', 413)
+        return
+      }
+      readData(Buffer.from(c), isLast)
+    })
+  }
 }
