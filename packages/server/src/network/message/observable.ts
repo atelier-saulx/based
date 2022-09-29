@@ -32,11 +32,17 @@ export const enableSubscribe = (
             subscribe(server, id, checksum, client)
           }
         } else {
-          console.error('No function for you', name)
+          sendError(client, 'Function not found', {
+            basedCode: BasedErrorCode.AuthorizeError,
+            observableId: id,
+          })
         }
       })
-      .catch((err) => {
-        console.error('fn does not exist', err)
+      .catch((_err) => {
+        sendError(client, 'Function dos not exist', {
+          basedCode: BasedErrorCode.AuthorizeError,
+          observableId: id,
+        })
       })
   }
 }

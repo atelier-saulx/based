@@ -113,11 +113,17 @@ export const getMessage = (
                 })
               }
             } else {
-              console.error('No function for you', name)
+              sendError(client, 'Function not found', {
+                basedCode: BasedErrorCode.AuthorizeError,
+                observableId: id,
+              })
             }
           })
           .catch((err) => {
-            console.error('fn does not exist', err)
+            sendError(client, err, {
+              basedCode: BasedErrorCode.AuthorizeError,
+              observableId: id,
+            })
           })
       }
     })
