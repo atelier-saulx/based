@@ -2,6 +2,7 @@ import uws from '@based/uws'
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, HttpClient } from '../../types'
 import { httpFunction } from './function'
+import { httpStreamFunction } from './streamFunction'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
@@ -106,17 +107,31 @@ export const httpHandler = (
     res,
     req,
     context: {
-      authorization: req.getHeader('authorization'),
-      contentType: req.getHeader('content-type'),
-      contentEncoding: req.getHeader('content-encoding'),
-      encoding: req.getHeader('accept-encoding'),
       query: req.getQuery(),
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
-      // custom headers
-      headers: {},
+      headers: {
+        authorization: req.getHeader('authorization'),
+        'content-type': req.getHeader('content-type'),
+        'content-encoding': req.getHeader('content-encoding'),
+        encoding: req.getHeader('accept-encoding'),
+      },
     },
+  }
+
+  const len = req.getHeader('content-length')
+  if (len && !isNaN(len)) {
+    client.context.headers['content-length'] = Number(len)
+  }
+
+  if (route.headers) {
+    for (const header of route.headers) {
+      const v = req.getHeader(header)
+      if (v) {
+        client.context[header] = v
+      }
+    }
   }
 
   client.res.writeHeader('Access-Control-Allow-Origin', '*')
@@ -138,9 +153,14 @@ export const httpHandler = (
     )
   } else {
     if (route.stream === true) {
-      // start with authorize...
-      // only for streams
-      //   fix this nice
+      if (method !== 'post') {
+        sendError(client, 'Method not allowed', 405)
+        return
+      }
+      // add DataStewam
+      authorizeRequest(server, client, undefined, route, () => {
+        httpStreamFunction(server, client, route)
+      })
     } else {
       handleRequest(server, method, client, route, (payload) =>
         httpFunction(name, payload, client, server)
