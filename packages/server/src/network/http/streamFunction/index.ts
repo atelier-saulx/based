@@ -26,6 +26,7 @@ export const httpStreamFunction = (
 
   const streamPayload = { payload, stream }
 
+  // if de-authorized destroy stream! (add it to context!)
   authorizeRequest(server, client, streamPayload, route, (payload) => {
     httpFunction(route, payload, client, server)
   })

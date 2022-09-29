@@ -45,7 +45,7 @@ export const functionMessage = (
       if (!ok) {
         sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
-          statusCode: StatusCode.Forbidden,
+          // statusCode: StatusCode.Forbidden,
           requestId: reqId,
         })
         return false
@@ -67,7 +67,7 @@ export const functionMessage = (
               .catch((err) => {
                 sendError(client, err, {
                   basedCode: BasedErrorCode.FunctionError,
-                  statusCode: StatusCode.InternalServerError,
+                  // statusCode: StatusCode.InternalServerError,
                   requestId: reqId,
                 })
               })
@@ -90,7 +90,7 @@ export const functionMessage = (
     .catch((err) => {
       sendError(client, err, {
         basedCode: BasedErrorCode.AuthorizeError,
-        statusCode: StatusCode.InternalServerError,
+        // statusCode: StatusCode.InternalServerError,
         requestId: reqId,
       })
       return false
