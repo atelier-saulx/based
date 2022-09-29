@@ -91,7 +91,7 @@ export const httpHandler = (
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   if (server.blocked.has(ip)) {
-    sendErrorRaw(res, 'Too Many Requests', 429, 'Too Many Requests')
+    sendErrorRaw(res, 'Too Many Requests', 429)
     return
   }
 
@@ -101,7 +101,7 @@ export const httpHandler = (
   const route = server.functions.route(path[1], url)
 
   if (route === false) {
-    sendErrorRaw(res, 'Not found', 404, 'Not found')
+    sendErrorRaw(res, 'Not found', 404)
     return
   }
 
