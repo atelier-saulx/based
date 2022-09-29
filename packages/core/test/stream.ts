@@ -1,6 +1,6 @@
 import test from 'ava'
 import createServer from '@based/server'
-import { wait } from '@saulx/utils'
+import { readStream, wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
 // contentEncoding will be respected
@@ -20,12 +20,10 @@ test.serial('functions (over http + stream)', async (t) => {
   const functionSpecs = {
     hello: {
       checksum: 1,
-      function: async ({ stream, client }) => {
-        console.info('STREAM coming', client)
-        stream.on('data', (c) => {
-          console.info(c)
-        })
-        return 'bla'
+      function: async ({ stream }) => {
+        const buf = await readStream(stream)
+        const x = JSON.parse(buf.toString())
+        return x
       },
       ...routes.hello,
     },
@@ -66,7 +64,7 @@ test.serial('functions (over http + stream)', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 100000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
@@ -79,9 +77,9 @@ test.serial('functions (over http + stream)', async (t) => {
       },
       body: JSON.stringify(bigBod),
     })
-  ).text()
+  ).json()
 
-  console.info(result)
+  t.deepEqual(bigBod, result)
 
   await wait(10e3)
 

@@ -1,9 +1,9 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { HttpClient, ActiveObservable } from '../../types'
+import { HttpClient, ActiveObservable, BasedFunctionRoute } from '../../types'
 import end from './end'
 import { compress } from './compress'
-import { sendError } from './sendError'
+import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
@@ -55,7 +55,7 @@ const sendGetResponse = (
       end(client)
     }
   } catch (err) {
-    sendError(client, err.message)
+    sendHttpError(client, err.message)
   }
 
   if (obs.clients.size === 0) {
@@ -64,7 +64,7 @@ const sendGetResponse = (
 }
 
 export const httpGet = (
-  name: string,
+  route: BasedFunctionRoute,
   payload: any,
   client: HttpClient,
   server: BasedServer,
@@ -75,6 +75,7 @@ export const httpGet = (
   }
 
   const encoding = client.context.encoding
+  const name = route.name
 
   server.functions
     .install(name)
@@ -111,14 +112,14 @@ export const httpGet = (
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendError(
+        sendHttpError(
           client,
           `function is not observable - use /function/${name} instead`,
           404,
           'Not Found'
         )
       } else {
-        sendError(
+        sendHttpError(
           client,
           `observable function does not exist ${name}`,
           404,
@@ -127,7 +128,7 @@ export const httpGet = (
       }
     })
     .catch(() =>
-      sendError(
+      sendHttpError(
         client,
         `observable function does not exist ${name}`,
         404,

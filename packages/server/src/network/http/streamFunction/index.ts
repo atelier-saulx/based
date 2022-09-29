@@ -1,38 +1,33 @@
-// import end from '../end'
-// import { DataStream } from './DataStre
-// import stream from './stream'
+import createDataStream from './stream'
 import { BasedServer } from '../../../server'
-import { sendError } from '../sendError'
+import { sendHttpError } from '../send'
 import { BasedFunctionRoute, HttpClient } from '../../../types'
-
-export type StreamOptions = {
-  type: string
-  size: number
-}
+import { authorizeRequest } from '../authorize'
+import { httpFunction } from '../function'
 
 export const httpStreamFunction = (
   server: BasedServer,
   client: HttpClient,
+  payload: any,
   route: BasedFunctionRoute
 ) => {
-  // route config
-  // const type = req.getHeader('content-type')
-  // if (type === 'multipart/form-data') {
-  //   // formStream(server, res)
-  //   return
-  // }
-  // const size = Number(req.getHeader('content-length'))
-  // if (!type) {
-  //   sendError(res)
-  //   return
-  // }
-  // const opts: StreamOptions = {
-  //   size,
-  //   type,
-  // }
-  // if (!opts.size) {
-  //   sendError(res)
-  //   return
-  // }
-  // stream(res, size)
+  if (!client.res) {
+    return
+  }
+
+  const size = client.context.headers['content-length']
+
+  if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
+    sendHttpError(client, 'Payload Too Large', 413)
+    return
+  }
+
+  const stream = createDataStream(client, size)
+
+  const streamPayload = { payload, stream }
+
+  // if de-authorized destroy stream! (add it to context!)
+  authorizeRequest(server, client, streamPayload, route, (payload) => {
+    httpFunction(route, payload, client, server)
+  })
 }
