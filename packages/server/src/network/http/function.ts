@@ -1,35 +1,10 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../types'
-import end from './end'
-import { compress } from './compress'
-import { sendError } from './sendError'
-
-const sendResponse = (client: HttpClient, encoding: string, result: any) => {
-  if (!client.res) {
-    return
-  }
-
-  client.res.writeStatus('200 OK')
-
-  // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
-  client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-
-  let parsed: string
-
-  if (typeof result === 'string') {
-    client.res.writeHeader('Content-Type', 'text/plain')
-    parsed = result
-  } else {
-    client.res.writeHeader('Content-Type', 'application/json')
-    parsed = JSON.stringify(result)
-  }
-
-  compress(client, parsed, encoding).then((p) => end(client, p))
-}
+import { BasedFunctionRoute, HttpClient } from '../../types'
+import { sendHttpError, sendHttpResponse } from './send'
 
 export const httpFunction = (
-  name: string,
+  route: BasedFunctionRoute,
   payload: any,
   client: HttpClient,
   server: BasedServer
@@ -38,7 +13,7 @@ export const httpFunction = (
     return
   }
 
-  const encoding = client.context.encoding
+  const name = route.name
 
   server.functions
     .install(name)
@@ -54,7 +29,7 @@ export const httpFunction = (
               return
             }
             if (!ok) {
-              sendError(
+              sendHttpError(
                 client,
                 `${name} unauthorized request`,
                 401,
@@ -73,29 +48,36 @@ export const httpFunction = (
                     ) {
                       return
                     }
-                    sendResponse(client, encoding, result)
+                    sendHttpResponse(client, result)
                   } else {
-                    sendResponse(client, encoding, result)
+                    sendHttpResponse(client, result)
                   }
                 })
                 .catch((err) => {
-                  sendError(client, err.message)
+                  sendHttpError(client, err.message)
                 })
             }
           })
-          .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
+          .catch((err) =>
+            sendHttpError(client, err.message, 401, 'Unauthorized')
+          )
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendError(
+        sendHttpError(
           client,
           `function is observable - use /get/${name} instead`,
           404,
           'Not Found'
         )
       } else {
-        sendError(client, `function does not exist ${name}`, 404, 'Not Found')
+        sendHttpError(
+          client,
+          `function does not exist ${name}`,
+          404,
+          'Not Found'
+        )
       }
     })
     .catch(() =>
-      sendError(client, `function does not exist ${name}`, 404, 'Not Found')
+      sendHttpError(client, `function does not exist ${name}`, 404, 'Not Found')
     )
 }

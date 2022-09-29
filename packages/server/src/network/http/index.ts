@@ -6,7 +6,8 @@ import { httpStreamFunction } from './streamFunction'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
-import { sendError, sendErrorRaw } from './sendError'
+import { sendHttpError, sendErrorRaw } from './send'
+import { authorizeRequest } from './authorize'
 
 let clientId = 0
 
@@ -28,28 +29,6 @@ let clientId = 0
 //   'origin',
 //   'pragma',
 // ]
-
-const authorizeRequest = (
-  server: BasedServer,
-  client: HttpClient,
-  payload: any,
-  route: BasedFunctionRoute,
-  authorized: (payload: any) => void
-) => {
-  server.auth.config
-    .authorize(server, client, route.name, payload)
-    .then((ok) => {
-      if (!client.res) {
-        return
-      }
-      if (!ok) {
-        sendError(client, `${name} unauthorized request`, 401, 'Unauthorized')
-      } else {
-        authorized(payload)
-      }
-    })
-    .catch((err) => sendError(client, err.message, 401, 'Unauthorized'))
-}
 
 const handleRequest = (
   server: BasedServer,
@@ -121,6 +100,7 @@ export const httpHandler = (
   }
 
   const len = req.getHeader('content-length')
+  // @ts-ignore
   if (len && !isNaN(len)) {
     client.context.headers['content-length'] = Number(len)
   }
@@ -138,32 +118,37 @@ export const httpHandler = (
   // only allowed headers
   client.res.writeHeader('Access-Control-Allow-Headers', '*')
 
-  const name = route.name
-
   if (route.observable === true) {
     if (route.stream) {
-      sendError(client, 'Cannot stream to observable functions', 400)
+      sendHttpError(client, 'Cannot stream to observable functions', 400)
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
     handleRequest(server, method, client, route, (payload) =>
-      httpGet(name, payload, client, server, checksum)
+      httpGet(route, payload, client, server, checksum)
     )
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendError(client, 'Method not allowed', 405)
+        sendHttpError(client, 'Method not allowed', 405)
         return
       }
-      // add DataStewam
-      authorizeRequest(server, client, undefined, route, () => {
-        httpStreamFunction(server, client, route)
-      })
+      if (!client.context.headers['content-length']) {
+        // zero is also not allowed
+        sendHttpError(client, 'Length required', 411)
+        return
+      }
+      httpStreamFunction(
+        server,
+        client,
+        parseQuery(client.context.query),
+        route
+      )
     } else {
       handleRequest(server, method, client, route, (payload) =>
-        httpFunction(name, payload, client, server)
+        httpFunction(route, payload, client, server)
       )
     }
   }
