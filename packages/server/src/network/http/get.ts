@@ -7,6 +7,7 @@ import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
+import { BasedErrorCode } from '../../error'
 
 const sendGetResponse = (
   server: BasedServer,
@@ -55,7 +56,8 @@ const sendGetResponse = (
       end(client)
     }
   } catch (err) {
-    sendHttpError(client, err.message)
+    sendHttpError(client, BasedErrorCode.FunctionError, err.message)
+    // sendHttpError(client, err.message)
   }
 
   if (obs.clients.size === 0) {
@@ -114,25 +116,41 @@ export const httpGet = (
       } else if (spec && isObservableFunctionSpec(spec)) {
         sendHttpError(
           client,
-          `function is not observable - use /function/${name} instead`,
-          404,
-          'Not Found'
+          BasedErrorCode.FunctionNotFound,
+          `function is not observable - use /function/${name} instead`
         )
+        // sendHttpError(
+        //   client,
+        //   `function is not observable - use /function/${name} instead`,
+        //   404,
+        //   'Not Found'
+        // )
       } else {
         sendHttpError(
           client,
-          `observable function does not exist ${name}`,
-          404,
-          'Not Found'
+          BasedErrorCode.FunctionNotFound,
+          `observable function does not exist ${name}`
         )
+        // sendHttpError(
+        //   client,
+        //   `observable function does not exist ${name}`,
+        //   404,
+        //   'Not Found'
+        // )
       }
     })
-    .catch(() =>
-      sendHttpError(
-        client,
-        `observable function does not exist ${name}`,
-        404,
-        'Not Found'
-      )
+    .catch(
+      () =>
+        sendHttpError(
+          client,
+          BasedErrorCode.FunctionNotFound,
+          `observable function does not exist ${name}`
+        )
+      // sendHttpError(
+      //   client,
+      //   `observable function does not exist ${name}`,
+      //   404,
+      //   'Not Found'
+      // )
     )
 }

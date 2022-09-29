@@ -2,6 +2,7 @@ import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, HttpClient } from '../../types'
 import { sendHttpError, sendHttpResponse } from './send'
+import { BasedErrorCode } from '../../error'
 
 export const httpFunction = (
   route: BasedFunctionRoute,
@@ -31,10 +32,15 @@ export const httpFunction = (
             if (!ok) {
               sendHttpError(
                 client,
-                `${name} unauthorized request`,
-                401,
-                'Unauthorized'
+                BasedErrorCode.AuthorizeRejectedError,
+                `${name} unauthorized request`
               )
+              // sendHttpError(
+              //   client,
+              //   `${name} unauthorized request`,
+              //   401,
+              //   'Unauthorized'
+              // )
             } else {
               spec
                 .function(payload, client)
@@ -54,30 +60,57 @@ export const httpFunction = (
                   }
                 })
                 .catch((err) => {
-                  sendHttpError(client, err.message)
+                  sendHttpError(
+                    client,
+                    BasedErrorCode.FunctionError,
+                    err.message
+                  )
+                  // sendHttpError(client, err.message)
                 })
             }
           })
-          .catch((err) =>
-            sendHttpError(client, err.message, 401, 'Unauthorized')
+          .catch(
+            (err) =>
+              sendHttpError(
+                client,
+                BasedErrorCode.AuthorizeRejectedError,
+                err.message
+              )
+            // sendHttpError(client, err.message, 401, 'Unauthorized')
           )
       } else if (spec && isObservableFunctionSpec(spec)) {
         sendHttpError(
           client,
-          `function is observable - use /get/${name} instead`,
-          404,
-          'Not Found'
+          BasedErrorCode.FunctionNotFound,
+          `function is observable - use /get/${name} instead`
         )
+        // sendHttpError(
+        //   client,
+        //   `function is observable - use /get/${name} instead`,
+        //   404,
+        //   'Not Found'
+        // )
       } else {
         sendHttpError(
           client,
-          `function does not exist ${name}`,
-          404,
-          'Not Found'
+          BasedErrorCode.FunctionNotFound,
+          `function does not exist ${name}`
         )
+        // sendHttpError(
+        //   client,
+        //   `function does not exist ${name}`,
+        //   404,
+        //   'Not Found'
+        // )
       }
     })
-    .catch(() =>
-      sendHttpError(client, `function does not exist ${name}`, 404, 'Not Found')
+    .catch(
+      () =>
+        sendHttpError(
+          client,
+          BasedErrorCode.FunctionNotFound,
+          `function does not exist ${name}`
+        )
+      // sendHttpError(client, `function does not exist ${name}`, 404, 'Not Found')
     )
 }

@@ -14,6 +14,13 @@ enum StatusCode {
   InternalServerError = 500,
 }
 
+export const defaultMessages = {
+  [BasedErrorCode.FunctionError]: 'Error in function',
+  [BasedErrorCode.FunctionNotFound]: 'Function not found',
+  [BasedErrorCode.AuthorizeError]: 'Error in authorize function',
+  [BasedErrorCode.AuthorizeRejectedError]: 'Authorize rejected',
+}
+
 export type BasedErrorData = {
   message: string
   stack: string
@@ -43,13 +50,7 @@ export const sendError = (
   }
 
   if (typeof error === 'undefined' || error === null) {
-    errorData.message =
-      {
-        [BasedErrorCode.FunctionError]: 'Error in function',
-        [BasedErrorCode.FunctionNotFound]: 'Function not found',
-        [BasedErrorCode.AuthorizeError]: 'Error in authorize function',
-        [BasedErrorCode.AuthorizeRejectedError]: 'Authorize rejected',
-      }[basedCode] || 'Ops something went wrong'
+    errorData.message = defaultMessages[basedCode] || 'Ops something went wrong'
   }
 
   switch (basedCode) {

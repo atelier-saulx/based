@@ -8,6 +8,7 @@ import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { sendHttpError, sendErrorRaw } from './send'
 import { authorizeRequest } from './authorize'
+import { BasedErrorCode } from '../../error'
 
 let clientId = 0
 
@@ -120,7 +121,12 @@ export const httpHandler = (
 
   if (route.observable === true) {
     if (route.stream) {
-      sendHttpError(client, 'Cannot stream to observable functions', 400)
+      sendHttpError(
+        client,
+        BasedErrorCode.FunctionNotFound,
+        'Cannot stream to observable functions'
+      )
+      // sendHttpError(client, 'Cannot stream to observable functions', 400)
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
@@ -132,12 +138,24 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(client, 'Method not allowed', 405)
+        sendHttpError(
+          client,
+          BasedErrorCode.FunctionNotFound,
+          'Method not allowed',
+          { status: 'Method not allowed', code: 405 }
+        )
+        // sendHttpError(client, 'Method not allowed', 405)
         return
       }
       if (!client.context.headers['content-length']) {
         // zero is also not allowed
-        sendHttpError(client, 'Length required', 411)
+        sendHttpError(
+          client,
+          BasedErrorCode.FunctionNotFound,
+          'Length required',
+          { status: 'Length required', code: 411 }
+        )
+        // sendHttpError(client, 'Length required', 411)
         return
       }
       httpStreamFunction(

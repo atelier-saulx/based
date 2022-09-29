@@ -4,6 +4,7 @@ import { sendHttpError } from '../send'
 import { BasedFunctionRoute, HttpClient } from '../../../types'
 import { authorizeRequest } from '../authorize'
 import { httpFunction } from '../function'
+import { BasedErrorCode } from '../../../error'
 
 export const httpStreamFunction = (
   server: BasedServer,
@@ -18,7 +19,10 @@ export const httpStreamFunction = (
   const size = client.context.headers['content-length']
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
-    sendHttpError(client, 'Payload Too Large', 413)
+    sendHttpError(client, BasedErrorCode.InvalidPayload, 'Payload Too Large', {
+      code: 413,
+    })
+    // sendHttpError(client, 'Payload Too Large', 413)
     return
   }
 

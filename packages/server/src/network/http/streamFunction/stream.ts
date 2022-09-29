@@ -1,6 +1,7 @@
 import { DataStream } from './DataStream'
 import { HttpClient } from '../../../types'
 import { sendHttpError } from '../send'
+import { BasedErrorCode } from '../../../error'
 
 // uncompress incoming
 
@@ -13,7 +14,13 @@ const smallFile = (client: HttpClient, stream: DataStream, size: number) => {
 
     if (total > size) {
       stream.destroy()
-      sendHttpError(client, 'Payload Too Large', 413)
+      sendHttpError(
+        client,
+        BasedErrorCode.InvalidPayload,
+        'Payload Too Large',
+        { code: 413 }
+      )
+      // sendHttpError(client, 'Payload Too Large', 413)
       return
     }
 
@@ -39,7 +46,13 @@ const largeFile = (client: HttpClient, stream: DataStream, size: number) => {
 
     if (total > size) {
       stream.destroy()
-      sendHttpError(client, 'Payload Too Large', 413)
+      sendHttpError(
+        client,
+        BasedErrorCode.InvalidPayload,
+        'Payload Too Large',
+        { code: 413 }
+      )
+      // sendHttpError(client, 'Payload Too Large', 413)
       return
     }
 

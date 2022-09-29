@@ -1,6 +1,7 @@
 import { HttpClient } from '../../types'
 import zlib from 'node:zlib'
 import { sendHttpError } from './send'
+import { BasedErrorCode } from '../../error'
 
 export const readBody = (
   client: HttpClient,
@@ -27,7 +28,8 @@ export const readBody = (
           onData(params)
         } catch (e) {
           console.error(e, str)
-          sendHttpError(client, 'Invalid Payload', 400)
+          sendHttpError(client, BasedErrorCode.InvalidPayload)
+          // sendHttpError(client, 'Invalid Payload', 400)
         }
       } else if (
         contentType.startsWith('text') ||
@@ -60,7 +62,13 @@ export const readBody = (
       client.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > maxSize) {
-          sendHttpError(client, 'Payload Too Large', 413)
+          sendHttpError(
+            client,
+            BasedErrorCode.InvalidPayload,
+            'Payload Too Large',
+            { code: 413 }
+          )
+          // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
@@ -76,13 +84,24 @@ export const readBody = (
         readData(d, last)
       })
     } else {
-      sendHttpError(client, 'Unsupported Content-Encoding', 400)
+      sendHttpError(
+        client,
+        BasedErrorCode.InvalidPayload,
+        'Unsupported Content-Encoding'
+      )
+      // sendHttpError(client, 'Unsupported Content-Encoding', 400)
     }
   } else {
     client.res.onData((c, isLast) => {
       size += c.byteLength
       if (size > maxSize) {
-        sendHttpError(client, 'Payload Too Large', 413)
+        sendHttpError(
+          client,
+          BasedErrorCode.InvalidPayload,
+          'Payload Too Large',
+          { code: 413 }
+        )
+        // sendHttpError(client, 'Payload Too Large', 413)
         return
       }
       readData(Buffer.from(c), isLast)
