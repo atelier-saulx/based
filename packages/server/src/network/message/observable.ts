@@ -38,7 +38,7 @@ export const enableSubscribe = (
           })
         }
       })
-      .catch((_err) => {
+      .catch(() => {
         sendError(client, 'Function dos not exist', {
           basedCode: BasedErrorCode.AuthorizeError,
           observableId: id,
