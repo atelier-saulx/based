@@ -2,7 +2,6 @@ import test from 'ava'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
-
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 
