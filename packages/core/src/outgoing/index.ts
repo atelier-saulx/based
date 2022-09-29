@@ -36,7 +36,7 @@ export const drainQueue = (client: BasedCoreClient) => {
     const drainOutgoing = () => {
       client.drainInProgress = false
 
-      if (!client?.connection?.ws) {
+      if (!client.connected) {
         return
       }
 
