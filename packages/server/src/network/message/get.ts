@@ -68,7 +68,7 @@ export const getMessage = (
   )
 
   server.auth.config
-    .authorize(server, client, 'observe', name, payload)
+    .authorize(server, client, name, payload)
     .then((ok) => {
       if (!client.ws) {
         return false

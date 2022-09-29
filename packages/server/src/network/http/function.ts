@@ -1,9 +1,9 @@
-import { isObservableFunctionSpec } from '../../../functions'
-import { BasedServer } from '../../../server'
-import { HttpClient } from '../../../types'
-import end from '../end'
-import { compress } from '../compress'
-import { sendError } from '../sendError'
+import { isObservableFunctionSpec } from '../../functions'
+import { BasedServer } from '../../server'
+import { HttpClient } from '../../types'
+import end from './end'
+import { compress } from './compress'
+import { sendError } from './sendError'
 
 const sendResponse = (client: HttpClient, encoding: string, result: any) => {
   if (!client.res) {
@@ -30,14 +30,15 @@ const sendResponse = (client: HttpClient, encoding: string, result: any) => {
 
 export const httpFunction = (
   name: string,
-  encoding: string,
   payload: any,
   client: HttpClient,
   server: BasedServer
 ): void => {
-  // fix max payload from spec..
+  if (!client.res) {
+    return
+  }
 
-  // parse payload
+  const encoding = client.context.encoding
 
   server.functions
     .install(name)
@@ -47,7 +48,7 @@ export const httpFunction = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.auth.config
-          .authorize(server, client, 'function', name, payload)
+          .authorize(server, client, name, payload)
           .then((ok) => {
             if (!client.res) {
               return

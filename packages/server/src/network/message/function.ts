@@ -40,7 +40,7 @@ export const functionMessage = (
   }
 
   server.auth.config
-    .authorize(server, client, 'function', name, payload)
+    .authorize(server, client, name, payload)
     .then((ok) => {
       if (!ok) {
         sendError(client, 'Not authorized', {

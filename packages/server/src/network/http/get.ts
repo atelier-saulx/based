@@ -65,12 +65,17 @@ const sendGetResponse = (
 
 export const httpGet = (
   name: string,
-  encoding: string,
   payload: any,
   client: HttpClient,
   server: BasedServer,
   checksum: number
 ): void => {
+  if (!client.res) {
+    return
+  }
+
+  const encoding = client.context.encoding
+
   server.functions
     .install(name)
     .then((spec) => {

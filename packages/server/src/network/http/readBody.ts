@@ -5,9 +5,13 @@ import { sendError } from './sendError'
 export const readBody = (
   client: HttpClient,
   onData: (data: any | void) => void,
-  contentEncoding: string,
   maxSize: number
 ) => {
+  if (!client.res) {
+    return
+  }
+
+  const contentEncoding = client.context.contentEncoding
   let data = Buffer.from([])
   let size = 0
 

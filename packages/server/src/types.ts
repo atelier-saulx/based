@@ -24,6 +24,7 @@ export type HttpClient = {
   req: uws.HttpRequest | null
   context:
     | ({
+        headers: { [key: string]: string }
         authorization: string
         ua: string
         ip: string
@@ -50,7 +51,6 @@ export type AuthConfig = {
 export type Authorize = (
   server: BasedServer,
   client: WebsocketClient | HttpClient,
-  type: 'observe' | 'function',
   name: string,
   payload?: any
 ) => Promise<boolean>

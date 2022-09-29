@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../types'
+import { BasedFunctionRoute, HttpClient } from '../../types'
 import { httpFunction } from './function'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
@@ -32,12 +32,11 @@ const authorizeRequest = (
   server: BasedServer,
   client: HttpClient,
   payload: any,
-  type: 'function' | 'observe',
-  name: string,
+  route: BasedFunctionRoute,
   authorized: (payload: any) => void
 ) => {
   server.auth.config
-    .authorize(server, client, type, name, payload)
+    .authorize(server, client, route.name, payload)
     .then((ok) => {
       if (!client.res) {
         return
@@ -55,22 +54,18 @@ const handleRequest = (
   server: BasedServer,
   method: string,
   client: HttpClient,
-  name: string,
-  contentEncoding: string,
-  maxPayloadSize: number,
+  route: BasedFunctionRoute,
   authorized: (payload: any) => void
 ) => {
   if (method === 'post') {
     readBody(
       client,
-      (payload) =>
-        authorizeRequest(server, client, payload, 'observe', name, authorized),
-      contentEncoding,
-      maxPayloadSize
+      (payload) => authorizeRequest(server, client, payload, route, authorized),
+      route.maxPayloadSize
     )
   } else {
     const payload = parseQuery(client.context.query)
-    authorizeRequest(server, client, payload, 'observe', name, authorized)
+    authorizeRequest(server, client, payload, route, authorized)
   }
 }
 
@@ -85,7 +80,6 @@ export const httpHandler = (
     client.req = null
   })
 
-  // ip is 39 bytes - (adds 312kb for 8k clients to mem)
   const ip =
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
@@ -107,8 +101,6 @@ export const httpHandler = (
 
   // add all headers in context that are specialy defined for the route
   const method = req.getMethod()
-  const contentEncoding = req.getHeader('content-encoding')
-  const encoding = req.getHeader('accept-encoding')
 
   const client: HttpClient = {
     res,
@@ -116,10 +108,14 @@ export const httpHandler = (
     context: {
       authorization: req.getHeader('authorization'),
       contentType: req.getHeader('content-type'),
+      contentEncoding: req.getHeader('content-encoding'),
+      encoding: req.getHeader('accept-encoding'),
       query: req.getQuery(),
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
+      // custom headers
+      headers: {},
     },
   }
 
@@ -137,28 +133,17 @@ export const httpHandler = (
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-    handleRequest(
-      server,
-      method,
-      client,
-      name,
-      contentEncoding,
-      route.maxPayloadSize,
-      (payload) => httpGet(name, encoding, payload, client, server, checksum)
+    handleRequest(server, method, client, route, (payload) =>
+      httpGet(name, payload, client, server, checksum)
     )
   } else {
     if (route.stream === true) {
+      // start with authorize...
       // only for streams
       //   fix this nice
     } else {
-      handleRequest(
-        server,
-        method,
-        client,
-        name,
-        contentEncoding,
-        route.maxPayloadSize,
-        (payload) => httpFunction(name, encoding, payload, client, server)
+      handleRequest(server, method, client, route, (payload) =>
+        httpFunction(name, payload, client, server)
       )
     }
   }
