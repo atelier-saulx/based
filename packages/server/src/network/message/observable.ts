@@ -2,7 +2,7 @@ import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
-import { sendError, BasedErrorCode } from '../../error'
+import { sendError, BasedErrorCode, StatusCode } from '../../error'
 import { WebsocketClient } from '../../types'
 
 export const enableSubscribe = (
@@ -33,14 +33,16 @@ export const enableSubscribe = (
           }
         } else {
           sendError(client, 'Function not found', {
-            basedCode: BasedErrorCode.AuthorizeError,
+            basedCode: BasedErrorCode.FunctionNotFound,
+            statusCode: StatusCode.NotFound,
             observableId: id,
           })
         }
       })
       .catch(() => {
         sendError(client, 'Function dos not exist', {
-          basedCode: BasedErrorCode.AuthorizeError,
+          basedCode: BasedErrorCode.FunctionNotFound,
+          statusCode: StatusCode.NotFound,
           observableId: id,
         })
       })
@@ -94,6 +96,7 @@ export const subscribeMessage = (
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
         sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
+          statusCode: StatusCode.Forbidden,
           observableId: id,
         })
         return false
@@ -104,6 +107,7 @@ export const subscribeMessage = (
     .catch((err) => {
       sendError(client, err, {
         basedCode: BasedErrorCode.AuthorizeError,
+        statusCode: StatusCode.InternalServerError,
         observableId: id,
       })
       destroy(server, id)

@@ -7,6 +7,11 @@ export enum BasedErrorCode {
   AuthorizeError = 50002,
   AuthorizeRejectedError = 40301,
 }
+
+export enum StatusCode {
+  NotFound = 404,
+}
+
 export type BasedErrorData = {
   message: string
   stack: string
@@ -19,7 +24,10 @@ export type BasedErrorData = {
 export const sendError = (
   client: WebsocketClient,
   error: Error | string,
-  props: Partial<BasedErrorData> & { basedCode: BasedErrorCode }
+  props: Partial<BasedErrorData> & {
+    basedCode: BasedErrorCode
+    statusCode?: StatusCode
+  }
 ): void => {
   const errorData = { message: null, stack: null, basedCode: null }
   if (typeof error === 'string') {

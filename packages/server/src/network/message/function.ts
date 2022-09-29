@@ -7,7 +7,7 @@ import {
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { sendError, BasedErrorCode } from '../../error'
+import { sendError, BasedErrorCode, StatusCode } from '../../error'
 import { WebsocketClient } from '../../types'
 
 export const functionMessage = (
@@ -45,6 +45,7 @@ export const functionMessage = (
       if (!ok) {
         sendError(client, 'Not authorized', {
           basedCode: BasedErrorCode.AuthorizeRejectedError,
+          statusCode: StatusCode.Forbidden,
           requestId: reqId,
         })
         return false
@@ -66,12 +67,14 @@ export const functionMessage = (
               .catch((err) => {
                 sendError(client, err, {
                   basedCode: BasedErrorCode.FunctionError,
+                  statusCode: StatusCode.InternalServerError,
                   requestId: reqId,
                 })
               })
           } else {
             sendError(client, 'No function for you', {
               basedCode: BasedErrorCode.FunctionNotFound,
+              statusCode: StatusCode.NotFound,
               requestId: reqId,
             })
           }
@@ -79,6 +82,7 @@ export const functionMessage = (
         .catch(() => {
           sendError(client, 'fn does not exist', {
             basedCode: BasedErrorCode.FunctionNotFound,
+            statusCode: StatusCode.NotFound,
             requestId: reqId,
           })
         })
@@ -86,6 +90,7 @@ export const functionMessage = (
     .catch((err) => {
       sendError(client, err, {
         basedCode: BasedErrorCode.AuthorizeError,
+        statusCode: StatusCode.InternalServerError,
         requestId: reqId,
       })
       return false
