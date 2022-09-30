@@ -22,17 +22,13 @@ type FileDescriptor = {
   headersSet: number
 }
 
-const setHeader = (
-  server: BasedServer,
-  client: HttpClient,
-  file: any
-): boolean => {
+const setHeader = (file: FileDescriptor): boolean => {
   file.headersSet++
   if (file.headersSet === 2) {
     const opts = file.opts
     if (opts.size < 200000) {
       file.stream.on('end', () => {
-        console.log({ progress: 1 }, opts)
+        console.info({ progress: 1 }, opts)
       })
     } else {
       let progress = 0
@@ -50,7 +46,7 @@ const setHeader = (
         if (!setInProgress) {
           setInProgress = true
           setTimeout(() => {
-            console.log(progress)
+            console.info(progress)
             setInProgress = false
           }, 250)
         }
@@ -78,9 +74,13 @@ export default async (
   server: BasedServer,
   client: HttpClient,
   payload: any,
-  route: BasedFunctionSpec
+  fn: BasedFunctionSpec
 ): Promise<void> => {
   // multi file...
+
+  if (!payload || (!payload && typeof payload !== 'object')) {
+    payload = {}
+  }
 
   const files: FileDescriptor[] = []
 
@@ -123,6 +123,9 @@ export default async (
           headersSet: 0,
           opts: {},
         }
+
+        // bit more
+
         files.push(file)
         continue
       }
@@ -140,7 +143,7 @@ export default async (
           // TODO: invalid file
           return sendHttpError(client, BasedErrorCode.InvalidPayload)
         }
-        const [functionName, raw, id, size, ...name] = meta.split('|')
+        const [raw, id, size, ...name] = meta.split('|')
         const opts = file.opts
         opts.id = id
         if (raw) {
@@ -151,13 +154,16 @@ export default async (
         } else {
           opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
         }
-        if (functionName) {
-          opts.functionName = functionName
-        }
+
         opts.size = Number(size)
-        isWriting = setHeader(server, client, file)
+        isWriting = setHeader(file)
         if (isWriting === null) {
           return
+        } else {
+          fn.function(
+            { payload: { ...payload, ...opts }, stream: file.stream },
+            client
+          ).catch(() => {})
         }
         continue
       }
@@ -172,9 +178,14 @@ export default async (
         }
         file.opts.type = mimeType
         file.opts.extension = getExtension(mimeType)
-        isWriting = setHeader(server, client, file)
+        isWriting = setHeader(file)
         if (isWriting === null) {
           return
+        } else {
+          fn.function(
+            { payload: { ...payload, ...file.opts }, stream: file.stream },
+            client
+          ).catch(() => {})
         }
         continue
       }

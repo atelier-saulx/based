@@ -5,9 +5,7 @@ import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 
-const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
-const br = promisify(zlib.brotliCompress)
 
 test.serial('functions (over http + stream)', async (t) => {
   const routes = {
@@ -80,12 +78,9 @@ test.serial('functions (over http + stream)', async (t) => {
     })
   ).json()
 
-  console.info('yes -->', result)
-  // t.deepEqual(bigBod, result)
+  t.true(!!result)
 
   const x = await gzip(JSON.stringify(bigBod))
-
-  console.log(x.length)
 
   const resultBrotli = await (
     await fetch('http://localhost:9910/flap', {
@@ -98,9 +93,7 @@ test.serial('functions (over http + stream)', async (t) => {
     })
   ).json()
 
-  console.log('durp', resultBrotli)
-
-  // t.deepEqual(bigBod, resultBrotli)
+  t.true(!!resultBrotli)
 
   await wait(30e3)
 
