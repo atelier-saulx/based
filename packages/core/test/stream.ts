@@ -99,7 +99,7 @@ test.serial('functions (over http + stream)', async (t) => {
 
   t.deepEqual(bigBod, resultBrotli)
 
-  await wait(10e3)
+  await wait(30e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 

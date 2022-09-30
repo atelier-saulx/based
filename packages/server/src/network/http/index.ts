@@ -105,6 +105,17 @@ export const httpHandler = (
     client.context.headers['content-length'] = Number(len)
   }
 
+  // client.res.writeHeader('Transfer-Encoding', 'gzip')
+
+  if (
+    method === 'post' &&
+    client.context.headers['content-length'] === undefined
+  ) {
+    // zero is also not allowed
+    sendHttpError(client, 'Length required', 411)
+    return
+  }
+
   if (route.headers) {
     for (const header of route.headers) {
       const v = req.getHeader(header)
@@ -135,11 +146,13 @@ export const httpHandler = (
         sendHttpError(client, 'Method not allowed', 405)
         return
       }
-      if (!client.context.headers['content-length']) {
-        // zero is also not allowed
+
+      if (client.context.headers['content-length'] === 0) {
+        // zero is also not allowed for streams
         sendHttpError(client, 'Length required', 411)
         return
       }
+
       httpStreamFunction(
         server,
         client,

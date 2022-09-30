@@ -53,19 +53,15 @@ export default (client: HttpClient, size: number): DataStream => {
     }
 
     if (uncompressStream) {
-      let last = false
       client.res.onData((c, isLast) => {
         total += c.byteLength
 
-        console.log('???', total)
-
-        // if (total > size) {
-        //   sendHttpError(client, 'Payload Too Large', 413)
-        //   uncompressStream.destroy()
-        //   return
-        // }
+        if (total > size) {
+          sendHttpError(client, 'Payload Too Large', 413)
+          uncompressStream.destroy()
+          return
+        }
         const buf = Buffer.from(c)
-        last = isLast
         if (isLast) {
           uncompressStream.end(buf)
         } else {

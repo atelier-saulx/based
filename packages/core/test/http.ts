@@ -4,6 +4,7 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
+import http from 'node:http'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
@@ -202,6 +203,8 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
+        await wait(100)
+        console.log('goootttt some payloadsss', payload)
         if (payload) {
           return payload
         }
@@ -238,6 +241,7 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
           for (const name in store) {
             if (store[name].path === path) {
               return {
+                maxPayloadSize: 1e11,
                 name: store[name].name,
                 observable: store[name].observable,
               }
@@ -297,22 +301,82 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
   // t.is(result2, '{"flurp":2}')
 
   const large: any[] = []
-  for (let i = 0; i < 1000; i++) {
+  for (let i = 0; i < 100000; i++) {
     large.push({ i, gur: 'gur' })
   }
 
-  const result3 = await (
-    await fetch('http://localhost:9910/flap', {
-      method: 'post',
-      headers: {
-        'content-encoding': 'gzip',
-        'content-type': 'application/json',
-      },
-      body: await gzip(JSON.stringify(large)),
-    })
-  ).json()
+  const gzipBod = await gzip(JSON.stringify(large))
 
-  t.deepEqual(result3, large)
+  console.info('send', gzipBod.byteLength)
+
+  const options = {
+    port: 9910,
+    host: 'localhost',
+    method: 'POST',
+    path: '/flap',
+    chunkSize: 50 * 1024,
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': gzipBod.length,
+      'Content-Encoding': 'gzip',
+    },
+  }
+
+  const req = http.request(options)
+
+  const chunkSize = 10 * 1024
+  const end = Math.ceil(gzipBod.byteLength / chunkSize)
+
+  const write = (c: Buffer): Promise<void> => {
+    return new Promise((resolve) => {
+      req.write(c, () => {
+        resolve()
+      })
+    })
+  }
+
+  for (let i = 0; i < end; i++) {
+    const c = gzipBod.slice(
+      i * chunkSize,
+      Math.min((i + 1) * chunkSize, gzipBod.byteLength)
+    )
+    // console.log('writing', i * chunkSize)
+    // if (i === end - 1) {
+    //   req.end(c)
+    // } else {
+    await write(c)
+    await wait(10)
+
+    // }
+  }
+
+  req.on('response', () => {
+    console.log('resp')
+  })
+
+  req.on('error', (err) => {
+    console.log('??', err)
+  })
+
+  // req.on('end', function () {
+  //   req.end()
+  // })
+
+  // const result3 = await (
+  //   await fetch('http://localhost:9910/flap', {
+  //     method: 'post',
+
+  //     headers: {
+  //       'content-encoding': 'gzip',
+  //       'content-type': 'application/json',
+  //     },
+  //     body: gzipBod,
+  //   })
+  // ).json()
+
+  // console.log(result3)
+
+  // t.deepEqual(result3, large)
 
   await wait(10e3)
 
