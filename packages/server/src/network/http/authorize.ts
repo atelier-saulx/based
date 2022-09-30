@@ -24,10 +24,10 @@ export const authorizeRequest = (
         authorized(payload)
       }
     })
-    .catch((err) =>
+    .catch((err) => {
       sendHttpError(client, BasedErrorCode.AuthorizeFunctionError, {
         name: route.name,
         err,
       })
-    )
+    })
 }
