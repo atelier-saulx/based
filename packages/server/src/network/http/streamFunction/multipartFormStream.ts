@@ -1,9 +1,25 @@
-import { DataStream } from './DataStream'
-import uws from '@based/uws'
-import { BasedServer } from '../../..'
-import { HttpClient } from '../../../types'
-// import getExtenstion from './getExtenstion'
-// import fs from 'fs'
+// import { DataStream } from './DataStream'
+// import uws from '@based/uws'
+// import { BasedServer } from '../../..'
+// import { HttpClient } from '../../../types'
+// import { BasedErrorCode } from '../../../error'
+// import { sendHttpError } from '../send'
+// import getExtension from './getExtension'
+// // import fs from 'fs'
+
+// // will become file not STREAM
+
+// // make it file
+
+// export type FileOptions = {
+//   name?: string
+//   raw?: boolean
+//   size: number
+//   type: string
+//   id: string
+//   extension: string
+//   functionName?: string
+// }
 
 // type FileDescriptor = {
 //   opts: Partial<FileOptions>
@@ -11,206 +27,210 @@ import { HttpClient } from '../../../types'
 //   headersSet: number
 // }
 
-// const isCompleteOpts = (
-//   options: Partial<FileOptions>
-// ): options is FileOptions => {
-//   return !!(options.id && options.size && options.type && options.extension)
+// // const isCompleteOpts = (
+// //   options: Partial<FileOptions>
+// // ): options is FileOptions => {
+// //   return !!(options.id && options.size && options.type && options.extension)
+// // }
+
+// // handler for updates
+
+// const setHeader = (
+//   server: BasedServer,
+//   client: HttpClient,
+//   file: any
+// ): boolean => {
+//   file.headersSet++
+//   if (file.headersSet === 2) {
+//     const opts = file.opts
+
+//     if (opts.size < 200000) {
+//       file.stream.on('end', () => {
+//         //   const payload: any = {
+//         //     $id: opts.id,
+//         //     progress: 1,
+//         //     size: opts.size,
+//         //   }
+//         //   if (opts.name) {
+//         // payload.name = opts.name
+//         //   }
+//         //   server.based.set(payload)
+//         console.log('DONE!')
+//       })
+//     } else {
+//       let progress = 0
+//       let total = 0
+//       let setInProgress = false
+//       const payload: any = {
+//         $id: opts.id,
+//         progress: 0,
+//         size: opts.size,
+//       }
+//       if (opts.name) {
+//         payload.name = opts.name
+//       }
+//       //   server.based.set(payload)
+//       const updateProgress = () => {
+//         if (!setInProgress) {
+//           setInProgress = true
+//           setTimeout(() => {
+//             // console.log(stream)
+//             // const payload: any = {
+//             //   $id: opts.id,
+//             //   progress,
+//             // }
+//             // server.based.set(payload)
+//             setInProgress = false
+//           }, 250)
+//         }
+//       }
+//       file.stream.on('end', () => {
+//         // progress = 1
+//         updateProgress()
+//       })
+//       file.stream.on('data', (chunk) => {
+//         // total += chunk.byteLength
+//         // progress = total / opts.size
+//         updateProgress()
+//       })
+//     }
+
+//     // storeFile(server, file.stream, opts)
+
+//     return true
+//   }
+//   return false
 // }
 
-// handler for updates
+// const toBuffer = (str: string, firstWritten: boolean): Buffer => {
+//   return Buffer.from(firstWritten ? str + '\r\n' : str, 'binary')
+// }
 
-const setHeader = (
-  server: BasedServer,
-  file: FileDescriptor,
-  res: uws.HttpResponse
-): boolean => {
-  file.headersSet++
-  if (file.headersSet === 2) {
-    const opts = file.opts
-    if (isCompleteOpts(opts)) {
-      if (opts.size < 200000) {
-        file.stream.on('end', () => {
-          const payload: any = {
-            $id: opts.id,
-            progress: 1,
-            size: opts.size,
-          }
-          if (opts.name) {
-            payload.name = opts.name
-          }
-          server.based.set(payload)
-        })
-      } else {
-        let progress = 0
-        let total = 0
-        let setInProgress = false
-        const payload: any = {
-          $id: opts.id,
-          progress: 0,
-          size: opts.size,
-        }
-        if (opts.name) {
-          payload.name = opts.name
-        }
-        server.based.set(payload)
-        const updateProgress = () => {
-          if (!setInProgress) {
-            setInProgress = true
-            setTimeout(() => {
-              const payload: any = {
-                $id: opts.id,
-                progress,
-              }
-              server.based.set(payload)
-              setInProgress = false
-            }, 250)
-          }
-        }
-        file.stream.on('end', () => {
-          progress = 1
-          updateProgress()
-        })
-        file.stream.on('data', (chunk) => {
-          total += chunk.byteLength
-          progress = total / opts.size
-          updateProgress()
-        })
-      }
-      storeFile(server, file.stream, opts)
-    } else {
-      invalidFile(res)
-      return null
-    }
-    return true
-  }
-  return false
-}
+// export default async (
+//   server: BasedServer,
+//   client: HttpClient
+// ): Promise<void> => {
+//   // multi file...
 
-const invalidFile = (res: uws.HttpResponse) => {
-  console.info('Invalid file')
-  res.aborted = true
-  res.writeStatus('400 Invalid Request').end('{"error":"invalid file}')
-}
+//   const files: FileDescriptor[] = []
 
-const toBuffer = (str: string, firstWritten: boolean): Buffer => {
-  return Buffer.from(firstWritten ? str + '\r\n' : str, 'binary')
-}
+//   let boundary = null
+//   let prevLine: string
+//   let isWriting = false
 
-export default async (
-  server: BasedServer,
-  client: HttpClient,
+//   client.res.onData((chunk, isLast) => {
+//     let firstWritten = false
+//     const blocks = Buffer.from(chunk).toString('binary').split('\r\n')
 
-  res: uws.HttpResponse
-): Promise<void> => {
-  const files: FileDescriptor[] = []
+//     if (!boundary) {
+//       boundary = blocks[0]
+//     }
 
-  let boundary = null
-  let prevLine: string
-  let isWriting = false
+//     for (let i = 0; i < blocks.length; i++) {
+//       const line = blocks[i]
 
-  res.onData((chunk, isLast) => {
-    let firstWritten = false
-    const blocks = Buffer.from(chunk).toString('binary').split('\r\n')
+//       if (!boundary) {
+//         continue
+//       }
 
-    if (!boundary) {
-      boundary = blocks[0]
-    }
+//       if (isWriting && (line === boundary || line === boundary + '--')) {
+//         isWriting = false
+//         const file = files[files.length - 1]
+//         if (prevLine) {
+//           file.stream.end(toBuffer(prevLine, firstWritten))
+//         } else {
+//           file.stream.end()
+//         }
+//         prevLine = null
+//         if (line === boundary + '--') {
+//           continue
+//         }
+//       }
 
-    for (let i = 0; i < blocks.length; i++) {
-      const line = blocks[i]
+//       if (line === boundary && !isWriting) {
+//         const file = {
+//           stream: new DataStream(),
+//           headersSet: 0,
+//           opts: {},
+//         }
 
-      if (!boundary) {
-        continue
-      }
+//         console.info('go go go', file)
 
-      if (isWriting && (line === boundary || line === boundary + '--')) {
-        isWriting = false
-        const file = files[files.length - 1]
-        if (prevLine) {
-          file.stream.end(toBuffer(prevLine, firstWritten))
-        } else {
-          file.stream.end()
-        }
-        prevLine = null
-        if (line === boundary + '--') {
-          continue
-        }
-      }
+//         files.push(file)
+//         // try {
+//         //   fs.unlinkSync('/Users/jim/Desktop/yes.png')
+//         // } catch (err) {}
+//         // file.stream.pipe(fs.createWriteStream('/Users/jim/Desktop/yes.png'))
+//         continue
+//       }
 
-      if (line === boundary && !isWriting) {
-        const file = {
-          stream: new DataStream(),
-          headersSet: 0,
-          opts: {},
-        }
-        files.push(file)
-        // try {
-        //   fs.unlinkSync('/Users/jim/Desktop/yes.png')
-        // } catch (err) {}
-        // file.stream.pipe(fs.createWriteStream('/Users/jim/Desktop/yes.png'))
-        continue
-      }
+//       const file = files[files.length - 1]
 
-      const file = files[files.length - 1]
+//       if (!file) {
+//         // TODO: invalid file
+//         return sendHttpError(client, BasedErrorCode.InvalidPayload)
+//         // return invalidFile(res)
+//       }
 
-      if (!file) {
-        return invalidFile(res)
-      }
+//       if (!isWriting && line.includes('Content-Disposition')) {
+//         const meta = line.match(/name="(.*?)"/)?.[1]
+//         if (!meta) {
+//           // TODO: invalid file
+//           return sendHttpError(client, BasedErrorCode.InvalidPayload)
+//         }
+//         const [functionName, raw, id, size, ...name] = meta.split('|')
+//         const opts = file.opts
+//         opts.id = id
+//         if (raw) {
+//           opts.raw = true
+//         }
+//         if (name && name.length) {
+//           opts.name = name.join('|')
+//         } else {
+//           opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
+//         }
+//         if (functionName) {
+//           opts.functionName = functionName
+//         }
+//         opts.size = Number(size)
+//         isWriting = setHeader(server, client, file)
+//         if (isWriting === null) {
+//           return
+//         }
+//         continue
+//       }
 
-      if (!isWriting && line.includes('Content-Disposition')) {
-        const meta = line.match(/name="(.*?)"/)?.[1]
-        if (!meta) {
-          return invalidFile(res)
-        }
-        const [functionName, raw, id, size, ...name] = meta.split('|')
-        const opts = file.opts
-        opts.id = id
-        if (raw) {
-          opts.raw = true
-        }
-        if (name && name.length) {
-          opts.name = name.join('|')
-        } else {
-          opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
-        }
-        if (functionName) {
-          opts.functionName = functionName
-        }
-        opts.size = Number(size)
-        isWriting = setHeader(server, file, res)
-        if (isWriting === null) {
-          return
-        }
-        continue
-      }
+//       if (!isWriting && line.includes('Content-Type')) {
+//         const mimeType = line.match(
+//           /Content-Type: ([a-zA-Z0-9].+\/[a-zA-Z0-9].+)/
+//         )?.[1]
+//         if (!mimeType) {
+//           // TODO: invalid file
+//           return sendHttpError(client, BasedErrorCode.InvalidPayload)
+//         }
+//         file.opts.type = mimeType
+//         // get dat extension
+//         file.opts.extension = getExtension(mimeType)
+//         isWriting = setHeader(server, client, file)
+//         if (isWriting === null) {
+//           return
+//         }
+//         continue
+//       }
 
-      if (!isWriting && line.includes('Content-Type')) {
-        const mimeType = line.match(
-          /Content-Type: ([a-zA-Z0-9].+\/[a-zA-Z0-9].+)/
-        )?.[1]
-        if (!mimeType) {
-          return invalidFile(res)
-        }
-        file.opts.type = mimeType
-        file.opts.extension = getExtenstion(mimeType)
-        isWriting = setHeader(server, file, res)
-        if (isWriting === null) {
-          return
-        }
-        continue
-      }
+//       if (isWriting) {
+//         if (prevLine) {
+//           file.stream.write(toBuffer(prevLine, firstWritten))
+//         }
+//         prevLine = line
+//         firstWritten = true
+//       }
+//     }
 
-      if (isWriting) {
-        if (prevLine) {
-          file.stream.write(toBuffer(prevLine, firstWritten))
-        }
-        prevLine = line
-        firstWritten = true
-      }
-    }
-
-    if (isLast) {
-      res.end('{}')
-    }
-  })
-}
+//     if (isLast) {
+//       console.info('stream end')
+//       // dont do this i geuss
+//       //   client.res.end('{}')
+//     }
+//   })
+// }
