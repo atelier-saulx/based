@@ -1,30 +1,60 @@
 const createServer = require('@based/server').default
 const { wait } = require('@saulx/utils')
 
-const json = require('./tmp.json')
+// const json = require('./tmp.json')
 
 const init = async () => {
-  const store = {
-    // custom thing
-    flap: async () => {
-      await wait(100)
-      return 'FLAP'
+  const functions = {
+    flap: {
+      path: '/mygur',
+      name: 'flap',
+      checksum: 1,
+      function: async () => {
+        await wait(100)
+        return 'FLAP'
+      },
     },
-    small: async (x) => x,
-    iqTest: async () => json,
-    counter: async (payload, update) => {
-      console.info('init counter')
-      let cnt = 0
-      const counter = setInterval(() => {
-        let x = ''
-        for (let i = 0; i < 1000; i++) {
-          x += ++cnt + 'Hello numm ' + i
+    streamboy: {
+      name: 'streamboy',
+      stream: true,
+      checksum: 1,
+      function: (p) => {
+        return new Promise((resolve, reject) => {
+          p.stream.on('progress', (p) => {
+            console.info('progress', p * 100, '%')
+          })
+
+          p.stream.on('data', (c) => {
+            console.info('receive chunk', c.byteLength)
+          })
+
+          p.stream.on('end', () => {
+            console.info('done streami!')
+            resolve('w00t FILE')
+          })
+
+          p.stream.once('error', reject)
+        })
+      },
+    },
+    counter: {
+      name: 'counter',
+      observable: true,
+      checksum: 1,
+      function: async (payload, update) => {
+        console.info('init counter')
+        let cnt = 0
+        const counter = setInterval(() => {
+          let x = ''
+          for (let i = 0; i < 1000; i++) {
+            x += ++cnt + 'Hello numm ' + i
+          }
+          update(x)
+        }, 2000)
+        return () => {
+          clearInterval(counter)
         }
-        update(x)
-      }, 2000)
-      return () => {
-        clearInterval(counter)
-      }
+      },
     },
   }
 
@@ -37,27 +67,19 @@ const init = async () => {
         return true
       },
       route: ({ path, name }) => {
-        if (path === '/') {
-          return {
-            name: 'flap',
+        for (const name in functions) {
+          if (functions[name].path === path) {
+            return functions[name]
           }
         }
-        if (name && store[name]) {
-          return {
-            name,
-            observable: name === 'counter',
-          }
+        if (functions[name]) {
+          return functions[name]
         }
         return false
       },
       install: async ({ name }) => {
-        if (store[name]) {
-          return {
-            name,
-            checksum: 1,
-            function: store[name],
-            observable: name === 'counter',
-          }
+        if (functions[name]) {
+          return functions[name]
         } else {
           return false
         }
