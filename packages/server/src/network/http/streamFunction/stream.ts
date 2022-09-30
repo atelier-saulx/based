@@ -2,6 +2,7 @@ import { DataStream } from './DataStream'
 import { HttpClient } from '../../../types'
 import { sendHttpError } from '../send'
 import zlib from 'node:zlib'
+import { BasedErrorCode } from '../../../error'
 
 export default (client: HttpClient, size: number): DataStream => {
   const stream = new DataStream()
@@ -57,7 +58,7 @@ export default (client: HttpClient, size: number): DataStream => {
         total += c.byteLength
 
         if (total > size) {
-          sendHttpError(client, 'Payload Too Large', 413)
+          sendHttpError(client, BasedErrorCode.PayloadTooLarge)
           uncompressStream.destroy()
           return
         }
@@ -68,17 +69,17 @@ export default (client: HttpClient, size: number): DataStream => {
           uncompressStream.push(buf)
         }
       })
-      uncompressStream.on('data', (d) => {
+      uncompressStream.on('data', () => {
         // readData(d, last)
       })
     } else {
-      sendHttpError(client, 'Unsupported Content-Encoding', 400)
+      sendHttpError(client, BasedErrorCode.UnsupportedContentEncoding)
     }
   } else {
     client.res.onData((c, isLast) => {
       total += c.byteLength
       if (total > size) {
-        sendHttpError(client, 'Payload Too Large', 413)
+        sendHttpError(client, BasedErrorCode.PayloadTooLarge)
         return
       }
       readData(Buffer.from(c), isLast)

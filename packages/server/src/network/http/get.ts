@@ -7,6 +7,7 @@ import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
+import { BasedErrorCode } from '../../error'
 
 const sendGetResponse = (
   server: BasedServer,
@@ -24,12 +25,13 @@ const sendGetResponse = (
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
-        // ERROR
-        sendHttpError(client, 'no value', 400)
+        sendHttpError(client, BasedErrorCode.NoOservableCacheAvailable, {
+          id,
+          name: obs.name,
+        })
       } else {
         if (obs.isDeflate) {
           if (typeof encoding === 'string' && encoding.includes('deflate')) {
-            // send it
             client.res.cork(() => {
               client.res.writeStatus('200 OK')
               client.res.writeHeader('ETag', String(obs.checksum))
@@ -82,7 +84,11 @@ const sendGetResponse = (
       })
     }
   } catch (err) {
-    sendHttpError(client, err.message)
+    sendHttpError(client, BasedErrorCode.ObservableFunctionError, {
+      err,
+      id,
+      name: obs.name,
+    })
   }
 
   if (obs.clients.size === 0) {
@@ -138,27 +144,10 @@ export const httpGet = (
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendHttpError(
-          client,
-          `function is not observable - use /function/${name} instead`,
-          404,
-          'Not Found'
-        )
+        sendHttpError(client, BasedErrorCode.FunctionIsNotObservable, name)
       } else {
-        sendHttpError(
-          client,
-          `observable function does not exist ${name}`,
-          404,
-          'Not Found'
-        )
+        sendHttpError(client, BasedErrorCode.FunctionNotFound, name)
       }
     })
-    .catch(() =>
-      sendHttpError(
-        client,
-        `observable function does not exist ${name}`,
-        404,
-        'Not Found'
-      )
-    )
+    .catch(() => sendHttpError(client, BasedErrorCode.FunctionNotFound, name))
 }

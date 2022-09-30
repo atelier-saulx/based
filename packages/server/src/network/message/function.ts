@@ -7,7 +7,7 @@ import {
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { sendError, BasedErrorCode, StatusCode } from '../../error'
+import { sendError, BasedErrorCode } from '../../error'
 import { WebsocketClient } from '../../types'
 
 export const functionMessage = (
@@ -43,9 +43,7 @@ export const functionMessage = (
     .authorize(server, client, name, payload)
     .then((ok) => {
       if (!ok) {
-        sendError(client, 'Not authorized', {
-          basedCode: BasedErrorCode.AuthorizeRejectedError,
-          // statusCode: StatusCode.Forbidden,
+        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
           requestId: reqId,
         })
         return false
@@ -65,34 +63,41 @@ export const functionMessage = (
                 )
               })
               .catch((err) => {
-                sendError(client, err, {
-                  basedCode: BasedErrorCode.FunctionError,
-                  // statusCode: StatusCode.InternalServerError,
-                  requestId: reqId,
-                })
+                sendError(
+                  client,
+                  BasedErrorCode.FunctionError,
+                  {
+                    requestId: reqId,
+                  },
+                  err
+                )
               })
           } else {
-            sendError(client, 'No function for you', {
-              basedCode: BasedErrorCode.FunctionNotFound,
-              statusCode: StatusCode.NotFound,
+            sendError(client, BasedErrorCode.FunctionNotFound, {
               requestId: reqId,
             })
           }
         })
-        .catch(() => {
-          sendError(client, 'fn does not exist', {
-            basedCode: BasedErrorCode.FunctionNotFound,
-            statusCode: StatusCode.NotFound,
-            requestId: reqId,
-          })
+        .catch((err) => {
+          sendError(
+            client,
+            BasedErrorCode.FunctionNotFound,
+            {
+              requestId: reqId,
+            },
+            err
+          )
         })
     })
     .catch((err) => {
-      sendError(client, err, {
-        basedCode: BasedErrorCode.AuthorizeError,
-        // statusCode: StatusCode.InternalServerError,
-        requestId: reqId,
-      })
+      sendError(
+        client,
+        BasedErrorCode.AuthorizeFunctionError,
+        {
+          requestId: reqId,
+        },
+        err
+      )
       return false
     })
 

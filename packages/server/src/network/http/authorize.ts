@@ -1,6 +1,7 @@
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, HttpClient } from '../../types'
 import { sendHttpError } from './send'
+import { BasedErrorCode } from '../../error'
 
 export const authorizeRequest = (
   server: BasedServer,
@@ -16,15 +17,15 @@ export const authorizeRequest = (
         return
       }
       if (!ok) {
-        sendHttpError(
-          client,
-          `${route.name} unauthorized request`,
-          401,
-          'Unauthorized'
-        )
+        sendHttpError(client, BasedErrorCode.AuthorizeRejectedError, route.name)
       } else {
         authorized(payload)
       }
     })
-    .catch((err) => sendHttpError(client, err.message, 401, 'Unauthorized'))
+    .catch((err) =>
+      sendHttpError(client, BasedErrorCode.AuthorizeFunctionError, {
+        name: route.name,
+        err,
+      })
+    )
 }

@@ -85,7 +85,7 @@ test.serial('function authorize error', async (t) => {
 
   server.auth.updateConfig({
     authorize: async () => {
-      throw new Error('Error inside authrorize')
+      throw new Error('Error inside authorize')
     },
   })
 
@@ -107,7 +107,7 @@ test.serial('observable authorize error', async (t) => {
 
   server.auth.updateConfig({
     authorize: async () => {
-      throw new Error('Error inside authrorize')
+      throw new Error('Error inside authorize')
     },
   })
 
@@ -146,6 +146,5 @@ test.serial('type error in function', async (t) => {
   const error = (await t.throwsAsync(
     coreClient.function('errorFunction')
   )) as BasedError
-  console.error(error)
   t.is(error.basedCode, BasedErrorCode.FunctionError)
 })

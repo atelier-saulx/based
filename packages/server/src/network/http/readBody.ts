@@ -1,6 +1,7 @@
 import { HttpClient } from '../../types'
 import zlib from 'node:zlib'
 import { sendHttpError } from './send'
+import { BasedErrorCode } from '../../error'
 
 const MAX_CHUNK_SIZE = 1024 * 1024
 
@@ -23,7 +24,7 @@ const parseData = (
       return params
     } catch (e) {
       // make this an event
-      sendHttpError(client, 'Invalid Payload', 400)
+      sendHttpError(client, BasedErrorCode.InvalidPayload)
     }
   } else if (
     contentType.startsWith('text') ||
@@ -50,7 +51,7 @@ export const readBody = (
   const contentLen = client.context.headers['content-length']
 
   if (contentLen > maxSize) {
-    sendHttpError(client, 'Payload Too Large', 413)
+    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
     return
   }
 
@@ -71,12 +72,14 @@ export const readBody = (
       client.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > maxSize) {
-          sendHttpError(client, 'Payload Too Large', 413)
+          sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+          // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(client, 'Chunk too large', 413)
+          sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+
           uncompressStream.destroy()
           return
         }
@@ -102,18 +105,22 @@ export const readBody = (
         onData(parseData(client, contentType, data, false))
       })
     } else {
-      sendHttpError(client, 'Unsupported Content-Encoding', 400)
+      sendHttpError(
+        client,
+        BasedErrorCode.InvalidPayload,
+        'Unsupported Content-Encoding'
+      )
     }
   } else {
     let data: Buffer
     client.res.onData((c, isLast) => {
       size += c.byteLength
       if (size > maxSize) {
-        sendHttpError(client, 'Payload Too Large', 413)
+        sendHttpError(client, BasedErrorCode.PayloadTooLarge)
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(client, 'Chunk too large', 413)
+        sendHttpError(client, BasedErrorCode.ChunkTooLarge)
         return
       }
       if (!data && isLast) {

@@ -8,7 +8,7 @@ import {
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
 import { ActiveObservable, WebsocketClient } from '../../types'
-import { sendError, BasedErrorCode, StatusCode } from '../../error'
+import { sendError, BasedErrorCode } from '../../error'
 
 const sendGetData = (
   server: BasedServer,
@@ -75,9 +75,7 @@ export const getMessage = (
       }
 
       if (!ok) {
-        sendError(client, 'Not authorized', {
-          basedCode: BasedErrorCode.AuthorizeRejectedError,
-          statusCode: StatusCode.Forbidden,
+        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
           observableId: id,
         })
         return false
@@ -114,28 +112,32 @@ export const getMessage = (
                 })
               }
             } else {
-              sendError(client, 'Function not found', {
-                basedCode: BasedErrorCode.FunctionNotFound,
-                statusCode: StatusCode.NotFound,
+              sendError(client, BasedErrorCode.FunctionNotFound, {
                 observableId: id,
               })
             }
           })
           .catch((err) => {
-            sendError(client, err, {
-              basedCode: BasedErrorCode.FunctionNotFound,
-              statusCode: StatusCode.NotFound,
-              observableId: id,
-            })
+            sendError(
+              client,
+              BasedErrorCode.FunctionNotFound,
+              {
+                observableId: id,
+              },
+              err
+            )
           })
       }
     })
     .catch((err) => {
-      sendError(client, err, {
-        basedCode: BasedErrorCode.AuthorizeError,
-        statusCode: StatusCode.InternalServerError,
-        observableId: id,
-      })
+      sendError(
+        client,
+        BasedErrorCode.AuthorizeFunctionError,
+        {
+          observableId: id,
+        },
+        err
+      )
     })
 
   return true
