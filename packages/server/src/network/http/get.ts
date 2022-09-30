@@ -12,13 +12,14 @@ const sendGetResponse = (
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
-  encoding: string,
   checksum: number,
   client: HttpClient
 ) => {
   if (!client.res) {
     return
   }
+
+  const encoding = client.context.headers.encoding
 
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
@@ -27,11 +28,7 @@ const sendGetResponse = (
         sendHttpError(client, 'no value', 400)
       } else {
         if (obs.isDeflate) {
-          if (
-            encoding &&
-            typeof encoding === 'string' &&
-            encoding.includes('deflate')
-          ) {
+          if (typeof encoding === 'string' && encoding.includes('deflate')) {
             // send it
             client.res.cork(() => {
               client.res.writeStatus('200 OK')
@@ -104,7 +101,6 @@ export const httpGet = (
     return
   }
 
-  const encoding = client.context.encoding
   const name = route.name
 
   server.functions
@@ -123,13 +119,13 @@ export const httpGet = (
             obs.beingDestroyed = null
           }
           if (obs.cache) {
-            sendGetResponse(server, id, obs, encoding, checksum, client)
+            sendGetResponse(server, id, obs, checksum, client)
           } else {
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              sendGetResponse(server, id, obs, encoding, checksum, client)
+              sendGetResponse(server, id, obs, checksum, client)
             })
           }
         } else {
@@ -138,7 +134,7 @@ export const httpGet = (
             obs.onNextData = new Set()
           }
           obs.onNextData.add(() => {
-            sendGetResponse(server, id, obs, encoding, checksum, client)
+            sendGetResponse(server, id, obs, checksum, client)
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {

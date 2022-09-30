@@ -125,10 +125,6 @@ export const httpHandler = (
     }
   }
 
-  client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  // only allowed headers
-  client.res.writeHeader('Access-Control-Allow-Headers', '*')
-
   if (route.observable === true) {
     if (route.stream) {
       sendHttpError(client, 'Cannot stream to observable functions', 400)
