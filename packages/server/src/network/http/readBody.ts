@@ -83,7 +83,7 @@ export const readBody = (
           uncompressStream.destroy()
           return
         }
-        const buf = Buffer.from(c)
+        const buf = Buffer.alloc(c.byteLength, Buffer.from(c))
         if (isLast) {
           uncompressStream.end(buf)
         } else {

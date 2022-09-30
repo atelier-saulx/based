@@ -4,11 +4,9 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import http from 'node:http'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
-const br = promisify(zlib.brotliCompress)
 
 test.serial('functions (over http)', async (t) => {
   const store = {
@@ -204,7 +202,6 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
       checksum: 1,
       function: async (payload) => {
         await wait(100)
-        console.log('goootttt some payloadsss', payload)
         if (payload) {
           return payload
         }
@@ -274,109 +271,51 @@ test.serial.only('functions (over http + contentEncoding)', async (t) => {
     },
   })
 
-  // const result1 = await (
-  //   await fetch('http://localhost:9910/flap', {
-  //     method: 'post',
-  //     headers: {
-  //       'content-encoding': 'deflate',
-  //       'content-type': 'application/json',
-  //     },
-  //     body: await deflate(JSON.stringify({ flurp: 1 })),
-  //   })
-  // ).text()
-
-  // t.is(result1, '{"flurp":1}')
-
-  // const result2 = await (
-  //   await fetch('http://localhost:9910/flap', {
-  //     method: 'post',
-  //     headers: {
-  //       'content-encoding': 'gzip',
-  //       'content-type': 'application/json',
-  //     },
-  //     body: await gzip(JSON.stringify({ flurp: 2 })),
-  //   })
-  // ).text()
-
-  // t.is(result2, '{"flurp":2}')
-
-  const large: any[] = []
-  for (let i = 0; i < 100000; i++) {
-    large.push({ i, gur: 'gur' })
-  }
-
-  const gzipBod = await gzip(JSON.stringify(large))
-
-  console.info('send', gzipBod.byteLength)
-
-  const options = {
-    port: 9910,
-    host: 'localhost',
-    method: 'POST',
-    path: '/flap',
-    chunkSize: 50 * 1024,
-    headers: {
-      'Content-Type': 'application/json',
-      'Content-Length': gzipBod.length,
-      'Content-Encoding': 'gzip',
-    },
-  }
-
-  const req = http.request(options)
-
-  const chunkSize = 10 * 1024
-  const end = Math.ceil(gzipBod.byteLength / chunkSize)
-
-  const write = (c: Buffer): Promise<void> => {
-    return new Promise((resolve) => {
-      req.write(c, () => {
-        resolve()
-      })
+  const result1 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'deflate',
+        'content-type': 'application/json',
+      },
+      body: await deflate(JSON.stringify({ flurp: 1 })),
     })
+  ).text()
+
+  t.is(result1, '{"flurp":1}')
+
+  const result2 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'gzip',
+        'content-type': 'application/json',
+      },
+      body: await gzip(JSON.stringify({ flurp: 2 })),
+    })
+  ).text()
+
+  t.is(result2, '{"flurp":2}')
+
+  const bigBod: any[] = []
+
+  for (let i = 0; i < 1e6; i++) {
+    bigBod.push({ flap: 'snurp', i })
   }
 
-  for (let i = 0; i < end; i++) {
-    const c = gzipBod.slice(
-      i * chunkSize,
-      Math.min((i + 1) * chunkSize, gzipBod.byteLength)
-    )
-    // console.log('writing', i * chunkSize)
-    // if (i === end - 1) {
-    //   req.end(c)
-    // } else {
-    await write(c)
-    await wait(10)
+  const result3 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
 
-    // }
-  }
+      headers: {
+        'content-encoding': 'gzip',
+        'content-type': 'application/json',
+      },
+      body: await gzip(JSON.stringify(bigBod)),
+    })
+  ).json()
 
-  req.on('response', () => {
-    console.log('resp')
-  })
-
-  req.on('error', (err) => {
-    console.log('??', err)
-  })
-
-  // req.on('end', function () {
-  //   req.end()
-  // })
-
-  // const result3 = await (
-  //   await fetch('http://localhost:9910/flap', {
-  //     method: 'post',
-
-  //     headers: {
-  //       'content-encoding': 'gzip',
-  //       'content-type': 'application/json',
-  //     },
-  //     body: gzipBod,
-  //   })
-  // ).json()
-
-  // console.log(result3)
-
-  // t.deepEqual(result3, large)
+  t.deepEqual(result3, bigBod)
 
   await wait(10e3)
 
