@@ -10,9 +10,24 @@ export const defaultCodes = {
     status: 'Internal Server Error',
   },
   [BasedErrorCode.FunctionNotFound]: { code: 404, status: 'Not Found' },
-  [BasedErrorCode.AuthorizeError]: { code: 403, status: 'Forbidden' },
+  [BasedErrorCode.CannotStreamToObservableFunction]: {
+    code: 404,
+    status: 'Not Found',
+  },
+  [BasedErrorCode.AuthorizeFunctionError]: { code: 403, status: 'Forbidden' },
   [BasedErrorCode.AuthorizeRejectedError]: { code: 403, status: 'Forbidden' },
   [BasedErrorCode.InvalidPayload]: { code: 400, status: 'Bad Request' },
+  [BasedErrorCode.PayloadTooLarge]: { code: 413, status: 'Payload Too Large' },
+  [BasedErrorCode.ChunkTooLarge]: { code: 413, status: 'Payload Too Large' },
+  [BasedErrorCode.UnsupportedContentEncoding]: {
+    code: 400,
+    statis: 'Incorrect content encoding',
+  },
+  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
+  [BasedErrorCode.MethodNotAllowed]: {
+    code: 405,
+    status: 'Method Not Allowed',
+  },
 }
 
 export const sendHttpError = (
@@ -26,16 +41,21 @@ export const sendHttpError = (
   if (!client.res) {
     return
   }
-  const defaultProps = { ...(defaultCodes[basedErrorCode] || {}), ...props }
-  const { code, status } = defaultProps
-  client.res.writeStatus(`${code} ${status}`)
-  client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  client.res.writeHeader('Content-Type', 'application/json')
-  end(
-    client,
-    JSON.stringify({ error: error || defaultMessages[basedErrorCode], code })
-  )
+  client.res.cork(() => {
+    const defaultProps = { ...(defaultCodes[basedErrorCode] || {}), ...props }
+    const { code, status } = defaultProps
+
+    // fix them status
+
+    client.res.writeStatus(`${code} ${status}`)
+    client.res.writeHeader('Access-Control-Allow-Origin', '*')
+    client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+    client.res.writeHeader('Content-Type', 'application/json')
+    end(
+      client,
+      JSON.stringify({ error: error || defaultMessages[basedErrorCode], code })
+    )
+  })
 }
 
 export const sendErrorRaw = (
@@ -44,11 +64,11 @@ export const sendErrorRaw = (
   code: number = 400,
   status: string = 'Bad Request'
 ) => {
-  res.writeStatus(`${code} ${status}`)
-  res.writeHeader('Access-Control-Allow-Origin', '*')
-  res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  res.writeHeader('Content-Type', 'application/json')
-  res.end(JSON.stringify({ error, code }))
+  res.cork(() => {
+    res.writeStatus(`${code} ${status}`)
+    res.writeHeader('Content-Type', 'application/json')
+    res.end(JSON.stringify({ error, code }))
+  })
 }
 
 export const sendHttpResponse = (client: HttpClient, result: any) => {
@@ -58,16 +78,28 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
 
   const encoding = client.context.encoding
 
-  client.res.writeStatus('200 OK')
+  let cType: string
+
   // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
-  client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
   let parsed: string
   if (typeof result === 'string') {
-    client.res.writeHeader('Content-Type', 'text/plain')
+    cType = 'text/plain'
     parsed = result
   } else {
-    client.res.writeHeader('Content-Type', 'application/json')
+    cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(client, parsed, encoding).then((p) => end(client, p))
+  compress(client, parsed, encoding).then(({ payload, encoding }) => {
+    if (client.res) {
+      client.res.cork(() => {
+        client.res.writeStatus('200 OK')
+        client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+        client.res.writeHeader('Content-Type', cType)
+        if (encoding) {
+          client.res.writeHeader('Content-Encoding', encoding)
+        }
+        end(client, payload)
+      })
+    }
+  })
 }

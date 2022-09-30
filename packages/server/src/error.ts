@@ -3,9 +3,20 @@ import { WebsocketClient } from './types'
 
 export enum BasedErrorCode {
   FunctionError = 50001,
+  AuthorizeFunctionError = 50002,
+  NoOservableCacheAvailable = 50003,
+  ObservableFunctionError = 50004,
   FunctionNotFound = 40401,
-  AuthorizeError = 50002,
+  FunctionIsNotObservable = 40402,
+  FunctionIsObservable = 40403,
+  CannotStreamToObservableFunction = 40402,
   AuthorizeRejectedError = 40301,
+  InvalidPayload = 40001,
+  PayloadTooLarge = 40002,
+  ChunkTooLarge = 40003,
+  UnsupportedContentEncoding = 40004,
+  LengthRequired = 41101,
+  MethodNotAllowed = 40501,
 }
 
 enum StatusCode {
@@ -17,7 +28,7 @@ enum StatusCode {
 export const defaultMessages = {
   [BasedErrorCode.FunctionError]: 'Error in function',
   [BasedErrorCode.FunctionNotFound]: 'Function not found',
-  [BasedErrorCode.AuthorizeError]: 'Error in authorize function',
+  [BasedErrorCode.AuthorizeFunctionError]: 'Error in authorize function',
   [BasedErrorCode.AuthorizeRejectedError]: 'Authorize rejected',
 }
 
@@ -55,7 +66,7 @@ export const sendError = (
 
   switch (basedCode) {
     case BasedErrorCode.FunctionError:
-    case BasedErrorCode.AuthorizeError:
+    case BasedErrorCode.AuthorizeFunctionError:
       errorData.statusCode = StatusCode.InternalServerError
       break
     case BasedErrorCode.FunctionNotFound:

@@ -3,6 +3,42 @@ import zlib from 'node:zlib'
 import { sendHttpError } from './send'
 import { BasedErrorCode } from '../../error'
 
+const MAX_CHUNK_SIZE = 1024 * 1024
+
+const UNCOMPRESS_OPTS = {
+  // can be endless scince we limit by incoming
+  chunkSize: 1024 * 1024 * 1000,
+}
+
+const parseData = (
+  client: HttpClient,
+  contentType: string,
+  data: Buffer,
+  rawBuffer: boolean
+): any => {
+  if (contentType === 'application/json' || !contentType) {
+    const str = data.toString()
+    let params
+    try {
+      params = data.length ? JSON.parse(str) : undefined
+      return params
+    } catch (e) {
+      // make this an event
+      sendHttpError(client, BasedErrorCode.InvalidPayload)
+    }
+  } else if (
+    contentType.startsWith('text') ||
+    contentType === 'application/xml'
+  ) {
+    return data.toString()
+  } else {
+    if (rawBuffer) {
+      return Buffer.alloc(data.byteLength, data)
+    }
+    return data
+  }
+}
+
 export const readBody = (
   client: HttpClient,
   onData: (data: any | void) => void,
@@ -12,76 +48,61 @@ export const readBody = (
     return
   }
 
-  const contentEncoding = client.context.contentEncoding
-  let data = Buffer.from([])
-  let size = 0
+  const contentLen = client.context.headers['content-length']
 
-  const readData = (chunk: Buffer, isLast: boolean) => {
-    data = Buffer.concat([data, chunk])
-    if (isLast) {
-      const contentType = client.context.contentType
-      if (contentType === 'application/json' || !contentType) {
-        const str = data.toString()
-        let params
-        try {
-          params = data.length ? JSON.parse(str) : undefined
-          onData(params)
-        } catch (e) {
-          console.error(e, str)
-          sendHttpError(client, BasedErrorCode.InvalidPayload)
-          // sendHttpError(client, 'Invalid Payload', 400)
-        }
-      } else if (
-        contentType.startsWith('text') ||
-        contentType === 'application/xml'
-      ) {
-        onData(data.toString())
-      } else {
-        onData(data)
-      }
-    }
+  if (contentLen > maxSize) {
+    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+    return
   }
 
+  const contentType = client.context.headers['content-type']
+  const contentEncoding = client.context.headers['content-encoding']
+  let size = 0
+
   if (contentEncoding) {
-    /*
-    Content-Encoding: gzip
-    Content-Encoding: deflate
-    Content-Encoding: br
-    */
     let uncompressStream: zlib.Deflate | zlib.Gunzip
     if (contentEncoding === 'deflate') {
-      uncompressStream = zlib.createInflate()
+      uncompressStream = zlib.createInflate(UNCOMPRESS_OPTS)
     } else if (contentEncoding === 'gzip') {
-      uncompressStream = zlib.createGunzip()
+      uncompressStream = zlib.createGunzip(UNCOMPRESS_OPTS)
     } else if (contentEncoding === 'br') {
-      uncompressStream = zlib.createBrotliDecompress()
+      uncompressStream = zlib.createBrotliDecompress(UNCOMPRESS_OPTS)
     }
-
     if (uncompressStream) {
-      let last = false
       client.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > maxSize) {
-          sendHttpError(
-            client,
-            BasedErrorCode.InvalidPayload,
-            'Payload Too Large',
-            { code: 413 }
-          )
+          sendHttpError(client, BasedErrorCode.PayloadTooLarge)
           // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
+        if (c.byteLength > MAX_CHUNK_SIZE) {
+          sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+
+          uncompressStream.destroy()
+          return
+        }
         const buf = Buffer.from(c)
-        last = isLast
         if (isLast) {
           uncompressStream.end(buf)
         } else {
-          uncompressStream.push(buf)
+          if (!uncompressStream.write(buf)) {
+            // handle backpressure
+          }
         }
       })
-      uncompressStream.on('data', (d) => {
-        readData(d, last)
+      let data: Buffer
+      uncompressStream.on('data', (c) => {
+        if (!data) {
+          data = c
+        } else {
+          data = Buffer.concat([data, c])
+        }
+      })
+      uncompressStream.on('end', () => {
+        uncompressStream.destroy()
+        onData(parseData(client, contentType, data, false))
       })
     } else {
       sendHttpError(
@@ -89,22 +110,31 @@ export const readBody = (
         BasedErrorCode.InvalidPayload,
         'Unsupported Content-Encoding'
       )
-      // sendHttpError(client, 'Unsupported Content-Encoding', 400)
     }
   } else {
+    let data: Buffer
     client.res.onData((c, isLast) => {
       size += c.byteLength
       if (size > maxSize) {
-        sendHttpError(
-          client,
-          BasedErrorCode.InvalidPayload,
-          'Payload Too Large',
-          { code: 413 }
-        )
-        // sendHttpError(client, 'Payload Too Large', 413)
+        sendHttpError(client, BasedErrorCode.PayloadTooLarge)
         return
       }
-      readData(Buffer.from(c), isLast)
+      if (c.byteLength > MAX_CHUNK_SIZE) {
+        sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+        return
+      }
+      if (!data && isLast) {
+        data = Buffer.from(c)
+        onData(parseData(client, contentType, data, true))
+        return
+      } else if (!data) {
+        data = Buffer.alloc(c.byteLength, Buffer.from(c))
+      } else {
+        data = Buffer.concat([data, Buffer.from(c)])
+      }
+      if (isLast) {
+        onData(parseData(client, contentType, data, false))
+      }
     })
   }
 }

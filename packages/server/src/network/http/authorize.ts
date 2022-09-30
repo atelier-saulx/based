@@ -17,23 +17,15 @@ export const authorizeRequest = (
         return
       }
       if (!ok) {
-        sendHttpError(
-          client,
-          BasedErrorCode.AuthorizeRejectedError,
-          `${route.name} unauthorized request`
-        )
-        // sendHttpError(
-        //   client,
-        //   `${route.name} unauthorized request`,
-        //   401,
-        //   'Unauthorized'
-        // )
+        sendHttpError(client, BasedErrorCode.AuthorizeRejectedError, route.name)
       } else {
         authorized(payload)
       }
     })
-    .catch((_err) =>
-      // Not exposing err on purpose for rest calls
-      sendHttpError(client, BasedErrorCode.AuthorizeError)
+    .catch((err) =>
+      sendHttpError(client, BasedErrorCode.AuthorizeFunctionError, {
+        name: route.name,
+        err,
+      })
     )
 }

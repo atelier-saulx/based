@@ -92,7 +92,7 @@ export const functionMessage = (
     .catch((err) => {
       sendError(
         client,
-        BasedErrorCode.AuthorizeError,
+        BasedErrorCode.AuthorizeFunctionError,
         {
           requestId: reqId,
         },

@@ -94,6 +94,7 @@ export class BasedFunctions {
     name: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
     let spec = this.getFromStore(name)
+
     if (spec) {
       return spec
     }

@@ -106,6 +106,15 @@ export const httpHandler = (
     client.context.headers['content-length'] = Number(len)
   }
 
+  if (
+    method === 'post' &&
+    client.context.headers['content-length'] === undefined
+  ) {
+    // zero is also not allowed
+    sendHttpError(client, BasedErrorCode.LengthRequired)
+    return
+  }
+
   if (route.headers) {
     for (const header of route.headers) {
       const v = req.getHeader(header)
@@ -115,18 +124,9 @@ export const httpHandler = (
     }
   }
 
-  client.res.writeHeader('Access-Control-Allow-Origin', '*')
-  // only allowed headers
-  client.res.writeHeader('Access-Control-Allow-Headers', '*')
-
   if (route.observable === true) {
     if (route.stream) {
-      sendHttpError(
-        client,
-        BasedErrorCode.FunctionNotFound,
-        'Cannot stream to observable functions'
-      )
-      // sendHttpError(client, 'Cannot stream to observable functions', 400)
+      sendHttpError(client, BasedErrorCode.CannotStreamToObservableFunction)
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
@@ -138,26 +138,16 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(
-          client,
-          BasedErrorCode.FunctionNotFound,
-          'Method not allowed',
-          { status: 'Method not allowed', code: 405 }
-        )
-        // sendHttpError(client, 'Method not allowed', 405)
+        sendHttpError(client, BasedErrorCode.MethodNotAllowed)
         return
       }
-      if (!client.context.headers['content-length']) {
-        // zero is also not allowed
-        sendHttpError(
-          client,
-          BasedErrorCode.FunctionNotFound,
-          'Length required',
-          { status: 'Length required', code: 411 }
-        )
-        // sendHttpError(client, 'Length required', 411)
+
+      if (client.context.headers['content-length'] === 0) {
+        // zero is also not allowed for streams
+        sendHttpError(client, BasedErrorCode.LengthRequired)
         return
       }
+
       httpStreamFunction(
         server,
         client,

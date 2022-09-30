@@ -17,28 +17,29 @@ export const compress = async (
   client: HttpClient,
   payload: string | Buffer,
   encoding: string
-): Promise<Buffer | string> => {
+): Promise<{ payload: Buffer | string; encoding?: string }> => {
   if (!client.res) {
     return
   }
-  if (encoding) {
+  if (encoding && typeof encoding === 'string') {
+    let responseEncoding: string
     let compressed: Buffer
     if (!(payload instanceof Buffer)) {
       payload = Buffer.from(payload)
     }
     if (encoding.includes('deflate')) {
-      client.res.writeHeader('Content-Encoding', 'deflate')
+      responseEncoding = 'defalte'
       compressed = await deflate(payload)
     } else if (encoding.includes('gzip')) {
-      client.res.writeHeader('Content-Encoding', 'gzip')
+      responseEncoding = 'gzip'
       compressed = await gzip(payload)
     } else if (encoding.includes('br')) {
-      client.res.writeHeader('Content-Encoding', 'br')
+      responseEncoding = 'br'
       compressed = await br(payload)
     }
     if (compressed) {
-      return compressed
+      return { payload: compressed, encoding: responseEncoding }
     }
   }
-  return payload
+  return { payload }
 }

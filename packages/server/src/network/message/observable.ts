@@ -106,7 +106,7 @@ export const subscribeMessage = (
     .catch((err) => {
       sendError(
         client,
-        BasedErrorCode.AuthorizeError,
+        BasedErrorCode.AuthorizeFunctionError,
         {
           observableId: id,
         },
