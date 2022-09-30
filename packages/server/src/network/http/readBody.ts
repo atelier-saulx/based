@@ -11,19 +11,22 @@ export const readBody = (
     return
   }
 
-  const contentEncoding = client.context.contentEncoding
+  const contentType = client.context.headers['content-type']
+  const contentEncoding = client.context.headers['content-encoding']
   let data = Buffer.from([])
   let size = 0
 
   const readData = (chunk: Buffer, isLast: boolean) => {
     data = Buffer.concat([data, chunk])
+
     if (isLast) {
-      const contentType = client.context.contentType
       if (contentType === 'application/json' || !contentType) {
         const str = data.toString()
         let params
         try {
           params = data.length ? JSON.parse(str) : undefined
+
+          console.log('GOT DATA', params)
           onData(params)
         } catch (e) {
           console.error(e, str)
@@ -64,15 +67,19 @@ export const readBody = (
           uncompressStream.destroy()
           return
         }
-        const buf = Buffer.from(c)
+        const buf = Buffer.from(c.slice(0))
         last = isLast
-        if (isLast) {
-          uncompressStream.end(buf)
-        } else {
-          uncompressStream.push(buf)
+        // if (isLast) {
+        // uncompressStream.end(buf)
+        // } else {
+        console.log('WRITE!')
+        if (!uncompressStream.write(buf)) {
+          console.log('wrong !')
         }
+        // }
       })
       uncompressStream.on('data', (d) => {
+        // console.log(d.toString(), last)
         readData(d, last)
       })
     } else {

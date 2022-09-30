@@ -195,7 +195,7 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('functions (over http + contentEncoding)', async (t) => {
+test.serial.only('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -270,44 +270,49 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
     },
   })
 
-  const result1 = await (
-    await fetch('http://localhost:9910/flap', {
-      method: 'post',
-      headers: {
-        'content-encoding': 'deflate',
-        'content-type': 'application/json',
-      },
-      body: await deflate(JSON.stringify({ flurp: 1 })),
-    })
-  ).text()
+  // const result1 = await (
+  //   await fetch('http://localhost:9910/flap', {
+  //     method: 'post',
+  //     headers: {
+  //       'content-encoding': 'deflate',
+  //       'content-type': 'application/json',
+  //     },
+  //     body: await deflate(JSON.stringify({ flurp: 1 })),
+  //   })
+  // ).text()
 
-  t.is(result1, '{"flurp":1}')
+  // t.is(result1, '{"flurp":1}')
 
-  const result2 = await (
+  // const result2 = await (
+  //   await fetch('http://localhost:9910/flap', {
+  //     method: 'post',
+  //     headers: {
+  //       'content-encoding': 'gzip',
+  //       'content-type': 'application/json',
+  //     },
+  //     body: await gzip(JSON.stringify({ flurp: 2 })),
+  //   })
+  // ).text()
+
+  // t.is(result2, '{"flurp":2}')
+
+  const large: any[] = []
+  for (let i = 0; i < 1000; i++) {
+    large.push({ i, gur: 'gur' })
+  }
+
+  const result3 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
       },
-      body: await gzip(JSON.stringify({ flurp: 2 })),
+      body: await gzip(JSON.stringify(large)),
     })
-  ).text()
+  ).json()
 
-  t.is(result2, '{"flurp":2}')
-
-  const result3 = await (
-    await fetch('http://localhost:9910/flap', {
-      method: 'post',
-      headers: {
-        'content-encoding': 'br',
-        'content-type': 'application/json',
-      },
-      body: await br(JSON.stringify({ flurp: 3 })),
-    })
-  ).text()
-
-  t.is(result3, '{"flurp":3}')
+  t.deepEqual(result3, large)
 
   await wait(10e3)
 

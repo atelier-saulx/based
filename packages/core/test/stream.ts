@@ -2,11 +2,12 @@ import test from 'ava'
 import createServer from '@based/server'
 import { readStream, wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
+import zlib from 'node:zlib'
+import { promisify } from 'node:util'
 
-// contentEncoding will be respected
-// const deflate = promisify(zlib.deflate)
-// const gzip = promisify(zlib.gzip)
-// const br = promisify(zlib.brotliCompress)
+const deflate = promisify(zlib.deflate)
+const gzip = promisify(zlib.gzip)
+const br = promisify(zlib.brotliCompress)
 
 test.serial('functions (over http + stream)', async (t) => {
   const routes = {
@@ -80,6 +81,23 @@ test.serial('functions (over http + stream)', async (t) => {
   ).json()
 
   t.deepEqual(bigBod, result)
+
+  const x = await gzip(JSON.stringify(bigBod))
+
+  console.log(x.length)
+
+  const resultBrotli = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'gzip',
+        'content-type': 'application/json',
+      },
+      body: x,
+    })
+  ).json()
+
+  t.deepEqual(bigBod, resultBrotli)
 
   await wait(10e3)
 
