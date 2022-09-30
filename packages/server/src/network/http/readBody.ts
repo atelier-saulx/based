@@ -69,6 +69,8 @@ export const readBody = (
     }
     if (uncompressStream) {
       client.res.onData((c, isLast) => {
+        console.log('INCOMING compress...', c.byteLength)
+
         size += c.byteLength
         if (size > maxSize) {
           sendHttpError(client, 'Payload Too Large', 413)
@@ -107,6 +109,8 @@ export const readBody = (
   } else {
     let data: Buffer
     client.res.onData((c, isLast) => {
+      console.log('INCOMING', c.byteLength)
+
       size += c.byteLength
       if (size > maxSize) {
         sendHttpError(client, 'Payload Too Large', 413)

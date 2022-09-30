@@ -10,10 +10,10 @@ const init = async () => {
       await wait(100)
       return 'FLAP'
     },
-    small: async () => 'he',
+    small: async (x) => x,
     iqTest: async () => json,
     counter: async (payload, update) => {
-      console.info('init counter', payload)
+      console.info('init counter')
       let cnt = 0
       const counter = setInterval(() => {
         let x = ''
@@ -33,21 +33,24 @@ const init = async () => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
-      unregister: async () => {
+      uninstall: async () => {
         return true
       },
-      registerByPath: async ({ path }) => {
+      route: ({ path, name }) => {
         if (path === '/') {
           return {
             name: 'flap',
-            checksum: 1,
-            function: store.flap,
-            observable: false,
+          }
+        }
+        if (name && store[name]) {
+          return {
+            name,
+            observable: name === 'counter',
           }
         }
         return false
       },
-      register: async ({ name }) => {
+      install: async ({ name }) => {
         if (store[name]) {
           return {
             name,

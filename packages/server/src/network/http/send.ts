@@ -14,8 +14,6 @@ export const sendHttpError = (
   }
   client.res.cork(() => {
     client.res.writeStatus(`${code} ${status}`)
-    client.res.writeHeader('Access-Control-Allow-Origin', '*')
-    client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
     client.res.writeHeader('Content-Type', 'application/json')
     end(client, JSON.stringify({ error, code }))
   })
@@ -29,8 +27,6 @@ export const sendErrorRaw = (
 ) => {
   res.cork(() => {
     res.writeStatus(`${code} ${status}`)
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', 'content-type')
     res.writeHeader('Content-Type', 'application/json')
     res.end(JSON.stringify({ error, code }))
   })
@@ -54,13 +50,16 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(client, parsed, encoding).then((p) => {
+  compress(client, parsed, encoding).then(({ payload, encoding }) => {
     if (client.res) {
       client.res.cork(() => {
         client.res.writeStatus('200 OK')
         client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
         client.res.writeHeader('Content-Type', cType)
-        end(client, p)
+        if (encoding) {
+          client.res.writeHeader('Content-Encoding', encoding)
+        }
+        end(client, payload)
       })
     }
   })

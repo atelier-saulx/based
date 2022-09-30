@@ -24,35 +24,61 @@ const sendGetResponse = (
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
         // ERROR
-        throw new Error('Observable does not have a value...')
+        sendHttpError(client, 'no value', 400)
       } else {
-        // client.res.writeHeader('Cache-Control', 'max-age=10')
-        client.res.writeStatus('200 OK')
-        client.res.writeHeader('ETag', String(obs.checksum))
         if (obs.isDeflate) {
-          if (encoding.includes('deflate')) {
+          if (encoding && encoding.includes('deflate')) {
             // send it
-            client.res.writeHeader('Content-Encoding', 'deflate')
-            end(client, obs.cache.slice(4 + 8 + 8))
+            client.res.cork(() => {
+              client.res.writeStatus('200 OK')
+              client.res.writeHeader('ETag', String(obs.checksum))
+              client.res.writeHeader('Content-Encoding', 'deflate')
+              end(client, obs.cache.slice(4 + 8 + 8))
+            })
           } else if (obs.rawData) {
-            compress(client, JSON.stringify(obs.rawData), encoding).then((p) =>
-              end(client, p)
+            compress(client, JSON.stringify(obs.rawData), encoding).then(
+              ({ payload, encoding }) => {
+                if (client.res) {
+                  client.res.cork(() => {
+                    client.res.writeStatus('200 OK')
+                    if (encoding) {
+                      client.res.writeHeader('Content-Encoding', encoding)
+                    }
+                    client.res.writeHeader('ETag', String(obs.checksum))
+                    end(client, payload)
+                  })
+                }
+              }
             )
           } else {
             compress(
               client,
               zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8)),
               encoding
-            ).then((p) => end(client, p))
+            ).then(({ payload, encoding }) => {
+              client.res.cork(() => {
+                client.res.writeStatus('200 OK')
+                if (encoding) {
+                  client.res.writeHeader('Content-Encoding', encoding)
+                }
+                client.res.writeHeader('ETag', String(obs.checksum))
+                end(client, payload)
+              })
+            })
           }
         } else {
-          end(client, obs.cache.slice(4 + 8 + 8))
+          client.res.cork(() => {
+            client.res.writeStatus('200 OK')
+            client.res.writeHeader('ETag', String(obs.checksum))
+            end(client, obs.cache.slice(4 + 8 + 8))
+          })
         }
       }
     } else {
-      console.info('not modified')
-      client.res.writeStatus('304 Not Modified')
-      end(client)
+      client.res.cork(() => {
+        client.res.writeStatus('304 Not Modified')
+        end(client)
+      })
     }
   } catch (err) {
     sendHttpError(client, err.message)
