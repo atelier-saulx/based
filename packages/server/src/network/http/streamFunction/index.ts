@@ -19,10 +19,7 @@ export const httpStreamFunction = (
   const size = client.context.headers['content-length']
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
-    sendHttpError(client, BasedErrorCode.InvalidPayload, 'Payload Too Large', {
-      code: 413,
-    })
-    // sendHttpError(client, 'Payload Too Large', 413)
+    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
     return
   }
 

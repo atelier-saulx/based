@@ -44,5 +44,7 @@ export const httpFunction = (
           })
       }
     })
-    .catch(() => sendHttpError(client, BasedErrorCode.FunctionNotFound, name))
+    .catch(() =>
+      sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
+    )
 }

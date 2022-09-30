@@ -2,7 +2,8 @@ import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
-import { sendError, BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../error'
+import { sendError } from './send'
 import { WebsocketClient } from '../../types'
 
 export const enableSubscribe = (
@@ -38,14 +39,10 @@ export const enableSubscribe = (
         }
       })
       .catch((err) => {
-        sendError(
-          client,
-          BasedErrorCode.FunctionNotFound,
-          {
-            observableId: id,
-          },
-          err
-        )
+        sendError(client, BasedErrorCode.FunctionNotFound, {
+          observableId: id,
+          err,
+        })
       })
   }
 }
@@ -104,14 +101,10 @@ export const subscribeMessage = (
       enableSubscribe(server, client, id, checksum, name, payload)
     })
     .catch((err) => {
-      sendError(
-        client,
-        BasedErrorCode.AuthorizeFunctionError,
-        {
-          observableId: id,
-        },
-        err
-      )
+      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+        observableId: id,
+        err,
+      })
       destroy(server, id)
     })
 

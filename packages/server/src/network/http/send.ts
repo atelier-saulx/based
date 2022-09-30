@@ -2,48 +2,20 @@ import { HttpClient } from '../../types'
 import uws from '@based/uws'
 import end from './end'
 import { compress } from './compress'
-import { BasedErrorCode, defaultMessages } from '../../error'
-
-export const defaultCodes = {
-  [BasedErrorCode.FunctionError]: {
-    code: 500,
-    status: 'Internal Server Error',
-  },
-  [BasedErrorCode.FunctionNotFound]: { code: 404, status: 'Not Found' },
-  [BasedErrorCode.CannotStreamToObservableFunction]: {
-    code: 404,
-    status: 'Not Found',
-  },
-  [BasedErrorCode.AuthorizeFunctionError]: { code: 403, status: 'Forbidden' },
-  [BasedErrorCode.AuthorizeRejectedError]: { code: 403, status: 'Forbidden' },
-  [BasedErrorCode.InvalidPayload]: { code: 400, status: 'Bad Request' },
-  [BasedErrorCode.PayloadTooLarge]: { code: 413, status: 'Payload Too Large' },
-  [BasedErrorCode.ChunkTooLarge]: { code: 413, status: 'Payload Too Large' },
-  [BasedErrorCode.UnsupportedContentEncoding]: {
-    code: 400,
-    statis: 'Incorrect content encoding',
-  },
-  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
-  [BasedErrorCode.MethodNotAllowed]: {
-    code: 405,
-    status: 'Method Not Allowed',
-  },
-}
+import { BasedErrorCode, CreateErrorProps, createError } from '../../error'
 
 export const sendHttpError = (
   client: HttpClient,
-  basedErrorCode: BasedErrorCode,
-  // code: number = 400,
-  // status: string = 'Bad Request'
-  error?: any,
-  props?: { code?: number; status?: string }
+  basedCode: BasedErrorCode,
+  err?: CreateErrorProps,
+  overrides?: any
 ) => {
   if (!client.res) {
     return
   }
   client.res.cork(() => {
-    const defaultProps = { ...(defaultCodes[basedErrorCode] || {}), ...props }
-    const { code, status } = defaultProps
+    const errorData = createError(basedCode, err)
+    const { code, status, message, basedMessage } = errorData
 
     // fix them status
 
@@ -53,7 +25,7 @@ export const sendHttpError = (
     client.res.writeHeader('Content-Type', 'application/json')
     end(
       client,
-      JSON.stringify({ error: error || defaultMessages[basedErrorCode], code })
+      JSON.stringify({ error: err || message, code, basedCode, basedMessage })
     )
   })
 }
