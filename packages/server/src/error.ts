@@ -42,6 +42,17 @@ export type BasedErrorData = {
   code?: string
 }
 
+// MAP OF ARGUMENTS TYPES
+
+// GEN ERROR RETURNS AN OBJECT { status, message: (ARGS OF ERROR) => , code }
+// SEND EVENT WITH ERROR
+
+// ----------------------------------
+// createError()
+
+// ----------------------------------
+// sendHtttpError / sendError
+
 export const sendError = (
   client: WebsocketClient,
   basedCode: BasedErrorCode,
