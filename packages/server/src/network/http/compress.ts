@@ -21,8 +21,7 @@ export const compress = async (
   if (!client.res) {
     return
   }
-  if (encoding) {
-    console.info('GGG', encoding)
+  if (encoding && typeof encoding === 'string') {
     let responseEncoding: string
     let compressed: Buffer
     if (!(payload instanceof Buffer)) {

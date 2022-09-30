@@ -27,7 +27,11 @@ const sendGetResponse = (
         sendHttpError(client, 'no value', 400)
       } else {
         if (obs.isDeflate) {
-          if (encoding && encoding.includes('deflate')) {
+          if (
+            encoding &&
+            typeof encoding === 'string' &&
+            encoding.includes('deflate')
+          ) {
             // send it
             client.res.cork(() => {
               client.res.writeStatus('200 OK')
