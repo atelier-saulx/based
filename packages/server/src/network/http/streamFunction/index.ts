@@ -29,6 +29,7 @@ export const httpStreamFunction = (
 
   const type = client.context.headers['content-type']
 
+  // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
     authorizeRequest(server, client, payload, route, (payload) => {
       server.functions

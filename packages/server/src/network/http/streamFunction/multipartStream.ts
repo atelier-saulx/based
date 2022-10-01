@@ -5,6 +5,8 @@ import { sendHttpError } from '../send'
 import getExtension from './getExtension'
 import endStreamRequest from './endStreamRequest'
 
+const MAX_CHUNK_SIZE = 1024 * 1024 * 5
+
 export type FileOptions = {
   name?: string
   size: number
@@ -70,8 +72,6 @@ export default async (
   payload: any,
   fn: BasedFunctionSpec
 ): Promise<void> => {
-  // multi file...
-
   if (!payload || (!payload && typeof payload !== 'object')) {
     payload = {}
   }
@@ -86,6 +86,15 @@ export default async (
   let total = 0
 
   client.res.onData((chunk, isLast) => {
+    // see if this goes ok... (clearing mem etc)
+    if (chunk.byteLength > MAX_CHUNK_SIZE) {
+      sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+      for (const file of files) {
+        file.stream.destroy()
+      }
+      return
+    }
+
     let firstWritten = false
     const blocks = Buffer.from(chunk).toString('binary').split('\r\n')
     total += chunk.byteLength
