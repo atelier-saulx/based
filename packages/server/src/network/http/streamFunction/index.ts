@@ -29,7 +29,9 @@ export const httpStreamFunction = (
 
   const type = client.context.headers['content-type']
 
-  if (type === 'multipart/form-data') {
+  console.log('hello', type)
+
+  if (type && type.startsWith('multipart/form-data')) {
     authorizeRequest(server, client, payload, route, (payload) => {
       server.functions
         .install(route.name)

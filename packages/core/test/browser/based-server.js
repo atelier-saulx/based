@@ -1,5 +1,5 @@
 const createServer = require('@based/server').default
-const { wait } = require('@saulx/utils')
+const { wait, readStream } = require('@saulx/utils')
 
 // const json = require('./tmp.json')
 
@@ -18,23 +18,10 @@ const init = async () => {
       name: 'streamboy',
       stream: true,
       checksum: 1,
-      function: (p) => {
-        return new Promise((resolve, reject) => {
-          p.stream.on('progress', (p) => {
-            console.info('progress', p * 100, '%')
-          })
-
-          p.stream.on('data', (c) => {
-            console.info('receive chunk', c.byteLength)
-          })
-
-          p.stream.on('end', () => {
-            console.info('done streami!')
-            resolve('w00t FILE')
-          })
-
-          p.stream.once('error', reject)
-        })
+      function: async (p) => {
+        console.info('-------------------->', p.payload)
+        const x = await readStream(p.stream)
+        console.info(x.toString().length)
       },
     },
     counter: {

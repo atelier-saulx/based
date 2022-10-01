@@ -8,59 +8,55 @@ import endStreamRequest from './endStreamRequest'
 
 export type FileOptions = {
   name?: string
-  raw?: boolean
   size: number
   type: string
-  id: string
   extension: string
-  functionName?: string
+  disposition: string[]
+  meta: { size?: number } & { [key: string]: string }
 }
 
 type FileDescriptor = {
   opts: Partial<FileOptions>
   stream: DataStream
+  isDone: boolean
   headersSet: number
 }
 
+const streamProgress = (stream: DataStream, size: number) => {
+  stream.emit('progress', 0)
+  if (size < 200000) {
+    stream.on('end', () => {
+      stream.emit('progress', 1)
+    })
+  } else {
+    let progress = 0
+    let total = 0
+    let setInProgress = false
+    const updateProgress = () => {
+      if (!setInProgress) {
+        setInProgress = true
+        setTimeout(() => {
+          stream.emit('progress', progress)
+          setInProgress = false
+        }, 250)
+      }
+    }
+    stream.on('end', () => {
+      progress = 1
+      updateProgress()
+    })
+    stream.on('data', (chunk) => {
+      total += chunk.byteLength
+      progress = total / size
+      updateProgress()
+    })
+  }
+}
+
+// only use this if you have individual file else its just all
 const setHeader = (file: FileDescriptor): boolean => {
   file.headersSet++
   if (file.headersSet === 2) {
-    const opts = file.opts
-    if (opts.size < 200000) {
-      file.stream.on('end', () => {
-        console.info({ progress: 1 }, opts)
-      })
-    } else {
-      let progress = 0
-      let total = 0
-      let setInProgress = false
-      const payload: any = {
-        $id: opts.id,
-        progress: 0,
-        size: opts.size,
-      }
-      if (opts.name) {
-        payload.name = opts.name
-      }
-      const updateProgress = () => {
-        if (!setInProgress) {
-          setInProgress = true
-          setTimeout(() => {
-            console.info(progress)
-            setInProgress = false
-          }, 250)
-        }
-      }
-      file.stream.on('end', () => {
-        progress = 1
-        updateProgress()
-      })
-      file.stream.on('data', (chunk) => {
-        total += chunk.byteLength
-        progress = total / opts.size
-        updateProgress()
-      })
-    }
     return true
   }
   return false
@@ -84,13 +80,23 @@ export default async (
 
   const files: FileDescriptor[] = []
 
+  const contentLength = client.context.headers['content-length']
+
   let boundary = null
   let prevLine: string
   let isWriting = false
+  let total = 0
 
   client.res.onData((chunk, isLast) => {
     let firstWritten = false
     const blocks = Buffer.from(chunk).toString('binary').split('\r\n')
+    total += chunk.byteLength
+
+    for (const file of files) {
+      if (file.headersSet > 1 && !file.isDone && !file.opts.meta.size) {
+        file.stream.emit('progress', total / contentLength)
+      }
+    }
 
     if (!boundary) {
       boundary = blocks[0]
@@ -111,6 +117,10 @@ export default async (
         } else {
           file.stream.end()
         }
+        file.isDone = true
+        if (!file.opts.meta.size) {
+          file.stream.emit('progress', 1)
+        }
         prevLine = null
         if (line === boundary + '--') {
           continue
@@ -122,9 +132,8 @@ export default async (
           stream: new DataStream(),
           headersSet: 0,
           opts: {},
+          isDone: false,
         }
-
-        // bit more
 
         files.push(file)
         continue
@@ -143,19 +152,27 @@ export default async (
           // TODO: invalid file
           return sendHttpError(client, BasedErrorCode.InvalidPayload)
         }
-        const [raw, id, size, ...name] = meta.split('|')
+
         const opts = file.opts
-        opts.id = id
-        if (raw) {
-          opts.raw = true
-        }
-        if (name && name.length) {
-          opts.name = name.join('|')
-        } else {
-          opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
+
+        opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
+        opts.disposition = meta.split('|')
+        opts.meta = {}
+        for (const seg of opts.disposition) {
+          if (/=/.test(seg)) {
+            const [k, v] = seg.split('=')
+            if (k === 'size') {
+              opts.meta[k] = Number(v)
+            } else {
+              opts.meta[k] = v
+            }
+          }
         }
 
-        opts.size = Number(size)
+        if (opts.meta.size) {
+          streamProgress(file.stream, opts.meta.size)
+        }
+
         isWriting = setHeader(file)
         if (isWriting === null) {
           return
@@ -200,7 +217,6 @@ export default async (
     }
 
     if (isLast) {
-      console.info('stream end')
       endStreamRequest(client)
     }
   })
