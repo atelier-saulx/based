@@ -27,8 +27,8 @@ export const compress = async (
     return { payload }
   }
 
-  // assume 4 bytes per char
-  if (payload.length < 100) {
+  // assume 3.5 bytes per char
+  if (payload.length < 150) {
     return { payload }
   }
 
