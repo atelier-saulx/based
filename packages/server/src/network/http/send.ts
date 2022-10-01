@@ -8,6 +8,7 @@ export const sendHttpError = (
   client: HttpClient,
   basedCode: BasedErrorCode,
   err?: CreateErrorProps,
+  // eslint-disable-next-line
   overrides?: any
 ) => {
   if (!client.res) {

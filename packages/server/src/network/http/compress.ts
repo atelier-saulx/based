@@ -1,6 +1,7 @@
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { HttpClient } from '../../types'
+import { COMPRESS_FROM_BYTES } from '../../protocol'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
@@ -13,6 +14,8 @@ Content-Encoding: deflate
 Content-Encoding: br
 */
 
+const COMPRESS_STRING_LEN = Math.ceil(COMPRESS_FROM_BYTES / 1.5)
+
 export const compress = async (
   client: HttpClient,
   payload: string | Buffer
@@ -23,12 +26,11 @@ export const compress = async (
 
   const encoding = client.context.headers.encoding
 
-  if (payload instanceof Buffer && payload.byteLength < 400) {
+  if (payload instanceof Buffer && payload.byteLength <= COMPRESS_FROM_BYTES) {
     return { payload }
   }
 
-  // assume 3.5 bytes per char
-  if (payload.length < 150) {
+  if (payload.length < COMPRESS_STRING_LEN) {
     return { payload }
   }
 
