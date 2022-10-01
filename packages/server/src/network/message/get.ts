@@ -8,7 +8,8 @@ import {
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
 import { ActiveObservable, WebsocketClient } from '../../types'
-import { sendError, BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../error'
+import { sendError } from './send'
 
 const sendGetData = (
   server: BasedServer,
@@ -118,26 +119,18 @@ export const getMessage = (
             }
           })
           .catch((err) => {
-            sendError(
-              client,
-              BasedErrorCode.FunctionNotFound,
-              {
-                observableId: id,
-              },
-              err
-            )
+            sendError(client, BasedErrorCode.FunctionNotFound, {
+              observableId: id,
+              err,
+            })
           })
       }
     })
     .catch((err) => {
-      sendError(
-        client,
-        BasedErrorCode.AuthorizeFunctionError,
-        {
-          observableId: id,
-        },
-        err
-      )
+      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+        observableId: id,
+        err,
+      })
     })
 
   return true

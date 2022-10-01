@@ -1,6 +1,3 @@
-import { valueToBuffer, encodeErrorResponse } from './protocol'
-import { WebsocketClient } from './types'
-
 export enum BasedErrorCode {
   FunctionError = 50001,
   AuthorizeFunctionError = 50002,
@@ -19,78 +16,116 @@ export enum BasedErrorCode {
   MethodNotAllowed = 40501,
 }
 
-enum StatusCode {
-  Forbidden = 403,
-  NotFound = 404,
-  InternalServerError = 500,
-}
-
-export const defaultMessages = {
-  [BasedErrorCode.FunctionError]: 'Error in function',
-  [BasedErrorCode.FunctionNotFound]: 'Function not found',
-  [BasedErrorCode.AuthorizeFunctionError]: 'Error in authorize function',
-  [BasedErrorCode.AuthorizeRejectedError]: 'Authorize rejected',
+const errorDefaults = {
+  [BasedErrorCode.FunctionError]: {
+    code: 500,
+    status: 'Internal Server Error',
+    message: ({ name }) => `Error in function${name ? ' ' + name : ''}.`,
+  },
+  [BasedErrorCode.FunctionNotFound]: {
+    code: 404,
+    status: 'Not Found',
+    message: ({ name }) => `Function${name ? ' ' + name : ''} not found.`,
+  },
+  [BasedErrorCode.CannotStreamToObservableFunction]: {
+    code: 404,
+    status: 'Not Found',
+    message: 'Cannot stream to observable function.',
+  },
+  [BasedErrorCode.AuthorizeFunctionError]: {
+    code: 403,
+    status: 'Forbidden',
+    message: 'Error in authorize function',
+  },
+  [BasedErrorCode.AuthorizeRejectedError]: {
+    code: 403,
+    status: 'Forbidden',
+    message: ({ name }) =>
+      `Authorize rejected access${name ? ' to function ' + name : ''}.`,
+  },
+  [BasedErrorCode.InvalidPayload]: {
+    code: 400,
+    status: 'Bad Request',
+    message: 'Invalid payload.',
+  },
+  [BasedErrorCode.PayloadTooLarge]: { code: 413, status: 'Payload Too Large' },
+  [BasedErrorCode.ChunkTooLarge]: { code: 413, status: 'Payload Too Large' },
+  [BasedErrorCode.UnsupportedContentEncoding]: {
+    code: 400,
+    status: 'Incorrect content encoding',
+  },
+  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
+  [BasedErrorCode.MethodNotAllowed]: {
+    code: 405,
+    status: 'Method Not Allowed',
+  },
+  [BasedErrorCode.NoOservableCacheAvailable]: {
+    code: 500,
+    status: 'Internal Server Error',
+    message: ({ name }) =>
+      `No observable cache available${name ? ' for function ' + name : ''}.`,
+  },
 }
 
 export type BasedErrorData = {
   message: string
+  basedMessage?: string
   stack: string
   requestId?: number
   observableId?: number
   basedCode: BasedErrorCode
-  statusCode?: StatusCode
+  status?: number
   code?: string
 }
 
-// MAP OF ARGUMENTS TYPES
+export type CreateErrorProps =
+  | {
+      err?: Error
+      name?: string
+      observableId?: number
+      requestId?: number
+    }
+  | string
 
-// GEN ERROR RETURNS AN OBJECT { status, message: (ARGS OF ERROR) => , code }
-// SEND EVENT WITH ERROR
-
-// ----------------------------------
-// createError()
-
-// ----------------------------------
-// sendHtttpError / sendError
-
-export const sendError = (
-  client: WebsocketClient,
+export const createError = (
   basedCode: BasedErrorCode,
-  props: { observableId: number } | { requestId: number },
-  error?: Error | string
-): void => {
+  err?: CreateErrorProps
+): BasedErrorData => {
   const errorData: BasedErrorData = { message: null, stack: null, basedCode }
-  if (typeof error === 'string') {
-    errorData.message = error
-    const captureTarget = { stack: null }
-    Error.captureStackTrace(captureTarget, sendError)
-    errorData.stack = captureTarget.stack
-  } else if (error) {
-    Object.getOwnPropertyNames(error).forEach((key: string) => {
-      errorData[key] = error[key]
-    })
+
+  errorData.basedMessage =
+    typeof errorDefaults[basedCode]?.message === 'function'
+      ? errorDefaults[basedCode]?.message(err)
+      : errorDefaults[basedCode]?.message ||
+        errorDefaults[basedCode]?.status ||
+        'Oops something went wrong'
+
+  if (typeof err === 'string') {
+    errorData.message = err
+  } else {
+    if (err?.err instanceof Error) {
+      Object.getOwnPropertyNames(err.err).forEach((key: string) => {
+        errorData[key] = err.err[key]
+      })
+    } else {
+      errorData.message = errorData.basedMessage
+
+      const captureTarget = { stack: null }
+      Error.captureStackTrace(captureTarget, createError)
+      errorData.stack = captureTarget.stack
+    }
   }
 
-  if (typeof error === 'undefined' || error === null) {
-    errorData.message = defaultMessages[basedCode] || 'Ops something went wrong'
+  if (typeof err !== 'string') {
+    if (err?.observableId) {
+      errorData.observableId = err.observableId
+    }
+    if (err?.requestId) {
+      errorData.requestId = err.requestId
+    }
   }
+  errorData.code = errorDefaults[basedCode]?.code
+  errorData.status = errorDefaults[basedCode]?.status
 
-  switch (basedCode) {
-    case BasedErrorCode.FunctionError:
-    case BasedErrorCode.AuthorizeFunctionError:
-      errorData.statusCode = StatusCode.InternalServerError
-      break
-    case BasedErrorCode.FunctionNotFound:
-      errorData.statusCode = StatusCode.NotFound
-      break
-    case BasedErrorCode.AuthorizeRejectedError:
-      errorData.statusCode = StatusCode.Forbidden
-      break
-  }
-
-  client.ws?.send(
-    encodeErrorResponse(valueToBuffer({ ...errorData, ...props })),
-    true,
-    false
-  )
+  return errorData
 }

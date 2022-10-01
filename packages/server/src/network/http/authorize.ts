@@ -17,7 +17,9 @@ export const authorizeRequest = (
         return
       }
       if (!ok) {
-        sendHttpError(client, BasedErrorCode.AuthorizeRejectedError, route.name)
+        sendHttpError(client, BasedErrorCode.AuthorizeRejectedError, {
+          name: route.name,
+        })
       } else {
         authorized(payload)
       }

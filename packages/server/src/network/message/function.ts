@@ -7,7 +7,8 @@ import {
   decodeName,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { sendError, BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../error'
+import { sendError } from './send'
 import { WebsocketClient } from '../../types'
 
 export const functionMessage = (
@@ -63,14 +64,10 @@ export const functionMessage = (
                 )
               })
               .catch((err) => {
-                sendError(
-                  client,
-                  BasedErrorCode.FunctionError,
-                  {
-                    requestId: reqId,
-                  },
-                  err
-                )
+                sendError(client, BasedErrorCode.FunctionError, {
+                  requestId: reqId,
+                  err,
+                })
               })
           } else {
             sendError(client, BasedErrorCode.FunctionNotFound, {
@@ -79,25 +76,17 @@ export const functionMessage = (
           }
         })
         .catch((err) => {
-          sendError(
-            client,
-            BasedErrorCode.FunctionNotFound,
-            {
-              requestId: reqId,
-            },
-            err
-          )
+          sendError(client, BasedErrorCode.FunctionNotFound, {
+            requestId: reqId,
+            err,
+          })
         })
     })
     .catch((err) => {
-      sendError(
-        client,
-        BasedErrorCode.AuthorizeFunctionError,
-        {
-          requestId: reqId,
-        },
-        err
-      )
+      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+        requestId: reqId,
+        err,
+      })
       return false
     })
 

@@ -26,7 +26,7 @@ const sendGetResponse = (
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
         sendHttpError(client, BasedErrorCode.NoOservableCacheAvailable, {
-          id,
+          observableId: id,
           name: obs.name,
         })
       } else {
@@ -84,9 +84,9 @@ const sendGetResponse = (
       })
     }
   } catch (err) {
-    sendHttpError(client, BasedErrorCode.ObservableFunctionError, {
+    sendHttpError(client, BasedErrorCode.FunctionError, {
       err,
-      id,
+      observableId: id,
       name: obs.name,
     })
   }
@@ -144,10 +144,12 @@ export const httpGet = (
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendHttpError(client, BasedErrorCode.FunctionIsNotObservable, name)
+        sendHttpError(client, BasedErrorCode.FunctionIsNotObservable, { name })
       } else {
-        sendHttpError(client, BasedErrorCode.FunctionNotFound, name)
+        sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
       }
     })
-    .catch(() => sendHttpError(client, BasedErrorCode.FunctionNotFound, name))
+    .catch(() =>
+      sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
+    )
 }
