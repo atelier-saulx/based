@@ -1,6 +1,6 @@
 import createDataStream from './stream'
 import { BasedServer } from '../../../server'
-import { sendHttpError } from '../send'
+import { sendHttpError, sendHttpResponse } from '../send'
 import {
   BasedFunctionRoute,
   HttpClient,
@@ -55,19 +55,24 @@ export const httpStreamFunction = (
       .then((spec) => {
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
           const stream = createDataStream(client, size)
-
           const streamPayload = { payload, stream }
-
           spec
             .function(streamPayload, client)
             .catch((err) => {
+              stream.destroy()
               sendHttpError(client, BasedErrorCode.FunctionError, {
                 err,
                 name: route.name,
               })
             })
-            .then(() => {
-              // function finished - dont really know what to do here :D
+            .then((r) => {
+              if (stream.readableEnded) {
+                sendHttpResponse(client, r)
+              } else {
+                stream.once('end', () => {
+                  sendHttpResponse(client, r)
+                })
+              }
             })
         } else {
           sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)

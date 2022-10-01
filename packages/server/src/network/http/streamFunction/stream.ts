@@ -3,7 +3,6 @@ import { HttpClient } from '../../../types'
 import { sendHttpError } from '../send'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../../error'
-import endStreamRequest from './endStreamRequest'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -56,7 +55,6 @@ export default (client: HttpClient, size: number): DataStream => {
             stream.emit('progress', 1)
           }
           uncompressStream.end(buf)
-          endStreamRequest(client)
         } else {
           if (!uncompressStream.write(buf)) {
             // handle backpressure
@@ -94,7 +92,6 @@ export default (client: HttpClient, size: number): DataStream => {
           stream.emit('progress', 1)
         }
         stream.end(Buffer.from(c))
-        endStreamRequest(client)
       } else {
         stream.write(Buffer.from(c))
       }

@@ -1,9 +1,8 @@
 import { DataStream } from './DataStream'
 import { HttpClient, BasedFunctionSpec } from '../../../types'
 import { BasedErrorCode } from '../../../error'
-import { sendHttpError } from '../send'
+import { sendHttpError, sendHttpResponse } from '../send'
 import getExtension from './getExtension'
-import endStreamRequest from './endStreamRequest'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -77,6 +76,8 @@ export default async (
   const files: FileDescriptor[] = []
 
   const contentLength = client.context.headers['content-length']
+
+  const promiseQ: Promise<any>[] = []
 
   let setInProgress = false
   let boundary = null
@@ -195,13 +196,12 @@ export default async (
         }
         isWriting = setHeader(file)
         if (isWriting) {
-          fn.function(
-            { payload: { ...payload, ...opts }, stream: file.stream },
-            client
-          ).catch(() => {
-            console.error('Error in multipart stream handler', fn.name)
-            file.stream.destroy()
-          })
+          promiseQ.push(
+            fn.function(
+              { payload: { ...payload, ...file.opts }, stream: file.stream },
+              client
+            )
+          )
         }
         continue
       }
@@ -218,13 +218,12 @@ export default async (
         file.opts.extension = getExtension(mimeType)
         isWriting = setHeader(file)
         if (isWriting) {
-          fn.function(
-            { payload: { ...payload, ...file.opts }, stream: file.stream },
-            client
-          ).catch(() => {
-            console.error('Error in multipart stream handler', fn.name)
-            file.stream.destroy()
-          })
+          promiseQ.push(
+            fn.function(
+              { payload: { ...payload, ...file.opts }, stream: file.stream },
+              client
+            )
+          )
         }
         continue
       }
@@ -239,7 +238,16 @@ export default async (
     }
 
     if (isLast) {
-      endStreamRequest(client)
+      Promise.allSettled(promiseQ).then((results) => {
+        const r = results.map((v) => {
+          if (v.status === 'rejected') {
+            return { err: v.reason }
+          } else {
+            return v.value
+          }
+        })
+        sendHttpResponse(client, r)
+      })
     }
   })
 }
