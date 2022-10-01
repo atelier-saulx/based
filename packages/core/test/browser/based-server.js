@@ -1,7 +1,7 @@
 const createServer = require('@based/server').default
-const { wait, readStream } = require('@saulx/utils')
+const { wait } = require('@saulx/utils')
 
-// const json = require('./tmp.json')
+const json = require('./tmp.json')
 
 const init = async () => {
   const functions = {
@@ -24,8 +24,8 @@ const init = async () => {
           console.info('progress', payload.name, p)
         })
 
-        await wait(5e3)
-        return payload
+        // await wait(5e3)
+        return { payload, json }
       },
     },
     counter: {

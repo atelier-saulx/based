@@ -80,7 +80,6 @@ export const httpHandler = (
     return
   }
 
-  // add all headers in context that are specialy defined for the route
   const method = req.getMethod()
 
   const client: HttpClient = {
@@ -110,7 +109,7 @@ export const httpHandler = (
     method === 'post' &&
     client.context.headers['content-length'] === undefined
   ) {
-    // zero is also not allowed
+    // zero allowed, but not for streams
     sendHttpError(client, BasedErrorCode.LengthRequired)
     return
   }

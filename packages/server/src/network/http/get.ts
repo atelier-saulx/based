@@ -39,7 +39,7 @@ const sendGetResponse = (
               end(client, obs.cache.slice(4 + 8 + 8))
             })
           } else if (obs.rawData) {
-            compress(client, JSON.stringify(obs.rawData), encoding).then(
+            compress(client, JSON.stringify(obs.rawData)).then(
               ({ payload, encoding }) => {
                 if (client.res) {
                   client.res.cork(() => {
@@ -56,8 +56,7 @@ const sendGetResponse = (
           } else {
             compress(
               client,
-              zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8)),
-              encoding
+              zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8))
             ).then(({ payload, encoding }) => {
               client.res.cork(() => {
                 client.res.writeStatus('200 OK')

@@ -9,6 +9,13 @@ export default (mimeType: string) => {
   } else if (type === 'woff2') {
     return 'woff2'
   } else {
-    return mimeTypes.extension(mimeType)
+    const t = mimeTypes.extension(mimeType)
+    if (t === 'markdown') {
+      return 'md'
+    }
+    if (t === 'qt') {
+      return 'mov'
+    }
+    return t
   }
 }

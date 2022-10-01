@@ -48,8 +48,6 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     return
   }
 
-  const encoding = client.context.encoding
-
   let cType: string
 
   // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
@@ -61,7 +59,7 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(client, parsed, encoding).then(({ payload, encoding }) => {
+  compress(client, parsed).then(({ payload, encoding }) => {
     if (client.res) {
       client.res.cork(() => {
         client.res.writeStatus('200 OK')

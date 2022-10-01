@@ -15,12 +15,14 @@ Content-Encoding: br
 
 export const compress = async (
   client: HttpClient,
-  payload: string | Buffer,
-  encoding: string
+  payload: string | Buffer
 ): Promise<{ payload: Buffer | string; encoding?: string }> => {
   if (!client.res) {
     return
   }
+
+  const encoding = client.context.headers.encoding
+
   if (encoding && typeof encoding === 'string') {
     let responseEncoding: string
     let compressed: Buffer
@@ -28,7 +30,7 @@ export const compress = async (
       payload = Buffer.from(payload)
     }
     if (encoding.includes('deflate')) {
-      responseEncoding = 'defalte'
+      responseEncoding = 'deflate'
       compressed = await deflate(payload)
     } else if (encoding.includes('gzip')) {
       responseEncoding = 'gzip'
