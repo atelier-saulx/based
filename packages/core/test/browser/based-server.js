@@ -25,7 +25,7 @@ const init = async () => {
         })
 
         // await wait(5e3)
-        return { payload, json }
+        return payload
       },
     },
     counter: {

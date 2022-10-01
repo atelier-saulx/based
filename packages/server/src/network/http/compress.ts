@@ -23,6 +23,15 @@ export const compress = async (
 
   const encoding = client.context.headers.encoding
 
+  if (payload instanceof Buffer && payload.byteLength < 400) {
+    return { payload }
+  }
+
+  // assume 4 bytes per char
+  if (payload.length < 100) {
+    return { payload }
+  }
+
   if (encoding && typeof encoding === 'string') {
     let responseEncoding: string
     let compressed: Buffer
