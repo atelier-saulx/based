@@ -152,7 +152,7 @@ export const encodeObservableResponse = (
   // implement later
   const chunks = 1
 
-  if (buffer.length > 100) {
+  if (buffer.length > 300) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
