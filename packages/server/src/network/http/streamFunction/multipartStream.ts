@@ -1,5 +1,4 @@
 import { DataStream } from './DataStream'
-import { BasedServer } from '../../..'
 import { HttpClient, BasedFunctionSpec } from '../../../types'
 import { BasedErrorCode } from '../../../error'
 import { sendHttpError } from '../send'
@@ -67,7 +66,6 @@ const toBuffer = (str: string, firstWritten: boolean): Buffer => {
 }
 
 export default async (
-  server: BasedServer,
   client: HttpClient,
   payload: any,
   fn: BasedFunctionSpec

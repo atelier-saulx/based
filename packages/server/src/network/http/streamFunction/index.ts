@@ -29,15 +29,13 @@ export const httpStreamFunction = (
 
   const type = client.context.headers['content-type']
 
-  console.log('hello', type)
-
   if (type && type.startsWith('multipart/form-data')) {
     authorizeRequest(server, client, payload, route, (payload) => {
       server.functions
         .install(route.name)
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            multipartStream(server, client, payload, spec)
+            multipartStream(client, payload, spec)
           } else {
             sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
           }
