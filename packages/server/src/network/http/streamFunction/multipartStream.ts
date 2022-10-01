@@ -78,10 +78,12 @@ export default async (
 
   const contentLength = client.context.headers['content-length']
 
+  let setInProgress = false
   let boundary = null
   let prevLine: string
   let isWriting = false
   let total = 0
+  let progress = 0
 
   client.res.onData((chunk, isLast) => {
     // see if this goes ok... (clearing mem etc)
@@ -97,9 +99,27 @@ export default async (
     const blocks = Buffer.from(chunk).toString('binary').split('\r\n')
     total += chunk.byteLength
 
+    progress = total / contentLength
+
     for (const file of files) {
       if (file.headersSet > 1 && !file.isDone && !file.opts.size) {
-        file.stream.emit('progress', total / contentLength)
+        if (contentLength > 200000) {
+          if (!setInProgress) {
+            setInProgress = true
+            setTimeout(() => {
+              for (const file of files) {
+                if (file.headersSet > 1 && !file.isDone && !file.opts.size) {
+                  if (progress === 1) {
+                    file.isDone = true
+                  }
+                  file.stream.emit('progress', progress)
+                }
+              }
+              setInProgress = false
+            }, 250)
+          }
+          break
+        }
       }
     }
 
@@ -122,10 +142,11 @@ export default async (
         } else {
           file.stream.end()
         }
-        file.isDone = true
-        if (!file.opts.size) {
+        if (!file.opts.size && !file.isDone) {
           file.stream.emit('progress', 1)
         }
+        file.isDone = true
+
         prevLine = null
         if (line === boundary + '--') {
           continue
