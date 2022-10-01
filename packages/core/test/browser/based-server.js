@@ -18,10 +18,11 @@ const init = async () => {
       name: 'streamboy',
       stream: true,
       checksum: 1,
-      function: async (p) => {
-        console.info('-------------------->', p.payload)
-        const x = await readStream(p.stream)
-        console.info(x.toString().length)
+      function: async ({ payload, stream }) => {
+        console.info('---------------Incoming stream! \n', payload)
+        stream.on('progress', (p) => {
+          console.info('progress', payload.name, p)
+        })
       },
     },
     counter: {

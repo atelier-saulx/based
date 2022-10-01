@@ -9,12 +9,10 @@ const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
 export type FileOptions = {
   name?: string
-  size: number
+  size?: number
   type: string
   extension: string
-  disposition: string[]
-  meta: { size?: number } & { [key: string]: string }
-}
+} & { [key: string]: string }
 
 type FileDescriptor = {
   opts: Partial<FileOptions>
@@ -100,7 +98,7 @@ export default async (
     total += chunk.byteLength
 
     for (const file of files) {
-      if (file.headersSet > 1 && !file.isDone && !file.opts.meta.size) {
+      if (file.headersSet > 1 && !file.isDone && !file.opts.size) {
         file.stream.emit('progress', total / contentLength)
       }
     }
@@ -125,7 +123,7 @@ export default async (
           file.stream.end()
         }
         file.isDone = true
-        if (!file.opts.meta.size) {
+        if (!file.opts.size) {
           file.stream.emit('progress', 1)
         }
         prevLine = null
@@ -141,7 +139,6 @@ export default async (
           opts: {},
           isDone: false,
         }
-
         files.push(file)
         continue
       }
@@ -159,35 +156,31 @@ export default async (
           // TODO: invalid file
           return sendHttpError(client, BasedErrorCode.InvalidPayload)
         }
-
         const opts = file.opts
-
         opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
-        opts.disposition = meta.split('|')
-        opts.meta = {}
-        for (const seg of opts.disposition) {
+        const disposition = meta.split('|')
+        for (const seg of disposition) {
           if (/=/.test(seg)) {
             const [k, v] = seg.split('=')
             if (k === 'size') {
-              opts.meta[k] = Number(v)
+              opts[k] = Number(v)
             } else {
-              opts.meta[k] = v
+              opts[k] = v
             }
           }
         }
-
-        if (opts.meta.size) {
-          streamProgress(file.stream, opts.meta.size)
+        if (opts.size) {
+          streamProgress(file.stream, opts.size)
         }
-
         isWriting = setHeader(file)
-        if (isWriting === null) {
-          return
-        } else {
+        if (isWriting) {
           fn.function(
             { payload: { ...payload, ...opts }, stream: file.stream },
             client
-          ).catch(() => {})
+          ).catch(() => {
+            console.error('Error in multipart stream handler', fn.name)
+            file.stream.destroy()
+          })
         }
         continue
       }
@@ -197,19 +190,20 @@ export default async (
           /Content-Type: ([a-zA-Z0-9].+\/[a-zA-Z0-9].+)/
         )?.[1]
         if (!mimeType) {
-          // TODO: invalid file
+          // TODO: invalid file (can speficy in route potentialy...)
           return sendHttpError(client, BasedErrorCode.InvalidPayload)
         }
         file.opts.type = mimeType
         file.opts.extension = getExtension(mimeType)
         isWriting = setHeader(file)
-        if (isWriting === null) {
-          return
-        } else {
+        if (isWriting) {
           fn.function(
             { payload: { ...payload, ...file.opts }, stream: file.stream },
             client
-          ).catch(() => {})
+          ).catch(() => {
+            console.error('Error in multipart stream handler', fn.name)
+            file.stream.destroy()
+          })
         }
         continue
       }
