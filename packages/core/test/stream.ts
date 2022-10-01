@@ -21,8 +21,8 @@ test.serial('functions (over http + stream)', async (t) => {
       checksum: 1,
       function: async ({ stream }) => {
         const buf = await readStream(stream)
-        const x = JSON.parse(buf.toString())
-        console.info(x)
+        JSON.parse(buf.toString())
+        return 'bla'
       },
       ...routes.hello,
     },
@@ -76,9 +76,9 @@ test.serial('functions (over http + stream)', async (t) => {
       },
       body: JSON.stringify(bigBod),
     })
-  ).json()
+  ).text()
 
-  t.true(!!result)
+  t.is(result, 'bla')
 
   const x = await gzip(JSON.stringify(bigBod))
 
@@ -91,9 +91,9 @@ test.serial('functions (over http + stream)', async (t) => {
       },
       body: x,
     })
-  ).json()
+  ).text()
 
-  t.true(!!resultBrotli)
+  t.is(resultBrotli, 'bla')
 
   await wait(30e3)
 
