@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "3.2.2",
+  "version": "3.3.0",
   "license": "MIT",
   "main": "dist/index.js",
   "browser": {
@@ -42,8 +42,8 @@
     "@based/types": "^2.8.0",
     "@saulx/aristotle": "^4.0.14",
     "@saulx/hash": "^1.1.0",
-    "@saulx/selva": "^15.1.0",
-    "@saulx/selva-server": "^15.1.0",
+    "@saulx/selva": "^19.0.0",
+    "@saulx/selva-server": "^19.0.0",
     "@types/jsonwebtoken": "^8.5.6",
     "@types/node": "^17.0.23",
     "@types/ws": "^7.4.6",

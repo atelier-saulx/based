@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "3.3.7",
+  "version": "3.4.0",
   "license": "MIT",
   "main": "dist/index.js",
   "module": "src/index.ts",
@@ -13,7 +13,7 @@
     "@saulx/selva": "10||11||12||13||14||15||16||17||18||19||20"
   },
   "dependencies": {
-    "@based/client": "^3.2.1",
+    "@based/client": "^3.3.0",
     "@based/graphql": "^2.4.4",
     "@based/uws": "2.4.0",
     "@saulx/diff": "^1.1.3",
