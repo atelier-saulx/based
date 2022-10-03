@@ -365,7 +365,15 @@ class BasedClient {
         m_draining = false;
     }
 
-    void request_full_data(uint64_t obs_id) {}
+    void request_full_data(uint64_t obs_id) {
+        if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
+            return;
+        }
+        auto obs = m_observe_requests.at(obs_id);
+        auto msg = Utility::encode_observe_message(obs_id, obs->name, obs->payload, 0);
+        m_observe_queue.push_back(msg);
+        drain_queues();
+    }
 
     void on_open() {
         // TODO: must reencode the obs request with the latest checksum.
@@ -475,7 +483,8 @@ class BasedClient {
 
                 if (patch.length() > 0) {
                     json value = json::parse(m_cache.at(obs_id).first);
-                    json res = Diff::apply_patch(value, patch);
+                    json patch_json = json::parse(patch);
+                    json res = Diff::apply_patch(value, patch_json);
                     patched_payload = res.dump();
                     m_cache[obs_id].first = patched_payload;
                     m_cache[obs_id].second = checksum;
@@ -550,8 +559,8 @@ class BasedClient {
                         m_get_subs.erase(id);
                     }
                 }
-                // keep alive
                 if (error.find("observableId") != error.end()) {
+                    // destroy observable
                     auto obs_id = error.at("observableId");
                     if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                         for (auto sub_id : m_observe_subs.at(obs_id)) {
