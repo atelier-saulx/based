@@ -4,8 +4,10 @@
 #include <map>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
+#include "apply-patch.hpp"
 #include "connection.hpp"
 #include "utility.hpp"
 
@@ -27,12 +29,21 @@ struct ObservableOpts {
     int max_cache_time;
 };
 
+struct Observable {
+    Observable(std::string name, std::string payload) : name(name), payload(payload){};
+
+    std::string name;
+    std::string payload;
+};
+
 class BasedClient {
    private:
     WsConnection m_con;
 
     int32_t m_request_id;
     int32_t m_sub_id;
+
+    bool m_draining;
 
     bool m_auth_in_progress;
     std::string m_auth_state;
@@ -43,6 +54,15 @@ class BasedClient {
     // std::map<int, std::function<void(std::string)>> m_error_listeners;
 
     /////////////////////
+    // cache
+    /////////////////////
+
+    /**
+     * map<obs_id, <value, checksum>>
+     */
+    std::map<int, std::pair<std::string, int>> m_cache;
+
+    /////////////////////
     // queues
     /////////////////////
 
@@ -50,8 +70,6 @@ class BasedClient {
     std::vector<std::vector<uint8_t>> m_function_queue;
     std::vector<std::vector<uint8_t>> m_unobserve_queue;
     std::vector<std::vector<uint8_t>> m_get_queue;
-
-    bool m_draining;
 
     /////////////////////
     // observables
@@ -62,7 +80,7 @@ class BasedClient {
      * The list of all the active observables. These should only be deleted when
      * there are no active subs for it. It's used in the event of a reconnection.
      */
-    std::map<int, std::vector<uint8_t>> m_observe_requests;
+    std::map<int, Observable*> m_observe_requests;
 
     /**
      * map<obs_hash, list of sub_ids>
@@ -148,14 +166,21 @@ class BasedClient {
         if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
             // first time this query is observed
             // encode request
-            // TODO: remove hardcoded checksum after implementing cache
-            std::vector<uint8_t> msg = Utility::encode_observe_message(obs_id, name, payload, 0);
+            int checksum = 0;
+
+            if (m_cache.find(obs_id) != m_cache.end()) {
+                // if cache for this obs exists
+                checksum = m_cache.at(obs_id).second;
+            }
+
+            std::vector<uint8_t> msg =
+                Utility::encode_observe_message(obs_id, name, payload, checksum);
 
             // add encoded request to queue
             m_observe_queue.push_back(msg);
 
             // add encoded request to map of observables
-            m_observe_requests[obs_id] = msg;
+            m_observe_requests[obs_id] = new Observable(name, payload);
 
             // add subscriber to list of subs for this observable
             m_observe_subs[obs_id] = std::set<int>{sub_id};
@@ -203,8 +228,13 @@ class BasedClient {
         // is there an active obs? if so, do nothing (get will trigger on next update)
         // if there isnt, queue request
         if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
-            // TODO: remove hardcoded checksum when cache is implemented
-            std::vector<uint8_t> msg = Utility::encode_get_message(obs_id, name, payload, 0);
+            int checksum = 0;
+
+            if (m_cache.find(obs_id) != m_cache.end()) {
+                // if cache for this obs exists
+                checksum = m_cache.at(obs_id).second;
+            }
+            std::vector<uint8_t> msg = Utility::encode_get_message(obs_id, name, payload, checksum);
             m_get_queue.push_back(msg);
             drain_queues();
         }
@@ -227,11 +257,14 @@ class BasedClient {
         // remove sub to obs mapping for removed sub
         m_sub_to_obs.erase(sub_id);
 
+        // TODO: should it remove cache entry here? prob not
+
         // if the list is now empty, add request to unobserve to queue
         if (m_observe_subs.at(obs_id).empty()) {
             std::vector<uint8_t> msg = Utility::encode_unobserve_message(obs_id);
             m_unobserve_queue.push_back(msg);
             // and remove the obs from the map of active ones.
+            delete m_observe_requests.at(obs_id);
             m_observe_requests.erase(obs_id);
             // and the vector of listeners, since it's now empty we can free the memory
             m_observe_subs.erase(obs_id);
@@ -332,9 +365,17 @@ class BasedClient {
         m_draining = false;
     }
 
+    void request_full_data(uint64_t obs_id) {}
+
     void on_open() {
-        for (auto obs : m_observe_requests) {
-            m_observe_queue.push_back(obs.second);
+        // TODO: must reencode the obs request with the latest checksum.
+        //       either change the checksum in the encoded request (harder probs) or
+        //       just encode it on drain queue rather than on .observe,
+        //       changing the data structure a bit
+        for (auto el : m_observe_requests) {
+            Observable* obs = el.second;
+            auto msg = Utility::encode_observe_message(el.first, obs->name, obs->payload, 0);
+            m_observe_queue.push_back(msg);
         }
         drain_queues();
     }
@@ -404,7 +445,55 @@ class BasedClient {
             }
                 return;
             case IncomingType::SUBSCRIPTION_DIFF_DATA: {
-                std::cerr << "Diffing not implemented yet, should never happen." << std::endl;
+                uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
+                int checksum = Utility::read_bytes_from_string(message, 12, 8);
+                int prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
+
+                int cached_checksum = 0;
+
+                if (m_cache.find(obs_id) != m_cache.end()) {
+                    cached_checksum = m_cache.at(obs_id).second;
+                }
+
+                if (cached_checksum == 0 || (cached_checksum != prev_checksum)) {
+                    request_full_data(obs_id);
+                    return;
+                }
+
+                int start = 28;  // size of header
+                int end = len + 4;
+                std::string patch = "";
+                if (len != 24) {
+                    patch = is_deflate ? Utility::inflate_string(message.substr(start, end))
+                                       : message.substr(start, end);
+                }
+
+                std::string patched_payload = "";
+
+                if (patch.length() > 0) {
+                    std::string value = m_cache.at(obs_id).first;
+                    json res = Diff::apply_patch(value, patch);
+                    patched_payload = res.dump();
+                    m_cache[obs_id].first = patched_payload;
+                    m_cache[obs_id].second = checksum;
+                }
+
+                if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
+                    for (auto sub_id : m_observe_subs.at(obs_id)) {
+                        auto fn = m_sub_callback.at(sub_id);
+                        fn(patched_payload, checksum, "");
+                    }
+                }
+
+                if (m_get_subs.find(obs_id) != m_get_subs.end()) {
+                    for (auto sub_id : m_get_subs.at(obs_id)) {
+                        auto fn = m_get_sub_callbacks.at(sub_id);
+                        fn(patched_payload, "");
+                        m_get_sub_callbacks.erase(sub_id);
+                    }
+                    m_get_subs.at(obs_id).clear();
+                }
+
             } break;
             case IncomingType::GET_DATA:
                 std::cout << "GET DATA CACHE NOT IMPLEMENTED YET" << std::endl;
@@ -451,9 +540,9 @@ class BasedClient {
                     }
                     if (m_get_subs.find(id) != m_get_subs.end()) {
                         for (auto get_id : m_get_subs.at(id)) {
-                            auto fn = m_get_sub_callbacks.at(id);
+                            auto fn = m_get_sub_callbacks.at(get_id);
                             fn("", payload);
-                            m_get_sub_callbacks.erase(id);
+                            m_get_sub_callbacks.erase(get_id);
                         }
                         m_get_subs.erase(id);
                     }
