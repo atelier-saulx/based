@@ -7,7 +7,6 @@ import { promisify } from 'node:util'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
-const br = promisify(zlib.brotliCompress)
 
 test.serial('functions (over http)', async (t) => {
   const store = {
@@ -195,13 +194,14 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('functions (over http + contentEncoding)', async (t) => {
+test.serial.only('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
       function: async (payload) => {
+        await wait(100)
         if (payload) {
           return payload
         }
@@ -238,6 +238,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
           for (const name in store) {
             if (store[name].path === path) {
               return {
+                maxPayloadSize: 1e11,
                 name: store[name].name,
                 observable: store[name].observable,
               }
@@ -296,18 +297,25 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
   t.is(result2, '{"flurp":2}')
 
+  const bigBod: any[] = []
+
+  for (let i = 0; i < 1e6; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
+
   const result3 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
+
       headers: {
-        'content-encoding': 'br',
+        'content-encoding': 'gzip',
         'content-type': 'application/json',
       },
-      body: await br(JSON.stringify({ flurp: 3 })),
+      body: await gzip(JSON.stringify(bigBod)),
     })
-  ).text()
+  ).json()
 
-  t.is(result3, '{"flurp":3}')
+  t.deepEqual(result3, bigBod)
 
   await wait(10e3)
 

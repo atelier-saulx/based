@@ -1,10 +1,10 @@
-import test, { ExecutionContext } from 'ava'
+import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer, { isHttpClient } from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
-const setup = async (t: ExecutionContext) => {
+const setup = async () => {
   const coreClient = new BasedCoreClient()
 
   const obsStore = {
@@ -73,7 +73,7 @@ const setup = async (t: ExecutionContext) => {
 }
 
 test.serial('get', async (t) => {
-  const { coreClient, server } = await setup(t)
+  const { coreClient, server } = await setup()
 
   t.teardown(() => {
     coreClient.disconnect()
@@ -115,7 +115,7 @@ test.serial('get', async (t) => {
 })
 
 test.serial('authorize get', async (t) => {
-  const { coreClient, server } = await setup(t)
+  const { coreClient, server } = await setup()
 
   const token = 'mock_token'
 
@@ -153,5 +153,5 @@ test.serial('authorize get', async (t) => {
   t.is(error.basedCode, BasedErrorCode.AuthorizeRejectedError)
 
   await coreClient.auth(token)
-  const result = await t.notThrowsAsync(coreClient.get('counter'))
+  await t.notThrowsAsync(coreClient.get('counter'))
 })

@@ -7,12 +7,12 @@ import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
+import { BasedErrorCode } from '../../error'
 
 const sendGetResponse = (
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
-  encoding: string,
   checksum: number,
   client: HttpClient
 ) => {
@@ -20,42 +20,74 @@ const sendGetResponse = (
     return
   }
 
+  const encoding = client.context.headers.encoding
+
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
-        // ERROR
-        throw new Error('Observable does not have a value...')
+        sendHttpError(client, BasedErrorCode.NoOservableCacheAvailable, {
+          observableId: id,
+          name: obs.name,
+        })
       } else {
-        // client.res.writeHeader('Cache-Control', 'max-age=10')
-        client.res.writeStatus('200 OK')
-        client.res.writeHeader('ETag', String(obs.checksum))
         if (obs.isDeflate) {
-          if (encoding.includes('deflate')) {
-            // send it
-            client.res.writeHeader('Content-Encoding', 'deflate')
-            end(client, obs.cache.slice(4 + 8 + 8))
+          if (typeof encoding === 'string' && encoding.includes('deflate')) {
+            client.res.cork(() => {
+              client.res.writeStatus('200 OK')
+              client.res.writeHeader('ETag', String(obs.checksum))
+              client.res.writeHeader('Content-Encoding', 'deflate')
+              end(client, obs.cache.slice(4 + 8 + 8))
+            })
           } else if (obs.rawData) {
-            compress(client, JSON.stringify(obs.rawData), encoding).then((p) =>
-              end(client, p)
+            compress(client, JSON.stringify(obs.rawData)).then(
+              ({ payload, encoding }) => {
+                if (client.res) {
+                  client.res.cork(() => {
+                    client.res.writeStatus('200 OK')
+                    if (encoding) {
+                      client.res.writeHeader('Content-Encoding', encoding)
+                    }
+                    client.res.writeHeader('ETag', String(obs.checksum))
+                    end(client, payload)
+                  })
+                }
+              }
             )
           } else {
             compress(
               client,
-              zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8)),
-              encoding
-            ).then((p) => end(client, p))
+              zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8))
+            ).then(({ payload, encoding }) => {
+              client.res.cork(() => {
+                client.res.writeStatus('200 OK')
+                if (encoding) {
+                  client.res.writeHeader('Content-Encoding', encoding)
+                }
+                client.res.writeHeader('ETag', String(obs.checksum))
+                end(client, payload)
+              })
+            })
           }
         } else {
-          end(client, obs.cache.slice(4 + 8 + 8))
+          client.res.cork(() => {
+            client.res.writeStatus('200 OK')
+            client.res.writeHeader('ETag', String(obs.checksum))
+            end(client, obs.cache.slice(4 + 8 + 8))
+          })
         }
       }
     } else {
-      console.info('not modified')
-      client.res.writeStatus('304 Not Modified')
-      end(client)
+      client.res.cork(() => {
+        client.res.writeStatus('304 Not Modified')
+        end(client)
+      })
     }
   } catch (err) {
-    sendHttpError(client, err.message)
+    sendHttpError(client, BasedErrorCode.FunctionError, {
+      err,
+      observableId: id,
+      name: obs.name,
+    })
   }
 
   if (obs.clients.size === 0) {
@@ -74,7 +106,6 @@ export const httpGet = (
     return
   }
 
-  const encoding = client.context.encoding
   const name = route.name
 
   server.functions
@@ -93,13 +124,13 @@ export const httpGet = (
             obs.beingDestroyed = null
           }
           if (obs.cache) {
-            sendGetResponse(server, id, obs, encoding, checksum, client)
+            sendGetResponse(server, id, obs, checksum, client)
           } else {
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              sendGetResponse(server, id, obs, encoding, checksum, client)
+              sendGetResponse(server, id, obs, checksum, client)
             })
           }
         } else {
@@ -108,31 +139,16 @@ export const httpGet = (
             obs.onNextData = new Set()
           }
           obs.onNextData.add(() => {
-            sendGetResponse(server, id, obs, encoding, checksum, client)
+            sendGetResponse(server, id, obs, checksum, client)
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendHttpError(
-          client,
-          `function is not observable - use /function/${name} instead`,
-          404,
-          'Not Found'
-        )
+        sendHttpError(client, BasedErrorCode.FunctionIsNotObservable, { name })
       } else {
-        sendHttpError(
-          client,
-          `observable function does not exist ${name}`,
-          404,
-          'Not Found'
-        )
+        sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
       }
     })
     .catch(() =>
-      sendHttpError(
-        client,
-        `observable function does not exist ${name}`,
-        404,
-        'Not Found'
-      )
+      sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
     )
 }

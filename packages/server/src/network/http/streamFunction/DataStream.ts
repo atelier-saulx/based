@@ -5,7 +5,7 @@ export class DataStream extends Duplex {
 
   // writableHighWaterMark:
   _write(chunk, encoding, callback) {
-    this.push(Buffer.from(chunk))
+    this.push(Buffer.from(chunk, encoding))
     callback()
   }
 

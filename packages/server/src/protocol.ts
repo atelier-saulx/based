@@ -2,6 +2,8 @@ import zlib from 'node:zlib'
 
 const textDecoder = new TextDecoder()
 
+export const COMPRESS_FROM_BYTES = 150
+
 export const decodeHeader = (
   nr: number
 ): { type: number; isDeflate: boolean; len: number } => {
@@ -107,7 +109,7 @@ export const encodeFunctionResponse = (
   // implement later
   const chunks = 1
 
-  if (buffer.length > 100) {
+  if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
@@ -152,7 +154,7 @@ export const encodeObservableResponse = (
   // implement later
   const chunks = 1
 
-  if (buffer.length > 100) {
+  if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
@@ -187,7 +189,7 @@ export const encodeObservableDiffResponse = (
   // implement later
   const chunks = 1
 
-  if (buffer.length > 100) {
+  if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
@@ -214,7 +216,7 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
   // | 4 header | * payload |
   let isDeflate = false
 
-  if (buffer.length > 100) {
+  if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }

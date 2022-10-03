@@ -2,7 +2,8 @@ import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
-import { sendError, BasedErrorCode, StatusCode } from '../../error'
+import { BasedErrorCode } from '../../error'
+import { sendError } from './send'
 import { WebsocketClient } from '../../types'
 
 export const enableSubscribe = (
@@ -32,18 +33,15 @@ export const enableSubscribe = (
             subscribe(server, id, checksum, client)
           }
         } else {
-          sendError(client, 'Function not found', {
-            basedCode: BasedErrorCode.FunctionNotFound,
-            statusCode: StatusCode.NotFound,
+          sendError(client, BasedErrorCode.FunctionNotFound, {
             observableId: id,
           })
         }
       })
-      .catch(() => {
-        sendError(client, 'Function dos not exist', {
-          basedCode: BasedErrorCode.FunctionNotFound,
-          statusCode: StatusCode.NotFound,
+      .catch((err) => {
+        sendError(client, BasedErrorCode.FunctionNotFound, {
           observableId: id,
+          err,
         })
       })
   }
@@ -94,9 +92,7 @@ export const subscribeMessage = (
 
       if (!ok) {
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
-        sendError(client, 'Not authorized', {
-          basedCode: BasedErrorCode.AuthorizeRejectedError,
-          statusCode: StatusCode.Forbidden,
+        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
           observableId: id,
         })
         return false
@@ -105,10 +101,9 @@ export const subscribeMessage = (
       enableSubscribe(server, client, id, checksum, name, payload)
     })
     .catch((err) => {
-      sendError(client, err, {
-        basedCode: BasedErrorCode.AuthorizeError,
-        statusCode: StatusCode.InternalServerError,
+      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
         observableId: id,
+        err,
       })
       destroy(server, id)
     })

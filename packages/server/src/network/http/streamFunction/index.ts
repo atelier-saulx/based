@@ -1,9 +1,14 @@
 import createDataStream from './stream'
 import { BasedServer } from '../../../server'
-import { sendHttpError } from '../send'
-import { BasedFunctionRoute, HttpClient } from '../../../types'
+import { sendHttpError, sendHttpResponse } from '../send'
+import {
+  BasedFunctionRoute,
+  HttpClient,
+  isObservableFunctionSpec,
+} from '../../../types'
 import { authorizeRequest } from '../authorize'
-import { httpFunction } from '../function'
+import { BasedErrorCode } from '../../../error'
+import multipartStream from './multipartStream'
 
 export const httpStreamFunction = (
   server: BasedServer,
@@ -18,16 +23,63 @@ export const httpStreamFunction = (
   const size = client.context.headers['content-length']
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
-    sendHttpError(client, 'Payload Too Large', 413)
+    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
     return
   }
 
-  const stream = createDataStream(client, size)
+  const type = client.context.headers['content-type']
 
-  const streamPayload = { payload, stream }
+  // replace this with transder encoding 'chunked'
+  if (type && type.startsWith('multipart/form-data')) {
+    authorizeRequest(server, client, payload, route, (payload) => {
+      server.functions
+        .install(route.name)
+        .then((spec) => {
+          if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
+            multipartStream(client, payload, spec)
+          } else {
+            sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+          }
+        })
+        .catch(() => {
+          sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+        })
+    })
+    return
+  }
 
-  // if de-authorized destroy stream! (add it to context!)
-  authorizeRequest(server, client, streamPayload, route, (payload) => {
-    httpFunction(route, payload, client, server)
+  // destroy stream from context
+  authorizeRequest(server, client, payload, route, (payload) => {
+    server.functions
+      .install(route.name)
+      .then((spec) => {
+        if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
+          const stream = createDataStream(client, size)
+          const streamPayload = { payload, stream }
+          spec
+            .function(streamPayload, client)
+            .catch((err) => {
+              stream.destroy()
+              sendHttpError(client, BasedErrorCode.FunctionError, {
+                err,
+                name: route.name,
+              })
+            })
+            .then((r) => {
+              if (stream.readableEnded) {
+                sendHttpResponse(client, r)
+              } else {
+                stream.once('end', () => {
+                  sendHttpResponse(client, r)
+                })
+              }
+            })
+        } else {
+          sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+        }
+      })
+      .catch(() => {
+        sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+      })
   })
 }

@@ -2,11 +2,10 @@ import test from 'ava'
 import createServer from '@based/server'
 import { readStream, wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
+import zlib from 'node:zlib'
+import { promisify } from 'node:util'
 
-// contentEncoding will be respected
-// const deflate = promisify(zlib.deflate)
-// const gzip = promisify(zlib.gzip)
-// const br = promisify(zlib.brotliCompress)
+const gzip = promisify(zlib.gzip)
 
 test.serial('functions (over http + stream)', async (t) => {
   const routes = {
@@ -22,8 +21,8 @@ test.serial('functions (over http + stream)', async (t) => {
       checksum: 1,
       function: async ({ stream }) => {
         const buf = await readStream(stream)
-        const x = JSON.parse(buf.toString())
-        return x
+        JSON.parse(buf.toString())
+        return 'bla'
       },
       ...routes.hello,
     },
@@ -64,7 +63,7 @@ test.serial('functions (over http + stream)', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 100000; i++) {
+  for (let i = 0; i < 1e6; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
@@ -77,11 +76,26 @@ test.serial('functions (over http + stream)', async (t) => {
       },
       body: JSON.stringify(bigBod),
     })
-  ).json()
+  ).text()
 
-  t.deepEqual(bigBod, result)
+  t.is(result, 'bla')
 
-  await wait(10e3)
+  const x = await gzip(JSON.stringify(bigBod))
+
+  const resultBrotli = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        'content-encoding': 'gzip',
+        'content-type': 'application/json',
+      },
+      body: x,
+    })
+  ).text()
+
+  t.is(resultBrotli, 'bla')
+
+  await wait(30e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 
