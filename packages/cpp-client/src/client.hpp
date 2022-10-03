@@ -427,6 +427,9 @@ class BasedClient {
                                          : message.substr(start, end);
                 }
 
+                m_cache[obs_id].first = payload;
+                m_cache[obs_id].second = checksum;
+
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         auto fn = m_sub_callback.at(sub_id);
@@ -471,7 +474,7 @@ class BasedClient {
                 std::string patched_payload = "";
 
                 if (patch.length() > 0) {
-                    std::string value = m_cache.at(obs_id).first;
+                    json value = json::parse(m_cache.at(obs_id).first);
                     json res = Diff::apply_patch(value, patch);
                     patched_payload = res.dump();
                     m_cache[obs_id].first = patched_payload;
