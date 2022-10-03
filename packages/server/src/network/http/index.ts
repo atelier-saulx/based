@@ -6,7 +6,7 @@ import { httpStreamFunction } from './streamFunction'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
-import { sendHttpError, sendErrorRaw } from './send'
+import { sendHttpError } from './send'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 
@@ -66,17 +66,26 @@ export const httpHandler = (
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
   if (server.blocked.has(ip)) {
-    sendErrorRaw(res, 'Too Many Requests', 429)
+    res.writeStatus('429 Too Many Requests')
+    res.end()
     return
   }
 
   const url = req.getUrl()
   const path = url.split('/')
-
   const route = server.functions.route(path[1], url)
 
   if (route === false) {
-    sendErrorRaw(res, 'Not found', 404)
+    sendHttpError(
+      server,
+      {
+        res,
+        req,
+        // @ts-ignore (ignore because we dont need a lot here)
+        context: { ip, id: ++clientId, headers: {} },
+      },
+      BasedErrorCode.FunctionNotFound
+    )
     return
   }
 
@@ -110,7 +119,7 @@ export const httpHandler = (
     client.context.headers['content-length'] === undefined
   ) {
     // zero allowed, but not for streams
-    sendHttpError(client, BasedErrorCode.LengthRequired)
+    sendHttpError(server, client, BasedErrorCode.LengthRequired)
     return
   }
 
@@ -125,7 +134,11 @@ export const httpHandler = (
 
   if (route.observable === true) {
     if (route.stream) {
-      sendHttpError(client, BasedErrorCode.CannotStreamToObservableFunction)
+      sendHttpError(
+        server,
+        client,
+        BasedErrorCode.CannotStreamToObservableFunction
+      )
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
@@ -137,13 +150,13 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(client, BasedErrorCode.MethodNotAllowed)
+        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed)
         return
       }
 
       if (client.context.headers['content-length'] === 0) {
         // zero is also not allowed for streams
-        sendHttpError(client, BasedErrorCode.LengthRequired)
+        sendHttpError(server, client, BasedErrorCode.LengthRequired)
         return
       }
 

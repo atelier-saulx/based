@@ -23,7 +23,6 @@ const init = async () => {
         stream.on('progress', (p) => {
           console.info('progress', payload.name, p)
         })
-
         // await wait(5e3)
         return payload
       },
