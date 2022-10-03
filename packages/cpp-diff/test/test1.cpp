@@ -10,7 +10,7 @@ void test(std::string title, json a, json b, json patch) {
     double elapsed_time_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
     // std::cout << "diff =  " << json::diff(res, b) << std::endl;
     assert(res == b);
-    std::cout << ">> " << title << " done in " << elapsed_time_ms << " ms" << std::endl;
+    std::cout << ">> " << title << " --- " << elapsed_time_ms << " ms" << std::endl;
 }
 
 int main() {
@@ -24,6 +24,12 @@ int main() {
 
     test("Array to object", R"([0,1,2,3,4])"_json, R"({"0":0,"1":1,"2":2,"3":3})"_json,
          R"({"4":[1],"___$toObject":true})"_json);
+
+    test("Object to array", R"({"0":0,"1":1,"2":2,"3":3})"_json, R"([0,1,2,3,4])"_json,
+         R"([0,[0,1,2,3,4]])"_json);
+
+    test("Object to array 2", R"({"0":0,"1":1,"2":2,"3":3})"_json, R"([0,1,2])"_json,
+         R"([0,[0,1,2]])"_json);
 
     test(
         "Array + nested object",

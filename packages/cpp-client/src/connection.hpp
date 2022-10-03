@@ -194,8 +194,8 @@ class WsConnection {
     std::function<void()> m_on_open;
     std::function<void(std::string)> m_on_message;
     // set this when destroying the connection object to prevent a reconnection attempt
-    bool m_terminating;
     int m_reconnect_attempts;
+    bool m_terminating;
 };
 
 #endif
