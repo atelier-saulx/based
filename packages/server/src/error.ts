@@ -1,3 +1,6 @@
+import { BasedServer } from './server'
+import { BasedFunctionRoute, HttpClient, WebsocketClient } from './types'
+
 export enum BasedErrorCode {
   FunctionError = 50001,
   AuthorizeFunctionError = 50002,
@@ -78,18 +81,41 @@ export type BasedErrorData = {
   code?: string
 }
 
-export type CreateErrorProps =
+type FunctionErrorProps =
   | {
-      err?: Error
-      name?: string
-      observableId?: number
+      err: Error
       requestId?: number
+      route: BasedFunctionRoute
     }
-  | string
+  | {
+      observableId: number
+      err: Error
+      route: BasedFunctionRoute
+    }
+
+export type ErrorPayload = {
+  [BasedErrorCode.FunctionError]: FunctionErrorProps
+  [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
+  [BasedErrorCode.NoOservableCacheAvailable]: FunctionErrorProps
+  [BasedErrorCode.ObservableFunctionError]: FunctionErrorProps
+  [BasedErrorCode.FunctionNotFound]: FunctionErrorProps
+  [BasedErrorCode.FunctionIsNotObservable]: FunctionErrorProps
+  [BasedErrorCode.FunctionIsObservable]: FunctionErrorProps
+  [BasedErrorCode.CannotStreamToObservableFunction]: FunctionErrorProps
+  [BasedErrorCode.AuthorizeRejectedError]: FunctionErrorProps
+  [BasedErrorCode.InvalidPayload]: FunctionErrorProps
+  [BasedErrorCode.PayloadTooLarge]: FunctionErrorProps
+  [BasedErrorCode.ChunkTooLarge]: FunctionErrorProps
+  [BasedErrorCode.UnsupportedContentEncoding]: FunctionErrorProps
+  [BasedErrorCode.LengthRequired]: FunctionErrorProps
+  [BasedErrorCode.MethodNotAllowed]: FunctionErrorProps
+}
 
 export const createError = (
+  server: BasedServer,
+  client: HttpClient | WebsocketClient,
   basedCode: BasedErrorCode,
-  err?: CreateErrorProps
+  err?: ErrorPayload[BasedErrorCode]
 ): BasedErrorData => {
   const errorData: BasedErrorData = { message: null, stack: null, basedCode }
 
@@ -116,16 +142,20 @@ export const createError = (
     }
   }
 
-  if (typeof err !== 'string') {
-    if (err?.observableId) {
-      errorData.observableId = err.observableId
-    }
-    if (err?.requestId) {
-      errorData.requestId = err.requestId
-    }
+  if (typeof err === 'string') {
+    errorData.message = err
+
+    // do something
+  } else if (err instanceof Error) {
+    // do it!
+  } else if (typeof err === 'object') {
+    Object.assign(errorData, err)
   }
+
   errorData.code = errorDefaults[basedCode]?.code
   errorData.status = errorDefaults[basedCode]?.status
+
+  server.emit('error', client, errorData)
 
   return errorData
 }

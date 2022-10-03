@@ -2,45 +2,48 @@ import { HttpClient } from '../../types'
 import uws from '@based/uws'
 import end from './end'
 import { compress } from './compress'
-import { BasedErrorCode, CreateErrorProps, createError } from '../../error'
+import {
+  BasedErrorCode,
+  createError,
+  ErrorPayload,
+  BasedErrorData,
+} from '../../error'
+import { BasedServer } from '../../server'
+
+const sendHttpErrorMessage = (
+  res: uws.HttpResponse,
+  error: BasedErrorData
+): string => {
+  const { code, status, message, basedMessage, basedCode } = error
+  res.writeStatus(`${code} ${status}`)
+  res.writeHeader('Access-Control-Allow-Origin', '*')
+  res.writeHeader('Access-Control-Allow-Headers', 'content-type')
+  res.writeHeader('Content-Type', 'application/json')
+  return JSON.stringify({
+    error: message,
+    code,
+    basedCode,
+    basedMessage,
+  })
+}
 
 export const sendHttpError = (
+  server: BasedServer,
   client: HttpClient,
   basedCode: BasedErrorCode,
-  err?: CreateErrorProps,
-  // eslint-disable-next-line
-  overrides?: any
+  err?: ErrorPayload[BasedErrorCode]
 ) => {
   if (!client.res) {
     return
   }
   client.res.cork(() => {
-    const errorData = createError(basedCode, err)
-    const { code, status, message, basedMessage } = errorData
-
-    // fix them status
-
-    client.res.writeStatus(`${code} ${status}`)
-    client.res.writeHeader('Access-Control-Allow-Origin', '*')
-    client.res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-    client.res.writeHeader('Content-Type', 'application/json')
     end(
       client,
-      JSON.stringify({ error: err || message, code, basedCode, basedMessage })
+      sendHttpErrorMessage(
+        client.res,
+        createError(server, client, basedCode, err)
+      )
     )
-  })
-}
-
-export const sendErrorRaw = (
-  res: uws.HttpResponse,
-  error: any,
-  code: number = 400,
-  status: string = 'Bad Request'
-) => {
-  res.cork(() => {
-    res.writeStatus(`${code} ${status}`)
-    res.writeHeader('Content-Type', 'application/json')
-    res.end(JSON.stringify({ error, code }))
   })
 }
 

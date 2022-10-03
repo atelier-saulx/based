@@ -2,6 +2,7 @@ import { HttpClient } from '../../types'
 import zlib from 'node:zlib'
 import { sendHttpError } from './send'
 import { BasedErrorCode } from '../../error'
+import { BasedServer } from '../../server'
 
 const MAX_CHUNK_SIZE = 1024 * 1024
 
@@ -11,6 +12,7 @@ const UNCOMPRESS_OPTS = {
 }
 
 const parseData = (
+  server: BasedServer,
   client: HttpClient,
   contentType: string,
   data: Buffer,
@@ -40,6 +42,7 @@ const parseData = (
 }
 
 export const readBody = (
+  server: BasedServer,
   client: HttpClient,
   onData: (data: any | void) => void,
   maxSize: number
@@ -51,7 +54,7 @@ export const readBody = (
   const contentLen = client.context.headers['content-length']
 
   if (contentLen > maxSize) {
-    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+    sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
     return
   }
 
@@ -72,13 +75,13 @@ export const readBody = (
       client.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > maxSize) {
-          sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+          sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
           // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge)
 
           uncompressStream.destroy()
           return
@@ -102,10 +105,11 @@ export const readBody = (
       })
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-        onData(parseData(client, contentType, data, false))
+        onData(parseData(server, client, contentType, data, false))
       })
     } else {
       sendHttpError(
+        server,
         client,
         BasedErrorCode.InvalidPayload,
         'Unsupported Content-Encoding'
@@ -116,16 +120,16 @@ export const readBody = (
     client.res.onData((c, isLast) => {
       size += c.byteLength
       if (size > maxSize) {
-        sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+        sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge)
         return
       }
       if (!data && isLast) {
         data = Buffer.from(c)
-        onData(parseData(client, contentType, data, true))
+        onData(parseData(server, client, contentType, data, true))
         return
       } else if (!data) {
         data = Buffer.alloc(c.byteLength, Buffer.from(c))
@@ -133,7 +137,7 @@ export const readBody = (
         data = Buffer.concat([data, Buffer.from(c)])
       }
       if (isLast) {
-        onData(parseData(client, contentType, data, false))
+        onData(parseData(server, client, contentType, data, false))
       }
     })
   }

@@ -1,5 +1,6 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
+import { BasedErrorCode, BasedErrorData, ErrorPayload } from './error'
 
 export type WebsocketClient = {
   ws:
@@ -185,7 +186,7 @@ export type ActiveObservable = {
 }
 
 export type EventMap = {
-  doesNotExist: string
+  error: BasedErrorData
 }
 
 export type Event = keyof EventMap
