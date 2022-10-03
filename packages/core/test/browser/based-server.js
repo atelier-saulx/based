@@ -35,9 +35,13 @@ const init = async () => {
         console.info('init counter')
         let cnt = 0
         const counter = setInterval(() => {
-          let x = ''
-          for (let i = 0; i < 1000; i++) {
-            x += ++cnt + 'Hello numm ' + i
+          const x = []
+          if (cnt > 99) {
+            cnt = 0
+          }
+          cnt++
+          for (let i = 0; i < 100; i++) {
+            x.push({ i, name: 'hello', thisIsCount: i === cnt })
           }
           update(x)
         }, 2000)
@@ -57,9 +61,11 @@ const init = async () => {
         return true
       },
       route: ({ path, name }) => {
-        for (const name in functions) {
-          if (functions[name].path === path) {
-            return functions[name]
+        if (path) {
+          for (const name in functions) {
+            if (functions[name].path === path) {
+              return functions[name]
+            }
           }
         }
         if (functions[name]) {

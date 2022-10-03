@@ -11,7 +11,7 @@ int main() {
     client.connect("ws://localhost:9910");
 
     bool done = false;
-    int i = 0;
+    // int i = 0;
     std::string cmd;
 
     while (!done) {
