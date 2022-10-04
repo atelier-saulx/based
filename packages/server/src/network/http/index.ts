@@ -12,25 +12,6 @@ import { BasedErrorCode } from '../../error'
 
 let clientId = 0
 
-// these can be stored on context
-// const allowedHeaders = [
-//   'x-forwarded-for',
-//   'user-agent',
-//   'authorization',
-//   'accept',
-//   'accept-language',
-//   'accept-encoding',
-//   'referer',
-//   'connection',
-//   'upgrade-insecure-requests',
-//   'if-modified-since',
-//   'if-none-match',
-//   'cache-control',
-//   'host',
-//   'origin',
-//   'pragma',
-// ]
-
 const handleRequest = (
   server: BasedServer,
   method: string,
@@ -40,6 +21,7 @@ const handleRequest = (
 ) => {
   if (method === 'post') {
     readBody(
+      server,
       client,
       (payload) => authorizeRequest(server, client, payload, route, authorized),
       route.maxPayloadSize

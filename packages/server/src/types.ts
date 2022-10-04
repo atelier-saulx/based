@@ -1,6 +1,6 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
-import { BasedErrorCode, BasedErrorData, ErrorPayload } from './error'
+import { BasedErrorData } from './error'
 
 export type WebsocketClient = {
   ws:
