@@ -4,15 +4,11 @@ import { WebsocketClient } from '../../types'
 import { BasedServer } from '../../server'
 
 export const sendError = (
-	server: BasedServer,
-	client: WebsocketClient,
-	basedCode: BasedErrorCode,
-	err?: ErrorPayload[BasedErrorCode]
+  server: BasedServer,
+  client: WebsocketClient,
+  basedCode: BasedErrorCode,
+  err?: ErrorPayload[BasedErrorCode]
 ): void => {
-	const errorData = createError(server, client, basedCode, err)
-	client.ws?.send(
-		encodeErrorResponse(valueToBuffer(errorData)),
-		true,
-		false
-	)
+  const errorData = createError(server, client, basedCode, err)
+  client.ws?.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
 }

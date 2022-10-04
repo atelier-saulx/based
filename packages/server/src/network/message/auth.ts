@@ -15,7 +15,6 @@ export const authMessage = (
   len: number,
   isDeflate: boolean,
   client: WebsocketClient,
-  // eslint-disable-next-line
   server: BasedServer
 ): boolean => {
   // | 4 header | * payload |
@@ -25,27 +24,23 @@ export const authMessage = (
     isDeflate
   )
 
-  // authorizeHandshake here
-
   let authState: AuthState
   try {
-    // this has to be part of the handshake
     authState = JSON.parse(authPayload)
   } catch (err) {
     console.error("can't decode auth payload", err)
   }
   if (client.ws) {
     client.ws.authState = authState
-
     if (client.ws.unauthorizedObs.size) {
       client.ws.unauthorizedObs.forEach((obs) => {
         const { id, name, checksum, payload } = obs
-        enableSubscribe(server, client, id, checksum, name, payload)
+        enableSubscribe(server, client, id, checksum, name, payload, {
+          name: 'internal-websocket-auth',
+        })
       })
-      //
       client.ws.unauthorizedObs.clear()
     }
-
     client.ws.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   }
 
