@@ -29,7 +29,7 @@ export const sendHttpError = (
   server: BasedServer,
   client: HttpClient,
   basedCode: BasedErrorCode,
-  err?: ErrorPayload[BasedErrorCode]
+  err: ErrorPayload[BasedErrorCode]
 ) => {
   if (!client.res) {
     return

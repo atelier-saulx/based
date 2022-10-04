@@ -24,7 +24,7 @@ const handleRequest = (
       server,
       client,
       (payload) => authorizeRequest(server, client, payload, route, authorized),
-      route.maxPayloadSize
+      route
     )
   } else {
     const payload = parseQuery(client.context.query)
@@ -66,7 +66,8 @@ export const httpHandler = (
         // @ts-ignore (ignore because we dont need a lot here)
         context: { ip, id: ++clientId, headers: {} },
       },
-      BasedErrorCode.FunctionNotFound
+      BasedErrorCode.FunctionNotFound,
+      { path, name: path[1] }
     )
     return
   }
@@ -101,7 +102,7 @@ export const httpHandler = (
     client.context.headers['content-length'] === undefined
   ) {
     // zero allowed, but not for streams
-    sendHttpError(server, client, BasedErrorCode.LengthRequired)
+    sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
     return
   }
 
@@ -119,7 +120,8 @@ export const httpHandler = (
       sendHttpError(
         server,
         client,
-        BasedErrorCode.CannotStreamToObservableFunction
+        BasedErrorCode.CannotStreamToObservableFunction,
+        route
       )
       return
     }
@@ -132,13 +134,13 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed)
+        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed, route)
         return
       }
 
       if (client.context.headers['content-length'] === 0) {
         // zero is also not allowed for streams
-        sendHttpError(server, client, BasedErrorCode.LengthRequired)
+        sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
         return
       }
 

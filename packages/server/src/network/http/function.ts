@@ -37,14 +37,14 @@ export const httpFunction = (
             }
           })
           .catch((err) => {
-            sendHttpError(client, BasedErrorCode.FunctionError, {
+            sendHttpError(server, client, BasedErrorCode.FunctionError, {
               err,
-              name,
+              route,
             })
           })
       }
     })
     .catch(() =>
-      sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
+      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
     )
 }
