@@ -1,4 +1,4 @@
-import { HttpClient } from '../../types'
+import { BasedFunctionRoute, HttpClient } from '../../types'
 import zlib from 'node:zlib'
 import { sendHttpError } from './send'
 import { BasedErrorCode } from '../../error'
@@ -16,7 +16,8 @@ const parseData = (
   client: HttpClient,
   contentType: string,
   data: Buffer,
-  rawBuffer: boolean
+  rawBuffer: boolean,
+  route: BasedFunctionRoute
 ): any => {
   if (contentType === 'application/json' || !contentType) {
     const str = data.toString()
@@ -26,7 +27,7 @@ const parseData = (
       return params
     } catch (e) {
       // make this an event
-      sendHttpError(client, BasedErrorCode.InvalidPayload)
+      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else if (
     contentType.startsWith('text') ||
@@ -45,7 +46,7 @@ export const readBody = (
   server: BasedServer,
   client: HttpClient,
   onData: (data: any | void) => void,
-  maxSize: number
+  route: BasedFunctionRoute
 ) => {
   if (!client.res) {
     return
@@ -53,7 +54,7 @@ export const readBody = (
 
   const contentLen = client.context.headers['content-length']
 
-  if (contentLen > maxSize) {
+  if (contentLen > route.maxPayloadSize) {
     sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
     return
   }
@@ -74,7 +75,7 @@ export const readBody = (
     if (uncompressStream) {
       client.res.onData((c, isLast) => {
         size += c.byteLength
-        if (size > maxSize) {
+        if (size > route.maxPayloadSize) {
           sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
           // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
@@ -108,12 +109,7 @@ export const readBody = (
         onData(parseData(server, client, contentType, data, false))
       })
     } else {
-      sendHttpError(
-        server,
-        client,
-        BasedErrorCode.InvalidPayload,
-        'Unsupported Content-Encoding'
-      )
+      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else {
     let data: Buffer

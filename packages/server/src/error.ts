@@ -164,7 +164,7 @@ export const createError = (
   server: BasedServer,
   client: HttpClient | WebsocketClient,
   code: BasedErrorCode,
-  payload?: ErrorPayload[BasedErrorCode]
+  payload: ErrorPayload[BasedErrorCode]
 ): BasedErrorData => {
   const type = errorTypes[code]
 
