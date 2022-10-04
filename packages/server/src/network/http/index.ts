@@ -67,7 +67,7 @@ export const httpHandler = (
         context: { ip, id: ++clientId, headers: {} },
       },
       BasedErrorCode.FunctionNotFound,
-      { path, name: path[1] }
+      path[1] ? { name: path[1] } : { path: url }
     )
     return
   }

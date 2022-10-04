@@ -88,7 +88,9 @@ const errorTypes = {
     statusCode: 404,
     statusMessage: 'Not Found',
     message: (payload: ErrorPayload[BasedErrorCode.FunctionNotFound]) =>
-      `Function${payload.name}`,
+      `Function not found${payload.name ? ` '${payload.name}'` : ''}${
+        payload.path ? ` path '${payload.path}'` : ''
+      }`,
   },
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
