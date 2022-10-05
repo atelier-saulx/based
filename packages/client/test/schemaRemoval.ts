@@ -165,6 +165,8 @@ test.serial('remove field', async (t) => {
     ids.map(({ id }) => client.get({ $id: id, nested: { something: true } }))
   )
 
+  console.log('---- nice ---->', result3)
+
   for (const r of result3) {
     if (r.nested?.something) {
       t.fail('Did not remove field')

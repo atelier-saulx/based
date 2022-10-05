@@ -23,6 +23,8 @@ export default async (
     }
     y[path[path.length - 1]] = { $delete: true }
 
+    console.log(path, '---', JSON.stringify(fieldRemoval, null, 2))
+
     await server.db.updateSchema(
       {
         types: {
