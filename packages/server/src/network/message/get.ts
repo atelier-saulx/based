@@ -63,6 +63,11 @@ export const getMessage = (
     return false
   }
 
+  if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
     isDeflate

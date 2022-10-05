@@ -40,6 +40,11 @@ export const functionMessage = (
     return false
   }
 
+  if (len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   server.auth.config
     .authorize(server, client, name, payload)
     .then((ok) => {

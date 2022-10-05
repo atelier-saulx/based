@@ -69,6 +69,11 @@ export const subscribeMessage = (
     return false
   }
 
+  if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   if (client.ws?.obs.has(id)) {
     // allready subscribed to this id
     return true
