@@ -24,6 +24,11 @@ export class BasedServer {
 
   public listenSocket: any
 
+  // maybe call this "security"
+
+  // opposite of blocked can never get blocked
+  public whiteList: Set<string> = new Set()
+  // will be taken out of blocked when rate limit is over
   public blocked: Set<string> = new Set()
 
   // per ip so consitent unfortanetly
