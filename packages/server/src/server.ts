@@ -26,6 +26,10 @@ export class BasedServer {
 
   public blocked: Set<string> = new Set()
 
+  // per ip so consitent unfortanetly
+  // check how large it is and make a loop to downgrade it
+  public rateLimit: Map<string, number> = new Map()
+
   // in bytes
   public cacheSize: number = 0
 
