@@ -4,6 +4,8 @@ import type { BasedServer } from '../server'
 // import { BasedErrorCode } from '../error'
 // import { HttpClient, isHttpClient, WebsocketClient } from '../types'
 
+// token
+
 const drainRequestCounter = (server: BasedServer) => {
   server.requestsCounterInProgress = true
   server.requestsCounterTimeout = setTimeout(() => {
@@ -22,7 +24,7 @@ const drainRequestCounter = (server: BasedServer) => {
         console.info('error handle different')
       }
       console.info('DRAIN TIME')
-      value.requests -= 100
+      value.requests -= 60
     })
 
     if (server.requestsCounter.size) {
