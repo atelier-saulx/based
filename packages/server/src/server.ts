@@ -11,6 +11,7 @@ import type {
 } from './types'
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
+import { BasedErrorCode } from './error'
 
 // extend emitter
 export class BasedServer {
@@ -24,18 +25,23 @@ export class BasedServer {
 
   public listenSocket: any
 
-  // maybe call this "security"
-
   // opposite of blocked can never get blocked
   public whiteList: Set<string> = new Set()
-  // will be taken out of blocked when rate limit is over
-  public blocked: Set<string> = new Set()
 
   // per ip so consitent unfortanetly
   // check how large it is and make a loop to downgrade it
-  public rateLimit: Map<string, number> = new Map()
+  public requestsCounter: Map<
+    string,
+    {
+      requests: number
+      errors?: Map<BasedErrorCode, number>
+    }
+  > = new Map()
 
-  // in bytes
+  public requestsCounterInProgress: boolean = false
+
+  public requestsCounterTimeout: NodeJS.Timeout
+
   public cacheSize: number = 0
 
   public activeObservables: {

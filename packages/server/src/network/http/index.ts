@@ -9,6 +9,7 @@ import { readBody } from './readBody'
 import { sendHttpError } from './send'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
+import { incomingCounter } from '../../security'
 
 let clientId = 0
 
@@ -47,7 +48,7 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  if (server.blocked.has(ip)) {
+  if (incomingCounter(server, ip)) {
     res.writeStatus('429 Too Many Requests')
     res.end()
     return
