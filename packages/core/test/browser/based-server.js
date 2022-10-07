@@ -1,5 +1,6 @@
 const createServer = require('@based/server').default
 const { wait } = require('@saulx/utils')
+const { join } = require('node:path')
 
 // const json = require('./tmp.json')
 
@@ -34,14 +35,15 @@ const init = async () => {
       function: async (payload, update) => {
         console.info('init counter')
         let cnt = 0
+        const x = []
         const counter = setInterval(() => {
-          const x = []
           if (cnt > 99) {
             cnt = 0
           }
           cnt++
-          for (let i = 0; i < 100; i++) {
-            x.push({ i, name: 'hello', thisIsCount: i === cnt })
+
+          for (let i = 0; i < 2; i++) {
+            x.push({ cnt, i, name: 'hello' })
           }
           update(x)
         }, 2000)
@@ -53,6 +55,8 @@ const init = async () => {
   }
 
   await createServer({
+    cert: join(__dirname, 'secret/cert.pem'),
+    key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,

@@ -1,18 +1,25 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <sstream>
 
 #include "client.hpp"
 
-int main() {
-    BasedClient client;
+int main(int argc, char** argv) {
+    if (argc < 2) {
+        std::cerr << "Specify address" << std::endl;
+        return -1;
+    }
 
-    client.connect("ws://localhost:9910");
+    BasedClient client;
+    client.connect(argv[1]);
 
     bool done = false;
     // int i = 0;
     std::string cmd;
+
+    std::vector<int> obs;
 
     while (!done) {
         // client.function("small", "", [](std::string_view data) {
@@ -29,28 +36,36 @@ int main() {
         //             [](std::string data) { std::cout << "got auth data = " << data << std::endl;
         //             });
 
-        std::cout << "adding an observe request" << std::endl;
+        client.get("counter", "", [](std::string data, std::string error) {
+            std::cout << "I GOT data 2 = " << data << std::endl;
+        });
 
-        client.observe(
-            "counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
-            [](std::string data, int checksum, std::string error) {
-                if (data.length() > 0) {
-                    std::cout << "DATA = " << data << std::endl;
-                }
-                if (error.length() > 0) {
-                    std::cout << "ERROR = " << data << std::endl;
-                }
-            },
-            ObservableOpts(true, 100));
-        // client.get("counter", "", [](std::string data, std::string error) {
-        //     std::cout << "I GOT data 2 = " << data << std::endl;
-        // });
+        if (cmd.substr(0, 1) == "r") {
+            int rem_id = atoi(cmd.substr(2).c_str());
+            client.unobserve(rem_id);
+            continue;
+        }
 
-        // if (cmd.substr(0, 1) == "r") {
-        //     int rem_id = atoi(cmd.substr(2).c_str());
-        //     client.unobserve(rem_id);
-        //     continue;
-        // }
+        if (cmd.substr(0, 1) == "o") {
+            int id = client.observe(
+                "counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
+                [](std::string data, int checksum, std::string error) {
+                    if (data.length() > 0) {
+                        std::cout << "DATA = " << data << std::endl;
+                    }
+                    if (error.length() > 0) {
+                        std::cout << "ERROR = " << data << std::endl;
+                    }
+                },
+                ObservableOpts(true, 100));
+            obs.push_back(id);
+        }
+
+        std::cout << "obs = ";
+        for (auto el : obs) {
+            std::cout << el << ", ";
+        }
+        std::cout << "\n";
         // if (i % 2 == 0) {
         //     int id = client.observe(
         //         "counter", "{\"b\":\"a\",\"a\":\"b\"}",

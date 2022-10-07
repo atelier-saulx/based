@@ -5,9 +5,15 @@
 #include <string>
 #include <thread>
 #include <websocketpp/client.hpp>
-#include <websocketpp/config/asio_no_tls_client.hpp>
 
-typedef websocketpp::client<websocketpp::config::asio_client> ws_client;
+#ifdef BASED_TLS
+#include <websocketpp/config/asio_client.hpp>                                 // SSL
+typedef websocketpp::client<websocketpp::config::asio_tls_client> ws_client;  // SSL
+#endif
+#ifndef BASED_TLS
+#include <websocketpp/config/asio_no_tls_client.hpp>                      // No SSL
+typedef websocketpp::client<websocketpp::config::asio_client> ws_client;  // No SSL
+#endif
 
 enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
 
@@ -27,6 +33,10 @@ class WsConnection {
         m_endpoint.clear_error_channels(websocketpp::log::elevel::all);
 
         m_endpoint.init_asio();
+#ifdef BASED_TLS
+        m_endpoint.set_tls_init_handler(websocketpp::lib::bind(&on_tls_init));
+#endif
+
         // perpetual mode the endpoint's processing loop will not exit automatically when it has no
         // connections
         m_endpoint.start_perpetual();
@@ -118,6 +128,25 @@ class WsConnection {
     };
 
    private:
+#ifdef BASED_TLS
+    using context_ptr = std::shared_ptr<boost::asio::ssl::context>;
+
+    static context_ptr on_tls_init() {
+        context_ptr ctx =
+            std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
+
+        try {
+            ctx->set_options(boost::asio::ssl::context::default_workarounds |
+                             boost::asio::ssl::context::no_sslv2 |
+                             boost::asio::ssl::context::no_sslv3 |
+                             boost::asio::ssl::context::single_dh_use);
+
+        } catch (std::exception& e) {
+            std::cout << "Error in context pointer: " << e.what() << std::endl;
+        }
+        return ctx;
+    }
+#endif
     std::shared_future<void> reconnect() {
         return std::async(std::launch::async, [&]() {
             if (m_status != ConnectionStatus::OPEN && !m_terminating) {
