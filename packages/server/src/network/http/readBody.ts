@@ -1,4 +1,4 @@
-import { HttpClient } from '../../types'
+import { BasedFunctionRoute, HttpClient } from '../../types'
 import zlib from 'node:zlib'
 import { sendHttpError } from './send'
 import { BasedErrorCode } from '../../error'
@@ -16,17 +16,18 @@ const parseData = (
   client: HttpClient,
   contentType: string,
   data: Buffer,
-  rawBuffer: boolean
+  rawBuffer: boolean,
+  route: BasedFunctionRoute
 ): any => {
   if (contentType === 'application/json' || !contentType) {
     const str = data.toString()
-    let params
+    let parsedData: any
     try {
-      params = data.length ? JSON.parse(str) : undefined
-      return params
+      parsedData = data.length ? JSON.parse(str) : undefined
+      return parsedData
     } catch (e) {
       // make this an event
-      sendHttpError(client, BasedErrorCode.InvalidPayload)
+      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else if (
     contentType.startsWith('text') ||
@@ -45,7 +46,7 @@ export const readBody = (
   server: BasedServer,
   client: HttpClient,
   onData: (data: any | void) => void,
-  maxSize: number
+  route: BasedFunctionRoute
 ) => {
   if (!client.res) {
     return
@@ -53,8 +54,8 @@ export const readBody = (
 
   const contentLen = client.context.headers['content-length']
 
-  if (contentLen > maxSize) {
-    sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
+  if (contentLen > route.maxPayloadSize) {
+    sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
     return
   }
 
@@ -74,15 +75,14 @@ export const readBody = (
     if (uncompressStream) {
       client.res.onData((c, isLast) => {
         size += c.byteLength
-        if (size > maxSize) {
-          sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
+        if (size > route.maxPayloadSize) {
+          sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
           // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge)
-
+          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           return
         }
@@ -105,31 +105,26 @@ export const readBody = (
       })
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-        onData(parseData(server, client, contentType, data, false))
+        onData(parseData(server, client, contentType, data, false, route))
       })
     } else {
-      sendHttpError(
-        server,
-        client,
-        BasedErrorCode.InvalidPayload,
-        'Unsupported Content-Encoding'
-      )
+      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else {
     let data: Buffer
     client.res.onData((c, isLast) => {
       size += c.byteLength
-      if (size > maxSize) {
-        sendHttpError(server, client, BasedErrorCode.PayloadTooLarge)
+      if (size > route.maxPayloadSize) {
+        sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge)
+        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
         return
       }
       if (!data && isLast) {
         data = Buffer.from(c)
-        onData(parseData(server, client, contentType, data, true))
+        onData(parseData(server, client, contentType, data, true, route))
         return
       } else if (!data) {
         data = Buffer.alloc(c.byteLength, Buffer.from(c))
@@ -137,7 +132,7 @@ export const readBody = (
         data = Buffer.concat([data, Buffer.from(c)])
       }
       if (isLast) {
-        onData(parseData(server, client, contentType, data, false))
+        onData(parseData(server, client, contentType, data, false, route))
       }
     })
   }

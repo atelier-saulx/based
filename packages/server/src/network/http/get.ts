@@ -10,6 +10,7 @@ import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../error'
 
 const sendGetResponse = (
+  route: BasedFunctionRoute,
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
@@ -25,10 +26,15 @@ const sendGetResponse = (
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
       if (!obs.cache) {
-        sendHttpError(client, BasedErrorCode.NoOservableCacheAvailable, {
-          observableId: id,
-          name: obs.name,
-        })
+        sendHttpError(
+          server,
+          client,
+          BasedErrorCode.NoOservableCacheAvailable,
+          {
+            observableId: id,
+            name: obs.name,
+          }
+        )
       } else {
         if (obs.isDeflate) {
           if (typeof encoding === 'string' && encoding.includes('deflate')) {
@@ -83,10 +89,10 @@ const sendGetResponse = (
       })
     }
   } catch (err) {
-    sendHttpError(client, BasedErrorCode.FunctionError, {
+    sendHttpError(server, client, BasedErrorCode.FunctionError, {
       err,
       observableId: id,
-      name: obs.name,
+      route,
     })
   }
 
@@ -124,13 +130,13 @@ export const httpGet = (
             obs.beingDestroyed = null
           }
           if (obs.cache) {
-            sendGetResponse(server, id, obs, checksum, client)
+            sendGetResponse(route, server, id, obs, checksum, client)
           } else {
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
             obs.onNextData.add(() => {
-              sendGetResponse(server, id, obs, checksum, client)
+              sendGetResponse(route, server, id, obs, checksum, client)
             })
           }
         } else {
@@ -139,16 +145,21 @@ export const httpGet = (
             obs.onNextData = new Set()
           }
           obs.onNextData.add(() => {
-            sendGetResponse(server, id, obs, checksum, client)
+            sendGetResponse(route, server, id, obs, checksum, client)
           })
         }
       } else if (spec && isObservableFunctionSpec(spec)) {
-        sendHttpError(client, BasedErrorCode.FunctionIsNotObservable, { name })
+        sendHttpError(
+          server,
+          client,
+          BasedErrorCode.FunctionIsNotObservable,
+          route
+        )
       } else {
-        sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
+        sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
       }
     })
     .catch(() =>
-      sendHttpError(client, BasedErrorCode.FunctionNotFound, { name })
+      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
     )
 }

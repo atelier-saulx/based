@@ -40,13 +40,16 @@ export const functionMessage = (
     return false
   }
 
+  if (len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   server.auth.config
     .authorize(server, client, name, payload)
     .then((ok) => {
       if (!ok) {
-        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
-          requestId: reqId,
-        })
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
         return false
       }
 
@@ -64,26 +67,23 @@ export const functionMessage = (
                 )
               })
               .catch((err) => {
-                sendError(client, BasedErrorCode.FunctionError, {
+                sendError(server, client, BasedErrorCode.FunctionError, {
+                  route,
                   requestId: reqId,
                   err,
                 })
               })
           } else {
-            sendError(client, BasedErrorCode.FunctionNotFound, {
-              requestId: reqId,
-            })
+            sendError(server, client, BasedErrorCode.FunctionNotFound, route)
           }
         })
-        .catch((err) => {
-          sendError(client, BasedErrorCode.FunctionNotFound, {
-            requestId: reqId,
-            err,
-          })
+        .catch(() => {
+          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
         })
     })
     .catch((err) => {
-      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+        route,
         requestId: reqId,
         err,
       })

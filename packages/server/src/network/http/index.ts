@@ -9,27 +9,9 @@ import { readBody } from './readBody'
 import { sendHttpError } from './send'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
+import { incomingCounter } from '../../security'
 
 let clientId = 0
-
-// these can be stored on context
-// const allowedHeaders = [
-//   'x-forwarded-for',
-//   'user-agent',
-//   'authorization',
-//   'accept',
-//   'accept-language',
-//   'accept-encoding',
-//   'referer',
-//   'connection',
-//   'upgrade-insecure-requests',
-//   'if-modified-since',
-//   'if-none-match',
-//   'cache-control',
-//   'host',
-//   'origin',
-//   'pragma',
-// ]
 
 const handleRequest = (
   server: BasedServer,
@@ -40,9 +22,10 @@ const handleRequest = (
 ) => {
   if (method === 'post') {
     readBody(
+      server,
       client,
       (payload) => authorizeRequest(server, client, payload, route, authorized),
-      route.maxPayloadSize
+      route
     )
   } else {
     const payload = parseQuery(client.context.query)
@@ -65,7 +48,7 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  if (server.blocked.has(ip)) {
+  if (incomingCounter(server, ip)) {
     res.writeStatus('429 Too Many Requests')
     res.end()
     return
@@ -84,7 +67,8 @@ export const httpHandler = (
         // @ts-ignore (ignore because we dont need a lot here)
         context: { ip, id: ++clientId, headers: {} },
       },
-      BasedErrorCode.FunctionNotFound
+      BasedErrorCode.FunctionNotFound,
+      path[1] ? { name: path[1] } : { path: url }
     )
     return
   }
@@ -119,7 +103,7 @@ export const httpHandler = (
     client.context.headers['content-length'] === undefined
   ) {
     // zero allowed, but not for streams
-    sendHttpError(server, client, BasedErrorCode.LengthRequired)
+    sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
     return
   }
 
@@ -137,7 +121,8 @@ export const httpHandler = (
       sendHttpError(
         server,
         client,
-        BasedErrorCode.CannotStreamToObservableFunction
+        BasedErrorCode.CannotStreamToObservableFunction,
+        route
       )
       return
     }
@@ -150,13 +135,13 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed)
+        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed, route)
         return
       }
 
       if (client.context.headers['content-length'] === 0) {
         // zero is also not allowed for streams
-        sendHttpError(server, client, BasedErrorCode.LengthRequired)
+        sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
         return
       }
 

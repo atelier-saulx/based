@@ -1,7 +1,7 @@
 import test from 'ava'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
-// import fetch from 'cross-fetch'
+import fetch from 'cross-fetch'
 import { BasedCoreClient } from '../src/index'
 
 test.serial('rate limit ws', async (t) => {
@@ -59,16 +59,20 @@ test.serial('rate limit ws', async (t) => {
 
   const coreClient = new BasedCoreClient()
 
-  // const result = await (
-  //   await fetch('http://localhost:9910/flap', {
-  //     method: 'get',
-  //     headers: {
-  //       'content-type': 'application/json',
-  //     },
-  //   })
-  // ).text()
-
-  // for (i=0;i<10000) too many requests
+  for (let i = 0; i < 1e3; i++) {
+    const x = await fetch('http://localhost:9910/flap', {
+      method: 'get',
+      headers: {
+        'content-type': 'application/json',
+      },
+    })
+    if (x.status === 429) {
+      console.info('bah ratelimit lets wait 30 secods...')
+      await wait(30e3)
+    } else {
+      console.log('Pass', i)
+    }
+  }
 
   // t.is(result, 'bla')
 

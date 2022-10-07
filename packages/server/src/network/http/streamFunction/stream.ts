@@ -1,8 +1,9 @@
 import { DataStream } from './DataStream'
-import { HttpClient } from '../../../types'
+import { HttpClient, BasedFunctionRoute } from '../../../types'
 import { sendHttpError } from '../send'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../../error'
+import { BasedServer } from '../../../server'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -11,7 +12,12 @@ const UNCOMPRESS_OPTS = {
   chunkSize: 1024 * 1024 * 100,
 }
 
-export default (client: HttpClient, size: number): DataStream => {
+export default (
+  server: BasedServer,
+  route: BasedFunctionRoute,
+  client: HttpClient,
+  size: number
+): DataStream => {
   const stream = new DataStream()
   let total = 0
   let progress = 0
@@ -34,7 +40,7 @@ export default (client: HttpClient, size: number): DataStream => {
       client.res.onData((c, isLast) => {
         total += c.byteLength
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           stream.destroy()
           return
@@ -64,16 +70,17 @@ export default (client: HttpClient, size: number): DataStream => {
       uncompressStream.pipe(stream)
     } else {
       sendHttpError(
+        server,
         client,
-        BasedErrorCode.InvalidPayload,
-        'Unsupported Content-Encoding'
+        BasedErrorCode.UnsupportedContentEncoding,
+        route
       )
     }
   } else {
     client.res.onData((c, isLast) => {
       total += c.byteLength
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
         stream.destroy()
         return
       }

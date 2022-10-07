@@ -1,6 +1,6 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
-import { BasedErrorCode, BasedErrorData, ErrorPayload } from './error'
+import { BasedErrorData } from './error'
 
 export type WebsocketClient = {
   ws:
@@ -103,6 +103,7 @@ export type BasedFunctionRoute = {
   headers?: string[]
   path?: string
   stream?: boolean
+  rateLimitTokens?: number
 }
 
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
@@ -187,6 +188,7 @@ export type ActiveObservable = {
 
 export type EventMap = {
   error: BasedErrorData
+  ratelimit: void
 }
 
 export type Event = keyof EventMap

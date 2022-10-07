@@ -4,7 +4,7 @@ import { BasedServer } from '../../server'
 import { create, unsubscribe, destroy, subscribe } from '../../observable'
 import { BasedErrorCode } from '../../error'
 import { sendError } from './send'
-import { WebsocketClient } from '../../types'
+import { WebsocketClient, BasedFunctionRoute } from '../../types'
 
 export const enableSubscribe = (
   server: BasedServer,
@@ -12,7 +12,8 @@ export const enableSubscribe = (
   id: number,
   checksum: number,
   name: string,
-  payload: any
+  payload: any,
+  route: BasedFunctionRoute
 ) => {
   client.ws.subscribe(String(id))
   client.ws.obs.add(id)
@@ -33,16 +34,11 @@ export const enableSubscribe = (
             subscribe(server, id, checksum, client)
           }
         } else {
-          sendError(client, BasedErrorCode.FunctionNotFound, {
-            observableId: id,
-          })
+          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
         }
       })
-      .catch((err) => {
-        sendError(client, BasedErrorCode.FunctionNotFound, {
-          observableId: id,
-          err,
-        })
+      .catch(() => {
+        sendError(server, client, BasedErrorCode.FunctionNotFound, route)
       })
   }
 }
@@ -73,6 +69,11 @@ export const subscribeMessage = (
     return false
   }
 
+  if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   if (client.ws?.obs.has(id)) {
     // allready subscribed to this id
     return true
@@ -92,16 +93,15 @@ export const subscribeMessage = (
 
       if (!ok) {
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
-        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
-          observableId: id,
-        })
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
         return false
       }
 
-      enableSubscribe(server, client, id, checksum, name, payload)
+      enableSubscribe(server, client, id, checksum, name, payload, route)
     })
     .catch((err) => {
-      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+        route,
         observableId: id,
         err,
       })

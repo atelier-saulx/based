@@ -19,68 +19,6 @@ export enum BasedErrorCode {
   MethodNotAllowed = 40501,
 }
 
-const errorDefaults = {
-  [BasedErrorCode.FunctionError]: {
-    code: 500,
-    status: 'Internal Server Error',
-    message: ({ name }) => `Error in function${name ? ' ' + name : ''}.`,
-  },
-  [BasedErrorCode.FunctionNotFound]: {
-    code: 404,
-    status: 'Not Found',
-    message: ({ name }) => `Function${name ? ' ' + name : ''} not found.`,
-  },
-  [BasedErrorCode.CannotStreamToObservableFunction]: {
-    code: 404,
-    status: 'Not Found',
-    message: 'Cannot stream to observable function.',
-  },
-  [BasedErrorCode.AuthorizeFunctionError]: {
-    code: 403,
-    status: 'Forbidden',
-    message: 'Error in authorize function',
-  },
-  [BasedErrorCode.AuthorizeRejectedError]: {
-    code: 403,
-    status: 'Forbidden',
-    message: ({ name }) =>
-      `Authorize rejected access${name ? ' to function ' + name : ''}.`,
-  },
-  [BasedErrorCode.InvalidPayload]: {
-    code: 400,
-    status: 'Bad Request',
-    message: 'Invalid payload.',
-  },
-  [BasedErrorCode.PayloadTooLarge]: { code: 413, status: 'Payload Too Large' },
-  [BasedErrorCode.ChunkTooLarge]: { code: 413, status: 'Payload Too Large' },
-  [BasedErrorCode.UnsupportedContentEncoding]: {
-    code: 400,
-    status: 'Incorrect content encoding',
-  },
-  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
-  [BasedErrorCode.MethodNotAllowed]: {
-    code: 405,
-    status: 'Method Not Allowed',
-  },
-  [BasedErrorCode.NoOservableCacheAvailable]: {
-    code: 500,
-    status: 'Internal Server Error',
-    message: ({ name }) =>
-      `No observable cache available${name ? ' for function ' + name : ''}.`,
-  },
-}
-
-export type BasedErrorData = {
-  message: string
-  basedMessage?: string
-  stack: string
-  requestId?: number
-  observableId?: number
-  basedCode: BasedErrorCode
-  status?: number
-  code?: string
-}
-
 type FunctionErrorProps =
   | {
       err: Error
@@ -96,64 +34,160 @@ type FunctionErrorProps =
 export type ErrorPayload = {
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
-  [BasedErrorCode.NoOservableCacheAvailable]: FunctionErrorProps
-  [BasedErrorCode.ObservableFunctionError]: FunctionErrorProps
-  [BasedErrorCode.FunctionNotFound]: FunctionErrorProps
-  [BasedErrorCode.FunctionIsNotObservable]: FunctionErrorProps
-  [BasedErrorCode.FunctionIsObservable]: FunctionErrorProps
-  [BasedErrorCode.CannotStreamToObservableFunction]: FunctionErrorProps
-  [BasedErrorCode.AuthorizeRejectedError]: FunctionErrorProps
-  [BasedErrorCode.InvalidPayload]: FunctionErrorProps
-  [BasedErrorCode.PayloadTooLarge]: FunctionErrorProps
-  [BasedErrorCode.ChunkTooLarge]: FunctionErrorProps
-  [BasedErrorCode.UnsupportedContentEncoding]: FunctionErrorProps
-  [BasedErrorCode.LengthRequired]: FunctionErrorProps
-  [BasedErrorCode.MethodNotAllowed]: FunctionErrorProps
+  [BasedErrorCode.NoOservableCacheAvailable]: {
+    observableId: number
+    route: BasedFunctionRoute
+  }
+  [BasedErrorCode.ObservableFunctionError]: {
+    observableId: number
+    route: BasedFunctionRoute
+  }
+  [BasedErrorCode.FunctionNotFound]: BasedFunctionRoute
+  [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute
+  [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute
+  [BasedErrorCode.CannotStreamToObservableFunction]: BasedFunctionRoute
+  [BasedErrorCode.AuthorizeRejectedError]: BasedFunctionRoute
+  [BasedErrorCode.InvalidPayload]: BasedFunctionRoute
+  [BasedErrorCode.PayloadTooLarge]: BasedFunctionRoute
+  [BasedErrorCode.ChunkTooLarge]: BasedFunctionRoute
+  [BasedErrorCode.UnsupportedContentEncoding]: BasedFunctionRoute
+  [BasedErrorCode.LengthRequired]: BasedFunctionRoute
+  [BasedErrorCode.MethodNotAllowed]: BasedFunctionRoute
+}
+
+/*
+ // errorData.basedMessage =
+  //   typeof errorDefaults[basedCode]?.message === 'function'
+  //     ? errorDefaults[basedCode]?.message(err)
+  //     : errorDefaults[basedCode]?.message ||
+  //       errorDefaults[basedCode]?.status ||
+  //       'Oops something went wrong'
+  //   if (payload && 'err' in payload && payload instanceof Error) {
+  //     Object.getOwnPropertyNames(payload.err).forEach((key: string) => {
+  //       errorData[key] = payload.err[key]
+  //     })
+  //   } else {
+  //     errorData.message = errorData.basedMessage
+  //     const captureTarget = { stack: null }
+  //     Error.captureStackTrace(captureTarget, createError)
+  //     errorData.stack = captureTarget.stack
+  //   }
+  // }
+*/
+
+const errorTypes = {
+  [BasedErrorCode.FunctionError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (payload: ErrorPayload[BasedErrorCode.FunctionError]) => {
+      // do it nice
+      return `Error in function ${payload.route.name}  [${payload.err.name}] ${payload.err.message}`
+    },
+  },
+  [BasedErrorCode.FunctionNotFound]: {
+    statusCode: 404,
+    statusMessage: 'Not Found',
+    message: (payload: ErrorPayload[BasedErrorCode.FunctionNotFound]) =>
+      `Function not found${payload.name ? ` '${payload.name}'` : ''}${
+        payload.path ? ` path '${payload.path}'` : ''
+      }`,
+  },
+  [BasedErrorCode.CannotStreamToObservableFunction]: {
+    statusCode: 404,
+    statusMessage: 'Not Found',
+    message: 'Cannot stream to observable function.',
+  },
+  [BasedErrorCode.AuthorizeFunctionError]: {
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+    message: 'Error in authorize function',
+  },
+  [BasedErrorCode.AuthorizeRejectedError]: {
+    statusCode: 403,
+    statusMessage: 'Forbidden',
+    message: (payload: ErrorPayload[BasedErrorCode.AuthorizeRejectedError]) =>
+      `Authorize rejected access to ${payload.name}`,
+  },
+  [BasedErrorCode.InvalidPayload]: {
+    statusCode: 400,
+    statusMessage: 'Bad Request',
+    message: (payload: ErrorPayload[BasedErrorCode.InvalidPayload]) =>
+      'Invalid payload ' + payload.name,
+  },
+  [BasedErrorCode.PayloadTooLarge]: {
+    code: 413,
+    status: 'Payload Too Large',
+    message: (payload: ErrorPayload[BasedErrorCode.PayloadTooLarge]) =>
+      'PayloadTooLarge ' + payload.name,
+  },
+  [BasedErrorCode.ChunkTooLarge]: {
+    code: 413,
+    status: 'Payload Too Large',
+    message: (payload: ErrorPayload[BasedErrorCode.ChunkTooLarge]) =>
+      'ChunkTooLarge ' + payload.name,
+  },
+  [BasedErrorCode.UnsupportedContentEncoding]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect content encoding',
+  },
+  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
+  [BasedErrorCode.MethodNotAllowed]: {
+    statusCode: 405,
+    statusMessage: 'Method Not Allowed',
+  },
+  [BasedErrorCode.NoOservableCacheAvailable]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.NoOservableCacheAvailable]
+    ) =>
+      `No observable cache available${payload.route.name} - ${payload.observableId}`,
+  },
+}
+
+export type BasedErrorData = {
+  route: BasedFunctionRoute
+  message: string
+  code: BasedErrorCode
+  statusCode: number
+  statusMessage: string
+  requestId?: number
+  observableId?: number
+}
+
+const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
+  if (route && typeof route === 'object' && 'name' in route) {
+    return true
+  }
+  return false
 }
 
 export const createError = (
   server: BasedServer,
   client: HttpClient | WebsocketClient,
-  basedCode: BasedErrorCode,
-  err?: ErrorPayload[BasedErrorCode]
+  code: BasedErrorCode,
+  payload: ErrorPayload[BasedErrorCode]
 ): BasedErrorData => {
-  const errorData: BasedErrorData = { message: null, stack: null, basedCode }
+  const type = errorTypes[code]
 
-  errorData.basedMessage =
-    typeof errorDefaults[basedCode]?.message === 'function'
-      ? errorDefaults[basedCode]?.message(err)
-      : errorDefaults[basedCode]?.message ||
-        errorDefaults[basedCode]?.status ||
-        'Oops something went wrong'
+  const route = isBasedFunctionRoute(payload) ? payload : payload.route
 
-  if (typeof err === 'string') {
-    errorData.message = err
-  } else {
-    if (err?.err instanceof Error) {
-      Object.getOwnPropertyNames(err.err).forEach((key: string) => {
-        errorData[key] = err.err[key]
-      })
-    } else {
-      errorData.message = errorData.basedMessage
-
-      const captureTarget = { stack: null }
-      Error.captureStackTrace(captureTarget, createError)
-      errorData.stack = captureTarget.stack
-    }
+  const errorData: BasedErrorData = {
+    code,
+    statusCode: type.statusCode,
+    statusMessage: type.statusMessage,
+    message:
+      typeof type.message === 'function' ? type.message(payload) : type.message,
+    route,
   }
 
-  if (typeof err === 'string') {
-    errorData.message = err
-
-    // do something
-  } else if (err instanceof Error) {
-    // do it!
-  } else if (typeof err === 'object') {
-    Object.assign(errorData, err)
+  if ('requestId' in payload) {
+    errorData.requestId = payload.requestId
   }
 
-  errorData.code = errorDefaults[basedCode]?.code
-  errorData.status = errorDefaults[basedCode]?.status
+  if ('observableId' in payload) {
+    errorData.observableId = payload.observableId
+  }
 
   server.emit('error', client, errorData)
 

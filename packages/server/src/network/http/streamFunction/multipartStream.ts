@@ -1,8 +1,13 @@
 import { DataStream } from './DataStream'
-import { HttpClient, BasedFunctionSpec } from '../../../types'
+import {
+  HttpClient,
+  BasedFunctionSpec,
+  BasedFunctionRoute,
+} from '../../../types'
 import { BasedErrorCode } from '../../../error'
 import { sendHttpError, sendHttpResponse } from '../send'
 import getExtension from './getExtension'
+import { BasedServer } from '../../../server'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -66,7 +71,9 @@ const toBuffer = (str: string, firstWritten: boolean): Buffer => {
 
 export default async (
   client: HttpClient,
+  server: BasedServer,
   payload: any,
+  route: BasedFunctionRoute,
   fn: BasedFunctionSpec
 ): Promise<void> => {
   if (!payload || (!payload && typeof payload !== 'object')) {
@@ -89,7 +96,7 @@ export default async (
   client.res.onData((chunk, isLast) => {
     // see if this goes ok... (clearing mem etc)
     if (chunk.byteLength > MAX_CHUNK_SIZE) {
-      sendHttpError(client, BasedErrorCode.ChunkTooLarge)
+      sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
       for (const file of files) {
         file.stream.destroy()
       }
@@ -169,14 +176,24 @@ export default async (
 
       if (!file) {
         // TODO: invalid file
-        return sendHttpError(client, BasedErrorCode.InvalidPayload)
+        return sendHttpError(
+          server,
+          client,
+          BasedErrorCode.InvalidPayload,
+          route
+        )
       }
 
       if (!isWriting && line.includes('Content-Disposition')) {
         const meta = line.match(/name="(.*?)"/)?.[1]
         if (!meta) {
           // TODO: invalid file
-          return sendHttpError(client, BasedErrorCode.InvalidPayload)
+          return sendHttpError(
+            server,
+            client,
+            BasedErrorCode.InvalidPayload,
+            route
+          )
         }
         const opts = file.opts
         opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
@@ -212,7 +229,12 @@ export default async (
         )?.[1]
         if (!mimeType) {
           // TODO: invalid file (can speficy in route potentialy...)
-          return sendHttpError(client, BasedErrorCode.InvalidPayload)
+          return sendHttpError(
+            server,
+            client,
+            BasedErrorCode.InvalidPayload,
+            route
+          )
         }
         file.opts.type = mimeType
         file.opts.extension = getExtension(mimeType)

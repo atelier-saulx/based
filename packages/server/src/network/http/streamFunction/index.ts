@@ -23,7 +23,7 @@ export const httpStreamFunction = (
   const size = client.context.headers['content-length']
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
-    sendHttpError(client, BasedErrorCode.PayloadTooLarge)
+    sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
     return
   }
 
@@ -36,13 +36,18 @@ export const httpStreamFunction = (
         .install(route.name)
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            multipartStream(client, payload, spec)
+            multipartStream(client, server, payload, route, spec)
           } else {
-            sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+            sendHttpError(
+              server,
+              client,
+              BasedErrorCode.FunctionNotFound,
+              route
+            )
           }
         })
         .catch(() => {
-          sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+          sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
         })
     })
     return
@@ -54,13 +59,13 @@ export const httpStreamFunction = (
       .install(route.name)
       .then((spec) => {
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-          const stream = createDataStream(client, size)
+          const stream = createDataStream(server, route, client, size)
           const streamPayload = { payload, stream }
           spec
             .function(streamPayload, client)
             .catch((err) => {
               stream.destroy()
-              sendHttpError(client, BasedErrorCode.FunctionError, {
+              sendHttpError(server, client, BasedErrorCode.FunctionError, {
                 err,
                 name: route.name,
               })
@@ -75,11 +80,11 @@ export const httpStreamFunction = (
               }
             })
         } else {
-          sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+          sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
         }
       })
       .catch(() => {
-        sendHttpError(client, BasedErrorCode.FunctionNotFound, route.name)
+        sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
       })
   })
 }

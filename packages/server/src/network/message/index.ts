@@ -67,7 +67,6 @@ export const message = (
   }
 
   // check if msg if empty (0) then it idle timeout
-
   const uint8View = new Uint8Array(msg)
   const len = uint8View.length
   let next = 0

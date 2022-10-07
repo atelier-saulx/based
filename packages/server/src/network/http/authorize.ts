@@ -17,16 +17,19 @@ export const authorizeRequest = (
         return
       }
       if (!ok) {
-        sendHttpError(client, BasedErrorCode.AuthorizeRejectedError, {
-          name: route.name,
-        })
+        sendHttpError(
+          server,
+          client,
+          BasedErrorCode.AuthorizeRejectedError,
+          route
+        )
       } else {
         authorized(payload)
       }
     })
     .catch((err) => {
-      sendHttpError(client, BasedErrorCode.AuthorizeFunctionError, {
-        name: route.name,
+      sendHttpError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+        route,
         err,
       })
     })

@@ -14,16 +14,14 @@ const sendHttpErrorMessage = (
   res: uws.HttpResponse,
   error: BasedErrorData
 ): string => {
-  const { code, status, message, basedMessage, basedCode } = error
-  res.writeStatus(`${code} ${status}`)
+  const { code, message, statusCode, statusMessage } = error
+  res.writeStatus(`${statusCode} ${statusMessage}`)
   res.writeHeader('Access-Control-Allow-Origin', '*')
   res.writeHeader('Access-Control-Allow-Headers', 'content-type')
   res.writeHeader('Content-Type', 'application/json')
   return JSON.stringify({
     error: message,
     code,
-    basedCode,
-    basedMessage,
   })
 }
 
@@ -31,7 +29,7 @@ export const sendHttpError = (
   server: BasedServer,
   client: HttpClient,
   basedCode: BasedErrorCode,
-  err?: ErrorPayload[BasedErrorCode]
+  err: ErrorPayload[BasedErrorCode]
 ) => {
   if (!client.res) {
     return

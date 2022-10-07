@@ -63,6 +63,11 @@ export const getMessage = (
     return false
   }
 
+  if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    return false
+  }
+
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
     isDeflate
@@ -76,9 +81,7 @@ export const getMessage = (
       }
 
       if (!ok) {
-        sendError(client, BasedErrorCode.AuthorizeRejectedError, {
-          observableId: id,
-        })
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
         return false
       }
 
@@ -113,21 +116,17 @@ export const getMessage = (
                 })
               }
             } else {
-              sendError(client, BasedErrorCode.FunctionNotFound, {
-                observableId: id,
-              })
+              sendError(server, client, BasedErrorCode.FunctionNotFound, route)
             }
           })
-          .catch((err) => {
-            sendError(client, BasedErrorCode.FunctionNotFound, {
-              observableId: id,
-              err,
-            })
+          .catch(() => {
+            sendError(server, client, BasedErrorCode.FunctionNotFound, route)
           })
       }
     })
     .catch((err) => {
-      sendError(client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+        route,
         observableId: id,
         err,
       })
