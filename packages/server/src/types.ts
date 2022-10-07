@@ -103,6 +103,7 @@ export type BasedFunctionRoute = {
   headers?: string[]
   path?: string
   stream?: boolean
+  rateLimitTokens?: number
 }
 
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {

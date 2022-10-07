@@ -33,6 +33,7 @@ const drainRequestCounter = (server: BasedServer) => {
   }, 30e3)
 }
 
+// not counter also rate limit adder
 export const incomingCounter = (server: BasedServer, ip: string): boolean => {
   let ipReqCounter = server.requestsCounter.get(ip)
   if (!ipReqCounter) {
