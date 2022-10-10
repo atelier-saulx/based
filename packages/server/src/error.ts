@@ -15,6 +15,7 @@ export enum BasedErrorCode {
   PayloadTooLarge = 40002,
   ChunkTooLarge = 40003,
   UnsupportedContentEncoding = 40004,
+  NoBinaryProtocol = 40005,
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
 }
@@ -32,6 +33,7 @@ type FunctionErrorProps =
     }
 
 export type ErrorPayload = {
+  [BasedErrorCode.NoBinaryProtocol]: undefined
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
   [BasedErrorCode.NoOservableCacheAvailable]: {
@@ -114,14 +116,19 @@ const errorTypes = {
     message: (payload: ErrorPayload[BasedErrorCode.InvalidPayload]) =>
       'Invalid payload ' + payload.name,
   },
+  [BasedErrorCode.NoBinaryProtocol]: {
+    statusCode: 400,
+    statusMessage: 'Protocol mismatch',
+    message: () => 'Please upgrade to the latest based client',
+  },
   [BasedErrorCode.PayloadTooLarge]: {
-    code: 413,
+    statusCode: 413,
     status: 'Payload Too Large',
     message: (payload: ErrorPayload[BasedErrorCode.PayloadTooLarge]) =>
       'PayloadTooLarge ' + payload.name,
   },
   [BasedErrorCode.ChunkTooLarge]: {
-    code: 413,
+    statusCode: 413,
     status: 'Payload Too Large',
     message: (payload: ErrorPayload[BasedErrorCode.ChunkTooLarge]) =>
       'ChunkTooLarge ' + payload.name,
@@ -161,6 +168,11 @@ const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
   }
   return false
 }
+const EMPTY = {
+  route: {
+    name: 'no-route',
+  },
+}
 
 export const createError = (
   server: BasedServer,
@@ -170,7 +182,11 @@ export const createError = (
 ): BasedErrorData => {
   const type = errorTypes[code]
 
-  const route = isBasedFunctionRoute(payload) ? payload : payload.route
+  const route = !payload
+    ? EMPTY.route
+    : isBasedFunctionRoute(payload)
+    ? payload
+    : payload.route
 
   const errorData: BasedErrorData = {
     code,
