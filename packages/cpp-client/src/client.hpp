@@ -232,6 +232,7 @@ class BasedClient {
 
             if (m_cache.find(obs_id) != m_cache.end()) {
                 // if cache for this obs exists
+                std::cout << ">>>>> CACHE FOUND" << std::endl;
                 checksum = m_cache.at(obs_id).second;
             }
             std::vector<uint8_t> msg = Utility::encode_get_message(obs_id, name, payload, checksum);
@@ -365,7 +366,15 @@ class BasedClient {
         m_draining = false;
     }
 
-    void request_full_data(uint64_t obs_id) {}
+    void request_full_data(uint64_t obs_id) {
+        if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
+            return;
+        }
+        auto obs = m_observe_requests.at(obs_id);
+        auto msg = Utility::encode_observe_message(obs_id, obs->name, obs->payload, 0);
+        m_observe_queue.push_back(msg);
+        drain_queues();
+    }
 
     void on_open() {
         // TODO: must reencode the obs request with the latest checksum.
@@ -416,6 +425,8 @@ class BasedClient {
             }
                 return;
             case IncomingType::SUBSCRIPTION_DATA: {
+                std::cout << "this was a SUB type" << std::endl;
+
                 uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
                 int checksum = Utility::read_bytes_from_string(message, 12, 8);
 
@@ -448,6 +459,7 @@ class BasedClient {
             }
                 return;
             case IncomingType::SUBSCRIPTION_DIFF_DATA: {
+                std::cout << "this was a SUBDIFF type" << std::endl;
                 uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
                 int checksum = Utility::read_bytes_from_string(message, 12, 8);
                 int prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
@@ -475,7 +487,8 @@ class BasedClient {
 
                 if (patch.length() > 0) {
                     json value = json::parse(m_cache.at(obs_id).first);
-                    json res = Diff::apply_patch(value, patch);
+                    json patch_json = json::parse(patch);
+                    json res = Diff::apply_patch(value, patch_json);
                     patched_payload = res.dump();
                     m_cache[obs_id].first = patched_payload;
                     m_cache[obs_id].second = checksum;
@@ -498,9 +511,19 @@ class BasedClient {
                 }
 
             } break;
-            case IncomingType::GET_DATA:
-                std::cout << "GET DATA CACHE NOT IMPLEMENTED YET" << std::endl;
-                break;
+            case IncomingType::GET_DATA: {
+                std::cout << "this was a GETDATA type" << std::endl;
+                uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
+                if (m_get_subs.find(obs_id) != m_get_subs.end() &&
+                    m_cache.find(obs_id) != m_cache.end()) {
+                    for (auto sub_id : m_get_subs.at(obs_id)) {
+                        auto fn = m_get_sub_callbacks.at(sub_id);
+                        fn(m_cache.at(obs_id).first, "");
+                        m_get_sub_callbacks.erase(sub_id);
+                    }
+                    m_get_subs.at(obs_id).clear();
+                }
+            } break;
             case IncomingType::AUTH_DATA: {
                 int32_t start = 4;
                 int32_t end = len + 4;
@@ -550,8 +573,8 @@ class BasedClient {
                         m_get_subs.erase(id);
                     }
                 }
-                // keep alive
                 if (error.find("observableId") != error.end()) {
+                    // destroy observable
                     auto obs_id = error.at("observableId");
                     if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                         for (auto sub_id : m_observe_subs.at(obs_id)) {
