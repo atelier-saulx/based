@@ -212,6 +212,10 @@ class BasedClient {
         return sub_id;
     }
 
+    /**
+     * Get the value of an observable only once. The callback will trigger when the function
+     * fires a new update.
+     */
     void get(std::string name,
              std::string payload,
              std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
@@ -241,6 +245,13 @@ class BasedClient {
         }
     }
 
+    /**
+     * Stop the observable associated with the ID, and clean up the related structures.
+     * This will also send the unobserve request to the server, if there are no
+     * subscribers left for this observable.
+     *
+     * @param sub_id The ID return by the call to .observe.
+     */
     void unobserve(int sub_id) {
         std::cout << "> Removing sub_id " << sub_id << std::endl;
         if (m_sub_to_obs.find(sub_id) == m_sub_to_obs.end()) {
@@ -273,6 +284,14 @@ class BasedClient {
         drain_queues();
     }
 
+    /**
+     * @brief Run a remote function.
+     *
+     * @param name Name of the function to call.
+     * @param payload Payload of the function, must be a JSON string.
+     * @param cb Callback function, must have two string arguments: first is for data, the seconds
+     * one is for error.
+     */
     void function(std::string name,
                   std::string payload,
                   std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
@@ -288,8 +307,13 @@ class BasedClient {
         drain_queues();
     }
 
+    /**
+     * @brief Set a auth state.
+     *
+     * @param state Any object, usually the token
+     * @param cb This callback will fire with either be "true" or the auth state itself.
+     */
     void auth(std::string state, std::function<void(std::string)> cb) {
-        // std::cout << "auth not implemented yet" << std::endl;
         if (m_auth_in_progress) return;
 
         m_auth_request_state = state;
@@ -307,7 +331,7 @@ class BasedClient {
             int32_t payload_hash = (int32_t)std::hash<json>{}("");
             int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
 
-            int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
+            int32_t obs_id = (payload_hash * 33) ^ name_hash;
 
             return obs_id;
         }
@@ -315,7 +339,7 @@ class BasedClient {
         int32_t payload_hash = (int32_t)std::hash<json>{}(p);
         int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
 
-        int32_t obs_id = (payload_hash * 33) ^ name_hash;  // TODO: check with jim
+        int32_t obs_id = (payload_hash * 33) ^ name_hash;
         return obs_id;
     }
 
