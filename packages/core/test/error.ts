@@ -77,7 +77,7 @@ test.serial('function error', async (t) => {
   const error = (await t.throwsAsync(
     coreClient.function('throwingFunction')
   )) as BasedError
-  t.is(error.basedCode, BasedErrorCode.FunctionError)
+  t.is(error.code, BasedErrorCode.FunctionError)
 })
 
 test.serial('function authorize error', async (t) => {
@@ -99,10 +99,10 @@ test.serial('function authorize error', async (t) => {
   const error = (await t.throwsAsync(
     coreClient.function('throwingFunction')
   )) as BasedError
-  t.is(error.basedCode, BasedErrorCode.AuthorizeError)
+  t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
 
-test.serial('observable authorize error', async (t) => {
+test.serial.only('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
@@ -130,7 +130,7 @@ test.serial('observable authorize error', async (t) => {
       }
     )
   })) as BasedError
-  t.is(error.basedCode, BasedErrorCode.AuthorizeError)
+  t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
 
 test.serial('type error in function', async (t) => {
@@ -146,5 +146,5 @@ test.serial('type error in function', async (t) => {
   const error = (await t.throwsAsync(
     coreClient.function('errorFunction')
   )) as BasedError
-  t.is(error.basedCode, BasedErrorCode.FunctionError)
+  t.is(error.code, BasedErrorCode.FunctionError)
 })
