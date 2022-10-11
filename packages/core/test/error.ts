@@ -19,6 +19,12 @@ const setup = async (t: ExecutionContext) => {
       // @ts-ignore
       return wawa[3].yeye
     },
+    errorTimer: async (payload, update) => {
+      setInterval(() => {
+        throw new Error('lol')
+      }, 10)
+      update('yes')
+    },
   }
 
   const server = await createServer({
@@ -30,7 +36,7 @@ const setup = async (t: ExecutionContext) => {
         if (name && store[name]) {
           return {
             name,
-            observable: name === 'counter',
+            observable: name === 'counter' || name === 'errorTimer',
           }
         }
         return false
@@ -41,7 +47,7 @@ const setup = async (t: ExecutionContext) => {
       install: async ({ name }) => {
         if (store[name]) {
           return {
-            observable: name === 'counter',
+            observable: name === 'counter' || name === 'errorTimer',
             name,
             checksum: 1,
             function: store[name],
@@ -102,7 +108,7 @@ test.serial('function authorize error', async (t) => {
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
 
-test.serial.only('observable authorize error', async (t) => {
+test.serial('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
@@ -147,4 +153,18 @@ test.serial('type error in function', async (t) => {
     coreClient.function('errorFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.FunctionError)
+})
+
+test.serial('throw in an interval', async (t) => {
+  const { coreClient } = await setup(t)
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  await t.throwsAsync(
+    new Promise((resolve, reject) =>
+      coreClient.observe('errorTimer', console.info, {}, reject)
+    )
+  )
 })
