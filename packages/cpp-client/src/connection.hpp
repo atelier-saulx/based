@@ -177,9 +177,6 @@ class WsConnection {
             [this](websocketpp::connection_hdl hdl, ws_client::message_ptr msg) {
                 // here we will pass the message to the decoder, which, based on the header, will
                 // call the appropriate callback
-
-                // m_data_handler->incoming(msg);
-
                 std::string payload = msg->get_payload();
 
                 // if (msg->get_opcode() == websocketpp::frame::opcode::text) {
@@ -200,7 +197,6 @@ class WsConnection {
                 m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 m_reconnect_future = reconnect();
             }
-            // m_reconnect_thread->join();
         });
 
         con->set_fail_handler([this](websocketpp::connection_hdl) {
@@ -210,7 +206,6 @@ class WsConnection {
                 m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
                 m_reconnect_future = reconnect();
             }
-            // m_reconnect_thread->join();
         });
     }
 

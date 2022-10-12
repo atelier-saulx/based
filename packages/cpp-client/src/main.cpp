@@ -36,9 +36,9 @@ int main(int argc, char** argv) {
         //             [](std::string data) { std::cout << "got auth data = " << data << std::endl;
         //             });
 
-        client.get("counter", "", [](std::string data, std::string error) {
-            std::cout << "I GOT data 2 = " << data << std::endl;
-        });
+        // client.get("counter", "", [](std::string data, std::string error) {
+        //     std::cout << "I GOT data 2 = " << data << std::endl;
+        // });
 
         if (cmd.substr(0, 1) == "r") {
             int rem_id = atoi(cmd.substr(2).c_str());

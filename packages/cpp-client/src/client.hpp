@@ -1,6 +1,7 @@
 #ifndef BASED_CLIENT_H
 #define BASED_CLIENT_H
 
+#include <curl/curl.h>
 #include <map>
 #include <set>
 #include <string>
@@ -12,6 +13,8 @@
 #include "utility.hpp"
 
 using namespace nlohmann::literals;
+
+#define DEFAULT_CLUSTER_URL "https://d15p61sp2f2oaj.cloudfront.net"
 
 enum IncomingType {
     FUNCTION_DATA = 0,
@@ -125,8 +128,35 @@ class BasedClient {
         m_con.set_open_handler([&]() { on_open(); });
     }
 
-    void connect(std::string uri) {
-        m_con.connect(uri);
+    void connect(/* std::string org, std::string project, std::string env, */ std::string cluster) {
+        std::thread con_thr([&]() {
+            const char* url;
+
+            if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
+            else url = cluster.c_str();
+
+            CURL* curl;
+            CURLcode res;
+            std::string buf;
+
+            curl = curl_easy_init();
+            if (curl) {
+                // curl_easy_setopt(curl, CURLOPT_URL, url);
+                curl_easy_setopt(curl, CURLOPT_URL, "https://httpbin.org/delay/5");
+                curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+                                 [](void* contents, size_t size, size_t nmemb, void* userp) {
+                                     ((std::string*)userp)->append((char*)contents, size * nmemb);
+                                     return size * nmemb;
+                                 });
+                curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+                res = curl_easy_perform(curl);
+                curl_easy_cleanup(curl);
+            }
+            m_con.connect(cluster);
+            return buf;
+        });
+        con_thr.detach();
     }
 
     void disconnect() {
