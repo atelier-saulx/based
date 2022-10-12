@@ -7,13 +7,14 @@
 #include "client.hpp"
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cerr << "Specify address" << std::endl;
-        return -1;
-    }
+    // if (argc < 2) {
+    //     std::cerr << "Specify address" << std::endl;
+    //     return -1;
+    // }
 
     BasedClient client;
-    client.connect(argv[1]);
+    client.connect("https://d15p61sp2f2oaj.cloudfront.net", "saulx", "demo", "production",
+                   "@based/hub", "", false);
 
     bool done = false;
     // int i = 0;

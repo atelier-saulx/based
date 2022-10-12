@@ -28,7 +28,7 @@ main: $(OBJ) $(ODIR)/main.o
 
 tls:
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
-	$(CXX) $(CXXFLAGS) -DBASED_TLS -o main src/main.cpp -L/usr/local/opt/openssl@3/lib -lz -lssl -lcrypto
+	$(CXX) $(CXXFLAGS) -DBASED_TLS -o main src/main.cpp -L/usr/local/opt/openssl@3/lib -lz -lssl -lcrypto -lcurl
 
 clean:
 	rm -r $(ODIR)
