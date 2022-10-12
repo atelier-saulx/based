@@ -2,43 +2,40 @@ import type { BasedServer } from './server'
 import type uws from '@based/uws'
 import { BasedErrorData } from './error'
 
+export type ClientContext = {
+  query: string
+  ua: string
+  ip: string
+  id: number
+  authState?: any
+  headers: {
+    'content-length'?: number
+    authorization?: string
+    'content-type'?: string
+    'content-encoding'?: string
+    encoding?: string
+  } & { [key: string]: string }
+}
+
 export type WebsocketClient = {
   ws:
-    | (uws.WebSocket & {
-        query: string
-        ua: string
-        ip: string
-        authState?: any
-        id: number
-        obs: Set<number>
-        unauthorizedObs: Set<{
-          id: number
-          checksum: number
-          name: string
-          payload: any
-        }>
-      })
+    | (uws.WebSocket &
+        ClientContext & {
+          obs: Set<number>
+          unauthorizedObs: Set<{
+            id: number
+            checksum: number
+            name: string
+            payload: any
+          }>
+        })
     | null
 }
 
 export type HttpClient = {
   res: uws.HttpResponse | null
   req: uws.HttpRequest | null
-  context:
-    | ({
-        authState?: any
-        headers: {
-          'content-length'?: number
-          authorization?: string
-          'content-type'?: string
-          'content-encoding'?: string
-          encoding?: string
-        } & { [key: string]: string }
-        ua: string
-        ip: string
-        id: number
-      } & { [contextField: string]: any })
-    | null
+  context: ClientContext | null
 }
 
 export const isHttpClient = (
@@ -90,6 +87,7 @@ export type ObservableUpdateFunction = (
   fromChecksum?: number
 ) => void
 
+// this gets run in the main thread
 export type CustomHttpResponse = (
   result: any,
   payload: any,
@@ -117,7 +115,6 @@ export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
-  worker?: string | true | false
   timeoutCounter?: number // bit harder have to add
 }
 
@@ -125,9 +122,9 @@ export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
+  // just client context
+  function: (payload: any, client: ClientContext) => Promise<any>
   idleTimeout?: number // in ms
-  worker?: boolean | true | false
   timeoutCounter?: number
 }
 

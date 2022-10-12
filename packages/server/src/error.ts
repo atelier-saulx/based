@@ -33,7 +33,7 @@ type FunctionErrorProps =
     }
 
 export type ErrorPayload = {
-  [BasedErrorCode.NoBinaryProtocol]: undefined
+  [BasedErrorCode.NoBinaryProtocol]: any
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
   [BasedErrorCode.NoOservableCacheAvailable]: {
@@ -58,6 +58,8 @@ export type ErrorPayload = {
 }
 
 /*
+  for functione errors
+
  // errorData.basedMessage =
   //   typeof errorDefaults[basedCode]?.message === 'function'
   //     ? errorDefaults[basedCode]?.message(err)

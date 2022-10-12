@@ -5,6 +5,7 @@ import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
 import { WebsocketClient } from '../../types'
+import { BasedErrorCode, createError } from '../../error'
 
 const reader = (
   server: BasedServer,
@@ -61,7 +62,7 @@ export const message = (
   }
 
   if (!isBinary) {
-    // TODO: add an event here for illegal requests
+    createError(server, client, BasedErrorCode.NoBinaryProtocol, msg)
     client.ws.close()
     return
   }
