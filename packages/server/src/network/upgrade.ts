@@ -29,6 +29,7 @@ export const upgrade = (
       id: ++clientId,
       obs: new Set(),
       unauthorizedObs: new Set(),
+      headers: {}, // TODO: can add some extra headers here
     },
     secWebSocketKey,
     secWebSocketProtocol,

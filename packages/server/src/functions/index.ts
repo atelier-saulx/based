@@ -9,8 +9,18 @@ import {
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroy, initFunction } from '../observable'
+import { Worker } from 'node:worker_threads'
+import { join } from 'path'
+
+/*
+  isMainThread,
+  parentPort,
+  workerData,
+*/
 
 export { isObservableFunctionSpec }
+
+const WORKER_PATH = join(__dirname, './worker')
 
 export class BasedFunctions {
   server: BasedServer
@@ -18,6 +28,8 @@ export class BasedFunctions {
   config: FunctionConfig
 
   unregisterTimeout: NodeJS.Timeout
+
+  workers: Worker[] = []
 
   paths: {
     [path: string]: string
@@ -77,7 +89,7 @@ export class BasedFunctions {
       this.config.memCacheTimeout = 3e3
     }
     if (this.config.maxWorkers === undefined) {
-      this.config.maxWorkers = 0
+      this.config.maxWorkers = 1
     }
     if (this.config.log === undefined) {
       this.config.log = (opts) => {
@@ -87,6 +99,22 @@ export class BasedFunctions {
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
+
+    const d = this.config.maxWorkers - this.workers.length
+
+    if (d !== 0) {
+      if (d < 0) {
+        for (let i = 0; i < d; i++) {
+          const worker = this.workers.pop()
+          worker.terminate()
+        }
+      } else {
+        for (let i = 0; i < d; i++) {
+          this.workers.push(new Worker(WORKER_PATH, {}))
+        }
+      }
+    }
+
     this.uninstallLoop()
   }
 
@@ -236,5 +264,20 @@ export class BasedFunctions {
       }
     }
     return false
+  }
+
+  // time to add a core client in a worker?
+
+  // selva needs to be avaible trough a worker adress / id
+
+  // just add sharedBuffer to send back and call things from the server
+
+  // has to call it in the worker
+  async stopObservableFunction(name: string) {}
+
+  async runObservableFunction(spec: BasedObservableFunctionSpec) {}
+
+  async runFunction(spec: BasedFunctionSpec) {
+    // start with this
   }
 }
