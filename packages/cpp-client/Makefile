@@ -24,7 +24,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 
 main: $(OBJ) $(ODIR)/main.o
 	@echo $(SRCS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) -L/usr/local/opt/openssl@3/lib -lz -lssl -lcrypto
+	$(CXX) -o $@ $^ $(CXXFLAGS) -lz -lcurl
 
 tls:
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
