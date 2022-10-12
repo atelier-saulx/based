@@ -117,7 +117,6 @@ export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
-  worker?: string | true | false
   timeoutCounter?: number // bit harder have to add
 }
 
@@ -127,7 +126,6 @@ export type BasedFunctionSpec = BasedFunctionRoute & {
   checksum: number
   function: (payload: any, client: WebsocketClient | HttpClient) => Promise<any>
   idleTimeout?: number // in ms
-  worker?: boolean | true | false
   timeoutCounter?: number
 }
 
