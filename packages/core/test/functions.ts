@@ -22,6 +22,7 @@ test.serial('functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
+      maxWorkers: 5,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       route: ({ name }) => {

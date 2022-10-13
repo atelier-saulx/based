@@ -31,7 +31,9 @@ const encodeHeader = (
   //   4 = auth
   // isDeflate (1 bit)
   // len (28 bits)
-  const encodedMeta = (type << 1) + (isDeflate ? 1 : 0)
+
+  // @ts-ignore
+  const encodedMeta = (type << 1) + (isDeflate | 0)
   const nr = (len << 4) + encodedMeta
   return nr
 }
@@ -60,6 +62,7 @@ export const encodeGetObserveMessage = (
   // Type 3 = get
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
+  // try to reduce ifs
   if (type === 3) {
     const n = encoder.encode(name)
     len += 1 + n.length

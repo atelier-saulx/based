@@ -20,6 +20,7 @@ const handleRequest = (
   route: BasedFunctionRoute,
   authorized: (payload: any) => void
 ) => {
+  // send shared array buffer
   if (method === 'post') {
     readBody(
       server,

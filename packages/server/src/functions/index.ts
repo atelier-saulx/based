@@ -4,7 +4,9 @@ import {
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
+  HttpClient,
   isObservableFunctionSpec,
+  WebsocketClient,
 } from '../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -29,7 +31,12 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
-  workers: Worker[] = []
+  workers: {
+    worker: Worker
+    name: string
+    activeObservables: number
+    activeFunctions: number
+  }[] = []
 
   paths: {
     [path: string]: string
@@ -105,12 +112,17 @@ export class BasedFunctions {
     if (d !== 0) {
       if (d < 0) {
         for (let i = 0; i < d; i++) {
-          const worker = this.workers.pop()
-          worker.terminate()
+          const w = this.workers.pop()
+          w.worker.terminate()
         }
       } else {
         for (let i = 0; i < d; i++) {
-          this.workers.push(new Worker(WORKER_PATH, {}))
+          this.workers.push({
+            worker: new Worker(WORKER_PATH, {}),
+            name: '' + this.workers.length,
+            activeObservables: 0,
+            activeFunctions: 0,
+          })
         }
       }
     }
@@ -273,11 +285,31 @@ export class BasedFunctions {
   // just add sharedBuffer to send back and call things from the server
 
   // has to call it in the worker
-  async stopObservableFunction(name: string) {}
+  // async stopObservableFunction(name: string) {}
 
-  async runObservableFunction(spec: BasedObservableFunctionSpec) {}
+  // async runObservableFunction(
+  //   spec: BasedObservableFunctionSpec,
+  //   payload: Uint8Array
+  // ) {}
 
-  async runFunction(spec: BasedFunctionSpec) {
+  // shared buffer here as thing that we want to send
+  async runFunction(
+    spec: BasedFunctionSpec,
+    client: HttpClient | WebsocketClient,
+    payload: Uint8Array
+  ): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
+      // go go go
+      // for (const worker in this.workers) {
+      //   break
+      // }
+
+      // TODO: function needs to be instlled on the worker - just send function path
+      this.workers[0].worker.postMessage({
+        // either path or STRING (string is shitty)
+        path: spec.functionPath,
+      })
+    })
     // start with this
   }
 }

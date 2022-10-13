@@ -62,7 +62,7 @@ export const httpStreamFunction = (
           const stream = createDataStream(server, route, client, size)
           const streamPayload = { payload, stream }
           spec
-            .function(streamPayload, client)
+            .function(streamPayload, client.context)
             .catch((err) => {
               stream.destroy()
               sendHttpError(server, client, BasedErrorCode.FunctionError, {

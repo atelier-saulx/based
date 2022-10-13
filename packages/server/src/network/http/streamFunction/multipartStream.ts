@@ -216,7 +216,7 @@ export default async (
           promiseQ.push(
             fn.function(
               { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client
+              client.context
             )
           )
         }
@@ -243,7 +243,7 @@ export default async (
           promiseQ.push(
             fn.function(
               { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client
+              client.context
             )
           )
         }

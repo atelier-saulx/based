@@ -104,28 +104,37 @@ export type BasedFunctionRoute = {
   rateLimitTokens?: number
 }
 
+export type BasedObservableFunction = (
+  payload: any,
+  update: ObservableUpdateFunction
+) => Promise<() => void>
+
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string
   checksum: number
   observable: true
-  function: (
-    payload: any,
-    update: ObservableUpdateFunction
-  ) => Promise<() => void>
+  functionPath: string
+  stickyWorker?: string
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
-  timeoutCounter?: number // bit harder have to add
+  timeoutCounter?: number
 }
+
+export type BasedFunction = (
+  payload: any,
+  client: ClientContext
+) => Promise<any>
 
 export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  // just client context
-  function: (payload: any, client: ClientContext) => Promise<any>
+  stickyWorker?: string
+  functionPath: string
+  maxExecTime?: number // in ms - very nice too have
   idleTimeout?: number // in ms
-  timeoutCounter?: number
+  timeoutCounter?: number // in ms
 }
 
 export type FunctionConfig = {

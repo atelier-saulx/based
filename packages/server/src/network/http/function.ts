@@ -6,7 +6,7 @@ import { BasedErrorCode } from '../../error'
 
 export const httpFunction = (
   route: BasedFunctionRoute,
-  payload: any,
+  payload: Uint8Array,
   client: HttpClient,
   server: BasedServer
 ): void => {
@@ -20,9 +20,16 @@ export const httpFunction = (
       if (!client.res) {
         return
       }
+
+      // run and pass shared array buffer
+      /*
+       // spec
+        //   .function(payload, client)
+      */
+
       if (spec && !isObservableFunctionSpec(spec)) {
-        spec
-          .function(payload, client)
+        server.functions
+          .runFunction(spec, client, payload)
           .then(async (result) => {
             if (!client.res) {
               return
