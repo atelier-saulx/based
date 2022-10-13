@@ -166,6 +166,8 @@ command(
 
     options.code = result.outputFiles[0].text
 
+    console.log('------>', options.code)
+
     spinner.clear()
 
     console.info(
