@@ -22,6 +22,8 @@ import { join } from 'path'
 
 export { isObservableFunctionSpec }
 
+let reqId = 0
+
 const WORKER_PATH = join(__dirname, './worker')
 
 export class BasedFunctions {
@@ -37,6 +39,8 @@ export class BasedFunctions {
     activeObservables: number
     activeFunctions: number
   }[] = []
+
+  workerResponseListeners: Map<number, (err: Error, p: any) => void>
 
   paths: {
     [path: string]: string
@@ -109,6 +113,10 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
+    const incomingWorkerMessage = (data) => {
+      console.info('got data', data)
+    }
+
     if (d !== 0) {
       if (d < 0) {
         for (let i = 0; i < d; i++) {
@@ -117,12 +125,14 @@ export class BasedFunctions {
         }
       } else {
         for (let i = 0; i < d; i++) {
+          const worker = new Worker(WORKER_PATH, {})
           this.workers.push({
-            worker: new Worker(WORKER_PATH, {}),
+            worker,
             name: '' + this.workers.length,
             activeObservables: 0,
             activeFunctions: 0,
           })
+          worker.on('message', incomingWorkerMessage)
         }
       }
     }
@@ -299,15 +309,25 @@ export class BasedFunctions {
     payload: Uint8Array
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
-      // go go go
-      // for (const worker in this.workers) {
-      //   break
-      // }
+      const selectedWorker = this.workers[0]
 
-      // TODO: function needs to be instlled on the worker - just send function path
-      this.workers[0].worker.postMessage({
-        // either path or STRING (string is shitty)
+      const listenerId = ++reqId
+      this.workerResponseListeners.set(listenerId, (err, p) => {
+        this.workerResponseListeners.delete(listenerId)
+        if (err) {
+          reject(err)
+        } else {
+          // prob shared array buffer...
+          resolve(p)
+        }
+      })
+
+      selectedWorker.worker.postMessage({
         path: spec.functionPath,
+        payload,
+        reqId: listenerId,
+        // will become shared simdjson
+        context: 'context' in client ? client.context : client,
       })
     })
     // start with this

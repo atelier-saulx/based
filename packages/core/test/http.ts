@@ -4,22 +4,24 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
+import { join } from 'node:path'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial('functions (over http)', async (t) => {
+test.serial.only('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
-        if (payload) {
-          return payload
-        }
-        return 'flap'
-      },
+      functionPath: join(__dirname, 'functions', 'hello.js'),
+      // function: async (payload) => {
+      //   if (payload) {
+      //     return payload
+      //   }
+      //   return 'flap'
+      // },
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
