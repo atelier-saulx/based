@@ -7,13 +7,14 @@
 #include "client.hpp"
 
 int main(int argc, char** argv) {
-    if (argc < 2) {
-        std::cerr << "Specify address" << std::endl;
-        return -1;
-    }
+    // if (argc < 2) {
+    //     std::cerr << "Specify address" << std::endl;
+    //     return -1;
+    // }
 
     BasedClient client;
-    client.connect(argv[1]);
+    client.connect("https://d15p61sp2f2oaj.cloudfront.net", "saulx", "demo", "production",
+                   "@based/hub", "", false);
 
     bool done = false;
     // int i = 0;
@@ -36,9 +37,9 @@ int main(int argc, char** argv) {
         //             [](std::string data) { std::cout << "got auth data = " << data << std::endl;
         //             });
 
-        client.get("counter", "", [](std::string data, std::string error) {
-            std::cout << "I GOT data 2 = " << data << std::endl;
-        });
+        // client.get("counter", "", [](std::string data, std::string error) {
+        //     std::cout << "I GOT data 2 = " << data << std::endl;
+        // });
 
         if (cmd.substr(0, 1) == "r") {
             int rem_id = atoi(cmd.substr(2).c_str());

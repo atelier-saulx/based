@@ -1,8 +1,11 @@
 #ifndef BASED_CLIENT_H
 #define BASED_CLIENT_H
 
+#include <curl/curl.h>
+#include <json.hpp>
 #include <map>
 #include <set>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -12,6 +15,8 @@
 #include "utility.hpp"
 
 using namespace nlohmann::literals;
+
+#define DEFAULT_CLUSTER_URL "https://d15p61sp2f2oaj.cloudfront.net"
 
 enum IncomingType {
     FUNCTION_DATA = 0,
@@ -51,7 +56,7 @@ class BasedClient {
     std::function<void(std::string)> m_auth_callback;
 
     std::map<int, std::function<void(std::string, std::string)>> m_function_callbacks;
-    // std::map<int, std::function<void(std::string)>> m_error_listeners;
+    int m_registry_index;
 
     /////////////////////
     // cache
@@ -119,14 +124,74 @@ class BasedClient {
     std::map<int, std::function<void(std::string /*data*/, std::string /*error*/)>>
         m_get_sub_callbacks;
 
+    static size_t write_function(void* contents, size_t size, size_t nmemb, void* userp) {
+        ((std::string*)userp)->append((char*)contents, size * nmemb);
+        return size * nmemb;
+    }
+
    public:
-    BasedClient() : m_request_id(0), m_sub_id(0), m_draining(false), m_auth_in_progress(false) {
+    BasedClient()
+        : m_request_id(0),
+          m_sub_id(0),
+          m_draining(false),
+          m_auth_in_progress(false),
+          m_registry_index(0) {
         m_con.set_message_handler([&](std::string msg) { on_message(msg); });
         m_con.set_open_handler([&]() { on_open(); });
     }
 
-    void connect(std::string uri) {
-        m_con.connect(uri);
+    void connect(std::string cluster,
+                 std::string org,
+                 std::string project,
+                 std::string env,
+                 std::string name,
+                 std::string key,
+                 bool optional_key) {
+        std::thread con_thr([&, org, project, env, name, cluster, key, optional_key]() {
+            const char* url;
+            if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
+            else url = cluster.c_str();
+
+            CURL* curl;
+            CURLcode res;
+            std::string buf;
+
+            curl = curl_easy_init();
+            if (!curl) {
+                throw std::runtime_error("curl object failed to initialize");
+            }
+            // Set up curl
+            curl_easy_setopt(curl, CURLOPT_URL, url);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
+
+            res = curl_easy_perform(curl);  // get list of registry urls
+
+            json registries = json::array();
+            registries = json::parse(buf);
+
+            m_registry_index++;
+            if (m_registry_index > registries.size()) m_registry_index = 0;
+
+            std::string registry_url = registries.at(m_registry_index);
+            std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
+            if (key.length() > 0) req_url += "." + key;
+            if (optional_key) req_url += "$";
+
+            std::cout << "req_url = " << req_url << std::endl;
+
+            buf = "";
+            curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
+
+            res = curl_easy_perform(curl);  // get service
+
+            std::cout << "service url = " << buf << std::endl;
+
+            curl_easy_cleanup(curl);
+            m_con.connect(buf);
+        });
+        con_thr.detach();
     }
 
     void disconnect() {
