@@ -61,24 +61,24 @@ export const httpStreamFunction = (
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
           const stream = createDataStream(server, route, client, size)
           const streamPayload = { payload, stream }
-          spec
-            .function(streamPayload, client.context)
-            .catch((err) => {
-              stream.destroy()
-              sendHttpError(server, client, BasedErrorCode.FunctionError, {
-                err,
-                name: route.name,
-              })
-            })
-            .then((r) => {
-              if (stream.readableEnded) {
-                sendHttpResponse(client, r)
-              } else {
-                stream.once('end', () => {
-                  sendHttpResponse(client, r)
-                })
-              }
-            })
+          // spec
+          //   .function(streamPayload, client.context)
+          //   .catch((err) => {
+          //     stream.destroy()
+          //     sendHttpError(server, client, BasedErrorCode.FunctionError, {
+          //       err,
+          //       name: route.name,
+          //     })
+          //   })
+          //   .then((r) => {
+          //     if (stream.readableEnded) {
+          //       sendHttpResponse(client, r)
+          //     } else {
+          //       stream.once('end', () => {
+          //         sendHttpResponse(client, r)
+          //       })
+          //     }
+          //   })
         } else {
           sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
         }

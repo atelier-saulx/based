@@ -40,7 +40,7 @@ export class BasedFunctions {
     activeFunctions: number
   }[] = []
 
-  workerResponseListeners: Map<number, (err: Error, p: any) => void>
+  workerResponseListeners: Map<number, (err: Error, p: any) => void> = new Map()
 
   paths: {
     [path: string]: string
@@ -114,7 +114,12 @@ export class BasedFunctions {
     const d = this.config.maxWorkers - this.workers.length
 
     const incomingWorkerMessage = (data) => {
-      console.info('got data', data)
+      if (data.reqId) {
+        const listener = this.workerResponseListeners.get(data.reqId)
+        if (listener) {
+          listener(data.err, data.payload)
+        }
+      }
     }
 
     if (d !== 0) {
@@ -306,11 +311,9 @@ export class BasedFunctions {
   async runFunction(
     spec: BasedFunctionSpec,
     client: HttpClient | WebsocketClient,
-    payload: Uint8Array
+    payload?: Uint8Array
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
-      const selectedWorker = this.workers[0]
-
       const listenerId = ++reqId
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
@@ -322,7 +325,10 @@ export class BasedFunctions {
         }
       })
 
+      const selectedWorker = this.workers[0]
+
       selectedWorker.worker.postMessage({
+        type: 1, // function
         path: spec.functionPath,
         payload,
         reqId: listenerId,

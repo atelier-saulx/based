@@ -8,6 +8,7 @@ export type ClientContext = {
   ip: string
   id: number
   authState?: any
+  method: string
   headers: {
     'content-length'?: number
     authorization?: string

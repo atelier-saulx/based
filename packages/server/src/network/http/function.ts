@@ -6,9 +6,9 @@ import { BasedErrorCode } from '../../error'
 
 export const httpFunction = (
   route: BasedFunctionRoute,
-  payload: Uint8Array,
   client: HttpClient,
-  server: BasedServer
+  server: BasedServer,
+  payload?: Uint8Array
 ): void => {
   if (!client.res) {
     return

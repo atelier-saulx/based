@@ -13,7 +13,6 @@
     "@saulx/selva": "10||11||12||13||14"
   },
   "dependencies": {
-    "simdjson": "^0.9.2",
     "@based/client": "^2.9.0",
     "@based/graphql": "^2.4.2",
     "@based/uws": "2.4.0",

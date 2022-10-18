@@ -11,40 +11,6 @@ const UNCOMPRESS_OPTS = {
   chunkSize: 1024 * 1024 * 1000,
 }
 
-// export const parseData = (
-//   // server: BasedServer,
-//   context: ClientContext,
-//   // client: HttpClient,
-//   // contentType: string,
-//   data: SharedArrayBuffer,
-//   // route: BasedFunctionRoute
-// ): any => {
-//   // has to happen somehwere else...
-//   // authorize???? - we want to check the payload so authorize HAS TO RUN IN THE WORKER
-
-//   const contentType = context.headers['content-type']
-
-//   if (contentType === 'application/json' || !contentType) {
-//     const str = data.toString()
-//     let parsedData: any
-//     try {
-//       parsedData = data.byteLength ? JSON.parse(str) : undefined
-//       return parsedData
-//     } catch (e) {
-//       // make this an event
-//       // has to buble up
-//       // sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
-//     }
-//   } else if (
-//     contentType.startsWith('text') ||
-//     contentType === 'application/xml'
-//   ) {
-//     return data.toString()
-//   } else {
-//     return data
-//   }
-// }
-
 export const readBody = (
   server: BasedServer,
   client: HttpClient,
@@ -62,7 +28,6 @@ export const readBody = (
     return
   }
 
-  // const contentType = client.context.headers['content-type']
   const contentEncoding = client.context.headers['content-encoding']
   let size = 0
 
@@ -100,14 +65,17 @@ export const readBody = (
       })
       const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
       const buf = new Uint8Array(data)
-      let index = 0
+      // let index = 0
 
       uncompressStream.on('data', (c) => {
-        const len = c.byteLength
-        for (let i = 0; i < len; i++) {
-          Atomics.store(buf, index, c[i])
-        }
-        index += len
+        // const len = c.byteLength
+        // for (let i = 0; i < len; i++) {
+        // console.log(c[i])
+        // worng ofc..
+        // maybe unpack in worker? - will not work like this...
+        // Atomics.store(buf, index, c[i])
+        // }
+        // index += len
       })
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
@@ -134,12 +102,11 @@ export const readBody = (
         return
       }
 
-      for (let i = 0; i < len; i++) {
-        Atomics.store(buf, index, c[i])
-      }
+      buf.set(new Uint8Array(c), index)
       index += len
 
       if (isLast) {
+        console.info('shared buf time', buf)
         onData(buf)
       }
     })

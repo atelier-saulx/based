@@ -213,12 +213,12 @@ export default async (
         }
         isWriting = setHeader(file)
         if (isWriting) {
-          promiseQ.push(
-            fn.function(
-              { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client.context
-            )
-          )
+          // promiseQ.push(
+          //   fn.function(
+          //     { payload: { ...payload, ...file.opts }, stream: file.stream },
+          //     client.context
+          //   )
+          // )
         }
         continue
       }
@@ -240,12 +240,12 @@ export default async (
         file.opts.extension = getExtension(mimeType)
         isWriting = setHeader(file)
         if (isWriting) {
-          promiseQ.push(
-            fn.function(
-              { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client.context
-            )
-          )
+          // promiseQ.push(
+          //   fn.function(
+          //     { payload: { ...payload, ...file.opts }, stream: file.stream },
+          //     client.context
+          //   )
+          // )
         }
         continue
       }

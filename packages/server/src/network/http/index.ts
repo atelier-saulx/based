@@ -7,9 +7,10 @@ import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { sendHttpError } from './send'
-import { authorizeRequest } from './authorize'
+// import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { incomingCounter } from '../../security'
+// import simdjson from 'simdjson'
 
 let clientId = 0
 
@@ -18,19 +19,22 @@ const handleRequest = (
   method: string,
   client: HttpClient,
   route: BasedFunctionRoute,
-  authorized: (payload: any) => void
+  ready: (payload?: any) => void
 ) => {
   // send shared array buffer
   if (method === 'post') {
     readBody(
       server,
       client,
-      (payload) => authorizeRequest(server, client, payload, route, authorized),
+      ready,
+      // (payload) => authorizeRequest(server, client, payload, route, authorized),
       route
     )
   } else {
-    const payload = parseQuery(client.context.query)
-    authorizeRequest(server, client, payload, route, authorized)
+    ready()
+    // parse query in the actual worker
+    // const payload = parseQuery(client.context.query)
+    // authorizeRequest(server, client, payload, route, authorized)
   }
 }
 
@@ -76,11 +80,17 @@ export const httpHandler = (
 
   const method = req.getMethod()
 
+  //
+
+  // const valid = simdjson.isValid(jsonString); // true
+  // read only...
+
   const client: HttpClient = {
     res,
     req,
     context: {
-      query: req.getQuery(),
+      method,
+      query: req.getQuery(), // need to use this if payload is undefined ? // maybe add method here?
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
@@ -154,7 +164,7 @@ export const httpHandler = (
       )
     } else {
       handleRequest(server, method, client, route, (payload) =>
-        httpFunction(route, payload, client, server)
+        httpFunction(route, client, server, payload)
       )
     }
   }

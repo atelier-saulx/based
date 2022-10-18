@@ -24,6 +24,9 @@ export const functionMessage = (
   const reqId = readUint8(arr, start + 4, 3)
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
+
+  // make this shared - remove authorize form ehre
+  // content ecndoing will be set and send as well
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
     isDeflate
@@ -45,6 +48,7 @@ export const functionMessage = (
     return false
   }
 
+  // authroize has to go from here (scince we dont parse the payload yet)
   server.auth.config
     .authorize(server, client, name, payload)
     .then((ok) => {
