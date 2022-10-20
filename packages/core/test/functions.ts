@@ -2,20 +2,22 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
+import { join } from 'path'
 
 test.serial('functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const store = {
-    hello: async (payload) => {
-      return payload.length
+    hello: {
+      path: '/flap',
+      name: 'hello',
+      checksum: 1,
+      functionPath: join(__dirname, 'functions', 'hello.js'),
     },
-    lotsOfData: async () => {
-      let str = ''
-      for (let i = 0; i < 200000; i++) {
-        str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-      }
-      return str
+    lotOfData: {
+      name: 'lotsOfData',
+      checksum: 1,
+      functionPath: join(__dirname, 'functions', 'lotsOfData.js'),
     },
   }
 
@@ -32,15 +34,12 @@ test.serial('functions', async (t) => {
         return false
       },
       uninstall: async () => {
+        await wait(1e3)
         return true
       },
       install: async ({ name }) => {
         if (store[name]) {
-          return {
-            name,
-            checksum: 1,
-            function: store[name],
-          }
+          return store[name]
         } else {
           return false
         }

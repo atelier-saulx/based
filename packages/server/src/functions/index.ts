@@ -293,21 +293,6 @@ export class BasedFunctions {
     return false
   }
 
-  // time to add a core client in a worker?
-
-  // selva needs to be avaible trough a worker adress / id
-
-  // just add sharedBuffer to send back and call things from the server
-
-  // has to call it in the worker
-  // async stopObservableFunction(name: string) {}
-
-  // async runObservableFunction(
-  //   spec: BasedObservableFunctionSpec,
-  //   payload: Uint8Array
-  // ) {}
-
-  // shared buffer here as thing that we want to send
   async runFunction(
     spec: BasedFunctionSpec,
     client: HttpClient | WebsocketClient,
@@ -327,12 +312,13 @@ export class BasedFunctions {
 
       const selectedWorker = this.workers[0]
 
+      // will make this super small
       selectedWorker.worker.postMessage({
         type: 1, // function
         path: spec.functionPath,
         payload,
         reqId: listenerId,
-        // will become shared simdjson
+        // will become shared simdjson or custom shared protocol
         context: 'context' in client ? client.context : client,
       })
     })

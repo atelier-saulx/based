@@ -68,6 +68,8 @@ export const readBody = (
       // let index = 0
 
       uncompressStream.on('data', (c) => {
+        console.log('bytes written???', uncompressStream.bytesWritten)
+
         // const len = c.byteLength
         // for (let i = 0; i < len; i++) {
         // console.log(c[i])

@@ -7,17 +7,7 @@ console.info('start function workerthread')
 const decoder = new TextDecoder('utf-8')
 
 export const parsePayload = (context: ClientContext, data: Uint8Array): any => {
-  // has to happen somehwere else...
-  // authorize???? - we want to check the payload so authorize HAS TO RUN IN THE WORKER
-
   const contentType = context.headers['content-type']
-
-  // may need to deflate
-  // add isDeflate
-
-  // make context very effcient with getters and just a shared arraybuffer
-
-  console.info('yo yo', data, contentType)
 
   if (contentType === 'application/json' || !contentType) {
     const str = decoder.decode(data)
@@ -48,6 +38,8 @@ parentPort.on('message', (d) => {
 
     let payload: any
 
+    console.log(d)
+
     if (d.payload === undefined && d.context.method === 'get') {
       payload = parseQuery(d.context.query)
     } else if (d.payload) {
@@ -57,9 +49,7 @@ parentPort.on('message', (d) => {
     console.info('payload', payload, d)
 
     // parse result
-
     // add deflate
-
     // measure cpu
 
     fn(payload, d.context)
@@ -79,17 +69,3 @@ parentPort.on('message', (d) => {
     // fn!
   }
 })
-
-// how to get a function?
-
-// maybe allways get them from a path?
-
-// SharedArrayBuffer
-
-// https://www.npmjs.com/package/simdjson
-// mostly usefull for simdjson
-
-/*
-const JSONbuffer = simdjson.lazyParse(jsonString); // external (C++) parsed JSON object
-console.log(JSONbuffer.valueForKeyPath("foo.bar[1]")); // 42
-*/
