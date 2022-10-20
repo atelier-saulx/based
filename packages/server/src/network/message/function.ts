@@ -54,8 +54,6 @@ export const functionMessage = (
 
   a.set(arr.slice(start + 8 + nameLen, start + len), 0)
 
-  console.log('yes', a)
-
   server.functions
     .install(name)
     .then((spec) => {
@@ -75,6 +73,8 @@ export const functionMessage = (
             )
           })
           .catch((err) => {
+            console.error(err)
+
             sendError(server, client, BasedErrorCode.FunctionError, {
               route,
               requestId: reqId,
