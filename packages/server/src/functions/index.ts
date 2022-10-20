@@ -20,6 +20,13 @@ import { join } from 'path'
   workerData,
 */
 
+type BasedWorker = {
+  worker: Worker
+  name: string
+  activeObservables: number
+  activeFunctions: number
+}
+
 export { isObservableFunctionSpec }
 
 let reqId = 0
@@ -33,12 +40,7 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
-  workers: {
-    worker: Worker
-    name: string
-    activeObservables: number
-    activeFunctions: number
-  }[] = []
+  workers: BasedWorker[] = []
 
   workerResponseListeners: Map<number, (err: Error, p: any) => void> = new Map()
 
@@ -63,6 +65,11 @@ export class BasedFunctions {
     if (config) {
       this.updateConfig(config)
     }
+  }
+
+  workerSortLoop() {
+    // or something else?
+    // this.workerSortTimeout
   }
 
   uninstallLoop() {
@@ -133,6 +140,8 @@ export class BasedFunctions {
           const worker = new Worker(WORKER_PATH, {})
           this.workers.push({
             worker,
+            // name can be defined as well
+            // workers by name
             name: '' + this.workers.length,
             activeObservables: 0,
             activeFunctions: 0,
@@ -303,8 +312,12 @@ export class BasedFunctions {
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
+
+      const selectedWorker: BasedWorker = this.workers[0]
+
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
+        selectedWorker.activeFunctions--
         if (err) {
           reject(err)
         } else {
@@ -313,7 +326,7 @@ export class BasedFunctions {
         }
       })
 
-      const selectedWorker = this.workers[0]
+      selectedWorker.activeFunctions++
 
       // will make this super small
       selectedWorker.worker.postMessage({
