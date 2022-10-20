@@ -7,7 +7,7 @@
     "build": "npx  tsc",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --timeout 1m --verbose",
+    "test": "ava --node-arguments='--expose-gc' --timeout 1m --verbose",
     "watchTest": "ava --color --watch --verbose",
     "browserTest": "concurrently \"node ./test/browser/based-server.js\" \"aristotle watch -t test/browser/index.tsx -p 8005\""
   },

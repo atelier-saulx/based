@@ -9,7 +9,6 @@ test.serial('functions', async (t) => {
 
   const store = {
     hello: {
-      path: '/flap',
       name: 'hello',
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'hello.js'),
@@ -29,7 +28,10 @@ test.serial('functions', async (t) => {
       idleTimeout: 3e3,
       route: ({ name }) => {
         if (name && store[name]) {
-          return { name }
+          return {
+            name,
+            maxPayloadSize: 1e6 * 10,
+          }
         }
         return false
       },
@@ -60,10 +62,29 @@ test.serial('functions', async (t) => {
     console.info('connect', isConnected)
   })
 
+  const helloResponsesX = await Promise.all([
+    coreClient.function('hello', {
+      bla: true,
+    }),
+    coreClient.function('hello', {
+      bla: true,
+    }),
+    coreClient.function('hello', {
+      bla: true,
+    }),
+  ])
+
+  t.true(helloResponsesX[0] < 20)
+
+  t.deepEqual(helloResponsesX[0], helloResponsesX[1])
+  t.deepEqual(helloResponsesX[1], helloResponsesX[2])
+
   let str = ''
-  for (let i = 0; i < 200000; i++) {
+  for (let i = 0; i < 2000000; i++) {
     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
   }
+
+  console.info('go go go', str.length)
 
   const helloResponses = await Promise.all([
     coreClient.function('hello', {
@@ -81,7 +102,7 @@ test.serial('functions', async (t) => {
 
   t.true(bigString.length > 5e6)
 
-  await wait(6e3)
+  await wait(15e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)
 })

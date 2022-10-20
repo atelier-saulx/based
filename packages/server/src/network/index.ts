@@ -39,7 +39,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
 
   app
     .ws('/*', {
-      maxPayloadLength: 1024 * 1024 * 5,
+      maxPayloadLength: 1024 * 1024 * 10, // 10 mb max payload
       idleTimeout: 100,
       maxBackpressure: 1024,
       // compression: uws.SHARED_COMPRESSOR,

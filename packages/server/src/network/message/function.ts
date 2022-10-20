@@ -48,11 +48,39 @@ export const functionMessage = (
     return false
   }
 
-  const sharedBuf = new SharedArrayBuffer(len - (start + 8 + nameLen))
+  const pLen = len - (8 + nameLen)
+
+  console.info('GC')
+  global.gc()
+  const m1 = process.memoryUsage() // Initial usage
+  const d = Date.now()
+
+  const sharedBuf = new SharedArrayBuffer(pLen)
 
   const a = new Uint8Array(sharedBuf)
 
-  a.set(arr.slice(start + 8 + nameLen, start + len), 0)
+  // const nB = arr.slice(start + 8 + nameLen, start + len)
+
+  // const s = start + 8 + nameLen
+  // const e = start + len
+  // for (let i = s; i < e; i++) {
+  //   a[i - s] = arr[i]
+  // }
+
+  const x = arr.slice(start + 8 + nameLen, start + len)
+
+  a.set(x, 0)
+
+  const m2 = process.memoryUsage()
+  console.info('INCOMING SIZE', len)
+  console.info('SPEED', Date.now() - d, 'ms')
+  console.info(
+    `Memory: ${
+      Math.round(((m2.heapUsed - m1.heapUsed) / 1024 / 1024) * 100) / 100
+    } MB`,
+
+    `Total Memory: ${Math.round((m2.heapUsed / 1024 / 1024) * 100) / 100} MB`
+  )
 
   server.functions
     .install(name)
@@ -61,9 +89,11 @@ export const functionMessage = (
         return
       }
 
+      console.info(spec)
+
       if (spec && !isObservableFunctionSpec(spec)) {
         server.functions
-          .runFunction(spec, client, a)
+          .runFunction(spec, client, a, isDeflate)
           .then(async (v) => {
             // can allready be buffer from the function (in this case)
             client.ws?.send(
@@ -87,53 +117,53 @@ export const functionMessage = (
       sendError(server, client, BasedErrorCode.FunctionNotFound, route)
     )
 
-  // sharedBuf
-
-  // authorize has to go from here (scince we dont parse the payload yet)
-  // server.auth.config
-  //   .authorize(server, client, name, payload)
-  //   .then((ok) => {
-  //     if (!ok) {
-  //       sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
-  //       return false
-  //     }
-
-  //     server.functions
-  //       .install(name)
-  //       .then((spec) => {
-  //         if (spec && !isObservableFunctionSpec(spec)) {
-  //           spec
-  //             .function(payload, client)
-  //             .then((v) => {
-  //               client.ws?.send(
-  //                 encodeFunctionResponse(reqId, valueToBuffer(v)),
-  //                 true,
-  //                 false
-  //               )
-  //             })
-  //             .catch((err) => {
-  //               sendError(server, client, BasedErrorCode.FunctionError, {
-  //                 route,
-  //                 requestId: reqId,
-  //                 err,
-  //               })
-  //             })
-  //         } else {
-  //           sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-  //         }
-  //       })
-  //       .catch(() => {
-  //         sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-  //       })
-  //   })
-  //   .catch((err) => {
-  //     sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
-  //       route,
-  //       requestId: reqId,
-  //       err,
-  //     })
-  //     return false
-  //   })
-
   return true
 }
+
+// sharedBuf
+
+// authorize has to go from here (scince we dont parse the payload yet)
+// server.auth.config
+//   .authorize(server, client, name, payload)
+//   .then((ok) => {
+//     if (!ok) {
+//       sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
+//       return false
+//     }
+
+//     server.functions
+//       .install(name)
+//       .then((spec) => {
+//         if (spec && !isObservableFunctionSpec(spec)) {
+//           spec
+//             .function(payload, client)
+//             .then((v) => {
+//               client.ws?.send(
+//                 encodeFunctionResponse(reqId, valueToBuffer(v)),
+//                 true,
+//                 false
+//               )
+//             })
+//             .catch((err) => {
+//               sendError(server, client, BasedErrorCode.FunctionError, {
+//                 route,
+//                 requestId: reqId,
+//                 err,
+//               })
+//             })
+//         } else {
+//           sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+//         }
+//       })
+//       .catch(() => {
+//         sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+//       })
+//   })
+//   .catch((err) => {
+//     sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+//       route,
+//       requestId: reqId,
+//       err,
+//     })
+//     return false
+//   })

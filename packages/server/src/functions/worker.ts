@@ -1,5 +1,6 @@
 import { parseQuery } from '@saulx/utils'
 import { parentPort } from 'node:worker_threads'
+import { decodePayload } from '../protocol'
 import { ClientContext } from '../types'
 
 console.info('start function workerthread')
@@ -38,15 +39,16 @@ parentPort.on('message', (d) => {
 
     let payload: any
 
-    console.log(d)
-
-    if (d.payload === undefined && d.context.method === 'get') {
+    if (d.context.method === 'ws') {
+      if (d.payload) {
+        payload = decodePayload(d.payload, d.isDeflate)
+      }
+      // console.log(x)
+    } else if (d.payload === undefined && d.context.method === 'get') {
       payload = parseQuery(d.context.query)
     } else if (d.payload) {
       payload = parsePayload(d.context, d.payload)
     }
-
-    console.info('payload', payload, d)
 
     // parse result
     // add deflate

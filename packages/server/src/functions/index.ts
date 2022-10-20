@@ -296,7 +296,8 @@ export class BasedFunctions {
   async runFunction(
     spec: BasedFunctionSpec,
     client: HttpClient | WebsocketClient,
-    payload?: Uint8Array
+    payload?: Uint8Array,
+    isDeflate?: boolean
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
@@ -317,9 +318,11 @@ export class BasedFunctions {
         type: 1, // function
         path: spec.functionPath,
         payload,
+        isDeflate,
         reqId: listenerId,
         // will become shared simdjson or custom shared protocol
-        context: 'context' in client ? client.context : client,
+        context:
+          'context' in client ? client.context : { headers: {}, method: 'ws' },
       })
     })
     // start with this
