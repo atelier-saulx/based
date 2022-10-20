@@ -11,6 +11,8 @@ import { BasedErrorCode } from '../../error'
 import { sendError } from './send'
 import { WebsocketClient } from '../../types'
 
+const processFunction = () => {}
+
 export const functionMessage = (
   arr: Uint8Array,
   start: number,
@@ -25,27 +27,30 @@ export const functionMessage = (
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
 
-  // make this shared - remove authorize form ehre
-  // content ecndoing will be set and send as well
-  // const payload = decodePayload(
-  //   new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-  //   isDeflate
-  // )
-
   if (!name || !reqId) {
     return false
   }
 
   const route = server.functions.route(name)
 
-  if (!route || route.observable === true || route.stream === true) {
-    // stream not with ws for now...
+  if (!route) {
+    sendError(server, client, BasedErrorCode.FunctionNotFound, { name })
+    return false
+  }
+
+  if (route.observable === true) {
+    sendError(server, client, BasedErrorCode.FunctionIsObservable, route)
     return false
   }
 
   if (len > route.maxPayloadSize) {
     sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
     return false
+  }
+
+  if (route.stream === true) {
+    sendError(server, client, BasedErrorCode.FunctionIsStream, route)
+    return true
   }
 
   const pLen = len - (8 + nameLen)
@@ -55,9 +60,9 @@ export const functionMessage = (
   const m1 = process.memoryUsage() // Initial usage
   const d = Date.now()
 
-  const sharedBuf = new SharedArrayBuffer(pLen)
+  // const sharedBuf = new SharedArrayBuffer(pLen)
 
-  const a = new Uint8Array(sharedBuf)
+  // const a = new Uint8Array(sharedBuf)
 
   // const nB = arr.slice(start + 8 + nameLen, start + len)
 
@@ -67,9 +72,11 @@ export const functionMessage = (
   //   a[i - s] = arr[i]
   // }
 
-  const x = arr.slice(start + 8 + nameLen, start + len)
+  const p = arr.slice(start + 8 + nameLen, start + len)
 
-  a.set(x, 0)
+  // const x = arr.slice(start + 8 + nameLen, start + len)
+
+  // a.set(x, 0)
 
   const m2 = process.memoryUsage()
   console.info('INCOMING SIZE', len)
@@ -88,23 +95,16 @@ export const functionMessage = (
       if (!client.ws) {
         return
       }
-
-      console.info(spec)
-
       if (spec && !isObservableFunctionSpec(spec)) {
+        // optimize format of client
         server.functions
-          .runFunction(spec, client, a, isDeflate)
+          .runFunction(spec, client, p, isDeflate, reqId)
           .then(async (v) => {
+            console.info('response', v)
             // can allready be buffer from the function (in this case)
-            client.ws?.send(
-              encodeFunctionResponse(reqId, valueToBuffer(v)),
-              true,
-              false
-            )
+            client.ws?.send(v, true, false)
           })
           .catch((err) => {
-            console.error(err)
-
             sendError(server, client, BasedErrorCode.FunctionError, {
               route,
               requestId: reqId,

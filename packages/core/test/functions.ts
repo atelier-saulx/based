@@ -13,7 +13,7 @@ test.serial('functions', async (t) => {
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'hello.js'),
     },
-    lotOfData: {
+    lotsOfData: {
       name: 'lotsOfData',
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'lotsOfData.js'),
@@ -23,7 +23,7 @@ test.serial('functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      maxWorkers: 5,
+      maxWorkers: 16,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       route: ({ name }) => {
@@ -51,6 +51,8 @@ test.serial('functions', async (t) => {
       },
     },
   })
+
+  server.on('error', console.error)
 
   coreClient.connect({
     url: async () => {
@@ -84,7 +86,8 @@ test.serial('functions', async (t) => {
     str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
   }
 
-  console.info('go go go', str.length)
+  // max size is 10mb (compressed) so this is close (50mb uncompressed)
+  console.info('Send:', ~~((str.length / 1024 / 1024) * 100) / 100, 'mb')
 
   const helloResponses = await Promise.all([
     coreClient.function('hello', {

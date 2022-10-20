@@ -297,7 +297,9 @@ export class BasedFunctions {
     spec: BasedFunctionSpec,
     client: HttpClient | WebsocketClient,
     payload?: Uint8Array,
-    isDeflate?: boolean
+    // meta
+    isDeflate?: boolean,
+    id?: number
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
@@ -319,7 +321,8 @@ export class BasedFunctions {
         path: spec.functionPath,
         payload,
         isDeflate,
-        reqId: listenerId,
+        id,
+        reqId: listenerId, //  can make this the id potentialy
         // will become shared simdjson or custom shared protocol
         context:
           'context' in client ? client.context : { headers: {}, method: 'ws' },

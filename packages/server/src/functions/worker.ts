@@ -1,6 +1,10 @@
 import { parseQuery } from '@saulx/utils'
 import { parentPort } from 'node:worker_threads'
-import { decodePayload } from '../protocol'
+import {
+  decodePayload,
+  valueToBuffer,
+  encodeFunctionResponse,
+} from '../protocol'
 import { ClientContext } from '../types'
 
 console.info('start function workerthread')
@@ -33,6 +37,7 @@ export const parsePayload = (context: ClientContext, data: Uint8Array): any => {
 
 // will pack the total message (for ws and http)
 
+// have to authorize here...
 parentPort.on('message', (d) => {
   if (d.type === 1) {
     const fn = require(d.path)
@@ -56,9 +61,11 @@ parentPort.on('message', (d) => {
 
     fn(payload, d.context)
       .then((v) => {
+        // only for WS
+        // meta has to be send as well
         parentPort.postMessage({
           reqId: d.reqId,
-          payload: v,
+          payload: encodeFunctionResponse(d.id, valueToBuffer(v)),
         })
       })
       .catch((err) => {
@@ -67,7 +74,5 @@ parentPort.on('message', (d) => {
           err,
         })
       })
-
-    // fn!
   }
 })

@@ -48,7 +48,7 @@ const reader = (
   }
 
   // emit whats wrong
-  console.warn('Unsupported incoming message with type', type)
+  // console.warn('Unsupported incoming message with type', type)
 }
 
 export const message = (

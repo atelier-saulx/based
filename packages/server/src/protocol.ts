@@ -120,7 +120,10 @@ export const encodeFunctionResponse = (
     const idSize = 3
     const msgSize = idSize + buffer.length
     const header = encodeHeader(0, isDeflate, msgSize)
-    const array = new Uint8Array(headerSize + msgSize)
+
+    // not very nessecary but ok
+    const buf = new SharedArrayBuffer(headerSize + msgSize)
+    const array = new Uint8Array(buf)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 3)
     if (buffer.length) {
