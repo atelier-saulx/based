@@ -86,7 +86,7 @@ export const backupDownloadCommand = new Command('download')
       const { downloadName } = answers
 
       Object.assign(options, {
-        backupName: mapOfChoices.get(downloadName).Key,
+        filename: mapOfChoices.get(downloadName).Key,
       })
       try {
         const { url } = await client.call('getBackupLink', options)
