@@ -59,26 +59,27 @@ export const functionMessage = (
   const m1 = process.memoryUsage() // Initial usage
   const d = Date.now()
 
-  const sharedBuf = new SharedArrayBuffer(pLen)
+  // const sharedBuf = new SharedArrayBuffer(pLen)
 
-  const a = new Uint8Array(sharedBuf)
+  // const a = new Uint8Array(sharedBuf)
 
   // const nB = arr.slice(start + 8 + nameLen, start + len)
 
-  const s = start + 8 + nameLen
-  const e = start + len
-  for (let i = s; i < e; i++) {
-    a[i - s] = arr[i]
-  }
+  // const s = start + 8 + nameLen
+  // const e = start + len
+  // for (let i = s; i < e; i++) {
+  //   a[i - s] = arr[i]
+  // }
 
-  // const p = arr.slice(start + 8 + nameLen, start + len)
+  const p = arr.slice(start + 8 + nameLen, start + len)
 
   // const x = arr.slice(start + 8 + nameLen, start + len)
 
   // a.set(x, 0)
+  global.gc()
 
   const m2 = process.memoryUsage()
-  console.log('----------------------------------------')
+  console.info('----------------------------------------')
   console.info('INCOMING SIZE', len)
   console.info('SPEED', Date.now() - d, 'ms')
   console.info(
@@ -98,9 +99,9 @@ export const functionMessage = (
       if (spec && !isObservableFunctionSpec(spec)) {
         // optimize format of client
         server.functions
-          .runFunction(spec, client, a, isDeflate, reqId)
+          .runFunction(spec, client, p, isDeflate, reqId)
           .then(async (v) => {
-            console.log('----------------------------------------')
+            console.info('----------------------------------------')
             console.info('response', v)
             // can allready be buffer from the function (in this case)
 

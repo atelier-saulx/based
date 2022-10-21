@@ -9,7 +9,7 @@ const init = async () => {
       path: '/mygur',
       name: 'hello',
       checksum: 1,
-      maxPayload: 1e9,
+      maxPayloadSize: 1e6 * 10,
       functionPath: join(__dirname, '/hello.js'),
     },
     // streamboy: {
@@ -52,10 +52,11 @@ const init = async () => {
   }
 
   const server = await createServer({
-    cert: join(__dirname, 'secret/cert.pem'),
-    key: join(__dirname, 'secret/key.pem'),
+    // cert: join(__dirname, 'secret/cert.pem'),
+    // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     functions: {
+      maxWorkers: 10,
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
       uninstall: async () => {

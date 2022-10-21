@@ -21,10 +21,17 @@ const init = async () => {
   // console.info(iqTest)
   // console.info(small)
 
-  const flap = await coreClient.function('flap')
+  let str = ''
+  for (let i = 0; i < 2000000; i++) {
+    str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+  }
 
-  console.info('GOT FLAP', flap)
+  let i = 10e3
+  while (--i) {
+    const flap = await coreClient.function('hello', str)
 
+    console.info('GOT FLAP', flap)
+  }
   // const close = await coreClient.observe('counter', (data) => {
   //   console.log('incoming', data)
   // })

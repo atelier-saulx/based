@@ -253,7 +253,7 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Function
-  function(name: string, payload?: GenericObject): Promise<any> {
+  function(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
     })
