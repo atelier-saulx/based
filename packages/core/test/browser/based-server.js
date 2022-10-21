@@ -52,8 +52,8 @@ const init = async () => {
   }
 
   const server = await createServer({
-    cert: join(__dirname, 'secret/cert.pem'),
-    key: join(__dirname, 'secret/key.pem'),
+    // cert: join(__dirname, 'secret/cert.pem'),
+    // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,
