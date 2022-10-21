@@ -1,5 +1,8 @@
 import { Duplex } from 'stream'
 
+// copy / ;/ or shall we just run stream functions on the main thread
+
+// how to send to worker...
 export class DataStream extends Duplex {
   _read() {}
 

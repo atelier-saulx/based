@@ -4,22 +4,18 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
+import { join } from 'node:path'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial('functions (over http)', async (t) => {
+test.serial.only('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
-        if (payload) {
-          return payload
-        }
-        return 'flap'
-      },
+      functionPath: join(__dirname, 'functions', 'hello.js'),
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
@@ -107,7 +103,7 @@ test.serial('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `{"error":"Not found","code":404}`)
+  t.is(x, `'{"error":"Function not found 'gurk'","code":40401}`)
 
   await wait(10e3)
 
@@ -194,7 +190,7 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('functions (over http + contentEncoding)', async (t) => {
+test.serial('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',

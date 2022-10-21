@@ -11,37 +11,6 @@ const UNCOMPRESS_OPTS = {
   chunkSize: 1024 * 1024 * 1000,
 }
 
-const parseData = (
-  server: BasedServer,
-  client: HttpClient,
-  contentType: string,
-  data: Buffer,
-  rawBuffer: boolean,
-  route: BasedFunctionRoute
-): any => {
-  if (contentType === 'application/json' || !contentType) {
-    const str = data.toString()
-    let parsedData: any
-    try {
-      parsedData = data.length ? JSON.parse(str) : undefined
-      return parsedData
-    } catch (e) {
-      // make this an event
-      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
-    }
-  } else if (
-    contentType.startsWith('text') ||
-    contentType === 'application/xml'
-  ) {
-    return data.toString()
-  } else {
-    if (rawBuffer) {
-      return Buffer.alloc(data.byteLength, data)
-    }
-    return data
-  }
-}
-
 export const readBody = (
   server: BasedServer,
   client: HttpClient,
@@ -59,7 +28,6 @@ export const readBody = (
     return
   }
 
-  const contentType = client.context.headers['content-type']
   const contentEncoding = client.context.headers['content-encoding']
   let size = 0
 
@@ -95,25 +63,38 @@ export const readBody = (
           }
         }
       })
-      let data: Buffer
+      const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
+      const buf = new Uint8Array(data)
+      // let index = 0
+
       uncompressStream.on('data', (c) => {
-        if (!data) {
-          data = c
-        } else {
-          data = Buffer.concat([data, c])
-        }
+        console.log('bytes written???', uncompressStream.bytesWritten)
+
+        // const len = c.byteLength
+        // for (let i = 0; i < len; i++) {
+        // console.log(c[i])
+        // worng ofc..
+        // maybe unpack in worker? - will not work like this...
+        // Atomics.store(buf, index, c[i])
+        // }
+        // index += len
       })
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-        onData(parseData(server, client, contentType, data, false, route))
+        // parseData(server, client, contentType, data, false, route)
+        onData(buf)
       })
     } else {
       sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else {
-    let data: Buffer
+    const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
+    const buf = new Uint8Array(data)
+    let index = 0
     client.res.onData((c, isLast) => {
-      size += c.byteLength
+      const len = c.byteLength
+
+      size += len
       if (size > route.maxPayloadSize) {
         sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
         return
@@ -122,17 +103,13 @@ export const readBody = (
         sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
         return
       }
-      if (!data && isLast) {
-        data = Buffer.from(c)
-        onData(parseData(server, client, contentType, data, true, route))
-        return
-      } else if (!data) {
-        data = Buffer.alloc(c.byteLength, Buffer.from(c))
-      } else {
-        data = Buffer.concat([data, Buffer.from(c)])
-      }
+
+      buf.set(new Uint8Array(c), index)
+      index += len
+
       if (isLast) {
-        onData(parseData(server, client, contentType, data, false, route))
+        console.info('shared buf time', buf)
+        onData(buf)
       }
     })
   }

@@ -4,7 +4,9 @@ import {
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
+  HttpClient,
   isObservableFunctionSpec,
+  WebsocketClient,
 } from '../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -18,7 +20,16 @@ import { join } from 'path'
   workerData,
 */
 
+type BasedWorker = {
+  worker: Worker
+  name: string
+  activeObservables: number
+  activeFunctions: number
+}
+
 export { isObservableFunctionSpec }
+
+let reqId = 0
 
 const WORKER_PATH = join(__dirname, './worker')
 
@@ -29,7 +40,9 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
-  workers: Worker[] = []
+  workers: BasedWorker[] = []
+
+  workerResponseListeners: Map<number, (err: Error, p: any) => void> = new Map()
 
   paths: {
     [path: string]: string
@@ -52,6 +65,11 @@ export class BasedFunctions {
     if (config) {
       this.updateConfig(config)
     }
+  }
+
+  workerSortLoop() {
+    // or something else?
+    // this.workerSortTimeout
   }
 
   uninstallLoop() {
@@ -102,15 +120,33 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
+    const incomingWorkerMessage = (data) => {
+      if (data.reqId) {
+        const listener = this.workerResponseListeners.get(data.reqId)
+        if (listener) {
+          listener(data.err, data.payload)
+        }
+      }
+    }
+
     if (d !== 0) {
       if (d < 0) {
         for (let i = 0; i < d; i++) {
-          const worker = this.workers.pop()
-          worker.terminate()
+          const w = this.workers.pop()
+          w.worker.terminate()
         }
       } else {
         for (let i = 0; i < d; i++) {
-          this.workers.push(new Worker(WORKER_PATH, {}))
+          const worker = new Worker(WORKER_PATH, {})
+          this.workers.push({
+            worker,
+            // name can be defined as well
+            // workers by name
+            name: '' + this.workers.length,
+            activeObservables: 0,
+            activeFunctions: 0,
+          })
+          worker.on('message', incomingWorkerMessage)
         }
       }
     }
@@ -266,18 +302,45 @@ export class BasedFunctions {
     return false
   }
 
-  // time to add a core client in a worker?
+  async runFunction(
+    spec: BasedFunctionSpec,
+    client: HttpClient | WebsocketClient,
+    payload?: Uint8Array,
+    // meta
+    isDeflate?: boolean,
+    id?: number
+  ): Promise<Uint8Array> {
+    return new Promise((resolve, reject) => {
+      const listenerId = ++reqId
 
-  // selva needs to be avaible trough a worker adress / id
+      const selectedWorker: BasedWorker = this.workers[0]
 
-  // just add sharedBuffer to send back and call things from the server
+      this.workerResponseListeners.set(listenerId, (err, p) => {
+        this.workerResponseListeners.delete(listenerId)
+        selectedWorker.activeFunctions--
+        if (err) {
+          reject(err)
+        } else {
+          // prob shared array buffer...
+          resolve(p)
+        }
+      })
 
-  // has to call it in the worker
-  async stopObservableFunction(name: string) {}
+      selectedWorker.activeFunctions++
 
-  async runObservableFunction(spec: BasedObservableFunctionSpec) {}
-
-  async runFunction(spec: BasedFunctionSpec) {
+      // will make this super small
+      selectedWorker.worker.postMessage({
+        type: 1, // function
+        path: spec.functionPath,
+        payload,
+        isDeflate,
+        id,
+        reqId: listenerId, //  can make this the id potentialy
+        // will become shared simdjson or custom shared protocol
+        context:
+          'context' in client ? client.context : { headers: {}, method: 'ws' },
+      })
+    })
     // start with this
   }
 }

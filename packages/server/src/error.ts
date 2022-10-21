@@ -9,6 +9,7 @@ export enum BasedErrorCode {
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
+  FunctionIsStream = 40404,
   CannotStreamToObservableFunction = 40402,
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
@@ -44,6 +45,7 @@ export type ErrorPayload = {
     observableId: number
     route: BasedFunctionRoute
   }
+  [BasedErrorCode.FunctionIsStream]: BasedFunctionRoute
   [BasedErrorCode.FunctionNotFound]: BasedFunctionRoute
   [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute
   [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute
@@ -95,6 +97,11 @@ const errorTypes = {
       `Function not found${payload.name ? ` '${payload.name}'` : ''}${
         payload.path ? ` path '${payload.path}'` : ''
       }`,
+  },
+  [BasedErrorCode.FunctionIsStream]: {
+    statusCode: 400,
+    statusMessage: 'Incorrect protocol',
+    message: () => 'Cannot use stream functions over websockets',
   },
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
