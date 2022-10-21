@@ -21,9 +21,12 @@ export default async ({ based, payload }: Params) => {
     throw new Error('invalid refreshToken')
   }
 
-  const refreshTokenBody: RefreshTokenBody = await based.decode(refreshToken, {
-    publicKey,
-  })
+  let refreshTokenBody: RefreshTokenBody
+  try {
+    refreshTokenBody = await based.decode(refreshToken, {
+      publicKey,
+    })
+  } catch (error) {}
 
   if (
     refreshTokenBody &&
