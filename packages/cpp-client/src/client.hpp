@@ -27,13 +27,6 @@ enum IncomingType {
     ERROR_DATA = 5
 };
 
-struct ObservableOpts {
-    ObservableOpts(bool ls, int mct) : local_storage(ls), max_cache_time(mct){};
-
-    bool local_storage;
-    int max_cache_time;
-};
-
 struct Observable {
     Observable(std::string name, std::string payload) : name(name), payload(payload){};
 
@@ -167,11 +160,13 @@ class BasedClient {
         if (key.length() > 0) req_url += "." + key;
         if (optional_key) req_url += "$";
 
+        std::cout << req_url << std::endl;
+
         buf = "";
         curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
 
         res = curl_easy_perform(curl);  // get service url
-        if (res = CURLE_OPERATION_TIMEDOUT) {
+        if (res == CURLE_OPERATION_TIMEDOUT) {
             throw std::runtime_error("Operation timed out");
         }
         curl_easy_cleanup(curl);
@@ -220,8 +215,7 @@ class BasedClient {
          * Callback that the observable will trigger.
          */
         std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)>
-            on_data,
-        ObservableOpts obs_opts) {
+            on_data) {
         /**
          * Each observable must be stored in memory, in case the connection drops.
          * So there's a queue, which is emptied on drain, but is refilled with the observables
