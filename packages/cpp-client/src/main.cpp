@@ -48,17 +48,15 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = client.observe(
-                "counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
-                [](std::string data, int checksum, std::string error) {
-                    if (data.length() > 0) {
-                        std::cout << "DATA = " << data << std::endl;
-                    }
-                    if (error.length() > 0) {
-                        std::cout << "ERROR = " << data << std::endl;
-                    }
-                },
-                ObservableOpts(true, 100));
+            int id = client.observe("counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
+                                    [](std::string data, int checksum, std::string error) {
+                                        if (data.length() > 0) {
+                                            std::cout << "DATA = " << data << std::endl;
+                                        }
+                                        if (error.length() > 0) {
+                                            std::cout << "ERROR = " << data << std::endl;
+                                        }
+                                    });
             obs.push_back(id);
         }
 

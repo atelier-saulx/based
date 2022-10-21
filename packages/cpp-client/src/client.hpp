@@ -27,13 +27,6 @@ enum IncomingType {
     ERROR_DATA = 5
 };
 
-struct ObservableOpts {
-    ObservableOpts(bool ls, int mct) : local_storage(ls), max_cache_time(mct){};
-
-    bool local_storage;
-    int max_cache_time;
-};
-
 struct Observable {
     Observable(std::string name, std::string payload) : name(name), payload(payload){};
 
@@ -129,6 +122,58 @@ class BasedClient {
         return size * nmemb;
     }
 
+    std::string get_service(std::string cluster,
+                            std::string org,
+                            std::string project,
+                            std::string env,
+                            std::string name,
+                            std::string key,
+                            bool optional_key) {
+        const char* url;
+        if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
+        else url = cluster.c_str();
+
+        CURL* curl;
+        CURLcode res;
+        std::string buf;
+
+        curl = curl_easy_init();
+        if (!curl) {
+            throw std::runtime_error("curl object failed to initialize");
+        }
+        // Set up curl
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
+        curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
+
+        res = curl_easy_perform(curl);  // get list of registry urls
+
+        json registries = json::array();
+        registries = json::parse(buf);
+
+        m_registry_index++;
+        if (m_registry_index > registries.size()) m_registry_index = 0;
+
+        std::string registry_url = registries.at(m_registry_index);
+        std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
+        if (key.length() > 0) req_url += "." + key;
+        if (optional_key) req_url += "$";
+
+        std::cout << req_url << std::endl;
+
+        buf = "";
+        curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
+
+        res = curl_easy_perform(curl);  // get service url
+        if (res == CURLE_OPERATION_TIMEDOUT) {
+            throw std::runtime_error("Operation timed out");
+        }
+        curl_easy_cleanup(curl);
+
+        return buf;
+    }
+
    public:
     BasedClient()
         : m_request_id(0),
@@ -148,48 +193,9 @@ class BasedClient {
                  std::string key,
                  bool optional_key) {
         std::thread con_thr([&, org, project, env, name, cluster, key, optional_key]() {
-            const char* url;
-            if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
-            else url = cluster.c_str();
-
-            CURL* curl;
-            CURLcode res;
-            std::string buf;
-
-            curl = curl_easy_init();
-            if (!curl) {
-                throw std::runtime_error("curl object failed to initialize");
-            }
-            // Set up curl
-            curl_easy_setopt(curl, CURLOPT_URL, url);
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-            curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
-
-            res = curl_easy_perform(curl);  // get list of registry urls
-
-            json registries = json::array();
-            registries = json::parse(buf);
-
-            m_registry_index++;
-            if (m_registry_index > registries.size()) m_registry_index = 0;
-
-            std::string registry_url = registries.at(m_registry_index);
-            std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
-            if (key.length() > 0) req_url += "." + key;
-            if (optional_key) req_url += "$";
-
-            std::cout << "req_url = " << req_url << std::endl;
-
-            buf = "";
-            curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
-
-            res = curl_easy_perform(curl);  // get service
-
-            std::cout << "service url = " << buf << std::endl;
-
-            curl_easy_cleanup(curl);
-            m_con.connect(buf);
+            std::string service_url =
+                get_service(cluster, org, project, env, name, key, optional_key);
+            m_con.connect(service_url);
         });
         con_thr.detach();
     }
@@ -209,8 +215,7 @@ class BasedClient {
          * Callback that the observable will trigger.
          */
         std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)>
-            on_data,
-        ObservableOpts obs_opts) {
+            on_data) {
         /**
          * Each observable must be stored in memory, in case the connection drops.
          * So there's a queue, which is emptied on drain, but is refilled with the observables
