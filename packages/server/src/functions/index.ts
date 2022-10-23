@@ -4,9 +4,7 @@ import {
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
-  HttpClient,
   isObservableFunctionSpec,
-  WebsocketClient,
 } from '../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -14,15 +12,10 @@ import { destroy, initFunction } from '../observable'
 import { Worker } from 'node:worker_threads'
 import { join } from 'path'
 
-/*
-  isMainThread,
-  parentPort,
-  workerData,
-*/
-
 type BasedWorker = {
   worker: Worker
-  name: string
+  name?: string
+  index: number
   activeObservables: number
   activeFunctions: number
 }
@@ -143,9 +136,8 @@ export class BasedFunctions {
           const worker = new Worker(WORKER_PATH, {})
           this.workers.push({
             worker,
-            // name can be defined as well
-            // workers by name
-            name: '' + this.workers.length,
+            index: this.workers.length,
+            // if name
             activeObservables: 0,
             activeFunctions: 0,
           })
@@ -318,28 +310,68 @@ export class BasedFunctions {
     return false
   }
 
+  runObservableFunction(
+    spec: BasedFunctionSpec,
+    id: number,
+    error: (err: Error) => void,
+    update: (
+      encodedDiffData: Uint8Array,
+      encodedData: Uint8Array,
+      checksum: number,
+      isDeflate: boolean
+    ) => void,
+    payload?: any
+  ): () => void {
+    const selectedWorker: BasedWorker = this.lowestWorker
+
+    this.workerResponseListeners.set(id, (err, p) => {
+      if (err) {
+        error(err)
+      } else {
+        update(p.diff, p.data, p.checksum, p.isDeflate)
+      }
+    })
+    selectedWorker.worker.postMessage({
+      type: 1,
+      id,
+      path: spec.functionPath,
+      payload,
+    })
+    return () => {
+      this.workerResponseListeners.delete(id)
+      selectedWorker.worker.postMessage({
+        id,
+        type: 2,
+      })
+    }
+  }
+
   async runFunction(
     spec: BasedFunctionSpec,
-    type: number,
-    client: HttpClient | WebsocketClient,
-    context: { [key: string]: any },
+    context: { [key: string]: any }, // make this specific
     payload?: Uint8Array
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
+      // max concurrent execution is 1 mil...
+
+      if (this.workerResponseListeners.size >= 1e6) {
+        throw new Error('MAX CONCURRENT SERVER EXECUTION REACHED (1 MIL)')
+      }
+
+      if (reqId > 1e6) {
+        reqId = 0
+      }
 
       const selectedWorker: BasedWorker = this.lowestWorker
-
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
         selectedWorker.activeFunctions--
-
         if (
           selectedWorker.activeFunctions < this.lowestWorker.activeFunctions
         ) {
           this.lowestWorker = selectedWorker
         }
-
         if (err) {
           reject(err)
         } else {
@@ -347,11 +379,16 @@ export class BasedFunctions {
           resolve(p)
         }
       })
-
       selectedWorker.activeFunctions++
-
+      let next = selectedWorker.index + 1
+      if (next >= this.workers.length) {
+        next = 0
+      }
+      if (selectedWorker.activeFunctions > this.workers[next].activeFunctions) {
+        this.lowestWorker = this.workers[next]
+      }
       selectedWorker.worker.postMessage({
-        type,
+        type: 0,
         path: spec.functionPath,
         payload,
         context,

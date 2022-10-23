@@ -12,6 +12,14 @@ const init = async () => {
       maxPayloadSize: 1e6 * 10,
       functionPath: join(__dirname, '/hello.js'),
     },
+    counter: {
+      observable: true,
+      path: '/blap',
+      name: 'counter',
+      checksum: 1,
+      maxPayloadSize: 1e6 * 10,
+      functionPath: join(__dirname, '/counter.js'),
+    },
     // streamboy: {
     //   name: 'streamboy',
     //   stream: true,

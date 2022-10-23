@@ -1,23 +1,7 @@
-import {
-  valueToBuffer,
-  encodeObservableResponse,
-  encodeObservableDiffResponse,
-} from '../protocol'
 import { BasedServer } from '../server'
-import {
-  ActiveObservable,
-  ObservableUpdateFunction,
-  WebsocketClient,
-} from '../types'
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
-import { deepCopy } from '@saulx/utils'
-import createPatch from '@saulx/diff'
+import { ActiveObservable, WebsocketClient } from '../types'
 
 export const destroy = (server: BasedServer, id: number) => {
-  // also need to send info to clients that its gone (e.g. does not exist anymore)
-
-  // TODO: have to implement memCache here
-
   const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
@@ -53,19 +37,8 @@ export const destroy = (server: BasedServer, id: number) => {
         delete server.activeObservables[obs.name]
       }
       server.activeObservablesById.delete(id)
-
-      if (obs.cache) {
-        server.cacheSize -= obs.cache.byteLength
-      }
-
-      if (obs.rawData) {
-        server.cacheSize -= obs.rawDataSize
-      }
-
       obs.isDestroyed = true
-      if (obs.closeFunction) {
-        obs.closeFunction()
-      }
+      obs.closeFunction()
     }, memCacheTimeout)
   }
 }
@@ -162,106 +135,40 @@ export const initFunction = async (
     return
   }
 
-  const update: ObservableUpdateFunction = (
-    data: any,
-    checksum?: number,
-    diff?: any,
-    previousChecksum?: number
-  ) => {
-    if (checksum === undefined) {
-      if (data === undefined) {
-        checksum = 0
-      } else {
-        // do something
-        if (typeof data === 'object' && data !== null) {
-          checksum = hashObjectIgnoreKeyOrder(data)
-        } else {
-          checksum = hash(data)
-        }
+  const payload = obs.payload
+
+  const close = server.functions.runObservableFunction(
+    spec,
+    id,
+    // add isDeflate for http
+    (err) => {
+      if (err) {
+        console.error('ERROR TIMES /w obserbable', err)
       }
-    }
-
-    if (checksum !== obs.checksum) {
-      const buff = valueToBuffer(data)
-
-      if (obs.cache) {
-        server.cacheSize -= obs.cache.byteLength
-      }
-
-      if (obs.rawData) {
-        server.cacheSize -= obs.rawDataSize
-      }
-
-      if (previousChecksum === undefined) {
-        // if buff > 1mb then dont store deepcopy
-        /*
-        // also have to be aware that there is an 8byte increase
-        // if ratio of diff repsonse is 75% of full just send the full
-        // if (diff && previousChecksum) {
-        //   fix later
-        // }
-        */
-
-        if (typeof data === 'object' && data !== null) {
-          if (obs.rawData) {
-            diff = createPatch(obs.rawData, data)
-            obs.previousChecksum = obs.checksum
-          }
-
-          obs.rawData = deepCopy(data)
-          const size = buff.byteLength
-          server.cacheSize += size
-          obs.rawDataSize = size
-        } else if (obs.rawData) {
-          delete obs.rawData
-          delete obs.rawDataSize
-        }
-      }
-
-      // keep track globally of total mem usage
-      const [encodedData, isDeflate] = encodeObservableResponse(
-        id,
-        checksum,
-        buff
-      )
-      // add deflate info
-      obs.isDeflate = isDeflate
-      obs.cache = encodedData
-      server.cacheSize += obs.cache.byteLength
+    },
+    (encodedDiffData, encodedData, checksum, isDeflate) => {
+      obs.previousChecksum = obs.checksum
       obs.checksum = checksum
-
-      if (diff) {
-        const diffBuff = valueToBuffer(diff)
-        const encodedDiffData = encodeObservableDiffResponse(
-          id,
-          checksum,
-          obs.previousChecksum,
-          diffBuff
-        )
+      obs.cache = encodedData
+      obs.isDeflate = isDeflate
+      if (encodedDiffData) {
         obs.diffCache = encodedDiffData
-        // add to cache size
         server.uwsApp.publish(String(id), encodedDiffData, true, false)
       } else {
         server.uwsApp.publish(String(id), encodedData, true, false)
       }
-
       if (obs.onNextData) {
         const setObs = obs.onNextData
         delete obs.onNextData
         setObs.forEach((fn) => fn())
       }
-    }
-  }
-
-  try {
-    const close = await spec.function(obs.payload, update)
-    if (obs.isDestroyed) {
-      close()
-    } else {
-      obs.closeFunction = close
-    }
-  } catch (err) {
-    console.error('Error starting', err)
+    },
+    payload
+  )
+  if (obs.isDestroyed) {
+    close()
+  } else {
+    obs.closeFunction = close
   }
 }
 

@@ -65,7 +65,7 @@ export const functionMessage = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.functions
-          .runFunction(spec, 1, client, { isDeflate, reqId }, p)
+          .runFunction(spec, { isDeflate, reqId }, p)
           .then(async (v) => {
             client.ws?.send(v, true, false)
           })

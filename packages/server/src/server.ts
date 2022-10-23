@@ -42,8 +42,6 @@ export class BasedServer {
 
   public requestsCounterTimeout: NodeJS.Timeout
 
-  public cacheSize: number = 0
-
   public activeObservables: {
     [name: string]: Map<number, ActiveObservable>
   } = {}

@@ -4,6 +4,7 @@ import {
   valueToBuffer,
   encodeFunctionResponse,
 } from '../protocol'
+import { createObs, closeObs } from './observable'
 
 console.info('start function workerthread')
 
@@ -14,7 +15,7 @@ console.info('start function workerthread')
 
 // have to authorize here...
 parentPort.on('message', (d) => {
-  if (d.type === 1) {
+  if (d.type === 0) {
     // unregister fns also...
     const fn = require(d.path)
 
@@ -39,5 +40,11 @@ parentPort.on('message', (d) => {
           err,
         })
       })
+  } else if (d.type === 1) {
+    createObs(d.id, d.path, d.payload)
+    // make subscription
+  } else if (d.type === 2) {
+    closeObs(d.id)
+    // close subscription
   }
 })
