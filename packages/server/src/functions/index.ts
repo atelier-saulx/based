@@ -31,7 +31,7 @@ export { isObservableFunctionSpec }
 
 let reqId = 0
 
-const WORKER_PATH = join(__dirname, './worker')
+const WORKER_PATH = join(__dirname, '../worker')
 
 export class BasedFunctions {
   server: BasedServer
@@ -59,6 +59,8 @@ export class BasedFunctions {
   beingUninstalled: {
     [name: string]: boolean
   } = {}
+
+  lowestWorker: BasedWorker
 
   constructor(server: BasedServer, config?: FunctionConfig) {
     this.server = server
@@ -121,8 +123,9 @@ export class BasedFunctions {
     const d = this.config.maxWorkers - this.workers.length
 
     const incomingWorkerMessage = (data) => {
-      if (data.reqId) {
-        const listener = this.workerResponseListeners.get(data.reqId)
+      if (data.id) {
+        const listener = this.workerResponseListeners.get(data.id)
+        // prob need more here
         if (listener) {
           listener(data.err, data.payload)
         }
@@ -150,6 +153,19 @@ export class BasedFunctions {
         }
       }
     }
+
+    if (this.workers.length === 0) {
+      throw new Error('Needs at least 1 worker')
+    }
+
+    this.lowestWorker = this.workers.sort((a, b) => {
+      // will be RATE LIMIT TOKEN
+      return a.activeFunctions < b.activeFunctions
+        ? -1
+        : a.activeFunctions === b.activeFunctions
+        ? 0
+        : 1
+    })[0]
 
     this.uninstallLoop()
   }
@@ -304,20 +320,26 @@ export class BasedFunctions {
 
   async runFunction(
     spec: BasedFunctionSpec,
+    type: number,
     client: HttpClient | WebsocketClient,
-    payload?: Uint8Array,
-    // meta
-    isDeflate?: boolean,
-    id?: number
+    context: { [key: string]: any },
+    payload?: Uint8Array
   ): Promise<Uint8Array> {
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
 
-      const selectedWorker: BasedWorker = this.workers[0]
+      const selectedWorker: BasedWorker = this.lowestWorker
 
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
         selectedWorker.activeFunctions--
+
+        if (
+          selectedWorker.activeFunctions < this.lowestWorker.activeFunctions
+        ) {
+          this.lowestWorker = selectedWorker
+        }
+
         if (err) {
           reject(err)
         } else {
@@ -328,19 +350,13 @@ export class BasedFunctions {
 
       selectedWorker.activeFunctions++
 
-      // will make this super small
       selectedWorker.worker.postMessage({
-        type: 1, // function
+        type,
         path: spec.functionPath,
         payload,
-        isDeflate,
-        id,
-        reqId: listenerId, //  can make this the id potentialy
-        // will become shared simdjson or custom shared protocol
-        context:
-          'context' in client ? client.context : { headers: {}, method: 'ws' },
+        context,
+        id: listenerId,
       })
     })
-    // start with this
   }
 }
