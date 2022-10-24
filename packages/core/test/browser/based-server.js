@@ -9,8 +9,16 @@ const init = async () => {
       path: '/mygur',
       name: 'hello',
       checksum: 1,
-      maxPayload: 1e9,
+      maxPayloadSize: 1e6 * 10,
       functionPath: join(__dirname, '/hello.js'),
+    },
+    counter: {
+      observable: true,
+      path: '/blap',
+      name: 'counter',
+      checksum: 1,
+      maxPayloadSize: 1e6 * 10,
+      functionPath: join(__dirname, '/counter.js'),
     },
     // streamboy: {
     //   name: 'streamboy',
@@ -56,6 +64,7 @@ const init = async () => {
     // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     functions: {
+      maxWorkers: 10,
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
       uninstall: async () => {

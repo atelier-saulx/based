@@ -18,7 +18,6 @@ export const idleTimeout = (client: BasedCoreClient) => {
       client.connected &&
       !client.connection.disconnected
     ) {
-      console.info(ping)
       client.connection.ws.send(ping)
     }
   }, updateTime)

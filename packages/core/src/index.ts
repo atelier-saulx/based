@@ -103,8 +103,6 @@ export class BasedCoreClient extends Emitter {
 
     // --------- Resend all subscriptions
     for (const [id, obs] of this.observeState) {
-      console.info('RESEND sub', id)
-
       if (!this.observeQueue.has(id)) {
         const cachedData = this.cache.get(id)
         addObsToQueue(
@@ -115,6 +113,23 @@ export class BasedCoreClient extends Emitter {
           cachedData?.checksum || 0
         )
       }
+    }
+
+    // temporary fix...
+    if (this.functionResponseListeners.size > this.functionQueue.length) {
+      this.functionResponseListeners.forEach((p, k) => {
+        if (
+          !this.functionQueue.find(([id]) => {
+            if (id === k) {
+              return true
+            }
+            return false
+          })
+        ) {
+          p[1](new Error('Function executed on disconnect'))
+          this.functionResponseListeners.delete(k)
+        }
+      })
     }
 
     drainQueue(this)
@@ -253,7 +268,7 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Function
-  function(name: string, payload?: GenericObject): Promise<any> {
+  function(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
     })

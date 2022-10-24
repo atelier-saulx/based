@@ -1,17 +1,9 @@
 import { isObservableFunctionSpec } from '../../functions'
-import {
-  readUint8,
-  valueToBuffer,
-  encodeFunctionResponse,
-  // decodePayload,
-  decodeName,
-} from '../../protocol'
+import { readUint8, decodeName } from '../../protocol'
 import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from './send'
 import { WebsocketClient } from '../../types'
-
-const processFunction = () => {}
 
 export const functionMessage = (
   arr: Uint8Array,
@@ -53,41 +45,17 @@ export const functionMessage = (
     return true
   }
 
-  const pLen = len - (8 + nameLen)
-
-  global.gc()
-  const m1 = process.memoryUsage() // Initial usage
-  const d = Date.now()
-
-  const sharedBuf = new SharedArrayBuffer(pLen)
-
-  const a = new Uint8Array(sharedBuf)
-
+  // const pLen = len - (8 + nameLen)
+  // const sharedBuf = new SharedArrayBuffer(pLen)
+  // const a = new Uint8Array(sharedBuf)
   // const nB = arr.slice(start + 8 + nameLen, start + len)
+  // const s = start + 8 + nameLen
+  // const e = start + len
+  // for (let i = s; i < e; i++) {
+  //   a[i - s] = arr[i]
+  // }
 
-  const s = start + 8 + nameLen
-  const e = start + len
-  for (let i = s; i < e; i++) {
-    a[i - s] = arr[i]
-  }
-
-  // const p = arr.slice(start + 8 + nameLen, start + len)
-
-  // const x = arr.slice(start + 8 + nameLen, start + len)
-
-  // a.set(x, 0)
-
-  const m2 = process.memoryUsage()
-  console.log('----------------------------------------')
-  console.info('INCOMING SIZE', len)
-  console.info('SPEED', Date.now() - d, 'ms')
-  console.info(
-    `Memory: ${
-      Math.round(((m2.heapUsed - m1.heapUsed) / 1024 / 1024) * 100) / 100
-    } MB`,
-
-    `Total Memory: ${Math.round((m2.heapUsed / 1024 / 1024) * 100) / 100} MB`
-  )
+  const p = arr.slice(start + 8 + nameLen, start + len)
 
   server.functions
     .install(name)
@@ -96,21 +64,9 @@ export const functionMessage = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
-        // optimize format of client
         server.functions
-          .runFunction(spec, client, a, isDeflate, reqId)
+          .runFunction(spec, { isDeflate, reqId }, p)
           .then(async (v) => {
-            console.log('----------------------------------------')
-            console.info('response', v)
-            // can allready be buffer from the function (in this case)
-
-            global.gc()
-            const m2 = process.memoryUsage() // Initial usage
-            console.info(
-              `Total Memory: ${
-                Math.round((m2.heapUsed / 1024 / 1024) * 100) / 100
-              } MB`
-            )
             client.ws?.send(v, true, false)
           })
           .catch((err) => {
@@ -128,51 +84,3 @@ export const functionMessage = (
 
   return true
 }
-
-// sharedBuf
-
-// authorize has to go from here (scince we dont parse the payload yet)
-// server.auth.config
-//   .authorize(server, client, name, payload)
-//   .then((ok) => {
-//     if (!ok) {
-//       sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
-//       return false
-//     }
-
-//     server.functions
-//       .install(name)
-//       .then((spec) => {
-//         if (spec && !isObservableFunctionSpec(spec)) {
-//           spec
-//             .function(payload, client)
-//             .then((v) => {
-//               client.ws?.send(
-//                 encodeFunctionResponse(reqId, valueToBuffer(v)),
-//                 true,
-//                 false
-//               )
-//             })
-//             .catch((err) => {
-//               sendError(server, client, BasedErrorCode.FunctionError, {
-//                 route,
-//                 requestId: reqId,
-//                 err,
-//               })
-//             })
-//         } else {
-//           sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-//         }
-//       })
-//       .catch(() => {
-//         sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-//       })
-//   })
-//   .catch((err) => {
-//     sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
-//       route,
-//       requestId: reqId,
-//       err,
-//     })
-//     return false
-//   })

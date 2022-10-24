@@ -166,7 +166,10 @@ export const encodeObservableResponse = (
   if (chunks === 1) {
     const msgSize = 16 + buffer.length
     const header = encodeHeader(1, isDeflate, msgSize)
-    const array = new Uint8Array(4 + msgSize)
+
+    const sBuff = new SharedArrayBuffer(4 + msgSize)
+
+    const array = new Uint8Array(sBuff)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 8)
     storeUint8(array, checksum, 12, 8)
@@ -201,7 +204,10 @@ export const encodeObservableDiffResponse = (
   if (chunks === 1) {
     const msgSize = 24 + buffer.length
     const header = encodeHeader(2, isDeflate, msgSize)
-    const array = new Uint8Array(4 + msgSize)
+
+    const sBuff = new SharedArrayBuffer(4 + msgSize)
+
+    const array = new Uint8Array(sBuff)
     storeUint8(array, header, 0, 4)
     storeUint8(array, id, 4, 8)
     storeUint8(array, checksum, 12, 8)
