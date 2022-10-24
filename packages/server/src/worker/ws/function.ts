@@ -1,6 +1,46 @@
+import {
+  decodePayload,
+  valueToBuffer,
+  encodeFunctionResponse,
+} from '../../protocol'
+import { parentPort } from 'node:worker_threads'
+
+export default (
+  path: string,
+  id: number,
+  reqId: number,
+  isDeflate: boolean,
+  payload?: Uint8Array
+) => {
+  const fn = require(path)
+
+  let parsedPayload: any
+
+  if (payload) {
+    parsedPayload = decodePayload(payload, isDeflate)
+  }
+
+  fn(parsedPayload, {})
+    .then((v) => {
+      parentPort.postMessage({
+        id,
+        payload: encodeFunctionResponse(reqId, valueToBuffer(v)),
+      })
+    })
+    .catch((err) => {
+      parentPort.postMessage({
+        id,
+        err,
+      })
+    })
+}
+
 // sharedBuf
 
 // authorize has to go from here (scince we dont parse the payload yet)
+
+// authorize has to be a path to an authorize function as well....
+
 // server.auth.config
 //   .authorize(server, client, name, payload)
 //   .then((ok) => {
