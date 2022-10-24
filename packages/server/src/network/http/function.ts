@@ -5,6 +5,7 @@ import { sendHttpError, sendHttpResponse } from './send'
 import { BasedErrorCode } from '../../error'
 
 export const httpFunction = (
+  method: string,
   route: BasedFunctionRoute,
   client: HttpClient,
   server: BasedServer,
@@ -20,16 +21,9 @@ export const httpFunction = (
       if (!client.res) {
         return
       }
-
-      // run and pass shared array buffer
-      /*
-       // spec
-        //   .function(payload, client)
-      */
-
       if (spec && !isObservableFunctionSpec(spec)) {
         server.functions
-          .runFunction(spec, client, payload)
+          .runFunction(method === 'post' ? 3 : 4, spec, client, payload)
           .then(async (result) => {
             if (!client.res) {
               return

@@ -3,15 +3,17 @@ import { AuthorizeConnection } from '../types'
 
 let clientId = 0
 
+// const encoder = new TextEncoder()
+
 export const upgrade = (
   res: uws.HttpResponse,
   req: uws.HttpRequest,
   // eslint-disable-next-line
   ctx: uws.us_socket_context_t
 ) => {
-  const query = req.getQuery()
+  const query = req.getQuery() // encode
   const ua = req.getHeader('user-agent')
-  // ip is 39 bytes - (adds 312kb for 8k clients to mem)
+
   const ip =
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()

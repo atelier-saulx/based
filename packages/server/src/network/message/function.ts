@@ -45,16 +45,6 @@ export const functionMessage = (
     return true
   }
 
-  // const pLen = len - (8 + nameLen)
-  // const sharedBuf = new SharedArrayBuffer(pLen)
-  // const a = new Uint8Array(sharedBuf)
-  // const nB = arr.slice(start + 8 + nameLen, start + len)
-  // const s = start + 8 + nameLen
-  // const e = start + len
-  // for (let i = s; i < e; i++) {
-  //   a[i - s] = arr[i]
-  // }
-
   const p = arr.slice(start + 8 + nameLen, start + len)
 
   server.functions
@@ -65,7 +55,20 @@ export const functionMessage = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.functions
-          .runFunction(spec, { isDeflate, reqId }, p)
+          .runFunction(
+            0,
+            spec,
+            {
+              isDeflate,
+              reqId,
+              // TODO: way too much copy but this is tmp solution
+              authState: client.ws.authState,
+              query: client.ws.query,
+              ua: client.ws.ua,
+              ip: client.ws.ip,
+            },
+            p
+          )
           .then(async (v) => {
             client.ws?.send(v, true, false)
           })

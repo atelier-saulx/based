@@ -49,8 +49,8 @@ export const isHttpClient = (
 }
 
 export type AuthConfig = {
+  // authorize has to be a string
   authorize?: Authorize
-  authHandshake?: AuthorizeHandshake
   authorizeConnection?: AuthorizeConnection
 }
 
@@ -69,6 +69,7 @@ export type AuthorizeHandshake = (
 
 export type AuthorizeConnection = (req: uws.HttpRequest) => Promise<boolean>
 
+// - FUNCTIONS IN HUB
 // authorize
 // authorize-advanced TODO: better name
 // authorize-handshake

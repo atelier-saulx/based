@@ -322,6 +322,8 @@ export class BasedFunctions {
     ) => void,
     payload?: any
   ): () => void {
+    // TODO: move selection criteria etc to other file
+
     const selectedWorker: BasedWorker = this.lowestWorker
 
     this.workerResponseListeners.set(id, (err, p) => {
@@ -347,22 +349,27 @@ export class BasedFunctions {
   }
 
   async runFunction(
+    type: 0 | 3 | 4,
+    // 0 is normal function WS
+    // 3 is POST payload
+    // 4 is GET payload
     spec: BasedFunctionSpec,
     context: { [key: string]: any }, // make this specific
     payload?: Uint8Array
   ): Promise<Uint8Array> {
+    // TODO: move selection criteria etc to other file
+
     return new Promise((resolve, reject) => {
       const listenerId = ++reqId
       // max concurrent execution is 1 mil...
-
       if (this.workerResponseListeners.size >= 1e6) {
-        throw new Error('MAX CONCURRENT SERVER EXECUTION REACHED (1 MIL)')
+        throw new Error(
+          'MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)'
+        )
       }
-
       if (reqId > 1e6) {
         reqId = 0
       }
-
       const selectedWorker: BasedWorker = this.lowestWorker
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
@@ -388,7 +395,7 @@ export class BasedFunctions {
         this.lowestWorker = this.workers[next]
       }
       selectedWorker.worker.postMessage({
-        type: 0,
+        type,
         path: spec.functionPath,
         payload,
         context,
