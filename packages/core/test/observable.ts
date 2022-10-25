@@ -2,19 +2,15 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
+import { join } from 'path'
 
 test.serial('observables', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const obsStore = {
-    counter: async (payload, update) => {
-      let cnt = 0
-      const counter = setInterval(() => {
-        update(++cnt)
-      }, 100)
-      return () => {
-        clearInterval(counter)
-      }
+  const routes = {
+    counter: {
+      observable: true,
+      name: 'counter',
     },
   }
 
@@ -25,8 +21,8 @@ test.serial('observables', async (t) => {
       idleTimeout: 1e3,
 
       route: ({ name }) => {
-        if (name && obsStore[name]) {
-          return { name, observable: true }
+        if (name && routes[name]) {
+          return routes[name]
         }
         return false
       },
@@ -37,12 +33,12 @@ test.serial('observables', async (t) => {
       },
 
       install: async ({ name }) => {
-        if (obsStore[name]) {
+        if (routes[name]) {
           return {
             observable: true,
             name,
             checksum: 1,
-            function: obsStore[name],
+            functionPath: join(__dirname, './functions/counter.js'),
           }
         } else {
           return false
@@ -95,17 +91,8 @@ test.serial('observables', async (t) => {
   server.functions.update({
     observable: true,
     name: 'counter',
-    // memCacheTimeout: 2e3,
     checksum: 2,
-    function: async (payload, update) => {
-      let cnt = 0
-      const counter = setInterval(() => {
-        update('UpdatedFn' + ++cnt)
-      }, 100)
-      return () => {
-        clearInterval(counter)
-      }
-    },
+    functionPath: join(__dirname, './functions/counter2.js'),
   })
 
   await wait(3e3)
