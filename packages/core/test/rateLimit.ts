@@ -16,7 +16,7 @@ test.serial('rate limit ws', async (t) => {
   const functionSpecs = {
     hello: {
       checksum: 1,
-      functionPath: join(__dirname, '/funcitons/counter.js'),
+      functionPath: join(__dirname, '/functions/hello.js'),
       ...routes.hello,
     },
   }
@@ -58,7 +58,9 @@ test.serial('rate limit ws', async (t) => {
 
   const coreClient = new BasedCoreClient()
 
-  for (let i = 0; i < 1e3; i++) {
+  let isLimit = false
+
+  for (let i = 0; i < 2e3; i++) {
     const x = await fetch('http://localhost:9910/flap', {
       method: 'get',
       headers: {
@@ -67,6 +69,7 @@ test.serial('rate limit ws', async (t) => {
     })
     if (x.status === 429) {
       console.info('bah ratelimit lets wait 30 secods...')
+      isLimit = true
       await wait(30e3)
     } else {
       console.info('Pass', i)
@@ -83,7 +86,9 @@ test.serial('rate limit ws', async (t) => {
 
   const x = await coreClient.function('hello')
 
-  console.info('??', x)
+  t.true(!!x)
+
+  t.true(isLimit, 'is rate Limited')
 
   await wait(10e3)
 
