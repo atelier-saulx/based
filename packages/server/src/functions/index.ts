@@ -460,11 +460,11 @@ export class BasedFunctions {
         context,
         id: listenerId,
       })
-      console.info(
-        'SPEED',
-        selectedWorker.worker.threadId,
-        selectedWorker.worker.performance.eventLoopUtilization()
-      )
+      // console.info(
+      //   'SPEED',
+      //   selectedWorker.worker.threadId,
+      //   selectedWorker.worker.performance.eventLoopUtilization()
+      // )
     })
   }
 }

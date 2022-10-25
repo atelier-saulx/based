@@ -1,6 +1,7 @@
 import { parentPort, threadId } from 'node:worker_threads'
 import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
+import httpFunction from './http/function'
 import { fnPathMap, fnInstallListeners } from './functions'
 
 console.info('Start worker', threadId)
@@ -49,9 +50,15 @@ parentPort.on('message', (d) => {
     console.info('Uninstall', d.name)
     fnPathMap.delete(path)
     delete require.cache[require.resolve(path)]
-  } else if (d.type === 5) {
-    // means got something reinstalled OR installed
-    // can update listeners for fns being installed
+  } else if (d.type === 3 || d.type === 4) {
+    const prevPath = fnPathMap.get(d.name)
+    if (!prevPath) {
+      fnPathMap.set(d.name, d.path)
+    } else if (prevPath !== d.path) {
+      delete require.cache[require.resolve(prevPath)]
+    }
+    console.info('Http function...')
+    httpFunction(d.type, d.path, d.id, d.context, d.payload)
   } else if (d.type === 0) {
     const prevPath = fnPathMap.get(d.name)
     if (!prevPath) {
@@ -59,7 +66,7 @@ parentPort.on('message', (d) => {
     } else if (prevPath !== d.path) {
       delete require.cache[require.resolve(prevPath)]
     }
-    wsFunction(d.path, d.id, d.reqId, d.isDeflate, d.payload)
+    wsFunction(d.path, d.id, d.context.reqId, d.context.isDeflate, d.payload)
   } else if (d.type === 1) {
     const prevPath = fnPathMap.get(d.name)
     if (!prevPath) {

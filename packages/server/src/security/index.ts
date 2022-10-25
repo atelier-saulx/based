@@ -1,5 +1,4 @@
 // rate limit
-import { request } from 'https'
 import type { BasedServer } from '../server'
 // import { BasedErrorCode } from '../error'
 // import { HttpClient, isHttpClient, WebsocketClient } from '../types'
@@ -23,7 +22,7 @@ const drainRequestCounter = (server: BasedServer) => {
       } else {
         console.info('error handle different')
       }
-      console.info('DRAIN TIME')
+      console.info('DRAIN RATELIMIT TOKENS')
       value.requests -= 60
     })
 

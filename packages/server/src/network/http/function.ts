@@ -23,7 +23,7 @@ export const httpFunction = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         server.functions
-          .runFunction(method === 'post' ? 3 : 4, spec, client, payload)
+          .runFunction(method === 'post' ? 3 : 4, spec, client.context, payload)
           .then(async (result) => {
             if (!client.res) {
               return
