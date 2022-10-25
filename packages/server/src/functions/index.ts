@@ -115,15 +115,7 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
-    const incomingWorkerMessage = (data) => {
-      if (data.id) {
-        const listener = this.workerResponseListeners.get(data.id)
-        // prob need more here
-        if (listener) {
-          listener(data.err, data.payload)
-        }
-      }
-    }
+    // delete require.cache[require.resolve('./my_script')];
 
     if (d !== 0) {
       if (d < 0) {
@@ -141,7 +133,15 @@ export class BasedFunctions {
             activeObservables: 0,
             activeFunctions: 0,
           })
-          worker.on('message', incomingWorkerMessage)
+          worker.on('message', (data) => {
+            if (data.id) {
+              const listener = this.workerResponseListeners.get(data.id)
+              // prob need more here
+              if (listener) {
+                listener(data.err, data.payload)
+              }
+            }
+          })
         }
       }
     }
@@ -237,6 +237,13 @@ export class BasedFunctions {
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {
           this.remove(spec.name)
+        } else {
+          for (const w of this.workers) {
+            w.worker.postMessage({
+              type: 6,
+              name: spec.name,
+            })
+          }
         }
         this.observables[spec.name] = spec
         if (this.server.activeObservables[spec.name]) {
@@ -247,6 +254,13 @@ export class BasedFunctions {
       } else {
         if (this.observables[spec.name]) {
           this.remove(spec.name)
+        } else {
+          for (const w of this.workers) {
+            w.worker.postMessage({
+              type: 6,
+              name: spec.name,
+            })
+          }
         }
         this.functions[spec.name] = spec
       }
@@ -268,12 +282,25 @@ export class BasedFunctions {
         }
         delete this.server.activeObservables[name]
       }
+      // this is a bit harder... not allways relevant
+      for (const w of this.workers) {
+        w.worker.postMessage({
+          type: 6,
+          name,
+        })
+      }
       return true
     } else if (this.functions[name]) {
       if (this.functions[name].path) {
         delete this.paths[this.functions[name].path]
       }
       delete this.functions[name]
+      for (const w of this.workers) {
+        w.worker.postMessage({
+          type: 6,
+          name,
+        })
+      }
       return true
     }
 
@@ -310,6 +337,7 @@ export class BasedFunctions {
     return false
   }
 
+  // from other worker fn
   runObservableFunction(
     spec: BasedFunctionSpec,
     id: number,
@@ -336,6 +364,7 @@ export class BasedFunctions {
     selectedWorker.worker.postMessage({
       type: 1,
       id,
+      name: spec.name,
       path: spec.functionPath,
       payload,
     })
@@ -373,6 +402,8 @@ export class BasedFunctions {
       const selectedWorker: BasedWorker = this.lowestWorker
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
+
+        // include observables
         selectedWorker.activeFunctions--
         if (
           selectedWorker.activeFunctions < this.lowestWorker.activeFunctions
@@ -397,10 +428,16 @@ export class BasedFunctions {
       selectedWorker.worker.postMessage({
         type,
         path: spec.functionPath,
+        name: spec.name,
         payload,
         context,
         id: listenerId,
       })
+      console.info(
+        'SPEED',
+        selectedWorker.worker.threadId,
+        selectedWorker.worker.performance.eventLoopUtilization()
+      )
     })
   }
 }
