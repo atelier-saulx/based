@@ -132,20 +132,20 @@ struct BasedClientStatus {
 
 BasedClientStatus status;
 
-int32_t make_obs_id(std::string& name, std::string& payload) {
+uint32_t make_obs_id(std::string& name, std::string& payload) {
     if (payload.length() == 0) {
-        int32_t payload_hash = (int32_t)std::hash<json>{}("");
-        int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+        uint32_t payload_hash = (uint32_t)std::hash<json>{}("");
+        uint32_t name_hash = (uint32_t)std::hash<std::string>{}(name);
 
-        int32_t obs_id = (payload_hash * 33) ^ name_hash;
+        uint32_t obs_id = (payload_hash * 33) ^ name_hash;
 
         return obs_id;
     }
     json p = json::parse(payload);
-    int32_t payload_hash = (int32_t)std::hash<json>{}(p);
-    int32_t name_hash = (int32_t)std::hash<std::string>{}(name);
+    uint32_t payload_hash = (uint32_t)std::hash<json>{}(p);
+    uint32_t name_hash = (uint32_t)std::hash<std::string>{}(name);
 
-    int32_t obs_id = (payload_hash * 33) ^ name_hash;
+    uint32_t obs_id = (payload_hash * 33) ^ name_hash;
     return obs_id;
 }
 
@@ -154,6 +154,19 @@ static size_t write_function(void* contents, size_t size, size_t nmemb, void* us
     return size * nmemb;
 }
 
+/**
+ * @brief Function to retrieve the url of a specific service.
+ *
+ * @param cluster Url of the desired cluster
+ * @param org Organization name
+ * @param project Project name
+ * @param env Environment name
+ * @param name Name of the service, for example "@based/hub"
+ * @param key Optional string, for named hubs or other named service.
+ * @param optional_key Boolean, set to true if it should fall back to the default service in case
+ * the named one is not found
+ * @return std::string of the url
+ */
 std::string get_service(std::string cluster,
                         std::string org,
                         std::string project,
@@ -205,6 +218,23 @@ std::string get_service(std::string cluster,
 
     return buf;
 }
+
+void connect_to_url(std::string url) {
+    status.m_con.connect(url);
+}
+
+/**
+ * @brief Connect to a Based service
+ *
+ * @param cluster Url of the desired cluster
+ * @param org Organization name
+ * @param project Project name
+ * @param env Environment name
+ * @param name Name of the service, for example "@based/hub"
+ * @param key Optional string, for named hubs or other named service.
+ * @param optional_key Boolean, set to true if it should fall back to the default service in case
+ * the named one is not found
+ */
 void connect(std::string cluster,
              std::string org,
              std::string project,
@@ -224,29 +254,28 @@ void disconnect() {
 }
 
 /**
- * Observe a function. This returns the sub_id used to
- * unsubscribe with .unobserve(id)
+ * Observe a function. This returns the sub_id used to unsubscribe with .unobserve(id)
  */
-int observe(std::string name,
-            std::string payload,
-            /**
-             * Callback that the observable will trigger.
-             */
-            std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)>
-                on_data) {
+int observe(
+    std::string name,
+    std::string payload,
+    /**
+     * Callback that the observable will trigger.
+     */
+    std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)> cb) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
      * stored in memory in the event of a reconnection.
      *
-     * These observables all have a list of listeners. Each listener has a on_data callback
+     * These observables all have a list of listeners. Each listener has a cb callback
      * and and optional on_error callback.
      *
      * When all listeners are removed with .unobserve, the observable should be removed
      * and the unobserve request should be queued, to let the server know.
      */
 
-    int32_t obs_id = make_obs_id(name, payload);
+    uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = status.m_sub_id++;
 
     std::cout << "obs_id sent = " << obs_id << std::endl;
@@ -275,8 +304,8 @@ int observe(std::string name,
         // record what obs this sub is for, to delete it later
         status.m_sub_to_obs[sub_id] = obs_id;
 
-        // add on_data for this sub
-        status.m_sub_callback[sub_id] = on_data;
+        // add cb for this sub
+        status.m_sub_callback[sub_id] = cb;
 
         // add on_error for this sub if on_error is present (overload?)
     } else {
@@ -289,8 +318,8 @@ int observe(std::string name,
         // record what obs this sub is for, to delete it later
         status.m_sub_to_obs[sub_id] = obs_id;
 
-        // add on_data for this new sub
-        status.m_sub_callback[sub_id] = on_data;
+        // add cb for this new sub
+        status.m_sub_callback[sub_id] = cb;
         // add on_error for this new sub if it exists
     }
 
@@ -306,7 +335,7 @@ int observe(std::string name,
 void get(std::string name,
          std::string payload,
          std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
-    int32_t obs_id = make_obs_id(name, payload);
+    uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = status.m_sub_id++;
 
     // if obs_id exists in get_subs, add new sub to list
@@ -517,9 +546,7 @@ void on_message(std::string message) {
         }
             return;
         case IncomingType::SUBSCRIPTION_DATA: {
-            std::cout << "this was a SUB type" << std::endl;
-
-            uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
+            uint32_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
             int checksum = Utility::read_bytes_from_string(message, 12, 8);
 
             int start = 20;  // size of header
@@ -551,7 +578,6 @@ void on_message(std::string message) {
         }
             return;
         case IncomingType::SUBSCRIPTION_DIFF_DATA: {
-            std::cout << "this was a SUBDIFF type" << std::endl;
             uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
             int checksum = Utility::read_bytes_from_string(message, 12, 8);
             int prev_checksum = Utility::read_bytes_from_string(message, 20, 8);

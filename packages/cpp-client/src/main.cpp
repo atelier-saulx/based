@@ -1,6 +1,6 @@
 #include <iostream>
+#include <list>
 #include <string>
-#include <vector>
 
 #include <sstream>
 
@@ -12,14 +12,12 @@ int main(int argc, char** argv) {
     //     return -1;
     // }
 
-    connect("https://d15p61sp2f2oaj.cloudfront.net", "saulx", "demo", "production", "@based/hub",
-            "", false);
-
+    connect_to_url("ws://localhost:9910");
     bool done = false;
     // int i = 0;
     std::string cmd;
 
-    std::vector<int> obs;
+    std::list<int> obs;
 
     while (!done) {
         // function("small", "", [](std::string_view data) {
@@ -43,11 +41,12 @@ int main(int argc, char** argv) {
         if (cmd.substr(0, 1) == "r") {
             int rem_id = atoi(cmd.substr(2).c_str());
             unobserve(rem_id);
+            obs.remove(rem_id);
             continue;
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = observe("counter", "{\"b\":\"a\",\"a\":\"bababa\"}",
+            int id = observe("chill", "{\"b\":\"a\",\"a\":\"bababa\"}",
                              [](std::string data, int checksum, std::string error) {
                                  if (data.length() > 0) {
                                      std::cout << "DATA = " << data << std::endl;
@@ -57,6 +56,17 @@ int main(int argc, char** argv) {
                                  }
                              });
             obs.push_back(id);
+        }
+
+        if (cmd.substr(0, 1) == "g") {
+            get("chill", "", [](std::string data, std::string error) {
+                if (data.length() > 0) {
+                    std::cout << "GET DATA = " << data << std::endl;
+                }
+                if (error.length() > 0) {
+                    std::cout << "GET ERROR = " << data << std::endl;
+                }
+            });
         }
 
         std::cout << "obs = ";
