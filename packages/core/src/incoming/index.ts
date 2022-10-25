@@ -2,7 +2,7 @@ import { BasedCoreClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
-import { BasedErrorCode, convertDataToBasedError } from '../types/error'
+import { convertDataToBasedError } from '../types/error'
 
 export const decodeHeader = (
   nr: number
@@ -197,7 +197,6 @@ export const incoming = async (
         )
       }
 
-      console.info('SET CACJE DATA', payload, id)
       // handle max size etc / localstorage etc
       client.cache.set(id, {
         value: payload,

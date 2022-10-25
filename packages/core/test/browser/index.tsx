@@ -11,6 +11,10 @@ const init = async () => {
     },
   })
 
+  const x = await coreClient.get('counter')
+
+  console.info('FUN', x)
+
   coreClient.once('connect', (isConnected) => {
     console.info('connect', isConnected)
   })
