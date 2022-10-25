@@ -1,8 +1,9 @@
 import test from 'ava'
 import createServer from '@based/server'
-import { readStream, wait } from '@saulx/utils'
+import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
+import { join } from 'path'
 import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
@@ -19,11 +20,7 @@ test.serial('functions (over http + stream)', async (t) => {
   const functionSpecs = {
     hello: {
       checksum: 1,
-      function: async ({ stream }) => {
-        const buf = await readStream(stream)
-        JSON.parse(buf.toString())
-        return 'bla'
-      },
+      functionPath: join(__dirname, './functions/stream.js'),
       ...routes.hello,
     },
   }
@@ -71,7 +68,6 @@ test.serial('functions (over http + stream)', async (t) => {
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
-        // 'content-encoding': 'br',
         'content-type': 'application/json',
       },
       body: JSON.stringify(bigBod),
