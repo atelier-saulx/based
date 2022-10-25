@@ -99,8 +99,10 @@ test.serial('observables', async (t) => {
 
   close2()
 
+  console.info(obs2Results)
+
   t.true(obs1Results.length < obs2Results.length)
-  t.true(typeof obs2Results[obs2Results.length - 1] === 'string')
+  t.true(obs2Results[obs2Results.length - 1].startsWith('counter2:'))
 
   await wait(100)
 
