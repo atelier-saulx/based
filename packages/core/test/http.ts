@@ -9,7 +9,7 @@ import { join } from 'node:path'
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial.only('functions (over http)', async (t) => {
+test.serial('functions (over http)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
@@ -119,15 +119,7 @@ test.serial('get (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       observable: true,
-      function: async (payload, update) => {
-        let cnt = 0
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
-      },
+      functionPath: join(__dirname, 'functions', 'counter.js'),
     },
   }
 
