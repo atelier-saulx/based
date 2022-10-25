@@ -12,7 +12,7 @@ int main(int argc, char** argv) {
     //     return -1;
     // }
 
-    connect_to_url("ws://localhost:9910");
+    _connect_to_url("ws://localhost:9910");
     bool done = false;
     // int i = 0;
     std::string cmd;

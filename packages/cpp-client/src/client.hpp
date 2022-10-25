@@ -34,10 +34,17 @@ struct Observable {
     std::string payload;
 };
 
+/////////////////
+// Forward declarations
+/////////////////
+
 void on_open();
 void on_message(std::string message);
 void drain_queues();
 
+/**
+ * @brief Struct that holds all of the client state.
+ */
 struct BasedClientStatus {
     BasedClientStatus()
         : m_request_id(0),
@@ -132,6 +139,10 @@ struct BasedClientStatus {
 
 BasedClientStatus status;
 
+/////////////////
+// Helper functions
+/////////////////
+
 uint32_t make_obs_id(std::string& name, std::string& payload) {
     if (payload.length() == 0) {
         uint32_t payload_hash = (uint32_t)std::hash<json>{}("");
@@ -153,6 +164,10 @@ static size_t write_function(void* contents, size_t size, size_t nmemb, void* us
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
+
+//////////////////////////////////////////////////////////////////////////
+///////////////////////// Client methods /////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Function to retrieve the url of a specific service.
@@ -219,7 +234,10 @@ std::string get_service(std::string cluster,
     return buf;
 }
 
-void connect_to_url(std::string url) {
+/**
+ * @brief Connect directly to a websocket url.
+ */
+void _connect_to_url(std::string url) {
     status.m_con.connect(url);
 }
 
@@ -338,8 +356,6 @@ void get(std::string name,
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = status.m_sub_id++;
 
-    std::cout << ">>>>> GET req with obs_id = " << obs_id << std::endl;
-
     // if obs_id exists in get_subs, add new sub to list
     if (status.m_get_subs.find(obs_id) != status.m_get_subs.end()) {
         status.m_get_subs.at(obs_id).insert(sub_id);
@@ -371,7 +387,6 @@ void get(std::string name,
  * @param sub_id The ID return by the call to .observe.
  */
 void unobserve(int sub_id) {
-    std::cout << "> Removing sub_id " << sub_id << std::endl;
     if (status.m_sub_to_obs.find(sub_id) == status.m_sub_to_obs.end()) {
         std::cerr << "No subscription found with sub_id " << sub_id << std::endl;
         return;
@@ -386,8 +401,6 @@ void unobserve(int sub_id) {
 
     // remove sub to obs mapping for removed sub
     status.m_sub_to_obs.erase(sub_id);
-
-    // TODO: should it remove cache entry here? prob not
 
     // if the list is now empty, add request to unobserve to queue
     if (status.m_observe_subs.at(obs_id).empty()) {
@@ -442,6 +455,14 @@ void auth(std::string state, std::function<void(std::string)> cb) {
     status.m_con.send(msg);
 }
 
+/////////////////////////////////////////////////////////////
+/////////////////// End of client methods ///////////////////
+/////////////////////////////////////////////////////////////
+
+/**
+ * @brief Drain the request queues by sending the request message to the server
+ *
+ */
 void drain_queues() {
     if (status.m_draining || status.m_con.status() == ConnectionStatus::CLOSED ||
         status.m_con.status() == ConnectionStatus::FAILED ||
@@ -449,8 +470,6 @@ void drain_queues() {
         std::cerr << "Connection is unavailable, status = " << status.m_con.status() << std::endl;
         return;
     }
-
-    std::cout << "> Draining queue" << std::endl;
 
     status.m_draining = true;
 
@@ -489,6 +508,12 @@ void drain_queues() {
     status.m_draining = false;
 }
 
+/**
+ * @brief When the client goes out of sync with the server, send request to get the full data rather
+ * than the diffing patch.
+ *
+ * @param obs_id
+ */
 void request_full_data(uint64_t obs_id) {
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
         return;
@@ -499,6 +524,9 @@ void request_full_data(uint64_t obs_id) {
     drain_queues();
 }
 
+/**
+ * @brief (Re)send the list of active observables when the connection (re)opens
+ */
 void on_open() {
     // TODO: must reencode the obs request with the latest checksum.
     //       either change the checksum in the encoded request (harder probs) or
@@ -512,6 +540,9 @@ void on_open() {
     drain_queues();
 }
 
+/**
+ * @brief Handle incoming messages.
+ */
 void on_message(std::string message) {
     if (message.length() <= 7) {
         std::cerr << ">> Payload is too small, wrong data: " << message << std::endl;
