@@ -57,14 +57,21 @@ test.serial('mem tests', async (t) => {
 
   Promise.all(
     [...cl.values()].map((c) => {
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < 1000; i++) {
         c.function('hello')
       }
       return undefined
     })
   )
 
-  await wait(2000)
+  const used = process.memoryUsage().heapUsed / 1024 / 1024
+  console.info(
+    `Mem while exec functions disconnect approximately ${
+      Math.round(used * 100) / 100
+    } MB`
+  )
+
+  await wait(10000)
 
   const used1 = process.memoryUsage().heapUsed / 1024 / 1024
   console.info(
@@ -77,6 +84,8 @@ test.serial('mem tests', async (t) => {
   }
 
   await wait(10000)
+
+  // @ts-ignore
 
   const used2 = process.memoryUsage().heapUsed / 1024 / 1024
   console.info(
