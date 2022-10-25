@@ -115,11 +115,11 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
-    // delete require.cache[require.resolve('./my_script')];
-
+    // clean all this stuff up.....
     if (d !== 0) {
       if (d < 0) {
         for (let i = 0; i < d; i++) {
+          // active into account
           const w = this.workers.pop()
           w.worker.terminate()
         }
@@ -129,12 +129,37 @@ export class BasedFunctions {
           this.workers.push({
             worker,
             index: this.workers.length,
-            // if name
             activeObservables: 0,
             activeFunctions: 0,
           })
           worker.on('message', (data) => {
-            if (data.id) {
+            // type 0 is just install fn
+
+            // subscribe and close will just go the normal way
+
+            if (data.type === 0) {
+              this.install(data.name)
+                .then((spec) => {
+                  if (spec) {
+                    worker.postMessage({
+                      type: 5,
+                      name: spec.name,
+                      path: spec.functionPath,
+                    })
+                  } else {
+                    worker.postMessage({
+                      type: 7,
+                      name: data.name,
+                    })
+                  }
+                })
+                .catch(() => {
+                  worker.postMessage({
+                    type: 7,
+                    name: data.name,
+                  })
+                })
+            } else if (data.id) {
               const listener = this.workerResponseListeners.get(data.id)
               // prob need more here
               if (listener) {

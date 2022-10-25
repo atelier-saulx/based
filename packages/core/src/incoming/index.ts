@@ -156,7 +156,6 @@ export const incoming = async (
         // o no cannot apply diff for you!
         console.info('o no wrong diffiy diff diff', err)
         requestFullData(client, id)
-
         return
       }
 
