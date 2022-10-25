@@ -5,6 +5,10 @@ import { fnPathMap, fnInstallListeners } from './functions'
 
 console.info('Start worker', threadId)
 
+// outgoing type: 0 => install function
+// outgoing type: 1 => GET
+// outgoing type: 2 => OBSERVE
+
 parentPort.on('message', (d) => {
   // d.type === 3 // HTTP POST FN
   // d.type === 4 // HTTP GET FN
@@ -13,6 +17,8 @@ parentPort.on('message', (d) => {
   // d.type === 7 // CANNOT INSTALL FN
 
   if (d.type === 5) {
+    // maybe if you install like this it gets marked for a bit longer
+    // nested functions have to be kept in mem a bit longer...
     const x = fnInstallListeners.get(d.name)
     fnPathMap.set(d.name, d.path)
     if (x) {

@@ -12,6 +12,8 @@ import { destroy, initFunction } from '../observable'
 import { Worker } from 'node:worker_threads'
 import { join } from 'path'
 
+// clean this up put this in the worker folder...
+
 type BasedWorker = {
   worker: Worker
   name?: string

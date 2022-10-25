@@ -16,7 +16,7 @@ export type WorkerObs = {
   rawDataSize?: number
   diffCache?: Uint8Array
   previousChecksum?: number
-  cache?: Uint8Array // will become SharedArrayBuffer
+  cache?: Uint8Array
   isDeflate?: boolean
   checksum?: number
   closeFunction?: () => void
