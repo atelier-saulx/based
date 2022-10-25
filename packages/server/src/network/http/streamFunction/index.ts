@@ -10,6 +10,8 @@ import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
 
+// TODO: move to workers....
+
 export const httpStreamFunction = (
   server: BasedServer,
   client: HttpClient,
@@ -61,9 +63,7 @@ export const httpStreamFunction = (
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
           const stream = createDataStream(server, route, client, size)
           const streamPayload = { payload, stream }
-
           const fn = require(spec.functionPath)
-
           fn(streamPayload, client.context)
             .catch((err) => {
               stream.destroy()
