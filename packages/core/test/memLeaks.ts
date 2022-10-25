@@ -57,7 +57,10 @@ test.serial('mem tests', async (t) => {
 
   Promise.all(
     [...cl.values()].map((c) => {
-      return c.function('hello')
+      for (let i = 0; i < 100; i++) {
+        c.function('hello')
+      }
+      return undefined
     })
   )
 
