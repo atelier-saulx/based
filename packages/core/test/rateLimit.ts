@@ -3,6 +3,7 @@ import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import { BasedCoreClient } from '../src/index'
+import { join } from 'path'
 
 test.serial('rate limit ws', async (t) => {
   const routes = {
@@ -15,9 +16,7 @@ test.serial('rate limit ws', async (t) => {
   const functionSpecs = {
     hello: {
       checksum: 1,
-      function: async () => {
-        return 'bla'
-      },
+      functionPath: join(__dirname, '/funcitons/counter.js'),
       ...routes.hello,
     },
   }
@@ -70,7 +69,7 @@ test.serial('rate limit ws', async (t) => {
       console.info('bah ratelimit lets wait 30 secods...')
       await wait(30e3)
     } else {
-      console.log('Pass', i)
+      console.info('Pass', i)
     }
   }
 
