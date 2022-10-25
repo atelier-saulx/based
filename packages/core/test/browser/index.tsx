@@ -29,20 +29,20 @@ const init = async () => {
   // console.info(iqTest)
   // console.info(small)
 
-  let str = ''
-  for (let i = 0; i < 20000; i++) {
-    str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-  }
+  // let str = ''
+  // for (let i = 0; i < 20000; i++) {
+  //   str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+  // }
 
-  let i = 100e3
-  while (--i) {
-    try {
-      const flap = await coreClient.function('hello', str)
-      console.info('GOT FLAP', flap)
-    } catch (err) {
-      console.error(err)
-    }
-  }
+  // let i = 100e3
+  // while (--i) {
+  //   try {
+  //     const flap = await coreClient.function('hello', str)
+  //     console.info('GOT FLAP', flap)
+  //   } catch (err) {
+  //     console.error(err)
+  //   }
+  // }
   // const close = await coreClient.observe('counter', (data) => {
   //   console.log('incoming', data)
   // })
