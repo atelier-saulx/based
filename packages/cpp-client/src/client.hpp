@@ -70,7 +70,7 @@ struct BasedClientStatus {
     /**
      * map<obs_id, <value, checksum>>
      */
-    std::map<int, std::pair<std::string, int>> m_cache;
+    std::map<int, std::pair<std::string, uint64_t>> m_cache;
 
     /////////////////////
     // queues
@@ -262,7 +262,7 @@ int observe(
     /**
      * Callback that the observable will trigger.
      */
-    std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)> cb) {
+    std::function<void(std::string /*data*/, uint64_t /*checksum*/, std::string /*error*/)> cb) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -283,7 +283,7 @@ int observe(
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
         // first time this query is observed
         // encode request
-        int checksum = 0;
+        uint64_t checksum = 0;
 
         if (status.m_cache.find(obs_id) != status.m_cache.end()) {
             // if cache for this obs exists
@@ -338,6 +338,8 @@ void get(std::string name,
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = status.m_sub_id++;
 
+    std::cout << ">>>>> GET req with obs_id = " << obs_id << std::endl;
+
     // if obs_id exists in get_subs, add new sub to list
     if (status.m_get_subs.find(obs_id) != status.m_get_subs.end()) {
         status.m_get_subs.at(obs_id).insert(sub_id);
@@ -348,7 +350,7 @@ void get(std::string name,
     // is there an active obs? if so, do nothing (get will trigger on next update)
     // if there isnt, queue request
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
-        int checksum = 0;
+        uint64_t checksum = 0;
 
         if (status.m_cache.find(obs_id) != status.m_cache.end()) {
             // if cache for this obs exists
@@ -547,7 +549,7 @@ void on_message(std::string message) {
             return;
         case IncomingType::SUBSCRIPTION_DATA: {
             uint32_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
-            int checksum = Utility::read_bytes_from_string(message, 12, 8);
+            uint64_t checksum = Utility::read_bytes_from_string(message, 12, 8);
 
             int start = 20;  // size of header
             int end = len + 4;
@@ -556,6 +558,8 @@ void on_message(std::string message) {
                 payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
                                      : message.substr(start, end);
             }
+
+            std::cout << "SUB updating cache for id = " << obs_id << std::endl;
 
             status.m_cache[obs_id].first = payload;
             status.m_cache[obs_id].second = checksum;
@@ -578,11 +582,11 @@ void on_message(std::string message) {
         }
             return;
         case IncomingType::SUBSCRIPTION_DIFF_DATA: {
-            uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
-            int checksum = Utility::read_bytes_from_string(message, 12, 8);
-            int prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
+            uint32_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
+            uint64_t checksum = Utility::read_bytes_from_string(message, 12, 8);
+            uint64_t prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
 
-            int cached_checksum = 0;
+            uint64_t cached_checksum = 0;
 
             if (status.m_cache.find(obs_id) != status.m_cache.end()) {
                 cached_checksum = status.m_cache.at(obs_id).second;
@@ -608,6 +612,9 @@ void on_message(std::string message) {
                 json patch_json = json::parse(patch);
                 json res = Diff::apply_patch(value, patch_json);
                 patched_payload = res.dump();
+
+                std::cout << "SUB DIFF updating cache for id = " << obs_id << std::endl;
+
                 status.m_cache[obs_id].first = patched_payload;
                 status.m_cache[obs_id].second = checksum;
             }

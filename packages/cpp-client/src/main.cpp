@@ -46,15 +46,14 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = observe("chill", "{\"b\":\"a\",\"a\":\"bababa\"}",
-                             [](std::string data, int checksum, std::string error) {
-                                 if (data.length() > 0) {
-                                     std::cout << "DATA = " << data << std::endl;
-                                 }
-                                 if (error.length() > 0) {
-                                     std::cout << "ERROR = " << data << std::endl;
-                                 }
-                             });
+            int id = observe("chill", "", [](std::string data, int checksum, std::string error) {
+                if (data.length() > 0) {
+                    std::cout << "DATA = " << data << std::endl;
+                }
+                if (error.length() > 0) {
+                    std::cout << "ERROR = " << data << std::endl;
+                }
+            });
             obs.push_back(id);
         }
 
@@ -65,6 +64,17 @@ int main(int argc, char** argv) {
                 }
                 if (error.length() > 0) {
                     std::cout << "GET ERROR = " << data << std::endl;
+                }
+            });
+        }
+
+        if (cmd.substr(0, 1) == "f") {
+            function("chill", "", [](std::string data, std::string error) {
+                if (data.length() > 0) {
+                    std::cout << "FUNCTION DATA = " << data << std::endl;
+                }
+                if (error.length() > 0) {
+                    std::cout << "FUNCTION ERROR = " << data << std::endl;
                 }
             });
         }
