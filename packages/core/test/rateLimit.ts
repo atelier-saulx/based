@@ -68,7 +68,7 @@ test.serial('rate limit ws', async (t) => {
       },
     })
     if (x.status === 429) {
-      console.info('bah ratelimit lets wait 30 secods...')
+      console.info('bah ratelimit lets wait 30 seconds...')
       isLimit = true
       await wait(30e3)
     } else {
