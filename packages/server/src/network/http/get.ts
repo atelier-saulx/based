@@ -44,22 +44,25 @@ const sendGetResponse = (
               client.res.writeHeader('Content-Encoding', 'deflate')
               end(client, obs.cache.slice(4 + 8 + 8))
             })
-          } else if (obs.rawData) {
-            compress(client, JSON.stringify(obs.rawData)).then(
-              ({ payload, encoding }) => {
-                if (client.res) {
-                  client.res.cork(() => {
-                    client.res.writeStatus('200 OK')
-                    if (encoding) {
-                      client.res.writeHeader('Content-Encoding', encoding)
-                    }
-                    client.res.writeHeader('ETag', String(obs.checksum))
-                    end(client, payload)
-                  })
-                }
-              }
-            )
-          } else {
+          }
+
+          // else if (obs.rawData) {
+          //   compress(client, JSON.stringify(obs.rawData)).then(
+          //     ({ payload, encoding }) => {
+          //       if (client.res) {
+          //         client.res.cork(() => {
+          //           client.res.writeStatus('200 OK')
+          //           if (encoding) {
+          //             client.res.writeHeader('Content-Encoding', encoding)
+          //           }
+          //           client.res.writeHeader('ETag', String(obs.checksum))
+          //           end(client, payload)
+          //         })
+          //       }
+          //     }
+          //   )
+          // }
+          else {
             compress(
               client,
               zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8))

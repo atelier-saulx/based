@@ -23,8 +23,6 @@ export const destroy = (server: BasedServer, id: number) => {
   const memCacheTimeout =
     spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
 
-  //   clearTimeout(obs.beingDestroyed)
-
   if (!obs.beingDestroyed) {
     obs.beingDestroyed = setTimeout(() => {
       if (!server.activeObservables[obs.name]) {
