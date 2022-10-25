@@ -2,31 +2,17 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
+import { join } from 'path'
 
 test.serial('observablesDiff', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const obsStore = {
-    counter: async (payload, update) => {
-      const largeThing: any = { bla: [] }
-      for (let i = 0; i < 10; i++) {
-        largeThing.bla.push({
-          title: 'snurp',
-          cnt: i,
-          snurp: ~~(Math.random() * 19999),
-        })
-      }
-      update(largeThing)
-      const counter = setInterval(() => {
-        largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup = ~~(
-          Math.random() * 19999
-        )
-        // diff has to be made on an extra cache layer
-        update(largeThing)
-      }, 100)
-      return () => {
-        clearInterval(counter)
-      }
+    counter: {
+      observable: true,
+      name: 'counter',
+      checksum: 1,
+      functionPath: join(__dirname, '/functions/objectCounter.js'),
     },
   }
 
@@ -42,18 +28,12 @@ test.serial('observablesDiff', async (t) => {
         }
         return false
       },
-      uninstall: async (opts) => {
-        console.info('unRegister', opts.name)
+      uninstall: async () => {
         return true
       },
       install: async ({ name }) => {
         if (obsStore[name]) {
-          return {
-            observable: true,
-            name,
-            checksum: 1,
-            function: obsStore[name],
-          }
+          return obsStore[name]
         } else {
           return false
         }
