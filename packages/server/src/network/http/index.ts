@@ -164,7 +164,7 @@ export const httpHandler = (
       )
     } else {
       handleRequest(server, method, client, route, (payload) =>
-        httpFunction(route, client, server, payload)
+        httpFunction(method, route, client, server, payload)
       )
     }
   }
