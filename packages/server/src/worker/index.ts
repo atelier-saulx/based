@@ -44,7 +44,7 @@ parentPort.on('message', (d) => {
   } else if (d.type === 6) {
     const path = fnPathMap.get(d.name)
     if (!path) {
-      console.info('Cannot find path to uninstall', d.name)
+      // console.info('Cannot find path to uninstall', d.name)
       return
     }
     console.info('Uninstall', d.name)
