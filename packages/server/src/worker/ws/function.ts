@@ -4,11 +4,13 @@ import {
   encodeFunctionResponse,
 } from '../../protocol'
 import { parentPort } from 'node:worker_threads'
+import { ClientContext } from '../../types'
 
 export default (
   path: string,
   id: number,
   reqId: number,
+  context: ClientContext,
   isDeflate: boolean,
   payload?: Uint8Array
 ) => {

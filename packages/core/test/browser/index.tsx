@@ -20,8 +20,16 @@ const init = async () => {
   })
 
   coreClient.observe('counter', (d) => {
-    console.info('guuuurrr', d)
+    console.info('--->', d)
   })
+
+  const close = coreClient.observe('chill', (d) => {
+    console.info('chill', d)
+  })
+
+  setTimeout(() => {
+    close()
+  }, 1e3)
 
   // const iqTest = await coreClient.function('iqTest')
   // const small = await coreClient.function('small')
