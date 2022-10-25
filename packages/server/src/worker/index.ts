@@ -37,9 +37,10 @@ parentPort.on('message', (d) => {
   } else if (d.type === 6) {
     const path = fnPathMap.get(d.name)
     if (!path) {
-      console.info('Cannot find path', path)
+      console.info('Cannot find path to uninstall', d.name)
       return
     }
+    console.info('Uninstall', d.name)
     fnPathMap.delete(path)
     delete require.cache[require.resolve(path)]
   } else if (d.type === 5) {
@@ -54,6 +55,12 @@ parentPort.on('message', (d) => {
     }
     wsFunction(d.path, d.id, d.reqId, d.isDeflate, d.payload)
   } else if (d.type === 1) {
+    const prevPath = fnPathMap.get(d.name)
+    if (!prevPath) {
+      fnPathMap.set(d.name, d.path)
+    } else if (prevPath !== d.path) {
+      delete require.cache[require.resolve(prevPath)]
+    }
     // payload is parsed for this
     createObs(d.id, d.path, d.payload)
   } else if (d.type === 2) {

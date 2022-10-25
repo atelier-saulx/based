@@ -35,6 +35,8 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
     isDestroyed: false,
   }
 
+  activeObs.set(id, obs)
+
   const fn = require(functionPath)
 
   const update: ObservableUpdateFunction = (

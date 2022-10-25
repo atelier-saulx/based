@@ -262,7 +262,7 @@ export class BasedFunctions {
       if (isObservableFunctionSpec(spec)) {
         if (this.functions[spec.name]) {
           this.remove(spec.name)
-        } else {
+        } else if (this.observables[spec.name]) {
           for (const w of this.workers) {
             w.worker.postMessage({
               type: 6,
@@ -279,7 +279,7 @@ export class BasedFunctions {
       } else {
         if (this.observables[spec.name]) {
           this.remove(spec.name)
-        } else {
+        } else if (this.functions[spec.name]) {
           for (const w of this.workers) {
             w.worker.postMessage({
               type: 6,
