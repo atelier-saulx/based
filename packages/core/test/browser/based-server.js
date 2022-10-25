@@ -20,6 +20,14 @@ const init = async () => {
       maxPayloadSize: 1e6 * 10,
       functionPath: join(__dirname, '/counter.js'),
     },
+    chill: {
+      observable: true,
+      path: '/lol',
+      name: 'chill',
+      checksum: 1,
+      maxPayloadSize: 1e6 * 10,
+      functionPath: join(__dirname, '/chill.js'),
+    },
     // streamboy: {
     //   name: 'streamboy',
     //   stream: true,
