@@ -248,6 +248,9 @@ export class BasedFunctions {
   }
 
   update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
+    // force uninstall in workers (and clear require cache - so it hopefully re-evaluates authorize etc)
+    // will make the 'call' function to be able to call a user defined authorize
+
     if (spec) {
       if (!spec.idleTimeout) {
         spec.idleTimeout = this.config.idleTimeout

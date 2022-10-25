@@ -3,63 +3,43 @@ import { BasedCoreClient } from '../src/index'
 import createServer, { isHttpClient } from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { join } from 'path'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
-
   const obsStore = {
-    counter: async (_payload: any, update: any) => {
-      let cnt = 0
-      const counter = setInterval(() => {
-        update(++cnt)
-      }, 1000)
-      return () => {
-        clearInterval(counter)
-      }
+    counter: {
+      name: 'counter',
+      observable: true,
+      checksum: 1,
+      functionPath: join(__dirname, 'functions', 'counter.js'),
+    },
+    'counter-cached': {
+      observable: true,
+      name: 'counter-cached',
+      checksum: 1,
+      functionPath: join(__dirname, 'functions', 'counter.js'),
+      memCacheTimeout: 1e3,
     },
   }
-
   const server = await createServer({
     port: 9910,
     functions: {
       memCacheTimeout: 0,
       idleTimeout: 1e3,
-
       route: ({ name }) => {
-        if (name === 'counter-cached') {
-          return {
-            observable: true,
-            name: 'counter-cached',
-          }
-        }
         if (name && obsStore[name]) {
-          return { name, observable: true }
+          return obsStore[name]
         }
         return false
       },
-
       uninstall: async (opts) => {
         console.info('unRegister', opts.name)
         return true
       },
       install: async ({ name }) => {
-        if (name === 'counter-cached') {
-          return {
-            observable: true,
-            name: 'counter-cached',
-            checksum: 1,
-            function: obsStore.counter,
-            memCacheTimeout: 1e3,
-          }
-        }
-
         if (obsStore[name]) {
-          return {
-            observable: true,
-            name,
-            checksum: 1,
-            function: obsStore[name],
-          }
+          return obsStore[name]
         } else {
           return false
         }
@@ -72,7 +52,7 @@ const setup = async () => {
   return { coreClient, server }
 }
 
-test.serial('get', async (t) => {
+test.serial.only('get', async (t) => {
   const { coreClient, server } = await setup()
 
   t.teardown(() => {
@@ -150,7 +130,7 @@ test.serial('authorize get', async (t) => {
   // })
 
   const error: BasedError = await t.throwsAsync(coreClient.get('counter'))
-  t.is(error.basedCode, BasedErrorCode.AuthorizeRejectedError)
+  t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
 
   await coreClient.auth(token)
   await t.notThrowsAsync(coreClient.get('counter'))

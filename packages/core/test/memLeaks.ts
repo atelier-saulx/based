@@ -2,16 +2,14 @@ import test from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/server'
 import { wait } from '@saulx/utils'
+import { join } from 'node:path'
 
 test.serial('mem tests', async (t) => {
   const store = {
     hello: {
       name: 'hello',
       checksum: 1,
-      function: async () => {
-        await wait(3e3)
-        return 'hello'
-      },
+      functionPath: join(__dirname, './functions', 'wait.js'),
     },
   }
 
@@ -59,7 +57,10 @@ test.serial('mem tests', async (t) => {
 
   Promise.all(
     [...cl.values()].map((c) => {
-      return c.function('hello')
+      for (let i = 0; i < 100; i++) {
+        c.function('hello')
+      }
+      return undefined
     })
   )
 

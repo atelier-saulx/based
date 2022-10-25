@@ -22,6 +22,7 @@ export const httpFunction = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
+        // TODO: way too much copy but this is tmp solution
         server.functions
           .runFunction(method === 'post' ? 3 : 4, spec, client.context, payload)
           .then(async (result) => {
