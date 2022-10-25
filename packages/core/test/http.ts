@@ -311,3 +311,5 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
   server.destroy()
 })
+
+// TODO: add auth test
