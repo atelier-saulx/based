@@ -49,8 +49,7 @@ export const isHttpClient = (
 }
 
 export type AuthConfig = {
-  // authorize has to be a string
-  authorize?: Authorize
+  authorizePath?: string
   authorizeConnection?: AuthorizeConnection
 }
 
