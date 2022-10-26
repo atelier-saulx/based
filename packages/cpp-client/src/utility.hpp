@@ -183,7 +183,7 @@ std::vector<uint8_t> encode_function_message(int32_t id, std::string name, std::
 std::vector<uint8_t> encode_observe_message(uint64_t id,
                                             std::string name,
                                             std::string& payload,
-                                            int64_t checksum) {
+                                            uint64_t checksum) {
     // Type 1 = subscribe
     // | 4 header | 8 id | 8 checksum | 1 name length | * name | [* payload]
 
@@ -242,7 +242,7 @@ std::vector<uint8_t> encode_unobserve_message(int64_t obs_id) {
 std::vector<uint8_t> encode_get_message(uint64_t id,
                                         std::string name,
                                         std::string& payload,
-                                        int64_t checksum) {
+                                        uint64_t checksum) {
     // Type 3 = get
     // | 4 header | 8 id | 8 checksum | 1 name length | * name | [* payload]
 

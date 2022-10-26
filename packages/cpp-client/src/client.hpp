@@ -34,10 +34,17 @@ struct Observable {
     std::string payload;
 };
 
+/////////////////
+// Forward declarations
+/////////////////
+
 void on_open();
 void on_message(std::string message);
 void drain_queues();
 
+/**
+ * @brief Struct that holds all of the client state.
+ */
 struct BasedClientStatus {
     BasedClientStatus()
         : m_request_id(0),
@@ -70,7 +77,7 @@ struct BasedClientStatus {
     /**
      * map<obs_id, <value, checksum>>
      */
-    std::map<int, std::pair<std::string, int>> m_cache;
+    std::map<int, std::pair<std::string, uint64_t>> m_cache;
 
     /////////////////////
     // queues
@@ -132,6 +139,10 @@ struct BasedClientStatus {
 
 BasedClientStatus status;
 
+/////////////////
+// Helper functions
+/////////////////
+
 uint32_t make_obs_id(std::string& name, std::string& payload) {
     if (payload.length() == 0) {
         uint32_t payload_hash = (uint32_t)std::hash<json>{}("");
@@ -153,6 +164,10 @@ static size_t write_function(void* contents, size_t size, size_t nmemb, void* us
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
 }
+
+//////////////////////////////////////////////////////////////////////////
+///////////////////////// Client methods /////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
 
 /**
  * @brief Function to retrieve the url of a specific service.
@@ -219,7 +234,10 @@ std::string get_service(std::string cluster,
     return buf;
 }
 
-void connect_to_url(std::string url) {
+/**
+ * @brief Connect directly to a websocket url.
+ */
+void _connect_to_url(std::string url) {
     status.m_con.connect(url);
 }
 
@@ -262,7 +280,7 @@ int observe(
     /**
      * Callback that the observable will trigger.
      */
-    std::function<void(std::string /*data*/, int64_t /*checksum*/, std::string /*error*/)> cb) {
+    std::function<void(std::string /*data*/, uint64_t /*checksum*/, std::string /*error*/)> cb) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -283,7 +301,7 @@ int observe(
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
         // first time this query is observed
         // encode request
-        int checksum = 0;
+        uint64_t checksum = 0;
 
         if (status.m_cache.find(obs_id) != status.m_cache.end()) {
             // if cache for this obs exists
@@ -348,7 +366,7 @@ void get(std::string name,
     // is there an active obs? if so, do nothing (get will trigger on next update)
     // if there isnt, queue request
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
-        int checksum = 0;
+        uint64_t checksum = 0;
 
         if (status.m_cache.find(obs_id) != status.m_cache.end()) {
             // if cache for this obs exists
@@ -369,7 +387,6 @@ void get(std::string name,
  * @param sub_id The ID return by the call to .observe.
  */
 void unobserve(int sub_id) {
-    std::cout << "> Removing sub_id " << sub_id << std::endl;
     if (status.m_sub_to_obs.find(sub_id) == status.m_sub_to_obs.end()) {
         std::cerr << "No subscription found with sub_id " << sub_id << std::endl;
         return;
@@ -384,8 +401,6 @@ void unobserve(int sub_id) {
 
     // remove sub to obs mapping for removed sub
     status.m_sub_to_obs.erase(sub_id);
-
-    // TODO: should it remove cache entry here? prob not
 
     // if the list is now empty, add request to unobserve to queue
     if (status.m_observe_subs.at(obs_id).empty()) {
@@ -440,6 +455,14 @@ void auth(std::string state, std::function<void(std::string)> cb) {
     status.m_con.send(msg);
 }
 
+/////////////////////////////////////////////////////////////
+/////////////////// End of client methods ///////////////////
+/////////////////////////////////////////////////////////////
+
+/**
+ * @brief Drain the request queues by sending the request message to the server
+ *
+ */
 void drain_queues() {
     if (status.m_draining || status.m_con.status() == ConnectionStatus::CLOSED ||
         status.m_con.status() == ConnectionStatus::FAILED ||
@@ -447,8 +470,6 @@ void drain_queues() {
         std::cerr << "Connection is unavailable, status = " << status.m_con.status() << std::endl;
         return;
     }
-
-    std::cout << "> Draining queue" << std::endl;
 
     status.m_draining = true;
 
@@ -487,6 +508,12 @@ void drain_queues() {
     status.m_draining = false;
 }
 
+/**
+ * @brief When the client goes out of sync with the server, send request to get the full data rather
+ * than the diffing patch.
+ *
+ * @param obs_id
+ */
 void request_full_data(uint64_t obs_id) {
     if (status.m_observe_requests.find(obs_id) == status.m_observe_requests.end()) {
         return;
@@ -497,6 +524,9 @@ void request_full_data(uint64_t obs_id) {
     drain_queues();
 }
 
+/**
+ * @brief (Re)send the list of active observables when the connection (re)opens
+ */
 void on_open() {
     // TODO: must reencode the obs request with the latest checksum.
     //       either change the checksum in the encoded request (harder probs) or
@@ -510,6 +540,9 @@ void on_open() {
     drain_queues();
 }
 
+/**
+ * @brief Handle incoming messages.
+ */
 void on_message(std::string message) {
     if (message.length() <= 7) {
         std::cerr << ">> Payload is too small, wrong data: " << message << std::endl;
@@ -547,7 +580,7 @@ void on_message(std::string message) {
             return;
         case IncomingType::SUBSCRIPTION_DATA: {
             uint32_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
-            int checksum = Utility::read_bytes_from_string(message, 12, 8);
+            uint64_t checksum = Utility::read_bytes_from_string(message, 12, 8);
 
             int start = 20;  // size of header
             int end = len + 4;
@@ -556,6 +589,8 @@ void on_message(std::string message) {
                 payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
                                      : message.substr(start, end);
             }
+
+            std::cout << "SUB updating cache for id = " << obs_id << std::endl;
 
             status.m_cache[obs_id].first = payload;
             status.m_cache[obs_id].second = checksum;
@@ -578,11 +613,11 @@ void on_message(std::string message) {
         }
             return;
         case IncomingType::SUBSCRIPTION_DIFF_DATA: {
-            uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
-            int checksum = Utility::read_bytes_from_string(message, 12, 8);
-            int prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
+            uint32_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
+            uint64_t checksum = Utility::read_bytes_from_string(message, 12, 8);
+            uint64_t prev_checksum = Utility::read_bytes_from_string(message, 20, 8);
 
-            int cached_checksum = 0;
+            uint64_t cached_checksum = 0;
 
             if (status.m_cache.find(obs_id) != status.m_cache.end()) {
                 cached_checksum = status.m_cache.at(obs_id).second;
@@ -608,6 +643,9 @@ void on_message(std::string message) {
                 json patch_json = json::parse(patch);
                 json res = Diff::apply_patch(value, patch_json);
                 patched_payload = res.dump();
+
+                std::cout << "SUB DIFF updating cache for id = " << obs_id << std::endl;
+
                 status.m_cache[obs_id].first = patched_payload;
                 status.m_cache[obs_id].second = checksum;
             }
