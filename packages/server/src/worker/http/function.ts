@@ -1,6 +1,7 @@
 import { ClientContext } from '../../types'
 import { parentPort } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
+import { authorize } from '../authorize'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -48,17 +49,27 @@ export default (
   } else if (type === 4) {
     parsedPayload = parseQuery(context.query)
   }
-  fn(parsedPayload, {})
-    .then((v) => {
-      parentPort.postMessage({
-        id,
-        payload: v,
-      })
+  authorize(context, name, payload)
+    .then((ok) => {
+      if (!ok) {
+        console.error('autn wrong')
+        return
+      }
+      fn(parsedPayload, {})
+        .then((v) => {
+          parentPort.postMessage({
+            id,
+            payload: v,
+          })
+        })
+        .catch((err) => {
+          parentPort.postMessage({
+            id,
+            err,
+          })
+        })
     })
     .catch((err) => {
-      parentPort.postMessage({
-        id,
-        err,
-      })
+      console.log('error ch', err)
     })
 }
