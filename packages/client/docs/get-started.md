@@ -1,3 +1,4 @@
+<!-- based-remove-start -->
 <div align="center">
   <a href="javascript:void(0);" style="pointer-events: none;">
         <img src="../../../.docs/assets/based-logo-black.svg#gh-light-mode-only" style="width: 350px; padding-bottom: 10px;" />
@@ -5,6 +6,7 @@
 
   </a>
 </div>
+<!-- based-remove-end -->
 
 # Getting started
 
