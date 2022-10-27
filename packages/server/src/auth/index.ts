@@ -1,18 +1,18 @@
 import { deepMerge } from '@saulx/utils'
+import { join } from 'path'
 import { AuthState } from '../network/message/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
-import { AuthConfig, WebsocketClient } from '../types'
-import { authorize } from './authorize'
+import { AuthConfig, Authorize, WebsocketClient } from '../types'
 
 export class BasedAuth {
   server: BasedServer
   config: AuthConfig
-
+  authorize: Authorize
   constructor(server: BasedServer, config?: AuthConfig) {
     this.server = server
     this.config = {
-      authorize,
+      authorizePath: join(__dirname, './dummyAuth'),
     }
     this.updateConfig(config)
   }

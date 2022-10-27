@@ -10,10 +10,10 @@ import { sendHttpError } from './send'
 // import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { incomingCounter } from '../../security'
-// import simdjson from 'simdjson'
 
 let clientId = 0
 
+// TODO: re-add authorize
 const handleRequest = (
   server: BasedServer,
   method: string,

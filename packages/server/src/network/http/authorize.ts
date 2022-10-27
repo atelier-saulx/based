@@ -3,7 +3,6 @@ import { BasedFunctionRoute, HttpClient } from '../../types'
 import { sendHttpError } from './send'
 import { BasedErrorCode } from '../../error'
 
-// will go to the workers... (after payload is unpacked)
 export const authorizeRequest = (
   server: BasedServer,
   client: HttpClient,
@@ -11,8 +10,8 @@ export const authorizeRequest = (
   route: BasedFunctionRoute,
   authorized: (payload: any) => void
 ) => {
-  server.auth.config
-    .authorize(server, client, route.name, payload)
+  server.auth
+    .authorize(client.context, route.name, payload)
     .then((ok) => {
       if (!client.res) {
         return
