@@ -18,8 +18,11 @@ export class BasedAuth {
   }
 
   async authorize(
+    // eslint-disable-next-line
     client: ClientContext,
+    // eslint-disable-next-line
     name: string,
+    // eslint-disable-next-line
     payload?: any
   ): Promise<boolean> {
     return true
