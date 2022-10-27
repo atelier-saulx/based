@@ -54,8 +54,7 @@ export type AuthConfig = {
 }
 
 export type Authorize = (
-  server: BasedServer,
-  client: WebsocketClient | HttpClient,
+  client: ClientContext,
   name: string,
   payload?: any
 ) => Promise<boolean>
