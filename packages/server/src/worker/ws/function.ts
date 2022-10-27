@@ -5,10 +5,11 @@ import {
 } from '../../protocol'
 import { parentPort } from 'node:worker_threads'
 import { ClientContext } from '../../types'
-
-// add authroize
+import { authorize } from '../authorize'
+// add authorize
 
 export default (
+  name: string,
   path: string,
   id: number,
   reqId: number,
@@ -23,6 +24,49 @@ export default (
   if (payload) {
     parsedPayload = decodePayload(payload, isDeflate)
   }
+
+  authorize(context, name, payload)   .then((ok) => {
+    //     if (!ok) {
+    //       sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
+    //       return false
+    //     }
+    
+    //     server.functions
+    //       .install(name)
+    //       .then((spec) => {
+    //         if (spec && !isObservableFunctionSpec(spec)) {
+    //           spec
+    //             .function(payload, client)
+    //             .then((v) => {
+    //               client.ws?.send(
+    //                 encodeFunctionResponse(reqId, valueToBuffer(v)),
+    //                 true,
+    //                 false
+    //               )
+    //             })
+    //             .catch((err) => {
+    //               sendError(server, client, BasedErrorCode.FunctionError, {
+    //                 route,
+    //                 requestId: reqId,
+    //                 err,
+    //               })
+    //             })
+    //         } else {
+    //           sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+    //         }
+    //       })
+    //       .catch(() => {
+    //         sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+    //       })
+    //   })
+    //   .catch((err) => {
+    //     sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+    //       route,
+    //       requestId: reqId,
+    //       err,
+    //     })
+    //     return false
+    //   })
 
   fn(parsedPayload, {})
     .then((v) => {

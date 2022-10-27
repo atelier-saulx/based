@@ -134,6 +134,12 @@ export class BasedFunctions {
             activeObservables: 0,
             activeFunctions: 0,
           })
+          // allways install authorize
+          worker.postMessage({
+            type: 5,
+            name: 'authorize', // default name for this...
+            path: this.server.auth.config.authorizePath,
+          })
           worker.on('message', (data) => {
             // type 0 is just install fn
 

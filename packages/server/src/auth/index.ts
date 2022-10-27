@@ -18,6 +18,15 @@ export class BasedAuth {
   }
 
   updateConfig(config: AuthConfig) {
+    if (config.authorizePath !== this.config.authorizePath) {
+      for (const worker of this.server.functions.workers) {
+        worker.worker.postMessage({
+          type: 5,
+          name: 'authorize', // default name for this...
+          path: this.config.authorizePath,
+        })
+      }
+    }
     deepMerge(this.config, config)
   }
 

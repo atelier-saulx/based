@@ -34,6 +34,7 @@ export const parsePayload = (
 }
 
 export default (
+  name: string,
   type: number,
   path: string,
   id: number,
