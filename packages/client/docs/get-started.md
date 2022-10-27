@@ -59,4 +59,4 @@ await client.set({
 })
 ```
 
-> [Click here to read more about the Javascript Based SDK](../README.md)
+Click [here](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md) to read more about the Javascript Based SDK.
