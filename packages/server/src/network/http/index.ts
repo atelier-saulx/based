@@ -7,7 +7,7 @@ import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { sendHttpError } from './send'
-// import { authorizeRequest } from './authorize'
+import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { incomingCounter } from '../../security'
 
@@ -23,18 +23,9 @@ const handleRequest = (
 ) => {
   // send shared array buffer
   if (method === 'post') {
-    readBody(
-      server,
-      client,
-      ready,
-      // (payload) => authorizeRequest(server, client, payload, route, authorized),
-      route
-    )
+    readBody(server, client, ready, route)
   } else {
     ready()
-    // parse query in the actual worker
-    // const payload = parseQuery(client.context.query)
-    // authorizeRequest(server, client, payload, route, authorized)
   }
 }
 
@@ -140,9 +131,11 @@ export const httpHandler = (
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-    handleRequest(server, method, client, route, (payload) =>
-      httpGet(route, payload, client, server, checksum)
-    )
+    handleRequest(server, method, client, route, (payload) => {
+      authorizeRequest(server, client, payload, route, () => {
+        httpGet(route, payload, client, server, checksum)
+      })
+    })
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
