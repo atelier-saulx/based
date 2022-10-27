@@ -73,8 +73,8 @@ export const getMessage = (
     isDeflate
   )
 
-  server.auth.config
-    .authorize(server, client, name, payload)
+  server.auth
+    .authorize(client.ws, name, payload)
     .then((ok) => {
       if (!client.ws) {
         return false

@@ -6,6 +6,8 @@ import {
 import { parentPort } from 'node:worker_threads'
 import { ClientContext } from '../../types'
 
+// add authroize
+
 export default (
   path: string,
   id: number,

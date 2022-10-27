@@ -84,19 +84,17 @@ export const subscribeMessage = (
     isDeflate
   )
 
-  server.auth.config
-    .authorize(server, client, name, payload)
+  server.auth
+    .authorize(client.ws, name, payload)
     .then((ok) => {
       if (!client.ws) {
         return
       }
-
       if (!ok) {
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
         sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
         return false
       }
-
       enableSubscribe(server, client, id, checksum, name, payload, route)
     })
     .catch((err) => {

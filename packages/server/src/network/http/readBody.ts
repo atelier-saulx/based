@@ -63,12 +63,16 @@ export const readBody = (
           }
         }
       })
+
+      // TODO: NEED TO READ CONTENT LEN OF UNCOMPRESSED....
       const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
       const buf = new Uint8Array(data)
       // let index = 0
 
       uncompressStream.on('data', (c) => {
-        console.log('bytes written???', uncompressStream.bytesWritten)
+        console.info('bytes written???', uncompressStream.bytesWritten, c)
+
+        // FIX LATER
 
         // const len = c.byteLength
         // for (let i = 0; i < len; i++) {
