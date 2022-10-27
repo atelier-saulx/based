@@ -26,7 +26,11 @@ export default (
 
   authorize(context, name, payload)
     .then((ok) => {
-      if (ok) {
+      if (!ok) {
+        parentPort.postMessage({
+          id,
+          err: new Error('AITH WRONG'),
+        })
         return false
       }
 
@@ -45,6 +49,9 @@ export default (
         })
     })
     .catch((err) => {
-      console.error('WRONGDX', err)
+      parentPort.postMessage({
+        id,
+        err,
+      })
     })
 }

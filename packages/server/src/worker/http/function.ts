@@ -53,6 +53,11 @@ export default (
     .then((ok) => {
       if (!ok) {
         console.error('autn wrong')
+        // err will become based error
+        parentPort.postMessage({
+          id,
+          err: new Error('AITH WRONG'),
+        })
         return
       }
       fn(parsedPayload, {})
@@ -70,6 +75,9 @@ export default (
         })
     })
     .catch((err) => {
-      console.error('error ch', err)
+      parentPort.postMessage({
+        id,
+        err,
+      })
     })
 }
