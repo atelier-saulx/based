@@ -11,10 +11,9 @@ export const authorize: Authorize = async (
   payload?: any
 ) => {
   if (!state.authorize) {
-    console.error('No authorize installed in worker...', threadId)
-    return false
+    console.warn('No authorize installed in worker...', threadId)
+    return true
   }
-
   // needs callstack...
   return state.authorize(client, name, payload)
 }
