@@ -1,8 +1,16 @@
 .PHONY: clean
 
-WEBSOCKETPPDIR=include/websocketpp
-ZLIBDIR=include/zlib
-JSONDIR=include
+INCLUDE_DIRS = \
+  include/websocketpp \
+  include/zlib \
+  include/nlohmann-json \
+  include/apply-patch \
+
+IDIR = $(patsubst %,-I%,$(INCLUDE_DIRS))
+
+LDFLAGS = 
+LDLIBS = -lz -lcurl
+
 CXX = clang++
 
 ODIR=obj
@@ -14,9 +22,17 @@ SRCS = $(filter-out $(SRCDIR)/main.cpp, $(_SRCS))
 _OBJ = $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(SRCS:.c=.o))
 OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
 
-CXXFLAGS +=-I$(WEBSOCKETPPDIR) -I$(JSONDIR) -I$(ZLIBDIR) -I/usr/local/opt/openssl@3/include -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
+CXXFLAGS += $(IDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
 all: main
+
+.PHONY: tls
+tls: INCLUDE_DIRS += /usr/local/opt/openssl@3/include
+tls: CXXFLAGS += -DBASED_TLS
+tls: LDLIBS += -lssl -lcrypto
+tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
+tls: main
+
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
@@ -24,11 +40,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 
 main: $(OBJ) $(ODIR)/main.o
 	@echo $(SRCS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) -lz -lcurl
-
-tls:
-	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
-	$(CXX) $(CXXFLAGS) -DBASED_TLS -o main src/main.cpp -L/usr/local/opt/openssl@3/lib -lz -lssl -lcrypto -lcurl
+	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -r $(ODIR)

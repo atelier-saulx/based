@@ -553,10 +553,6 @@ void on_message(std::string message) {
     int32_t len = Utility::get_payload_len(header);
     int32_t is_deflate = Utility::get_payload_is_deflate(header);
 
-    // std::cout << "type = " << type << std::endl;
-    // std::cout << "len = " << len << std::endl;
-    // std::cout << "is_deflate = " << is_deflate << std::endl;
-
     switch (type) {
         case IncomingType::FUNCTION_DATA: {
             int id = Utility::read_bytes_from_string(message, 4, 3);
@@ -589,8 +585,6 @@ void on_message(std::string message) {
                 payload = is_deflate ? Utility::inflate_string(message.substr(start, end))
                                      : message.substr(start, end);
             }
-
-            std::cout << "SUB updating cache for id = " << obs_id << std::endl;
 
             status.m_cache[obs_id].first = payload;
             status.m_cache[obs_id].second = checksum;
@@ -644,8 +638,6 @@ void on_message(std::string message) {
                 json res = Diff::apply_patch(value, patch_json);
                 patched_payload = res.dump();
 
-                std::cout << "SUB DIFF updating cache for id = " << obs_id << std::endl;
-
                 status.m_cache[obs_id].first = patched_payload;
                 status.m_cache[obs_id].second = checksum;
             }
@@ -668,7 +660,6 @@ void on_message(std::string message) {
 
         } break;
         case IncomingType::GET_DATA: {
-            std::cout << "this was a GETDATA type" << std::endl;
             uint64_t obs_id = Utility::read_bytes_from_string(message, 4, 8);
             if (status.m_get_subs.find(obs_id) != status.m_get_subs.end() &&
                 status.m_cache.find(obs_id) != status.m_cache.end()) {
