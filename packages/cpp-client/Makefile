@@ -17,14 +17,19 @@ ODIR=obj
 SRCDIR=src
 
 
-_SRCS = $(wildcard $(SRCDIR)/*.cpp)
-SRCS = $(filter-out $(SRCDIR)/main.cpp, $(_SRCS))
-_OBJ = $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(SRCS:.c=.o))
-OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
+# _SRCS = $(wildcard $(SRCDIR)/*.cpp)
+# SRCS = $(filter-out $(SRCDIR)/main.cpp, $(_SRCS))
+# _OBJ = $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(SRCS:.c=.o))
+# OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
+
+HEADERS = $(wildcard $(SRCDIR)/*.hpp)
+OBJS = client.o \
+  connection.o \
+	utility.o
 
 CXXFLAGS += $(IDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
-all: main
+all: basedclient.so
 
 .PHONY: tls
 tls: INCLUDE_DIRS += /usr/local/opt/openssl@3/include
@@ -38,9 +43,12 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
 	$(CXX) -MMD $(CXXFLAGS) -c -o $@ $<
 
-main: $(OBJ) $(ODIR)/main.o
+main: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
-	$(CXX) -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) src/main.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+
+basedclient.so: $(OBJ)
+	$(CXX) -o $@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS)
 
 clean:
 	rm -r $(ODIR)

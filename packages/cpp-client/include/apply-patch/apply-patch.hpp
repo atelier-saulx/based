@@ -18,9 +18,9 @@ bool vec_contains(std::vector<T> vec, T item) {
     else return false;
 };
 
-json apply_patch(json, json);
+inline json apply_patch(json, json);
 
-json apply_array_patch(json& value, json patch) {
+inline json apply_array_patch(json& value, json patch) {
     if (!value.is_array()) {
         return -1;
     }
@@ -89,7 +89,7 @@ json apply_array_patch(json& value, json patch) {
     return new_array;
 }
 
-int nested_apply_patch(json& value, std::string key, json patch) {
+inline int nested_apply_patch(json& value, std::string key, json patch) {
     if (patch.is_array()) {
         json type = patch.at(0);
         if (type == 0) {
@@ -115,7 +115,7 @@ int nested_apply_patch(json& value, std::string key, json patch) {
     }
     return 0;
 }
-json apply_patch(json value, json patch) {
+inline json apply_patch(json value, json patch) {
     if (patch.is_array()) {
         json type = patch.at(0);
         if (type == 0) {
