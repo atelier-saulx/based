@@ -3,3 +3,5 @@ main
 obj/*
 
 *.o
+
+linked

@@ -1,12 +1,12 @@
 .PHONY: clean
 
-INCLUDE_DIRS = \
-  include/websocketpp \
-  include/zlib \
-  include/nlohmann-json \
-  include/apply-patch \
+LIB_DIRS = \
+  lib/websocketpp \
+  lib/zlib \
+  lib/nlohmann-json \
+  lib/apply-patch \
 
-IDIR = $(patsubst %,-I%,$(INCLUDE_DIRS))
+LDIR = $(patsubst %,-I%,$(LIB_DIRS))
 
 LDFLAGS = 
 LDLIBS = -lz -lcurl
@@ -15,6 +15,7 @@ CXX = clang++
 
 ODIR=obj
 SRCDIR=src
+DISTDIR=distribute
 
 
 # _SRCS = $(wildcard $(SRCDIR)/*.cpp)
@@ -23,21 +24,20 @@ SRCDIR=src
 # OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
 
 HEADERS = $(wildcard $(SRCDIR)/*.hpp)
-OBJS = client.o \
+OBJS = basedclient.o \
   connection.o \
 	utility.o
 
-CXXFLAGS += $(IDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
+CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
-all: basedclient.so
+all: libbasedclient.dylib
 
 .PHONY: tls
-tls: INCLUDE_DIRS += /usr/local/opt/openssl@3/include
+tls: LIB_DIRS += /usr/local/opt/openssl@3/include
 tls: CXXFLAGS += -DBASED_TLS
 tls: LDLIBS += -lssl -lcrypto
 tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
-tls: main
-
+tls: libbasedclient.dylib
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
@@ -47,9 +47,15 @@ main: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
 	$(CXX) src/main.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
-basedclient.so: $(OBJ)
-	$(CXX) -o $@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS)
+libbasedclient.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
+	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
+	cp -rf $(SRCDIR)/basedclient.hpp $(DISTDIR)/basedclient.hpp
+	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
+
+linked:
+	$(CXX) $(SRCDIR)/main.cpp -o $@ -lbasedclient
 
 clean:
 	rm -r $(ODIR)
+	rm -r $(DISTDIR)
 	rm main
