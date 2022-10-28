@@ -13,7 +13,7 @@
 The first step in getting started with using Based is creating a new project. To do so, after logging in, click the `+ New Project` button and type in a new project name.  
 Each project can have multiple environments (e.g. development and production).
 
-Go to the based [dashboard](https://based-website.vercel.app/dashboard)
+Go to the based [dashboard](https://based.io/dashboard)
 
 <!-- create-new-project video -->
 
@@ -59,4 +59,4 @@ await client.set({
 })
 ```
 
-Click [here](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md) to read more about the Javascript Based SDK.
+Click [here](../README.md) to read more about the Javascript Based SDK.
