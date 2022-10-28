@@ -3,11 +3,13 @@ import { join } from 'path'
 import { AuthState } from '../network/message/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
-import { AuthConfig, ClientContext, WebsocketClient } from '../types'
+import { AuthConfig, Authorize, WebsocketClient } from '../types'
+import dummyAuth from './dummyAuth'
 
 export class BasedAuth {
   server: BasedServer
   config: AuthConfig
+  authorize: Authorize = dummyAuth
 
   constructor(server: BasedServer, config?: AuthConfig) {
     this.server = server
@@ -15,17 +17,6 @@ export class BasedAuth {
       authorizePath: join(__dirname, './dummyAuth'),
     }
     this.updateConfig(config)
-  }
-
-  async authorize(
-    // eslint-disable-next-line
-    client: ClientContext,
-    // eslint-disable-next-line
-    name: string,
-    // eslint-disable-next-line
-    payload?: any
-  ): Promise<boolean> {
-    return true
   }
 
   updateConfig(config: AuthConfig) {
