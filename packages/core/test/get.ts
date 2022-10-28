@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer, { isHttpClient } from '@based/server'
+import createServer from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 import { join } from 'path'
@@ -52,7 +52,7 @@ const setup = async () => {
   return { coreClient, server }
 }
 
-test.serial.only('get', async (t) => {
+test.serial('get', async (t) => {
   const { coreClient, server } = await setup()
 
   t.teardown(() => {
@@ -97,22 +97,11 @@ test.serial.only('get', async (t) => {
 test.serial('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
-  const token = 'mock_token'
-
   server.auth.updateConfig({
-    authorize: async (_server, client) => {
-      if (isHttpClient(client)) {
-        if (client.context) {
-          return client.context.authState === token
-        }
-      } else {
-        if (client.ws) {
-          return client.ws.authState === token
-        }
-      }
-      return false
-    },
+    authorizePath: join(__dirname, './functions/auth.js'),
   })
+
+  console.info('mep mep --> ', coreClient)
 
   t.teardown(() => {
     coreClient.disconnect()
@@ -125,13 +114,11 @@ test.serial('authorize get', async (t) => {
     },
   })
 
-  // coreClient.once('connect', (isConnected) => {
-  //   t.log('connect', isConnected)
-  // })
+  console.info('GURDO?')
 
   const error: BasedError = await t.throwsAsync(coreClient.get('counter'))
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
 
-  await coreClient.auth(token)
+  await coreClient.auth('mock_token')
   await t.notThrowsAsync(coreClient.get('counter'))
 })

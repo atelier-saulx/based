@@ -3,6 +3,7 @@ import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
 import httpFunction from './http/function'
 import { fnPathMap, fnInstallListeners } from './functions'
+import { state } from './authorize'
 
 console.info('Start worker', threadId)
 
@@ -21,12 +22,19 @@ parentPort.on('message', (d) => {
     // maybe if you install like this it gets marked for a bit longer
     // nested functions have to be kept in mem a bit longer...
     const x = fnInstallListeners.get(d.name)
+    const prevPath = fnPathMap.get(d.name)
+    if (prevPath) {
+      delete require.cache[require.resolve(prevPath)]
+    }
     fnPathMap.set(d.name, d.path)
     if (x) {
       const installedFn = require(d.path)
       x.forEach((r) => {
         r(installedFn)
       })
+    }
+    if (d.name === 'authorize') {
+      state.authorize = require(d.path)
     }
   } else if (d.type === 7) {
     const x = fnInstallListeners.get(d.name)
@@ -58,7 +66,7 @@ parentPort.on('message', (d) => {
       delete require.cache[require.resolve(prevPath)]
     }
     console.info('Http function...')
-    httpFunction(d.type, d.path, d.id, d.context, d.payload)
+    httpFunction(d.name, d.type, d.path, d.id, d.context, d.payload)
   } else if (d.type === 0) {
     const prevPath = fnPathMap.get(d.name)
     if (!prevPath) {
@@ -67,6 +75,7 @@ parentPort.on('message', (d) => {
       delete require.cache[require.resolve(prevPath)]
     }
     wsFunction(
+      d.name,
       d.path,
       d.id,
       d.context.reqId,
