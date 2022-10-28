@@ -1,5 +1,6 @@
 # @based/client
 
+<!-- based-docs-remove-start -->
 ### Index
 
 - [Modify data](#modify-data)
@@ -10,6 +11,7 @@
 - [Auth System](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth.md)
 
 ---
+<!-- based-docs-remove-end -->
 
 This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
 
@@ -349,6 +351,7 @@ Based analytics can provide more specific data by using the `$geo` and `$history
 ```
 <!-- prettier-ignore-end -->
 
+<!-- based-docs-remove-start -->
 ---
 
 ## License
@@ -356,3 +359,4 @@ Based analytics can provide more specific data by using the `$geo` and `$history
 Licensed under the MIT License.
 
 See [LICENSE](./LICENSE) for more information.
+<!-- based-docs-remove-end -->
