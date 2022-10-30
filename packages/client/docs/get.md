@@ -6,7 +6,7 @@ The `based.get()` method allows the user to retrieve data from the database. The
 
 The method takes as argument a single object formatted using the based-db query language, and returns an object containing the required data.
 
-> :exclamation: **_Note:_** While the `get()` method and `observe()` method share the same argument syntax, when using `get()` you will not subscribe to the query, thus you will not be notified when there's a change in the node.
+> **_Note:_** While the `get()` method and `observe()` method share the same argument syntax, when using `get()` you will not subscribe to the query, thus you will not be notified when there's a change in the node.
 
 **Based-db** is a graph database, meaning that nodes are connected by reference in a tree-like structure. When executing a `get` operation, you can either extract data from a single node, or start from a single node and execute a _traversal_ of the tree, collecting data along the way. The starting point and direction of this traversal can be specified in the query.
 
@@ -284,7 +284,7 @@ const result = await client.get({
 })
 ```
 
-#### `$type`: _string | [string, string, ...]_
+#### `$type`: _string | \[string, string, ...\]_
 
 Limits inheritance to a specific node type or array of types in the ancestry. It goes in order through the array.
 
@@ -301,7 +301,7 @@ const result = await client.get({
 })
 ```
 
-#### `$item`: _string | [string, string, ...]_
+#### `$item`: _string | \[string, string, ...\]_
 
 Once the inheritance traversal has found a hit, you can select which fields to inherit from that node. It's faster than doing multiple inherits since it's a single operation.
 
@@ -338,7 +338,7 @@ Once the inheritance traversal has found a hit, you can select which fields to i
 // }
 ```
 
-#### `$required`: _string | [string, string, ...]_
+#### `$required`: _string | \[string, string, ...\]_
 
 Used in conjucntion with `$item`, it requires one or more fields to be set in the ancestor.
 
@@ -389,7 +389,7 @@ const data = await client.get({
 
 ```
 
-### `$field`: _string | [string, string, ...]_
+### `$field`: _string | \[string, string, ...\]_
 
 The `$field` operator is used to create a field that fetches its results from another field.
 
@@ -461,7 +461,7 @@ const data = await client.get({
 // Will return a single random child of root, the first one hit.
 ```
 
-### `$traverse`: _string | [id1, id2, ...] | object_
+### `$traverse`: _string | \[id1, id2, ...\] | object_
 
 - Property of `$find`.
 - Allowed values: any field of type `references`, an array of IDs, an object
