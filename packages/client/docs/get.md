@@ -178,7 +178,7 @@ const result = await get({
     - [`$list`](#list-boolean--object)
   - [`$aggregate`](#aggregate-object)
 
-## `$id`: _string | [string, string, ...]_
+## `$id`: _string | \[string, string, ...\]_
 
 ID of the node to get. If it is an array, the first existing record is used for the query.
 If omited, the _root_ object ID is assumed. Can only be used at the top level of a query object.
@@ -189,7 +189,7 @@ const result = await get({
 })
 ```
 
-## `$alias`: _string | [string, string, ...]_
+## `$alias`: _string | \[string, string, ...\]_
 
 Alias of the object to get. If it is an array, the first existing record is used for the query.
 An ID can also be passed as `$alias`. If the specified alias does not exist, the value is tried as an ID lookup also before moving to the next entry if an array is specified.
