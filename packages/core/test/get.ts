@@ -94,14 +94,12 @@ test.serial('get', async (t) => {
   t.is(Object.keys(server.functions.observables).length, 0)
 })
 
-test.serial('authorize get', async (t) => {
+test.serial.only('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
     authorizePath: join(__dirname, './functions/auth.js'),
   })
-
-  console.info('mep mep --> ', coreClient)
 
   t.teardown(() => {
     coreClient.disconnect()
@@ -113,8 +111,6 @@ test.serial('authorize get', async (t) => {
       return 'ws://localhost:9910'
     },
   })
-
-  console.info('GURDO?')
 
   const error: BasedError = await t.throwsAsync(coreClient.get('counter'))
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)

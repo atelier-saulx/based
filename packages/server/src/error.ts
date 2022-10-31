@@ -33,6 +33,8 @@ type FunctionErrorProps =
       route: BasedFunctionRoute
     }
 
+// need to add reqId & observableId as well.. else you cannot handle them at all
+
 export type ErrorPayload = {
   [BasedErrorCode.NoBinaryProtocol]: any
   [BasedErrorCode.FunctionError]: FunctionErrorProps
