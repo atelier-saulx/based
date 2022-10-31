@@ -17,8 +17,6 @@ struct Observable;
 /////////////////
 
 class BasedClient {
-    BasedClient();
-
    private:
     WsConnection m_con;
     int32_t m_request_id;
@@ -101,6 +99,8 @@ class BasedClient {
         m_get_sub_callbacks;
 
    public:
+    BasedClient();
+
     /**
      * @brief Function to retrieve the url of a specific service.
      *

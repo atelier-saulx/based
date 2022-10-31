@@ -45,7 +45,7 @@ $(ODIR)/%.o: $(SRCDIR)/%.cpp
 
 main: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
-	$(CXX) src/main.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) example/main.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 libbasedclient.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
@@ -53,7 +53,7 @@ libbasedclient.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
 linked:
-	$(CXX) $(SRCDIR)/main.cpp -o $@ -lbasedclient
+	$(CXX) example/main.cpp -o $@ -lbasedclient
 
 clean:
 	rm -r $(ODIR)
