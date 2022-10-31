@@ -26,7 +26,8 @@ DISTDIR=distribute
 HEADERS = $(wildcard $(SRCDIR)/*.hpp)
 OBJS = basedclient.o \
   connection.o \
-	utility.o
+	utility.o \
+	based.o
 
 CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
