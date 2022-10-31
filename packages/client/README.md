@@ -1,4 +1,4 @@
-# @based/client
+# Based Client
 
 <!-- based-docs-remove-start -->
 ### Index
