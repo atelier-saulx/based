@@ -12,7 +12,9 @@ int main(int argc, char** argv) {
     //     return -1;
     // }
 
-    _connect_to_url("ws://localhost:9910");
+    BasedClient client;
+
+    client._connect_to_url("ws://localhost:9910");
     bool done = false;
     // int i = 0;
     std::string cmd;
@@ -40,25 +42,26 @@ int main(int argc, char** argv) {
 
         if (cmd.substr(0, 1) == "r") {
             int rem_id = atoi(cmd.substr(2).c_str());
-            unobserve(rem_id);
+            client.unobserve(rem_id);
             obs.remove(rem_id);
             continue;
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = observe("chill", "", [](std::string data, int checksum, std::string error) {
-                if (data.length() > 0) {
-                    std::cout << "DATA = " << data << std::endl;
-                }
-                if (error.length() > 0) {
-                    std::cout << "ERROR = " << data << std::endl;
-                }
-            });
+            int id =
+                client.observe("chill", "", [](std::string data, int checksum, std::string error) {
+                    if (data.length() > 0) {
+                        std::cout << "DATA = " << data << std::endl;
+                    }
+                    if (error.length() > 0) {
+                        std::cout << "ERROR = " << data << std::endl;
+                    }
+                });
             obs.push_back(id);
         }
 
         if (cmd.substr(0, 1) == "g") {
-            get("chill", "", [](std::string data, std::string error) {
+            client.get("chill", "", [](std::string data, std::string error) {
                 if (data.length() > 0) {
                     std::cout << "GET DATA = " << data << std::endl;
                 }
@@ -69,7 +72,7 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "f") {
-            function("chill", "", [](std::string data, std::string error) {
+            client.function("chill", "", [](std::string data, std::string error) {
                 if (data.length() > 0) {
                     std::cout << "FUNCTION DATA = " << data << std::endl;
                 }
