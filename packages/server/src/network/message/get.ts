@@ -76,8 +76,6 @@ export const getMessage = (
   server.auth
     .authorize(client.ws, name, payload)
     .then((ok) => {
-      console.info(name, ok)
-
       if (!client.ws) {
         return false
       }
