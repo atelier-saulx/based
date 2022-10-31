@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#include "basedclient.hpp"
+#include "../src/basedclient.hpp"
 
 int main(int argc, char** argv) {
     // if (argc < 2) {
