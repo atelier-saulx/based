@@ -31,32 +31,32 @@ OBJS = basedclient.o \
 
 CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
-all: libbasedclient.dylib
+all: libbased.dylib
 
 .PHONY: tls
 tls: LIB_DIRS += /usr/local/opt/openssl@3/include
 tls: CXXFLAGS += -DBASED_TLS
 tls: LDLIBS += -lssl -lcrypto
 tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
-tls: libbasedclient.dylib
+tls: libbased.dylib
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
 	$(CXX) -MMD $(CXXFLAGS) -c -o $@ $<
 
-main: $(patsubst %,$(ODIR)/%,$(OBJS))
+example: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
-	$(CXX) example/main.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) example/example.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
-libbasedclient.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
+libbased.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
-	cp -rf $(SRCDIR)/basedclient.hpp $(DISTDIR)/basedclient.hpp
+	cp -rf $(SRCDIR)/based.hpp $(DISTDIR)/based.hpp
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
-linked:
-	$(CXX) example/main.cpp -o $@ -lbasedclient
+linked-example:
+	$(CXX) example/example.cpp -o $@ -Wall -std=c++0x -stdlib=libc++ -L./$(DISTDIR) -lbased
 
 clean:
 	rm -r $(ODIR)
 	rm -r $(DISTDIR)
-	rm main
+	rm example

@@ -1,7 +1,7 @@
-main
+example
 
 obj/*
 
 *.o
 
-linked
+linked-example
