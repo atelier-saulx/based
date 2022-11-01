@@ -12,19 +12,19 @@ Based Query:
 ```javascript
 {
   $id: 'root',
-	descendants: {
-		$all: true,
-		$list: {
-			$find: {
-				$sort: { $field: 'createdAt', $order: 'asc' },
-			},
-			$filter: {
-				$field: 'type',
-				$operator: '=',
-				$value: 'todo'
-			}
-		}:
-	}
+  descendants: {
+    $all: true,
+    $list: {
+      $find: {
+        $sort: { $field: 'createdAt', $order: 'asc' },
+      },
+      $filter: {
+        $field: 'type',
+        $operator: '=',
+        $value: 'todo'
+      }
+    }
+  }
 }
 ```
 
