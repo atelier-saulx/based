@@ -29,13 +29,13 @@ extern "C" void Based__delete_client(based_id id) {
 }
 
 extern "C" std::string Based__get_service(based_id client_id,
-                               std::string cluster,
-                               std::string org,
-                               std::string project,
-                               std::string env,
-                               std::string name,
-                               std::string key,
-                               bool optional_key) {
+                                          std::string cluster,
+                                          std::string org,
+                                          std::string project,
+                                          std::string env,
+                                          std::string name,
+                                          std::string key,
+                                          bool optional_key) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return "";
@@ -54,13 +54,13 @@ extern "C" void Based__connect_to_url(based_id client_id, std::string url) {
 }
 
 extern "C" void Based__conect(based_id client_id,
-                   std::string cluster,
-                   std::string org,
-                   std::string project,
-                   std::string env,
-                   std::string name,
-                   std::string key,
-                   bool optional_key) {
+                              std::string cluster,
+                              std::string org,
+                              std::string project,
+                              std::string env,
+                              std::string name,
+                              std::string key,
+                              bool optional_key) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -95,9 +95,9 @@ extern "C" int Based__observe(
 }
 
 extern "C" void Based__get(based_id client_id,
-                std::string name,
-                std::string payload,
-                std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
+                           std::string name,
+                           std::string payload,
+                           std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -115,10 +115,11 @@ extern "C" void Based__unobserve(based_id client_id, int sub_id) {
     cl->unobserve(sub_id);
 }
 
-extern "C" void Based__function(based_id client_id,
-                     std::string name,
-                     std::string payload,
-                     std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
+extern "C" void Based__function(
+    based_id client_id,
+    std::string name,
+    std::string payload,
+    std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -127,7 +128,9 @@ extern "C" void Based__function(based_id client_id,
     cl->function(name, payload, cb);
 }
 
-extern "C" void Based__auth(based_id client_id, std::string state, std::function<void(std::string)> cb) {
+extern "C" void Based__auth(based_id client_id,
+                            std::string state,
+                            std::function<void(std::string)> cb) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;

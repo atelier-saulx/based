@@ -12,11 +12,13 @@ int main(int argc, char** argv) {
     //     return -1;
     // }
 
-    int client_id = Based__new_client();
+    int client1 = Based__new_client();
+    int client2 = Based__new_client();
 
-    Based__connect_to_url(client_id, "ws://localhost:9910");
+    Based__connect_to_url(client1, "ws://localhost:9910");
+    Based__connect_to_url(client2, "ws://localhost:9910");
     bool done = false;
-    // int i = 0;
+    int i = 0;
     std::string cmd;
 
     std::list<int> obs;
@@ -42,26 +44,40 @@ int main(int argc, char** argv) {
 
         if (cmd.substr(0, 1) == "r") {
             int rem_id = atoi(cmd.substr(2).c_str());
-            Based__unobserve(client_id, rem_id);
+            Based__unobserve(client1, rem_id);
             obs.remove(rem_id);
             continue;
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = Based__observe(client_id, "chill", "",
-                                    [](std::string data, int checksum, std::string error) {
-                                        if (data.length() > 0) {
-                                            std::cout << "DATA = " << data << std::endl;
-                                        }
-                                        if (error.length() > 0) {
-                                            std::cout << "ERROR = " << data << std::endl;
-                                        }
-                                    });
-            obs.push_back(id);
+            i++;
+            if (i % 2) {
+                int id = Based__observe(client1, "chill", "",
+                                        [](std::string data, int checksum, std::string error) {
+                                            if (data.length() > 0) {
+                                                std::cout << "DATA = " << data << std::endl;
+                                            }
+                                            if (error.length() > 0) {
+                                                std::cout << "ERROR = " << data << std::endl;
+                                            }
+                                        });
+                obs.push_back(id);
+            } else {
+                int id = Based__observe(client2, "chill", "",
+                                        [](std::string data, int checksum, std::string error) {
+                                            if (data.length() > 0) {
+                                                std::cout << "DATA CLIENT 2= " << data << std::endl;
+                                            }
+                                            if (error.length() > 0) {
+                                                std::cout << "ERROR = " << data << std::endl;
+                                            }
+                                        });
+                obs.push_back(id);
+            }
         }
 
         if (cmd.substr(0, 1) == "g") {
-            Based__get(client_id, "chill", "", [](std::string data, std::string error) {
+            Based__get(client1, "chill", "", [](std::string data, std::string error) {
                 if (data.length() > 0) {
                     std::cout << "GET DATA = " << data << std::endl;
                 }
@@ -72,7 +88,7 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "f") {
-            Based__function(client_id, "chill", "", [](std::string data, std::string error) {
+            Based__function(client1, "chill", "", [](std::string data, std::string error) {
                 if (data.length() > 0) {
                     std::cout << "FUNCTION DATA = " << data << std::endl;
                 }
@@ -110,5 +126,8 @@ int main(int argc, char** argv) {
         //     i++;
         // }
     }
+
+    Based__delete_client(client1);
+    Based__delete_client(client2);
     // disconnect();
 }

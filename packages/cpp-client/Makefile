@@ -53,10 +53,11 @@ libbased.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
 	cp -rf $(SRCDIR)/based.hpp $(DISTDIR)/based.hpp
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
-linked-example:
+linked-example: libbased.dylib
 	$(CXX) example/example.cpp -o $@ -Wall -std=c++0x -stdlib=libc++ -L./$(DISTDIR) -lbased
 
 clean:
 	rm -r $(ODIR)
 	rm -r $(DISTDIR)
 	rm example
+	rm linked-example
