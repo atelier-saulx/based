@@ -6,7 +6,7 @@
 std::map<based_id, BasedClient*> clients;
 based_id idx = 0;
 
-based_id Based__new_client() {
+extern "C" based_id Based__new_client() {
     BasedClient* cl = new BasedClient;
     idx++;
 
@@ -19,7 +19,7 @@ based_id Based__new_client() {
     return idx;
 }
 
-void Based__delete_client(based_id id) {
+extern "C" void Based__delete_client(based_id id) {
     if (clients.find(id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -28,7 +28,7 @@ void Based__delete_client(based_id id) {
     clients.erase(id);
 }
 
-std::string Based__get_service(based_id client_id,
+extern "C" std::string Based__get_service(based_id client_id,
                                std::string cluster,
                                std::string org,
                                std::string project,
@@ -44,7 +44,7 @@ std::string Based__get_service(based_id client_id,
     return cl->get_service(cluster, org, project, env, name, key, optional_key);
 }
 
-void Based__connect_to_url(based_id client_id, std::string url) {
+extern "C" void Based__connect_to_url(based_id client_id, std::string url) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -53,7 +53,7 @@ void Based__connect_to_url(based_id client_id, std::string url) {
     cl->_connect_to_url(url);
 }
 
-void Based__conect(based_id client_id,
+extern "C" void Based__conect(based_id client_id,
                    std::string cluster,
                    std::string org,
                    std::string project,
@@ -69,7 +69,7 @@ void Based__conect(based_id client_id,
     cl->connect(cluster, org, project, env, name, key, optional_key);
 }
 
-void Based__disconnect(based_id client_id) {
+extern "C" void Based__disconnect(based_id client_id) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -78,7 +78,7 @@ void Based__disconnect(based_id client_id) {
     cl->disconnect();
 }
 
-int Based__observe(
+extern "C" int Based__observe(
     based_id client_id,
     std::string name,
     std::string payload,
@@ -94,7 +94,7 @@ int Based__observe(
     return cl->observe(name, payload, cb);
 }
 
-void Based__get(based_id client_id,
+extern "C" void Based__get(based_id client_id,
                 std::string name,
                 std::string payload,
                 std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
@@ -106,7 +106,7 @@ void Based__get(based_id client_id,
     cl->get(name, payload, cb);
 }
 
-void Based__unobserve(based_id client_id, int sub_id) {
+extern "C" void Based__unobserve(based_id client_id, int sub_id) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
@@ -115,7 +115,7 @@ void Based__unobserve(based_id client_id, int sub_id) {
     cl->unobserve(sub_id);
 }
 
-void Based__function(based_id client_id,
+extern "C" void Based__function(based_id client_id,
                      std::string name,
                      std::string payload,
                      std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
@@ -127,7 +127,7 @@ void Based__function(based_id client_id,
     cl->function(name, payload, cb);
 }
 
-void Based__auth(based_id client_id, std::string state, std::function<void(std::string)> cb) {
+extern "C" void Based__auth(based_id client_id, std::string state, std::function<void(std::string)> cb) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return;
