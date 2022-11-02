@@ -141,13 +141,12 @@ void BasedClient::disconnect() {
     m_con.disconnect();
 }
 
-int BasedClient::observe(
-    std::string name,
-    std::string payload,
-    /**
-     * Callback that the observable will trigger.
-     */
-    std::function<void(std::string /*data*/, uint64_t /*checksum*/, std::string /*error*/)> cb) {
+int BasedClient::observe(std::string name,
+                         std::string payload,
+                         /**
+                          * Callback that the observable will trigger.
+                          */
+                         void (*cb)(const char*, uint64_t, const char*)) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -213,9 +212,7 @@ int BasedClient::observe(
     return sub_id;
 }
 
-void BasedClient::get(std::string name,
-                      std::string payload,
-                      std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
+void BasedClient::get(std::string name, std::string payload, void (*cb)(const char*, const char*)) {
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = m_sub_id++;
 
@@ -272,7 +269,7 @@ void BasedClient::unobserve(int sub_id) {
 
 void BasedClient::function(std::string name,
                            std::string payload,
-                           std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
+                           void (*cb)(const char*, const char*)) {
     m_request_id++;
     if (m_request_id > 16777215) {
         m_request_id = 0;
@@ -285,7 +282,7 @@ void BasedClient::function(std::string name,
     drain_queues();
 }
 
-void BasedClient::auth(std::string state, std::function<void(std::string)> cb) {
+void BasedClient::auth(std::string state, void (*cb)(const char*)) {
     if (m_auth_in_progress) return;
 
     m_auth_request_state = state;
@@ -390,7 +387,7 @@ void BasedClient::on_message(std::string message) {
                     std::string payload = is_deflate
                                               ? Utility::inflate_string(message.substr(start, end))
                                               : message.substr(start, end);
-                    fn(payload, "");
+                    fn(payload.c_str(), "");
                 } else {
                     fn("", "");
                 }
@@ -417,14 +414,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(payload, checksum, "");
+                    fn(payload.c_str(), checksum, "");
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(payload, "");
+                    fn(payload.c_str(), "");
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -470,14 +467,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(patched_payload, checksum, "");
+                    fn(patched_payload.c_str(), checksum, "");
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(patched_payload, "");
+                    fn(patched_payload.c_str(), "");
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -490,7 +487,7 @@ void BasedClient::on_message(std::string message) {
                 m_cache.find(obs_id) != m_cache.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(m_cache.at(obs_id).first, "");
+                    fn(m_cache.at(obs_id).first.c_str(), "");
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -510,7 +507,7 @@ void BasedClient::on_message(std::string message) {
             } else {
                 m_auth_state = payload;
             }
-            m_auth_callback(payload);
+            m_auth_callback(payload.c_str());
 
             m_auth_in_progress = false;
         }
@@ -533,13 +530,13 @@ void BasedClient::on_message(std::string message) {
                 auto id = error.at("requestId");
                 if (m_function_callbacks.find(id) != m_function_callbacks.end()) {
                     auto fn = m_function_callbacks.at(id);
-                    fn("", payload);
+                    fn("", payload.c_str());
                     m_function_callbacks.erase(id);
                 }
                 if (m_get_subs.find(id) != m_get_subs.end()) {
                     for (auto get_id : m_get_subs.at(id)) {
                         auto fn = m_get_sub_callbacks.at(get_id);
-                        fn("", payload);
+                        fn("", payload.c_str());
                         m_get_sub_callbacks.erase(get_id);
                     }
                     m_get_subs.erase(id);
@@ -552,7 +549,7 @@ void BasedClient::on_message(std::string message) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {
                             auto fn = m_sub_callback.at(sub_id);
-                            fn("", 0, payload);
+                            fn("", 0, payload.c_str());
                         }
                     }
                 }

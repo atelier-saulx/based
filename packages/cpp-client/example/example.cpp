@@ -6,6 +6,28 @@
 
 #include "../distribute/based.hpp"
 
+void based_cb(const char* data, const char* error) {
+    int len_data = strlen(data);
+    int len_error = strlen(error);
+    if (len_data > 0) {
+        std::cout << "DATA = " << data << std::endl;
+    }
+    if (len_error > 0) {
+        std::cout << "ERROR = " << error << std::endl;
+    }
+}
+
+void based_observe_cb(const char* data, uint64_t checksum, const char* error) {
+    int len_data = strlen(data);
+    int len_error = strlen(error);
+    if (len_data > 0) {
+        std::cout << "DATA[" << checksum << "] = " << data << std::endl;
+    }
+    if (len_error > 0) {
+        std::cout << "ERROR = " << error << std::endl;
+    }
+}
+
 int main(int argc, char** argv) {
     // if (argc < 2) {
     //     std::cerr << "Specify address" << std::endl;
@@ -13,12 +35,12 @@ int main(int argc, char** argv) {
     // }
 
     int client1 = Based__new_client();
-    int client2 = Based__new_client();
 
-    Based__connect_to_url(client1, "ws://localhost:9910");
-    Based__connect_to_url(client2, "ws://localhost:9910");
+    char* address = (char*)"ws://localhost:9910";
+
+    Based__connect_to_url(client1, address);
     bool done = false;
-    int i = 0;
+    // int i = 0;
     std::string cmd;
 
     std::list<int> obs;
@@ -50,52 +72,16 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "o") {
-            i++;
-            if (i % 2) {
-                int id = Based__observe(client1, "chill", "",
-                                        [](std::string data, int checksum, std::string error) {
-                                            if (data.length() > 0) {
-                                                std::cout << "DATA = " << data << std::endl;
-                                            }
-                                            if (error.length() > 0) {
-                                                std::cout << "ERROR = " << data << std::endl;
-                                            }
-                                        });
-                obs.push_back(id);
-            } else {
-                int id = Based__observe(client2, "chill", "",
-                                        [](std::string data, int checksum, std::string error) {
-                                            if (data.length() > 0) {
-                                                std::cout << "DATA CLIENT 2= " << data << std::endl;
-                                            }
-                                            if (error.length() > 0) {
-                                                std::cout << "ERROR = " << data << std::endl;
-                                            }
-                                        });
-                obs.push_back(id);
-            }
+            int id = Based__observe(client1, (char*)"chill", (char*)"", &based_observe_cb);
+            obs.push_back(id);
         }
 
         if (cmd.substr(0, 1) == "g") {
-            Based__get(client1, "chill", "", [](std::string data, std::string error) {
-                if (data.length() > 0) {
-                    std::cout << "GET DATA = " << data << std::endl;
-                }
-                if (error.length() > 0) {
-                    std::cout << "GET ERROR = " << data << std::endl;
-                }
-            });
+            Based__get(client1, (char*)"chill", (char*)"", &based_cb);
         }
 
         if (cmd.substr(0, 1) == "f") {
-            Based__function(client1, "chill", "", [](std::string data, std::string error) {
-                if (data.length() > 0) {
-                    std::cout << "FUNCTION DATA = " << data << std::endl;
-                }
-                if (error.length() > 0) {
-                    std::cout << "FUNCTION ERROR = " << data << std::endl;
-                }
-            });
+            Based__function(client1, (char*)"chill", (char*)"", &based_cb);
         }
 
         std::cout << "obs = ";
@@ -128,6 +114,5 @@ int main(int argc, char** argv) {
     }
 
     Based__delete_client(client1);
-    Based__delete_client(client2);
     // disconnect();
 }

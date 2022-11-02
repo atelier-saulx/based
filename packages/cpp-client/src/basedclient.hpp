@@ -27,9 +27,9 @@ class BasedClient {
     bool m_auth_in_progress;
     std::string m_auth_state;
     std::string m_auth_request_state;
-    std::function<void(std::string)> m_auth_callback;
+    void (*m_auth_callback)(const char*);
 
-    std::map<int, std::function<void(std::string, std::string)>> m_function_callbacks;
+    std::map<int, void (*)(const char*, const char*)> m_function_callbacks;
     int m_registry_index;
 
     /////////////////////
@@ -78,7 +78,7 @@ class BasedClient {
      * map<sub_id, on_data callback>
      * List of on_data callback to call when receiving the data.
      */
-    std::map<int, std::function<void(std::string, int64_t, std::string)>> m_sub_callback;
+    std::map<int, void (*)(const char*, uint64_t, const char*)> m_sub_callback;
 
     ////////////////
     // gets
@@ -95,8 +95,7 @@ class BasedClient {
      * map<sub_id, on_data callback>
      * List of on_data callback to call when receiving the data. Should be deleted after firing.
      */
-    std::map<int, std::function<void(std::string /*data*/, std::string /*error*/)>>
-        m_get_sub_callbacks;
+    std::map<int, void (*)(const char*, const char*)> m_get_sub_callbacks;
 
    public:
     BasedClient();
@@ -155,21 +154,18 @@ class BasedClient {
     /**
      * @brief Observe a function. This returns the sub_id used to unsubscribe with .unobserve(id)
      */
-    int observe(
-        std::string name,
-        std::string payload,
-        /**
-         * Callback that the observable will trigger.
-         */
-        std::function<void(std::string /*data*/, uint64_t /*checksum*/, std::string /*error*/)> cb);
+    int observe(std::string name,
+                std::string payload,
+                /**
+                 * Callback that the observable will trigger.
+                 */
+                void (*cb)(const char*, uint64_t, const char*));
 
     /**
      * @brief Get the value of an observable only once. The callback will trigger when the function
      * fires a new update.
      */
-    void get(std::string name,
-             std::string payload,
-             std::function<void(std::string /*data*/, std::string /*error*/)> cb);
+    void get(std::string name, std::string payload, void (*cb)(const char*, const char*));
 
     /**
      * @brief Stop the observable associated with the ID, and clean up the related structures.
@@ -188,9 +184,7 @@ class BasedClient {
      * @param cb Callback function, must have two string arguments: first is for data, the seconds
      * one is for error.
      */
-    void function(std::string name,
-                  std::string payload,
-                  std::function<void(std::string /*data*/, std::string /*error*/)> cb);
+    void function(std::string name, std::string payload, void (*cb)(const char*, const char*));
 
     /**
      * @brief Set a auth state.
@@ -198,7 +192,7 @@ class BasedClient {
      * @param state Any object, usually the token
      * @param cb This callback will fire with either be "true" or the auth state itself.
      */
-    void auth(std::string state, std::function<void(std::string)> cb);
+    void auth(std::string state, void (*cb)(const char*));
 
    private:
     /**
