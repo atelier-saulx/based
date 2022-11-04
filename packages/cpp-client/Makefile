@@ -5,6 +5,7 @@ LIB_DIRS = \
   lib/zlib \
   lib/nlohmann-json \
   lib/apply-patch \
+  lib/asio/asio/include \
 
 LDIR = $(patsubst %,-I%,$(LIB_DIRS))
 
@@ -35,7 +36,7 @@ OBJS = basedclient.o \
 	utility.o \
 	based.o
 
-CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
+CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE
 
 all: $(TARGET)
 
