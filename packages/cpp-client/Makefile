@@ -44,7 +44,7 @@ tls: LIB_DIRS += /usr/local/opt/openssl@3/include
 tls: CXXFLAGS += -DBASED_TLS
 tls: LDLIBS += -lssl -lcrypto
 tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
-tls: libbased.dylib
+tls: $(TARGET)
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
