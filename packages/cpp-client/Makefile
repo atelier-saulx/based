@@ -17,11 +17,17 @@ ODIR=obj
 SRCDIR=src
 DISTDIR=distribute
 
+uname_S := $(shell uname -s)
 
-# _SRCS = $(wildcard $(SRCDIR)/*.cpp)
-# SRCS = $(filter-out $(SRCDIR)/main.cpp, $(_SRCS))
-# _OBJ = $(patsubst $(SRCDIR)/%,$(ODIR)/%,$(SRCS:.c=.o))
-# OBJ = $(filter-out $(ODIR)/main.o,$(_OBJ))
+ifeq ($(uname_S),Linux)
+	TARGET := libbased.so
+endif
+ifeq ($(uname_S),Darwin) # macOS
+	TARGET := libbased.dylib
+endif
+ifndef TARGET
+$(error TARGET is not set)
+endif
 
 HEADERS = $(wildcard $(SRCDIR)/*.hpp)
 OBJS = basedclient.o \
@@ -31,7 +37,7 @@ OBJS = basedclient.o \
 
 CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_
 
-all: libbased.dylib
+all: $(TARGET)
 
 .PHONY: tls
 tls: LIB_DIRS += /usr/local/opt/openssl@3/include
@@ -42,18 +48,18 @@ tls: libbased.dylib
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
-	$(CXX) -MMD $(CXXFLAGS) -c -o $@ $<
+	$(CXX) -MMD -fPIC $(CXXFLAGS) -c -o $@ $<
 
 example: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
 	$(CXX) example/example.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
-libbased.dylib: $(patsubst %,$(ODIR)/%,$(OBJS))
+$(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
 	cp -rf $(SRCDIR)/based.hpp $(DISTDIR)/based.hpp
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
-linked-example: libbased.dylib
+linked-example: $(TARGET)
 	$(CXX) example/example.cpp -o $@ -Wall -std=c++0x -stdlib=libc++ -L./$(DISTDIR) -lbased
 
 clean:
