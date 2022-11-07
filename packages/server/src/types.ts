@@ -203,6 +203,7 @@ export function isObservableFunctionSpec(
 export type ActiveObservable = {
   name: string
   id: number
+  reusedCache: boolean
   clients: Set<number>
   workers: Set<BasedWorker>
   isDestroyed: boolean

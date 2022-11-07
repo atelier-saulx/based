@@ -61,7 +61,7 @@ const requestFullData = (client: BasedCoreClient, id: number) => {
     console.error('Cannot find name for id from diff', id)
     return
   }
-  console.info('dont have cache data o no')
+  console.info('dont have cache data o no', id)
   // and prob need to add an extra arg (type 4 msg) to enfore sending the data back
   addGetToQueue(client, sub.name, id, sub.payload)
 }
