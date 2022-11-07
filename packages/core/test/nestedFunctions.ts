@@ -23,6 +23,7 @@ test.serial('nested functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
+      functionApiWrapperPath: join(__dirname, 'functions', 'fnWrapper.js'),
       maxWorkers: 2,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
@@ -64,7 +65,7 @@ test.serial('nested functions', async (t) => {
     console.info('??? connect --->', isConnected)
   })
 
-  const x = await coreClient.function('hello', { bla: true })
+  const x = await coreClient.function('nested', { bla: true })
 
   console.info('FN RESPONSE -->', x)
 

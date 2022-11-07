@@ -4,6 +4,10 @@
   "license": "MIT",
   "main": "dist/index.js",
   "module": "src/index.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./worker": "./dist/worker/index.js"
+  },
   "scripts": {
     "build": "npx  tsc",
     "watch": "npm run build -- --watch",
