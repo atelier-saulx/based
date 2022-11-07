@@ -5,14 +5,14 @@ LIB_DIRS = \
   lib/zlib \
   lib/nlohmann-json \
   lib/apply-patch \
-  lib/asio/asio/include \
+  lib/asio/asio/include 
 
 LDIR = $(patsubst %,-I%,$(LIB_DIRS))
 
 LDFLAGS = 
 LDLIBS = -lz -lcurl
 
-CXX = clang++
+# CXX = clang++
 
 ODIR=obj
 SRCDIR=src
@@ -36,7 +36,7 @@ OBJS = basedclient.o \
 	utility.o \
 	based.o
 
-CXXFLAGS += $(LDIR) -Wall -std=c++0x -stdlib=libc++ -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE
+CXXFLAGS += -Wall -std=c++0x -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE
 
 all: $(TARGET)
 
@@ -45,15 +45,16 @@ tls: LIB_DIRS += /usr/local/opt/openssl@3/include
 tls: CXXFLAGS += -DBASED_TLS
 tls: LDLIBS += -lssl -lcrypto
 tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
+tls: TARGET = libbasedtls.$(suffix $(TARGET))
 tls: $(TARGET)
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
-	$(CXX) -MMD -fPIC $(CXXFLAGS) -c -o $@ $<
+	$(CXX) -MMD -fPIC $(LDIR) $(CXXFLAGS) -c -o $@ $<
 
 example: $(patsubst %,$(ODIR)/%,$(OBJS))
 	@echo $(SRCS)
-	$(CXX) example/example.cpp -o $@ $^ $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
+	$(CXX) example/example.cpp -o $@ $^ $(LDIR) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
@@ -61,10 +62,11 @@ $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
 linked-example: $(TARGET)
-	$(CXX) example/example.cpp -o $@ -Wall -std=c++0x -stdlib=libc++ -L./$(DISTDIR) -lbased
+	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -L./$(DISTDIR) -lbased
 
 clean:
-	rm -r $(ODIR)
-	rm -r $(DISTDIR)
-	rm example
-	rm linked-example
+	rm -rf $(ODIR)
+	rm -rf $(DISTDIR)
+	rm -rf docker-build
+	rm -f linked-example
+	rm -f example

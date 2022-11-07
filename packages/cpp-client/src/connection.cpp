@@ -14,7 +14,7 @@ WsConnection::WsConnection()
 
     m_endpoint.init_asio();
 #ifdef BASED_TLS
-    m_endpoint.set_tls_init_handler(websocketpp::lib::bind(&on_tls_init));
+    m_endpoint.set_tls_init_handler(websocketpp::lib::bind(&WsConnection::on_tls_init));
 #endif
 
     // perpetual mode the endpoint's processing loop will not exit automatically when it has no
@@ -106,9 +106,26 @@ ConnectionStatus WsConnection::status() {
 };
 
 #ifdef BASED_TLS
+#ifdef ASIO_STANDALONE
+using context_ptr = std::shared_ptr<asio::ssl::context>;
+
+context_ptr WsConnection::on_tls_init() {
+    context_ptr ctx = std::make_shared<asio::ssl::context>(asio::ssl::context::sslv23);
+
+    try {
+        ctx->set_options(asio::ssl::context::default_workarounds | asio::ssl::context::no_sslv2 |
+                         asio::ssl::context::no_sslv3 | asio::ssl::context::single_dh_use);
+
+    } catch (std::exception& e) {
+        std::cout << "Error in context pointer: " << e.what() << std::endl;
+    }
+    return ctx;
+}
+#endif
+#ifndef ASIO_STANDALONE
 using context_ptr = std::shared_ptr<boost::asio::ssl::context>;
 
-static WsConnection::context_ptr on_tls_init() {
+context_ptr WsConnection::on_tls_init() {
     context_ptr ctx =
         std::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::sslv23);
 
@@ -122,6 +139,7 @@ static WsConnection::context_ptr on_tls_init() {
     }
     return ctx;
 }
+#endif
 #endif
 std::shared_future<void> WsConnection::reconnect() {
     return std::async(std::launch::async, [&]() {
