@@ -19,6 +19,7 @@ export type WorkerObs = {
   cache?: Uint8Array
   isDeflate?: boolean
   checksum?: number
+  reusedCache?: boolean
   closeFunction?: () => void
 }
 
@@ -62,6 +63,7 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
     if (checksum !== obs.checksum) {
       let encodedData: Uint8Array
       if (data instanceof Uint8Array) {
+        obs.reusedCache = true
         // console.info('hello!', data, diff, previousChecksum, isDeflate)
         encodedData = data
         if (diff) {
@@ -72,6 +74,7 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
           isDeflate = false
         }
       } else {
+        obs.reusedCache = false
         const buff = valueToBuffer(data)
 
         if (previousChecksum === undefined) {
@@ -103,7 +106,6 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
         }
       }
 
-      console.log('yo yo yo', checksum, isDeflate, encodedData)
       // add deflate info
       obs.isDeflate = isDeflate
       obs.cache = encodedData
@@ -116,6 +118,7 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
           data: encodedData,
           checksum: checksum,
           isDeflate: isDeflate,
+          reusedCache: obs.reusedCache,
         },
       })
     }

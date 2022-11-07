@@ -1,5 +1,6 @@
 import { BasedServer } from '../server'
 import { ActiveObservable, WebsocketClient, WorkerClient } from '../types'
+import { updateId } from '../protocol'
 
 export const destroy = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -182,7 +183,7 @@ export const initFunction = async (
         console.error('ERROR TIMES /w observable', err)
       }
     },
-    (encodedDiffData, encodedData, checksum, isDeflate) => {
+    (encodedDiffData, encodedData, checksum, isDeflate, reusedCache) => {
       obs.previousChecksum = obs.checksum
       obs.checksum = checksum
       obs.cache = encodedData
@@ -192,10 +193,21 @@ export const initFunction = async (
         obs.diffCache = encodedDiffData
       }
 
+      let prevId: Uint8Array
+      let prevDiffId: Uint8Array
+
       if (obs.clients.size) {
         if (encodedDiffData) {
+          if (reusedCache) {
+            prevDiffId = updateId(encodedDiffData, id)
+          }
+
           server.uwsApp.publish(String(id), encodedDiffData, true, false)
         } else {
+          if (reusedCache) {
+            prevId = updateId(encodedData, id)
+          }
+
           server.uwsApp.publish(String(id), encodedData, true, false)
         }
       }
@@ -218,6 +230,13 @@ export const initFunction = async (
         const onNextData = obs.onNextData
         delete obs.onNextData
         onNextData.forEach((fn) => fn())
+      }
+
+      if (prevDiffId) {
+        encodedDiffData.set(prevId, 4)
+      }
+      if (prevId) {
+        encodedData.set(prevId, 4)
       }
     },
     payload

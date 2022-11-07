@@ -353,7 +353,8 @@ export class BasedFunctions {
       encodedDiffData: Uint8Array,
       encodedData: Uint8Array,
       checksum: number,
-      isDeflate: boolean
+      isDeflate: boolean,
+      reusedCache: boolean
     ) => void,
     payload?: any
   ): () => void {
@@ -365,7 +366,7 @@ export class BasedFunctions {
       if (err) {
         error(err)
       } else {
-        update(p.diff, p.data, p.checksum, p.isDeflate)
+        update(p.diff, p.data, p.checksum, p.isDeflate, p.reusedCache)
       }
     })
     selectedWorker.worker.postMessage({
