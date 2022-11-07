@@ -1,5 +1,6 @@
 import { BasedServer } from '../server'
-import { ActiveObservable, WebsocketClient } from '../types'
+import { ActiveObservable, WebsocketClient, WorkerClient } from '../types'
+import { updateId } from '../protocol'
 
 export const destroy = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -10,6 +11,10 @@ export const destroy = (server: BasedServer, id: number) => {
   }
 
   if (obs.isDestroyed) {
+    return
+  }
+
+  if (obs.clients.size || obs.workers.size) {
     return
   }
 
@@ -66,30 +71,66 @@ export const subscribe = (
   }
 }
 
+export const subscribeWorker = (
+  server: BasedServer,
+  id: number,
+  checksum: number,
+  client: WorkerClient
+) => {
+  const obs = server.activeObservablesById.get(id)
+  client.worker.nestedObservers.add(id)
+  if (obs.beingDestroyed) {
+    clearTimeout(obs.beingDestroyed)
+    obs.beingDestroyed = null
+  }
+  obs.workers.add(client.worker)
+  if (obs.cache && obs.checksum !== checksum) {
+    client.worker.worker.postMessage({
+      type: 8,
+      id,
+      data: obs.cache,
+    })
+  }
+}
+
+export const unsubscribeWorker = (
+  server: BasedServer,
+  id: number,
+  client: WorkerClient
+): true | void => {
+  if (!client.worker.nestedObservers.has(id)) {
+    return
+  }
+  const obs = server.activeObservablesById.get(id)
+  client.worker.nestedObservers.delete(id)
+  if (!obs) {
+    return
+  }
+  if (obs.workers.delete(client.worker)) {
+    destroy(server, id)
+    return true
+  }
+}
+
 export const unsubscribe = (
   server: BasedServer,
   id: number,
   client: WebsocketClient
-) => {
+): true | void => {
   if (!client.ws) {
     return
   }
-
   if (!client.ws.obs.has(id)) {
     return
   }
-
   const obs = server.activeObservablesById.get(id)
   client.ws.obs.delete(id)
-
   if (!obs) {
     return
   }
-
-  obs.clients.delete(client.ws.id)
-
-  if (obs.clients.size === 0) {
+  if (obs.clients.delete(client.ws.id)) {
     destroy(server, id)
+    return true
   }
 }
 
@@ -110,9 +151,7 @@ export const unsubscribeIgnoreClient = (
 
   obs.clients.delete(client.ws.id)
 
-  if (obs.clients.size === 0) {
-    destroy(server, id)
-  }
+  destroy(server, id)
 }
 
 export const initFunction = async (
@@ -141,24 +180,63 @@ export const initFunction = async (
     // add isDeflate for http
     (err) => {
       if (err) {
-        console.error('ERROR TIMES /w obserbable', err)
+        console.error('ERROR TIMES /w observable', err)
       }
     },
-    (encodedDiffData, encodedData, checksum, isDeflate) => {
+    (encodedDiffData, encodedData, checksum, isDeflate, reusedCache) => {
       obs.previousChecksum = obs.checksum
       obs.checksum = checksum
       obs.cache = encodedData
       obs.isDeflate = isDeflate
+
       if (encodedDiffData) {
         obs.diffCache = encodedDiffData
-        server.uwsApp.publish(String(id), encodedDiffData, true, false)
-      } else {
-        server.uwsApp.publish(String(id), encodedData, true, false)
       }
+
+      let prevId: Uint8Array
+      let prevDiffId: Uint8Array
+
+      if (obs.clients.size) {
+        if (encodedDiffData) {
+          if (reusedCache) {
+            prevDiffId = updateId(encodedDiffData, id)
+          }
+
+          server.uwsApp.publish(String(id), encodedDiffData, true, false)
+        } else {
+          if (reusedCache) {
+            prevId = updateId(encodedData, id)
+          }
+
+          server.uwsApp.publish(String(id), encodedData, true, false)
+        }
+      }
+
+      if (obs.workers.size) {
+        obs.workers.forEach((w) => {
+          w.worker.postMessage({
+            type: 8,
+            id,
+            checksum,
+            diff: encodedDiffData,
+            previousChecksum: obs.previousChecksum,
+            data: obs.cache,
+            isDeflate: obs.isDeflate,
+          })
+        })
+      }
+
       if (obs.onNextData) {
-        const setObs = obs.onNextData
+        const onNextData = obs.onNextData
         delete obs.onNextData
-        setObs.forEach((fn) => fn())
+        onNextData.forEach((fn) => fn())
+      }
+
+      if (prevDiffId) {
+        encodedDiffData.set(prevDiffId, 4)
+      }
+      if (prevId) {
+        encodedData.set(prevId, 4)
       }
     },
     payload
@@ -183,6 +261,7 @@ export const create = (
   const obs: ActiveObservable = {
     payload,
     clients: new Set(),
+    workers: new Set(),
     id,
     name,
     isDestroyed: false,

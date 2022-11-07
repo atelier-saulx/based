@@ -6,23 +6,6 @@ import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 
-// ----------------- mem test code -------------------
-// let cl = 0
-// const genLargeMemBlock = (): string => {
-//   ++cl
-//   let str = ''
-//   for (let i = 0; i < 100000; i++) {
-//     str += Math.random() * 99999 + ' xxxx'
-//   }
-//   return str
-// }
-// let cnt = 0
-// setInterval(() => {
-//   ++cnt
-//   console.info('Amount of clients', cl, 'after', cnt, 'seconds')
-// }, 1e3)
-// -----------------------------------------------------
-
 export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
   const app =
     key && cert
@@ -57,6 +40,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         message(server, ws.c, data, isBinary)
       },
       open: (ws) => {
+        console.info('!@!@!@ client open WS')
+
         if (ws) {
           // ws.bla = genLargeMemBlock()
           const client = { ws }
@@ -74,7 +59,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         ws.c = null
       },
       drain: () => {
-        // console.info('drain')
+        console.info('drain')
         // lets handle drain efficiently (or more efficiently at least)
         // call client.drain can be much more efficient
         // if (ws.client && ws.client.backpressureQueue) {

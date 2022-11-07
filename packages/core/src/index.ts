@@ -181,7 +181,7 @@ export class BasedCoreClient extends Emitter {
   observe(
     name: string,
     onData: ObserveDataListener,
-    payload?: GenericObject,
+    payload?: any,
     onError?: ObserveErrorListener,
     opts?: ObserveOpts
   ): CloseObserve {

@@ -63,29 +63,22 @@ export const readBody = (
           }
         }
       })
-
-      // TODO: NEED TO READ CONTENT LEN OF UNCOMPRESSED....
-      const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
-      const buf = new Uint8Array(data)
-      // let index = 0
-
+      // unfortunately need to make a copy of the data and decompress in the main thread
+      const chunks: Buffer[] = []
+      let len = 0
       uncompressStream.on('data', (c) => {
-        console.info('bytes written???', uncompressStream.bytesWritten, c)
-
-        // FIX LATER
-
-        // const len = c.byteLength
-        // for (let i = 0; i < len; i++) {
-        // console.log(c[i])
-        // worng ofc..
-        // maybe unpack in worker? - will not work like this...
-        // Atomics.store(buf, index, c[i])
-        // }
-        // index += len
+        chunks.push(c)
+        len += c.byteLength
       })
+      let i = 0
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-        // parseData(server, client, contentType, data, false, route)
+        const data: SharedArrayBuffer = new SharedArrayBuffer(len)
+        const buf = new Uint8Array(data)
+        for (const c of chunks) {
+          buf.set(c, i)
+          i += c.byteLength
+        }
         onData(buf)
       })
     } else {

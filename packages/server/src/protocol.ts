@@ -146,6 +146,12 @@ export const encodeGetResponse = (id: number): Uint8Array => {
   return array
 }
 
+export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
+  const prevId = payload.slice(4, 8)
+  storeUint8(payload, id, 4, 8)
+  return prevId
+}
+
 export const encodeObservableResponse = (
   id: number,
   checksum: number,

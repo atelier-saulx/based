@@ -1,6 +1,7 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
 import { BasedErrorData } from './error'
+import { Worker } from 'node:worker_threads'
 
 export type ClientContext = {
   query: string
@@ -39,10 +40,33 @@ export type HttpClient = {
   context: ClientContext | null
 }
 
+export type BasedWorker = {
+  worker: Worker
+  name?: string
+  index: number
+  activeObservables: number
+  activeFunctions: number
+  nestedObservers: Set<number>
+}
+
+export type WorkerClient = {
+  worker: BasedWorker
+  context: ClientContext
+}
+
 export const isHttpClient = (
-  client: HttpClient | WebsocketClient
+  client: HttpClient | WebsocketClient | WorkerClient
 ): client is HttpClient => {
   if ('res' in client) {
+    return true
+  }
+  return false
+}
+
+export const isWorkerClient = (
+  client: HttpClient | WebsocketClient | WorkerClient
+): client is WorkerClient => {
+  if ('worker' in client) {
     return true
   }
   return false
@@ -84,7 +108,8 @@ export type ObservableUpdateFunction = (
   data: any,
   checksum?: number,
   diff?: any,
-  fromChecksum?: number
+  fromChecksum?: number,
+  isDeflate?: boolean
 ) => void
 
 // this gets run in the main thread
@@ -141,6 +166,7 @@ export type FunctionConfig = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   maxWorkers?: number
+  functionApiWrapperPath?: string
 
   route: (opts: {
     server: BasedServer
@@ -178,6 +204,7 @@ export type ActiveObservable = {
   name: string
   id: number
   clients: Set<number>
+  workers: Set<BasedWorker>
   isDestroyed: boolean
   payload: any
   diffCache?: Uint8Array
@@ -198,6 +225,6 @@ export type EventMap = {
 export type Event = keyof EventMap
 
 export type Listener<T> = (
-  client: HttpClient | WebsocketClient,
+  client: HttpClient | WebsocketClient | WorkerClient,
   data?: T
 ) => void

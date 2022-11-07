@@ -5,22 +5,14 @@ import {
   BasedObservableFunctionSpec,
   FunctionConfig,
   isObservableFunctionSpec,
+  BasedWorker,
 } from '../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroy, initFunction } from '../observable'
 import { Worker } from 'node:worker_threads'
 import { join } from 'path'
-
-// clean this up put this in the worker folder...
-
-type BasedWorker = {
-  worker: Worker
-  name?: string
-  index: number
-  activeObservables: number
-  activeFunctions: number
-}
+import { workerMessage } from '../network/worker'
 
 export { isObservableFunctionSpec }
 
@@ -62,11 +54,6 @@ export class BasedFunctions {
     if (config) {
       this.updateConfig(config)
     }
-  }
-
-  workerSortLoop() {
-    // or something else?
-    // this.workerSortTimeout
   }
 
   uninstallLoop() {
@@ -117,6 +104,14 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
+    const functionApiWrapperPath =
+      this.config.functionApiWrapperPath ||
+      join(__dirname, './dummyFunctionApiWrapper')
+
+    const workerData = {
+      workerData: { functionApiWrapperPath },
+    }
+
     // clean all this stuff up.....
     if (d !== 0) {
       if (d < 0) {
@@ -127,13 +122,17 @@ export class BasedFunctions {
         }
       } else {
         for (let i = 0; i < d; i++) {
-          const worker = new Worker(WORKER_PATH, {})
-          this.workers.push({
+          const worker = new Worker(WORKER_PATH, workerData)
+
+          const basedWorker: BasedWorker = {
             worker,
+            nestedObservers: new Set(),
             index: this.workers.length,
             activeObservables: 0,
             activeFunctions: 0,
-          })
+          }
+
+          this.workers.push(basedWorker)
 
           if (this.server.auth) {
             // allways install authorize
@@ -145,39 +144,7 @@ export class BasedFunctions {
           }
 
           worker.on('message', (data) => {
-            // type 0 is just install fn
-
-            // subscribe and close will just go the normal way
-
-            if (data.type === 0) {
-              this.install(data.name)
-                .then((spec) => {
-                  if (spec) {
-                    worker.postMessage({
-                      type: 5,
-                      name: spec.name,
-                      path: spec.functionPath,
-                    })
-                  } else {
-                    worker.postMessage({
-                      type: 7,
-                      name: data.name,
-                    })
-                  }
-                })
-                .catch(() => {
-                  worker.postMessage({
-                    type: 7,
-                    name: data.name,
-                  })
-                })
-            } else if (data.id) {
-              const listener = this.workerResponseListeners.get(data.id)
-              // prob need more here
-              if (listener) {
-                listener(data.err, data.payload)
-              }
-            }
+            workerMessage(this.server, basedWorker, data)
           })
         }
       }
@@ -386,7 +353,8 @@ export class BasedFunctions {
       encodedDiffData: Uint8Array,
       encodedData: Uint8Array,
       checksum: number,
-      isDeflate: boolean
+      isDeflate: boolean,
+      reusedCache: boolean
     ) => void,
     payload?: any
   ): () => void {
@@ -398,7 +366,7 @@ export class BasedFunctions {
       if (err) {
         error(err)
       } else {
-        update(p.diff, p.data, p.checksum, p.isDeflate)
+        update(p.diff, p.data, p.checksum, p.isDeflate, p.reusedCache)
       }
     })
     selectedWorker.worker.postMessage({

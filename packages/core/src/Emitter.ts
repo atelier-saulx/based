@@ -30,10 +30,12 @@ class Emitter {
   }
 
   once(type: Event, fn: Listener<EventMap[Event]>) {
-    this.on(type, (v) => {
+    const listener = (v) => {
       fn(v)
-      this.off(type, fn)
-    })
+      this.off(type, listener)
+    }
+
+    this.on(type, listener)
   }
 
   off(type: Event, fn: Listener<EventMap[Event]>) {

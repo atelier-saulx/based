@@ -1,9 +1,12 @@
 import { ClientContext } from '../../types'
-import { parentPort } from 'worker_threads'
+import { parentPort, workerData } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
 
 const decoder = new TextDecoder('utf-8')
+
+const { functionApiWrapperPath } = workerData
+const fnWrapper = require(functionApiWrapperPath).runFunction
 
 export const parsePayload = (
   id: number,
@@ -52,15 +55,15 @@ export default (
   authorize(context, name, payload)
     .then((ok) => {
       if (!ok) {
-        console.error('autn wrong')
+        console.error('auth wrong')
         // err will become based error
         parentPort.postMessage({
           id,
-          err: new Error('AITH WRONG'),
+          err: new Error('AUTH WRONG'),
         })
         return
       }
-      fn(parsedPayload, {})
+      fnWrapper(name, fn, parsedPayload, context)
         .then((v) => {
           parentPort.postMessage({
             id,

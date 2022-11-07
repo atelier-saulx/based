@@ -3,9 +3,12 @@ import {
   valueToBuffer,
   encodeFunctionResponse,
 } from '../../protocol'
-import { parentPort } from 'node:worker_threads'
+import { parentPort, workerData } from 'node:worker_threads'
 import { ClientContext } from '../../types'
 import { authorize } from '../authorize'
+
+const { functionApiWrapperPath } = workerData
+const fnWrapper = require(functionApiWrapperPath).runFunction
 
 export default (
   name: string,
@@ -34,7 +37,7 @@ export default (
         return false
       }
 
-      fn(parsedPayload, {})
+      fnWrapper(name, fn, parsedPayload, context)
         .then((v) => {
           parentPort.postMessage({
             id,

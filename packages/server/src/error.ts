@@ -19,6 +19,7 @@ export enum BasedErrorCode {
   NoBinaryProtocol = 40005,
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
+  // WorkerDied
 }
 
 type FunctionErrorProps =
@@ -33,11 +34,11 @@ type FunctionErrorProps =
       route: BasedFunctionRoute
     }
 
-// need to add reqId & observableId as well.. else you cannot handle them at all
+// TODO: need to add reqId & observableId as well.. else you cannot handle them at all
 
 export type ErrorPayload = {
   [BasedErrorCode.NoBinaryProtocol]: any
-  [BasedErrorCode.FunctionError]: FunctionErrorProps
+  [BasedErrorCode.FunctionError]: FunctionErrorProps // TODO include payload
   [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
   [BasedErrorCode.NoOservableCacheAvailable]: {
     observableId: number
@@ -108,6 +109,7 @@ const errorTypes = {
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
     statusMessage: 'Not Found',
+    // TODO: make this allways a function
     message: 'Cannot stream to observable function.',
   },
   [BasedErrorCode.AuthorizeFunctionError]: {
