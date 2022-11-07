@@ -29,6 +29,7 @@ export class BasedAuth {
         delete require.cache[require.resolve(this.config.authorizePath)]
       }
 
+      // TODO: add that it gets executed on the worker...
       this.authorize = require(config.authorizePath)
 
       for (const worker of this.server.functions.workers) {

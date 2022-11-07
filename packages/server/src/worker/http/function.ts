@@ -52,11 +52,11 @@ export default (
   authorize(context, name, payload)
     .then((ok) => {
       if (!ok) {
-        console.error('autn wrong')
+        console.error('auth wrong')
         // err will become based error
         parentPort.postMessage({
           id,
-          err: new Error('AITH WRONG'),
+          err: new Error('AUTH WRONG'),
         })
         return
       }

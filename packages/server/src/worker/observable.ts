@@ -74,8 +74,6 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
         }
       }
 
-      // TODO: this will all become SHAREDBUFFERS
-
       // keep track globally of total mem usage
       const [encodedData, isDeflate] = encodeObservableResponse(
         id,

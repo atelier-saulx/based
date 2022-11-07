@@ -71,8 +71,6 @@ export const httpHandler = (
 
   const method = req.getMethod()
 
-  //
-
   // const valid = simdjson.isValid(jsonString); // true
   // read only...
 

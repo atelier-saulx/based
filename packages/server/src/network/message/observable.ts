@@ -84,6 +84,7 @@ export const subscribeMessage = (
     isDeflate
   )
 
+  // TODO: either make a 'worker' client and norma client or move auth to worker for this as well...
   server.auth
     .authorize(client.ws, name, payload)
     .then((ok) => {

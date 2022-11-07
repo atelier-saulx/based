@@ -63,26 +63,22 @@ export const readBody = (
           }
         }
       })
-
-      // TODO: NEED TO READ CONTENT LEN OF UNCOMPRESSED....
+      // unfortunately need to make a copy of the data and decompress in the main thread
       const chunks: Buffer[] = []
       let len = 0
-
       uncompressStream.on('data', (c) => {
-        console.info('bytes written???', uncompressStream.bytesWritten, c)
         chunks.push(c)
         len += c.byteLength
       })
+      let i = 0
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-
         const data: SharedArrayBuffer = new SharedArrayBuffer(len)
-
-        for (const c of chunks) {
-        }
-
         const buf = new Uint8Array(data)
-
+        for (const c of chunks) {
+          buf.set(c, i)
+          i += c.byteLength
+        }
         onData(buf)
       })
     } else {

@@ -141,7 +141,7 @@ export const initFunction = async (
     // add isDeflate for http
     (err) => {
       if (err) {
-        console.error('ERROR TIMES /w obserbable', err)
+        console.error('ERROR TIMES /w observable', err)
       }
     },
     (encodedDiffData, encodedData, checksum, isDeflate) => {
@@ -156,9 +156,9 @@ export const initFunction = async (
         server.uwsApp.publish(String(id), encodedData, true, false)
       }
       if (obs.onNextData) {
-        const setObs = obs.onNextData
+        const onNextData = obs.onNextData
         delete obs.onNextData
-        setObs.forEach((fn) => fn())
+        onNextData.forEach((fn) => fn())
       }
     },
     payload
