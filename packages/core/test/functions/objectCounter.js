@@ -1,6 +1,6 @@
 module.exports = async (payload, update) => {
   const largeThing = { bla: [] }
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e4; i++) {
     largeThing.bla.push({
       title: 'snurp',
       cnt: i,

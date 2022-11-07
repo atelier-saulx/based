@@ -99,7 +99,7 @@ test.serial('nested functions', async (t) => {
 
   const bla = await coreClient.get('obsWithNested', 'json')
 
-  t.is(bla.bla.length, 10e4)
+  t.is(bla.bla.length, 1e4)
 
   await wait(5e3)
 
@@ -107,7 +107,7 @@ test.serial('nested functions', async (t) => {
 
   close2()
 
-  t.true(incomingCnt > 0)
+  t.true(incomingCnt > 50)
   t.true(incomingCntNoJson > 0)
 
   await wait(15e3)
