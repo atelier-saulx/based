@@ -13,10 +13,22 @@ test.serial('nested functions', async (t) => {
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'hello.js'),
     },
-    nested: {
-      name: 'nested',
+    fnWithNested: {
+      name: 'fnWithNested',
       checksum: 1,
-      functionPath: join(__dirname, 'functions', 'helloNested.js'),
+      functionPath: join(__dirname, 'functions', 'fnWithNested.js'),
+    },
+    counter: {
+      observable: true,
+      name: 'counter',
+      checksum: 1,
+      functionPath: join(__dirname, './functions/counter.js'),
+    },
+    obsWithNested: {
+      observable: true,
+      name: 'obsWithNested',
+      checksum: 1,
+      functionPath: join(__dirname, './functions/obsWithNested.js'),
     },
   }
 
@@ -30,6 +42,7 @@ test.serial('nested functions', async (t) => {
       route: ({ name }) => {
         if (name && store[name]) {
           return {
+            ...store[name],
             name,
             maxPayloadSize: 1e6 * 10,
           }
@@ -53,21 +66,23 @@ test.serial('nested functions', async (t) => {
     },
   })
 
-  server.on('error', console.error)
-
   coreClient.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
 
-  coreClient.once('connect', (isConnected) => {
-    console.info('??? connect --->', isConnected)
+  const x = await coreClient.function('fnWithNested', { bla: true })
+
+  t.is(x, 12)
+
+  const close = coreClient.observe('obsWithNested', (data) => {
+    console.info('X????', data)
   })
 
-  const x = await coreClient.function('nested', { bla: true })
+  await wait(5e3)
 
-  console.info('FN RESPONSE -->', x)
+  close()
 
   await wait(15e3)
 

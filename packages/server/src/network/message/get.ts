@@ -32,9 +32,7 @@ const sendGetData = (
     client.ws.send(obs.cache, true, false)
   }
 
-  if (obs.clients.size === 0) {
-    destroy(server, id)
-  }
+  destroy(server, id)
 }
 
 export const getMessage = (

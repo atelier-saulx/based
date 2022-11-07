@@ -4,6 +4,7 @@ import wsFunction from './ws/function'
 import httpFunction from './http/function'
 import { fnPathMap, fnInstallListeners } from './functions'
 import { state } from './authorize'
+import { incomingObserve } from './api'
 
 export * from './api'
 
@@ -19,8 +20,11 @@ parentPort.on('message', (d) => {
   // d.type === 5 // FN INSTALLED (can be observable as well)
   // d.type === 6 // UNINSTALL FN
   // d.type === 7 // CANNOT INSTALL FN
+  // d.type === 8 // OBSERVABLE UPDATE
 
-  if (d.type === 5) {
+  if (d.type === 8) {
+    incomingObserve(d.id, d.checksum, d.data, d.err, d.diff, d.previousChecksum)
+  } else if (d.type === 5) {
     // maybe if you install like this it gets marked for a bit longer
     // nested functions have to be kept in mem a bit longer...
     const x = fnInstallListeners.get(d.name)

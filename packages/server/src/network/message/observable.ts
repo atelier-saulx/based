@@ -16,7 +16,6 @@ export const enableSubscribe = (
   route: BasedFunctionRoute
 ) => {
   client.ws.subscribe(String(id))
-  client.ws.obs.add(id)
 
   if (server.activeObservablesById.has(id)) {
     subscribe(server, id, checksum, client)
@@ -25,11 +24,9 @@ export const enableSubscribe = (
       .install(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
-          const obs = create(server, name, id, payload)
+          create(server, name, id, payload)
           if (!client.ws?.obs.has(id)) {
-            if (obs.clients.size === 0) {
-              destroy(server, id)
-            }
+            destroy(server, id)
           } else {
             subscribe(server, id, checksum, client)
           }
@@ -84,6 +81,8 @@ export const subscribeMessage = (
     isDeflate
   )
 
+  client.ws.obs.add(id)
+
   // TODO: either make a 'worker' client and norma client or move auth to worker for this as well...
   server.auth
     .authorize(client.ws, name, payload)
@@ -91,10 +90,13 @@ export const subscribeMessage = (
       if (!client.ws) {
         return
       }
+      if (!client.ws.obs.has(id)) {
+        return
+      }
       if (!ok) {
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
         sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
-        return false
+        return
       }
       enableSubscribe(server, client, id, checksum, name, payload, route)
     })
@@ -117,6 +119,9 @@ export const unsubscribeMessage = (
   server: BasedServer
 ) => {
   // | 4 header | 8 id |
+  if (!client.ws) {
+    return false
+  }
 
   const id = readUint8(arr, start + 4, 8)
 
@@ -124,17 +129,9 @@ export const unsubscribeMessage = (
     return false
   }
 
-  if (!client.ws) {
-    return
+  if (unsubscribe(server, id, client)) {
+    client.ws.unsubscribe(String(id))
   }
-
-  if (!client.ws.obs.has(id)) {
-    return true
-  }
-
-  client.ws.unsubscribe(String(id))
-
-  unsubscribe(server, id, client)
 
   return true
 }

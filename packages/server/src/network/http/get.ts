@@ -81,9 +81,7 @@ const sendGetResponse = (
     })
   }
 
-  if (obs.clients.size === 0) {
-    destroy(server, id)
-  }
+  destroy(server, id)
 }
 
 export const httpGet = (

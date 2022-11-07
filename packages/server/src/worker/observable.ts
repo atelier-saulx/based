@@ -43,7 +43,8 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
     data: any,
     checksum?: number,
     diff?: any,
-    previousChecksum?: number
+    previousChecksum?: number,
+    isDeflate?: boolean
   ) => {
     if (checksum === undefined) {
       if (data === undefined) {
@@ -59,43 +60,54 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
     }
 
     if (checksum !== obs.checksum) {
-      const buff = valueToBuffer(data)
+      let encodedData: Uint8Array
+      if (data instanceof Uint8Array) {
+        // console.info('hello!', data, diff, previousChecksum, isDeflate)
+        encodedData = data
+        if (diff) {
+          obs.diffCache = diff
+          obs.previousChecksum = previousChecksum
+        }
+        if (!isDeflate) {
+          isDeflate = false
+        }
+      } else {
+        const buff = valueToBuffer(data)
 
-      if (previousChecksum === undefined) {
-        if (typeof data === 'object' && data !== null) {
-          if (obs.rawData) {
-            diff = createPatch(obs.rawData, data)
-            obs.previousChecksum = obs.checksum
+        if (previousChecksum === undefined) {
+          if (typeof data === 'object' && data !== null) {
+            if (obs.rawData) {
+              diff = createPatch(obs.rawData, data)
+              obs.previousChecksum = obs.checksum
+            }
+            obs.rawData = deepCopy(data)
+          } else if (obs.rawData) {
+            delete obs.rawData
+            delete obs.rawDataSize
           }
-          obs.rawData = deepCopy(data)
-        } else if (obs.rawData) {
-          delete obs.rawData
-          delete obs.rawDataSize
+        }
+
+        // keep track globally of total mem usage
+        ;[encodedData, isDeflate] = encodeObservableResponse(id, checksum, buff)
+
+        if (diff) {
+          const diffBuff = valueToBuffer(diff)
+          const encodedDiffData = encodeObservableDiffResponse(
+            id,
+            checksum,
+            obs.previousChecksum,
+            diffBuff
+          )
+          obs.diffCache = encodedDiffData
+          // add to cache size
         }
       }
 
-      // keep track globally of total mem usage
-      const [encodedData, isDeflate] = encodeObservableResponse(
-        id,
-        checksum,
-        buff
-      )
+      console.log('yo yo yo', checksum, isDeflate, encodedData)
       // add deflate info
       obs.isDeflate = isDeflate
       obs.cache = encodedData
       obs.checksum = checksum
-
-      if (diff) {
-        const diffBuff = valueToBuffer(diff)
-        const encodedDiffData = encodeObservableDiffResponse(
-          id,
-          checksum,
-          obs.previousChecksum,
-          diffBuff
-        )
-        obs.diffCache = encodedDiffData
-        // add to cache size
-      }
 
       parentPort.postMessage({
         id,
