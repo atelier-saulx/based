@@ -1,5 +1,4 @@
 import {
-  GenericObject,
   BasedOpts,
   CloseObserve,
   ObserveOpts,
@@ -229,7 +228,7 @@ export class BasedCoreClient extends Emitter {
     }
   }
 
-  get(name: string, payload?: GenericObject, opts?: ObserveOpts): Promise<any> {
+  get(name: string, payload?: any, opts?: ObserveOpts): Promise<any> {
     if (opts) {
       // cache options
       console.warn('get opts not implemented yet...', opts)

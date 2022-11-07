@@ -82,23 +82,33 @@ test.serial('nested functions', async (t) => {
 
   t.is(x, 12)
 
-  const close = coreClient.observe('obsWithNested', (data) => {
-    console.info('X????', data)
+  let incomingCntNoJson = 0
+
+  const close = coreClient.observe('obsWithNested', () => {
+    incomingCntNoJson++
   })
 
+  let incomingCnt = 0
   const close2 = coreClient.observe(
     'obsWithNested',
-    (data, checksum) => {
-      console.info('NR 2 incoming!', data.bla.length, checksum)
+    () => {
+      incomingCnt++
     },
     'json'
   )
+
+  const bla = await coreClient.get('obsWithNested', 'json')
+
+  t.is(bla.bla.length, 10e4)
 
   await wait(5e3)
 
   close()
 
   close2()
+
+  t.true(incomingCnt > 0)
+  t.true(incomingCntNoJson > 0)
 
   await wait(15e3)
 
