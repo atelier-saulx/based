@@ -24,6 +24,12 @@ test.serial('nested functions', async (t) => {
       checksum: 1,
       functionPath: join(__dirname, './functions/counter.js'),
     },
+    objectCounter: {
+      observable: true,
+      name: 'objectCounter',
+      checksum: 1,
+      functionPath: join(__dirname, './functions/objectCounter.js'),
+    },
     obsWithNested: {
       observable: true,
       name: 'obsWithNested',
@@ -80,9 +86,19 @@ test.serial('nested functions', async (t) => {
     console.info('X????', data)
   })
 
+  const close2 = coreClient.observe(
+    'obsWithNested',
+    (data) => {
+      console.info('NR 2', data)
+    },
+    'json'
+  )
+
   await wait(5e3)
 
   close()
+
+  close2()
 
   await wait(15e3)
 

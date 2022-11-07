@@ -42,7 +42,9 @@ const encodePayload = (payload: any): [boolean, Uint8Array] | [boolean] => {
   let p: Uint8Array
   let isDeflate = false
   if (payload !== undefined) {
-    p = encoder.encode(JSON.stringify(payload))
+    p = encoder.encode(
+      typeof payload === 'string' ? payload : JSON.stringify(payload)
+    )
     if (p.length > 150) {
       p = fflate.deflateSync(p)
       isDeflate = true

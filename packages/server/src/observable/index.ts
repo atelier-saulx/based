@@ -233,7 +233,7 @@ export const initFunction = async (
       }
 
       if (prevDiffId) {
-        encodedDiffData.set(prevId, 4)
+        encodedDiffData.set(prevDiffId, 4)
       }
       if (prevId) {
         encodedData.set(prevId, 4)
