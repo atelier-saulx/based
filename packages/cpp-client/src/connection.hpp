@@ -29,13 +29,19 @@ class WsConnection {
     void send(std::vector<uint8_t> message);
     ConnectionStatus status();
 
-   private:  // Methods
-    std::shared_future<void> reconnect();
     void set_handlers(ws_client::connection_ptr con);
 #ifdef BASED_TLS
+#ifdef ASIO_STANDALONE
+    using context_ptr = std::shared_ptr<asio::ssl::context>;
+    static context_ptr on_tls_init();
+#endif
+#ifndef ASIO_STANDALONE
     using context_ptr = std::shared_ptr<boost::asio::ssl::context>;
     static context_ptr on_tls_init();
 #endif
+#endif
+   private:  // Methods
+    std::shared_future<void> reconnect();
 
    private:  // Members
     ws_client m_endpoint;
