@@ -5,6 +5,8 @@ import httpFunction from './http/function'
 import { fnPathMap, fnInstallListeners } from './functions'
 import { state } from './authorize'
 
+export * from './api'
+
 console.info('Start worker', threadId)
 
 // outgoing type: 0 => install function

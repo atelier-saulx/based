@@ -117,6 +117,14 @@ export class BasedFunctions {
 
     const d = this.config.maxWorkers - this.workers.length
 
+    const functionApiWrapperPath =
+      this.config.functionApiWrapperPath ||
+      join(__dirname, './dummyFunctionApiWrapper')
+
+    const workerData = {
+      workerData: { functionApiWrapperPath },
+    }
+
     // clean all this stuff up.....
     if (d !== 0) {
       if (d < 0) {
@@ -127,7 +135,7 @@ export class BasedFunctions {
         }
       } else {
         for (let i = 0; i < d; i++) {
-          const worker = new Worker(WORKER_PATH, {})
+          const worker = new Worker(WORKER_PATH, workerData)
           this.workers.push({
             worker,
             index: this.workers.length,

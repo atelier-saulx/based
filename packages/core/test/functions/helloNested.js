@@ -1,13 +1,16 @@
-const { runFunction, get, observe } = require('@based/server')
+// const { runFunction } = require('@based/server/worker')
+
+// based-db-query
+// based-db-set
+// based-db-updateSchema
+// based-file-upload
 
 module.exports = async (payload, context) => {
-  if (payload) {
-    return payload.length
-  }
+  console.log('fkap')
 
-  const x = await runFunction('hello', payload, context)
+  // const x = await runFunction('hello', payload, context)
 
-  console.info(x)
+  // console.info(x)
 
   return 'flap'
 }

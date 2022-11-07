@@ -116,21 +116,21 @@ export class BasedCoreClient extends Emitter {
     }
 
     // temporary fix...
-    if (this.functionResponseListeners.size > this.functionQueue.length) {
-      this.functionResponseListeners.forEach((p, k) => {
-        if (
-          !this.functionQueue.find(([id]) => {
-            if (id === k) {
-              return true
-            }
-            return false
-          })
-        ) {
-          p[1](new Error('Function executed on disconnect'))
-          this.functionResponseListeners.delete(k)
-        }
-      })
-    }
+    // if (this.functionResponseListeners.size > this.functionQueue.length) {
+    //   this.functionResponseListeners.forEach((p, k) => {
+    //     if (
+    //       !this.functionQueue.find(([id]) => {
+    //         if (id === k) {
+    //           return true
+    //         }
+    //         return false
+    //       })
+    //     ) {
+    //       p[1](new Error('Function executed on disconnect'))
+    //       this.functionResponseListeners.delete(k)
+    //     }
+    //   })
+    // }
 
     drainQueue(this)
   }

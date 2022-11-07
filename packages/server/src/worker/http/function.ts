@@ -1,9 +1,12 @@
 import { ClientContext } from '../../types'
-import { parentPort } from 'worker_threads'
+import { parentPort, workerData } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
 
 const decoder = new TextDecoder('utf-8')
+
+const { functionApiWrapperPath } = workerData
+const fnWrapper = require(functionApiWrapperPath).runFunction
 
 export const parsePayload = (
   id: number,
@@ -60,7 +63,7 @@ export default (
         })
         return
       }
-      fn(parsedPayload, {})
+      fnWrapper(name, fn, parsedPayload, context)
         .then((v) => {
           parentPort.postMessage({
             id,
