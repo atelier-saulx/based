@@ -66,7 +66,7 @@ test.serial('nested functions', async (t) => {
 
   const x = await coreClient.function('hello', { bla: true })
 
-  console.info('???', x)
+  console.info('FN RESPONSE -->', x)
 
   await wait(15e3)
 
