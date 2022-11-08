@@ -1,4 +1,4 @@
-import { ENDIANNESS, WORD_SIZE } from './mach';
+import { ENDIANNESS, WORD_SIZE } from './mach'
 
 /**
  * Encodings accepted by Record read and write operations.
@@ -14,7 +14,7 @@ export type Encoding =
 	| 'latin1'
 	| 'binary'
 	| 'hex'
-	| undefined;
+	| undefined
 
 /**
  * A list of valid Field Type Codes.
@@ -62,7 +62,7 @@ export type FieldTypeCode =
 	| 'pp'
 	| 'pq'
 	| 'pr'
-	| 'pw';
+	| 'pw'
 
 /**
  * A map from type names to Field Type Codes.
@@ -134,9 +134,11 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	double_le_p: 'pr',
 	// Variable size pointer types
 	cstring_p: 'pw',
-};
+}
 
-export const TYPE_CODE2TYPE = new Map(Object.keys(TYPES).map((k) => [TYPES[k], k]));
+export const TYPE_CODE2TYPE = new Map(
+	Object.keys(TYPES).map((k) => [TYPES[k], k])
+)
 
 /**
  * A map from type code to type size.
@@ -179,27 +181,33 @@ export const SIZES: { [index: string]: number } = {
 	[TYPES.double_be_p]: 2 * WORD_SIZE, // double_be_p
 	[TYPES.double_le_p]: 2 * WORD_SIZE, // double_le_p
 	[TYPES.cstring_p]: 2 * WORD_SIZE, // cstring_p
-};
+}
 
 /**
  * Returns a boolean true if the given Field Type Code is a variable type.
  */
 export function isVarType(typeCode: FieldTypeCode): boolean {
-	return [TYPES.int_be, TYPES.int_le, TYPES.uint_be, TYPES.uint_le, TYPES.cstring].includes(typeCode);
+	return [
+		TYPES.int_be,
+		TYPES.int_le,
+		TYPES.uint_be,
+		TYPES.uint_le,
+		TYPES.cstring,
+	].includes(typeCode)
 }
 
 /**
  * Returns a boolean true if the given Field Type Code is a virtual type.
  */
 export function isVirtualType(typeCode: FieldTypeCode): boolean {
-	return typeCode === TYPES.record;
+	return typeCode === TYPES.record
 }
 
 /**
  * Returns a boolean true if the given Field Type Code is a pointer type.
  */
 export function isPointerType(typeCode: FieldTypeCode): boolean {
-	return typeCode.length == 2;
+	return typeCode.length === 2
 }
 
 /**
@@ -250,4 +258,4 @@ export const C_TYPES = {
 	[TYPES.float_le_p]: 'float *',
 	[TYPES.double_be_p]: 'double *',
 	[TYPES.double_le_p]: 'double *',
-};
+}

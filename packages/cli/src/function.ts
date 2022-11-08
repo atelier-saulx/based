@@ -150,6 +150,7 @@ command(
       minify: true,
       platform: 'node',
       write: false,
+      sourcemap: true,
     }).catch((err) => err)
 
     if (result.errors && result.errors.length) {
@@ -157,6 +158,8 @@ command(
       options.debug && printError(result.errors)
       fail('Cannot deploy function got a build error.', output, options)
     }
+
+    console.log('--->', result.outputFiles)
 
     options.code = result.outputFiles[0].text
 

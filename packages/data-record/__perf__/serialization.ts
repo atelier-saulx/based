@@ -28,7 +28,7 @@ export default function serialization() {
 
 	function jsonTest(i: number, n: number) {
 		const obj = objs[i];
-		let o = JSON.parse(JSON.stringify(obj));
+		const o = JSON.parse(JSON.stringify(obj));
 
 		for (let i = 0; i < n; i++) {
 			JSON.parse(JSON.stringify(o));
@@ -38,7 +38,7 @@ export default function serialization() {
 	function dataRecordSerializeTest(i: number, n: number) {
 		const obj = objs[i];
 		const compiled = compile(recordDefs[i]);
-		let o = JSON.parse(JSON.stringify(obj));
+		const o = JSON.parse(JSON.stringify(obj));
 
 		for (let i = 0; i < n; i++) {
 			const buf = allocRecord(compiled);
