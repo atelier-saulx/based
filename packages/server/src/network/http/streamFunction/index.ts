@@ -38,46 +38,45 @@ export const httpStreamFunction = (
 
     multipartStream(client, server, payload, route, (p) => {
       return new Promise((resolve) => {
-        if (!thisIsFn) {
-          files.push({ p, resolve })
-        } else {
-          resolve(thisIsFn(p, client.context))
-        }
+        authorizeRequest(server, client, payload, route, () => {
+          if (!thisIsFn) {
+            files.push({ p, resolve })
+          } else {
+                resolve(thisIsFn(p, client.context))
+          }
+        },  () => {
+          console.log('not auth')
+        })
       })
     })
 
-    authorizeRequest(server, client, payload, route, () => {
-      server.functions
-        .install(route.name)
-        .then((spec) => {
-          if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            let fn = require(spec.functionPath)
-            if (fn.default) {
-              fn = fn.default
-            }
-            thisIsFn = fn
-
-            if (files.length) {
-              for (const file of files) {
-                console.info('File parsed before fn / auth')
-                file.resolve(fn(file.p, client.context))
-              }
-            }
-
-            // attach to fns that are being called...
-          } else {
-            sendHttpError(
-              server,
-              client,
-              BasedErrorCode.FunctionNotFound,
-              route
-            )
+    server.functions
+    .install(route.name)
+    .then((spec) => {
+      if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
+        let fn = require(spec.functionPath)
+        if (fn.default) {
+          fn = fn.default
+        }
+        thisIsFn = fn
+        if (files.length) {
+          for (const file of files) {
+            console.info('File parsed before fn / auth')
+            file.resolve(fn(file.p, client.context))
           }
-        })
-        .catch(() => {
-          sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
-        })
+        }
+      } else {
+        sendHttpError(
+          server,
+          client,
+          BasedErrorCode.FunctionNotFound,
+          route
+        )
+      }
+    }).catch(() => {
+      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
     })
+       
     return
   }
 
