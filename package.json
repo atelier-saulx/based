@@ -41,12 +41,12 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "lint-staged": {
+  "_lint-staged": {
     "*": [
       "npm run lint"
     ]
   },
-  "husky": {
+  "_husky": {
     "hooks": {
       "pre-push": "npm run lint"
     }
