@@ -1,6 +1,6 @@
 module.exports = async (payload, update) => {
   const largeThing = { bla: [] }
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1e4; i++) {
     largeThing.bla.push({
       title: 'snurp',
       cnt: i,
@@ -14,7 +14,7 @@ module.exports = async (payload, update) => {
     )
     // diff is made on an extra cache layer
     update(largeThing)
-  }, 100)
+  }, 1)
   return () => {
     clearInterval(counter)
   }

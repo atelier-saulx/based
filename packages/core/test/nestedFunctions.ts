@@ -42,7 +42,7 @@ test.serial('nested functions', async (t) => {
     port: 9910,
     functions: {
       functionApiWrapperPath: join(__dirname, 'functions', 'fnWrapper.js'),
-      maxWorkers: 2,
+      maxWorkers: 16,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
       route: ({ name }) => {
@@ -82,23 +82,33 @@ test.serial('nested functions', async (t) => {
 
   t.is(x, 12)
 
-  const close = coreClient.observe('obsWithNested', (data) => {
-    console.info('X????', data)
+  let incomingCntNoJson = 0
+
+  const close = coreClient.observe('obsWithNested', () => {
+    incomingCntNoJson++
   })
 
+  let incomingCnt = 0
   const close2 = coreClient.observe(
     'obsWithNested',
-    (data) => {
-      console.info('NR 2', data)
+    () => {
+      incomingCnt++
     },
     'json'
   )
+
+  const bla = await coreClient.get('obsWithNested', 'json')
+
+  t.is(bla.bla.length, 1e4)
 
   await wait(5e3)
 
   close()
 
   close2()
+
+  t.true(incomingCnt > 50)
+  t.true(incomingCntNoJson > 0)
 
   await wait(15e3)
 

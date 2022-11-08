@@ -38,7 +38,10 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
 
   activeObs.set(id, obs)
 
-  const fn = require(functionPath)
+  let fn = require(functionPath)
+  if (fn.default) {
+    fn = fn.default
+  }
 
   const update: ObservableUpdateFunction = (
     data: any,

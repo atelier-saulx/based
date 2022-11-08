@@ -3,7 +3,7 @@ import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
 import httpFunction from './http/function'
 import { fnPathMap, fnInstallListeners } from './functions'
-import { state } from './authorize'
+import { state, authorize } from './authorize'
 import { incomingObserve } from './api'
 
 export * from './api'
@@ -21,8 +21,23 @@ parentPort.on('message', (d) => {
   // d.type === 6 // UNINSTALL FN
   // d.type === 7 // CANNOT INSTALL FN
   // d.type === 8 // OBSERVABLE UPDATE
+  // d.type === 9 // AUTHORIZE
 
-  if (d.type === 8) {
+  if (d.type === 9) {
+    authorize(d.context, d.name, d.payload)
+      .then((ok) => {
+        parentPort.postMessage({
+          id: d.id,
+          payload: ok,
+        })
+      })
+      .catch((err) => {
+        parentPort.postMessage({
+          id: d.id,
+          err,
+        })
+      })
+  } else if (d.type === 8) {
     incomingObserve(d.id, d.checksum, d.data, d.err, d.diff, d.previousChecksum)
   } else if (d.type === 5) {
     // maybe if you install like this it gets marked for a bit longer
@@ -34,13 +49,18 @@ parentPort.on('message', (d) => {
     }
     fnPathMap.set(d.name, d.path)
     if (x) {
-      const installedFn = require(d.path)
+      let installedFn = require(d.path)
+      if (installedFn.default) {
+        installedFn = installedFn.default
+      }
+
       x.forEach((r) => {
         r(installedFn)
       })
     }
     if (d.name === 'authorize') {
-      state.authorize = require(d.path)
+      const auth = require(d.path)
+      state.authorize = auth.default || auth
     }
   } else if (d.type === 7) {
     const x = fnInstallListeners.get(d.name)

@@ -64,9 +64,22 @@ export const subscribe = (
   obs.clients.add(client.ws.id)
   if (obs.cache && obs.checksum !== checksum) {
     if (obs.diffCache && obs.previousChecksum === checksum) {
-      client.ws.send(obs.diffCache, true, false)
+      if (obs.reusedCache) {
+        const prevId = updateId(obs.diffCache, id)
+        client.ws.send(obs.diffCache, true, false)
+        obs.diffCache.set(prevId, 4)
+      } else {
+        client.ws.send(obs.diffCache, true, false)
+      }
     } else {
-      client.ws.send(obs.cache, true, false)
+      // and for this
+      if (obs.reusedCache) {
+        const prevId = updateId(obs.cache, id)
+        client.ws.send(obs.cache, true, false)
+        obs.cache.set(prevId, 4)
+      } else {
+        client.ws.send(obs.cache, true, false)
+      }
     }
   }
 }
@@ -188,6 +201,7 @@ export const initFunction = async (
       obs.checksum = checksum
       obs.cache = encodedData
       obs.isDeflate = isDeflate
+      obs.reusedCache = reusedCache || false
 
       if (encodedDiffData) {
         obs.diffCache = encodedDiffData
@@ -260,6 +274,7 @@ export const create = (
 
   const obs: ActiveObservable = {
     payload,
+    reusedCache: false,
     clients: new Set(),
     workers: new Set(),
     id,

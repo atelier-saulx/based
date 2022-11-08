@@ -207,7 +207,10 @@ export const createError = (
     statusMessage: type.statusMessage,
     message:
       typeof type.message === 'function' ? type.message(payload) : type.message,
-    route,
+    route: {
+      name: route.name,
+      path: route.path,
+    },
   }
 
   if ('requestId' in payload) {

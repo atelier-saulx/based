@@ -16,12 +16,12 @@ import { workerMessage } from '../network/worker'
 
 export { isObservableFunctionSpec }
 
-let reqId = 0
-
 const WORKER_PATH = join(__dirname, '../worker')
 
 export class BasedFunctions {
   server: BasedServer
+
+  reqId: number = 0
 
   config: FunctionConfig
 
@@ -397,15 +397,15 @@ export class BasedFunctions {
     // TODO: move selection criteria etc to other file
 
     return new Promise((resolve, reject) => {
-      const listenerId = ++reqId
+      const listenerId = ++this.reqId
       // max concurrent execution is 1 mil...
       if (this.workerResponseListeners.size >= 1e6) {
         throw new Error(
           'MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)'
         )
       }
-      if (reqId > 1e6) {
-        reqId = 0
+      if (this.reqId > 1e6) {
+        this.reqId = 0
       }
       const selectedWorker: BasedWorker = this.lowestWorker
       this.workerResponseListeners.set(listenerId, (err, p) => {

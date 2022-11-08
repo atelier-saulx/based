@@ -4,6 +4,7 @@ import {
   decodeName,
   readUint8,
   encodeGetResponse,
+  updateId,
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
@@ -23,13 +24,31 @@ const sendGetData = (
   }
 
   if (checksum === 0) {
-    client.ws.send(obs.cache, true, false)
+    if (obs.reusedCache) {
+      const prevId = updateId(obs.cache, id)
+      client.ws.send(obs.cache, true, false)
+      obs.cache.set(prevId, 4)
+    } else {
+      client.ws.send(obs.cache, true, false)
+    }
   } else if (checksum === obs.checksum) {
     client.ws.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
-    client.ws.send(obs.diffCache, true, false)
+    if (obs.reusedCache) {
+      const prevId = updateId(obs.diffCache, id)
+      client.ws.send(obs.diffCache, true, false)
+      obs.diffCache.set(prevId, 4)
+    } else {
+      client.ws.send(obs.diffCache, true, false)
+    }
   } else {
-    client.ws.send(obs.cache, true, false)
+    if (obs.reusedCache) {
+      const prevId = updateId(obs.cache, id)
+      client.ws.send(obs.cache, true, false)
+      obs.cache.set(prevId, 4)
+    } else {
+      client.ws.send(obs.cache, true, false)
+    }
   }
 
   destroy(server, id)

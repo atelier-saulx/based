@@ -19,7 +19,10 @@ export default (
   isDeflate: boolean,
   payload?: Uint8Array
 ) => {
-  const fn = require(path)
+  let fn = require(path)
+  if (fn.default) {
+    fn = fn.default
+  }
 
   let parsedPayload: any
 
