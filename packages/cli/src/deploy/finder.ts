@@ -11,6 +11,7 @@ export type BasedFunctionConfig = {
   observable: boolean
   shared: boolean
   code?: string
+  sourcemap?: string
   status?: 'update' | 'new' | 'unchanged' | 'err'
 }
 /**

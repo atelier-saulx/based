@@ -8,7 +8,7 @@ import makeClient from '../makeClient'
 import { envId } from '@based/ids'
 import path from 'path'
 import { Based } from '@based/client'
-import { Config, GenericOutput } from '../types'
+import { GenericOutput } from '../types'
 import {
   fail,
   prefix,
@@ -107,8 +107,14 @@ command(
         minify: true,
         platform: 'node',
         write: false,
+        sourcemap: 'external',
       })
-      fun.code = x.outputFiles[0].text
+
+      fun.code = x.outputFiles.find(({ path }) => path.endsWith('.js')).text
+      fun.sourcemap = x.outputFiles.find(({ path }) =>
+        path.endsWith('.js.map')
+      ).text
+
       fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
       if (fun.status === 'unchanged') {
         unchangedFns++

@@ -27,6 +27,7 @@ export default async function (
               shared: fun.shared,
               name: fun.name,
               code: fun.code,
+              sourcemap: fun.sourcemap,
               fromFile: true,
             })
 
