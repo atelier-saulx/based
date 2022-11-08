@@ -72,15 +72,40 @@ test.serial('auth with apiKey', async (t) => {
   const token = jwt.sign({ foo: 'bar', apiKey: true }, privateKey, {
     algorithm: 'RS256',
   })
-  client.auth(token, { isApiKey: true })
+  await client.auth(token, { isApiKey: true })
 
   const y = await client.get({
     $id: 'root',
     id: true,
     name: true,
   })
-
   t.is(y?.id, 'root')
+
+  await client.auth(token, { isApiKey: true })
+
+  const z = await client.get({
+    $id: 'root',
+    id: true,
+    name: true,
+  })
+  t.is(z?.id, 'root')
+
+  await client.auth(false)
+
+  console.info('multi')
+  await Promise.all([
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+    client.auth(token, { isApiKey: true }),
+  ])
+
+  const a = await client.get({
+    $id: 'root',
+    id: true,
+    name: true,
+  })
+  t.is(a?.id, 'root')
 
   await server.destroy()
   client.disconnect()

@@ -1,4 +1,4 @@
-const { observe } = require('@based/server/worker')
+const { observe } = require('@based/edge-server/worker')
 
 module.exports = async (payload, update) => {
   return observe(

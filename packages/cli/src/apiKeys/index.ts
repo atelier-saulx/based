@@ -23,11 +23,11 @@ export type ApiKeyData = {
 
 command(
   program
-    .command('apiKeys')
+    .command('api-keys')
     .option('--name <name>', 'Name of apiKey')
     .option('--file <file>', 'Filepath to save the apiKey')
     .addArgument(
-      new Argument('<subcommand>', 'apiKeys subcommand').choices([
+      new Argument('<subcommand>', 'api-keys subcommand').choices([
         'ls',
         'add',
         'remove',

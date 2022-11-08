@@ -1,4 +1,4 @@
-const { runFunction, get, decode } = require('@based/server/worker')
+const { runFunction, get, decode } = require('@based/edge-server/worker')
 
 module.exports = async (payload, context) => {
   const x = await runFunction('hello', payload, context)

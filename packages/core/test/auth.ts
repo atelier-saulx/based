@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer, { isHttpClient } from '@based/server'
+import createServer, { isHttpClient } from '@based/edge-server'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()

@@ -9,11 +9,11 @@ const test = anyTest as TestInterface<{
 }>
 
 const authorize: AuthorizeFn = async ({ user }) => {
-  if (user._token === 'expiredToken') {
+  if (user?._token === 'expiredToken') {
     const basedError = new BasedError('Token expired')
     basedError.code = BasedErrorCodes.TokenExpired
     throw basedError
-  } else if (user._token === 'validToken') {
+  } else if (user?._token === 'validToken') {
     return true
   }
   return false

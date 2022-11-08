@@ -1,5 +1,6 @@
-# @based/client
+# Based Client
 
+<!-- based-docs-remove-start -->
 ### Index
 
 - [Modify data](#modify-data)
@@ -7,8 +8,10 @@
 - [Upload files](#upload-files)
 - [Schema](#schema)
 - [Analytics](#analytics)
+- [Auth System](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/auth.md)
 
 ---
+<!-- based-docs-remove-end -->
 
 This package allows to interact with a Based environment, set and observe data, upload files, track and see analytics, and authenticate users.
 
@@ -60,7 +63,7 @@ await client.set({
 
 ## Modify data
 
-> Read more about `set` and its operators [here](docs/set.md)
+> Read more about `set` and its operators [here](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/set.md)
 
 ### `set`
 
@@ -114,7 +117,7 @@ await client.delete({
 
 ## Observe data
 
-> Read more about `observe` and the query language [here](docs/get.md)
+> Read more about `observe` and the query language [here](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/get.md)
 
 Based is built from the ground up with realtime updates in mind. This is why the best way to retrieve data for the database is to _observe_ it. This allows to pass an `onData` function that will get called any time the data that the query points to changes.
 
@@ -191,7 +194,7 @@ const data = await client.get({
 
 ## Upload files
 
-> Details [here](docs/files.md)
+> Details [here](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/files.md)
 
 Based provides a way to upload and serve user content without hassle using the `client.file()` API.
 
@@ -253,7 +256,7 @@ data = {
 
 ## Schema
 
-> Read more about schemas [here](docs/schema.md)
+> Read more about schemas [here](https://github.com/atelier-saulx/based/blob/main/packages/client/docs/schema.md)
 
 The schema describes what types of nodes can exist on the database. Each `type` can have several named `fields`, each with its own data type (i.e. `string`, `number`, `object`, and so on). Based on the data type, Based will validate the value passed.
 
@@ -263,14 +266,16 @@ One of the first things a Based user will have to do is set a schema for its dat
 
 ```js
 await client.updateSchema({
-  types: {
-    thing: {
-      fields: {
-        name: { type: 'string' },
-        nested: {
-          type: 'object',
-          properties: {
-            something: { type: 'string' },
+  schema: {
+    types: {
+      thing: {
+        fields: {
+          name: { type: 'string' },
+          nested: {
+            type: 'object',
+            properties: {
+              something: { type: 'string' },
+            },
           },
         },
       },
@@ -346,6 +351,7 @@ Based analytics can provide more specific data by using the `$geo` and `$history
 ```
 <!-- prettier-ignore-end -->
 
+<!-- based-docs-remove-start -->
 ---
 
 ## License
@@ -353,3 +359,4 @@ Based analytics can provide more specific data by using the `$geo` and `$history
 Licensed under the MIT License.
 
 See [LICENSE](./LICENSE) for more information.
+<!-- based-docs-remove-end -->

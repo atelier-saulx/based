@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer from '@based/edge-server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const setup = async (t: ExecutionContext) => {

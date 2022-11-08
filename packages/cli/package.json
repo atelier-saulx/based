@@ -1,32 +1,37 @@
 {
   "name": "@based/cli",
-  "version": "2.9.1",
+  "version": "2.17.3",
   "license": "MIT",
   "main": "dist/index.js",
   "bin": {
     "based": "bin/cmd.js"
   },
   "scripts": {
-    "watch": "npx tsc -w",
-    "build": "npx tsc",
+    "postbuild": "cp ./src/buildApp/template.ts ./dist/buildApp",
+    "watch": "npx tsc-watch --onSuccess 'npm run postbuild'",
+    "build": "npx tsc && npm run postbuild",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
+  "engines": {
+    "node": ">=10.0.0"
+  },
   "dependencies": {
-    "@based/client": "2.8.0",
+    "@based/client": "^3.3.0",
     "@based/ids": "2.6.2",
     "@based/pretty-date": "^1.0.4",
     "@based/pretty-number": "1.0.3",
-    "@root/walk": "^1.1.0",
+    "@saulx/aristotle-build": "^2.5.2",
+    "@saulx/fs-walker": "1.0.2",
     "@saulx/hash": "^1.1.0",
-    "@saulx/utils": "^2.2.1",
+    "@saulx/utils": "2.4.1",
     "chalk": "^4.1.2",
     "commander": "^8.1.0",
-    "cross-fetch": "^3.1.4",
-    "esbuild": "^0.14.29",
+    "esbuild": "0.14.29",
     "find-up": "^5.0.0",
     "fs-extra": "^10.0.1",
     "glob": "7.2.0",
     "inquirer": "8.2.0",
+    "node-fetch": "^2.6.7",
     "ora": "^5.1.0",
     "pretty-bytes": "^5.4.1"
   },
@@ -34,7 +39,9 @@
     "@types/inquirer": "^8.1.3",
     "@types/node": "^17.0.23",
     "ts-node": "10.9.1",
-    "typescript": "^4.3.5",
-    "rimraf": "^3.0.2"
+    "@types/node-fetch": "^2.6.2",
+    "rimraf": "^3.0.2",
+    "tsc-watch": "^5.0.3",
+    "typescript": "^4.3.5"
   }
 }
