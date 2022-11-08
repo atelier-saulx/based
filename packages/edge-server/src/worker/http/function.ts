@@ -52,7 +52,7 @@ export default (
   } else if (type === 4) {
     parsedPayload = parseQuery(context.query)
   }
-  authorize(context, name, payload)
+  authorize(context, name, parsedPayload)
     .then((ok) => {
       if (!ok) {
         console.error('auth wrong')
