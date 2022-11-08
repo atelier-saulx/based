@@ -29,7 +29,7 @@ test.serial('functions (over http + stream)', async (t) => {
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
+      idleTimeout: 20e3,
       uninstall: async ({ name }) => {
         console.info('uninstall', name)
         await wait(1e3)
@@ -61,7 +61,7 @@ test.serial('functions (over http + stream)', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 1e6; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
@@ -96,6 +96,8 @@ test.serial('functions (over http + stream)', async (t) => {
     console.info('ERROR', err)
     t.fail('Crash with uncompressing')
   }
+
+  console.log('rdy')
 
   await wait(30e3)
 
