@@ -13,9 +13,6 @@
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
-  "peerDependencies": {
-    "@saulx/selva": "10||11||12||13||14"
-  },
   "dependencies": {
     "@based/client": "^2.9.0",
     "@based/graphql": "^2.4.2",
