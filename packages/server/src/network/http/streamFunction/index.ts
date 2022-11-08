@@ -59,6 +59,7 @@ export const httpStreamFunction = (
 
             if (files.length) {
               for (const file of files) {
+                console.info('File parsed before fn / auth')
                 file.resolve(fn(file.p, client.context))
               }
             }
