@@ -2,7 +2,12 @@ FROM openjdk:11.0.9-jdk
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --no-upgrade build-essential libc++-dev libcurl4-openssl-dev libz-dev
+    apt-get install -y --no-install-recommends --no-upgrade build-essential \
+    libc++-dev \
+    libcurl4-openssl-dev \
+    libz-dev \
+    libssl-dev
+
 
 WORKDIR /build
 COPY ./src ./src
