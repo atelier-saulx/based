@@ -89,6 +89,13 @@ test.serial('rest call request', async (t) => {
             return '<div>hello</div>'
           },
         },
+        returnPath: {
+          observable: false,
+          function: async ({ path }) => path,
+          headers: async () => ({
+            'Content-Type': 'text/plain',
+          }),
+        },
       },
     },
   })
@@ -257,6 +264,22 @@ test.serial('rest call request', async (t) => {
 
   t.is(p.headers.get('content-type'), 'text/html')
   t.is(await p.text(), '<div>hello</div>')
+
+  const q = await fetch('http://localhost:9200/call/returnPath/success')
+
+  t.is(await q.text(), '/success')
+
+  const r = await fetch('http://localhost:9200/call/returnPath/success/story')
+
+  t.is(await r.text(), '/success/story')
+
+  const s = await fetch('http://localhost:9200/call/returnPath')
+
+  t.is(await s.text(), '/')
+
+  const s2 = await fetch('http://localhost:9200/call/returnPath/')
+
+  t.is(await s2.text(), '/')
 
   await server.destroy()
 

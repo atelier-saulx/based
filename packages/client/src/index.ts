@@ -23,6 +23,7 @@ import {
   FileUploadStream,
   AnalyticsHistoryResult,
   GetOptions,
+  RegisterOpts,
   LoginOpts,
 } from '@based/types'
 import {
@@ -39,7 +40,7 @@ import { hashCompact } from '@saulx/hash'
 import sendToken from './token'
 import track, { genKey as generateTrackingKey } from './track'
 import { CompoundObservable, IObservable, Observable } from './observable'
-import { login, logout } from './auth'
+import { login, logout, register } from './auth'
 import file from './file'
 import getService, { getClusterUrl } from '@based/get-service'
 import { deepCopy } from '@saulx/utils'
@@ -341,10 +342,8 @@ export class Based extends Emitter {
             } as any // TODO: FIX
           }
 
-          // console.info('hello', this.client.configuration)
           this.client.configuration.schema[db] = data
           onData(data, checksum)
-          // this.client.configuration.schema
         },
         (err, subscriptionId, subscriberId, _data, isAuthError) => {
           if (err && !isAuthError) {
@@ -448,6 +447,18 @@ export class Based extends Emitter {
   public set(payload: SetOptions): Promise<{ id: string }> {
     return new Promise((resolve, reject) => {
       addRequest(this.client, RequestTypes.Set, payload, resolve, reject)
+    })
+  }
+
+  public bulkUpdate(payload: SetOptions, query: any): Promise<{ id: string }> {
+    return new Promise((resolve, reject) => {
+      addRequest(
+        this.client,
+        RequestTypes.BulkUpdate,
+        { payload, query },
+        resolve,
+        reject
+      )
     })
   }
 
@@ -811,40 +822,128 @@ export class Based extends Emitter {
     options?: SendTokenOptions
   ): Promise<false | string | number> {
     return new Promise((resolve) => {
-      this.client.auth.push(resolve)
-      if (
-        (token && token !== this.client.token) ||
-        (token === false && this.client.token)
-      ) {
-        if (typeof token === 'string') {
-          const { renewOptions, refreshToken, ...redactedOptions } =
-            options || {}
-          if (renewOptions) {
-            this.client.renewOptions = renewOptions
-          }
-          if (refreshToken) {
-            this.client.renewOptions = {
-              ...this.client.renewOptions,
-              refreshToken,
-            }
-          }
-          sendToken(this.client, token, redactedOptions)
+      if (token && token === this.client.token) {
+        if (!this.client.beingAuth) {
+          resolve(token)
         } else {
-          // this is very important
-          // may need to add a req Id (and a timer how long it takes)
-          sendToken(this.client)
+          this.client.auth.push((v) => {
+            if (v) {
+              resolve(token)
+            } else {
+              resolve(false)
+            }
+          })
         }
-        this.emit('auth', token)
+      } else {
+        this.client.auth.push(resolve)
+        if (
+          (token && token !== this.client.token) ||
+          (token === false && this.client.token)
+        ) {
+          if (
+            typeof token === 'string' &&
+            options?.id &&
+            options.refreshToken
+          ) {
+            if (options.localStorage === false) {
+              this.client.tokenToLocalStorage = false
+            } else {
+              this.client.tokenToLocalStorage = true
+            }
+            this.client.updateUserState(options.id, token, options.refreshToken)
+          } else {
+            if (typeof token === 'string') {
+              const { renewOptions, refreshToken, ...redactedOptions } =
+                options || {}
+              if (renewOptions) {
+                this.client.renewOptions = renewOptions
+              }
+              if (refreshToken) {
+                this.client.renewOptions = {
+                  ...this.client.renewOptions,
+                  refreshToken,
+                }
+              }
+              sendToken(this.client, token, redactedOptions)
+            } else {
+              // this is very important
+              // may need to add a req Id (and a timer how long it takes)
+              sendToken(this.client)
+            }
+            this.emit('auth', token)
+          }
+        }
       }
     })
   }
 
-  public async login(opts: LoginOpts): Promise<GenericObject> {
+  // observeAuth
+
+  public async login(
+    opts: LoginOpts & { localStorage?: boolean }
+  ): Promise<GenericObject> {
+    if (opts.localStorage === false) {
+      this.client.tokenToLocalStorage = false
+    } else {
+      this.client.tokenToLocalStorage = true
+    }
     return login(this.client, opts)
+  }
+
+  public async register(
+    opts: RegisterOpts & { localStorage?: boolean }
+  ): Promise<GenericObject> {
+    if (opts.localStorage === false) {
+      this.client.tokenToLocalStorage = false
+    } else {
+      this.client.tokenToLocalStorage = true
+    }
+    return register(this.client, opts)
   }
 
   public logout(): Promise<GenericObject> {
     return logout(this.client)
+  }
+
+  public observeAuth(
+    userDataListener: (
+      data:
+        | {
+            id: string
+            token: string
+          }
+        | false
+    ) => void
+  ): Promise<() => void> {
+    return new Promise((resolve) => {
+      // store a user state somehwere..
+
+      if (this.client.user && this.client.token) {
+        userDataListener({
+          id: this.client.user,
+          token: this.client.token,
+        })
+      } else {
+        userDataListener(false)
+      }
+
+      const authListener = (d) => {
+        if (d && this.client.user && this.client.token) {
+          userDataListener({
+            id: this.client.user,
+            token: this.client.token,
+          })
+        } else {
+          userDataListener(false)
+        }
+      }
+
+      this.on('auth', authListener)
+
+      resolve(() => {
+        this.removeListener('auth', authListener)
+      })
+    })
   }
 }
 
@@ -905,6 +1004,7 @@ const based = (opts: BasedOpts, BasedClass = Based): Based => {
           org,
           key,
           name,
+          optionalKey: true,
         },
         0,
         cluster
@@ -916,6 +1016,7 @@ const based = (opts: BasedOpts, BasedClass = Based): Based => {
   if (url) {
     const client = new BasedClass()
     client.opts = opts
+    client.client.initUserState()
     client.connect(url)
     return client
   }

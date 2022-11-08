@@ -34,15 +34,21 @@ export const findInstances = async (
   const coreServicesEnv = envs.find(
     (env: any) => env.org === 'saulx' && env.env === 'core-services'
   )
-  const { services: coreServices } = await client.get('listServices', {
-    id: coreServicesEnv.id,
-  })
+  let coreServices = []
+  if (coreServicesEnv) {
+    ;({ services: coreServices } = await client.get('listServices', {
+      id: coreServicesEnv.id,
+    }))
+  }
   const sharedServicesEnv = envs.find(
     (env: any) => env.org === 'saulx' && env.env === 'shared-services'
   )
-  const { services: sharedServices } = await client.get('listServices', {
-    id: sharedServicesEnv.id,
-  })
+  let sharedServices = []
+  if (sharedServicesEnv) {
+    ;({ services: sharedServices } = await client.get('listServices', {
+      id: sharedServicesEnv.id,
+    }))
+  }
   services = services.concat(coreServices, sharedServices)
 
   if ((!wantedNames && !wantedTemplates) || forceMenu) {

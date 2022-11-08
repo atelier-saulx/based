@@ -1,5 +1,5 @@
 import { Params } from '@based/server'
-import jwt from 'jsonwebtoken'
+import { generateTokens, tokenExpiresIn } from '../shared'
 
 type RefreshTokenBody = { id: string; refreshToken: true }
 
@@ -10,30 +10,35 @@ export default async ({ based, payload }: Params) => {
   const publicKey = await based.secret(`users-public-key-${project}-${env}`)
   const privateKey = await based.secret(`users-private-key-${project}-${env}`)
 
-  if ((await based.redis.get(refreshToken)) === 'invalidated') {
+  if (
+    (await based.redis.get(
+      {
+        name: 'default',
+      },
+      refreshToken
+    )) === 'invalidated'
+  ) {
     throw new Error('invalid refreshToken')
   }
 
-  const refreshTokenBody: RefreshTokenBody = await based.decode(refreshToken, {
-    publicKey,
-  })
+  let refreshTokenBody: RefreshTokenBody
+  try {
+    refreshTokenBody = await based.decode(refreshToken, {
+      publicKey,
+    })
+  } catch (error) {}
 
   if (
     refreshTokenBody &&
     refreshTokenBody.refreshToken === true &&
     refreshTokenBody.id
   ) {
-    const newToken = jwt.sign(
-      {
-        id: refreshTokenBody.id,
-      },
+    const { token } = await generateTokens({
+      based,
+      id: refreshTokenBody.id,
       privateKey,
-      {
-        expiresIn: '30m',
-        algorithm: 'RS256',
-      }
-    )
-    return { token: newToken }
+    })
+    return { token, tokenExpiresIn }
   }
 
   throw new Error('invalid refreshToken')

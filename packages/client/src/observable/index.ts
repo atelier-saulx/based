@@ -84,6 +84,7 @@ export class CompoundObservable implements IObservable {
   subscribe(
     onNext: UpdateCallback,
     onError?: (err: Error) => void,
+    // eslint-disable-next-line
     onComplete?: (x?: any) => void
   ): ISubscription {
     const sharedResult: any = { data: {} }
@@ -143,6 +144,7 @@ export class Observable implements IObservable {
   subscribe(
     onNext: UpdateCallback,
     onError?: (err: Error) => void,
+    // eslint-disable-next-line
     onComplete?: (x?: any) => void
   ): ISubscription {
     const [, subscriberId] = addSubscriber(

@@ -1,4 +1,4 @@
-## JWT Auth Flow HowTo
+# JWT Auth Flow HowTo
 
 A short guide to setting up the JWT authentication flow using based.
 An example with the info on this guide can be foud [here](https://github.com/atelier-saulx/auth-demo)

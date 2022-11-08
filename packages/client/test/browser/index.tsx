@@ -10,11 +10,36 @@ const init = async () => {
   })
 
   client.client.debug = true
-  client.observe('bla', (d) => {
-    console.info(d)
+
+  const but = document.createElement('button')
+
+  const loginStatus = document.createElement('div')
+
+  but.innerHTML = 'LOGIN'
+
+  but.onclick = () => {
+    client.login({
+      password: 'bla',
+      email: 'bla@bla.com',
+      // localStorage: false,
+    })
+  }
+
+  client.observeAuth((d) => {
+    loginStatus.innerHTML = d ? d.id : 'not logged in!'
   })
 
-  // client.observe({ id: true }, () => {})
+  //
+
+  const butget = document.createElement('button')
+  butget.innerHTML = 'GET'
+  butget.onclick = () => {
+    client.get({ $id: 'root', id: true })
+  }
+
+  document.body.appendChild(but)
+  document.body.appendChild(loginStatus)
+  document.body.appendChild(butget)
 }
 
 init()

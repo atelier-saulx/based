@@ -1,3 +1,4 @@
+<!-- based-docs-remove-start -->
 <div align="center">
   <a href="javascript:void(0);" style="pointer-events: none;">
         <img src="../../../.docs/assets/based-logo-black.svg#gh-light-mode-only" style="width: 350px; padding-bottom: 10px;" />
@@ -5,13 +6,19 @@
 
   </a>
 </div>
+<!-- based-docs-remove-end -->
+<!-- based-docs-only
+<div align="center">
+        <img src="../../../.docs/assets/based.svg#gh-dark-mode-only" style="width: 350px; padding-bottom: 10px;" />
+</div>
+-->
 
 # Getting started
 
 The first step in getting started with using Based is creating a new project. To do so, after logging in, click the `+ New Project` button and type in a new project name.  
 Each project can have multiple environments (e.g. development and production).
 
-Go to the based [dashboard](https://based-website.vercel.app/dashboard)
+Go to the based [dashboard](https://based.io/dashboard)
 
 <!-- create-new-project video -->
 
@@ -57,4 +64,4 @@ await client.set({
 })
 ```
 
-> [Click here to read more about the Javascript Based SDK](../README.md)
+Click [here](https://github.com/atelier-saulx/based/blob/main/packages/client/README.md) to read more about the Javascript Based SDK.

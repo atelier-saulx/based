@@ -61,14 +61,9 @@ const connect = (
       })
 
       const ws = (connection.ws = new WebSocket(realUrl))
-      // ws.binaryType = 'blob'
 
-      ws.onerror = (err) => {
-        console.error(err)
-      }
-      ws.onmessage = (d) => {
-        client.onData(d)
-      }
+      ws.onerror = () => {}
+      ws.onmessage = (d) => client.onData(d)
       ws.onopen = () => {
         if (isActive) {
           if (connection.disconnected) {

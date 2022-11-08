@@ -1,4 +1,4 @@
-# Schema of Based-db
+# Schemas
 
 <!-- - [Schema](#schema)
   - [Fields](#fields)

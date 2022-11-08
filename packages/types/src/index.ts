@@ -47,6 +47,8 @@ export enum RequestTypes {
   RemoveField = 17,
   // eslint-disable-next-line
   Auth = 18,
+  // eslint-disable-next-line
+  BulkUpdate = 19,
 }
 
 export enum AuthRequestTypes {
@@ -109,7 +111,13 @@ export type ErrorObject = {
 }
 
 // outgoing data
-export type FunctionCallMessage = [RequestTypes.Call, string, number, any?]
+export type FunctionCallMessage = [
+  RequestTypes.Call,
+  string,
+  number,
+  any?,
+  any?
+]
 
 export type TrackMessage = [RequestTypes.Track, TrackPayload]
 
@@ -125,6 +133,7 @@ export type RequestMessage<T = GenericObject> =
         | RequestTypes.Digest
         | RequestTypes.RemoveType
         | RequestTypes.RemoveField
+        | RequestTypes.BulkUpdate
       ),
       number,
       T
@@ -233,6 +242,7 @@ export type RequestData = [
     | RequestTypes.Digest
     | RequestTypes.RemoveType
     | RequestTypes.RemoveField
+    | RequestTypes.BulkUpdate
   ),
   // callback id
   number,
@@ -273,12 +283,14 @@ export type TrackOpts = {
 }
 
 export type SendTokenOptions = {
+  id?: string
   isBasedUser?: boolean
   isApiKey?: boolean
   refreshToken?: string
   renewOptions?: {
     refreshToken?: string
   } & { [key: string]: any }
+  localStorage?: boolean
 }
 
 export type AnalyticsResult = {
@@ -350,6 +362,14 @@ export type LoginOpts = {
   email: string
   password: string
 }
+
+export type RegisterOpts = {
+  email: string
+  password: string
+  name?: string
+  redirectUrl?: string
+}
+
 export type RenewTokenOpts = {
   refreshToken?: string
 } & { [key: string]: any }

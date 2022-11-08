@@ -1,7 +1,6 @@
 import { BasedServerClient } from '@based/server'
 
 export default async ({
-  payload,
   based,
   user,
 }: {
@@ -11,7 +10,16 @@ export default async ({
 }) => {
   const refreshToken = user?._refreshToken
   if (refreshToken) {
-    based.redis.set(refreshToken, 'invalidated', 'EX', 60 * 60 * 24 * 7) // expire in 7d
+    based.redis.set(
+      {
+        name: 'default',
+        type: 'origin',
+      },
+      refreshToken,
+      'invalidated',
+      'EX',
+      60 * 60 * 24 * 7
+    ) // expire in 7d
   }
   return {}
 }

@@ -62,6 +62,19 @@ export const printDebug = (value: any) => {
   lines.forEach((line: string) => console.info(prefixDebug + line))
 }
 
+export const fitLines = (text: string, pre: string = prefix) => {
+  const lines = stripAnsi(text).split('\n')
+  const preSize = stripAnsi(pre).length
+  const maxWidth = process.stdout.columns - preSize
+  lines.forEach((line: string) => {
+    while (line.length > maxWidth) {
+      console.info(pre + line.substring(0, maxWidth))
+      line = line.substring(maxWidth)
+    }
+    console.info(pre + line)
+  })
+}
+
 export const fail = (message: string, output: GenericOutput, options: any) => {
   output.errors = output.errors || []
   output.errors.push({ message })
