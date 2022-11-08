@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 
     int client1 = Based__new_client();
 
-    char* address = (char*)"ws://localhost:9910";
+    char* address = (char*)"wss://localhost:9910";
 
     Based__connect_to_url(client1, address);
     bool done = false;
