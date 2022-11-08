@@ -9,3 +9,5 @@ obj/*
 linked-example
 
 docker-build
+
+distribute/*

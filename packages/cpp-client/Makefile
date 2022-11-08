@@ -12,19 +12,19 @@ LDIR = $(patsubst %,-I%,$(LIB_DIRS))
 LDFLAGS = 
 LDLIBS = -lz -lcurl
 
-# CXX = clang++
-
 ODIR=obj
 SRCDIR=src
 DISTDIR=distribute
 
+LIBNAME = libbased
+
 uname_S := $(shell uname -s)
 
 ifeq ($(uname_S),Linux)
-	TARGET := libbased.so
+	TARGET = $(LIBNAME).so
 endif
 ifeq ($(uname_S),Darwin) # macOS
-	TARGET := libbased.dylib
+	TARGET = $(LIBNAME).dylib
 endif
 ifndef TARGET
 $(error TARGET is not set)
@@ -38,22 +38,23 @@ OBJS = basedclient.o \
 
 CXXFLAGS += -Wall -std=c++0x -D_WEBSOCKETPP_CPP11_STL_ -DASIO_STANDALONE
 
-all: $(TARGET)
+all: tls
 
 .PHONY: tls
 tls: LIB_DIRS += /usr/local/opt/openssl@3/include
 tls: CXXFLAGS += -DBASED_TLS
 tls: LDLIBS += -lssl -lcrypto
 tls: LDFLAGS += -L/usr/local/opt/openssl@3/lib
-tls: TARGET = libbasedtls.$(suffix $(TARGET))
 tls: $(TARGET)
+
+.PHONY: no-tls
+no-tls: $(TARGET)
 
 $(ODIR)/%.o: $(SRCDIR)/%.cpp
 	+@[ -d $(ODIR) ] || mkdir -p $(ODIR)
 	$(CXX) -MMD -fPIC $(LDIR) $(CXXFLAGS) -c -o $@ $<
 
 example: $(patsubst %,$(ODIR)/%,$(OBJS))
-	@echo $(SRCS)
 	$(CXX) example/example.cpp -o $@ $^ $(LDIR) $(CXXFLAGS) $(LDFLAGS) $(LDLIBS)
 
 $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
@@ -61,7 +62,7 @@ $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	cp -rf $(SRCDIR)/based.hpp $(DISTDIR)/based.hpp
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
-linked-example: $(TARGET)
+linked-example:
 	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -L./$(DISTDIR) -lbased
 
 clean:
@@ -69,4 +70,3 @@ clean:
 	rm -rf $(DISTDIR)
 	rm -rf docker-build
 	rm -f linked-example
-	rm -f example
