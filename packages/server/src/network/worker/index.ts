@@ -11,6 +11,8 @@ export const workerMessage = (
   // type 3 Get
   // type 2 Unsubscribe
 
+  // TODO: Handle errors if wrong send back error
+  // something like an error channel can also send the error back to the subscription update..
   if (data.type === 2) {
     // close
     unsubscribe(

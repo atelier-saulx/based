@@ -1,21 +1,28 @@
-import { deepMerge } from '@saulx/utils'
 import { join } from 'path'
 import { AuthState } from '../network/message/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
-import { AuthConfig, Authorize, WebsocketClient } from '../types'
-import dummyAuth from './dummyAuth'
+import {
+  AuthConfig,
+  Authorize,
+  WebsocketClient,
+  BasedWorker,
+  ClientContext,
+} from '../types'
 
 export class BasedAuth {
   server: BasedServer
-  config: AuthConfig
-  authorize: Authorize = dummyAuth
+  config: AuthConfig = {}
 
-  constructor(server: BasedServer, config?: AuthConfig) {
-    this.server = server
-    this.config = {
+  authorize: Authorize
+
+  constructor(
+    server: BasedServer,
+    config: AuthConfig = {
       authorizePath: join(__dirname, './dummyAuth'),
     }
+  ) {
+    this.server = server
     this.updateConfig(config)
   }
 
@@ -24,24 +31,54 @@ export class BasedAuth {
       return
     }
 
+    if (config.authorizeConnection) {
+      this.config.authorizeConnection = config.authorizeConnection
+    }
+
     if (config.authorizePath !== this.config.authorizePath) {
-      if (this.config.authorizePath) {
-        delete require.cache[require.resolve(this.config.authorizePath)]
+      const server = this.server
+
+      this.config.authorizePath = config.authorizePath
+
+      this.authorize = (client: ClientContext, name: string, payload: any) => {
+        return new Promise((resolve, reject) => {
+          const id = ++server.functions.reqId
+          // max concurrent execution is 1 mil...
+          if (server.functions.workerResponseListeners.size >= 1e6) {
+            throw new Error(
+              'MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)'
+            )
+          }
+          if (server.functions.reqId > 1e6) {
+            server.functions.reqId = 0
+          }
+          const selectedWorker: BasedWorker = server.functions.lowestWorker
+          server.functions.workerResponseListeners.set(id, (err, p) => {
+            if (err) {
+              reject(err)
+            } else {
+              resolve(p)
+            }
+          })
+          selectedWorker.worker.postMessage({
+            type: 9,
+            id,
+            name: name,
+            payload,
+            client,
+          })
+        })
       }
 
-      // TODO: add that it gets executed on the worker...
-      this.authorize = require(config.authorizePath)
-
       for (const worker of this.server.functions.workers) {
+        console.info('go send auth to worker!')
         worker.worker.postMessage({
           type: 5,
-          name: 'authorize', // default name for this...
+          name: 'authorize',
           path: this.config.authorizePath,
         })
       }
     }
-
-    deepMerge(this.config, config)
   }
 
   sendAuthUpdate(client: WebsocketClient, authState: AuthState) {

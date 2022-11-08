@@ -62,24 +62,7 @@ export const subscribe = (
 
   client.worker.nestedObservers.add(id)
 
-  server.auth
-    .authorize(client.context, name, payload)
-    .then((ok) => {
-      if (!ok) {
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
-        return false
-      }
-
-      enableSubscribe(server, client, id, name, payload, route)
-    })
-    .catch((err) => {
-      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
-        route,
-        observableId: id,
-        err,
-      })
-      destroy(server, id)
-    })
+  enableSubscribe(server, client, id, name, payload, route)
 
   return true
 }
