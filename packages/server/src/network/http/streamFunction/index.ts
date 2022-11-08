@@ -39,7 +39,7 @@ export const httpStreamFunction = (
         authorizeRequest(
           server,
           client,
-          payload,
+          p.payload,
           route,
           () => {
             if (!thisIsFn) {
@@ -49,7 +49,7 @@ export const httpStreamFunction = (
             }
           },
           () => {
-            reject(new Error('Not authorized'))
+            resolve(undefined)
           }
         )
       })

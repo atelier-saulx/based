@@ -15,6 +15,7 @@ export const authorizeRequest = (
     .authorize(client.context, route.name, payload)
     .then((ok) => {
       if (!client.res) {
+        notAuth()
         return
       }
       if (!ok) {
