@@ -40,10 +40,7 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         message(server, ws.c, data, isBinary)
       },
       open: (ws) => {
-        console.info('!@!@!@ client open WS')
-
         if (ws) {
-          // ws.bla = genLargeMemBlock()
           const client = { ws }
           ws.c = client
         }

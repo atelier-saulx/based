@@ -64,6 +64,8 @@ test.serial('functions (over http + stream)', async (t) => {
     bigBod.push({ flap: 'snurp', i })
   }
 
+  console.info('start!')
+
   const result = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
@@ -73,6 +75,8 @@ test.serial('functions (over http + stream)', async (t) => {
       body: JSON.stringify(bigBod),
     })
   ).text()
+
+  console.info(result)
 
   t.is(result, 'bla')
 

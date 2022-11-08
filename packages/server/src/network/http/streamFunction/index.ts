@@ -63,7 +63,10 @@ export const httpStreamFunction = (
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
           const stream = createDataStream(server, route, client, size)
           const streamPayload = { payload, stream }
-          const fn = require(spec.functionPath)
+          let fn = require(spec.functionPath)
+          if (fn.default) {
+            fn = fn.default
+          }
           fn(streamPayload, client.context)
             .catch((err) => {
               stream.destroy()
