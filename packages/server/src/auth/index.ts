@@ -65,7 +65,13 @@ export class BasedAuth {
             id,
             name: name,
             payload,
-            client,
+            client: {
+              // TODO: way too much copy but this is tmp solution
+              authState: client.authState,
+              query: client.query,
+              ua: client.ua,
+              ip: client.ip,
+            },
           })
         })
       }

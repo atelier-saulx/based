@@ -276,7 +276,11 @@ export const incoming = async (
         if (client.observeState.has(payload.observableId)) {
           const observable = client.observeState.get(payload.observableId)
           for (const [, handlers] of observable.subscribers) {
-            handlers.onError(error)
+            if (handlers.onError) {
+              handlers.onError(error)
+            } else {
+              console.error(error)
+            }
           }
         }
         if (client.getState.has(payload.observableId)) {

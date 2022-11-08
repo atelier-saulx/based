@@ -86,6 +86,7 @@ export const subscribeMessage = (
   server.auth
     .authorize(client.ws, name, payload)
     .then((ok) => {
+      console.log('not ok!', ok)
       if (!client.ws) {
         return
       }
@@ -100,6 +101,7 @@ export const subscribeMessage = (
       enableSubscribe(server, client, id, checksum, name, payload, route)
     })
     .catch((err) => {
+      console.log('errror time', err)
       sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
         route,
         observableId: id,
