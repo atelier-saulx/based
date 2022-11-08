@@ -84,6 +84,15 @@ export class BasedFunctions {
     } else {
       this.config = config
     }
+
+    if (!this.config.log) {
+      this.config.log = (d) => console.info(d.toString())
+    }
+
+    if (!this.config.error) {
+      this.config.error = (d) => console.error(d)
+    }
+
     if (this.config.idleTimeout === undefined) {
       this.config.idleTimeout = 60e3 // 1 min
     }
@@ -114,7 +123,26 @@ export class BasedFunctions {
         }
       } else {
         for (let i = 0; i < d; i++) {
-          const worker = new Worker(WORKER_PATH)
+          const worker = new Worker(WORKER_PATH, {
+            stdout: true,
+          })
+
+          // setInterval(() => {
+          //   // worker.postMessage('hi')
+          //   console.info(
+          //     'worker',
+          //     worker.threadId,
+          //     worker.performance.eventLoopUtilization()
+          //   )
+          // }, 1000)
+
+          worker.stdout.on('data', (d) => {
+            this.config.log(d)
+          })
+
+          worker.stdout.on('error', (d) => {
+            this.config.error(d)
+          })
 
           const basedWorker: BasedWorker = {
             worker,

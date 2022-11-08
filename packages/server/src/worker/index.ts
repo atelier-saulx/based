@@ -1,4 +1,4 @@
-import { parentPort, threadId } from 'node:worker_threads'
+import { parentPort } from 'node:worker_threads'
 import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
 import httpFunction from './http/function'
@@ -7,8 +7,6 @@ import { state, authorize } from './authorize'
 import { incomingObserve } from './api'
 
 export * from './api'
-
-console.info('Start worker', threadId)
 
 // outgoing type: 0 => install function
 // outgoing type: 1 => GET
@@ -78,10 +76,8 @@ parentPort.on('message', (d) => {
   } else if (d.type === 6) {
     const path = fnPathMap.get(d.name)
     if (!path) {
-      // console.info('Cannot find path to uninstall', d.name)
       return
     }
-    console.info('Uninstall', d.name)
     fnPathMap.delete(path)
     delete require.cache[require.resolve(path)]
   } else if (d.type === 3 || d.type === 4) {
@@ -91,7 +87,6 @@ parentPort.on('message', (d) => {
     } else if (prevPath !== d.path) {
       delete require.cache[require.resolve(prevPath)]
     }
-    console.info('Http function...')
     httpFunction(d.name, d.type, d.path, d.id, d.context, d.payload)
   } else if (d.type === 0) {
     const prevPath = fnPathMap.get(d.name)

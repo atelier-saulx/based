@@ -184,13 +184,8 @@ export type FunctionConfig = {
     function: BasedObservableFunctionSpec | BasedFunctionSpec
   }) => Promise<boolean>
 
-  log?: (opts: {
-    server: BasedServer
-    type: 'error' | 'warn' | 'info' | 'log'
-    name: string
-    message: string
-    callstack: string[]
-  }) => void
+  log?: (message: Buffer) => void
+  error?: (err: Error) => void
 }
 
 export function isObservableFunctionSpec(
