@@ -65,8 +65,11 @@ test.serial('nested functions', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
+      log: (log) => {
+        console.info('-->', log.toString())
+      },
+      error: (err) => {
+        console.error('-->', err)
       },
     },
   })
@@ -76,6 +79,7 @@ test.serial('nested functions', async (t) => {
       return 'ws://localhost:9910'
     },
   })
+
 
   const x = await coreClient.function('fnWithNested', { bla: true })
 
