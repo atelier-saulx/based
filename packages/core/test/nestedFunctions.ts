@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer from '@based/edge-server'
 import { wait } from '@saulx/utils'
 import { join } from 'path'
 
@@ -81,7 +81,6 @@ test.serial('nested functions', async (t) => {
       return 'ws://localhost:9910'
     },
   })
-
 
   const x = await coreClient.function('fnWithNested', { bla: true })
 

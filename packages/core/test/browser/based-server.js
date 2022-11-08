@@ -1,4 +1,4 @@
-const createServer = require('@based/server').default
+const createServer = require('@based/edge-server').default
 const { join } = require('node:path')
 
 // const json = require('./tmp.json')
