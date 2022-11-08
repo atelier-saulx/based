@@ -4,10 +4,11 @@ import getService, { getClusterUrl } from '@based/get-service'
 export default async (
   opts: BasedOpts
 ): Promise<string | (() => Promise<string>)> => {
-  let { env, project, org, url, key, name = '@based/hub', cluster } = opts
+  let { env, project, org, url, key, name = '@based/edge', cluster } = opts
   if (!url) {
     cluster = opts.cluster = getClusterUrl(cluster)
-    url = async () => {
+
+    opts.url = url = async () => {
       const { url } = await getService(
         {
           env,

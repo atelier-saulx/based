@@ -6,18 +6,22 @@ const init = async () => {
   const coreClient = new BasedCoreClient()
 
   coreClient.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
+    env: 'production',
+    org: 'saulx',
+    project: 'flap',
+    cluster: 'local',
+    // url: async () => {
+    //   return 'ws://localhost:9910'
+    // },
+  })
+
+  coreClient.once('connect', (isConnected) => {
+    console.info('connect', isConnected)
   })
 
   const x = await coreClient.get('counter')
 
   console.info('FUN', x)
-
-  coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
-  })
 
   coreClient.observe('counter', (d) => {
     console.info('--->', d)
