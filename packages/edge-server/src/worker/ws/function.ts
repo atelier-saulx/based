@@ -27,7 +27,7 @@ export default (
     parsedPayload = decodePayload(payload, isDeflate)
   }
 
-  authorize(context, name, payload)
+  authorize(context, name, parsedPayload)
     .then((ok) => {
       if (!ok) {
         parentPort.postMessage({
