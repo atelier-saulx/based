@@ -3,12 +3,9 @@ import {
   valueToBuffer,
   encodeFunctionResponse,
 } from '../../protocol'
-import { parentPort, workerData } from 'node:worker_threads'
+import { parentPort } from 'node:worker_threads'
 import { ClientContext } from '../../types'
 import { authorize } from '../authorize'
-
-const { functionApiWrapperPath } = workerData
-const fnWrapper = require(functionApiWrapperPath).runFunction
 
 export default (
   name: string,
@@ -35,12 +32,12 @@ export default (
       if (!ok) {
         parentPort.postMessage({
           id,
-          err: new Error('AITH WRONG'),
+          err: new Error('AUTH WRONG'),
         })
         return false
       }
 
-      fnWrapper(name, fn, parsedPayload, context)
+      fn(parsedPayload, context)
         .then((v) => {
           parentPort.postMessage({
             id,

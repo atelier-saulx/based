@@ -41,7 +41,6 @@ test.serial('nested functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      functionApiWrapperPath: join(__dirname, 'functions', 'fnWrapper.js'),
       maxWorkers: 16,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,

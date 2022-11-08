@@ -166,7 +166,6 @@ export type FunctionConfig = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   maxWorkers?: number
-  functionApiWrapperPath?: string
 
   route: (opts: {
     server: BasedServer
