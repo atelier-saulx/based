@@ -77,7 +77,6 @@ export class BasedAuth {
       }
 
       for (const worker of this.server.functions.workers) {
-        console.info('go send auth to worker!')
         worker.worker.postMessage({
           type: 5,
           name: 'authorize',
