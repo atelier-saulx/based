@@ -10,7 +10,7 @@ import {
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroy, initFunction } from '../observable'
-import { Worker } from 'node:worker_threads'
+import { Worker, SHARE_ENV } from 'node:worker_threads'
 import { join } from 'path'
 import { workerMessage } from '../network/worker'
 
@@ -125,6 +125,7 @@ export class BasedFunctions {
         for (let i = 0; i < d; i++) {
           const worker = new Worker(WORKER_PATH, {
             stdout: true,
+            env: SHARE_ENV,
           })
 
           // setInterval(() => {

@@ -25,7 +25,7 @@ const handleRequest = (
   if (method === 'post') {
     readBody(server, client, ready, route)
   } else {
-    ready()
+    ready(parseQuery(client.context.query))
   }
 }
 
