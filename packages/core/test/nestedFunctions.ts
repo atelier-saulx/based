@@ -65,9 +65,11 @@ test.serial('nested functions', async (t) => {
           return false
         }
       },
+      // add name
       log: (log) => {
         console.info('-->', log.toString())
       },
+      // add name
       error: (err) => {
         console.error('-->', err)
       },
