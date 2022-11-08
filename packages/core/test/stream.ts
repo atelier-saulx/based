@@ -30,7 +30,8 @@ test.serial('functions (over http + stream)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-      uninstall: async () => {
+      uninstall: async ({ name }) => {
+        console.info('uninstall', name)
         await wait(1e3)
         return true
       },
@@ -60,11 +61,9 @@ test.serial('functions (over http + stream)', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 1e6; i++) {
+  for (let i = 0; i < 1e5; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
-
-  console.info('start!')
 
   const result = await (
     await fetch('http://localhost:9910/flap', {
@@ -76,24 +75,27 @@ test.serial('functions (over http + stream)', async (t) => {
     })
   ).text()
 
-  console.info(result)
-
   t.is(result, 'bla')
 
   const x = await gzip(JSON.stringify(bigBod))
 
-  const resultBrotli = await (
-    await fetch('http://localhost:9910/flap', {
-      method: 'post',
-      headers: {
-        'content-encoding': 'gzip',
-        'content-type': 'application/json',
-      },
-      body: x,
-    })
-  ).text()
+  try {
+    const resultBrotli = await (
+      await fetch('http://localhost:9910/flap', {
+        method: 'post',
+        headers: {
+          'content-encoding': 'gzip',
+          'content-type': 'application/json',
+        },
+        body: x,
+      })
+    ).text()
 
-  t.is(resultBrotli, 'bla')
+    t.is(resultBrotli, 'bla')
+  } catch (err) {
+    console.info('ERROR', err)
+    t.fail('Crash with uncompressing')
+  }
 
   await wait(30e3)
 

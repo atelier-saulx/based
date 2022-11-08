@@ -60,13 +60,15 @@ export const httpStreamFunction = (
     server.functions
       .install(route.name)
       .then((spec) => {
+        console.log('FN INSTALLED', size)
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-          const stream = createDataStream(server, route, client, size)
-          const streamPayload = { payload, stream }
           let fn = require(spec.functionPath)
           if (fn.default) {
             fn = fn.default
           }
+          const stream = createDataStream(server, route, client, size)
+          const streamPayload = { payload, stream }
+
           fn(streamPayload, client.context)
             .catch((err) => {
               stream.destroy()
@@ -88,7 +90,8 @@ export const httpStreamFunction = (
           sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error(err)
         sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
       })
   })
