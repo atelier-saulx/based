@@ -1,9 +1,16 @@
-import v8 from 'v8';
-import { performance } from 'perf_hooks';
-import gc from './util/gc';
-import { compile, createRecord, readValue, writeValue, createReader, createWriter } from '../src/index';
+import v8 from 'v8'
+import { performance } from 'perf_hooks'
+import gc from './util/gc'
+import {
+	compile,
+	createRecord,
+	readValue,
+	writeValue,
+	createReader,
+	createWriter,
+} from '../src/index'
 
-const COUNT = 99999;
+const COUNT = 99999
 
 export default function modify() {
 	const recordDefEx = [
@@ -24,10 +31,14 @@ export default function modify() {
 			type: 'record',
 			def: [
 				{ name: 'a', type: 'uint32_le' },
-				{ name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+				{
+					name: 'y',
+					type: 'record',
+					def: [{ name: 'a', type: 'uint32_le' }],
+				},
 			],
 		},
-	];
+	]
 
 	const obj = {
 		a: 4,
@@ -44,81 +55,85 @@ export default function modify() {
 				a: 5,
 			},
 		},
-	};
+	}
 
-	const compiled = compile(recordDefEx);
+	const compiled = compile(recordDefEx)
 
 	function nativeObjectTest() {
 		// @ts-ignore
-		let x = 0;
+		let x = 0
 
 		for (let i = 0; i < COUNT; i++) {
-			x = obj.x.y.a;
-			obj.x.y.a = i;
+			x = obj.x.y.a
+			obj.x.y.a = i
 		}
 	}
 
 	function nativeV8SerializerTest() {
-		let ser = v8.serialize(obj);
+		let ser = v8.serialize(obj)
 
 		// @ts-ignore
-		let x = 0;
+		let x = 0
 
 		for (let i = 0; i < COUNT; i++) {
-			const o = v8.deserialize(ser);
-			x = o.x.y.a;
-			o.x.y.a = i;
-			ser = v8.serialize(o);
+			const o = v8.deserialize(ser)
+			x = o.x.y.a
+			o.x.y.a = i
+			ser = v8.serialize(o)
 		}
 	}
 
 	function jsonTest() {
-		let str = JSON.stringify(obj);
+		let str = JSON.stringify(obj)
 
 		// @ts-ignore
-		let x = 0;
+		let x = 0
 
 		for (let i = 0; i < COUNT; i++) {
-			const o = JSON.parse(str);
-			x = o.x.y.a;
-			o.x.y.a = i;
-			str = JSON.stringify(o);
+			const o = JSON.parse(str)
+			x = o.x.y.a
+			o.x.y.a = i
+			str = JSON.stringify(o)
 		}
 	}
 
 	function dataRecordTestSlow() {
-		const buf = createRecord(compiled, obj);
+		const buf = createRecord(compiled, obj)
 
 		// @ts-ignore
-		let x = 0;
+		let x = 0
 
 		for (let i = 0; i < COUNT; i++) {
-			x = readValue(compiled, buf, '.x.y.a');
-			writeValue(compiled, buf, '.x.y.a', i);
+			x = readValue(compiled, buf, '.x.y.a')
+			writeValue(compiled, buf, '.x.y.a', i)
 		}
 	}
 
 	function dataRecordTestFast() {
-		const buf = createRecord(compiled, obj);
-		const reader = createReader(compiled, buf, '.x.y.a');
-		const writer = createWriter(compiled, buf, '.x.y.a');
+		const buf = createRecord(compiled, obj)
+		const reader = createReader(compiled, buf, '.x.y.a')
+		const writer = createWriter(compiled, buf, '.x.y.a')
 
 		// @ts-ignore
-		let x = 0;
+		let x = 0
 
 		for (let i = 0; i < COUNT; i++) {
-			x = reader();
-			writer(i);
+			x = reader()
+			writer(i)
 		}
 	}
 
-	const wrapped = [nativeObjectTest, nativeV8SerializerTest, jsonTest, dataRecordTestSlow, dataRecordTestFast].map(
-		(fn) => performance.timerify(fn)
-	);
+	const wrapped = [
+		nativeObjectTest,
+		nativeV8SerializerTest,
+		jsonTest,
+		dataRecordTestSlow,
+		dataRecordTestFast,
+	].map((fn) => performance.timerify(fn))
 
 	for (const test of wrapped) {
-		gc();
+		gc()
 		// @ts-ignore
-		test();
+		test()
 	}
 }
