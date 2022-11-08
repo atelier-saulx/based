@@ -1,4 +1,4 @@
 export default async (_client, name) => {
-  console.warn('  No authorize configured for server - dummy auth', name)
+  console.warn(' 🔓 Dummy auth', name)
   return true
 }

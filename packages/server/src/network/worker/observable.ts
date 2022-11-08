@@ -55,15 +55,11 @@ export const subscribe = (
   server: BasedServer
 ) => {
   const route = server.functions.route(name)
-
   if (!route || !route.observable) {
     return false
   }
-
   client.worker.nestedObservers.add(id)
-
   enableSubscribe(server, client, id, name, payload, route)
-
   return true
 }
 
