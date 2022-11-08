@@ -1,13 +1,10 @@
 // external api
 import { ClientContext, ObservableUpdateFunction } from '../types'
-import { parentPort, workerData } from 'worker_threads'
+import { parentPort } from 'worker_threads'
 import { fnPathMap, fnInstallListeners } from './functions'
 import { authorize } from './authorize'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-
-const { functionApiWrapperPath } = workerData
-const fnWrapper = require(functionApiWrapperPath).runFunction
 
 export type ObserveErrorListener = (err: Error) => void
 
@@ -25,7 +22,7 @@ const nestedRunFunction = async (
   if (!ok) {
     throw new Error('Not auth')
   }
-  return fnWrapper(name, fn, payload, context)
+  return fn(payload, context)
 }
 
 // TODO: Rename clientContext to context OR add one specially for nested observable contexts

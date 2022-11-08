@@ -45,7 +45,6 @@ export const readBody = (
         size += c.byteLength
         if (size > route.maxPayloadSize) {
           sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
-          // sendHttpError(client, 'Payload Too Large', 413)
           uncompressStream.destroy()
           return
         }
@@ -65,6 +64,7 @@ export const readBody = (
       })
       // unfortunately need to make a copy of the data and decompress in the main thread
       const chunks: Buffer[] = []
+      // will prob not work because shared data in uws
       let len = 0
       uncompressStream.on('data', (c) => {
         chunks.push(c)

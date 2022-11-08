@@ -8,8 +8,7 @@ import { BasedServer } from '../../../server'
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
 const UNCOMPRESS_OPTS = {
-  // can be endless scince we limit by incoming
-  chunkSize: 1024 * 1024 * 100,
+  chunkSize: 1024 * 1024 * 5,
 }
 
 export default (
@@ -28,7 +27,7 @@ export default (
   const contentEncoding = client.context.headers['content-encoding']
 
   if (contentEncoding) {
-    let uncompressStream: zlib.Deflate | zlib.Gunzip
+    let uncompressStream: zlib.Deflate | zlib.Gunzip | zlib.BrotliDecompress
     if (contentEncoding === 'deflate') {
       uncompressStream = zlib.createInflate(UNCOMPRESS_OPTS)
     } else if (contentEncoding === 'gzip') {
@@ -45,7 +44,9 @@ export default (
           stream.destroy()
           return
         }
+
         const buf = Buffer.alloc(c.byteLength, Buffer.from(c))
+
         if (emitProgress) {
           progress = total / size
           if (!setInProgress) {
@@ -56,6 +57,7 @@ export default (
             }, 250)
           }
         }
+
         if (isLast) {
           if (!emitProgress) {
             stream.emit('progress', 1)
@@ -63,9 +65,15 @@ export default (
           uncompressStream.end(buf)
         } else {
           if (!uncompressStream.write(buf)) {
-            // handle backpressure
+            // console.info('BACKPRESSURE')
           }
         }
+      })
+      uncompressStream.on('error', (err) => {
+        console.warn('Uncompress error', route, contentEncoding, err)
+        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        uncompressStream.destroy()
+        stream.destroy()
       })
       uncompressStream.pipe(stream)
     } else {

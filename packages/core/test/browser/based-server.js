@@ -28,19 +28,12 @@ const init = async () => {
       maxPayloadSize: 1e6 * 10,
       functionPath: join(__dirname, '/chill.js'),
     },
-    // streamboy: {
-    //   name: 'streamboy',
-    //   stream: true,
-    //   checksum: 1,
-    //   function: async ({ payload, stream }) => {
-    //     console.info('---------------Incoming stream! \n', payload)
-    //     stream.on('progress', (p) => {
-    //       console.info('progress', payload.name, p)
-    //     })
-    //     // await wait(5e3)
-    //     return payload
-    //   },
-    // },
+    streamboy: {
+      name: 'streamboy',
+      stream: true,
+      checksum: 1,
+      functionPath: join(__dirname, '/stream.js'),
+    },
     // counter: {
     //   name: 'counter',
     //   observable: true,

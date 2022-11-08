@@ -1,9 +1,5 @@
 import { DataStream } from './DataStream'
-import {
-  HttpClient,
-  BasedFunctionSpec,
-  BasedFunctionRoute,
-} from '../../../types'
+import { HttpClient, BasedFunctionRoute } from '../../../types'
 import { BasedErrorCode } from '../../../error'
 import { sendHttpError, sendHttpResponse } from '../send'
 import getExtension from './getExtension'
@@ -69,18 +65,16 @@ const toBuffer = (str: string, firstWritten: boolean): Buffer => {
   return Buffer.from(firstWritten ? str + '\r\n' : str, 'binary')
 }
 
-export default async (
+export default (
   client: HttpClient,
   server: BasedServer,
   payload: any,
   route: BasedFunctionRoute,
-  spec: BasedFunctionSpec
-): Promise<void> => {
+  fn: (payload: any) => Promise<any>
+) => {
   if (!payload || (!payload && typeof payload !== 'object')) {
     payload = {}
   }
-
-  const fn = require(spec.functionPath)
 
   const files: FileDescriptor[] = []
 
@@ -216,10 +210,7 @@ export default async (
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
-            fn(
-              { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client.context
-            )
+            fn({ payload: { ...payload, ...file.opts }, stream: file.stream })
           )
         }
         continue
@@ -243,10 +234,7 @@ export default async (
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
-            fn(
-              { payload: { ...payload, ...file.opts }, stream: file.stream },
-              client.context
-            )
+            fn({ payload: { ...payload, ...file.opts }, stream: file.stream })
           )
         }
         continue

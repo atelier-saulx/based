@@ -8,7 +8,8 @@ export const authorizeRequest = (
   client: HttpClient,
   payload: any,
   route: BasedFunctionRoute,
-  authorized: (payload: any) => void
+  authorized: (payload: any) => void,
+  notAuth: () => void = () => undefined
 ) => {
   server.auth
     .authorize(client.context, route.name, payload)
@@ -17,6 +18,7 @@ export const authorizeRequest = (
         return
       }
       if (!ok) {
+        notAuth()
         sendHttpError(
           server,
           client,
@@ -28,6 +30,7 @@ export const authorizeRequest = (
       }
     })
     .catch((err) => {
+      notAuth()
       sendHttpError(server, client, BasedErrorCode.AuthorizeFunctionError, {
         route,
         err,
