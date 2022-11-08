@@ -6,7 +6,10 @@ import { message } from './message'
 import { unsubscribeIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 
-export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
+export default (
+  server: BasedServer,
+  { key, cert, port, ws: wsListeners }: ServerOptions
+) => {
   const app =
     key && cert
       ? uws.SSLApp({
@@ -18,6 +21,13 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
 
   if (port) {
     server.port = port
+  }
+
+  if (!wsListeners) {
+    wsListeners = {
+      open: () => undefined,
+      close: () => undefined,
+    }
   }
 
   app
@@ -43,6 +53,8 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         if (ws) {
           const client = { ws }
           ws.c = client
+          // @ts-ignore
+          wsListeners.open(ws)
         }
       },
       close: (ws) => {
@@ -50,6 +62,9 @@ export default (server: BasedServer, { key, cert, port }: ServerOptions) => {
         ws.obs.forEach((id) => {
           unsubscribeIgnoreClient(server, id, ws.c)
         })
+        // @ts-ignore
+        wsListeners.close(ws)
+
         // Looks really ugly but same impact on memory and GC as using the ws directly
         // and better for dc's when functions etc are in progress
         ws.c.ws = null

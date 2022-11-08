@@ -102,6 +102,14 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   auth?: AuthConfig
+  ws?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
+  http?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
 }
 
 export type ObservableUpdateFunction = (
