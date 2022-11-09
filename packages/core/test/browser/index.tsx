@@ -19,25 +19,29 @@ const init = async () => {
     console.info('connect', isConnected)
   })
 
-  // const bla = await coreClient.function('db-update-schema', {
-  //   languages: ['en'],
-  //   types: {
-  //     thing: {
-  //       prefix: 'th',
-  //       fields: {
-  //         name: { type: 'string' },
-  //       },
-  //     },
-  //   },
-  // })
+  const bla = await coreClient.function('based-db-update-schema', {
+    languages: ['en'],
+    types: {
+      thing: {
+        prefix: 'th',
+        fields: {
+          name: { type: 'string' },
+        },
+      },
+    },
+  })
 
-  // for (let i = 0; i < 1000; i++) {
-  //   const x = await coreClient.function('db-set', {
-  //     type: 'thing',
-  //     name: 'YES' + i,
-  //   })
-  //   console.info(bla, x, i)
-  // }
+  for (let i = 0; i < 5; i++) {
+    const x = await coreClient.function('based-db-set', {
+      type: 'thing',
+      name: 'YES' + i,
+    })
+    console.info(bla, x, i)
+  }
+
+  coreClient.observe('counter', (d) => {
+    console.info('-->', d)
+  })
 
   // const x = await coreClient.get('counter')
 
