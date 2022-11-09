@@ -31,9 +31,13 @@ const init = async () => {
     },
   })
 
-  // coreClient.observe('counter', (d) => {
-  //   console.info('-->', d)
-  // })
+  coreClient.observe(
+    'based-db-observe',
+    (d) => {
+      console.info('-->', d)
+    },
+    { children: true }
+  )
 
   coreClient.observe(
     'nestedCounter',
@@ -43,12 +47,12 @@ const init = async () => {
     { children: true }
   )
 
-  for (let i = 0; i < 5; i++) {
-    await coreClient.function('based-db-set', {
-      type: 'thing',
-      name: 'YES' + i,
-    })
-  }
+  // for (let i = 0; i < 5; i++) {
+  //   await coreClient.function('based-db-set', {
+  //     type: 'thing',
+  //     name: 'YES' + i,
+  //   })
+  // }
 
   const button = document.createElement('button')
   button.innerHTML = 'set something'

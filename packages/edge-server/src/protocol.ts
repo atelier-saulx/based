@@ -147,7 +147,10 @@ export const encodeGetResponse = (id: number): Uint8Array => {
 }
 
 export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
-  const prevId = payload.slice(4, 8)
+  const prevId = payload.slice(4, 12)
+  // if (readUint8(prevId, 0, 8) !== readUint8(payload, 4, 8)) {
+  // throw new Error('INCORRECT PARSING')
+  // }
   storeUint8(payload, id, 4, 8)
   return prevId
 }

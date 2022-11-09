@@ -207,22 +207,18 @@ export const initFunction = async (
       if (encodedDiffData) {
         obs.diffCache = encodedDiffData
       }
-
       let prevId: Uint8Array
       let prevDiffId: Uint8Array
-
       if (obs.clients.size) {
         if (encodedDiffData) {
           if (reusedCache) {
             prevDiffId = updateId(encodedDiffData, id)
           }
-
           server.uwsApp.publish(String(id), encodedDiffData, true, false)
         } else {
           if (reusedCache) {
             prevId = updateId(encodedData, id)
           }
-
           server.uwsApp.publish(String(id), encodedData, true, false)
         }
       }
