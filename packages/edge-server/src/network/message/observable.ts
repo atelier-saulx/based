@@ -83,7 +83,6 @@ export const subscribeMessage = (
 
   client.ws.obs.add(id)
 
-  console.info('reobserve????', name)
   server.auth
     .authorize(client.ws, name, payload)
     .then((ok) => {

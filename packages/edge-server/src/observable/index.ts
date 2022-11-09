@@ -268,8 +268,6 @@ export const create = (
     return server.activeObservablesById.get(id)
   }
 
-  console.info('CREATE OBS:', id, name)
-
   const obs: ActiveObservable = {
     payload,
     reusedCache: false,
