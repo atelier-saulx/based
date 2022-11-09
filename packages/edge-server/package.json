@@ -2,11 +2,11 @@
   "name": "@based/edge-server",
   "version": "0.0.1",
   "license": "MIT",
-  "main": "dist/index.js",
-  "module": "src/index.ts",
+  "main": "./dist/index.js",
   "exports": {
     ".": "./dist/index.js",
-    "./worker": "./dist/worker/index.js"
+    "./worker": "./dist/worker/api.js",
+    "./dist/worker/api": "./dist/worker/api.js"
   },
   "scripts": {
     "build": "npx  tsc",

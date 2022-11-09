@@ -4,8 +4,9 @@ import {
   encodeFunctionResponse,
 } from '../../protocol'
 import { parentPort } from 'node:worker_threads'
-import { ClientContext } from '../../types'
+import { ClientContext, FunctionType } from '../../types'
 import { authorize } from '../authorize'
+import { getFunction } from '../functions'
 
 export default (
   name: string,
@@ -16,10 +17,7 @@ export default (
   isDeflate: boolean,
   payload?: Uint8Array
 ) => {
-  let fn = require(path)
-  if (fn.default) {
-    fn = fn.default
-  }
+  const fn = getFunction(name, FunctionType.function, path)
 
   let parsedPayload: any
 

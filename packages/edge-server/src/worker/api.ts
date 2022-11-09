@@ -1,7 +1,6 @@
-// external api
-import { ClientContext, ObservableUpdateFunction } from '../types'
+import { ClientContext, FunctionType, ObservableUpdateFunction } from '../types'
 import { parentPort } from 'worker_threads'
-import { fnPathMap, fnInstallListeners } from './functions'
+import { installFunction } from './functions'
 import { authorize } from './authorize'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
@@ -12,52 +11,17 @@ export const genObserveId = (name: string, payload: any): number => {
   return hashObjectIgnoreKeyOrder([name, payload])
 }
 
-const nestedRunFunction = async (
-  name: string,
-  fn: Function,
-  context: ClientContext,
-  payload: any
-) => {
-  const ok = await authorize(context, name, payload)
-  if (!ok) {
-    throw new Error('Not auth')
-  }
-  return fn(payload, context)
-}
-
-// TODO: Rename clientContext to context OR add one specially for nested observable contexts
-export const runFunction = (
+export const runFunction = async (
   name: string,
   payload: any,
   context: ClientContext
 ): Promise<any> => {
-  return new Promise((resolve, reject) => {
-    const prevPath = fnPathMap.get(name)
-    if (prevPath) {
-      let fn = require(prevPath)
-      if (fn.default) {
-        fn = fn.default
-      }
-      resolve(nestedRunFunction(name, fn, context, payload))
-    } else {
-      let listeners = fnInstallListeners.get(name)
-      if (!listeners) {
-        listeners = []
-        fnInstallListeners.set(name, listeners)
-      }
-      listeners.push((fn: Function, err) => {
-        if (err) {
-          reject(err)
-        } else {
-          resolve(nestedRunFunction(name, fn, context, payload))
-        }
-      })
-      parentPort.postMessage({
-        type: 0,
-        name,
-      })
-    }
-  })
+  const ok = await authorize(context, name, payload)
+  if (!ok) {
+    throw new Error('Not auth')
+  }
+  const fn = await installFunction(name, FunctionType.function)
+  return fn(payload, context)
 }
 
 let obsIds = 0
@@ -82,10 +46,11 @@ export const observe = (
 ): (() => void) => {
   const id = genObserveId(name, payload)
   const observerId = ++obsIds
-  let observers: ActiveNestedObservers = activeObservables.get(id)
 
   authorize(context, name, payload)
     .then((ok) => {
+      let observers: ActiveNestedObservers = activeObservables.get(id)
+
       if (!ok) {
         console.error('no auth for you!', name)
         return
@@ -113,6 +78,8 @@ export const observe = (
     })
 
   return () => {
+    const observers: ActiveNestedObservers = activeObservables.get(id)
+
     observers.delete(observerId)
     if (observers.size === 0) {
       parentPort.postMessage({

@@ -41,6 +41,7 @@ test.serial('nested functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
+      importWrapperPath: join(__dirname, './functions/importWrapper.js'),
       maxWorkers: 16,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,

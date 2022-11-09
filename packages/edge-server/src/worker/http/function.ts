@@ -1,7 +1,8 @@
-import { ClientContext } from '../../types'
+import { ClientContext, FunctionType } from '../../types'
 import { parentPort } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
+import { getFunction } from '../functions'
 
 const decoder = new TextDecoder('utf-8')
 
@@ -42,10 +43,7 @@ export default (
   context: ClientContext,
   payload?: Uint8Array
 ) => {
-  let fn = require(path)
-  if (fn.default) {
-    fn = fn.default
-  }
+  const fn = getFunction(name, FunctionType.function, path)
   let parsedPayload: any
   if (payload) {
     parsedPayload = parsePayload(id, context, payload)

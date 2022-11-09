@@ -125,17 +125,13 @@ export class BasedFunctions {
         for (let i = 0; i < d; i++) {
           const worker = new Worker(WORKER_PATH, {
             stdout: true,
-            env: SHARE_ENV,
+            env: SHARE_ENV, // only specifics later...
+            workerData: {
+              importWrapperPath:
+                this.config.importWrapperPath ||
+                join(__dirname, 'dummyImportWrapper'),
+            },
           })
-
-          // setInterval(() => {
-          //   // worker.postMessage('hi')
-          //   console.info(
-          //     'worker',
-          //     worker.threadId,
-          //     worker.performance.eventLoopUtilization()
-          //   )
-          // }, 1000)
 
           worker.stdout.on('data', (d) => {
             this.config.log(d)
@@ -393,7 +389,7 @@ export class BasedFunctions {
 
   // from other worker fn
   runObservableFunction(
-    spec: BasedFunctionSpec,
+    spec: BasedObservableFunctionSpec,
     id: number,
     error: (err: Error) => void,
     update: (

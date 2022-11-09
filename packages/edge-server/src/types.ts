@@ -171,11 +171,24 @@ export type BasedFunctionSpec = BasedFunctionRoute & {
   timeoutCounter?: number // in ms
 }
 
+export enum FunctionType {
+  authorize,
+  observe,
+  function,
+  streamFunction,
+}
+
+export type ImportWrapper = (
+  name: string,
+  type: FunctionType,
+  path: string
+) => Function
+
 export type FunctionConfig = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   maxWorkers?: number
-
+  importWrapperPath?: string
   route: (opts: {
     server: BasedServer
     name?: string
