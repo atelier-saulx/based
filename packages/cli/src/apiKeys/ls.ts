@@ -47,10 +47,10 @@ export const ls = async ({
     })
     spinner && spinner.stop()
 
-    if (!apiKeys.length && options.output === 'fancy') {
+    if (!apiKeys?.length && options.output === 'fancy') {
       console.info(prefixNotice + 'No apiKeys found')
     } else {
-      apiKeys.forEach((apiKey: { id: string; name: string }) => {
+      apiKeys?.forEach((apiKey: { id: string; name: string }) => {
         const { /*id,*/ name } = apiKey
         output.data.push({
           // id,

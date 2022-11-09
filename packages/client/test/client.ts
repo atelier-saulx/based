@@ -416,6 +416,8 @@ test.serial('Get', async (t) => {
     $all: true,
   })
 
+  delete data.createdAt
+  delete data.updatedAt
   t.deepEqual(data, {
     id,
     type: 'thing',

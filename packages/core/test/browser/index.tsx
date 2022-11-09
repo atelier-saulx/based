@@ -6,30 +6,54 @@ const init = async () => {
   const coreClient = new BasedCoreClient()
 
   coreClient.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
+    env: 'production',
+    org: 'saulx',
+    project: 'flap',
+    cluster: 'local',
+    // url: async () => {
+    //   return 'ws://localhost:9910'
+    // },
   })
-
-  const x = await coreClient.get('counter')
-
-  console.info('FUN', x)
 
   coreClient.once('connect', (isConnected) => {
     console.info('connect', isConnected)
   })
 
-  coreClient.observe('counter', (d) => {
-    console.info('--->', d)
-  })
+  // const bla = await coreClient.function('db-update-schema', {
+  //   languages: ['en'],
+  //   types: {
+  //     thing: {
+  //       prefix: 'th',
+  //       fields: {
+  //         name: { type: 'string' },
+  //       },
+  //     },
+  //   },
+  // })
 
-  const close = coreClient.observe('chill', (d) => {
-    console.info('chill', d)
-  })
+  // for (let i = 0; i < 1000; i++) {
+  //   const x = await coreClient.function('db-set', {
+  //     type: 'thing',
+  //     name: 'YES' + i,
+  //   })
+  //   console.info(bla, x, i)
+  // }
 
-  setTimeout(() => {
-    close()
-  }, 1e3)
+  // const x = await coreClient.get('counter')
+
+  // console.info('FUN', x)
+
+  // coreClient.observe('counter', (d) => {
+  //   console.info('--->', d)
+  // })
+
+  // const close = coreClient.observe('chill', (d) => {
+  //   console.info('chill', d)
+  // })
+
+  // setTimeout(() => {
+  //   close()
+  // }, 1e3)
 
   // const iqTest = await coreClient.function('iqTest')
   // const small = await coreClient.function('small')

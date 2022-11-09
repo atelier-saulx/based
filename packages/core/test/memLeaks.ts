@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer from '@based/edge-server'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 

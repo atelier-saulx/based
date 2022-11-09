@@ -105,7 +105,8 @@ test.serial('authorize functions', async (t) => {
           function: async ({ based }) => {
             return based.get({
               $id: 'root',
-              $all: true,
+              id: true,
+              type: true,
             })
           },
         },

@@ -1,4 +1,5 @@
 import { program } from 'commander'
+import fs from 'fs/promises'
 import { command, GlobalOptions } from '../command'
 import chalk from 'chalk'
 import ora from 'ora'
@@ -8,7 +9,7 @@ import makeClient from '../makeClient'
 import { envId } from '@based/ids'
 import path from 'path'
 import { Based } from '@based/client'
-import { Config, GenericOutput } from '../types'
+import { GenericOutput } from '../types'
 import {
   fail,
   prefix,
@@ -18,6 +19,7 @@ import {
   prefixSuccess,
   printHeader,
   prefixWarn,
+  prefixError,
 } from '../tui'
 import inquirer from 'inquirer'
 import { makeConfig } from '../makeConfig'
@@ -37,6 +39,8 @@ export type DeployOptions = {
   file: string[]
   schema: boolean
   functions: boolean
+  name: string[]
+  bundle: boolean
 } & GlobalOptions
 
 export const output: DeployOutput = { data: [] }
@@ -49,6 +53,8 @@ command(
     .option('-f, --file  [files...]', 'Load schema from file/s')
     .option('--schema', 'Deploy schema')
     .option('--functions', 'Deploy functions')
+    .option('-n, --name  [names...]', 'Deploy functions by name/s')
+    .option('--no-bundle', "Don't bundle the functions before deploying")
 ).action(async (options: DeployOptions) => {
   const config = await makeConfig(options)
 
@@ -79,6 +85,21 @@ command(
     fail(err.message, output, options)
   }
 
+  if (options.name) {
+    const filteredFunctions = []
+    options.name.forEach((requestedName) => {
+      const functionToAdd = found.fns?.find((fn) => fn.name === requestedName)
+      if (functionToAdd) {
+        filteredFunctions.push(functionToAdd)
+      } else {
+        console.info(
+          prefixError + "Can't find function " + chalk.blue(requestedName)
+        )
+      }
+    })
+    found.fns = filteredFunctions
+  }
+
   const { schemaFiles, fns } = found
 
   if (schemaFiles.length > 1) {
@@ -92,91 +113,111 @@ command(
   }
 
   // Build functions
-  const d = Date.now()
-  const spinner = ora(`Building function(s)...`)
-  spinner.start()
-  await Promise.all(
-    fns.map(async (fun) => {
-      const x = await build({
-        bundle: true,
-        outdir: 'out',
-        incremental: false,
-        publicPath: '/',
-        target: 'node14',
-        entryPoints: [fun.path],
-        minify: true,
-        platform: 'node',
-        write: false,
+  if (found.fns?.length) {
+    const d = Date.now()
+    const spinner = ora(`Building function(s)...`)
+    spinner.start()
+    // TODO: should not need to get schema (ask nunofrade)
+    await client.schema()
+
+    await Promise.all(
+      fns.map(async (fun) => {
+        if (!options.bundle || fun.bundle === false) {
+          fun.code = await fs.readFile(fun.path, 'utf8')
+          fun.fromFile = false
+        } else {
+          const x = await build({
+            bundle: true,
+            outdir: 'out',
+            incremental: false,
+            publicPath: '/',
+            target: 'node14',
+            entryPoints: [fun.path],
+            minify: true,
+            platform: 'node',
+            write: false,
+            sourcemap: 'external',
+          })
+          fun.code = x.outputFiles.find(({ path }) => path.endsWith('.js')).text
+          fun.sourcemap = x.outputFiles.find(({ path }) =>
+            path.endsWith('.js.map')
+          ).text
+        }
       })
-      fun.code = x.outputFiles[0].text
-      fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
-      if (fun.status === 'unchanged') {
-        unchangedFns++
-      }
-      if (fun.status === 'err')
-        throw new Error("Error checking function's remote version")
-    })
-  ).catch((err) => fail(err.message, output, options))
-  spinner.stop()
-  console.info(
-    chalk.grey(prefixSuccess + `Function(s) built in ${Date.now() - d}ms`)
-  )
+    ).catch((err) => fail(err.message, output, options))
 
-  let maxPathLength: number = null
-  let maxNameLength: number = null
-  fns.forEach((value) => {
-    const { path: funcFilePath, name } = value
-    const tmp = path.join('./', path.relative('./', funcFilePath))
-    maxPathLength = maxPathLength < tmp.length ? tmp.length : maxPathLength
-    maxNameLength = maxNameLength < name.length ? name.length : maxNameLength
-  })
-  if (fns.length > unchangedFns) {
+    await Promise.all(
+      fns.map(async (fun) => {
+        fun.status = await compareRemoteFns(client, envid, fun.code, fun.name)
+        if (fun.status === 'unchanged') {
+          unchangedFns++
+        }
+        if (fun.status === 'err')
+          throw new Error("Error checking function's remote version")
+      })
+    ).catch((err) => fail(err.message, output, options))
+
+    spinner.stop()
     console.info(
-      prefix +
-        chalk.bold.cyanBright(
-          'name'.padEnd(maxNameLength, ' '),
-          prefix,
-          'observable',
-          prefix,
-          'shared',
-          prefix,
-          'status'.padEnd('update'.length),
-          prefix,
-          'path'
-        )
+      chalk.grey(prefixSuccess + `Function(s) built in ${Date.now() - d}ms`)
     )
 
+    let maxPathLength: number = null
+    let maxNameLength: number = null
     fns.forEach((value) => {
-      const { path: funcFilePath, name, observable, shared, status } = value
-      if (status !== 'unchanged') {
-        const relativeFnPath = './' + path.relative('./', funcFilePath)
-        console.info(
-          prefix + chalk.greenBright(name.padEnd(maxNameLength)),
-          prefix,
-          chalk.bold.greenBright(
-            observable
-              ? '✔'.padEnd('Observable'.length)
-              : ''.padEnd('Observable'.length)
-          ),
-          prefix,
-          chalk.bold.greenBright(
-            shared ? '✔'.padEnd('Shared'.length) : ''.padEnd('Shared'.length)
-          ),
-          prefix,
-          chalk.blue(status.padEnd('update'.length)),
-          prefix,
-          chalk.blue(relativeFnPath)
-        )
-      }
+      const { path: funcFilePath, name } = value
+      const tmp = path.join('./', path.relative('./', funcFilePath))
+      maxPathLength = maxPathLength < tmp.length ? tmp.length : maxPathLength
+      maxNameLength = maxNameLength < name.length ? name.length : maxNameLength
     })
+    if (fns.length > unchangedFns) {
+      console.info(
+        prefix +
+          chalk.bold.cyanBright(
+            'name'.padEnd(maxNameLength, ' '),
+            prefix,
+            'observable',
+            prefix,
+            'shared',
+            prefix,
+            'status'.padEnd('update'.length),
+            prefix,
+            'path'
+          )
+      )
 
-    if (unchangedFns > 0)
-      console.info(prefixWarn + `and ${unchangedFns} unchanged function(s).`)
-  } else {
-    console.info(
-      prefixWarn +
-        `All ${fns.length} functions found were unchanged compared to their remote versions.`
-    )
+      fns.forEach((value) => {
+        const { path: funcFilePath, name, observable, shared, status } = value
+        if (status !== 'unchanged') {
+          const relativeFnPath = './' + path.relative('./', funcFilePath)
+          console.info(
+            prefix + chalk.greenBright(name.padEnd(maxNameLength)),
+            prefix,
+            chalk.bold.greenBright(
+              observable
+                ? '✔'.padEnd('Observable'.length)
+                : ''.padEnd('Observable'.length)
+            ),
+            prefix,
+            chalk.bold.greenBright(
+              shared ? '✔'.padEnd('Shared'.length) : ''.padEnd('Shared'.length)
+            ),
+            prefix,
+            chalk.blue(status.padEnd('update'.length)),
+            prefix,
+            chalk.blue(relativeFnPath)
+          )
+        }
+      })
+
+      if (unchangedFns > 0)
+        console.info(prefixWarn + `and ${unchangedFns} unchanged function(s).`)
+    } else {
+      console.info(
+        prefixWarn +
+          `All ${fns.length} functions found were unchanged compared to their remote versions.`
+      )
+    }
   }
 
   printEmptyLine()
@@ -190,7 +231,9 @@ command(
       )
     )
   } else {
-    console.info(chalk.bold(prefix + 'No schema found'))
+    if (!options.functions && !options.name?.length) {
+      console.info(chalk.bold(prefix + 'No schema found'))
+    }
   }
 
   printEmptyLine()
@@ -198,11 +241,11 @@ command(
   const actionsList = ['schema', 'functions', 'both'] as const
   let action: typeof actionsList[number] // uses array above as possible values
 
-  if (options.schema && options.functions) {
+  if (options.schema && (options.functions || options.name?.length)) {
     action = 'both'
   } else if (options.schema) {
     action = 'schema'
-  } else if (options.functions) {
+  } else if (options.functions || options.name?.length) {
     action = 'functions'
   } else {
     ;({ action } = await inquirer.prompt([
@@ -221,6 +264,14 @@ command(
   }
   if (action === 'functions' || action === 'both') {
     await deployFunctions(client, envid, config, fns, unchangedFns)
+    if (options.output === 'fancy') {
+      console.info(
+        prefixSuccess +
+          `Successfully deployed ${chalk.blue(
+            fns.filter((fun) => fun.status !== 'unchanged').length
+          )} functions to ${chalk.blue(config.project + '/' + config.env)}`
+      )
+    }
   }
 
   process.exit()

@@ -276,6 +276,8 @@ test.serial('Get', async (t) => {
 
   const data = await client.graphql.query(getQuery, { id })
 
+  delete data.data.match.createdAt
+  delete data.data.match.updatedAt
   t.deepEqual(data, {
     data: {
       match: {
@@ -306,6 +308,8 @@ test.serial('Get', async (t) => {
 
   const fnData = await client.graphql.query(fnQuery, { id })
 
+  delete fnData.data.match.createdAt
+  delete fnData.data.match.updatedAt
   t.deepEqual(fnData, {
     data: {
       match: {

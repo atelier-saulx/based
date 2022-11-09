@@ -8,7 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@based/client": "*",
+    "@based/client": "^3.3.0",
     "@based/vue": "../../",
     "vue": "^3.2.36"
   },

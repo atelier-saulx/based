@@ -49,7 +49,8 @@ export const remove = async ({
     let name: string
     if (options.name) {
       name = options.name
-      ;({ id } = apiKeys.find((k: ApiKeyData) => k.name === options.name) || {})
+      ;({ id } =
+        apiKeys?.find((k: ApiKeyData) => k.name === options.name) || {})
       if (!id) {
         fail(`apiKey with name ${chalk.blue(name)} not found`, output, options)
       }
@@ -61,7 +62,7 @@ export const remove = async ({
         type: 'list',
         name: 'apiKey',
         message: 'Select apiKey to remove',
-        choices: apiKeys.map((apiKey: { id: string; name: string }) => ({
+        choices: apiKeys?.map((apiKey: { id: string; name: string }) => ({
           value: { id: apiKey.id, name: apiKey.name },
           name: apiKey.name,
         })),

@@ -28,30 +28,7 @@ import { addRequest, incomingRequest } from './request'
 import sendToken from './token'
 import { incomingAuthRequest, renewToken } from './auth'
 import defaultDebug from './debug'
-import { decode } from '@based/protocol/dist/decode'
-
-// import avro from 'avro-js'
-
-// const subType = avro.parse({
-//   name: 'Subscription',
-//   type: 'record',
-//   fields: [
-//     { name: 'id', type: 'long' },
-//     { name: 'version', type: 'long' },
-//     { name: 'data', type: 'string' }, // can type it for queries
-//   ],
-// })
-
-// const subDiffType = avro.parse({
-//   name: 'SubscriptionDiff',
-//   type: 'record',
-//   fields: [
-//     { name: 'id', type: 'long' },
-//     { name: 'version', type: 'long' },
-//     { name: 'fromVersion', type: 'long' },
-//     { name: 'data', type: 'string' }, // can type it for queries - which is AMAZING
-//   ],
-// })
+import { hash } from '@saulx/hash'
 
 export * from '@based/types'
 
@@ -76,7 +53,13 @@ export class BasedClient {
     }
   }
 
+  public user: string | false
+
+  optsId: number
+
   token: string
+
+  tokenToLocalStorage: boolean = false
 
   renewOptions: {
     refreshToken?: string
@@ -92,6 +75,103 @@ export class BasedClient {
   isLogginIn: boolean
 
   auth: ((x?: any) => void)[] = []
+
+  public initUserState() {
+    if (typeof window !== 'undefined') {
+      if (this.based.opts) {
+        const optsId = hash({
+          cluster: this.based.opts.cluster,
+          project: this.based.opts.project,
+          env: this.based.opts.project,
+          org: this.based.opts.org,
+        })
+        this.optsId = optsId
+      } else {
+        this.optsId = hash('un-specified-env')
+      }
+      try {
+        const userString = global.localStorage.getItem(
+          'based-' + this.optsId + '-uid'
+        )
+        if (userString) {
+          this.tokenToLocalStorage = true
+          try {
+            const [id, token, refreshToken] = JSON.parse(userString)
+            if (token && id) {
+              this.updateUserState(id, token, refreshToken)
+            }
+          } catch (err) {
+            global.localStorage.removeItem('based-' + this.optsId + '-uid')
+          }
+        }
+      } catch (err) {}
+    }
+  }
+
+  public updateUserState(
+    id: string | false,
+    token?: string,
+    refreshToken?: string
+  ) {
+    this.user = id
+
+    if (!this.tokenToLocalStorage && typeof window !== 'undefined') {
+      try {
+        global.localStorage.removeItem('based-' + this.optsId + '-uid')
+      } catch (err) {}
+    }
+
+    if (token) {
+      if (refreshToken) {
+        this.renewOptions = { refreshToken }
+      }
+      if (refreshToken) {
+        this.renewOptions = {
+          ...this.renewOptions,
+          refreshToken,
+        }
+      }
+      sendToken(this, token, {
+        refreshToken: refreshToken,
+      })
+      this.auth.push((isValid) => {
+        if (isValid) {
+          if (typeof window !== 'undefined') {
+            try {
+              if (this.tokenToLocalStorage) {
+                global.localStorage.setItem(
+                  'based-' + this.optsId + '-uid',
+                  JSON.stringify([id, token, refreshToken])
+                )
+              }
+            } catch (err) {}
+          }
+          this.based.emit('auth', token)
+        } else {
+          if (typeof window !== 'undefined') {
+            try {
+              if (this.tokenToLocalStorage) {
+                global.localStorage.removeItem('based-' + this.optsId + '-uid')
+              }
+            } catch (err) {}
+          }
+          this.based.emit('auth', false)
+        }
+      })
+    } else {
+      if (typeof window !== 'undefined') {
+        this.user = false
+        try {
+          if (this.tokenToLocalStorage) {
+            global.localStorage.removeItem('based-' + this.optsId + '-uid')
+          }
+        } catch (err) {}
+      }
+      sendToken(this)
+      this.based.emit('auth', false)
+    }
+    // handle dat localstorage
+  }
 
   subscriptions: {
     [subscriptionId: string]: {
@@ -180,6 +260,7 @@ export class BasedClient {
     stopDrainQueue(this)
     removeUnsubscribesFromQueue(this)
     removeSendSubsriptionDataFromQueue(this)
+    // removeSendSubsriptionDataFromQueue
     if (this.based.listeners.disconnect) {
       this.based.listeners.disconnect.forEach((val) => val())
     }
@@ -209,23 +290,15 @@ export class BasedClient {
     drainQueue(this)
   }
 
-  async onData(d) {
+  onData(d) {
     try {
-      // if (d.)
-
-      let data: ResponseData
-      if (d.data instanceof Blob) {
-        // Uint8Array
-        const x = await d.data.arrayBuffer()
-        data = decode(new Uint8Array(x))
-      } else {
-        data = JSON.parse(d.data)
-      }
+      const data: ResponseData = JSON.parse(d.data)
 
       if (this.debugInternal) {
         this.debugInternal(data, 'incoming')
       }
 
+      // @ts-ignore
       const [type, reqId, payload, err, subscriptionErr] = data
       if (type === RequestTypes.Token) {
         this.retryingRenewToken = false
@@ -233,6 +306,16 @@ export class BasedClient {
         if (reqId.length) {
           logoutSubscriptions(this, data)
         }
+
+        if (
+          !payload &&
+          typeof err === 'string' &&
+          this.user &&
+          this.renewOptions.refreshToken
+        ) {
+          this.token = err
+        }
+
         for (const fn of this.auth) {
           fn(!payload)
         }
@@ -250,6 +333,8 @@ export class BasedClient {
           !this.retryingRenewToken
         ) {
           this.retryingRenewToken = true
+          const userId = this.user
+
           renewToken(this, this.renewOptions)
             .then((result) => {
               sendToken(this, result.token, this.sendTokenOptions)
@@ -271,6 +356,13 @@ export class BasedClient {
                 )
               }
               this.based.emit('renewToken', result)
+              if (result) {
+                this.updateUserState(
+                  userId,
+                  result.token,
+                  this.renewOptions.refreshToken
+                )
+              }
             })
             .catch((err) => {
               this.requestCallbacks[reqId]?.reject(err)
@@ -286,7 +378,8 @@ export class BasedClient {
             type === RequestTypes.Copy ||
             type === RequestTypes.Digest ||
             type === RequestTypes.RemoveType ||
-            type === RequestTypes.RemoveField
+            type === RequestTypes.RemoveField ||
+            type === RequestTypes.BulkUpdate
           ) {
             incomingRequest(this, data)
           } else if (type === RequestTypes.Subscription) {

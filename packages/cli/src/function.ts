@@ -13,6 +13,7 @@ import {
   prefix,
   prefixError,
   prefixSuccess,
+  prefixWarn,
   printEmptyLine,
   printError,
   printHeader,
@@ -54,6 +55,11 @@ command(
 ).action(async (name: string, options: FunctionsOptions) => {
   const config = await makeConfig(options)
   printHeader(options, config, 'Manage functions')
+
+  console.info(
+    prefixWarn +
+      '`functions` command is deprecated and will be removed soon. Please use `deploy` command instead.'
+  )
 
   const output: FunctionsOutput = { data: [] }
 
@@ -150,6 +156,7 @@ command(
       minify: true,
       platform: 'node',
       write: false,
+      sourcemap: true,
     }).catch((err) => err)
 
     if (result.errors && result.errors.length) {
@@ -158,7 +165,11 @@ command(
       fail('Cannot deploy function got a build error.', output, options)
     }
 
+    console.log('--->', result.outputFiles)
+
     options.code = result.outputFiles[0].text
+
+    console.log('------>', options.code)
 
     spinner.clear()
 

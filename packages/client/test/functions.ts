@@ -93,7 +93,8 @@ test.serial('call functions', async (t) => {
             if (payload === 4) {
               return based.get({
                 $id: 'root',
-                $all: true,
+                id: true,
+                type: true,
               })
             }
             if (payload === 5) {

@@ -1,9 +1,16 @@
 {
-  "extends": "@based/tsconfig/src/based.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist"
   },
   "include": ["src/**/*", "src/**/*.json"],
-  "exclude": ["node_modules", "test", "dist", "tmp", "examples"]
+  "exclude": [
+    "node_modules",
+    "test",
+    "dist",
+    "tmp",
+    "examples",
+    "src/buildApp/template.ts"
+  ]
 }

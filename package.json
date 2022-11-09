@@ -1,6 +1,6 @@
 {
   "name": "@based/workspaces",
-  "version": "2.5.3",
+  "version": "2.5.4",
   "author": "Based",
   "license": "MIT",
   "homepage": "https://github.com/atelier-saulx/based#readme",
@@ -18,12 +18,11 @@
     "saulx"
   ],
   "workspaces": [
-    "shared/*",
     "packages/*"
   ],
-  "prettier": "@based/prettier-config",
+  "prettier": "@saulx/prettier-config",
   "eslintConfig": {
-    "extends": "@based/eslint-config"
+    "extends": "@saulx/eslint-config"
   },
   "scripts": {
     "prepare": "husky install",
@@ -41,12 +40,12 @@
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
   },
-  "lint-staged": {
+  "_lint-staged": {
     "*": [
       "npm run lint"
     ]
   },
-  "husky": {
+  "_husky": {
     "hooks": {
       "pre-push": "npm run lint"
     }
@@ -55,16 +54,18 @@
     "turbo": "^1.2.8"
   },
   "devDependencies": {
+    "@saulx/eslint-config": "^1.1.1",
+    "@saulx/prettier-config": "^1.0.0",
     "@types/fs-extra": "^9.0.13",
     "@types/node": "^17.0.23",
     "@types/yargs": "^17.0.0",
     "chalk": "^4.1.2",
     "enquirer": "^2.3.6",
-    "esno": "^0.14.1",
+    "esno": "0.14.1",
     "execa": "^6.0.0",
     "fs-extra": "^10.0.1",
-    "husky": "^7.0.4",
-    "lint-staged": "^12.1.2",
+    "husky": "7.0.4",
+    "lint-staged": "12.1.2",
     "new-github-release-url": "^2.0.0",
     "npm-run-all": "^4.1.5",
     "open": "^8.4.0",

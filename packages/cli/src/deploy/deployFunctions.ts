@@ -12,44 +12,55 @@ export default async function (
   fns: BasedFunctionConfig[],
   unchangedFns: number
 ) {
-  // Deploy functions
-  const s = Date.now()
   if (fns.length > unchangedFns) {
     printEmptyLine()
     const spinner = ora('Deploying function(s)...').start()
-    await Promise.all(
-      fns.map(async (fun) => {
-        if (fun.status !== 'unchanged') {
-          try {
-            await client.call('updateFunction', {
-              env: envid,
-              observable: fun.observable,
-              shared: fun.shared,
-              name: fun.name,
-              code: fun.code,
-              fromFile: true,
-            })
+    const changedFns = fns.filter((fun) => fun.status !== 'unchanged')
+    let i = 0
 
-            spinner.stop()
+    const deployFunctions = async () => {
+      for (; i < changedFns.length; i++) {
+        const fun = changedFns[i]
 
-            console.info(
-              prefixSuccess +
-                `${'Succesfully deployed function'} ${chalk.blue(
-                  fun.name
-                )} ${'to'} ${chalk.blue(
-                  `${config.project}/${config.env}`
-                )} ${chalk.grey('in ' + (Date.now() - s) + 'ms')}`
-            )
-          } catch (err) {
-            spinner.stop()
-            console.info(
-              prefixError + chalk.red('Cannot deploy function'),
-              err.message
-            )
-          }
+        spinner.start(
+          `Deploying function ${fun.name} (${i + 1}/${changedFns.length})`
+        )
+
+        try {
+          await client.call('updateFunction', {
+            env: envid,
+            observable: fun.observable,
+            shared: fun.shared,
+            name: fun.name,
+            code: fun.code,
+            sourcemap: fun.sourcemap,
+            fromFile:
+              fun.bundle === false
+                ? false
+                : typeof fun.fromFile !== 'undefined'
+                ? fun.fromFile
+                : true,
+          })
+        } catch (err) {
+          console.info(
+            prefixError + chalk.red(`Cannot deploy function ${fun.name}`),
+            err.message
+          )
         }
-      })
-    )
+      }
+
+      spinner.stop()
+    }
+
+    await Promise.race([
+      new Promise((resolve) =>
+        client.on('connect', async () => {
+          await deployFunctions()
+          resolve(true)
+        })
+      ),
+      deployFunctions(),
+    ])
   } else {
     console.info(prefixWarn + `No functions to deploy`)
   }

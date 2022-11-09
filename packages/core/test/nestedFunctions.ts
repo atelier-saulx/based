@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/server'
+import createServer from '@based/edge-server'
 import { wait } from '@saulx/utils'
 import { join } from 'path'
 
@@ -41,7 +41,6 @@ test.serial('nested functions', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      functionApiWrapperPath: join(__dirname, 'functions', 'fnWrapper.js'),
       maxWorkers: 16,
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
@@ -66,8 +65,13 @@ test.serial('nested functions', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
+      // add name
+      log: (log) => {
+        console.info('-->', log.toString())
+      },
+      // add name
+      error: (err) => {
+        console.error('-->', err)
       },
     },
   })
