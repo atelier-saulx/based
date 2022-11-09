@@ -42,8 +42,9 @@ export const convertDataToBasedError = (
   stack?: string
 ): BasedError => {
   const { message, /* requestId, */ ...otherProps } = payload
-  const error = new BasedError(message)
-  error.stack = stack ? message + ' ' + stack : message
+  const msg = 'Based ' + message
+  const error = new BasedError()
+  error.stack = stack ? msg + ' ' + stack : msg
   Object.keys(otherProps).forEach((key) => {
     error[key] = otherProps[key]
   })

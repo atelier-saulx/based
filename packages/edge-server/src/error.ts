@@ -22,29 +22,26 @@ export enum BasedErrorCode {
   // WorkerDied
 }
 
-type FunctionErrorProps =
-  | {
-      err: Error
-      requestId?: number
-      route: BasedFunctionRoute
-    }
-  | {
-      observableId: number
-      err: Error
-      route: BasedFunctionRoute
-    }
+type FunctionErrorProps = {
+  err: Error
+  requestId?: number
+  route: BasedFunctionRoute
+}
 
-// TODO: need to add reqId & observableId as well.. else you cannot handle them at all
+type ObservableFunctionErrorProps = {
+  observableId: number
+  err: Error
+  route: BasedFunctionRoute
+}
 
 export type ErrorPayload = {
   [BasedErrorCode.NoBinaryProtocol]: any
-  [BasedErrorCode.FunctionError]: FunctionErrorProps // TODO include payload
-  [BasedErrorCode.AuthorizeFunctionError]: FunctionErrorProps
+  [BasedErrorCode.FunctionError]: FunctionErrorProps
+  [BasedErrorCode.ObservableFunctionError]: ObservableFunctionErrorProps
+  [BasedErrorCode.AuthorizeFunctionError]:
+    | FunctionErrorProps
+    | ObservableFunctionErrorProps
   [BasedErrorCode.NoOservableCacheAvailable]: {
-    observableId: number
-    route: BasedFunctionRoute
-  }
-  [BasedErrorCode.ObservableFunctionError]: {
     observableId: number
     route: BasedFunctionRoute
   }
@@ -62,40 +59,46 @@ export type ErrorPayload = {
   [BasedErrorCode.MethodNotAllowed]: BasedFunctionRoute
 }
 
-/*
-  for functione errors
+const addName = (payload: BasedFunctionRoute): string => {
+  return payload.name ? `[${payload.name}] ` : ''
+}
 
- // errorData.basedMessage =
-  //   typeof errorDefaults[basedCode]?.message === 'function'
-  //     ? errorDefaults[basedCode]?.message(err)
-  //     : errorDefaults[basedCode]?.message ||
-  //       errorDefaults[basedCode]?.status ||
-  //       'Oops something went wrong'
-  //   if (payload && 'err' in payload && payload instanceof Error) {
-  //     Object.getOwnPropertyNames(payload.err).forEach((key: string) => {
-  //       errorData[key] = payload.err[key]
-  //     })
-  //   } else {
-  //     errorData.message = errorData.basedMessage
-  //     const captureTarget = { stack: null }
-  //     Error.captureStackTrace(captureTarget, createError)
-  //     errorData.stack = captureTarget.stack
-  //   }
-  // }
-*/
+type ErrorPayloadType = ErrorPayload[BasedErrorCode]
 
-const errorTypes = {
+type ErorHandler = {
+  statusCode: number
+  statusMessage: string
+  message: (payload: ErrorPayloadType) => string
+}
+
+const errorTypes: Record<keyof ErrorPayload, ErorHandler> = {
   [BasedErrorCode.FunctionError]: {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
     message: (payload: ErrorPayload[BasedErrorCode.FunctionError]) => {
-      // do it nice
       // @ts-ignore
       if (payload.err && !payload.err.message && !payload.err.name) {
         // @ts-ignore
         return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
       }
-
+      return `[${payload.route.name}] ${
+        payload.err.name && payload.err.name !== 'Error'
+          ? `[${payload.err.name}] `
+          : ''
+      }${payload.err.message || ''}`
+    },
+  },
+  [BasedErrorCode.ObservableFunctionError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.ObservableFunctionError]
+    ) => {
+      // @ts-ignore
+      if (payload.err && !payload.err.message && !payload.err.name) {
+        // @ts-ignore
+        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
+      }
       return `[${payload.route.name}] ${
         payload.err.name && payload.err.name !== 'Error'
           ? `[${payload.err.name}] `
@@ -106,38 +109,65 @@ const errorTypes = {
   [BasedErrorCode.FunctionNotFound]: {
     statusCode: 404,
     statusMessage: 'Not Found',
-    message: (payload: ErrorPayload[BasedErrorCode.FunctionNotFound]) =>
-      `Function not found${payload.name ? ` '${payload.name}'` : ''}${
-        payload.path ? ` path '${payload.path}'` : ''
-      }`,
+    message: (payload: ErrorPayload[BasedErrorCode.FunctionNotFound]) => {
+      return (
+        addName(payload) +
+        `Function not found${payload.path ? ` path '${payload.path}'` : ''}`
+      )
+    },
   },
   [BasedErrorCode.FunctionIsStream]: {
     statusCode: 400,
-    statusMessage: 'Incorrect protocol',
-    message: () => 'Cannot use stream functions over websockets',
+    statusMessage: 'Incorrect Protocol',
+    message: (payload: ErrorPayload[BasedErrorCode.FunctionIsStream]) => {
+      return addName(payload) + 'Cannot use stream functions over websockets'
+    },
+  },
+  [BasedErrorCode.FunctionIsNotObservable]: {
+    statusCode: 400,
+    statusMessage: 'Function Is Not Observable',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.FunctionIsNotObservable]
+    ) => {
+      return addName(payload) + 'Cannot observe non observable functions'
+    },
+  },
+  [BasedErrorCode.FunctionIsObservable]: {
+    statusCode: 400,
+    statusMessage: 'Function Is Observable',
+    message: (payload: ErrorPayload[BasedErrorCode.FunctionIsObservable]) => {
+      return (
+        addName(payload) + 'Cannot call observable functions as a standard one'
+      )
+    },
   },
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
     statusMessage: 'Not Found',
     // TODO: make this allways a function
-    message: 'Cannot stream to observable function.',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.CannotStreamToObservableFunction]
+    ) => {
+      return addName(payload) + 'Cannot stream to observable function'
+    },
   },
   [BasedErrorCode.AuthorizeFunctionError]: {
     statusCode: 403,
     statusMessage: 'Forbidden',
-    message: 'Error in authorize function',
+    message: (payload: ErrorPayload[BasedErrorCode.AuthorizeFunctionError]) =>
+      addName(payload.route) + 'Error in authorize function',
   },
   [BasedErrorCode.AuthorizeRejectedError]: {
     statusCode: 403,
     statusMessage: 'Forbidden',
     message: (payload: ErrorPayload[BasedErrorCode.AuthorizeRejectedError]) =>
-      `Authorize rejected access to ${payload.name}`,
+      addName(payload) + `Authorize rejected access`,
   },
   [BasedErrorCode.InvalidPayload]: {
     statusCode: 400,
     statusMessage: 'Bad Request',
     message: (payload: ErrorPayload[BasedErrorCode.InvalidPayload]) =>
-      'Invalid payload ' + payload.name,
+      addName(payload) + 'Invalid payload',
   },
   [BasedErrorCode.NoBinaryProtocol]: {
     statusCode: 400,
@@ -146,24 +176,34 @@ const errorTypes = {
   },
   [BasedErrorCode.PayloadTooLarge]: {
     statusCode: 413,
-    status: 'Payload Too Large',
+    statusMessage: 'Payload Too Large',
     message: (payload: ErrorPayload[BasedErrorCode.PayloadTooLarge]) =>
-      'PayloadTooLarge ' + payload.name,
+      addName(payload) + ' PayloadTooLarge',
   },
   [BasedErrorCode.ChunkTooLarge]: {
     statusCode: 413,
-    status: 'Payload Too Large',
+    statusMessage: 'Payload Too Large',
     message: (payload: ErrorPayload[BasedErrorCode.ChunkTooLarge]) =>
-      'ChunkTooLarge ' + payload.name,
+      addName(payload) + 'ChunkTooLarge ' + payload.name,
   },
   [BasedErrorCode.UnsupportedContentEncoding]: {
     statusCode: 400,
     statusMessage: 'Incorrect content encoding',
+    message: (
+      payload: ErrorPayload[BasedErrorCode.UnsupportedContentEncoding]
+    ) => addName(payload) + 'Incorrect content encoding',
   },
-  [BasedErrorCode.LengthRequired]: { code: 411, status: 'Length Required' },
+  [BasedErrorCode.LengthRequired]: {
+    statusCode: 411,
+    statusMessage: 'Length Required',
+    message: (payload: ErrorPayload[BasedErrorCode.LengthRequired]) =>
+      addName(payload) + 'Length Required',
+  },
   [BasedErrorCode.MethodNotAllowed]: {
     statusCode: 405,
     statusMessage: 'Method Not Allowed',
+    message: (payload: ErrorPayload[BasedErrorCode.MethodNotAllowed]) =>
+      addName(payload) + 'Method Not Allowed',
   },
   [BasedErrorCode.NoOservableCacheAvailable]: {
     statusCode: 500,
@@ -171,6 +211,7 @@ const errorTypes = {
     message: (
       payload: ErrorPayload[BasedErrorCode.NoOservableCacheAvailable]
     ) =>
+      addName(payload.route) +
       `No observable cache available${payload.route.name} - ${payload.observableId}`,
   },
 }
@@ -204,7 +245,7 @@ export const createError = (
   code: BasedErrorCode,
   payload: ErrorPayload[BasedErrorCode]
 ): BasedErrorData => {
-  const type = errorTypes[code]
+  const type: ErorHandler = errorTypes[code]
 
   const route = !payload
     ? EMPTY.route
@@ -216,8 +257,7 @@ export const createError = (
     code,
     statusCode: type.statusCode,
     statusMessage: type.statusMessage,
-    message:
-      typeof type.message === 'function' ? type.message(payload) : type.message,
+    message: type.message(payload),
     route: {
       name: route.name,
       path: route.path,
