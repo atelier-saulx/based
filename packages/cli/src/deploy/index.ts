@@ -127,6 +127,21 @@ command(
           fun.fromFile = false
         } else {
           const x = await build({
+            banner: {
+              js: `
+console = { ...console }
+for (const i in console) {
+  const fn = console[i]
+  if (typeof fn === 'function') {
+    console[i] = (str, ...props) => {
+      if (typeof str === 'string') {
+        return fn.call(console, '[${fun.name}] ' + str, ...props)
+      }
+      return fn.call(console, str, ...props)
+    }
+  }
+}`,
+            },
             bundle: true,
             outdir: 'out',
             incremental: false,
