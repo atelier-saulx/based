@@ -105,9 +105,11 @@ function bufferWriteCstringP(
 
 	setPointer(buf, offset, destOffset, value.length)
 	// @ts-ignore
-	return 'copy' in value
-		? value.copy(buf, destOffset, 0)
-		: buf.write(value, destOffset, value.length, encoding)
+	return value.copy
+		? // @ts-ignore
+		  value.copy(buf, destOffset, 0)
+		: // @ts-ignore
+		  buf.write(value, destOffset, value.length, encoding)
 }
 
 type BufferReadFunction = (
@@ -747,9 +749,11 @@ export function getWriteFuncs(buf: Buffer): {
 			encoding: Encoding
 		): number =>
 			// @ts-ignore
-			'copy' in v
-				? v.copy(buf, offset, 0, len)
-				: buf.write(v, offset, len, encoding),
+			value.copy
+				? // @ts-ignore
+				  v.copy(buf, offset, 0, len)
+				: // @ts-ignore
+				  buf.write(v, offset, len, encoding),
 		pw: (
 			v: string | Buffer | undefined,
 			offset: number,

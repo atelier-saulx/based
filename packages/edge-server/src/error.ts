@@ -90,7 +90,15 @@ const errorTypes = {
     statusMessage: 'Internal Server Error',
     message: (payload: ErrorPayload[BasedErrorCode.FunctionError]) => {
       // do it nice
-      return `Error in function ${payload.route.name}  [${payload.err.name}] ${payload.err.message}`
+      // @ts-ignore
+      if (payload.err && !payload.message && !payload.name) {
+        // @ts-ignore
+        return `${JSON.stringify(payload.err)}`
+      }
+
+      return `Error in function ${payload.route.name} [${
+        payload.err.name ? `[${payload.err.name}]` : ''
+      } ${payload.err.message || ''}`
     },
   },
   [BasedErrorCode.FunctionNotFound]: {
