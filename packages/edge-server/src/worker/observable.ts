@@ -3,11 +3,12 @@ import {
   encodeObservableResponse,
   encodeObservableDiffResponse,
 } from '../protocol'
-import { ObservableUpdateFunction } from '../types'
+import { FunctionType, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
 import { parentPort } from 'node:worker_threads'
+import { getFunction } from './functions'
 
 export type WorkerObs = {
   id: number
@@ -25,7 +26,12 @@ export type WorkerObs = {
 
 export const activeObs: Map<number, WorkerObs> = new Map()
 
-export const createObs = (id: number, functionPath: string, payload?: any) => {
+export const createObs = (
+  name: string,
+  id: number,
+  functionPath: string,
+  payload?: any
+) => {
   if (activeObs.has(id)) {
     console.warn('trying to creater an obs that allready exists...')
     return
@@ -38,10 +44,7 @@ export const createObs = (id: number, functionPath: string, payload?: any) => {
 
   activeObs.set(id, obs)
 
-  let fn = require(functionPath)
-  if (fn.default) {
-    fn = fn.default
-  }
+  const fn = getFunction(name, FunctionType.observe, functionPath)
 
   const update: ObservableUpdateFunction = (
     data: any,

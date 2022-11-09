@@ -1,19 +1,15 @@
-import { threadId } from 'worker_threads'
-import { Authorize, ClientContext } from '../types'
-
-export const state: {
-  authorize?: Authorize
-} = {}
+import { Authorize, ClientContext, FunctionType } from '../types'
+import { getFunctionByName } from './functions'
 
 export const authorize: Authorize = async (
   client: ClientContext,
   name: string,
   payload?: any
 ) => {
-  if (!state.authorize) {
-    console.warn('No authorize installed in worker...', threadId)
-    return true
+  const auth = getFunctionByName('authorize', FunctionType.authorize)
+  if (auth) {
+    return auth(client, name, payload)
   }
-  // needs callstack...
-  return state.authorize(client, name, payload)
+  console.error('Cannot find authorize on worker...')
+  return false
 }
