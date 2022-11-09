@@ -11,3 +11,5 @@ linked-example
 docker-build
 
 distribute/*
+
+build/*
