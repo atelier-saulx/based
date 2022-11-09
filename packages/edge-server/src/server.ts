@@ -62,10 +62,11 @@ export class BasedServer {
   emit(
     type: Event,
     client: HttpClient | WebsocketClient | WorkerClient,
-    val: EventMap[Event]
+    val: EventMap[Event],
+    err?: Error
   ) {
     if (this.listeners[type]) {
-      this.listeners[type].forEach((fn) => fn(client, val))
+      this.listeners[type].forEach((fn) => fn(client, val, err))
     }
   }
 

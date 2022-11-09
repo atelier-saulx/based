@@ -73,7 +73,7 @@ export const functionMessage = (
             client.ws?.send(v, true, false)
           })
           .catch((err) => {
-            sendError(server, client, BasedErrorCode.FunctionError, {
+            sendError(server, client, err.code, {
               route,
               requestId: reqId,
               err,

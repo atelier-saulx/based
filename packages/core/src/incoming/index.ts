@@ -289,10 +289,14 @@ export const incoming = async (
         )
       }
 
-      const error = convertDataToBasedError(payload)
       if (payload.requestId) {
         if (client.functionResponseListeners.has(payload.requestId)) {
-          client.functionResponseListeners.get(payload.requestId)[1](error)
+          const [, reject, stack] = client.functionResponseListeners.get(
+            payload.requestId
+          )
+
+          reject(convertDataToBasedError(payload, stack))
+
           client.functionResponseListeners.delete(payload.requestId)
         }
       }
@@ -300,6 +304,7 @@ export const incoming = async (
         client.cache.delete(payload.observableId)
 
         if (client.observeState.has(payload.observableId)) {
+          const error = convertDataToBasedError(payload)
           const observable = client.observeState.get(payload.observableId)
           for (const [, handlers] of observable.subscribers) {
             if (handlers.onError) {
@@ -310,8 +315,10 @@ export const incoming = async (
           }
         }
         if (client.getState.has(payload.observableId)) {
+          const error = convertDataToBasedError(payload)
           const get = client.getState.get(payload.observableId)
           for (const [, reject] of get) {
+            // also add stack
             reject(error)
           }
           client.getState.delete(payload.observableId)

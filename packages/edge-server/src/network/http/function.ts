@@ -39,9 +39,7 @@ export const httpFunction = (
             }
           })
           .catch((err) => {
-            console.info('CATCH>>>', err)
-
-            sendHttpError(server, client, BasedErrorCode.FunctionError, {
+            sendHttpError(server, client, err.code, {
               err,
               route,
             })

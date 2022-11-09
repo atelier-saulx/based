@@ -38,10 +38,12 @@ export class BasedError extends Error {
 }
 
 export const convertDataToBasedError = (
-  payload: BasedErrorData
+  payload: BasedErrorData,
+  stack?: string
 ): BasedError => {
   const { message, /* requestId, */ ...otherProps } = payload
   const error = new BasedError(message)
+  error.stack = stack ? message + ' ' + stack : message
   Object.keys(otherProps).forEach((key) => {
     error[key] = otherProps[key]
   })

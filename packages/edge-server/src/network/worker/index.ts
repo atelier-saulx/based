@@ -71,8 +71,14 @@ export const workerMessage = (
     )
   } else if (data.id) {
     const listener = server.functions.workerResponseListeners.get(data.id)
-    // prob need more here
     if (listener) {
+      if (data.errCode) {
+        if (!data.err) {
+          data.err = new Error()
+        }
+        data.err.code = data.errCode
+      }
+
       listener(data.err, data.payload)
     }
   }

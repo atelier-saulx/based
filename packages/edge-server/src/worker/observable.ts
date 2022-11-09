@@ -9,11 +9,12 @@ import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
 import { parentPort } from 'node:worker_threads'
 import { getFunction } from './functions'
+import { BasedErrorCode } from '../error'
 
 export type WorkerObs = {
   id: number
   isDestroyed: boolean
-  rawData?: any // deepCopy
+  rawData?: any // deepCopy - can be heavy...
   rawDataSize?: number
   diffCache?: Uint8Array
   previousChecksum?: number
@@ -57,7 +58,6 @@ export const createObs = (
       if (data === undefined) {
         checksum = 0
       } else {
-        // do something
         if (typeof data === 'object' && data !== null) {
           checksum = hashObjectIgnoreKeyOrder(data)
         } else {
@@ -70,7 +70,6 @@ export const createObs = (
       let encodedData: Uint8Array
       if (data instanceof Uint8Array) {
         obs.reusedCache = true
-        // console.info('hello!', data, diff, previousChecksum, isDeflate)
         encodedData = data
         if (diff) {
           obs.diffCache = diff
@@ -108,11 +107,9 @@ export const createObs = (
             diffBuff
           )
           obs.diffCache = encodedDiffData
-          // add to cache size
         }
       }
 
-      // add deflate info
       obs.isDeflate = isDeflate
       obs.cache = encodedData
       obs.checksum = checksum
@@ -133,6 +130,8 @@ export const createObs = (
   // @ts-ignore
   update.__isEdge__ = true
 
+  // add onError function to observe api...
+
   fn(payload, update)
     .then((close) => {
       if (obs.isDestroyed) {
@@ -145,8 +144,8 @@ export const createObs = (
       parentPort.postMessage({
         id,
         err,
+        errCode: BasedErrorCode.ObservableFunctionError,
       })
-      // TODO: maybe clear instantly?
     })
 }
 
@@ -164,5 +163,3 @@ export const closeObs = (id: number) => {
   }
   activeObs.delete(id)
 }
-
-// make a map

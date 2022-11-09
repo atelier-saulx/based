@@ -13,6 +13,7 @@ import { destroy, initFunction } from '../observable'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
 import { join } from 'path'
 import { workerMessage } from '../network/worker'
+import { BasedErrorCode } from '../error'
 
 export { isObservableFunctionSpec }
 
@@ -29,7 +30,11 @@ export class BasedFunctions {
 
   workers: BasedWorker[] = []
 
-  workerResponseListeners: Map<number, (err: Error, p: any) => void> = new Map()
+  workerResponseListeners: Map<
+    number,
+    | ((err: null, p: any) => void)
+    | ((err: Error & { code: BasedErrorCode }) => void)
+  > = new Map()
 
   paths: {
     [path: string]: string
@@ -443,8 +448,6 @@ export class BasedFunctions {
       const selectedWorker: BasedWorker = this.lowestWorker
       this.workerResponseListeners.set(listenerId, (err, p) => {
         this.workerResponseListeners.delete(listenerId)
-
-        // include observables
         selectedWorker.activeFunctions--
         if (
           selectedWorker.activeFunctions < this.lowestWorker.activeFunctions
@@ -454,7 +457,6 @@ export class BasedFunctions {
         if (err) {
           reject(err)
         } else {
-          // prob shared array buffer...
           resolve(p)
         }
       })
@@ -474,11 +476,6 @@ export class BasedFunctions {
         context,
         id: listenerId,
       })
-      // console.info(
-      //   'SPEED',
-      //   selectedWorker.worker.threadId,
-      //   selectedWorker.worker.performance.eventLoopUtilization()
-      // )
     })
   }
 }

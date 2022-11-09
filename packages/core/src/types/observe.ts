@@ -67,6 +67,6 @@ export type GetObserveQueue = Map<
   | [
       3,
       string, // name
-      number // checksum
+      number // checksum,
     ]
 >

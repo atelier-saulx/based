@@ -91,14 +91,16 @@ const errorTypes = {
     message: (payload: ErrorPayload[BasedErrorCode.FunctionError]) => {
       // do it nice
       // @ts-ignore
-      if (payload.err && !payload.message && !payload.name) {
+      if (payload.err && !payload.err.message && !payload.err.name) {
         // @ts-ignore
-        return `${JSON.stringify(payload.err)}`
+        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
       }
 
-      return `Error in function ${payload.route.name} [${
-        payload.err.name ? `[${payload.err.name}]` : ''
-      } ${payload.err.message || ''}`
+      return `[${payload.route.name}] ${
+        payload.err.name && payload.err.name !== 'Error'
+          ? `[${payload.err.name}] `
+          : ''
+      }${payload.err.message || ''}`
     },
   },
   [BasedErrorCode.FunctionNotFound]: {
@@ -181,6 +183,7 @@ export type BasedErrorData = {
   statusMessage: string
   requestId?: number
   observableId?: number
+  err?: Error
 }
 
 const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
@@ -229,7 +232,11 @@ export const createError = (
     errorData.observableId = payload.observableId
   }
 
-  server.emit('error', client, errorData)
+  if (payload?.err) {
+    server.emit('error', client, errorData, payload.err)
+  } else {
+    server.emit('error', client, errorData)
+  }
 
   return errorData
 }

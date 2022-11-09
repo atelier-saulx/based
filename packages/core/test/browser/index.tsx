@@ -56,6 +56,8 @@ const init = async () => {
 
   const button = document.createElement('button')
   button.innerHTML = 'set something'
+  button.style.margin = '40px'
+
   button.onclick = () => {
     coreClient.function('based-db-set', {
       type: 'thing',
@@ -63,6 +65,16 @@ const init = async () => {
     })
   }
   document.body.appendChild(button)
+
+  const crbutton = document.createElement('button')
+  crbutton.style.margin = '40px'
+  crbutton.innerHTML = 'crash something'
+  crbutton.onclick = () => {
+    coreClient.function('crasher').catch((err) => {
+      console.error(err)
+    })
+  }
+  document.body.appendChild(crbutton)
   // const x = await coreClient.get('counter')
 
   // console.info('FUN', x)

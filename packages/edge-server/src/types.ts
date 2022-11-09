@@ -242,5 +242,6 @@ export type Event = keyof EventMap
 
 export type Listener<T> = (
   client: HttpClient | WebsocketClient | WorkerClient,
-  data?: T
+  data?: T,
+  err?: Error
 ) => void

@@ -120,7 +120,11 @@ export const addToFunctionQueue = (
   }
 
   const id = client.requestId
-  client.functionResponseListeners.set(id, [resolve, reject])
+
+  // TODO: When node env is development
+  const s = Error().stack.split(/BasedCoreClient\.function.+:\d\d\)/)[1]
+
+  client.functionResponseListeners.set(id, [resolve, reject, s])
   client.functionQueue.push([id, name, payload])
 
   drainQueue(client)
@@ -165,6 +169,7 @@ export const addGetToQueue = (
   if (client.getObserveQueue.has(id)) {
     return
   }
+
   client.getObserveQueue.set(id, [3, name, checksum, payload])
   drainQueue(client)
 }
