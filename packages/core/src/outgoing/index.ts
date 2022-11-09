@@ -48,8 +48,6 @@ export const drainQueue = (client: BasedCoreClient) => {
         const obs = client.observeQueue
         const get = client.getObserveQueue
 
-        console.info('SEND', 'FNS', fn, 'OBS', obs, 'GETS', get)
-
         const buffs = []
         let l = 0
 

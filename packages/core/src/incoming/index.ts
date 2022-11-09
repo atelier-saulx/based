@@ -4,6 +4,11 @@ import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
 
+const getName = (client: BasedCoreClient, id: number): string => {
+  const sub = client.observeState.get(id)
+  return sub?.name
+}
+
 export const decodeHeader = (
   nr: number
 ): { type: number; isDeflate: boolean; len: number } => {
@@ -61,7 +66,14 @@ const requestFullData = (client: BasedCoreClient, id: number) => {
     console.error('Cannot find name for id from diff', id)
     return
   }
-  console.info('dont have cache data o no', id)
+  console.info(
+    'GET NEW DATA',
+    id,
+    'HAS',
+    [...client.cache.keys()].map((v) => {
+      return `${getName(client, v)} : ${v} `
+    })
+  )
   // and prob need to add an extra arg (type 4 msg) to enfore sending the data back
   addGetToQueue(client, sub.name, id, sub.payload)
 }
@@ -121,8 +133,11 @@ export const incoming = async (
 
       const cachedData = client.cache.get(id)
 
+      console.info('Incoming diff data', getName(client, id), id)
+
       if (!cachedData) {
-        console.info('NO CACHED DATA...', id, client.cache)
+        console.info('DIFF => NO CACHE')
+
         requestFullData(client, id)
         return
       }
@@ -131,6 +146,7 @@ export const incoming = async (
       const previousChecksum = readUint8(buffer, 20, 8)
 
       if (cachedData.checksum !== previousChecksum) {
+        console.info('DIFF => DIFF CHECKSUM')
         requestFullData(client, id)
         return
       }
@@ -182,6 +198,8 @@ export const incoming = async (
       const id = readUint8(buffer, 4, 8)
       const checksum = readUint8(buffer, 12, 8)
 
+      console.info('Incoming sub data', getName(client, id), id, checksum)
+
       const start = 20
       const end = len + 4
       let payload: any
@@ -203,11 +221,14 @@ export const incoming = async (
         checksum,
       })
 
+      let found = false
+
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }
+        found = true
       }
 
       if (client.getState.has(id)) {
@@ -216,6 +237,11 @@ export const incoming = async (
           resolve(payload)
         }
         client.getState.delete(id)
+        found = true
+      }
+
+      if (!found) {
+        console.warn('Cannot find sub for incoming id', id)
       }
     }
 
