@@ -191,6 +191,27 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
+  async updateFunction(spec: BasedObservableFunctionSpec | BasedFunctionSpec) {
+    const { name } = spec
+    const prevSpec = this.observables[name] || this.functions[name]
+    if (prevSpec) {
+      if (prevSpec.functionPath !== spec.functionPath) {
+        if (this.beingUninstalled[name]) {
+          delete this.beingUninstalled[name]
+        }
+        updateTimeoutCounter(spec)
+        await this.config.install({ server: this.server, name: spec.name })
+        await this.config.uninstall({
+          server: this.server,
+          function: prevSpec,
+          name,
+        })
+      } else {
+        this.update(spec)
+      }
+    }
+  }
+
   async install(
     name: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
@@ -238,11 +259,8 @@ export class BasedFunctions {
     const spec = this.observables[name] || this.functions[name]
     if (spec) {
       if (this.beingUninstalled[name]) {
-        console.info('getFromStore is being uninstalled', name)
-
         delete this.beingUninstalled[name]
       }
-
       updateTimeoutCounter(spec)
       return spec
     }
@@ -250,10 +268,9 @@ export class BasedFunctions {
   }
 
   update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
-    // force uninstall in workers (and clear require cache - so it hopefully re-evaluates authorize etc)
-    // will make the 'call' function to be able to call a user defined authorize
+    const prevSpec = this.functions[spec.name] || this.observables[spec.name]
 
-    if (spec) {
+    if (spec && prevSpec) {
       if (!spec.idleTimeout) {
         spec.idleTimeout = this.config.idleTimeout
       }
@@ -297,6 +314,7 @@ export class BasedFunctions {
         this.functions[spec.name] = spec
       }
     }
+
     return false
   }
 
@@ -347,7 +365,7 @@ export class BasedFunctions {
       console.error('Allready being unregistered...', name)
     }
     if (!spec && spec !== false) {
-      spec = this.getFromStore(name)
+      spec = this.observables[name] || this.functions[name]
     }
     if (spec) {
       this.beingUninstalled[name] = true

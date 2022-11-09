@@ -161,6 +161,7 @@ export type BasedFunction = (
 
 export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string
+  observable?: false
   customHttpResponse?: CustomHttpResponse
   checksum: number
   stickyWorker?: string
