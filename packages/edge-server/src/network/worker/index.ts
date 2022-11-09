@@ -7,9 +7,11 @@ export const workerMessage = (
   worker: BasedWorker,
   data: any
 ) => {
+  // type 0 install fn
   // type 1 Subscribe
-  // type 3 Get
   // type 2 Unsubscribe
+  // type 3 Get
+  // type 4 log
 
   // TODO: Handle errors if wrong send back error
   // something like an error channel can also send the error back to the subscription update..
@@ -58,6 +60,15 @@ export const workerMessage = (
           name: data.name,
         })
       })
+  } else if (data.type === 4) {
+    server.emit(
+      'log',
+      {
+        worker,
+        context: data.context || {},
+      },
+      data.log
+    )
   } else if (data.id) {
     const listener = server.functions.workerResponseListeners.get(data.id)
     // prob need more here

@@ -238,6 +238,7 @@ export type ActiveObservable = {
 export type EventMap = {
   error: BasedErrorData
   ratelimit: void
+  log: any
 }
 
 export type Event = keyof EventMap

@@ -148,3 +148,13 @@ export const decode = (buffer: Uint8Array): any => {
   }
   // decode diff as well
 }
+
+export const workerLog = (log: any, context?: ClientContext) => {
+  parentPort.postMessage({
+    type: 4,
+    log,
+    context,
+  })
+}
+
+export default workerLog
