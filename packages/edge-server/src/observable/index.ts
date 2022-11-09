@@ -188,6 +188,7 @@ export const initFunction = async (
   const payload = obs.payload
 
   const close = server.functions.runObservableFunction(
+    // @ts-ignore
     spec,
     id,
     // add isDeflate for http

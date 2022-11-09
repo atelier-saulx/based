@@ -85,13 +85,13 @@ export class BasedFunctions {
       this.config = config
     }
 
-    if (!this.config.log) {
-      this.config.log = (d) => console.info(d.toString())
-    }
+    // if (!this.config.log) {
+    //   this.config.log = (d) => console.info(d.toString())
+    // }
 
-    if (!this.config.error) {
-      this.config.error = (d) => console.error(d)
-    }
+    // if (!this.config.error) {
+    //   this.config.error = (d) => console.error(d)
+    // }
 
     if (this.config.idleTimeout === undefined) {
       this.config.idleTimeout = 60e3 // 1 min
@@ -102,11 +102,11 @@ export class BasedFunctions {
     if (this.config.maxWorkers === undefined) {
       this.config.maxWorkers = 1
     }
-    if (this.config.log === undefined) {
-      this.config.log = (opts) => {
-        console.info(opts)
-      }
-    }
+    // if (this.config.log === undefined) {
+    //   this.config.log = (opts) => {
+    //     console.info(opts)
+    //   }
+    // }
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
@@ -122,9 +122,11 @@ export class BasedFunctions {
           w.worker.terminate()
         }
       } else {
+        const hasWorkerListener = !!this.config.onWorker
         for (let i = 0; i < d; i++) {
           const worker = new Worker(WORKER_PATH, {
-            stdout: true,
+            stdout: hasWorkerListener,
+            stderr: hasWorkerListener,
             env: SHARE_ENV, // only specifics later...
             workerData: {
               importWrapperPath:
@@ -133,13 +135,9 @@ export class BasedFunctions {
             },
           })
 
-          worker.stdout.on('data', (d) => {
-            this.config.log(d)
-          })
-
-          worker.stdout.on('error', (d) => {
-            this.config.error(d)
-          })
+          if (hasWorkerListener) {
+            this.config.onWorker(worker)
+          }
 
           const basedWorker: BasedWorker = {
             worker,

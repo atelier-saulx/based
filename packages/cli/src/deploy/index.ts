@@ -127,6 +127,9 @@ command(
           fun.fromFile = false
         } else {
           const x = await build({
+            banner: {
+              js: `var console = global.createWorkerConsole?.('functionWithError') || console;`,
+            },
             bundle: true,
             outdir: 'out',
             incremental: false,
