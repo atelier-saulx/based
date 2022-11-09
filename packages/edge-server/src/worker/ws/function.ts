@@ -7,6 +7,7 @@ import { parentPort } from 'node:worker_threads'
 import { ClientContext, FunctionType } from '../../types'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
+import { BasedErrorCode } from '../../error'
 
 export default (
   name: string,
@@ -30,7 +31,7 @@ export default (
       if (!ok) {
         parentPort.postMessage({
           id,
-          err: new Error('AUTH WRONG'),
+          errCode: BasedErrorCode.AuthorizeRejectedError,
         })
         return false
       }
@@ -46,6 +47,7 @@ export default (
           parentPort.postMessage({
             id,
             err,
+            errCode: BasedErrorCode.FunctionError,
           })
         })
     })
@@ -53,6 +55,7 @@ export default (
       parentPort.postMessage({
         id,
         err,
+        errCode: BasedErrorCode.AuthorizeFunctionError,
       })
     })
 }

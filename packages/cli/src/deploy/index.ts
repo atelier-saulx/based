@@ -128,7 +128,7 @@ command(
         } else {
           const x = await build({
             banner: {
-              js: `var console = global.createWorkerConsole?.('functionWithError') || console;`,
+              js: `var console = global.createWorkerConsole?.('${fun.name}') || console;`,
             },
             bundle: true,
             outdir: 'out',

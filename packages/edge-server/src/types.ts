@@ -206,8 +206,6 @@ export type FunctionConfig = {
     name: string
     function: BasedObservableFunctionSpec | BasedFunctionSpec
   }) => Promise<boolean>
-
-  onWorker?: (worker: Worker) => void
 }
 
 export function isObservableFunctionSpec(

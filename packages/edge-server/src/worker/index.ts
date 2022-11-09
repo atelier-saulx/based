@@ -3,38 +3,24 @@ import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
 import httpFunction from './http/function'
 import { addFunction, removeFunction, errorInstallFunction } from './functions'
-import { authorize } from './authorize'
+import { incomingAuthorize } from './authorize'
 import { incomingObserve } from './api'
 
 export * from './api'
 
-// outgoing type: 0 => install function
-// outgoing type: 1 => GET
-// outgoing type: 2 => OBSERVE
-
 parentPort.on('message', (d) => {
-  // d.type === 3 // HTTP POST FN
-  // d.type === 4 // HTTP GET FN
-  // d.type === 5 // FN INSTALLED (can be observable as well)
-  // d.type === 6 // UNINSTALL FN
-  // d.type === 7 // CANNOT INSTALL FN
-  // d.type === 8 // OBSERVABLE UPDATE
-  // d.type === 9 // AUTHORIZE
+  // 1 CREATE OBS
+  // 2 CLOSE OBS
+  // 3 HTTP POST FN
+  // 4 HTTP GET FN
+  // 5 FN INSTALLED (can be observable as well)
+  // 6 UNINSTALL FN
+  // 7 CANNOT INSTALL FN
+  // 8 OBSERVABLE UPDATE
+  // 9 AUTHORIZE
 
   if (d.type === 9) {
-    authorize(d.context, d.name, d.payload)
-      .then((ok) => {
-        parentPort.postMessage({
-          id: d.id,
-          payload: ok,
-        })
-      })
-      .catch((err) => {
-        parentPort.postMessage({
-          id: d.id,
-          err,
-        })
-      })
+    incomingAuthorize(d)
   } else if (d.type === 8) {
     incomingObserve(d.id, d.checksum, d.data, d.err, d.diff, d.previousChecksum)
   } else if (d.type === 5) {

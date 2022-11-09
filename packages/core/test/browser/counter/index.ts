@@ -6,7 +6,7 @@ export default async (payload, update) => {
   const interval = setInterval(() => {
     let lotsOfThings = ''
     for (let i = 0; i < 1; i++) {
-      lotsOfThings += 'OK! GUR ' + Math.random()
+      lotsOfThings += 'OK! GUxxR ' + Math.random()
     }
     update({ cnt: ++cnt, lotsOfThings })
   }, 5e3)

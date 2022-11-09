@@ -1,6 +1,6 @@
 import { Based } from '@based/client'
 import { BasedFunctionConfig } from './finder'
-import { printEmptyLine, prefixSuccess, prefixError, prefixWarn } from '../tui'
+import { printEmptyLine, prefixError, prefixWarn } from '../tui'
 import chalk from 'chalk'
 import ora from 'ora'
 import { Config } from '../types'

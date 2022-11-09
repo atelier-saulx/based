@@ -10,5 +10,5 @@ export default async (payload, client) => {
   } catch (err) {
     console.error('ERR WHATS UP...', err)
   }
-  return 'YESSS JONKOERNOxxxxxxFLAPxxxYES!'
+  return 'YESSS JONKOERNOxxxxxxxxFLAPxxxYES!'
 }

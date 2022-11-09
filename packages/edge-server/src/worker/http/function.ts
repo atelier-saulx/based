@@ -3,7 +3,7 @@ import { parentPort } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
-
+import { BasedErrorCode } from '../../error'
 const decoder = new TextDecoder('utf-8')
 
 export const parsePayload = (
@@ -22,8 +22,8 @@ export const parsePayload = (
       parentPort.postMessage({
         id,
         err,
+        errCode: BasedErrorCode.InvalidPayload,
       })
-      // sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else if (
     contentType.startsWith('text') ||
@@ -55,11 +55,9 @@ export default (
   authorize(context, name, parsedPayload)
     .then((ok) => {
       if (!ok) {
-        console.error('auth wrong')
-        // err will become based error
         parentPort.postMessage({
+          errCode: BasedErrorCode.AuthorizeRejectedError,
           id,
-          err: new Error('AUTH WRONG'),
         })
         return
       }
@@ -72,6 +70,7 @@ export default (
         })
         .catch((err) => {
           parentPort.postMessage({
+            errCode: BasedErrorCode.FunctionError,
             id,
             err,
           })
@@ -79,6 +78,7 @@ export default (
     })
     .catch((err) => {
       parentPort.postMessage({
+        errCode: BasedErrorCode.AuthorizeFunctionError,
         id,
         err,
       })

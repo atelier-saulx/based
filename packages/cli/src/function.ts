@@ -149,7 +149,7 @@ command(
 
     const result = await esbuild({
       banner: {
-        js: `var console = global.createWorkerConsole?.('functionWithError') || console;`,
+        js: `var console = global.createWorkerConsole?.('${name}') || console;`,
       },
       bundle: true,
       outdir: 'out',

@@ -85,14 +85,6 @@ export class BasedFunctions {
       this.config = config
     }
 
-    // if (!this.config.log) {
-    //   this.config.log = (d) => console.info(d.toString())
-    // }
-
-    // if (!this.config.error) {
-    //   this.config.error = (d) => console.error(d)
-    // }
-
     if (this.config.idleTimeout === undefined) {
       this.config.idleTimeout = 60e3 // 1 min
     }
@@ -102,18 +94,14 @@ export class BasedFunctions {
     if (this.config.maxWorkers === undefined) {
       this.config.maxWorkers = 1
     }
-    // if (this.config.log === undefined) {
-    //   this.config.log = (opts) => {
-    //     console.info(opts)
-    //   }
-    // }
+
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
 
     const d = this.config.maxWorkers - this.workers.length
 
-    // clean all this stuff up.....
+    // TODO: clean all this stuff up.....
     if (d !== 0) {
       if (d < 0) {
         for (let i = 0; i < d; i++) {
@@ -122,11 +110,10 @@ export class BasedFunctions {
           w.worker.terminate()
         }
       } else {
-        const hasWorkerListener = !!this.config.onWorker
         for (let i = 0; i < d; i++) {
           const worker = new Worker(WORKER_PATH, {
-            stdout: hasWorkerListener,
-            stderr: hasWorkerListener,
+            stdout: true,
+            stderr: true,
             env: SHARE_ENV, // only specifics later...
             workerData: {
               importWrapperPath:
@@ -135,9 +122,18 @@ export class BasedFunctions {
             },
           })
 
-          if (hasWorkerListener) {
-            this.config.onWorker(worker)
-          }
+          worker.stdout.on('data', (d) => {
+            process.stdout.write(` [worker ${worker.threadId}] ${d.toString()}`)
+          })
+
+          worker.stderr.on('data', (d) => {
+            process.stderr.write(` [worker ${worker.threadId}] ${d.toString()}`)
+          })
+
+          worker.on('error', (err) => {
+            // CRASHING WORKER
+            console.error('Crash on worker', worker.threadId, err)
+          })
 
           const basedWorker: BasedWorker = {
             worker,
@@ -157,10 +153,6 @@ export class BasedFunctions {
               path: this.server.auth.config.authorizePath,
             })
           }
-
-          worker.on('error', (err) => {
-            console.error('Crash on worker', err)
-          })
 
           worker.on('message', (data) => {
             workerMessage(this.server, basedWorker, data)
