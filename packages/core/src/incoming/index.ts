@@ -66,14 +66,14 @@ const requestFullData = (client: BasedCoreClient, id: number) => {
     console.error('Cannot find name for id from diff', id)
     return
   }
-  console.info(
-    'GET NEW DATA',
-    id,
-    'HAS',
-    [...client.cache.keys()].map((v) => {
-      return `${getName(client, v)} : ${v} `
-    })
-  )
+  // console.info(
+  //   'GET NEW DATA',
+  //   id,
+  //   'HAS',
+  //   [...client.cache.keys()].map((v) => {
+  //     return `${getName(client, v)} : ${v} `
+  //   })
+  // )
   // and prob need to add an extra arg (type 4 msg) to enfore sending the data back
   addGetToQueue(client, sub.name, id, sub.payload)
 }
@@ -133,10 +133,10 @@ export const incoming = async (
 
       const cachedData = client.cache.get(id)
 
-      console.info('Incoming diff data', getName(client, id), id)
+      // console.info('Incoming diff data', getName(client, id), id)
 
       if (!cachedData) {
-        console.info('DIFF => NO CACHE')
+        // console.info('DIFF => NO CACHE')
 
         requestFullData(client, id)
         return
@@ -146,7 +146,7 @@ export const incoming = async (
       const previousChecksum = readUint8(buffer, 20, 8)
 
       if (cachedData.checksum !== previousChecksum) {
-        console.info('DIFF => DIFF CHECKSUM')
+        // console.info('DIFF => DIFF CHECKSUM')
         requestFullData(client, id)
         return
       }
@@ -170,8 +170,7 @@ export const incoming = async (
         applyPatch(cachedData.value, diff)
         cachedData.checksum = checksum
       } catch (err) {
-        // o no cannot apply diff for you!
-        console.info('o no wrong diffiy diff diff', err)
+        console.warn('Cannot apply corrupt patch for ' + getName(client, id))
         requestFullData(client, id)
         return
       }
@@ -198,7 +197,7 @@ export const incoming = async (
       const id = readUint8(buffer, 4, 8)
       const checksum = readUint8(buffer, 12, 8)
 
-      console.info('Incoming sub data', getName(client, id), id, checksum)
+      // console.info('Incoming sub data', getName(client, id), id, checksum)
 
       const start = 20
       const end = len + 4
