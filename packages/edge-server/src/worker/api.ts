@@ -46,10 +46,11 @@ export const observe = (
 ): (() => void) => {
   const id = genObserveId(name, payload)
   const observerId = ++obsIds
-  let observers: ActiveNestedObservers = activeObservables.get(id)
 
   authorize(context, name, payload)
     .then((ok) => {
+      let observers: ActiveNestedObservers = activeObservables.get(id)
+
       if (!ok) {
         console.error('no auth for you!', name)
         return
@@ -77,6 +78,8 @@ export const observe = (
     })
 
   return () => {
+    const observers: ActiveNestedObservers = activeObservables.get(id)
+
     observers.delete(observerId)
     if (observers.size === 0) {
       parentPort.postMessage({

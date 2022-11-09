@@ -130,6 +130,9 @@ export const createObs = (
     }
   }
 
+  // @ts-ignore
+  update.__isEdge__ = true
+
   fn(payload, update)
     .then((close) => {
       if (obs.isDestroyed) {

@@ -389,7 +389,7 @@ export class BasedFunctions {
 
   // from other worker fn
   runObservableFunction(
-    spec: BasedFunctionSpec,
+    spec: BasedObservableFunctionSpec,
     id: number,
     error: (err: Error) => void,
     update: (

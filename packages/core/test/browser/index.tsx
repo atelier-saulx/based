@@ -19,7 +19,7 @@ const init = async () => {
     console.info('connect', isConnected)
   })
 
-  const bla = await coreClient.function('based-db-update-schema', {
+  await coreClient.function('based-db-update-schema', {
     languages: ['en'],
     types: {
       thing: {
@@ -31,18 +31,34 @@ const init = async () => {
     },
   })
 
+  // coreClient.observe('counter', (d) => {
+  //   console.info('-->', d)
+  // })
+
+  coreClient.observe(
+    'nestedCounter',
+    (d) => {
+      console.info('NESTED, INCOMING ---->', d)
+    },
+    { children: true }
+  )
+
   for (let i = 0; i < 5; i++) {
-    const x = await coreClient.function('based-db-set', {
+    await coreClient.function('based-db-set', {
       type: 'thing',
       name: 'YES' + i,
     })
-    console.info(bla, x, i)
   }
 
-  coreClient.observe('counter', (d) => {
-    console.info('-->', d)
-  })
-
+  const button = document.createElement('button')
+  button.innerHTML = 'set something'
+  button.onclick = () => {
+    coreClient.function('based-db-set', {
+      type: 'thing',
+      name: 'BLAAAA',
+    })
+  }
+  document.body.appendChild(button)
   // const x = await coreClient.get('counter')
 
   // console.info('FUN', x)
