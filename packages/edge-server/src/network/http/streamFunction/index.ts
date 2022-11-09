@@ -35,7 +35,7 @@ export const httpStreamFunction = (
     let thisIsFn: Function
 
     multipartStream(client, server, payload, route, (p) => {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         authorizeRequest(
           server,
           client,

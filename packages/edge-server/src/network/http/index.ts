@@ -25,7 +25,7 @@ const handleRequest = (
   if (method === 'post') {
     readBody(server, client, ready, route)
   } else {
-    ready(parseQuery(client.context.query))
+    ready()
   }
 }
 
@@ -140,19 +140,18 @@ export const httpHandler = (
         sendHttpError(server, client, BasedErrorCode.MethodNotAllowed, route)
         return
       }
-
       if (client.context.headers['content-length'] === 0) {
         // zero is also not allowed for streams
         sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
         return
       }
-
-      httpStreamFunction(
-        server,
-        client,
-        parseQuery(client.context.query),
-        route
-      )
+      let p
+      if (client.context.query) {
+        try {
+          p = parseQuery(client.context.query)
+        } catch (err) {}
+      }
+      httpStreamFunction(server, client, p, route)
     } else {
       handleRequest(server, method, client, route, (payload) =>
         httpFunction(method, route, client, server, payload)

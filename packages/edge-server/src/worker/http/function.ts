@@ -50,7 +50,9 @@ export default (
   if (payload) {
     parsedPayload = parsePayload(id, context, payload)
   } else if (type === 4) {
-    parsedPayload = parseQuery(context.query)
+    try {
+      parsedPayload = parseQuery(decodeURIComponent(context.query))
+    } catch (err) {}
   }
   authorize(context, name, parsedPayload)
     .then((ok) => {

@@ -31,12 +31,13 @@ const init = async () => {
     },
   })
 
-  const x = await coreClient.function('db-set', {
-    type: 'thing',
-    name: 'YES',
-  })
-
-  console.info(bla, x)
+  for (let i = 0; i < 1000; i++) {
+    const x = await coreClient.function('db-set', {
+      type: 'thing',
+      name: 'YES' + i,
+    })
+    console.info(bla, x, i)
+  }
 
   // const x = await coreClient.get('counter')
 

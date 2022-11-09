@@ -8,6 +8,7 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../error'
+import { parseQuery } from '@saulx/utils'
 
 const sendGetResponse = (
   route: BasedFunctionRoute,
@@ -96,6 +97,12 @@ export const httpGet = (
   }
 
   const name = route.name
+
+  if (payload === undefined && client.context.query) {
+    try {
+      payload = parseQuery(decodeURIComponent(client.context.query))
+    } catch (err) {}
+  }
 
   server.functions
     .install(name)

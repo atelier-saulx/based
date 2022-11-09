@@ -164,6 +164,10 @@ export class BasedFunctions {
             })
           }
 
+          worker.on('error', (err) => {
+            console.error('Crash on worker', err)
+          })
+
           worker.on('message', (data) => {
             workerMessage(this.server, basedWorker, data)
           })
