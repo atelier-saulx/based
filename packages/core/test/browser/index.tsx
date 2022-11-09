@@ -33,16 +33,16 @@ const init = async () => {
 
   coreClient.observe(
     'based-db-observe',
-    () => {
-      // console.info('-->', d)
+    (d) => {
+      console.info('-->', d)
     },
     { children: true }
   )
 
   coreClient.observe(
     'nestedCounter',
-    () => {
-      // console.info('NESTED, INCOMING ---->', d)
+    (d) => {
+      console.info('NESTED, INCOMING ---->', d)
     },
     { children: true }
   )

@@ -1,5 +1,5 @@
 import { FunctionType, ImportWrapper } from '../types'
-import { parentPort, threadId, workerData } from 'worker_threads'
+import { parentPort, workerData } from 'worker_threads'
 
 const importWrapper: ImportWrapper = require(workerData.importWrapperPath)
 
@@ -65,7 +65,6 @@ const getFunction = (
   if (initializedFnMap.has(path)) {
     return initializedFnMap.get(path)
   }
-  console.info('🌈 get fn', name, threadId)
   const fn = importWrapper(name, type, path)
   initializedFnMap.set(path, fn)
   fnPathMap.set(name, path)
