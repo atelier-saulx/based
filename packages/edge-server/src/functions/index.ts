@@ -193,6 +193,7 @@ export class BasedFunctions {
 
   async updateFunction(spec: BasedObservableFunctionSpec | BasedFunctionSpec) {
     const { name } = spec
+
     const prevSpec = this.observables[name] || this.functions[name]
     if (prevSpec) {
       if (prevSpec.functionPath !== spec.functionPath) {
@@ -200,12 +201,17 @@ export class BasedFunctions {
           delete this.beingUninstalled[name]
         }
         updateTimeoutCounter(spec)
-        await this.config.install({ server: this.server, name: spec.name })
+        await this.config.install({
+          server: this.server,
+          name: spec.name,
+          function: spec,
+        })
         await this.config.uninstall({
           server: this.server,
           function: prevSpec,
           name,
         })
+        this.update(spec)
       } else {
         this.update(spec)
       }
@@ -268,9 +274,7 @@ export class BasedFunctions {
   }
 
   update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
-    const prevSpec = this.functions[spec.name] || this.observables[spec.name]
-
-    if (spec && prevSpec) {
+    if (spec) {
       if (!spec.idleTimeout) {
         spec.idleTimeout = this.config.idleTimeout
       }

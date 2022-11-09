@@ -185,6 +185,7 @@ export type FunctionConfig = {
   install: (opts: {
     server: BasedServer
     name: string
+    function?: BasedFunctionSpec | BasedObservableFunctionSpec
   }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
   uninstall: (opts: {

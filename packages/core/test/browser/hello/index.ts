@@ -1,3 +1,3 @@
 export default async () => {
-  return 'YESSS!'
+  return 'YESSS JONKOERNOxxxxxxFLAPxxx!'
 }
