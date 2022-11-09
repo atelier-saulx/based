@@ -161,6 +161,7 @@ export type BasedFunction = (
 
 export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string
+  observable?: false
   customHttpResponse?: CustomHttpResponse
   checksum: number
   stickyWorker?: string
@@ -184,6 +185,7 @@ export type FunctionConfig = {
   install: (opts: {
     server: BasedServer
     name: string
+    function?: BasedFunctionSpec | BasedObservableFunctionSpec
   }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
 
   uninstall: (opts: {
