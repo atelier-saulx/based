@@ -122,6 +122,7 @@ export const incoming = async (
       const cachedData = client.cache.get(id)
 
       if (!cachedData) {
+        console.info('NO CACHED DATA...', id, client.cache)
         requestFullData(client, id)
         return
       }

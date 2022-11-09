@@ -34,18 +34,18 @@ const init = async () => {
   coreClient.observe(
     'based-db-observe',
     (d) => {
-      console.info('-->', d)
+      // console.info('-->', d)
     },
     { children: true }
   )
 
-  // coreClient.observe(
-  //   'nestedCounter',
-  //   (d) => {
-  //     console.info('NESTED, INCOMING ---->', d)
-  //   },
-  //   { children: true }
-  // )
+  coreClient.observe(
+    'nestedCounter',
+    (d) => {
+      // console.info('NESTED, INCOMING ---->', d)
+    },
+    { children: true }
+  )
 
   // for (let i = 0; i < 5; i++) {
   //   await coreClient.function('based-db-set', {
