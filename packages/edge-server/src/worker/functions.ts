@@ -11,7 +11,7 @@ const initializedFnMap: Map<string, Function> = new Map()
 
 const addFunction = (name: string, path: string) => {
   const prevPath = fnPathMap.get(name)
-  if (prevPath) {
+  if (prevPath && prevPath !== path) {
     removeFunctionPath(prevPath)
   }
   fnPathMap.set(name, path)
@@ -66,7 +66,6 @@ const getFunction = (
     return initializedFnMap.get(path)
   }
   console.info('🌈 get fn', name, threadId)
-
   const fn = importWrapper(name, type, path)
   initializedFnMap.set(path, fn)
   fnPathMap.set(name, path)
