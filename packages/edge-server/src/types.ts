@@ -207,8 +207,7 @@ export type FunctionConfig = {
     function: BasedObservableFunctionSpec | BasedFunctionSpec
   }) => Promise<boolean>
 
-  log?: (message: Buffer) => void
-  error?: (err: Error) => void
+  onWorker?: (worker: Worker) => void
 }
 
 export function isObservableFunctionSpec(
