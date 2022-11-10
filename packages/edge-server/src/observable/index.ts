@@ -268,14 +268,6 @@ export const initFunction = async (
       }
     },
     (encodedDiffData, encodedData, checksum, isDeflate, reusedCache) => {
-      console.info(
-        '--> OBS incoming update',
-        obs.name,
-        isDeflate,
-        reusedCache,
-        obs.payload
-      )
-
       obs.error = null
       obs.previousChecksum = obs.checksum
       obs.checksum = checksum
