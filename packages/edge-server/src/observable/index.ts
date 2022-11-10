@@ -18,10 +18,16 @@ export const destroy = (server: BasedServer, id: number) => {
   }
 
   if (obs.isDestroyed) {
+    console.error('Obs allready destroyed', obs.name)
     return
   }
 
-  if (obs.clients.size || obs.workers.size) {
+  if (obs.clients.size || obs.workers.size || obs.onNextData?.size) {
+    if (obs.beingDestroyed) {
+      console.error('OBS BEING DESTROYED BUT HAS THINGS...')
+      // clearTimeout(obs.beingDestroyed)
+      // obs.beingDestroyed = null
+    }
     return
   }
 
@@ -32,24 +38,27 @@ export const destroy = (server: BasedServer, id: number) => {
     return
   }
 
-  const memCacheTimeout =
-    spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
-
   if (!obs.beingDestroyed) {
-    obs.beingDestroyed = setTimeout(() => {
-      obs.beingDestroyed = null
-      if (!server.activeObservables[obs.name]) {
-        console.info('Trying to destroy a removed observable function')
-        return
-      }
-      server.activeObservables[obs.name].delete(id)
-      if (server.activeObservables[obs.name].size === 0) {
-        delete server.activeObservables[obs.name]
-      }
-      server.activeObservablesById.delete(id)
-      obs.isDestroyed = true
-      obs.closeFunction()
-    }, memCacheTimeout)
+    const memCacheTimeout =
+      spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
+
+    // obs.beingDestroyed = setTimeout(() => {
+    //   console.error('--> DESTROY OBS', id, obs.name)
+
+    //   obs.beingDestroyed = null
+    //   if (!server.activeObservables[obs.name]) {
+    //     console.info('Trying to destroy a removed observable function')
+    //     server.activeObservablesById.delete(id)
+    //     return
+    //   }
+    //   server.activeObservables[obs.name].delete(id)
+    //   if (server.activeObservables[obs.name].size === 0) {
+    //     delete server.activeObservables[obs.name]
+    //   }
+    //   server.activeObservablesById.delete(id)
+    //   obs.isDestroyed = true
+    //   obs.closeFunction()
+    // }, 100)
   }
 }
 
@@ -120,7 +129,12 @@ export const subscribeWorker = (
     client.worker.worker.postMessage({
       type: 8,
       id,
+      checksum: obs.checksum,
       data: obs.cache,
+      isDeflate: obs.isDeflate,
+      diff: obs.diffCache,
+      previousChecksum: obs.previousChecksum,
+      reusedCache: obs.reusedCache,
     })
   }
 }
@@ -306,6 +320,7 @@ export const initFunction = async (
             previousChecksum: obs.previousChecksum,
             data: obs.cache,
             isDeflate: obs.isDeflate,
+            reusedCache: obs.reusedCache,
           })
         })
       }
@@ -339,6 +354,8 @@ export const create = (
   payload: any
 ): ActiveObservable => {
   if (server.activeObservablesById.has(id)) {
+    console.warn('Allready has observable', id)
+    throw new Error('WRONG')
     return server.activeObservablesById.get(id)
   }
 

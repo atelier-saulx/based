@@ -24,6 +24,7 @@ const obsFnError = (
     },
     err: err,
   })
+
   destroy(server, id)
 }
 
@@ -105,6 +106,34 @@ const sendGetResponse = (
   destroy(server, id)
 }
 
+const getFromExisting = (
+  server: BasedServer,
+  id: number,
+  client: HttpClient,
+  route: BasedFunctionRoute,
+  checksum: number
+) => {
+  // increase memCache
+  const obs = server.activeObservablesById.get(id)
+  if (obs.beingDestroyed) {
+    clearTimeout(obs.beingDestroyed)
+    obs.beingDestroyed = null
+  }
+  if (obs.error) {
+    obsFnError(server, client, obs.id, obs.name, obs.error)
+  } else if (obs.cache) {
+    sendGetResponse(route, server, id, obs, checksum, client)
+  } else {
+    obs.onNextData.add((err) => {
+      if (err) {
+        obsFnError(server, client, obs.id, obs.name, err)
+      } else {
+        sendGetResponse(route, server, id, obs, checksum, client)
+      }
+    })
+  }
+}
+
 export const httpGet = (
   route: BasedFunctionRoute,
   payload: any,
@@ -124,25 +153,22 @@ export const httpGet = (
     } catch (err) {}
   }
 
-  server.functions
-    .install(name)
-    .then((spec) => {
-      if (!client.res) {
-        return
-      }
-      if (spec && isObservableFunctionSpec(spec)) {
-        const id = hashObjectIgnoreKeyOrder([name, payload])
-        if (server.activeObservablesById.has(id)) {
-          const obs = server.activeObservablesById.get(id)
-          if (obs.beingDestroyed) {
-            clearTimeout(obs.beingDestroyed)
-            obs.beingDestroyed = null
-          }
-          if (obs.error) {
-            obsFnError(server, client, obs.id, obs.name, obs.error)
-          } else if (obs.cache) {
-            sendGetResponse(route, server, id, obs, checksum, client)
+  const id = hashObjectIgnoreKeyOrder([name, payload])
+  if (server.activeObservablesById.has(id)) {
+    getFromExisting(server, id, client, route, checksum)
+  } else {
+    server.functions
+      .install(name)
+      .then((spec) => {
+        if (!client.res) {
+          return
+        }
+        if (spec && isObservableFunctionSpec(spec)) {
+          if (server.activeObservablesById.has(id)) {
+            getFromExisting(server, id, client, route, checksum)
           } else {
+            console.error('GET: NO OBS LETS WAIT', name)
+            const obs = create(server, name, id, payload)
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
@@ -154,34 +180,21 @@ export const httpGet = (
               }
             })
           }
-        } else {
-          const obs = create(server, name, id, payload)
-          if (!obs.onNextData) {
-            obs.onNextData = new Set()
-          }
-
-          obs.onNextData.add((err) => {
-            if (err) {
-              obsFnError(server, client, obs.id, obs.name, err)
-            } else {
-              sendGetResponse(route, server, id, obs, checksum, client)
-            }
-          })
+        } else if (spec && !isObservableFunctionSpec(spec)) {
+          sendHttpError(
+            server,
+            client,
+            BasedErrorCode.FunctionIsNotObservable,
+            route
+          )
+        } else if (!spec) {
+          sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
         }
-      } else if (spec && !isObservableFunctionSpec(spec)) {
-        sendHttpError(
-          server,
-          client,
-          BasedErrorCode.FunctionIsNotObservable,
-          route
-        )
-      } else if (!spec) {
+      })
+      .catch((err) => {
+        // TODO: error type
+        console.error('Internal: Unxpected error in observable', err)
         sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
-      }
-    })
-    .catch((err) => {
-      // TODO: error type
-      console.error('Internal: Unxpected error in observable', err)
-      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
-    })
+      })
+  }
 }

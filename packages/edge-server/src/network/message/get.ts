@@ -69,6 +69,36 @@ const sendGetData = (
   destroy(server, id)
 }
 
+const getFromExisting = (
+  server: BasedServer,
+  id: number,
+  client: WebsocketClient,
+  checksum: number,
+  name: string
+) => {
+  const obs = server.activeObservablesById.get(id)
+  if (obs.beingDestroyed) {
+    clearTimeout(obs.beingDestroyed)
+    obs.beingDestroyed = null
+  }
+  if (obs.error) {
+    obsFnError(server, client, id, name, obs.error)
+  } else if (obs.cache) {
+    sendGetData(server, id, obs, checksum, client)
+  } else {
+    if (!obs.onNextData) {
+      obs.onNextData = new Set()
+    }
+    obs.onNextData.add((err) => {
+      if (err) {
+        obsFnError(server, client, id, name, err)
+      } else {
+        sendGetData(server, id, obs, checksum, client)
+      }
+    })
+  }
+}
+
 export const getMessage = (
   arr: Uint8Array,
   start: number,
@@ -118,44 +148,28 @@ export const getMessage = (
       }
 
       if (server.activeObservablesById.has(id)) {
-        const obs = server.activeObservablesById.get(id)
-        if (obs.beingDestroyed) {
-          clearTimeout(obs.beingDestroyed)
-          obs.beingDestroyed = null
-        }
-        if (obs.error) {
-          obsFnError(server, client, id, name, obs.error)
-        } else if (obs.cache) {
-          sendGetData(server, id, obs, checksum, client)
-        } else {
-          if (!obs.onNextData) {
-            obs.onNextData = new Set()
-          }
-          obs.onNextData.add((err) => {
-            if (err) {
-              obsFnError(server, client, id, name, err)
-            } else {
-              sendGetData(server, id, obs, checksum, client)
-            }
-          })
-        }
+        getFromExisting(server, id, client, checksum, name)
       } else {
         server.functions
           .install(name)
           .then((spec) => {
             if (spec && isObservableFunctionSpec(spec)) {
-              const obs = create(server, name, id, payload)
-              if (!client.ws?.obs.has(id)) {
-                if (!obs.onNextData) {
-                  obs.onNextData = new Set()
-                }
-                obs.onNextData.add((err) => {
-                  if (err) {
-                    obsFnError(server, client, id, name, err)
-                  } else {
-                    sendGetData(server, id, obs, checksum, client)
+              if (server.activeObservablesById.has(id)) {
+                getFromExisting(server, id, client, checksum, name)
+              } else {
+                const obs = create(server, name, id, payload)
+                if (!client.ws?.obs.has(id)) {
+                  if (!obs.onNextData) {
+                    obs.onNextData = new Set()
                   }
-                })
+                  obs.onNextData.add((err) => {
+                    if (err) {
+                      obsFnError(server, client, id, name, err)
+                    } else {
+                      sendGetData(server, id, obs, checksum, client)
+                    }
+                  })
+                }
               }
             } else {
               sendError(server, client, BasedErrorCode.FunctionNotFound, route)

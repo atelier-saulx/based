@@ -29,14 +29,17 @@ export const enableSubscribe = (
     server.functions
       .install(name)
       .then((spec) => {
+        if (!client.worker.nestedObservers.has(id)) {
+          destroy(server, id)
+          return
+        }
         if (spec && isObservableFunctionSpec(spec)) {
-          if (!client.worker.nestedObservers.has(id)) {
-            destroy(server, id)
-            return
+          if (server.activeObservablesById.has(id)) {
+            subscribeWorker(server, id, 0, client)
+          } else {
+            create(server, name, id, payload)
+            subscribeWorker(server, id, 0, client)
           }
-
-          create(server, name, id, payload)
-          subscribeWorker(server, id, 0, client)
         } else {
           sendError(server, client, BasedErrorCode.FunctionNotFound, route)
         }
