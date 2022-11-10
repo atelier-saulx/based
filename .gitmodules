@@ -10,3 +10,6 @@
 [submodule "packages/cpp-client/lib/curl"]
 	path = packages/cpp-client/lib/curl
 	url = git@github.com:curl/curl.git
+[submodule "packages/cpp-client/lib/openssl"]
+	path = packages/cpp-client/lib/openssl
+	url = git@github.com:openssl/openssl.git
