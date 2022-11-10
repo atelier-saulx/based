@@ -10,6 +10,5 @@ export function sendError<T extends BasedErrorCode>(
   payload: ErrorPayload[T]
 ): void {
   const errorData = createError(server, client, basedCode, payload)
-  console.info('!!!! SEND ERROR TO CLIENT', errorData)
   client.ws?.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
 }

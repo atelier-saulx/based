@@ -105,6 +105,18 @@ const init = async () => {
     )
   })
 
+  makeButton('obsObserverCrash', () => {
+    coreClient.observe(
+      'obsObserverCrash',
+      (d) => {
+        console.info('obsObserverCrash -> ', d)
+      },
+      (err) => {
+        console.error(err)
+      }
+    )
+  })
+
   // const x = await coreClient.get('counter')
 
   // console.info('FUN', x)

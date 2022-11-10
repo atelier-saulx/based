@@ -9,7 +9,7 @@ import { installFunction } from './functions'
 import { authorize } from './authorize'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-import { BasedError, BasedErrorCode } from '../error'
+import { BasedError, BasedErrorCode, ErrorPayload } from '../error'
 
 export const genObserveId = (name: string, payload: any): number => {
   return hashObjectIgnoreKeyOrder([name, payload])
@@ -134,7 +134,19 @@ export const incomingObserve = (
       if (err) {
         onError(err)
       } else {
-        onData(data, checksum, diff, previousChecksum)
+        // @ts-ignore
+        if (onData.__isEdge__) {
+          onData(data, checksum, diff, previousChecksum)
+        } else {
+          try {
+            onData(data, checksum, diff, previousChecksum)
+          } catch (err) {
+            workerError(BasedErrorCode.ObserveCallbackError, {
+              err,
+              observableId: id,
+            })
+          }
+        }
       }
     })
   }
@@ -163,4 +175,15 @@ export const workerLog = (log: any, context?: ClientContext) => {
   })
 }
 
-export default workerLog
+export function workerError<T extends BasedErrorCode>(
+  code: T,
+  payload: ErrorPayload[T],
+  context?: ClientContext
+) {
+  parentPort.postMessage({
+    type: 5,
+    code,
+    payload,
+    context,
+  })
+}

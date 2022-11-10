@@ -10,6 +10,7 @@ export enum BasedErrorCode {
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
   ObservableFunctionError = 50004,
+  ObserveCallbackError = 50005,
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
@@ -49,6 +50,11 @@ export type ErrorPayload = {
   [BasedErrorCode.AuthorizeFunctionError]:
     | FunctionErrorProps
     | ObservableFunctionErrorProps
+  [BasedErrorCode.ObserveCallbackError]: {
+    err: Error
+    observableId: number
+    route?: BasedFunctionRoute
+  }
   [BasedErrorCode.NoOservableCacheAvailable]: {
     observableId: number
     route: BasedFunctionRoute

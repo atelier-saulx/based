@@ -1,3 +1,4 @@
+import { BasedErrorCode, createError } from '../../error'
 import { BasedServer } from '../../server'
 import { BasedWorker } from '../../types'
 import { subscribe, unsubscribe } from './observable'
@@ -12,6 +13,7 @@ export const workerMessage = (
   // type 2 Unsubscribe
   // type 3 Get
   // type 4 log
+  // type 5 Error
 
   // TODO: Handle errors if wrong send back error
   // something like an error channel can also send the error back to the subscription update..
@@ -60,6 +62,25 @@ export const workerMessage = (
           name: data.name,
         })
       })
+  } else if (data.type === 5) {
+    if (data.code === BasedErrorCode.ObserveCallbackError) {
+      const obs = server.activeObservablesById.get(data.payload.observableId)
+      if (obs) {
+        data.payload.route = {
+          name: obs.name,
+        }
+      }
+    }
+    createError(
+      server,
+      {
+        worker,
+        // not really worker context.. but ok clean up later
+        context: data.context || {},
+      },
+      data.code,
+      data.payload
+    )
   } else if (data.type === 4) {
     server.emit(
       'log',

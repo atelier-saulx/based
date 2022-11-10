@@ -38,6 +38,13 @@ const errorTypes: ErrorType = {
       }${payload.err.message || ''}`
     },
   },
+  [BasedErrorCode.ObserveCallbackError]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: () => {
+      return 'Error in server side observer'
+    },
+  },
   [BasedErrorCode.ObservableFunctionError]: {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
