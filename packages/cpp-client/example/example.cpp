@@ -36,9 +36,11 @@ int main(int argc, char** argv) {
 
     int client1 = Based__new_client();
 
-    char* address = (char*)"wss://localhost:9910";
+    // char* address = (char*)"wss://localhost:9910";
 
-    Based__connect_to_url(client1, address);
+    // Based__connect_to_url(client1, address);
+    Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net", "saulx", "development",
+                   "production", "@based/edge", "", false);
     bool done = false;
     // int i = 0;
     std::string cmd;
@@ -72,7 +74,7 @@ int main(int argc, char** argv) {
         }
 
         if (cmd.substr(0, 1) == "o") {
-            int id = Based__observe(client1, (char*)"chill", (char*)"", &based_observe_cb);
+            int id = Based__observe(client1, (char*)"counter", (char*)"", &based_observe_cb);
             obs.push_back(id);
         }
 
