@@ -127,6 +127,9 @@ command(
           fun.fromFile = false
         } else {
           const x = await build({
+            banner: {
+              js: `var console = global.createWorkerConsole?.('${fun.name}') || console;`,
+            },
             bundle: true,
             outdir: 'out',
             incremental: false,
@@ -136,8 +139,12 @@ command(
             minify: true,
             platform: 'node',
             write: false,
+            sourcemap: 'external',
           })
-          fun.code = x.outputFiles[0].text
+          fun.code = x.outputFiles.find(({ path }) => path.endsWith('.js')).text
+          fun.sourcemap = x.outputFiles.find(({ path }) =>
+            path.endsWith('.js.map')
+          ).text
         }
       })
     ).catch((err) => fail(err.message, output, options))

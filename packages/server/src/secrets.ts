@@ -12,10 +12,9 @@ const jwtDecode = (
     jwt.verify(
       value,
       publicKey,
-      // FIX: Reverted to re-enable airhub
-      // {
-      //   algorithms: ['RS256'],
-      // },
+      {
+        algorithms: ['RS256'],
+      },
       (err, decoded) => {
         if (err) {
           if (err instanceof jwt.TokenExpiredError) {

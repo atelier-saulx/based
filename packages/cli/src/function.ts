@@ -33,6 +33,7 @@ type FunctionsOptions = GlobalOptions & {
   file?: string
   delete?: boolean
   code?: string
+  sourcemap?: string
 }
 
 const printBytes = (str: string) => {
@@ -147,6 +148,9 @@ command(
     const spinner = ora('Bundling function').start()
 
     const result = await esbuild({
+      banner: {
+        js: `var console = global.createWorkerConsole?.('${name}') || console;`,
+      },
       bundle: true,
       outdir: 'out',
       incremental: false,
@@ -156,6 +160,7 @@ command(
       minify: true,
       platform: 'node',
       write: false,
+      sourcemap: true,
     }).catch((err) => err)
 
     if (result.errors && result.errors.length) {
@@ -164,9 +169,13 @@ command(
       fail('Cannot deploy function got a build error.', output, options)
     }
 
-    options.code = result.outputFiles[0].text
+    options.code = result.outputFiles.find(({ path }) =>
+      path.endsWith('.js')
+    ).text
 
-    console.log('------>', options.code)
+    options.sourcemap = result.outputFiles.find(({ path }) =>
+      path.endsWith('.js.map')
+    ).text
 
     spinner.clear()
 

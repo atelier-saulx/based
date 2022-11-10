@@ -1,25 +1,20 @@
 {
   "baseBranch": "origin/master",
-
   "pipeline": {
     "build": {
       "outputs": ["dist/**"],
       "dependsOn": ["^build"]
     },
-
+    "lint": {
+      "outputs": []
+    },
     "watch": {
       "dependsOn": ["^build"],
       "cache": false
     },
-
-    "lint": {
-      "outputs": []
-    },
-
     "release": {
       "outputs": []
     },
-
     "clean": {
       "outputs": []
     }

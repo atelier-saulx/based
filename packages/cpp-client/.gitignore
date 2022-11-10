@@ -1,0 +1,17 @@
+*.so
+
+*.dylib
+
+obj/*
+
+*.o
+
+linked-example
+
+docker-build
+
+distribute/*
+
+build/*
+build_darwin/*
+build_ios/*

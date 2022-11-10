@@ -14,6 +14,7 @@ type BasedFunctionConfigFile = {
 export type BasedFunctionConfig = BasedFunctionConfigFile & {
   path: string
   code?: string
+  sourcemap?: string
   status?: 'update' | 'new' | 'unchanged' | 'err'
   fromFile?: boolean
 }
@@ -112,7 +113,7 @@ export async function findSchemaAndFunctions(
           }
         })
 
-        let indexesFound = []
+        const indexesFound = []
         const dir = await fs.readdir(folder)
         ;['index.js', 'index.ts'].forEach((indexFileName) => {
           if (dir.includes(indexFileName)) {
@@ -134,7 +135,7 @@ export async function findSchemaAndFunctions(
     },
     {
       itemMatchFn: async (item) =>
-        item.type === 'file' && item.name == 'based.config.js',
+        item.type === 'file' && item.name === 'based.config.js',
       recurseFn: async (item) =>
         item.type === 'dir' &&
         !['node_modules', 'tmp', 'dists', 'dist', '.git'].includes(item.name),

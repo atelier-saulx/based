@@ -1,0 +1,1119 @@
+{
+  "parents": ["ed7709dced"],
+  "startTime": 1655205126554,
+  "id": "se6c4ca5a0",
+  "pages": [
+    {
+      "index": 0,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "button": "Beispielfrage Starten",
+      "type": "pageContentScreen",
+      "id": "cod612ccb0",
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort! Sie haben **20 Sekunden** pro Aufgabe.</br> \n\n*Bitte klicken Sie auf \"Beispielfrage Starten\", wenn die Beispielfrage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>\n\n**Laden Sie diese Seite nicht neu, sonst werden Sie am Anfang der Kategorie beginnen.*",
+      "name": "Start - Buchstaben ordnen",
+      "title": "Buchstaben ordnen",
+      "items": []
+    },
+    {
+      "index": 1,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mc0eefa49f",
+      "label": "Sprachverständnis: Buchstaben ordnen - Beispiel",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Gesucht wird eine *Frucht*",
+      "name": "Beispiel",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "im3f960680",
+          "index": 0,
+          "title": "A. TSRTA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imadfdd81b",
+          "index": 1,
+          "title": "B. SUMIK",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imfe194649",
+          "index": 2,
+          "title": "C. ELPAF",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "im86fc3a46",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. SNTIE",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "yourAnswerText": "Ihre Antwort",
+      "incorrectText": "Das ist leider falsch",
+      "label": "Sprachverständnis: Buchstaben ordnen - Beispiel",
+      "parents": ["se6c4ca5a0"],
+      "correctText": "Das ist korrekt",
+      "youDidntVoteText": "Sie haben nicht auf diese Frage geantwortet",
+      "button": "Weiter",
+      "correctAnswerText": "Die richtige Antwort",
+      "id": "cnC3ltpW",
+      "name": "Beispiel - Auflösung",
+      "index": 2,
+      "type": "pageCorrectAnswer",
+      "items": []
+    },
+    {
+      "index": 3,
+      "label": "Sprachverständnis: Buchstaben ordnen",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 1 Starten",
+      "type": "pageContentScreen",
+      "id": "co53258206",
+      "body": "Wir werden nun mit den eigentlichen Fragen fortfahren. Am Ende der Sendung werden Sie erfahren, ob Sie diese richtig beantwortet haben.</br>\n\n*Bitte klicken Sie auf \"Frage 1 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 4,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mcCc0TXL",
+      "label": "Sprachverständnis: Buchstaben ordnen - Frage 1",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Gesucht wird ein *Kleidungsstück*",
+      "name": "Frage 1",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imDSLnB5",
+          "index": 0,
+          "title": "A. NHCTA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imD8vuhB",
+          "index": 1,
+          "points": 1,
+          "title": "B. KEJCA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCEwbnN",
+          "index": 2,
+          "title": "C. LIEHF",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imDdOLm7",
+          "index": 3,
+          "title": "D. GOLEV",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 5,
+      "label": "Sprachverständnis: Buchstaben ordnen",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 2 Starten",
+      "type": "pageContentScreen",
+      "id": "coDdqTgC",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 2 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 6,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mcCqC7uu",
+      "label": "Sprachverständnis: Buchstaben ordnen - Frage 2",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Gesucht wird ein *Musikinstrument*",
+      "name": "Frage 2",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imB9IFLe",
+          "index": 0,
+          "title": "A. SHITC",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imBkncLG",
+          "index": 1,
+          "title": "B. EHFNA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imEecJeF",
+          "index": 2,
+          "title": "C. GEUNJ",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imBixUyV",
+          "index": 3,
+          "points": 1,
+          "title": "D. AFREH",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 7,
+      "label": "Sprachverständnis: Buchstaben ordnen",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 3 Starten",
+      "type": "pageContentScreen",
+      "id": "coEcgRbP",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 3 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 8,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mcGVaoQ",
+      "label": "Sprachverständnis: Buchstaben ordnen - Frage 3",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Welches Wort ist *<u>kein</u> Vogel*",
+      "name": "Frage 3",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imBs70GU",
+          "index": 0,
+          "title": "A. TAPZS",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCwkg5K",
+          "index": 1,
+          "title": "B. EBTUA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imEHLgBH",
+          "index": 2,
+          "points": 1,
+          "title": "C. CHUFS",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCoksdS",
+          "index": 3,
+          "title": "D. LAKFE",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 9,
+      "label": "Sprachverständnis: Buchstaben ordnen",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 4 Starten",
+      "type": "pageContentScreen",
+      "id": "coBDxdsC",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 4 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 10,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mcBTKh7y",
+      "label": "Sprachverständnis: Buchstaben ordnen - Frage 4",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Gesucht wird eine *europäische Hauptstadt*",
+      "name": "Frage 4",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imEXzsXm",
+          "index": 0,
+          "title": "A. GGERAA",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "im4lZct",
+          "index": 1,
+          "title": "B. PEREPT",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imCCFQLd",
+          "index": 2,
+          "points": 1,
+          "title": "C. DARIMD",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "im6tdLS",
+          "index": 3,
+          "title": "D. LEELRT",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 11,
+      "label": "Sprachverständnis: Buchstaben ordnen",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 5 Starten",
+      "type": "pageContentScreen",
+      "id": "coBKOnKA",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 5 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 12,
+      "parents": ["se6c4ca5a0"],
+      "body": "Ordnen Sie die Buchstaben und finden Sie das richtige Wort!",
+      "button": "Eingeben",
+      "id": "mcDN0zLD",
+      "label": "Sprachverständnis: Buchstaben ordnen - Frage 5",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 20,
+          "enabled": true
+        }
+      },
+      "title": "Gesucht wird ein *Möbelstück*",
+      "name": "Frage 5",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imDNxnPy",
+          "index": 0,
+          "title": "A. HUACTRS",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imEMNviN",
+          "index": 1,
+          "points": 1,
+          "title": "B. NACSRHK",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imBI3TBt",
+          "index": 2,
+          "title": "C. AGNRTE",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCRMsnr",
+          "index": 3,
+          "title": "D. GEFINR",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 13,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "button": "Weiter",
+      "type": "pageContentScreen",
+      "id": "coo2PXU",
+      "body": "Ob Ihre Antworten richtig waren, erfahren Sie am Ende der Sendung.</br>\n\nIm folgenden geht es weiter mit dem nächsten Fragen zum Sprachverständnis. ",
+      "name": "Ende der Unterkategorie",
+      "title": "Das war die erste Unterkategorie",
+      "items": []
+    },
+    {
+      "index": 14,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "button": "Beispielfrage Starten",
+      "type": "pageContentScreen",
+      "id": "coCmkWKC",
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt! Sie haben **12 Sekunden** pro Aufgabe.</br> \n\n*Bitte klicken Sie auf \"Beispielfrage Starten\", wenn die Beispielfrage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Start - Was passt nicht?",
+      "title": "Was passt nicht?",
+      "items": []
+    },
+    {
+      "index": 15,
+      "parents": ["se6c4ca5a0"],
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt!",
+      "button": "Eingeben",
+      "id": "mcBkG1I4",
+      "label": "Sprachverständnis: Was passt nicht? - Beispiel",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Was passt nicht zu den Anderen?",
+      "name": "Beispiel",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imDSRnjO",
+          "index": 0,
+          "title": "A. schlapp",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imC80HnC",
+          "index": 1,
+          "title": "B. matt",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imBy3Hlq",
+          "index": 2,
+          "title": "C. schwach",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imEU9HhA",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. schlecht",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "yourAnswerText": "Ihre Antwort",
+      "incorrectText": "Das ist leider falsch",
+      "label": "Sprachverständnis: Was passt nicht? - Beispiel",
+      "parents": ["se6c4ca5a0"],
+      "correctText": "Das ist korrekt",
+      "youDidntVoteText": "Sie haben nicht auf diese Frage geantwortet",
+      "button": "Weiter",
+      "correctAnswerText": "Die richtige Antwort",
+      "id": "cnBrX2f4",
+      "name": "Beispiel - Auflösung",
+      "index": 16,
+      "type": "pageCorrectAnswer",
+      "items": []
+    },
+    {
+      "index": 17,
+      "label": "Sprachverständnis: Was passt nicht?",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 6 Starten",
+      "type": "pageContentScreen",
+      "id": "coLgMks",
+      "body": "Wir werden nun mit den eigentlichen Fragen fortfahren. Am Ende der Sendung werden Sie erfahren, ob Sie diese richtig beantwortet haben.</br>\n\n*Bitte klicken Sie auf \"Frage 6 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 18,
+      "parents": ["se6c4ca5a0"],
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt!",
+      "button": "Eingeben",
+      "id": "mcCENKiF",
+      "label": "Sprachverständnis: Was passt nicht? - Frage 6",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Was passt nicht zu den Anderen?",
+      "name": "Frage 6",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "ima32bh",
+          "index": 0,
+          "title": "A. widersetzen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imDyZsxm",
+          "index": 1,
+          "title": "B. entrüsten",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imBatdTc",
+          "index": 2,
+          "points": 1,
+          "title": "C. widerrufen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imEApfIH",
+          "index": 3,
+          "title": "D. auflehnen",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 19,
+      "label": "Sprachverständnis: Was passt nicht?",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 7 Starten",
+      "type": "pageContentScreen",
+      "id": "coChKma6",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 7 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 20,
+      "parents": ["se6c4ca5a0"],
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt!",
+      "button": "Eingeben",
+      "id": "mcBF9vRP",
+      "label": "Sprachverständnis: Was passt nicht? - Frage 7",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Was passt nicht zu den Anderen?",
+      "name": "Frage 7",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "correct": true,
+          "id": "imC3E3wf",
+          "index": 0,
+          "points": 1,
+          "title": "A. großartig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imEmWeZf",
+          "index": 1,
+          "title": "B. riesig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCykj2Z",
+          "index": 2,
+          "title": "C. gewaltig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imDOdbN2",
+          "index": 3,
+          "title": "D. gigantisch",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 21,
+      "label": "Sprachverständnis: Was passt nicht?",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 8 Starten",
+      "type": "pageContentScreen",
+      "id": "coDOL9B2",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 8 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 22,
+      "parents": ["se6c4ca5a0"],
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt!",
+      "button": "Eingeben",
+      "id": "mcDB9z15",
+      "label": "Sprachverständnis: Was passt nicht? - Frage 8",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Was passt nicht zu den Anderen?",
+      "name": "Frage 8",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imEhz26t",
+          "index": 0,
+          "title": "A. Märchen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imDhFvus",
+          "index": 1,
+          "title": "B. Geschichte",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imCZWxwb",
+          "index": 2,
+          "points": 1,
+          "title": "C. Bericht",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "id": "imDjlal2",
+          "index": 3,
+          "title": "D. Erzählung",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 23,
+      "label": "Sprachverständnis: Was passt nicht?",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 9 Starten",
+      "type": "pageContentScreen",
+      "id": "coDwYgep",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 9 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 24,
+      "parents": ["se6c4ca5a0"],
+      "body": "Wählen Sie die Antwort aus, die <u>nicht</u> zu den Übrigen passt!",
+      "button": "Eingeben",
+      "id": "mcEgdq47",
+      "label": "Sprachverständnis: Was passt nicht? - Frage 9",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Was passt nicht zu den Anderen?",
+      "name": "Frage 9",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imCAhO0C",
+          "index": 0,
+          "title": "A. betonen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imEOF2uk",
+          "index": 1,
+          "title": "B. herausstellen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "im49Pq4",
+          "index": 2,
+          "title": "C. hervorheben",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imDADahE",
+          "index": 3,
+          "points": 1,
+          "title": "D. übertreiben",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 25,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "button": "Weiter",
+      "type": "pageContentScreen",
+      "id": "coDfifGx",
+      "body": "Ob Ihre Antworten richtig waren, erfahren Sie am Ende der Sendung.</br>\n\nIm folgenden geht es weiter mit dem nächsten Fragen zum Sprachverständnis. ",
+      "name": "Ende der Unterkategorie",
+      "title": "Das war die zweite Unterkategorie",
+      "items": []
+    },
+    {
+      "index": 26,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "button": "Beispielfrage Starten",
+      "type": "pageContentScreen",
+      "id": "coCuFoei",
+      "body": "Wählen Sie die Antwort mit der gleichen oder ähnlichen Bedeutung wie das vorgegebene Wort! Sie haben **12 Sekunden** pro Aufgabe.</br> \n\n*Bitte klicken Sie auf \"Beispielfrage Starten\", wenn die Beispielfrage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Start - Wortbedeutung",
+      "title": "Wortbedeutung",
+      "items": []
+    },
+    {
+      "index": 27,
+      "parents": ["se6c4ca5a0"],
+      "button": "Eingeben",
+      "id": "mcBG58Yu",
+      "label": "Sprachverständnis: Wortbedeutung - Beispiel",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Finden Sie das Wort, das die gleiche oder eine ähnliche Bedeutung wie „<u>absurd</u>“ hat!",
+      "name": "Beispiel",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imH0Z28",
+          "index": 0,
+          "title": "A. unpassend",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imOFpnN",
+          "index": 1,
+          "title": "B. widersinnig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCeUtJT",
+          "index": 2,
+          "title": "C. falsch",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imCOOGNl",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. ungeschickt",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "yourAnswerText": "Ihre Antwort",
+      "incorrectText": "Das ist leider falsch",
+      "label": "Sprachverständnis: Wortbedeutung - Beispiel",
+      "parents": ["se6c4ca5a0"],
+      "correctText": "Das ist korrekt",
+      "youDidntVoteText": "Sie haben nicht auf diese Frage geantwortet",
+      "button": "Weiter",
+      "correctAnswerText": "Die richtige Antwort",
+      "id": "cnBcy0XT",
+      "name": "Beispiel - Auflösung",
+      "index": 28,
+      "type": "pageCorrectAnswer",
+      "items": []
+    },
+    {
+      "index": 29,
+      "label": "Sprachverständnis: Wortbedeutung",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 10 Starten",
+      "type": "pageContentScreen",
+      "id": "cofbGeF",
+      "body": "Wir werden nun mit den eigentlichen Fragen fortfahren. Am Ende der Sendung werden Sie erfahren, ob Sie diese richtig beantwortet haben.</br>\n\n*Bitte klicken Sie auf \"Frage 10 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 30,
+      "parents": ["se6c4ca5a0"],
+      "button": "Eingeben",
+      "id": "mcDiB1Ox",
+      "label": "Sprachverständnis: Wortbedeutung - Beispiel",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Finden Sie das Wort, das die gleiche oder eine ähnliche Bedeutung wie „<u>provisorisch</u>“ hat!",
+      "name": "Frage 10",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imBHcQHg",
+          "index": 0,
+          "title": "A. primitiv",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imDvsq6F",
+          "index": 1,
+          "title": "B. minderwertig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imEcheSq",
+          "index": 2,
+          "title": "C. einfach",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imCqrDu4",
+          "index": 3,
+          "points": 1,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. behelfsmäßig",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 31,
+      "label": "Sprachverständnis: Wortbedeutung",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 11 Starten",
+      "type": "pageContentScreen",
+      "id": "coDLrZGA",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 11 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 32,
+      "parents": ["se6c4ca5a0"],
+      "button": "Eingeben",
+      "id": "mcNo9nr",
+      "label": "Sprachverständnis: Wortbedeutung - Frage 11",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Finden Sie das Wort, das die gleiche oder eine ähnliche Bedeutung wie „<u>abwägen</u>“ hat!",
+      "name": "Frage 11",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imBMI2X9",
+          "index": 0,
+          "title": "A. nachdenken",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imETM1AP",
+          "index": 1,
+          "points": 1,
+          "title": "B. prüfen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imC5KASH",
+          "index": 2,
+          "title": "C. besinnen",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imDIYltx",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. überlegen",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 33,
+      "label": "Sprachverständnis: Wortbedeutung",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 12 Starten",
+      "type": "pageContentScreen",
+      "id": "coDOycC1",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 12 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 34,
+      "parents": ["se6c4ca5a0"],
+      "button": "Eingeben",
+      "id": "mcEIoi0n",
+      "label": "Sprachverständnis: Wortbedeutung - Frage 12",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Finden Sie das Wort, das die gleiche oder eine ähnliche Bedeutung wie „<u>argwöhnisch</u>“ hat!",
+      "name": "Frage 12",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "id": "imBFEbQ6",
+          "index": 0,
+          "title": "A. unsicher",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imBTdhLA",
+          "index": 1,
+          "title": "B. unentschieden",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": true,
+          "id": "imDXRw2i",
+          "index": 2,
+          "points": 1,
+          "title": "C. misstrauisch",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imjrcZD",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. empfindlich",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 35,
+      "label": "Sprachverständnis: Wortbedeutung",
+      "parents": ["se6c4ca5a0"],
+      "button": "Frage 13 Starten",
+      "type": "pageContentScreen",
+      "id": "coECo8e7",
+      "body": "Ob Ihre Antwort richtig war, erfahren Sie am Ende der Sendung.</br>\n\n*Bitte klicken Sie auf \"Frage 13 Starten\", wenn die Frage im TV vorgelesen wurde. Sie haben dann genau so viel Zeit zu antworten, wie unsere prominenten Kandidaten und das Studiopublikum.*</br>",
+      "name": "Zwischenseite",
+      "title": "Weiter geht's",
+      "items": []
+    },
+    {
+      "index": 36,
+      "parents": ["se6c4ca5a0"],
+      "button": "Eingeben",
+      "id": "mcB7hlH0",
+      "label": "Sprachverständnis: Wortbedeutung - Frage 12",
+      "quiz": {
+        "enabled": true,
+        "requiresCorrectAnswer": {
+          "enabled": false
+        },
+        "timer": {
+          "buffer": 3600,
+          "duration": 12,
+          "enabled": true
+        }
+      },
+      "title": "Finden Sie das Wort, das die gleiche oder eine ähnliche Bedeutung wie „<u>unerlässlich</u>“ hat!",
+      "name": "Frage 13",
+      "type": "pageMultipleChoice",
+      "items": [
+        {
+          "correct": true,
+          "id": "imBxHjOC",
+          "index": 0,
+          "points": 1,
+          "title": "A. erforderlich",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imEek0t9",
+          "index": 1,
+          "title": "B. wichtig",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imBsBSzF",
+          "index": 2,
+          "title": "C. bedeutend",
+          "type": "itemMultipleChoice"
+        },
+        {
+          "correct": false,
+          "id": "imu74AU",
+          "index": 3,
+          "popup": {
+            "enabled": false
+          },
+          "title": "D. uneingeschränkt",
+          "type": "itemMultipleChoice"
+        }
+      ]
+    },
+    {
+      "index": 37,
+      "label": "Sprachverständnis",
+      "parents": ["se6c4ca5a0"],
+      "type": "pageContentScreen",
+      "id": "coDmNTwY",
+      "body": "Ob Ihre Antworten richtig waren, erfahren Sie am Ende der Sendung.</br>\n\nIm Folgenden geht es weiter mit der nächsten Kategorie **Rechnen**. Verfolgen Sie die Show im TV, um zu erfahren, wann es los geht.",
+      "name": "Ende der Kategorie",
+      "title": "Das war die erste Kategorie",
+      "items": []
+    }
+  ]
+}
