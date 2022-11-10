@@ -1,11 +1,15 @@
-import { ClientContext, FunctionType, ObservableUpdateFunction } from '../types'
+import {
+  ClientContext,
+  FunctionType,
+  ObservableUpdateFunction, // and listener bit confuse...
+  ObserveErrorListener,
+} from '../types'
 import { parentPort } from 'worker_threads'
 import { installFunction } from './functions'
 import { authorize } from './authorize'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-
-export type ObserveErrorListener = (err: Error) => void
+import { BasedError, BasedErrorCode, ErrorPayload } from '../error'
 
 export const genObserveId = (name: string, payload: any): number => {
   return hashObjectIgnoreKeyOrder([name, payload])
@@ -53,6 +57,7 @@ export const observe = (
 
       if (!ok) {
         console.error('no auth for you!', name)
+        // TODO: send up
         return
       }
 
@@ -74,6 +79,7 @@ export const observe = (
       })
     })
     .catch((err) => {
+      // TODO: send up
       console.error('wrong authorize!', name, err)
     })
 
@@ -118,7 +124,7 @@ export const incomingObserve = (
   id: number,
   checksum?: number,
   data?: Uint8Array,
-  err?: Error,
+  err?: BasedError<BasedErrorCode.ObservableFunctionError>,
   diff?: Uint8Array,
   previousChecksum?: number
 ) => {
@@ -128,7 +134,19 @@ export const incomingObserve = (
       if (err) {
         onError(err)
       } else {
-        onData(data, checksum, diff, previousChecksum)
+        // @ts-ignore
+        if (onData.__isEdge__) {
+          onData(data, checksum, diff, previousChecksum)
+        } else {
+          try {
+            onData(data, checksum, diff, previousChecksum)
+          } catch (err) {
+            workerError(BasedErrorCode.ObserveCallbackError, {
+              err,
+              observableId: id,
+            })
+          }
+        }
       }
     })
   }
@@ -157,4 +175,15 @@ export const workerLog = (log: any, context?: ClientContext) => {
   })
 }
 
-export default workerLog
+export function workerError<T extends BasedErrorCode>(
+  code: T,
+  payload: ErrorPayload[T],
+  context?: ClientContext
+) {
+  parentPort.postMessage({
+    type: 5,
+    code,
+    payload,
+    context,
+  })
+}

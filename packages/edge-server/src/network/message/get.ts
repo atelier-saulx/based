@@ -9,8 +9,25 @@ import {
 import { BasedServer } from '../../server'
 import { create, destroy } from '../../observable'
 import { ActiveObservable, WebsocketClient } from '../../types'
-import { BasedErrorCode } from '../../error'
 import { sendError } from './send'
+import { BasedErrorCode, BasedError } from '../../error'
+
+const obsFnError = (
+  server: BasedServer,
+  client: WebsocketClient,
+  id: number,
+  name: string,
+  err: BasedError<BasedErrorCode.ObservableFunctionError>
+) => {
+  sendError(server, client, err.code, {
+    observableId: id,
+    route: {
+      name,
+    },
+    err: err,
+  })
+  destroy(server, id)
+}
 
 const sendGetData = (
   server: BasedServer,
@@ -22,7 +39,6 @@ const sendGetData = (
   if (!client.ws) {
     return
   }
-
   if (checksum === 0) {
     if (obs.reusedCache) {
       const prevId = updateId(obs.cache, id)
@@ -50,7 +66,6 @@ const sendGetData = (
       client.ws.send(obs.cache, true, false)
     }
   }
-
   destroy(server, id)
 }
 
@@ -108,14 +123,20 @@ export const getMessage = (
           clearTimeout(obs.beingDestroyed)
           obs.beingDestroyed = null
         }
-        if (obs.cache) {
+        if (obs.error) {
+          obsFnError(server, client, id, name, obs.error)
+        } else if (obs.cache) {
           sendGetData(server, id, obs, checksum, client)
         } else {
           if (!obs.onNextData) {
             obs.onNextData = new Set()
           }
-          obs.onNextData.add(() => {
-            sendGetData(server, id, obs, checksum, client)
+          obs.onNextData.add((err) => {
+            if (err) {
+              obsFnError(server, client, id, name, err)
+            } else {
+              sendGetData(server, id, obs, checksum, client)
+            }
           })
         }
       } else {
@@ -128,8 +149,12 @@ export const getMessage = (
                 if (!obs.onNextData) {
                   obs.onNextData = new Set()
                 }
-                obs.onNextData.add(() => {
-                  sendGetData(server, id, obs, checksum, client)
+                obs.onNextData.add((err) => {
+                  if (err) {
+                    obsFnError(server, client, id, name, err)
+                  } else {
+                    sendGetData(server, id, obs, checksum, client)
+                  }
                 })
               }
             } else {

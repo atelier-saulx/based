@@ -25,12 +25,12 @@ const sendHttpErrorMessage = (
   })
 }
 
-export const sendHttpError = (
+export function sendHttpError<T extends BasedErrorCode>(
   server: BasedServer,
   client: HttpClient,
-  basedCode: BasedErrorCode,
-  err: ErrorPayload[BasedErrorCode]
-) => {
+  basedCode: T,
+  err: ErrorPayload[T]
+) {
   if (!client.res) {
     return
   }

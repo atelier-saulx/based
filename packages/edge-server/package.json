@@ -1,8 +1,13 @@
 {
   "name": "@based/edge-server",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "license": "MIT",
   "main": "./dist/index.js",
+  "files": [
+    "package.json",
+    "README.md",
+    "dist"
+  ],
   "exports": {
     ".": "./dist/index.js",
     "./worker": "./dist/worker/api.js",
@@ -14,14 +19,11 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "@based/client": "^2.9.0",
-    "@based/graphql": "^2.4.2",
     "@based/uws": "2.4.0",
     "@saulx/diff": "^1.1.3",
     "@saulx/hash": "^1.1.0",
     "@saulx/utils": "^2.4.0",
     "chalk": "^4.1.2",
-    "graphql": "^16.3.0",
     "jsonexport": "^3.2.0",
     "jsonwebtoken": "^8.5.1",
     "mime-types": "^2.1.31",

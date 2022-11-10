@@ -13,7 +13,7 @@ import { destroy, initFunction } from '../observable'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
 import { join } from 'path'
 import { workerMessage } from '../network/worker'
-import { BasedErrorCode } from '../error'
+import { BasedErrorCode, BasedError } from '../error'
 
 export { isObservableFunctionSpec }
 
@@ -32,8 +32,7 @@ export class BasedFunctions {
 
   workerResponseListeners: Map<
     number,
-    | ((err: null, p: any) => void)
-    | ((err: Error & { code: BasedErrorCode }) => void)
+    ((err: null, p: any) => void) | ((err: BasedError) => void)
   > = new Map()
 
   paths: {
@@ -386,7 +385,7 @@ export class BasedFunctions {
   runObservableFunction(
     spec: BasedObservableFunctionSpec,
     id: number,
-    error: (err: Error) => void,
+    error: (err: BasedError<BasedErrorCode.ObservableFunctionError>) => void,
     update: (
       encodedDiffData: Uint8Array,
       encodedData: Uint8Array,
@@ -397,9 +396,7 @@ export class BasedFunctions {
     payload?: any
   ): () => void {
     // TODO: move selection criteria etc to other file
-
     const selectedWorker: BasedWorker = this.lowestWorker
-
     this.workerResponseListeners.set(id, (err, p) => {
       if (err) {
         error(err)
@@ -438,9 +435,11 @@ export class BasedFunctions {
       const listenerId = ++this.reqId
       // max concurrent execution is 1 mil...
       if (this.workerResponseListeners.size >= 1e6) {
-        throw new Error(
-          'MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)'
+        // TODO: handle better Make into a based error! also needs to be stored!
+        reject(
+          new Error('MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)')
         )
+        return
       }
       if (this.reqId > 1e6) {
         this.reqId = 0

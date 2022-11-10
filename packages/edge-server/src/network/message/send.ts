@@ -3,12 +3,12 @@ import { BasedErrorCode, ErrorPayload, createError } from '../../error'
 import { WebsocketClient } from '../../types'
 import { BasedServer } from '../../server'
 
-export const sendError = (
+export function sendError<T extends BasedErrorCode>(
   server: BasedServer,
   client: WebsocketClient,
-  basedCode: BasedErrorCode,
-  err?: ErrorPayload[BasedErrorCode]
-): void => {
-  const errorData = createError(server, client, basedCode, err)
+  basedCode: T,
+  payload: ErrorPayload[T]
+): void {
+  const errorData = createError(server, client, basedCode, payload)
   client.ws?.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
 }

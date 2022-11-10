@@ -10,6 +10,7 @@ export enum BasedErrorCode {
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
   ObservableFunctionError = 50004,
+  ObserveCallbackError = 50005,
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
@@ -26,6 +27,10 @@ export enum BasedErrorCode {
   // WorkerDied
 }
 
+export type BasedError<T extends BasedErrorCode = BasedErrorCode> = Error & {
+  code: T
+}
+
 type FunctionErrorProps = {
   err: Error
   requestId?: number
@@ -39,12 +44,17 @@ type ObservableFunctionErrorProps = {
 }
 
 export type ErrorPayload = {
-  [BasedErrorCode.NoBinaryProtocol]: BasedFunctionRoute
+  [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.ObservableFunctionError]: ObservableFunctionErrorProps
   [BasedErrorCode.AuthorizeFunctionError]:
     | FunctionErrorProps
     | ObservableFunctionErrorProps
+  [BasedErrorCode.ObserveCallbackError]: {
+    err: Error
+    observableId: number
+    route?: BasedFunctionRoute
+  }
   [BasedErrorCode.NoOservableCacheAvailable]: {
     observableId: number
     route: BasedFunctionRoute
@@ -69,13 +79,13 @@ export type ErrorHandler<T extends BasedErrorCode> = {
   message: (payload: ErrorPayload[T]) => string
 }
 
-export type BasedErrorData = {
+export type BasedErrorData<T extends BasedErrorCode = BasedErrorCode> = {
   route: BasedFunctionRoute
   message: string
-  code: BasedErrorCode
+  code: T
   statusCode: number
   statusMessage: string
   requestId?: number
   observableId?: number
-  err?: Error
+  err?: BasedError<T>
 }

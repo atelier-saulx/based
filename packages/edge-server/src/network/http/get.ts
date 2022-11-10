@@ -7,8 +7,25 @@ import { sendHttpError } from './send'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { create, destroy } from '../../observable'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../error'
 import { parseQuery } from '@saulx/utils'
+import { BasedErrorCode, BasedError } from '../../error'
+
+const obsFnError = (
+  server: BasedServer,
+  client: HttpClient,
+  id: number,
+  name: string,
+  err: BasedError<BasedErrorCode.ObservableFunctionError>
+) => {
+  sendHttpError(server, client, err.code, {
+    observableId: id,
+    route: {
+      name,
+    },
+    err: err,
+  })
+  destroy(server, id)
+}
 
 const sendGetResponse = (
   route: BasedFunctionRoute,
@@ -33,7 +50,7 @@ const sendGetResponse = (
           BasedErrorCode.NoOservableCacheAvailable,
           {
             observableId: id,
-            name: obs.name,
+            route: { name: obs.name },
           }
         )
       } else {
@@ -75,7 +92,9 @@ const sendGetResponse = (
       })
     }
   } catch (err) {
-    sendHttpError(server, client, BasedErrorCode.FunctionError, {
+    // TODO: OTHER ERROR again UNEXPECTED
+    console.error('Internal: Unxpected error in sendGetResponse', err)
+    sendHttpError(server, client, BasedErrorCode.ObservableFunctionError, {
       err,
       observableId: id,
       route,
@@ -112,21 +131,26 @@ export const httpGet = (
       }
       if (spec && isObservableFunctionSpec(spec)) {
         const id = hashObjectIgnoreKeyOrder([name, payload])
-
         if (server.activeObservablesById.has(id)) {
           const obs = server.activeObservablesById.get(id)
           if (obs.beingDestroyed) {
             clearTimeout(obs.beingDestroyed)
             obs.beingDestroyed = null
           }
-          if (obs.cache) {
+          if (obs.error) {
+            obsFnError(server, client, obs.id, obs.name, obs.error)
+          } else if (obs.cache) {
             sendGetResponse(route, server, id, obs, checksum, client)
           } else {
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
-            obs.onNextData.add(() => {
-              sendGetResponse(route, server, id, obs, checksum, client)
+            obs.onNextData.add((err) => {
+              if (err) {
+                obsFnError(server, client, obs.id, obs.name, err)
+              } else {
+                sendGetResponse(route, server, id, obs, checksum, client)
+              }
             })
           }
         } else {
@@ -134,22 +158,28 @@ export const httpGet = (
           if (!obs.onNextData) {
             obs.onNextData = new Set()
           }
-          obs.onNextData.add(() => {
-            sendGetResponse(route, server, id, obs, checksum, client)
+          obs.onNextData.add((err) => {
+            if (err) {
+              obsFnError(server, client, obs.id, obs.name, err)
+            } else {
+              sendGetResponse(route, server, id, obs, checksum, client)
+            }
           })
         }
-      } else if (spec && isObservableFunctionSpec(spec)) {
+      } else if (spec && !isObservableFunctionSpec(spec)) {
         sendHttpError(
           server,
           client,
           BasedErrorCode.FunctionIsNotObservable,
           route
         )
-      } else {
+      } else if (!spec) {
         sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
       }
     })
-    .catch(() =>
+    .catch((err) => {
+      // TODO: error type
+      console.error('Internal: Unxpected error in observable', err)
       sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
-    )
+    })
 }
