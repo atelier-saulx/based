@@ -40,6 +40,7 @@ const sendGetResponse = (
   }
 
   const encoding = client.context.headers.encoding
+  console.info('Send GET ' + obs.name)
 
   try {
     if (checksum === 0 || checksum !== obs.checksum) {
@@ -158,6 +159,7 @@ export const httpGet = (
           if (!obs.onNextData) {
             obs.onNextData = new Set()
           }
+
           obs.onNextData.add((err) => {
             if (err) {
               obsFnError(server, client, obs.id, obs.name, err)

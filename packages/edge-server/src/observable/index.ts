@@ -35,8 +35,6 @@ export const destroy = (server: BasedServer, id: number) => {
   const memCacheTimeout =
     spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
 
-  console.info('DESTROY', id, obs.name)
-
   if (!obs.beingDestroyed) {
     obs.beingDestroyed = setTimeout(() => {
       obs.beingDestroyed = null
@@ -270,6 +268,14 @@ export const initFunction = async (
       }
     },
     (encodedDiffData, encodedData, checksum, isDeflate, reusedCache) => {
+      console.info(
+        '--> OBS incoming update',
+        obs.name,
+        isDeflate,
+        reusedCache,
+        obs.payload
+      )
+
       obs.error = null
       obs.previousChecksum = obs.checksum
       obs.checksum = checksum

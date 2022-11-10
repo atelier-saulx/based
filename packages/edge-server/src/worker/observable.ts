@@ -34,7 +34,7 @@ export const createObs = (
   payload?: any
 ) => {
   if (activeObs.has(id)) {
-    console.warn('trying to creater an obs that allready exists...')
+    console.warn('Trying to create an obs that allready exists...')
     return
   }
 
@@ -131,29 +131,40 @@ export const createObs = (
   update.__isEdge__ = true
 
   // add onError function to observe api...
-
-  fn(payload, update)
-    .then((close) => {
-      if (obs.isDestroyed) {
-        close()
-      } else {
-        obs.closeFunction = close
-      }
-    })
-    .catch((err) => {
-      parentPort.postMessage({
-        id,
-        err,
-        errCode: BasedErrorCode.ObservableFunctionError,
+  // support both async and sync fns
+  try {
+    const r = fn(payload, update)
+    if (r instanceof Promise) {
+      r.then((close) => {
+        if (obs.isDestroyed) {
+          close()
+        } else {
+          obs.closeFunction = close
+        }
+      }).catch((err) => {
+        parentPort.postMessage({
+          id,
+          err,
+          errCode: BasedErrorCode.ObservableFunctionError,
+        })
       })
+    } else {
+      obs.closeFunction = r
+    }
+  } catch (err) {
+    parentPort.postMessage({
+      id,
+      err,
+      errCode: BasedErrorCode.ObservableFunctionError,
     })
+  }
 }
 
 export const closeObs = (id: number) => {
   const obs = activeObs.get(id)
 
   if (!obs) {
-    console.warn('trying to close an obs that does not exist')
+    console.warn('Trying to close an obs that does not exist')
     return
   }
 

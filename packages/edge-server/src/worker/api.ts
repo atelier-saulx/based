@@ -126,7 +126,8 @@ export const incomingObserve = (
   data?: Uint8Array,
   err?: BasedError<BasedErrorCode.ObservableFunctionError>,
   diff?: Uint8Array,
-  previousChecksum?: number
+  previousChecksum?: number,
+  isDeflate?: boolean
 ) => {
   const obs = activeObservables.get(id)
   if (obs) {
@@ -136,10 +137,10 @@ export const incomingObserve = (
       } else {
         // @ts-ignore
         if (onData.__isEdge__) {
-          onData(data, checksum, diff, previousChecksum)
+          onData(data, checksum, diff, previousChecksum, isDeflate)
         } else {
           try {
-            onData(data, checksum, diff, previousChecksum)
+            onData(data, checksum, diff, previousChecksum, isDeflate)
           } catch (err) {
             workerError(BasedErrorCode.ObserveCallbackError, {
               err,

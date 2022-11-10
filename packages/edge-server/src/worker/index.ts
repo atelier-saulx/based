@@ -22,7 +22,15 @@ parentPort.on('message', (d) => {
   if (d.type === 9) {
     incomingAuthorize(d)
   } else if (d.type === 8) {
-    incomingObserve(d.id, d.checksum, d.data, d.err, d.diff, d.previousChecksum)
+    incomingObserve(
+      d.id,
+      d.checksum,
+      d.data,
+      d.err,
+      d.diff,
+      d.previousChecksum,
+      d.isDeflate
+    )
   } else if (d.type === 5) {
     addFunction(d.name, d.path)
   } else if (d.type === 7) {

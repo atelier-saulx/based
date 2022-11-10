@@ -15,8 +15,6 @@ export const workerMessage = (
   // type 4 log
   // type 5 Error
 
-  // TODO: Handle errors if wrong send back error
-  // something like an error channel can also send the error back to the subscription update..
   if (data.type === 2) {
     // close
     unsubscribe(
@@ -93,13 +91,13 @@ export const workerMessage = (
   } else if (data.id) {
     const listener = server.functions.workerResponseListeners.get(data.id)
     if (listener) {
+      // use error for this...
       if (data.errCode) {
         if (!data.err) {
           data.err = new Error()
         }
         data.err.code = data.errCode
       }
-
       listener(data.err, data.payload)
     }
   }
