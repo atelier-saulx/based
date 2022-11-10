@@ -9,7 +9,7 @@ export default async (payload, update) => {
     }
 
     update({ cnt: ++cnt })
-  }, 5e3)
+  }, 100)
   return () => {
     clearInterval(interval)
   }

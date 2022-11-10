@@ -1,5 +1,4 @@
-export default async (client, name) => {
-  //  payload, !!client, new Error().stack
-  console.info('AUTH TIMxE', name)
+export default async (client, name, payload) => {
+  console.info('--> Need to auth', name, payload)
   return true
 }

@@ -1,4 +1,6 @@
 export default async (payload, client) => {
+  client.set('hello', {})
+
   try {
     const x = await client.get({
       children: true,

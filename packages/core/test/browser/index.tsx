@@ -22,6 +22,11 @@ const init = async () => {
   await coreClient.function('based-db-update-schema', {
     languages: ['en'],
     types: {
+      blurf: {
+        fields: {
+          price: { type: 'int', timeseries: true },
+        },
+      },
       thing: {
         prefix: 'th',
         fields: {
@@ -39,13 +44,13 @@ const init = async () => {
   //   { children: { name: true, id: true, $list: true } }
   // )
 
-  // coreClient.observe(
-  //   'nestedCounter',
-  //   (d) => {
-  //     console.info('NESTED, INCOMING ---->', d)
-  //   },
-  //   { children: { name: true, id: true, $list: true } }
-  // )
+  coreClient.observe(
+    'nestedCounter',
+    (d) => {
+      console.info('NESTED, INCOMING ---->', d)
+    },
+    { children: { name: true, id: true, $list: true } }
+  )
 
   // for (let i = 0; i < 5; i++) {
   //   await coreClient.function('based-db-set', {
@@ -67,6 +72,15 @@ const init = async () => {
       type: 'thing',
       name: 'BLAAAA',
     })
+  })
+
+  makeButton('add many things', () => {
+    for (let i = 0; i < 1000; i++) {
+      coreClient.function('based-db-set', {
+        type: 'thing',
+        name: 'YES' + i,
+      })
+    }
   })
 
   makeButton('crasher', () => {
