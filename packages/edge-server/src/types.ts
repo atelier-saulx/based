@@ -1,6 +1,6 @@
 import type { BasedServer } from './server'
 import type uws from '@based/uws'
-import { BasedErrorData } from './error'
+import { BasedError, BasedErrorCode, BasedErrorData } from './error'
 import { Worker } from 'node:worker_threads'
 
 export type ClientContext = {
@@ -51,6 +51,11 @@ export type BasedWorker = {
 
 export type WorkerClient = {
   worker: BasedWorker
+  context: ClientContext
+}
+
+export type ObservableDummyClient = {
+  isDummy: true
   context: ClientContext
 }
 
@@ -118,6 +123,10 @@ export type ObservableUpdateFunction = (
   diff?: any,
   fromChecksum?: number,
   isDeflate?: boolean
+) => void
+
+export type ObserveErrorListener = (
+  err: BasedError<BasedErrorCode.ObservableFunctionError>
 ) => void
 
 // this gets run in the main thread
@@ -229,8 +238,10 @@ export type ActiveObservable = {
   checksum?: number
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
-  onNextData?: Set<() => void>
-  error?: Error
+  onNextData?: Set<
+    (err?: BasedError<BasedErrorCode.ObservableFunctionError>) => void
+  >
+  error?: BasedError<BasedErrorCode.ObservableFunctionError> | null
 }
 
 export type EventMap = {
@@ -242,7 +253,7 @@ export type EventMap = {
 export type Event = keyof EventMap
 
 export type Listener<T> = (
-  client: HttpClient | WebsocketClient | WorkerClient,
+  client: HttpClient | WebsocketClient | WorkerClient | ObservableDummyClient,
   data?: T,
   err?: Error
 ) => void

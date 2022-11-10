@@ -107,7 +107,7 @@ export const httpStreamFunction = (
                 stream.destroy()
                 sendHttpError(server, client, BasedErrorCode.FunctionError, {
                   err,
-                  name: route.name,
+                  route,
                 })
               })
               .then((r) => {

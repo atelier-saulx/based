@@ -1,6 +1,12 @@
 import { BasedServer } from '../server'
-import { ActiveObservable, WebsocketClient, WorkerClient } from '../types'
-import { updateId } from '../protocol'
+import {
+  ActiveObservable,
+  ObservableDummyClient,
+  WebsocketClient,
+  WorkerClient,
+} from '../types'
+import { encodeErrorResponse, updateId, valueToBuffer } from '../protocol'
+import { createError } from '../error'
 
 export const destroy = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -167,6 +173,18 @@ export const unsubscribeIgnoreClient = (
   destroy(server, id)
 }
 
+const dummyClient: ObservableDummyClient = {
+  isDummy: true,
+  context: {
+    query: '',
+    ip: '',
+    id: -1,
+    ua: '',
+    method: 'dummy',
+    headers: {},
+  },
+}
+
 export const initFunction = async (
   server: BasedServer,
   id: number
@@ -193,12 +211,51 @@ export const initFunction = async (
     id,
     // add isDeflate for http
     (err) => {
-      if (err) {
-        // keep initialization error?
-        console.error('ERROR TIMES /w observable', err)
+      // keep initialization error?
+      obs.error = err
+      delete obs.cache
+      delete obs.diffCache
+      delete obs.checksum
+      delete obs.previousChecksum
+
+      obs.isDeflate = false
+      obs.reusedCache = false
+
+      const errorData = createError(server, dummyClient, err.code, {
+        err,
+        observableId: id,
+        route: {
+          name: obs.name,
+        },
+      })
+
+      if (obs.clients.size) {
+        server.uwsApp.publish(
+          String(id),
+          encodeErrorResponse(valueToBuffer(errorData)),
+          true,
+          false
+        )
+      }
+
+      if (obs.workers.size) {
+        obs.workers.forEach((w) => {
+          w.worker.postMessage({
+            type: 8,
+            id,
+            err,
+          })
+        })
+      }
+
+      if (obs.onNextData) {
+        const onNextData = obs.onNextData
+        delete obs.onNextData
+        onNextData.forEach((fn) => fn(err))
       }
     },
     (encodedDiffData, encodedData, checksum, isDeflate, reusedCache) => {
+      obs.error = null
       obs.previousChecksum = obs.checksum
       obs.checksum = checksum
       obs.cache = encodedData
@@ -208,8 +265,10 @@ export const initFunction = async (
       if (encodedDiffData) {
         obs.diffCache = encodedDiffData
       }
+
       let prevId: Uint8Array
       let prevDiffId: Uint8Array
+
       if (obs.clients.size) {
         if (encodedDiffData) {
           if (reusedCache) {

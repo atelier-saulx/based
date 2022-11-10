@@ -62,7 +62,9 @@ export const message = (
   }
 
   if (!isBinary) {
-    createError(server, client, BasedErrorCode.NoBinaryProtocol, msg)
+    createError(server, client, BasedErrorCode.NoBinaryProtocol, {
+      buffer: msg,
+    })
 
     client.ws.close()
     return

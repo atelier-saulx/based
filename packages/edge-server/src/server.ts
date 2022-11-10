@@ -9,6 +9,7 @@ import type {
   HttpClient,
   WebsocketClient,
   WorkerClient,
+  ObservableDummyClient,
 } from './types'
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
@@ -61,7 +62,7 @@ export class BasedServer {
 
   emit(
     type: Event,
-    client: HttpClient | WebsocketClient | WorkerClient,
+    client: HttpClient | WebsocketClient | WorkerClient | ObservableDummyClient,
     val: EventMap[Event],
     err?: Error
   ) {

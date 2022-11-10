@@ -1,5 +1,11 @@
 import { BasedServer } from '../server'
-import { BasedFunctionRoute, HttpClient, WebsocketClient } from '../types'
+import {
+  BasedFunctionRoute,
+  HttpClient,
+  WebsocketClient,
+  WorkerClient,
+  ObservableDummyClient,
+} from '../types'
 import {
   BasedErrorCode,
   ErrorPayload,
@@ -78,7 +84,6 @@ const errorTypes: ErrorType = {
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
     statusMessage: 'Not Found',
-    // TODO: make this allways a function
     message: (payload) => {
       return addName(payload) + 'Cannot stream to observable function'
     },
@@ -149,10 +154,10 @@ const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
 
 export function createError<T extends BasedErrorCode>(
   server: BasedServer,
-  client: HttpClient | WebsocketClient,
+  client: HttpClient | WebsocketClient | WorkerClient | ObservableDummyClient,
   code: T,
   payload: ErrorPayload[T]
-): BasedErrorData {
+): BasedErrorData<T> {
   const type = errorTypes[code]
 
   const route = !payload
@@ -163,7 +168,7 @@ export function createError<T extends BasedErrorCode>(
     ? payload.route
     : EMPTY_ROUTE
 
-  const errorData: BasedErrorData = {
+  const errorData: BasedErrorData<T> = {
     code,
     statusCode: type.statusCode,
     statusMessage: type.statusMessage,
