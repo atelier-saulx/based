@@ -31,21 +31,21 @@ const init = async () => {
     },
   })
 
-  coreClient.observe(
-    'based-db-observe',
-    (d) => {
-      console.info('|-->', d)
-    },
-    { children: { name: true, id: true, $list: true } }
-  )
+  // coreClient.observe(
+  //   'based-db-observe',
+  //   (d) => {
+  //     console.info('|-->', d)
+  //   },
+  //   { children: { name: true, id: true, $list: true } }
+  // )
 
-  coreClient.observe(
-    'nestedCounter',
-    (d) => {
-      console.info('NESTED, INCOMING ---->', d)
-    },
-    { children: { name: true, id: true, $list: true } }
-  )
+  // coreClient.observe(
+  //   'nestedCounter',
+  //   (d) => {
+  //     console.info('NESTED, INCOMING ---->', d)
+  //   },
+  //   { children: { name: true, id: true, $list: true } }
+  // )
 
   // for (let i = 0; i < 5; i++) {
   //   await coreClient.function('based-db-set', {
@@ -85,6 +85,12 @@ const init = async () => {
         console.error(err)
       }
     )
+  })
+
+  makeButton('init obs crash GET', () => {
+    coreClient.get('obsInitCrash').catch((err) => {
+      console.error(err)
+    })
   })
 
   makeButton('rando obs crash', () => {

@@ -7,6 +7,7 @@ import {
 } from '../types'
 import { encodeErrorResponse, updateId, valueToBuffer } from '../protocol'
 import { createError } from '../error'
+import { sendError } from '../network/message/send'
 
 export const destroy = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -34,13 +35,15 @@ export const destroy = (server: BasedServer, id: number) => {
   const memCacheTimeout =
     spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
 
+  console.info('DESTROY', id, obs.name)
+
   if (!obs.beingDestroyed) {
     obs.beingDestroyed = setTimeout(() => {
+      obs.beingDestroyed = null
       if (!server.activeObservables[obs.name]) {
         console.info('Trying to destroy a removed observable function')
         return
       }
-      obs.beingDestroyed = null
       server.activeObservables[obs.name].delete(id)
       if (server.activeObservables[obs.name].size === 0) {
         delete server.activeObservables[obs.name]
@@ -68,6 +71,18 @@ export const subscribe = (
     obs.beingDestroyed = null
   }
   obs.clients.add(client.ws.id)
+
+  if (obs.error) {
+    sendError(server, client, obs.error.code, {
+      err: obs.error,
+      observableId: id,
+      route: {
+        name: obs.name,
+      },
+    })
+    return
+  }
+
   if (obs.cache && obs.checksum !== checksum) {
     if (obs.diffCache && obs.previousChecksum === checksum) {
       if (obs.reusedCache) {

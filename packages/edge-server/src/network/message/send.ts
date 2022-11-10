@@ -7,8 +7,9 @@ export function sendError<T extends BasedErrorCode>(
   server: BasedServer,
   client: WebsocketClient,
   basedCode: T,
-  err?: ErrorPayload[T]
+  payload: ErrorPayload[T]
 ): void {
-  const errorData = createError(server, client, basedCode, err)
+  const errorData = createError(server, client, basedCode, payload)
+  console.info('!!!! SEND ERROR TO CLIENT', errorData)
   client.ws?.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
 }

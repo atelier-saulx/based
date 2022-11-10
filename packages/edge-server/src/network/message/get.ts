@@ -133,7 +133,7 @@ export const getMessage = (
           }
           obs.onNextData.add((err) => {
             if (err) {
-              obsFnError(server, client, id, name, obs.error)
+              obsFnError(server, client, id, name, err)
             } else {
               sendGetData(server, id, obs, checksum, client)
             }
@@ -149,8 +149,12 @@ export const getMessage = (
                 if (!obs.onNextData) {
                   obs.onNextData = new Set()
                 }
-                obs.onNextData.add(() => {
-                  sendGetData(server, id, obs, checksum, client)
+                obs.onNextData.add((err) => {
+                  if (err) {
+                    obsFnError(server, client, id, name, err)
+                  } else {
+                    sendGetData(server, id, obs, checksum, client)
+                  }
                 })
               }
             } else {

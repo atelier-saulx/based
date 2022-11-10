@@ -145,8 +145,12 @@ export const httpGet = (
             if (!obs.onNextData) {
               obs.onNextData = new Set()
             }
-            obs.onNextData.add(() => {
-              sendGetResponse(route, server, id, obs, checksum, client)
+            obs.onNextData.add((err) => {
+              if (err) {
+                obsFnError(server, client, obs.id, obs.name, err)
+              } else {
+                sendGetResponse(route, server, id, obs, checksum, client)
+              }
             })
           }
         } else {
