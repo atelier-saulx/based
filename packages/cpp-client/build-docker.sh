@@ -1,5 +1,5 @@
 #!/bin/sh
 make clean
-mkdir -p docker-build
+mkdir -p build-docker
 docker build -t based-build .
-docker run -v "$PWD/docker-build":/build/out based-build
+docker run -v "$PWD/build-docker":/build/out based-build

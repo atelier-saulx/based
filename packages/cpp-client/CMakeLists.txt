@@ -20,6 +20,7 @@ add_compile_definitions(ASIO_STANDALONE _WEBSOCKETPP_CPP11_STL_ BASED_TLS)
 
 
 target_link_directories(based PRIVATE /usr/local/opt/openssl@3/lib) # This is how CMake does -L[...]
+target_link_directories(based PRIVATE lib/curl/artifacts/lib)
 
 target_link_libraries(linked-example LINK_PUBLIC )
 target_link_libraries(linked-example PRIVATE based)
@@ -36,6 +37,7 @@ target_include_directories(based PRIVATE lib/websocketpp)
 target_include_directories(based PRIVATE lib/zlib)
 target_include_directories(based PRIVATE lib/nlohmann-json)
 target_include_directories(based PRIVATE lib/apply-patch)
+target_include_directories(based PRIVATE lib/curl/artifacts/include)
 target_include_directories(based PRIVATE lib/asio/asio/include)
 target_include_directories(based PRIVATE /usr/local/opt/openssl@3/include)
 
