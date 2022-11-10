@@ -13,3 +13,5 @@ docker-build
 distribute/*
 
 build/*
+build_darwin/*
+build_ios/*
