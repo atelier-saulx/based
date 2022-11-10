@@ -230,6 +230,7 @@ export type ActiveObservable = {
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
   onNextData?: Set<() => void>
+  error?: Error
 }
 
 export type EventMap = {

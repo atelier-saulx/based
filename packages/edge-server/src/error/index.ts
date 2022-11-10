@@ -22,9 +22,7 @@ const errorTypes: ErrorType = {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
     message: (payload) => {
-      // @ts-ignore
       if (payload.err && !payload.err.message && !payload.err.name) {
-        // @ts-ignore
         return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
       }
       return `[${payload.route.name}] ${

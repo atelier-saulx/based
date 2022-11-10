@@ -194,6 +194,7 @@ export const initFunction = async (
     // add isDeflate for http
     (err) => {
       if (err) {
+        // keep initialization error?
         console.error('ERROR TIMES /w observable', err)
       }
     },
