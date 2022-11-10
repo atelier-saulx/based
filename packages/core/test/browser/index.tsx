@@ -34,9 +34,9 @@ const init = async () => {
   coreClient.observe(
     'based-db-observe',
     (d) => {
-      console.info('-->', d)
+      console.info('|-->', d)
     },
-    { children: true }
+    { children: { name: true, id: true, $list: true } }
   )
 
   coreClient.observe(
@@ -44,7 +44,7 @@ const init = async () => {
     (d) => {
       console.info('NESTED, INCOMING ---->', d)
     },
-    { children: true }
+    { children: { name: true, id: true, $list: true } }
   )
 
   // for (let i = 0; i < 5; i++) {
@@ -54,27 +54,51 @@ const init = async () => {
   //   })
   // }
 
-  const button = document.createElement('button')
-  button.innerHTML = 'set something'
-  button.style.margin = '40px'
+  const makeButton = (label: string, fn: () => void) => {
+    const button = document.createElement('button')
+    button.innerHTML = label
+    button.style.margin = '40px'
+    button.onclick = fn
+    document.body.appendChild(button)
+  }
 
-  button.onclick = () => {
+  makeButton('set thing', () => {
     coreClient.function('based-db-set', {
       type: 'thing',
       name: 'BLAAAA',
     })
-  }
-  document.body.appendChild(button)
+  })
 
-  const crbutton = document.createElement('button')
-  crbutton.style.margin = '40px'
-  crbutton.innerHTML = 'crash something'
-  crbutton.onclick = () => {
+  makeButton('crasher', () => {
     coreClient.function('crasher').catch((err) => {
       console.error(err)
     })
-  }
-  document.body.appendChild(crbutton)
+  })
+
+  makeButton('init obs crash', () => {
+    coreClient.observe(
+      'obsInitCrash',
+      (d) => {
+        console.info(d)
+      },
+      (err) => {
+        console.error(err)
+      }
+    )
+  })
+
+  makeButton('rando obs crash', () => {
+    coreClient.observe(
+      'obsRandomUpdateCrash',
+      (d) => {
+        console.info('rando', d)
+      },
+      (err) => {
+        console.error(err)
+      }
+    )
+  })
+
   // const x = await coreClient.get('counter')
 
   // console.info('FUN', x)
