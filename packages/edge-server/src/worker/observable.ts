@@ -9,7 +9,7 @@ import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
 import { parentPort } from 'node:worker_threads'
 import { getFunction } from './functions'
-import { BasedErrorCode } from '../error'
+import { BasedErrorCode } from '../main/error'
 
 export type WorkerObs = {
   id: number

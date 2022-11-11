@@ -7,7 +7,7 @@ import { parentPort } from 'node:worker_threads'
 import { ClientContext, FunctionType } from '../../types'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../main/error'
 
 export default (
   name: string,

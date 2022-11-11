@@ -3,7 +3,7 @@ import { parentPort } from 'worker_threads'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../main/error'
 const decoder = new TextDecoder('utf-8')
 
 export const parsePayload = (

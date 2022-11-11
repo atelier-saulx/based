@@ -3,9 +3,11 @@ export enum BasedErrorCode {
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
   ObservableFunctionError = 50004,
+  ObserveCallbackError = 50005,
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
+  FunctionIsStream = 40404,
   CannotStreamToObservableFunction = 40402,
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
@@ -22,34 +24,24 @@ export type BasedErrorData = {
   stack: string
   requestId?: number
   observableId?: number
-  basedCode: BasedErrorCode
+  code: BasedErrorCode
   statusCode?: number
 }
 
-// TODO: Bellow functions should go to the fluffy client
 export class BasedError extends Error {
-  public statusCode?: number
   public statusMessage?: string
-  public code?: BasedErrorCode
-
-  // constructor(message: string) {
-  //   super(message)
-  // }
+  public code: BasedErrorCode
 }
 
 export const convertDataToBasedError = (
   payload: BasedErrorData,
   stack?: string
 ): BasedError => {
-  const { message, /* requestId, */ ...otherProps } = payload
+  const { message, /* requestId, */ code } = payload
   const msg =
-    message[0] === '['
-      ? '[Based ' + message.slice(1)
-      : '[BasedError] ' + message
-  const error = new BasedError()
+    message[0] === '[' ? message : `[${BasedErrorCode[code]}] ` + message
+  const error = new BasedError(msg)
   error.stack = stack ? msg + ' ' + stack : msg
-  Object.keys(otherProps).forEach((key) => {
-    error[key] = otherProps[key]
-  })
+  error.name = BasedErrorCode[code]
   return error
 }

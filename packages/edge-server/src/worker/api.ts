@@ -7,13 +7,9 @@ import {
 import { parentPort } from 'worker_threads'
 import { installFunction } from './functions'
 import { authorize } from './authorize'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-import { BasedError, BasedErrorCode, ErrorPayload } from '../error'
-
-export const genObserveId = (name: string, payload: any): number => {
-  return hashObjectIgnoreKeyOrder([name, payload])
-}
+import { BasedError, BasedErrorCode, ErrorPayload } from '../main/error'
+import genObservableId from '../genObservableId'
 
 export const runFunction = async (
   name: string,
@@ -48,11 +44,16 @@ export const observe = (
   onData: ObservableUpdateFunction,
   onError?: ObserveErrorListener
 ): (() => void) => {
-  const id = genObserveId(name, payload)
+  const id = genObservableId(name, payload)
+
   const observerId = ++obsIds
 
+  let isRemoved = false
   authorize(context, name, payload)
     .then((ok) => {
+      if (isRemoved) {
+        return
+      }
       let observers: ActiveNestedObservers = activeObservables.get(id)
 
       if (!ok) {
@@ -64,28 +65,35 @@ export const observe = (
       if (!observers) {
         observers = new Map()
         activeObservables.set(id, observers)
-        parentPort.postMessage({
-          type: 1,
-          payload,
-          name,
-          context: {},
-          id,
-        })
       }
 
       observers.set(observerId, {
         onData,
         onError: onError || (() => {}),
       })
+
+      parentPort.postMessage({
+        type: 1,
+        payload,
+        name,
+        context: {},
+        id,
+      })
     })
     .catch((err) => {
+      if (isRemoved) {
+        return
+      }
       // TODO: send up
       console.error('wrong authorize!', name, err)
     })
 
   return () => {
+    if (isRemoved) {
+      return
+    }
     const observers: ActiveNestedObservers = activeObservables.get(id)
-
+    isRemoved = true
     observers.delete(observerId)
     if (observers.size === 0) {
       parentPort.postMessage({
@@ -130,6 +138,8 @@ export const incomingObserve = (
   isDeflate?: boolean
 ) => {
   const obs = activeObservables.get(id)
+  console.error('HELLO', id, obs, activeObservables.keys())
+
   if (obs) {
     obs.forEach(({ onData, onError }) => {
       if (err) {

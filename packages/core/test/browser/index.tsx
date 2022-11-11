@@ -52,6 +52,14 @@ const init = async () => {
     { children: { name: true, id: true, $list: true } }
   )
 
+  // coreClient.observe(
+  //   'nestedCounter',
+  //   (d) => {
+  //     console.info('NESTED, INCOMING ---->', d)
+  //   },
+  //   { children: true }
+  // )
+
   // for (let i = 0; i < 5; i++) {
   //   await coreClient.function('based-db-set', {
   //     type: 'thing',

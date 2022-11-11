@@ -44,7 +44,7 @@ test.serial('nested functions', async (t) => {
       importWrapperPath: join(__dirname, './functions/importWrapper.js'),
       maxWorkers: 16,
       memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
+      idleTimeout: 500,
       route: ({ name }) => {
         if (name && store[name]) {
           return {
@@ -65,14 +65,6 @@ test.serial('nested functions', async (t) => {
         } else {
           return false
         }
-      },
-      // add name
-      log: (log) => {
-        console.info('-->', log.toString())
-      },
-      // add name
-      error: (err) => {
-        console.error('-->', err)
       },
     },
   })
@@ -101,6 +93,8 @@ test.serial('nested functions', async (t) => {
     },
     'json'
   )
+
+  await wait(2e3)
 
   const bla = await coreClient.get('obsWithNested', 'json')
 

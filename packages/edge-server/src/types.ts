@@ -1,6 +1,6 @@
-import type { BasedServer } from './server'
+import type { BasedServer } from './main/server'
 import type uws from '@based/uws'
-import { BasedError, BasedErrorCode, BasedErrorData } from './error'
+import { BasedError, BasedErrorCode, BasedErrorData } from './main/error'
 import { Worker } from 'node:worker_threads'
 
 export type ClientContext = {
