@@ -53,7 +53,6 @@ parentPort.on('message', (d) => {
     )
   } else if (d.type === 1) {
     addFunction(d.name, d.path)
-    console.error('incoming create obs', d)
     createObs(d.name, d.id, d.path, d.payload)
   } else if (d.type === 2) {
     closeObs(d.id)

@@ -14,6 +14,7 @@ import type {
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
 import { BasedErrorCode } from './error'
+import { wait } from '@saulx/utils'
 
 // extend emitter
 export class BasedServer {
@@ -108,12 +109,13 @@ export class BasedServer {
     }
   }
 
-  start(port?: number, sharedSocket?: boolean): Promise<BasedServer> {
+  async start(port?: number, sharedSocket?: boolean): Promise<BasedServer> {
     if (!port) {
       port = this.port
     } else {
       this.port = port
     }
+    await wait(10)
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {
         if (listenSocket) {

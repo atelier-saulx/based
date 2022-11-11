@@ -57,7 +57,7 @@ export const observe = (
       let observers: ActiveNestedObservers = activeObservables.get(id)
 
       if (!ok) {
-        console.error('no auth for you!', name)
+        console.error('OBS - need to error! no auth for you!', name)
         // TODO: send up
         return
       }
@@ -85,7 +85,7 @@ export const observe = (
         return
       }
       // TODO: send up
-      console.error('wrong authorize!', name, err)
+      console.error('Wrong auth obs - send up - authorize!', name, err)
     })
 
   return () => {
@@ -138,7 +138,6 @@ export const incomingObserve = (
   isDeflate?: boolean
 ) => {
   const obs = activeObservables.get(id)
-  console.error('HELLO', id, obs, activeObservables.keys())
 
   if (obs) {
     obs.forEach(({ onData, onError }) => {

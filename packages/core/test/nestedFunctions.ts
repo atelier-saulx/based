@@ -42,7 +42,7 @@ test.serial('nested functions', async (t) => {
     port: 9910,
     functions: {
       importWrapperPath: join(__dirname, './functions/importWrapper.js'),
-      maxWorkers: 16,
+      maxWorkers: 3,
       memCacheTimeout: 3e3,
       idleTimeout: 500,
       route: ({ name }) => {

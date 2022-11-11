@@ -76,6 +76,10 @@ export class BasedAuth {
         })
       }
 
+      console.error('install auth..', this.server.functions.workers.length)
+
+      // need to check all workers ready or something
+
       for (const worker of this.server.functions.workers) {
         worker.worker.postMessage({
           type: 5,

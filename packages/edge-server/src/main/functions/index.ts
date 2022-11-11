@@ -17,7 +17,7 @@ import { BasedErrorCode, BasedError } from '../error'
 
 export { isObservableFunctionSpec }
 
-const WORKER_PATH = join(__dirname, '../worker')
+const WORKER_PATH = join(__dirname, '../../worker')
 
 export class BasedFunctions {
   server: BasedServer

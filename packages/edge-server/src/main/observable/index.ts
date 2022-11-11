@@ -121,7 +121,6 @@ export const subscribeWorker = (
     obs.beingDestroyed = null
   }
   obs.workers.add(client.worker)
-  console.info('HELLO SUBRSIBE WORKER', id, 'to', obs.name)
   if (obs.cache && obs.checksum !== checksum) {
     client.worker.worker.postMessage({
       type: 8,

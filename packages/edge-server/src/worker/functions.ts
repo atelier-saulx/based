@@ -87,7 +87,6 @@ const installFunction = (
       }
       listeners.push((err) => {
         if (err) {
-          console.error('Error', err)
           reject(err)
         } else {
           const fn = getFunctionByName(name, type)
