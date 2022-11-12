@@ -19,6 +19,58 @@ import zlib from 'node:zlib'
 import { parseQuery } from '@saulx/utils'
 import { BasedErrorCode, sendError } from '../../error'
 import genObservableId from '../../../genObservableId'
+import { promisify } from 'node:util'
+
+const inflate = promisify(zlib.inflate)
+
+const sendCacheSwapEncoding = async (
+  server: BasedServer,
+  route: BasedFunctionRoute,
+  client: HttpClient,
+  buffer: Uint8Array,
+  checksum: number
+) => {
+  try {
+    const inflated = await inflate(buffer.slice(4 + 8 + 8))
+    const { payload, encoding } = await compress(client, inflated)
+    if (!client.res) {
+      return
+    }
+    client.res.cork(() => {
+      client.res.writeStatus('200 OK')
+      if (encoding) {
+        client.res.writeHeader('Content-Encoding', encoding)
+      }
+      client.res.writeHeader('ETag', String(checksum))
+      end(client, payload)
+    })
+  } catch (err) {
+    sendError(server, client, BasedErrorCode.UnsupportedContentEncoding, route)
+  }
+}
+
+const sendCache = (
+  client: HttpClient,
+  buffer: Uint8Array,
+  checksum: number,
+  isDeflate: boolean
+) => {
+  client.res.cork(() => {
+    client.res.writeStatus('200 OK')
+    client.res.writeHeader('ETag', String(checksum))
+    if (isDeflate) {
+      client.res.writeHeader('Content-Encoding', 'deflate')
+    }
+    end(client, buffer.slice(4 + 8 + 8))
+  })
+}
+
+const sendNotModified = (client: HttpClient) => {
+  client.res.cork(() => {
+    client.res.writeStatus('304 Not Modified')
+    end(client)
+  })
+}
 
 const sendGetResponse = (
   route: BasedFunctionRoute,
@@ -34,57 +86,23 @@ const sendGetResponse = (
 
   const encoding = client.context.headers.encoding
 
-  try {
-    if (checksum === 0 || checksum !== obs.checksum) {
-      if (!obs.cache) {
-        sendError(server, client, BasedErrorCode.NoOservableCacheAvailable, {
-          observableId: id,
-          route: { name: obs.name },
-        })
-      } else if (obs.isDeflate) {
-        if (typeof encoding === 'string' && encoding.includes('deflate')) {
-          client.res.cork(() => {
-            client.res.writeStatus('200 OK')
-            client.res.writeHeader('ETag', String(obs.checksum))
-            client.res.writeHeader('Content-Encoding', 'deflate')
-            end(client, obs.cache.slice(4 + 8 + 8))
-          })
-        } else {
-          compress(
-            client,
-            zlib.inflateRawSync(obs.cache.slice(4 + 8 + 8))
-          ).then(({ payload, encoding }) => {
-            client.res.cork(() => {
-              client.res.writeStatus('200 OK')
-              if (encoding) {
-                client.res.writeHeader('Content-Encoding', encoding)
-              }
-              client.res.writeHeader('ETag', String(obs.checksum))
-              end(client, payload)
-            })
-          })
-        }
+  if (checksum === 0 || checksum !== obs.checksum) {
+    if (!obs.cache) {
+      sendError(server, client, BasedErrorCode.NoOservableCacheAvailable, {
+        observableId: id,
+        route: { name: obs.name },
+      })
+    } else if (obs.isDeflate) {
+      if (typeof encoding === 'string' && encoding.includes('deflate')) {
+        sendCache(client, obs.cache, obs.checksum, true)
       } else {
-        client.res.cork(() => {
-          client.res.writeStatus('200 OK')
-          client.res.writeHeader('ETag', String(obs.checksum))
-          end(client, obs.cache.slice(4 + 8 + 8))
-        })
+        sendCacheSwapEncoding(server, route, client, obs.cache, obs.checksum)
       }
     } else {
-      client.res.cork(() => {
-        client.res.writeStatus('304 Not Modified')
-        end(client)
-      })
+      sendCache(client, obs.cache, obs.checksum, false)
     }
-  } catch (err) {
-    // TODO: OTHER ERROR again UNEXPECTED
-    console.error('Internal: Unxpected error in sendGetResponse', err)
-    sendError(server, client, BasedErrorCode.ObservableFunctionError, {
-      err,
-      observableId: id,
-      route,
-    })
+  } else {
+    sendNotModified(client)
   }
 
   destroyObs(server, id)
@@ -153,12 +171,8 @@ export const httpGet = (
         if (server.activeObservablesById.has(id)) {
           getFromExisting(server, id, client, route, checksum)
         } else {
-          console.error('GET: NO OBS LETS WAIT', name)
           const obs = createObs(server, name, id, payload)
-          if (!obs.onNextData) {
-            obs.onNextData = new Set()
-          }
-          obs.onNextData.add((err) => {
+          subscribeNext(obs, (err) => {
             if (err) {
               sendObsGetError(server, client, obs.id, obs.name, err)
             } else {
