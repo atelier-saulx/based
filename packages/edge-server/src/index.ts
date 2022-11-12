@@ -16,7 +16,7 @@ export default createServer
 export * from './types'
 
 // maybe send responsed
-export { compress } from './main/incoming/http/compress'
+export { compress } from './main/compress'
 export { sendHttpResponse, sendHttpError } from './main/incoming/http/send'
 
 export * from './main/error'

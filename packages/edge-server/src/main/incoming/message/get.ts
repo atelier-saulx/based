@@ -1,33 +1,26 @@
-import { isObservableFunctionSpec } from '../../functions'
 import {
   decodePayload,
   decodeName,
   readUint8,
   encodeGetResponse,
-  updateId,
 } from '../../../protocol'
 import { BasedServer } from '../../server'
-import { create, destroy } from '../../observable'
-import { ActiveObservable, WebsocketClient } from '../../../types'
-import { sendError } from './send'
-import { BasedErrorCode, BasedError } from '../../error'
-
-const obsFnError = (
-  server: BasedServer,
-  client: WebsocketClient,
-  id: number,
-  name: string,
-  err: BasedError<BasedErrorCode.ObservableFunctionError>
-) => {
-  sendError(server, client, err.code, {
-    observableId: id,
-    route: {
-      name,
-    },
-    err: err,
-  })
-  destroy(server, id)
-}
+import {
+  createObs,
+  destroyObs,
+  subscribeNext,
+  verifyRoute,
+  getObs,
+  hasObs,
+  sendObsWs,
+  sendObsGetError,
+} from '../../observable'
+import {
+  ActiveObservable,
+  BasedFunctionRoute,
+  WebsocketClient,
+} from '../../../types'
+import { BasedErrorCode, sendError } from '../../error'
 
 const sendGetData = (
   server: BasedServer,
@@ -40,33 +33,15 @@ const sendGetData = (
     return
   }
   if (checksum === 0) {
-    if (obs.reusedCache) {
-      const prevId = updateId(obs.cache, id)
-      client.ws.send(obs.cache, true, false)
-      obs.cache.set(prevId, 4)
-    } else {
-      client.ws.send(obs.cache, true, false)
-    }
+    sendObsWs(client, obs.cache, obs)
   } else if (checksum === obs.checksum) {
     client.ws.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
-    if (obs.reusedCache) {
-      const prevId = updateId(obs.diffCache, id)
-      client.ws.send(obs.diffCache, true, false)
-      obs.diffCache.set(prevId, 4)
-    } else {
-      client.ws.send(obs.diffCache, true, false)
-    }
+    sendObsWs(client, obs.diffCache, obs)
   } else {
-    if (obs.reusedCache) {
-      const prevId = updateId(obs.cache, id)
-      client.ws.send(obs.cache, true, false)
-      obs.cache.set(prevId, 4)
-    } else {
-      client.ws.send(obs.cache, true, false)
-    }
+    sendObsWs(client, obs.cache, obs)
   }
-  destroy(server, id)
+  destroyObs(server, id)
 }
 
 const getFromExisting = (
@@ -76,27 +51,57 @@ const getFromExisting = (
   checksum: number,
   name: string
 ) => {
-  const obs = server.activeObservablesById.get(id)
-  if (obs.beingDestroyed) {
-    clearTimeout(obs.beingDestroyed)
-    obs.beingDestroyed = null
-  }
+  const obs = getObs(server, id)
   if (obs.error) {
-    obsFnError(server, client, id, name, obs.error)
-  } else if (obs.cache) {
+    sendObsGetError(server, client, id, name, obs.error)
+    return
+  }
+  if (obs.cache) {
     sendGetData(server, id, obs, checksum, client)
-  } else {
-    if (!obs.onNextData) {
-      obs.onNextData = new Set()
+    return
+  }
+  subscribeNext(obs, (err) => {
+    if (err) {
+      sendObsGetError(server, client, id, name, err)
+    } else {
+      sendGetData(server, id, obs, checksum, client)
     }
-    obs.onNextData.add((err) => {
-      if (err) {
-        obsFnError(server, client, id, name, err)
-      } else {
-        sendGetData(server, id, obs, checksum, client)
+  })
+}
+
+const install = (
+  server: BasedServer,
+  name: string,
+  client: WebsocketClient,
+  route: BasedFunctionRoute,
+  id: number,
+  checksum: number,
+  payload: any
+) => {
+  server.functions
+    .install(name)
+    .then((spec) => {
+      if (!verifyRoute(server, name, spec, client)) {
+        return
+      }
+      if (server.activeObservablesById.has(id)) {
+        getFromExisting(server, id, client, checksum, name)
+        return
+      }
+      const obs = createObs(server, name, id, payload)
+      if (!client.ws?.obs.has(id)) {
+        subscribeNext(obs, (err) => {
+          if (err) {
+            sendObsGetError(server, client, id, name, err)
+          } else {
+            sendGetData(server, id, obs, checksum, client)
+          }
+        })
       }
     })
-  }
+    .catch(() => {
+      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+    })
 }
 
 export const getMessage = (
@@ -108,20 +113,19 @@ export const getMessage = (
   server: BasedServer
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
-
   const nameLen = arr[start + 20]
-
   const id = readUint8(arr, start + 4, 8)
   const checksum = readUint8(arr, start + 12, 8)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
   if (!name || !id) {
+    // TODO: sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
     return false
   }
 
-  const route = server.functions.route(name)
+  const route = verifyRoute(server, name, server.functions.route(name), client)
 
-  if (!route || !route.observable) {
+  if (!route) {
     return false
   }
 
@@ -147,38 +151,12 @@ export const getMessage = (
         return false
       }
 
-      if (server.activeObservablesById.has(id)) {
+      if (hasObs(server, id)) {
         getFromExisting(server, id, client, checksum, name)
-      } else {
-        server.functions
-          .install(name)
-          .then((spec) => {
-            if (spec && isObservableFunctionSpec(spec)) {
-              if (server.activeObservablesById.has(id)) {
-                getFromExisting(server, id, client, checksum, name)
-              } else {
-                const obs = create(server, name, id, payload)
-                if (!client.ws?.obs.has(id)) {
-                  if (!obs.onNextData) {
-                    obs.onNextData = new Set()
-                  }
-                  obs.onNextData.add((err) => {
-                    if (err) {
-                      obsFnError(server, client, id, name, err)
-                    } else {
-                      sendGetData(server, id, obs, checksum, client)
-                    }
-                  })
-                }
-              }
-            } else {
-              sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-            }
-          })
-          .catch(() => {
-            sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-          })
+        return
       }
+
+      install(server, name, client, route, id, checksum, payload)
     })
     .catch((err) => {
       sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {

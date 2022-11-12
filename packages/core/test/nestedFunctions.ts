@@ -36,6 +36,12 @@ test.serial('nested functions', async (t) => {
       checksum: 1,
       functionPath: join(__dirname, './functions/obsWithNested.js'),
     },
+    obsWithNestedLvl2: {
+      observable: true,
+      name: 'obsWithNested',
+      checksum: 1,
+      functionPath: join(__dirname, './functions/obsWithNestedLvl2.js'),
+    },
   }
 
   const server = await createServer({
@@ -94,20 +100,41 @@ test.serial('nested functions', async (t) => {
     'json'
   )
 
-  await wait(2e3)
+  await wait(1e3)
 
   const bla = await coreClient.get('obsWithNested', 'json')
 
   t.is(bla.bla.length, 1e4)
 
-  await wait(5e3)
+  await wait(1e3)
 
+  let incomingCnt2 = 0
   close()
-
   close2()
 
-  t.true(incomingCnt > 50)
+  console.info('---->FLAP FLAP')
+
+  const close3 = coreClient.observe(
+    'obsWithNestedLvl2',
+    () => {
+      incomingCnt2++
+    },
+    'glurk'
+  )
+
+  const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
+
+  console.info('GET BLA2', bla2)
+
+  t.is(bla2.bla.length, 1e4)
+
+  await wait(1e3)
+
+  close3()
+
+  t.true(incomingCnt > 10)
   t.true(incomingCntNoJson > 0)
+  t.true(incomingCnt2 > 10)
 
   await wait(15e3)
 

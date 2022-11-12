@@ -6,9 +6,8 @@ import { httpStreamFunction } from './streamFunction'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
-import { sendHttpError } from './send'
 import { authorizeRequest } from './authorize'
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode, sendError } from '../../error'
 import { incomingCounter } from '../../security'
 
 let clientId = 0
@@ -55,7 +54,7 @@ export const httpHandler = (
   const route = server.functions.route(path[1], url)
 
   if (route === false) {
-    sendHttpError(
+    sendError(
       server,
       {
         res,
@@ -103,7 +102,7 @@ export const httpHandler = (
     client.context.headers['content-length'] === undefined
   ) {
     // zero allowed, but not for streams
-    sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
+    sendError(server, client, BasedErrorCode.LengthRequired, route)
     return
   }
 
@@ -118,7 +117,7 @@ export const httpHandler = (
 
   if (route.observable === true) {
     if (route.stream) {
-      sendHttpError(
+      sendError(
         server,
         client,
         BasedErrorCode.CannotStreamToObservableFunction,
@@ -137,12 +136,12 @@ export const httpHandler = (
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendHttpError(server, client, BasedErrorCode.MethodNotAllowed, route)
+        sendError(server, client, BasedErrorCode.MethodNotAllowed, route)
         return
       }
       if (client.context.headers['content-length'] === 0) {
         // zero is also not allowed for streams
-        sendHttpError(server, client, BasedErrorCode.LengthRequired, route)
+        sendError(server, client, BasedErrorCode.LengthRequired, route)
         return
       }
       let p

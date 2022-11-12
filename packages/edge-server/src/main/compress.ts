@@ -1,7 +1,7 @@
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import { HttpClient } from '../../../types'
-import { COMPRESS_FROM_BYTES } from '../../../protocol'
+import { HttpClient } from '../types'
+import { COMPRESS_FROM_BYTES } from '../protocol'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)

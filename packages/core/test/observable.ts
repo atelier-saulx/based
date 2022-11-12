@@ -44,9 +44,6 @@ test.serial('observables', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 

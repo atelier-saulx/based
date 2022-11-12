@@ -1,9 +1,9 @@
 import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import {
-  create,
+  createObs,
   unsubscribeWorker,
-  destroy,
+  destroyObs,
   subscribeWorker,
 } from '../../observable'
 import { BasedErrorCode } from '../../error'
@@ -18,24 +18,22 @@ const enableSubscribe = (
   payload: any,
   route: BasedFunctionRoute
 ) => {
-  console.info('GO SUB FROM WORKER', name)
   if (server.activeObservablesById.has(id)) {
-    subscribeWorker(server, id, 0, client)
+    subscribeWorker(server, id, client)
   } else {
     server.functions
       .install(name)
       .then((spec) => {
         if (spec && isObservableFunctionSpec(spec)) {
           if (!client.worker.nestedObservers.has(id)) {
-            destroy(server, id)
+            destroyObs(server, id)
             return
           }
-
           if (server.activeObservablesById.has(id)) {
-            subscribeWorker(server, id, 0, client)
+            subscribeWorker(server, id, client)
           } else {
-            create(server, name, id, payload)
-            subscribeWorker(server, id, 0, client)
+            createObs(server, name, id, payload)
+            subscribeWorker(server, id, client)
           }
         } else {
           sendError(server, client, BasedErrorCode.FunctionNotFound, route)

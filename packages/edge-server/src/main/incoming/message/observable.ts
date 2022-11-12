@@ -1,9 +1,14 @@
-import { isObservableFunctionSpec } from '../../functions'
 import { decodePayload, decodeName, readUint8 } from '../../../protocol'
 import { BasedServer } from '../../server'
-import { create, unsubscribe, destroy, subscribe } from '../../observable'
-import { BasedErrorCode } from '../../error'
-import { sendError } from './send'
+import {
+  createObs,
+  unsubscribeWs,
+  destroyObs,
+  subscribeWs,
+  verifyRoute,
+  hasObs,
+} from '../../observable'
+import { BasedErrorCode, sendError } from '../../error'
 import { WebsocketClient, BasedFunctionRoute } from '../../../types'
 
 export const enableSubscribe = (
@@ -15,33 +20,32 @@ export const enableSubscribe = (
   payload: any,
   route: BasedFunctionRoute
 ) => {
-  client.ws.subscribe(String(id))
-
-  if (server.activeObservablesById.has(id)) {
-    subscribe(server, id, checksum, client)
-  } else {
-    server.functions
-      .install(name)
-      .then((spec) => {
-        if (spec && isObservableFunctionSpec(spec)) {
-          if (server.activeObservablesById.has(id)) {
-            subscribe(server, id, checksum, client)
-          } else {
-            create(server, name, id, payload)
-            if (!client.ws?.obs.has(id)) {
-              destroy(server, id)
-            } else {
-              subscribe(server, id, checksum, client)
-            }
-          }
-        } else {
-          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-        }
-      })
-      .catch(() => {
-        sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-      })
+  if (hasObs(server, id)) {
+    subscribeWs(server, id, checksum, client)
+    return
   }
+
+  server.functions
+    .install(name)
+    .then((spec) => {
+      if (!verifyRoute(server, name, spec, client)) {
+        return
+      }
+
+      if (!client.ws?.obs.has(id)) {
+        return
+      }
+
+      if (!hasObs(server, id)) {
+        createObs(server, name, id, payload)
+      }
+
+      client.ws.subscribe(String(id))
+      subscribeWs(server, id, checksum, client)
+    })
+    .catch(() => {
+      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+    })
 }
 
 export const subscribeMessage = (
@@ -64,9 +68,9 @@ export const subscribeMessage = (
     return false
   }
 
-  const route = server.functions.route(name)
+  const route = verifyRoute(server, name, server.functions.route(name), client)
 
-  if (!route || !route.observable) {
+  if (!route) {
     return false
   }
 
@@ -109,7 +113,7 @@ export const subscribeMessage = (
         observableId: id,
         err,
       })
-      destroy(server, id)
+      destroyObs(server, id)
     })
 
   return true
@@ -132,7 +136,7 @@ export const unsubscribeMessage = (
     return false
   }
 
-  if (unsubscribe(server, id, client)) {
+  if (unsubscribeWs(server, id, client)) {
     client.ws.unsubscribe(String(id))
   }
 

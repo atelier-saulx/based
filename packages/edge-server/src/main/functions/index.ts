@@ -14,6 +14,7 @@ import { Worker, SHARE_ENV } from 'node:worker_threads'
 import { join } from 'path'
 import { workerMessage } from '../incoming/worker'
 import { BasedErrorCode, BasedError } from '../error'
+import chalk from 'chalk'
 
 export { isObservableFunctionSpec }
 
@@ -127,7 +128,9 @@ export class BasedFunctions {
           })
 
           worker.stdout.on('data', (d) => {
-            process.stdout.write(` [worker ${worker.threadId}] ${d.toString()}`)
+            process.stdout.write(
+              chalk.grey(` [worker ${worker.threadId}] ${d.toString()}`)
+            )
           })
 
           worker.stderr.on('data', (d) => {
