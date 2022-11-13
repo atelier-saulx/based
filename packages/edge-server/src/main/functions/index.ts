@@ -9,7 +9,7 @@ import {
 } from '../../types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
-import { destroy, initFunction } from '../observable'
+import { destroyObs, initFunction } from '../observable'
 import { Worker, SHARE_ENV } from 'node:worker_threads'
 import { join } from 'path'
 import { workerMessage } from '../incoming/worker'
@@ -325,7 +325,7 @@ export class BasedFunctions {
       const activeObs = this.server.activeObservables[name]
       if (activeObs) {
         for (const [id] of activeObs) {
-          destroy(this.server, id)
+          destroyObs(this.server, id)
         }
         delete this.server.activeObservables[name]
       }

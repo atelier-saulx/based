@@ -8,7 +8,9 @@ import { incomingObserve } from './api'
 
 export * from './api'
 
+// make incoming types
 parentPort.on('message', (d) => {
+  // 0 FN
   // 1 CREATE OBS
   // 2 CLOSE OBS
   // 3 HTTP POST FN
