@@ -5,6 +5,8 @@ import { BasedError, BasedErrorCode } from '../../error'
 import { sendObsWs } from './send'
 import { getObs } from './get'
 import { sendError } from '../sendError'
+import { sendToWorker } from '../worker'
+import { IncomingType } from '../../worker/types'
 
 export const subscribeWs = (
   server: BasedServer,
@@ -49,17 +51,15 @@ export const subscribeWorker = (
 ) => {
   const obs = getObs(server, id)
   obs.workers.add(client.worker)
-
   if (obs.cache) {
-    client.worker.worker.postMessage({
-      type: 8,
+    sendToWorker(client.worker, {
+      type: IncomingType.UpdateObservable,
       id,
       checksum: obs.checksum,
       data: obs.cache,
       isDeflate: obs.isDeflate,
       diff: obs.diffCache,
       previousChecksum: obs.previousChecksum,
-      reusedCache: obs.reusedCache,
     })
   }
 }

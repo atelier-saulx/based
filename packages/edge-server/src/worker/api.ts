@@ -9,7 +9,7 @@ import { authorize } from './authorize'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
 import { BasedErrorCode, ErrorPayload } from '../error'
 import genObservableId from '../genObservableId'
-import { Incoming, IncomingType } from './types'
+import { Incoming, IncomingType, OutgoingType } from './types'
 import send from './send'
 
 export const runFunction = async (
@@ -46,10 +46,9 @@ export const observe = (
   onError?: ObserveErrorListener
 ): (() => void) => {
   const id = genObservableId(name, payload)
-
   const observerId = ++obsIds
-
   let isRemoved = false
+
   authorize(context, name, payload)
     .then((ok) => {
       if (isRemoved) {
@@ -74,7 +73,7 @@ export const observe = (
       })
 
       send({
-        type: 1,
+        type: OutgoingType.Subscribe,
         name,
         id,
         payload,
@@ -98,7 +97,7 @@ export const observe = (
     observers.delete(observerId)
     if (observers.size === 0) {
       send({
-        type: 2,
+        type: OutgoingType.Unsubscribe,
         id,
         context: { headers: {} },
       })
@@ -139,6 +138,8 @@ export const incomingObserve = ({
   isDeflate,
 }: Incoming[IncomingType.UpdateObservable]) => {
   const obs = activeObservables.get(id)
+
+  console.log('go go go')
 
   if (obs) {
     obs.forEach(({ onData, onError }) => {

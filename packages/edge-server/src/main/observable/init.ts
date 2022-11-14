@@ -2,7 +2,8 @@ import { BasedServer } from '../server'
 import { encodeErrorResponse, updateId, valueToBuffer } from '../../protocol'
 import { createError } from '../../error'
 import { ObservableDummyClient } from '../../types'
-import { startObs } from '../worker'
+import { startObs, sendToWorker } from '../worker'
+import { IncomingType } from '../../worker/types'
 
 const dummyClient: ObservableDummyClient = {
   isDummy: true,
@@ -66,8 +67,8 @@ export const initFunction = (server: BasedServer, id: number) => {
 
       if (obs.workers.size) {
         obs.workers.forEach((w) => {
-          w.worker.postMessage({
-            type: 8,
+          sendToWorker(w, {
+            type: IncomingType.UpdateObservable,
             id,
             err,
           })
@@ -111,15 +112,14 @@ export const initFunction = (server: BasedServer, id: number) => {
 
       if (obs.workers.size) {
         obs.workers.forEach((w) => {
-          w.worker.postMessage({
-            type: 8,
+          sendToWorker(w, {
+            type: IncomingType.UpdateObservable,
             id,
-            checksum,
-            diff: encodedDiffData,
-            previousChecksum: obs.previousChecksum,
+            checksum: obs.checksum,
             data: obs.cache,
             isDeflate: obs.isDeflate,
-            reusedCache: obs.reusedCache,
+            diff: obs.diffCache,
+            previousChecksum: obs.previousChecksum,
           })
         })
       }

@@ -4,6 +4,8 @@ import chalk from 'chalk'
 import { join } from 'path'
 import { BasedWorker } from '../../types'
 import { BasedFunctions } from '../functions'
+import { sendToWorker } from './send'
+import { IncomingType } from '../../worker/types'
 
 const WORKER_PATH = join(__dirname, '../../worker')
 
@@ -59,8 +61,8 @@ export const updateWorkers = (functions: BasedFunctions) => {
 
         if (functions.server.auth) {
           // allways install authorize
-          worker.postMessage({
-            type: 5,
+          sendToWorker(basedWorker, {
+            type: IncomingType.AddFunction,
             name: 'authorize', // default name for this...
             path: functions.server.auth.config.authorizePath,
           })

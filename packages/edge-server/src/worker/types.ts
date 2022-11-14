@@ -66,7 +66,6 @@ export type Incoming = {
 
   [IncomingType.UpdateObservable]: {
     type: IncomingType.UpdateObservable
-    name: string
     id: number
     checksum?: number
     data?: Uint8Array
