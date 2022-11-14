@@ -63,7 +63,7 @@ $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
 linked-example:
-	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -L./$(DISTDIR) -lbased
+	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -Isrc -L./$(DISTDIR) -lbased
 
 clean:
 	rm -rf $(ODIR)

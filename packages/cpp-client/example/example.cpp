@@ -39,8 +39,8 @@ int main(int argc, char** argv) {
     // char* address = (char*)"wss://localhost:9910";
 
     // Based__connect_to_url(client1, address);
-    Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net", "saulx", "development",
-                   "production", "@based/edge", "", false);
+    Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net", "saulx", "demo", "production",
+                   "@based/edge", "", false);
     bool done = false;
     // int i = 0;
     std::string cmd;
@@ -76,14 +76,6 @@ int main(int argc, char** argv) {
         if (cmd.substr(0, 1) == "o") {
             int id = Based__observe(client1, (char*)"counter", (char*)"", &based_observe_cb);
             obs.push_back(id);
-        }
-
-        if (cmd.substr(0, 1) == "g") {
-            Based__get(client1, (char*)"chill", (char*)"", &based_cb);
-        }
-
-        if (cmd.substr(0, 1) == "f") {
-            Based__function(client1, (char*)"chill", (char*)"", &based_cb);
         }
 
         std::cout << "obs = ";
