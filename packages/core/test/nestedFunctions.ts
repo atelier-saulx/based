@@ -38,7 +38,7 @@ test.serial('nested functions', async (t) => {
     },
     obsWithNestedLvl2: {
       observable: true,
-      name: 'obsWithNested',
+      name: 'obsWithNestedLvl2',
       checksum: 1,
       functionPath: join(__dirname, './functions/obsWithNestedLvl2.js'),
     },
@@ -67,7 +67,7 @@ test.serial('nested functions', async (t) => {
       },
       install: async ({ name }) => {
         if (store[name]) {
-          return store[name]
+          return { ...store[name] }
         } else {
           return false
         }
@@ -93,9 +93,9 @@ test.serial('nested functions', async (t) => {
     cnt++
   })
 
-  await wait(2100)
+  await wait(500)
 
-  t.true(cnt > 1)
+  t.true(cnt > 0)
 
   closeX()
 

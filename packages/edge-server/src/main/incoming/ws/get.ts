@@ -85,11 +85,13 @@ const install = (
       if (!verifyRoute(server, name, spec, client)) {
         return
       }
+
       if (hasObs(server, id)) {
         getFromExisting(server, id, client, checksum, name)
         return
       }
       const obs = createObs(server, name, id, payload)
+
       if (!client.ws?.obs.has(id)) {
         subscribeNext(obs, (err) => {
           if (err) {
@@ -153,7 +155,6 @@ export const getMessage = (
       }
 
       if (hasObs(server, id)) {
-        console.info('GET from existing', name, id, payload)
         getFromExisting(server, id, client, checksum, name)
         return
       }

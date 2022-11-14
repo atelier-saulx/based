@@ -151,6 +151,7 @@ export class BasedFunctions {
       server: this.server,
       name,
     })
+
     if (spec) {
       this.update(spec)
       return this.getFromStore(name)
