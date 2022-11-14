@@ -60,10 +60,9 @@ export const updateWorkers = (functions: BasedFunctions) => {
         functions.workers.push(basedWorker)
 
         if (functions.server.auth) {
-          // allways install authorize
           sendToWorker(basedWorker, {
             type: IncomingType.AddFunction,
-            name: 'authorize', // default name for this...
+            name: 'authorize',
             path: functions.server.auth.config.authorizePath,
           })
         }
