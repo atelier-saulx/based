@@ -10,5 +10,9 @@ const { observe } = require('@based/edge-server/worker')
 
 // async and non async support
 module.exports = (payload, update) => {
-  return observe('obsWithNested', 'json', {}, update)
+  console.info('startlvl2')
+  return observe('obsWithNested', 'json', {}, (d, c) => {
+    console.info('inc')
+    update(d, c)
+  })
 }

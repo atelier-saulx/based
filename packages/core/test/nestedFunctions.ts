@@ -50,7 +50,7 @@ test.serial('nested functions', async (t) => {
       importWrapperPath: join(__dirname, './functions/importWrapper.js'),
       maxWorkers: 3,
       memCacheTimeout: 3e3,
-      idleTimeout: 500,
+      idleTimeout: 3e3,
       route: ({ name }) => {
         if (name && store[name]) {
           return {
@@ -89,60 +89,65 @@ test.serial('nested functions', async (t) => {
 
   let cnt = 0
 
-  const close = coreClient.observe('counter', () => {
+  const closeX = coreClient.observe('counter', () => {
     cnt++
   })
 
-  console.log(cnt)
+  await wait(2100)
 
-  await wait(2e3)
+  t.true(cnt > 1)
 
+  closeX()
+
+  let incomingCntNoJson = 0
+
+  const close = coreClient.observe('obsWithNested', () => {
+    incomingCntNoJson++
+  })
+
+  let incomingCnt = 0
+  const close2 = coreClient.observe(
+    'obsWithNested',
+    () => {
+      incomingCnt++
+    },
+    'json'
+  )
+
+  await wait(1e3)
+
+  const bla = await coreClient.get('obsWithNested', 'json')
+
+  t.is(bla.bla.length, 1e4)
+
+  await wait(1e3)
+
+  let incomingCnt2 = 0
   close()
+  close2()
 
-  // const close = coreClient.observe('obsWithNested', () => {
-  //   incomingCntNoJson++
-  // })
+  console.info('CLOSED 1, 2, NOW LVL2')
 
-  // let incomingCnt = 0
-  // const close2 = coreClient.observe(
-  //   'obsWithNested',
-  //   () => {
-  //     incomingCnt++
-  //   },
-  //   'json'
-  // )
+  const close3 = coreClient.observe(
+    'obsWithNestedLvl2',
+    () => {
+      incomingCnt2++
+    },
+    'glurk'
+  )
 
-  // await wait(1e3)
+  console.info('GET FROM LVL2')
+  const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
 
-  // const bla = await coreClient.get('obsWithNested', 'json')
+  t.is(bla2.bla.length, 1e4)
 
-  // t.is(bla.bla.length, 1e4)
+  await wait(1e3)
 
-  // await wait(1e3)
+  close3()
 
-  // let incomingCnt2 = 0
-  // close()
-  // close2()
-
-  // const close3 = coreClient.observe(
-  //   'obsWithNestedLvl2',
-  //   () => {
-  //     incomingCnt2++
-  //   },
-  //   'glurk'
-  // )
-
-  // const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
-
-  // t.is(bla2.bla.length, 1e4)
-
-  // await wait(1e3)
-
-  // close3()
-
-  // t.true(incomingCnt > 10)
-  // t.true(incomingCntNoJson > 0)
-  // t.true(incomingCnt2 > 10)
+  t.true(incomingCnt > 10)
+  t.true(incomingCntNoJson > 0)
+  t.true(incomingCnt2 > 10)
 
   await wait(15e3)
 

@@ -168,24 +168,29 @@ export const httpGet = (
       if (!client.res) {
         return
       }
-      if (spec && isObservableFunctionSpec(spec)) {
-        if (server.activeObservablesById.has(id)) {
-          getFromExisting(server, id, client, route, checksum)
-        } else {
-          const obs = createObs(server, name, id, payload)
-          subscribeNext(obs, (err) => {
-            if (err) {
-              sendObsGetError(server, client, obs.id, obs.name, err)
-            } else {
-              sendGetResponse(route, server, id, obs, checksum, client)
-            }
-          })
-        }
-      } else if (spec && !isObservableFunctionSpec(spec)) {
-        sendError(server, client, BasedErrorCode.FunctionIsNotObservable, route)
-      } else if (!spec) {
+      if (!spec) {
         sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+        return
       }
+
+      if (!isObservableFunctionSpec(spec)) {
+        sendError(server, client, BasedErrorCode.FunctionIsNotObservable, route)
+        return
+      }
+
+      if (hasObs(server, id)) {
+        getFromExisting(server, id, client, route, checksum)
+        return
+      }
+
+      const obs = createObs(server, name, id, payload)
+      subscribeNext(obs, (err) => {
+        if (err) {
+          sendObsGetError(server, client, obs.id, obs.name, err)
+        } else {
+          sendGetResponse(route, server, id, obs, checksum, client)
+        }
+      })
     })
     .catch((err) => {
       // TODO: error type

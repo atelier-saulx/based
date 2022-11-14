@@ -139,8 +139,6 @@ export const incomingObserve = ({
 }: Incoming[IncomingType.UpdateObservable]) => {
   const obs = activeObservables.get(id)
 
-  console.log('go go go')
-
   if (obs) {
     obs.forEach(({ onData, onError }) => {
       if (err) {

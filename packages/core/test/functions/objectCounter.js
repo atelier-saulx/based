@@ -14,7 +14,7 @@ module.exports = async (payload, update) => {
     )
     // diff is made on an extra cache layer
     update(largeThing)
-  }, 1e3)
+  }, 1)
   return () => {
     clearInterval(counter)
   }
