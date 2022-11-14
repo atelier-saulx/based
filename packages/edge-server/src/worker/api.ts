@@ -4,16 +4,13 @@ import {
   ObservableUpdateFunction, // and listener bit confuse...
   ObserveErrorListener,
 } from '../types'
-import { parentPort } from 'worker_threads'
 import { installFunction } from './functions'
 import { authorize } from './authorize'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-import { BasedError, BasedErrorCode, ErrorPayload } from '../error'
-
-export const genObserveId = (name: string, payload: any): number => {
-  return hashObjectIgnoreKeyOrder([name, payload])
-}
+import { BasedErrorCode, ErrorPayload } from '../error'
+import genObservableId from '../genObservableId'
+import { Incoming, IncomingType, OutgoingType } from './types'
+import send from './send'
 
 export const runFunction = async (
   name: string,
@@ -48,15 +45,19 @@ export const observe = (
   onData: ObservableUpdateFunction,
   onError?: ObserveErrorListener
 ): (() => void) => {
-  const id = genObserveId(name, payload)
+  const id = genObservableId(name, payload)
   const observerId = ++obsIds
+  let isRemoved = false
 
   authorize(context, name, payload)
     .then((ok) => {
+      if (isRemoved) {
+        return
+      }
       let observers: ActiveNestedObservers = activeObservables.get(id)
 
       if (!ok) {
-        console.error('no auth for you!', name)
+        console.error('OBS - need to error! no auth for you!', name)
         // TODO: send up
         return
       }
@@ -64,34 +65,41 @@ export const observe = (
       if (!observers) {
         observers = new Map()
         activeObservables.set(id, observers)
-        parentPort.postMessage({
-          type: 1,
-          payload,
-          name,
-          context: {},
-          id,
-        })
       }
 
       observers.set(observerId, {
         onData,
         onError: onError || (() => {}),
       })
+
+      send({
+        type: OutgoingType.Subscribe,
+        name,
+        id,
+        payload,
+        context: { headers: {} },
+      })
     })
     .catch((err) => {
+      if (isRemoved) {
+        return
+      }
       // TODO: send up
-      console.error('wrong authorize!', name, err)
+      console.error('Wrong auth obs - send up - authorize!', name, err)
     })
 
   return () => {
+    if (isRemoved) {
+      return
+    }
     const observers: ActiveNestedObservers = activeObservables.get(id)
-
+    isRemoved = true
     observers.delete(observerId)
     if (observers.size === 0) {
-      parentPort.postMessage({
-        type: 2,
-        context: {},
+      send({
+        type: OutgoingType.Unsubscribe,
         id,
+        context: { headers: {} },
       })
       activeObservables.delete(id)
     }
@@ -120,15 +128,17 @@ export const get = (
   })
 }
 
-export const incomingObserve = (
-  id: number,
-  checksum?: number,
-  data?: Uint8Array,
-  err?: BasedError<BasedErrorCode.ObservableFunctionError>,
-  diff?: Uint8Array,
-  previousChecksum?: number
-) => {
+export const incomingObserve = ({
+  id,
+  err,
+  data,
+  checksum,
+  diff,
+  previousChecksum,
+  isDeflate,
+}: Incoming[IncomingType.UpdateObservable]) => {
   const obs = activeObservables.get(id)
+
   if (obs) {
     obs.forEach(({ onData, onError }) => {
       if (err) {
@@ -136,10 +146,10 @@ export const incomingObserve = (
       } else {
         // @ts-ignore
         if (onData.__isEdge__) {
-          onData(data, checksum, diff, previousChecksum)
+          onData(data, checksum, diff, previousChecksum, isDeflate)
         } else {
           try {
-            onData(data, checksum, diff, previousChecksum)
+            onData(data, checksum, diff, previousChecksum, isDeflate)
           } catch (err) {
             workerError(BasedErrorCode.ObserveCallbackError, {
               err,
@@ -168,10 +178,10 @@ export const decode = (buffer: Uint8Array): any => {
 }
 
 export const workerLog = (log: any, context?: ClientContext) => {
-  parentPort.postMessage({
-    type: 4,
-    log,
+  send({
+    type: 3,
     context,
+    log,
   })
 }
 
@@ -180,10 +190,10 @@ export function workerError<T extends BasedErrorCode>(
   payload: ErrorPayload[T],
   context?: ClientContext
 ) {
-  parentPort.postMessage({
-    type: 5,
+  send({
+    type: 4,
+    context,
     code,
     payload,
-    context,
   })
 }

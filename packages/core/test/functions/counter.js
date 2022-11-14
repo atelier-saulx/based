@@ -1,5 +1,6 @@
 module.exports = async (_payload, update) => {
   let cnt = 0
+  update(cnt)
   const counter = setInterval(() => {
     update(++cnt)
   }, 1000)

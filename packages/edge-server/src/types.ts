@@ -1,23 +1,33 @@
-import type { BasedServer } from './server'
+import type { BasedServer } from './main/server'
 import type uws from '@based/uws'
 import { BasedError, BasedErrorCode, BasedErrorData } from './error'
 import { Worker } from 'node:worker_threads'
 
-export type ClientContext = {
-  query: string
-  ua: string
-  ip: string
-  id: number
-  authState?: any
-  method: string
-  headers: {
-    'content-length'?: number
-    authorization?: string
-    'content-type'?: string
-    'content-encoding'?: string
-    encoding?: string
-  } & { [key: string]: string }
-}
+export type ClientContext =
+  | {
+      query: string
+      ua: string
+      ip: string
+      id: number
+      authState?: any
+      method: string
+      headers: {
+        'content-length'?: number
+        authorization?: string
+        'content-type'?: string
+        'content-encoding'?: string
+        encoding?: string
+      } & { [key: string]: string }
+    }
+  | {
+      headers: {
+        'content-length'?: number
+        authorization?: string
+        'content-type'?: string
+        'content-encoding'?: string
+        encoding?: string
+      }
+    }
 
 export type WebsocketClient = {
   ws:
@@ -257,3 +267,8 @@ export type Listener<T> = (
   data?: T,
   err?: Error
 ) => void
+
+export enum HttpMethod {
+  Post,
+  Get,
+}

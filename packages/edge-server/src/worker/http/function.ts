@@ -1,9 +1,11 @@
-import { ClientContext, FunctionType } from '../../types'
-import { parentPort } from 'worker_threads'
+import { ClientContext, FunctionType, HttpMethod } from '../../types'
 import { parseQuery } from '@saulx/utils'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
 import { BasedErrorCode } from '../../error'
+import { Incoming, IncomingType, OutgoingType } from '../types'
+import send from '../send'
+
 const decoder = new TextDecoder('utf-8')
 
 export const parsePayload = (
@@ -19,10 +21,11 @@ export const parsePayload = (
       parsedData = data.byteLength ? JSON.parse(str) : undefined
       return parsedData
     } catch (err) {
-      parentPort.postMessage({
+      send({
+        type: OutgoingType.Listener,
         id,
         err,
-        errCode: BasedErrorCode.InvalidPayload,
+        code: BasedErrorCode.InvalidPayload,
       })
     }
   } else if (
@@ -35,19 +38,15 @@ export const parsePayload = (
   }
 }
 
-export default (
-  name: string,
-  type: number,
-  path: string,
-  id: number,
-  context: ClientContext,
-  payload?: Uint8Array
-) => {
+export default (msg: Incoming[IncomingType.HttpFunction]) => {
+  const { name, payload, context, id, path } = msg
+
   const fn = getFunction(name, FunctionType.function, path)
   let parsedPayload: any
   if (payload) {
     parsedPayload = parsePayload(id, context, payload)
-  } else if (type === 4) {
+  } else if (msg.method === HttpMethod.Get && 'query' in context) {
+    // TODO: for these kind of parsing things much better to use simdjson and a buffer...
     try {
       parsedPayload = parseQuery(decodeURIComponent(context.query))
     } catch (err) {}
@@ -55,32 +54,36 @@ export default (
   authorize(context, name, parsedPayload)
     .then((ok) => {
       if (!ok) {
-        parentPort.postMessage({
-          errCode: BasedErrorCode.AuthorizeRejectedError,
+        send({
+          type: OutgoingType.Listener,
           id,
+          code: BasedErrorCode.AuthorizeRejectedError,
         })
         return
       }
       fn(parsedPayload, context)
-        .then((v) => {
-          parentPort.postMessage({
+        .then((v: any) => {
+          send({
+            type: OutgoingType.Listener,
             id,
             payload: v,
           })
         })
-        .catch((err) => {
-          parentPort.postMessage({
-            errCode: BasedErrorCode.FunctionError,
+        .catch((err: Error) => {
+          send({
+            type: OutgoingType.Listener,
             id,
             err,
+            code: BasedErrorCode.FunctionError,
           })
         })
     })
     .catch((err) => {
-      parentPort.postMessage({
-        errCode: BasedErrorCode.AuthorizeFunctionError,
+      send({
+        type: OutgoingType.Listener,
         id,
         err,
+        code: BasedErrorCode.AuthorizeFunctionError,
       })
     })
 }
