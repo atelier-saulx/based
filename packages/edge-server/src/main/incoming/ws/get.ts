@@ -85,7 +85,7 @@ const install = (
       if (!verifyRoute(server, name, spec, client)) {
         return
       }
-      if (server.activeObservablesById.has(id)) {
+      if (hasObs(server, id)) {
         getFromExisting(server, id, client, checksum, name)
         return
       }
@@ -153,6 +153,7 @@ export const getMessage = (
       }
 
       if (hasObs(server, id)) {
+        console.info('GET from existing', name, id, payload)
         getFromExisting(server, id, client, checksum, name)
         return
       }

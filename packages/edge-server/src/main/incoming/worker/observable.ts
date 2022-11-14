@@ -4,6 +4,7 @@ import {
   unsubscribeWorker,
   destroyObs,
   subscribeWorker,
+  hasObs,
 } from '../../observable'
 import { BasedErrorCode } from '../../../error'
 import {
@@ -21,7 +22,7 @@ const enableSubscribe = (
   payload: any,
   route: BasedFunctionRoute
 ) => {
-  if (server.activeObservablesById.has(id)) {
+  if (hasObs(server, id)) {
     subscribeWorker(server, id, client)
   } else {
     server.functions
@@ -32,7 +33,7 @@ const enableSubscribe = (
             destroyObs(server, id)
             return
           }
-          if (server.activeObservablesById.has(id)) {
+          if (hasObs(server, id)) {
             subscribeWorker(server, id, client)
           } else {
             createObs(server, name, id, payload)

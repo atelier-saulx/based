@@ -1,6 +1,7 @@
 import { BasedServer } from '../server'
 import { ActiveObservable } from '../../types'
 import { initFunction } from './init'
+import { hasObs } from './get'
 
 export const createObs = (
   server: BasedServer,
@@ -8,7 +9,7 @@ export const createObs = (
   id: number,
   payload: any
 ): ActiveObservable => {
-  if (server.activeObservablesById.has(id)) {
+  if (hasObs(server, id)) {
     const msg = `Allready has observable ${name} ${id}`
     console.error(msg)
     throw new Error(msg)
