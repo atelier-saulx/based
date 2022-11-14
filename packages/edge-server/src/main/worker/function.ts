@@ -45,14 +45,6 @@ const execFunction = (
 
 const getListenerId = (server: BasedServer): number => {
   const listenerId = ++server.functions.reqId
-  // max concurrent execution is 1 mil...
-  if (server.functions.workerResponseListeners.size >= 1e6) {
-    // TODO: handle better Make into a based error! also needs to be stored!
-    throw new Error('MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)')
-  }
-  if (server.functions.reqId > 1e6) {
-    server.functions.reqId = 0
-  }
   return listenerId
 }
 

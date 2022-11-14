@@ -8,7 +8,6 @@ import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
 import { getFunction } from './functions'
-import { BasedErrorCode } from '../error'
 import { Incoming, IncomingType, OutgoingType } from './types'
 import send from './send'
 
@@ -116,7 +115,7 @@ export const createObs = ({
       obs.checksum = checksum
 
       send({
-        type: OutgoingType.Listener,
+        type: OutgoingType.ObservableUpdate,
         id,
         payload: {
           diff: obs.diffCache,
@@ -145,10 +144,9 @@ export const createObs = ({
         }
       }).catch((err) => {
         send({
-          type: OutgoingType.Listener,
+          type: OutgoingType.ObservableUpdate,
           id,
           err,
-          code: BasedErrorCode.ObservableFunctionError,
         })
       })
     } else {
@@ -156,10 +154,9 @@ export const createObs = ({
     }
   } catch (err) {
     send({
-      type: OutgoingType.Listener,
+      type: OutgoingType.ObservableUpdate,
       id,
       err,
-      code: BasedErrorCode.ObservableFunctionError,
     })
   }
 }

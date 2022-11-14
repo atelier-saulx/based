@@ -16,10 +16,7 @@ const dummyClient: ObservableDummyClient = {
   },
 }
 
-export const initFunction = async (
-  server: BasedServer,
-  id: number
-): Promise<void> => {
+export const initFunction = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {

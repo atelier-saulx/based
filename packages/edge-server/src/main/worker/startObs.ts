@@ -20,12 +20,9 @@ export const startObs = (
 ): (() => void) => {
   // TODO: move selection criteria etc to other file
   const selectedWorker: BasedWorker = server.functions.lowestWorker
-  server.functions.workerResponseListeners.set(id, (err, p) => {
+  server.functions.workerObsListeners.set(id, (err, p) => {
     if (err) {
-      if (err.code === BasedErrorCode.ObservableFunctionError) {
-        // @ts-ignore TODO: make an error check funciton....
-        error(err)
-      }
+      error(err)
     } else {
       update(p.diff, p.data, p.checksum, p.isDeflate, p.reusedCache)
     }
@@ -40,7 +37,7 @@ export const startObs = (
   })
 
   return () => {
-    server.functions.workerResponseListeners.delete(id)
+    server.functions.workerObsListeners.delete(id)
     sendToWorker(selectedWorker, { type: IncomingType.CloseObs, id })
   }
 }

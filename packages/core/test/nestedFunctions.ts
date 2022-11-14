@@ -81,60 +81,68 @@ test.serial('nested functions', async (t) => {
     },
   })
 
+  console.info('-----')
+
   const x = await coreClient.function('fnWithNested', { bla: true })
 
   t.is(x, 12)
 
-  let incomingCntNoJson = 0
+  let cnt = 0
 
-  const close = coreClient.observe('obsWithNested', () => {
-    incomingCntNoJson++
+  const close = coreClient.observe('counter', () => {
+    cnt++
   })
 
-  let incomingCnt = 0
-  const close2 = coreClient.observe(
-    'obsWithNested',
-    () => {
-      incomingCnt++
-    },
-    'json'
-  )
+  console.log(cnt)
 
-  await wait(1e3)
+  await wait(2e3)
 
-  const bla = await coreClient.get('obsWithNested', 'json')
-
-  t.is(bla.bla.length, 1e4)
-
-  await wait(1e3)
-
-  let incomingCnt2 = 0
   close()
-  close2()
 
-  console.info('---->FLAP FLAP')
+  // const close = coreClient.observe('obsWithNested', () => {
+  //   incomingCntNoJson++
+  // })
 
-  const close3 = coreClient.observe(
-    'obsWithNestedLvl2',
-    () => {
-      incomingCnt2++
-    },
-    'glurk'
-  )
+  // let incomingCnt = 0
+  // const close2 = coreClient.observe(
+  //   'obsWithNested',
+  //   () => {
+  //     incomingCnt++
+  //   },
+  //   'json'
+  // )
 
-  const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
+  // await wait(1e3)
 
-  console.info('GET BLA2', bla2)
+  // const bla = await coreClient.get('obsWithNested', 'json')
 
-  t.is(bla2.bla.length, 1e4)
+  // t.is(bla.bla.length, 1e4)
 
-  await wait(1e3)
+  // await wait(1e3)
 
-  close3()
+  // let incomingCnt2 = 0
+  // close()
+  // close2()
 
-  t.true(incomingCnt > 10)
-  t.true(incomingCntNoJson > 0)
-  t.true(incomingCnt2 > 10)
+  // const close3 = coreClient.observe(
+  //   'obsWithNestedLvl2',
+  //   () => {
+  //     incomingCnt2++
+  //   },
+  //   'glurk'
+  // )
+
+  // const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
+
+  // t.is(bla2.bla.length, 1e4)
+
+  // await wait(1e3)
+
+  // close3()
+
+  // t.true(incomingCnt > 10)
+  // t.true(incomingCntNoJson > 0)
+  // t.true(incomingCnt2 > 10)
 
   await wait(15e3)
 

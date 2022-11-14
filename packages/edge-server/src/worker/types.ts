@@ -94,9 +94,27 @@ export enum OutgoingType {
   Log = 3,
   Error = 4,
   Listener = 5,
+  ObservableUpdate = 6,
 }
 
 export type Outgoing = {
+  [OutgoingType.ObservableUpdate]:
+    | {
+        type: OutgoingType.ObservableUpdate
+        id: number
+        payload: {
+          diff?: Uint8Array
+          data: Uint8Array
+          checksum: number
+          isDeflate: boolean
+          reusedCache: boolean
+        }
+      }
+    | {
+        type: OutgoingType.ObservableUpdate
+        id: number
+        err: Error
+      }
   [OutgoingType.InstallFn]: {
     type: OutgoingType.InstallFn
     name: string

@@ -10,7 +10,7 @@ import {
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroyObs, initFunction } from '../observable'
-import { BasedError } from '../../error'
+import { BasedError, BasedErrorCode } from '../../error'
 import { sendToWorker, updateWorkers } from '../worker'
 import { IncomingType } from '../../worker/types'
 
@@ -28,6 +28,14 @@ export class BasedFunctions {
   workerResponseListeners: Map<
     number,
     (err: null | BasedError, p?: any) => void
+  > = new Map()
+
+  workerObsListeners: Map<
+    number,
+    (
+      err: null | BasedError<BasedErrorCode.ObservableFunctionError>,
+      p?: any
+    ) => void
   > = new Map()
 
   paths: {

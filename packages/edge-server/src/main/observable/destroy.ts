@@ -1,6 +1,7 @@
 import { BasedServer } from '../server'
 
 export const destroyObs = (server: BasedServer, id: number) => {
+  console.info('DESTROY!', id)
   const obs = server.activeObservablesById.get(id)
 
   if (!obs) {

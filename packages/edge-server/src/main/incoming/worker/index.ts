@@ -3,6 +3,7 @@ import { BasedWorker } from '../../../types'
 import { subscribe, unsubscribe } from './observable'
 import { OutgoingMessage, OutgoingType } from '../../../worker/types'
 import listener from './listener'
+import obsListener from './obsListener'
 import error from './error'
 import installFunction from './installFunction'
 
@@ -11,6 +12,11 @@ export const incomingWorkerMessage = (
   worker: BasedWorker,
   msg: OutgoingMessage
 ) => {
+  if (msg.type === OutgoingType.ObservableUpdate) {
+    obsListener(server, msg)
+    return
+  }
+
   if (msg.type === OutgoingType.Listener) {
     listener(server, msg)
     return
