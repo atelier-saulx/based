@@ -5,53 +5,53 @@ import httpFunction from './http/function'
 import { addFunction, removeFunction, errorInstallFunction } from './functions'
 import { incomingAuthorize } from './authorize'
 import { incomingObserve } from './api'
-import { IncomingMessage } from './types'
+import { IncomingMessage, IncomingType } from './types'
 
 parentPort.on('message', (msg: IncomingMessage) => {
-  if (msg.type === 0) {
+  if (msg.type === IncomingType.WsFunction) {
     addFunction(msg.name, msg.path)
     wsFunction(msg)
     return
   }
 
-  if (msg.type === 1) {
+  if (msg.type === IncomingType.CreateObs) {
     addFunction(msg.name, msg.path)
     createObs(msg)
     return
   }
 
-  if (msg.type === 2) {
+  if (msg.type === IncomingType.CloseObs) {
     closeObs(msg.id)
     return
   }
 
-  if (msg.type === 3) {
+  if (msg.type === IncomingType.HttpFunction) {
     addFunction(msg.name, msg.path)
     httpFunction(msg)
     return
   }
 
-  if (msg.type === 4) {
+  if (msg.type === IncomingType.AddFunction) {
     addFunction(msg.name, msg.path)
     return
   }
 
-  if (msg.type === 5) {
+  if (msg.type === IncomingType.RemoveFunction) {
     removeFunction(msg.name)
     return
   }
 
-  if (msg.type === 6) {
+  if (msg.type === IncomingType.InstallFunctionError) {
     errorInstallFunction(msg.name)
     return
   }
 
-  if (msg.type === 7) {
+  if (msg.type === IncomingType.UpdateObservable) {
     incomingObserve(msg)
     return
   }
 
-  if (msg.type === 8) {
+  if (msg.type === IncomingType.Authorize) {
     incomingAuthorize(msg)
   }
 })
