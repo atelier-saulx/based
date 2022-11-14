@@ -14,7 +14,7 @@ export const createObs = (
     console.error(msg)
     throw new Error(msg)
   }
-  console.info(`Create observable ${name} ${id}`, payload)
+  // console.info(`   Create observable ${name} ${id}`, payload)
 
   const obs: ActiveObservable = {
     payload,
