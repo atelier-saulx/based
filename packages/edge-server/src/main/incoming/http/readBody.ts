@@ -1,8 +1,8 @@
 import { BasedFunctionRoute, HttpClient } from '../../../types'
 import zlib from 'node:zlib'
-import { sendHttpError } from './send'
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../../error'
 import { BasedServer } from '../../server'
+import { sendError } from '../../sendError'
 
 const MAX_CHUNK_SIZE = 1024 * 1024
 
@@ -24,7 +24,7 @@ export const readBody = (
   const contentLen = client.context.headers['content-length']
 
   if (contentLen > route.maxPayloadSize) {
-    sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
     return
   }
 
@@ -44,12 +44,12 @@ export const readBody = (
       client.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > route.maxPayloadSize) {
-          sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
+          sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
           uncompressStream.destroy()
           return
         }
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+          sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           return
         }
@@ -82,7 +82,7 @@ export const readBody = (
         onData(buf)
       })
     } else {
-      sendHttpError(server, client, BasedErrorCode.InvalidPayload, route)
+      sendError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else {
     const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
@@ -93,11 +93,11 @@ export const readBody = (
 
       size += len
       if (size > route.maxPayloadSize) {
-        sendHttpError(server, client, BasedErrorCode.PayloadTooLarge, route)
+        sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
         return
       }
 

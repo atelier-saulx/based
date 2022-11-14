@@ -1,104 +1,65 @@
-import { BasedErrorCode, createError } from '../../error'
 import { BasedServer } from '../../server'
 import { BasedWorker } from '../../../types'
 import { subscribe, unsubscribe } from './observable'
+import { OutgoingMessage, OutgoingType } from '../../../worker/types'
+import listener from './listener'
+import error from './error'
+import installFunction from './installFunction'
 
-export const workerMessage = (
+export const incomingWorkerMessage = (
   server: BasedServer,
   worker: BasedWorker,
-  data: any
+  msg: OutgoingMessage
 ) => {
-  // type 0 install fn
-  // type 1 Subscribe
-  // type 2 Unsubscribe
-  // type 3 Get
-  // type 4 log
-  // type 5 Error
+  if (msg.type === OutgoingType.Listener) {
+    listener(server, msg)
+    return
+  }
 
-  if (data.type === 2) {
-    // close
-    unsubscribe(
-      {
-        worker,
-        context: data.context,
-      },
-      data.id,
-      server
-    )
-  } else if (data.type === 1) {
-    // SUBSCRIBE
-    subscribe(
-      data.name,
-      data.payload,
-      data.id,
-      {
-        worker,
-        context: data.context,
-      },
-      server
-    )
-  } else if (data.type === 0) {
-    server.functions
-      .install(data.name)
-      .then((spec) => {
-        if (spec) {
-          worker.worker.postMessage({
-            type: 5,
-            name: spec.name,
-            path: spec.functionPath,
-          })
-        } else {
-          worker.worker.postMessage({
-            type: 7,
-            name: data.name,
-          })
-        }
-      })
-      .catch(() => {
-        worker.worker.postMessage({
-          type: 7,
-          name: data.name,
-        })
-      })
-  } else if (data.type === 5) {
-    if (data.code === BasedErrorCode.ObserveCallbackError) {
-      const obs = server.activeObservablesById.get(data.payload.observableId)
-      if (obs) {
-        data.payload.route = {
-          name: obs.name,
-        }
-      }
-    }
-    createError(
-      server,
-      {
-        worker,
-        // not really worker context.. but ok clean up later
-        context: data.context || {},
-      },
-      data.code,
-      data.payload
-    )
-  } else if (data.type === 4) {
+  if (msg.type === OutgoingType.Error) {
+    error(server, worker, msg)
+    return
+  }
+
+  if (msg.type === OutgoingType.InstallFn) {
+    installFunction(server, worker, msg)
+    return
+  }
+
+  if (msg.type === OutgoingType.Log) {
     server.emit(
       'log',
       {
         worker,
-        context: data.context || {},
+        context: msg.context || { headers: {} },
       },
-      data.log
+      msg.log
     )
-  } else if (data.id) {
-    const listener = server.functions.workerResponseListeners.get(data.id)
-    if (listener) {
-      // use error for this...
-      if (data.errCode) {
-        if (!data.err) {
-          data.err = new Error()
-        }
-        data.err.code = data.errCode
-      }
-      listener(data.err, data.payload)
-    }
+    return
+  }
+
+  if (msg.type === OutgoingType.Subscribe) {
+    subscribe(
+      msg.name,
+      msg.payload,
+      msg.id,
+      {
+        worker,
+        context: msg.context,
+      },
+      server
+    )
+    return
+  }
+
+  if (msg.type === OutgoingType.Unsubscribe) {
+    unsubscribe(
+      {
+        worker,
+        context: msg.context,
+      },
+      msg.id,
+      server
+    )
   }
 }

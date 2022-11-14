@@ -7,9 +7,10 @@ import { FunctionType, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
-import { parentPort } from 'node:worker_threads'
 import { getFunction } from './functions'
-import { BasedErrorCode } from '../main/error'
+import { BasedErrorCode } from '../error'
+import { Incoming, IncomingType, OutgoingType } from './types'
+import send from './send'
 
 export type WorkerObs = {
   id: number
@@ -27,12 +28,12 @@ export type WorkerObs = {
 
 export const activeObs: Map<number, WorkerObs> = new Map()
 
-export const createObs = (
-  name: string,
-  id: number,
-  functionPath: string,
-  payload?: any
-) => {
+export const createObs = ({
+  id,
+  name,
+  path,
+  payload,
+}: Incoming[IncomingType.CreateObs]) => {
   if (activeObs.has(id)) {
     console.warn('Trying to create an obs that allready exists...')
     return
@@ -45,7 +46,7 @@ export const createObs = (
 
   activeObs.set(id, obs)
 
-  const fn = getFunction(name, FunctionType.observe, functionPath)
+  const fn = getFunction(name, FunctionType.observe, path)
 
   const update: ObservableUpdateFunction = (
     data: any,
@@ -114,7 +115,8 @@ export const createObs = (
       obs.cache = encodedData
       obs.checksum = checksum
 
-      parentPort.postMessage({
+      send({
+        type: OutgoingType.Listener,
         id,
         payload: {
           diff: obs.diffCache,
@@ -142,20 +144,22 @@ export const createObs = (
           obs.closeFunction = close
         }
       }).catch((err) => {
-        parentPort.postMessage({
+        send({
+          type: OutgoingType.Listener,
           id,
           err,
-          errCode: BasedErrorCode.ObservableFunctionError,
+          code: BasedErrorCode.ObservableFunctionError,
         })
       })
     } else {
       obs.closeFunction = r
     }
   } catch (err) {
-    parentPort.postMessage({
+    send({
+      type: OutgoingType.Listener,
       id,
       err,
-      errCode: BasedErrorCode.ObservableFunctionError,
+      code: BasedErrorCode.ObservableFunctionError,
     })
   }
 }

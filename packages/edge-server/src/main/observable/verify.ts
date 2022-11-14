@@ -1,6 +1,7 @@
 import { BasedFunctionRoute, HttpClient, WebsocketClient } from '../../types'
-import { BasedErrorCode, sendError } from '../error'
+import { BasedErrorCode } from '../../error'
 import { BasedServer } from '../server'
+import { sendError } from '../sendError'
 
 export const verifyRoute = (
   server: BasedServer,

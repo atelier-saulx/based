@@ -1,7 +1,8 @@
 import { DataStream } from './DataStream'
 import { HttpClient, BasedFunctionRoute } from '../../../../types'
-import { BasedErrorCode } from '../../../error'
-import { sendHttpError, sendHttpResponse } from '../send'
+import { BasedErrorCode } from '../../../../error'
+import { sendError } from '../../../sendError'
+import { sendHttpResponse } from '../../../sendHttpResponse'
 import getExtension from './getExtension'
 import { BasedServer } from '../../../server'
 
@@ -92,7 +93,7 @@ export default (
   client.res.onData((chunk, isLast) => {
     // see if this goes ok... (clearing mem etc)
     if (chunk.byteLength > MAX_CHUNK_SIZE) {
-      sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+      sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
       for (const file of files) {
         file.stream.destroy()
       }
@@ -172,24 +173,14 @@ export default (
 
       if (!file) {
         // TODO: invalid file
-        return sendHttpError(
-          server,
-          client,
-          BasedErrorCode.InvalidPayload,
-          route
-        )
+        return sendError(server, client, BasedErrorCode.InvalidPayload, route)
       }
 
       if (!isWriting && line.includes('Content-Disposition')) {
         const meta = line.match(/name="(.*?)"/)?.[1]
         if (!meta) {
           // TODO: invalid file
-          return sendHttpError(
-            server,
-            client,
-            BasedErrorCode.InvalidPayload,
-            route
-          )
+          return sendError(server, client, BasedErrorCode.InvalidPayload, route)
         }
         const opts = file.opts
         opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
@@ -222,12 +213,7 @@ export default (
         )?.[1]
         if (!mimeType) {
           // TODO: invalid file (can speficy in route potentialy...)
-          return sendHttpError(
-            server,
-            client,
-            BasedErrorCode.InvalidPayload,
-            route
-          )
+          return sendError(server, client, BasedErrorCode.InvalidPayload, route)
         }
         file.opts.type = mimeType
         file.opts.extension = getExtension(mimeType)

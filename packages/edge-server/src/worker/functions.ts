@@ -1,5 +1,7 @@
 import { FunctionType, ImportWrapper } from '../types'
-import { parentPort, workerData } from 'worker_threads'
+import { workerData } from 'worker_threads'
+import send from './send'
+import { OutgoingType } from './types'
 
 const importWrapper: ImportWrapper = require(workerData.importWrapperPath)
 
@@ -97,8 +99,8 @@ const installFunction = (
           }
         }
       })
-      parentPort.postMessage({
-        type: 0,
+      send({
+        type: OutgoingType.InstallFn,
         name,
       })
     }

@@ -8,8 +8,9 @@ import {
   verifyRoute,
   hasObs,
 } from '../../observable'
-import { BasedErrorCode, sendError } from '../../error'
+import { BasedErrorCode } from '../../../error'
 import { WebsocketClient, BasedFunctionRoute } from '../../../types'
+import { sendError } from '../../sendError'
 
 export const enableSubscribe = (
   server: BasedServer,

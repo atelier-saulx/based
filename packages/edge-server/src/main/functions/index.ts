@@ -10,15 +10,9 @@ import {
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroyObs, initFunction } from '../observable'
-import { Worker, SHARE_ENV } from 'node:worker_threads'
-import { join } from 'path'
-import { workerMessage } from '../incoming/worker'
-import { BasedErrorCode, BasedError } from '../error'
-import chalk from 'chalk'
-
-export { isObservableFunctionSpec }
-
-const WORKER_PATH = join(__dirname, '../../worker')
+import { BasedError } from '../../error'
+import { sendToWorker, updateWorkers } from '../worker'
+import { IncomingType } from '../../worker/types'
 
 export class BasedFunctions {
   server: BasedServer
@@ -33,7 +27,7 @@ export class BasedFunctions {
 
   workerResponseListeners: Map<
     number,
-    ((err: null, p: any) => void) | ((err: BasedError) => void)
+    (err: null | BasedError, p?: any) => void
   > = new Map()
 
   paths: {
@@ -104,82 +98,7 @@ export class BasedFunctions {
       clearTimeout(this.unregisterTimeout)
     }
 
-    const d = this.config.maxWorkers - this.workers.length
-
-    // TODO: clean all this stuff up.....
-    if (d !== 0) {
-      if (d < 0) {
-        for (let i = 0; i < d; i++) {
-          // active into account
-          const w = this.workers.pop()
-          w.worker.terminate()
-        }
-      } else {
-        for (let i = 0; i < d; i++) {
-          const worker = new Worker(WORKER_PATH, {
-            stdout: true,
-            stderr: true,
-            env: SHARE_ENV, // only specifics later...
-            workerData: {
-              importWrapperPath:
-                this.config.importWrapperPath ||
-                join(__dirname, 'dummyImportWrapper'),
-            },
-          })
-
-          worker.stdout.on('data', (d) => {
-            process.stdout.write(
-              chalk.grey(` [worker ${worker.threadId}] ${d.toString()}`)
-            )
-          })
-
-          worker.stderr.on('data', (d) => {
-            process.stderr.write(` [worker ${worker.threadId}] ${d.toString()}`)
-          })
-
-          worker.on('error', (err) => {
-            // CRASHING WORKER
-            console.error('Crash on worker', worker.threadId, err)
-          })
-
-          const basedWorker: BasedWorker = {
-            worker,
-            nestedObservers: new Set(),
-            index: this.workers.length,
-            activeObservables: 0,
-            activeFunctions: 0,
-          }
-
-          this.workers.push(basedWorker)
-
-          if (this.server.auth) {
-            // allways install authorize
-            worker.postMessage({
-              type: 5,
-              name: 'authorize', // default name for this...
-              path: this.server.auth.config.authorizePath,
-            })
-          }
-
-          worker.on('message', (data) => {
-            workerMessage(this.server, basedWorker, data)
-          })
-        }
-      }
-    }
-
-    if (this.workers.length === 0) {
-      throw new Error('Needs at least 1 worker')
-    }
-
-    this.lowestWorker = this.workers.sort((a, b) => {
-      // will be RATE LIMIT TOKEN
-      return a.activeFunctions < b.activeFunctions
-        ? -1
-        : a.activeFunctions === b.activeFunctions
-        ? 0
-        : 1
-    })[0]
+    updateWorkers(this)
 
     this.uninstallLoop()
   }
@@ -285,8 +204,8 @@ export class BasedFunctions {
           this.remove(spec.name)
         } else if (this.observables[spec.name]) {
           for (const w of this.workers) {
-            w.worker.postMessage({
-              type: 6,
+            sendToWorker(w, {
+              type: IncomingType.RemoveFunction,
               name: spec.name,
             })
           }
@@ -302,8 +221,8 @@ export class BasedFunctions {
           this.remove(spec.name)
         } else if (this.functions[spec.name]) {
           for (const w of this.workers) {
-            w.worker.postMessage({
-              type: 6,
+            sendToWorker(w, {
+              type: IncomingType.RemoveFunction,
               name: spec.name,
             })
           }
@@ -331,8 +250,8 @@ export class BasedFunctions {
       }
       // this is a bit harder... not allways relevant
       for (const w of this.workers) {
-        w.worker.postMessage({
-          type: 6,
+        sendToWorker(w, {
+          type: IncomingType.RemoveFunction,
           name,
         })
       }
@@ -343,8 +262,8 @@ export class BasedFunctions {
       }
       delete this.functions[name]
       for (const w of this.workers) {
-        w.worker.postMessage({
-          type: 6,
+        sendToWorker(w, {
+          type: IncomingType.RemoveFunction,
           name,
         })
       }
@@ -382,102 +301,5 @@ export class BasedFunctions {
       }
     }
     return false
-  }
-
-  // from other worker fn
-  runObservableFunction(
-    spec: BasedObservableFunctionSpec,
-    id: number,
-    error: (err: BasedError<BasedErrorCode.ObservableFunctionError>) => void,
-    update: (
-      encodedDiffData: Uint8Array,
-      encodedData: Uint8Array,
-      checksum: number,
-      isDeflate: boolean,
-      reusedCache: boolean
-    ) => void,
-    payload?: any
-  ): () => void {
-    // TODO: move selection criteria etc to other file
-    const selectedWorker: BasedWorker = this.lowestWorker
-    this.workerResponseListeners.set(id, (err, p) => {
-      if (err) {
-        error(err)
-      } else {
-        update(p.diff, p.data, p.checksum, p.isDeflate, p.reusedCache)
-      }
-    })
-    selectedWorker.worker.postMessage({
-      type: 1,
-      id,
-      name: spec.name,
-      path: spec.functionPath,
-      payload,
-    })
-    return () => {
-      this.workerResponseListeners.delete(id)
-      selectedWorker.worker.postMessage({
-        id,
-        type: 2,
-      })
-    }
-  }
-
-  async runFunction(
-    type: 0 | 3 | 4,
-    // 0 is normal function WS
-    // 3 is POST payload
-    // 4 is GET payload
-    spec: BasedFunctionSpec,
-    context: { [key: string]: any }, // make this specific
-    payload?: Uint8Array
-  ): Promise<Uint8Array> {
-    // TODO: move selection criteria etc to other file
-
-    return new Promise((resolve, reject) => {
-      const listenerId = ++this.reqId
-      // max concurrent execution is 1 mil...
-      if (this.workerResponseListeners.size >= 1e6) {
-        // TODO: handle better Make into a based error! also needs to be stored!
-        reject(
-          new Error('MAX CONCURRENT SERVER FUNCTION EXECUTION REACHED (1 MIL)')
-        )
-        return
-      }
-      if (this.reqId > 1e6) {
-        this.reqId = 0
-      }
-      const selectedWorker: BasedWorker = this.lowestWorker
-      this.workerResponseListeners.set(listenerId, (err, p) => {
-        this.workerResponseListeners.delete(listenerId)
-        selectedWorker.activeFunctions--
-        if (
-          selectedWorker.activeFunctions < this.lowestWorker.activeFunctions
-        ) {
-          this.lowestWorker = selectedWorker
-        }
-        if (err) {
-          reject(err)
-        } else {
-          resolve(p)
-        }
-      })
-      selectedWorker.activeFunctions++
-      let next = selectedWorker.index + 1
-      if (next >= this.workers.length) {
-        next = 0
-      }
-      if (selectedWorker.activeFunctions > this.workers[next].activeFunctions) {
-        this.lowestWorker = this.workers[next]
-      }
-      selectedWorker.worker.postMessage({
-        type,
-        path: spec.functionPath,
-        name: spec.name,
-        payload,
-        context,
-        id: listenerId,
-      })
-    })
   }
 }

@@ -1,9 +1,9 @@
-import { isObservableFunctionSpec } from '../../functions'
 import { readUint8, decodeName } from '../../../protocol'
 import { BasedServer } from '../../server'
-import { BasedErrorCode } from '../../error'
-import { sendError } from './send'
-import { WebsocketClient } from '../../../types'
+import { BasedErrorCode } from '../../../error'
+import { sendError } from '../../sendError'
+import { WebsocketClient, isObservableFunctionSpec } from '../../../types'
+import { sendWsFunction } from '../../worker'
 
 export const functionMessage = (
   arr: Uint8Array,
@@ -54,21 +54,20 @@ export const functionMessage = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
-        server.functions
-          .runFunction(
-            0,
-            spec,
-            {
-              isDeflate,
-              reqId,
-              // TODO: way too much copy but this is tmp solution
-              authState: client.ws.authState,
-              query: client.ws.query,
-              ua: client.ws.ua,
-              ip: client.ws.ip,
-            },
-            p
-          )
+        sendWsFunction(
+          server,
+          {
+            authState: client.ws.authState,
+            query: client.ws.query,
+            ua: client.ws.ua,
+            ip: client.ws.ip,
+            headers: client.ws.headers,
+          },
+          spec,
+          reqId,
+          isDeflate,
+          p
+        )
           .then(async (v) => {
             client.ws?.send(v, true, false)
           })

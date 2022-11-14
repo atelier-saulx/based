@@ -2,7 +2,8 @@ import { ActiveObservable, WebsocketClient, HttpClient } from '../../types'
 import { updateId } from '../../protocol'
 import { BasedServer } from '../server'
 import { destroyObs } from './destroy'
-import { BasedErrorCode, BasedError, sendError } from '../error'
+import { BasedErrorCode, BasedError } from '../../error'
+import { sendError } from '../sendError'
 
 export const sendObsWs = (
   client: WebsocketClient,

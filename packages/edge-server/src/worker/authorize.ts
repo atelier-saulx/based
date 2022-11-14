@@ -1,6 +1,8 @@
 import { Authorize, ClientContext, FunctionType } from '../types'
 import { getFunctionByName } from './functions'
-import { parentPort } from 'node:worker_threads'
+import { Incoming, IncomingType, OutgoingType } from './types'
+import send from './send'
+import { BasedErrorCode } from '../error'
 
 export const authorize: Authorize = async (
   client: ClientContext,
@@ -15,17 +17,20 @@ export const authorize: Authorize = async (
   return false
 }
 
-export const incomingAuthorize = (d: any) => {
-  authorize(d.context, d.name, d.payload)
+export const incomingAuthorize = (msg: Incoming[IncomingType.Authorize]) => {
+  authorize(msg.context, msg.name, msg.payload)
     .then((ok) => {
-      parentPort.postMessage({
-        id: d.id,
+      send({
+        type: OutgoingType.Listener,
+        id: msg.id,
         payload: ok,
       })
     })
     .catch((err) => {
-      parentPort.postMessage({
-        id: d.id,
+      send({
+        id: msg.id,
+        type: OutgoingType.Listener,
+        code: BasedErrorCode.AuthorizeFunctionError,
         err,
       })
     })

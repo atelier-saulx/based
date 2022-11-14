@@ -5,7 +5,7 @@ import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
 import { WebsocketClient } from '../../../types'
-import { BasedErrorCode, createError } from '../../error'
+import { BasedErrorCode, createError } from '../../../error'
 
 const reader = (
   server: BasedServer,

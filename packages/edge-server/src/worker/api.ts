@@ -4,12 +4,13 @@ import {
   ObservableUpdateFunction, // and listener bit confuse...
   ObserveErrorListener,
 } from '../types'
-import { parentPort } from 'worker_threads'
 import { installFunction } from './functions'
 import { authorize } from './authorize'
 import { readUint8, decodeHeader, decodePayload } from '../protocol'
-import { BasedError, BasedErrorCode, ErrorPayload } from '../main/error'
+import { BasedErrorCode, ErrorPayload } from '../error'
 import genObservableId from '../genObservableId'
+import { Incoming, IncomingType } from './types'
+import send from './send'
 
 export const runFunction = async (
   name: string,
@@ -72,12 +73,12 @@ export const observe = (
         onError: onError || (() => {}),
       })
 
-      parentPort.postMessage({
+      send({
         type: 1,
-        payload,
         name,
-        context: {},
         id,
+        payload,
+        context: { headers: {} },
       })
     })
     .catch((err) => {
@@ -96,10 +97,10 @@ export const observe = (
     isRemoved = true
     observers.delete(observerId)
     if (observers.size === 0) {
-      parentPort.postMessage({
+      send({
         type: 2,
-        context: {},
         id,
+        context: { headers: {} },
       })
       activeObservables.delete(id)
     }
@@ -128,15 +129,15 @@ export const get = (
   })
 }
 
-export const incomingObserve = (
-  id: number,
-  checksum?: number,
-  data?: Uint8Array,
-  err?: BasedError<BasedErrorCode.ObservableFunctionError>,
-  diff?: Uint8Array,
-  previousChecksum?: number,
-  isDeflate?: boolean
-) => {
+export const incomingObserve = ({
+  id,
+  err,
+  data,
+  checksum,
+  diff,
+  previousChecksum,
+  isDeflate,
+}: Incoming[IncomingType.UpdateObservable]) => {
   const obs = activeObservables.get(id)
 
   if (obs) {
@@ -178,10 +179,10 @@ export const decode = (buffer: Uint8Array): any => {
 }
 
 export const workerLog = (log: any, context?: ClientContext) => {
-  parentPort.postMessage({
-    type: 4,
-    log,
+  send({
+    type: 3,
     context,
+    log,
   })
 }
 
@@ -190,10 +191,10 @@ export function workerError<T extends BasedErrorCode>(
   payload: ErrorPayload[T],
   context?: ClientContext
 ) {
-  parentPort.postMessage({
-    type: 5,
+  send({
+    type: 4,
+    context,
     code,
     payload,
-    context,
   })
 }

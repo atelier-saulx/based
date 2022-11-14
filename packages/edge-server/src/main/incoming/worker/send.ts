@@ -1,4 +1,4 @@
-import { BasedErrorCode, ErrorPayload } from '../../error' // createError
+import { BasedErrorCode, ErrorPayload } from '../../../error' // createError
 import { WorkerClient } from '../../../types'
 import { BasedServer } from '../../server'
 

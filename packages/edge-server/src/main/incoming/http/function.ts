@@ -1,8 +1,14 @@
-import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
-import { BasedFunctionRoute, HttpClient } from '../../../types'
-import { sendHttpError, sendHttpResponse } from './send'
-import { BasedErrorCode } from '../../error'
+import {
+  BasedFunctionRoute,
+  HttpClient,
+  HttpMethod,
+  isObservableFunctionSpec,
+} from '../../../types'
+import { sendHttpResponse } from '../../sendHttpResponse'
+import { BasedErrorCode } from '../../../error'
+import { sendError } from '../../sendError'
+import { sendHttpFunction } from '../../worker'
 
 export const httpFunction = (
   method: string,
@@ -22,9 +28,13 @@ export const httpFunction = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
-        // TODO: way too much copy but this is tmp solution
-        server.functions
-          .runFunction(method === 'post' ? 3 : 4, spec, client.context, payload)
+        sendHttpFunction(
+          server,
+          method === 'post' ? HttpMethod.Post : HttpMethod.Get,
+          client.context,
+          spec,
+          payload
+        )
           .then(async (result) => {
             if (!client.res) {
               return
@@ -39,7 +49,7 @@ export const httpFunction = (
             }
           })
           .catch((err) => {
-            sendHttpError(server, client, err.code, {
+            sendError(server, client, err.code, {
               err,
               route,
             })
@@ -47,6 +57,6 @@ export const httpFunction = (
       }
     })
     .catch(() =>
-      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
+      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
     )
 }

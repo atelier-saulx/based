@@ -1,8 +1,8 @@
 import { DataStream } from './DataStream'
 import { HttpClient, BasedFunctionRoute } from '../../../../types'
-import { sendHttpError } from '../send'
+import { sendError } from '../../../sendError'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../../error'
+import { BasedErrorCode } from '../../../../error'
 import { BasedServer } from '../../../server'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
@@ -39,7 +39,7 @@ export default (
       client.res.onData((c, isLast) => {
         total += c.byteLength
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+          sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           stream.destroy()
           return
@@ -71,13 +71,13 @@ export default (
       })
       uncompressStream.on('error', (err) => {
         console.warn('Uncompress error', route, contentEncoding, err)
-        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
         uncompressStream.destroy()
         stream.destroy()
       })
       uncompressStream.pipe(stream)
     } else {
-      sendHttpError(
+      sendError(
         server,
         client,
         BasedErrorCode.UnsupportedContentEncoding,
@@ -88,7 +88,7 @@ export default (
     client.res.onData((c, isLast) => {
       total += c.byteLength
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendHttpError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
         stream.destroy()
         return
       }

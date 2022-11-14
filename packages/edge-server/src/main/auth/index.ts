@@ -1,5 +1,5 @@
 import { join } from 'path'
-import { AuthState } from '../incoming/message/auth'
+import { AuthState } from '../incoming/ws/auth'
 import { encodeAuthResponse, valueToBuffer } from '../../protocol'
 import { BasedServer } from '../server'
 import {
@@ -9,6 +9,8 @@ import {
   BasedWorker,
   ClientContext,
 } from '../../types'
+import { sendToWorker } from '../worker'
+import { IncomingType } from '../../worker/types'
 
 export class BasedAuth {
   server: BasedServer
@@ -60,29 +62,30 @@ export class BasedAuth {
               resolve(p)
             }
           })
-          selectedWorker.worker.postMessage({
-            type: 9,
+
+          sendToWorker(selectedWorker, {
+            type: IncomingType.Authorize,
             id,
-            name: name,
+            name,
             payload,
-            client: {
-              // TODO: way too much copy but this is tmp solution
+            context: {
+              // @ts-ignore
               authState: client.authState,
+              // @ts-ignore
               query: client.query,
+              // @ts-ignore
               ua: client.ua,
+              // @ts-ignore
               ip: client.ip,
+              headers: {},
             },
           })
         })
       }
 
-      console.error('install auth..', this.server.functions.workers.length)
-
-      // need to check all workers ready or something
-
       for (const worker of this.server.functions.workers) {
-        worker.worker.postMessage({
-          type: 5,
+        sendToWorker(worker, {
+          type: IncomingType.AddFunction,
           name: 'authorize',
           path: this.config.authorizePath,
         })

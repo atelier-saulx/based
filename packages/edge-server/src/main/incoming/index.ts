@@ -2,8 +2,8 @@ import type { ServerOptions } from '../../types'
 import type { BasedServer } from '../server'
 import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
-import { message } from './message'
-import { unsubscribeIgnoreClient } from '../observable'
+import { message } from './ws'
+import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 
 export default (
@@ -60,7 +60,7 @@ export default (
       close: (ws) => {
         // cl--
         ws.obs.forEach((id) => {
-          unsubscribeIgnoreClient(server, id, ws.c)
+          unsubscribeWsIgnoreClient(server, id, ws.c)
         })
         // @ts-ignore
         wsListeners.close(ws)

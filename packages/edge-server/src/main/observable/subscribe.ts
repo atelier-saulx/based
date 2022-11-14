@@ -1,9 +1,10 @@
 import { BasedServer } from '../server'
 import { ActiveObservable, WebsocketClient, WorkerClient } from '../../types'
 import { extendCache } from './extendCache'
-import { BasedError, BasedErrorCode, sendError } from '../error'
+import { BasedError, BasedErrorCode } from '../../error'
 import { sendObsWs } from './send'
 import { getObs } from './get'
+import { sendError } from '../sendError'
 
 export const subscribeWs = (
   server: BasedServer,

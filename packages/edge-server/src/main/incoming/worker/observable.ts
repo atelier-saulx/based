@@ -1,4 +1,3 @@
-import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import {
   createObs,
@@ -6,9 +5,13 @@ import {
   destroyObs,
   subscribeWorker,
 } from '../../observable'
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../../../error'
+import {
+  BasedFunctionRoute,
+  WorkerClient,
+  isObservableFunctionSpec,
+} from '../../../types'
 import { sendError } from './send'
-import { BasedFunctionRoute, WorkerClient } from '../../../types'
 
 const enableSubscribe = (
   server: BasedServer,

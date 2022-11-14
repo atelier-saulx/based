@@ -1,8 +1,8 @@
-import { isObservableFunctionSpec } from '../../functions'
 import { BasedServer } from '../../server'
 import {
   HttpClient,
   ActiveObservable,
+  isObservableFunctionSpec,
   BasedFunctionRoute,
 } from '../../../types'
 import { end } from '../../sendHttpResponse'
@@ -17,7 +17,8 @@ import {
 } from '../../observable'
 import zlib from 'node:zlib'
 import { parseQuery } from '@saulx/utils'
-import { BasedErrorCode, sendError } from '../../error'
+import { BasedErrorCode } from '../../../error'
+import { sendError } from '../../sendError'
 import genObservableId from '../../../genObservableId'
 import { promisify } from 'node:util'
 
@@ -147,7 +148,7 @@ export const httpGet = (
     return
   }
 
-  if (payload === undefined && client.context.query) {
+  if (payload === undefined && 'query' in client.context) {
     try {
       payload = parseQuery(decodeURIComponent(client.context.query))
     } catch (err) {}

@@ -1,69 +1,141 @@
-// 0 FN
-// 1 CREATE OBS
-// 2 CLOSE OBS
-// 3 HTTP POST FN
-// 4 HTTP GET FN
-// 5 FN INSTALLED (can be observable as well)
-// 6 UNINSTALL FN
-// 7 CANNOT INSTALL FN
-// 8 OBSERVABLE UPDATE
-// 9 AUTHORIZE
+import { ClientContext, HttpMethod } from '../types'
+import { BasedError, BasedErrorCode, ErrorPayload } from '../error'
 
-import { ClientContext } from '../types'
+export enum IncomingType {
+  WsFunction = 0,
+  CreateObs = 1,
+  CloseObs = 2,
+  HttpFunction = 3,
+  AddFunction = 4,
+  RemoveFunction = 5,
+  InstallFunctionError = 6,
+  UpdateObservable = 7,
+  Authorize = 8,
+}
 
 export type Incoming = {
-  // 0
-  Fn: {
-    type: 0
+  [IncomingType.WsFunction]: {
+    type: IncomingType.WsFunction
+    path: string
+    name: string
+    id: number
+    reqId: number
+    context: ClientContext
+    isDeflate: boolean
+    payload?: Uint8Array
   }
 
-  // 1
-  CreateObs: {
-    type: 1
+  [IncomingType.CreateObs]: {
+    type: IncomingType.CreateObs
+    path: string
+    name: string
+    id: number
+    payload: any
   }
 
-  // 2
-  CloseObs: {}
+  [IncomingType.CloseObs]: {
+    type: IncomingType.CloseObs
+    id: number
+  }
 
-  // 3
-  FnPost: {}
+  [IncomingType.HttpFunction]: {
+    name: string
+    type: IncomingType.HttpFunction
+    method: HttpMethod
+    path: string
+    id: number
+    context: ClientContext
+    payload?: Uint8Array
+  }
 
-  // 4
-  FnGet: {}
+  [IncomingType.AddFunction]: {
+    type: IncomingType.AddFunction
+    path: string
+    name: string
+  }
 
-  // 5
-  AddFn: {}
+  [IncomingType.RemoveFunction]: {
+    name: string
+    type: IncomingType.RemoveFunction
+  }
 
-  // 6
-  RemoveFn: {}
+  [IncomingType.InstallFunctionError]: {
+    type: IncomingType.InstallFunctionError
+    name: string
+  }
 
-  // 7
-  InstallFnError: {}
+  [IncomingType.UpdateObservable]: {
+    type: IncomingType.UpdateObservable
+    name: string
+    id: number
+    checksum?: number
+    data?: Uint8Array
+    err?: BasedError<BasedErrorCode.ObservableFunctionError>
+    diff?: Uint8Array
+    previousChecksum?: number
+    isDeflate?: boolean
+  }
 
-  // 8
-  UpdateObs: {}
-
-  // 9
-  Authorize: {
+  [IncomingType.Authorize]: {
+    type: IncomingType.Authorize
     context: ClientContext
     name: string
+    id: number
     payload?: any
   }
 }
 
 export type IncomingMessage = Incoming[keyof Incoming]
 
-export type Outgoing = {
-  // 0
-  InstallFn: {}
-  // 1
-  Subscribe: {}
-  // 2
-  Unsubscribe: {}
-  // 3
-  Get: {}
-  // 4
-  Log: {}
-  // 5
-  Error: {}
+export enum OutgoingType {
+  InstallFn = 0,
+  Subscribe = 1,
+  Unsubscribe = 2,
+  Log = 3,
+  Error = 4,
+  Listener = 5,
 }
+
+export type Outgoing = {
+  [OutgoingType.InstallFn]: {
+    type: OutgoingType.InstallFn
+    name: string
+  }
+  [OutgoingType.Subscribe]: {
+    type: OutgoingType.Subscribe
+    name: string
+    id: number
+    payload: any
+    context: ClientContext
+  }
+  [OutgoingType.Unsubscribe]: {
+    type: OutgoingType.Unsubscribe
+    id: number
+    context: ClientContext
+  }
+  [OutgoingType.Log]: {
+    type: OutgoingType.Log
+    context?: ClientContext
+    log: any // TODO: make it serializable...
+  }
+  [OutgoingType.Error]: {
+    type: OutgoingType.Error
+    context?: ClientContext
+    code: BasedErrorCode
+    payload: ErrorPayload[BasedErrorCode]
+  }
+  [OutgoingType.Listener]:
+    | {
+        type: OutgoingType.Listener
+        id: number
+        err?: Error
+        code: BasedErrorCode
+      }
+    | {
+        type: OutgoingType.Listener
+        id: number
+        payload: any
+      }
+}
+
+export type OutgoingMessage = Outgoing[keyof Outgoing]

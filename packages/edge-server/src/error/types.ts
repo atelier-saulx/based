@@ -1,4 +1,4 @@
-import { BasedFunctionRoute } from '../../types'
+import { BasedFunctionRoute } from '../types'
 
 export const EMPTY_ROUTE = {
   name: 'no-route',

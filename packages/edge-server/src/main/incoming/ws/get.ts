@@ -20,7 +20,8 @@ import {
   BasedFunctionRoute,
   WebsocketClient,
 } from '../../../types'
-import { BasedErrorCode, sendError } from '../../error'
+import { BasedErrorCode } from '../../../error'
+import { sendError } from '../../sendError'
 
 const sendGetData = (
   server: BasedServer,

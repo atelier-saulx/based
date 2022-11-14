@@ -17,6 +17,7 @@ export * from './types'
 
 // maybe send responsed
 export { compress } from './main/compress'
-export { sendHttpResponse, sendHttpError } from './main/incoming/http/send'
+export { sendHttpResponse } from './main/sendHttpResponse'
+export { sendError } from './main/sendError'
 
-export * from './main/error'
+export * from './error'

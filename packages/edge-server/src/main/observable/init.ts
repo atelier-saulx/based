@@ -1,7 +1,8 @@
 import { BasedServer } from '../server'
 import { encodeErrorResponse, updateId, valueToBuffer } from '../../protocol'
-import { createError } from '../error'
+import { createError } from '../../error'
 import { ObservableDummyClient } from '../../types'
+import { startObs } from '../worker'
 
 const dummyClient: ObservableDummyClient = {
   isDummy: true,
@@ -35,7 +36,8 @@ export const initFunction = async (
 
   const payload = obs.payload
 
-  const close = server.functions.runObservableFunction(
+  const close = startObs(
+    server,
     spec,
     id,
     (err) => {

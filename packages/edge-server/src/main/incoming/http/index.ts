@@ -7,7 +7,8 @@ import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
-import { BasedErrorCode, sendError } from '../../error'
+import { BasedErrorCode } from '../../../error'
+import { sendError } from '../../sendError'
 import { incomingCounter } from '../../security'
 
 let clientId = 0
@@ -63,7 +64,7 @@ export const httpHandler = (
         context: { ip, id: ++clientId, headers: {} },
       },
       BasedErrorCode.FunctionNotFound,
-      path[1] ? { name: path[1] } : { path: url }
+      path[1] ? { name: path[1] } : { name: '', path: url }
     )
     return
   }
@@ -145,7 +146,7 @@ export const httpHandler = (
         return
       }
       let p
-      if (client.context.query) {
+      if ('query' in client.context) {
         try {
           p = parseQuery(client.context.query)
         } catch (err) {}

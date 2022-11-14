@@ -13,7 +13,7 @@ import type {
 } from '../types'
 import { BasedFunctions } from './functions'
 import { BasedAuth } from './auth'
-import { BasedErrorCode } from './error'
+import { BasedErrorCode } from '../error'
 import { wait } from '@saulx/utils'
 
 // extend emitter

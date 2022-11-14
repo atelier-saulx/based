@@ -1,7 +1,8 @@
 import { BasedServer } from '../server'
-import { destroy } from './destroy'
+import { destroyObs } from './destroy'
 import { WebsocketClient, HttpClient } from '../../types'
-import { BasedErrorCode, BasedError, sendError } from '../error'
+import { BasedErrorCode, BasedError } from '../../error'
+import { sendError } from '../sendError'
 
 export const sendObsGetError = (
   server: BasedServer,
@@ -17,5 +18,5 @@ export const sendObsGetError = (
     },
     err: err,
   })
-  destroy(server, id)
+  destroyObs(server, id)
 }
