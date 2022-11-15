@@ -50,9 +50,6 @@ test.serial('rate limit ws', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 
