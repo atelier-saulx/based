@@ -1,6 +1,7 @@
 const utils = require('@saulx/utils')
 
 module.exports = async (payload) => {
+  console.info('????', payload)
   if (payload === undefined) {
     return 'hello'
   }

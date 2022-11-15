@@ -105,7 +105,6 @@ export const readBody = (
       index += len
 
       if (isLast) {
-        console.info('shared buf time', buf)
         onData(buf)
       }
     })

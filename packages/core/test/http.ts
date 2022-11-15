@@ -16,17 +16,11 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'hello.js'),
-
-      // TODO: FIX THIS
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
           return
         }
-        // just make a return thing
-        // { headers: {} , status: , reply }
-        // send() can be wrapped in the based fn header
-
         res.writeStatus('200 OkiDoki')
         if (typeof result === 'object') {
           res.end(JSON.stringify(result))
@@ -43,7 +37,6 @@ test.serial('functions (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -55,18 +48,15 @@ test.serial('functions (over http)', async (t) => {
             }
           }
         }
-
         if (name && store[name]) {
           return { name }
         }
         return false
       },
-
       uninstall: async () => {
         await wait(1e3)
         return true
       },
-
       install: async ({ name }) => {
         if (store[name]) {
           return store[name]
@@ -101,7 +91,7 @@ test.serial('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `'{"error":"Function not found 'gurk'","code":40401}`)
+  t.is(x, `{"error":"[gurk] Function not found","code":40401}`)
 
   await wait(10e3)
 
@@ -179,7 +169,7 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('functions (over http + contentEncoding)', async (t) => {
+test.serial('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
