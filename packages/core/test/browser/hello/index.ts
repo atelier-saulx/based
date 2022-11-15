@@ -1,4 +1,4 @@
-export default async (payload, client) => {
+export default async ({ client }) => {
   client.set('hello', {})
 
   try {

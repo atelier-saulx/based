@@ -1,4 +1,4 @@
-export default async (payload, update) => {
+export default async ({ update }) => {
   let cnt = 0
 
   update({ cnt: ++cnt })

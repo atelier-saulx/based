@@ -1,4 +1,4 @@
-export default async (payload, update, client) => {
+export default async ({ update, client }) => {
   console.info('!!nice observe!')
   return client.observe(
     {

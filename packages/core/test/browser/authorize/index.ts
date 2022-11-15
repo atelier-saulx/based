@@ -1,4 +1,4 @@
-export default async (client, name, payload) => {
+export default async ({ client, name, payload }) => {
   // authorize: async ({ user, payload, name, type, based, callstack }) => {
 
   /*
