@@ -110,7 +110,7 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('get (over http)', async (t) => {
+test.serial('get (over http)', async (t) => {
   const store = {
     hello: {
       path: '/counter',
@@ -179,19 +179,13 @@ test.serial.only('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('functions (over http + contentEncoding)', async (t) => {
+test.serial.only('functions (over http + contentEncoding)', async (t) => {
   const store = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
-        await wait(100)
-        if (payload) {
-          return payload
-        }
-        return 'flap'
-      },
+      functionPath: join(__dirname, './functions/flap.js'),
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
