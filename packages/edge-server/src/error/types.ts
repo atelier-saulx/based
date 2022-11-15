@@ -50,6 +50,15 @@ export type ErrorPayload = {
   [BasedErrorCode.AuthorizeFunctionError]:
     | FunctionErrorProps
     | ObservableFunctionErrorProps
+  [BasedErrorCode.AuthorizeRejectedError]:
+    | {
+        observableId: number
+        route: BasedFunctionRoute
+      }
+    | {
+        requestId?: number
+        route: BasedFunctionRoute
+      }
   [BasedErrorCode.ObserveCallbackError]: {
     err: Error
     observableId: number
@@ -64,7 +73,7 @@ export type ErrorPayload = {
   [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute
   [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute
   [BasedErrorCode.CannotStreamToObservableFunction]: BasedFunctionRoute
-  [BasedErrorCode.AuthorizeRejectedError]: BasedFunctionRoute
+
   [BasedErrorCode.InvalidPayload]: BasedFunctionRoute
   [BasedErrorCode.PayloadTooLarge]: BasedFunctionRoute
   [BasedErrorCode.ChunkTooLarge]: BasedFunctionRoute

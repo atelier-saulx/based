@@ -46,9 +46,6 @@ test.serial('functions', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 

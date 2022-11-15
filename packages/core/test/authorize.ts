@@ -56,9 +56,6 @@ const setup = async () => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
   return { coreClient, server }

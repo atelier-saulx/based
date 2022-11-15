@@ -3,7 +3,9 @@ import { workerData } from 'worker_threads'
 import send from './send'
 import { OutgoingType } from './types'
 
-const importWrapper: ImportWrapper = require(workerData.importWrapperPath)
+const importWrapper: ImportWrapper =
+  require(workerData.importWrapperPath).default ||
+  require(workerData.importWrapperPath)
 
 const fnPathMap: Map<string, string> = new Map()
 

@@ -43,5 +43,6 @@ export const convertDataToBasedError = (
   const error = new BasedError(msg)
   error.stack = stack ? msg + ' ' + stack : msg
   error.name = BasedErrorCode[code]
+  error.code = code
   return error
 }

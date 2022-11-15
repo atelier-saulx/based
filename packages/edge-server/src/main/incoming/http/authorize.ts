@@ -20,7 +20,9 @@ export const authorizeRequest = (
       }
       if (!ok) {
         notAuth()
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+          route,
+        })
       } else {
         authorized(payload)
       }
