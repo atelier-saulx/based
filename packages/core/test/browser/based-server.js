@@ -34,30 +34,6 @@ const init = async () => {
       checksum: 1,
       functionPath: join(__dirname, '/stream.js'),
     },
-    // counter: {
-    //   name: 'counter',
-    //   observable: true,
-    //   checksum: 1,
-    //   function: async (payload, update) => {
-    //     console.info('init counter')
-    //     let cnt = 0
-    //     const x = []
-    //     const counter = setInterval(() => {
-    //       if (cnt > 99) {
-    //         cnt = 0
-    //       }
-    //       cnt++
-
-    //       for (let i = 0; i < 2; i++) {
-    //         x.push({ cnt, i, name: 'hello' })
-    //       }
-    //       update(x)
-    //     }, 2000)
-    //     return () => {
-    //       clearInterval(counter)
-    //     }
-    //   },
-    // },
   }
 
   const server = await createServer({

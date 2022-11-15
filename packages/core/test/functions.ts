@@ -11,7 +11,7 @@ test.serial('functions', async (t) => {
     hello: {
       name: 'hello',
       checksum: 1,
-      functionPath: join(__dirname, 'functions', 'hello.js'),
+      functionPath: join(__dirname, 'functions', 'helloPayload.js'),
     },
     lotsOfData: {
       name: 'lotsOfData',
