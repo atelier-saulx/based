@@ -36,6 +36,8 @@ const init = async () => {
     },
   })
 
+  await coreClient.auth('myblurf')
+
   // coreClient.observe(
   //   'based-db-observe',
   //   (d) => {

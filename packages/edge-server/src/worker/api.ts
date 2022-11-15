@@ -24,7 +24,7 @@ export const runFunction = async (
   const fn = await installFunction(name, FunctionType.function)
   return fn(payload, {
     ...context,
-    callStack: context.callStack ? [...context.callStack, name] : [name],
+    callStack: context?.callStack ? [...context.callStack, name] : [name],
   })
 }
 
@@ -81,7 +81,7 @@ export const observe = (
         id,
         payload,
         context: {
-          callStack: context.callStack ? [...context.callStack, name] : [name],
+          callStack: context?.callStack ? [...context.callStack, name] : [name],
           headers: {},
         },
       })
