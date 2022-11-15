@@ -3,6 +3,9 @@ export default async ({ update, client }) => {
   return client.observe(
     {
       children: true,
+      myflurperstein: {
+        $value: 'flluprestein',
+      },
     },
     update
   )

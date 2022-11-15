@@ -1,4 +1,4 @@
-export default async ({ client, name, payload }) => {
+export default async ({ client, user, name, payload, callStack, type }) => {
   // authorize: async ({ user, payload, name, type, based, callstack }) => {
 
   /*
@@ -28,6 +28,14 @@ based.observe(query, update)
 
   */
 
-  console.info('--> Need to auth', client, name, payload)
+  console.info(
+    '--> Need to auth',
+    'NAME:',
+    name,
+    payload,
+    callStack,
+    type,
+    user.ip
+  )
   return true
 }

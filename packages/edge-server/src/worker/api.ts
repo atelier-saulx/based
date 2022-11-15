@@ -94,14 +94,16 @@ export const observe = (
     }
     const observers: ActiveNestedObservers = activeObservables.get(id)
     isRemoved = true
-    observers.delete(observerId)
-    if (observers.size === 0) {
-      send({
-        type: OutgoingType.Unsubscribe,
-        id,
-        context: { headers: {} },
-      })
-      activeObservables.delete(id)
+    if (observers) {
+      observers.delete(observerId)
+      if (observers.size === 0) {
+        send({
+          type: OutgoingType.Unsubscribe,
+          id,
+          context: { headers: {} },
+        })
+        activeObservables.delete(id)
+      }
     }
   }
 }
