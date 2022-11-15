@@ -1,21 +1,14 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer, { isHttpClient } from '@based/edge-server'
+import createServer from '@based/edge-server'
+import { join } from 'path'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
 
   const store = {
-    hello: async (payload: any) => {
-      return payload.length
-    },
-    lotsOfData: async () => {
-      let str = ''
-      for (let i = 0; i < 200000; i++) {
-        str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-      }
-      return str
-    },
+    hello: join(__dirname, '/functions', 'hello.js'),
+    lotsOfData: join(__dirname, '/functions', 'lotsOfData.js'),
   }
 
   const server = await createServer({
@@ -39,14 +32,11 @@ const setup = async () => {
           return {
             name,
             checksum: 1,
-            function: store[name],
+            functionPath: store[name],
           }
         } else {
           return false
         }
-      },
-      log: (opts) => {
-        console.info('-->', opts)
       },
     },
   })
@@ -145,7 +135,7 @@ test.serial('multiple auth calls', async (t) => {
   })
 
   let authEventCount = 0
-  coreClient.once('auth', () => {
+  coreClient.on('auth', () => {
     authEventCount++
   })
 
@@ -206,22 +196,10 @@ test.serial('authState update', async (t) => {
 
   await t.notThrowsAsync(coreClient.function('hello'))
   server.auth.updateConfig({
-    authorize: async (server, client) => {
-      const authState = 'second_token'
-
-      if (isHttpClient(client)) {
-        if (client.context) {
-          client.context.authState = authState
-        }
-      } else {
-        if (client.ws) {
-          client.ws.authState = authState
-          server.auth.sendAuthUpdate(client, authState)
-        }
-      }
-      return true
-    },
+    authorizePath: join(__dirname, 'functions', 'authAdvanced'),
   })
+  await coreClient.auth('second_token')
+
   await coreClient.function('hello')
   t.deepEqual(coreClient.authState, 'second_token')
 })
