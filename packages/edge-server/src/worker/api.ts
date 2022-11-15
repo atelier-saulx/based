@@ -22,7 +22,10 @@ export const runFunction = async (
     throw new Error('Not auth')
   }
   const fn = await installFunction(name, FunctionType.function)
-  return fn(payload, context)
+  return fn(payload, {
+    ...context,
+    callStack: context.callStack ? [...context.callStack, name] : [name],
+  })
 }
 
 let obsIds = 0
@@ -77,7 +80,10 @@ export const observe = (
         name,
         id,
         payload,
-        context: { headers: {} },
+        context: {
+          callStack: context.callStack ? [...context.callStack, name] : [name],
+          headers: {},
+        },
       })
     })
     .catch((err) => {

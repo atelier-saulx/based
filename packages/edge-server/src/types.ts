@@ -8,6 +8,7 @@ export type ClientContext =
       query: string
       ua: string
       ip: string
+      callStack?: string[]
       id: number
       authState?: any
       method: string
@@ -20,6 +21,7 @@ export type ClientContext =
       } & { [key: string]: string }
     }
   | {
+      callStack?: string[]
       headers: {
         'content-length'?: number
         authorization?: string
