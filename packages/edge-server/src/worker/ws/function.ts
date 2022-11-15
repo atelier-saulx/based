@@ -21,8 +21,6 @@ export default ({
 }: Incoming[IncomingType.WsFunction]) => {
   const fn = getFunction(name, FunctionType.function, path)
 
-  console.info('WORKER!', name)
-
   let parsedPayload: any
 
   if (payload) {
