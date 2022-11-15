@@ -95,8 +95,6 @@ test.serial('functions (over http + stream)', async (t) => {
     t.fail('Crash with uncompressing')
   }
 
-  console.log('rdy')
-
   await wait(30e3)
 
   t.is(Object.keys(server.functions.functions).length, 0)

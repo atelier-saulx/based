@@ -73,8 +73,6 @@ test.serial('rate limit ws', async (t) => {
     }
   }
 
-  // t.is(result, 'bla')
-
   coreClient.connect({
     url: async () => {
       return 'ws://localhost:9910'
