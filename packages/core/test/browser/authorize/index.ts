@@ -1,4 +1,6 @@
 export default async (client, name, payload) => {
+  // authorize: async ({ user, payload, name, type, based, callstack }) => {
+
   /*
 
   js
@@ -18,8 +20,14 @@ based.opts.env === 'dev'
 based.secret(envKey)
 based.observe(query, update)
 
+(d) => {
+      subsResults[0].push(deepCopy(d))
+    }),
+
+{ payload, based }
+
   */
 
-  console.info('--> Need to auth', name, payload)
+  console.info('--> Need to auth', client, name, payload)
   return true
 }
