@@ -2,29 +2,17 @@ import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
 import createServer from '@based/edge-server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { join } from 'path'
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
   const coreClient = new BasedCoreClient()
 
   const store = {
-    throwingFunction: async () => {
-      throw new Error('This is error message')
-    },
-    counter: async (_payload, update) => {
-      update({ yeye: 'yeye' })
-    },
-    errorFunction: async () => {
-      const wawa = [1, 2]
-      // @ts-ignore
-      return wawa[3].yeye
-    },
-    errorTimer: async (payload, update) => {
-      setInterval(() => {
-        throw new Error('lol')
-      }, 10)
-      update('yes')
-    },
+    throwingFunction: join(__dirname, '/functions/throwingFunctions.js'),
+    counter: join(__dirname, '/functions/counterYe.js'),
+    errorFunction: join(__dirname, '/functions/errorFunction.js'),
+    errorTimer: join(__dirname, '/functions/errorTimer.js'),
   }
 
   const server = await createServer({
@@ -50,14 +38,11 @@ const setup = async (t: ExecutionContext) => {
             observable: name === 'counter' || name === 'errorTimer',
             name,
             checksum: 1,
-            function: store[name],
+            functionPath: store[name],
           }
         } else {
           return false
         }
-      },
-      log: (opts) => {
-        console.info('-->', opts)
       },
     },
   })
@@ -90,9 +75,7 @@ test.serial('function authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorize: async () => {
-      throw new Error('Error inside authorize')
-    },
+    authorizePath: join(__dirname, './functions/throwingFunction.js'),
   })
 
   coreClient.connect({
@@ -112,9 +95,7 @@ test.serial('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorize: async () => {
-      throw new Error('Error inside authorize')
-    },
+    authorizePath: join(__dirname, './functions/throwingFunction.js'),
   })
 
   coreClient.connect({
@@ -155,6 +136,7 @@ test.serial('type error in function', async (t) => {
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
+// TODO: NEEDS TO BE FIXED
 test.serial('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({

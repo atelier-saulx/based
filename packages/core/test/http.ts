@@ -16,6 +16,8 @@ test.serial('functions (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       functionPath: join(__dirname, 'functions', 'hello.js'),
+
+      // TODO: FIX THIS
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
@@ -72,10 +74,6 @@ test.serial('functions (over http)', async (t) => {
           return false
         }
       },
-
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 
@@ -112,7 +110,7 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('get (over http)', async (t) => {
+test.serial.only('get (over http)', async (t) => {
   const store = {
     hello: {
       path: '/counter',
@@ -155,21 +153,20 @@ test.serial('get (over http)', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result, '1')
+  t.is(result, '0')
 
   await wait(1e3)
 
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result2, '2')
+  t.is(result2, '1')
+
+  await wait(1e3)
 
   const result3 = await (await fetch('http://localhost:9910/hello')).text()
 
@@ -251,10 +248,6 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         } else {
           return false
         }
-      },
-
-      log: (opts) => {
-        console.info('-->', opts)
       },
     },
   })
