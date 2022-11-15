@@ -9,7 +9,7 @@ const init = async () => {
     env: 'production',
     org: 'saulx',
     project: 'flap',
-    cluster: 'http://192.168.1.104:7022',
+    cluster: 'http://localhost:7022',
     // url: async () => {
     //   return 'ws://localhost:9910'
     // },
