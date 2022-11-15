@@ -10,6 +10,7 @@ export type ClientContext =
       ip: string
       callStack?: string[]
       id: number
+      fromAuth?: boolean
       authState?: any
       method: string
       headers: {
@@ -22,6 +23,7 @@ export type ClientContext =
     }
   | {
       callStack?: string[]
+      fromAuth?: boolean
       headers: {
         'content-length'?: number
         authorization?: string

@@ -32,10 +32,14 @@ based.observe(query, update)
     '--> Need to auth',
     'NAME:',
     name,
+    'TOKEN:',
+    await user.token(),
     payload,
     callStack,
     type,
-    user.ip
+    user.ip,
+    'GET',
+    await client.get({ id: true })
   )
   return true
 }
