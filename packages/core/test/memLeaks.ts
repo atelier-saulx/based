@@ -37,9 +37,6 @@ test.serial('mem tests', async (t) => {
           return false
         }
       },
-      log: () => {
-        // console.info('-->', opts)
-      },
     },
   })
 

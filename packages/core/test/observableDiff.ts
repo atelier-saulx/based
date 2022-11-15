@@ -38,7 +38,6 @@ test.serial('observablesDiff', async (t) => {
           return false
         }
       },
-      log: () => {},
     },
   })
 
