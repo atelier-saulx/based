@@ -1,8 +1,9 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer, { isHttpClient } from '@based/edge-server'
+import createServer from '@based/edge-server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 import { wait } from '@saulx/utils'
+import { join } from 'path'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
@@ -10,21 +11,11 @@ const setup = async () => {
   const store = {
     hello: {
       observable: false,
-      function: async (payload: any) => {
-        return payload.length
-      },
+      functionPath: join(__dirname, '/functions/hello'),
     },
     counter: {
       observable: true,
-      function: async (_payload: any, update: any) => {
-        let cnt = 0
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 100)
-        return () => {
-          clearInterval(counter)
-        }
-      },
+      functionPath: join(__dirname, '/functions/counter'),
     },
   }
 
@@ -69,18 +60,7 @@ test.serial('authorize functions', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorize: async (_server, client) => {
-      if (isHttpClient(client)) {
-        if (client.context) {
-          return client.context.authState === token
-        }
-      } else {
-        if (client.ws) {
-          return client.ws.authState === token
-        }
-      }
-      return false
-    },
+    authorizePath: join(__dirname, 'functions', 'auth.js'),
   })
 
   t.teardown(() => {
@@ -119,32 +99,12 @@ test.serial('authorize observe', async (t) => {
   server.functions.update({
     observable: true,
     name: 'counter',
-    // memCacheTimeout: 2e3,
     checksum: 2,
-    function: async (_payload: any, update: any) => {
-      let cnt = 0
-      counter = setInterval(() => {
-        update('UpdatedFn' + ++cnt)
-      }, 100)
-      return () => {
-        clearInterval(counter)
-      }
-    },
+    functionPath: join(__dirname, 'functions', 'counter.js'),
   })
 
   server.auth.updateConfig({
-    authorize: async (_server, client) => {
-      if (isHttpClient(client)) {
-        if (client.context) {
-          return client.context.authState === token
-        }
-      } else {
-        if (client.ws) {
-          return client.ws.authState === token
-        }
-      }
-      return false
-    },
+    authorizePath: join(__dirname, 'functions', 'auth.js'),
   })
 
   t.teardown(() => {
@@ -168,7 +128,7 @@ test.serial('authorize observe', async (t) => {
         myQuery: 123,
       },
       (err: BasedError) => {
-        t.is(err.basedCode, BasedErrorCode.AuthorizeRejectedError)
+        t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
         resolve(err)
       }
     )
@@ -209,30 +169,11 @@ test.serial('authorize after observe', async (t) => {
     observable: true,
     name: 'counter',
     checksum: 2,
-    function: async (_payload: any, update: any) => {
-      let cnt = 0
-      counter = setInterval(() => {
-        update('UpdatedFn' + ++cnt)
-      }, 100)
-      return () => {
-        clearInterval(counter)
-      }
-    },
+    functionPath: join(__dirname, 'functions', 'counter.js'),
   })
 
   server.auth.updateConfig({
-    authorize: async (_server, client) => {
-      if (isHttpClient(client)) {
-        if (client.context) {
-          return client.context.authState === token
-        }
-      } else {
-        if (client.ws) {
-          return client.ws.authState === token
-        }
-      }
-      return false
-    },
+    authorizePath: join(__dirname, 'functions', 'auth.js'),
   })
 
   t.teardown(() => {
@@ -258,7 +199,7 @@ test.serial('authorize after observe', async (t) => {
       myQuery: 123,
     },
     (err: BasedError) => {
-      t.is(err.basedCode, BasedErrorCode.AuthorizeRejectedError)
+      t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
     }
   )
 
