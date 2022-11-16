@@ -9,7 +9,7 @@ const init = async () => {
     env: 'production',
     org: 'saulx',
     project: 'flap',
-    cluster: 'http://192.168.1.104:7022',
+    cluster: 'http://localhost:7022',
     // url: async () => {
     //   return 'ws://localhost:9910'
     // },
@@ -22,6 +22,11 @@ const init = async () => {
   await coreClient.function('based-db-update-schema', {
     languages: ['en'],
     types: {
+      blurf: {
+        fields: {
+          price: { type: 'int', timeseries: true },
+        },
+      },
       thing: {
         prefix: 'th',
         fields: {
@@ -31,6 +36,8 @@ const init = async () => {
     },
   })
 
+  await coreClient.auth('myblurf')
+
   // coreClient.observe(
   //   'based-db-observe',
   //   (d) => {
@@ -39,12 +46,20 @@ const init = async () => {
   //   { children: { name: true, id: true, $list: true } }
   // )
 
+  coreClient.observe(
+    'nestedCounter',
+    (d) => {
+      console.info('NESTED, INCOMING ---->', d)
+    },
+    { children: { name: true, id: true, $list: true } }
+  )
+
   // coreClient.observe(
   //   'nestedCounter',
   //   (d) => {
   //     console.info('NESTED, INCOMING ---->', d)
   //   },
-  //   { children: { name: true, id: true, $list: true } }
+  //   { children: true }
   // )
 
   // for (let i = 0; i < 5; i++) {
@@ -67,6 +82,15 @@ const init = async () => {
       type: 'thing',
       name: 'BLAAAA',
     })
+  })
+
+  makeButton('add many things', () => {
+    for (let i = 0; i < 1000; i++) {
+      coreClient.function('based-db-set', {
+        type: 'thing',
+        name: 'YES' + i,
+      })
+    }
   })
 
   makeButton('crasher', () => {

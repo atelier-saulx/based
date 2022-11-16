@@ -1,7 +1,11 @@
 import { FunctionType, ImportWrapper } from '../types'
-import { parentPort, workerData } from 'worker_threads'
+import { workerData } from 'worker_threads'
+import send from './send'
+import { OutgoingType } from './types'
 
-const importWrapper: ImportWrapper = require(workerData.importWrapperPath)
+const importWrapper: ImportWrapper =
+  require(workerData.importWrapperPath).default ||
+  require(workerData.importWrapperPath)
 
 const fnPathMap: Map<string, string> = new Map()
 
@@ -87,7 +91,6 @@ const installFunction = (
       }
       listeners.push((err) => {
         if (err) {
-          console.error('Error', err)
           reject(err)
         } else {
           const fn = getFunctionByName(name, type)
@@ -98,8 +101,8 @@ const installFunction = (
           }
         }
       })
-      parentPort.postMessage({
-        type: 0,
+      send({
+        type: OutgoingType.InstallFn,
         name,
       })
     }

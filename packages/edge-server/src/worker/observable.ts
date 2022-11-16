@@ -7,9 +7,9 @@ import { FunctionType, ObservableUpdateFunction } from '../types'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepCopy } from '@saulx/utils'
 import createPatch from '@saulx/diff'
-import { parentPort } from 'node:worker_threads'
 import { getFunction } from './functions'
-import { BasedErrorCode } from '../error'
+import { Incoming, IncomingType, OutgoingType } from './types'
+import send from './send'
 
 export type WorkerObs = {
   id: number
@@ -27,14 +27,14 @@ export type WorkerObs = {
 
 export const activeObs: Map<number, WorkerObs> = new Map()
 
-export const createObs = (
-  name: string,
-  id: number,
-  functionPath: string,
-  payload?: any
-) => {
+export const createObs = ({
+  id,
+  name,
+  path,
+  payload,
+}: Incoming[IncomingType.CreateObs]) => {
   if (activeObs.has(id)) {
-    console.warn('trying to creater an obs that allready exists...')
+    console.warn('Trying to create an obs that allready exists...')
     return
   }
 
@@ -45,7 +45,7 @@ export const createObs = (
 
   activeObs.set(id, obs)
 
-  const fn = getFunction(name, FunctionType.observe, functionPath)
+  const fn = getFunction(name, FunctionType.observe, path)
 
   const update: ObservableUpdateFunction = (
     data: any,
@@ -114,7 +114,8 @@ export const createObs = (
       obs.cache = encodedData
       obs.checksum = checksum
 
-      parentPort.postMessage({
+      send({
+        type: OutgoingType.ObservableUpdate,
         id,
         payload: {
           diff: obs.diffCache,
@@ -130,30 +131,40 @@ export const createObs = (
   // @ts-ignore
   update.__isEdge__ = true
 
-  // add onError function to observe api...
-
-  fn(payload, update)
-    .then((close) => {
-      if (obs.isDestroyed) {
-        close()
-      } else {
-        obs.closeFunction = close
-      }
-    })
-    .catch((err) => {
-      parentPort.postMessage({
-        id,
-        err,
-        errCode: BasedErrorCode.ObservableFunctionError,
+  // TODO: PassCONTEXT
+  try {
+    const r = fn(payload, update)
+    if (r instanceof Promise) {
+      r.then((close) => {
+        if (obs.isDestroyed) {
+          close()
+        } else {
+          obs.closeFunction = close
+        }
+      }).catch((err) => {
+        send({
+          type: OutgoingType.ObservableUpdate,
+          id,
+          err,
+        })
       })
+    } else {
+      obs.closeFunction = r
+    }
+  } catch (err) {
+    send({
+      type: OutgoingType.ObservableUpdate,
+      id,
+      err,
     })
+  }
 }
 
 export const closeObs = (id: number) => {
   const obs = activeObs.get(id)
 
   if (!obs) {
-    console.warn('trying to close an obs that does not exist')
+    console.warn('Trying to close an obs that does not exist')
     return
   }
 

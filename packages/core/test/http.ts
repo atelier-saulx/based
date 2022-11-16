@@ -21,10 +21,6 @@ test.serial('functions (over http)', async (t) => {
         if (isAborted) {
           return
         }
-        // just make a return thing
-        // { headers: {} , status: , reply }
-        // send() can be wrapped in the based fn header
-
         res.writeStatus('200 OkiDoki')
         if (typeof result === 'object') {
           res.end(JSON.stringify(result))
@@ -41,7 +37,6 @@ test.serial('functions (over http)', async (t) => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 3e3,
-
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -53,28 +48,21 @@ test.serial('functions (over http)', async (t) => {
             }
           }
         }
-
         if (name && store[name]) {
           return { name }
         }
         return false
       },
-
       uninstall: async () => {
         await wait(1e3)
         return true
       },
-
       install: async ({ name }) => {
         if (store[name]) {
           return store[name]
         } else {
           return false
         }
-      },
-
-      log: (opts) => {
-        console.info('-->', opts)
       },
     },
   })
@@ -103,7 +91,7 @@ test.serial('functions (over http)', async (t) => {
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
-  t.is(x, `'{"error":"Function not found 'gurk'","code":40401}`)
+  t.is(x, `{"error":"[gurk] Function not found","code":40401}`)
 
   await wait(10e3)
 
@@ -155,21 +143,20 @@ test.serial('get (over http)', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result, '1')
+  t.is(result, '0')
 
   await wait(1e3)
 
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result2, '2')
+  t.is(result2, '1')
+
+  await wait(1e3)
 
   const result3 = await (await fetch('http://localhost:9910/hello')).text()
 
@@ -188,13 +175,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
-        await wait(100)
-        if (payload) {
-          return payload
-        }
-        return 'flap'
-      },
+      functionPath: join(__dirname, './functions/flap.js'),
       customHttpResponse: async (result, payload, client) => {
         const { res, isAborted } = client
         if (isAborted) {
@@ -251,10 +232,6 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         } else {
           return false
         }
-      },
-
-      log: (opts) => {
-        console.info('-->', opts)
       },
     },
   })

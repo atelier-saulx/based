@@ -3,21 +3,22 @@ import {
   valueToBuffer,
   encodeFunctionResponse,
 } from '../../protocol'
-import { parentPort } from 'node:worker_threads'
-import { ClientContext, FunctionType } from '../../types'
+import { FunctionType } from '../../types'
 import { authorize } from '../authorize'
 import { getFunction } from '../functions'
 import { BasedErrorCode } from '../../error'
+import { Incoming, IncomingType, OutgoingType } from '../types'
+import send from '../send'
 
-export default (
-  name: string,
-  path: string,
-  id: number,
-  reqId: number,
-  context: ClientContext,
-  isDeflate: boolean,
-  payload?: Uint8Array
-) => {
+export default ({
+  name,
+  payload,
+  isDeflate,
+  path,
+  context,
+  id,
+  reqId,
+}: Incoming[IncomingType.WsFunction]) => {
   const fn = getFunction(name, FunctionType.function, path)
 
   let parsedPayload: any
@@ -29,33 +30,36 @@ export default (
   authorize(context, name, parsedPayload)
     .then((ok) => {
       if (!ok) {
-        parentPort.postMessage({
+        send({
+          type: OutgoingType.Listener,
           id,
-          errCode: BasedErrorCode.AuthorizeRejectedError,
+          code: BasedErrorCode.AuthorizeRejectedError,
         })
         return false
       }
-
       fn(parsedPayload, context)
-        .then((v) => {
-          parentPort.postMessage({
+        .then((v: any) => {
+          send({
+            type: OutgoingType.Listener,
             id,
             payload: encodeFunctionResponse(reqId, valueToBuffer(v)),
           })
         })
-        .catch((err) => {
-          parentPort.postMessage({
+        .catch((err: Error) => {
+          send({
+            type: OutgoingType.Listener,
             id,
+            code: BasedErrorCode.FunctionError,
             err,
-            errCode: BasedErrorCode.FunctionError,
           })
         })
     })
     .catch((err) => {
-      parentPort.postMessage({
+      send({
+        type: OutgoingType.Listener,
         id,
+        code: BasedErrorCode.AuthorizeFunctionError,
         err,
-        errCode: BasedErrorCode.AuthorizeFunctionError,
       })
     })
 }
