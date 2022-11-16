@@ -12,9 +12,9 @@ const jwtDecode = (
     jwt.verify(
       value,
       publicKey,
-      {
-        algorithms: ['RS256'],
-      },
+      // {
+      //   algorithms: ['RS256'],
+      // },
       (err, decoded) => {
         if (err) {
           if (err instanceof jwt.TokenExpiredError) {

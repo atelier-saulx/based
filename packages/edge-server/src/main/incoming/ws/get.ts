@@ -150,7 +150,10 @@ export const getMessage = (
       }
 
       if (!ok) {
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+          route,
+          observableId: id,
+        })
         return false
       }
 
@@ -162,6 +165,8 @@ export const getMessage = (
       install(server, name, client, route, id, checksum, payload)
     })
     .catch((err) => {
+      console.info('AUTH FN CRASHED??', name)
+
       sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
         route,
         observableId: id,

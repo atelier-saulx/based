@@ -81,11 +81,9 @@ test.serial('nested functions', async (t) => {
     },
   })
 
-  console.info('-----')
-
   const x = await coreClient.function('fnWithNested', { bla: true })
 
-  t.is(x, 12)
+  t.is(x, '{"bla":true}')
 
   let cnt = 0
 

@@ -8,6 +8,7 @@ import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
 
+// TODO: FIX
 test.serial('functions (over http + stream)', async (t) => {
   const routes = {
     hello: {
@@ -53,9 +54,6 @@ test.serial('functions (over http + stream)', async (t) => {
           return false
         }
       },
-      log: (opts) => {
-        console.info('-->', opts)
-      },
     },
   })
 
@@ -96,8 +94,6 @@ test.serial('functions (over http + stream)', async (t) => {
     console.info('ERROR', err)
     t.fail('Crash with uncompressing')
   }
-
-  console.log('rdy')
 
   await wait(30e3)
 

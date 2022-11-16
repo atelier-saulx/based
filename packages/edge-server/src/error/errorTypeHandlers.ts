@@ -93,7 +93,7 @@ export const errorTypeHandlers: ErrorType = {
   [BasedErrorCode.AuthorizeRejectedError]: {
     statusCode: 403,
     statusMessage: 'Forbidden',
-    message: (payload) => addName(payload) + `Authorize rejected access`,
+    message: (payload) => addName(payload.route) + `Authorize rejected access`,
   },
   [BasedErrorCode.InvalidPayload]: {
     statusCode: 400,

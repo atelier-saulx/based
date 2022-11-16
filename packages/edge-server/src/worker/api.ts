@@ -17,12 +17,17 @@ export const runFunction = async (
   payload: any,
   context: ClientContext
 ): Promise<any> => {
-  const ok = await authorize(context, name, payload)
-  if (!ok) {
-    throw new Error('Not auth')
+  if (!context.fromAuth) {
+    const ok = await authorize(context, name, payload)
+    if (!ok) {
+      throw new Error('Not auth')
+    }
   }
   const fn = await installFunction(name, FunctionType.function)
-  return fn(payload, context)
+  return fn(payload, {
+    ...context,
+    callStack: context?.callStack ? [...context.callStack, name] : [name],
+  })
 }
 
 let obsIds = 0
@@ -49,44 +54,56 @@ export const observe = (
   const observerId = ++obsIds
   let isRemoved = false
 
-  authorize(context, name, payload)
-    .then((ok) => {
-      if (isRemoved) {
-        return
-      }
-      let observers: ActiveNestedObservers = activeObservables.get(id)
+  const observeIt = () => {
+    let observers: ActiveNestedObservers = activeObservables.get(id)
 
-      if (!ok) {
-        console.error('OBS - need to error! no auth for you!', name)
+    if (!observers) {
+      observers = new Map()
+      activeObservables.set(id, observers)
+    }
+
+    observers.set(observerId, {
+      onData,
+      onError: onError || (() => {}),
+    })
+
+    send({
+      type: OutgoingType.Subscribe,
+      name,
+      id,
+      payload,
+      context: {
+        callStack: context?.callStack ? [...context.callStack, name] : [name],
+        headers: {},
+      },
+    })
+  }
+
+  if (context.fromAuth) {
+    observeIt()
+  } else {
+    authorize(context, name, payload)
+      .then((ok) => {
+        if (isRemoved) {
+          return
+        }
+
+        if (!ok) {
+          console.error('OBS - need to error! no auth for you!', name)
+          // TODO: send up
+          return
+        }
+
+        observeIt()
+      })
+      .catch((err) => {
+        if (isRemoved) {
+          return
+        }
         // TODO: send up
-        return
-      }
-
-      if (!observers) {
-        observers = new Map()
-        activeObservables.set(id, observers)
-      }
-
-      observers.set(observerId, {
-        onData,
-        onError: onError || (() => {}),
+        console.error('Wrong auth obs - send up - authorize!', name, err)
       })
-
-      send({
-        type: OutgoingType.Subscribe,
-        name,
-        id,
-        payload,
-        context: { headers: {} },
-      })
-    })
-    .catch((err) => {
-      if (isRemoved) {
-        return
-      }
-      // TODO: send up
-      console.error('Wrong auth obs - send up - authorize!', name, err)
-    })
+  }
 
   return () => {
     if (isRemoved) {
@@ -94,14 +111,16 @@ export const observe = (
     }
     const observers: ActiveNestedObservers = activeObservables.get(id)
     isRemoved = true
-    observers.delete(observerId)
-    if (observers.size === 0) {
-      send({
-        type: OutgoingType.Unsubscribe,
-        id,
-        context: { headers: {} },
-      })
-      activeObservables.delete(id)
+    if (observers) {
+      observers.delete(observerId)
+      if (observers.size === 0) {
+        send({
+          type: OutgoingType.Unsubscribe,
+          id,
+          context: { headers: {} },
+        })
+        activeObservables.delete(id)
+      }
     }
   }
 }

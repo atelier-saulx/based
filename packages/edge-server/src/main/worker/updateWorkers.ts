@@ -36,7 +36,7 @@ export const updateWorkers = (functions: BasedFunctions) => {
 
         worker.stdout.on('data', (d) => {
           process.stdout.write(
-            chalk.grey(` [worker ${worker.threadId}] ${d.toString()}`)
+            ` ${chalk.grey(`[worker ${worker.threadId}]`)} ${d.toString()}`
           )
         })
 

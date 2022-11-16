@@ -10,8 +10,6 @@ const drainRequestCounter = (server: BasedServer) => {
   server.requestsCounterTimeout = setTimeout(() => {
     server.requestsCounterInProgress = false
 
-    // every 30 second remove  - 30 reqs
-
     server.requestsCounter.forEach((value, ip) => {
       if (!value.errors?.size) {
         if (value.requests <= 0) {
@@ -23,7 +21,7 @@ const drainRequestCounter = (server: BasedServer) => {
         console.info('error handle different')
       }
       console.info('DRAIN RATELIMIT TOKENS')
-      value.requests -= 60
+      value.requests -= 500
     })
 
     if (server.requestsCounter.size) {

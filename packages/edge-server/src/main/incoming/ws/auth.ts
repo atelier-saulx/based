@@ -28,7 +28,7 @@ export const authMessage = (
   try {
     authState = JSON.parse(authPayload)
   } catch (err) {
-    console.error("can't decode auth payload", err)
+    authState = authPayload
   }
   if (client.ws) {
     client.ws.authState = authState

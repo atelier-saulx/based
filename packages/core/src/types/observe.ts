@@ -1,3 +1,5 @@
+import { BasedError } from './error'
+
 export type ObserveOpts = {
   localStorage?: boolean
   maxCacheTime?: number
@@ -5,7 +7,7 @@ export type ObserveOpts = {
 
 export type ObserveDataListener = (data: any, checksum: number) => void
 
-export type ObserveErrorListener = (err: Error) => void
+export type ObserveErrorListener = (err: BasedError) => void
 
 export type CloseObserve = () => void
 

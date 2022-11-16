@@ -103,7 +103,10 @@ export const subscribeMessage = (
       }
       if (!ok) {
         client.ws.unauthorizedObs.add({ id, checksum, name, payload })
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
+        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+          route,
+          observableId: id,
+        })
         return
       }
       enableSubscribe(server, client, id, checksum, name, payload, route)

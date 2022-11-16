@@ -131,8 +131,7 @@ export const createObs = ({
   // @ts-ignore
   update.__isEdge__ = true
 
-  // add onError function to observe api...
-  // support both async and sync fns
+  // TODO: PassCONTEXT
   try {
     const r = fn(payload, update)
     if (r instanceof Promise) {

@@ -38,7 +38,6 @@ test.serial('observablesDiff', async (t) => {
           return false
         }
       },
-      log: () => {},
     },
   })
 
@@ -52,18 +51,11 @@ test.serial('observablesDiff', async (t) => {
     console.info('connect', isConnected)
   })
 
-  coreClient.on('debug', (d) => {
-    // make this nice
-    // @ts-ignore
-    console.info(d.data)
-  })
-
   const results: any[] = []
 
   const close = coreClient.observe(
     'counter',
-    (d, c) => {
-      console.info('\nincoming', c)
+    (d) => {
       results.push(d)
     },
     {
@@ -77,7 +69,6 @@ test.serial('observablesDiff', async (t) => {
 
   await wait(3e3)
 
-  console.info('------------------>')
   coreClient.connect({
     url: async () => {
       return 'ws://localhost:9910'
@@ -86,12 +77,10 @@ test.serial('observablesDiff', async (t) => {
 
   await wait(1e3)
 
-  console.info('hekllo')
   coreClient.cache.clear()
 
   await wait(5e3)
 
-  console.info('close it now')
   close()
 
   await wait(6e3)
