@@ -16,9 +16,10 @@ if(NOT DEFINED ARCH_FOLDER)
 endif(NOT DEFINED ARCH_FOLDER)
 
 
-find_library(CURL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcurl.dylib HINTS "prebuilt-libs/curl/lib/${ARCH_FOLDER}")
-find_library(SSL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libssl.a libssl.dylib HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
-find_library(CRYPTO_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcrypto.a libcrypto.dylib HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
+# find_package(CURL PATHS "lib/curl" NO_DEFAULT_PATH CONFIG REQUIRED)
+find_library(CURL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcurl.dylib libcurl.a HINTS "prebuilt-libs/curl/lib/${ARCH_FOLDER}")
+find_library(SSL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libssl.dylib libssl.a HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
+find_library(CRYPTO_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcrypto.dylib libcrypto.a HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
 
 
 set (CMAKE_CXX_STANDARD 11)

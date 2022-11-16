@@ -103,7 +103,7 @@ std::string BasedClient::get_service(std::string cluster,
     std::string registry_url = registries.at(m_registry_index);
     std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
     if (key.length() > 0) req_url += "." + key;
-    if (optional_key) req_url += "$";
+    if (key.length() > 0 && optional_key) req_url += "$";
 
     std::cout << req_url << std::endl;
 
