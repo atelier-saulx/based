@@ -1,12 +1,12 @@
-export default async ({ client }) => {
-  client.set('hello', {})
+export default async ({ based }) => {
+  console.info('GO GO GO', await based.secret('flap'))
 
   try {
-    const x = await client.get({
+    const x = await based.get({
       children: true,
     })
 
-    const y = await client.get('counter')
+    const y = await based.get('counter')
 
     return [y, x]
   } catch (err) {

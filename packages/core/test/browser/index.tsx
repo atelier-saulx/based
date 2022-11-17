@@ -84,6 +84,10 @@ const init = async () => {
     })
   })
 
+  makeButton('hello', async () => {
+    console.info('hello:', await coreClient.function('hello'))
+  })
+
   makeButton('add many things', () => {
     for (let i = 0; i < 1000; i++) {
       coreClient.function('based-db-set', {

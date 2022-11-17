@@ -1,4 +1,4 @@
-export default async ({ client, user, name, payload, callStack, type }) => {
+export default async ({ based, user, name, payload, callStack, type }) => {
   // authorize: async ({ user, payload, name, type, based, callstack }) => {
 
   /*
@@ -39,7 +39,7 @@ based.observe(query, update)
     type,
     user.ip,
     'GET',
-    await client.get({ id: true })
+    await based.get({ id: true })
   )
   return true
 }
