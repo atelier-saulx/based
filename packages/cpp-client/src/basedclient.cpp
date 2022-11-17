@@ -162,8 +162,6 @@ int BasedClient::observe(std::string name,
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = m_sub_id++;
 
-    std::cout << "obs_id sent = " << obs_id << std::endl;
-
     if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
         // first time this query is observed
         // encode request
@@ -515,7 +513,8 @@ void BasedClient::on_message(std::string message) {
         case IncomingType::ERROR_DATA: {
             // TODO: test this when errors get implemented in the server
 
-            // std::cout << "Error received. Error handling not implemented yet" << std::endl;
+            // std::cout << "Error received" << std::endl;
+
             int32_t start = 4;
             int32_t end = len + 4;
             std::string payload = "{}";
@@ -524,10 +523,13 @@ void BasedClient::on_message(std::string message) {
                                      : message.substr(start, end);
             }
 
-            json error(payload);
+            json error = json::parse(payload);
+            // std::cout << "payload = " << error << std::endl;
             // fire once
             if (error.find("requestId") != error.end()) {
                 auto id = error.at("requestId");
+                // std::cout << "id = " << id << std::endl;
+
                 if (m_function_callbacks.find(id) != m_function_callbacks.end()) {
                     auto fn = m_function_callbacks.at(id);
                     fn("", payload.c_str());

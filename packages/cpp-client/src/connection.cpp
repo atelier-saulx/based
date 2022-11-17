@@ -6,7 +6,7 @@ WsConnection::WsConnection()
       m_on_message(NULL),
       m_reconnect_attempts(0),
       m_terminating(false) {
-    std::cout << "> Created a new WsConnection" << std::endl;
+    std::cout << "[libbased::connection] >> Created a new WsConnection" << std::endl;
     // set the endpoint logging behavior to silent by clearing all of the access and error
     // logging channels
     m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
@@ -28,16 +28,17 @@ WsConnection::~WsConnection() {
     m_endpoint.stop_perpetual();
     if (m_status == ConnectionStatus::OPEN) {
         // Only close open connections
-        std::cout << "> Closing connection" << std::endl;
+        std::cout << "[libbased::connection] >> Closing connection" << std::endl;
 
         websocketpp::lib::error_code ec;
         m_endpoint.close(m_hdl, websocketpp::close::status::going_away, "", ec);
         if (ec) {
-            std::cout << "> Error closing connection: " << ec.message() << ec.value() << std::endl;
+            std::cout << "[libbased::connection] >> Error closing connection: " << ec.message()
+                      << ec.value() << std::endl;
         }
     }
     m_thread->join();
-    std::cout << "> Destroyed WsConnection obj" << std::endl;
+    std::cout << "[libbased::connection] >> Destroyed WsConnection obj" << std::endl;
 };
 int WsConnection::connect(std::string uri) {
     m_uri = uri;
@@ -45,7 +46,8 @@ int WsConnection::connect(std::string uri) {
     ws_client::connection_ptr con = m_endpoint.get_connection(m_uri, ec);
 
     if (ec) {
-        std::cout << "> Connect initialization error: " << ec.message() << std::endl;
+        std::cout << "[libbased::connection] >> Connect initialization error: " << ec.message()
+                  << std::endl;
         m_status = ConnectionStatus::FAILED;
         return -1;
     }
@@ -56,7 +58,7 @@ int WsConnection::connect(std::string uri) {
     set_handlers(con);
 
     m_endpoint.connect(con);
-    std::cout << "> Connecting to ws, uri = " << m_uri << std::endl;
+    std::cout << "[libbased::connection] >> Connecting to ws, uri = " << m_uri << std::endl;
 
     return 0;
 };
@@ -73,12 +75,13 @@ void WsConnection::disconnect() {
 
     if (m_status == ConnectionStatus::OPEN) {
         // Only close open connections
-        std::cout << "> Closing connection" << std::endl;
+        std::cout << "[libbased::connection] >> Closing connection" << std::endl;
 
         websocketpp::lib::error_code ec;
         m_endpoint.close(m_hdl, websocketpp::close::status::going_away, "", ec);
         if (ec) {
-            std::cout << "> Error closing connection: " << ec.message() << std::endl;
+            std::cout << "[libbased::connection] >> Error closing connection: " << ec.message()
+                      << std::endl;
             return;
         }
         m_status = ConnectionStatus::CLOSED;
@@ -88,7 +91,7 @@ void WsConnection::disconnect() {
 };
 
 void WsConnection::send(std::vector<uint8_t> message) {
-    std::cout << "> Sending message to ws" << std::endl;
+    std::cout << "[libbased::connection] >> Sending message to ws" << std::endl;
 
     websocketpp::lib::error_code ec;
 
@@ -96,7 +99,8 @@ void WsConnection::send(std::vector<uint8_t> message) {
 
     m_endpoint.send(m_hdl, message.data(), message.size(), websocketpp::frame::opcode::binary, ec);
     if (ec) {
-        std::cout << "> Error sending message: " << ec.message() << std::endl;
+        std::cout << "[libbased::connection] >> Error sending message: " << ec.message()
+                  << std::endl;
         return;
     }
 };
@@ -121,8 +125,7 @@ context_ptr WsConnection::on_tls_init() {
     }
     return ctx;
 }
-#endif
-#ifndef ASIO_STANDALONE
+#else
 using context_ptr = std::shared_ptr<boost::asio::ssl::context>;
 
 context_ptr WsConnection::on_tls_init() {
@@ -159,7 +162,7 @@ void WsConnection::set_handlers(ws_client::connection_ptr con) {
     // arguments (hence the placeholders) these handlers must be set before calling connect, and
     // can't be changed after (i think)
     con->set_open_handler([this](websocketpp::connection_hdl) {
-        std::cout << ">> Received OPEN event" << std::endl;
+        std::cout << "[libbased::connection] >> Received OPEN event" << std::endl;
         m_status = ConnectionStatus::OPEN;
         m_reconnect_attempts = 0;
         if (m_on_open) {
@@ -184,7 +187,7 @@ void WsConnection::set_handlers(ws_client::connection_ptr con) {
     });
 
     con->set_close_handler([this](websocketpp::connection_hdl) {
-        std::cout << ">> Received CLOSE event" << std::endl;
+        std::cout << "[libbased::connection] >> Received CLOSE event" << std::endl;
         m_status = ConnectionStatus::CLOSED;
         if (!m_reconnect_future.valid() ||
             m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
@@ -193,7 +196,7 @@ void WsConnection::set_handlers(ws_client::connection_ptr con) {
     });
 
     con->set_fail_handler([this](websocketpp::connection_hdl) {
-        std::cout << ">> Received FAIL event" << std::endl;
+        std::cout << "[libbased::connection] >> Received FAIL event" << std::endl;
         m_status = ConnectionStatus::FAILED;
         if (!m_reconnect_future.valid() ||
             m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
