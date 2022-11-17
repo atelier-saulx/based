@@ -121,6 +121,7 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   auth?: AuthConfig
+  workerRequest?: (type: string, payload?: any) => void | Promise<any>
   ws?: {
     open: (client: ClientContext) => void
     close: (client: ClientContext) => void
