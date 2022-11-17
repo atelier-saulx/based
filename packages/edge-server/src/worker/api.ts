@@ -12,6 +12,44 @@ import genObservableId from '../genObservableId'
 import { Incoming, IncomingType, OutgoingType } from './types'
 import send from './send'
 
+let reqMainId = 0
+const incomingRequestFromMainListeners: Map<
+  number,
+  (err: Error | null, payload?: any) => void
+> = new Map()
+
+export const incomingRequestFromMain = (
+  msg: Incoming[IncomingType.RequestFromMain]
+) => {
+  const listener = incomingRequestFromMainListeners.get(msg.id)
+  if (listener) {
+    listener(msg.err || null, msg.payload)
+  }
+}
+
+export const requestFromMain = async (requestType: string, payload?: any) => {
+  const id = reqMainId++
+  if (reqMainId > 1e15) {
+    reqMainId = 0
+  }
+  return new Promise((resolve, reject) => {
+    send({
+      type: OutgoingType.RequestFromMain,
+      requestType,
+      payload,
+      id,
+    })
+    incomingRequestFromMainListeners.set(id, (err, payload) => {
+      incomingRequestFromMainListeners.delete(id)
+      if (err) {
+        reject(err)
+      } else {
+        resolve(payload)
+      }
+    })
+  })
+}
+
 export const runFunction = async (
   name: string,
   payload: any,

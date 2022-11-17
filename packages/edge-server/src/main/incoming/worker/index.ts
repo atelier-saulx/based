@@ -6,6 +6,7 @@ import listener from './listener'
 import obsListener from './obsListener'
 import error from './error'
 import installFunction from './installFunction'
+import customRequest from './customRequest'
 
 export const incomingWorkerMessage = (
   server: BasedServer,
@@ -67,5 +68,9 @@ export const incomingWorkerMessage = (
       msg.id,
       server
     )
+  }
+
+  if (msg.type === OutgoingType.RequestFromMain) {
+    customRequest(server, worker, msg)
   }
 }

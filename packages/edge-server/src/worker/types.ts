@@ -11,9 +11,17 @@ export enum IncomingType {
   InstallFunctionError = 6,
   UpdateObservable = 7,
   Authorize = 8,
+  RequestFromMain = 9,
 }
 
 export type Incoming = {
+  [IncomingType.RequestFromMain]: {
+    type: IncomingType.RequestFromMain
+    id: number
+    payload?: any
+    err?: Error
+  }
+
   [IncomingType.WsFunction]: {
     type: IncomingType.WsFunction
     path: string
@@ -94,9 +102,16 @@ export enum OutgoingType {
   Error = 4,
   Listener = 5,
   ObservableUpdate = 6,
+  RequestFromMain = 7,
 }
 
 export type Outgoing = {
+  [OutgoingType.RequestFromMain]: {
+    type: OutgoingType.RequestFromMain
+    requestType: string
+    payload?: any
+    id: number
+  }
   [OutgoingType.ObservableUpdate]:
     | {
         type: OutgoingType.ObservableUpdate

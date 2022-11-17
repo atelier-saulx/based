@@ -55,9 +55,14 @@ export class BasedServer {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
+  public workerRequest: (type: string, payload?: any) => void | Promise<any>
+
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
+    if (opts.workerRequest) {
+      this.workerRequest = opts.workerRequest
+    }
     initNetwork(this, opts)
   }
 

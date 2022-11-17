@@ -4,7 +4,7 @@ import wsFunction from './ws/function'
 import httpFunction from './http/function'
 import { addFunction, removeFunction, errorInstallFunction } from './functions'
 import { incomingAuthorize } from './authorize'
-import { incomingObserve } from './api'
+import { incomingObserve, incomingRequestFromMain } from './api'
 import { IncomingMessage, IncomingType } from './types'
 
 parentPort.on('message', (msg: IncomingMessage) => {
@@ -53,5 +53,9 @@ parentPort.on('message', (msg: IncomingMessage) => {
 
   if (msg.type === IncomingType.Authorize) {
     incomingAuthorize(msg)
+  }
+
+  if (msg.type === IncomingType.RequestFromMain) {
+    incomingRequestFromMain(msg)
   }
 })
