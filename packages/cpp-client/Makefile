@@ -5,7 +5,8 @@ LIB_DIRS = \
   lib/zlib \
   lib/nlohmann-json \
   lib/apply-patch \
-  lib/asio/asio/include 
+  lib/asio/asio/include \
+	include
 
 LDIR = $(patsubst %,-I%,$(LIB_DIRS))
 
@@ -59,11 +60,11 @@ example: $(patsubst %,$(ODIR)/%,$(OBJS))
 
 $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
-	cp -rf $(SRCDIR)/based.hpp $(DISTDIR)/based.hpp
+	cp -rf include/based.h $(DISTDIR)/based.h
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
 linked-example:
-	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -Isrc -L./$(DISTDIR) -lbased
+	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -Iinclude -L$(DISTDIR) -lbased
 
 clean:
 	rm -rf $(ODIR)

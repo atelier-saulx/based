@@ -8,8 +8,9 @@ include_directories(lib/zlib)
 include_directories(lib/nlohmann-json)
 include_directories(lib/apply-patch)
 include_directories(lib/asio/asio/include)
-include_directories(prebuilt-libs/openssl/include/)
-include_directories(prebuilt-libs/curl/include/)
+include_directories(prebuilt-libs/include/)
+# include_directories(prebuilt-libs/curl/include/)
+include_directories(include)
 
 if(NOT DEFINED ARCH_FOLDER)
   message(FATAL_ERROR "ARCH_FOLDER is not set, I don't know where to look for libraries")
@@ -17,9 +18,13 @@ endif(NOT DEFINED ARCH_FOLDER)
 
 
 # find_package(CURL PATHS "lib/curl" NO_DEFAULT_PATH CONFIG REQUIRED)
-find_library(CURL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcurl.dylib libcurl.a HINTS "prebuilt-libs/curl/lib/${ARCH_FOLDER}")
-find_library(SSL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libssl.dylib libssl.a HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
-find_library(CRYPTO_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES libcrypto.dylib libcrypto.a HINTS "prebuilt-libs/openssl/lib/${ARCH_FOLDER}")
+
+set(LIB_FOLDER "${CMAKE_CURRENT_LIST_DIR}/prebuilt-libs/lib/${ARCH_FOLDER}")
+
+find_library(CURL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES curl HINTS "${LIB_FOLDER}")
+find_library(SSL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES ssl HINTS "${LIB_FOLDER}")
+find_library(CRYPTO_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES crypto HINTS "${LIB_FOLDER}")
+find_library(NGHTTP2_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES nghttp2 HINTS "${LIB_FOLDER}")
 
 
 set (CMAKE_CXX_STANDARD 11)
@@ -38,10 +43,11 @@ add_executable(linked-example example/example.cpp)
 add_compile_definitions(ASIO_STANDALONE _WEBSOCKETPP_CPP11_STL_ BASED_TLS)
 
 target_link_libraries(linked-example PRIVATE based)
+target_include_directories(linked-example PRIVATE include)
 
 target_link_libraries(based PRIVATE z)
 target_link_libraries(based PRIVATE ${CURL_LIBRARY})
 target_link_libraries(based PRIVATE ${SSL_LIBRARY})
 target_link_libraries(based PRIVATE ${CRYPTO_LIBRARY})
+target_link_libraries(based PRIVATE ${NGHTTP2_LIBRARY})
 
-target_include_directories(linked-example PRIVATE src)

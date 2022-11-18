@@ -12,9 +12,9 @@ docker-build
 
 distribute/*
 
-build/*
-build_darwin/*
-build_ios/*
-build_ios_sim/*
+build
+build_darwin
+build_ios
+build_ios_sim
 
 *.zip

@@ -15,7 +15,7 @@ typedef websocketpp::client<websocketpp::config::asio_tls_client> ws_client;  //
 typedef websocketpp::client<websocketpp::config::asio_client> ws_client;  // No SSL
 #endif
 
-enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED };
+enum ConnectionStatus { OPEN = 0, CONNECTING, CLOSED, FAILED, TERMINATED };
 
 class WsConnection {
     // eventually there should be some logic here to handle inactivity.

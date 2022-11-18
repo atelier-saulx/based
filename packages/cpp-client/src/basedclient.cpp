@@ -373,6 +373,8 @@ void BasedClient::on_message(std::string message) {
     int32_t len = Utility::get_payload_len(header);
     int32_t is_deflate = Utility::get_payload_is_deflate(header);
 
+    std::cout << "msg received, type = " << type << std::endl;
+
     switch (type) {
         case IncomingType::FUNCTION_DATA: {
             int id = Utility::read_bytes_from_string(message, 4, 3);
@@ -547,6 +549,9 @@ void BasedClient::on_message(std::string message) {
             if (error.find("observableId") != error.end()) {
                 // destroy observable
                 auto obs_id = error.at("observableId");
+
+                m_observe_requests.erase(obs_id);
+
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {

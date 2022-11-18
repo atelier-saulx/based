@@ -77,6 +77,8 @@ void WsConnection::disconnect() {
         // Only close open connections
         std::cout << "[libbased::connection] >> Closing connection" << std::endl;
 
+        m_status = ConnectionStatus::TERMINATED;
+
         websocketpp::lib::error_code ec;
         m_endpoint.close(m_hdl, websocketpp::close::status::going_away, "", ec);
         if (ec) {
@@ -84,7 +86,7 @@ void WsConnection::disconnect() {
                       << std::endl;
             return;
         }
-        m_status = ConnectionStatus::CLOSED;
+        // m_status = ConnectionStatus::CLOSED;
     }
 
     m_thread->join();
@@ -188,10 +190,12 @@ void WsConnection::set_handlers(ws_client::connection_ptr con) {
 
     con->set_close_handler([this](websocketpp::connection_hdl) {
         std::cout << "[libbased::connection] >> Received CLOSE event" << std::endl;
-        m_status = ConnectionStatus::CLOSED;
-        if (!m_reconnect_future.valid() ||
-            m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
-            m_reconnect_future = reconnect();
+        if (m_status != ConnectionStatus::TERMINATED) {
+            m_status = ConnectionStatus::CLOSED;
+            if (!m_reconnect_future.valid() ||
+                m_reconnect_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+                m_reconnect_future = reconnect();
+            }
         }
     });
 

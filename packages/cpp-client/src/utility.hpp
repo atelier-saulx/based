@@ -1,19 +1,9 @@
 #ifndef BASED_OUTGOING_H
 #define BASED_OUTGOING_H
 
-#include <zlib.h>
-
-#include <cstdint>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <json.hpp>
-
-using json = nlohmann::json;
 namespace Utility {
 std::string inflate_string(const std::string& str);
 std::string deflate_string(const std::string& str);
