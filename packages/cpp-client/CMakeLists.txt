@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.20.0)
 
 project(universal-based)
@@ -25,9 +24,10 @@ find_library(CURL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES curl HINTS "${
 find_library(SSL_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES ssl HINTS "${LIB_FOLDER}")
 find_library(CRYPTO_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES crypto HINTS "${LIB_FOLDER}")
 find_library(NGHTTP2_LIBRARY NO_CACHE REQUIRED NO_DEFAULT_PATH NAMES nghttp2 HINTS "${LIB_FOLDER}")
+find_library(Z_LIBRARY z REQUIRED)
 
 
-set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 
@@ -45,7 +45,7 @@ add_compile_definitions(ASIO_STANDALONE _WEBSOCKETPP_CPP11_STL_ BASED_TLS)
 target_link_libraries(linked-example PRIVATE based)
 target_include_directories(linked-example PRIVATE include)
 
-target_link_libraries(based PRIVATE z)
+target_link_libraries(based PRIVATE ${Z_LIBRARY})
 target_link_libraries(based PRIVATE ${CURL_LIBRARY})
 target_link_libraries(based PRIVATE ${SSL_LIBRARY})
 target_link_libraries(based PRIVATE ${CRYPTO_LIBRARY})
