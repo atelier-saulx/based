@@ -39,34 +39,38 @@ export const getSecret = async (
   server: BasedServer,
   secret: string
 ): Promise<any> => {
-  let cert = server.config?.secrets?.[secret]
+  try {
+    let cert = server.config?.secrets?.[secret]
 
-  // can make a thing to update it as well - but later...
-  if (server.config?.secretsConfig) {
-    if (!server.config.secretsConfig.secretTimeouts) {
-      server.config.secretsConfig.secretTimeouts = {}
-    }
-
-    if (!cert) {
-      cert = await server.config.secretsConfig.getInitial(server, secret)
+    // can make a thing to update it as well - but later...
+    if (server.config?.secretsConfig) {
+      if (!server.config.secretsConfig.secretTimeouts) {
+        server.config.secretsConfig.secretTimeouts = {}
+      }
 
       if (!cert) {
-        return null
-      }
-      if (!server.config.secrets) {
-        server.config.secrets = {}
-      }
+        cert = await server.config.secretsConfig.getInitial(server, secret)
 
-      server.config.secretsConfig.secretTimeouts[secret] = 0
-      server.config.secrets[secret] = cert
-    } else {
-      if (server.config.secretsConfig.secretTimeouts[secret] !== undefined) {
+        if (!cert) {
+          return null
+        }
+        if (!server.config.secrets) {
+          server.config.secrets = {}
+        }
+
         server.config.secretsConfig.secretTimeouts[secret] = 0
+        server.config.secrets[secret] = cert
+      } else {
+        if (server.config.secretsConfig.secretTimeouts[secret] !== undefined) {
+          server.config.secretsConfig.secretTimeouts[secret] = 0
+        }
       }
     }
+    return cert || false
+  } catch (err) {
+    console.warn('Error getting secret (unhandled)', err)
+    return false
   }
-
-  return cert || false
 }
 
 const cleanCarriageReturn = (value: string) =>
