@@ -16,6 +16,9 @@ if(NOT DEFINED ARCH_FOLDER)
 endif(NOT DEFINED ARCH_FOLDER)
 
 
+# message(WARNING ">>>>>>>>>>>>>>>>>>>>>> ${CMAKE_TOOLCHAIN_FILE}" )
+# message(FATAL_ERROR ">>>>>>>>>>>>>>>>>>>>>> ${CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM}" )
+
 # find_package(CURL PATHS "lib/curl" NO_DEFAULT_PATH CONFIG REQUIRED)
 
 set(LIB_FOLDER "${CMAKE_CURRENT_LIST_DIR}/prebuilt-libs/lib/${ARCH_FOLDER}")
