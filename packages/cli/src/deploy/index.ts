@@ -130,6 +130,7 @@ command(
             banner: {
               js: `var console = global.createWorkerConsole?.('${fun.name}') || global.console;`,
             },
+            external: ['node-fetch', 'joi'],
             bundle: true,
             outdir: 'out',
             incremental: false,
