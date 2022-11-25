@@ -11,6 +11,9 @@ import { BasedErrorCode } from '../../../../error'
 import multipartStream from './multipartStream'
 import { sendHttpResponse } from '../../../sendHttpResponse'
 
+// copy stream and put in worker
+// use atomics
+
 export const httpStreamFunction = (
   server: BasedServer,
   client: HttpClient,
