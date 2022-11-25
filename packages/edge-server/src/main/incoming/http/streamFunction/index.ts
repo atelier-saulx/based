@@ -13,6 +13,7 @@ import { sendHttpResponse } from '../../../sendHttpResponse'
 
 // copy stream and put in worker
 // use atomics
+// one block to stream into 512kb / 1 mb size?
 
 export const httpStreamFunction = (
   server: BasedServer,
