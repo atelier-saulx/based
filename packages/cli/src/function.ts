@@ -154,6 +154,7 @@ command(
       bundle: true,
       outdir: 'out',
       incremental: false,
+      external: ['node-fetch', 'joi'],
       publicPath: '/',
       target: 'node14',
       entryPoints: [options.file],

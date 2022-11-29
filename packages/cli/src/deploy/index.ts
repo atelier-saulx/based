@@ -128,8 +128,9 @@ command(
         } else {
           const x = await build({
             banner: {
-              js: `var console = global.createWorkerConsole?.('${fun.name}') || console;`,
+              js: `var console = global.createWorkerConsole?.('${fun.name}') || global.console;`,
             },
+            external: ['node-fetch', 'joi'],
             bundle: true,
             outdir: 'out',
             incremental: false,
