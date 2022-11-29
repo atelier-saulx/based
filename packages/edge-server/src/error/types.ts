@@ -24,6 +24,7 @@ export enum BasedErrorCode {
   NoBinaryProtocol = 40005,
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
+  RateLimit = 40029,
   // WorkerDied
 }
 
@@ -44,6 +45,7 @@ type ObservableFunctionErrorProps = {
 }
 
 export type ErrorPayload = {
+  [BasedErrorCode.RateLimit]: void
   [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.ObservableFunctionError]: ObservableFunctionErrorProps

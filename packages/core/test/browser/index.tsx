@@ -148,6 +148,16 @@ const init = async () => {
       }
     )
   })
+  makeButton('rate limit', async () => {
+    let url = coreClient.connection.ws?.url
+    if (!url) {
+      return
+    }
+    url = url.replace(/^ws/, 'http')
+    for (let i = 0; i < 1000; i++) {
+      await fetch(url + 'hello')
+    }
+  })
 
   // const x = await coreClient.get('counter')
 

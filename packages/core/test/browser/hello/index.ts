@@ -1,5 +1,5 @@
 export default async ({ based }) => {
-  console.info('GO GO GO', await based.secret('flap'))
+  // console.info('GO GO GO', await based.secret('flap'))
 
   try {
     const x = await based.get({

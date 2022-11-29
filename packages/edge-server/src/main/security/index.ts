@@ -1,5 +1,8 @@
 // rate limit
+import { BasedErrorCode } from '../../error'
 import type { BasedServer } from '../server'
+import uws from '@based/uws'
+
 // import { BasedErrorCode } from '../error'
 // import { HttpClient, isHttpClient, WebsocketClient } from '../types'
 
@@ -30,8 +33,14 @@ const drainRequestCounter = (server: BasedServer) => {
   }, 30e3)
 }
 
+// fix client objects...
+
 // not counter also rate limit adder
-export const incomingCounter = (server: BasedServer, ip: string): boolean => {
+export const incomingCounter = (
+  server: BasedServer,
+  ip: string,
+  req: uws.HttpRequest
+): boolean => {
   let ipReqCounter = server.requestsCounter.get(ip)
   if (!ipReqCounter) {
     ipReqCounter = {
@@ -42,11 +51,26 @@ export const incomingCounter = (server: BasedServer, ip: string): boolean => {
     ipReqCounter.requests++
   }
 
+  if (ipReqCounter.requests === 999) {
+    server.emit(
+      'error',
+      {
+        // tmp
+        isDummy: true,
+        context: {
+          ua: req.getHeader('user-agent'),
+          ip,
+          headers: {},
+        },
+      },
+      { code: BasedErrorCode.RateLimit }
+    )
+  }
+  // way too arbitrary
   // rate limit per route....
   if (ipReqCounter.requests > 1000) {
     // console.info('RATE  LIMIT', ip)
     // good indicator of malicious activity
-    // server.emit('ratelimit', client)
     return true
   }
 

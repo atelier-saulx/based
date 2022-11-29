@@ -44,7 +44,7 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  if (incomingCounter(server, ip)) {
+  if (incomingCounter(server, ip, req)) {
     res.writeStatus('429 Too Many Requests')
     res.end()
     return
