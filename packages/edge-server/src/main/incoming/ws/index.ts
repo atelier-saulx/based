@@ -47,6 +47,8 @@ const reader = (
     return next
   }
 
+  return next
+
   // emit whats wrong
   // console.warn('Unsupported incoming message with type', type)
 }
@@ -77,7 +79,7 @@ export const message = (
   while (next < len) {
     const n = reader(server, client, uint8View, next)
     if (n === undefined) {
-      // Malformed message close client
+      // Malformed message close client - maybe a bit too extreme...
       client.ws.close()
       return
     }
