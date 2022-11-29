@@ -70,14 +70,20 @@ export type ErrorPayload = {
     observableId: number
     route: BasedFunctionRoute
   }
-  [BasedErrorCode.FunctionIsStream]: BasedFunctionRoute
-  [BasedErrorCode.FunctionNotFound]: BasedFunctionRoute
-  [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute
-  [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute
-  [BasedErrorCode.CannotStreamToObservableFunction]: BasedFunctionRoute
+  [BasedErrorCode.FunctionIsStream]: BasedFunctionRoute & { requestId?: number }
+  [BasedErrorCode.FunctionNotFound]: BasedFunctionRoute & { requestId?: number }
+  [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute & {
+    requestId?: number
+  }
+  [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute & {
+    requestId?: number
+  }
+  [BasedErrorCode.CannotStreamToObservableFunction]: BasedFunctionRoute & {
+    requestId?: number
+  }
 
-  [BasedErrorCode.InvalidPayload]: BasedFunctionRoute
-  [BasedErrorCode.PayloadTooLarge]: BasedFunctionRoute
+  [BasedErrorCode.InvalidPayload]: BasedFunctionRoute & { requestId?: number }
+  [BasedErrorCode.PayloadTooLarge]: BasedFunctionRoute & { requestId?: number }
   [BasedErrorCode.ChunkTooLarge]: BasedFunctionRoute
   [BasedErrorCode.UnsupportedContentEncoding]: BasedFunctionRoute
   [BasedErrorCode.LengthRequired]: BasedFunctionRoute

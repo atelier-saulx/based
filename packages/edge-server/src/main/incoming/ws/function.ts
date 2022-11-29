@@ -15,33 +15,45 @@ export const functionMessage = (
 ): boolean => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
 
-  const reqId = readUint8(arr, start + 4, 3)
+  const requestId = readUint8(arr, start + 4, 3)
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
 
-  if (!name || !reqId) {
+  if (!name || !requestId) {
     return false
   }
 
   const route = server.functions.route(name)
 
   if (!route) {
-    sendError(server, client, BasedErrorCode.FunctionNotFound, { name })
+    sendError(server, client, BasedErrorCode.FunctionNotFound, {
+      name,
+      requestId,
+    })
     return false
   }
 
   if (route.observable === true) {
-    sendError(server, client, BasedErrorCode.FunctionIsObservable, route)
+    sendError(server, client, BasedErrorCode.FunctionIsObservable, {
+      name,
+      requestId,
+    })
     return false
   }
 
   if (len > route.maxPayloadSize) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, client, BasedErrorCode.PayloadTooLarge, {
+      name,
+      requestId,
+    })
     return false
   }
 
   if (route.stream === true) {
-    sendError(server, client, BasedErrorCode.FunctionIsStream, route)
+    sendError(server, client, BasedErrorCode.FunctionIsStream, {
+      name,
+      requestId,
+    })
     return true
   }
 
@@ -64,7 +76,7 @@ export const functionMessage = (
             headers: client.ws.headers,
           },
           spec,
-          reqId,
+          requestId,
           isDeflate,
           p
         )
@@ -74,14 +86,17 @@ export const functionMessage = (
           .catch((err) => {
             sendError(server, client, err.code, {
               route,
-              requestId: reqId,
+              requestId,
               err,
             })
           })
       }
     })
     .catch(() =>
-      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+      sendError(server, client, BasedErrorCode.FunctionNotFound, {
+        name,
+        requestId,
+      })
     )
 
   return true
