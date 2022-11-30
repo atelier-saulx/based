@@ -4,6 +4,8 @@ import { BasedErrorCode } from '../../../error'
 import { BasedServer } from '../../server'
 import { sendError } from '../../sendError'
 
+// TODO: might be good to use worker stream as well for this
+
 const MAX_CHUNK_SIZE = 1024 * 1024
 
 const UNCOMPRESS_OPTS = {

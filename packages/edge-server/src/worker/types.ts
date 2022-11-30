@@ -12,6 +12,7 @@ export enum IncomingType {
   UpdateObservable = 7,
   Authorize = 8,
   RequestFromMain = 9,
+  HttpStreamFunction = 10,
 }
 
 export type Incoming = {
@@ -90,6 +91,13 @@ export type Incoming = {
     id: number
     payload?: any
   }
+
+  [IncomingType.HttpStreamFunction]: {
+    type: IncomingType.HttpStreamFunction
+    context: ClientContext
+    name: string
+    chunk: Int32Array // Atomics require int32 or int64
+  }
 }
 
 export type IncomingMessage = Incoming[keyof Incoming]
@@ -103,6 +111,7 @@ export enum OutgoingType {
   Listener = 5,
   ObservableUpdate = 6,
   RequestFromMain = 7,
+  // no stream function scince we will use Atomics for this
 }
 
 export type Outgoing = {

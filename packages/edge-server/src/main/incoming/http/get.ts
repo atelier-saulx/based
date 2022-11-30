@@ -32,7 +32,7 @@ const sendCacheSwapEncoding = async (
   checksum: number
 ) => {
   try {
-    const inflated = await inflate(buffer.slice(4 + 8 + 8))
+    const inflated = await inflate(buffer.slice(20))
     const { payload, encoding } = await compress(client, inflated)
     if (!client.res) {
       return
@@ -62,7 +62,7 @@ const sendCache = (
     if (isDeflate) {
       client.res.writeHeader('Content-Encoding', 'deflate')
     }
-    end(client, buffer.slice(4 + 8 + 8))
+    end(client, buffer.slice(20))
   })
 }
 

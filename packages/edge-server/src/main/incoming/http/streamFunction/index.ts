@@ -10,6 +10,7 @@ import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../../error'
 import multipartStream from './multipartStream'
 import { sendHttpResponse } from '../../../sendHttpResponse'
+import { sendStream } from '../../worker'
 
 // copy stream and put in worker
 // use atomics
@@ -88,6 +89,7 @@ export const httpStreamFunction = (
 
   const stream = createDataStream(server, route, client, size)
 
+  // may want to include authorize in the worker
   // destroy stream from context
   authorizeRequest(
     server,
@@ -98,35 +100,39 @@ export const httpStreamFunction = (
       server.functions
         .install(route.name)
         .then((spec) => {
+          // clean this up - need to check if stream
+
           if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            // const stream = createDataStream(server, route, client, size)
-            const streamPayload = { payload, stream }
+            console.info('Lets go ham WORKER ATOMICSSSS')
 
-            let fn = require(spec.functionPath)
-            if (fn.default) {
-              fn = fn.default
-            }
+            sendStream()
 
-            fn(streamPayload, client.context)
-              .catch((err) => {
-                stream.destroy()
-                sendError(server, client, BasedErrorCode.FunctionError, {
-                  err,
-                  route,
-                })
-              })
-              .then((r) => {
-                if (
-                  stream.readableEnded ||
-                  stream.listenerCount('data') === 0
-                ) {
-                  sendHttpResponse(client, r)
-                } else {
-                  stream.on('end', () => {
-                    sendHttpResponse(client, r)
-                  })
-                }
-              })
+            // // const stream = createDataStream(server, route, client, size)
+            // const streamPayload = { payload, stream }
+            // let fn = require(spec.functionPath)
+            // if (fn.default) {
+            //   fn = fn.default
+            // }
+            // fn(streamPayload, client.context)
+            //   .catch((err) => {
+            //     stream.destroy()
+            //     sendError(server, client, BasedErrorCode.FunctionError, {
+            //       err,
+            //       route,
+            //     })
+            //   })
+            //   .then((r) => {
+            //     if (
+            //       stream.readableEnded ||
+            //       stream.listenerCount('data') === 0
+            //     ) {
+            //       sendHttpResponse(client, r)
+            //     } else {
+            //       stream.on('end', () => {
+            //         sendHttpResponse(client, r)
+            //       })
+            //     }
+            //   })
           } else {
             sendError(server, client, BasedErrorCode.FunctionNotFound, route)
           }
