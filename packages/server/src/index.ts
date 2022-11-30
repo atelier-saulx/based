@@ -19,6 +19,7 @@ import { Params } from './Params'
 import { GenericObject } from '@based/client'
 import { getFunction } from './getFromConfig'
 import { SharedConfigurationObservable } from './handlers/configuration/observable'
+const pkg = require('../package.json')
 
 export { Params, BasedServerClient, Client as User }
 
@@ -207,7 +208,10 @@ export class BasedServer extends EventEmitter {
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, (listenSocket) => {
         if (listenSocket) {
-          console.info('💫  Based-server listening on port:', this.port)
+          console.info(
+            `💫  Based-server ${pkg.version} listening on port:`,
+            this.port
+          )
           // do this better wrap a nice thing arround it
           this.listenSocket = listenSocket
           resolve(this)
@@ -239,7 +243,6 @@ export class BasedServer extends EventEmitter {
     await this.db.destroy()
     this.db = null
 
-    // clean up subscriptions (tmp)
     await wait(1000)
   }
 }
