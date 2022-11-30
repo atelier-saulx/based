@@ -1,4 +1,4 @@
-import createDataStream from './stream'
+import createDataStream from './_stream'
 import { BasedServer } from '../../../server'
 import { sendError } from '../../../sendError'
 import {
@@ -9,8 +9,7 @@ import {
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../../error'
 import multipartStream from './multipartStream'
-import { sendHttpResponse } from '../../../sendHttpResponse'
-import { sendStream } from '../../worker'
+import stream from './stream'
 
 // copy stream and put in worker
 // use atomics
@@ -73,6 +72,7 @@ export const httpStreamFunction = (
           if (files.length) {
             for (const file of files) {
               console.info('File parsed before fn / auth')
+              // now this has to go to worker or the total parsing as well
               file.resolve(fn(file.p, client.context))
             }
           }
@@ -87,63 +87,7 @@ export const httpStreamFunction = (
     return
   }
 
-  const stream = createDataStream(server, route, client, size)
-
-  // may want to include authorize in the worker
-  // destroy stream from context
-  authorizeRequest(
-    server,
-    client,
-    payload,
-    route,
-    (payload) => {
-      server.functions
-        .install(route.name)
-        .then((spec) => {
-          // clean this up - need to check if stream
-
-          if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            console.info('Lets go ham WORKER ATOMICSSSS')
-
-            sendStream()
-
-            // // const stream = createDataStream(server, route, client, size)
-            // const streamPayload = { payload, stream }
-            // let fn = require(spec.functionPath)
-            // if (fn.default) {
-            //   fn = fn.default
-            // }
-            // fn(streamPayload, client.context)
-            //   .catch((err) => {
-            //     stream.destroy()
-            //     sendError(server, client, BasedErrorCode.FunctionError, {
-            //       err,
-            //       route,
-            //     })
-            //   })
-            //   .then((r) => {
-            //     if (
-            //       stream.readableEnded ||
-            //       stream.listenerCount('data') === 0
-            //     ) {
-            //       sendHttpResponse(client, r)
-            //     } else {
-            //       stream.on('end', () => {
-            //         sendHttpResponse(client, r)
-            //       })
-            //     }
-            //   })
-          } else {
-            sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-          }
-        })
-        .catch((err) => {
-          console.error(err)
-          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-        })
-    },
-    () => {
-      stream.destroy()
-    }
-  )
+  console.info('normal shit...')
+  // this is different payload...
+  stream(server, client, route, payload)
 }

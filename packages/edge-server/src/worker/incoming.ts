@@ -2,6 +2,8 @@ import { parentPort } from 'node:worker_threads'
 import { createObs, closeObs } from './observable'
 import wsFunction from './ws/function'
 import httpFunction from './http/function'
+import stream from './stream'
+
 import { addFunction, removeFunction, errorInstallFunction } from './functions'
 import { incomingAuthorize } from './authorize'
 import { incomingObserve, incomingRequestFromMain } from './api'
@@ -57,5 +59,9 @@ parentPort.on('message', (msg: IncomingMessage) => {
 
   if (msg.type === IncomingType.RequestFromMain) {
     incomingRequestFromMain(msg)
+  }
+
+  if (msg.type === IncomingType.Stream) {
+    stream(msg)
   }
 })

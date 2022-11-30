@@ -1,3 +1,5 @@
+import { Incoming, IncomingType } from '../types'
+
 // const MAX_STRING = buffer.constants.MAX_STRING_LENGTH
 
 // fix stream right here...
@@ -44,3 +46,7 @@ opts.bufferSize || 4 * 1024 * 1024
 
 // then write on state from the worker and the other way arround
 */
+
+export default (msg: Incoming[IncomingType.Stream]) => {
+  console.info('Incoming stream fn go go gog ', msg)
+}

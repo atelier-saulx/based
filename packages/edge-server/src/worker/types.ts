@@ -12,7 +12,7 @@ export enum IncomingType {
   UpdateObservable = 7,
   Authorize = 8,
   RequestFromMain = 9,
-  HttpStreamFunction = 10,
+  Stream = 10,
 }
 
 export type Incoming = {
@@ -92,11 +92,14 @@ export type Incoming = {
     payload?: any
   }
 
-  [IncomingType.HttpStreamFunction]: {
-    type: IncomingType.HttpStreamFunction
+  [IncomingType.Stream]: {
+    type: IncomingType.Stream
     context: ClientContext
     name: string
-    chunk: Int32Array // Atomics require int32 or int64
+    path: string
+    payload?: any
+    data: Uint8Array
+    state: Int32Array // Atomics require int32 or int64
   }
 }
 

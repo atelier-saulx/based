@@ -1,117 +1,73 @@
-import { DataStream } from './DataStream'
-import { HttpClient, BasedFunctionRoute } from '../../../../types'
-import { sendError } from '../../../sendError'
-import zlib from 'node:zlib'
+// import { sendStream } from '../../worker'
+import { sendToWorker } from '../../../worker'
+import { BasedFunctionRoute, HttpClient } from '../../../../types'
+import { sendError, sendHttpError } from '../../../sendError'
 import { BasedErrorCode } from '../../../../error'
 import { BasedServer } from '../../../server'
+import { IncomingType } from '../../../../worker/types'
 
-const MAX_CHUNK_SIZE = 1024 * 1024 * 5
+const MAX_CHUNK_SIZE = 1024 * 1024 * 5 // 5mb
 
-const UNCOMPRESS_OPTS = {
-  chunkSize: 1024 * 1024 * 5,
-}
+const SHARED_CHUNK_SIZE = 128 * 1024 // 128kb
 
 export default (
   server: BasedServer,
-  route: BasedFunctionRoute,
   client: HttpClient,
-  size: number
-): DataStream => {
-  const stream = new DataStream()
-  let total = 0
-  let progress = 0
-  let setInProgress = false
-  stream.emit('progress', progress)
-  const emitProgress = size > 200000
+  route: BasedFunctionRoute,
+  payload?: any
+): void => {
+  console.info('go go go stream!', payload)
 
-  const contentEncoding = client.context.headers['content-encoding']
+  // TMP make selection better in worker...
 
-  if (contentEncoding) {
-    let uncompressStream: zlib.Deflate | zlib.Gunzip | zlib.BrotliDecompress
-    if (contentEncoding === 'deflate') {
-      uncompressStream = zlib.createInflate(UNCOMPRESS_OPTS)
-    } else if (contentEncoding === 'gzip') {
-      uncompressStream = zlib.createGunzip(UNCOMPRESS_OPTS)
-    } else if (contentEncoding === 'br') {
-      uncompressStream = zlib.createBrotliDecompress(UNCOMPRESS_OPTS)
+  // if size is smaller then 128kb just send the parsed payload
+
+  // allready start accepting the stream and building it
+  const data = new Uint8Array(new SharedArrayBuffer(SHARED_CHUNK_SIZE))
+  const state = new Int32Array(new SharedArrayBuffer(32)) // 32bytes to fit in 1 int32 array (for atomics...)
+
+  let lastIndex = 0
+
+  client.res.onData((c, isLast) => {
+    if (c.byteLength > MAX_CHUNK_SIZE) {
+      sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+      return
     }
-    if (uncompressStream) {
-      client.res.onData((c, isLast) => {
-        total += c.byteLength
-        if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
-          uncompressStream.destroy()
-          stream.destroy()
-          return
-        }
 
-        const buf = Buffer.alloc(c.byteLength, Buffer.from(c))
-
-        if (emitProgress) {
-          progress = total / size
-          if (!setInProgress) {
-            setInProgress = true
-            setTimeout(() => {
-              stream.emit('progress', progress)
-              setInProgress = false
-            }, 250)
-          }
-        }
-
-        if (isLast) {
-          if (!emitProgress) {
-            stream.emit('progress', 1)
-          }
-          uncompressStream.end(buf)
-        } else {
-          if (!uncompressStream.write(buf)) {
-            // console.info('BACKPRESSURE')
-          }
-        }
-      })
-      uncompressStream.on('error', (err) => {
-        console.warn('Uncompress error', route, contentEncoding, err)
-        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
-        uncompressStream.destroy()
-        stream.destroy()
-      })
-      uncompressStream.pipe(stream)
+    if (c.byteLength + lastIndex > SHARED_CHUNK_SIZE) {
+      // now we do shit
+      console.info('FULL DO SOMETHING')
     } else {
-      sendError(
-        server,
-        client,
-        BasedErrorCode.UnsupportedContentEncoding,
-        route
-      )
+      data.set(new Uint8Array(c), lastIndex)
+      lastIndex += c.byteLength
     }
-  } else {
-    client.res.onData((c, isLast) => {
-      total += c.byteLength
-      if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
-        stream.destroy()
-        return
-      }
-      if (emitProgress) {
-        progress = total / size
-        if (!setInProgress) {
-          setInProgress = true
-          setTimeout(() => {
-            stream.emit('progress', progress)
-            setInProgress = false
-          }, 250)
-        }
-      }
-      if (isLast) {
-        if (!emitProgress) {
-          stream.emit('progress', 1)
-        }
-        stream.end(Buffer.from(c))
+
+    // do we wait until its full?
+
+    if (isLast) {
+      console.info('END')
+      Atomics.store(state, 0, 1)
+    }
+  })
+
+  server.functions
+    .install(route.name)
+    .then((fn) => {
+      if (fn) {
+        const selectedWorker = server.functions.lowestWorker
+        sendToWorker(selectedWorker, {
+          type: IncomingType.Stream,
+          context: client.context,
+          name: route.name,
+          path: fn.functionPath,
+          data,
+          state,
+        })
       } else {
-        stream.write(Buffer.from(c))
+        sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
       }
     })
-  }
-
-  return stream
+    .catch(() => {
+      sendHttpError(server, client, BasedErrorCode.FunctionNotFound, route)
+    })
 }
