@@ -1,11 +1,13 @@
 import { Readable } from 'stream'
 import { BasedServer } from '../../..'
 import { FileOptions } from './types'
+import { Client } from '../../../Client'
 
 export default async (
   server: BasedServer,
   stream: Readable,
-  opts: FileOptions
+  opts: FileOptions,
+  user: Client
 ): Promise<void> => {
   const storeFile = server.config.storeFile
 
@@ -20,9 +22,8 @@ export default async (
     mimeType: opts.type,
     extension: opts.extension,
     size: opts.size,
+    user,
   })
-
-  // thumb
 
   const setObj: any = {
     $id: opts.id,

@@ -70,6 +70,7 @@ export type FileOpts = {
   id: string
   extension: string
   size: number
+  user?: Client
 }
 
 export type GetInitial = (

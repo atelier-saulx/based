@@ -128,6 +128,10 @@ export default async (
       }
     } catch (err) {}
   } else {
-    await storeFile(server, stream, opts)
+    if (res.client) {
+      res.client = new Client(server, undefined, res)
+    }
+    // @ts-ignore
+    await storeFile(server, stream, { user: res.client, ...opts })
   }
 }
