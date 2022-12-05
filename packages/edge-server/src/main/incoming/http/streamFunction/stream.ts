@@ -46,7 +46,10 @@ export default (
 
     if (isLast) {
       console.info('END')
+      // lets use a shared state for more messages e.g. make a shared state of 128 bytes and allow 128 things to execute in paralel
+
       Atomics.store(state, 0, 1)
+      Atomics.notify(state, 0)
     }
   })
 

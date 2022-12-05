@@ -57,7 +57,7 @@ test.serial('functions (small over http + stream)', async (t) => {
   // chunk size = 4 * 1024 * 1024 / 32 (131kb)
 
   const result = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch('http://localhost:9910/hello', {
       method: 'post',
       headers: {
         'content-type': 'application/json',

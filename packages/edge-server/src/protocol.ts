@@ -160,7 +160,7 @@ export const encodeObservableResponse = (
   checksum: number,
   buffer: Buffer
 ): [Uint8Array, boolean] => {
-  // Type 1 (full data)
+  // Type 1 (full data) // TODO: include crc32 4 Bytes
   // | 4 header | 8 id | 8 checksum | * payload |
 
   let isDeflate = false
@@ -198,7 +198,7 @@ export const encodeObservableDiffResponse = (
   previousChecksum: number,
   buffer: Buffer
 ): Uint8Array => {
-  // Type 2 (diff data)
+  // Type 2 (diff data) // TODO: include crc32 4 Bytes
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
 
   let isDeflate = false

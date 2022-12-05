@@ -6,13 +6,13 @@ const init = async () => {
   const coreClient = new BasedCoreClient()
 
   coreClient.connect({
-    // env: 'production',
-    // org: 'saulx',
-    // project: 'flap',
-    // cluster: 'http://localhost:7022',
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
+    env: 'production',
+    org: 'saulx',
+    project: 'flap',
+    cluster: 'http://localhost:7022',
+    // url: async () => {
+    //   return 'ws://localhost:9910'
+    // },
   })
 
   coreClient.once('connect', (isConnected) => {
