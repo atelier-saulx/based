@@ -4,6 +4,8 @@ import uws from '@based/uws'
 import { BasedServer } from '../../..'
 import { FileOptions } from './types'
 import getExtenstion from './getExtenstion'
+import { Client } from '../../../Client'
+
 // import fs from 'fs'
 
 type FileDescriptor = {
@@ -23,6 +25,10 @@ const setHeader = (
   file: FileDescriptor,
   res: uws.HttpResponse
 ): boolean => {
+  if (!res.client) {
+    res.client = new Client(server, undefined, res)
+  }
+
   file.headersSet++
   if (file.headersSet === 2) {
     const opts = file.opts
@@ -75,7 +81,7 @@ const setHeader = (
           updateProgress()
         })
       }
-      storeFile(server, file.stream, opts)
+      storeFile(server, file.stream, opts, res.client)
     } else {
       invalidFile(res)
       return null

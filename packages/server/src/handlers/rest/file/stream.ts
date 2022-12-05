@@ -128,7 +128,7 @@ export default async (
       }
     } catch (err) {}
   } else {
-    if (res.client) {
+    if (!res.client) {
       res.client = new Client(server, undefined, res)
     }
     // @ts-ignore
