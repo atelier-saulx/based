@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(universal-based)
 
 include_directories(lib/websocketpp)
-include_directories(lib/zlib)
+# include_directories(lib/zlib)
 include_directories(lib/nlohmann-json)
 include_directories(lib/apply-patch)
 include_directories(lib/asio/asio/include)
@@ -43,7 +43,8 @@ src/utility.cpp
 
 add_executable(linked-example example/example.cpp)
 
-add_compile_definitions(ASIO_STANDALONE _WEBSOCKETPP_CPP11_STL_ BASED_TLS)
+add_compile_definitions(ASIO_STANDALONE _WEBSOCKETPP_CPP11_STL_)
+add_compile_definitions(BASED_TLS)
 
 target_link_libraries(linked-example PRIVATE based)
 target_include_directories(linked-example PRIVATE include)

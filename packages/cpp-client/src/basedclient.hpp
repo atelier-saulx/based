@@ -25,12 +25,12 @@ class BasedClient {
     bool m_draining;
 
     bool m_auth_in_progress;
+    bool m_auth_required;
     std::string m_auth_state;
     std::string m_auth_request_state;
     void (*m_auth_callback)(const char*);
 
     std::map<int, void (*)(const char*, const char*)> m_function_callbacks;
-    int m_registry_index;
 
     /////////////////////
     // cache

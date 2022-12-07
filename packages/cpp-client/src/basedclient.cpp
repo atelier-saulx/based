@@ -1,4 +1,3 @@
-#include <curl/curl.h>
 #include <json.hpp>
 #include <stdexcept>
 #include <utility>
@@ -7,8 +6,6 @@
 #include "utility.hpp"
 
 #include "basedclient.hpp"
-
-#define DEFAULT_CLUSTER_URL "https://d15p61sp2f2oaj.cloudfront.net"
 
 using namespace nlohmann::literals;
 
@@ -32,10 +29,7 @@ BasedClient::BasedClient()
       m_sub_id(0),
       m_draining(false),
       m_auth_in_progress(false),
-      m_registry_index(0) {
-    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
-    m_con.set_open_handler([&]() { on_open(); });
-};
+      m_auth_required(true){};
 
 /////////////////
 // Helper functions
@@ -58,11 +52,6 @@ inline uint32_t make_obs_id(std::string& name, std::string& payload) {
     return obs_id;
 }
 
-static size_t write_function(void* contents, size_t size, size_t nmemb, void* userp) {
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
-
 //////////////////////////////////////////////////////////////////////////
 ///////////////////////// Client methods /////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -74,53 +63,13 @@ std::string BasedClient::get_service(std::string cluster,
                                      std::string name,
                                      std::string key,
                                      bool optional_key) {
-    const char* url;
-    if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
-    else url = cluster.c_str();
-
-    CURL* curl;
-    CURLcode res;
-    std::string buf;
-
-    curl = curl_easy_init();
-    if (!curl) {
-        throw std::runtime_error("curl object failed to initialize");
-    }
-    // Set up curl
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
-
-    res = curl_easy_perform(curl);  // get list of registry urls
-
-    json registries = json::array();
-    registries = json::parse(buf);
-
-    m_registry_index++;
-    if (m_registry_index > registries.size()) m_registry_index = 0;
-
-    std::string registry_url = registries.at(m_registry_index);
-    std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
-    if (key.length() > 0) req_url += "." + key;
-    if (key.length() > 0 && optional_key) req_url += "$";
-
-    std::cout << req_url << std::endl;
-
-    buf = "";
-    curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
-
-    res = curl_easy_perform(curl);  // get service url
-    if (res == CURLE_OPERATION_TIMEDOUT) {
-        throw std::runtime_error("Operation timed out");
-    }
-    curl_easy_cleanup(curl);
-
-    return buf;
+    // m_con.get_service(...args)
 }
 
 void BasedClient::_connect_to_url(std::string url) {
-    m_con.connect(url);
+    m_con.connect_to_uri(url);
+    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
+    m_con.set_open_handler([&]() { on_open(); });
 }
 
 void BasedClient::connect(std::string cluster,
@@ -130,11 +79,9 @@ void BasedClient::connect(std::string cluster,
                           std::string name,
                           std::string key,
                           bool optional_key) {
-    std::thread con_thr([&, org, project, env, name, cluster, key, optional_key]() {
-        std::string service_url = get_service(cluster, org, project, env, name, key, optional_key);
-        m_con.connect(service_url);
-    });
-    con_thr.detach();
+    m_con.connect(cluster, org, project, env, key, optional_key);
+    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
+    m_con.set_open_handler([&]() { on_open(); });
 }
 
 void BasedClient::disconnect() {
@@ -288,6 +235,9 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
     m_auth_callback = cb;
 
     std::vector<uint8_t> msg = Utility::encode_auth_message(state);
+    // TODO: rather than sending the message straight, it should be set and sent when the queue is
+    // drained. there should also be a flag `authRequired` that is set everytime the connection is
+    // dropped/fails/is terminated and unset when the connection opens
     m_con.send(msg);
 }
 
@@ -296,10 +246,8 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
 /////////////////////////////////////////////////////////////
 
 void BasedClient::drain_queues() {
-    if (m_draining || m_con.status() == ConnectionStatus::CLOSED ||
-        m_con.status() == ConnectionStatus::FAILED ||
-        m_con.status() == ConnectionStatus::CONNECTING) {
-        std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
+    if (m_draining || m_con.status() != ConnectionStatus::OPEN) {
+        // std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
         return;
     }
 
@@ -372,8 +320,6 @@ void BasedClient::on_message(std::string message) {
     int32_t type = Utility::get_payload_type(header);
     int32_t len = Utility::get_payload_len(header);
     int32_t is_deflate = Utility::get_payload_is_deflate(header);
-
-    std::cout << "msg received, type = " << type << std::endl;
 
     switch (type) {
         case IncomingType::FUNCTION_DATA: {
@@ -507,16 +453,12 @@ void BasedClient::on_message(std::string message) {
             } else {
                 m_auth_state = payload;
             }
-            m_auth_callback(payload.c_str());
+            if (m_auth_callback) m_auth_callback(payload.c_str());
 
             m_auth_in_progress = false;
         }
             return;
         case IncomingType::ERROR_DATA: {
-            // TODO: test this when errors get implemented in the server
-
-            // std::cout << "Error received" << std::endl;
-
             int32_t start = 4;
             int32_t end = len + 4;
             std::string payload = "{}";

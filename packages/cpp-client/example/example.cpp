@@ -37,9 +37,9 @@ int main(int argc, char** argv) {
     int client1 = Based__new_client();
 
     Based__connect_to_url(client1, (char*)"wss://localhost:9910");
-    // Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net", "saulx", "demo",
-    // "production",
-    //                "@based/edge", "", false);
+    // Based__connect(client1, "http://localhost:7022", "saulx", "demo", "production",
+    // "@based/edge",
+    //                "", false);
     bool done = false;
     // int i = 0;
     std::string cmd;
@@ -83,6 +83,17 @@ int main(int argc, char** argv) {
 
         if (cmd.substr(0, 1) == "d") {
             Based__disconnect(client1);
+        }
+
+        if (cmd.substr(0, 1) == "c") {
+            // Based__connect(client1, "http://localhost:7022", "saulx", "demo", "production",
+            //                "@based/edge", "", false);
+
+            Based__connect_to_url(client1, (char*)"wss://localhost:9910");
+        }
+
+        if (cmd.substr(0, 1) == "a") {
+            Based__auth(client1, "flurp", NULL);
         }
 
         std::cout << "obs = ";
