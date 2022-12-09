@@ -80,20 +80,27 @@ std::string WsConnection::get_service(std::string cluster,
     curl_easy_setopt(curl, CURLOPT_URL, url);
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);        // timeout after 3 seconds
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);  // TODO: do this better
 
     res = curl_easy_perform(curl);  // get list of registry urls
-    if (res == CURLE_OPERATION_TIMEDOUT) {
-        throw std::runtime_error("Operation timed out");
+    if (res != 0) {
+        if (res == CURLE_OPERATION_TIMEDOUT) {
+            throw std::runtime_error("Operation timed out");
+        }
+        std::cerr << "error with easy_perform, code: " << res << std::endl;
     }
 
     json registries = json::array();
 
+    std::cout << "opts = " << cluster << " " << org << " " << project << " " << env << " " << name
+              << " " << key << std::endl;
+
     std::cout << "Buf = " << buf << std::endl;
 
-    registries = json::parse(buf);
+    if (buf.length() > 0) registries = json::parse(buf);
 
-    std::cout << "Buf = " << registries.size() << std::endl;
+    std::cout << "Reg size = " << registries.size() << std::endl;
 
     m_registry_index++;
     if (m_registry_index >= registries.size()) m_registry_index = 0;
@@ -173,7 +180,7 @@ void WsConnection::connect_to_uri(std::string uri) {
     std::cout << "-------------------" << std::endl;
 
     // std::make_shared<std::thread>(&ws_client::run, m_endpoint);
-    // THIS IS BROKEN vvv
+    // TODO: THIS IS BROKEN WHEN RECONNECTING vvv
     m_thread = std::make_shared<std::thread>(&ws_client::run, m_endpoint);
     std::cout << "-------------------" << std::endl;
 
