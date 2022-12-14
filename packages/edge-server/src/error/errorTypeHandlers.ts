@@ -10,6 +10,11 @@ type ErrorType = {
 }
 
 export const errorTypeHandlers: ErrorType = {
+  [BasedErrorCode.RateLimit]: {
+    statusCode: 429,
+    statusMessage: 'Rate limit',
+    message: () => 'rate limt'
+  },
   [BasedErrorCode.FunctionError]: {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
