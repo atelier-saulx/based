@@ -131,7 +131,7 @@ export default async (
     if (!res.client) {
       res.client = new Client(server, undefined, res)
     }
-    // @ts-ignore
-    await storeFile(server, stream, { user: res.client, ...opts })
+
+    await storeFile(server, stream, opts, res.client)
   }
 }
