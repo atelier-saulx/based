@@ -1,7 +1,4 @@
-const createServer = require('@based/edge-server').default
-const { join } = require('node:path')
-
-// const json = require('./tmp.json')
+const createServer = require('@based/server').default
 
 const init = async () => {
   const functions = {
@@ -10,29 +7,10 @@ const init = async () => {
       name: 'hello',
       checksum: 1,
       maxPayloadSize: 1e6 * 10,
-      functionPath: join(__dirname, '/hello.js'),
-    },
-    counter: {
-      observable: true,
-      path: '/blap',
-      name: 'counter',
-      checksum: 1,
-      maxPayloadSize: 1e6 * 10,
-      functionPath: join(__dirname, '/counter.js'),
-    },
-    chill: {
-      observable: true,
-      path: '/lol',
-      name: 'chill',
-      checksum: 1,
-      maxPayloadSize: 1e6 * 10,
-      functionPath: join(__dirname, '/chill.js'),
-    },
-    streamboy: {
-      name: 'streamboy',
-      stream: true,
-      checksum: 1,
-      functionPath: join(__dirname, '/stream.js'),
+      function: async (payload) => {
+        console.info('go go go get hello!', payload)
+        return 'blabla'
+      },
     },
   }
 
@@ -41,7 +19,6 @@ const init = async () => {
     // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     functions: {
-      maxWorkers: 10,
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
       uninstall: async () => {

@@ -76,8 +76,7 @@ export const readBody = (
       let i = 0
       uncompressStream.on('end', () => {
         uncompressStream.destroy()
-        const data: SharedArrayBuffer = new SharedArrayBuffer(len)
-        const buf = new Uint8Array(data)
+        const buf = new Uint8Array(len)
         for (const c of chunks) {
           buf.set(c, i)
           i += c.byteLength
@@ -88,8 +87,7 @@ export const readBody = (
       sendError(server, client, BasedErrorCode.InvalidPayload, route)
     }
   } else {
-    const data: SharedArrayBuffer = new SharedArrayBuffer(contentLen)
-    const buf = new Uint8Array(data)
+    const buf = new Uint8Array(contentLen)
     let index = 0
     client.res.onData((c, isLast) => {
       const len = c.byteLength

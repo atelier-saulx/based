@@ -7,7 +7,7 @@ const init = async () => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9001'
+      return 'ws://localhost:9910'
       // //   return 'ws://localhost:9910'
       // // },
       // env: 'production',
@@ -22,9 +22,10 @@ const init = async () => {
 
   coreClient.on('connect', (isConnected) => {
     console.info('connect', isConnected)
-
-    coreClient.connection.ws.send('bla')
   })
+
+  console.info('-----------')
+  console.info(await coreClient.function('hello', { x: true }))
 
   // console.info('go auth!')
 
