@@ -1,5 +1,5 @@
 import uws from '@based/uws'
-import { AuthorizeConnection } from '../../types'
+import { AuthorizeConnection } from '../auth'
 
 let clientId = 0
 

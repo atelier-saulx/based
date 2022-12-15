@@ -2,9 +2,9 @@ import {
   valueToBuffer,
   decodePayload,
   encodeAuthResponse,
-} from '../../../protocol'
+} from '../../protocol'
 import { BasedServer } from '../../server'
-import { WebsocketClient } from '../../../types'
+import { WebsocketClient } from '../../client'
 import { enableSubscribe } from './observable'
 
 export type AuthState = any

@@ -1,11 +1,11 @@
 import { BasedServer } from '../../server'
-import { decodeHeader, readUint8 } from '../../../protocol'
+import { decodeHeader, readUint8 } from '../../protocol'
 import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
-import { WebsocketClient } from '../../../types'
-import { BasedErrorCode, createError } from '../../../error'
+import { WebsocketClient } from '../../client'
+import { BasedErrorCode, createError } from '../../error'
 
 const reader = (
   server: BasedServer,
@@ -64,7 +64,7 @@ export const message = (
   }
 
   if (!isBinary) {
-    createError(server, client, BasedErrorCode.NoBinaryProtocol, {
+    createError(server, client.ws, BasedErrorCode.NoBinaryProtocol, {
       buffer: msg,
     })
 

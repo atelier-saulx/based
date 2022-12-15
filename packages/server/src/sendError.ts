@@ -1,14 +1,14 @@
 import uws from '@based/uws'
-import { end } from '../main/sendHttpResponse'
-import { BasedServer } from '../main/server'
-import { HttpClient, WebsocketClient, isHttpClient } from '../types'
-import { valueToBuffer, encodeErrorResponse } from '../protocol'
+import { end } from './sendHttpResponse'
+import { BasedServer } from './server'
+import { HttpClient, WebsocketClient, isHttpClient } from './client'
+import { valueToBuffer, encodeErrorResponse } from './protocol'
 import {
   BasedErrorCode,
   ErrorPayload,
   BasedErrorData,
   createError,
-} from '../error'
+} from './error'
 
 const sendHttpErrorMessage = (
   res: uws.HttpResponse,
@@ -39,7 +39,7 @@ export function sendHttpError<T extends BasedErrorCode>(
       client,
       sendHttpErrorMessage(
         client.res,
-        createError(server, client, basedCode, payload)
+        createError(server, client.context, basedCode, payload)
       )
     )
   })
@@ -54,6 +54,9 @@ export function sendError<T extends BasedErrorCode>(
   if (isHttpClient(client)) {
     return sendHttpError(server, client, basedCode, payload)
   }
-  const errorData = createError(server, client, basedCode, payload)
-  client.ws?.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
+  if (!client.ws) {
+    return
+  }
+  const errorData = createError(server, client.ws, basedCode, payload)
+  client.ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
 }

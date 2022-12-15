@@ -25,7 +25,6 @@ export enum BasedErrorCode {
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
   RateLimit = 40029,
-  // WorkerDied
 }
 
 export type BasedError<T extends BasedErrorCode = BasedErrorCode> = Error & {

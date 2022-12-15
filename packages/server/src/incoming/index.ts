@@ -1,5 +1,4 @@
-import type { ServerOptions } from '../../types'
-import type { BasedServer } from '../server'
+import type { BasedServer, ServerOptions } from '../server'
 import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './ws'
@@ -36,14 +35,9 @@ export default (
       idleTimeout: 100,
       maxBackpressure: 1024,
       // compression: uws.SHARED_COMPRESSOR,
-      upgrade: server.auth?.config?.authorizeConnection
+      upgrade: server.auth?.authorizeConnection
         ? (res, req, ctx) => {
-            upgradeAuthorize(
-              server.auth.config.authorizeConnection,
-              res,
-              req,
-              ctx
-            )
+            upgradeAuthorize(server.auth.authorizeConnection, res, req, ctx)
           }
         : upgrade,
       message: (ws, data, isBinary) => {

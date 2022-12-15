@@ -1,4 +1,4 @@
-import { decodePayload, decodeName, readUint8 } from '../../../protocol'
+import { decodePayload, decodeName, readUint8 } from '../../protocol'
 import { BasedServer } from '../../server'
 import {
   createObs,
@@ -8,8 +8,9 @@ import {
   verifyRoute,
   hasObs,
 } from '../../observable'
-import { BasedErrorCode } from '../../../error'
-import { WebsocketClient, BasedFunctionRoute } from '../../../types'
+import { BasedErrorCode } from '../../error'
+import { WebsocketClient } from '../../client'
+import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 
 export const enableSubscribe = (

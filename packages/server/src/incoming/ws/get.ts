@@ -3,7 +3,7 @@ import {
   decodeName,
   readUint8,
   encodeGetResponse,
-} from '../../../protocol'
+} from '../../protocol'
 import { BasedServer } from '../../server'
 import {
   createObs,
@@ -13,14 +13,12 @@ import {
   getObs,
   hasObs,
   sendObsWs,
+  ActiveObservable,
   sendObsGetError,
 } from '../../observable'
-import {
-  ActiveObservable,
-  BasedFunctionRoute,
-  WebsocketClient,
-} from '../../../types'
-import { BasedErrorCode } from '../../../error'
+import { BasedFunctionRoute } from '../../functions'
+import { WebsocketClient } from '../../client'
+import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 
 const sendGetData = (
@@ -165,8 +163,6 @@ export const getMessage = (
       install(server, name, client, route, id, checksum, payload)
     })
     .catch((err) => {
-      console.info('AUTH FN CRASHED??', name)
-
       sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
         route,
         observableId: id,
