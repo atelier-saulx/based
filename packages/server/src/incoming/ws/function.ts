@@ -1,4 +1,10 @@
-import { readUint8, decodeName, decodePayload } from '../../protocol'
+import {
+  readUint8,
+  decodeName,
+  decodePayload,
+  encodeFunctionResponse,
+  valueToBuffer,
+} from '../../protocol'
 import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
@@ -87,7 +93,11 @@ export const functionMessage = (
             spec
               .function(payload, client.ws)
               .then(async (v) => {
-                client.ws?.send(v, true, false)
+                client.ws?.send(
+                  encodeFunctionResponse(requestId, valueToBuffer(v)),
+                  true,
+                  false
+                )
               })
               .catch((err) => {
                 sendError(server, client, err.code, {

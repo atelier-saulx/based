@@ -87,12 +87,8 @@ export const incoming = async (
 
     const buffer = await parseArrayBuffer(d)
 
-    console.info('hello!', buffer)
-
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
     // reader for batched replies
-
-    console.info('???', type, len, isDeflate)
 
     // ------- Function
     if (type === 0) {
