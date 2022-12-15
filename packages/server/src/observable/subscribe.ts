@@ -52,12 +52,13 @@ export const subscribeFunction = (
   const obs = getObs(server, id)
   obs.functionObserveClients.add(update)
   if (obs.cache) {
+    // will make this better!
     update(
       obs.cache,
       obs.checksum,
-      obs.diff,
-      obs.fromChecksum,
-      obs.isBasedFunctionRoute
+      obs.diffCache,
+      obs.previousChecksum,
+      obs.isDeflate
     )
   }
 }

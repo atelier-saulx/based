@@ -1,4 +1,4 @@
-import { ActiveObservable } from '../../types'
+import { ActiveObservable } from './types'
 
 export const extendCache = (obs: ActiveObservable) => {
   if (obs.beingDestroyed) {

@@ -1,4 +1,4 @@
-import { ActiveObservable } from '../../types'
+import { ActiveObservable } from './types'
 import { BasedServer } from '../server'
 import { extendCache } from './extendCache'
 
