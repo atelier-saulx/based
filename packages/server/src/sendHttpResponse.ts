@@ -1,4 +1,4 @@
-import { HttpClient } from '../types'
+import { HttpClient } from './client'
 import { compress } from './compress'
 
 export const end = (
@@ -36,7 +36,12 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(client, parsed).then(({ payload, encoding }) => {
+  compress(
+    parsed,
+    'encoding' in client.context.headers
+      ? client.context.headers.encoding
+      : undefined
+  ).then(({ payload, encoding }) => {
     if (client.res) {
       client.res.cork(() => {
         client.res.writeStatus('200 OK')

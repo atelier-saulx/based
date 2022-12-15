@@ -55,13 +55,9 @@ export const incomingCounter = (
     server.emit(
       'error',
       {
-        // tmp
-        isDummy: true,
-        context: {
-          ua: req.getHeader('user-agent'),
-          ip,
-          headers: {},
-        },
+        ua: req.getHeader('user-agent'),
+        ip,
+        headers: {},
       },
       { code: BasedErrorCode.RateLimit }
     )
