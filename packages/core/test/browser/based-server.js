@@ -12,6 +12,23 @@ const init = async () => {
         return 'blabla'
       },
     },
+    bla: {
+      observable: true,
+      path: '/mysnap',
+      name: 'bla',
+      checksum: 1,
+      function: async (payload, update) => {
+        // if payload is smaller then checksum then parse it
+        let cnt = 1
+        update(cnt)
+        const x = setInterval(() => {
+          update(++cnt)
+        })
+        return () => {
+          clearInterval(x)
+        }
+      },
+    },
   }
 
   const server = await createServer({

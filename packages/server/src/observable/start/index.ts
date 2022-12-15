@@ -20,24 +20,15 @@ export const start = (server: BasedServer, id: number) => {
 
   const payload = obs.payload
 
+  const update = (data, checksum, diff, fromChecksum, isDeflate) =>
+    updateListener(server, obs, data, checksum, diff, fromChecksum, isDeflate)
+
   // @ts-ignore
   update.__isEdge__ = true
-
   try {
     // TODO: make these functions receive server and obs (as last args) - every fn that you dont need is WIN
-    const r = spec.function(
-      payload,
-      (data, checksum, diff, fromChecksum, isDeflate) =>
-        updateListener(
-          server,
-          obs,
-          data,
-          checksum,
-          diff,
-          fromChecksum,
-          isDeflate
-        )
-    )
+    const r = spec.function(payload, update)
+
     if (r instanceof Promise) {
       r.then((close) => {
         if (obs.isDestroyed) {

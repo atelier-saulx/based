@@ -1,4 +1,4 @@
-const { BasedCoreClient } = require('@based/core-client')
+import { BasedCoreClient } from '@based/core-client'
 
 console.info('browsxxer')
 
@@ -26,6 +26,10 @@ const init = async () => {
 
   console.info('-----------')
   console.info(await coreClient.function('hello', { x: true }))
+
+  coreClient.observe('bla', (d, c) => {
+    console.info(d, c)
+  })
 
   // console.info('go auth!')
 
