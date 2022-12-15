@@ -3,9 +3,9 @@ import { BasedServer } from '../../../server'
 import { sendError } from '../../../sendError'
 import {
   BasedFunctionRoute,
-  HttpClient,
   isObservableFunctionSpec,
-} from '../../../types'
+} from '../../../functions'
+import { HttpClient } from '../../../client'
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
@@ -60,15 +60,11 @@ export const httpStreamFunction = (
       .install(route.name)
       .then((spec) => {
         if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-          let fn = require(spec.functionPath)
-          if (fn.default) {
-            fn = fn.default
-          }
-          thisIsFn = fn
+          thisIsFn = spec.function
           if (files.length) {
             for (const file of files) {
               console.info('File parsed before fn / auth')
-              file.resolve(fn(file.p, client.context))
+              file.resolve(thisIsFn(file.p, client.context))
             }
           }
         } else {
@@ -98,10 +94,7 @@ export const httpStreamFunction = (
             // const stream = createDataStream(server, route, client, size)
             const streamPayload = { payload, stream }
 
-            let fn = require(spec.functionPath)
-            if (fn.default) {
-              fn = fn.default
-            }
+            const fn = spec.function
 
             fn(streamPayload, client.context)
               .catch((err) => {

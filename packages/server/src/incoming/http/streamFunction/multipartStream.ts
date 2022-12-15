@@ -1,10 +1,11 @@
 import { DataStream } from './DataStream'
-import { HttpClient, BasedFunctionRoute } from '../../../types'
+import { HttpClient } from '../../../client'
 import { BasedErrorCode } from '../../../error'
 import { sendError } from '../../../sendError'
 import { sendHttpResponse } from '../../../sendHttpResponse'
 import getExtension from './getExtension'
 import { BasedServer } from '../../../server'
+import { BasedFunctionRoute } from '../../../functions'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 

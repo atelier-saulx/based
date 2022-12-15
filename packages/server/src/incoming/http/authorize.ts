@@ -1,7 +1,8 @@
 import { BasedServer } from '../../server'
-import { BasedFunctionRoute, HttpClient } from '../../../types'
+import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
-import { BasedErrorCode } from '../../../error'
+import { BasedErrorCode } from '../../error'
+import { HttpClient } from '../../client'
 
 export const authorizeRequest = (
   server: BasedServer,

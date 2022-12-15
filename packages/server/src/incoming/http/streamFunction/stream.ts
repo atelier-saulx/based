@@ -1,5 +1,6 @@
 import { DataStream } from './DataStream'
-import { HttpClient, BasedFunctionRoute } from '../../../types'
+import { HttpClient } from '../../../client'
+import { BasedFunctionRoute } from '../../../functions'
 import { sendError } from '../../../sendError'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../../error'

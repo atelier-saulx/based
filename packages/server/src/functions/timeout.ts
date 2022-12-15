@@ -1,7 +1,4 @@
-import type {
-  BasedFunctionSpec,
-  BasedObservableFunctionSpec,
-} from '../../types'
+import type { BasedFunctionSpec, BasedObservableFunctionSpec } from './types'
 
 export const fnIsTimedOut = (
   spec: BasedObservableFunctionSpec | BasedFunctionSpec

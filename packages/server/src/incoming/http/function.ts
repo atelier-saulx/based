@@ -1,13 +1,9 @@
 import { BasedServer } from '../../server'
-import {
-  BasedFunctionRoute,
-  HttpClient,
-  isObservableFunctionSpec,
-} from '../../../types'
+import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
+import { HttpClient } from '../../client'
 import { sendHttpResponse } from '../../sendHttpResponse'
-import { BasedErrorCode } from '../../../error'
+import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { sendHttpFunction } from '../../worker'
 
 export const httpFunction = (
   method: string,
@@ -27,13 +23,8 @@ export const httpFunction = (
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
-        sendHttpFunction(
-          server,
-          method === 'post' ? HttpMethod.Post : HttpMethod.Get,
-          client.context,
-          spec,
-          payload
-        )
+        spec
+          .function(payload, client.context)
           .then(async (result) => {
             if (!client.res) {
               return

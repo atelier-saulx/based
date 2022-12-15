@@ -1,5 +1,5 @@
 // rate limit
-import { BasedErrorCode } from '../../error'
+import { BasedErrorCode } from '../error'
 import type { BasedServer } from '../server'
 import uws from '@based/uws'
 

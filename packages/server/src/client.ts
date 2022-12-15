@@ -35,7 +35,9 @@ export type ClientContext =
       id: number
       name: string
       isObservable: true
-      headers: {}
+      headers: {
+        encoding?: string
+      }
     }
 
 export type WebsocketClient = {

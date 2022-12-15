@@ -1,13 +1,14 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { BasedFunctionRoute, HttpClient } from '../../../types'
+import { HttpClient } from '../../client'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
+import { BasedFunctionRoute } from '../../functions'
 import { httpGet } from './get'
 import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
-import { BasedErrorCode } from '../../../error'
+import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { incomingCounter } from '../../security'
 
@@ -153,9 +154,11 @@ export const httpHandler = (
       }
       httpStreamFunction(server, client, p, route)
     } else {
-      handleRequest(server, method, client, route, (payload) =>
-        httpFunction(method, route, client, server, payload)
-      )
+      handleRequest(server, method, client, route, (payload) => {
+        authorizeRequest(server, client, payload, route, () => {
+          httpFunction(method, route, client, server, payload)
+        })
+      })
     }
   }
 }

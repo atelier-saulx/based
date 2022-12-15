@@ -1,6 +1,7 @@
-import { BasedFunctionRoute, HttpClient } from '../../../types'
+import { HttpClient } from '../../client'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../../error'
+import { BasedFunctionRoute } from '../../functions'
+import { BasedErrorCode } from '../../error'
 import { BasedServer } from '../../server'
 import { sendError } from '../../sendError'
 

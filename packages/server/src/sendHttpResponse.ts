@@ -36,22 +36,19 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(
-    parsed,
-    'encoding' in client.context.headers
-      ? client.context.headers.encoding
-      : undefined
-  ).then(({ payload, encoding }) => {
-    if (client.res) {
-      client.res.cork(() => {
-        client.res.writeStatus('200 OK')
-        client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-        client.res.writeHeader('Content-Type', cType)
-        if (encoding) {
-          client.res.writeHeader('Content-Encoding', encoding)
-        }
-        end(client, payload)
-      })
+  compress(parsed, client.context.headers.encoding).then(
+    ({ payload, encoding }) => {
+      if (client.res) {
+        client.res.cork(() => {
+          client.res.writeStatus('200 OK')
+          client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
+          client.res.writeHeader('Content-Type', cType)
+          if (encoding) {
+            client.res.writeHeader('Content-Encoding', encoding)
+          }
+          end(client, payload)
+        })
+      }
     }
-  })
+  )
 }

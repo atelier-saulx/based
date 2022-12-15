@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { WebsocketClient, HttpClient, ClientContext } from '../types'
+import { WebsocketClient, HttpClient, ClientContext } from '../client'
 import uws from '@based/uws'
 
 export type AuthConfig = {

@@ -1,10 +1,6 @@
 import { BasedServer } from '../../server'
-import {
-  HttpClient,
-  ActiveObservable,
-  isObservableFunctionSpec,
-  BasedFunctionRoute,
-} from '../../../types'
+import { HttpClient } from '../../client'
+import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
 import { end } from '../../sendHttpResponse'
 import { compress } from '../../compress'
 import {
@@ -14,12 +10,13 @@ import {
   hasObs,
   sendObsGetError,
   subscribeNext,
+  ActiveObservable,
+  genObservableId,
 } from '../../observable'
 import zlib from 'node:zlib'
 import { parseQuery } from '@saulx/utils'
-import { BasedErrorCode } from '../../../error'
+import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import genObservableId from '../../../genObservableId'
 import { promisify } from 'node:util'
 
 const inflate = promisify(zlib.inflate)
@@ -33,7 +30,10 @@ const sendCacheSwapEncoding = async (
 ) => {
   try {
     const inflated = await inflate(buffer.slice(20))
-    const { payload, encoding } = await compress(client, inflated)
+    const { payload, encoding } = await compress(
+      inflated,
+      client.context.headers.encoding
+    )
     if (!client.res) {
       return
     }
