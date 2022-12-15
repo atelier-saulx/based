@@ -26,6 +26,7 @@ export type ActiveObservable = {
   payload: any
   diffCache?: Uint8Array
   cache?: Uint8Array
+  rawData?: any
   previousChecksum?: number
   isDeflate?: boolean
   checksum?: number

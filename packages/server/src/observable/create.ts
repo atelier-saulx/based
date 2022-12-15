@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { ActiveObservable } from './types'
-import { initFunction } from './init'
+import { start } from './start'
 import { hasObs } from './get'
 
 export const createObs = (
@@ -32,7 +32,7 @@ export const createObs = (
   server.activeObservables[name].set(id, obs)
   server.activeObservablesById.set(id, obs)
 
-  initFunction(server, id)
+  start(server, id)
 
   return obs
 }

@@ -8,7 +8,7 @@ import {
 } from './types'
 import { deepMerge } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
-import { destroyObs, initFunction } from '../observable'
+import { destroyObs, start } from '../observable'
 export * from './types'
 
 export class BasedFunctions {
@@ -83,7 +83,7 @@ export class BasedFunctions {
     const { name } = spec
     const prevSpec = this.specs[name]
     if (prevSpec) {
-      if (prevSpec.functionPath !== spec.functionPath) {
+      if (prevSpec.function !== spec.function) {
         if (this.beingUninstalled[name]) {
           delete this.beingUninstalled[name]
         }
@@ -186,7 +186,7 @@ export class BasedFunctions {
         }
       } else {
         for (const [id] of this.server.activeObservables[spec.name]) {
-          initFunction(this.server, id)
+          start(this.server, id)
         }
       }
     }
