@@ -22,7 +22,20 @@ const init = async () => {
         let cnt = 1
         update(cnt)
         const x = setInterval(() => {
-          update(++cnt)
+          const xyz = []
+          for (let i = 0; i < 1e3; i++) {
+            xyz.push('my snutx ' + i + Math.random() * 112231213)
+          }
+
+          update([
+            xyz,
+            'glurbatjof',
+            ++cnt,
+            cnt,
+            cnt,
+            cnt,
+            [++cnt, cnt, cnt, cnt, [++cnt, cnt, cnt, cnt]],
+          ])
         })
         return () => {
           clearInterval(x)
