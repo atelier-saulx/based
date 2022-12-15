@@ -1,197 +1,279 @@
-import Client from './Client'
-import uws from '@based/uws'
-import { ConnectOptions } from '@saulx/selva'
-import Based from './BasedServerClient'
-import { Params } from './Params'
-import { BasedServer } from '.'
-import {
-  ErrorObject,
-  GenericObject,
-  Based as BasedAdminClient,
-} from '@based/client'
-import { Readable } from 'stream'
+import type { BasedServer } from './main/server'
+import type uws from '@based/uws'
+import { BasedError, BasedErrorCode, BasedErrorData } from './error'
+import { Worker } from 'node:worker_threads'
 
-export { Client }
-
-export type CallParams = Omit<Params, 'update'>
-
-export type ObservableParams = Omit<Params, 'user'>
-
-export type DataListener = (
-  data: GenericObject,
-  checksum: number,
-  error?: ErrorObject
-) => void
-
-export type ObservableFunction = {
-  function: (params: ObservableParams) => Promise<() => void>
-  authorize?: (params: CallParams) => Promise<boolean>
-  observable: true
-  shared: boolean
-  cnt?: number
-  worker?: boolean
-}
-
-export type CallFunction = {
-  observable: false
-  authorize?: (params: CallParams) => Promise<boolean>
-  function: (params: CallParams) => Promise<any>
-  cnt?: number
-  worker?: boolean
-  headers?: (
-    params: CallParams,
-    result: any
-  ) => Promise<{
-    [key: string]: string
-  }>
-}
-
-export const isCallFunction = (
-  fn: CallFunction | ObservableFunction
-): fn is CallFunction => {
-  return fn.observable === false
-}
-
-export const isObservableFunction = (
-  fn: CallFunction | ObservableFunction
-): fn is ObservableFunction => {
-  return fn.observable === true
-}
-
-export type AuthorizeFn = (params: Params) => Promise<boolean>
-
-export type LoginFn = (params: Params) => Promise<GenericObject>
-export type LogoutFn = (params: Params) => Promise<GenericObject>
-export type RenewTokenFn = (params: Params) => Promise<GenericObject>
-export type FileOpts = {
-  based: Based
-  stream: Readable
-  mimeType: string
-  id: string
-  extension: string
-  size: number
-  user?: Client
-}
-
-export type GetInitial = (
-  server: BasedServer,
-  name: string
-) => Promise<ObservableFunction | CallFunction | null>
-
-export type Geo = {
-  iso: string
-  long: number
-  lat: number
-  regions: string[]
-}
-
-export type Config = {
-  noAuth?: boolean
-  getBasedKey?: () => Promise<string>
-
-  getApiKeysPublicKey?: () => Promise<string>
-
-  getGeo?: (ip: string) => Geo
-
-  /*
-       sendEmail: async ({ to, subject, body, from }) => {
-        // add validation later
-        return {
-          status: 1,
-          message: `Send email to ${to} from ${from} subject ${subject} body ${body}`,
-        }
-      },
-  */
-
-  sendEmail?: (payload: {
-    to: string
-    subject: string
-    body: string
-    from?: string
-  }) => Promise<
-    | {
-        status: 'ok'
-        message?: string
+export type ClientContext =
+  | {
+      query: string
+      ua: string
+      ip: string
+      callStack?: string[]
+      id: number
+      fromAuth?: boolean
+      authState?: any
+      method: string
+      headers: {
+        'content-length'?: number
+        authorization?: string
+        'content-type'?: string
+        'content-encoding'?: string
+        encoding?: string
+      } & { [key: string]: string }
+    }
+  | {
+      callStack?: string[]
+      fromAuth?: boolean
+      headers: {
+        'content-length'?: number
+        authorization?: string
+        'content-type'?: string
+        'content-encoding'?: string
+        encoding?: string
       }
-    | { status: 'error'; message: string }
-  >
+    }
 
-  // allow overwrite of this function (from a function then if that function gets access to the 'default')
-  storeFile?: (opts: FileOpts) => Promise<{
-    src: string
-    origin: string
-    status: number
-    statusText?: string
-    thumb?: string
-    version?: string
-    mimeType?: string
-  }>
+export type WebsocketClient = {
+  ws:
+    | (uws.WebSocket &
+        ClientContext & {
+          obs: Set<number>
+          unauthorizedObs: Set<{
+            id: number
+            checksum: number
+            name: string
+            payload: any
+          }>
+        })
+    | null
+}
 
-  deleteFile?: (opts: {
-    based: Based
-    id: string
-    db?: string
-  }) => Promise<boolean>
+export type HttpClient = {
+  res: uws.HttpResponse | null
+  req: uws.HttpRequest | null
+  context: ClientContext | null
+}
 
-  getAdmin?: (key: string) => Promise<BasedAdminClient>
+export type BasedWorker = {
+  worker: Worker
+  name?: string
+  index: number
+  activeObservables: number
+  activeFunctions: number
+  nestedObservers: Set<number>
+}
 
-  functionConfig?: {
-    idleTimeout: number
-    getInitial: GetInitial
-    subscribeFunctions: (
-      cb: (err: Error, d?: any) => void
-    ) => Promise<() => void>
-    clear: (server: BasedServer, name: string) => Promise<void>
+export type WorkerClient = {
+  worker: BasedWorker
+  context: ClientContext
+}
+
+export type ObservableDummyClient = {
+  isDummy: true
+  context: ClientContext
+}
+
+export const isHttpClient = (
+  client: HttpClient | WebsocketClient | WorkerClient
+): client is HttpClient => {
+  if ('res' in client) {
+    return true
   }
+  return false
+}
 
-  secretsConfig?: {
-    secretTimeouts?: { [name: string]: number }
-    idleTimeout: number
-    getInitial: (server: BasedServer, name: string) => Promise<string | null>
-    clear: (server: BasedServer, name: string) => Promise<void>
+export const isWorkerClient = (
+  client: HttpClient | WebsocketClient | WorkerClient
+): client is WorkerClient => {
+  if ('worker' in client) {
+    return true
   }
+  return false
+}
 
-  secrets?: {
-    [key: string]: any
-  }
-
-  authorizeConnection?: Authorize
-
-  // if functions have authorize then add an empty function for this that returns true
-  authorize?: AuthorizeFn
-  defaultAuthorize?: AuthorizeFn
-
-  login?: LoginFn
-  logout?: LogoutFn
-  renewToken?: RenewTokenFn
-
-  functions?: {
-    [key: string]: ObservableFunction | CallFunction
-  }
-
-  // is this nice syntax?
-  onOpen?: (...args: any[]) => void
-  onClose?: (...args: any[]) => void
+export type AuthConfig = {
+  authorizePath?: string
+  authorizeConnection?: AuthorizeConnection
 }
 
 export type Authorize = (
-  req: uws.HttpRequest,
-  // eslint-disable-next-line
-  ctx: uws.us_socket_context_t
+  client: ClientContext,
+  name: string,
+  payload?: any
 ) => Promise<boolean>
+
+export type AuthorizeHandshake = (
+  server: BasedServer,
+  client: WebsocketClient | HttpClient,
+  payload?: any
+) => Promise<boolean>
+
+export type AuthorizeConnection = (req: uws.HttpRequest) => Promise<boolean>
+
+// - FUNCTIONS IN HUB
+// authorize
+// authorize-advanced TODO: better name
+// authorize-handshake
 
 export type ServerOptions = {
   port?: number
-  useLessMemory?: boolean
   key?: string
   cert?: string
-  debug?: boolean
-  db: ConnectOptions
-  config?: Config
-  state?: GenericObject
+  functions?: FunctionConfig
+  auth?: AuthConfig
+  workerRequest?: (type: string, payload?: any) => void | Promise<any>
+  ws?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
+  http?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
 }
 
-export type SendTokenOptions = {
-  isBasedUser?: boolean
-  isApiKey?: boolean
+export type ObservableUpdateFunction = (
+  data: any,
+  checksum?: number,
+  diff?: any,
+  fromChecksum?: number,
+  isDeflate?: boolean
+) => void
+
+export type ObserveErrorListener = (
+  err: BasedError<BasedErrorCode.ObservableFunctionError>
+) => void
+
+// this gets run in the main thread
+export type CustomHttpResponse = (
+  result: any,
+  payload: any,
+  client: HttpClient
+) => Promise<boolean>
+
+export type BasedFunctionRoute = {
+  name: string
+  observable?: boolean
+  maxPayloadSize?: number
+  headers?: string[]
+  path?: string
+  stream?: boolean
+  rateLimitTokens?: number
+}
+
+export type BasedObservableFunction = (
+  payload: any,
+  update: ObservableUpdateFunction
+) => Promise<() => void>
+
+export type BasedObservableFunctionSpec = BasedFunctionRoute & {
+  name: string
+  checksum: number
+  observable: true
+  functionPath: string
+  stickyWorker?: string
+  customHttpResponse?: CustomHttpResponse
+  memCacheTimeout?: number // in ms
+  idleTimeout?: number // in ms
+  timeoutCounter?: number
+}
+
+export type BasedFunction = (
+  payload: any,
+  client: ClientContext
+) => Promise<any>
+
+export type BasedFunctionSpec = BasedFunctionRoute & {
+  name: string
+  observable?: false
+  customHttpResponse?: CustomHttpResponse
+  checksum: number
+  stickyWorker?: string
+  functionPath: string
+  maxExecTime?: number // in ms - very nice too have
+  idleTimeout?: number // in ms
+  timeoutCounter?: number // in ms
+}
+
+export enum FunctionType {
+  authorize,
+  observe,
+  function,
+  streamFunction,
+}
+
+export type ImportWrapper = (
+  name: string,
+  type: FunctionType,
+  path: string
+) => Function
+
+export type FunctionConfig = {
+  memCacheTimeout?: number // in ms
+  idleTimeout?: number // in ms
+  maxWorkers?: number
+  importWrapperPath?: string
+  route: (opts: {
+    server: BasedServer
+    name?: string
+    path?: string
+  }) => false | BasedFunctionRoute
+
+  install: (opts: {
+    server: BasedServer
+    name: string
+    function?: BasedFunctionSpec | BasedObservableFunctionSpec
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+
+  uninstall: (opts: {
+    server: BasedServer
+    name: string
+    function: BasedObservableFunctionSpec | BasedFunctionSpec
+  }) => Promise<boolean>
+}
+
+export function isObservableFunctionSpec(
+  fn: BasedObservableFunctionSpec | BasedFunctionSpec
+): fn is BasedObservableFunctionSpec {
+  return (fn as BasedObservableFunctionSpec).observable
+}
+
+export type ActiveObservable = {
+  name: string
+  id: number
+  reusedCache: boolean
+  clients: Set<number>
+  workers: Set<BasedWorker>
+  isDestroyed: boolean
+  payload: any
+  diffCache?: Uint8Array
+  cache?: Uint8Array
+  previousChecksum?: number
+  isDeflate?: boolean
+  checksum?: number
+  closeFunction?: () => void
+  beingDestroyed?: NodeJS.Timeout
+  onNextData?: Set<
+    (err?: BasedError<BasedErrorCode.ObservableFunctionError>) => void
+  >
+  error?: BasedError<BasedErrorCode.ObservableFunctionError> | null
+}
+
+export type EventMap = {
+  error: BasedErrorData
+  ratelimit: void
+  log: any
+}
+
+export type Event = keyof EventMap
+
+export type Listener<T> = (
+  client: HttpClient | WebsocketClient | WorkerClient | ObservableDummyClient,
+  data?: T,
+  err?: Error
+) => void
+
+export enum HttpMethod {
+  Post,
+  Get,
 }

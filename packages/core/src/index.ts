@@ -26,7 +26,6 @@ import {
   sendAuth,
   addGetToQueue,
 } from './outgoing'
-import { envId } from '@based/ids'
 import { incoming } from './incoming'
 import { genObserveId } from './genObserveId'
 
@@ -45,7 +44,6 @@ export class BasedCoreClient extends Emitter {
 
   // --------- Connection State
   opts: BasedOpts
-  envId: string
   connected: boolean = false
   connection: Connection
   url: string | (() => Promise<string>)
@@ -147,10 +145,6 @@ export class BasedCoreClient extends Emitter {
         this.disconnect()
       }
       this.opts = opts
-      this.envId =
-        opts.env && opts.org && opts.project
-          ? envId(opts.env, opts.org, opts.project)
-          : undefined
     }
     if (!this.opts) {
       console.error('Configure opts to connect')
