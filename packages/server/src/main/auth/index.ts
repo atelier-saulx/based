@@ -1,16 +1,11 @@
 import { join } from 'path'
-import { AuthState } from '../incoming/ws/auth'
 import { encodeAuthResponse, valueToBuffer } from '../../protocol'
 import { BasedServer } from '../server'
-import {
-  AuthConfig,
-  Authorize,
-  WebsocketClient,
-  BasedWorker,
-  ClientContext,
-} from '../../types'
-import { sendToWorker } from '../worker'
-import { IncomingType } from '../../worker/types'
+import { ClientContext } from '../../types'
+import { WebsocketClient } from '../types'
+import { AuthConfig, Authorize } from './types'
+
+export * from './types'
 
 export class BasedAuth {
   server: BasedServer
@@ -62,6 +57,8 @@ export class BasedAuth {
               resolve(p)
             }
           })
+
+          // lets jsut add context to client this is annoying...
 
           sendToWorker(selectedWorker, {
             type: IncomingType.Authorize,

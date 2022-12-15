@@ -1,22 +1,32 @@
+import type { ClientContext, ObservableCache } from '../types'
 import uws from '@based/uws'
-import initNetwork from './incoming'
-import type {
-  ServerOptions,
-  ActiveObservable,
-  Listener,
-  EventMap,
-  Event,
-  HttpClient,
-  WebsocketClient,
-  WorkerClient,
-  ObservableDummyClient,
-} from '../types'
-import { BasedFunctions } from './functions'
-import { BasedAuth } from './auth'
-import { BasedErrorCode } from '../error'
 import { wait } from '@saulx/utils'
+import { Worker } from 'node:worker_threads'
+import { attachNetwork } from './network'
+import { BasedFunctions, FunctionConfig } from './functions'
+import { Listener, EventMap, Event } from './types'
+import { BasedAuth, AuthConfig } from './auth'
+import { BasedErrorCode } from '../error'
+import { createWorker } from './worker'
 
-// extend emitter
+export type ServerOptions = {
+  port?: number
+  httpPort?: number // seperate http listener
+  key?: string
+  cert?: string
+  functions?: FunctionConfig
+  auth?: AuthConfig
+  workerRequest?: (type: string, payload?: any) => void | Promise<any>
+  ws?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
+  http?: {
+    open: (client: ClientContext) => void
+    close: (client: ClientContext) => void
+  }
+}
+
 export class BasedServer {
   public functions: BasedFunctions
 
@@ -27,6 +37,8 @@ export class BasedServer {
   public uwsApp: uws.TemplatedApp
 
   public listenSocket: any
+
+  public worker: Worker
 
   // opposite of blocked can never get blocked
   public whiteList: Set<string> = new Set()
@@ -45,35 +57,27 @@ export class BasedServer {
 
   public requestsCounterTimeout: NodeJS.Timeout
 
-  public activeObservables: {
-    [name: string]: Map<number, ActiveObservable>
-  } = {}
-
-  public activeObservablesById: Map<number, ActiveObservable> = new Map()
+  public observableCache: Map<number, ObservableCache> = new Map()
 
   public listeners: {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
-  public workerRequest: (type: string, payload?: any) => void | Promise<any>
-
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
+    this.worker = createWorker(this)
     this.auth = new BasedAuth(this, opts.auth)
-    if (opts.workerRequest) {
-      this.workerRequest = opts.workerRequest
-    }
-    initNetwork(this, opts)
+    attachNetwork(this, opts)
   }
 
   emit(
     type: Event,
-    client: HttpClient | WebsocketClient | WorkerClient | ObservableDummyClient,
+    clientContext: ClientContext,
     val: EventMap[Event],
     err?: Error
   ) {
     if (this.listeners[type]) {
-      this.listeners[type].forEach((fn) => fn(client, val, err))
+      this.listeners[type].forEach((fn) => fn(clientContext, val, err))
     }
   }
 
@@ -120,6 +124,9 @@ export class BasedServer {
     } else {
       this.port = port
     }
+
+    // add importwrapper
+
     await wait(10)
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {

@@ -84,6 +84,10 @@ export const incoming = async (
 ) => {
   try {
     const d = data.data
+
+    // console.log('--->', d)
+    return
+
     const buffer = await parseArrayBuffer(d)
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
     // reader for batched replies

@@ -1,18 +1,14 @@
 import type { BasedServer } from '../server'
 import {
-  BasedFunctionRoute,
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
   FunctionConfig,
-  isObservableFunctionSpec,
-  BasedWorker,
-} from '../../types'
+} from './types'
+import { BasedFunctionRoute } from '../../types'
 import { deepMerge } from '@saulx/utils'
-import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
-import { destroyObs, initFunction } from '../observable'
-import { BasedError, BasedErrorCode } from '../../error'
-import { sendToWorker, updateWorkers } from '../worker'
-import { IncomingType } from '../../worker/types'
+import { fnIsTimedOut, extendTimeoutCounter } from './timeout'
+import { removeFunction, updateFunction } from '../worker'
+export * from './types'
 
 export class BasedFunctions {
   server: BasedServer
@@ -23,38 +19,17 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
-  workers: BasedWorker[] = []
-
-  workerResponseListeners: Map<
-    number,
-    (err: null | BasedError, p?: any) => void
-  > = new Map()
-
-  workerObsListeners: Map<
-    number,
-    (
-      err: null | BasedError<BasedErrorCode.ObservableFunctionError>,
-      p?: any
-    ) => void
-  > = new Map()
-
   paths: {
     [path: string]: string
   } = {}
 
-  observables: {
-    [name: string]: BasedObservableFunctionSpec
-  } = {}
-
-  functions: {
-    [name: string]: BasedFunctionSpec
+  specs: {
+    [name: string]: BasedFunctionSpec | BasedObservableFunctionSpec
   } = {}
 
   beingUninstalled: {
     [name: string]: boolean
   } = {}
-
-  lowestWorker: BasedWorker
 
   constructor(server: BasedServer, config?: FunctionConfig) {
     this.server = server
@@ -64,19 +39,12 @@ export class BasedFunctions {
   }
 
   uninstallLoop() {
+    // TODO: gets updates from worker once in a while
     this.unregisterTimeout = setTimeout(async () => {
       const q = []
-      for (const name in this.functions) {
-        const spec = this.functions[name]
+      for (const name in this.specs) {
+        const spec = this.specs[name]
         if (fnIsTimedOut(spec)) {
-          q.push(this.uninstall(name, spec))
-        }
-      }
-      for (const name in this.observables) {
-        const spec = this.observables[name]
-        if (this.server.activeObservables[name]) {
-          updateTimeoutCounter(spec)
-        } else if (fnIsTimedOut(spec)) {
           q.push(this.uninstall(name, spec))
         }
       }
@@ -91,36 +59,32 @@ export class BasedFunctions {
     } else {
       this.config = config
     }
-
     if (this.config.idleTimeout === undefined) {
       this.config.idleTimeout = 60e3 // 1 min
     }
     if (this.config.memCacheTimeout === undefined) {
       this.config.memCacheTimeout = 3e3
     }
-    if (this.config.maxWorkers === undefined) {
-      this.config.maxWorkers = 1
-    }
-
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
-
-    updateWorkers(this)
-
     this.uninstallLoop()
+  }
+
+  extendTimeoutCounter(spec: BasedObservableFunctionSpec | BasedFunctionSpec) {
+    // for external
+    return extendTimeoutCounter(spec)
   }
 
   async updateFunction(spec: BasedObservableFunctionSpec | BasedFunctionSpec) {
     const { name } = spec
-
-    const prevSpec = this.observables[name] || this.functions[name]
+    const prevSpec = this.specs[name]
     if (prevSpec) {
       if (prevSpec.functionPath !== spec.functionPath) {
         if (this.beingUninstalled[name]) {
           delete this.beingUninstalled[name]
         }
-        updateTimeoutCounter(spec)
+        extendTimeoutCounter(spec)
         await this.config.install({
           server: this.server,
           name: spec.name,
@@ -183,12 +147,12 @@ export class BasedFunctions {
   getFromStore(
     name: string
   ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
-    const spec = this.observables[name] || this.functions[name]
+    const spec = this.specs[name]
     if (spec) {
       if (this.beingUninstalled[name]) {
         delete this.beingUninstalled[name]
       }
-      updateTimeoutCounter(spec)
+      extendTimeoutCounter(spec)
       return spec
     }
     return false
@@ -208,77 +172,19 @@ export class BasedFunctions {
         this.paths[spec.path] = spec.name
       }
 
-      if (isObservableFunctionSpec(spec)) {
-        if (this.functions[spec.name]) {
-          this.remove(spec.name)
-        } else if (this.observables[spec.name]) {
-          for (const w of this.workers) {
-            sendToWorker(w, {
-              type: IncomingType.RemoveFunction,
-              name: spec.name,
-            })
-          }
-        }
-        this.observables[spec.name] = spec
-        if (this.server.activeObservables[spec.name]) {
-          for (const [id] of this.server.activeObservables[spec.name]) {
-            initFunction(this.server, id)
-          }
-        }
-      } else {
-        if (this.observables[spec.name]) {
-          this.remove(spec.name)
-        } else if (this.functions[spec.name]) {
-          for (const w of this.workers) {
-            sendToWorker(w, {
-              type: IncomingType.RemoveFunction,
-              name: spec.name,
-            })
-          }
-        }
-        this.functions[spec.name] = spec
-      }
+      updateFunction(this.server, spec)
+
+      this.specs[spec.name] = spec
     }
 
     return false
   }
 
   remove(name: string): boolean {
-    // Does not call unregister!
-    if (this.observables[name]) {
-      if (this.observables[name].path) {
-        delete this.paths[this.observables[name].path]
-      }
-      delete this.observables[name]
-      const activeObs = this.server.activeObservables[name]
-      if (activeObs) {
-        for (const [id] of activeObs) {
-          destroyObs(this.server, id)
-        }
-        delete this.server.activeObservables[name]
-      }
-      // this is a bit harder... not allways relevant
-      for (const w of this.workers) {
-        sendToWorker(w, {
-          type: IncomingType.RemoveFunction,
-          name,
-        })
-      }
-      return true
-    } else if (this.functions[name]) {
-      if (this.functions[name].path) {
-        delete this.paths[this.functions[name].path]
-      }
-      delete this.functions[name]
-      for (const w of this.workers) {
-        sendToWorker(w, {
-          type: IncomingType.RemoveFunction,
-          name,
-        })
-      }
+    if (this.specs[name]) {
+      removeFunction(this.server, name)
       return true
     }
-
     return false
   }
 
@@ -290,7 +196,7 @@ export class BasedFunctions {
       console.error('Allready being unregistered...', name)
     }
     if (!spec && spec !== false) {
-      spec = this.observables[name] || this.functions[name]
+      spec = this.specs[name]
     }
     if (spec) {
       this.beingUninstalled[name] = true

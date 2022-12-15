@@ -1,5 +1,4 @@
-import type { ServerOptions } from './types'
-import { BasedServer } from './main/server'
+import { BasedServer, ServerOptions } from './main/server'
 
 export { BasedServer }
 
@@ -13,11 +12,13 @@ const createServer = async (
 
 export default createServer
 
+// lets check which types we want to export... more specific
 export * from './types'
 
 // maybe send responsed
-export { compress } from './main/compress'
-export { sendHttpResponse } from './main/sendHttpResponse'
-export { sendError } from './main/sendError'
+export { compress } from './compress'
+// export { sendHttpResponse } from './main/sendHttpResponse'
+// export { sendError } from './main/sendError'
 
+// same here...
 export * from './error'

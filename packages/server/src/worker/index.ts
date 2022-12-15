@@ -1,2 +1,1 @@
-import './incoming'
-export * from './api'
+console.info('lullz worker!')
