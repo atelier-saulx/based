@@ -1,4 +1,4 @@
-import { BasedFunctionRoute } from '../types'
+import { BasedFunctionRoute } from '../functions'
 
 export const EMPTY_ROUTE = {
   name: 'no-route',
@@ -45,7 +45,7 @@ type ObservableFunctionErrorProps = {
 }
 
 export type ErrorPayload = {
-  [BasedErrorCode.RateLimit]: void
+  [BasedErrorCode.RateLimit]: {}
   [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.ObservableFunctionError]: ObservableFunctionErrorProps

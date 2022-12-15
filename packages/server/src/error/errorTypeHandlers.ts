@@ -1,4 +1,4 @@
-import { BasedFunctionRoute } from '../types'
+import { BasedFunctionRoute } from '../functions'
 import { BasedErrorCode, ErrorPayload, ErrorHandler } from './types'
 
 const addName = (payload: BasedFunctionRoute): string => {

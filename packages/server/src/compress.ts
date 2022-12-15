@@ -47,6 +47,5 @@ export const compress = async (
       return { payload: compressed, encoding: responseEncoding }
     }
   }
-
   return { payload }
 }

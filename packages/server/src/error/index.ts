@@ -1,14 +1,26 @@
+import { BasedServer } from '../server'
+import { BasedFunctionRoute } from '../functions'
+import { ClientContext } from '../client'
 import {
   BasedErrorCode,
   ErrorPayload,
   BasedErrorData,
   EMPTY_ROUTE,
 } from './types'
-import { isBasedFunctionRoute } from '../types'
+
 import { errorTypeHandlers } from './errorTypeHandlers'
 export * from './types'
 
+const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
+  if (route && typeof route === 'object' && 'name' in route) {
+    return true
+  }
+  return false
+}
+
 export function createError<T extends BasedErrorCode>(
+  server: BasedServer,
+  context: ClientContext,
   code: T,
   payload: ErrorPayload[T]
 ): BasedErrorData<T> {
@@ -39,6 +51,12 @@ export function createError<T extends BasedErrorCode>(
 
   if ('observableId' in payload) {
     errorData.observableId = payload.observableId
+  }
+
+  if ('err' in payload) {
+    server.emit('error', context, errorData, payload.err)
+  } else {
+    server.emit('error', context, errorData)
   }
 
   return errorData

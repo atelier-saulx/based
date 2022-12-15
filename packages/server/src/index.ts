@@ -1,6 +1,4 @@
-import { BasedServer, ServerOptions } from './main/server'
-
-export { BasedServer }
+import { BasedServer, ServerOptions } from './server'
 
 const createServer = async (
   props: ServerOptions,
@@ -10,15 +8,15 @@ const createServer = async (
   return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
 }
 
-export default createServer
+export { BasedServer }
 
-// lets check which types we want to export... more specific
-export * from './types'
+export default createServer
 
 // maybe send responsed
 export { compress } from './compress'
-// export { sendHttpResponse } from './main/sendHttpResponse'
-// export { sendError } from './main/sendError'
+export { sendHttpResponse } from './sendHttpResponse'
+export { sendError } from './sendError'
 
-// same here...
+export * from './auth/types'
+export * from './functions/types'
 export * from './error'
