@@ -1,3 +1,0 @@
-// GO GO GO
-// CALL FN
-// CALL OBS

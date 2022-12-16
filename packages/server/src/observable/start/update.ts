@@ -10,8 +10,6 @@ import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { createPatch } from '@saulx/diff'
 import { BasedServer } from '../../server'
 
-// clean this up
-
 export const updateListener = (
   server: BasedServer,
   obs: ActiveObservable,
@@ -101,19 +99,17 @@ export const updateListener = (
       }
     }
 
-    // if (obs.workers.size) {
-    //   obs.workers.forEach((w) => {
-    //     sendToWorker(w, {
-    //       type: IncomingType.UpdateObservable,
-    //       id,
-    //       checksum: obs.checksum,
-    //       data: obs.cache,
-    //       isDeflate: obs.isDeflate,
-    //       diff: obs.diffCache,
-    //       previousChecksum: obs.previousChecksum,
-    //     })
-    //   })
-    // }
+    if (obs.functionObserveClients.size) {
+      obs.functionObserveClients.forEach((fnUpdate) => {
+        fnUpdate(
+          obs.cache,
+          obs.checksum,
+          obs.diffCache,
+          obs.previousChecksum,
+          obs.isDeflate
+        )
+      })
+    }
 
     if (obs.onNextData) {
       const onNextData = obs.onNextData
@@ -129,3 +125,5 @@ export const updateListener = (
     }
   }
 }
+
+updateListener.__isEdge__ = true

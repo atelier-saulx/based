@@ -20,16 +20,29 @@ const init = async () => {
     },
   })
 
-  coreClient.on('connect', (isConnected) => {
+  coreClient.on('connect', async (isConnected) => {
     console.info('connect', isConnected)
+    console.info('--->', await coreClient.function('helloNest', { x: true }))
   })
 
   console.info('-----------')
   console.info(await coreClient.function('hello', { x: true }))
 
-  coreClient.observe('bla', (d, c) => {
-    console.info(d, c)
+  const makeButton = (label: string, fn: () => void) => {
+    const button = document.createElement('button')
+    button.innerHTML = label
+    button.style.margin = '40px'
+    button.onclick = fn
+    document.body.appendChild(button)
+  }
+
+  makeButton('nested hello', async () => {
+    console.info(await coreClient.function('helloNest', { x: true }))
   })
+
+  // coreClient.observe('bla', (d, c) => {
+  //   console.info(d, c)
+  // })
 
   // console.info('go auth!')
 

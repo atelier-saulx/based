@@ -23,8 +23,8 @@ export const start = (server: BasedServer, id: number) => {
   const update = (data, checksum, diff, fromChecksum, isDeflate) =>
     updateListener(server, obs, data, checksum, diff, fromChecksum, isDeflate)
 
-  // @ts-ignore
-  update.__isEdge__ = true
+  update.__internalObs__ = true
+
   try {
     // TODO: make these functions receive server and obs (as last args) - every fn that you dont need is WIN
     const r = spec.function(payload, update)

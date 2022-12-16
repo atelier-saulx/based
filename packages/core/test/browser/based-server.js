@@ -1,4 +1,4 @@
-const createServer = require('@based/server').default
+const { default: createServer, runFunction } = require('@based/server')
 
 const init = async () => {
   const functions = {
@@ -10,6 +10,16 @@ const init = async () => {
       function: async (payload) => {
         console.info('go go go get hello!', payload)
         return 'blabla'
+      },
+    },
+    helloNest: {
+      path: '/mygurd',
+      name: 'helloNest',
+      checksum: 1,
+      function: async (payload, ctx) => {
+        console.info('call nested!')
+        const bla = await runFunction(server, 'hello', ctx, payload)
+        return bla
       },
     },
     bla: {
