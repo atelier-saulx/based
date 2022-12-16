@@ -255,3 +255,19 @@ export const encodeErrorResponse = (buffer: Buffer): Uint8Array => {
 
   return encodeSimpleResponse(5, buffer)
 }
+
+// decode cached data
+export const decode = (buffer: Uint8Array): any => {
+  const header = readUint8(buffer, 0, 4)
+  const { isDeflate, len, type } = decodeHeader(header)
+  if (type === 1) {
+    // | 4 header | 8 id | 8 checksum | * payload |
+    if (len === 16) {
+      return
+    }
+    const start = 20
+    const end = len + 4
+    return decodePayload(buffer.slice(start, end), isDeflate)
+  }
+  // decode diff as well
+}

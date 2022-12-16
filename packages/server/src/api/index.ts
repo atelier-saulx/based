@@ -14,7 +14,6 @@ import {
   getObs,
   unsubscribeFunction,
 } from '../observable'
-import { resolve } from 'path'
 
 export const runFunction = async (
   server: BasedServer,
@@ -63,78 +62,103 @@ export const runFunction = async (
   }
 }
 
-export const get = async (
+export const get = (
   server: BasedServer,
   name: string,
   ctx: ClientContext,
   payload: any
 ): Promise<any> => {
-  const route = server.functions.route(name)
+  return new Promise((resolve, reject) => {
+    const route = server.functions.route(name)
 
-  if (!route) {
-    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
-  }
-
-  if (route.observable === false) {
-    throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-      name,
-    })
-  }
-
-  // TODO: Callstack
-  try {
-    const ok = await server.auth.authorize(ctx, name)
-    if (!ok) {
-      throw createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-        route: { name },
-      })
-    }
-
-    const id = genObservableId(name, payload)
-
-    if (!hasObs(server, id)) {
-      const fn = await server.functions.install(name)
-      if (!fn) {
-        throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-          name,
-        })
-      }
-      if (!isObservableFunctionSpec(fn)) {
-        throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-          name,
-        })
-      }
-      createObs(server, name, id, payload)
-    }
-
-    const obs = getObs(server, id)
-    if (obs.error) {
-      throw createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
-        route,
-        observableId: id,
-        err: obs.error,
-      })
-    }
-    if (obs.cache) {
-      resolve(obs.cache)
-      sendGetData(server, id, obs, checksum, client)
+    if (!route) {
+      reject(
+        createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
+      )
       return
     }
-    subscribeNext(obs, (err) => {
-      if (err) {
-        sendObsGetError(server, client, id, name, err)
-      } else {
-        sendGetData(server, id, obs, checksum, client)
-      }
-    })
 
-    // return fn.function(payload, ctx)
-  } catch (err) {
-    throw createError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
-      route: { name },
-      err,
-    })
-  }
+    if (route.observable === false) {
+      reject(
+        createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+          name,
+        })
+      )
+      return
+    }
+
+    // TODO: Callstack
+    server.auth
+      .authorize(ctx, name)
+      .catch((err) => {
+        reject(
+          createError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
+            route: { name },
+            err,
+          })
+        )
+      })
+      .then(async (ok) => {
+        if (!ok) {
+          reject(
+            createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
+              route: { name },
+            })
+          )
+          return
+        }
+        const id = genObservableId(name, payload)
+        if (!hasObs(server, id)) {
+          const fn = await server.functions.install(name)
+          if (!fn) {
+            throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+              name,
+            })
+          }
+          if (!isObservableFunctionSpec(fn)) {
+            throw createError(
+              server,
+              ctx,
+              BasedErrorCode.FunctionIsNotObservable,
+              {
+                name,
+              }
+            )
+          }
+          createObs(server, name, id, payload)
+        }
+        const obs = getObs(server, id)
+        if (obs.error) {
+          throw createError(
+            server,
+            ctx,
+            BasedErrorCode.ObservableFunctionError,
+            {
+              route,
+              observableId: id,
+              err: obs.error,
+            }
+          )
+        }
+        if (obs.cache) {
+          resolve(obs.rawData || obs.cache)
+          return
+        }
+        subscribeNext(obs, (err) => {
+          if (err) {
+            reject(
+              createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
+                observableId: id,
+                route,
+                err,
+              })
+            )
+          } else {
+            resolve(obs.rawData || obs.cache)
+          }
+        })
+      })
+  })
 }
 
 export const observe = (
@@ -221,5 +245,7 @@ export const observe = (
 
   return close
 }
+
+export { decode } from '../protocol'
 
 // TODO: nested stream function
