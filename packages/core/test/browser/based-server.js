@@ -8,8 +8,7 @@ const init = async () => {
       checksum: 1,
       maxPayloadSize: 1e6 * 10,
       function: async (payload) => {
-        console.info('go go go get hello!', payload)
-        return 'blabla'
+        return 'blabla ' + JSON.stringify(payload)
       },
     },
     helloNest: {
@@ -17,9 +16,8 @@ const init = async () => {
       name: 'helloNest',
       checksum: 1,
       function: async (payload, ctx) => {
-        console.info('call nested!')
         const bla = await runFunction(server, 'hello', ctx, payload)
-        return bla
+        return 'from nested => ' + bla
       },
     },
     bla: {

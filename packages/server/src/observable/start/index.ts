@@ -2,6 +2,7 @@ import { BasedServer } from '../../server'
 import { isObservableFunctionSpec } from '../../functions'
 import { updateListener } from './update'
 import { errorListener } from './error'
+import { ObservableUpdateFunction } from '../types'
 
 export const start = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -20,7 +21,13 @@ export const start = (server: BasedServer, id: number) => {
 
   const payload = obs.payload
 
-  const update = (data, checksum, diff, fromChecksum, isDeflate) =>
+  const update: ObservableUpdateFunction = (
+    data,
+    checksum,
+    diff,
+    fromChecksum,
+    isDeflate
+  ) =>
     updateListener(server, obs, data, checksum, diff, fromChecksum, isDeflate)
 
   update.__internalObs__ = true

@@ -1,15 +1,24 @@
-import { BasedError, BasedErrorCode } from '../error'
+import { BasedError, BasedErrorCode, BasedErrorData } from '../error'
 
-export type ObservableUpdateFunction = (
-  data: any,
-  checksum?: number,
-  diff?: any,
-  fromChecksum?: number,
-  isDeflate?: boolean
-) => void
+export type ObservableUpdateFunction = {
+  (
+    data: any,
+    checksum?: number,
+    diff?: any,
+    fromChecksum?: number,
+    isDeflate?: boolean
+  ): void
+  __internalObs__?: true
+}
 
 export type ObserveErrorListener = (
-  err: BasedError<BasedErrorCode.ObservableFunctionError>
+  err:
+    | BasedError<BasedErrorCode.ObservableFunctionError>
+    | BasedErrorData<BasedErrorCode.ObservableFunctionError>
+    | BasedError<BasedErrorCode.FunctionIsNotObservable>
+    | BasedErrorData<BasedErrorCode.FunctionIsNotObservable>
+    | BasedError<BasedErrorCode.FunctionNotFound>
+    | BasedErrorData<BasedErrorCode.FunctionNotFound>
 ) => void
 
 export type ActiveObservable = {
