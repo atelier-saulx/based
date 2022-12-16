@@ -1,4 +1,4 @@
-const { default: createServer, runFunction } = require('@based/server')
+const { default: createServer, runFunction, observe } = require('@based/server')
 
 const init = async () => {
   const functions = {
@@ -18,6 +18,23 @@ const init = async () => {
       function: async (payload, ctx) => {
         const bla = await runFunction(server, 'hello', ctx, payload)
         return 'from nested => ' + bla
+      },
+    },
+    blaNest: {
+      observable: true,
+      path: '/mysnapbla',
+      name: 'blaNest',
+      checksum: 1,
+      function: async (payload, update, error) => {
+        console.info('go time...')
+        return observe(
+          server,
+          'bla',
+          {},
+          payload,
+          update,
+          error || ((err) => console.error('???ERROR TIME', err))
+        )
       },
     },
     bla: {
@@ -44,7 +61,7 @@ const init = async () => {
             cnt,
             [++cnt, cnt, cnt, cnt, [++cnt, cnt, cnt, cnt]],
           ])
-        })
+        }, 500)
         return () => {
           clearInterval(x)
         }

@@ -40,9 +40,9 @@ const init = async () => {
     console.info(await coreClient.function('helloNest', { x: true }))
   })
 
-  // coreClient.observe('bla', (d, c) => {
-  //   console.info(d, c)
-  // })
+  coreClient.observe('blaNest', (d, c) => {
+    console.info('flap', d, c)
+  })
 
   // console.info('go auth!')
 
