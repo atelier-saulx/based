@@ -53,7 +53,9 @@ export const destroyObs = (server: BasedServer, id: number) => {
       }
       server.activeObservablesById.delete(id)
       obs.isDestroyed = true
-      obs.closeFunction()
+      if (obs.closeFunction) {
+        obs.closeFunction()
+      }
     }, memCacheTimeout)
   }
 }

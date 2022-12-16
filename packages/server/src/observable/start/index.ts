@@ -5,6 +5,8 @@ import { errorListener } from './error'
 import { ObservableUpdateFunction } from '../types'
 
 export const start = (server: BasedServer, id: number) => {
+  // TODO: install here - if fn is not available is ok - just wait until start gets called again
+
   const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {

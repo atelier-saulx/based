@@ -7,11 +7,14 @@ import {
   genObservableId,
   hasObs,
   createObs,
+  subscribeNext,
   ObservableUpdateFunction,
   ObserveErrorListener,
   subscribeFunction,
+  getObs,
   unsubscribeFunction,
 } from '../observable'
+import { resolve } from 'path'
 
 export const runFunction = async (
   server: BasedServer,
@@ -33,8 +36,14 @@ export const runFunction = async (
 
   const fn = await server.functions.install(name)
 
-  if (!fn || isObservableFunctionSpec(fn)) {
+  if (!fn) {
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
+  }
+
+  if (isObservableFunctionSpec(fn)) {
+    throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
+      name,
+    })
   }
 
   // TODO: Callstack
@@ -54,14 +63,90 @@ export const runFunction = async (
   }
 }
 
-export const observe = (
+export const get = async (
   server: BasedServer,
   name: string,
   ctx: ClientContext,
+  payload: any
+): Promise<any> => {
+  const route = server.functions.route(name)
+
+  if (!route) {
+    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
+  }
+
+  if (route.observable === false) {
+    throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+      name,
+    })
+  }
+
+  // TODO: Callstack
+  try {
+    const ok = await server.auth.authorize(ctx, name)
+    if (!ok) {
+      throw createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
+        route: { name },
+      })
+    }
+
+    const id = genObservableId(name, payload)
+
+    if (!hasObs(server, id)) {
+      const fn = await server.functions.install(name)
+      if (!fn) {
+        throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+          name,
+        })
+      }
+      if (!isObservableFunctionSpec(fn)) {
+        throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+          name,
+        })
+      }
+      createObs(server, name, id, payload)
+    }
+
+    const obs = getObs(server, id)
+    if (obs.error) {
+      throw createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
+        route,
+        observableId: id,
+        err: obs.error,
+      })
+    }
+    if (obs.cache) {
+      resolve(obs.cache)
+      sendGetData(server, id, obs, checksum, client)
+      return
+    }
+    subscribeNext(obs, (err) => {
+      if (err) {
+        sendObsGetError(server, client, id, name, err)
+      } else {
+        sendGetData(server, id, obs, checksum, client)
+      }
+    })
+
+    // return fn.function(payload, ctx)
+  } catch (err) {
+    throw createError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
+      route: { name },
+      err,
+    })
+  }
+}
+
+export const observe = (
+  server: BasedServer,
+  name: string,
+  ctx: ClientContext, // call this ctx with ctx.session for client
   payload: any,
   update: ObservableUpdateFunction,
   error: ObserveErrorListener
 ): (() => void) => {
+  // TODO: Callstack
+
   const route = server.functions.route(name)
 
   if (!route) {
