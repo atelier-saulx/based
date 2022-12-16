@@ -72,7 +72,6 @@ const init = async () => {
           for (let i = 0; i < 1000; i++) {
             xyz.push('my snutx ' + i + Math.random() * 112231213)
           }
-
           cnt++
           update([
             xyz,
