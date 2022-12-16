@@ -69,18 +69,19 @@ const init = async () => {
         update(cnt)
         const x = setInterval(() => {
           const xyz = []
-          for (let i = 0; i < 1e3; i++) {
+          for (let i = 0; i < 1000; i++) {
             xyz.push('my snutx ' + i + Math.random() * 112231213)
           }
 
+          cnt++
           update([
             xyz,
             'glurbatjof',
-            ++cnt,
             cnt,
             cnt,
             cnt,
-            [++cnt, cnt, cnt, cnt, [++cnt, cnt, cnt, cnt]],
+            cnt,
+            [cnt, cnt, cnt, cnt, [cnt, cnt, cnt, cnt]],
           ])
         }, 500)
         return () => {

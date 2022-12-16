@@ -169,7 +169,7 @@ export const incoming = async (
       }
 
       try {
-        applyPatch(cachedData.value, diff)
+        cachedData.value = applyPatch(cachedData.value, diff)
         cachedData.checksum = checksum
       } catch (err) {
         console.warn('Cannot apply corrupt patch for ' + getName(client, id))
