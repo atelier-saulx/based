@@ -17,7 +17,8 @@ export const updateListener = (
   checksum?: number,
   diff?: any,
   previousChecksum?: number,
-  isDeflate?: boolean
+  isDeflate?: boolean,
+  rawData?: any
 ) => {
   if (checksum === undefined) {
     if (data === undefined) {
@@ -39,6 +40,11 @@ export const updateListener = (
       if (diff) {
         obs.diffCache = diff
         obs.previousChecksum = previousChecksum
+      }
+      if (rawData) {
+        obs.rawData = rawData
+      } else {
+        // go go go just read id and put it
       }
       if (!isDeflate) {
         isDeflate = false
@@ -106,7 +112,8 @@ export const updateListener = (
           obs.checksum,
           obs.diffCache,
           obs.previousChecksum,
-          obs.isDeflate
+          obs.isDeflate,
+          obs.rawData
         )
       })
     }
@@ -120,6 +127,7 @@ export const updateListener = (
     if (prevDiffId) {
       obs.diffCache.set(prevDiffId, 4)
     }
+
     if (prevId) {
       encodedData.set(prevId, 4)
     }

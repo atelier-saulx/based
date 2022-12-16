@@ -20,6 +20,8 @@ export class BasedFunctions {
 
   unregisterTimeout: NodeJS.Timeout
 
+  installsInProgress: { [name: string]: Promise<any> } = {}
+
   paths: {
     [path: string]: string
   } = {}
@@ -88,11 +90,7 @@ export class BasedFunctions {
           delete this.beingUninstalled[name]
         }
         updateTimeoutCounter(spec)
-        await this.config.install({
-          server: this.server,
-          name: spec.name,
-          function: spec,
-        })
+        await this.installGaurdedFromConfig(name)
         await this.config.uninstall({
           server: this.server,
           function: prevSpec,
@@ -105,6 +103,21 @@ export class BasedFunctions {
     }
   }
 
+  private async installGaurdedFromConfig(
+    name: string
+  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+    if (this.installsInProgress[name]) {
+      return this.installsInProgress[name]
+    }
+    this.installsInProgress[name] = this.config.install({
+      server: this.server,
+      name,
+    })
+    const s = await this.installsInProgress[name]
+    delete this.installsInProgress[name]
+    return s
+  }
+
   async install(
     name: string
   ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
@@ -114,10 +127,7 @@ export class BasedFunctions {
       return spec
     }
 
-    spec = await this.config.install({
-      server: this.server,
-      name,
-    })
+    spec = await this.installGaurdedFromConfig(name)
 
     if (spec) {
       this.update(spec)

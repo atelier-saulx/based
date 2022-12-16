@@ -6,7 +6,8 @@ export type ObservableUpdateFunction = {
     checksum?: number,
     diff?: any,
     fromChecksum?: number,
-    isDeflate?: boolean
+    isDeflate?: boolean,
+    rawData?: any
   ): void
   __internalObs__?: true
 }

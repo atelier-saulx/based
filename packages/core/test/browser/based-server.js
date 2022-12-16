@@ -1,4 +1,11 @@
-const { default: createServer, runFunction, observe } = require('@based/server')
+const {
+  default: createServer,
+  runFunction,
+  observe,
+  get,
+} = require('@based/server')
+
+const ds = [0, 0]
 
 const init = async () => {
   const functions = {
@@ -16,8 +23,23 @@ const init = async () => {
       name: 'helloNest',
       checksum: 1,
       function: async (payload, ctx) => {
+        const d = Date.now()
+        const q = []
+        for (let i = 0; i < 1e3; i++) {
+          q.push(get(server, 'blaNest', ctx, payload))
+        }
+        await Promise.all(q)
+        ds[0] += Date.now() - d
+        ds[1]++
         const bla = await runFunction(server, 'hello', ctx, payload)
         return 'from nested => ' + bla
+      },
+    },
+    timespend: {
+      name: 'timespend',
+      checksum: 1,
+      function: async () => {
+        return `all nested gets -> ${ds[0] / ds[1]}ms`
       },
     },
     blaNest: {
@@ -26,7 +48,6 @@ const init = async () => {
       name: 'blaNest',
       checksum: 1,
       function: async (payload, update, error) => {
-        console.info('go time...')
         return observe(
           server,
           'bla',
@@ -76,7 +97,8 @@ const init = async () => {
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
-      uninstall: async () => {
+      uninstall: async ({ name }) => {
+        console.info('go uninstall', name)
         return true
       },
       route: ({ path, name }) => {
@@ -93,6 +115,7 @@ const init = async () => {
         return false
       },
       install: async ({ name }) => {
+        console.info('go install', name)
         if (functions[name]) {
           return functions[name]
         } else {

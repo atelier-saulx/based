@@ -22,7 +22,7 @@ const init = async () => {
 
   coreClient.on('connect', async (isConnected) => {
     console.info('connect', isConnected)
-    console.info('--->', await coreClient.function('helloNest', { x: true }))
+    // console.info('--->', await coreClient.function('helloNest', { x: true }))
   })
 
   console.info('-----------')
@@ -38,6 +38,20 @@ const init = async () => {
 
   makeButton('nested hello', async () => {
     console.info(await coreClient.function('helloNest', { x: true }))
+  })
+
+  makeButton('info time', async () => {
+    console.info(await coreClient.function('timespend'))
+  })
+
+  makeButton('bombard hello', async () => {
+    const d = Date.now()
+    const q: any[] = []
+    for (let i = 0; i < 1e3; i++) {
+      q.push(coreClient.function('helloNest', { x: true }))
+    }
+    await Promise.all(q)
+    console.info('fire 1000 hello nests', Date.now() - d, 'ms')
   })
 
   coreClient.observe('blaNest', (d, c) => {
