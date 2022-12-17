@@ -1,7 +1,9 @@
 import uws from '@based/uws'
 
 export type WebSocketSession = {
+  // State can be used for anyting - for us the based class instance
   state?: any
+  // Good place to add user id from token
   user?: string
   query: string
   ua: string
@@ -19,9 +21,11 @@ export type WebSocketSession = {
 } & uws.WebSocket
 
 export type HttpSession = {
+  // State can be used for anyting - for us the based class instance
+  state?: any
   res: uws.HttpResponse
   req: uws.HttpRequest
-  state?: any
+  // Good place to add user id from token
   user?: string
   query?: string
   ua: string
@@ -39,15 +43,17 @@ export type HttpSession = {
 }
 
 // Observable session means the first observable that called the current stack
-export type ObservableSession = { id: number; state?: any }
+export type ObservableSession = {
+  id: number // observable-ud
+  state?: any
+}
 
-// used for minimal security errors (rate limit for example)
+// used for minimal security errors (e.g. rate limit)
 export type MinimalExternalSession = {
   ua: string
   ip: string
 }
 
-// State can be used for anyting - for us the based class instance
 export type Context<
   S extends
     | WebSocketSession
