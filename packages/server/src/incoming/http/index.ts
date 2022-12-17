@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../client'
+import { HttpSession, Context } from '../../client'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
 import { BasedFunctionRoute } from '../../functions'
@@ -14,17 +14,16 @@ import { incomingCounter } from '../../security'
 
 let clientId = 0
 
-// TODO: re-add authorize
 const handleRequest = (
   server: BasedServer,
   method: string,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   route: BasedFunctionRoute,
   ready: (payload?: any) => void
 ) => {
   // send shared array buffer
   if (method === 'post') {
-    readBody(server, client, ready, route)
+    readBody(server, ctx, ready, route)
   } else {
     ready()
   }
@@ -36,9 +35,9 @@ export const httpHandler = (
   res: uws.HttpResponse
 ) => {
   res.onAborted(() => {
-    client.context = null
-    client.res = null
-    client.req = null
+    ctx.session.res = null
+    ctx.session.req = null
+    ctx.session = null
   })
 
   const ip =
@@ -54,15 +53,21 @@ export const httpHandler = (
   const url = req.getUrl()
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
+  const method = req.getMethod()
 
   if (route === false) {
     sendError(
       server,
       {
-        res,
-        req,
-        // @ts-ignore (ignore because we dont need a lot here)
-        context: { ip, id: ++clientId, headers: {} },
+        session: {
+          ua: req.getHeader('user-agent'),
+          ip,
+          method,
+          id: ++clientId,
+          headers: {},
+          res,
+          req,
+        },
       },
       BasedErrorCode.FunctionNotFound,
       path[1] ? { name: path[1] } : { name: '', path: url }
@@ -70,17 +75,11 @@ export const httpHandler = (
     return
   }
 
-  const method = req.getMethod()
-
-  // const valid = simdjson.isValid(jsonString); // true
-  // read only...
-
-  const client: HttpClient = {
-    res,
-    req,
-    context: {
+  const ctx: Context<HttpSession> = {
+    session: {
+      res,
+      req,
       method,
-      query: req.getQuery(), // need to use this if payload is undefined ? // maybe add method here?
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
@@ -93,18 +92,23 @@ export const httpHandler = (
     },
   }
 
+  const query = req.getQuery()
+  if (query) {
+    ctx.session.query = query
+  }
+
   const len = req.getHeader('content-length')
-  // @ts-ignore
+  // @ts-ignore use isNan as number check
   if (len && !isNaN(len)) {
-    client.context.headers['content-length'] = Number(len)
+    ctx.session.headers['content-length'] = Number(len)
   }
 
   if (
     method === 'post' &&
-    client.context.headers['content-length'] === undefined
+    ctx.session.headers['content-length'] === undefined
   ) {
     // zero allowed, but not for streams
-    sendError(server, client, BasedErrorCode.LengthRequired, route)
+    sendError(server, ctx, BasedErrorCode.LengthRequired, route)
     return
   }
 
@@ -112,7 +116,7 @@ export const httpHandler = (
     for (const header of route.headers) {
       const v = req.getHeader(header)
       if (v) {
-        client.context[header] = v
+        ctx.session.headers[header] = v
       }
     }
   }
@@ -121,7 +125,7 @@ export const httpHandler = (
     if (route.stream) {
       sendError(
         server,
-        client,
+        ctx,
         BasedErrorCode.CannotStreamToObservableFunction,
         route
       )
@@ -130,33 +134,33 @@ export const httpHandler = (
     const checksumRaw = req.getHeader('if-none-match')
     // @ts-ignore use isNaN to cast string to number
     const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
-    handleRequest(server, method, client, route, (payload) => {
-      authorizeRequest(server, client, payload, route, () => {
-        httpGet(route, payload, client, server, checksum)
+    handleRequest(server, method, ctx, route, (payload) => {
+      authorizeRequest(server, ctx, payload, route, () => {
+        httpGet(route, payload, ctx, server, checksum)
       })
     })
   } else {
     if (route.stream === true) {
       if (method !== 'post') {
-        sendError(server, client, BasedErrorCode.MethodNotAllowed, route)
+        sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
         return
       }
-      if (client.context.headers['content-length'] === 0) {
+      if (ctx.session.headers['content-length'] === 0) {
         // zero is also not allowed for streams
-        sendError(server, client, BasedErrorCode.LengthRequired, route)
+        sendError(server, ctx, BasedErrorCode.LengthRequired, route)
         return
       }
-      let p
-      if ('query' in client.context) {
+      let p: any
+      if ('query' in ctx.session) {
         try {
-          p = parseQuery(client.context.query)
+          p = parseQuery(ctx.session.query)
         } catch (err) {}
       }
-      httpStreamFunction(server, client, p, route)
+      httpStreamFunction(server, ctx, p, route)
     } else {
-      handleRequest(server, method, client, route, (payload) => {
-        authorizeRequest(server, client, payload, route, () => {
-          httpFunction(method, route, client, server, payload)
+      handleRequest(server, method, ctx, route, (payload) => {
+        authorizeRequest(server, ctx, payload, route, () => {
+          httpFunction(method, route, ctx, server, payload)
         })
       })
     }

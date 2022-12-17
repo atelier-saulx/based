@@ -7,7 +7,8 @@ export type ObservableUpdateFunction = {
     diff?: any,
     fromChecksum?: number,
     isDeflate?: boolean,
-    rawData?: any
+    rawData?: any,
+    err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>
   ): void
   __internalObs__?: true
 }
@@ -26,9 +27,8 @@ export type ActiveObservable = {
   name: string
   id: number
   reusedCache: boolean
-  functionObserveClients: Set<ObservableUpdateFunction> // kan ook normale functie zijn
+  functionObserveClients: Set<ObservableUpdateFunction>
   clients: Set<number>
-  // listener too bad - but not really another option...
   onNextData?: Set<
     (err?: BasedError<BasedErrorCode.ObservableFunctionError>) => void
   >

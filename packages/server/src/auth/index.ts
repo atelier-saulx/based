@@ -2,7 +2,7 @@ import { AuthState } from '../incoming/ws/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
 import { AuthConfig, Authorize, AuthorizeConnection } from './types'
-import { WebsocketClient } from '../client'
+import { Context, WebSocketSession } from '../client'
 import dummyAuth from './dummyAuth'
 
 export * from './types'
@@ -36,7 +36,7 @@ export class BasedAuth {
     }
   }
 
-  sendAuthUpdate(client: WebsocketClient, authState: AuthState) {
-    client.ws?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
+  sendAuthUpdate(ctx: Context<WebSocketSession>, authState: AuthState) {
+    ctx.session?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
   }
 }

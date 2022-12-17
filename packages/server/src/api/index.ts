@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
-import { ClientContext } from '../client'
+import { Context } from '../client'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../functions'
 import {
   ActiveObservable,
@@ -18,7 +18,7 @@ import {
 export const runFunction = async (
   server: BasedServer,
   name: string,
-  ctx: ClientContext,
+  ctx: Context,
   payload: any
 ): Promise<any> => {
   const route = server.functions.route(name)
@@ -67,7 +67,7 @@ const getObsData = (
   reject: (err) => void,
   server: BasedServer,
   id: number,
-  ctx: ClientContext,
+  ctx: Context,
   route: BasedFunctionRoute
 ) => {
   const obs = getObs(server, id)
@@ -103,7 +103,7 @@ const getObsData = (
 export const get = (
   server: BasedServer,
   name: string,
-  ctx: ClientContext,
+  ctx: Context,
   payload: any
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
@@ -193,7 +193,7 @@ export const get = (
 export const observe = (
   server: BasedServer,
   name: string,
-  ctx: ClientContext, // call this ctx with ctx.session for client
+  ctx: Context, // call this ctx with ctx.session for client
   payload: any,
   update: ObservableUpdateFunction,
   error: ObserveErrorListener

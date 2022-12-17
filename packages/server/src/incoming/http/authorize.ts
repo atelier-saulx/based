@@ -2,26 +2,26 @@ import { BasedServer } from '../../server'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 import { BasedErrorCode } from '../../error'
-import { HttpClient } from '../../client'
+import { HttpSession, Context } from '../../client'
 
 export const authorizeRequest = (
   server: BasedServer,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   payload: any,
   route: BasedFunctionRoute,
   authorized: (payload: any) => void,
   notAuth: () => void = () => undefined
 ) => {
   server.auth
-    .authorize(client.context, route.name, payload)
+    .authorize(ctx, route.name, payload)
     .then((ok) => {
-      if (!client.res) {
+      if (!ctx.session) {
         notAuth()
         return
       }
       if (!ok) {
         notAuth()
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
           route,
         })
       } else {
@@ -30,7 +30,7 @@ export const authorizeRequest = (
     })
     .catch((err) => {
       notAuth()
-      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
         route,
         err,
       })

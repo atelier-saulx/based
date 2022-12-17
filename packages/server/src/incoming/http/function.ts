@@ -1,6 +1,6 @@
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
-import { HttpClient } from '../../client'
+import { HttpSession, Context } from '../../client'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
@@ -8,45 +8,43 @@ import { sendError } from '../../sendError'
 export const httpFunction = (
   method: string,
   route: BasedFunctionRoute,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   server: BasedServer,
   payload?: Uint8Array
 ): void => {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
   const name = route.name
   server.functions
     .install(name)
     .then((spec) => {
-      if (!client.res) {
+      if (!ctx.session) {
         return
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         spec
-          .function(payload, client.context)
+          .function(payload, ctx)
           .then(async (result) => {
-            if (!client.res) {
+            if (!ctx.session) {
               return
             }
             if (spec.customHttpResponse) {
-              if (await spec.customHttpResponse(result, payload, client)) {
+              if (await spec.customHttpResponse(result, payload, ctx)) {
                 return
               }
-              sendHttpResponse(client, result)
+              sendHttpResponse(ctx, result)
             } else {
-              sendHttpResponse(client, result)
+              sendHttpResponse(ctx, result)
             }
           })
           .catch((err) => {
-            sendError(server, client, err.code, {
+            sendError(server, ctx, err.code, {
               err,
               route,
             })
           })
       }
     })
-    .catch(() =>
-      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
-    )
+    .catch(() => sendError(server, ctx, BasedErrorCode.FunctionNotFound, route))
 }

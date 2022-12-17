@@ -1,5 +1,5 @@
 import { BasedServer } from '../../server'
-import { HttpClient } from '../../client'
+import { HttpSession, Context } from '../../client'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
 import { end } from '../../sendHttpResponse'
 import { compress } from '../../compress'
@@ -24,7 +24,7 @@ const inflate = promisify(zlib.inflate)
 const sendCacheSwapEncoding = async (
   server: BasedServer,
   route: BasedFunctionRoute,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   buffer: Uint8Array,
   checksum: number
 ) => {
@@ -32,44 +32,44 @@ const sendCacheSwapEncoding = async (
     const inflated = await inflate(buffer.slice(20))
     const { payload, encoding } = await compress(
       inflated,
-      client.context.headers.encoding
+      ctx.session.headers.encoding
     )
-    if (!client.res) {
+    if (!ctx.session.res) {
       return
     }
-    client.res.cork(() => {
-      client.res.writeStatus('200 OK')
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeStatus('200 OK')
       if (encoding) {
-        client.res.writeHeader('Content-Encoding', encoding)
+        ctx.session.res.writeHeader('Content-Encoding', encoding)
       }
-      client.res.writeHeader('ETag', String(checksum))
-      end(client, payload)
+      ctx.session.res.writeHeader('ETag', String(checksum))
+      end(ctx, payload)
     })
   } catch (err) {
-    sendError(server, client, BasedErrorCode.UnsupportedContentEncoding, route)
+    sendError(server, ctx, BasedErrorCode.UnsupportedContentEncoding, route)
   }
 }
 
 const sendCache = (
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   buffer: Uint8Array,
   checksum: number,
   isDeflate: boolean
 ) => {
-  client.res.cork(() => {
-    client.res.writeStatus('200 OK')
-    client.res.writeHeader('ETag', String(checksum))
+  ctx.session.res.cork(() => {
+    ctx.session.res.writeStatus('200 OK')
+    ctx.session.res.writeHeader('ETag', String(checksum))
     if (isDeflate) {
-      client.res.writeHeader('Content-Encoding', 'deflate')
+      ctx.session.res.writeHeader('Content-Encoding', 'deflate')
     }
-    end(client, buffer.slice(20))
+    end(ctx, buffer.slice(20))
   })
 }
 
-const sendNotModified = (client: HttpClient) => {
-  client.res.cork(() => {
-    client.res.writeStatus('304 Not Modified')
-    end(client)
+const sendNotModified = (ctx: Context<HttpSession>) => {
+  ctx.session.res.cork(() => {
+    ctx.session.res.writeStatus('304 Not Modified')
+    end(ctx)
   })
 }
 
@@ -79,31 +79,31 @@ const sendGetResponse = (
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  client: HttpClient
+  ctx: Context<HttpSession>
 ) => {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
 
-  const encoding = client.context.headers.encoding
+  const encoding = ctx.session.headers.encoding
 
   if (checksum === 0 || checksum !== obs.checksum) {
     if (!obs.cache) {
-      sendError(server, client, BasedErrorCode.NoOservableCacheAvailable, {
+      sendError(server, ctx, BasedErrorCode.NoOservableCacheAvailable, {
         observableId: id,
         route: { name: obs.name },
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
-        sendCache(client, obs.cache, obs.checksum, true)
+        sendCache(ctx, obs.cache, obs.checksum, true)
       } else {
-        sendCacheSwapEncoding(server, route, client, obs.cache, obs.checksum)
+        sendCacheSwapEncoding(server, route, ctx, obs.cache, obs.checksum)
       }
     } else {
-      sendCache(client, obs.cache, obs.checksum, false)
+      sendCache(ctx, obs.cache, obs.checksum, false)
     }
   } else {
-    sendNotModified(client)
+    sendNotModified(ctx)
   }
 
   destroyObs(server, id)
@@ -112,27 +112,31 @@ const sendGetResponse = (
 const getFromExisting = (
   server: BasedServer,
   id: number,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   route: BasedFunctionRoute,
   checksum: number
 ) => {
   const obs = getObs(server, id)
 
   if (obs.error) {
-    sendObsGetError(server, client, obs.id, obs.name, obs.error)
+    sendObsGetError(server, ctx, obs.id, obs.name, obs.error)
     return
   }
 
   if (obs.cache) {
-    sendGetResponse(route, server, id, obs, checksum, client)
+    sendGetResponse(route, server, id, obs, checksum, ctx)
     return
   }
 
   subscribeNext(obs, (err) => {
+    if (!ctx.session) {
+      return
+    }
+
     if (err) {
-      sendObsGetError(server, client, obs.id, obs.name, err)
+      sendObsGetError(server, ctx, obs.id, obs.name, err)
     } else {
-      sendGetResponse(route, server, id, obs, checksum, client)
+      sendGetResponse(route, server, id, obs, checksum, ctx)
     }
   })
 }
@@ -140,17 +144,17 @@ const getFromExisting = (
 export const httpGet = (
   route: BasedFunctionRoute,
   payload: any,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   server: BasedServer,
   checksum: number
 ): void => {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
 
-  if (payload === undefined && 'query' in client.context) {
+  if (payload === undefined && 'query' in ctx.session) {
     try {
-      payload = parseQuery(decodeURIComponent(client.context.query))
+      payload = parseQuery(decodeURIComponent(ctx.session.query))
     } catch (err) {}
   }
 
@@ -158,43 +162,43 @@ export const httpGet = (
   const id = genObservableId(name, payload)
 
   if (hasObs(server, id)) {
-    getFromExisting(server, id, client, route, checksum)
+    getFromExisting(server, id, ctx, route, checksum)
     return
   }
 
   server.functions
     .install(name)
     .then((spec) => {
-      if (!client.res) {
+      if (!ctx.session) {
         return
       }
       if (!spec) {
-        sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+        sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
         return
       }
 
       if (!isObservableFunctionSpec(spec)) {
-        sendError(server, client, BasedErrorCode.FunctionIsNotObservable, route)
+        sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, route)
         return
       }
 
       if (hasObs(server, id)) {
-        getFromExisting(server, id, client, route, checksum)
+        getFromExisting(server, id, ctx, route, checksum)
         return
       }
 
       const obs = createObs(server, name, id, payload)
       subscribeNext(obs, (err) => {
         if (err) {
-          sendObsGetError(server, client, obs.id, obs.name, err)
+          sendObsGetError(server, ctx, obs.id, obs.name, err)
         } else {
-          sendGetResponse(route, server, id, obs, checksum, client)
+          sendGetResponse(route, server, id, obs, checksum, ctx)
         }
       })
     })
     .catch((err) => {
       // TODO: error type
       console.error('Internal: Unxpected error in observable', err)
-      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
     })
 }

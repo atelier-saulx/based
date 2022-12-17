@@ -5,26 +5,26 @@ import { BasedError, BasedErrorCode } from '../error'
 import { sendObsWs } from './send'
 import { getObs } from './get'
 import { sendError } from '../sendError'
-import { WebsocketClient } from '../client'
+import { WebSocketSession, Context } from '../client'
 
 export const subscribeWs = (
   server: BasedServer,
   id: number,
   checksum: number,
-  client: WebsocketClient
+  ctx: Context<WebSocketSession>
 ) => {
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
 
-  client.ws.subscribe(String(id))
+  ctx.session.subscribe(String(id))
   const obs = getObs(server, id)
 
-  client.ws.obs.add(id)
-  obs.clients.add(client.ws.id)
+  ctx.session.obs.add(id)
+  obs.clients.add(ctx.session.id)
 
   if (obs.error) {
-    sendError(server, client, obs.error.code, {
+    sendError(server, ctx, obs.error.code, {
       err: obs.error,
       observableId: id,
       route: {
@@ -36,9 +36,9 @@ export const subscribeWs = (
 
   if (obs.cache && obs.checksum !== checksum) {
     if (obs.diffCache && obs.previousChecksum === checksum) {
-      sendObsWs(client, obs.diffCache, obs)
+      sendObsWs(ctx, obs.diffCache, obs)
     } else {
-      sendObsWs(client, obs.cache, obs)
+      sendObsWs(ctx, obs.cache, obs)
     }
   }
 }

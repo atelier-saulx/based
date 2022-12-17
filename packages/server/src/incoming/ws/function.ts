@@ -9,18 +9,17 @@ import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { isObservableFunctionSpec } from '../../functions'
-import { WebsocketClient } from '../../client'
+import { WebSocketSession, Context } from '../../client'
 
 export const functionMessage = (
   arr: Uint8Array,
   start: number,
   len: number,
   isDeflate: boolean,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   server: BasedServer
 ): boolean => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
-
   const requestId = readUint8(arr, start + 4, 3)
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
@@ -32,7 +31,7 @@ export const functionMessage = (
   const route = server.functions.route(name)
 
   if (!route) {
-    sendError(server, client, BasedErrorCode.FunctionNotFound, {
+    sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
       name,
       requestId,
     })
@@ -40,7 +39,7 @@ export const functionMessage = (
   }
 
   if (route.observable === true) {
-    sendError(server, client, BasedErrorCode.FunctionIsObservable, {
+    sendError(server, ctx, BasedErrorCode.FunctionIsObservable, {
       name,
       requestId,
     })
@@ -48,7 +47,7 @@ export const functionMessage = (
   }
 
   if (len > route.maxPayloadSize) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, {
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
       name,
       requestId,
     })
@@ -56,7 +55,7 @@ export const functionMessage = (
   }
 
   if (route.stream === true) {
-    sendError(server, client, BasedErrorCode.FunctionIsStream, {
+    sendError(server, ctx, BasedErrorCode.FunctionIsStream, {
       name,
       requestId,
     })
@@ -68,16 +67,16 @@ export const functionMessage = (
     isDeflate
   )
 
-  // make this fn a bit nicer....
+  // TODO: make this fn a bit nicer.... remove nestedness...
   server.auth
-    .authorize(client.ws, name, payload)
+    .authorize(ctx, name, payload)
     .then((ok) => {
-      if (!client.ws) {
+      if (!ctx.session) {
         return false
       }
 
       if (!ok) {
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
           route,
         })
         return false
@@ -86,21 +85,21 @@ export const functionMessage = (
       server.functions
         .install(name)
         .then((spec) => {
-          if (!client.ws) {
+          if (!ctx.session) {
             return
           }
           if (spec && !isObservableFunctionSpec(spec)) {
             spec
-              .function(payload, client.ws)
+              .function(payload, ctx)
               .then(async (v) => {
-                client.ws?.send(
+                ctx.session?.send(
                   encodeFunctionResponse(requestId, valueToBuffer(v)),
                   true,
                   false
                 )
               })
               .catch((err) => {
-                sendError(server, client, err.code, {
+                sendError(server, ctx, err.code, {
                   route,
                   requestId,
                   err,
@@ -109,14 +108,14 @@ export const functionMessage = (
           }
         })
         .catch(() =>
-          sendError(server, client, BasedErrorCode.FunctionNotFound, {
+          sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
             name,
             requestId,
           })
         )
     })
     .catch((err) => {
-      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
         route,
         err,
       })

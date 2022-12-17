@@ -1,4 +1,4 @@
-import type { ClientContext } from './client'
+import type { Context } from './client'
 import type { ActiveObservable } from './observable'
 import uws from '@based/uws'
 import initNetwork from './incoming'
@@ -15,7 +15,7 @@ type EventMap = {
 
 type Event = keyof EventMap
 
-type Listener<T> = (context: ClientContext, data?: T, err?: Error) => void
+type Listener<T> = (context: Context, data?: T, err?: Error) => void
 
 export type ServerOptions = {
   port?: number
@@ -25,12 +25,12 @@ export type ServerOptions = {
   auth?: AuthConfig
   workerRequest?: (type: string, payload?: any) => void | Promise<any>
   ws?: {
-    open: (client: ClientContext) => void
-    close: (client: ClientContext) => void
+    open: (client: Context) => void
+    close: (client: Context) => void
   }
   http?: {
-    open: (client: ClientContext) => void
-    close: (client: ClientContext) => void
+    open: (client: Context) => void
+    close: (client: Context) => void
   }
 }
 
@@ -84,7 +84,7 @@ export class BasedServer {
     initNetwork(this, opts)
   }
 
-  emit(type: Event, client: ClientContext, val: EventMap[Event], err?: Error) {
+  emit(type: Event, client: Context, val: EventMap[Event], err?: Error) {
     if (this.listeners[type]) {
       this.listeners[type].forEach((fn) => fn(client, val, err))
     }

@@ -1,7 +1,13 @@
 import uws from '@based/uws'
 import { end } from './sendHttpResponse'
 import { BasedServer } from './server'
-import { HttpClient, WebsocketClient, isHttpClient } from './client'
+import {
+  HttpSession,
+  WebSocketSession,
+  Context,
+  isHttpContext,
+  isWsSession,
+} from './client'
 import { valueToBuffer, encodeErrorResponse } from './protocol'
 import {
   BasedErrorCode,
@@ -27,19 +33,19 @@ const sendHttpErrorMessage = (
 
 export function sendHttpError<T extends BasedErrorCode>(
   server: BasedServer,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   basedCode: T,
   payload: ErrorPayload[T]
 ) {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
-  client.res.cork(() => {
+  ctx.session.res.cork(() => {
     end(
-      client,
+      ctx,
       sendHttpErrorMessage(
-        client.res,
-        createError(server, client.context, basedCode, payload)
+        ctx.session.res,
+        createError(server, ctx, basedCode, payload)
       )
     )
   })
@@ -47,16 +53,18 @@ export function sendHttpError<T extends BasedErrorCode>(
 
 export function sendError<T extends BasedErrorCode>(
   server: BasedServer,
-  client: WebsocketClient | HttpClient,
+  ctx: Context<WebSocketSession | HttpSession>,
   basedCode: T,
   payload: ErrorPayload[T]
 ): void {
-  if (isHttpClient(client)) {
-    return sendHttpError(server, client, basedCode, payload)
-  }
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
-  const errorData = createError(server, client.ws, basedCode, payload)
-  client.ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
+  if (isHttpContext(ctx)) {
+    return sendHttpError(server, ctx, basedCode, payload)
+  } else if (isWsSession(ctx.session)) {
+    const errorData = createError(server, ctx, basedCode, payload)
+    const ws: WebSocketSession = ctx.session
+    ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
+  }
 }

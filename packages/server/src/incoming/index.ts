@@ -4,6 +4,7 @@ import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
+import { WebSocketSession, Context } from '../client'
 
 export default (
   server: BasedServer,
@@ -43,15 +44,17 @@ export default (
       message: (ws, data, isBinary) => {
         message(server, ws.c, data, isBinary)
       },
-      open: (ws) => {
+      open: (ws: WebSocketSession) => {
         if (ws) {
-          const client = { ws }
-          ws.c = client
+          const ctx: Context<WebSocketSession> = {
+            session: ws,
+          }
+          ws.c = ctx
           // @ts-ignore
           wsListeners.open(ws)
         }
       },
-      close: (ws) => {
+      close: (ws: WebSocketSession) => {
         // cl--
         ws.obs.forEach((id) => {
           unsubscribeWsIgnoreClient(server, id, ws.c)
@@ -61,7 +64,7 @@ export default (
 
         // Looks really ugly but same impact on memory and GC as using the ws directly
         // and better for dc's when functions etc are in progress
-        ws.c.ws = null
+        ws.c.session = null
         ws.c = null
       },
       drain: () => {

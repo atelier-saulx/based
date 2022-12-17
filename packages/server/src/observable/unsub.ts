@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { WebsocketClient } from '../client'
+import { WebSocketSession, Context } from '../client'
 import { destroyObs } from './destroy'
 import { ObservableUpdateFunction } from './types'
 
@@ -21,20 +21,17 @@ export const unsubscribeFunction = (
 export const unsubscribeWs = (
   server: BasedServer,
   id: number,
-  client: WebsocketClient
+  ctx: Context<WebSocketSession>
 ): true | void => {
-  if (!client.ws) {
-    return
-  }
-  if (!client.ws.obs.has(id)) {
+  if (!ctx.session?.obs.has(id)) {
     return
   }
   const obs = server.activeObservablesById.get(id)
-  client.ws.obs.delete(id)
+  ctx.session.obs.delete(id)
   if (!obs) {
     return
   }
-  if (obs.clients.delete(client.ws.id)) {
+  if (obs.clients.delete(ctx.session.id)) {
     destroyObs(server, id)
     return true
   }
@@ -43,9 +40,9 @@ export const unsubscribeWs = (
 export const unsubscribeWsIgnoreClient = (
   server: BasedServer,
   id: number,
-  client: WebsocketClient
+  ctx: Context<WebSocketSession>
 ) => {
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
 
@@ -55,7 +52,7 @@ export const unsubscribeWsIgnoreClient = (
     return
   }
 
-  obs.clients.delete(client.ws.id)
+  obs.clients.delete(ctx.session.id)
 
   destroyObs(server, id)
 }

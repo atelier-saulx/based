@@ -1,11 +1,11 @@
-import { HttpClient, ClientContext } from '../client'
+import { Context, HttpSession } from '../client'
 import { ObservableUpdateFunction } from '../observable'
 import { BasedServer } from '../server'
 
 export type CustomHttpResponse = (
   result: any,
   payload: any,
-  client: HttpClient
+  client: Context<HttpSession>
 ) => Promise<boolean>
 
 export type BasedFunctionRoute = {
@@ -35,10 +35,7 @@ export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   timeoutCounter?: number
 }
 
-export type BasedFunction = (
-  payload: any,
-  client: ClientContext
-) => Promise<any>
+export type BasedFunction = (payload: any, client: Context) => Promise<any>
 
 export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string

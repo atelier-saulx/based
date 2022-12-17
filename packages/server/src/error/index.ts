@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedFunctionRoute } from '../functions'
-import { ClientContext } from '../client'
+import { Context } from '../client'
 import {
   BasedErrorCode,
   ErrorPayload,
@@ -20,7 +20,7 @@ const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
 
 export function createError<T extends BasedErrorCode>(
   server: BasedServer,
-  context: ClientContext,
+  context: Context,
   code: T,
   payload: ErrorPayload[T]
 ): BasedErrorData<T> {

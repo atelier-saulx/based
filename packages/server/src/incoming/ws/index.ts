@@ -4,12 +4,12 @@ import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
-import { WebsocketClient } from '../../client'
+import { WebSocketSession, Context } from '../../client'
 import { BasedErrorCode, createError } from '../../error'
 
 const reader = (
   server: BasedServer,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   arr: Uint8Array,
   start: number
 ): number => {
@@ -17,33 +17,27 @@ const reader = (
   const next = len + start
 
   // type 0 = function
-  if (
-    type === 0 &&
-    functionMessage(arr, start, len, isDeflate, client, server)
-  ) {
+  if (type === 0 && functionMessage(arr, start, len, isDeflate, ctx, server)) {
     return next
   }
 
   // type 1 = subscribe
-  if (
-    type === 1 &&
-    subscribeMessage(arr, start, len, isDeflate, client, server)
-  ) {
+  if (type === 1 && subscribeMessage(arr, start, len, isDeflate, ctx, server)) {
     return next
   }
 
   // type 2 = unsubscribe
-  if (type === 2 && unsubscribeMessage(arr, start, client, server)) {
+  if (type === 2 && unsubscribeMessage(arr, start, ctx, server)) {
     return next
   }
 
   // type 3 = get
-  if (type === 3 && getMessage(arr, start, len, isDeflate, client, server)) {
+  if (type === 3 && getMessage(arr, start, len, isDeflate, ctx, server)) {
     return next
   }
 
   // type 4 = auth
-  if (type === 4 && authMessage(arr, start, len, isDeflate, client, server)) {
+  if (type === 4 && authMessage(arr, start, len, isDeflate, ctx, server)) {
     return next
   }
 
@@ -55,20 +49,18 @@ const reader = (
 
 export const message = (
   server: BasedServer,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   msg: ArrayBuffer,
   isBinary: boolean
 ) => {
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
-
   if (!isBinary) {
-    createError(server, client.ws, BasedErrorCode.NoBinaryProtocol, {
+    createError(server, ctx, BasedErrorCode.NoBinaryProtocol, {
       buffer: msg,
     })
-
-    client.ws.close()
+    ctx.session.close()
     return
   }
 
@@ -77,10 +69,10 @@ export const message = (
   const len = uint8View.length
   let next = 0
   while (next < len) {
-    const n = reader(server, client, uint8View, next)
+    const n = reader(server, ctx, uint8View, next)
     if (n === undefined) {
       // Malformed message close client - maybe a bit too extreme...
-      client.ws.close()
+      ctx.session.close()
       return
     }
     next = n

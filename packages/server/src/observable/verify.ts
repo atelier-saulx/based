@@ -1,4 +1,4 @@
-import { HttpClient, WebsocketClient } from '../client'
+import { HttpSession, WebSocketSession, Context } from '../client'
 import { BasedErrorCode } from '../error'
 import { BasedServer } from '../server'
 import { sendError } from '../sendError'
@@ -8,14 +8,14 @@ export const verifyRoute = (
   server: BasedServer,
   name: string,
   route: BasedFunctionRoute | false,
-  client: WebsocketClient | HttpClient
+  ctx: Context<HttpSession | WebSocketSession>
 ): BasedFunctionRoute | false => {
   if (!route) {
-    sendError(server, client, BasedErrorCode.FunctionNotFound, { name })
+    sendError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
     return false
   }
   if (!route.observable) {
-    sendError(server, client, BasedErrorCode.FunctionIsNotObservable, route)
+    sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, route)
     return false
   }
   return route

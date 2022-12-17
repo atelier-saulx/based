@@ -1,27 +1,28 @@
-import { HttpClient } from './client'
+import { Context, HttpSession } from './client'
 import { compress } from './compress'
 
 export const end = (
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   payload?: string | Buffer | Uint8Array
 ) => {
-  if (client.res) {
-    client.res.writeHeader('Access-Control-Allow-Origin', '*')
-    // only allowed headers
-    client.res.writeHeader('Access-Control-Allow-Headers', '*')
-    if (payload === undefined) {
-      client.res.end()
-    } else {
-      client.res.end(payload)
-    }
-    client.res = null
-    client.req = null
-    client.context = null
+  if (!ctx.session) {
+    return
   }
+  ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+  // only allowed headers
+  ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+  if (payload === undefined) {
+    ctx.session.res.end()
+  } else {
+    ctx.session.res.end(payload)
+  }
+  ctx.session.res = null
+  ctx.session.req = null
+  ctx.session = null
 }
 
-export const sendHttpResponse = (client: HttpClient, result: any) => {
-  if (!client.res) {
+export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
+  if (!ctx.session) {
     return
   }
 
@@ -36,17 +37,20 @@ export const sendHttpResponse = (client: HttpClient, result: any) => {
     cType = 'application/json'
     parsed = JSON.stringify(result)
   }
-  compress(parsed, client.context.headers.encoding).then(
+  compress(parsed, ctx.session.headers.encoding).then(
     ({ payload, encoding }) => {
-      if (client.res) {
-        client.res.cork(() => {
-          client.res.writeStatus('200 OK')
-          client.res.writeHeader('Cache-Control', 'max-age=0, must-revalidate')
-          client.res.writeHeader('Content-Type', cType)
+      if (ctx.session.res) {
+        ctx.session.res.cork(() => {
+          ctx.session.res.writeStatus('200 OK')
+          ctx.session.res.writeHeader(
+            'Cache-Control',
+            'max-age=0, must-revalidate'
+          )
+          ctx.session.res.writeHeader('Content-Type', cType)
           if (encoding) {
-            client.res.writeHeader('Content-Encoding', encoding)
+            ctx.session.res.writeHeader('Content-Encoding', encoding)
           }
-          end(client, payload)
+          end(ctx, payload)
         })
       }
     }

@@ -9,13 +9,13 @@ import {
   hasObs,
 } from '../../observable'
 import { BasedErrorCode } from '../../error'
-import { WebsocketClient } from '../../client'
+import { WebSocketSession, Context } from '../../client'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 
 export const enableSubscribe = (
   server: BasedServer,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   id: number,
   checksum: number,
   name: string,
@@ -23,18 +23,18 @@ export const enableSubscribe = (
   route: BasedFunctionRoute
 ) => {
   if (hasObs(server, id)) {
-    subscribeWs(server, id, checksum, client)
+    subscribeWs(server, id, checksum, ctx)
     return
   }
 
   server.functions
     .install(name)
     .then((spec) => {
-      if (!verifyRoute(server, name, spec, client)) {
+      if (!verifyRoute(server, name, spec, ctx)) {
         return
       }
 
-      if (!client.ws?.obs.has(id)) {
+      if (!ctx.session?.obs.has(id)) {
         return
       }
 
@@ -42,11 +42,11 @@ export const enableSubscribe = (
         createObs(server, name, id, payload)
       }
 
-      client.ws.subscribe(String(id))
-      subscribeWs(server, id, checksum, client)
+      ctx.session.subscribe(String(id))
+      subscribeWs(server, id, checksum, ctx)
     })
     .catch(() => {
-      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
     })
 }
 
@@ -55,7 +55,7 @@ export const subscribeMessage = (
   start: number,
   len: number,
   isDeflate: boolean,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   server: BasedServer
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
@@ -70,18 +70,18 @@ export const subscribeMessage = (
     return false
   }
 
-  const route = verifyRoute(server, name, server.functions.route(name), client)
+  const route = verifyRoute(server, name, server.functions.route(name), ctx)
 
   if (!route) {
     return false
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
     return false
   }
 
-  if (client.ws?.obs.has(id)) {
+  if (ctx.session?.obs.has(id)) {
     // allready subscribed to this id
     return true
   }
@@ -91,29 +91,31 @@ export const subscribeMessage = (
     isDeflate
   )
 
-  client.ws.obs.add(id)
+  ctx.session.obs.add(id)
 
   server.auth
-    .authorize(client.ws, name, payload)
+    .authorize(ctx, name, payload)
     .then((ok) => {
-      if (!client.ws) {
-        return
-      }
-      if (!client.ws.obs.has(id)) {
+      if (!ctx.session?.obs.has(id)) {
         return
       }
       if (!ok) {
-        client.ws.unauthorizedObs.add({ id, checksum, name, payload })
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+        ctx.session.unauthorizedObs.add({
+          id,
+          checksum,
+          name,
+          payload,
+        })
+        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
           route,
           observableId: id,
         })
         return
       }
-      enableSubscribe(server, client, id, checksum, name, payload, route)
+      enableSubscribe(server, ctx, id, checksum, name, payload, route)
     })
     .catch((err) => {
-      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
         route,
         observableId: id,
         err,
@@ -127,11 +129,11 @@ export const subscribeMessage = (
 export const unsubscribeMessage = (
   arr: Uint8Array,
   start: number,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   server: BasedServer
 ) => {
   // | 4 header | 8 id |
-  if (!client.ws) {
+  if (!ctx.session) {
     return false
   }
 
@@ -141,8 +143,8 @@ export const unsubscribeMessage = (
     return false
   }
 
-  if (unsubscribeWs(server, id, client)) {
-    client.ws.unsubscribe(String(id))
+  if (unsubscribeWs(server, id, ctx)) {
+    ctx.session.unsubscribe(String(id))
   }
 
   return true

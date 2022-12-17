@@ -44,15 +44,18 @@ const init = async () => {
     console.info(await coreClient.function('timespend'))
   })
 
-  makeButton('bombard hello', async () => {
+  const bombard = async () => {
     const d = Date.now()
     const q: any[] = []
     for (let i = 0; i < 1e3; i++) {
       q.push(coreClient.function('helloNest', { x: true }))
     }
     await Promise.all(q)
-    console.info('fire 1000 hello nests', Date.now() - d, 'ms')
-  })
+    console.info('fire 1000 hello nests (1M gets)', Date.now() - d, 'ms')
+    bombard()
+  }
+
+  makeButton('bombard hello', bombard)
 
   coreClient.observe('blaNest', (d, c) => {
     console.info('flap', d, c)

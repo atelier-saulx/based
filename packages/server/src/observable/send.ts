@@ -1,4 +1,4 @@
-import { WebsocketClient, HttpClient } from '../client'
+import { Context, WebSocketSession, HttpSession } from '../client'
 import { updateId } from '../protocol'
 import { BasedServer } from '../server'
 import { destroyObs } from './destroy'
@@ -7,30 +7,30 @@ import { sendError } from '../sendError'
 import { ActiveObservable } from './types'
 
 export const sendObsWs = (
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   buffer: Uint8Array,
   obs: ActiveObservable
 ) => {
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
   if (obs.reusedCache) {
     const prevId = updateId(buffer, obs.id)
-    client.ws.send(buffer, true, false)
+    ctx.session.send(buffer, true, false)
     buffer.set(prevId, 4)
   } else {
-    client.ws.send(buffer, true, false)
+    ctx.session.send(buffer, true, false)
   }
 }
 
 export const sendObsGetError = (
   server: BasedServer,
-  client: WebsocketClient | HttpClient,
+  ctx: Context<WebSocketSession | HttpSession>,
   id: number,
   name: string,
   err: BasedError<BasedErrorCode.ObservableFunctionError>
 ) => {
-  sendError(server, client, err.code, {
+  sendError(server, ctx, err.code, {
     observableId: id,
     route: {
       name,

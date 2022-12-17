@@ -5,7 +5,7 @@ import {
   BasedFunctionRoute,
   isObservableFunctionSpec,
 } from '../../../functions'
-import { HttpClient } from '../../../client'
+import { HttpSession, Context } from '../../../client'
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
@@ -13,40 +13,40 @@ import { sendHttpResponse } from '../../../sendHttpResponse'
 
 export const httpStreamFunction = (
   server: BasedServer,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   payload: any,
   route: BasedFunctionRoute
 ) => {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
 
-  const size = client.context.headers['content-length']
+  const size = ctx.session.headers['content-length']
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
     return
   }
 
-  const type = client.context.headers['content-type']
+  const type = ctx.session.headers['content-type']
 
   // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
     const files: any[] = []
     let thisIsFn: Function
 
-    multipartStream(client, server, payload, route, (p) => {
+    multipartStream(ctx, server, payload, route, (p) => {
       return new Promise((resolve) => {
         authorizeRequest(
           server,
-          client,
+          ctx,
           p.payload,
           route,
           () => {
             if (!thisIsFn) {
               files.push({ p, resolve })
             } else {
-              resolve(thisIsFn(p, client.context))
+              resolve(thisIsFn(p, ctx))
             }
           },
           () => {
@@ -64,26 +64,26 @@ export const httpStreamFunction = (
           if (files.length) {
             for (const file of files) {
               console.info('File parsed before fn / auth')
-              file.resolve(thisIsFn(file.p, client.context))
+              file.resolve(thisIsFn(file.p, ctx))
             }
           }
         } else {
-          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+          sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
         }
       })
       .catch(() => {
-        sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+        sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
       })
 
     return
   }
 
-  const stream = createDataStream(server, route, client, size)
+  const stream = createDataStream(server, route, ctx, size)
 
   // destroy stream from context
   authorizeRequest(
     server,
-    client,
+    ctx,
     payload,
     route,
     (payload) => {
@@ -96,10 +96,10 @@ export const httpStreamFunction = (
 
             const fn = spec.function
 
-            fn(streamPayload, client.context)
+            fn(streamPayload, ctx)
               .catch((err) => {
                 stream.destroy()
-                sendError(server, client, BasedErrorCode.FunctionError, {
+                sendError(server, ctx, BasedErrorCode.FunctionError, {
                   err,
                   route,
                 })
@@ -109,20 +109,20 @@ export const httpStreamFunction = (
                   stream.readableEnded ||
                   stream.listenerCount('data') === 0
                 ) {
-                  sendHttpResponse(client, r)
+                  sendHttpResponse(ctx, r)
                 } else {
                   stream.on('end', () => {
-                    sendHttpResponse(client, r)
+                    sendHttpResponse(ctx, r)
                   })
                 }
               })
           } else {
-            sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+            sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
           }
         })
         .catch((err) => {
           console.error(err)
-          sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+          sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
         })
     },
     () => {

@@ -17,7 +17,7 @@ import {
   sendObsGetError,
 } from '../../observable'
 import { BasedFunctionRoute } from '../../functions'
-import { WebsocketClient } from '../../client'
+import { WebSocketSession, Context } from '../../client'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 
@@ -26,19 +26,19 @@ const sendGetData = (
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  client: WebsocketClient
+  ctx: Context<WebSocketSession>
 ) => {
-  if (!client.ws) {
+  if (!ctx.session) {
     return
   }
   if (checksum === 0) {
-    sendObsWs(client, obs.cache, obs)
+    sendObsWs(ctx, obs.cache, obs)
   } else if (checksum === obs.checksum) {
-    client.ws.send(encodeGetResponse(id), true, false)
+    ctx.session.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
-    sendObsWs(client, obs.diffCache, obs)
+    sendObsWs(ctx, obs.diffCache, obs)
   } else {
-    sendObsWs(client, obs.cache, obs)
+    sendObsWs(ctx, obs.cache, obs)
   }
   destroyObs(server, id)
 }
@@ -46,24 +46,24 @@ const sendGetData = (
 const getFromExisting = (
   server: BasedServer,
   id: number,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   checksum: number,
   name: string
 ) => {
   const obs = getObs(server, id)
   if (obs.error) {
-    sendObsGetError(server, client, id, name, obs.error)
+    sendObsGetError(server, ctx, id, name, obs.error)
     return
   }
   if (obs.cache) {
-    sendGetData(server, id, obs, checksum, client)
+    sendGetData(server, id, obs, checksum, ctx)
     return
   }
   subscribeNext(obs, (err) => {
     if (err) {
-      sendObsGetError(server, client, id, name, err)
+      sendObsGetError(server, ctx, id, name, err)
     } else {
-      sendGetData(server, id, obs, checksum, client)
+      sendGetData(server, id, obs, checksum, ctx)
     }
   })
 }
@@ -71,7 +71,7 @@ const getFromExisting = (
 const install = (
   server: BasedServer,
   name: string,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   route: BasedFunctionRoute,
   id: number,
   checksum: number,
@@ -80,28 +80,29 @@ const install = (
   server.functions
     .install(name)
     .then((spec) => {
-      if (!verifyRoute(server, name, spec, client)) {
+      if (!ctx.session) {
         return
       }
-
+      if (!verifyRoute(server, name, spec, ctx)) {
+        return
+      }
       if (hasObs(server, id)) {
-        getFromExisting(server, id, client, checksum, name)
+        getFromExisting(server, id, ctx, checksum, name)
         return
       }
       const obs = createObs(server, name, id, payload)
-
-      if (!client.ws?.obs.has(id)) {
+      if (!ctx.session?.obs.has(id)) {
         subscribeNext(obs, (err) => {
           if (err) {
-            sendObsGetError(server, client, id, name, err)
+            sendObsGetError(server, ctx, id, name, err)
           } else {
-            sendGetData(server, id, obs, checksum, client)
+            sendGetData(server, id, obs, checksum, ctx)
           }
         })
       }
     })
     .catch(() => {
-      sendError(server, client, BasedErrorCode.FunctionNotFound, route)
+      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
     })
 }
 
@@ -110,7 +111,7 @@ export const getMessage = (
   start: number,
   len: number,
   isDeflate: boolean,
-  client: WebsocketClient,
+  ctx: Context<WebSocketSession>,
   server: BasedServer
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
@@ -124,14 +125,14 @@ export const getMessage = (
     return false
   }
 
-  const route = verifyRoute(server, name, server.functions.route(name), client)
+  const route = verifyRoute(server, name, server.functions.route(name), ctx)
 
   if (!route) {
     return false
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
     return false
   }
 
@@ -141,29 +142,26 @@ export const getMessage = (
   )
 
   server.auth
-    .authorize(client.ws, name, payload)
+    .authorize(ctx, name, payload)
     .then((ok) => {
-      if (!client.ws) {
+      if (!ctx.session) {
         return false
       }
-
       if (!ok) {
-        sendError(server, client, BasedErrorCode.AuthorizeRejectedError, {
+        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
           route,
           observableId: id,
         })
         return false
       }
-
       if (hasObs(server, id)) {
-        getFromExisting(server, id, client, checksum, name)
+        getFromExisting(server, id, ctx, checksum, name)
         return
       }
-
-      install(server, name, client, route, id, checksum, payload)
+      install(server, name, ctx, route, id, checksum, payload)
     })
     .catch((err) => {
-      sendError(server, client, BasedErrorCode.AuthorizeFunctionError, {
+      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
         route,
         observableId: id,
         err,

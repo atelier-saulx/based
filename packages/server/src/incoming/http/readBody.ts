@@ -1,4 +1,4 @@
-import { HttpClient } from '../../client'
+import { HttpSession, Context } from '../../client'
 import zlib from 'node:zlib'
 import { BasedFunctionRoute } from '../../functions'
 import { BasedErrorCode } from '../../error'
@@ -16,22 +16,22 @@ const UNCOMPRESS_OPTS = {
 
 export const readBody = (
   server: BasedServer,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   onData: (data: any | void) => void,
   route: BasedFunctionRoute
 ) => {
-  if (!client.res) {
+  if (!ctx.session) {
     return
   }
 
-  const contentLen = client.context.headers['content-length']
+  const contentLen = ctx.session.headers['content-length']
 
   if (contentLen > route.maxPayloadSize) {
-    sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
     return
   }
 
-  const contentEncoding = client.context.headers['content-encoding']
+  const contentEncoding = ctx.session.headers['content-encoding']
   let size = 0
 
   if (contentEncoding) {
@@ -44,15 +44,15 @@ export const readBody = (
       uncompressStream = zlib.createBrotliDecompress(UNCOMPRESS_OPTS)
     }
     if (uncompressStream) {
-      client.res.onData((c, isLast) => {
+      ctx.session.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > route.maxPayloadSize) {
-          sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+          sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
           uncompressStream.destroy()
           return
         }
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+          sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           return
         }
@@ -84,21 +84,21 @@ export const readBody = (
         onData(buf)
       })
     } else {
-      sendError(server, client, BasedErrorCode.InvalidPayload, route)
+      sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
     }
   } else {
     const buf = new Uint8Array(contentLen)
     let index = 0
-    client.res.onData((c, isLast) => {
+    ctx.session.res.onData((c, isLast) => {
       const len = c.byteLength
 
       size += len
       if (size > route.maxPayloadSize) {
-        sendError(server, client, BasedErrorCode.PayloadTooLarge, route)
+        sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
         return
       }
 

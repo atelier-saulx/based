@@ -1,5 +1,5 @@
 import { DataStream } from './DataStream'
-import { HttpClient } from '../../../client'
+import { HttpSession, Context } from '../../../client'
 import { BasedFunctionRoute } from '../../../functions'
 import { sendError } from '../../../sendError'
 import zlib from 'node:zlib'
@@ -15,7 +15,7 @@ const UNCOMPRESS_OPTS = {
 export default (
   server: BasedServer,
   route: BasedFunctionRoute,
-  client: HttpClient,
+  ctx: Context<HttpSession>,
   size: number
 ): DataStream => {
   const stream = new DataStream()
@@ -25,7 +25,7 @@ export default (
   stream.emit('progress', progress)
   const emitProgress = size > 200000
 
-  const contentEncoding = client.context.headers['content-encoding']
+  const contentEncoding = ctx.session.headers['content-encoding']
 
   if (contentEncoding) {
     let uncompressStream: zlib.Deflate | zlib.Gunzip | zlib.BrotliDecompress
@@ -37,10 +37,10 @@ export default (
       uncompressStream = zlib.createBrotliDecompress(UNCOMPRESS_OPTS)
     }
     if (uncompressStream) {
-      client.res.onData((c, isLast) => {
+      ctx.session.res.onData((c, isLast) => {
         total += c.byteLength
         if (c.byteLength > MAX_CHUNK_SIZE) {
-          sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+          sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           stream.destroy()
           return
@@ -72,24 +72,19 @@ export default (
       })
       uncompressStream.on('error', (err) => {
         console.warn('Uncompress error', route, contentEncoding, err)
-        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
         uncompressStream.destroy()
         stream.destroy()
       })
       uncompressStream.pipe(stream)
     } else {
-      sendError(
-        server,
-        client,
-        BasedErrorCode.UnsupportedContentEncoding,
-        route
-      )
+      sendError(server, ctx, BasedErrorCode.UnsupportedContentEncoding, route)
     }
   } else {
-    client.res.onData((c, isLast) => {
+    ctx.session.res.onData((c, isLast) => {
       total += c.byteLength
       if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendError(server, client, BasedErrorCode.ChunkTooLarge, route)
+        sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
         stream.destroy()
         return
       }

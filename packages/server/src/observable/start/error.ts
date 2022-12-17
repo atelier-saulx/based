@@ -17,10 +17,9 @@ export const errorListener = (
   obs.isDeflate = false
   obs.reusedCache = false
 
-  // FIX ERROR CODE!
   const errorData = createError(
     server,
-    { headers: {}, isObservable: true, id: obs.id, name: obs.name },
+    { session: { id: obs.id, name: obs.name } },
     err.code || BasedErrorCode.ObservableFunctionError,
     {
       err,
@@ -40,15 +39,19 @@ export const errorListener = (
     )
   }
 
-  // if (obs.workers.size) {
-  //   obs.workers.forEach((w) => {
-  //     sendToWorker(w, {
-  //       type: IncomingType.UpdateObservable,
-  //       id,
-  //       err,
-  //     })
-  //   })
-  // }
+  if (obs.functionObserveClients.size) {
+    obs.functionObserveClients.forEach((fnUpdate) => {
+      fnUpdate(
+        obs.cache,
+        obs.checksum,
+        obs.diffCache,
+        obs.previousChecksum,
+        obs.isDeflate,
+        obs.rawData,
+        errorData
+      )
+    })
+  }
 
   if (obs.onNextData) {
     const onNextData = obs.onNextData
