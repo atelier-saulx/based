@@ -65,20 +65,17 @@ int main(int argc, char** argv) {
 
         if (cmd.substr(0, 1) == "o") {
             std::string fn_name = cmd.substr(2);
-
-            // std::cout << "Observing " << fn_name << std::endl;
-
             char* fn = &*fn_name.begin();
+
             int id = Based__observe(client1, fn, (char*)"", &based_observe_cb);
+
             obs.push_back(id);
         }
 
         if (cmd.substr(0, 1) == "g") {
             std::string fn_name = cmd.substr(2);
-
-            // std::cout << "Observing " << fn_name << std::endl;
-
             char* fn = &*fn_name.begin();
+
             Based__get(client1, fn, (char*)"", &based_cb);
         }
 
@@ -86,18 +83,21 @@ int main(int argc, char** argv) {
             std::string fn_name = cmd.substr(2);
             std::cout << "Function " << fn_name << std::endl;
             char* fn = &*fn_name.begin();
+
             Based__function(client1, fn, (char*)"", &based_cb);
+        }
+
+        if (cmd.substr(0, 1) == "s") {
+            std::string payload = cmd.substr(2);
+            std::cout << "Payload =" << payload << std::endl;
+
+            char* p = &*payload.begin();
+
+            Based__function(client1, (char*)"based-db-set", p, &based_cb);
         }
 
         if (cmd.substr(0, 1) == "d") {
             Based__disconnect(client1);
-        }
-
-        if (cmd.substr(0, 1) == "c") {
-            // Based__connect(client1, "http://localhost:7022", "saulx", "demo", "production",
-            //                "@based/edge", "", false);
-            std::cout << "Doing nothing" << std::endl;
-            // Based__connect_to_url(client1, (char*)"wss://localhost:9910");
         }
 
         if (cmd.substr(0, 1) == "a") {
