@@ -135,11 +135,7 @@ export const incoming = async (
 
       const cachedData = client.cache.get(id)
 
-      // console.info('Incoming diff data', getName(client, id), id)
-
       if (!cachedData) {
-        // console.info('DIFF => NO CACHE')
-
         requestFullData(client, id)
         return
       }
@@ -148,7 +144,6 @@ export const incoming = async (
       const previousChecksum = readUint8(buffer, 20, 8)
 
       if (cachedData.checksum !== previousChecksum) {
-        // console.info('DIFF => DIFF CHECKSUM')
         requestFullData(client, id)
         return
       }
