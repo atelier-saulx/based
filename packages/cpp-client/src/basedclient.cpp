@@ -67,9 +67,9 @@ std::string BasedClient::get_service(std::string cluster,
 }
 
 void BasedClient::_connect_to_url(std::string url) {
-    m_con.connect_to_uri(url);
     m_con.set_message_handler([&](std::string msg) { on_message(msg); });
     m_con.set_open_handler([&]() { on_open(); });
+    m_con.connect_to_uri(url);
 }
 
 void BasedClient::connect(std::string cluster,
@@ -79,9 +79,9 @@ void BasedClient::connect(std::string cluster,
                           std::string name,
                           std::string key,
                           bool optional_key) {
-    m_con.connect(cluster, org, project, env, key, optional_key);
     m_con.set_message_handler([&](std::string msg) { on_message(msg); });
     m_con.set_open_handler([&]() { on_open(); });
+    m_con.connect(cluster, org, project, env, key, optional_key);
 }
 
 void BasedClient::disconnect() {

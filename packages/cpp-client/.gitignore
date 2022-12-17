@@ -21,3 +21,5 @@ build_catalyst
 *.zip
 
 prebuilt-libs
+
+Based.xcframework
