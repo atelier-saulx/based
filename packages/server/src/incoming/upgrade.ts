@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { AuthorizeConnection } from '../auth'
-import { WebSocketSession } from '../client'
+import { WebSocketSession } from '../context'
 
 let clientId = 0
 

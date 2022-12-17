@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedFunctionRoute } from '../functions'
-import { Context } from '../client'
+import { Context } from '../context'
 import {
   BasedErrorCode,
   ErrorPayload,

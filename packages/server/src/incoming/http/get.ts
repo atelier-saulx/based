@@ -1,5 +1,5 @@
 import { BasedServer } from '../../server'
-import { HttpSession, Context } from '../../client'
+import { HttpSession, Context } from '../../context'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
 import { end } from '../../sendHttpResponse'
 import { compress } from '../../compress'

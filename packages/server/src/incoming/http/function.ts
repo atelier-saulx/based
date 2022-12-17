@@ -1,6 +1,6 @@
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
-import { HttpSession, Context } from '../../client'
+import { HttpSession, Context } from '../../context'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'

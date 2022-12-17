@@ -1,4 +1,4 @@
-import type { Context } from './client'
+import type { Context } from './context'
 import type { ActiveObservable } from './observable'
 import uws from '@based/uws'
 import initNetwork from './incoming'

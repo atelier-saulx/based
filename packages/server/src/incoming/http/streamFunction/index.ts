@@ -5,7 +5,7 @@ import {
   BasedFunctionRoute,
   isObservableFunctionSpec,
 } from '../../../functions'
-import { HttpSession, Context } from '../../../client'
+import { HttpSession, Context } from '../../../context'
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'

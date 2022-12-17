@@ -1,4 +1,4 @@
-import { HttpSession, Context } from '../../client'
+import { HttpSession, Context } from '../../context'
 import zlib from 'node:zlib'
 import { BasedFunctionRoute } from '../../functions'
 import { BasedErrorCode } from '../../error'

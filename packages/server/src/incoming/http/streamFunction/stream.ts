@@ -1,5 +1,5 @@
 import { DataStream } from './DataStream'
-import { HttpSession, Context } from '../../../client'
+import { HttpSession, Context } from '../../../context'
 import { BasedFunctionRoute } from '../../../functions'
 import { sendError } from '../../../sendError'
 import zlib from 'node:zlib'

@@ -2,7 +2,7 @@ import { BasedServer } from '../../server'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 import { BasedErrorCode } from '../../error'
-import { HttpSession, Context } from '../../client'
+import { HttpSession, Context } from '../../context'
 
 export const authorizeRequest = (
   server: BasedServer,

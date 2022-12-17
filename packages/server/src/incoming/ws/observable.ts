@@ -9,7 +9,7 @@ import {
   hasObs,
 } from '../../observable'
 import { BasedErrorCode } from '../../error'
-import { WebSocketSession, Context } from '../../client'
+import { WebSocketSession, Context } from '../../context'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 

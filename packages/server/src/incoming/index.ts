@@ -4,7 +4,7 @@ import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
-import { WebSocketSession, Context } from '../client'
+import { WebSocketSession, Context } from '../context'
 
 export default (
   server: BasedServer,

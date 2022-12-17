@@ -4,7 +4,7 @@ import {
   encodeAuthResponse,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { WebSocketSession, Context } from '../../client'
+import { WebSocketSession, Context } from '../../context'
 import { enableSubscribe } from './observable'
 
 export type AuthState = any

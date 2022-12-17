@@ -1,4 +1,4 @@
-import { Context, WebSocketSession, HttpSession } from '../client'
+import { Context, WebSocketSession, HttpSession } from '../context'
 import { updateId } from '../protocol'
 import { BasedServer } from '../server'
 import { destroyObs } from './destroy'

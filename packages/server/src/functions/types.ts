@@ -1,4 +1,4 @@
-import { Context, HttpSession } from '../client'
+import { Context, HttpSession } from '../context'
 import { ObservableUpdateFunction } from '../observable'
 import { BasedServer } from '../server'
 

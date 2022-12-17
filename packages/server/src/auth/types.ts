@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { Context } from '../client'
+import { Context } from '../context'
 import uws from '@based/uws'
 
 export type AuthConfig = {

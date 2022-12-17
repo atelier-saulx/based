@@ -2,7 +2,7 @@ import { AuthState } from '../incoming/ws/auth'
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
 import { AuthConfig, Authorize, AuthorizeConnection } from './types'
-import { Context, WebSocketSession } from '../client'
+import { Context, WebSocketSession } from '../context'
 import dummyAuth from './dummyAuth'
 
 export * from './types'

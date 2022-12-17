@@ -9,7 +9,7 @@ import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { isObservableFunctionSpec } from '../../functions'
-import { WebSocketSession, Context } from '../../client'
+import { WebSocketSession, Context } from '../../context'
 
 export const functionMessage = (
   arr: Uint8Array,

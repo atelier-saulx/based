@@ -17,7 +17,7 @@ import {
   sendObsGetError,
 } from '../../observable'
 import { BasedFunctionRoute } from '../../functions'
-import { WebSocketSession, Context } from '../../client'
+import { WebSocketSession, Context } from '../../context'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 

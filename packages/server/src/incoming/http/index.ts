@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpSession, Context } from '../../client'
+import { HttpSession, Context } from '../../context'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
 import { BasedFunctionRoute } from '../../functions'

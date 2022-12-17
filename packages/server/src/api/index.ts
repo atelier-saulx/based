@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
-import { Context } from '../client'
+import { Context } from '../context'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../functions'
 import {
   ActiveObservable,
