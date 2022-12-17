@@ -93,14 +93,7 @@ std::string WsConnection::get_service(std::string cluster,
 
     json registries = json::array();
 
-    std::cout << "opts = " << cluster << " " << org << " " << project << " " << env << " " << name
-              << " " << key << std::endl;
-
-    std::cout << "Buf = " << buf << std::endl;
-
     if (buf.length() > 0) registries = json::parse(buf);
-
-    std::cout << "Reg size = " << registries.size() << std::endl;
 
     m_registry_index++;
     if (m_registry_index >= registries.size()) m_registry_index = 0;
@@ -109,8 +102,6 @@ std::string WsConnection::get_service(std::string cluster,
     std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
     if (key.length() > 0) req_url += "." + key;
     if (key.length() > 0 && optional_key) req_url += "$";
-
-    std::cout << req_url << std::endl;
 
     buf = "";
     curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
