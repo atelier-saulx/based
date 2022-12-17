@@ -37,7 +37,7 @@ int main(int argc, char** argv) {
     int client1 = Based__new_client();
 
     // Based__connect_to_url(client1, (char*)"wss://localhost:9910");
-    Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net/", "airhub", "airhub", "edge",
+    Based__connect(client1, "https://d15p61sp2f2oaj.cloudfront.net/", "saulx", "demo", "production",
                    "@based/edge", "", false);
     bool done = false;
     // int i = 0;
