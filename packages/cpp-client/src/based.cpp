@@ -87,7 +87,7 @@ extern "C" int Based__observe(based_id client_id,
                               /**
                                * Callback that the observable will trigger.
                                */
-                              void (*cb)(const char*, uint64_t, const char*)) {
+                              void (*cb)(const char*, uint64_t, const char*, int)) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
         return -1;
@@ -96,16 +96,16 @@ extern "C" int Based__observe(based_id client_id,
     return cl->observe(name, payload, cb);
 }
 
-extern "C" void Based__get(based_id client_id,
-                           char* name,
-                           char* payload,
-                           void (*cb)(const char*, const char*)) {
+extern "C" int Based__get(based_id client_id,
+                          char* name,
+                          char* payload,
+                          void (*cb)(const char*, const char*, int)) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
-        return;
+        return -1;
     }
     auto cl = clients.at(client_id);
-    cl->get(name, payload, cb);
+    return cl->get(name, payload, cb);
 }
 
 extern "C" void Based__unobserve(based_id client_id, int sub_id) {
@@ -117,17 +117,17 @@ extern "C" void Based__unobserve(based_id client_id, int sub_id) {
     cl->unobserve(sub_id);
 }
 
-extern "C" void Based__function(based_id client_id,
-                                char* name,
-                                char* payload,
-                                void (*cb)(const char*, const char*)) {
+extern "C" int Based__function(based_id client_id,
+                               char* name,
+                               char* payload,
+                               void (*cb)(const char*, const char*, int)) {
     // std::function<void(std::string /*data*/, std::string /*error*/)> cb) {
     if (clients.find(client_id) == clients.end()) {
         std::cerr << "No such id found" << std::endl;
-        return;
+        return -1;
     }
     auto cl = clients.at(client_id);
-    cl->function(name, payload, cb);
+    return cl->function(name, payload, cb);
 }
 
 extern "C" void Based__auth(based_id client_id, char* state, void (*cb)(const char*)) {

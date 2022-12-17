@@ -6,25 +6,25 @@
 
 #include "based.h"
 
-void based_cb(const char* data, const char* error) {
+void based_cb(const char* data, const char* error, int id) {
     int len_data = strlen(data);
     int len_error = strlen(error);
     if (len_data > 0) {
-        std::cout << "DATA = " << data << std::endl;
+        std::cout << "[" << id << "] DATA = " << data << std::endl;
     }
     if (len_error > 0) {
-        std::cout << "ERROR = " << error << std::endl;
+        std::cout << "[" << id << "] ERROR = " << error << std::endl;
     }
 }
 
-void based_observe_cb(const char* data, uint64_t checksum, const char* error) {
+void based_observe_cb(const char* data, uint64_t checksum, const char* error, int id) {
     int len_data = strlen(data);
     int len_error = strlen(error);
     if (len_data > 0) {
-        std::cout << "DATA[" << checksum << "] = " << data << std::endl;
+        std::cout << "[" << id << "] DATA {" << checksum << "} = " << data << std::endl;
     }
     if (len_error > 0) {
-        std::cout << "ERROR = " << error << std::endl;
+        std::cout << "[" << id << "] ERROR = " << error << std::endl;
     }
 }
 
@@ -66,11 +66,20 @@ int main(int argc, char** argv) {
         if (cmd.substr(0, 1) == "o") {
             std::string fn_name = cmd.substr(2);
 
-            std::cout << "Observing " << fn_name << std::endl;
+            // std::cout << "Observing " << fn_name << std::endl;
 
             char* fn = &*fn_name.begin();
             int id = Based__observe(client1, fn, (char*)"", &based_observe_cb);
             obs.push_back(id);
+        }
+
+        if (cmd.substr(0, 1) == "g") {
+            std::string fn_name = cmd.substr(2);
+
+            // std::cout << "Observing " << fn_name << std::endl;
+
+            char* fn = &*fn_name.begin();
+            Based__get(client1, fn, (char*)"", &based_cb);
         }
 
         if (cmd.substr(0, 1) == "f") {

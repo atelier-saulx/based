@@ -93,7 +93,10 @@ int BasedClient::observe(std::string name,
                          /**
                           * Callback that the observable will trigger.
                           */
-                         void (*cb)(const char*, uint64_t, const char*)) {
+                         void (*cb)(const char* /*data*/,
+                                    uint64_t /*checksum*/,
+                                    const char* /*error*/,
+                                    int /*sub_id*/)) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -157,7 +160,9 @@ int BasedClient::observe(std::string name,
     return sub_id;
 }
 
-void BasedClient::get(std::string name, std::string payload, void (*cb)(const char*, const char*)) {
+int BasedClient::get(std::string name,
+                     std::string payload,
+                     void (*cb)(const char* /*data*/, const char* /*error*/, int /*sub_id*/)) {
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = m_sub_id++;
 
@@ -181,6 +186,8 @@ void BasedClient::get(std::string name, std::string payload, void (*cb)(const ch
         m_get_queue.push_back(msg);
         drain_queues();
     }
+
+    return sub_id;
 }
 
 void BasedClient::unobserve(int sub_id) {
@@ -212,9 +219,11 @@ void BasedClient::unobserve(int sub_id) {
     drain_queues();
 }
 
-void BasedClient::function(std::string name,
-                           std::string payload,
-                           void (*cb)(const char*, const char*)) {
+int BasedClient::function(std::string name,
+                          std::string payload,
+                          void (*cb)(const char* /*data*/,
+                                     const char* /*error*/,
+                                     int /*request_id*/)) {
     m_request_id++;
     if (m_request_id > 16777215) {
         m_request_id = 0;
@@ -225,6 +234,7 @@ void BasedClient::function(std::string name,
     std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
     m_function_queue.push_back(msg);
     drain_queues();
+    return m_request_id;
 }
 
 void BasedClient::auth(std::string state, void (*cb)(const char*)) {
@@ -333,9 +343,9 @@ void BasedClient::on_message(std::string message) {
                     std::string payload = is_deflate
                                               ? Utility::inflate_string(message.substr(start, end))
                                               : message.substr(start, end);
-                    fn(payload.c_str(), "");
+                    fn(payload.c_str(), "", id);
                 } else {
-                    fn("", "");
+                    fn("", "", id);
                 }
                 // Listener has fired, remove it from the map.
                 m_function_callbacks.erase(id);
@@ -360,14 +370,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(payload.c_str(), checksum, "");
+                    fn(payload.c_str(), checksum, "", sub_id);
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(payload.c_str(), "");
+                    fn(payload.c_str(), "", sub_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -413,14 +423,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(patched_payload.c_str(), checksum, "");
+                    fn(patched_payload.c_str(), checksum, "", sub_id);
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(patched_payload.c_str(), "");
+                    fn(patched_payload.c_str(), "", sub_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -433,7 +443,7 @@ void BasedClient::on_message(std::string message) {
                 m_cache.find(obs_id) != m_cache.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(m_cache.at(obs_id).first.c_str(), "");
+                    fn(m_cache.at(obs_id).first.c_str(), "", obs_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -476,13 +486,13 @@ void BasedClient::on_message(std::string message) {
 
                 if (m_function_callbacks.find(id) != m_function_callbacks.end()) {
                     auto fn = m_function_callbacks.at(id);
-                    fn("", payload.c_str());
+                    fn("", payload.c_str(), id);
                     m_function_callbacks.erase(id);
                 }
                 if (m_get_subs.find(id) != m_get_subs.end()) {
                     for (auto get_id : m_get_subs.at(id)) {
                         auto fn = m_get_sub_callbacks.at(get_id);
-                        fn("", payload.c_str());
+                        fn("", payload.c_str(), id);
                         m_get_sub_callbacks.erase(get_id);
                     }
                     m_get_subs.erase(id);
@@ -498,8 +508,10 @@ void BasedClient::on_message(std::string message) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {
                             auto fn = m_sub_callback.at(sub_id);
-                            fn("", 0, payload.c_str());
+                            fn("", 0, payload.c_str(), sub_id);
                         }
+                        m_observe_subs.erase(sub_id);
+                        m_sub_to_obs.erase(sub_id);
                     }
                 }
             }

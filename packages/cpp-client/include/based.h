@@ -39,19 +39,24 @@ extern "C" int Based__observe(based_id client_id,
                                */
                               void (*cb)(const char* /* Data */,
                                          uint64_t /* Checksum */,
-                                         const char* /* Error*/));
+                                         const char* /* Error*/,
+                                         int /*obs_id*/));
 
-extern "C" void Based__get(based_id client_id,
-                           char* name,
-                           char* payload,
-                           void (*cb)(const char* /* Data */, const char* /* Error */));
+extern "C" int Based__get(based_id client_id,
+                          char* name,
+                          char* payload,
+                          void (*cb)(const char* /* Data */,
+                                     const char* /* Error */,
+                                     int /*sub_id*/));
 
 extern "C" void Based__unobserve(based_id client_id, int sub_id);
 
-extern "C" void Based__function(based_id client_id,
-                                char* name,
-                                char* payload,
-                                void (*cb)(const char* /* Data */, const char* /* Error */));
+extern "C" int Based__function(based_id client_id,
+                               char* name,
+                               char* payload,
+                               void (*cb)(const char* /* Data */,
+                                          const char* /* Error */,
+                                          int /*request_id*/));
 
 extern "C" void Based__auth(based_id client_id,
                             char* state,

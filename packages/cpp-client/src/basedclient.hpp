@@ -28,9 +28,9 @@ class BasedClient {
     bool m_auth_required;
     std::string m_auth_state;
     std::string m_auth_request_state;
-    void (*m_auth_callback)(const char*);
 
-    std::map<int, void (*)(const char*, const char*)> m_function_callbacks;
+    void (*m_auth_callback)(const char*);
+    std::map<int, void (*)(const char*, const char*, int)> m_function_callbacks;
 
     /////////////////////
     // cache
@@ -78,7 +78,7 @@ class BasedClient {
      * map<sub_id, on_data callback>
      * List of on_data callback to call when receiving the data.
      */
-    std::map<int, void (*)(const char*, uint64_t, const char*)> m_sub_callback;
+    std::map<int, void (*)(const char*, uint64_t, const char*, int)> m_sub_callback;
 
     ////////////////
     // gets
@@ -95,7 +95,7 @@ class BasedClient {
      * map<sub_id, on_data callback>
      * List of on_data callback to call when receiving the data. Should be deleted after firing.
      */
-    std::map<int, void (*)(const char*, const char*)> m_get_sub_callbacks;
+    std::map<int, void (*)(const char*, const char*, int)> m_get_sub_callbacks;
 
    public:
     BasedClient();
@@ -159,13 +159,17 @@ class BasedClient {
                 /**
                  * Callback that the observable will trigger.
                  */
-                void (*cb)(const char*, uint64_t, const char*));
+                void (*cb)(const char* /*data*/, uint64_t, const char* /*error*/, int /*sub_id*/));
 
     /**
      * @brief Get the value of an observable only once. The callback will trigger when the function
      * fires a new update.
+     *
+     * @return The sub_id that will also be passed in the callback.
      */
-    void get(std::string name, std::string payload, void (*cb)(const char*, const char*));
+    int get(std::string name,
+            std::string payload,
+            void (*cb)(const char* /*data*/, const char* /*error*/, int /*sub_id*/));
 
     /**
      * @brief Stop the observable associated with the ID, and clean up the related structures.
@@ -183,8 +187,12 @@ class BasedClient {
      * @param payload Payload of the function, must be a JSON string.
      * @param cb Callback function, must have two string arguments: first is for data, the seconds
      * one is for error.
+     *
+     * @return The sub_id that will also be passed in the callback.
      */
-    void function(std::string name, std::string payload, void (*cb)(const char*, const char*));
+    int function(std::string name,
+                 std::string payload,
+                 void (*cb)(const char* /*data*/, const char* /*error*/, int /*sub_id*/));
 
     /**
      * @brief Set a auth state.
