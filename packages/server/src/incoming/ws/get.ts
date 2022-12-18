@@ -141,6 +141,15 @@ export const getMessage = (
     isDeflate
   )
 
+  if (route.public === true) {
+    if (hasObs(server, id)) {
+      getFromExisting(server, id, ctx, checksum, name)
+      return
+    }
+    install(server, name, ctx, route, id, checksum, payload)
+    return true
+  }
+
   server.auth
     .authorize(ctx, name, payload)
     .then((ok) => {

@@ -3,7 +3,6 @@ import { BasedServer } from '../../server'
 import {
   createObs,
   unsubscribeWs,
-  destroyObs,
   subscribeWs,
   verifyRoute,
   hasObs,
@@ -33,15 +32,12 @@ export const enableSubscribe = (
       if (!verifyRoute(server, name, spec, ctx)) {
         return
       }
-
       if (!ctx.session?.obs.has(id)) {
         return
       }
-
       if (!hasObs(server, id)) {
         createObs(server, name, id, payload)
       }
-
       ctx.session.subscribe(String(id))
       subscribeWs(server, id, checksum, ctx)
     })
@@ -93,6 +89,11 @@ export const subscribeMessage = (
 
   ctx.session.obs.add(id)
 
+  if (route.public === true) {
+    enableSubscribe(server, ctx, id, checksum, name, payload, route)
+    return true
+  }
+
   server.auth
     .authorize(ctx, name, payload)
     .then((ok) => {
@@ -120,7 +121,6 @@ export const subscribeMessage = (
         observableId: id,
         err,
       })
-      destroyObs(server, id)
     })
 
   return true
