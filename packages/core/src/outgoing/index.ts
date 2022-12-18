@@ -177,7 +177,6 @@ export const addGetToQueue = (
 }
 
 export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
-  // add simple encryption on auth allways...
   if (deepEqual(authState, client.authRequest.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress
@@ -185,8 +184,11 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
       : new Promise((resolve) => resolve(false))
   }
   if (client.authRequest.inProgress) {
+    // TODO:
+    // fix this situation?
+    // add endpoint to refresh token on http
     console.error(
-      '[Based] Authentication still in progress - will not work (being worked on)'
+      '[Based] Authentication still in progress - will not work (will be added later)'
     )
     // TODO: need to set id on AUTH (req id)
     return client.authRequest.promise
