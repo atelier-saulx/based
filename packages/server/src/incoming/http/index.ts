@@ -5,13 +5,13 @@ import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
 import { BasedFunctionRoute } from '../../functions'
 import { httpGet } from './get'
-import { parseQuery } from '@saulx/utils'
 import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { incomingCounter } from '../../security'
 import { parseAuthState } from '../../auth'
+import parseQuery from './parseQuery'
 
 let clientId = 0
 
@@ -22,11 +22,10 @@ const handleRequest = (
   route: BasedFunctionRoute,
   ready: (payload?: any) => void
 ) => {
-  // send shared array buffer
   if (method === 'post') {
     readBody(server, ctx, ready, route)
   } else {
-    ready()
+    ready(parseQuery(ctx))
   }
 }
 
@@ -84,8 +83,8 @@ export const httpHandler = (
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
+      authState: parseAuthState(req.getHeader('authorization')),
       headers: {
-        authorization: parseAuthState(req.getHeader('authorization')),
         'content-type': req.getHeader('content-type'),
         'content-encoding': req.getHeader('content-encoding'),
         encoding: req.getHeader('accept-encoding'),
@@ -99,9 +98,9 @@ export const httpHandler = (
   }
 
   const len = req.getHeader('content-length')
-  // @ts-ignore use isNan as number check
-  if (len && !isNaN(len)) {
-    ctx.session.headers['content-length'] = Number(len)
+  const lenConverted = len ? Number(len) : undefined
+  if (lenConverted !== undefined && !isNaN(lenConverted)) {
+    ctx.session.headers['content-length'] = lenConverted
   }
 
   if (
@@ -133,8 +132,8 @@ export const httpHandler = (
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
-    // @ts-ignore use isNaN to cast string to number
-    const checksum = !isNaN(checksumRaw) ? Number(checksumRaw) : 0
+    const checksumNum = Number(checksumRaw)
+    const checksum = !isNaN(checksumNum) ? checksumNum : 0
     handleRequest(server, method, ctx, route, (payload) => {
       authorizeRequest(server, ctx, payload, route, () => {
         httpGet(route, payload, ctx, server, checksum)
@@ -151,17 +150,11 @@ export const httpHandler = (
         sendError(server, ctx, BasedErrorCode.LengthRequired, route)
         return
       }
-      let p: any
-      if ('query' in ctx.session) {
-        try {
-          p = parseQuery(ctx.session.query)
-        } catch (err) {}
-      }
-      httpStreamFunction(server, ctx, p, route)
+      httpStreamFunction(server, ctx, parseQuery(ctx), route)
     } else {
       handleRequest(server, method, ctx, route, (payload) => {
         authorizeRequest(server, ctx, payload, route, () => {
-          httpFunction(method, route, ctx, server, payload)
+          httpFunction(route, ctx, server, payload)
         })
       })
     }

@@ -66,8 +66,7 @@ export const encodeHeader = (
   //   2 = subscriptionDiffData
   // isDeflate (1 bit)
   // len (28 bits)
-  // @ts-ignore
-  const encodedMeta = (type << 1) + (isDeflate | 0)
+  const encodedMeta = (type << 1) + (Number(isDeflate) | 0)
   const nr = (len << 4) + encodedMeta
   return nr
 }

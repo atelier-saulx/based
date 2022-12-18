@@ -50,8 +50,7 @@ export default (
             session: ws,
           }
           ws.c = ctx
-          // @ts-ignore
-          wsListeners.open(ws)
+          wsListeners.open(ctx)
         }
       },
       close: (ws: WebSocketSession) => {
@@ -59,8 +58,7 @@ export default (
         ws.obs.forEach((id) => {
           unsubscribeWsIgnoreClient(server, id, ws.c)
         })
-        // @ts-ignore
-        wsListeners.close(ws)
+        wsListeners.close(ws.c)
 
         // Looks really ugly but same impact on memory and GC as using the ws directly
         // and better for dc's when functions etc are in progress

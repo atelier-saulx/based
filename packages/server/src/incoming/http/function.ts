@@ -6,7 +6,6 @@ import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 
 export const httpFunction = (
-  method: string,
   route: BasedFunctionRoute,
   ctx: Context<HttpSession>,
   server: BasedServer,

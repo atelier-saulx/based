@@ -5,6 +5,8 @@ console.info('browsxxer')
 const init = async () => {
   const coreClient = new BasedCoreClient()
 
+  coreClient.auth('myyuzi!')
+
   coreClient.connect({
     url: async () => {
       return 'ws://localhost:9910'
@@ -26,7 +28,7 @@ const init = async () => {
   })
 
   console.info('-----------')
-  console.info(await coreClient.function('hello', { x: true }))
+  console.info(await coreClient.call('hello', { x: true }))
 
   const makeButton = (label: string, fn: () => void) => {
     const button = document.createElement('button')
@@ -37,18 +39,18 @@ const init = async () => {
   }
 
   makeButton('nested hello', async () => {
-    console.info(await coreClient.function('helloNest', { x: true }))
+    console.info(await coreClient.call('helloNest', { x: true }))
   })
 
   makeButton('info time', async () => {
-    console.info(await coreClient.function('timespend'))
+    console.info(await coreClient.call('timespend'))
   })
 
   const bombard = async () => {
     const d = Date.now()
     const q: any[] = []
     for (let i = 0; i < 1e3; i++) {
-      q.push(coreClient.function('helloNest', { x: true }))
+      q.push(coreClient.call('helloNest', { x: true }))
     }
     await Promise.all(q)
     console.info('fire 1000 hello nests (1M gets)', Date.now() - d, 'ms')

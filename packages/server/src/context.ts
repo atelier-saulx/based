@@ -1,4 +1,5 @@
 import uws from '@based/uws'
+import { parseQuery } from '@saulx/utils'
 
 export type WebSocketSession = {
   // State can be used for anyting - for us the based class instance
@@ -18,6 +19,8 @@ export type WebSocketSession = {
     name: string
     payload: any
   }>
+  // Optimization so we dont need to keep track of websockets outside of uws
+  c?: Context<WebSocketSession>
 } & uws.WebSocket
 
 export type HttpSession = {
@@ -28,6 +31,7 @@ export type HttpSession = {
   // Good place to add user id from token
   user?: string
   query?: string
+  parsedQuery?: ReturnType<typeof parseQuery>
   ua: string
   ip: string
   id: number // client-id
@@ -35,7 +39,6 @@ export type HttpSession = {
   method: string
   headers: {
     'content-length'?: number
-    authorization?: string
     'content-type'?: string
     'content-encoding'?: string
     encoding?: string
@@ -65,7 +68,6 @@ export type Context<
     | ObservableSession
     | MinimalExternalSession
 > = {
-  callStack?: string[]
   session?: S
 }
 
