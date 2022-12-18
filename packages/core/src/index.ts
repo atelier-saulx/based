@@ -97,7 +97,7 @@ export class BasedCoreClient extends Emitter {
     this.connected = true
     this.emit('connect', true)
 
-    // --------- Resend all subscriptions
+    // Resend all subscriptions
     for (const [id, obs] of this.observeState) {
       if (!this.observeQueue.has(id)) {
         const cachedData = this.cache.get(id)
@@ -111,7 +111,7 @@ export class BasedCoreClient extends Emitter {
       }
     }
 
-    // temporary fix...
+    // Rare edge case where server got dc'ed while sneding the q - before recieving result)
     if (this.functionResponseListeners.size > this.functionQueue.length) {
       this.functionResponseListeners.forEach((p, k) => {
         if (
