@@ -9,6 +9,39 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
+const toProtocol = (authState: any): string => {
+  /*
+    Protocol needs to be url safe
+    token          = 1*<any CHAR except CTLs or separators>
+    separators     = "(" | ")" | "<" | ">" | "@"
+                  | "," | ";" | ":" | "\" | <">
+                  | "/" | "[" | "]" | "?" | "="
+                  | "{" | "}" | SP | HT 
+    exclude " | '
+  */
+  return encodeURI(
+    typeof authState === 'string' ? authState : JSON.stringify(authState)
+  )
+}
+
+const createWebsocket = (
+  realUrl: string,
+  client: BasedCoreClient
+): WebSocket => {
+  if (client.authRequest.inProgress) {
+    if (client.authRequest.authState) {
+      return new WebSocket(realUrl, [toProtocol(client.authRequest.authState)])
+    }
+    return new WebSocket(realUrl)
+  }
+
+  if (client.authState) {
+    return new WebSocket(realUrl, [toProtocol(client.authState)])
+  }
+
+  return new WebSocket(realUrl)
+}
+
 // Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
@@ -61,24 +94,7 @@ const connect = (
         }
       })
 
-      /*
-       Protocol needs to be url safe
-       token          = 1*<any CHAR except CTLs or separators>
-       separators     = "(" | ")" | "<" | ">" | "@"
-                      | "," | ";" | ":" | "\" | <">
-                      | "/" | "[" | "]" | "?" | "="
-                      | "{" | "}" | SP | HT 
-        exclude " | '
-      */
-      const ws = (connection.ws = client.authRequest.authState
-        ? new WebSocket(realUrl, [
-            encodeURI(
-              typeof client.authRequest.authState === 'string'
-                ? client.authRequest.authState
-                : JSON.stringify(client.authRequest.authState)
-            ),
-          ])
-        : new WebSocket(realUrl))
+      const ws = (connection.ws = createWebsocket(realUrl, client))
 
       ws.onerror = () => {
         // console.error(err)
