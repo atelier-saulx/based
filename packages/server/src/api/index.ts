@@ -45,17 +45,10 @@ export const callFunction = async (
     })
   }
 
-  // TODO: Callstack
   try {
-    const ok = await server.auth.authorize(ctx, name)
-    if (!ok) {
-      throw createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-        route: { name },
-      })
-    }
     return fn.function(payload, ctx)
   } catch (err) {
-    throw createError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
+    throw createError(server, ctx, BasedErrorCode.FunctionError, {
       route: { name },
       err,
     })
@@ -125,68 +118,42 @@ export const get = (
       return
     }
 
-    // TODO: Callstack
-    server.auth
-      .authorize(ctx, name)
-      .catch((err) => {
-        reject(
-          createError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
-            route: { name },
-            err,
-          })
-        )
-      })
-      .then((ok) => {
-        if (!ok) {
+    const id = genObservableId(name, payload)
+    if (!hasObs(server, id)) {
+      server.functions
+        .install(name)
+        .then((fn) => {
+          if (!fn) {
+            reject(
+              createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+                name,
+              })
+            )
+            return
+          }
+          if (!isObservableFunctionSpec(fn)) {
+            reject(
+              createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+                name,
+              })
+            )
+            return
+          }
+          if (!hasObs(server, id)) {
+            createObs(server, name, id, payload)
+          }
+          getObsData(resolve, reject, server, id, ctx, route)
+        })
+        .catch(() =>
           reject(
-            createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-              route: { name },
+            createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+              name,
             })
           )
-          return
-        }
-        const id = genObservableId(name, payload)
-        if (!hasObs(server, id)) {
-          server.functions
-            .install(name)
-            .then((fn) => {
-              if (!fn) {
-                reject(
-                  createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-                    name,
-                  })
-                )
-                return
-              }
-              if (!isObservableFunctionSpec(fn)) {
-                reject(
-                  createError(
-                    server,
-                    ctx,
-                    BasedErrorCode.FunctionIsNotObservable,
-                    {
-                      name,
-                    }
-                  )
-                )
-                return
-              }
-              if (!hasObs(server, id)) {
-                createObs(server, name, id, payload)
-              }
-              getObsData(resolve, reject, server, id, ctx, route)
-            })
-            .catch(() =>
-              reject(
-                createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-                  name,
-                })
-              )
-            )
-        } else {
-          getObsData(resolve, reject, server, id, ctx, route)
-        }
-      })
+        )
+    } else {
+      getObsData(resolve, reject, server, id, ctx, route)
+    }
   })
 }
 
