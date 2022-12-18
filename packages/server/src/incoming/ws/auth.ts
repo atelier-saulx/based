@@ -6,6 +6,7 @@ import {
 import { BasedServer } from '../../server'
 import { WebSocketSession, Context } from '../../context'
 import { enableSubscribe } from './observable'
+import { parseAuthState } from '../../auth'
 
 export type AuthState = any
 
@@ -22,12 +23,7 @@ export const authMessage = (
     new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate
   )
-  let authState: AuthState
-  try {
-    authState = JSON.parse(authPayload)
-  } catch (err) {
-    authState = authPayload
-  }
+  const authState: AuthState = parseAuthState(authPayload)
   ctx.session.authState = authState
   if (ctx.session.unauthorizedObs.size) {
     ctx.session.unauthorizedObs.forEach((obs) => {

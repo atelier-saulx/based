@@ -1,5 +1,5 @@
 import uws from '@based/uws'
-import { AuthorizeConnection } from '../auth'
+import { AuthorizeConnection, parseAuthState } from '../auth'
 import { WebSocketSession } from '../context'
 
 let clientId = 0
@@ -21,8 +21,16 @@ export const upgrade = (
   const secWebSocketKey = req.getHeader('sec-websocket-key')
   const secWebSocketProtocol = req.getHeader('sec-websocket-protocol')
   const secWebSocketExtensions = req.getHeader('sec-websocket-extensions')
-  const authorization = req.getHeader('authorization')
   res.writeStatus('101 Switching Protocols')
+
+  console.info(secWebSocketProtocol, secWebSocketExtensions)
+  /*
+   try {
+    authState = JSON.parse(authPayload)
+  } catch (err) {
+    authState = authPayload
+  }
+  */
 
   // TODO: authState in upgrade
   res.upgrade(
@@ -31,7 +39,7 @@ export const upgrade = (
       ua,
       ip,
       id: ++clientId,
-      authState: authorization, // may want to try and parse the auth....
+      authState: parseAuthState(secWebSocketProtocol), // May want to try and parse the auth....
       obs: new Set(),
       unauthorizedObs: new Set(),
     },

@@ -178,24 +178,15 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
   if (client.authRequest?.inProgress) {
     return client.authRequest.promise
   }
-
   client.authRequest.promise = new Promise<AuthState>((resolve, reject) => {
     client.authRequest.inProgress = true
     client.authRequest.resolve = resolve
     client.authRequest.reject = reject
-
     client.authRequest.authState = authState
-
-    const send = () => {
-      if (!client.connected) {
-        setTimeout(send, 0)
-      } else {
-        client.connection.ws.send(
-          encodeAuthMessage(client.authRequest.authState)
-        )
-      }
+    // Gets send in the upgrade header of the websocket
+    if (client.connected) {
+      client.connection.ws.send(encodeAuthMessage(client.authRequest.authState))
     }
-    send()
   }).finally(() => {
     client.authRequest.authState = null
     client.authRequest.resolve = null

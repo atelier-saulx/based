@@ -11,6 +11,7 @@ import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { incomingCounter } from '../../security'
+import { parseAuthState } from '../../auth'
 
 let clientId = 0
 
@@ -84,7 +85,7 @@ export const httpHandler = (
       ip,
       id: ++clientId,
       headers: {
-        authorization: req.getHeader('authorization'),
+        authorization: parseAuthState(req.getHeader('authorization')),
         'content-type': req.getHeader('content-type'),
         'content-encoding': req.getHeader('content-encoding'),
         encoding: req.getHeader('accept-encoding'),

@@ -100,6 +100,12 @@ const init = async () => {
     // cert: join(__dirname, 'secret/cert.pem'),
     // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
+    auth: {
+      authorize: (ctx) => {
+        console.info('lullz auth -->', ctx.session?.authState)
+        return !!ctx.session?.authState
+      },
+    },
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,

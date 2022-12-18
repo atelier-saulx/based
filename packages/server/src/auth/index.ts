@@ -4,6 +4,9 @@ import { BasedServer } from '../server'
 import { AuthConfig, Authorize, AuthorizeConnection } from './types'
 import { Context, WebSocketSession } from '../context'
 import dummyAuth from './dummyAuth'
+import parseAuthState from './parseAuthState'
+
+export { parseAuthState }
 
 export * from './types'
 

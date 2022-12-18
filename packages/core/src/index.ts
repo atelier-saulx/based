@@ -260,16 +260,15 @@ export class BasedCoreClient extends Emitter {
     })
   }
 
-  // -------- Function
-  function(name: string, payload?: any): Promise<any> {
+  // -------- Call-Function
+  call(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
     })
   }
 
   // -------- Auth
-  // maybe only send token on connect / upgrade
-  async auth(authState): Promise<any> {
+  async auth(authState: any): Promise<any> {
     if (authState === false) {
       this.authState = false
       this.emit('auth', this.authState)

@@ -61,8 +61,14 @@ const connect = (
         }
       })
 
-      const ws = (connection.ws = new WebSocket(realUrl))
-      // ws.binaryType = 'blob'
+      const ws = (connection.ws = client.authState
+        ? new WebSocket(
+            realUrl,
+            typeof client.authState === 'string'
+              ? client.authState
+              : JSON.stringify(client.authState)
+          )
+        : new WebSocket(realUrl))
 
       ws.onerror = () => {
         // console.error(err)
