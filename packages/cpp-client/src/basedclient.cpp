@@ -27,7 +27,6 @@ struct Observable {
 BasedClient::BasedClient()
     : m_request_id(0),
       m_sub_id(0),
-      m_draining(false),
       m_auth_in_progress(false),
       m_auth_required(true){};
 
@@ -192,7 +191,7 @@ int BasedClient::get(std::string name,
 
 void BasedClient::unobserve(int sub_id) {
     if (m_sub_to_obs.find(sub_id) == m_sub_to_obs.end()) {
-        std::cerr << "No subscription found with sub_id " << sub_id << std::endl;
+        BASED_LOG("No subscription found with sub_id %d", sub_id);
         return;
     }
     auto obs_id = m_sub_to_obs.at(sub_id);
@@ -244,11 +243,12 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
     m_auth_in_progress = true;
     m_auth_callback = cb;
 
-    std::vector<uint8_t> msg = Utility::encode_auth_message(state);
+    // std::vector<uint8_t> msg = Utility::encode_auth_message(state);
+    m_auth_queue = Utility::encode_auth_message(state);
     // TODO: rather than sending the message straight, it should be set and sent when the queue is
     // drained. there should also be a flag `authRequired` that is set everytime the connection is
     // dropped/fails/is terminated and unset when the connection opens
-    m_con.send(msg);
+    // m_con.send(msg);
 }
 
 /////////////////////////////////////////////////////////////
@@ -256,14 +256,17 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
 /////////////////////////////////////////////////////////////
 
 void BasedClient::drain_queues() {
-    if (m_draining || m_con.status() != ConnectionStatus::OPEN) {
+    if (m_con.status() != ConnectionStatus::OPEN) {
         // std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
         return;
     }
 
-    m_draining = true;
-
     std::vector<uint8_t> buff;
+
+    if (m_auth_queue.size() > 0) {
+        buff.insert(buff.end(), m_auth_queue.begin(), m_auth_queue.end());
+        m_auth_queue.clear();
+    }
 
     if (m_observe_queue.size() > 0) {
         for (auto msg : m_observe_queue) {
@@ -293,9 +296,11 @@ void BasedClient::drain_queues() {
         m_get_queue.clear();
     }
 
-    if (buff.size() > 0) m_con.send(buff);
-
-    m_draining = false;
+    if (buff.size() > 0) {
+        if (m_con.status() == ConnectionStatus::OPEN) {
+            m_con.send(buff);
+        }
+    }
 }
 
 void BasedClient::request_full_data(uint64_t obs_id) {

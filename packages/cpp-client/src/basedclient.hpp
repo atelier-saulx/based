@@ -19,10 +19,9 @@ struct Observable;
 class BasedClient {
    private:
     WsConnection m_con;
+
     int32_t m_request_id;
     int32_t m_sub_id;
-
-    bool m_draining;
 
     bool m_auth_in_progress;
     bool m_auth_required;
@@ -49,6 +48,7 @@ class BasedClient {
     std::vector<std::vector<uint8_t>> m_function_queue;
     std::vector<std::vector<uint8_t>> m_unobserve_queue;
     std::vector<std::vector<uint8_t>> m_get_queue;
+    std::vector<uint8_t> m_auth_queue;
 
     /////////////////////
     // observables
