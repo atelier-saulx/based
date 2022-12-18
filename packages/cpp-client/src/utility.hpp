@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 
+#define BASED_VERBOSE 1
+
 namespace Utility {
 std::string inflate_string(const std::string& str);
 std::string deflate_string(const std::string& str);
@@ -28,4 +30,13 @@ int32_t read_header(std::string buff);
 int64_t read_bytes_from_string(std::string& buff, int start, int len);
 
 }  // namespace Utility
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#define BASED_LOG(fmt, ...)                                                                   \
+    do {                                                                                      \
+        if (BASED_VERBOSE)                                                                    \
+            std::fprintf(stdout, "[%s:%d] " fmt "\n", __FILENAME__, __LINE__, ##__VA_ARGS__); \
+    } while (0)
+
 #endif
