@@ -151,7 +151,7 @@ void WsConnection::connect_to_uri(std::string uri) {
     // maximum timeout between attempts, in ms
     int timeout = m_reconnect_attempts > 15 ? 1500 : m_reconnect_attempts * 100;
     if (m_reconnect_attempts > 0) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(timeout));
     }
 
     if (m_status == ConnectionStatus::OPEN) {
