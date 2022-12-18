@@ -55,7 +55,7 @@ const init = async () => {
   const bombard = async () => {
     const d = Date.now()
     const q: any[] = []
-    for (let i = 0; i < 1e3; i++) {
+    for (let i = 0; i < 2e3; i++) {
       q.push(coreClient.call('helloNest', { x: true }))
     }
     await Promise.all(q)

@@ -40,7 +40,7 @@ const init = async () => {
 
         ds[1] += 1000
         const bla = await callFunction(server, 'hello', ctx, payload)
-        return 'from nested => ' + bla
+        return 'from nested => dsnsldkndslknds lksdkl' + bla
       },
     },
     timespend: {

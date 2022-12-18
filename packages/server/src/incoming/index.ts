@@ -42,7 +42,7 @@ export default (
             upgradeAuthorize(server, res, req, ctx)
           }
         : (res, req, ctx) => {
-            upgrade(res, req, ctx, server)
+            upgrade(server, res, req, ctx)
           },
       message: (ws, data, isBinary) => {
         message(server, ws.c, data, isBinary)
