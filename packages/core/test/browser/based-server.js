@@ -1,6 +1,6 @@
 const {
   default: createServer,
-  runFunction,
+  callFunction,
   observe,
   get,
 } = require('@based/server')
@@ -37,7 +37,7 @@ const init = async () => {
         }
         await Promise.all(q)
         ds[1] += 1000
-        const bla = await runFunction(server, 'hello', ctx, payload)
+        const bla = await callFunction(server, 'hello', ctx, payload)
         return 'from nested => ' + bla
       },
     },

@@ -15,7 +15,7 @@ import {
   unsubscribeFunction,
 } from '../observable'
 
-export const runFunction = async (
+export const callFunction = async (
   server: BasedServer,
   name: string,
   ctx: Context,
@@ -193,7 +193,7 @@ export const get = (
 export const observe = (
   server: BasedServer,
   name: string,
-  ctx: Context, // call this ctx with ctx.session for client
+  ctx: Context,
   payload: any,
   update: ObservableUpdateFunction,
   error: ObserveErrorListener
