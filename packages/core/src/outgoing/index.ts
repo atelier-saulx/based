@@ -6,6 +6,7 @@ import {
   encodeGetObserveMessage,
   encodeObserveMessage,
 } from './messageEncoders'
+import { deepEqual } from '@saulx/utils'
 
 const ping = new Uint8Array(0)
 
@@ -175,18 +176,35 @@ export const addGetToQueue = (
 }
 
 export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
-  if (client.authRequest?.inProgress) {
+  // add simple encryption on auth allways...
+
+  if (deepEqual(authState, client.authRequest.authState)) {
+    console.warn('[Based] Trying to send the same authState twice')
+    return client.authRequest.inProgress
+      ? client.authRequest.promise
+      : new Promise((resolve) => resolve(false))
+  }
+
+  if (client.authRequest.inProgress) {
+    console.error(
+      '[Based] Authentication still in progress - will not work (being worked on)'
+    )
+    // TODO: need to set id on AUTH (req id)
+
     return client.authRequest.promise
   }
+
+  client.authRequest.authState = authState
+
+  if (client.connected) {
+    client.connection.ws.send(encodeAuthMessage(authState))
+  }
+
   client.authRequest.promise = new Promise<AuthState>((resolve, reject) => {
     client.authRequest.inProgress = true
     client.authRequest.resolve = resolve
     client.authRequest.reject = reject
-    client.authRequest.authState = authState
     // Gets send in the upgrade header of the websocket
-    if (client.connected) {
-      client.connection.ws.send(encodeAuthMessage(client.authRequest.authState))
-    }
   }).finally(() => {
     client.authRequest.authState = null
     client.authRequest.resolve = null

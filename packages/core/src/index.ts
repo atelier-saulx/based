@@ -67,7 +67,7 @@ export class BasedCoreClient extends Emitter {
   // --------- Get State
   getState: GetState = new Map()
   // -------- Auth state
-  authState: AuthState = { token: false }
+  authState: AuthState = false
   authRequest: {
     authState: AuthState
     promise: Promise<AuthState>
@@ -268,7 +268,7 @@ export class BasedCoreClient extends Emitter {
   }
 
   // -------- Auth
-  async auth(authState: any): Promise<any> {
+  auth(authState: any): Promise<any> {
     if (authState === false) {
       this.authState = false
       this.emit('auth', this.authState)

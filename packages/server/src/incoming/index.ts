@@ -5,6 +5,7 @@ import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 import { WebSocketSession, Context } from '../context'
+import { sendAuthMessage } from './ws/auth'
 
 export default (
   server: BasedServer,
@@ -51,6 +52,9 @@ export default (
           }
           ws.c = ctx
           wsListeners.open(ctx)
+          if (ctx.session.authState) {
+            sendAuthMessage(ctx)
+          }
         }
       },
       close: (ws: WebSocketSession) => {

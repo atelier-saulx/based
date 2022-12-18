@@ -5,7 +5,13 @@ console.info('browsxxer')
 const init = async () => {
   const coreClient = new BasedCoreClient()
 
-  coreClient.auth('myyuzi!')
+  coreClient.auth('"myyuzi!"').then((v) => {
+    console.info('GOT AUTH', v)
+  })
+
+  coreClient.auth('"myyuzi!"').then((v) => {
+    console.info('GOT AUTH', v)
+  })
 
   coreClient.connect({
     url: async () => {

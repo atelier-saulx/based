@@ -261,6 +261,8 @@ export const incoming = async (
 
       if (payload === true) {
         client.authState = client.authRequest.authState
+      } else if (payload === false) {
+        client.authRequest.reject(new Error('Invalid token send to server...'))
       } else {
         client.authState = payload
       }

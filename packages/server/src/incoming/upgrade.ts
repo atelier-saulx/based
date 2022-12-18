@@ -23,7 +23,6 @@ export const upgrade = (
   const secWebSocketExtensions = req.getHeader('sec-websocket-extensions')
   res.writeStatus('101 Switching Protocols')
 
-  console.info(secWebSocketProtocol, secWebSocketExtensions)
   /*
    try {
     authState = JSON.parse(authPayload)
@@ -39,7 +38,9 @@ export const upgrade = (
       ua,
       ip,
       id: ++clientId,
-      authState: parseAuthState(secWebSocketProtocol), // May want to try and parse the auth....
+      authState: secWebSocketProtocol
+        ? parseAuthState(decodeURI(secWebSocketProtocol))
+        : undefined, // May want to try and parse the auth....
       obs: new Set(),
       unauthorizedObs: new Set(),
     },

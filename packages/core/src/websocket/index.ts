@@ -61,13 +61,29 @@ const connect = (
         }
       })
 
-      const ws = (connection.ws = client.authState
-        ? new WebSocket(
-            realUrl,
-            typeof client.authState === 'string'
-              ? client.authState
-              : JSON.stringify(client.authState)
-          )
+      console.info(
+        '?????????',
+        client.authRequest,
+        client.authRequest.authState
+      )
+
+      /*
+       token          = 1*<any CHAR except CTLs or separators>
+       separators     = "(" | ")" | "<" | ">" | "@"
+                      | "," | ";" | ":" | "\" | <">
+                      | "/" | "[" | "]" | "?" | "="
+                      | "{" | "}" | SP | HT 
+        exclude " | '
+      */
+
+      const ws = (connection.ws = client.authRequest.authState
+        ? new WebSocket(realUrl, [
+            encodeURI(
+              typeof client.authRequest.authState === 'string'
+                ? client.authRequest.authState
+                : JSON.stringify(client.authRequest.authState)
+            ),
+          ])
         : new WebSocket(realUrl))
 
       ws.onerror = () => {

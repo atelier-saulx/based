@@ -19,6 +19,7 @@ const init = async () => {
   const functions = {
     hello: {
       path: '/mygur',
+      public: true,
       name: 'hello',
       checksum: 1,
       maxPayloadSize: 1e6 * 10,
@@ -101,8 +102,8 @@ const init = async () => {
     // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     auth: {
-      authorize: (ctx) => {
-        console.info('lullz auth -->', ctx.session?.authState)
+      authorize: async (ctx, name, payload) => {
+        console.info('lullz auth -->', ctx.session?.authState, name, payload)
         return !!ctx.session?.authState
       },
     },

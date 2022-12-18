@@ -18,6 +18,10 @@ export const authMessage = (
   ctx: Context<WebSocketSession>,
   server: BasedServer
 ): boolean => {
+  // TODO: Check refresh etc here!
+  // TODO: Allow AUTH to be calleed in http to refresh a token
+  // include an REQ-ID in the auth request
+
   // | 4 header | * payload |
   const authPayload = decodePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
@@ -36,4 +40,8 @@ export const authMessage = (
   }
   ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   return true
+}
+
+export const sendAuthMessage = (ctx: Context<WebSocketSession>) => {
+  ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 }
