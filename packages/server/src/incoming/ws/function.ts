@@ -8,8 +8,48 @@ import {
 import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { isObservableFunctionSpec } from '../../functions'
+import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
 import { WebSocketSession, Context } from '../../context'
+
+const sendFunction = (
+  server: BasedServer,
+  ctx: Context<WebSocketSession>,
+  route: BasedFunctionRoute,
+  payload: any,
+  requestId: number
+) => {
+  server.functions
+    .install(route.name)
+    .then((spec) => {
+      if (!ctx.session) {
+        return
+      }
+      if (spec && !isObservableFunctionSpec(spec)) {
+        spec
+          .function(payload, ctx)
+          .then(async (v) => {
+            ctx.session?.send(
+              encodeFunctionResponse(requestId, valueToBuffer(v)),
+              true,
+              false
+            )
+          })
+          .catch((err) => {
+            sendError(server, ctx, err.code, {
+              route,
+              requestId,
+              err,
+            })
+          })
+      }
+    })
+    .catch(() =>
+      sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
+        name: route.name,
+        requestId,
+      })
+    )
+}
 
 export const functionMessage = (
   arr: Uint8Array,
@@ -67,6 +107,11 @@ export const functionMessage = (
     isDeflate
   )
 
+  if (route.public === true) {
+    sendFunction(server, ctx, route, payload, requestId)
+    return true
+  }
+
   // TODO: make this fn a bit nicer.... remove nestedness...
   server.auth
     .authorize(ctx, name, payload)
@@ -82,37 +127,7 @@ export const functionMessage = (
         return false
       }
 
-      server.functions
-        .install(name)
-        .then((spec) => {
-          if (!ctx.session) {
-            return
-          }
-          if (spec && !isObservableFunctionSpec(spec)) {
-            spec
-              .function(payload, ctx)
-              .then(async (v) => {
-                ctx.session?.send(
-                  encodeFunctionResponse(requestId, valueToBuffer(v)),
-                  true,
-                  false
-                )
-              })
-              .catch((err) => {
-                sendError(server, ctx, err.code, {
-                  route,
-                  requestId,
-                  err,
-                })
-              })
-          }
-        })
-        .catch(() =>
-          sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
-            name,
-            requestId,
-          })
-        )
+      sendFunction(server, ctx, route, payload, requestId)
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {

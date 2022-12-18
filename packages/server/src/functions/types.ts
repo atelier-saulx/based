@@ -16,6 +16,7 @@ export type BasedFunctionRoute = {
   path?: string
   stream?: boolean
   rateLimitTokens?: number
+  public?: boolean
 }
 
 export type BasedObservableFunction = (

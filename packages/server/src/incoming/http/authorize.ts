@@ -12,6 +12,11 @@ export const authorizeRequest = (
   authorized: (payload: any) => void,
   notAuth: () => void = () => undefined
 ) => {
+  if (route.public === true) {
+    authorized(payload)
+    return
+  }
+
   server.auth
     .authorize(ctx, route.name, payload)
     .then((ok) => {
