@@ -57,7 +57,7 @@ class WsConnection {
     std::shared_future<void> reconnect();
 
    private:  // Members
-    ws_client* m_endpoint;
+    ws_client m_endpoint;
     websocketpp::connection_hdl m_hdl;
     ConnectionStatus m_status;
     std::string m_uri;
