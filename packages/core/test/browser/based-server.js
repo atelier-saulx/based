@@ -103,13 +103,7 @@ const init = async () => {
     // key: join(__dirname, 'secret/key.pem'),
     port: 9910,
     auth: {
-      authorize: async (ctx, name, payload) => {
-        console.info(
-          '   ->>> lullz auth -->',
-          ctx.session.authState,
-          name,
-          payload
-        )
+      authorize: async (ctx) => {
         return !!ctx.session.authState
       },
     },

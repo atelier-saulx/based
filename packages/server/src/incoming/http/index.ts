@@ -9,7 +9,7 @@ import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { incomingCounter } from '../../security'
+import { blockIncomingRequest } from '../../security'
 import { parseAuthState } from '../../auth'
 import parseQuery from './parseQuery'
 
@@ -44,9 +44,7 @@ export const httpHandler = (
     req.getHeader('x-forwarded-for') ||
     Buffer.from(res.getRemoteAddressAsText()).toString()
 
-  if (incomingCounter(server, ip, req)) {
-    res.writeStatus('429 Too Many Requests')
-    res.end()
+  if (blockIncomingRequest(server, ip, res, req)) {
     return
   }
 

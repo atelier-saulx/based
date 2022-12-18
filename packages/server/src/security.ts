@@ -1,24 +1,16 @@
-// rate limit
-import { BasedErrorCode } from '../../error'
-import type { BasedServer } from '../server'
+import { BasedErrorCode } from './error'
+import type { BasedServer } from './server'
 import uws from '@based/uws'
-
-// import { BasedErrorCode } from '../error'
-// import { HttpClient, isHttpClient, WebsocketClient } from '../types'
-
-// token
 
 const drainRequestCounter = (server: BasedServer) => {
   server.requestsCounterInProgress = true
   server.requestsCounterTimeout = setTimeout(() => {
     server.requestsCounterInProgress = false
-
     server.requestsCounter.forEach((value, ip) => {
       if (!value.errors?.size) {
         if (value.requests <= 0) {
           server.requestsCounter.delete(ip)
           return
-          // check if client is still active ?
         }
       } else {
         console.info('error handle different')
@@ -26,59 +18,66 @@ const drainRequestCounter = (server: BasedServer) => {
       console.info('DRAIN RATELIMIT TOKENS')
       value.requests -= 500
     })
-
     if (server.requestsCounter.size) {
       drainRequestCounter(server)
     }
   }, 30e3)
 }
 
-// fix client objects...
-
-// not counter also rate limit adder
-export const incomingCounter = (
+export const blockIncomingRequest = (
   server: BasedServer,
   ip: string,
-  req: uws.HttpRequest
+  res: uws.HttpResponse,
+  req: uws.HttpRequest,
+  weight: number = 1
+): boolean => {
+  if (server.allowedIps.has(ip)) {
+    return false
+  }
+  if (server.blockedIps.has(ip)) {
+    res.end()
+    return true
+  }
+  if (incomingRequestCounter(server, ip, req, weight)) {
+    res.writeStatus('429 Too Many Requests')
+    res.end()
+    return true
+  }
+  return false
+}
+
+export const incomingRequestCounter = (
+  server: BasedServer,
+  ip: string,
+  req: uws.HttpRequest,
+  weight: number
 ): boolean => {
   let ipReqCounter = server.requestsCounter.get(ip)
   if (!ipReqCounter) {
     ipReqCounter = {
-      requests: 1,
+      requests: weight,
     }
     server.requestsCounter.set(ip, ipReqCounter)
   } else {
-    ipReqCounter.requests++
+    ipReqCounter.requests += weight
   }
-
-  if (ipReqCounter.requests === 999) {
+  if (ipReqCounter.requests === server.rateLimit.http) {
     server.emit(
       'error',
       {
-        // tmp
-        isDummy: true,
-        context: {
+        session: {
           ua: req.getHeader('user-agent'),
           ip,
-          headers: {},
         },
       },
       { code: BasedErrorCode.RateLimit }
     )
   }
-  // way too arbitrary
-  // rate limit per route....
-  if (ipReqCounter.requests > 1000) {
-    // console.info('RATE  LIMIT', ip)
-    // good indicator of malicious activity
+  if (ipReqCounter.requests > server.rateLimit.http) {
     return true
   }
-
   if (!server.requestsCounterInProgress) {
     drainRequestCounter(server)
   }
-
   return false
 }
-
-// incoming error counter is also a thing

@@ -17,11 +17,17 @@ type Event = keyof EventMap
 
 type Listener<T> = (context: Context, data?: T, err?: Error) => void
 
+type RateLimit = {
+  ws: number
+  http: number
+}
+
 export type ServerOptions = {
   port?: number
   key?: string
   cert?: string
   functions?: FunctionConfig
+  rateLimit?: RateLimit
   auth?: AuthConfig
   workerRequest?: (type: string, payload?: any) => void | Promise<any>
   ws?: {
@@ -44,10 +50,17 @@ export class BasedServer {
 
   public uwsApp: uws.TemplatedApp
 
+  public rateLimit: RateLimit = {
+    ws: 2e3,
+    http: 1e3,
+  }
+
   public listenSocket: any
 
-  // opposite of blocked can never get blocked
-  public whiteList: Set<string> = new Set()
+  public blockedIps: Set<string> = new Set()
+
+  // opposite of blockedIps can never get blocked
+  public allowedIps: Set<string> = new Set()
 
   // per ip so consitent unfortanetly
   // check how large it is and make a loop to downgrade it
@@ -80,6 +93,9 @@ export class BasedServer {
     this.auth = new BasedAuth(this, opts.auth)
     if (opts.workerRequest) {
       this.workerRequest = opts.workerRequest
+    }
+    if (opts.rateLimit) {
+      this.rateLimit = opts.rateLimit
     }
     initNetwork(this, opts)
   }

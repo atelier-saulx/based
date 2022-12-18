@@ -39,9 +39,11 @@ export default (
       // compression: uws.SHARED_COMPRESSOR,
       upgrade: server.auth?.authorizeConnection
         ? (res, req, ctx) => {
-            upgradeAuthorize(server.auth.authorizeConnection, res, req, ctx)
+            upgradeAuthorize(server, res, req, ctx)
           }
-        : upgrade,
+        : (res, req, ctx) => {
+            upgrade(res, req, ctx, server)
+          },
       message: (ws, data, isBinary) => {
         message(server, ws.c, data, isBinary)
       },
