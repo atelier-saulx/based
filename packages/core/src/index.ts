@@ -90,7 +90,6 @@ export class BasedCoreClient extends Emitter {
 
   onReconnect() {
     this.connected = true
-
     this.emit('reconnect', true)
   }
 
@@ -128,7 +127,6 @@ export class BasedCoreClient extends Emitter {
         }
       })
     }
-
     drainQueue(this)
   }
 

@@ -24,6 +24,7 @@ const init = async () => {
       checksum: 1,
       maxPayloadSize: 1e6 * 10,
       function: async (payload) => {
+        console.info('??HELLLO?')
         return 'blabla ' + JSON.stringify(payload)
       },
     },
@@ -37,6 +38,7 @@ const init = async () => {
           q.push(get(server, 'blaNest', ctx, payload))
         }
         await Promise.all(q)
+
         ds[1] += 1000
         const bla = await callFunction(server, 'hello', ctx, payload)
         return 'from nested => ' + bla
@@ -103,8 +105,8 @@ const init = async () => {
     port: 9910,
     auth: {
       authorize: async (ctx, name, payload) => {
-        console.info('lullz auth -->', ctx.session?.authState, name, payload)
-        return !!ctx.session?.authState
+        console.info('lullz auth -->', ctx.session.authState, name, payload)
+        return !!ctx.session.authState
       },
     },
     functions: {

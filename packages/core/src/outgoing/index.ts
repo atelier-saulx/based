@@ -90,13 +90,14 @@ export const drainQueue = (client: BasedCoreClient) => {
       }
     }
 
-    if (client.authRequest?.inProgress) {
-      client.authRequest.promise.then(() => {
-        drainQueue(client)
-      })
-    } else {
-      client.drainTimeout = setTimeout(drainOutgoing, 0)
-    }
+    // This can be removed scince we allways send it before the queue - dont need to wait for reply...
+    // if (client.authRequest?.inProgress) {
+    //   client.authRequest.promise.then(() => {
+    //     drainQueue(client)
+    //   })
+    // } else {
+    client.drainTimeout = setTimeout(drainOutgoing, 0)
+    // }
   }
 }
 
@@ -122,7 +123,7 @@ export const addToFunctionQueue = (
 
   const id = client.requestId
 
-  // TODO: When node env is development
+  // TODO: When node env is not "production" | or when dev
   const s = Error().stack.split(/BasedCoreClient\.function.+:\d\d\)/)[1]
 
   client.functionResponseListeners.set(id, [resolve, reject, s])
@@ -177,20 +178,17 @@ export const addGetToQueue = (
 
 export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
   // add simple encryption on auth allways...
-
   if (deepEqual(authState, client.authRequest.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress
       ? client.authRequest.promise
       : new Promise((resolve) => resolve(false))
   }
-
   if (client.authRequest.inProgress) {
     console.error(
       '[Based] Authentication still in progress - will not work (being worked on)'
     )
     // TODO: need to set id on AUTH (req id)
-
     return client.authRequest.promise
   }
 

@@ -64,6 +64,8 @@ export const functionMessage = (
   const nameLen = arr[start + 7]
   const name = decodeName(arr, start + 8, start + 8 + nameLen)
 
+  console.info('GO FN', name)
+
   if (!name || !requestId) {
     return false
   }
@@ -99,7 +101,7 @@ export const functionMessage = (
       name,
       requestId,
     })
-    return true
+    return false
   }
 
   const payload = decodePayload(

@@ -9,7 +9,7 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
-// disconnect in the browser when a window is inactive (on the background) for 30 seconds
+// Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
@@ -61,13 +61,8 @@ const connect = (
         }
       })
 
-      console.info(
-        '?????????',
-        client.authRequest,
-        client.authRequest.authState
-      )
-
       /*
+       Protocol needs to be url safe
        token          = 1*<any CHAR except CTLs or separators>
        separators     = "(" | ")" | "<" | ">" | "@"
                       | "," | ";" | ":" | "\" | <">
@@ -75,7 +70,6 @@ const connect = (
                       | "{" | "}" | SP | HT 
         exclude " | '
       */
-
       const ws = (connection.ws = client.authRequest.authState
         ? new WebSocket(realUrl, [
             encodeURI(
