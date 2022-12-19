@@ -60,6 +60,7 @@ export default (
         }
       },
       close: (ws: WebSocketSession) => {
+        console.info('CLOSE!')
         // cl--
         ws.obs.forEach((id) => {
           unsubscribeWsIgnoreClient(server, id, ws.c)

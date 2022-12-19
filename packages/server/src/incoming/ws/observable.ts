@@ -11,6 +11,7 @@ import { BasedErrorCode } from '../../error'
 import { WebSocketSession, Context } from '../../context'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
+import { rateLimitRequest } from '../../security'
 
 export const enableSubscribe = (
   server: BasedServer,
@@ -68,13 +69,21 @@ export const subscribeMessage = (
 
   const route = verifyRoute(server, name, server.functions.route(name), ctx)
 
+  // TODO: add strictness setting - if strict return false here
   if (!route) {
+    return true
+  }
+
+  if (
+    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+  ) {
+    ctx.session.close()
     return false
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
-    return false
+    return true
   }
 
   if (ctx.session?.obs.has(id)) {

@@ -20,6 +20,7 @@ import { BasedFunctionRoute } from '../../functions'
 import { WebSocketSession, Context } from '../../context'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
+import { rateLimitRequest } from '../../security'
 
 const sendGetData = (
   server: BasedServer,
@@ -121,19 +122,26 @@ export const getMessage = (
   const name = decodeName(arr, start + 21, start + 21 + nameLen)
 
   if (!name || !id) {
-    // TODO: sendError(server, client, BasedErrorCode.AuthorizeRejectedError, route)
     return false
   }
 
   const route = verifyRoute(server, name, server.functions.route(name), ctx)
 
+  // TODO: add strictness setting - if strict return false here
   if (!route) {
+    return true
+  }
+
+  if (
+    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+  ) {
+    ctx.session.close()
     return false
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
-    return false
+    return true
   }
 
   const payload = decodePayload(

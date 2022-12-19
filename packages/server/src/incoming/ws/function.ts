@@ -10,6 +10,7 @@ import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
 import { WebSocketSession, Context } from '../../context'
+import { rateLimitRequest } from '../../security'
 
 const sendFunction = (
   server: BasedServer,
@@ -70,11 +71,19 @@ export const functionMessage = (
 
   const route = server.functions.route(name)
 
+  // TODO: add strictness setting - if strict return false here
   if (!route) {
     sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
       name,
       requestId,
     })
+    return true
+  }
+
+  if (
+    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+  ) {
+    ctx.session.close()
     return false
   }
 
@@ -83,7 +92,7 @@ export const functionMessage = (
       name,
       requestId,
     })
-    return false
+    return true
   }
 
   if (len > route.maxPayloadSize) {
@@ -91,7 +100,7 @@ export const functionMessage = (
       name,
       requestId,
     })
-    return false
+    return true
   }
 
   if (route.stream === true) {
@@ -99,7 +108,7 @@ export const functionMessage = (
       name,
       requestId,
     })
-    return false
+    return true
   }
 
   const payload = decodePayload(
