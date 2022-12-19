@@ -47,7 +47,7 @@ export const upgrade = (
   ctx: uws.us_socket_context_t
 ) => {
   const ip = getIp(res)
-  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 25)) {
+  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
     return
   }
   upgradeInternal(res, req, ctx, ip)
@@ -65,7 +65,7 @@ export const upgradeAuthorize = (
     aborted = true
   })
   const ip = getIp(res)
-  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 25)) {
+  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
     return
   }
   server.auth.authorizeConnection(req).then((authorized) => {

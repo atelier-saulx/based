@@ -28,7 +28,6 @@ const createWebsocket = (
   realUrl: string,
   client: BasedCoreClient
 ): WebSocket => {
-  console.info('CLIENT AUTHSTATE', client.authState)
   if (client.authState) {
     return new WebSocket(realUrl, [toProtocol(client.authState)])
   }

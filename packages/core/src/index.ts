@@ -85,6 +85,27 @@ export class BasedCoreClient extends Emitter {
   // --------- Internal Events
   onClose() {
     this.connected = false
+    // TODO: Do this on dc
+    // Rare edge case where server got dc'ed while sending the queue - before recieving result)
+    if (this.functionResponseListeners.size > this.functionQueue.length) {
+      this.functionResponseListeners.forEach((p, k) => {
+        if (
+          !this.functionQueue.find(([id]) => {
+            if (id === k) {
+              return true
+            }
+            return false
+          })
+        ) {
+          p[1](
+            new Error(
+              `Server disconnected before function result was processed`
+            )
+          )
+          this.functionResponseListeners.delete(k)
+        }
+      })
+    }
     this.emit('disconnect', true)
   }
 
@@ -111,22 +132,6 @@ export class BasedCoreClient extends Emitter {
       }
     }
 
-    // Rare edge case where server got dc'ed while sneding the q - before recieving result)
-    if (this.functionResponseListeners.size > this.functionQueue.length) {
-      this.functionResponseListeners.forEach((p, k) => {
-        if (
-          !this.functionQueue.find(([id]) => {
-            if (id === k) {
-              return true
-            }
-            return false
-          })
-        ) {
-          p[1](new Error('Function executed on disconnect'))
-          this.functionResponseListeners.delete(k)
-        }
-      })
-    }
     drainQueue(this)
   }
 

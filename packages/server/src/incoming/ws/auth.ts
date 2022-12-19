@@ -46,7 +46,7 @@ export const authMessage = (
     })
     ctx.session.unauthorizedObs.clear()
   }
-  // TODO needs to call refresh mechanism or something
+  // TODO needs to call refresh mechanism or something also need that on HTTP
   ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   return true
 }
