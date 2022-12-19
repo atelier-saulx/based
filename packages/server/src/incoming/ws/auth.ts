@@ -46,10 +46,12 @@ export const authMessage = (
     })
     ctx.session.unauthorizedObs.clear()
   }
+  // TODO needs to call refresh mechanism or something
   ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
   return true
 }
 
 export const sendAuthMessage = (ctx: Context<WebSocketSession>) => {
+  // TODO needs to call refresh mechanism or something
   ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 }

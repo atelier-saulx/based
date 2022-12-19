@@ -177,6 +177,8 @@ export const addGetToQueue = (
 }
 
 export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
+  console.info('SEND AUTH', authState)
+
   if (deepEqual(authState, client.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress
