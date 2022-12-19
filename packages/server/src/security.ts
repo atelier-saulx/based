@@ -52,22 +52,11 @@ export const rateLimitRequest = (
   return true
 }
 
-const endRateLimitHttp = (res: uws.HttpResponse) => {
+export const endRateLimitHttp = (res: uws.HttpResponse) => {
   res.cork(() => {
     res.writeStatus('429 Too Many Requests')
-    res.end()
+    res.close()
   })
-}
-
-export const rateLimitResponsHttp = (ctx: Context<HttpSession>) => {
-  if (!ctx.session) {
-    return
-  }
-  endRateLimitHttp(ctx.session.res)
-  // force gc on req/res
-  ctx.session.req = null
-  ctx.session.res = null
-  ctx.session = null
 }
 
 export const blockIncomingRequest = (
@@ -82,7 +71,7 @@ export const blockIncomingRequest = (
     return false
   }
   if (server.blockedIps.has(ip)) {
-    res.end()
+    res.close()
     return true
   }
   const code = incomingRequestCounter(server, ip, tokens, max)
