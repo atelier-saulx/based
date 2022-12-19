@@ -13,23 +13,45 @@ const drainRequestCounter = (server: BasedServer) => {
   server.requestsCounterInProgress = true
   server.requestsCounterTimeout = setTimeout(() => {
     server.requestsCounterInProgress = false
-    server.requestsCounter.forEach((value, ip) => {
-      if (!value.errors?.size) {
-        if (value.requests <= 0) {
-          server.requestsCounter.delete(ip)
-          return
-        }
-      } else {
-        // fix handling errors...
-        console.info('error handle different')
+    server.rateLimitCounter.forEach((value, ip) => {
+      if (value.requests <= 0) {
+        server.rateLimitCounter.delete(ip)
+        return
       }
       console.info('DRAIN RATELIMIT TOKENS')
       value.requests -= server.rateLimit.drain
     })
-    if (server.requestsCounter.size) {
+    if (server.rateLimitCounter.size) {
       drainRequestCounter(server)
     }
   }, 30e3)
+}
+
+const incomingRequestCounter = (
+  server: BasedServer,
+  ip: string,
+  tokens: number,
+  max: number
+): IsBlocked => {
+  let ipReqCounter = server.rateLimitCounter.get(ip)
+  if (!ipReqCounter) {
+    ipReqCounter = {
+      requests: tokens,
+    }
+    server.rateLimitCounter.set(ip, ipReqCounter)
+  } else {
+    ipReqCounter.requests += tokens
+  }
+  if (ipReqCounter.requests === max) {
+    return 2
+  }
+  if (ipReqCounter.requests > max) {
+    return 1
+  }
+  if (!server.requestsCounterInProgress) {
+    drainRequestCounter(server)
+  }
+  return 0
 }
 
 export const rateLimitRequest = (
@@ -95,31 +117,4 @@ export const blockIncomingRequest = (
   endRateLimitHttp(res)
 
   return true
-}
-
-const incomingRequestCounter = (
-  server: BasedServer,
-  ip: string,
-  tokens: number,
-  max: number
-): IsBlocked => {
-  let ipReqCounter = server.requestsCounter.get(ip)
-  if (!ipReqCounter) {
-    ipReqCounter = {
-      requests: tokens,
-    }
-    server.requestsCounter.set(ip, ipReqCounter)
-  } else {
-    ipReqCounter.requests += tokens
-  }
-  if (ipReqCounter.requests === max) {
-    return 2
-  }
-  if (ipReqCounter.requests > max) {
-    return 1
-  }
-  if (!server.requestsCounterInProgress) {
-    drainRequestCounter(server)
-  }
-  return 0
 }

@@ -23,6 +23,7 @@ const init = async () => {
       name: 'hello',
       checksum: 1,
       maxPayloadSize: 1e6 * 10,
+      rateLimitTokens: 1,
       function: async (payload) => {
         return 'blabla ' + JSON.stringify(payload)
       },
@@ -30,6 +31,8 @@ const init = async () => {
     helloNest: {
       path: '/mygurd',
       name: 'helloNest',
+      maxPayloadSize: 500,
+      rateLimitTokens: 1,
       checksum: 1,
       function: async (payload, ctx) => {
         const q = []
@@ -44,6 +47,8 @@ const init = async () => {
       },
     },
     timespend: {
+      maxPayloadSize: 500,
+      rateLimitTokens: 1,
       name: 'timespend',
       checksum: 1,
       function: async () => {
@@ -51,6 +56,8 @@ const init = async () => {
       },
     },
     blaNest: {
+      maxPayloadSize: 500,
+      rateLimitTokens: 1,
       observable: true,
       path: '/mysnapbla',
       name: 'blaNest',
@@ -67,6 +74,8 @@ const init = async () => {
       },
     },
     bla: {
+      maxPayloadSize: 500,
+      rateLimitTokens: 1,
       observable: true,
       path: '/mysnap',
       name: 'bla',

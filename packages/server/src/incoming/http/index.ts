@@ -9,7 +9,7 @@ import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { blockIncomingRequest } from '../../security'
+import { blockIncomingRequest, rateLimitRequest } from '../../security'
 import { parseAuthState } from '../../auth'
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
@@ -50,6 +50,7 @@ export const httpHandler = (
   const url = req.getUrl()
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
+
   const method = req.getMethod()
 
   if (route === false) {
@@ -87,6 +88,12 @@ export const httpHandler = (
         encoding: req.getHeader('accept-encoding'),
       },
     },
+  }
+
+  if (
+    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.http)
+  ) {
+    return
   }
 
   const query = req.getQuery()

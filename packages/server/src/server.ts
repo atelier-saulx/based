@@ -66,11 +66,11 @@ export class BasedServer {
 
   // per ip so consitent unfortanetly
   // check how large it is and make a loop to downgrade it
-  public requestsCounter: Map<
+  public rateLimitCounter: Map<
     string,
     {
       requests: number
-      errors?: Map<BasedErrorCode, number>
+      errors?: Map<BasedErrorCode, number> // do really need this... and emit a block event
     }
   > = new Map()
 

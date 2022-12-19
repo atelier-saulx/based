@@ -14,7 +14,9 @@ export const httpFunction = (
   if (!ctx.session) {
     return
   }
+
   const name = route.name
+
   server.functions
     .install(name)
     .then((spec) => {

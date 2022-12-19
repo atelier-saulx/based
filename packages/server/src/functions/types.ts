@@ -11,10 +11,10 @@ export type CustomHttpResponse = (
 export type BasedFunctionRoute = {
   name: string
   observable?: boolean
-  maxPayloadSize?: number
   headers?: string[]
   path?: string
   stream?: boolean
+  maxPayloadSize?: number
   rateLimitTokens?: number
   public?: boolean
 }
@@ -55,11 +55,12 @@ export type FunctionConfig = {
   idleTimeout?: number // in ms
   maxWorkers?: number
   importWrapperPath?: string
-  route: (opts: {
-    server: BasedServer
-    name?: string
-    path?: string
-  }) => false | BasedFunctionRoute
+  route: (opts: { server: BasedServer; name?: string; path?: string }) =>
+    | false
+    | (BasedFunctionRoute & {
+        maxPayloadSize: number
+        rateLimitTokens: number
+      })
 
   install: (opts: {
     server: BasedServer
