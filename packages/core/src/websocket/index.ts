@@ -28,17 +28,10 @@ const createWebsocket = (
   realUrl: string,
   client: BasedCoreClient
 ): WebSocket => {
-  if (client.authRequest.inProgress) {
-    if (client.authRequest.authState) {
-      return new WebSocket(realUrl, [toProtocol(client.authRequest.authState)])
-    }
-    return new WebSocket(realUrl)
-  }
-
+  console.info('CLIENT AUTHSTATE', client.authState)
   if (client.authState) {
     return new WebSocket(realUrl, [toProtocol(client.authState)])
   }
-
   return new WebSocket(realUrl)
 }
 
@@ -65,7 +58,6 @@ const connect = (
   url: string | (() => Promise<string>),
   connection: Connection = {
     destroy: () => {
-      // console.info('remove')
       activityListeners.delete(connection)
     },
   },

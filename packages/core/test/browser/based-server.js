@@ -151,7 +151,7 @@ const init = async () => {
   })
 
   server.on('error', (client, err) => {
-    console.error(err)
+    console.error('ERROR', err)
   })
 
   console.info('Started server!')

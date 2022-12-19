@@ -177,7 +177,7 @@ export const addGetToQueue = (
 }
 
 export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
-  if (deepEqual(authState, client.authRequest.authState)) {
+  if (deepEqual(authState, client.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress
       ? client.authRequest.promise
@@ -194,7 +194,7 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
     return client.authRequest.promise
   }
 
-  client.authRequest.authState = authState
+  client.authState = authState
 
   if (client.connected) {
     client.connection.ws.send(encodeAuthMessage(authState))
@@ -206,7 +206,6 @@ export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
     client.authRequest.reject = reject
     // Gets send in the upgrade header of the websocket
   }).finally(() => {
-    client.authRequest.authState = null
     client.authRequest.resolve = null
     client.authRequest.reject = null
     client.authRequest.inProgress = false

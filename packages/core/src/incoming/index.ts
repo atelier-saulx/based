@@ -260,9 +260,11 @@ export const incoming = async (
       }
 
       if (payload === true) {
-        client.authState = client.authRequest.authState
+        // maybe hash of auth state?
+        // keep it! (do nothing)
       } else if (payload === false) {
         client.authRequest.reject(new Error('Invalid token send to server...'))
+        client.authState = null
       } else {
         client.authState = payload
       }

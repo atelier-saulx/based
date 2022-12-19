@@ -18,7 +18,6 @@ const drainRequestCounter = (server: BasedServer) => {
         server.rateLimitCounter.delete(ip)
         return
       }
-      console.info('DRAIN RATELIMIT TOKENS')
       value.requests -= server.rateLimit.drain
     })
     if (server.rateLimitCounter.size) {
