@@ -20,6 +20,7 @@ type Listener<T> = (context: Context, data?: T, err?: Error) => void
 type RateLimit = {
   ws: number
   http: number
+  drain: number
 }
 
 export type ServerOptions = {
@@ -53,6 +54,7 @@ export class BasedServer {
   public rateLimit: RateLimit = {
     ws: 2e3,
     http: 1e3,
+    drain: 500,
   }
 
   public listenSocket: any

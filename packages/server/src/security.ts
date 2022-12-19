@@ -20,10 +20,11 @@ const drainRequestCounter = (server: BasedServer) => {
           return
         }
       } else {
+        // fix handling errors...
         console.info('error handle different')
       }
       console.info('DRAIN RATELIMIT TOKENS')
-      value.requests -= 500
+      value.requests -= server.rateLimit.drain
     })
     if (server.requestsCounter.size) {
       drainRequestCounter(server)
@@ -51,6 +52,24 @@ export const rateLimitRequest = (
   return true
 }
 
+const endRateLimitHttp = (res: uws.HttpResponse) => {
+  res.cork(() => {
+    res.writeStatus('429 Too Many Requests')
+    res.end()
+  })
+}
+
+export const rateLimitResponsHttp = (ctx: Context<HttpSession>) => {
+  if (!ctx.session) {
+    return
+  }
+  endRateLimitHttp(ctx.session.res)
+  // force gc on req/res
+  ctx.session.req = null
+  ctx.session.res = null
+  ctx.session = null
+}
+
 export const blockIncomingRequest = (
   server: BasedServer,
   ip: string,
@@ -70,6 +89,7 @@ export const blockIncomingRequest = (
   if (code === 0) {
     return false
   }
+
   if (code === 2) {
     server.emit(
       'error',
@@ -82,8 +102,9 @@ export const blockIncomingRequest = (
       { code: BasedErrorCode.RateLimit }
     )
   }
-  res.writeStatus('429 Too Many Requests')
-  res.end()
+
+  endRateLimitHttp(res)
+
   return true
 }
 
