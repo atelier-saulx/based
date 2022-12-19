@@ -3,6 +3,7 @@ import { parseAuthState } from '../auth'
 import { WebSocketSession } from '../context'
 import { blockIncomingRequest } from '../security'
 import { BasedServer } from '../server'
+import { getIp } from '../ip'
 
 let clientId = 0
 
@@ -45,10 +46,8 @@ export const upgrade = (
   // eslint-disable-next-line
   ctx: uws.us_socket_context_t
 ) => {
-  const ip =
-    req.getHeader('x-forwarded-for') ||
-    Buffer.from(res.getRemoteAddressAsText()).toString()
-  if (blockIncomingRequest(server, ip, res, req, 25)) {
+  const ip = getIp(res)
+  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 25)) {
     return
   }
   upgradeInternal(res, req, ctx, ip)
@@ -65,16 +64,10 @@ export const upgradeAuthorize = (
   res.onAborted(() => {
     aborted = true
   })
-
-  const ip =
-    req.getHeader('x-forwarded-for') ||
-    Buffer.from(res.getRemoteAddressAsText()).toString()
-
-  // play with the number
-  if (blockIncomingRequest(server, ip, res, req, 25)) {
+  const ip = getIp(res)
+  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 25)) {
     return
   }
-
   server.auth.authorizeConnection(req).then((authorized) => {
     if (aborted) {
       return

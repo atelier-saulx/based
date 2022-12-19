@@ -12,6 +12,7 @@ import { sendError } from '../../sendError'
 import { blockIncomingRequest } from '../../security'
 import { parseAuthState } from '../../auth'
 import parseQuery from './parseQuery'
+import { getIp } from '../../ip'
 
 let clientId = 0
 
@@ -40,11 +41,9 @@ export const httpHandler = (
     ctx.session = null
   })
 
-  const ip =
-    req.getHeader('x-forwarded-for') ||
-    Buffer.from(res.getRemoteAddressAsText()).toString()
+  const ip = getIp(res)
 
-  if (blockIncomingRequest(server, ip, res, req)) {
+  if (blockIncomingRequest(server, ip, res, req, server.rateLimit.http, 1)) {
     return
   }
 
