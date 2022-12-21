@@ -15,7 +15,9 @@ const init = async () => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      // return 'ws://ec2-52-59-200-223.eu-central-1.compute.amazonaws.com'
+      return 'ws://ec2-3-70-244-158.eu-central-1.compute.amazonaws.com/'
+      // return 'ws://ec2-52-59-200-223.eu-central-1.compute.amazonaws.com'
       // //   return 'ws://localhost:9910'
       // // },
       // env: 'production',
@@ -55,7 +57,7 @@ const init = async () => {
   const bombard = async () => {
     const d = Date.now()
     const q: any[] = []
-    for (let i = 0; i < 2e3; i++) {
+    for (let i = 0; i < 1000; i++) {
       q.push(coreClient.call('helloNest', { x: true }))
     }
     await Promise.all(q)
