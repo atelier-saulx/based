@@ -15,9 +15,10 @@ command(
   program
     .command('build-app')
     .description('Builds app into function')
+    .option('-nm', '--no-minification <noMinification>', 'Disable minification')
     .requiredOption('-t, --target <target>', 'Target to build')
     .requiredOption('-d, --dest <dest>', 'Build Destination')
-).action(async ({ target, dest }) => {
+).action(async ({ target, dest, noMinification }) => {
   target = resolvePath(target)
   dest = resolvePath(dest)
   const indexPath = join(dest, 'index.ts')
@@ -28,7 +29,7 @@ command(
   const templatePath = join(__dirname, 'template.ts')
   const res = await build({
     entryPoints: [target],
-    minify: true,
+    minify: !noMinification,
     platform: 'browser',
     production: true,
     gzip: true,
