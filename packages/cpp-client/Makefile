@@ -67,7 +67,7 @@ linked-example:
 	$(CXX) example/example.cpp -o $@ $(CXXFLAGS) -Iinclude -L$(DISTDIR) -lbased
 
 clean:
-	rm -rf $(ODIR)
-	rm -rf $(DISTDIR)
-	rm -rf docker-build
-	rm -f linked-example
+	$(RM) $(ODIR)
+	$(RM) $(DISTDIR)
+	$(RM) docker-build
+	$(RM) linked-example
