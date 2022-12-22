@@ -33,7 +33,7 @@ endif
 
 HEADERS = $(wildcard $(SRCDIR)/*.hpp)
 OBJS = basedclient.o \
-  connection.o \
+	connection.o \
 	utility.o \
 	based.o
 
