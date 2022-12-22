@@ -33,10 +33,13 @@ int64_t read_bytes_from_string(std::string& buff, int start, int len);
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
+#if BASED_VERBOSE
 #define BASED_LOG(fmt, ...)                                                                   \
     do {                                                                                      \
-        if (BASED_VERBOSE)                                                                    \
-            std::fprintf(stdout, "[%s:%d] " fmt "\n", __FILENAME__, __LINE__, ##__VA_ARGS__); \
+        std::fprintf(stdout, "[%s:%d] " fmt "\n", __FILENAME__, __LINE__, ##__VA_ARGS__); \
     } while (0)
+#else
+#define BASED_LOG(fmt, ...)
+#endif
 
 #endif
