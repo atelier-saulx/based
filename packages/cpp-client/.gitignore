@@ -13,5 +13,8 @@ docker-build
 distribute/*
 
 build/*
+build-scripts
+prebuilt-libs
+*.xcframework
 build_darwin/*
 build_ios/*
