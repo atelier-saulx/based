@@ -12,6 +12,14 @@ docker-build
 
 distribute/*
 
-build/*
-build_darwin/*
-build_ios/*
+build
+build_darwin
+build_ios
+build_ios_sim
+build_catalyst
+
+*.zip
+
+prebuilt-libs
+
+Based.xcframework

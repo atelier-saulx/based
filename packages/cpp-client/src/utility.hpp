@@ -1,19 +1,11 @@
 #ifndef BASED_OUTGOING_H
 #define BASED_OUTGOING_H
 
-#include <zlib.h>
-
-#include <cstdint>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
-#include <json.hpp>
+#define BASED_VERBOSE 1
 
-using json = nlohmann::json;
 namespace Utility {
 std::string inflate_string(const std::string& str);
 std::string deflate_string(const std::string& str);
@@ -38,4 +30,16 @@ int32_t read_header(std::string buff);
 int64_t read_bytes_from_string(std::string& buff, int start, int len);
 
 }  // namespace Utility
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
+#if BASED_VERBOSE
+#define BASED_LOG(fmt, ...)                                                                   \
+    do {                                                                                      \
+        std::fprintf(stdout, "[%s:%d] " fmt "\n", __FILENAME__, __LINE__, ##__VA_ARGS__); \
+    } while (0)
+#else
+#define BASED_LOG(fmt, ...)
+#endif
+
 #endif

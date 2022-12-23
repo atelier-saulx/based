@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <string>
 
-using based_id = int32_t;
+typedef int32_t based_id;
 // using based_observe_cb = void (*)(char*, uint64_t, char*);
 // using based_cb = void (*)(char*, char*);
 
@@ -37,20 +37,29 @@ extern "C" int Based__observe(based_id client_id,
                               /**
                                * Callback that the observable will trigger.
                                */
-                              void (*cb)(const char*, uint64_t, const char*));
+                              void (*cb)(const char* /* Data */,
+                                         uint64_t /* Checksum */,
+                                         const char* /* Error*/,
+                                         int /*obs_id*/));
 
-extern "C" void Based__get(based_id client_id,
-                           char* name,
-                           char* payload,
-                           void (*cb)(const char*, const char*));
+extern "C" int Based__get(based_id client_id,
+                          char* name,
+                          char* payload,
+                          void (*cb)(const char* /* Data */,
+                                     const char* /* Error */,
+                                     int /*sub_id*/));
 
 extern "C" void Based__unobserve(based_id client_id, int sub_id);
 
-extern "C" void Based__function(based_id client_id,
-                                char* name,
-                                char* payload,
-                                void (*cb)(const char*, const char*));
+extern "C" int Based__function(based_id client_id,
+                               char* name,
+                               char* payload,
+                               void (*cb)(const char* /* Data */,
+                                          const char* /* Error */,
+                                          int /*request_id*/));
 
-extern "C" void Based__auth(based_id client_id, char* state, void (*cb)(const char*));
+extern "C" void Based__auth(based_id client_id,
+                            char* state,
+                            void (*cb)(const char* /* Auth response */));
 
 #endif

@@ -1,5 +1,15 @@
 #include "utility.hpp"
 
+#include <zlib.h>
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <json.hpp>
+#include <sstream>
+#include <stdexcept>
+
+using json = nlohmann::json;
+
 std::string Utility::inflate_string(const std::string& str) {
     // Original version of this function found on https://panthema.net/2007/0328-ZLibString.html,
     // adapted here for our usage.

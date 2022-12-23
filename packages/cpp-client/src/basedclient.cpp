@@ -1,4 +1,3 @@
-#include <curl/curl.h>
 #include <json.hpp>
 #include <stdexcept>
 #include <utility>
@@ -7,8 +6,6 @@
 #include "utility.hpp"
 
 #include "basedclient.hpp"
-
-#define DEFAULT_CLUSTER_URL "https://d15p61sp2f2oaj.cloudfront.net"
 
 using namespace nlohmann::literals;
 
@@ -30,12 +27,8 @@ struct Observable {
 BasedClient::BasedClient()
     : m_request_id(0),
       m_sub_id(0),
-      m_draining(false),
       m_auth_in_progress(false),
-      m_registry_index(0) {
-    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
-    m_con.set_open_handler([&]() { on_open(); });
-};
+      m_auth_required(true){};
 
 /////////////////
 // Helper functions
@@ -58,11 +51,6 @@ inline uint32_t make_obs_id(std::string& name, std::string& payload) {
     return obs_id;
 }
 
-static size_t write_function(void* contents, size_t size, size_t nmemb, void* userp) {
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
-
 //////////////////////////////////////////////////////////////////////////
 ///////////////////////// Client methods /////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -74,53 +62,13 @@ std::string BasedClient::get_service(std::string cluster,
                                      std::string name,
                                      std::string key,
                                      bool optional_key) {
-    const char* url;
-    if (cluster.length() < 1) url = DEFAULT_CLUSTER_URL;
-    else url = cluster.c_str();
-
-    CURL* curl;
-    CURLcode res;
-    std::string buf;
-
-    curl = curl_easy_init();
-    if (!curl) {
-        throw std::runtime_error("curl object failed to initialize");
-    }
-    // Set up curl
-    curl_easy_setopt(curl, CURLOPT_URL, url);
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_function);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &buf);
-    curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);  // timeout after 3 seconds
-
-    res = curl_easy_perform(curl);  // get list of registry urls
-
-    json registries = json::array();
-    registries = json::parse(buf);
-
-    m_registry_index++;
-    if (m_registry_index > registries.size()) m_registry_index = 0;
-
-    std::string registry_url = registries.at(m_registry_index);
-    std::string req_url = registry_url + "/" + org + "." + project + "." + env + "." + name;
-    if (key.length() > 0) req_url += "." + key;
-    if (optional_key) req_url += "$";
-
-    std::cout << req_url << std::endl;
-
-    buf = "";
-    curl_easy_setopt(curl, CURLOPT_URL, req_url.c_str());
-
-    res = curl_easy_perform(curl);  // get service url
-    if (res == CURLE_OPERATION_TIMEDOUT) {
-        throw std::runtime_error("Operation timed out");
-    }
-    curl_easy_cleanup(curl);
-
-    return buf;
+    // m_con.get_service(...args)
 }
 
 void BasedClient::_connect_to_url(std::string url) {
-    m_con.connect(url);
+    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
+    m_con.set_open_handler([&]() { on_open(); });
+    m_con.connect_to_uri(url);
 }
 
 void BasedClient::connect(std::string cluster,
@@ -130,11 +78,9 @@ void BasedClient::connect(std::string cluster,
                           std::string name,
                           std::string key,
                           bool optional_key) {
-    std::thread con_thr([&, org, project, env, name, cluster, key, optional_key]() {
-        std::string service_url = get_service(cluster, org, project, env, name, key, optional_key);
-        m_con.connect(service_url);
-    });
-    con_thr.detach();
+    m_con.set_message_handler([&](std::string msg) { on_message(msg); });
+    m_con.set_open_handler([&]() { on_open(); });
+    m_con.connect(cluster, org, project, env, key, optional_key);
 }
 
 void BasedClient::disconnect() {
@@ -146,7 +92,10 @@ int BasedClient::observe(std::string name,
                          /**
                           * Callback that the observable will trigger.
                           */
-                         void (*cb)(const char*, uint64_t, const char*)) {
+                         void (*cb)(const char* /*data*/,
+                                    uint64_t /*checksum*/,
+                                    const char* /*error*/,
+                                    int /*sub_id*/)) {
     /**
      * Each observable must be stored in memory, in case the connection drops.
      * So there's a queue, which is emptied on drain, but is refilled with the observables
@@ -161,8 +110,6 @@ int BasedClient::observe(std::string name,
 
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = m_sub_id++;
-
-    std::cout << "obs_id sent = " << obs_id << std::endl;
 
     if (m_observe_requests.find(obs_id) == m_observe_requests.end()) {
         // first time this query is observed
@@ -212,7 +159,9 @@ int BasedClient::observe(std::string name,
     return sub_id;
 }
 
-void BasedClient::get(std::string name, std::string payload, void (*cb)(const char*, const char*)) {
+int BasedClient::get(std::string name,
+                     std::string payload,
+                     void (*cb)(const char* /*data*/, const char* /*error*/, int /*sub_id*/)) {
     uint32_t obs_id = make_obs_id(name, payload);
     int32_t sub_id = m_sub_id++;
 
@@ -236,11 +185,13 @@ void BasedClient::get(std::string name, std::string payload, void (*cb)(const ch
         m_get_queue.push_back(msg);
         drain_queues();
     }
+
+    return sub_id;
 }
 
 void BasedClient::unobserve(int sub_id) {
     if (m_sub_to_obs.find(sub_id) == m_sub_to_obs.end()) {
-        std::cerr << "No subscription found with sub_id " << sub_id << std::endl;
+        BASED_LOG("No subscription found with sub_id %d", sub_id);
         return;
     }
     auto obs_id = m_sub_to_obs.at(sub_id);
@@ -267,9 +218,11 @@ void BasedClient::unobserve(int sub_id) {
     drain_queues();
 }
 
-void BasedClient::function(std::string name,
-                           std::string payload,
-                           void (*cb)(const char*, const char*)) {
+int BasedClient::function(std::string name,
+                          std::string payload,
+                          void (*cb)(const char* /*data*/,
+                                     const char* /*error*/,
+                                     int /*request_id*/)) {
     m_request_id++;
     if (m_request_id > 16777215) {
         m_request_id = 0;
@@ -280,6 +233,7 @@ void BasedClient::function(std::string name,
     std::vector<uint8_t> msg = Utility::encode_function_message(id, name, payload);
     m_function_queue.push_back(msg);
     drain_queues();
+    return m_request_id;
 }
 
 void BasedClient::auth(std::string state, void (*cb)(const char*)) {
@@ -289,8 +243,12 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
     m_auth_in_progress = true;
     m_auth_callback = cb;
 
-    std::vector<uint8_t> msg = Utility::encode_auth_message(state);
-    m_con.send(msg);
+    // std::vector<uint8_t> msg = Utility::encode_auth_message(state);
+    m_auth_queue = Utility::encode_auth_message(state);
+    // TODO: rather than sending the message straight, it should be set and sent when the queue is
+    // drained. there should also be a flag `authRequired` that is set everytime the connection is
+    // dropped/fails/is terminated and unset when the connection opens
+    // m_con.send(msg);
 }
 
 /////////////////////////////////////////////////////////////
@@ -298,16 +256,17 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
 /////////////////////////////////////////////////////////////
 
 void BasedClient::drain_queues() {
-    if (m_draining || m_con.status() == ConnectionStatus::CLOSED ||
-        m_con.status() == ConnectionStatus::FAILED ||
-        m_con.status() == ConnectionStatus::CONNECTING) {
-        std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
+    if (m_con.status() != ConnectionStatus::OPEN) {
+        // std::cerr << "Connection is unavailable, status = " << m_con.status() << std::endl;
         return;
     }
 
-    m_draining = true;
-
     std::vector<uint8_t> buff;
+
+    if (m_auth_queue.size() > 0) {
+        buff.insert(buff.end(), m_auth_queue.begin(), m_auth_queue.end());
+        m_auth_queue.clear();
+    }
 
     if (m_observe_queue.size() > 0) {
         for (auto msg : m_observe_queue) {
@@ -337,9 +296,11 @@ void BasedClient::drain_queues() {
         m_get_queue.clear();
     }
 
-    if (buff.size() > 0) m_con.send(buff);
-
-    m_draining = false;
+    if (buff.size() > 0) {
+        if (m_con.status() == ConnectionStatus::OPEN) {
+            m_con.send(buff);
+        }
+    }
 }
 
 void BasedClient::request_full_data(uint64_t obs_id) {
@@ -387,9 +348,9 @@ void BasedClient::on_message(std::string message) {
                     std::string payload = is_deflate
                                               ? Utility::inflate_string(message.substr(start, end))
                                               : message.substr(start, end);
-                    fn(payload.c_str(), "");
+                    fn(payload.c_str(), "", id);
                 } else {
-                    fn("", "");
+                    fn("", "", id);
                 }
                 // Listener has fired, remove it from the map.
                 m_function_callbacks.erase(id);
@@ -414,14 +375,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(payload.c_str(), checksum, "");
+                    fn(payload.c_str(), checksum, "", sub_id);
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(payload.c_str(), "");
+                    fn(payload.c_str(), "", sub_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -467,14 +428,14 @@ void BasedClient::on_message(std::string message) {
             if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                 for (auto sub_id : m_observe_subs.at(obs_id)) {
                     auto fn = m_sub_callback.at(sub_id);
-                    fn(patched_payload.c_str(), checksum, "");
+                    fn(patched_payload.c_str(), checksum, "", sub_id);
                 }
             }
 
             if (m_get_subs.find(obs_id) != m_get_subs.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(patched_payload.c_str(), "");
+                    fn(patched_payload.c_str(), "", sub_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -487,7 +448,7 @@ void BasedClient::on_message(std::string message) {
                 m_cache.find(obs_id) != m_cache.end()) {
                 for (auto sub_id : m_get_subs.at(obs_id)) {
                     auto fn = m_get_sub_callbacks.at(sub_id);
-                    fn(m_cache.at(obs_id).first.c_str(), "");
+                    fn(m_cache.at(obs_id).first.c_str(), "", obs_id);
                     m_get_sub_callbacks.erase(sub_id);
                 }
                 m_get_subs.at(obs_id).clear();
@@ -507,15 +468,12 @@ void BasedClient::on_message(std::string message) {
             } else {
                 m_auth_state = payload;
             }
-            m_auth_callback(payload.c_str());
+            if (m_auth_callback) m_auth_callback(payload.c_str());
 
             m_auth_in_progress = false;
         }
             return;
         case IncomingType::ERROR_DATA: {
-            // TODO: test this when errors get implemented in the server
-
-            // std::cout << "Error received. Error handling not implemented yet" << std::endl;
             int32_t start = 4;
             int32_t end = len + 4;
             std::string payload = "{}";
@@ -524,19 +482,22 @@ void BasedClient::on_message(std::string message) {
                                      : message.substr(start, end);
             }
 
-            json error(payload);
+            json error = json::parse(payload);
+            // std::cout << "payload = " << error << std::endl;
             // fire once
             if (error.find("requestId") != error.end()) {
                 auto id = error.at("requestId");
+                // std::cout << "id = " << id << std::endl;
+
                 if (m_function_callbacks.find(id) != m_function_callbacks.end()) {
                     auto fn = m_function_callbacks.at(id);
-                    fn("", payload.c_str());
+                    fn("", payload.c_str(), id);
                     m_function_callbacks.erase(id);
                 }
                 if (m_get_subs.find(id) != m_get_subs.end()) {
                     for (auto get_id : m_get_subs.at(id)) {
                         auto fn = m_get_sub_callbacks.at(get_id);
-                        fn("", payload.c_str());
+                        fn("", payload.c_str(), id);
                         m_get_sub_callbacks.erase(get_id);
                     }
                     m_get_subs.erase(id);
@@ -545,12 +506,17 @@ void BasedClient::on_message(std::string message) {
             if (error.find("observableId") != error.end()) {
                 // destroy observable
                 auto obs_id = error.at("observableId");
+
+                m_observe_requests.erase(obs_id);
+
                 if (m_observe_subs.find(obs_id) != m_observe_subs.end()) {
                     for (auto sub_id : m_observe_subs.at(obs_id)) {
                         if (m_sub_callback.find(sub_id) != m_sub_callback.end()) {
                             auto fn = m_sub_callback.at(sub_id);
-                            fn("", 0, payload.c_str());
+                            fn("", 0, payload.c_str(), sub_id);
                         }
+                        m_observe_subs.erase(sub_id);
+                        m_sub_to_obs.erase(sub_id);
                     }
                 }
             }
