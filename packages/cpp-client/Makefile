@@ -60,7 +60,6 @@ example: $(patsubst %,$(ODIR)/%,$(OBJS))
 
 $(TARGET): $(patsubst %,$(ODIR)/%,$(OBJS))
 	+@[ -d $(DISTDIR) ] || mkdir -p $(DISTDIR)
-	cp -rf include/based.h $(DISTDIR)/based.h
 	$(CXX) -o $(DISTDIR)/$@ -shared -fPIC -g $^ $(LDFLAGS) $(LDLIBS) -fvisibility=hidden
 
 linked-example:
