@@ -5,7 +5,13 @@ import { BackupOptions } from '.'
 import { prettyDate } from '@based/pretty-date'
 import { prettyNumber } from '@based/pretty-number'
 import inquirer from 'inquirer'
-import { fail, inquirerConfig, prefixSuccess, printHeader } from '../tui'
+import {
+  fail,
+  inquirerConfig,
+  prefixSuccess,
+  prefixWarn,
+  printHeader,
+} from '../tui'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import checkAuth from '../checkAuth'
@@ -43,34 +49,42 @@ export const backupDownloadCommand = new Command('download')
       ? `${org}-${project}-${env}-db-env-${database}`
       : `${org}-${project}-${env}-db-env-default`
 
-    const filename = 'dump.rdb'
+    console.info(
+      prefixWarn +
+        chalk.gray('Database: ') +
+        chalk.bold(`${database || 'default'} `)
+    )
+
+    let filename = 'dump.rdb'
 
     if (options.nonInteractive) {
       try {
-        if (!options.filename)
+        if (!options.filename) {
           fail(
             'Please specify backup name, syntax: --backup-name <name>',
             { data: [] },
             options
           )
+        }
+        filename = options.filename
         const { url } = await client.call('getBackupLink', options)
         await downloadUrl(url, folderName, filename)
       } catch (err) {
         fail(err.message, { data: [], errors: [err] }, options)
       }
     } else {
-      if (options.filename)
-        fail(
-          'Option --backup-name can only be used in non-interactive mode',
-          { data: [] },
-          options
-        )
+      if (options.filename) {
+        filename = options.filename
+        const { url } = await client.call('getBackupLink', options)
+        await downloadUrl(url, folderName, filename)
+        process.exit(0)
+      }
       const res = await client.call('listBackups', options)
       if (!res) fail('No backup found', { data: [] }, options)
 
       // sort results based on lastModified, most recent first
       res.sort((a, b) => {
-        return Date.parse(b.LastModified) - Date.parse(a.LastModified)
+        return b.LastModified - a.LastModified
       })
 
       const mapOfChoices = getMapOfChoices(res)
@@ -79,7 +93,7 @@ export const backupDownloadCommand = new Command('download')
         ...inquirerConfig,
         type: 'list',
         name: 'downloadName',
-        loop: false,
+        loop: true,
         message: 'Which backup would you like to download?',
         choices: [...mapOfChoices.keys()],
       })
@@ -89,24 +103,27 @@ export const backupDownloadCommand = new Command('download')
         filename: mapOfChoices.get(downloadName).Key,
       })
       try {
+        filename = options.filename
         const { url } = await client.call('getBackupLink', options)
         await downloadUrl(url, folderName, filename)
       } catch (err) {
         fail(err.message, { data: [] }, options)
       }
     }
+
     process.exit(0)
   })
 
-async function downloadUrl(url: string, path: string, filename: string) {
-  // console.log(url)
-  // return
+function downloadUrl(url: string, path: string, filename: string) {
   return new Promise<void>((resolve, reject) => {
     const spinner = ora('Downloading backup...').start()
     const fullPath = `${path}/${filename}`
+
+    let size
+    let cur = 0
+
     fs.ensureDirSync(path)
-    const exists = fs.existsSync(fullPath)
-    if (exists) {
+    if (fs.existsSync(fullPath)) {
       spinner.clear()
       reject(new Error('File already exists'))
       return
@@ -115,13 +132,19 @@ async function downloadUrl(url: string, path: string, filename: string) {
     https.get(url, (resp) => {
       if (resp.statusCode === 200) {
         resp.pipe(stream)
+        size = parseInt(resp.headers['content-length'])
+        resp.on('data', (chunk) => {
+          cur += chunk.length
+          spinner.text = `Downloading backup... ${((cur / size) * 100).toFixed(
+            1
+          )}%`
+        })
       } else {
         spinner.clear()
         fs.unlink(fullPath)
         reject(new Error(`Request got ${resp.statusCode} response code`))
       }
     })
-
     stream
       .on('finish', () => {
         stream.close()
@@ -145,48 +168,21 @@ function getMapOfChoices(list): Map<string, any> {
     const date = prettyDate(value.LastModified, 'date-time-human')
     const size = prettyNumber(value.Size, 'number-bytes')
     const name: string = value.Key
-
-    // 2021-10-27T09:50:17.545Z-copy-from-local-saulx-chat-dev-db-env-default
-    // 2021-10-27T09:50:17.545Z-copy
-    // 2021-10-27T09:50:17.545Z-copy-1
-    // becomes
-    // #85, from 2 days ago, 2.8 kb, migrated from saulx-chat-prod(users)
-    // #84, from 2 days ago, 2.8 kb, migrated from saulx-chat-prod(default)
-    // #83, from 2 days ago, 2.8 kb
-    // #82, from 2 days ago, 2.8 kb, copy of #66.
-
-    if (name.includes('from')) {
-      const x = name.search('from') + 'from'.length + 1
-      const y = name.search('db-env') + 'db-env'.length + 1
-
-      mapOfChoices.set(
-        `#${
-          list.length - index
-        }, from ${date}, ${size}, migrated from ${name.substring(
-          x,
-          y - '-db-env-'.length
-        )}(${name.substring(y)})`,
-        value
-      )
-    } else if (name.includes('copy')) {
-      const x = name.search('copy')
-      let copiedElementIndex
-      list.some((el) => {
-        if (el.Key === name.substring(0, x - 1)) {
-          copiedElementIndex = list.indexOf(el)
-          return true
-        }
-        return false
-      })
-      mapOfChoices.set(
-        `#${list.length - index}, from ${date}, ${size}, copy of #${
-          list.length - copiedElementIndex
-        }`,
-        value
-      )
-    } else {
-      mapOfChoices.set(`#${list.length - index}, from ${date}, ${size}`, value)
-    }
+    // Deprecated: not really relevant since this migration system was never implemented
+    // {
+    //    2021-10-27T09:50:17.545Z-copy-from-local-saulx-chat-dev-db-env-default
+    //    2021-10-27T09:50:17.545Z-copy
+    //    2021-10-27T09:50:17.545Z-copy-1
+    //    becomes
+    //    #85, from 2 days ago, 2.8 kb, migrated from saulx-chat-prod(users)
+    //    #84, from 2 days ago, 2.8 kb, migrated from saulx-chat-prod(default)
+    //    #83, from 2 days ago, 2.8 kb
+    //    #82, from 2 days ago, 2.8 kb, copy of #66.
+    // }
+    mapOfChoices.set(
+      `#${list.length - index}, "${name}" from ${date}, ${size}`,
+      value
+    )
   }
   return mapOfChoices
 }
