@@ -29,7 +29,6 @@ export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   checksum: number
   observable: true
   function: BasedObservableFunction
-  stickyWorker?: string
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
@@ -43,7 +42,6 @@ export type BasedFunctionSpec = BasedFunctionRoute & {
   observable?: false
   customHttpResponse?: CustomHttpResponse
   checksum: number
-  stickyWorker?: string
   function: BasedFunction
   maxExecTime?: number // in ms - very nice too have
   idleTimeout?: number // in ms
