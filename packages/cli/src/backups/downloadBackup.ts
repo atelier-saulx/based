@@ -1,6 +1,7 @@
 import fs from 'fs-extra'
 import https from 'https'
 import ora from 'ora'
+import exitHook from 'exit-hook'
 import { BackupOptions } from '.'
 import { prettyDate } from '@based/pretty-date'
 import { prettyNumber } from '@based/pretty-number'
@@ -8,6 +9,7 @@ import inquirer from 'inquirer'
 import {
   fail,
   inquirerConfig,
+  prefixError,
   prefixSuccess,
   prefixWarn,
   printHeader,
@@ -128,6 +130,11 @@ function downloadUrl(url: string, path: string, filename: string) {
       reject(new Error('File already exists'))
       return
     }
+    const removeExitHook = exitHook(() => {
+      spinner.clear()
+      console.info(prefixError + 'Download interrupted')
+      fs.unlinkSync(fullPath)
+    })
     const stream = fs.createWriteStream(fullPath)
     https.get(url, (resp) => {
       if (resp.statusCode === 200) {
@@ -141,7 +148,7 @@ function downloadUrl(url: string, path: string, filename: string) {
         })
       } else {
         spinner.clear()
-        fs.unlink(fullPath)
+        fs.unlinkSync(fullPath)
         reject(new Error(`Request got ${resp.statusCode} response code`))
       }
     })
@@ -152,11 +159,13 @@ function downloadUrl(url: string, path: string, filename: string) {
         console.info(
           prefixSuccess + `File downloaded to ` + chalk.blue(`./${fullPath}`)
         )
+        removeExitHook()
         resolve()
       })
       .on('error', (err) => {
         spinner.clear()
-        fs.unlink(fullPath)
+        fs.unlinkSync(fullPath)
+        removeExitHook()
         reject(new Error(`error while writing file: ${err}`))
       })
   })
