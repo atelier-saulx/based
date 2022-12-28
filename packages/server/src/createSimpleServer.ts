@@ -49,22 +49,22 @@ export async function createSimpleServer(
       const fn = functions[name]
       if (isFunctionSpec(fn)) {
         functionStore[name] = {
-          checksum: 1,
-          observable: false,
           function: fn.function,
           path: `/${name}`,
           name,
-          maxPayloadSize: 500,
-          rateLimitTokens: 5,
+          observable: false,
+          checksum: 1,
+          maxPayloadSize: 5e3,
+          rateLimitTokens: 1,
           ...fn,
         }
       } else {
         functionStore[name] = {
-          checksum: 1,
-          observable: false,
           function: fn,
           path: `/${name}`,
           name,
+          observable: false,
+          checksum: 1,
           maxPayloadSize: 5e3,
           rateLimitTokens: 1,
         }
@@ -108,12 +108,10 @@ export async function createSimpleServer(
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3,
-      uninstall: async ({ name }) => {
-        console.log('Uninstall', name)
+      uninstall: async () => {
         return true
       },
       install: async ({ name }) => {
-        console.log('Install', name)
         if (functionStore[name]) {
           return functionStore[name]
         } else {
@@ -121,7 +119,6 @@ export async function createSimpleServer(
         }
       },
       route: ({ path, name }) => {
-        console.log({ path, name })
         if (path) {
           for (const name in functionStore) {
             if (functionStore[name].path === path) {
@@ -135,6 +132,15 @@ export async function createSimpleServer(
         return false
       },
     },
+  }
+
+  console.info('Server starting with the following functions:')
+  for (const name in functionStore) {
+    console.info({
+      name: functionStore[name].name,
+      path: functionStore[name].path,
+      observable: functionStore[name].observable,
+    })
   }
 
   const basedServer = new BasedServer(properProps)
