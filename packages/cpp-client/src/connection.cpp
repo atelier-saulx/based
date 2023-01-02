@@ -137,7 +137,6 @@ void WsConnection::connect(std::string cluster,
     m_key = key;
     m_optional_key = optional_key;
 
-    // TODO: check if async is better for this
     std::thread con_thr([&, org, project, env, cluster, key, optional_key]() {
         std::string service_url =
             get_service(cluster, org, project, env, "@based/edge", key, optional_key);
@@ -236,7 +235,7 @@ context_ptr WsConnection::on_tls_init() {
                          asio::ssl::context::no_sslv3 | asio::ssl::context::single_dh_use);
 
     } catch (std::exception& e) {
-        std::cout << "Error in context pointer: " << e.what() << std::endl;
+        std::cerr << "Error in context pointer: " << e.what() << std::endl;
     }
     return ctx;
 }
@@ -253,7 +252,7 @@ context_ptr WsConnection::on_tls_init() {
                          boost::asio::ssl::context::single_dh_use);
 
     } catch (std::exception& e) {
-        std::cout << "Error in context pointer: " << e.what() << std::endl;
+        std::cerr << "Error in context pointer: " << e.what() << std::endl;
     }
     return ctx;
 }

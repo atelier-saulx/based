@@ -243,12 +243,7 @@ void BasedClient::auth(std::string state, void (*cb)(const char*)) {
     m_auth_in_progress = true;
     m_auth_callback = cb;
 
-    // std::vector<uint8_t> msg = Utility::encode_auth_message(state);
     m_auth_queue = Utility::encode_auth_message(state);
-    // TODO: rather than sending the message straight, it should be set and sent when the queue is
-    // drained. there should also be a flag `authRequired` that is set everytime the connection is
-    // dropped/fails/is terminated and unset when the connection opens
-    // m_con.send(msg);
 }
 
 /////////////////////////////////////////////////////////////

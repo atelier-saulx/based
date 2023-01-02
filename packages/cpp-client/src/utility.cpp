@@ -141,11 +141,8 @@ std::vector<uint8_t> Utility::encode_function_message(int32_t id,
 
     std::string p;
     if (payload.length() > 0) {
-        std::cout << "> Encoding payload... " << std::endl;
-
         if (payload.length() > 150) {
             is_deflate = 1;
-            std::cout << "> Deflating payload..." << std::endl;
             p = deflate_string(payload);
 
             // char const* buff = p.data();
@@ -199,11 +196,8 @@ std::vector<uint8_t> Utility::encode_observe_message(uint64_t id,
 
     std::string p;
     if (payload.length() > 0) {
-        std::cout << "> Encoding payload... " << std::endl;
-
         if (payload.length() > 150) {
             is_deflate = 1;
-            std::cout << "> Deflating payload..." << std::endl;
             p = deflate_string(payload);
         } else {
             p = payload;
@@ -258,11 +252,8 @@ std::vector<uint8_t> Utility::encode_get_message(uint64_t id,
 
     std::string p;
     if (payload.length() > 0) {
-        std::cout << "> Encoding payload... " << std::endl;
-
         if (payload.length() > 150) {
             is_deflate = 1;
-            std::cout << "> Deflating payload..." << std::endl;
             p = deflate_string(payload);
         } else {
             p = payload;
@@ -297,11 +288,8 @@ std::vector<uint8_t> Utility::encode_auth_message(std::string& auth_state) {
 
     std::string p;
     if (auth_state.length() > 0) {
-        std::cout << "> Encoding payload... " << std::endl;
-
         if (auth_state.length() > 150) {
             is_deflate = 1;
-            std::cout << "> Deflating payload..." << std::endl;
             p = deflate_string(auth_state);
         } else {
             p = auth_state;
