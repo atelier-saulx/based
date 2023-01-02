@@ -1,14 +1,12 @@
 cmake_minimum_required(VERSION 3.20.0)
 
-project(universal-based)
+project(universal-based VERSION 1.0.0)
 
 include_directories(lib/websocketpp)
-# include_directories(lib/zlib)
 include_directories(lib/nlohmann-json)
 include_directories(lib/apply-patch)
 include_directories(lib/asio/asio/include)
 include_directories(prebuilt-libs/include/)
-# include_directories(prebuilt-libs/curl/include/)
 include_directories(include)
 
 if(NOT DEFINED ARCH_FOLDER)
@@ -40,6 +38,8 @@ src/connection.cpp
 src/basedclient.cpp
 src/utility.cpp
 )
+
+set_target_properties(based PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${CMAKE_PROJECT_VERSION})
 
 add_executable(linked-example example/example.cpp)
 
