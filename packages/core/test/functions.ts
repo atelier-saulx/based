@@ -1,50 +1,29 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'path'
 
 test.serial('functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    hello: {
-      name: 'hello',
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'helloPayload.js'),
-    },
-    lotsOfData: {
-      name: 'lotsOfData',
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'lotsOfData.js'),
-    },
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
     functions: {
-      maxWorkers: 16,
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return {
-            name,
-            maxPayloadSize: 1e6 * 10,
+      hello: {
+        maxPayloadSize: 1e8,
+        function: async (payload) => {
+          if (payload) {
+            return payload.length
           }
-        }
-        return false
+          return 'flap'
+        },
       },
-      uninstall: async () => {
-        await wait(1e3)
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return store[name]
-        } else {
-          return false
+      lotsOfData: async () => {
+        let str = ''
+        for (let i = 0; i < 200000; i++) {
+          str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
         }
+        return str
       },
     },
   })
@@ -62,13 +41,13 @@ test.serial('functions', async (t) => {
   })
 
   const helloResponsesX = await Promise.all([
-    coreClient.function('hello', {
+    coreClient.call('hello', {
       bla: true,
     }),
-    coreClient.function('hello', {
+    coreClient.call('hello', {
       bla: true,
     }),
-    coreClient.function('hello', {
+    coreClient.call('hello', {
       bla: true,
     }),
   ])
@@ -87,10 +66,10 @@ test.serial('functions', async (t) => {
   console.info('Send:', ~~((str.length / 1024 / 1024) * 100) / 100, 'mb')
 
   const helloResponses = await Promise.all([
-    coreClient.function('hello', {
+    coreClient.call('hello', {
       bla: true,
     }),
-    coreClient.function('hello', {
+    coreClient.call('hello', {
       bla: str,
     }),
   ])
@@ -98,11 +77,11 @@ test.serial('functions', async (t) => {
   t.true(helloResponses[0] < 20)
   t.true(helloResponses[1] > 5e6)
 
-  const bigString = await coreClient.function('lotsOfData')
+  const bigString = await coreClient.call('lotsOfData')
 
   t.true(bigString.length > 5e6)
 
   await wait(15e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 })
