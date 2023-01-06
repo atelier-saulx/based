@@ -6,6 +6,7 @@ import { BasedFunctions, FunctionConfig } from './functions'
 import { BasedAuth, AuthConfig } from './auth'
 import { BasedErrorCode, BasedErrorData } from './error'
 import { wait } from '@saulx/utils'
+import picocolors = require('picocolors')
 
 type EventMap = {
   error: BasedErrorData
@@ -159,7 +160,10 @@ export class BasedServer {
           this.listenSocket = listenSocket
           resolve(this)
         } else {
-          console.info('🤮  Based-edge-server error on port:', this.port)
+          console.info(
+            picocolors.red('🤮  Based-edge-server error on port:'),
+            this.port
+          )
           reject(new Error('Cannot start based-server on port: ' + this.port))
         }
       })
