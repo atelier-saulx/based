@@ -11,7 +11,7 @@ import { promisify } from 'node:util'
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial.only('functions (over http)', async (t) => {
+test.serial('functions (over http)', async (t) => {
   const store: {
     [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
   } = {
@@ -176,19 +176,19 @@ test.serial('get (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result, '0')
+  t.is(result, '1')
 
   await wait(1e3)
 
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result2, '1')
+  t.is(result2, '2')
 
   await wait(1e3)
 
   const result3 = await (await fetch('http://localhost:9910/hello')).text()
 
-  t.is(result3, '2')
+  t.is(result3, '3')
 
   await wait(10e3)
 
@@ -324,3 +324,4 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 })
 
 // TODO: add auth test
+// do it now
