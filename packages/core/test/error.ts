@@ -49,7 +49,7 @@ const setup = async (t: ExecutionContext) => {
   return { coreClient, server }
 }
 
-test.serial('function error', async (t) => {
+test.serial.only('function error', async (t) => {
   const { coreClient } = await setup(t)
 
   coreClient.connect({
