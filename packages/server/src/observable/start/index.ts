@@ -32,10 +32,7 @@ export const start = (server: BasedServer, id: number) => {
     rawData,
     err
   ) => {
-    console.info(data, checksum, diff, fromChecksum, isDeflate, rawData)
-
     if (err) {
-      console.info(err)
       errorListener(server, obs, err)
       return
     }
