@@ -18,12 +18,19 @@ const errorFunction = async () => {
   return wawa[3].yeye
 }
 
-const errorTimer = (module.exports = (payload, update) => {
+const errorTimer = (_payload, update) => {
   setInterval(() => {
-    throw new Error('lol')
+    update(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      new Error('lol')
+    )
   }, 10)
   return update('yes')
-})
+}
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
@@ -132,7 +139,7 @@ test.serial('type error in function', async (t) => {
 })
 
 // TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
-test.serial.skip('throw in an interval', async (t) => {
+test.serial('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
     url: async () => {

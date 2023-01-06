@@ -34,8 +34,6 @@ export function createError<T extends BasedErrorCode>(
     ? payload.route
     : EMPTY_ROUTE
 
-  console.info(code, type, payload)
-
   const errorData: BasedErrorData<T> = {
     code,
     statusCode: type.statusCode,
