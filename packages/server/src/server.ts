@@ -155,8 +155,7 @@ export class BasedServer {
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {
         if (listenSocket) {
-          console.info('💫  Based-edge-server listening on port:', this.port)
-          // do this better wrap a nice thing arround it
+          console.info('    Based-server listening on port:', this.port)
           this.listenSocket = listenSocket
           resolve(this)
         } else {
