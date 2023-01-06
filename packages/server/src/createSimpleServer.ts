@@ -5,7 +5,16 @@ import {
   BasedObservableFunction,
   BasedObservableFunctionSpec,
 } from './functions'
+import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
+
+const whiteSpace = (nr: number) => {
+  let str = ''
+  for (let i = 0; i < nr; i++) {
+    str += ' '
+  }
+  return str
+}
 
 export type SimpleServerOptions = {
   port?: number
@@ -50,7 +59,6 @@ export async function createSimpleServer(
       if (isFunctionSpec(fn)) {
         functionStore[name] = {
           function: fn.function,
-          path: `/${name}`,
           name,
           observable: false,
           checksum: 1,
@@ -61,7 +69,6 @@ export async function createSimpleServer(
       } else {
         functionStore[name] = {
           function: fn,
-          path: `/${name}`,
           name,
           observable: false,
           checksum: 1,
@@ -81,7 +88,6 @@ export async function createSimpleServer(
           checksum: 1,
           observable: true,
           function: fn.function,
-          path: `/${name}`,
           name,
           maxPayloadSize: 500,
           rateLimitTokens: 5,
@@ -93,7 +99,6 @@ export async function createSimpleServer(
           observable: true,
           function: fn,
           name,
-          path: `/${name}`,
           maxPayloadSize: 500,
           rateLimitTokens: 5,
         }
@@ -134,22 +139,38 @@ export async function createSimpleServer(
     },
   }
 
-  console.info('Server starting with the following functions:')
+  console.info(
+    '   ',
+    picocolors.white('Based-server'),
+    `starting with functions`
+  )
+
+  let longestName = 0
+
   for (const name in functionStore) {
-    console.info({
-      name: functionStore[name].name,
-      path: functionStore[name].path,
-      observable: functionStore[name].observable,
-    })
+    if (name.length > longestName) {
+      longestName = name.length
+    }
+  }
+
+  for (const name in functionStore) {
+    const obs = functionStore[name].observable ? '[observable]' : ''
+    const pub = functionStore[name].public ? 'public' : 'private'
+    console.info(
+      '      ',
+      picocolors.white(name),
+      whiteSpace(longestName + 2 - name.length),
+      picocolors.gray(pub),
+      whiteSpace(8 - pub.length),
+      picocolors.green(obs),
+      whiteSpace(8 - obs.length),
+      functionStore[name].path || ''
+    )
   }
 
   const basedServer = new BasedServer(properProps)
   return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
 }
-
-// function simpleFuncToNormal(
-//   fn: (payload: any, ctx: Context) => any | Partial<BasedFunctionSpec>
-// ): BasedFunctionSpec {}
 
 export function isFunctionSpec(
   fn: BasedFunction | Partial<BasedFunctionSpec>

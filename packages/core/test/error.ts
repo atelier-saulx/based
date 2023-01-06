@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 import { join } from 'path'
 
@@ -15,36 +15,10 @@ const setup = async (t: ExecutionContext) => {
     errorTimer: join(__dirname, '/functions/errorTimer.js'),
   }
 
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
-    functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return {
-            name,
-            observable: name === 'counter' || name === 'errorTimer',
-          }
-        }
-        return false
-      },
-      uninstall: async () => {
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return {
-            observable: name === 'counter' || name === 'errorTimer',
-            name,
-            checksum: 1,
-            functionPath: store[name],
-          }
-        } else {
-          return false
-        }
-      },
-    },
+    functions: {},
+    observables: {},
   })
 
   t.teardown(() => {
@@ -66,7 +40,7 @@ test.serial('function error', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('throwingFunction')
+    coreClient.call('throwingFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.FunctionError)
 })
@@ -86,7 +60,7 @@ test.serial('function authorize error', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('throwingFunction')
+    coreClient.call('throwingFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
@@ -131,7 +105,7 @@ test.serial('type error in function', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('errorFunction')
+    coreClient.call('errorFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.FunctionError)
 })
