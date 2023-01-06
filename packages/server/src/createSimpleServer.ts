@@ -112,7 +112,7 @@ export async function createSimpleServer(
     cert: props.cert,
     functions: {
       memCacheTimeout: 3e3,
-      idleTimeout: 1e3,
+      idleTimeout: Infinity, // never needs to uninstall
       uninstall: async () => {
         return true
       },
@@ -130,7 +130,6 @@ export async function createSimpleServer(
               return functionStore[name]
             }
           }
-
           if (!name && functionStore[path]) {
             return functionStore[path]
           }
