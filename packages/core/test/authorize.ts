@@ -30,8 +30,7 @@ const setup = async () => {
       },
     },
     auth: {
-      authorize: async (context, name) => {
-        console.info('flap??', name, '---', context.session?.authState)
+      authorize: async (context) => {
         return context.session?.authState === 'mock_token'
       },
     },
