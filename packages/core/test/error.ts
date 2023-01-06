@@ -2,23 +2,43 @@ import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
-import { join } from 'path'
+
+const throwingFunction = async () => {
+  console.info('snurp?')
+  throw new Error('This is error message')
+}
+
+const counter = (_payload, update) => {
+  return update({ yeye: 'yeye' })
+}
+
+const errorFunction = async () => {
+  const wawa = [1, 2]
+  // @ts-ignore
+  return wawa[3].yeye
+}
+
+const errorTimer = (module.exports = (payload, update) => {
+  setInterval(() => {
+    throw new Error('lol')
+  }, 10)
+  return update('yes')
+})
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    throwingFunction: join(__dirname, '/functions/throwingFunctions.js'),
-    counter: join(__dirname, '/functions/counterYe.js'),
-    errorFunction: join(__dirname, '/functions/errorFunction.js'),
-    errorTimer: join(__dirname, '/functions/errorTimer.js'),
-  }
-
   const server = await createSimpleServer({
     port: 9910,
-    functions: {},
-    observables: {},
+    functions: {
+      throwingFunction,
+      errorFunction,
+    },
+    observables: {
+      counter,
+      errorTimer,
+    },
   })
 
   t.teardown(() => {
@@ -38,10 +58,15 @@ test.serial('function error', async (t) => {
     },
   })
 
+  console.info('go go go')
+
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
     coreClient.call('throwingFunction')
   )) as BasedError
+
+  console.log('slurp?')
+
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
@@ -49,7 +74,7 @@ test.serial('function authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorizePath: join(__dirname, './functions/throwingFunction.js'),
+    authorize: throwingFunction,
   })
 
   coreClient.connect({
@@ -69,7 +94,7 @@ test.serial('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorizePath: join(__dirname, './functions/throwingFunction.js'),
+    authorize: throwingFunction,
   })
 
   coreClient.connect({
