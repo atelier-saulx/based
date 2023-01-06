@@ -64,9 +64,6 @@ export function sendError<T extends BasedErrorCode>(
     return sendHttpError(server, ctx, basedCode, payload)
   } else if (isWsSession(ctx.session)) {
     const errorData = createError(server, ctx, basedCode, payload)
-
-    console.info('SEND', errorData)
-
     const ws: WebSocketSession = ctx.session
     ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
   }
