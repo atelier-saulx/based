@@ -56,15 +56,11 @@ test.serial('authorize functions', async (t) => {
     },
   })
 
-  console.info('connect???')
-
   await t.throwsAsync(
     coreClient.call('hello', {
       bla: true,
     })
   )
-
-  console.info('conblaaar!nect???')
 
   await coreClient.auth(token)
   await t.notThrowsAsync(
