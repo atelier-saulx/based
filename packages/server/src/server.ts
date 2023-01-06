@@ -171,7 +171,7 @@ export class BasedServer {
   }
 
   async destroy() {
-    console.info('🔥 Destroy Based-edge-server')
+    console.info(picocolors.gray('    Destroy Based-server\n'))
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
       this.listenSocket = null
