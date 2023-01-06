@@ -20,7 +20,7 @@ export const errorListener = (
   const errorData = createError(
     server,
     { session: { id: obs.id, name: obs.name } },
-    err.code || BasedErrorCode.ObservableFunctionError,
+    BasedErrorCode.ObservableFunctionError,
     {
       err,
       observableId: obs.id,
