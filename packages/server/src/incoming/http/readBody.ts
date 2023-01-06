@@ -5,13 +5,39 @@ import { BasedErrorCode } from '../../error'
 import { BasedServer } from '../../server'
 import { sendError } from '../../sendError'
 
-// TODO: might be good to use worker stream as well for this
+const decoder = new TextDecoder('utf-8')
 
 const MAX_CHUNK_SIZE = 1024 * 1024
 
 const UNCOMPRESS_OPTS = {
   // can be endless scince we limit by incoming
   chunkSize: 1024 * 1024 * 1000,
+}
+
+export const parsePayload = (
+  server: BasedServer,
+  ctx: Context<HttpSession>,
+  data: Uint8Array,
+  route: BasedFunctionRoute
+): any => {
+  const contentType = ctx.session.headers['content-type']
+  if (contentType === 'application/json' || !contentType) {
+    const str = decoder.decode(data)
+    let parsedData: any
+    try {
+      parsedData = data.byteLength ? JSON.parse(str) : undefined
+      return parsedData
+    } catch (err) {
+      sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+    }
+  } else if (
+    contentType.startsWith('text') ||
+    contentType === 'application/xml'
+  ) {
+    return decoder.decode(data)
+  } else {
+    return data
+  }
 }
 
 export const readBody = (
@@ -81,7 +107,8 @@ export const readBody = (
           buf.set(c, i)
           i += c.byteLength
         }
-        onData(buf)
+        // readValue
+        onData(parsePayload(server, ctx, buf, route))
       })
     } else {
       sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
@@ -106,7 +133,8 @@ export const readBody = (
       index += len
 
       if (isLast) {
-        onData(buf)
+        // readValue
+        onData(parsePayload(server, ctx, buf, route))
       }
     })
   }

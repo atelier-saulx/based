@@ -143,7 +143,7 @@ test.serial('type error in function', async (t) => {
 })
 
 // TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
-test.serial.only('throw in an interval', async (t) => {
+test.serial('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
     url: async () => {
