@@ -19,10 +19,9 @@ export type BasedFunctionRoute = {
   public?: boolean
 }
 
-export type BasedObservableFunction = (
-  payload: any,
-  update: ObservableUpdateFunction
-) => Promise<() => void>
+export type BasedObservableFunction =
+  | ((payload: any, update: ObservableUpdateFunction) => Promise<() => void>)
+  | ((payload: any, update: ObservableUpdateFunction) => () => void)
 
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string

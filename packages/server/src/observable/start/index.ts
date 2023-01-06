@@ -29,8 +29,17 @@ export const start = (server: BasedServer, id: number) => {
     diff,
     fromChecksum,
     isDeflate,
-    rawData
-  ) =>
+    rawData,
+    err
+  ) => {
+    console.info(data, checksum, diff, fromChecksum, isDeflate, rawData)
+
+    if (err) {
+      console.info(err)
+      errorListener(server, obs, err)
+      return
+    }
+
     updateListener(
       server,
       obs,
@@ -41,6 +50,7 @@ export const start = (server: BasedServer, id: number) => {
       isDeflate,
       rawData
     )
+  }
 
   update.__internalObs__ = true
 

@@ -1,10 +1,9 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { createSimpleServer, ObservableUpdateFunction } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const throwingFunction = async () => {
-  console.info('snurp?')
   throw new Error('This is error message')
 }
 
@@ -18,9 +17,10 @@ const errorFunction = async () => {
   return wawa[3].yeye
 }
 
-const errorTimer = (_payload, update) => {
-  setInterval(() => {
+const errorTimer = (_payload, update: ObservableUpdateFunction) => {
+  const int = setInterval(() => {
     update(
+      undefined,
       undefined,
       undefined,
       undefined,
@@ -29,7 +29,10 @@ const errorTimer = (_payload, update) => {
       new Error('lol')
     )
   }, 10)
-  return update('yes')
+  update('yes')
+  return () => {
+    clearInterval(int)
+  }
 }
 
 const setup = async (t: ExecutionContext) => {
@@ -139,7 +142,7 @@ test.serial('type error in function', async (t) => {
 })
 
 // TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
-test.serial('throw in an interval', async (t) => {
+test.serial.only('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
     url: async () => {
@@ -148,7 +151,7 @@ test.serial('throw in an interval', async (t) => {
   })
   await t.throwsAsync(
     new Promise((resolve, reject) =>
-      coreClient.observe('errorTimer', console.info, {}, reject)
+      coreClient.observe('errorTimer', () => {}, {}, reject)
     )
   )
 })
