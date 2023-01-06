@@ -130,6 +130,10 @@ export async function createSimpleServer(
               return functionStore[name]
             }
           }
+
+          if (!name && functionStore[path]) {
+            return functionStore[path]
+          }
         }
         if (functionStore[name]) {
           return functionStore[name]
