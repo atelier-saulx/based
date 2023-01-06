@@ -40,7 +40,7 @@ const setup = async () => {
 }
 
 test.serial('authorize functions', async (t) => {
-  t.timeout(10000)
+  t.timeout(1000)
 
   const token = 'mock_token'
 
