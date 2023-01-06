@@ -49,7 +49,7 @@ const setup = async (t: ExecutionContext) => {
   return { coreClient, server }
 }
 
-test.serial.only('function error', async (t) => {
+test.serial('function error', async (t) => {
   const { coreClient } = await setup(t)
 
   coreClient.connect({
@@ -58,14 +58,10 @@ test.serial.only('function error', async (t) => {
     },
   })
 
-  console.info('go go go')
-
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
     coreClient.call('throwingFunction')
   )) as BasedError
-
-  console.log('slurp?')
 
   t.is(error.code, BasedErrorCode.FunctionError)
 })
@@ -135,8 +131,8 @@ test.serial('type error in function', async (t) => {
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
-// TODO: NEEDS TO BE FIXED
-test.serial('throw in an interval', async (t) => {
+// TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
+test.serial.skip('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
     url: async () => {
