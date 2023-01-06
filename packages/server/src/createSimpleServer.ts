@@ -163,7 +163,7 @@ export async function createSimpleServer(
       picocolors.gray(pub),
       whiteSpace(8 - pub.length),
       picocolors.green(obs),
-      whiteSpace(8 - obs.length),
+      whiteSpace(14 - obs.length),
       functionStore[name].path || ''
     )
   }
