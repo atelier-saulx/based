@@ -26,6 +26,7 @@ const errorTimer = (_payload, update: ObservableUpdateFunction) => {
       undefined,
       undefined,
       undefined,
+      // This will be wrapped in the env client
       new Error('lol')
     )
   }, 10)
