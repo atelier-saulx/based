@@ -2,6 +2,7 @@ import test from 'ava'
 import createServer, {
   BasedFunctionSpec,
   BasedObservableFunctionSpec,
+  createSimpleServer,
 } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
@@ -325,3 +326,16 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
 // TODO: add auth test
 // do it now
+// AUTH TIME
+
+test.serial('auth', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+  })
+
+  await wait(10e3)
+
+  t.is(Object.keys(server.functions.specs).length, 0)
+
+  server.destroy()
+})
