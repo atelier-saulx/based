@@ -306,7 +306,6 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   const result3 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
-
       headers: {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
@@ -331,7 +330,25 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 test.serial('auth', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
+    functions: {},
+    auth: {
+      authorize: async (context) => {
+        if (context.session?.authState === 'bla') {
+          return true
+        }
+        return false
+      },
+    },
   })
+
+  const result3 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        authorization: '',
+      },
+    })
+  ).json()
 
   await wait(10e3)
 
