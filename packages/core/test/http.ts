@@ -331,7 +331,9 @@ test.serial('auth', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
-      flap: async () => {},
+      flap: async () => {
+        return 'hello this is fun!!!'
+      },
     },
     auth: {
       authorize: async (context) => {
@@ -343,16 +345,27 @@ test.serial('auth', async (t) => {
     },
   })
 
-  const result3 = await (
+  const r1 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
-        authorization: '',
+        authorization: 'snurp',
       },
     })
   ).json()
 
-  console.info(result3)
+  t.is(r1.code, 40301)
+
+  const r = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        authorization: 'bla',
+      },
+    })
+  ).text()
+
+  t.is(r, 'hello this is fun!!!')
 
   await wait(10e3)
 
