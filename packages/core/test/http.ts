@@ -323,11 +323,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   server.destroy()
 })
 
-// TODO: add auth test
-// do it now
-// AUTH TIME
-
-test.serial('auth', async (t) => {
+test.only('auth', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
