@@ -119,7 +119,7 @@ export const copy = async (
             copyIt({}, getObj, false)
           }
         }
-      } else if (f === 'name') {
+      } else if (f === 'name' && topLevel) {
         setObj.name = obj[f] + ' copy'
       } else {
         setObj[f] = obj[f]
