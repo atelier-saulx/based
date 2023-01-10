@@ -330,7 +330,9 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 test.serial('auth', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
-    functions: {},
+    functions: {
+      flap: async () => {},
+    },
     auth: {
       authorize: async (context) => {
         if (context.session?.authState === 'bla') {
@@ -349,6 +351,8 @@ test.serial('auth', async (t) => {
       },
     })
   ).json()
+
+  console.info(result3)
 
   await wait(10e3)
 
