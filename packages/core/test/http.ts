@@ -323,7 +323,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   server.destroy()
 })
 
-test.only('auth', async (t) => {
+test.serial('auth', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
