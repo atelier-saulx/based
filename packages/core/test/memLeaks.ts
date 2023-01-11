@@ -35,7 +35,7 @@ test.serial('mem tests', async (t) => {
   Promise.all(
     [...cl.values()].map((c) => {
       for (let i = 0; i < 1000; i++) {
-        c.call('hello').catch((err) => {})
+        c.call('hello').catch(() => {})
       }
       return undefined
     })
@@ -69,5 +69,5 @@ test.serial('mem tests', async (t) => {
     `Mem after disconnect approximately ${Math.round(used2 * 100) / 100} MB`
   )
 
-  t.true(used2 < 180, 'Does not use too much mem')
+  t.true(used2 < 160, 'Does not use too much mem')
 })
