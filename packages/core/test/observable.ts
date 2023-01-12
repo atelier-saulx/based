@@ -29,7 +29,7 @@ test.serial('observables', async (t) => {
   })
 
   coreClient.once('connect', (isConnected) => {
-    console.info('connect', isConnected)
+    console.info('   connect', isConnected)
   })
 
   const obs1Results: any[] = []

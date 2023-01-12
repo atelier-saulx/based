@@ -1,60 +1,24 @@
 import test from 'ava'
-import createServer from '@based/edge-server'
-import { wait } from '@saulx/utils'
+import { createSimpleServer } from '@based/server'
+import { wait, readStream } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
-import { join } from 'path'
 import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
 
 test.serial('functions (small over http + stream)', async (t) => {
-  const routes = {
-    hello: {
-      stream: true,
-    },
-  }
-
-  const functionSpecs = {
-    hello: {
-      checksum: 1,
-      functionPath: join(__dirname, './functions/simple-stream.js'),
-      ...routes.hello,
-    },
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 20e3,
-      uninstall: async ({ name }) => {
-        console.info('uninstall', name)
-        await wait(1e3)
-        return true
-      },
-      route: ({ path, name }) => {
-        for (const name in routes) {
-          if (routes[name].path === path) {
-            return routes[name]
-          }
-        }
-        if (name && routes[name]) {
-          return routes[name]
-        }
-        return false
-      },
-      install: async ({ name }) => {
-        if (functionSpecs[name]) {
-          return functionSpecs[name]
-        } else {
-          return false
-        }
+      hello: {
+        stream: true,
+        function: async () => {
+          return 'bla'
+        },
       },
     },
   })
-
-  // chunk size = 4 * 1024 * 1024 / 32 (131kb)
 
   const result = await (
     await fetch('http://localhost:9910/hello', {
@@ -68,102 +32,70 @@ test.serial('functions (small over http + stream)', async (t) => {
 
   t.is(result, 'bla')
 
-  await wait(30e3)
+  await wait(6e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })
 
-// test.serial('functions (over http + stream)', async (t) => {
-//   const routes = {
-//     hello: {
-//       name: 'hello',
-//       path: '/flap',
-//       stream: true,
-//     },
-//   }
+test.serial('functions (over http + stream)', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        maxPayloadSize: 1e9,
+        stream: true,
+        function: async ({ stream }) => {
+          const buf = await readStream(stream)
+          console.info('is end...', buf.byteLength)
+          return 'bla'
+        },
+      },
+    },
+  })
 
-//   const functionSpecs = {
-//     hello: {
-//       checksum: 1,
-//       functionPath: join(__dirname, './functions/stream.js'),
-//       ...routes.hello,
-//     },
-//   }
+  const bigBod: any[] = []
 
-//   const server = await createServer({
-//     port: 9910,
-//     functions: {
-//       memCacheTimeout: 3e3,
-//       idleTimeout: 20e3,
-//       uninstall: async ({ name }) => {
-//         console.info('uninstall', name)
-//         await wait(1e3)
-//         return true
-//       },
-//       route: ({ path, name }) => {
-//         for (const name in routes) {
-//           if (routes[name].path === path) {
-//             return routes[name]
-//           }
-//         }
-//         if (name && routes[name]) {
-//           return routes[name]
-//         }
-//         return false
-//       },
-//       install: async ({ name }) => {
-//         if (functionSpecs[name]) {
-//           return functionSpecs[name]
-//         } else {
-//           return false
-//         }
-//       },
-//     },
-//   })
+  for (let i = 0; i < 1e4; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
 
-//   const bigBod: any[] = []
+  const result = await (
+    await fetch('http://localhost:9910/hello', {
+      method: 'post',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify(bigBod),
+    })
+  ).text()
 
-//   for (let i = 0; i < 1e6; i++) {
-//     bigBod.push({ flap: 'snurp', i })
-//   }
+  t.is(result, 'bla')
 
-//   const result = await (
-//     await fetch('http://localhost:9910/flap', {
-//       method: 'post',
-//       headers: {
-//         'content-type': 'application/json',
-//       },
-//       body: JSON.stringify(bigBod),
-//     })
-//   ).text()
+  const x = await gzip(JSON.stringify(bigBod))
 
-//   t.is(result, 'bla')
+  try {
+    const resultBrotli = await (
+      await fetch('http://localhost:9910/hello', {
+        method: 'post',
+        headers: {
+          'content-encoding': 'gzip',
+          'content-type': 'application/json',
+        },
+        body: x,
+      })
+    ).text()
 
-//   const x = await gzip(JSON.stringify(bigBod))
+    t.is(resultBrotli, 'bla')
+  } catch (err) {
+    console.info('ERROR', err)
+    t.fail('Crash with uncompressing')
+  }
 
-//   try {
-//     const resultBrotli = await (
-//       await fetch('http://localhost:9910/flap', {
-//         method: 'post',
-//         headers: {
-//           'content-encoding': 'gzip',
-//           'content-type': 'application/json',
-//         },
-//         body: x,
-//       })
-//     ).text()
+  await wait(15e3)
 
-//     t.is(resultBrotli, 'bla')
-//   } catch (err) {
-//     console.info('ERROR', err)
-//     t.fail('Crash with uncompressing')
-//   }
+  t.is(Object.keys(server.functions.specs).length, 0)
 
-//   await wait(30e3)
-
-//   t.is(Object.keys(server.functions.functions).length, 0)
-
-//   server.destroy()
-// })
+  server.destroy()
+})

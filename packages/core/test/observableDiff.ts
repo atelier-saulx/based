@@ -1,41 +1,32 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'path'
 
 test.serial('observablesDiff', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const obsStore = {
-    counter: {
-      observable: true,
-      name: 'counter',
-      checksum: 1,
-      functionPath: join(__dirname, '/functions/objectCounter.js'),
-    },
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
-    functions: {
-      memCacheTimeout: 5e3,
-      idleTimeout: 1e3,
-      // add some defaults here...
-      route: ({ name }) => {
-        if (name && obsStore[name]) {
-          return { name, observable: true }
+    observables: {
+      counter: async (payload, update) => {
+        const largeThing: { bla: any[] } = { bla: [] }
+        for (let i = 0; i < 1e4; i++) {
+          largeThing.bla.push({
+            title: 'snurp',
+            cnt: i,
+            snurp: ~~(Math.random() * 19999),
+          })
         }
-        return false
-      },
-      uninstall: async () => {
-        return true
-      },
-      install: async ({ name }) => {
-        if (obsStore[name]) {
-          return obsStore[name]
-        } else {
-          return false
+        update(largeThing)
+        const counter = setInterval(() => {
+          largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
+            ~~(Math.random() * 19999)
+          // diff is made on an extra cache layer
+          update(largeThing)
+        }, 1)
+        return () => {
+          clearInterval(counter)
         }
       },
     },
@@ -89,5 +80,5 @@ test.serial('observablesDiff', async (t) => {
   t.is(server.activeObservablesById.size, 0)
 
   await wait(6e3)
-  t.is(Object.keys(server.functions.observables).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 })
