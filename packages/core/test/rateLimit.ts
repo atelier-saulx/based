@@ -16,7 +16,6 @@ test.serial('rate limit', async (t) => {
 
   const coreClient = new BasedCoreClient()
 
-  let isLimit = false
   let limits = 0
 
   for (let i = 0; i < 2e3; i++) {
@@ -27,7 +26,6 @@ test.serial('rate limit', async (t) => {
       },
     })
     if (x.status === 429) {
-      isLimit = true
       limits++
     }
   }
@@ -40,11 +38,14 @@ test.serial('rate limit', async (t) => {
 
   t.is(limits, 1501)
 
-  const x = await coreClient.call('flap')
+  let isConnect = false
+  coreClient.once('connect', () => {
+    isConnect = true
+  })
 
-  t.true(!!x)
+  await wait(5e3)
 
-  t.true(isLimit, 'is rate Limited')
+  t.is(isConnect, false)
 
   await wait(10e3)
 
