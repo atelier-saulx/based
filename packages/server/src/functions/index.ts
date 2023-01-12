@@ -176,6 +176,8 @@ export class BasedFunctions {
       this.paths[spec.path] = spec.name
     }
 
+    this.specs[spec.name] = spec
+
     if (this.specs[spec.name] && this.server.activeObservables[spec.name]) {
       if (!isObservableFunctionSpec(spec)) {
         for (const [id] of this.server.activeObservables[spec.name]) {
@@ -187,8 +189,6 @@ export class BasedFunctions {
         }
       }
     }
-
-    this.specs[spec.name] = spec
 
     return false
   }

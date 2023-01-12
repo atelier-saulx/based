@@ -1,47 +1,22 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'path'
 
 test.serial('observables', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const routes = {
-    counter: {
-      observable: true,
-      name: 'counter',
-    },
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
-    functions: {
-      memCacheTimeout: 1e3,
-      idleTimeout: 1e3,
-
-      route: ({ name }) => {
-        if (name && routes[name]) {
-          return routes[name]
-        }
-        return false
-      },
-
-      uninstall: async (opts) => {
-        console.info('unRegister', opts.name)
-        return true
-      },
-
-      install: async ({ name }) => {
-        if (routes[name]) {
-          return {
-            observable: true,
-            name,
-            checksum: 1,
-            functionPath: join(__dirname, './functions/counter.js'),
-          }
-        } else {
-          return false
+    observables: {
+      counter: (_payload, update) => {
+        let cnt = 0
+        update(cnt)
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
         }
       },
     },
@@ -84,15 +59,22 @@ test.serial('observables', async (t) => {
 
   close()
 
-  // memcache
   server.functions.update({
     observable: true,
     name: 'counter',
     checksum: 2,
-    functionPath: join(__dirname, './functions/counter2.js'),
+    function: (_payload, update) => {
+      let cnt = 0
+      const counter = setInterval(() => {
+        update('counter2:' + ++cnt)
+      }, 100)
+      return () => {
+        clearInterval(counter)
+      }
+    },
   })
 
-  await wait(3e3)
+  await wait(1e3)
 
   close2()
 
@@ -104,11 +86,11 @@ test.serial('observables', async (t) => {
   t.is(Object.keys(server.activeObservables).length, 1)
   t.is(server.activeObservablesById.size, 1)
 
-  await wait(1000)
+  await wait(5000)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
   await wait(6e3)
-  t.is(Object.keys(server.functions.observables).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 })
