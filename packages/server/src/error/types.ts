@@ -15,7 +15,7 @@ export enum BasedErrorCode {
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
   FunctionIsStream = 40404,
-  CannotStreamToObservableFunction = 40402,
+  CannotStreamToObservableFunction = 40405,
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
   PayloadTooLarge = 40002,

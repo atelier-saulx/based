@@ -1,76 +1,70 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+// make this methods on the server
+import { createSimpleServer, callFunction, get, observe } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'path'
 
 test.serial('nested functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    hello: {
-      name: 'hello',
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'hello.js'),
-    },
-    fnWithNested: {
-      name: 'fnWithNested',
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'fnWithNested.js'),
-    },
-    counter: {
-      observable: true,
-      name: 'counter',
-      checksum: 1,
-      functionPath: join(__dirname, './functions/counter.js'),
-    },
-    objectCounter: {
-      observable: true,
-      name: 'objectCounter',
-      checksum: 1,
-      functionPath: join(__dirname, './functions/objectCounter.js'),
-    },
-    obsWithNested: {
-      observable: true,
-      name: 'obsWithNested',
-      checksum: 1,
-      functionPath: join(__dirname, './functions/obsWithNested.js'),
-    },
-    obsWithNestedLvl2: {
-      observable: true,
-      name: 'obsWithNestedLvl2',
-      checksum: 1,
-      functionPath: join(__dirname, './functions/obsWithNestedLvl2.js'),
-    },
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
+    observables: {
+      obsWithNestedLvl2: (payload, update) => {
+        console.info('startlvl2')
+        return observe(server, 'obsWithNested', {}, 'json', update, () => {})
+      },
+      obsWithNested: async (payload, update) => {
+        return observe(
+          server,
+          payload === 'json' ? 'objectCounter' : 'counter',
+          {},
+          payload,
+          update,
+          () => {}
+        )
+      },
+      objectCounter: async (payload, update) => {
+        const largeThing: { bla: any[] } = { bla: [] }
+        for (let i = 0; i < 1e4; i++) {
+          largeThing.bla.push({
+            title: 'snurp',
+            cnt: i,
+            snurp: ~~(Math.random() * 19999),
+          })
+        }
+        update(largeThing)
+        const counter = setInterval(() => {
+          largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
+            ~~(Math.random() * 19999)
+          update(largeThing)
+        }, 1)
+        return () => {
+          clearInterval(counter)
+        }
+      },
+      counter: async (_payload, update) => {
+        let cnt = 0
+        update(cnt)
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
+        }
+      },
+    },
     functions: {
-      importWrapperPath: join(__dirname, './functions/importWrapper.js'),
-      maxWorkers: 3,
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return {
-            ...store[name],
-            name,
-            maxPayloadSize: 1e6 * 10,
-          }
-        }
-        return false
+      fnWithNested: async (payload, context) => {
+        const x = await callFunction(server, 'hello', context, payload)
+        await get(server, 'obsWithNested', context, 'json')
+        return x
       },
-      uninstall: async () => {
-        await wait(1e3)
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return { ...store[name] }
-        } else {
-          return false
+      hello: async (payload) => {
+        if (payload) {
+          return payload
         }
+        return 'flap'
       },
     },
   })
@@ -81,7 +75,7 @@ test.serial('nested functions', async (t) => {
     },
   })
 
-  const x = await coreClient.function('fnWithNested', { bla: true })
+  const x = await coreClient.call('fnWithNested', { bla: true })
 
   t.is(x, '{"bla":true}')
 
@@ -149,5 +143,5 @@ test.serial('nested functions', async (t) => {
 
   await wait(15e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 })

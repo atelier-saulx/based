@@ -1,26 +1,36 @@
 import test from 'ava'
-import createServer from '@based/edge-server'
+import createServer, {
+  BasedFunctionSpec,
+  BasedObservableFunctionSpec,
+  createSimpleServer,
+} from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import { join } from 'node:path'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
 test.serial('functions (over http)', async (t) => {
-  const store = {
+  const store: {
+    [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
+  } = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      functionPath: join(__dirname, 'functions', 'hello.js'),
-      customHttpResponse: async (result, payload, client) => {
-        const { res, isAborted } = client
-        if (isAborted) {
-          return
+      function: async (payload) => {
+        if (payload) {
+          return payload
         }
+        return 'flap'
+      },
+      customHttpResponse: async (result, payload, context) => {
+        if (!context.session) {
+          return false
+        }
+        const res = context.session.res
         res.writeStatus('200 OkiDoki')
         if (typeof result === 'object') {
           res.end(JSON.stringify(result))
@@ -36,7 +46,7 @@ test.serial('functions (over http)', async (t) => {
     port: 9910,
     functions: {
       memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
+      idleTimeout: 1e3,
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -44,12 +54,14 @@ test.serial('functions (over http)', async (t) => {
               return {
                 name: store[name].name,
                 observable: store[name].observable,
+                maxPayloadSize: 1e6,
+                rateLimitTokens: 1,
               }
             }
           }
         }
         if (name && store[name]) {
-          return { name }
+          return { name, maxPayloadSize: 1e6, rateLimitTokens: 1 }
         }
         return false
       },
@@ -83,11 +95,11 @@ test.serial('functions (over http)', async (t) => {
       headers: {
         'content-type': 'application/json',
       },
-      body: JSON.stringify({ flurp: 1 }),
+      body: JSON.stringify({ flurp: 2 }),
     })
   ).text()
 
-  t.is(result3, '{"flurp":1}')
+  t.is(result3, '{"flurp":2}')
 
   const x = await (await fetch('http://localhost:9910/gurk')).text()
 
@@ -95,19 +107,30 @@ test.serial('functions (over http)', async (t) => {
 
   await wait(10e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })
 
 test.serial('get (over http)', async (t) => {
-  const store = {
+  const store: {
+    [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
+  } = {
     hello: {
       path: '/counter',
       name: 'hello',
       checksum: 1,
       observable: true,
-      functionPath: join(__dirname, 'functions', 'counter.js'),
+      function: async (_payload, update) => {
+        let cnt = 0
+        update(cnt)
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
+        }
+      },
     },
   }
 
@@ -123,13 +146,19 @@ test.serial('get (over http)', async (t) => {
               return {
                 name: store[name].name,
                 observable: store[name].observable,
+                maxPayloadSize: 1e6,
+                rateLimitTokens: 1,
               }
             }
           }
         }
-
         if (name && store[name]) {
-          return { name, observable: store[name].observable }
+          return {
+            name,
+            observable: store[name].observable,
+            maxPayloadSize: 1e6,
+            rateLimitTokens: 1,
+          }
         }
         return false
       },
@@ -148,49 +177,50 @@ test.serial('get (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result, '0')
+  t.is(result, '1')
 
   await wait(1e3)
 
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result2, '1')
+  t.is(result2, '2')
 
   await wait(1e3)
 
   const result3 = await (await fetch('http://localhost:9910/hello')).text()
 
-  t.is(result3, '2')
+  t.is(result3, '3')
 
   await wait(10e3)
 
-  t.is(Object.keys(server.functions.observables).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })
 
 test.serial('functions (over http + contentEncoding)', async (t) => {
-  const store = {
+  const store: { [key: string]: BasedFunctionSpec } = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      functionPath: join(__dirname, './functions/flap.js'),
-      customHttpResponse: async (result, payload, client) => {
-        const { res, isAborted } = client
-        if (isAborted) {
-          return
+      function: async (payload) => {
+        await wait(100)
+        if (payload) {
+          return payload
         }
-        // just make a return thing
-        // { headers: {} , status: , reply }
-        // send() can be wrapped in the based fn header
-
-        res.writeStatus('200 OkiDoki')
+        return 'flap'
+      },
+      customHttpResponse: async (result, payload, context) => {
+        if (!context.session) {
+          return false
+        }
+        context.session.res.writeStatus('200 OkiDoki')
         if (typeof result === 'object') {
-          res.end(JSON.stringify(result))
+          context.session.res.end(JSON.stringify(result))
           return true
         }
-        res.end('yesh ' + result)
+        context.session.res.end('yesh ' + result)
         return true
       },
     },
@@ -210,13 +240,18 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
                 maxPayloadSize: 1e11,
                 name: store[name].name,
                 observable: store[name].observable,
+                rateLimitTokens: 1,
               }
             }
           }
         }
 
         if (name && store[name]) {
-          return { name }
+          return {
+            name,
+            maxPayloadSize: 1e11,
+            rateLimitTokens: 1,
+          }
         }
         return false
       },
@@ -271,7 +306,6 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   const result3 = await (
     await fetch('http://localhost:9910/flap', {
       method: 'post',
-
       headers: {
         'content-encoding': 'gzip',
         'content-type': 'application/json',
@@ -284,9 +318,54 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
   await wait(10e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })
 
-// TODO: add auth test
+test.serial('auth', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      flap: async () => {
+        return 'hello this is fun!!!'
+      },
+    },
+    auth: {
+      authorize: async (context) => {
+        if (context.session?.authState === 'bla') {
+          return true
+        }
+        return false
+      },
+    },
+  })
+
+  const r1 = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        authorization: 'snurp',
+      },
+    })
+  ).json()
+
+  t.is(r1.code, 40301)
+
+  const r = await (
+    await fetch('http://localhost:9910/flap', {
+      method: 'post',
+      headers: {
+        authorization: 'bla',
+      },
+    })
+  ).text()
+
+  t.is(r, 'hello this is fun!!!')
+
+  await wait(10e3)
+
+  t.is(Object.keys(server.functions.specs).length, 0)
+
+  server.destroy()
+})

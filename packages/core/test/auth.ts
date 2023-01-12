@@ -1,42 +1,28 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
-import { join } from 'path'
+import { createSimpleServer, isWsContext } from '@based/server'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    hello: join(__dirname, '/functions', 'hello.js'),
-    lotsOfData: join(__dirname, '/functions', 'lotsOfData.js'),
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return {
-            name,
+      hello: {
+        maxPayloadSize: 1e8,
+        function: async (payload) => {
+          if (payload) {
+            return payload.length
           }
-        }
-        return false
+          return 'flap'
+        },
       },
-      uninstall: async () => {
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return {
-            name,
-            checksum: 1,
-            functionPath: store[name],
-          }
-        } else {
-          return false
+      lotsOfData: async () => {
+        let str = ''
+        for (let i = 0; i < 200000; i++) {
+          str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
         }
+        return str
       },
     },
   })
@@ -180,26 +166,30 @@ test.serial('auth out', async (t) => {
 test.serial('authState update', async (t) => {
   t.timeout(4000)
   const { coreClient, server } = await setup()
-
   t.teardown(() => {
     coreClient.disconnect()
     server.destroy()
   })
-
   await coreClient.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
-
   await coreClient.auth('mock_token')
-
-  await t.notThrowsAsync(coreClient.function('hello'))
+  await t.notThrowsAsync(coreClient.call('hello'))
   server.auth.updateConfig({
-    authorizePath: join(__dirname, 'functions', 'authAdvanced'),
+    authorize: async (context) => {
+      const authState = 'second_token'
+      if (context.session) {
+        context.session.authState = authState
+        if (isWsContext(context)) {
+          server.auth.sendAuthUpdate(context, authState)
+        }
+      }
+      return true
+    },
   })
   await coreClient.auth('second_token')
-
-  await coreClient.function('hello')
+  await coreClient.call('hello')
   t.deepEqual(coreClient.authState, 'second_token')
 })

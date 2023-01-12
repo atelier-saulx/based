@@ -80,6 +80,15 @@ export const isHttpContext = (
   return false
 }
 
+export const isWsContext = (
+  ctx: Context<HttpSession | WebSocketSession>
+): ctx is Context<WebSocketSession> => {
+  if (ctx.session && !('res' in ctx.session)) {
+    return true
+  }
+  return false
+}
+
 export const isWsSession = (
   session: HttpSession | WebSocketSession
 ): session is WebSocketSession => {

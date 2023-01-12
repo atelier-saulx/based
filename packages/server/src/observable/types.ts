@@ -8,7 +8,7 @@ export type ObservableUpdateFunction = {
     fromChecksum?: number,
     isDeflate?: boolean,
     rawData?: any,
-    err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>
+    err?: Error | BasedErrorData<BasedErrorCode.ObservableFunctionError>
   ): void
   __internalObs__?: true
 }

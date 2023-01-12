@@ -6,6 +6,7 @@ import { BasedFunctions, FunctionConfig } from './functions'
 import { BasedAuth, AuthConfig } from './auth'
 import { BasedErrorCode, BasedErrorData } from './error'
 import { wait } from '@saulx/utils'
+import picocolors = require('picocolors')
 
 type EventMap = {
   error: BasedErrorData
@@ -155,12 +156,14 @@ export class BasedServer {
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {
         if (listenSocket) {
-          console.info('💫  Based-edge-server listening on port:', this.port)
-          // do this better wrap a nice thing arround it
+          console.info('    Based-server listening on port:', this.port)
           this.listenSocket = listenSocket
           resolve(this)
         } else {
-          console.info('🤮  Based-edge-server error on port:', this.port)
+          console.info(
+            picocolors.red('🤮  Based-edge-server error on port:'),
+            this.port
+          )
           reject(new Error('Cannot start based-server on port: ' + this.port))
         }
       })
@@ -168,7 +171,7 @@ export class BasedServer {
   }
 
   async destroy() {
-    console.info('🔥 Destroy Based-edge-server')
+    console.info(picocolors.gray('    Destroy Based-server\n'))
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
       this.listenSocket = null

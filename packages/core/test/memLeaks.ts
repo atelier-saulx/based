@@ -1,44 +1,24 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'node:path'
 
 test.serial('mem tests', async (t) => {
-  const store = {
-    hello: {
-      name: 'hello',
-      checksum: 1,
-      functionPath: join(__dirname, './functions', 'wait.js'),
-    },
-  }
-
-  await createServer({
+  await createSimpleServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 0,
-      idleTimeout: 1e3,
-
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return { name, observable: store[name].observable }
-        }
-        return false
-      },
-
-      uninstall: async (opts) => {
-        console.info('unRegister', opts.name)
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return { ...store[name] }
-        } else {
-          return false
-        }
+      hello: async () => {
+        await wait(3e3)
+        return 'hello'
       },
     },
   })
+
+  console.info(
+    `Mem before ${
+      Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    } MB`
+  )
 
   const cl: Set<BasedCoreClient> = new Set()
 
@@ -55,7 +35,7 @@ test.serial('mem tests', async (t) => {
   Promise.all(
     [...cl.values()].map((c) => {
       for (let i = 0; i < 1000; i++) {
-        c.function('hello')
+        c.call('hello').catch(() => {})
       }
       return undefined
     })

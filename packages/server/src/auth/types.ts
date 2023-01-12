@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { Context } from '../context'
+import { Context, HttpSession, WebSocketSession } from '../context'
 import uws from '@based/uws'
 
 export type AuthConfig = {
@@ -8,14 +8,14 @@ export type AuthConfig = {
 }
 
 export type Authorize = (
-  context: Context,
+  context: Context<HttpSession | WebSocketSession>,
   name: string,
   payload?: any
 ) => Promise<boolean>
 
 export type AuthorizeHandshake = (
   server: BasedServer,
-  context: Context,
+  context: Context<HttpSession | WebSocketSession>,
   payload?: any
 ) => Promise<boolean>
 

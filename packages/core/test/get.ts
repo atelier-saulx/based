@@ -1,50 +1,42 @@
 import test from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
-import { join } from 'path'
 
 const setup = async () => {
   const coreClient = new BasedCoreClient()
-  const obsStore = {
-    counter: {
-      name: 'counter',
-      observable: true,
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'counter.js'),
-    },
-    'counter-cached': {
-      observable: true,
-      name: 'counter-cached',
-      checksum: 1,
-      functionPath: join(__dirname, 'functions', 'counter.js'),
-      memCacheTimeout: 1e3,
-    },
-  }
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
-    functions: {
-      memCacheTimeout: 0,
-      idleTimeout: 1e3,
-      route: ({ name }) => {
-        if (name && obsStore[name]) {
-          return obsStore[name]
-        }
-        return false
+    observables: {
+      counter: {
+        memCacheTimeout: 0,
+        function: async (_payload, update) => {
+          let cnt = 0
+          update(cnt)
+          const counter = setInterval(() => {
+            update(++cnt)
+          }, 1000)
+          return () => {
+            clearInterval(counter)
+          }
+        },
       },
-      uninstall: async (opts) => {
-        console.info('unRegister', opts.name)
-        return true
-      },
-      install: async ({ name }) => {
-        if (obsStore[name]) {
-          return obsStore[name]
-        } else {
-          return false
-        }
+      'counter-cached': {
+        memCacheTimeout: 1e3,
+        function: async (_payload, update) => {
+          let cnt = 0
+          update(cnt)
+          const counter = setInterval(() => {
+            update(++cnt)
+          }, 1000)
+          return () => {
+            clearInterval(counter)
+          }
+        },
       },
     },
+    functions: {},
   })
   return { coreClient, server }
 }
@@ -88,14 +80,16 @@ test.serial('get', async (t) => {
 
   await wait(6000)
 
-  t.is(Object.keys(server.functions.observables).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 })
 
 test.serial.only('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorizePath: join(__dirname, './functions/auth.js'),
+    authorize: async (context) => {
+      return context.session?.authState === 'mock_token'
+    },
   })
 
   t.teardown(() => {

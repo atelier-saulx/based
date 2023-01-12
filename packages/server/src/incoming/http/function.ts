@@ -40,7 +40,7 @@ export const httpFunction = (
             }
           })
           .catch((err) => {
-            sendError(server, ctx, err.code, {
+            sendError(server, ctx, BasedErrorCode.FunctionError, {
               err,
               route,
             })

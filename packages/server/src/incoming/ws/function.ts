@@ -36,7 +36,7 @@ const sendFunction = (
             )
           })
           .catch((err) => {
-            sendError(server, ctx, err.code, {
+            sendError(server, ctx, BasedErrorCode.FunctionError, {
               route,
               requestId,
               err,
@@ -131,6 +131,7 @@ export const functionMessage = (
 
       if (!ok) {
         sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
+          requestId,
           route,
         })
         return false
@@ -140,6 +141,7 @@ export const functionMessage = (
     })
     .catch((err) => {
       sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
+        requestId,
         route,
         err,
       })

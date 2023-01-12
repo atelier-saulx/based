@@ -1,49 +1,54 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedCoreClient } from '../src/index'
-import createServer from '@based/edge-server'
+import { createSimpleServer, ObservableUpdateFunction } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
-import { join } from 'path'
+
+const throwingFunction = async () => {
+  throw new Error('This is error message')
+}
+
+const counter = (_payload, update) => {
+  return update({ yeye: 'yeye' })
+}
+
+const errorFunction = async () => {
+  const wawa = [1, 2]
+  // @ts-ignore
+  return wawa[3].yeye
+}
+
+const errorTimer = (_payload, update: ObservableUpdateFunction) => {
+  const int = setInterval(() => {
+    update(
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      // This will be wrapped in the env client
+      new Error('lol')
+    )
+  }, 10)
+  update('yes')
+  return () => {
+    clearInterval(int)
+  }
+}
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
   const coreClient = new BasedCoreClient()
 
-  const store = {
-    throwingFunction: join(__dirname, '/functions/throwingFunctions.js'),
-    counter: join(__dirname, '/functions/counterYe.js'),
-    errorFunction: join(__dirname, '/functions/errorFunction.js'),
-    errorTimer: join(__dirname, '/functions/errorTimer.js'),
-  }
-
-  const server = await createServer({
+  const server = await createSimpleServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      route: ({ name }) => {
-        if (name && store[name]) {
-          return {
-            name,
-            observable: name === 'counter' || name === 'errorTimer',
-          }
-        }
-        return false
-      },
-      uninstall: async () => {
-        return true
-      },
-      install: async ({ name }) => {
-        if (store[name]) {
-          return {
-            observable: name === 'counter' || name === 'errorTimer',
-            name,
-            checksum: 1,
-            functionPath: store[name],
-          }
-        } else {
-          return false
-        }
-      },
+      throwingFunction,
+      errorFunction,
+    },
+    observables: {
+      counter,
+      errorTimer,
     },
   })
 
@@ -66,8 +71,9 @@ test.serial('function error', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('throwingFunction')
+    coreClient.call('throwingFunction')
   )) as BasedError
+
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
@@ -75,7 +81,7 @@ test.serial('function authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorizePath: join(__dirname, './functions/throwingFunction.js'),
+    authorize: throwingFunction,
   })
 
   coreClient.connect({
@@ -86,7 +92,7 @@ test.serial('function authorize error', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('throwingFunction')
+    coreClient.call('throwingFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
@@ -95,7 +101,7 @@ test.serial('observable authorize error', async (t) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
-    authorizePath: join(__dirname, './functions/throwingFunction.js'),
+    authorize: throwingFunction,
   })
 
   coreClient.connect({
@@ -131,12 +137,12 @@ test.serial('type error in function', async (t) => {
 
   // TODO: Check error instance of
   const error = (await t.throwsAsync(
-    coreClient.function('errorFunction')
+    coreClient.call('errorFunction')
   )) as BasedError
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
-// TODO: NEEDS TO BE FIXED
+// TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
 test.serial('throw in an interval', async (t) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
@@ -146,7 +152,7 @@ test.serial('throw in an interval', async (t) => {
   })
   await t.throwsAsync(
     new Promise((resolve, reject) =>
-      coreClient.observe('errorTimer', console.info, {}, reject)
+      coreClient.observe('errorTimer', () => {}, {}, reject)
     )
   )
 })
