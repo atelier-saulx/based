@@ -120,6 +120,7 @@ export async function createSimpleServer(
     port: props.port,
     auth: props.auth,
     cert: props.cert,
+    key: props.key,
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3, // never needs to uninstall
