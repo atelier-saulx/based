@@ -9,9 +9,11 @@ test.serial('nested functions', async (t) => {
 
   const server = await createSimpleServer({
     port: 9910,
+    uninstall: async (props) => {
+      return true
+    },
     observables: {
       obsWithNestedLvl2: (payload, update) => {
-        console.info('startlvl2')
         return observe(server, 'obsWithNested', {}, 'json', update, () => {})
       },
       obsWithNested: async (payload, update) => {
@@ -118,8 +120,6 @@ test.serial('nested functions', async (t) => {
   close()
   close2()
 
-  console.info('CLOSED 1, 2, NOW LVL2')
-
   const close3 = coreClient.observe(
     'obsWithNestedLvl2',
     () => {
@@ -128,7 +128,6 @@ test.serial('nested functions', async (t) => {
     'glurk'
   )
 
-  console.info('GET FROM LVL2')
   const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
 
   t.is(bla2.bla.length, 1e4)
@@ -142,6 +141,8 @@ test.serial('nested functions', async (t) => {
   t.true(incomingCnt2 > 10)
 
   await wait(15e3)
+
+  console.info('---- flap--->', Object.keys(server.functions.specs).length)
 
   t.is(Object.keys(server.functions.specs).length, 0)
 })

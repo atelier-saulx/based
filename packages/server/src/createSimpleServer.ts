@@ -21,6 +21,16 @@ export type SimpleServerOptions = {
   key?: string
   cert?: string
   auth?: AuthConfig
+  install?: (opts: {
+    server: BasedServer
+    name: string
+    function?: BasedFunctionSpec | BasedObservableFunctionSpec
+  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+  uninstall?: (opts: {
+    server: BasedServer
+    name: string
+    function: BasedObservableFunctionSpec | BasedFunctionSpec
+  }) => Promise<boolean>
   functions?: {
     [key: string]:
       | BasedFunction
@@ -113,16 +123,20 @@ export async function createSimpleServer(
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3, // never needs to uninstall
-      uninstall: async () => {
-        return true
-      },
-      install: async ({ name }) => {
-        if (functionStore[name]) {
-          return functionStore[name]
-        } else {
-          return false
-        }
-      },
+      uninstall:
+        props.uninstall ||
+        (async () => {
+          return true
+        }),
+      install:
+        props.install ||
+        (async ({ name }) => {
+          if (functionStore[name]) {
+            return functionStore[name]
+          } else {
+            return false
+          }
+        }),
       route: ({ path, name }) => {
         if (path) {
           for (const name in functionStore) {
