@@ -57,7 +57,7 @@ test.serial('functions (over http + stream)', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 1e4; i++) {
+  for (let i = 0; i < 1e5; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
 
