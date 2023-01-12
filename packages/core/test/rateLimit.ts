@@ -1,55 +1,14 @@
 import test from 'ava'
-import createServer from '@based/edge-server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import { BasedCoreClient } from '../src/index'
-import { join } from 'path'
 
-test.serial('rate limit ws', async (t) => {
-  const routes = {
-    hello: {
-      name: 'hello',
-      path: '/flap',
-    },
-  }
-
-  const functionSpecs = {
-    hello: {
-      checksum: 1,
-      functionPath: join(__dirname, '/functions/hello.js'),
-      ...routes.hello,
-    },
-  }
-
-  const server = await createServer({
+test.serial('rate limit', async (t) => {
+  const server = await createSimpleServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-      uninstall: async () => {
-        await wait(1e3)
-        return true
-      },
-      route: ({ path, name }) => {
-        if (path) {
-          for (const name in routes) {
-            if (routes[name].path === path) {
-              return routes[name]
-            }
-          }
-        }
-        if (name && routes[name]) {
-          return routes[name]
-        }
-        return false
-      },
-      install: async ({ name }) => {
-        if (functionSpecs[name]) {
-          return functionSpecs[name]
-        } else {
-          return false
-        }
-      },
+      flap: async () => {},
     },
   })
 
@@ -79,7 +38,7 @@ test.serial('rate limit ws', async (t) => {
     },
   })
 
-  const x = await coreClient.function('hello')
+  const x = await coreClient.call('hello')
 
   t.true(!!x)
 
@@ -87,7 +46,7 @@ test.serial('rate limit ws', async (t) => {
 
   await wait(10e3)
 
-  t.is(Object.keys(server.functions.functions).length, 0)
+  t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
 })
