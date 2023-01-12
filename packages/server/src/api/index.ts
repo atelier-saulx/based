@@ -179,7 +179,6 @@ export const observe = (
   }
 
   const id = genObservableId(name, payload)
-  let obs: ActiveObservable
   let isClosed = false
 
   const close = () => {
@@ -187,9 +186,8 @@ export const observe = (
       return
     }
     isClosed = true
-    if (obs) {
-      unsubscribeFunction(server, id, update)
-    }
+    console.info('close!', name, id)
+    unsubscribeFunction(server, id, update)
   }
 
   if (hasObs(server, id)) {
