@@ -142,7 +142,10 @@ test.serial('nested functions', async (t) => {
   console.info(
     '---- flap--->',
     Object.keys(server.functions.specs).length,
-    server.activeObservablesById.size
+    server.activeObservablesById.size,
+    server.activeObservablesById.forEach((v) => {
+      console.info('still have name', v.name)
+    })
   )
 
   t.is(server.activeObservablesById.size, 0)
