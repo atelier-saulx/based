@@ -3,7 +3,6 @@ import { BasedErrorCode, createError } from '../error'
 import { Context } from '../context'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../functions'
 import {
-  ActiveObservable,
   genObservableId,
   hasObs,
   createObs,
@@ -186,7 +185,6 @@ export const observe = (
       return
     }
     isClosed = true
-    console.info('close!', name, id)
     unsubscribeFunction(server, id, update)
   }
 
