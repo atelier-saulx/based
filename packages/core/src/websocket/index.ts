@@ -88,7 +88,7 @@ const connect = (
       const ws = (connection.ws = createWebsocket(realUrl, client))
 
       ws.onerror = () => {
-        // console.error(err)
+        console.error(err)
       }
       ws.onmessage = (d) => {
         client.onData(d)
