@@ -26,14 +26,9 @@ test.serial('rate limit', async (t) => {
         'content-type': 'application/json',
       },
     })
-    console.info(x.status)
     if (x.status === 429) {
-      // console.info('bah ratelimit lets wait 30 seconds...')
       isLimit = true
       limits++
-      // await wait(30e3)
-    } else {
-      // console.info('Pass', i)
     }
   }
 
@@ -43,7 +38,7 @@ test.serial('rate limit', async (t) => {
     },
   })
 
-  console.info(limits)
+  t.is(limits, 1501)
 
   const x = await coreClient.call('flap')
 
