@@ -9,7 +9,11 @@ import { readBody } from './readBody'
 import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { blockIncomingRequest, rateLimitRequest } from '../../security'
+import {
+  blockIncomingRequest,
+  rateLimitRequest,
+  endRateLimitHttp,
+} from '../../security'
 import { parseAuthState } from '../../auth'
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
@@ -93,6 +97,7 @@ export const httpHandler = (
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.http)
   ) {
+    endRateLimitHttp(res)
     return
   }
 

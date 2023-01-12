@@ -8,13 +8,16 @@ test.serial('rate limit', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
-      flap: async () => {},
+      flap: async () => {
+        return {}
+      },
     },
   })
 
   const coreClient = new BasedCoreClient()
 
   let isLimit = false
+  let limits = 0
 
   for (let i = 0; i < 2e3; i++) {
     const x = await fetch('http://localhost:9910/flap', {
@@ -23,12 +26,14 @@ test.serial('rate limit', async (t) => {
         'content-type': 'application/json',
       },
     })
+    console.info(x.status)
     if (x.status === 429) {
-      console.info('bah ratelimit lets wait 30 seconds...')
+      // console.info('bah ratelimit lets wait 30 seconds...')
       isLimit = true
-      await wait(30e3)
+      limits++
+      // await wait(30e3)
     } else {
-      console.info('Pass', i)
+      // console.info('Pass', i)
     }
   }
 
@@ -38,7 +43,9 @@ test.serial('rate limit', async (t) => {
     },
   })
 
-  const x = await coreClient.call('hello')
+  console.info(limits)
+
+  const x = await coreClient.call('flap')
 
   t.true(!!x)
 

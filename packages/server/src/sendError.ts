@@ -37,6 +37,7 @@ export function sendHttpError<T extends BasedErrorCode>(
   basedCode: T,
   payload: ErrorPayload[T]
 ) {
+  console.info('SEND ERROR')
   if (!ctx.session) {
     return
   }

@@ -76,7 +76,7 @@ export const rateLimitRequest = (
 export const endRateLimitHttp = (res: uws.HttpResponse) => {
   res.cork(() => {
     res.writeStatus('429 Too Many Requests')
-    res.close()
+    res.end()
   })
 }
 

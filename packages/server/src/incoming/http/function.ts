@@ -30,14 +30,13 @@ export const httpFunction = (
             if (!ctx.session) {
               return
             }
-            if (spec.customHttpResponse) {
-              if (await spec.customHttpResponse(result, payload, ctx)) {
-                return
-              }
-              sendHttpResponse(ctx, result)
-            } else {
-              sendHttpResponse(ctx, result)
+            if (
+              spec.customHttpResponse &&
+              (await spec.customHttpResponse(result, payload, ctx))
+            ) {
+              return
             }
+            sendHttpResponse(ctx, result)
           })
           .catch((err) => {
             sendError(server, ctx, BasedErrorCode.FunctionError, {
