@@ -1,27 +1,26 @@
 # @based/core
 
 ```
-import { BasedCoreClient } from '@based/core-client'
+import based from '@based/core-client'
 
 // create client
-const coreClient = new BasedCoreClient()
+const client = based()
 
 // connect
-coreClient.connect({
+client.connect({
   env: 'myEnv',
   org: 'myOrg',
   project: 'myProject'
 })
 
-coreClient.once('connect', (isConnected) => {
+client.once('connect', (isConnected) => {
   console.info('connect', isConnected)
 })
 
 // authorize
-const authState = await coreClient.auth(token)
+const authState = await client.auth(token)
 
-// update schema
-await coreClient.function('based-db-update-schema', {
+await client.call('db:update-schema', {
   languages: ['en'],
   types: {
     thing: {
@@ -33,21 +32,7 @@ await coreClient.function('based-db-update-schema', {
   },
 })
 
-// observe
-coreClient.observe(
-   'based-db-observe',
-   (d) => {
-     console.info('|-->', d)
-   },
-   { children: { name: true, id: true, $list: true } }
- )
+await client.query('db', { id: 'fwe2233', title: true }).get()
 
-// set (or any function)
-const res = await coreClient.function('based-db-set', {
-  type: 'thing',
-  name: 'BLAAAA',
-})
-
-// get from observer
-const res = await coreClient.get('based-db-observe')
+await client.query('db', { id: 'fwe2233', title: true }).subscribe((x) => console.log(x))
 ```
