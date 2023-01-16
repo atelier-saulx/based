@@ -32,7 +32,11 @@ await client.call('db:update-schema', {
   },
 })
 
-await client.query('db', { id: 'fwe2233', title: true }).get()
+const data = await client
+  .query('db', { id: 'fwe2233', title: true })
+  .get()
 
-await client.query('db', { id: 'fwe2233', title: true }).subscribe((x) => console.log(x))
+const unsubscribe = client
+  .query('db', { id: 'fwe2233', title: true })
+  .subscribe((data) => console.log(data))
 ```
