@@ -84,10 +84,12 @@ const connect = (
 
       const ws = (connection.ws = createWebsocket(realUrl, client))
 
+      ws.onerror = () => {
+        // console.error()
+      }
       ws.onmessage = (d) => {
         client.onData(d)
       }
-
       ws.onopen = () => {
         if (isActive) {
           if (connection.disconnected) {
@@ -100,7 +102,6 @@ const connect = (
           client.onOpen()
         }
       }
-
       ws.onclose = () => {
         if (isActive) {
           if (connection.disconnected) {

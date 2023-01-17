@@ -83,7 +83,7 @@ test.serial('get', async (t) => {
   t.is(Object.keys(server.functions.specs).length, 0)
 })
 
-test.serial.only('authorize get', async (t) => {
+test.serial('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({

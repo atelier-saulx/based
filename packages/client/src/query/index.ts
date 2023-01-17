@@ -85,7 +85,7 @@ export class BasedQuery {
         return
       }
       this.client.getState.set(this.id, [])
-      const cachedData = this.cache.get(this.id)
+      const cachedData = this.client.cache.get(this.id)
       if (this.client.observeState.has(this.id)) {
         if (this.client.observeQueue.has(this.id)) {
           const [type] = this.client.observeQueue.get(this.id)
