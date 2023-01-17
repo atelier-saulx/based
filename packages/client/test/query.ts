@@ -50,7 +50,7 @@ test.serial('query functions', async (t) => {
   await wait(500)
   close()
   server.functions.update({
-    observable: true,
+    query: true,
     name: 'counter',
     checksum: 2,
     function: (_payload, update) => {
