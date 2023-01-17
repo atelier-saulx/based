@@ -96,7 +96,7 @@ export async function createSimpleServer(
       if (isObsFunctionSpec(fn)) {
         functionStore[name] = {
           checksum: 1,
-          observable: true,
+          query: true,
           function: fn.function,
           name,
           maxPayloadSize: 500,
@@ -106,7 +106,7 @@ export async function createSimpleServer(
       } else {
         functionStore[name] = {
           checksum: 1,
-          observable: true,
+          query: true,
           function: fn,
           name,
           maxPayloadSize: 500,
@@ -172,7 +172,7 @@ export async function createSimpleServer(
   }
 
   for (const name in functionStore) {
-    const obs = functionStore[name].observable ? '[observable]' : ''
+    const obs = functionStore[name].query ? '[query]' : ''
     const pub = functionStore[name].public ? 'public' : 'private'
     console.info(
       '      ',

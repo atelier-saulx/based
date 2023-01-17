@@ -14,7 +14,7 @@ export const verifyRoute = (
     sendError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
     return false
   }
-  if (!route.observable) {
+  if (!route.query) {
     sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, route)
     return false
   }

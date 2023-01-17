@@ -26,7 +26,7 @@ export const callFunction = async (
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
   }
 
-  if (route.observable === true) {
+  if (route.query === true) {
     throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
       name,
     })
@@ -108,7 +108,7 @@ export const get = (
       return
     }
 
-    if (route.observable === false) {
+    if (route.query === false) {
       reject(
         createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
           name,
@@ -171,7 +171,7 @@ export const observe = (
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
   }
 
-  if (route.observable !== true) {
+  if (route.query !== true) {
     throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
       name,
     })

@@ -46,7 +46,7 @@ export class BasedFunctions {
       const q = []
       for (const name in this.specs) {
         const spec = this.specs[name]
-        if (spec.observable && this.server.activeObservables[name]) {
+        if (spec.query && this.server.activeObservables[name]) {
           updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
           q.push(this.uninstall(name, spec))

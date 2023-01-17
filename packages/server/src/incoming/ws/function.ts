@@ -87,7 +87,7 @@ export const functionMessage = (
     return false
   }
 
-  if (route.observable === true) {
+  if (route.query === true) {
     sendError(server, ctx, BasedErrorCode.FunctionIsObservable, {
       name,
       requestId,

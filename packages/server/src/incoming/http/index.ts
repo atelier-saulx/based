@@ -130,7 +130,7 @@ export const httpHandler = (
     }
   }
 
-  if (route.observable === true) {
+  if (route.query === true) {
     if (route.stream) {
       sendError(
         server,

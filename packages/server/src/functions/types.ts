@@ -10,7 +10,7 @@ export type CustomHttpResponse = (
 
 export type BasedFunctionRoute = {
   name: string
-  observable?: boolean
+  query?: boolean
   headers?: string[]
   path?: string
   stream?: boolean
@@ -26,7 +26,7 @@ export type BasedObservableFunction =
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string
   checksum: number
-  observable: true
+  query: true
   function: BasedObservableFunction
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
@@ -82,5 +82,5 @@ export enum FunctionType {
 export function isObservableFunctionSpec(
   fn: BasedObservableFunctionSpec | BasedFunctionSpec
 ): fn is BasedObservableFunctionSpec {
-  return (fn as BasedObservableFunctionSpec).observable
+  return (fn as BasedObservableFunctionSpec).query
 }
