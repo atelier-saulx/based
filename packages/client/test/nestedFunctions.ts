@@ -80,7 +80,7 @@ test.serial('nested functions', async (t) => {
 
   let cnt = 0
 
-  const closeX = coreClient.observe('counter', () => {
+  const closeX = coreClient.query('counter').subscribe(() => {
     cnt++
   })
 
@@ -92,22 +92,18 @@ test.serial('nested functions', async (t) => {
 
   let incomingCntNoJson = 0
 
-  const close = coreClient.observe('obsWithNested', () => {
+  const close = coreClient.query('obsWithNested').subscribe(() => {
     incomingCntNoJson++
   })
 
   let incomingCnt = 0
-  const close2 = coreClient.observe(
-    'obsWithNested',
-    () => {
-      incomingCnt++
-    },
-    'json'
-  )
+  const close2 = coreClient.query('obsWithNested', 'json').subscribe(() => {
+    incomingCnt++
+  })
 
   await wait(1e3)
 
-  const bla = await coreClient.get('obsWithNested', 'json')
+  const bla = await coreClient.query('obsWithNested', 'json').get()
 
   t.is(bla.bla.length, 1e4)
 
@@ -117,15 +113,13 @@ test.serial('nested functions', async (t) => {
   close()
   close2()
 
-  const close3 = coreClient.observe(
-    'obsWithNestedLvl2',
-    () => {
+  const close3 = coreClient
+    .query('obsWithNestedLvl2', 'glurk')
+    .subscribe(() => {
       incomingCnt2++
-    },
-    'glurk'
-  )
+    })
 
-  const bla2 = await coreClient.get('obsWithNestedLvl2', 'glakkel')
+  const bla2 = await coreClient.query('obsWithNestedLvl2', 'glakkel').get()
 
   t.is(bla2.bla.length, 1e4)
 

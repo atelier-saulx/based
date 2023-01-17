@@ -59,19 +59,19 @@ test.serial('get', async (t) => {
     console.info('connect', isConnected)
   })
 
-  t.is(await coreClient.get('counter'), 1)
+  t.is(await coreClient.query('counter').get(), 1)
 
   await wait(100)
 
-  t.is(await coreClient.get('counter'), 1)
+  t.is(await coreClient.query('counter').get(), 1)
 
   await wait(100)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  t.is(await coreClient.get('counter-cached'), 1)
-  t.is(await coreClient.get('counter-cached'), 1)
+  t.is(await coreClient.query('counter-cached').get(), 1)
+  t.is(await coreClient.query('counter-cached').get(), 1)
 
   await wait(1500)
 
@@ -103,9 +103,11 @@ test.serial.only('authorize get', async (t) => {
     },
   })
 
-  const error: BasedError = await t.throwsAsync(coreClient.get('counter'))
+  const error: BasedError = await t.throwsAsync(
+    coreClient.query('counter').get()
+  )
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
 
   await coreClient.auth('mock_token')
-  await t.notThrowsAsync(coreClient.get('counter'))
+  await t.notThrowsAsync(coreClient.query('counter').get())
 })

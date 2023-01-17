@@ -91,38 +91,36 @@ test.serial('authorize observe', async (t) => {
   })
 
   await new Promise((resolve) => {
-    coreClient.observe(
-      'counter',
-      () => {
-        // console.info({ d })
-      },
-      {
+    coreClient
+      .query('counter', {
         myQuery: 123,
-      },
-      (err: BasedError) => {
-        t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
-        resolve(err)
-      }
-    )
+      })
+      .subscribe(
+        () => {},
+        (err: BasedError) => {
+          t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
+          resolve(err)
+        }
+      )
   })
 
   await coreClient.auth(token)
   await wait(500)
 
   await new Promise((resolve) => {
-    coreClient.observe(
-      'counter',
-      (d) => {
-        resolve(d)
-      },
-      {
+    coreClient
+      .query('counter', {
         myQuery: 123,
-      },
-      (err: BasedError) => {
-        t.fail('Should not error when authed')
-        resolve(err)
-      }
-    )
+      })
+      .subscribe(
+        (d) => {
+          resolve(d)
+        },
+        (err: BasedError) => {
+          t.fail('Should not error when authed')
+          resolve(err)
+        }
+      )
   })
 
   // @ts-ignore - totally incorrect typescript error...
@@ -151,18 +149,19 @@ test.serial('authorize after observe', async (t) => {
 
   let receiveCnt = 0
 
-  coreClient.observe(
-    'counter',
-    () => {
-      receiveCnt++
-    },
-    {
+  coreClient
+    .query('counter', {
       myQuery: 123,
-    },
-    (err: BasedError) => {
-      t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
-    }
-  )
+    })
+    .subscribe(
+      () => {
+        receiveCnt++
+      },
+
+      (err: BasedError) => {
+        t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
+      }
+    )
 
   await wait(500)
   t.is(receiveCnt, 0)

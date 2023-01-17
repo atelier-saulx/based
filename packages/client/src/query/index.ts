@@ -20,7 +20,6 @@ export class BasedQuery {
     this.id = genObserveId(name, payload)
     this.client = client
     this.name = name
-    // linkt to cache
   }
 
   get cache(): any {
@@ -36,8 +35,7 @@ export class BasedQuery {
     onError?: ObserveErrorListener
   ): CloseObserve {
     let subscriberId: number
-    const cachedData = this.cache.get(this.id)
-
+    const cachedData = this.client.cache.get(this.id)
     if (!this.client.observeState.has(this.id)) {
       subscriberId = 1
       const subscribers = new Map()

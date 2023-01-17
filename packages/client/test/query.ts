@@ -4,8 +4,7 @@ import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('query functions', async (t) => {
-  const coreClient = new BasedClient()
-
+  const client = new BasedClient()
   const server = await createSimpleServer({
     port: 9910,
     observables: {
@@ -21,23 +20,18 @@ test.serial('query functions', async (t) => {
       },
     },
   })
-
-  coreClient.connect({
+  client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
-
-  coreClient.once('connect', (isConnected) => {
+  client.once('connect', (isConnected) => {
     console.info('   connect', isConnected)
   })
-
   const obs1Results: any[] = []
   const obs2Results: any[] = []
 
-  console.log('hello')
-
-  const close = coreClient
+  const close = client
     .query('counter', {
       myQuery: 123,
     })
@@ -45,7 +39,7 @@ test.serial('query functions', async (t) => {
       obs1Results.push(d)
     })
 
-  const close2 = coreClient
+  const close2 = client
     .query('counter', {
       myQuery: 123,
     })
@@ -54,9 +48,7 @@ test.serial('query functions', async (t) => {
     })
 
   await wait(500)
-
   close()
-
   server.functions.update({
     observable: true,
     name: 'counter',
@@ -71,24 +63,16 @@ test.serial('query functions', async (t) => {
       }
     },
   })
-
   await wait(1e3)
-
   close2()
-
   t.true(obs1Results.length < obs2Results.length)
   t.true(obs2Results[obs2Results.length - 1].startsWith('counter2:'))
-
   await wait(100)
-
   t.is(Object.keys(server.activeObservables).length, 1)
   t.is(server.activeObservablesById.size, 1)
-
   await wait(5000)
-
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
-
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
 })

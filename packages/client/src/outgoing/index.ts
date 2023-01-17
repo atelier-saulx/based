@@ -1,4 +1,4 @@
-import { BasedClient } from '../'
+import { BasedClient } from '..'
 import { AuthState, GenericObject } from '../types'
 import {
   encodeAuthMessage,

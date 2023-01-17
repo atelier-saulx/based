@@ -112,12 +112,11 @@ test.serial('observable authorize error', async (t) => {
 
   // TODO: Check error instance of
   const error = (await new Promise((resolve) => {
-    coreClient.observe(
-      'counter',
+    coreClient.query('counter', {}).subscribe(
       (v) => {
         console.info({ v })
       },
-      {},
+
       (err) => {
         resolve(err)
       }
@@ -152,7 +151,7 @@ test.serial('throw in an interval', async (t) => {
   })
   await t.throwsAsync(
     new Promise((resolve, reject) =>
-      coreClient.observe('errorTimer', () => {}, {}, reject)
+      coreClient.query('errorTimer', {}).subscribe(() => {}, reject)
     )
   )
 })
