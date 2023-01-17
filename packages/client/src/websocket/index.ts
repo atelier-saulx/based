@@ -112,7 +112,8 @@ const connect = (
             client,
             url,
             connection,
-            Math.min(1250, Math.min(time + 500)),
+            // relatively low backoff but will make it faster if multiple servers are down
+            Math.min(2000, Math.min(time + ~~(Math.random() * 500) + 100)),
             true
           )
         }
