@@ -15,7 +15,7 @@ command(
   program
     .command('build-app')
     .description('Builds app into function')
-    .option('-nm', '--no-minification <noMinification>', 'Disable minification')
+    .option('-nm, --noMinification', 'Disable minification')
     .requiredOption('-t, --target <target>', 'Target to build')
     .requiredOption('-d, --dest <dest>', 'Build Destination')
 ).action(async ({ target, dest, noMinification }) => {
