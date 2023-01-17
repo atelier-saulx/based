@@ -5,7 +5,7 @@ import {
 } from '../types'
 import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
 import { genObserveId } from '../genObserveId'
-import { BasedCoreClient } from '..'
+import { BasedClient } from '..'
 
 // can make payloads etc a bit more efficient by allready storing it on the central storage before douing anything
 // payload name map to id
@@ -13,9 +13,9 @@ export class BasedQuery {
   public id: number
   public query: any
   public name: string
-  public client: BasedCoreClient
+  public client: BasedClient
 
-  constructor(client: BasedCoreClient, name: string, payload: any) {
+  constructor(client: BasedClient, name: string, payload: any) {
     this.query = payload
     this.id = genObserveId(name, payload)
     this.client = client

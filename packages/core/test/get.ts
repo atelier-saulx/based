@@ -1,11 +1,11 @@
 import test from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const setup = async () => {
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
   const server = await createSimpleServer({
     port: 9910,
     observables: {

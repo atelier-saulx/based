@@ -1,10 +1,10 @@
-import { BasedCoreClient } from '..'
+import { BasedClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
 
-const getName = (client: BasedCoreClient, id: number): string => {
+const getName = (client: BasedClient, id: number): string => {
   const sub = client.observeState.get(id)
   return sub?.name
 }
@@ -60,7 +60,7 @@ const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
   throw new Error('Recieved incorrect data')
 }
 
-const requestFullData = (client: BasedCoreClient, id: number) => {
+const requestFullData = (client: BasedClient, id: number) => {
   const sub = client.observeState.get(id)
   if (!sub) {
     console.error('Cannot find name for id from diff', id)
@@ -79,7 +79,7 @@ const requestFullData = (client: BasedCoreClient, id: number) => {
 }
 
 export const incoming = async (
-  client: BasedCoreClient,
+  client: BasedClient,
   data: any /* TODO: type */
 ) => {
   try {

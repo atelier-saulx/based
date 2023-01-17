@@ -1,9 +1,9 @@
-import { BasedCoreClient } from '@based/core-client'
+import { BasedClient } from '@based/core-client'
 
 console.info('browsxxer')
 
 const init = async () => {
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   // coreClient.auth('"myyuzi!"').then((v) => {
   //   console.info('GOT AUTH', v)

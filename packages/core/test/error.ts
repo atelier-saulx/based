@@ -1,5 +1,5 @@
 import test, { ExecutionContext } from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 import { createSimpleServer, ObservableUpdateFunction } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
@@ -38,7 +38,7 @@ const errorTimer = (_payload, update: ObservableUpdateFunction) => {
 
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,

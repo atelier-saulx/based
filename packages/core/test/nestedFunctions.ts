@@ -1,11 +1,11 @@
 import test from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 // make this methods on the server
 import { createSimpleServer, callFunction, get, observe } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('nested functions', async (t) => {
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,

@@ -23,7 +23,7 @@ import {
 import { incoming } from './incoming'
 import { BasedQuery } from './query'
 
-export class BasedCoreClient extends Emitter {
+export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
     if (settings) {

@@ -1,9 +1,9 @@
 import test from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 import { createSimpleServer, isWsContext } from '@based/server'
 
 const setup = async () => {
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,

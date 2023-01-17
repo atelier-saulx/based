@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
@@ -20,10 +20,10 @@ test.serial('mem tests', async (t) => {
     } MB`
   )
 
-  const cl: Set<BasedCoreClient> = new Set()
+  const cl: Set<BasedClient> = new Set()
 
   for (let i = 0; i < 100; i++) {
-    const client = new BasedCoreClient()
+    const client = new BasedClient()
     client.connect({
       url: async () => {
         return 'ws://localhost:9910'

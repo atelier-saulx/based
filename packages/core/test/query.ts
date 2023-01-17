@@ -1,10 +1,10 @@
 import test from 'ava'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('query functions', async (t) => {
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,
@@ -34,6 +34,8 @@ test.serial('query functions', async (t) => {
 
   const obs1Results: any[] = []
   const obs2Results: any[] = []
+
+  console.log('hello')
 
   const close = coreClient
     .query('counter', {

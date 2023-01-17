@@ -1,4 +1,4 @@
-import { BasedCoreClient } from '../'
+import { BasedClient } from '../'
 import { AuthState, GenericObject } from '../types'
 import {
   encodeAuthMessage,
@@ -10,7 +10,7 @@ import { deepEqual } from '@saulx/utils'
 
 const ping = new Uint8Array(0)
 
-export const idleTimeout = (client: BasedCoreClient) => {
+export const idleTimeout = (client: BasedClient) => {
   const updateTime = 60 * 1e3
   clearTimeout(client.idlePing)
   client.idlePing = setTimeout(() => {
@@ -24,7 +24,7 @@ export const idleTimeout = (client: BasedCoreClient) => {
   }, updateTime)
 }
 
-export const drainQueue = (client: BasedCoreClient) => {
+export const drainQueue = (client: BasedClient) => {
   if (
     client.connected &&
     !client.drainInProgress &&
@@ -101,7 +101,7 @@ export const drainQueue = (client: BasedCoreClient) => {
   }
 }
 
-export const stopDrainQueue = (client: BasedCoreClient) => {
+export const stopDrainQueue = (client: BasedClient) => {
   if (client.drainInProgress) {
     clearTimeout(client.drainTimeout)
     client.drainInProgress = false
@@ -109,7 +109,7 @@ export const stopDrainQueue = (client: BasedCoreClient) => {
 }
 
 export const addToFunctionQueue = (
-  client: BasedCoreClient,
+  client: BasedClient,
   payload: GenericObject,
   name: string,
   resolve: (response: any) => void,
@@ -124,7 +124,7 @@ export const addToFunctionQueue = (
   const id = client.requestId
 
   // TODO: When node env is not "production" | or when dev
-  const s = Error().stack.split(/BasedCoreClient\.function.+:\d\d\)/)[1]
+  const s = Error().stack.split(/BasedClient\.function.+:\d\d\)/)[1]
 
   client.functionResponseListeners.set(id, [resolve, reject, s])
   client.functionQueue.push([id, name, payload])
@@ -133,7 +133,7 @@ export const addToFunctionQueue = (
 }
 
 export const addObsCloseToQueue = (
-  client: BasedCoreClient,
+  client: BasedClient,
   name: string,
   id: number
 ) => {
@@ -146,7 +146,7 @@ export const addObsCloseToQueue = (
 }
 
 export const addObsToQueue = (
-  client: BasedCoreClient,
+  client: BasedClient,
   name: string,
   id: number,
   payload: GenericObject,
@@ -162,7 +162,7 @@ export const addObsToQueue = (
 
 // sub get queue
 export const addGetToQueue = (
-  client: BasedCoreClient,
+  client: BasedClient,
   name: string,
   id: number,
   payload: GenericObject,
@@ -176,7 +176,7 @@ export const addGetToQueue = (
   drainQueue(client)
 }
 
-export const sendAuth = (client: BasedCoreClient, authState: AuthState) => {
+export const sendAuth = (client: BasedClient, authState: AuthState) => {
   if (deepEqual(authState, client.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress

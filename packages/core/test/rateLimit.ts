@@ -2,7 +2,7 @@ import test from 'ava'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
-import { BasedCoreClient } from '../src/index'
+import { BasedClient } from '../src/index'
 
 test.serial('rate limit', async (t) => {
   const server = await createSimpleServer({
@@ -14,7 +14,7 @@ test.serial('rate limit', async (t) => {
     },
   })
 
-  const coreClient = new BasedCoreClient()
+  const coreClient = new BasedClient()
 
   let limits = 0
 

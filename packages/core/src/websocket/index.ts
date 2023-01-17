@@ -1,6 +1,6 @@
 import urlLoader from './urlLoader'
 import { Connection } from './types'
-import { BasedCoreClient } from '../'
+import { BasedClient } from '../'
 import WebSocket from 'isomorphic-ws'
 
 type ActiveFn = (isActive: boolean) => void
@@ -24,10 +24,7 @@ const toProtocol = (authState: any): string => {
   )
 }
 
-const createWebsocket = (
-  realUrl: string,
-  client: BasedCoreClient
-): WebSocket => {
+const createWebsocket = (realUrl: string, client: BasedClient): WebSocket => {
   if (client.authState) {
     return new WebSocket(realUrl, [toProtocol(client.authState)])
   }
@@ -53,7 +50,7 @@ if (typeof window !== 'undefined') {
 }
 
 const connect = (
-  client: BasedCoreClient,
+  client: BasedClient,
   url: string | (() => Promise<string>),
   connection: Connection = {
     destroy: () => {
