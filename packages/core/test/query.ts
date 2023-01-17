@@ -3,7 +3,7 @@ import { BasedCoreClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial('observables', async (t) => {
+test.serial('query functions', async (t) => {
   const coreClient = new BasedCoreClient()
 
   const server = await createSimpleServer({
@@ -35,25 +35,21 @@ test.serial('observables', async (t) => {
   const obs1Results: any[] = []
   const obs2Results: any[] = []
 
-  const close = coreClient.observe(
-    'counter',
-    (d) => {
+  const close = coreClient
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe((d) => {
       obs1Results.push(d)
-    },
-    {
-      myQuery: 123,
-    }
-  )
+    })
 
-  const close2 = coreClient.observe(
-    'counter',
-    (d) => {
-      obs2Results.push(d)
-    },
-    {
+  const close2 = coreClient
+    .query('counter', {
       myQuery: 123,
-    }
-  )
+    })
+    .subscribe((d) => {
+      obs2Results.push(d)
+    })
 
   await wait(500)
 

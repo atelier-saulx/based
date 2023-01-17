@@ -44,15 +44,13 @@ test.serial('observablesDiff', async (t) => {
 
   const results: any[] = []
 
-  const close = coreClient.observe(
-    'counter',
-    (d) => {
-      results.push(d)
-    },
-    {
+  const close = coreClient
+    .query('counter', {
       myQuery: 123,
-    }
-  )
+    })
+    .subscribe((d) => {
+      results.push(d)
+    })
 
   await wait(3e3)
 

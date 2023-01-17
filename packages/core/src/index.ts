@@ -1,9 +1,5 @@
 import {
   BasedOpts,
-  CloseObserve,
-  ObserveOpts,
-  ObserveDataListener,
-  ObserveErrorListener,
   AuthState,
   FunctionResponseListeners,
   Settings,
@@ -21,13 +17,11 @@ import getUrlFromOpts from './getUrlFromOpts'
 import {
   addObsToQueue,
   addToFunctionQueue,
-  addObsCloseToQueue,
   drainQueue,
   sendAuth,
-  addGetToQueue,
 } from './outgoing'
 import { incoming } from './incoming'
-import { genObserveId } from './genObserveId'
+import { BasedQuery } from './query'
 
 export class BasedCoreClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
@@ -173,100 +167,25 @@ export class BasedCoreClient extends Emitter {
     this.connected = false
   }
 
-  // --------- Observe
-  observe(
-    name: string,
-    onData: ObserveDataListener,
-    payload?: any,
-    onError?: ObserveErrorListener,
-    opts?: ObserveOpts
-  ): CloseObserve {
-    if (opts) {
-      // cache options
-      console.warn('observe opts not implemented yet...', opts)
-    }
-    const id = genObserveId(name, payload)
-    let subscriberId: number
-    const cachedData = this.cache.get(id)
-
-    if (!this.observeState.has(id)) {
-      subscriberId = 1
-      const subscribers = new Map()
-      subscribers.set(subscriberId, {
-        onError,
-        onData,
-      })
-      this.observeState.set(id, {
-        payload,
-        name,
-        subscribers,
-      })
-      addObsToQueue(this, name, id, payload, cachedData?.checksum || 0)
-    } else {
-      const obs = this.observeState.get(id)
-      subscriberId = obs.subscribers.size + 1
-      obs.subscribers.set(subscriberId, {
-        onError,
-        onData,
-      })
-    }
-
-    if (cachedData) {
-      onData(cachedData.value, cachedData.checksum)
-    }
-
-    return () => {
-      const obs = this.observeState.get(id)
-      obs.subscribers.delete(subscriberId)
-      if (obs.subscribers.size === 0) {
-        this.observeState.delete(id)
-        addObsCloseToQueue(this, name, id)
-      }
-    }
-  }
-
-  get(name: string, payload?: any, opts?: ObserveOpts): Promise<any> {
-    if (opts) {
-      // cache options
-      console.warn('get opts not implemented yet...', opts)
-    }
-
-    return new Promise((resolve, reject) => {
-      const id = genObserveId(name, payload)
-
-      if (this.getState.has(id)) {
-        this.getState.get(id).push([resolve, reject])
-        return
-      }
-
-      this.getState.set(id, [])
-
-      const cachedData = this.cache.get(id)
-
-      if (this.observeState.has(id)) {
-        if (this.observeQueue.has(id)) {
-          const [type] = this.observeQueue.get(id)
-          if (type === 1) {
-            // add listener
-            this.getState.get(id).push([resolve, reject])
-            return
-          }
-        }
-        if (cachedData) {
-          resolve(cachedData.value)
-          return
-        }
-      }
-
-      this.getState.get(id).push([resolve, reject])
-      addGetToQueue(this, name, id, payload, cachedData?.checksum || 0)
-    })
+  // ---------- Query
+  query(name: string, payload?: any): BasedQuery {
+    return new BasedQuery(this, name, payload)
   }
 
   // -------- Call-Function
   call(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
+    })
+  }
+
+  // TODO make this
+  // -------- Stream-Function
+  // File, NodeReadStream, anything else
+  stream(name: string, streams?: any[]): Promise<any> {
+    // do a http request - multipart under the hood (collecting multiple file uploads OR array)
+    return new Promise((resolve, reject) => {
+      addToFunctionQueue(this, streams, name, resolve, reject)
     })
   }
 
