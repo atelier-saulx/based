@@ -23,6 +23,8 @@ import {
 import { incoming } from './incoming'
 import { BasedQuery } from './query'
 
+// auth observer
+
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -201,6 +203,11 @@ export class BasedClient extends Emitter {
       throw new Error('Invalid auth() arguments')
     }
   }
+
+  observeAuth() {}
 }
+
+// observeUnitll is really nice
+// .until on sub
 
 export { BasedOpts }

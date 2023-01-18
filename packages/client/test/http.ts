@@ -53,7 +53,7 @@ test.serial('functions (over http)', async (t) => {
             if (store[name].path === path) {
               return {
                 name: store[name].name,
-                observable: store[name].query,
+                query: store[name].query,
                 maxPayloadSize: 1e6,
                 rateLimitTokens: 1,
               }
@@ -145,7 +145,7 @@ test.serial('get (over http)', async (t) => {
             if (store[name].path === path) {
               return {
                 name: store[name].name,
-                observable: store[name].query,
+                query: store[name].query,
                 maxPayloadSize: 1e6,
                 rateLimitTokens: 1,
               }
@@ -155,7 +155,7 @@ test.serial('get (over http)', async (t) => {
         if (name && store[name]) {
           return {
             name,
-            observable: store[name].query,
+            query: store[name].query,
             maxPayloadSize: 1e6,
             rateLimitTokens: 1,
           }
@@ -239,7 +239,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
               return {
                 maxPayloadSize: 1e11,
                 name: store[name].name,
-                observable: store[name].query,
+                query: store[name].query,
                 rateLimitTokens: 1,
               }
             }

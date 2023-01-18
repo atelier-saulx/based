@@ -9,6 +9,7 @@ import { BasedClient } from '..'
 
 // can make payloads etc a bit more efficient by allready storing it on the central storage before douing anything
 // payload name map to id
+
 export class BasedQuery {
   public id: number
   public query: any
@@ -76,6 +77,10 @@ export class BasedQuery {
         addObsCloseToQueue(this.client, this.name, this.id)
       }
     }
+  }
+
+  async getWhen(condition: () => boolean): Promise<any> {
+    return new Promise((resolve, reject) => {})
   }
 
   async get(): Promise<any> {
