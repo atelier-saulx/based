@@ -181,7 +181,9 @@ command(
     let value: string = options.value
     if (options.file) {
       try {
-        value = (await fs.readFile(options.file)).toString()
+        value = (await fs.readFile(options.file))
+          .toString()
+          .replace(/^[\r\n]+|\.|[\r\n]+$/gm, '')
       } catch (err) {
         spinner && spinner.stop()
         options.debug && printError(err)
