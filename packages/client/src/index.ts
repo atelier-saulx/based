@@ -22,6 +22,7 @@ import {
 } from './outgoing'
 import { incoming } from './incoming'
 import { BasedQuery } from './query'
+import { addStream } from './stream'
 
 // auth observer
 
@@ -43,6 +44,17 @@ export class BasedClient extends Emitter {
   connected: boolean = false
   connection: Connection
   url: string | (() => Promise<string>)
+  // --------- Stream
+  outgoingStreams: Map<
+    string,
+    {
+      stream: any
+      resolve: (result: any) => void
+      reject: (err: Error) => void
+    }[]
+  > = new Map()
+
+  isDrainingStreams: boolean = false
   // --------- Queue
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
@@ -183,11 +195,11 @@ export class BasedClient extends Emitter {
 
   // TODO make this
   // -------- Stream-Function
-  // File, NodeReadStream, anything else
-  stream(name: string, streams?: any[]): Promise<any> {
+  // File, NodeReadStream, payload, one with a timer
+  stream(name: string, stream?: any): Promise<any> {
     // do a http request - multipart under the hood (collecting multiple file uploads OR array)
     return new Promise((resolve, reject) => {
-      addToFunctionQueue(this, streams, name, resolve, reject)
+      addStream(this, stream, name, resolve, reject)
     })
   }
 

@@ -1,5 +1,6 @@
 import test from 'ava'
 import { createSimpleServer } from '@based/server'
+import { BasedClient } from '../src'
 import { wait, readStream } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
@@ -7,7 +8,7 @@ import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
 
-test.serial('functions (small over http + stream)', async (t) => {
+test.serial('stream functions (small over http + stream)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -39,7 +40,7 @@ test.serial('functions (small over http + stream)', async (t) => {
   server.destroy()
 })
 
-test.serial('functions (over http + stream)', async (t) => {
+test.serial('stream functions (over http + stream)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -92,6 +93,37 @@ test.serial('functions (over http + stream)', async (t) => {
     console.info('ERROR', err)
     t.fail('Crash with uncompressing')
   }
+
+  await wait(15e3)
+
+  t.is(Object.keys(server.functions.specs).length, 0)
+
+  server.destroy()
+})
+
+test.serial.only('stream functions using client helper', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        maxPayloadSize: 1e9,
+        stream: true,
+        function: async ({ stream }) => {
+          const buf = await readStream(stream)
+          console.info('is end...', buf.byteLength)
+          return 'bla'
+        },
+      },
+    },
+  })
+
+  const client = new BasedClient()
+
+  client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+
+  client.stream('hello')
 
   await wait(15e3)
 
