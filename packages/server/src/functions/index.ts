@@ -27,7 +27,10 @@ export class BasedFunctions {
   } = {}
 
   specs: {
-    [name: string]: BasedFunctionSpec | BasedObservableFunctionSpec
+    [name: string]: (BasedFunctionSpec | BasedObservableFunctionSpec) & {
+      maxPayloadSize: number
+      rateLimitTokens: number
+    }
   } = {}
 
   beingUninstalled: {
@@ -100,6 +103,8 @@ export class BasedFunctions {
       } else {
         this.update(spec)
       }
+    } else {
+      this.update(spec)
     }
   }
 
@@ -176,6 +181,20 @@ export class BasedFunctions {
       this.paths[spec.path] = spec.name
     }
 
+    // make constants for these...
+    if (!spec.maxPayloadSize) {
+      if (spec.query) {
+        spec.maxPayloadSize = 500
+      } else {
+        spec.maxPayloadSize = 5e3
+      }
+    }
+
+    if (!spec.rateLimitTokens) {
+      spec.rateLimitTokens = 1
+    }
+
+    // @ts-ignore maxpayload and rlimit tokens added on line 184...
     this.specs[spec.name] = spec
 
     if (this.specs[spec.name] && this.server.activeObservables[spec.name]) {
@@ -190,7 +209,7 @@ export class BasedFunctions {
       }
     }
 
-    return false
+    return true
   }
 
   remove(name: string): boolean {

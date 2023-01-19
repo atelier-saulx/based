@@ -111,3 +111,39 @@ test.serial('authorize get', async (t) => {
   await coreClient.auth('mock_token')
   await t.notThrowsAsync(coreClient.query('counter').get())
 })
+
+test.serial('getWhen', async (t) => {
+  const { coreClient, server } = await setup()
+
+  server.functions.updateFunction({
+    query: true,
+    name: 'flap',
+    checksum: 1,
+    function: (_payload, update) => {
+      let cnt = 0
+      const interval = setInterval(() => {
+        cnt++
+        update({ count: cnt, status: cnt > 1 })
+      }, 100)
+
+      return () => {
+        clearInterval(interval)
+      }
+    },
+  })
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  const g = await coreClient.query('flap').getWhen((d) => d.status)
+
+  t.is(g.count, 2)
+})

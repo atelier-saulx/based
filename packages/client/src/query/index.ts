@@ -79,8 +79,17 @@ export class BasedQuery {
     }
   }
 
-  async getWhen(condition: () => boolean): Promise<any> {
-    return new Promise((resolve, reject) => {})
+  async getWhen(
+    condition: (data: any, checksum: number) => boolean
+  ): Promise<any> {
+    return new Promise((resolve) => {
+      const close = this.subscribe((data, checksum) => {
+        if (condition(data, checksum)) {
+          resolve(data)
+          close()
+        }
+      })
+    })
   }
 
   async get(): Promise<any> {
