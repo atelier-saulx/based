@@ -140,17 +140,17 @@ export async function createSimpleServer(
         }),
       route: ({ path, name }) => {
         if (path) {
-          for (const name in basedServer.functions.specs) {
-            if (basedServer.functions.specs[name].path === path) {
-              return basedServer.functions.specs[name]
+          for (const name in functionStore) {
+            if (functionStore[name].path === path) {
+              return functionStore[name]
             }
           }
-          if (!name && basedServer.functions.specs[path]) {
-            return basedServer.functions.specs[path]
+          if (!name && functionStore[path]) {
+            return functionStore[path]
           }
         }
-        if (basedServer.functions.specs[name]) {
-          return basedServer.functions.specs[name]
+        if (functionStore[name]) {
+          return functionStore[name]
         }
         return false
       },

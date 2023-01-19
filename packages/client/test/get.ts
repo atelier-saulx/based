@@ -113,37 +113,36 @@ test.serial('authorize get', async (t) => {
 })
 
 test.serial('getWhen', async (t) => {
-  const { coreClient, server } = await setup()
+  const client = new BasedClient()
+  const server = await createSimpleServer({
+    port: 9910,
+    observables: {
+      flap: (_payload, update) => {
+        let cnt = 0
+        const interval = setInterval(() => {
+          cnt++
+          update({ count: cnt, status: cnt > 1 })
+        }, 100)
 
-  server.functions.updateFunction({
-    query: true,
-    name: 'flap',
-    checksum: 1,
-    function: (_payload, update) => {
-      let cnt = 0
-      const interval = setInterval(() => {
-        cnt++
-        update({ count: cnt, status: cnt > 1 })
-      }, 100)
-
-      return () => {
-        clearInterval(interval)
-      }
+        return () => {
+          clearInterval(interval)
+        }
+      },
     },
   })
 
   t.teardown(() => {
-    coreClient.disconnect()
+    client.disconnect()
     server.destroy()
   })
 
-  coreClient.connect({
+  client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
 
-  const g = await coreClient.query('flap').getWhen((d) => d.status)
+  const g = await client.query('flap').getWhen((d) => d.status)
 
   t.is(g.count, 2)
 })
