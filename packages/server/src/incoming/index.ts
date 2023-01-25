@@ -54,7 +54,6 @@ export default (
           }
           ws.c = ctx
           wsListeners.open(ctx)
-
           if (
             ctx.session.authState.token ||
             ctx.session.authState.refreshToken

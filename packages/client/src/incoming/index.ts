@@ -251,20 +251,29 @@ export const incoming = async (
         )
       }
 
-      console.info('INCOMING AUTHSTATE', payload, client.authState)
-
+      // same authState
       if (payload === true) {
-        // same authState
+        if (client.authRequest.resolve) {
+          client.authRequest.resolve(client.authState)
+        }
       } else if (payload === false) {
-        client.authRequest.reject(new Error('Invalid authState'))
         client.authState = { error: 'Invalid authState' }
         client.emit('authstate-change', client.authState)
-      } else if (!deepEqual(client.authState, payload)) {
+        client.authRequest.reject(new Error('Invalid authState'))
+      } else if ('error' in payload) {
         client.authState = payload
         client.emit('authstate-change', client.authState)
-      }
-      if (client.authRequest.resolve) {
-        client.authRequest.resolve(client.authState)
+        client.authRequest.reject(new Error(payload.error))
+      } else {
+        if (!deepEqual(client.authState, payload)) {
+          client.authState = payload
+          client.emit('authstate-change', client.authState)
+        } else {
+          client.authState = payload
+        }
+        if (client.authRequest.resolve) {
+          client.authRequest.resolve(client.authState)
+        }
       }
     }
 

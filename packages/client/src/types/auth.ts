@@ -4,6 +4,7 @@ export type AuthState = {
   refreshToken?: string
   error?: string
   persistent?: boolean
+  type?: string
 }
 
 export type AuthResponseListeners = {

@@ -169,7 +169,6 @@ test.serial('authState server clear', async (t) => {
     },
   })
 
-  console.info('connect')
   await client.connect({
     url: async () => {
       return 'ws://localhost:9910'
@@ -190,12 +189,10 @@ test.serial('authState server clear', async (t) => {
 
   await client.call('hello')
 
-  console.info('set auth state')
   await client.setAuthState({ token: 'mock_token' })
 
   t.is(serverSession.authState.token, 'mock_token')
 
-  console.info('clear auth state')
   await client.clearAuthState()
 
   t.is(serverSession.authState.token, undefined)

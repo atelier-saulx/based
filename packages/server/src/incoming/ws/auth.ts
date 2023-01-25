@@ -21,6 +21,10 @@ export const authMessage = (
   server: BasedServer
 ): boolean => {
   // TODO: Allow AUTH to be called over http to refresh a token
+  if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
+    ctx.session.close()
+    return false
+  }
 
   // | 4 header | * payload |
   const authPayload = decodePayload(
@@ -28,21 +32,17 @@ export const authMessage = (
     isDeflate
   )
 
-  if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
-    ctx.session.close()
-    return false
-  }
-
   const authState: AuthState = parseAuthState(authPayload)
 
-  const verified = server.auth.verifyAuthState(server, ctx)
+  const verified = server.auth.verifyAuthState(ctx, authState)
+
+  ctx.session.authState = verified === true ? authState : verified
 
   if (verified !== true && verified.error) {
     sendAuthMessage(ctx, verified)
     return true
   }
 
-  ctx.session.authState = authState
   if (ctx.session.unauthorizedObs.size) {
     ctx.session.unauthorizedObs.forEach((obs) => {
       const { id, name, checksum, payload } = obs
@@ -66,12 +66,14 @@ export const sendAndVerifyAuthMessage = (
     return
   }
 
-  const verified = server.auth.verifyAuthState(server, ctx)
+  const verified = server.auth.verifyAuthState(ctx, ctx.session.authState)
 
   if (verified === true) {
     sendAuthMessage(ctx, true)
     return
   }
+
+  ctx.session.authState = verified
 
   if (verified.error) {
     sendAuthMessage(ctx, false)

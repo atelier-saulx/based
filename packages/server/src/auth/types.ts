@@ -1,4 +1,3 @@
-import { BasedServer } from '../server'
 import { Context, HttpSession, WebSocketSession } from '../context'
 import uws from '@based/uws'
 
@@ -8,6 +7,7 @@ export type AuthState = {
   refreshToken?: string
   error?: string
   persistent?: boolean
+  type?: string
 }
 
 export type AuthConfig = {
@@ -26,8 +26,8 @@ export type Authorize = (
 // AuthState - new auth state send it
 //    if error send error state (and reject)
 export type VerifyAuthState = (
-  server: BasedServer,
-  context: Context<HttpSession | WebSocketSession>
+  context: Context<HttpSession | WebSocketSession>,
+  authState: AuthState
 ) => true | AuthState
 
 export type AuthorizeConnection = (req: uws.HttpRequest) => Promise<boolean>

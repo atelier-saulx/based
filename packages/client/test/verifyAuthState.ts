@@ -1,235 +1,111 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import {
-  createSimpleServer,
-  isWsContext,
-  AuthState,
-  WebSocketSession,
-  HttpSession,
-} from '@based/server'
+import { createSimpleServer, isWsContext } from '@based/server'
+import { wait } from '@saulx/utils'
 
-const setup = async () => {
+test.serial('verify auth state', async (t) => {
+  t.timeout(4000)
   const client = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,
-    functions: {
-      hello: {
-        maxPayloadSize: 1e8,
-        function: async (payload) => {
-          if (payload) {
-            return payload.length
+    auth: {
+      verifyAuthState: (ctx, authState) => {
+        if (authState.token === '9000') {
+          return { ...authState, type: 'over9000' }
+        }
+
+        if (
+          authState.refreshToken === 'refresh' &&
+          Number(authState.token) < Date.now() - 1e3
+        ) {
+          return {
+            ...authState,
+            token: '' + (Number(authState.token) + 1e3),
+            type: authState.type
+              ? 'fixed-' + (Number(authState.type.split('-')[1]) + 1)
+              : 'fixed-0',
           }
-          return 'flap'
-        },
-      },
-      lotsOfData: async () => {
-        let str = ''
-        for (let i = 0; i < 200000; i++) {
-          str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
         }
-        return str
+
+        if (Number(authState.token) < 100) {
+          return { error: 'Token is too small' }
+        }
+
+        return true
+      },
+      authorize: async (ctx) => {
+        if (!ctx.session) {
+          return false
+        }
+
+        const verified = server.auth.verifyAuthState(ctx, ctx.session.authState)
+
+        console.info('CALL HELLO', verified)
+
+        if (verified === true) {
+          return true
+        }
+
+        ctx.session.authState = verified
+
+        if (verified.error) {
+          return false
+        }
+
+        if (isWsContext(ctx)) {
+          server.auth.sendAuthState(ctx, verified)
+        }
+
+        return true
+      },
+    },
+    functions: {
+      hello: async (payload) => {
+        if (payload) {
+          return payload.length
+        }
+        return 'flap'
       },
     },
   })
-  return { client, server }
-}
 
-test.serial('auth string authState', async (t) => {
-  t.timeout(4000)
+  await client.connect({ url: 'ws://localhost:9910' })
 
-  const token = 'mock_token'
+  await client.call('hello')
 
-  const { client, server } = await setup()
+  const err = await t.throwsAsync(client.setAuthState({ token: '20' }))
 
-  t.teardown(() => {
-    client.disconnect()
-    server.destroy()
-  })
+  t.is(err.message, 'Token is too small')
 
-  client.once('connect', () => {
-    t.log('connect')
-  })
-  client.once('disconnect', () => {
-    t.log('disconnect')
-  })
+  const result = await client.setAuthState({ token: '9000' })
 
-  let authEventCount = 0
-  client.once('authstate-change', (result) => {
-    t.log('log', { result })
-    t.is(result.token, token)
-    authEventCount++
-  })
+  t.is(result.type, 'over9000')
 
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-
-  const result = await client.setAuthState({ token })
-  t.true(result)
-  t.is(client.authState.token, token)
-  t.false(client.authRequest.inProgress)
-  t.is(authEventCount, 1)
-})
-
-test.serial('authState simple', async (t) => {
-  t.timeout(4000)
-
-  const authState = {
-    token: 'mock_token',
-    renewToken: 'mock_renew_token',
-    userId: 'usUser',
-  }
-
-  const { client, server } = await setup()
-
-  t.teardown(() => {
-    client.disconnect()
-    server.destroy()
-  })
-
-  client.once('connect', () => {
-    t.log('connect')
-  })
-  client.once('disconnect', () => {
-    t.log('disconnect')
-  })
-
-  let authEventCount = 0
-  client.once('authstate-change', (result: any) => {
-    t.log('log', { result })
-    t.deepEqual(result, authState)
-    authEventCount++
-  })
-
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-
-  const result = await client.setAuthState(authState)
-  t.true(result)
-  t.is(client.authState, authState)
-  t.false(client.authRequest.inProgress)
-  t.is(authEventCount, 1)
-})
-
-test.serial('multiple authState calls', async (t) => {
-  t.timeout(4000)
-  const { client, server } = await setup()
-
-  t.teardown(() => {
-    client.disconnect()
-    server.destroy()
-  })
-
-  let authEventCount = 0
-  client.on('authstate-change', () => {
-    authEventCount++
-  })
-
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-
-  await t.notThrowsAsync(async () => {
-    await client.setAuthState({ token: 'first_token' })
-    await client.setAuthState({ token: 'second_token' })
-  })
-
-  t.is(client.authState.token, 'second_token')
-  t.is(authEventCount, 2)
-})
-
-test.serial.only('authState server clear', async (t) => {
-  let serverSession: WebSocketSession | HttpSession
-
-  t.timeout(4000)
-  const { client, server } = await setup()
-
-  t.teardown(() => {
-    client.disconnect()
-    server.destroy()
-  })
-
-  const serverAuthStates: Map<Number, AuthState> = new Map()
-
-  server.auth.updateConfig({
-    authorize: async (ctx) => {
-      if (ctx.session) {
-        serverSession = ctx.session
-        serverAuthStates.set(ctx.session.id, ctx.session.authState)
-      }
-      return true
-    },
-  })
-
-  console.info('connect')
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
+  const token1 = '' + Date.now()
+  await client.setAuthState({
+    refreshToken: 'refresh',
+    token: token1,
   })
 
   await client.call('hello')
 
-  // @ts-ignore
-  if (!serverSession) {
-    t.fail('no authstate set on server')
-    return
-  }
+  t.is(client.authState.token, token1)
 
-  t.is(serverAuthStates.size, 1)
-
-  t.is(serverSession.authState.token, undefined)
-
+  await wait(1e3)
   await client.call('hello')
 
-  console.info('set auth state')
-  await client.setAuthState({ token: 'mock_token' })
+  const token2 = client.authState.token
+  t.true(Number(token2) > Number(token1))
+  t.is(client.authState.type, 'fixed-0')
 
-  t.is(serverSession.authState.token, 'mock_token')
-
-  console.info('clear auth state')
-  await client.clearAuthState()
-
-  t.is(serverSession.authState.token, undefined)
-
-  t.is(client.authState.token, undefined)
-})
-
-test.serial('authState update', async (t) => {
-  t.timeout(4000)
-  const { client, server } = await setup()
-  t.teardown(() => {
-    client.disconnect()
-    server.destroy()
-  })
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-  await client.setAuthState({ token: 'mock_token' })
-  await t.notThrowsAsync(client.call('hello'))
-  server.auth.updateConfig({
-    authorize: async (context) => {
-      const authState = { token: 'second_token!', error: 'poopie' }
-      if (context.session) {
-        context.session.authState = authState
-        if (isWsContext(context)) {
-          server.auth.sendAuthState(context, authState)
-        }
-      }
-      return true
-    },
-  })
-  await client.setAuthState({ token: 'second_token' })
+  await wait(1e3)
   await client.call('hello')
-  t.deepEqual(client.authState, { token: 'second_token!', error: 'poopie' })
+
+  const token3 = client.authState.token
+  t.true(Number(token3) > Number(token2))
+  t.is(client.authState.type, 'fixed-1')
+
+  await server.destroy()
+  client.disconnect()
 })
