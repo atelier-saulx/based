@@ -59,7 +59,7 @@ export default (
             ctx.session.authState.token ||
             ctx.session.authState.refreshToken
           ) {
-            sendAndVerifyAuthMessage(ctx)
+            sendAndVerifyAuthMessage(server, ctx)
           }
         }
       },

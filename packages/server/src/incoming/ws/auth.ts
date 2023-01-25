@@ -46,12 +46,15 @@ export const authMessage = (
     })
     ctx.session.unauthorizedObs.clear()
   }
-  sendAndVerifyAuthMessage(ctx)
+  sendAndVerifyAuthMessage(server, ctx)
   return true
 }
 
 // send and verify
-export const sendAndVerifyAuthMessage = (ctx: Context<WebSocketSession>) => {
+export const sendAndVerifyAuthMessage = (
+  server: BasedServer,
+  ctx: Context<WebSocketSession>
+) => {
   console.info('SERVER -> SEND AUTH')
   ctx.session?.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 }
