@@ -87,8 +87,10 @@ test.serial('verify auth state', async (t) => {
 
   t.is(result.type, 'over9000')
 
+  let authstateChangeCnt = 0
   client.on('authstate-change', (a) => {
     console.info(a)
+    authstateChangeCnt++
   })
 
   const token1 = '' + Date.now()
@@ -114,6 +116,7 @@ test.serial('verify auth state', async (t) => {
   const token3 = client.authState.token
   t.true(Number(token3) > Number(token2))
   t.is(client.authState.type, 'fixed-1')
+  t.is(authstateChangeCnt, 3)
 
   await server.destroy()
   client.disconnect()
