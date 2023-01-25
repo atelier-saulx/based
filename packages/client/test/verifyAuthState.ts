@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer, isWsContext } from '@based/server'
+import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('verify auth state', async (t) => {
@@ -38,30 +38,10 @@ test.serial('verify auth state', async (t) => {
         if (!ctx.session) {
           return false
         }
-
-        // --- user land ---
-        // if (ctx.session.authState.error) {
-        //   return false
-        // }
-
-        // if (ctx.session.authState.token === 'xxx') {
-        //   return true
-        // }
-
-        // // ------------------
-        const verified = server.auth.verifyAuthState(ctx, ctx.session.authState)
-        if (verified === true) {
-          return true
-        }
-        ctx.session.authState = verified
-        if (isWsContext(ctx)) {
-          server.auth.sendAuthState(ctx, verified)
-        }
-        // --------------------
-        if (verified.error) {
+        server.auth.renewAuthState(ctx)
+        if (ctx.session.authState.error) {
           return false
         }
-
         return true
       },
     },

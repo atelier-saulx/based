@@ -7,7 +7,7 @@ import {
   AuthState,
   VerifyAuthState,
 } from './types'
-import { Context, WebSocketSession } from '../context'
+import { Context, WebSocketSession, isWsContext, HttpSession } from '../context'
 import { dummyConfig } from './dummy'
 import parseAuthState from './parseAuthState'
 
@@ -41,6 +41,23 @@ export class BasedAuth {
 
     if (config.verifyAuthState) {
       this.verifyAuthState = config.verifyAuthState
+    }
+  }
+
+  renewAuthState(ctx: Context<WebSocketSession | HttpSession>) {
+    if (!ctx.session) {
+      return
+    }
+    const verified = this.server.auth.verifyAuthState(
+      ctx,
+      ctx.session.authState
+    )
+    if (verified === true) {
+      return
+    }
+    ctx.session.authState = verified
+    if (isWsContext(ctx)) {
+      this.sendAuthState(ctx, verified)
     }
   }
 
