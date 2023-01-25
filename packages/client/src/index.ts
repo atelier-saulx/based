@@ -22,10 +22,9 @@ import {
 } from './outgoing'
 import { incoming } from './incoming'
 import { BasedQuery } from './query'
-import { addStream } from './stream'
+import addStream from './stream'
 
 // auth observer
-
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -75,7 +74,7 @@ export class BasedClient extends Emitter {
   // --------- Get State
   getState: GetState = new Map()
   // -------- Auth state
-  authState: AuthState = false
+  authState: AuthState = {}
   authRequest: {
     authState: AuthState
     promise: Promise<AuthState>
@@ -197,29 +196,22 @@ export class BasedClient extends Emitter {
   // -------- Stream-Function
   // File, NodeReadStream, payload, one with a timer
   stream(name: string, stream?: any): Promise<any> {
-    // do a http request - multipart under the hood (collecting multiple file uploads OR array)
-    return new Promise((resolve, reject) => {
-      addStream(this, stream, name, resolve, reject)
-    })
+    return addStream(this, name, stream)
   }
 
   // -------- Auth
-  auth(authState: any): Promise<any> {
-    if (authState === false) {
-      this.authState = false
-      this.emit('auth', this.authState)
-      return sendAuth(this, this.authState)
-    } else if (typeof authState === 'string' || typeof authState === 'object') {
+  setAuthState(authState: AuthState): Promise<AuthState> {
+    if (typeof authState === 'string' || typeof authState === 'object') {
       return sendAuth(this, authState)
     } else {
       throw new Error('Invalid auth() arguments')
     }
   }
 
-  observeAuth() {}
+  clearAuthState(): Promise<AuthState> {
+    this.authState = {}
+    return sendAuth(this, {})
+  }
 }
-
-// observeUnitll is really nice
-// .until on sub
 
 export { BasedOpts }

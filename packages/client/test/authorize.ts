@@ -31,7 +31,7 @@ const setup = async () => {
     },
     auth: {
       authorize: async (context) => {
-        return context.session?.authState === 'mock_token'
+        return context.session?.authState.token === 'mock_token'
       },
     },
   })
@@ -62,7 +62,7 @@ test.serial('authorize functions', async (t) => {
     })
   )
 
-  await coreClient.auth(token)
+  await coreClient.setAuthState({ token })
   await t.notThrowsAsync(
     coreClient.call('hello', {
       bla: true,
@@ -104,7 +104,7 @@ test.serial('authorize observe', async (t) => {
       )
   })
 
-  await coreClient.auth(token)
+  await coreClient.setAuthState({ token })
   await wait(500)
 
   await new Promise((resolve) => {
@@ -165,7 +165,7 @@ test.serial('authorize after observe', async (t) => {
 
   await wait(500)
   t.is(receiveCnt, 0)
-  await coreClient.auth(token)
+  await coreClient.setAuthState({ token })
   await wait(500)
 
   // @ts-ignore - totally incorrect typescript error...

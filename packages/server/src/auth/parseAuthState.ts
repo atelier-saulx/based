@@ -8,5 +8,8 @@ export default (authState: any): any => {
   try {
     return JSON.parse(authState)
   } catch (err) {}
+  if (typeof authState === 'string') {
+    return { token: authState }
+  }
   return authState
 }

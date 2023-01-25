@@ -2,6 +2,14 @@ import { BasedServer } from '../server'
 import { Context, HttpSession, WebSocketSession } from '../context'
 import uws from '@based/uws'
 
+export type AuthState = {
+  token?: string
+  userId?: string
+  refreshToken?: string
+  error?: string
+  persistent?: boolean
+}
+
 export type AuthConfig = {
   authorize?: Authorize
   authorizeConnection?: AuthorizeConnection

@@ -176,12 +176,15 @@ export const addGetToQueue = (
   drainQueue(client)
 }
 
-export const sendAuth = (client: BasedClient, authState: AuthState) => {
+export const sendAuth = (
+  client: BasedClient,
+  authState: AuthState
+): Promise<AuthState> => {
   if (deepEqual(authState, client.authState)) {
     console.warn('[Based] Trying to send the same authState twice')
     return client.authRequest.inProgress
       ? client.authRequest.promise
-      : new Promise((resolve) => resolve(false))
+      : new Promise((resolve) => resolve({}))
   }
   if (client.authRequest.inProgress) {
     // TODO:

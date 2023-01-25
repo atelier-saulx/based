@@ -63,18 +63,9 @@ const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
 const requestFullData = (client: BasedClient, id: number) => {
   const sub = client.observeState.get(id)
   if (!sub) {
-    console.error('Cannot find name for id from diff', id)
+    console.warn(`Cannot find query function name for id from diff [id]`)
     return
   }
-  // console.info(
-  //   'GET NEW DATA',
-  //   id,
-  //   'HAS',
-  //   [...client.cache.keys()].map((v) => {
-  //     return `${getName(client, v)} : ${v} `
-  //   })
-  // )
-  // and prob need to add an extra arg (type 4 msg) to enfore sending the data back
   addGetToQueue(client, sub.name, id, sub.payload)
 }
 
@@ -269,7 +260,7 @@ export const incoming = async (
         client.authState = payload
       }
       if (client.authRequest.resolve) client.authRequest.resolve(payload)
-      client.emit('auth', client.authState)
+      client.emit('authstate-change', client.authState)
     }
 
     // ------- Errors
@@ -301,6 +292,7 @@ export const incoming = async (
           client.functionResponseListeners.delete(payload.requestId)
         }
       }
+
       if (payload.observableId) {
         client.cache.delete(payload.observableId)
 
@@ -325,6 +317,8 @@ export const incoming = async (
           client.getState.delete(payload.observableId)
         }
       }
+
+      // else emit ERROR maybe?
     }
     // ---------------------------------
   } catch (err) {

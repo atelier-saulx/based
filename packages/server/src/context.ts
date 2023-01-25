@@ -1,5 +1,6 @@
 import uws from '@based/uws'
 import { parseQuery } from '@saulx/utils'
+import { AuthState } from './auth'
 
 export type WebSocketSession = {
   // State can be used for anyting - for us the based class instance
@@ -11,7 +12,7 @@ export type WebSocketSession = {
   ip: string
   id: number // client-id
   method: string
-  authState?: any
+  authState: AuthState
   obs: Set<number>
   unauthorizedObs: Set<{
     id: number
@@ -35,7 +36,7 @@ export type HttpSession = {
   ua: string
   ip: string
   id: number // client-id
-  authState?: any
+  authState: AuthState
   method: string
   headers: {
     'content-length'?: number

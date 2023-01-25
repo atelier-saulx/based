@@ -1,9 +1,11 @@
+// lets make a package Based error codes
 export enum BasedErrorCode {
   FunctionError = 50001,
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
   ObservableFunctionError = 50004,
   ObserveCallbackError = 50005,
+  TokenExpired = 50006,
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,

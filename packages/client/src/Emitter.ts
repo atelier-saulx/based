@@ -18,7 +18,7 @@ class Emitter {
     }
   }
 
-  on(type: Event, fn: Listener<EventMap[Event]>) {
+  on<E extends Event>(type: E, fn: Listener<EventMap[E]>) {
     if (!this.listeners[type]) {
       this.listeners[type] = []
     }
@@ -29,16 +29,15 @@ class Emitter {
     this.listeners = {}
   }
 
-  once(type: Event, fn: Listener<EventMap[Event]>) {
-    const listener = (v) => {
+  once<E extends Event>(type: E, fn: Listener<EventMap[E]>) {
+    const listener = (v: EventMap[E]) => {
       fn(v)
       this.off(type, listener)
     }
-
     this.on(type, listener)
   }
 
-  off(type: Event, fn: Listener<EventMap[Event]>) {
+  off<E extends Event>(type: E, fn?: Listener<EventMap[E]>) {
     const listeners = this.listeners[type]
     if (listeners) {
       if (!fn) {

@@ -28,7 +28,7 @@ const upgradeInternal = (
       id: ++clientId,
       authState: secWebSocketProtocol
         ? parseAuthState(decodeURI(secWebSocketProtocol))
-        : undefined, // May want to try and parse the auth....
+        : {},
       obs: new Set(),
       unauthorizedObs: new Set(),
     },

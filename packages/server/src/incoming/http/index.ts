@@ -67,6 +67,7 @@ export const httpHandler = (
           method,
           id: ++clientId,
           headers: {},
+          authState: {},
           res,
           req,
         },

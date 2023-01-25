@@ -10,9 +10,9 @@ export type EventMap = {
     binary?: Uint8Array
     data: any
   }
-  auth: AuthState
+  'authstate-change': AuthState
 }
 
 export type Event = keyof EventMap
 
-export type Listener<T> = (data?: T) => void
+export type Listener<T> = (data: T) => void
