@@ -10,6 +10,11 @@ type ErrorType = {
 }
 
 export const errorTypeHandlers: ErrorType = {
+  [BasedErrorCode.MissingAuthStateProtocolHeader]: {
+    statusCode: 500,
+    statusMessage: 'Internal Server Error',
+    message: () => '',
+  },
   [BasedErrorCode.RateLimit]: {
     statusCode: 429,
     statusMessage: 'Rate limit',

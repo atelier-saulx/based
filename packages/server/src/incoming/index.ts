@@ -5,7 +5,7 @@ import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
 import { WebSocketSession, Context } from '../context'
-import { sendAuthMessage } from './ws/auth'
+import { sendAndVerifyAuthMessage } from './ws/auth'
 
 export default (
   server: BasedServer,
@@ -59,7 +59,7 @@ export default (
             ctx.session.authState.token ||
             ctx.session.authState.refreshToken
           ) {
-            sendAuthMessage(ctx)
+            sendAndVerifyAuthMessage(ctx)
           }
         }
       },
