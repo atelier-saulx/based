@@ -68,6 +68,7 @@ export const upgradeAuthorize = (
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
     return
   }
+
   server.auth.authorizeConnection(req).then((authorized) => {
     if (aborted) {
       return

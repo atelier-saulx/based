@@ -38,7 +38,7 @@ export class BasedAuth {
     }
   }
 
-  sendAuthUpdate(ctx: Context<WebSocketSession>, authState: AuthState) {
+  sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {
     ctx.session?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
   }
 }

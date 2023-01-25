@@ -9,20 +9,10 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
-const toProtocol = (authState: any): string => {
-  /*
-    Protocol needs to be url safe
-    token          = 1*<any CHAR except CTLs or separators>
-    separators     = "(" | ")" | "<" | ">" | "@"
-                  | "," | ";" | ":" | "\" | <">
-                  | "/" | "[" | "]" | "?" | "="
-                  | "{" | "}" | SP | HT 
-    exclude " | '
-  */
-  return encodeURI(
+const toProtocol = (authState: any): string =>
+  encodeURI(
     typeof authState === 'string' ? authState : JSON.stringify(authState)
   )
-}
 
 const createWebsocket = (realUrl: string, client: BasedClient): WebSocket => {
   if (client.authState) {
@@ -87,9 +77,11 @@ const connect = (
       ws.onerror = () => {
         // console.error()
       }
+
       ws.onmessage = (d) => {
         client.onData(d)
       }
+
       ws.onopen = () => {
         if (isActive) {
           if (connection.disconnected) {
@@ -102,6 +94,7 @@ const connect = (
           client.onOpen()
         }
       }
+
       ws.onclose = () => {
         if (isActive) {
           if (connection.disconnected) {

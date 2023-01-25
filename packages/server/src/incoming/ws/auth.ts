@@ -6,10 +6,8 @@ import {
 import { BasedServer } from '../../server'
 import { WebSocketSession, Context } from '../../context'
 import { enableSubscribe } from './observable'
-import { parseAuthState } from '../../auth'
+import { parseAuthState, AuthState } from '../../auth'
 import { rateLimitRequest } from '../../security'
-
-export type AuthState = any
 
 export const authMessage = (
   arr: Uint8Array,
@@ -29,6 +27,8 @@ export const authMessage = (
     isDeflate
   )
 
+  console.info('incoming auth on server:', authPayload)
+
   // 10 rate limit tokens for auth (very strange when this gets called often)
   if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
     ctx.session.close()
@@ -46,12 +46,11 @@ export const authMessage = (
     })
     ctx.session.unauthorizedObs.clear()
   }
-  // TODO needs to call refresh mechanism or something also need that on HTTP
-  ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  sendAuthMessage(ctx)
   return true
 }
 
 export const sendAuthMessage = (ctx: Context<WebSocketSession>) => {
-  // TODO needs to call refresh mechanism or something
-  ctx.session.send(encodeAuthResponse(valueToBuffer(true)), true, false)
+  console.info('SEND AUTH')
+  ctx.session?.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 }

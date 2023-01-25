@@ -92,7 +92,6 @@ export class BasedClient extends Emitter {
   // --------- Internal Events
   onClose() {
     this.connected = false
-    // TODO: Do this on dc
     // Rare edge case where server got dc'ed while sending the queue - before recieving result)
     if (this.functionResponseListeners.size > this.functionQueue.length) {
       this.functionResponseListeners.forEach((p, k) => {

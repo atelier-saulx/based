@@ -8,7 +8,7 @@ import {
 } from './messageEncoders'
 import { deepEqual } from '@saulx/utils'
 
-const ping = new Uint8Array(0)
+const PING = new Uint8Array(0)
 
 export const idleTimeout = (client: BasedClient) => {
   const updateTime = 60 * 1e3
@@ -19,7 +19,7 @@ export const idleTimeout = (client: BasedClient) => {
       client.connected &&
       !client.connection.disconnected
     ) {
-      client.connection.ws.send(ping)
+      client.connection.ws.send(PING)
     }
   }, updateTime)
 }
@@ -90,14 +90,7 @@ export const drainQueue = (client: BasedClient) => {
       }
     }
 
-    // This can be removed scince we allways send it before the queue - dont need to wait for reply...
-    // if (client.authRequest?.inProgress) {
-    //   client.authRequest.promise.then(() => {
-    //     drainQueue(client)
-    //   })
-    // } else {
     client.drainTimeout = setTimeout(drainOutgoing, 0)
-    // }
   }
 }
 
@@ -160,7 +153,6 @@ export const addObsToQueue = (
   drainQueue(client)
 }
 
-// sub get queue
 export const addGetToQueue = (
   client: BasedClient,
   name: string,
@@ -171,30 +163,27 @@ export const addGetToQueue = (
   if (client.getObserveQueue.has(id)) {
     return
   }
-
   client.getObserveQueue.set(id, [3, name, checksum, payload])
   drainQueue(client)
 }
 
-export const sendAuth = (
+export const sendAuth = async (
   client: BasedClient,
   authState: AuthState
 ): Promise<AuthState> => {
   if (deepEqual(authState, client.authState)) {
-    console.warn('[Based] Trying to send the same authState twice')
+    console.warn(
+      '[Based] Trying to send the same authState twice',
+      client.authState
+    )
     return client.authRequest.inProgress
       ? client.authRequest.promise
       : new Promise((resolve) => resolve({}))
   }
+
   if (client.authRequest.inProgress) {
-    // TODO:
-    // fix this situation?
-    // add endpoint to refresh token on http
-    console.error(
-      '[Based] Authentication still in progress - will not work (will be added later)'
-    )
-    // TODO: need to set id on AUTH (req id)
-    return client.authRequest.promise
+    console.warn('[Based] Authentication still in progress - wait until done')
+    await client.authRequest.promise
   }
 
   client.authState = authState

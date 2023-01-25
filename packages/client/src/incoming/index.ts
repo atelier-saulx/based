@@ -3,6 +3,7 @@ import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
+import { deepEqual } from '@saulx/utils'
 
 const getName = (client: BasedClient, id: number): string => {
   const sub = client.observeState.get(id)
@@ -232,7 +233,7 @@ export const incoming = async (
       }
     }
 
-    // ------- Auth
+    // ------- AuthState
     else if (type === 4) {
       // | 4 header | * payload |
       const start = 4
@@ -250,17 +251,23 @@ export const incoming = async (
         )
       }
 
+      console.info('INCOMING AUTHSTATE', payload, client.authState)
+
       if (payload === true) {
-        // maybe hash of auth state?
-        // keep it! (do nothing)
+        // same authState
       } else if (payload === false) {
-        client.authRequest.reject(new Error('Invalid token send to server...'))
-        client.authState = null
+        client.authRequest.reject(new Error('Invalid authState'))
+        client.authState = { error: 'Invalid authState' }
+        client.emit('authstate-change', client.authState)
       } else {
-        client.authState = payload
+        if (!deepEqual(client.authState, payload)) {
+          client.authState = payload
+          client.emit('authstate-change', client.authState)
+        }
       }
-      if (client.authRequest.resolve) client.authRequest.resolve(payload)
-      client.emit('authstate-change', client.authState)
+      if (client.authRequest.resolve) {
+        client.authRequest.resolve(client.authState)
+      }
     }
 
     // ------- Errors
