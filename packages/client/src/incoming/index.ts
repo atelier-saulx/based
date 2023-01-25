@@ -259,11 +259,9 @@ export const incoming = async (
         client.authRequest.reject(new Error('Invalid authState'))
         client.authState = { error: 'Invalid authState' }
         client.emit('authstate-change', client.authState)
-      } else {
-        if (!deepEqual(client.authState, payload)) {
-          client.authState = payload
-          client.emit('authstate-change', client.authState)
-        }
+      } else if (!deepEqual(client.authState, payload)) {
+        client.authState = payload
+        client.emit('authstate-change', client.authState)
       }
       if (client.authRequest.resolve) {
         client.authRequest.resolve(client.authState)

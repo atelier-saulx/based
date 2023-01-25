@@ -68,7 +68,7 @@ test.serial('auth string authState', async (t) => {
   })
 
   const result = await client.setAuthState({ token })
-  t.deepEqual(result, { token })
+  t.true(result)
   t.is(client.authState.token, token)
   t.false(client.authRequest.inProgress)
   t.is(authEventCount, 1)
@@ -117,7 +117,7 @@ test.serial('authState simple', async (t) => {
   t.is(authEventCount, 1)
 })
 
-test.serial.only('multiple authState calls', async (t) => {
+test.serial('multiple authState calls', async (t) => {
   t.timeout(4000)
   const { client, server } = await setup()
 
@@ -128,7 +128,6 @@ test.serial.only('multiple authState calls', async (t) => {
 
   let authEventCount = 0
   client.on('authstate-change', () => {
-    console.info('hello?')
     authEventCount++
   })
 
@@ -138,15 +137,16 @@ test.serial.only('multiple authState calls', async (t) => {
     },
   })
 
-  await client.setAuthState({ token: 'first_token' })
-
-  await client.setAuthState({ token: 'second_token' })
+  await t.notThrowsAsync(async () => {
+    await client.setAuthState({ token: 'first_token' })
+    await client.setAuthState({ token: 'second_token' })
+  })
 
   t.is(client.authState.token, 'second_token')
   t.is(authEventCount, 2)
 })
 
-test.serial('authState server clear', async (t) => {
+test.serial.only('authState server clear', async (t) => {
   let serverSession: WebSocketSession | HttpSession
 
   t.timeout(4000)
