@@ -104,7 +104,7 @@ export const subscribeMessage = (
   }
 
   server.auth
-    .authorize(ctx, name, payload)
+    .authorize(server, ctx, name, payload)
     .then((ok) => {
       if (!ctx.session?.obs.has(id)) {
         return

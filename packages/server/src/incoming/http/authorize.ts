@@ -18,7 +18,7 @@ export const authorizeRequest = (
   }
 
   server.auth
-    .authorize(ctx, route.name, payload)
+    .authorize(server, ctx, route.name, payload)
     .then((ok) => {
       if (!ctx.session) {
         notAuth()

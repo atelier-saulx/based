@@ -34,7 +34,7 @@ export const authMessage = (
 
   const authState: AuthState = parseAuthState(authPayload)
 
-  const verified = server.auth.verifyAuthState(ctx, authState)
+  const verified = server.auth.verifyAuthState(server, ctx, authState)
 
   ctx.session.authState = verified === true ? authState : verified
 
@@ -66,7 +66,11 @@ export const sendAndVerifyAuthMessage = (
     return
   }
 
-  const verified = server.auth.verifyAuthState(ctx, ctx.session.authState)
+  const verified = server.auth.verifyAuthState(
+    server,
+    ctx,
+    ctx.session.authState
+  )
 
   if (verified === true) {
     sendAuthMessage(ctx, true)

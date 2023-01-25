@@ -30,15 +30,12 @@ export class BasedAuth {
     if (!config) {
       return
     }
-
     if (config.authorizeConnection) {
       this.authorizeConnection = config.authorizeConnection
     }
-
     if (config.authorize) {
       this.authorize = config.authorize
     }
-
     if (config.verifyAuthState) {
       this.verifyAuthState = config.verifyAuthState
     }
@@ -49,6 +46,7 @@ export class BasedAuth {
       return
     }
     const verified = this.server.auth.verifyAuthState(
+      this.server,
       ctx,
       ctx.session.authState
     )

@@ -10,7 +10,7 @@ test.serial('verify auth state', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     auth: {
-      verifyAuthState: (ctx, authState) => {
+      verifyAuthState: (server, ctx, authState) => {
         if (authState.token === '9000') {
           return { ...authState, type: 'over9000' }
         }
@@ -34,7 +34,7 @@ test.serial('verify auth state', async (t) => {
 
         return true
       },
-      authorize: async (ctx) => {
+      authorize: async (server, ctx) => {
         if (!ctx.session) {
           return false
         }

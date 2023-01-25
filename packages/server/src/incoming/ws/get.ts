@@ -159,7 +159,7 @@ export const getMessage = (
   }
 
   server.auth
-    .authorize(ctx, name, payload)
+    .authorize(server, ctx, name, payload)
     .then((ok) => {
       if (!ctx.session) {
         return false

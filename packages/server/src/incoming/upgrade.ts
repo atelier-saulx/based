@@ -86,7 +86,7 @@ export const upgradeAuthorize = (
     return
   }
 
-  server.auth.authorizeConnection(req).then((authorized) => {
+  server.auth.authorizeConnection(server, req).then((authorized) => {
     if (aborted) {
       return
     }
