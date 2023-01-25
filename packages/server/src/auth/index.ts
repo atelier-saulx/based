@@ -1,8 +1,14 @@
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
-import { AuthConfig, Authorize, AuthorizeConnection, AuthState } from './types'
+import {
+  AuthConfig,
+  Authorize,
+  AuthorizeConnection,
+  AuthState,
+  VerifyAuthState,
+} from './types'
 import { Context, WebSocketSession } from '../context'
-import dummyAuth from './dummyAuth'
+import { dummyConfig } from './dummy'
 import parseAuthState from './parseAuthState'
 
 export { parseAuthState }
@@ -13,13 +19,9 @@ export class BasedAuth {
   server: BasedServer
   authorize: Authorize
   authorizeConnection: AuthorizeConnection
+  verifyAuthState: VerifyAuthState
 
-  constructor(
-    server: BasedServer,
-    config: AuthConfig = {
-      authorize: dummyAuth,
-    }
-  ) {
+  constructor(server: BasedServer, config: AuthConfig = dummyConfig) {
     this.server = server
     this.updateConfig(config)
   }
@@ -35,6 +37,10 @@ export class BasedAuth {
 
     if (config.authorize) {
       this.authorize = config.authorize
+    }
+
+    if (config.verifyAuthState) {
+      this.verifyAuthState = config.verifyAuthState
     }
   }
 
