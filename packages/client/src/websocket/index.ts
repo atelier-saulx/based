@@ -2,6 +2,7 @@ import urlLoader from './urlLoader'
 import { Connection } from './types'
 import { BasedClient } from '..'
 import WebSocket from 'isomorphic-ws'
+import { encodeAuthState } from '../parseAuthState'
 
 type ActiveFn = (isActive: boolean) => void
 
@@ -61,7 +62,7 @@ const connect = (
       })
 
       const ws = (connection.ws = new WebSocket(realUrl, [
-        encodeURI(JSON.stringify(client.authState)),
+        encodeAuthState(client.authState),
       ]))
 
       ws.onerror = () => {

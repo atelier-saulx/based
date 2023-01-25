@@ -24,6 +24,8 @@ import { incoming } from './incoming'
 import { BasedQuery } from './query'
 import addStream from './stream'
 
+export * from './parseAuthState'
+
 // auth observer
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {

@@ -8,7 +8,7 @@ import {
   VerifyAuthState,
 } from './types'
 import { Context, WebSocketSession, isWsContext, HttpSession } from '../context'
-import { dummyConfig } from './dummy'
+import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
 
 export { parseAuthState }
@@ -17,11 +17,12 @@ export * from './types'
 
 export class BasedAuth {
   server: BasedServer
-  authorize: Authorize
   authorizeConnection: AuthorizeConnection
-  verifyAuthState: VerifyAuthState
 
-  constructor(server: BasedServer, config: AuthConfig = dummyConfig) {
+  verifyAuthState: VerifyAuthState = defaultVerifyAuthState
+  authorize: Authorize = defaultAuthorize
+
+  constructor(server: BasedServer, config: AuthConfig = {}) {
     this.server = server
     this.updateConfig(config)
   }
@@ -57,6 +58,14 @@ export class BasedAuth {
     if (isWsContext(ctx)) {
       this.sendAuthState(ctx, verified)
     }
+  }
+
+  encodeAuthState(authState: AuthState): string {
+    return Buffer.from(JSON.stringify(authState), 'utf8').toString('base64')
+  }
+
+  decodeAuthState(authState: any): AuthState {
+    return parseAuthState(authState)
   }
 
   sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {

@@ -30,7 +30,7 @@ const setup = async () => {
       },
     },
     auth: {
-      authorize: async (context) => {
+      authorize: async (server, context) => {
         return context.session?.authState.token === 'mock_token'
       },
     },
@@ -157,7 +157,6 @@ test.serial('authorize after observe', async (t) => {
       () => {
         receiveCnt++
       },
-
       (err: BasedError) => {
         t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
       }

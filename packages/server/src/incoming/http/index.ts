@@ -14,9 +14,9 @@ import {
   rateLimitRequest,
   endRateLimitHttp,
 } from '../../security'
-import { parseAuthState } from '../../auth'
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
+import { parseAuthState } from '../../auth'
 
 let clientId = 0
 
@@ -78,6 +78,8 @@ export const httpHandler = (
     return
   }
 
+  const authorization = req.getHeader('authorization')
+
   const ctx: Context<HttpSession> = {
     session: {
       res,
@@ -86,7 +88,7 @@ export const httpHandler = (
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
-      authState: parseAuthState(req.getHeader('authorization')),
+      authState: authorization ? parseAuthState(authorization) : {},
       headers: {
         'content-type': req.getHeader('content-type'),
         'content-encoding': req.getHeader('content-encoding'),

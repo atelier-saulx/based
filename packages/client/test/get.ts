@@ -87,8 +87,8 @@ test.serial('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorize: async (context) => {
-      return context.session?.authState === 'mock_token'
+    authorize: async (server, context) => {
+      return context.session?.authState.token === 'mock_token'
     },
   })
 
@@ -108,7 +108,7 @@ test.serial('authorize get', async (t) => {
   )
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
 
-  await coreClient.auth('mock_token')
+  await coreClient.setAuthState({ token: 'mock_token' })
   await t.notThrowsAsync(coreClient.query('counter').get())
 })
 

@@ -160,7 +160,7 @@ test.serial('authState server clear', async (t) => {
   const serverAuthStates: Map<Number, AuthState> = new Map()
 
   server.auth.updateConfig({
-    authorize: async (ctx) => {
+    authorize: async (server, ctx) => {
       if (ctx.session) {
         serverSession = ctx.session
         serverAuthStates.set(ctx.session.id, ctx.session.authState)
@@ -215,7 +215,7 @@ test.serial('authState update', async (t) => {
   await client.setAuthState({ token: 'mock_token' })
   await t.notThrowsAsync(client.call('hello'))
   server.auth.updateConfig({
-    authorize: async (context) => {
+    authorize: async (server, context) => {
       const authState = { token: 'second_token!', error: 'poopie' }
       if (context.session) {
         context.session.authState = authState
@@ -229,4 +229,44 @@ test.serial('authState update', async (t) => {
   await client.setAuthState({ token: 'second_token' })
   await client.call('hello')
   t.deepEqual(client.authState, { token: 'second_token!', error: 'poopie' })
+})
+
+test.serial('real authState encoded on start', async (t) => {
+  t.timeout(4000)
+  const { client, server } = await setup()
+  t.teardown(() => {
+    client.disconnect()
+    server.destroy()
+  })
+
+  const oAuthState = {
+    token: `-----BEGIN PUBLIC KEY-----
+    MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf
+    9Cnzj4p4WGeKLs1Pt8QuKUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQ==
+    -----END PUBLIC KEY-----`,
+    refreshToken:
+      'BwIAAACkAABSU0EyAAIAAAEAAQABQ++MWeOrCn4rWlOyjQoC9AIWfUvxKVFKKS7Et0/NLopnWHiKj/Mp9N/T1nL66BdRnMiCLQ330v0QFjFp4PeoHTYUW2QTrHy9HgBNsIRjS2JOtidKzt+iu3ieATK/EqM1G0dmccMhqf02Bk/0NxxNAfo3XENs9nu6ncwJRRpBCQEJAuYqPeWw878y5Xdxp7XoB5/QEqc+NqwG6PJzn7OEbYnevstdNEghgR4wjsfDQEVluz7RsP3HFsEbWI9oES7JNE1ge994WQVh4KwYYMYTUmogfcFtuyx1Ewo+opP/rBNNpN0xkPEcvqarkUGbkZg1BPTyvDbMxvcpCTZweON7W11FnpP7R5sgQE/PekvLhnqjJoGa0oBLaJGqthzE4pIg',
+  }
+
+  client.setAuthState(oAuthState)
+
+  await client.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  let aState: AuthState = {}
+
+  server.auth.updateConfig({
+    authorize: async (server, context) => {
+      if (context.session) {
+        aState = context.session.authState
+      }
+      return true
+    },
+  })
+
+  await client.call('hello')
+  t.deepEqual(aState, oAuthState)
 })

@@ -6,11 +6,19 @@ import {
 import { BasedServer } from '../../server'
 import { WebSocketSession, Context } from '../../context'
 import { enableSubscribe } from './observable'
-import { parseAuthState, AuthState } from '../../auth'
+import { AuthState } from '../../auth'
 import { rateLimitRequest } from '../../security'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
+
+const parse = (payload: string) => {
+  try {
+    return JSON.parse(payload)
+  } catch (err) {
+    return { error: 'invalid token' }
+  }
+}
 
 export const authMessage = (
   arr: Uint8Array,
@@ -27,12 +35,12 @@ export const authMessage = (
   }
 
   // | 4 header | * payload |
-  const authPayload = decodePayload(
+  const payload = decodePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
     isDeflate
   )
 
-  const authState: AuthState = parseAuthState(authPayload)
+  const authState: AuthState = parse(payload)
 
   const verified = server.auth.verifyAuthState(server, ctx, authState)
 

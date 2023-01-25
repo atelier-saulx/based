@@ -8,6 +8,7 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
+import { encodeAuthState } from '../src/index'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
@@ -332,8 +333,8 @@ test.serial('auth', async (t) => {
       },
     },
     auth: {
-      authorize: async (context) => {
-        if (context.session?.authState === 'bla') {
+      authorize: async (server, context) => {
+        if (context.session?.authState.token === 'bla') {
           return true
         }
         return false
@@ -345,7 +346,8 @@ test.serial('auth', async (t) => {
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
-        authorization: 'snurp',
+        // allways token ?
+        authorization: encodeAuthState({ token: 'snurp' }),
       },
     })
   ).json()
@@ -356,7 +358,7 @@ test.serial('auth', async (t) => {
     await fetch('http://localhost:9910/flap', {
       method: 'post',
       headers: {
-        authorization: 'bla',
+        authorization: encodeAuthState({ token: 'bla' }),
       },
     })
   ).text()

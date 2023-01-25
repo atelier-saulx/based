@@ -8,7 +8,7 @@ import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
 
-test.serial('file functions (small over http + file)', async (t) => {
+test.serial('stream functions (small over http + file)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -40,7 +40,7 @@ test.serial('file functions (small over http + file)', async (t) => {
   server.destroy()
 })
 
-test.serial('file functions (over http + stream)', async (t) => {
+test.serial('stream functions (over http + stream)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {

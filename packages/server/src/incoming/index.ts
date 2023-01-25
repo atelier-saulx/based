@@ -65,7 +65,6 @@ export default (
         unsubscribeWsIgnoreClient(server, id, ws.c)
       })
       wsListeners.close(ws.c)
-
       // Looks really ugly but same impact on memory and GC as using the ws directly
       // and better for dc's when functions etc are in progress
       ws.c.session = null
