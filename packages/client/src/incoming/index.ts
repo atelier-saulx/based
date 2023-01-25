@@ -253,17 +253,15 @@ export const incoming = async (
 
       // same authState
       if (payload === true) {
-        if (client.authRequest.resolve) {
-          client.authRequest.resolve(client.authState)
-        }
+        client.authRequest.resolve?.(client.authState)
       } else if (payload === false) {
         client.authState = { error: 'Invalid authState' }
         client.emit('authstate-change', client.authState)
-        client.authRequest.reject(new Error('Invalid authState'))
+        client.authRequest.reject?.(new Error('Invalid authState'))
       } else if ('error' in payload) {
         client.authState = payload
         client.emit('authstate-change', client.authState)
-        client.authRequest.reject(new Error(payload.error))
+        client.authRequest.reject?.(new Error(payload.error))
       } else {
         if (!deepEqual(client.authState, payload)) {
           client.authState = payload
@@ -271,9 +269,7 @@ export const incoming = async (
         } else {
           client.authState = payload
         }
-        if (client.authRequest.resolve) {
-          client.authRequest.resolve(client.authState)
-        }
+        client.authRequest.resolve?.(client.authState)
       }
     }
 

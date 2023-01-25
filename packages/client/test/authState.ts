@@ -231,7 +231,7 @@ test.serial('authState update', async (t) => {
   t.deepEqual(client.authState, { token: 'second_token!', error: 'poopie' })
 })
 
-test.serial('real authState encoded on start', async (t) => {
+test.serial('authState 16byte chars encoded on start', async (t) => {
   t.timeout(4000)
   const { client, server } = await setup()
   t.teardown(() => {
@@ -240,6 +240,7 @@ test.serial('real authState encoded on start', async (t) => {
   })
 
   const oAuthState = {
+    type: '🤪',
     token: `-----BEGIN PUBLIC KEY-----
     MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKj34GkxFhD90vcNLYLInFEX6Ppy1tPf
     9Cnzj4p4WGeKLs1Pt8QuKUpRKfFLfRYC9AIKjbJTWit+CqvjWYzvQwECAwEAAQ==
