@@ -111,13 +111,13 @@ test.serial('authState simple', async (t) => {
   })
 
   const result = await client.setAuthState(authState)
-  t.true(result)
+  t.deepEqual(result, authState)
   t.is(client.authState, authState)
   t.false(client.authRequest.inProgress)
   t.is(authEventCount, 1)
 })
 
-test.serial.only('multiple authState calls', async (t) => {
+test.serial('multiple authState calls', async (t) => {
   t.timeout(4000)
   const { client, server } = await setup()
 

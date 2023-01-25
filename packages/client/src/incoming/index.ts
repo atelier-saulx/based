@@ -291,9 +291,7 @@ export const incoming = async (
           const [, reject, stack] = client.functionResponseListeners.get(
             payload.requestId
           )
-
           reject(convertDataToBasedError(payload, stack))
-
           client.functionResponseListeners.delete(payload.requestId)
         }
       }
