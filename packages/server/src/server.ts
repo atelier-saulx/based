@@ -27,6 +27,7 @@ type RateLimit = {
 export type ServerOptions = {
   port?: number
   key?: string
+  disableRest?: boolean
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit

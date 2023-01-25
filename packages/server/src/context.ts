@@ -5,8 +5,6 @@ import { AuthState } from './auth'
 export type WebSocketSession = {
   // State can be used for anyting - for us the based class instance
   state?: any
-  // Good place to add user id from token
-  user?: string
   query: string
   ua: string
   ip: string
@@ -29,8 +27,6 @@ export type HttpSession = {
   state?: any
   res: uws.HttpResponse
   req: uws.HttpRequest
-  // Good place to add user id from token
-  user?: string
   query?: string
   parsedQuery?: ReturnType<typeof parseQuery>
   ua: string

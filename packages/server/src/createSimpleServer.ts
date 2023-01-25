@@ -19,6 +19,7 @@ const whiteSpace = (nr: number) => {
 export type SimpleServerOptions = {
   port?: number
   key?: string
+  disableRest?: boolean
   cert?: string
   auth?: AuthConfig
   install?: (opts: {
@@ -120,6 +121,7 @@ export async function createSimpleServer(
     port: props.port,
     auth: props.auth,
     cert: props.cert,
+    disableRest: props.disableRest,
     key: props.key,
     functions: {
       memCacheTimeout: 3e3,

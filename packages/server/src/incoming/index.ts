@@ -9,7 +9,7 @@ import { sendAndVerifyAuthMessage } from './ws/auth'
 
 export default (
   server: BasedServer,
-  { key, cert, port, ws: wsListeners }: ServerOptions
+  { key, cert, port, ws: wsListeners, disableRest }: ServerOptions
 ) => {
   const app =
     key && cert
@@ -31,62 +31,62 @@ export default (
     }
   }
 
-  app
-    .ws('/*', {
-      maxPayloadLength: 1024 * 1024 * 10, // 10 mb max payload
-      idleTimeout: 100,
-      maxBackpressure: 1024,
-      // compression: uws.SHARED_COMPRESSOR,
-      upgrade: server.auth?.authorizeConnection
-        ? (res, req, ctx) => {
-            upgradeAuthorize(server, res, req, ctx)
-          }
-        : (res, req, ctx) => {
-            upgrade(server, res, req, ctx)
-          },
-      message: (ws, data, isBinary) => {
-        message(server, ws.c, data, isBinary)
-      },
-      open: (ws: WebSocketSession) => {
-        if (ws) {
-          const ctx: Context<WebSocketSession> = {
-            session: ws,
-          }
-          ws.c = ctx
-          wsListeners.open(ctx)
-          if (
-            ctx.session.authState.token ||
-            ctx.session.authState.refreshToken
-          ) {
-            sendAndVerifyAuthMessage(server, ctx)
-          }
+  app.ws('/*', {
+    maxPayloadLength: 1024 * 1024 * 10, // 10 mb max payload
+    idleTimeout: 100,
+    maxBackpressure: 1024,
+    // No compression handled in the protocol
+    // compression: uws.SHARED_COMPRESSOR,
+    upgrade: server.auth?.authorizeConnection
+      ? (res, req, ctx) => {
+          upgradeAuthorize(server, res, req, ctx)
         }
-      },
-      close: (ws: WebSocketSession) => {
-        // cl--
-        ws.obs.forEach((id) => {
-          unsubscribeWsIgnoreClient(server, id, ws.c)
-        })
-        wsListeners.close(ws.c)
+      : (res, req, ctx) => {
+          upgrade(server, res, req, ctx)
+        },
+    message: (ws, data, isBinary) => {
+      message(server, ws.c, data, isBinary)
+    },
+    open: (ws: WebSocketSession) => {
+      if (ws) {
+        const ctx: Context<WebSocketSession> = {
+          session: ws,
+        }
+        ws.c = ctx
+        wsListeners.open(ctx)
+        if (ctx.session.authState.token || ctx.session.authState.refreshToken) {
+          sendAndVerifyAuthMessage(server, ctx)
+        }
+      }
+    },
+    close: (ws: WebSocketSession) => {
+      // cl--
+      ws.obs.forEach((id) => {
+        unsubscribeWsIgnoreClient(server, id, ws.c)
+      })
+      wsListeners.close(ws.c)
 
-        // Looks really ugly but same impact on memory and GC as using the ws directly
-        // and better for dc's when functions etc are in progress
-        ws.c.session = null
-        ws.c = null
-      },
-      drain: () => {
-        console.info('drain')
-        // lets handle drain efficiently (or more efficiently at least)
-        // call client.drain can be much more efficient
-        // if (ws.client && ws.client.backpressureQueue) {
-        //   ws.client.drain()
-        // }
-      },
-    })
-    // REST
-    .get('/*', (res, req) => httpHandler(server, req, res))
-    .post('/*', (res, req) => httpHandler(server, req, res))
-    .options('/*', (res, req) => httpHandler(server, req, res))
+      // Looks really ugly but same impact on memory and GC as using the ws directly
+      // and better for dc's when functions etc are in progress
+      ws.c.session = null
+      ws.c = null
+    },
+    drain: () => {
+      console.info('drain')
+      // lets handle drain efficiently (or more efficiently at least)
+      // call client.drain can be much more efficient
+      // if (ws.client && ws.client.backpressureQueue) {
+      //   ws.client.drain()
+      // }
+    },
+  })
 
+  if (!disableRest) {
+    app.get('/*', (res, req) => httpHandler(server, req, res))
+    app.post('/*', (res, req) => httpHandler(server, req, res))
+    app.options('/*', (res, req) => httpHandler(server, req, res))
+  }
+  // REST make this configurable
+  // .options('/*', (res, req) => httpHandler(server, req, res))
   server.uwsApp = app
 }

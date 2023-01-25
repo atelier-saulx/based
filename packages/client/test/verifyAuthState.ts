@@ -39,22 +39,27 @@ test.serial('verify auth state', async (t) => {
           return false
         }
 
+        // --- user land ---
+        // if (ctx.session.authState.error) {
+        //   return false
+        // }
+
+        // if (ctx.session.authState.token === 'xxx') {
+        //   return true
+        // }
+
+        // // ------------------
         const verified = server.auth.verifyAuthState(ctx, ctx.session.authState)
-
-        console.info('CALL HELLO', verified)
-
         if (verified === true) {
           return true
         }
-
         ctx.session.authState = verified
-
-        if (verified.error) {
-          return false
-        }
-
         if (isWsContext(ctx)) {
           server.auth.sendAuthState(ctx, verified)
+        }
+        // --------------------
+        if (verified.error) {
+          return false
         }
 
         return true
@@ -81,6 +86,10 @@ test.serial('verify auth state', async (t) => {
   const result = await client.setAuthState({ token: '9000' })
 
   t.is(result.type, 'over9000')
+
+  client.on('authstate-change', (a) => {
+    console.info(a)
+  })
 
   const token1 = '' + Date.now()
   await client.setAuthState({
