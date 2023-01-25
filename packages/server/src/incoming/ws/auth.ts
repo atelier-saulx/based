@@ -87,10 +87,5 @@ export const sendAndVerifyAuthMessage = (
 
   ctx.session.authState = verified
 
-  if (verified.error) {
-    sendAuthMessage(ctx, false)
-    return
-  }
-
   sendAuthMessage(ctx, verified)
 }

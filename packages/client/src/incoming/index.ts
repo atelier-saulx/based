@@ -251,13 +251,8 @@ export const incoming = async (
         )
       }
 
-      // same authState
       if (payload === true) {
         client.authRequest.resolve?.(client.authState)
-      } else if (payload === false) {
-        client.authState = { error: 'Invalid authState' }
-        client.emit('authstate-change', client.authState)
-        client.authRequest.reject?.(new Error('Invalid authState'))
       } else if ('error' in payload) {
         client.authState = payload
         client.emit('authstate-change', client.authState)

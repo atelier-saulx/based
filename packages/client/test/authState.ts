@@ -55,6 +55,7 @@ test.serial('auth string authState', async (t) => {
   })
 
   let authEventCount = 0
+
   client.once('authstate-change', (result) => {
     t.log('log', { result })
     t.is(result.token, token)

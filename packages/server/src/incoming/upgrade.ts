@@ -45,7 +45,7 @@ const upgradeInternal = (
       ua,
       ip,
       id: ++clientId,
-      authState: parseAuthState(decodeURI(secWebSocketProtocol)),
+      authState: parseAuthState(secWebSocketProtocol),
       obs: new Set(),
       unauthorizedObs: new Set(),
     },
