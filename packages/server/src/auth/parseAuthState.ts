@@ -1,15 +1,11 @@
-export default (authState: any): any => {
-  if (!authState) {
-    return
-  }
+import { AuthState } from './types'
+
+export default (authState: any): AuthState => {
   if (typeof authState !== 'string') {
-    return authState
+    return {}
   }
   try {
     return JSON.parse(authState)
   } catch (err) {}
-  if (typeof authState === 'string') {
-    return { token: authState }
-  }
-  return authState
+  return {}
 }

@@ -51,6 +51,6 @@ export const authMessage = (
 }
 
 export const sendAuthMessage = (ctx: Context<WebSocketSession>) => {
-  console.info('SEND AUTH')
+  console.info('SERVER -> SEND AUTH')
   ctx.session?.send(encodeAuthResponse(valueToBuffer(true)), true, false)
 }

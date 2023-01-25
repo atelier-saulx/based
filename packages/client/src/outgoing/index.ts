@@ -171,6 +171,8 @@ export const sendAuth = async (
   client: BasedClient,
   authState: AuthState
 ): Promise<AuthState> => {
+  console.info('SEND AUTH STATE', authState)
+
   if (deepEqual(authState, client.authState)) {
     console.warn(
       '[Based] Trying to send the same authState twice',

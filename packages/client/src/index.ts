@@ -208,7 +208,6 @@ export class BasedClient extends Emitter {
   }
 
   clearAuthState(): Promise<AuthState> {
-    this.authState = {}
     return sendAuth(this, {})
   }
 }

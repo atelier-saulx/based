@@ -25,6 +25,7 @@ export enum BasedErrorCode {
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
   RateLimit = 40029,
+  MissingAuthStateProtocolHeader = 40030,
 }
 
 export type BasedError<T extends BasedErrorCode = BasedErrorCode> = Error & {
@@ -45,6 +46,7 @@ type ObservableFunctionErrorProps = {
 
 export type ErrorPayload = {
   [BasedErrorCode.RateLimit]: {}
+  [BasedErrorCode.MissingAuthStateProtocolHeader]: {}
   [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
   [BasedErrorCode.FunctionError]: FunctionErrorProps
   [BasedErrorCode.ObservableFunctionError]: ObservableFunctionErrorProps

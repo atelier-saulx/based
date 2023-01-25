@@ -9,18 +9,6 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
-const toProtocol = (authState: any): string =>
-  encodeURI(
-    typeof authState === 'string' ? authState : JSON.stringify(authState)
-  )
-
-const createWebsocket = (realUrl: string, client: BasedClient): WebSocket => {
-  if (client.authState) {
-    return new WebSocket(realUrl, [toProtocol(client.authState)])
-  }
-  return new WebSocket(realUrl)
-}
-
 // Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
@@ -72,7 +60,9 @@ const connect = (
         }
       })
 
-      const ws = (connection.ws = createWebsocket(realUrl, client))
+      const ws = (connection.ws = new WebSocket(realUrl, [
+        encodeURI(JSON.stringify(client.authState)),
+      ]))
 
       ws.onerror = () => {
         // console.error()
