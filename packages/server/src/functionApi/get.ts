@@ -9,6 +9,7 @@ import {
   subscribeNext,
   getObs,
   destroyObs,
+  start,
 } from '../observable'
 
 const getObsData = (
@@ -96,10 +97,14 @@ export const get = (
             )
             return
           }
+
           if (!hasObs(server, id)) {
-            createObs(server, name, id, payload)
+            createObs(server, name, id, payload, true)
+            getObsData(resolve, reject, server, id, ctx, route)
+            start(server, id)
+          } else {
+            getObsData(resolve, reject, server, id, ctx, route)
           }
-          getObsData(resolve, reject, server, id, ctx, route)
         })
         .catch(() =>
           reject(

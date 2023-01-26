@@ -7,7 +7,8 @@ export const createObs = (
   server: BasedServer,
   name: string,
   id: number,
-  payload: any
+  payload: any,
+  noStart?: boolean
 ): ActiveObservable => {
   if (hasObs(server, id)) {
     const msg = `Allready has observable ${name} ${id}`
@@ -33,7 +34,10 @@ export const createObs = (
   server.activeObservables[name].set(id, obs)
   server.activeObservablesById.set(id, obs)
 
-  start(server, id)
+  if (noStart) {
+    return obs
+  }
 
+  start(server, id)
   return obs
 }

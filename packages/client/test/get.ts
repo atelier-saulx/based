@@ -12,7 +12,6 @@ const setup = async () => {
       checkPayload: {
         memCacheTimeout: 1e3,
         function: (based, payload, update) => {
-          console.info('check die shit', payload.power)
           update(payload.power)
           return () => {}
         },
@@ -44,7 +43,11 @@ const setup = async () => {
         },
       },
     },
-    functions: {},
+    functions: {
+      nestedGetCheckPayload: async (based, payload) => {
+        return based.query('checkPayload', payload).get()
+      },
+    },
   })
   return { coreClient, server }
 }
@@ -76,6 +79,18 @@ test.serial('get', async (t) => {
     .get()
 
   t.is(power.msg, 'powerfull stuff')
+
+  await wait(1e3)
+
+  const power2 = await coreClient.call('nestedGetCheckPayload', {
+    power: {
+      msg: 'powerfull stuff',
+    },
+  })
+
+  t.is(power2.msg, 'powerfull stuff')
+
+  await wait(1e3)
 
   t.is(await coreClient.query('counter').get(), 0)
 
