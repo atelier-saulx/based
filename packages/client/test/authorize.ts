@@ -10,7 +10,7 @@ const setup = async () => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
-      hello: async (payload) => {
+      hello: async (based, payload) => {
         if (payload) {
           return payload
         }
