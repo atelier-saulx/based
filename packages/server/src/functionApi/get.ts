@@ -8,6 +8,7 @@ import {
   createObs,
   subscribeNext,
   getObs,
+  destroyObs,
 } from '../observable'
 
 const getObsData = (
@@ -34,6 +35,7 @@ const getObsData = (
     return
   }
   subscribeNext(obs, (err) => {
+    destroyObs(server, id)
     if (err) {
       reject(
         createError(server, ctx, BasedErrorCode.ObservableFunctionError, {

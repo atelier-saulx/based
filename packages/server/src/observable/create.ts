@@ -23,6 +23,7 @@ export const createObs = (
     id,
     name,
     isDestroyed: false,
+    startId: 0,
   }
 
   if (!server.activeObservables[name]) {

@@ -31,6 +31,7 @@ const sendGetData = (
   ctx: Context<WebSocketSession>
 ) => {
   if (!ctx.session) {
+    destroyObs(server, id)
     return
   }
   if (checksum === 0) {

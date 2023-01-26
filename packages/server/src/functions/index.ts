@@ -6,7 +6,7 @@ import {
   FunctionConfig,
   isObservableFunctionSpec,
 } from './types'
-import { deepMerge } from '@saulx/utils'
+import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroyObs, start } from '../observable'
 export * from './types'
@@ -168,6 +168,11 @@ export class BasedFunctions {
       return false
     }
 
+    // Case when functions are installed exactly at the same time
+    if (deepEqual(spec, this.specs[spec.name])) {
+      return false
+    }
+
     if (!spec.idleTimeout) {
       spec.idleTimeout = this.config.idleTimeout
     }
@@ -194,6 +199,8 @@ export class BasedFunctions {
       spec.rateLimitTokens = 1
     }
 
+    const previousChecksum = this.specs[spec.name]?.checksum ?? -1
+
     // @ts-ignore maxpayload and rlimit tokens added on line 184...
     this.specs[spec.name] = spec
 
@@ -203,8 +210,10 @@ export class BasedFunctions {
           destroyObs(this.server, id)
         }
       } else {
-        for (const [id] of this.server.activeObservables[spec.name]) {
-          start(this.server, id)
+        if (previousChecksum !== spec.checksum) {
+          for (const [id] of this.server.activeObservables[spec.name]) {
+            start(this.server, id)
+          }
         }
       }
     }

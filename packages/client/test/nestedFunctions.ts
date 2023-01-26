@@ -68,15 +68,11 @@ const testShared = async (t, coreClient, server) => {
   t.true(incomingCntNoJson > 0)
   t.true(incomingCnt2 > 10)
 
-  await wait(20e3)
-
-  console.info(
-    server.activeObservablesById.forEach((v) => {
-      console.log(v.name, v.payload, v.functionObserveClients)
-    })
-  )
+  await wait(4e3)
 
   t.is(server.activeObservablesById.size, 0)
+
+  await wait(10e3)
 
   t.is(Object.keys(server.functions.specs).length, 0)
 }
@@ -87,47 +83,59 @@ test.serial.only('nested functions (raw api)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     queryFunctions: {
-      obsWithNestedLvl2: (based, payload, update) => {
-        return observe(server, 'obsWithNested', {}, 'json', update, () => {})
+      obsWithNestedLvl2: {
+        memCacheTimeout: 1e3,
+        function: (based, payload, update) => {
+          return observe(server, 'obsWithNested', {}, 'json', update, () => {})
+        },
       },
-      obsWithNested: async (based, payload, update) => {
-        return observe(
-          server,
-          payload === 'json' ? 'objectCounter' : 'counter',
-          {},
-          payload,
-          update,
-          () => {}
-        )
+      obsWithNested: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          return observe(
+            server,
+            payload === 'json' ? 'objectCounter' : 'counter',
+            {},
+            payload,
+            update,
+            () => {}
+          )
+        },
       },
-      objectCounter: async (based, payload, update) => {
-        const largeThing: { bla: any[] } = { bla: [] }
-        for (let i = 0; i < 1e4; i++) {
-          largeThing.bla.push({
-            title: 'snurp',
-            cnt: i,
-            snurp: ~~(Math.random() * 19999),
-          })
-        }
-        update(largeThing)
-        const counter = setInterval(() => {
-          largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-            ~~(Math.random() * 19999)
+      objectCounter: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          const largeThing: { bla: any[] } = { bla: [] }
+          for (let i = 0; i < 1e4; i++) {
+            largeThing.bla.push({
+              title: 'snurp',
+              cnt: i,
+              snurp: ~~(Math.random() * 19999),
+            })
+          }
           update(largeThing)
-        }, 1)
-        return () => {
-          clearInterval(counter)
-        }
+          const counter = setInterval(() => {
+            largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
+              ~~(Math.random() * 19999)
+            update(largeThing)
+          }, 1)
+          return () => {
+            clearInterval(counter)
+          }
+        },
       },
-      counter: async (based, payload, update) => {
-        let cnt = 0
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
+      counter: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          let cnt = 0
+          update(cnt)
+          const counter = setInterval(() => {
+            update(++cnt)
+          }, 1000)
+          return () => {
+            clearInterval(counter)
+          }
+        },
       },
     },
     functions: {

@@ -50,33 +50,38 @@ export const start = (server: BasedServer, id: number) => {
 
   update.__internalObs__ = true
 
+  const startId = ++obs.startId
+
+  // TODO: want to get rid of next tick...
   process.nextTick(() => {
-    console.info('START FN', obs.name, obs.payload)
-    if (obs.isDestroyed) {
+    if (obs.isDestroyed || startId !== obs.startId) {
       return
     }
-
     try {
       const r = spec.function(server.client, payload, update)
       if (r instanceof Promise) {
         r.then((close) => {
-          if (obs.isDestroyed) {
+          if (obs.isDestroyed || startId !== obs.startId) {
             close()
           } else {
             obs.closeFunction = close
           }
         }).catch((err) => {
-          errorListener(server, obs, err)
+          if (!(obs.isDestroyed || startId !== obs.startId)) {
+            errorListener(server, obs, err)
+          }
         })
       } else {
-        if (obs.isDestroyed) {
+        if (obs.isDestroyed || startId !== obs.startId) {
           r()
         } else {
           obs.closeFunction = r
         }
       }
     } catch (err) {
-      errorListener(server, obs, err)
+      if (!(obs.isDestroyed || startId !== obs.startId)) {
+        errorListener(server, obs, err)
+      }
     }
   })
 }

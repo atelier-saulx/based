@@ -50,17 +50,17 @@ export const subscribeFunction = (
 ) => {
   // TODO: FIX THIS
   const obs = getObs(server, id)
-  obs.functionObserveClients.add(update)
-  if (obs.cache) {
-    // will make this better!
-    update(
-      obs.cache,
-      obs.checksum,
-      obs.diffCache,
-      obs.previousChecksum,
-      obs.isDeflate
-    )
-  }
+  if (obs.functionObserveClients.add(update))
+    if (obs.cache) {
+      // will make this better!
+      update(
+        obs.cache,
+        obs.checksum,
+        obs.diffCache,
+        obs.previousChecksum,
+        obs.isDeflate
+      )
+    }
 }
 
 export const subscribeNext = (

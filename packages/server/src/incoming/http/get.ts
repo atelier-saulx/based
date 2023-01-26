@@ -82,6 +82,7 @@ const sendGetResponse = (
   ctx: Context<HttpSession>
 ) => {
   if (!ctx.session) {
+    destroyObs(server, id)
     return
   }
 
@@ -105,7 +106,6 @@ const sendGetResponse = (
   } else {
     sendNotModified(ctx)
   }
-
   destroyObs(server, id)
 }
 

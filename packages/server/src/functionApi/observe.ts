@@ -20,7 +20,6 @@ export const observe = (
   update: ObservableUpdateFunction,
   error: ObserveErrorListener
 ): (() => void) => {
-  // TODO: Callstack
   const route = server.functions.route(name)
 
   if (!route) {
