@@ -1,6 +1,6 @@
 export * from './callFunction'
 export * from './get'
-export * from './client/client'
+export * from './client'
 export { decode } from '../protocol'
 export * from './observe'
 

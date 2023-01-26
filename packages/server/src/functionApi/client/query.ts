@@ -5,13 +5,15 @@ import {
 import { observe } from '../observe'
 import { get } from '../get'
 import { Context, InternalSessionClient } from '../../context'
+import { BasedQuery as BasedQueryAbstract } from '@based/functions'
 
-export class BasedQuery {
+export class BasedQuery extends BasedQueryAbstract {
   public query: any
   public name: string
   public ctx: Context<InternalSessionClient>
 
   constructor(ctx: Context<InternalSessionClient>, name: string, payload: any) {
+    super()
     this.ctx = ctx
     this.query = payload
     this.name = name
