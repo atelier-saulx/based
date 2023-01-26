@@ -18,7 +18,6 @@ export { sendHttpResponse } from './sendHttpResponse'
 export { sendError } from './sendError'
 export { createSimpleServer } from './createSimpleServer'
 
-export * from './auth/types'
 export * from './functions/types'
 export * from './error'
 export * from './functionApi'

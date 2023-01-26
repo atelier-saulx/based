@@ -7,8 +7,8 @@ test.serial('query functions', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
     port: 9910,
-    observables: {
-      counter: (_payload, update) => {
+    queryFunctions: {
+      counter: (based, payload, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
@@ -53,7 +53,7 @@ test.serial('query functions', async (t) => {
     query: true,
     name: 'counter',
     checksum: 2,
-    function: (_payload, update) => {
+    function: (based, payload, update) => {
       let cnt = 0
       const counter = setInterval(() => {
         update('counter2:' + ++cnt)

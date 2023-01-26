@@ -2,9 +2,12 @@ import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
 import {
+  AuthState,
   BasedFunctionClient as BasedfunctionClientAbstract,
   Context,
   InternalSessionClient,
+  isWsContext,
+  Session,
 } from '@based/functions'
 
 export class BasedFunctionClient extends BasedfunctionClientAbstract {
@@ -31,5 +34,16 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
   async stream(name: string, stream?: any): Promise<any> {
     // make later
     return { name, stream }
+  }
+
+  renewAuthState(ctx: Context<Session>): void {
+    this.server.auth.renewAuthState(ctx)
+  }
+
+  sendAuthState(ctx: Context<Session>, authState: AuthState): void {
+    if (!isWsContext(ctx)) {
+      return
+    }
+    this.server.auth.sendAuthState(ctx, authState)
   }
 }

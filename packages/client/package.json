@@ -34,6 +34,7 @@
     "ws": "^7.5.3"
   },
   "devDependencies": {
+    "@based/functions": "^1.0.0",
     "concurrently": "^7.1.0",
     "@saulx/utils": "^2.2.1",
     "@saulx/aristotle": "^4.3.0",

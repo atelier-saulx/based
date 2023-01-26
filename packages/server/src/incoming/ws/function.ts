@@ -123,7 +123,7 @@ export const functionMessage = (
 
   // TODO: make this fn a bit nicer.... remove nestedness...
   server.auth
-    .authorize(server, ctx, name, payload)
+    .authorize(server.client, ctx, name, payload)
     .then((ok) => {
       if (!ctx.session) {
         return false

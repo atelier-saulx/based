@@ -1,4 +1,4 @@
-import { Context } from './context'
+import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 
 export type ObservableUpdateFunction = {
@@ -16,6 +16,12 @@ export type ObservableUpdateFunction = {
 }
 
 export type ObserveErrorListener = (err: any) => void
+
+export type CustomHttpResponse = (
+  result: any,
+  payload: any,
+  client: Context<HttpSession>
+) => Promise<boolean>
 
 export type BasedFunction = (
   based: BasedFunctionClient,

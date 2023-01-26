@@ -8,10 +8,10 @@ const setup = async () => {
   const coreClient = new BasedClient()
   const server = await createSimpleServer({
     port: 9910,
-    observables: {
+    queryFunctions: {
       counter: {
         memCacheTimeout: 0,
-        function: async (_payload, update) => {
+        function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)
           const counter = setInterval(() => {
@@ -24,7 +24,7 @@ const setup = async () => {
       },
       'counter-cached': {
         memCacheTimeout: 1e3,
-        function: async (_payload, update) => {
+        function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)
           const counter = setInterval(() => {
@@ -116,8 +116,8 @@ test.serial('getWhen', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
     port: 9910,
-    observables: {
-      flap: (_payload, update) => {
+    queryFunctions: {
+      flap: (based, _payload, update) => {
         let cnt = 0
         const interval = setInterval(() => {
           cnt++

@@ -1,16 +1,9 @@
 import {
-  Context,
-  HttpSession,
   BasedQueryFunction,
   BasedFunction,
+  CustomHttpResponse,
 } from '@based/functions'
 import { BasedServer } from '../server'
-
-export type CustomHttpResponse = (
-  result: any,
-  payload: any,
-  client: Context<HttpSession>
-) => Promise<boolean>
 
 export type BasedFunctionRoute = {
   name: string

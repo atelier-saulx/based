@@ -10,7 +10,7 @@ test.serial('verify auth state', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     auth: {
-      verifyAuthState: (server, ctx, authState) => {
+      verifyAuthState: (based, ctx, authState) => {
         if (authState.token === '9000') {
           return { ...authState, type: 'over9000' }
         }
@@ -34,11 +34,11 @@ test.serial('verify auth state', async (t) => {
 
         return true
       },
-      authorize: async (server, ctx) => {
+      authorize: async (based, ctx) => {
         if (!ctx.session) {
           return false
         }
-        server.auth.renewAuthState(ctx)
+        based.renewAuthState(ctx)
         if (ctx.session.authState.error) {
           return false
         }
@@ -46,7 +46,7 @@ test.serial('verify auth state', async (t) => {
       },
     },
     functions: {
-      hello: async (payload) => {
+      hello: async (based, payload) => {
         if (payload) {
           return payload.length
         }

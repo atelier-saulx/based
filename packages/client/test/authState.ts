@@ -1,12 +1,12 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
+import { createSimpleServer } from '@based/server'
 import {
-  createSimpleServer,
   isWsContext,
   AuthState,
   WebSocketSession,
   HttpSession,
-} from '@based/server'
+} from '@based/functions'
 
 const setup = async () => {
   const client = new BasedClient()
@@ -16,7 +16,7 @@ const setup = async () => {
     functions: {
       hello: {
         maxPayloadSize: 1e8,
-        function: async (payload) => {
+        function: async (based, payload) => {
           if (payload) {
             return payload.length
           }
@@ -216,12 +216,12 @@ test.serial('authState update', async (t) => {
   await client.setAuthState({ token: 'mock_token' })
   await t.notThrowsAsync(client.call('hello'))
   server.auth.updateConfig({
-    authorize: async (server, context) => {
+    authorize: async (based, context) => {
       const authState = { token: 'second_token!', error: 'poopie' }
       if (context.session) {
         context.session.authState = authState
         if (isWsContext(context)) {
-          server.auth.sendAuthState(context, authState)
+          based.sendAuthState(context, authState)
         }
       }
       return true
@@ -261,7 +261,7 @@ test.serial('authState 16byte chars encoded on start', async (t) => {
   let aState: AuthState = {}
 
   server.auth.updateConfig({
-    authorize: async (server, context) => {
+    authorize: async (based, context) => {
       if (context.session) {
         aState = context.session.authState
       }

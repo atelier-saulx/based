@@ -1,24 +1,25 @@
 import { encodeAuthResponse, valueToBuffer } from '../protocol'
 import { BasedServer } from '../server'
 import {
-  AuthConfig,
-  Authorize,
-  AuthorizeConnection,
-  VerifyAuthState,
-} from './types'
-import {
   Context,
   AuthState,
   WebSocketSession,
   isWsContext,
   HttpSession,
+  Authorize,
+  AuthorizeConnection,
+  VerifyAuthState,
 } from '@based/functions'
 import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
 
 export { parseAuthState }
 
-export * from './types'
+export type AuthConfig = {
+  authorize?: Authorize
+  authorizeConnection?: AuthorizeConnection
+  verifyAuthState?: VerifyAuthState
+}
 
 export class BasedAuth {
   server: BasedServer
@@ -47,13 +48,18 @@ export class BasedAuth {
     }
   }
 
-  renewAuthState(ctx: Context<WebSocketSession | HttpSession>) {
+  renewAuthState(ctx: Context) {
     if (!ctx.session) {
       return
     }
+
+    if (!('authState' in ctx.session)) {
+      return
+    }
+
     const verified = this.server.auth.verifyAuthState(
-      this.server,
-      ctx,
+      this.server.client,
+      <Context<HttpSession> | Context<WebSocketSession>>ctx,
       ctx.session.authState
     )
     if (verified === true) {

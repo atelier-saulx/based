@@ -4,16 +4,16 @@ import { BasedClient } from '../src/index'
 import { createSimpleServer, callFunction, get, observe } from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial('nested functions', async (t) => {
+test.serial('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
     port: 9910,
-    observables: {
-      obsWithNestedLvl2: (payload, update) => {
+    queryFunctions: {
+      obsWithNestedLvl2: (based, payload, update) => {
         return observe(server, 'obsWithNested', {}, 'json', update, () => {})
       },
-      obsWithNested: async (payload, update) => {
+      obsWithNested: async (based, payload, update) => {
         return observe(
           server,
           payload === 'json' ? 'objectCounter' : 'counter',
@@ -23,7 +23,7 @@ test.serial('nested functions', async (t) => {
           () => {}
         )
       },
-      objectCounter: async (payload, update) => {
+      objectCounter: async (based, payload, update) => {
         const largeThing: { bla: any[] } = { bla: [] }
         for (let i = 0; i < 1e4; i++) {
           largeThing.bla.push({
@@ -42,7 +42,7 @@ test.serial('nested functions', async (t) => {
           clearInterval(counter)
         }
       },
-      counter: async (_payload, update) => {
+      counter: async (based, payload, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
@@ -54,12 +54,12 @@ test.serial('nested functions', async (t) => {
       },
     },
     functions: {
-      fnWithNested: async (payload, context) => {
+      fnWithNested: async (based, payload, context) => {
         const x = await callFunction(server, 'hello', context, payload)
         await get(server, 'obsWithNested', context, 'json')
         return x
       },
-      hello: async (payload) => {
+      hello: async (based, payload) => {
         if (payload) {
           return payload
         }

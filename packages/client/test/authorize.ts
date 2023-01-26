@@ -17,8 +17,8 @@ const setup = async () => {
         return 'flap'
       },
     },
-    observables: {
-      counter: async (_payload, update) => {
+    queryFunctions: {
+      counter: async (based, payload, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
@@ -30,7 +30,7 @@ const setup = async () => {
       },
     },
     auth: {
-      authorize: async (server, context) => {
+      authorize: async (based, context) => {
         return context.session?.authState.token === 'mock_token'
       },
     },

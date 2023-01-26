@@ -99,9 +99,8 @@ export class BasedServer {
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
-
     if (opts.client) {
-      // @ts-ignore - allow different ones if you want to costumize
+      // @ts-ignore - allow different ones if you want a special client
       this.client = opts.client(this)
     } else {
       this.client = new BasedServerFunctionClient(this)

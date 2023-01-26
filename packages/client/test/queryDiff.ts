@@ -8,8 +8,8 @@ test.serial('observablesDiff', async (t) => {
 
   const server = await createSimpleServer({
     port: 9910,
-    observables: {
-      counter: async (payload, update) => {
+    queryFunctions: {
+      counter: async (based, payload, update) => {
         const largeThing: { bla: any[] } = { bla: [] }
         for (let i = 0; i < 1e4; i++) {
           largeThing.bla.push({

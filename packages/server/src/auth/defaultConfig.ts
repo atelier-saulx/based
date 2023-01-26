@@ -1,4 +1,4 @@
-import { Authorize, VerifyAuthState } from './types'
+import { Authorize, VerifyAuthState } from '@based/functions'
 
 export const defaultAuthorize: Authorize = async () => {
   return true

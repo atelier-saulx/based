@@ -63,22 +63,18 @@ export type MinimalExternalSession = {
   ip: string
 }
 
-export type Context<
-  S extends
-    | WebSocketSession
-    | HttpSession
-    | InternalSession
-    | MinimalExternalSession =
-    | WebSocketSession
-    | HttpSession
-    | InternalSession
-    | MinimalExternalSession
-> = {
+export type Session =
+  | WebSocketSession
+  | HttpSession
+  | InternalSession
+  | MinimalExternalSession
+
+export type Context<S extends Session = Session> = {
   session?: S
 }
 
 export const isHttpContext = (
-  ctx: Context<HttpSession | WebSocketSession>
+  ctx: Context<Session>
 ): ctx is Context<HttpSession> => {
   if ('res' in ctx?.session) {
     return true
@@ -87,18 +83,16 @@ export const isHttpContext = (
 }
 
 export const isWsContext = (
-  ctx: Context<HttpSession | WebSocketSession>
+  ctx: Context<Session>
 ): ctx is Context<WebSocketSession> => {
-  if (ctx.session && !('res' in ctx.session)) {
+  if (ctx.session && isWsSession(ctx.session)) {
     return true
   }
   return false
 }
 
-export const isWsSession = (
-  session: HttpSession | WebSocketSession
-): session is WebSocketSession => {
-  if (!('res' in session)) {
+export const isWsSession = (session: Session): session is WebSocketSession => {
+  if (!('res' in session) && 'ip' in session && 'id' in session) {
     return true
   }
   return false

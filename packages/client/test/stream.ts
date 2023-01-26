@@ -47,7 +47,7 @@ test.serial('stream functions (over http + stream)', async (t) => {
       hello: {
         maxPayloadSize: 1e9,
         stream: true,
-        function: async ({ stream }) => {
+        function: async (based, { stream }) => {
           const buf = await readStream(stream)
           console.info('is end...', buf.byteLength)
           return 'bla'
@@ -108,7 +108,7 @@ test.serial.only('file functions using client helper', async (t) => {
       hello: {
         maxPayloadSize: 1e9,
         stream: true,
-        function: async ({ stream }) => {
+        function: async (based, { stream }) => {
           const buf = await readStream(stream)
           console.info('is end...', buf.byteLength)
           return 'bla'

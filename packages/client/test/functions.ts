@@ -11,7 +11,7 @@ test.serial('functions', async (t) => {
     functions: {
       hello: {
         maxPayloadSize: 1e8,
-        function: async (payload) => {
+        function: async (based, payload) => {
           if (payload) {
             return payload.length
           }

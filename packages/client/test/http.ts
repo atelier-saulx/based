@@ -21,7 +21,7 @@ test.serial('functions (over http)', async (t) => {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
+      function: async (based, payload) => {
         if (payload) {
           return payload
         }
@@ -122,7 +122,7 @@ test.serial('get (over http)', async (t) => {
       name: 'hello',
       checksum: 1,
       query: true,
-      function: async (_payload, update) => {
+      function: async (based, payload, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
@@ -205,7 +205,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
       path: '/flap',
       name: 'hello',
       checksum: 1,
-      function: async (payload) => {
+      function: async (based, payload) => {
         await wait(100)
         if (payload) {
           return payload
@@ -333,7 +333,7 @@ test.serial('auth', async (t) => {
       },
     },
     auth: {
-      authorize: async (server, context) => {
+      authorize: async (based, context) => {
         if (context.session?.authState.token === 'bla') {
           return true
         }
