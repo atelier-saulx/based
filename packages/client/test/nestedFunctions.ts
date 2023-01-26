@@ -75,9 +75,12 @@ const testShared = async (t, coreClient, server) => {
   await wait(10e3)
 
   t.is(Object.keys(server.functions.specs).length, 0)
+
+  coreClient.disconnect()
+  await server.destroy()
 }
 
-test.serial.only('nested functions (raw api)', async (t) => {
+test.serial('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
@@ -156,64 +159,76 @@ test.serial.only('nested functions (raw api)', async (t) => {
   await testShared(t, coreClient, server)
 })
 
-// test.serial('nested functions (fancy api)', async (t) => {
-//   const coreClient = new BasedClient()
+test.serial('nested functions (fancy api)', async (t) => {
+  const coreClient = new BasedClient()
 
-//   const server = await createSimpleServer({
-//     port: 9910,
-//     queryFunctions: {
-//       obsWithNestedLvl2: (based, payload, update) => {
-//         return based.query('json', {}).subscribe(update)
-//       },
-//       obsWithNested: async (based, payload, update) => {
-//         return based
-//           .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
-//           .subscribe(update)
-//       },
-//       objectCounter: async (based, payload, update) => {
-//         const largeThing: { bla: any[] } = { bla: [] }
-//         for (let i = 0; i < 1e4; i++) {
-//           largeThing.bla.push({
-//             title: 'snurp',
-//             cnt: i,
-//             snurp: ~~(Math.random() * 19999),
-//           })
-//         }
-//         update(largeThing)
-//         const counter = setInterval(() => {
-//           largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-//             ~~(Math.random() * 19999)
-//           update(largeThing)
-//         }, 1)
-//         return () => {
-//           clearInterval(counter)
-//         }
-//       },
-//       counter: async (based, payload, update) => {
-//         let cnt = 0
-//         update(cnt)
-//         const counter = setInterval(() => {
-//           update(++cnt)
-//         }, 1000)
-//         return () => {
-//           clearInterval(counter)
-//         }
-//       },
-//     },
-//     functions: {
-//       fnWithNested: async (based, payload, context) => {
-//         const x = await based.call('hello', payload, context)
-//         await based.query('obsWithNested', 'json').get()
-//         return x
-//       },
-//       hello: async (based, payload) => {
-//         if (payload) {
-//           return payload
-//         }
-//         return 'flap'
-//       },
-//     },
-//   })
+  const server = await createSimpleServer({
+    port: 9910,
+    queryFunctions: {
+      obsWithNestedLvl2: {
+        memCacheTimeout: 1e3,
+        function: (based, payload, update) => {
+          return based.query('obsWithNested', 'json').subscribe(update)
+        },
+      },
+      obsWithNested: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          return based
+            .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
+            .subscribe(update)
+        },
+      },
+      objectCounter: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          const largeThing: { bla: any[] } = { bla: [] }
+          for (let i = 0; i < 1e4; i++) {
+            largeThing.bla.push({
+              title: 'snurp',
+              cnt: i,
+              snurp: ~~(Math.random() * 19999),
+            })
+          }
+          update(largeThing)
+          const counter = setInterval(() => {
+            largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
+              ~~(Math.random() * 19999)
+            update(largeThing)
+          }, 1)
+          return () => {
+            clearInterval(counter)
+          }
+        },
+      },
+      counter: {
+        memCacheTimeout: 1e3,
+        function: async (based, payload, update) => {
+          let cnt = 0
+          update(cnt)
+          const counter = setInterval(() => {
+            update(++cnt)
+          }, 1000)
+          return () => {
+            clearInterval(counter)
+          }
+        },
+      },
+    },
+    functions: {
+      fnWithNested: async (based, payload, context) => {
+        const x = await based.call('hello', payload, context)
+        await based.query('obsWithNested', 'json').get()
+        return x
+      },
+      hello: async (based, payload) => {
+        if (payload) {
+          return payload
+        }
+        return 'flap'
+      },
+    },
+  })
 
-//   await testShared(t, coreClient, server)
-// })
+  await testShared(t, coreClient, server)
+})
