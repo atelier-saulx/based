@@ -1,5 +1,9 @@
 import { BasedClient } from '..'
-import { FileUploadPath, FileUploadContents, FileUploadStream } from './types'
+import {
+  StreamFunctionOpts,
+  StreamFunctionPath,
+  StreamFunctionStream,
+} from './types'
 import uploadFileBrowser from './uploadFileBrowser'
 import fetch from './fetch'
 
@@ -16,24 +20,24 @@ const isStream = (stream: any): boolean => {
   )
 }
 
-const isFileUploadPath = (
-  options: FileUploadContents | FileUploadStream | FileUploadPath
-): options is FileUploadPath => {
+const isStreamFunctionPath = (
+  options: StreamFunctionOpts
+): options is StreamFunctionPath => {
   return 'path' in options && typeof options.path === 'string'
 }
 
-const isFileUploadStream = (
-  options: FileUploadContents | FileUploadStream | FileUploadPath
-): options is FileUploadStream => {
+const isStreamFunctionStream = (
+  options: StreamFunctionOpts
+): options is StreamFunctionStream => {
   return 'contents' in options && isStream(options.contents)
 }
 
 export default async (
   client: BasedClient,
   name: string,
-  options: FileUploadContents | FileUploadStream | FileUploadPath
+  options: StreamFunctionOpts
 ): Promise<any> => {
-  if (isFileUploadPath(options)) {
+  if (isStreamFunctionPath(options)) {
     if (isBrowser) {
       throw new Error('File path not supported in the browser')
     }
@@ -41,7 +45,7 @@ export default async (
     return require('./nodeStream').uploadFilePath(client, name, options)
   }
 
-  if (isFileUploadStream(options)) {
+  if (isStreamFunctionStream(options)) {
     if (isBrowser) {
       throw new Error('Node streams not supported in the browser')
     }
@@ -72,6 +76,7 @@ export default async (
     typeof options.contents === 'string' ||
     (!isBrowser && options.contents instanceof global.Buffer)
   ) {
+    console.info('go go go', options.contents)
     // want to stream this XHR browser / stream + http nodejs
     return fetch(client, name, options)
   }

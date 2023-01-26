@@ -1,13 +1,14 @@
 import { BasedClient } from '..'
-import { FileUploadContents } from './types'
+import { StreamFunctionContents } from './types'
 import fetch from 'cross-fetch'
 import getUrlFromOpts from '../getUrlFromOpts'
 
 export default async (
   client: BasedClient,
   name: string,
-  options: FileUploadContents
+  options: StreamFunctionContents
 ): Promise<any> => {
+  console.info(client)
   let url = await getUrlFromOpts(client.opts)
   if (typeof url === 'function') {
     url = await url()

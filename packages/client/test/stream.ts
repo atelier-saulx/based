@@ -101,13 +101,14 @@ test.serial('stream functions (over http + stream)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('file functions using client helper', async (t) => {
+test.serial.only('stream functions using client helper', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
       hello: {
         maxPayloadSize: 1e9,
         stream: true,
+        // fix signature
         function: async (based, { stream }) => {
           const buf = await readStream(stream)
           console.info('is end...', buf.byteLength)
@@ -123,7 +124,15 @@ test.serial.only('file functions using client helper', async (t) => {
     url: async () => 'ws://localhost:9910',
   })
 
-  client.stream('hello')
+  const bigBod: any[] = []
+
+  for (let i = 0; i < 10; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
+
+  client.stream('hello', {
+    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
+  })
 
   await wait(15e3)
 

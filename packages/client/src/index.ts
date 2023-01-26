@@ -23,6 +23,7 @@ import {
 import { incoming } from './incoming'
 import { BasedQuery } from './query'
 import startStream from './stream'
+import { StreamFunctionOpts } from './stream/types'
 
 export * from './parseAuthState'
 
@@ -196,7 +197,7 @@ export class BasedClient extends Emitter {
   // TODO make this
   // -------- Stream-Function
   // File, NodeReadStream, payload, one with a timer
-  stream(name: string, stream?: any): Promise<any> {
+  stream(name: string, stream: StreamFunctionOpts): Promise<any> {
     return startStream(this, name, stream)
   }
 

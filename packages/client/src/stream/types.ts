@@ -5,14 +5,14 @@ export type ReadableStream = {
   _readableState?: object
 }
 
-export type FileUploadContents = {
+export type StreamFunctionContents = {
   contents: Buffer | ArrayBuffer | string | File | Blob
   opts?: any
   mimeType?: string
   server?: string
 }
 
-export type FileUploadStream = {
+export type StreamFunctionStream = {
   contents: ReadableStream
   opts?: any
   size: number
@@ -20,9 +20,14 @@ export type FileUploadStream = {
   server?: string
 }
 
-export type FileUploadPath = {
+export type StreamFunctionPath = {
   path: string
   mimeType?: string
   opts?: any
   server?: string
 }
+
+export type StreamFunctionOpts =
+  | StreamFunctionPath
+  | StreamFunctionContents
+  | StreamFunctionStream

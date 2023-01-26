@@ -1,10 +1,10 @@
 import { BasedClient } from '..'
-import { FileUploadContents } from './types'
+import { StreamFunctionContents } from './types'
 
 // const inProgress: { [url: string]: boolean } = {}
 
 const queue: {
-  [url: string]: FileUploadContents[]
+  [url: string]: StreamFunctionContents[]
 } = {}
 
 // const drainQueue = (url: string, authorization: string) => {
@@ -65,7 +65,7 @@ const queue: {
 export default async (
   client: BasedClient,
   functionName: string,
-  options: FileUploadContents
+  options: StreamFunctionContents
 ) => {
   if (!queue[functionName]) {
     queue[functionName] = []

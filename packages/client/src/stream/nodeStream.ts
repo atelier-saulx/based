@@ -4,7 +4,7 @@ import { Readable } from 'stream'
 import { BasedClient } from '..'
 import fs from 'fs'
 import { promisify } from 'util'
-import { FileUploadPath, FileUploadStream } from './types'
+import { StreamFunctionPath, StreamFunctionStream } from './types'
 
 const stat = promisify(fs.stat)
 
@@ -26,7 +26,7 @@ export const isStream = (contents: any): contents is Readable => {
 export const uploadFilePath = async (
   client: BasedClient,
   name: string,
-  options: FileUploadPath
+  options: StreamFunctionPath
 ) => {
   const info = await checkFile(options.path)
   if (info) {
@@ -49,7 +49,7 @@ export const uploadFilePath = async (
 export const uploadFileStream = (
   client: BasedClient,
   name: string,
-  options: FileUploadStream
+  options: StreamFunctionStream
 ) => {
   if (!(options.contents instanceof Readable)) {
     throw new Error('File Contents has to be an instance of "Readable"')
