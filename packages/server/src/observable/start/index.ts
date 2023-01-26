@@ -36,7 +36,6 @@ export const start = (server: BasedServer, id: number) => {
       errorListener(server, obs, err)
       return
     }
-
     updateListener(
       server,
       obs,
@@ -52,25 +51,32 @@ export const start = (server: BasedServer, id: number) => {
   update.__internalObs__ = true
 
   process.nextTick(() => {
-    if (!obs.isDestroyed) {
-      try {
-        const r = spec.function(server.client, payload, update)
-        if (r instanceof Promise) {
-          r.then((close) => {
-            if (obs.isDestroyed) {
-              close()
-            } else {
-              obs.closeFunction = close
-            }
-          }).catch((err) => {
-            errorListener(server, obs, err)
-          })
+    console.info('START FN', obs.name, obs.payload)
+    if (obs.isDestroyed) {
+      return
+    }
+
+    try {
+      const r = spec.function(server.client, payload, update)
+      if (r instanceof Promise) {
+        r.then((close) => {
+          if (obs.isDestroyed) {
+            close()
+          } else {
+            obs.closeFunction = close
+          }
+        }).catch((err) => {
+          errorListener(server, obs, err)
+        })
+      } else {
+        if (obs.isDestroyed) {
+          r()
         } else {
           obs.closeFunction = r
         }
-      } catch (err) {
-        errorListener(server, obs, err)
       }
+    } catch (err) {
+      errorListener(server, obs, err)
     }
   })
 }
