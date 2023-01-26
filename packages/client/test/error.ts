@@ -2,13 +2,16 @@ import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index'
 import { createSimpleServer, ObservableUpdateFunction } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedQueryFunction } from '@based/functions'
 
 const throwingFunction = async () => {
   throw new Error('This is error message')
 }
 
-const counter = (_payload, update) => {
-  return update({ yeye: 'yeye' })
+const counter: BasedQueryFunction = (based, payload, update) => {
+  update({ yeye: 'yeye' })
+  throw new Error('bla')
+  return () => undefined
 }
 
 const errorFunction = async () => {
@@ -17,7 +20,7 @@ const errorFunction = async () => {
   return wawa[3].yeye
 }
 
-const errorTimer = (_payload, update: ObservableUpdateFunction) => {
+const errorTimer = (based, payload, update: ObservableUpdateFunction) => {
   const int = setInterval(() => {
     update(
       undefined,
@@ -46,7 +49,7 @@ const setup = async (t: ExecutionContext) => {
       throwingFunction,
       errorFunction,
     },
-    observables: {
+    queryFunctions: {
       counter,
       errorTimer,
     },

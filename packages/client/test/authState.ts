@@ -129,7 +129,6 @@ test.serial('multiple authState calls', async (t) => {
 
   let authEventCount = 0
   client.on('authstate-change', () => {
-    console.info('hello?')
     authEventCount++
   })
 
