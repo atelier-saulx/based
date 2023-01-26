@@ -4,10 +4,15 @@ import {
   AuthConfig,
   Authorize,
   AuthorizeConnection,
-  AuthState,
   VerifyAuthState,
 } from './types'
-import { Context, WebSocketSession, isWsContext, HttpSession } from '../context'
+import {
+  Context,
+  AuthState,
+  WebSocketSession,
+  isWsContext,
+  HttpSession,
+} from '@based/functions'
 import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
 

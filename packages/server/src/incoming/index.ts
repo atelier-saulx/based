@@ -4,7 +4,7 @@ import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { httpHandler } from './http'
-import { WebSocketSession, Context } from '../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { sendAndVerifyAuthMessage } from './ws/auth'
 
 export default (

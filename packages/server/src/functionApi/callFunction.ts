@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
-import { Context } from '../context'
+import { Context } from '@based/functions'
 import { isObservableFunctionSpec } from '../functions'
 
 export const callFunction = async (
@@ -34,7 +34,7 @@ export const callFunction = async (
   }
 
   try {
-    return fn.function(payload, ctx)
+    return fn.function(server.client, payload, ctx)
   } catch (err) {
     throw createError(server, ctx, BasedErrorCode.FunctionError, {
       route: { name },

@@ -1,10 +1,6 @@
 import { AuthConfig } from './auth'
-import {
-  BasedFunction,
-  BasedFunctionSpec,
-  BasedObservableFunction,
-  BasedObservableFunctionSpec,
-} from './functions'
+import { BasedFunctionSpec, BasedObservableFunctionSpec } from './functions'
+import { BasedQueryFunction, BasedFunction } from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
 
@@ -37,11 +33,11 @@ export type SimpleServerOptions = {
       | BasedFunction
       | (Partial<BasedFunctionSpec> & { function: BasedFunction })
   }
-  observables?: {
+  queryFunctions?: {
     [key: string]:
-      | BasedObservableFunction
+      | BasedQueryFunction
       | (Partial<BasedObservableFunctionSpec> & {
-          function: BasedObservableFunction
+          function: BasedQueryFunction
         })
   }
 }
@@ -50,7 +46,7 @@ export async function createSimpleServer(
   props: SimpleServerOptions,
   sharedSocket?: boolean
 ): Promise<BasedServer> {
-  const { functions, observables } = props
+  const { functions, queryFunctions } = props
 
   const functionStore: {
     [key: string]:
@@ -90,9 +86,9 @@ export async function createSimpleServer(
     }
   }
 
-  for (const name in observables) {
-    if (observables[name]) {
-      const fn = observables[name]
+  for (const name in queryFunctions) {
+    if (queryFunctions[name]) {
+      const fn = queryFunctions[name]
 
       if (isObsFunctionSpec(fn)) {
         functionStore[name] = {
@@ -199,7 +195,7 @@ export function isFunctionSpec(
 }
 
 export function isObsFunctionSpec(
-  fn: BasedObservableFunction | Partial<BasedObservableFunctionSpec>
+  fn: BasedQueryFunction | Partial<BasedObservableFunctionSpec>
 ): fn is Partial<BasedObservableFunctionSpec> {
   return 'function' in fn || false
 }

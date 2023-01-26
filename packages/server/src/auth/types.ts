@@ -1,15 +1,11 @@
-import { Context, HttpSession, WebSocketSession } from '../context'
+import {
+  Context,
+  HttpSession,
+  WebSocketSession,
+  AuthState,
+} from '@based/functions'
 import uws from '@based/uws'
 import { BasedServer } from '../server'
-
-export type AuthState = {
-  token?: string
-  userId?: string
-  refreshToken?: string
-  error?: string
-  persistent?: boolean
-  type?: string
-}
 
 export type AuthConfig = {
   authorize?: Authorize

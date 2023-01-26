@@ -1,16 +1,14 @@
-// lets make a package Based error codes
 export enum BasedErrorCode {
   FunctionError = 50001,
   AuthorizeFunctionError = 50002,
   NoOservableCacheAvailable = 50003,
   ObservableFunctionError = 50004,
   ObserveCallbackError = 50005,
-  TokenExpired = 50006,
   FunctionNotFound = 40401,
   FunctionIsNotObservable = 40402,
   FunctionIsObservable = 40403,
   FunctionIsStream = 40404,
-  CannotStreamToObservableFunction = 40402,
+  CannotStreamToObservableFunction = 40405,
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
   PayloadTooLarge = 40002,
@@ -19,6 +17,8 @@ export enum BasedErrorCode {
   NoBinaryProtocol = 40005,
   LengthRequired = 41101,
   MethodNotAllowed = 40501,
+  RateLimit = 40029,
+  MissingAuthStateProtocolHeader = 40030,
 }
 
 export type BasedErrorData = {

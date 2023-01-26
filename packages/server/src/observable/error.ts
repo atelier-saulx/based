@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { destroyObs } from './destroy'
-import { Context, WebSocketSession, HttpSession } from '../context'
+import { Context, WebSocketSession, HttpSession } from '@based/functions'
 import { BasedErrorCode, BasedError } from '../error'
 import { sendError } from '../sendError'
 

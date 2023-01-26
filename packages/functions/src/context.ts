@@ -1,7 +1,7 @@
-import uws from '@based/uws'
-import { parseQuery } from '@saulx/utils'
 import { AuthState } from './auth'
-import { BasedFunctionClient } from './functionApi'
+import { WebSocket, HttpRequest, HttpResponse } from './uws'
+import { parseQuery } from '@saulx/utils'
+import { BasedFunctionClient } from './client'
 
 export type WebSocketSession = {
   // State can be used for anyting - for us the based class instance
@@ -21,13 +21,13 @@ export type WebSocketSession = {
   }>
   // Optimization so we dont need to keep track of websockets outside of uws
   c?: Context<WebSocketSession>
-} & uws.WebSocket
+} & WebSocket
 
 export type HttpSession = {
   // State can be used for anyting - for us the based class instance
   state?: any
-  res: uws.HttpResponse
-  req: uws.HttpRequest
+  res: HttpResponse
+  req: HttpRequest
   query?: string
   parsedQuery?: ReturnType<typeof parseQuery>
   ua: string

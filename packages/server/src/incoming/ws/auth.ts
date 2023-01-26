@@ -4,10 +4,9 @@ import {
   encodeAuthResponse,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { WebSocketSession, Context } from '../../context'
 import { enableSubscribe } from './observable'
-import { AuthState } from '../../auth'
 import { rateLimitRequest } from '../../security'
+import { AuthState, WebSocketSession, Context } from '@based/functions'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.send(encodeAuthResponse(valueToBuffer(payload)), true, false)

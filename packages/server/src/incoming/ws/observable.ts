@@ -8,7 +8,7 @@ import {
   hasObs,
 } from '../../observable'
 import { BasedErrorCode } from '../../error'
-import { WebSocketSession, Context } from '../../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { BasedFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'

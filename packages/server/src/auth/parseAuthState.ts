@@ -1,4 +1,4 @@
-import { AuthState } from './types'
+import { AuthState } from '@based/functions'
 
 export default (authState: any): AuthState => {
   if (authState === undefined) {

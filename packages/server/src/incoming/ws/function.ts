@@ -9,7 +9,7 @@ import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
-import { WebSocketSession, Context } from '../../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { rateLimitRequest } from '../../security'
 
 const sendFunction = (
@@ -27,7 +27,7 @@ const sendFunction = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         spec
-          .function(payload, ctx)
+          .function(server.client, payload, ctx)
           .then(async (v) => {
             ctx.session?.send(
               encodeFunctionResponse(requestId, valueToBuffer(v)),

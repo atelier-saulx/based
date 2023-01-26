@@ -1,4 +1,4 @@
-import { Context, HttpSession } from './context'
+import { Context, HttpSession } from '@based/functions'
 import { compress } from './compress'
 
 export const end = (

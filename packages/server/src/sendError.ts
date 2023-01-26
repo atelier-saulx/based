@@ -7,7 +7,7 @@ import {
   Context,
   isHttpContext,
   isWsSession,
-} from './context'
+} from '@based/functions'
 import { valueToBuffer, encodeErrorResponse } from './protocol'
 import {
   BasedErrorCode,

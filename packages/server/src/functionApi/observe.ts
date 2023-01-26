@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
-import { Context } from '../context'
+import { Context } from '@based/functions'
 import { isObservableFunctionSpec } from '../functions'
 import {
   genObservableId,

@@ -1,8 +1,11 @@
-import { Context, InternalSessionClient } from '../../context'
 import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
-import { BasedFunctionClient as BasedfunctionClientAbstract } from '@based/functions'
+import {
+  BasedFunctionClient as BasedfunctionClientAbstract,
+  Context,
+  InternalSessionClient,
+} from '@based/functions'
 
 export class BasedFunctionClient extends BasedfunctionClientAbstract {
   server: BasedServer

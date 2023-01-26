@@ -1,4 +1,4 @@
-import { HttpSession, WebSocketSession, Context } from '../context'
+import { HttpSession, WebSocketSession, Context } from '@based/functions'
 import { BasedErrorCode } from '../error'
 import { BasedServer } from '../server'
 import { sendError } from '../sendError'

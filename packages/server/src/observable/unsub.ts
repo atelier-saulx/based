@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { WebSocketSession, Context } from '../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { destroyObs } from './destroy'
 import { ObservableUpdateFunction } from './types'
 

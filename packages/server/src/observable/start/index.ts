@@ -53,7 +53,7 @@ export const start = (server: BasedServer, id: number) => {
 
   try {
     // TODO: make these functions receive server and obs (as last args) - every fn that you dont need is WIN
-    const r = spec.function(payload, update)
+    const r = spec.function(server.client, payload, update)
 
     if (r instanceof Promise) {
       r.then((close) => {

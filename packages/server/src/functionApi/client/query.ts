@@ -4,8 +4,11 @@ import {
 } from '../../observable'
 import { observe } from '../observe'
 import { get } from '../get'
-import { Context, InternalSessionClient } from '../../context'
-import { BasedQuery as BasedQueryAbstract } from '@based/functions'
+import {
+  BasedQuery as BasedQueryAbstract,
+  Context,
+  InternalSessionClient,
+} from '@based/functions'
 
 export class BasedQuery extends BasedQueryAbstract {
   public query: any

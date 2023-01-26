@@ -1,7 +1,7 @@
 import { BasedErrorCode } from './error'
 import type { BasedServer } from './server'
 import uws from '@based/uws'
-import { HttpSession, WebSocketSession, Context } from './context'
+import { HttpSession, WebSocketSession, Context } from '@based/functions'
 
 enum IsBlocked {
   notBlocked = 0,

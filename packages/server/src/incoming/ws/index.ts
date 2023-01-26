@@ -4,7 +4,7 @@ import { functionMessage } from './function'
 import { subscribeMessage, unsubscribeMessage } from './observable'
 import { authMessage } from './auth'
 import { getMessage } from './get'
-import { WebSocketSession, Context } from '../../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { BasedErrorCode, createError } from '../../error'
 
 const reader = (

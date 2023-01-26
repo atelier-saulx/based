@@ -17,7 +17,7 @@ import {
   sendObsGetError,
 } from '../../observable'
 import { BasedFunctionRoute } from '../../functions'
-import { WebSocketSession, Context } from '../../context'
+import { WebSocketSession, Context } from '@based/functions'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'

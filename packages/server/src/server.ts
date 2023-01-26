@@ -1,4 +1,4 @@
-import type { Context } from './context'
+import type { Context, BasedFunctionClient } from '@based/functions'
 import type { ActiveObservable } from './observable'
 import uws from '@based/uws'
 import initNetwork from './incoming'
@@ -7,6 +7,7 @@ import { BasedAuth, AuthConfig } from './auth'
 import { BasedErrorCode, BasedErrorData } from './error'
 import { wait } from '@saulx/utils'
 import picocolors = require('picocolors')
+import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi'
 
 type EventMap = {
   error: BasedErrorData
@@ -31,6 +32,7 @@ export type ServerOptions = {
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit
+  client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
   workerRequest?: (type: string, payload?: any) => void | Promise<any>
   ws?: {
@@ -45,6 +47,8 @@ export type ServerOptions = {
 
 // extend emitter
 export class BasedServer {
+  public client: BasedServerFunctionClient
+
   public functions: BasedFunctions
 
   public auth: BasedAuth
@@ -95,6 +99,13 @@ export class BasedServer {
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
+
+    if (opts.client) {
+      // @ts-ignore - allow different ones if you want to costumize
+      this.client = opts.client(this)
+    } else {
+      this.client = new BasedServerFunctionClient(this)
+    }
     if (opts.workerRequest) {
       this.workerRequest = opts.workerRequest
     }

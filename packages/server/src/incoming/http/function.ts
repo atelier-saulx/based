@@ -1,6 +1,6 @@
 import { BasedServer } from '../../server'
 import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
-import { HttpSession, Context } from '../../context'
+import { HttpSession, Context } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
@@ -25,7 +25,7 @@ export const httpFunction = (
       }
       if (spec && !isObservableFunctionSpec(spec)) {
         spec
-          .function(payload, ctx)
+          .function(server.client, payload, ctx)
           .then(async (result) => {
             if (!ctx.session) {
               return

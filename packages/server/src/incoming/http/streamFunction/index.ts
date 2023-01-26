@@ -5,7 +5,7 @@ import {
   BasedFunctionRoute,
   isObservableFunctionSpec,
 } from '../../../functions'
-import { HttpSession, Context } from '../../../context'
+import { HttpSession, Context, BasedFunction } from '@based/functions'
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
@@ -33,7 +33,7 @@ export const httpStreamFunction = (
   // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
     const files: any[] = []
-    let thisIsFn: Function
+    let thisIsFn: BasedFunction
 
     multipartStream(ctx, server, payload, route, (p) => {
       return new Promise((resolve) => {
@@ -46,7 +46,7 @@ export const httpStreamFunction = (
             if (!thisIsFn) {
               files.push({ p, resolve })
             } else {
-              resolve(thisIsFn(p, ctx))
+              resolve(thisIsFn(server.client, p, ctx))
             }
           },
           () => {
@@ -64,7 +64,7 @@ export const httpStreamFunction = (
           if (files.length) {
             for (const file of files) {
               console.info('File parsed before fn / auth')
-              file.resolve(thisIsFn(file.p, ctx))
+              file.resolve(thisIsFn(server.client, file.p, ctx))
             }
           }
         } else {
@@ -96,7 +96,7 @@ export const httpStreamFunction = (
 
             const fn = spec.function
 
-            fn(streamPayload, ctx)
+            fn(server.client, streamPayload, ctx)
               .catch((err) => {
                 stream.destroy()
                 sendError(server, ctx, BasedErrorCode.FunctionError, {

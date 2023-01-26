@@ -1,5 +1,5 @@
 import { DataStream } from './DataStream'
-import { HttpSession, Context } from '../../../context'
+import { HttpSession, Context } from '@based/functions'
 import { BasedErrorCode } from '../../../error'
 import { sendError } from '../../../sendError'
 import { sendHttpResponse } from '../../../sendHttpResponse'

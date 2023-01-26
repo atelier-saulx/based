@@ -1,5 +1,9 @@
-import { Context, HttpSession } from '../context'
-import { ObservableUpdateFunction } from '../observable'
+import {
+  Context,
+  HttpSession,
+  BasedQueryFunction,
+  BasedFunction,
+} from '@based/functions'
 import { BasedServer } from '../server'
 
 export type CustomHttpResponse = (
@@ -19,22 +23,16 @@ export type BasedFunctionRoute = {
   public?: boolean
 }
 
-export type BasedObservableFunction =
-  | ((payload: any, update: ObservableUpdateFunction) => Promise<() => void>)
-  | ((payload: any, update: ObservableUpdateFunction) => () => void)
-
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string
   checksum: number
   query: true
-  function: BasedObservableFunction
+  function: BasedQueryFunction
   customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   timeoutCounter?: number
 }
-
-export type BasedFunction = (payload: any, client: Context) => Promise<any>
 
 export type BasedFunctionSpec = BasedFunctionRoute & {
   name: string

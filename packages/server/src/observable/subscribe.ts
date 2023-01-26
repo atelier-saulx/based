@@ -5,7 +5,7 @@ import { BasedError, BasedErrorCode } from '../error'
 import { sendObsWs } from './send'
 import { getObs } from './get'
 import { sendError } from '../sendError'
-import { WebSocketSession, Context } from '../context'
+import { WebSocketSession, Context } from '@based/functions'
 
 export const subscribeWs = (
   server: BasedServer,
