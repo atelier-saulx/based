@@ -1,5 +1,5 @@
 {
-  "name": "@based/cloud-function",
+  "name": "@based/function",
   "version": "1.0.0",
   "license": "MIT",
   "main": "dist/index.js",

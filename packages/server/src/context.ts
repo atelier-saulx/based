@@ -1,6 +1,7 @@
 import uws from '@based/uws'
 import { parseQuery } from '@saulx/utils'
 import { AuthState } from './auth'
+import { BasedFunctionClient } from './functionApi'
 
 export type WebSocketSession = {
   // State can be used for anyting - for us the based class instance
@@ -42,11 +43,19 @@ export type HttpSession = {
   } & { [key: string]: string }
 }
 
-// Observable session means the first observable that called the current stack
-export type ObservableSession = {
-  id: number // observable-ud
-  state?: any
+export type InternalSessionObservable = {
+  id: number
+  name: string
+  type: 'observable'
 }
+
+export type InternalSessionClient = {
+  client: BasedFunctionClient
+  type: 'client'
+}
+
+// Internal session for internal functions
+export type InternalSession = InternalSessionClient | InternalSessionObservable
 
 // used for minimal security errors (e.g. rate limit)
 export type MinimalExternalSession = {
@@ -58,11 +67,11 @@ export type Context<
   S extends
     | WebSocketSession
     | HttpSession
-    | ObservableSession
+    | InternalSession
     | MinimalExternalSession =
     | WebSocketSession
     | HttpSession
-    | ObservableSession
+    | InternalSession
     | MinimalExternalSession
 > = {
   session?: S

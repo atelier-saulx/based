@@ -7,8 +7,7 @@ import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
 import { genObserveId } from '../genObserveId'
 import { BasedClient } from '..'
 
-// can make payloads etc a bit more efficient by allready storing it on the central storage before douing anything
-// payload name map to id
+// Can extend this as a query builder
 
 export class BasedQuery {
   public id: number

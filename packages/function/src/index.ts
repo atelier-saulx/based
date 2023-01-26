@@ -1,0 +1,3 @@
+/*
+    builds the sever but types only
+*/
