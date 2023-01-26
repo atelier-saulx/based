@@ -51,24 +51,26 @@ export const start = (server: BasedServer, id: number) => {
 
   update.__internalObs__ = true
 
-  try {
-    // TODO: make these functions receive server and obs (as last args) - every fn that you dont need is WIN
-    const r = spec.function(server.client, payload, update)
-
-    if (r instanceof Promise) {
-      r.then((close) => {
-        if (obs.isDestroyed) {
-          close()
+  process.nextTick(() => {
+    if (!obs.isDestroyed) {
+      try {
+        const r = spec.function(server.client, payload, update)
+        if (r instanceof Promise) {
+          r.then((close) => {
+            if (obs.isDestroyed) {
+              close()
+            } else {
+              obs.closeFunction = close
+            }
+          }).catch((err) => {
+            errorListener(server, obs, err)
+          })
         } else {
-          obs.closeFunction = close
+          obs.closeFunction = r
         }
-      }).catch((err) => {
+      } catch (err) {
         errorListener(server, obs, err)
-      })
-    } else {
-      obs.closeFunction = r
+      }
     }
-  } catch (err) {
-    errorListener(server, obs, err)
-  }
+  })
 }

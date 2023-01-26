@@ -9,6 +9,14 @@ const setup = async () => {
   const server = await createSimpleServer({
     port: 9910,
     queryFunctions: {
+      checkPayload: {
+        memCacheTimeout: 1e3,
+        function: (based, payload, update) => {
+          console.info('check die shit', payload.power)
+          update(payload.power)
+          return () => {}
+        },
+      },
       counter: {
         memCacheTimeout: 0,
         function: async (based, payload, update) => {
@@ -59,19 +67,34 @@ test.serial('get', async (t) => {
     console.info('connect', isConnected)
   })
 
-  t.is(await coreClient.query('counter').get(), 1)
+  const power = await coreClient
+    .query('checkPayload', {
+      power: {
+        msg: 'powerfull stuff',
+      },
+    })
+    .get()
+
+  t.is(power.msg, 'powerfull stuff')
+
+  t.is(await coreClient.query('counter').get(), 0)
 
   await wait(100)
 
-  t.is(await coreClient.query('counter').get(), 1)
+  t.is(await coreClient.query('counter').get(), 0)
+
+  await wait(1000)
+
+  // stays zero because it has 0 cache time
+  t.is(await coreClient.query('counter').get(), 0)
 
   await wait(100)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
 
-  t.is(await coreClient.query('counter-cached').get(), 1)
-  t.is(await coreClient.query('counter-cached').get(), 1)
+  t.is(await coreClient.query('counter-cached').get(), 0)
+  t.is(await coreClient.query('counter-cached').get(), 0)
 
   await wait(1500)
 
