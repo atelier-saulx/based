@@ -38,7 +38,7 @@ export default async (
       throw new Error('File path not supported in the browser')
     }
     // not for browser! hope this is enough for most builders...
-    return require('./stream').uploadFilePath(client, name, options)
+    return require('./nodeStream').uploadFilePath(client, name, options)
   }
 
   if (isFileUploadStream(options)) {
@@ -46,7 +46,7 @@ export default async (
       throw new Error('Node streams not supported in the browser')
     }
     // not for browser! hope this is enough for most builders...
-    return require('./stream').uploadFileStream(client, name, options)
+    return require('./nodeStream').uploadFileStream(client, name, options)
   }
 
   if (options.contents instanceof ArrayBuffer) {

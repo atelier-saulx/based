@@ -1,6 +1,6 @@
 import { Readable } from 'stream'
-import { request } from 'http'
-import { request as sslRequest } from 'https'
+// import { request } from 'http'
+// import { request as sslRequest } from 'https'
 import { BasedClient } from '..'
 import fs from 'fs'
 import { promisify } from 'util'
@@ -21,7 +21,7 @@ export const isStream = (contents: any): contents is Readable => {
   return contents instanceof Readable
 }
 
-const parseUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
+// const parseUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
 
 export const uploadFilePath = async (
   client: BasedClient,
