@@ -1,4 +1,9 @@
-import { decodePayload, decodeName, readUint8 } from '../../protocol'
+import {
+  decodePayload,
+  decodeName,
+  readUint8,
+  parsePayload,
+} from '../../protocol'
 import { BasedServer } from '../../server'
 import {
   createObs,
@@ -91,9 +96,11 @@ export const subscribeMessage = (
     return true
   }
 
-  const payload = decodePayload(
-    new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-    isDeflate
+  const payload = parsePayload(
+    decodePayload(
+      new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+      isDeflate
+    )
   )
 
   ctx.session.obs.add(id)

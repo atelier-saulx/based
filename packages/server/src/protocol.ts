@@ -89,6 +89,15 @@ export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
   return textDecoder.decode(buffer)
 }
 
+export const parsePayload = (payload: any) => {
+  if (typeof payload === 'string') {
+    try {
+      return JSON.parse(payload)
+    } catch (err) {}
+  }
+  return parsePayload
+}
+
 export const decodeName = (
   arr: Uint8Array,
   start: number,

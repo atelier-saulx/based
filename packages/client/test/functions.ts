@@ -9,11 +9,14 @@ test.serial('functions', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
+      checkPayload: async (based, payload) => {
+        return payload.power
+      },
       hello: {
         maxPayloadSize: 1e8,
         function: async (based, payload) => {
           if (payload) {
-            return payload.length
+            return JSON.stringify(payload).length
           }
           return 'flap'
         },
@@ -39,6 +42,14 @@ test.serial('functions', async (t) => {
   coreClient.once('connect', (isConnected) => {
     console.info('connect', isConnected)
   })
+
+  const power = await coreClient.call('checkPayload', {
+    power: {
+      msg: 'powerfull stuff',
+    },
+  })
+
+  t.is(power.msg, 'powerfull stuff')
 
   const helloResponsesX = await Promise.all([
     coreClient.call('hello', {

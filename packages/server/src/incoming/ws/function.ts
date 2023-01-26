@@ -4,6 +4,7 @@ import {
   decodePayload,
   encodeFunctionResponse,
   valueToBuffer,
+  parsePayload,
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
@@ -111,9 +112,11 @@ export const functionMessage = (
     return true
   }
 
-  const payload = decodePayload(
-    new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-    isDeflate
+  const payload = parsePayload(
+    decodePayload(
+      new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+      isDeflate
+    )
   )
 
   if (route.public === true) {

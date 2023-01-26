@@ -3,6 +3,7 @@ import {
   decodeName,
   readUint8,
   encodeGetResponse,
+  parsePayload,
 } from '../../protocol'
 import { BasedServer } from '../../server'
 import {
@@ -144,9 +145,11 @@ export const getMessage = (
     return true
   }
 
-  const payload = decodePayload(
-    new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-    isDeflate
+  const payload = parsePayload(
+    decodePayload(
+      new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+      isDeflate
+    )
   )
 
   if (route.public === true) {
