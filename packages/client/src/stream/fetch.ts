@@ -1,4 +1,4 @@
-import { BasedClient } from '..'
+import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents } from './types'
 import fetch from 'cross-fetch'
 import getUrlFromOpts from '../getUrlFromOpts'
@@ -13,14 +13,12 @@ export default async (
   if (typeof url === 'function') {
     url = await url()
   }
-  const result = await fetch(url, {
+  const result = await fetch(url + '/' + name, {
     method: 'POST',
     cache: 'no-cache',
     headers: {
       'Content-Type': options.mimeType || 'text/plain',
-      // 'File-Name': options.name || '',
-      // opts in query param?
-      // Authorization: client.auth.token,
+      Authorization: encodeAuthState(client.authState),
     },
     body: options.contents,
   }).then((t) => t.text())
