@@ -179,6 +179,8 @@ export class BasedClient extends Emitter {
       }
       delete this.connection
     }
+    clearTimeout(this.drainTimeout)
+    clearTimeout(this.idlePing)
     this.connected = false
   }
 
