@@ -7,27 +7,33 @@ export type ReadableStream = {
 
 export type StreamFunctionContents = {
   contents: Buffer | ArrayBuffer | string | File | Blob
-  opts?: any
+  payload?: any
   mimeType?: string
-  server?: string
+  serverKey?: string
 }
 
 export type StreamFunctionStream = {
   contents: ReadableStream
-  opts?: any
+  payload?: any
   size: number
   mimeType?: string
-  server?: string
+  serverKey?: string
 }
 
 export type StreamFunctionPath = {
   path: string
+  payload?: any
   mimeType?: string
-  opts?: any
-  server?: string
+  serverKey?: string
 }
 
 export type StreamFunctionOpts =
   | StreamFunctionPath
   | StreamFunctionContents
   | StreamFunctionStream
+
+export type StreamHeaders = {
+  'Content-Type': string
+  Authorization: string
+  Payload?: string
+}

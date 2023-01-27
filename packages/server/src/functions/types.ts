@@ -2,19 +2,27 @@ import {
   BasedQueryFunction,
   BasedFunction,
   CustomHttpResponse,
+  BasedStreamFunction,
 } from '@based/functions'
 import { BasedServer } from '../server'
 
-export type BasedFunctionRoute = {
+export type BasedRoute = {
   name: string
   query?: boolean
   headers?: string[]
   path?: string
-  stream?: boolean
   maxPayloadSize?: number
   rateLimitTokens?: number
   public?: boolean
 }
+
+export type BasedStreamFunctionRoute = BasedRoute & {
+  stream?: boolean
+}
+
+export type BasedFunctionRoute =
+  | (BasedRoute & { stream?: false })
+  | BasedStreamFunctionRoute
 
 export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   name: string
@@ -27,16 +35,27 @@ export type BasedObservableFunctionSpec = BasedFunctionRoute & {
   timeoutCounter?: number
 }
 
-export type BasedFunctionSpec = BasedFunctionRoute & {
-  name: string
-  observable?: false
-  customHttpResponse?: CustomHttpResponse
-  checksum: number
-  function: BasedFunction
-  maxExecTime?: number // in ms - very nice too have
-  idleTimeout?: number // in ms
-  timeoutCounter?: number // in ms
-}
+export type BasedFunctionSpec =
+  | (BasedStreamFunctionRoute & {
+      name: string
+      observable?: false
+      customHttpResponse?: CustomHttpResponse
+      checksum: number
+      function: BasedStreamFunction
+      maxExecTime?: number // in ms - very nice too have
+      idleTimeout?: number // in ms
+      timeoutCounter?: number // in ms
+    })
+  | ((BasedRoute & { stream?: false }) & {
+      name: string
+      observable?: false
+      customHttpResponse?: CustomHttpResponse
+      checksum: number
+      function: BasedFunction
+      maxExecTime?: number // in ms - very nice too have
+      idleTimeout?: number // in ms
+      timeoutCounter?: number // in ms
+    })
 
 export type FunctionConfig = {
   memCacheTimeout?: number // in ms

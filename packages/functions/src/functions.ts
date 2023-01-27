@@ -1,6 +1,13 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 
+export type ReadableStream = {
+  pipe: (x: any) => ReadableStream
+  readable?: boolean
+  _read: (size?: number) => void
+  _readableState?: object
+}
+
 export type ObservableUpdateFunction = {
   (
     data: any,
@@ -15,6 +22,7 @@ export type ObservableUpdateFunction = {
   __internalObs__?: true
 }
 
+// TODO: use error package
 export type ObserveErrorListener = (err: any) => void
 
 export type CustomHttpResponse = (
@@ -23,20 +31,28 @@ export type CustomHttpResponse = (
   client: Context<HttpSession>
 ) => Promise<boolean>
 
-export type BasedFunction = (
+export type BasedFunction<P = any, K = any> = (
   based: BasedFunctionClient,
-  payload: any,
+  payload: P,
   ctx: Context
-) => Promise<any>
+) => Promise<K>
 
-export type BasedQueryFunction =
+export type BasedStreamFunction<P = any, K = any> = BasedFunction<
+  {
+    payload?: P
+    stream: ReadableStream
+  },
+  K
+>
+
+export type BasedQueryFunction<P = any> =
   | ((
       based: BasedFunctionClient,
-      payload: any,
+      payload: P,
       update: ObservableUpdateFunction
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
-      payload: any,
+      payload: P,
       update: ObservableUpdateFunction
     ) => () => void)

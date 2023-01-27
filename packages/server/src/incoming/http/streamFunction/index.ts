@@ -91,7 +91,6 @@ export const httpStreamFunction = (
         .install(route.name)
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            // const stream = createDataStream(server, route, client, size)
             const streamPayload = { payload, stream }
 
             const fn = spec.function

@@ -1,7 +1,8 @@
 import { BasedClient, encodeAuthState } from '..'
-import { StreamFunctionContents } from './types'
+import { StreamFunctionContents, StreamHeaders } from './types'
 import fetch from 'cross-fetch'
 import getUrlFromOpts from '../getUrlFromOpts'
+import { parsePayload } from './parsePayload'
 
 export default async (
   client: BasedClient,
@@ -13,13 +14,20 @@ export default async (
   if (typeof url === 'function') {
     url = await url()
   }
+
+  const headers: StreamHeaders = {
+    'Content-Type': options.mimeType || 'text/plain',
+    Authorization: encodeAuthState(client.authState),
+  }
+
+  if (options.payload) {
+    headers.Payload = parsePayload(options.payload)
+  }
+
   const result = await fetch(url + '/' + name, {
     method: 'POST',
     cache: 'no-cache',
-    headers: {
-      'Content-Type': options.mimeType || 'text/plain',
-      Authorization: encodeAuthState(client.authState),
-    },
+    headers,
     body: options.contents,
   }).then((t) => t.text())
 

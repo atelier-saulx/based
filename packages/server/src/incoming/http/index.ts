@@ -17,6 +17,7 @@ import {
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
 import { parseAuthState } from '../../auth'
+import { parsePayload } from '../../protocol'
 
 let clientId = 0
 
@@ -151,24 +152,27 @@ export const httpHandler = (
         httpGet(route, payload, ctx, server, checksum)
       })
     })
-  } else {
-    if (route.stream === true) {
-      if (method !== 'post') {
-        sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-        return
-      }
-      if (ctx.session.headers['content-length'] === 0) {
-        // zero is also not allowed for streams
-        sendError(server, ctx, BasedErrorCode.LengthRequired, route)
-        return
-      }
-      httpStreamFunction(server, ctx, parseQuery(ctx), route)
-    } else {
-      handleRequest(server, method, ctx, route, (payload) => {
-        authorizeRequest(server, ctx, payload, route, () => {
-          httpFunction(route, ctx, server, payload)
-        })
-      })
+  } else if (route.stream === true) {
+    if (method !== 'post') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
     }
+    if (ctx.session.headers['content-length'] === 0) {
+      // zero is also not allowed for streams
+      sendError(server, ctx, BasedErrorCode.LengthRequired, route)
+      return
+    }
+    httpStreamFunction(
+      server,
+      ctx,
+      parsePayload(ctx.session.req.getHeader('payload')),
+      route
+    )
+  } else {
+    handleRequest(server, method, ctx, route, (payload) => {
+      authorizeRequest(server, ctx, payload, route, () => {
+        httpFunction(route, ctx, server, payload)
+      })
+    })
   }
 }
