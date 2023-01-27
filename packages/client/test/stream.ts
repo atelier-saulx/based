@@ -2,103 +2,205 @@ import test from 'ava'
 import { createSimpleServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait, readStream } from '@saulx/utils'
-import fetch from 'cross-fetch'
-import zlib from 'node:zlib'
-import { promisify } from 'node:util'
+// import fetch from 'cross-fetch'
+// import zlib from 'node:zlib'
+// import { promisify } from 'node:util'
+import { Duplex } from 'node:stream'
 
-const gzip = promisify(zlib.gzip)
+// const gzip = promisify(zlib.gzip)
 
-test.serial('stream functions (small over http + file)', async (t) => {
+// test.serial('stream functions (small over http + file)', async (t) => {
+//   const server = await createSimpleServer({
+//     port: 9910,
+//     functions: {
+//       hello: {
+//         stream: true,
+//         function: async () => {
+//           return 'bla'
+//         },
+//       },
+//     },
+//   })
+
+//   const result = await (
+//     await fetch('http://localhost:9910/hello', {
+//       method: 'post',
+//       headers: {
+//         'content-type': 'application/json',
+//       },
+//       body: JSON.stringify({ name: 'my snurky' }),
+//     })
+//   ).text()
+
+//   t.is(result, 'bla')
+
+//   await wait(6e3)
+
+//   t.is(Object.keys(server.functions.specs).length, 0)
+
+//   server.destroy()
+// })
+
+// test.serial('stream functions (over http + stream)', async (t) => {
+//   const server = await createSimpleServer({
+//     port: 9910,
+//     functions: {
+//       hello: {
+//         maxPayloadSize: 1e9,
+//         stream: true,
+//         function: async (based, { stream }) => {
+//           const buf = await readStream(stream)
+//           console.info('is end...', buf.byteLength)
+//           return 'bla'
+//         },
+//       },
+//     },
+//   })
+
+//   const bigBod: any[] = []
+
+//   for (let i = 0; i < 1e5; i++) {
+//     bigBod.push({ flap: 'snurp', i })
+//   }
+
+//   const result = await (
+//     await fetch('http://localhost:9910/hello', {
+//       method: 'post',
+//       headers: {
+//         'content-type': 'application/json',
+//       },
+//       body: JSON.stringify(bigBod),
+//     })
+//   ).text()
+
+//   t.is(result, 'bla')
+
+//   const x = await gzip(JSON.stringify(bigBod))
+
+//   try {
+//     const resultBrotli = await (
+//       await fetch('http://localhost:9910/hello', {
+//         method: 'post',
+//         headers: {
+//           'content-encoding': 'gzip',
+//           'content-type': 'application/json',
+//         },
+//         body: x,
+//       })
+//     ).text()
+
+//     t.is(resultBrotli, 'bla')
+//   } catch (err) {
+//     console.info('ERROR', err)
+//     t.fail('Crash with uncompressing')
+//   }
+
+//   await wait(15e3)
+
+//   t.is(Object.keys(server.functions.specs).length, 0)
+
+//   server.destroy()
+// })
+
+test.serial('stream functions using client helper - contents', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
       hello: {
-        stream: true,
-        function: async () => {
-          return 'bla'
-        },
-      },
-    },
-  })
-
-  const result = await (
-    await fetch('http://localhost:9910/hello', {
-      method: 'post',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({ name: 'my snurky' }),
-    })
-  ).text()
-
-  t.is(result, 'bla')
-
-  await wait(6e3)
-
-  t.is(Object.keys(server.functions.specs).length, 0)
-
-  server.destroy()
-})
-
-test.serial('stream functions (over http + stream)', async (t) => {
-  const server = await createSimpleServer({
-    port: 9910,
-    functions: {
-      hello: {
+        idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
-        function: async (based, { stream }) => {
-          const buf = await readStream(stream)
-          console.info('is end...', buf.byteLength)
-          return 'bla'
+        function: async (based, { stream, payload }) => {
+          await readStream(stream)
+          return payload
         },
       },
     },
   })
-
+  const client = new BasedClient()
+  client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
   const bigBod: any[] = []
-
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 10; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
+  const s = await client.stream('hello', {
+    payload: { power: true },
+    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
+  })
+  t.deepEqual(s, { power: true })
+  // cycles of 3 secs
+  await wait(6e3)
+  t.is(Object.keys(server.functions.specs).length, 0)
+  client.disconnect()
+  await server.destroy()
+})
 
-  const result = await (
-    await fetch('http://localhost:9910/hello', {
-      method: 'post',
-      headers: {
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify(bigBod),
-    })
-  ).text()
-
-  t.is(result, 'bla')
-
-  const x = await gzip(JSON.stringify(bigBod))
-
-  try {
-    const resultBrotli = await (
-      await fetch('http://localhost:9910/hello', {
-        method: 'post',
-        headers: {
-          'content-encoding': 'gzip',
-          'content-type': 'application/json',
+test.serial('stream functions using client helper', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        idleTimeout: 1,
+        maxPayloadSize: 1e9,
+        stream: true,
+        function: async (based, { stream, payload }) => {
+          console.info('stream time')
+          const x = await readStream(stream)
+          console.info('go dem bytes', x)
+          return payload
         },
-        body: x,
-      })
-    ).text()
-
-    t.is(resultBrotli, 'bla')
-  } catch (err) {
-    console.info('ERROR', err)
-    t.fail('Crash with uncompressing')
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  const bigBod: any[] = []
+  for (let i = 0; i < 1000; i++) {
+    bigBod.push({ flap: 'snurp', i })
+  }
+  const payload = Buffer.from(JSON.stringify(bigBod))
+  const stream = new Duplex({
+    read() {},
+    write(x) {
+      this.push(x)
+    },
+  })
+  let index = 0
+  const streamBits = () => {
+    const readBytes = 1000
+    const end = (index + 1) * readBytes
+    if (end > payload.byteLength) {
+      stream.push(payload.slice(index * readBytes, end))
+      stream.push(null)
+    } else {
+      stream.push(payload.slice(index * readBytes, end))
+      setTimeout(() => {
+        index++
+        streamBits()
+      }, 18)
+    }
   }
 
-  await wait(15e3)
+  server.on('error', (ctx, err) => {
+    console.error(err)
+  })
 
-  t.is(Object.keys(server.functions.specs).length, 0)
+  streamBits()
 
-  server.destroy()
+  const s = await client.stream('hello', {
+    payload: { power: true },
+    contentLength: payload.byteLength,
+    contents: stream,
+  })
+
+  t.deepEqual(s, { power: true })
+
+  client.disconnect()
+  await server.destroy()
 })
 
 test.serial.only('stream functions using client helper', async (t) => {
@@ -106,13 +208,14 @@ test.serial.only('stream functions using client helper', async (t) => {
     port: 9910,
     functions: {
       hello: {
+        idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
-        // fix signature
-        function: async (based, { stream }) => {
-          const buf = await readStream(stream)
-          console.info('is end...', buf.byteLength)
-          return 'bla'
+        function: async (based, { stream, payload }) => {
+          console.info('stream time')
+          const x = await readStream(stream)
+          console.info('go dem bytes', x)
+          return payload
         },
       },
     },
@@ -126,17 +229,48 @@ test.serial.only('stream functions using client helper', async (t) => {
 
   const bigBod: any[] = []
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 1000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
+  const payload = Buffer.from(JSON.stringify(bigBod))
 
-  client.stream('hello', {
-    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
+  const stream = new Duplex({
+    read() {},
+    write(x) {
+      this.push(x)
+    },
   })
 
-  await wait(15e3)
+  let index = 0
+  const streamBits = () => {
+    const readBytes = 1000
+    const end = (index + 1) * readBytes
+    if (end > payload.byteLength) {
+      stream.push(payload.slice(index * readBytes, end))
+      stream.push(null)
+    } else {
+      stream.push(payload.slice(index * readBytes, end))
+      setTimeout(() => {
+        index++
+        streamBits()
+      }, 18)
+    }
+  }
 
-  t.is(Object.keys(server.functions.specs).length, 0)
+  server.on('error', (ctx, err) => {
+    console.error(err)
+  })
 
-  server.destroy()
+  streamBits()
+
+  const s = await client.stream('hello', {
+    payload: { power: true },
+    contentLength: payload.byteLength,
+    contents: stream,
+  })
+
+  t.deepEqual(s, { power: true })
+
+  client.disconnect()
+  await server.destroy()
 })

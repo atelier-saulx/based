@@ -76,7 +76,6 @@ export default async (
     typeof options.contents === 'string' ||
     (!isBrowser && options.contents instanceof global.Buffer)
   ) {
-    console.info('go go go', options.contents)
     // want to stream this XHR browser / stream + http nodejs
     return fetch(client, name, options)
   }

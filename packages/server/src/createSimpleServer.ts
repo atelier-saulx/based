@@ -29,16 +29,10 @@ export type SimpleServerOptions = {
     function: BasedObservableFunctionSpec | BasedFunctionSpec
   }) => Promise<boolean>
   functions?: {
-    [key: string]:
-      | BasedFunction
-      | (Partial<BasedFunctionSpec> & { function: BasedFunction })
+    [key: string]: BasedFunction | Partial<BasedFunctionSpec>
   }
   queryFunctions?: {
-    [key: string]:
-      | BasedQueryFunction
-      | (Partial<BasedObservableFunctionSpec> & {
-          function: BasedQueryFunction
-        })
+    [key: string]: BasedQueryFunction | Partial<BasedObservableFunctionSpec>
   }
 }
 

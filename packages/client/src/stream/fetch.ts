@@ -9,7 +9,11 @@ export default async (
   name: string,
   options: StreamFunctionContents
 ): Promise<any> => {
-  console.info(client)
+  if (!client.connected) {
+    await client.once('connect')
+  }
+
+  // key is something special
   let url = await getUrlFromOpts(client.opts)
   if (typeof url === 'function') {
     url = await url()
@@ -24,7 +28,7 @@ export default async (
     headers.Payload = parsePayload(options.payload)
   }
 
-  const result = await fetch(url + '/' + name, {
+  const result = await fetch(url.replace(/^ws/, 'http') + '/' + name, {
     method: 'POST',
     cache: 'no-cache',
     headers,

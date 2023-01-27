@@ -1,10 +1,16 @@
 import { Readable } from 'stream'
-// import { request } from 'http'
-// import { request as sslRequest } from 'https'
-import { BasedClient } from '..'
+import { IncomingMessage, request } from 'http'
+import { request as sslRequest } from 'https'
 import fs from 'fs'
 import { promisify } from 'util'
-import { StreamFunctionPath, StreamFunctionStream } from './types'
+import {
+  StreamFunctionPath,
+  StreamFunctionStream,
+  StreamHeaders,
+} from './types'
+import { BasedClient, encodeAuthState } from '..'
+import getUrlFromOpts from '../getUrlFromOpts'
+import { parsePayload } from './parsePayload'
 
 const stat = promisify(fs.stat)
 
@@ -21,7 +27,7 @@ export const isStream = (contents: any): contents is Readable => {
   return contents instanceof Readable
 }
 
-// const parseUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
+const parseUrlRe = /^(?:(tcp|wss?|https?):\/\/)?([a-z0-9.-]*)(?::(\d+))?$/
 
 export const uploadFilePath = async (
   client: BasedClient,
@@ -30,66 +36,87 @@ export const uploadFilePath = async (
 ) => {
   const info = await checkFile(options.path)
   if (info) {
-    // return uploadFileStream(client, url, {
-    //   contents: fs.createReadStream(options.path),
-    //   mimeType: options.mimeType,
-    //   extension: !options.mimeType
-    //     ? options.path.match(/\.(.*?)$/)?.[1]
-    //     : undefined,
-    //   size: info.size,
-    //   id: options.id,
-    //   functionName: options.functionName,
-    //   raw: options.raw,
-    // })
+    return uploadFileStream(client, name, {
+      contents: fs.createReadStream(options.path),
+      // add extension
+      mimeType: options.mimeType || options.path.match(/\.(.*?)$/)?.[1],
+      contentLength: info.size,
+    })
   } else {
     throw new Error(`File does not exist ${options.path}`)
   }
 }
 
-export const uploadFileStream = (
+export const uploadFileStream = async (
   client: BasedClient,
   name: string,
   options: StreamFunctionStream
-) => {
+): Promise<any> => {
   if (!(options.contents instanceof Readable)) {
     throw new Error('File Contents has to be an instance of "Readable"')
   }
 
-  // const [, protocol, host, port] = parseUrlRe.exec(url)
+  if (!client.connected) {
+    await client.once('connect')
+  }
 
-  // const headers: any = {
-  //   'Content-Length': options.size,
-  //   'Req-Type': 'blob',
-  //   'File-Is-Raw': options.raw ? '1' : '0',
-  //   'File-Id': options.id,
-  //   'File-Name': options.name || '',
-  //   'Function-Name': options.functionName || '',
-  //   Authorization: client.getToken() || '',
-  // }
+  // key is something special
+  let url = await getUrlFromOpts(client.opts)
+  if (typeof url === 'function') {
+    url = await url()
+  }
 
-  // if (options.mimeType) {
-  //   headers['Content-Type'] = options.mimeType
-  // } else if (options.extension) {
-  //   headers['File-Extension'] = options.extension
-  // } else {
-  //   headers['Content-Type'] = 'text/plain'
-  // }
+  const headers: StreamHeaders = {
+    'Content-Length': String(options.contentLength),
+    'Content-Type': options.mimeType || 'text/plain',
+    Authorization: encodeAuthState(client.authState),
+  }
 
-  // const httpOptions = {
-  //   port,
-  //   host: host,
-  //   path: '/file',
-  //   method: 'POST',
-  //   headers,
-  // }
+  if (options.payload) {
+    headers.Payload = parsePayload(options.payload)
+  }
 
-  // const onReady = () => {
-  //   console.info('file uploaded')
-  // }
-  // const req =
-  //   protocol === 'wss' || protocol === 'https'
-  //     ? sslRequest(httpOptions, onReady)
-  //     : request(httpOptions, onReady)
+  // add this for everything + extension)
+  if (options.mimeType) {
+    headers['Content-Type'] = options.mimeType
+  } else {
+    headers['Content-Type'] = 'text/plain'
+  }
+  // else if (options.extension) {
+  // headers['File-Extension'] = options.extension
 
-  // options.contents.pipe(req)
+  const [, protocol, host, port] = parseUrlRe.exec(url)
+
+  const httpOptions = {
+    port,
+    host: host,
+    path: '/' + name,
+    method: 'POST',
+    headers,
+  }
+
+  return new Promise((resolve, reject) => {
+    const incomingReady = (incomingReq: IncomingMessage) => {
+      const s: string[] = []
+      incomingReq.on('data', (c) => {
+        s.push(c.toString())
+      })
+      incomingReq.on('end', () => {
+        const result = s.join('')
+        try {
+          const parsed = JSON.parse(result)
+          console.info('incoming - now error', parsed)
+          resolve(parsed)
+        } catch (err) {}
+        resolve(result)
+      })
+    }
+
+    const req =
+      protocol === 'wss' || protocol === 'https'
+        ? sslRequest(httpOptions, incomingReady)
+        : request(httpOptions, incomingReady)
+
+    options.contents.pipe(req)
+  })
 }

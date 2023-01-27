@@ -17,7 +17,7 @@ export type BasedRoute = {
 }
 
 export type BasedStreamFunctionRoute = BasedRoute & {
-  stream?: boolean
+  stream?: true
 }
 
 export type BasedFunctionRoute =

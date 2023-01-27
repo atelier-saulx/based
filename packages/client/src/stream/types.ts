@@ -1,8 +1,7 @@
 export type ReadableStream = {
   pipe: (x: any) => ReadableStream
-  readable?: true
-  _read: (size?: number) => void
-  _readableState?: object
+  // readable?: true
+  // _readableState?: object
 }
 
 export type StreamFunctionContents = {
@@ -15,7 +14,7 @@ export type StreamFunctionContents = {
 export type StreamFunctionStream = {
   contents: ReadableStream
   payload?: any
-  size: number
+  contentLength: number
   mimeType?: string
   serverKey?: string
 }
@@ -33,6 +32,7 @@ export type StreamFunctionOpts =
   | StreamFunctionStream
 
 export type StreamHeaders = {
+  'Content-Length'?: string
   'Content-Type': string
   Authorization: string
   Payload?: string

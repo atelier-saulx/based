@@ -1,12 +1,6 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
-
-export type ReadableStream = {
-  pipe: (x: any) => ReadableStream
-  readable?: boolean
-  _read: (size?: number) => void
-  _readableState?: object
-}
+import { Stream } from 'stream'
 
 export type ObservableUpdateFunction = {
   (
@@ -40,7 +34,7 @@ export type BasedFunction<P = any, K = any> = (
 export type BasedStreamFunction<P = any, K = any> = BasedFunction<
   {
     payload?: P
-    stream: ReadableStream
+    stream: Stream
   },
   K
 >

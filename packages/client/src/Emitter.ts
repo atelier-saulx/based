@@ -29,7 +29,23 @@ class Emitter {
     this.listeners = {}
   }
 
-  once<E extends Event>(type: E, fn: Listener<EventMap[E]>) {
+  once<E extends Event>(type: E): Promise<EventMap[E]>
+
+  once<E extends Event>(type: E, fn: Listener<EventMap[E]>): void
+
+  once<E extends Event>(
+    type: E,
+    fn?: Listener<EventMap[E]>
+  ): Promise<EventMap[E]> | void {
+    if (!fn) {
+      return new Promise((resolve) => {
+        const listener = (v: EventMap[E]) => {
+          resolve(v)
+          this.off(type, listener)
+        }
+        this.on(type, listener)
+      })
+    }
     const listener = (v: EventMap[E]) => {
       fn(v)
       this.off(type, listener)

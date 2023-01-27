@@ -23,7 +23,7 @@ export const httpFunction = (
       if (!ctx.session) {
         return
       }
-      if (spec && !isObservableFunctionSpec(spec)) {
+      if (spec && !isObservableFunctionSpec(spec) && spec.stream !== true) {
         spec
           .function(server.client, payload, ctx)
           .then(async (result) => {
