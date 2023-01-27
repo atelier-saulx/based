@@ -179,7 +179,16 @@ export class BasedClient extends Emitter {
       }
       delete this.connection
     }
+    clearTimeout(this.drainTimeout)
+    clearTimeout(this.idlePing)
     this.connected = false
+  }
+
+  public destroy() {
+    this.disconnect()
+    for (const i in this) {
+      delete this[i]
+    }
   }
 
   // ---------- Query
