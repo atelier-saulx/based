@@ -184,6 +184,13 @@ export class BasedClient extends Emitter {
     this.connected = false
   }
 
+  public destroy() {
+    this.disconnect()
+    for (const i in this) {
+      delete this[i]
+    }
+  }
+
   // ---------- Query
   query(name: string, payload?: any): BasedQuery {
     return new BasedQuery(this, name, payload)
