@@ -102,7 +102,7 @@ import { Duplex } from 'node:stream'
 //   server.destroy()
 // })
 
-test.serial('stream functions using client helper - contents', async (t) => {
+test.serial('stream functions - buffer contents', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -137,7 +137,7 @@ test.serial('stream functions using client helper - contents', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream functions using client helper', async (t) => {
+test.serial('stream functions - streamContents', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -184,26 +184,18 @@ test.serial('stream functions using client helper', async (t) => {
       }, 18)
     }
   }
-
-  server.on('error', (ctx, err) => {
-    console.error(err)
-  })
-
   streamBits()
-
   const s = await client.stream('hello', {
     payload: { power: true },
     contentLength: payload.byteLength,
     contents: stream,
   })
-
   t.deepEqual(s, { power: true })
-
   client.disconnect()
   await server.destroy()
 })
 
-test.serial.only('stream functions using client helper', async (t) => {
+test.serial.only('stream functions - streamContents error', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -211,36 +203,27 @@ test.serial.only('stream functions using client helper', async (t) => {
         idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
-        function: async (based, { stream, payload }) => {
-          console.info('stream time')
-          const x = await readStream(stream)
-          console.info('go dem bytes', x)
-          return payload
+        function: async () => {
+          throw new Error('bla')
         },
       },
     },
   })
-
   const client = new BasedClient()
-
   client.connect({
     url: async () => 'ws://localhost:9910',
   })
-
   const bigBod: any[] = []
-
   for (let i = 0; i < 1000; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
   const payload = Buffer.from(JSON.stringify(bigBod))
-
   const stream = new Duplex({
     read() {},
     write(x) {
       this.push(x)
     },
   })
-
   let index = 0
   const streamBits = () => {
     const readBytes = 1000
@@ -256,21 +239,14 @@ test.serial.only('stream functions using client helper', async (t) => {
       }, 18)
     }
   }
-
-  server.on('error', (ctx, err) => {
-    console.error(err)
-  })
-
   streamBits()
-
   const s = await client.stream('hello', {
     payload: { power: true },
     contentLength: payload.byteLength,
     contents: stream,
   })
-
+  console.log('?????????????????', s)
   t.deepEqual(s, { power: true })
-
   client.disconnect()
   await server.destroy()
 })

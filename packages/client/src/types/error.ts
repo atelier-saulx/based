@@ -23,7 +23,7 @@ export enum BasedErrorCode {
 
 export type BasedErrorData = {
   message: string
-  stack: string
+  stack?: string
   requestId?: number
   observableId?: number
   code: BasedErrorCode

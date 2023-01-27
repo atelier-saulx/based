@@ -18,6 +18,7 @@ import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
 import { parseAuthState } from '../../auth'
 import { parsePayload } from '../../protocol'
+import mimeTypes from 'mime-types'
 
 let clientId = 0
 
@@ -162,6 +163,12 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
       return
     }
+
+    const extension = ctx.session.headers['content-extension']
+    if (extension) {
+      ctx.session.headers['content-type'] = mimeTypes.lookup(extension)
+    }
+
     httpStreamFunction(
       server,
       ctx,

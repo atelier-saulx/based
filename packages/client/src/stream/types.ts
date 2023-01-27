@@ -17,6 +17,7 @@ export type StreamFunctionStream = {
   contentLength: number
   mimeType?: string
   serverKey?: string
+  extension?: string
 }
 
 export type StreamFunctionPath = {
@@ -32,6 +33,7 @@ export type StreamFunctionOpts =
   | StreamFunctionStream
 
 export type StreamHeaders = {
+  'Content-Extension'?: string
   'Content-Length'?: string
   'Content-Type': string
   Authorization: string
