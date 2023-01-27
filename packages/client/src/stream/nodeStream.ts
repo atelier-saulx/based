@@ -42,6 +42,8 @@ export const uploadFilePath = async (
       mimeType: options.mimeType,
       extension: options.path.match(/\.(.*?)$/)?.[1],
       contentLength: info.size,
+      payload: options.payload,
+      serverKey: options.serverKey,
     })
   } else {
     throw new Error(`File does not exist ${options.path}`)

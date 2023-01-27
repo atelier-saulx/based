@@ -6,6 +6,8 @@ import { wait, readStream } from '@saulx/utils'
 // import zlib from 'node:zlib'
 // import { promisify } from 'node:util'
 import { Duplex } from 'node:stream'
+import { join } from 'path'
+import { readFileSync } from 'node:fs'
 
 // const gzip = promisify(zlib.gzip)
 
@@ -145,11 +147,16 @@ test.serial('stream functions - streamContents', async (t) => {
         idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
-        function: async (based, { stream, payload }) => {
-          console.info('stream time')
-          const x = await readStream(stream)
-          console.info('go dem bytes', x)
-          return payload
+        function: async (
+          based,
+          { stream, payload, mimeType, contentLength }
+        ) => {
+          let cnt = 0
+          stream.on('data', () => {
+            cnt++
+          })
+          await readStream(stream)
+          return { payload, cnt, mimeType, contentLength }
         },
       },
     },
@@ -188,14 +195,19 @@ test.serial('stream functions - streamContents', async (t) => {
   const s = await client.stream('hello', {
     payload: { power: true },
     contentLength: payload.byteLength,
+    mimeType: 'pipo',
     contents: stream,
   })
-  t.deepEqual(s, { power: true })
+  t.true(s.cnt > 5)
+  t.is(s.contentLength, payload.byteLength)
+  t.is(s.mimeType, 'pipo')
+  t.is(s.contentLength, payload.byteLength)
+  t.deepEqual(s.payload, { power: true })
   client.disconnect()
   await server.destroy()
 })
 
-test.serial.only('stream functions - streamContents error', async (t) => {
+test.serial('stream functions - streamContents error', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -240,13 +252,80 @@ test.serial.only('stream functions - streamContents error', async (t) => {
     }
   }
   streamBits()
+  await t.throwsAsync(
+    client.stream('hello', {
+      payload: { power: true },
+      contentLength: payload.byteLength,
+      contents: stream,
+    })
+  )
+  client.disconnect()
+  await server.destroy()
+})
+
+test.serial('stream functions - path', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        idleTimeout: 1,
+        maxPayloadSize: 1e9,
+        stream: true,
+        function: async (based, x) => {
+          const { payload, stream, mimeType } = x
+          const file = (await readStream(stream)).toString()
+          return { payload, file, mimeType }
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
   const s = await client.stream('hello', {
     payload: { power: true },
-    contentLength: payload.byteLength,
-    contents: stream,
+    mimeType: 'text/typescript',
+    path: join(__dirname, '/functions.ts'),
   })
-  console.log('?????????????????', s)
-  t.deepEqual(s, { power: true })
+  t.deepEqual(s, {
+    mimeType: 'text/typescript',
+    payload: { power: true },
+    file: readFileSync(join(__dirname, '/functions.ts')).toString(),
+  })
+  client.disconnect()
+  await server.destroy()
+})
+
+test.serial('stream functions - path json', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        idleTimeout: 1,
+        maxPayloadSize: 1e9,
+        stream: true,
+        function: async (based, x) => {
+          const { payload, stream, mimeType } = x
+          const file = (await readStream(stream)).toString()
+          return { payload, file, mimeType }
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  const s = await client.stream('hello', {
+    payload: { power: true },
+    path: join(__dirname, '/browser/tmp.json'),
+  })
+  t.deepEqual(s, {
+    mimeType: 'application/json',
+    payload: { power: true },
+    file: readFileSync(join(__dirname, '/browser/tmp.json')).toString(),
+  })
   client.disconnect()
   await server.destroy()
 })

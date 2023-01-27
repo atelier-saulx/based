@@ -164,7 +164,8 @@ export const httpHandler = (
       return
     }
 
-    const extension = ctx.session.headers['content-extension']
+    const extension = req.getHeader('content-extension')
+
     if (extension) {
       ctx.session.headers['content-type'] = mimeTypes.lookup(extension)
     }

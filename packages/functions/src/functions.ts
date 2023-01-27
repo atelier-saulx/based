@@ -34,6 +34,8 @@ export type BasedFunction<P = any, K = any> = (
 export type BasedStreamFunction<P = any, K = any> = BasedFunction<
   {
     payload?: P
+    mimeType: string
+    contentLength: number
     stream: Stream
   },
   K
