@@ -5,8 +5,6 @@ import { errorListener } from './error'
 import { ObservableUpdateFunction } from '../types'
 
 export const start = (server: BasedServer, id: number) => {
-  // TODO: install here - if fn is not available is ok - just wait until start gets called again
-
   const obs = server.activeObservablesById.get(id)
 
   if (obs.closeFunction) {
@@ -36,7 +34,6 @@ export const start = (server: BasedServer, id: number) => {
       errorListener(server, obs, err)
       return
     }
-
     updateListener(
       server,
       obs,
@@ -50,27 +47,28 @@ export const start = (server: BasedServer, id: number) => {
   }
 
   update.__internalObs__ = true
+  const startId = ++obs.startId
 
-  process.nextTick(() => {
-    if (!obs.isDestroyed) {
-      try {
-        const r = spec.function(server.client, payload, update)
-        if (r instanceof Promise) {
-          r.then((close) => {
-            if (obs.isDestroyed) {
-              close()
-            } else {
-              obs.closeFunction = close
-            }
-          }).catch((err) => {
-            errorListener(server, obs, err)
-          })
+  try {
+    const r = spec.function(server.client, payload, update)
+    if (r instanceof Promise) {
+      r.then((close) => {
+        if (obs.isDestroyed || startId !== obs.startId) {
+          close()
         } else {
-          obs.closeFunction = r
+          obs.closeFunction = close
         }
-      } catch (err) {
-        errorListener(server, obs, err)
-      }
+      }).catch((err) => {
+        if (!(obs.isDestroyed || startId !== obs.startId)) {
+          errorListener(server, obs, err)
+        }
+      })
+    } else {
+      obs.closeFunction = r
     }
-  })
+  } catch (err) {
+    if (!(obs.isDestroyed || startId !== obs.startId)) {
+      errorListener(server, obs, err)
+    }
+  }
 }

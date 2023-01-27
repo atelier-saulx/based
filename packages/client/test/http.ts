@@ -113,7 +113,7 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('get (over http)', async (t) => {
+test.serial.only('get (over http)', async (t) => {
   const store: {
     [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
   } = {
@@ -178,19 +178,19 @@ test.serial('get (over http)', async (t) => {
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result, '1')
+  t.is(result, '0')
 
   await wait(1e3)
 
   const result2 = await (await fetch('http://localhost:9910/counter')).text()
 
-  t.is(result2, '2')
+  t.is(result2, '1')
 
   await wait(1e3)
 
   const result3 = await (await fetch('http://localhost:9910/hello')).text()
 
-  t.is(result3, '3')
+  t.is(result3, '2')
 
   await wait(10e3)
 

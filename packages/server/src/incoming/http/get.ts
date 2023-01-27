@@ -11,6 +11,7 @@ import {
   sendObsGetError,
   subscribeNext,
   ActiveObservable,
+  start,
   genObservableId,
 } from '../../observable'
 import zlib from 'node:zlib'
@@ -82,6 +83,7 @@ const sendGetResponse = (
   ctx: Context<HttpSession>
 ) => {
   if (!ctx.session) {
+    destroyObs(server, id)
     return
   }
 
@@ -105,7 +107,6 @@ const sendGetResponse = (
   } else {
     sendNotModified(ctx)
   }
-
   destroyObs(server, id)
 }
 
@@ -187,7 +188,7 @@ export const httpGet = (
         return
       }
 
-      const obs = createObs(server, name, id, payload)
+      const obs = createObs(server, name, id, payload, true)
       subscribeNext(obs, (err) => {
         if (err) {
           sendObsGetError(server, ctx, obs.id, obs.name, err)
@@ -195,6 +196,7 @@ export const httpGet = (
           sendGetResponse(route, server, id, obs, checksum, ctx)
         }
       })
+      start(server, id)
     })
     .catch((err) => {
       // TODO: error type

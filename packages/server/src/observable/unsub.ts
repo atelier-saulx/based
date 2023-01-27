@@ -12,6 +12,7 @@ export const unsubscribeFunction = (
   if (!obs) {
     return
   }
+
   if (obs.functionObserveClients.delete(update)) {
     destroyObs(server, id)
     return true

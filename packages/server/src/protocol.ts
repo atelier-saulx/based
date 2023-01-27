@@ -95,7 +95,7 @@ export const parsePayload = (payload: any) => {
       return JSON.parse(payload)
     } catch (err) {}
   }
-  return parsePayload
+  return payload
 }
 
 export const decodeName = (

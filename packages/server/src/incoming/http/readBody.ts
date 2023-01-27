@@ -14,7 +14,7 @@ const UNCOMPRESS_OPTS = {
   chunkSize: 1024 * 1024 * 1000,
 }
 
-export const parsePayload = (
+export const parseHttpPayload = (
   server: BasedServer,
   ctx: Context<HttpSession>,
   data: Uint8Array,
@@ -108,7 +108,7 @@ export const readBody = (
           i += c.byteLength
         }
         // readValue
-        onData(parsePayload(server, ctx, buf, route))
+        onData(parseHttpPayload(server, ctx, buf, route))
       })
     } else {
       sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
@@ -134,7 +134,7 @@ export const readBody = (
 
       if (isLast) {
         // readValue
-        onData(parsePayload(server, ctx, buf, route))
+        onData(parseHttpPayload(server, ctx, buf, route))
       }
     })
   }

@@ -13,6 +13,7 @@ import {
   verifyRoute,
   getObs,
   hasObs,
+  start,
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
@@ -31,6 +32,7 @@ const sendGetData = (
   ctx: Context<WebSocketSession>
 ) => {
   if (!ctx.session) {
+    destroyObs(server, id)
     return
   }
   if (checksum === 0) {
@@ -92,7 +94,7 @@ const install = (
         getFromExisting(server, id, ctx, checksum, name)
         return
       }
-      const obs = createObs(server, name, id, payload)
+      const obs = createObs(server, name, id, payload, true)
       if (!ctx.session?.obs.has(id)) {
         subscribeNext(obs, (err) => {
           if (err) {
@@ -102,6 +104,7 @@ const install = (
           }
         })
       }
+      start(server, id)
     })
     .catch(() => {
       sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)

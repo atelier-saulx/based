@@ -24,6 +24,7 @@ export type ObserveErrorListener = (
 ) => void
 
 export type ActiveObservable = {
+  startId: number
   name: string
   id: number
   reusedCache: boolean
