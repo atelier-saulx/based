@@ -1,5 +1,5 @@
 import { BasedClient } from '@based/client'
-import { logs, button, toggleButton } from './ui'
+import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient()
@@ -14,6 +14,20 @@ const init = async () => {
     log('Call hello', await based.call('hello', { x: true }))
   })
 
+  button('Fetch hello', async () => {
+    log('Call hello', await (await fetch('http://localhost:8081/hello')).text())
+  })
+
+  uploadButton('Stream filefun', async (f) => {
+    console.info(f)
+    log(
+      await based.stream('files', {
+        contents: f[0],
+      })
+    )
+    // log('Call hello', await based.call('hello', { x: true }))
+  })
+
   toggleButton('Counter', () => {
     return based.query('counter', { speed: 10 }).subscribe((d) => {
       log('Counter', d)
@@ -26,6 +40,15 @@ const init = async () => {
     })
   })
 
+  toggleButton('setAuthState', () => {
+    based.setAuthState({
+      token: 'power',
+    })
+    return () => {
+      based.clearAuthState()
+    }
+  })
+
   based.on('authstate-change', (d) => {
     log('authstate-change', d)
   })
@@ -36,15 +59,6 @@ const init = async () => {
 
   based.on('disconnect', (d) => {
     log('disconnect', d)
-  })
-
-  toggleButton('setAuthState', () => {
-    based.setAuthState({
-      token: 'power',
-    })
-    return () => {
-      based.clearAuthState()
-    }
   })
 
   const log = logs()

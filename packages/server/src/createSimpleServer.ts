@@ -164,7 +164,11 @@ export async function createSimpleServer(
   }
 
   for (const name in functionStore) {
-    const obs = functionStore[name].query ? '[query]' : ''
+    const obs = functionStore[name].query
+      ? '[query]'
+      : functionStore[name].stream
+      ? '[stream]'
+      : ''
     const pub = functionStore[name].public ? 'public' : 'private'
     console.info(
       '      ',

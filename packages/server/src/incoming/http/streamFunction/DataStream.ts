@@ -1,4 +1,5 @@
 import { Duplex } from 'stream'
+import util from 'node:util'
 
 // copy / ;/ or shall we just run stream functions on the main thread
 
@@ -14,5 +15,9 @@ export class DataStream extends Duplex {
 
   _final() {
     this.push(null)
+  }
+
+  [util.inspect.custom]() {
+    return 'BasedStream'
   }
 }

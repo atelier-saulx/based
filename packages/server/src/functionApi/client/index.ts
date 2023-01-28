@@ -1,6 +1,8 @@
 import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
+import util from 'node:util'
+
 import {
   AuthState,
   BasedFunctionClient as BasedfunctionClientAbstract,
@@ -45,5 +47,9 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
       return
     }
     this.server.auth.sendAuthState(ctx, authState)
+  }
+
+  [util.inspect.custom]() {
+    return `BasedFunctionClient`
   }
 }

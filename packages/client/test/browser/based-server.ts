@@ -13,7 +13,14 @@ const start = async () => {
     },
     functions: {
       hello: async () => {
-        return 'here!'
+        return 'This is a response from hello'
+      },
+      files: {
+        stream: true,
+        function: async (based, payload) => {
+          console.log('!??!!', payload)
+          return 'go go go'
+        },
       },
     },
     queryFunctions: {

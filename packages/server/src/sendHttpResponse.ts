@@ -8,9 +8,10 @@ export const end = (
   if (!ctx.session) {
     return
   }
-  ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+  // ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+  // ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+
   // only allowed headers
-  ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
   if (payload === undefined) {
     ctx.session.res.end()
   } else {

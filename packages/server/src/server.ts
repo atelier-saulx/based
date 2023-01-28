@@ -8,6 +8,7 @@ import { BasedErrorCode, BasedErrorData } from './error'
 import { wait } from '@saulx/utils'
 import picocolors = require('picocolors')
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi'
+import util from 'node:util'
 
 type EventMap = {
   error: BasedErrorData
@@ -94,7 +95,11 @@ export class BasedServer {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
-  public workerRequest: (type: string, payload?: any) => void | Promise<any>
+  public workerRequest: (type: string, payload?: any) => void | Promise<any>;
+
+  [util.inspect.custom]() {
+    return `BasedServer [${this.port}]`
+  }
 
   constructor(opts: ServerOptions) {
     this.functions = new BasedFunctions(this, opts.functions)
