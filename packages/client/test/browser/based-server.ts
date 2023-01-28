@@ -7,4 +7,15 @@ createSimpleServer({
       return 'here!'
     },
   },
+  queryFunctions: {
+    counter: (based, payload, update) => {
+      let cnt = 0
+      const int = setInterval(() => {
+        update({ cnt: ++cnt })
+      }, payload.speed)
+      return () => {
+        clearInterval(int)
+      }
+    },
+  },
 })

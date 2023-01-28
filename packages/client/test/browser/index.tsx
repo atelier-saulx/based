@@ -1,25 +1,47 @@
 import { BasedClient } from '@based/client'
-
-const makeButton = (label: string, fn: () => void) => {
-  const button = document.createElement('button')
-  button.innerHTML = label
-  button.style.margin = '40px'
-  button.onclick = fn
-  document.body.appendChild(button)
-}
+import { logs, button, toggleButton } from './ui'
 
 const init = async () => {
-  const coreClient = new BasedClient()
+  document.body.style.padding = '10px'
 
-  coreClient.connect({
+  const based = new BasedClient()
+
+  based.connect({
     url: async () => {
       return 'ws://localhost:8081'
     },
   })
 
-  makeButton('call hello', async () => {
-    console.info(await coreClient.call('hello', { x: true }))
+  button('Call hello', async () => {
+    log('Call hello', await based.call('hello', { x: true }))
   })
+
+  toggleButton('Counter', () => {
+    return based.query('counter', { speed: 10 }).subscribe((d) => {
+      log('Counter', d)
+    })
+  })
+
+  toggleButton('Counter slow', () => {
+    return based.query('counter', { speed: 1e3 }).subscribe((d) => {
+      log('Counter slow', d)
+    })
+  })
+
+  based.on('authstate-change', (d) => {
+    log('authstate-change', d)
+  })
+
+  toggleButton('setAuthState', () => {
+    based.setAuthState({
+      token: 'power',
+    })
+    return () => {
+      based.clearAuthState()
+    }
+  })
+
+  const log = logs()
 }
 
 init()
