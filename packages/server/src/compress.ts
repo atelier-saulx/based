@@ -23,6 +23,10 @@ export const compress = async (
     return { payload }
   }
 
+  if (payload === undefined) {
+    return
+  }
+
   if (payload.length < COMPRESS_STRING_LEN) {
     return { payload }
   }

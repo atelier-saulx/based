@@ -50,6 +50,6 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
   }
 
   [util.inspect.custom]() {
-    return `BasedFunctionClient`
+    return `[BasedFunctionClient]`
   }
 }

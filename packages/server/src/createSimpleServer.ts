@@ -63,8 +63,9 @@ export async function createSimpleServer(
           name,
           observable: false,
           checksum: 1,
-          maxPayloadSize: 5e3,
-          rateLimitTokens: 1,
+          // 200MB default max size for stream
+          maxPayloadSize: fn.stream ? 200e6 : 5e3,
+          rateLimitTokens: fn.stream ? 5 : 1,
           ...fn,
         }
       } else {

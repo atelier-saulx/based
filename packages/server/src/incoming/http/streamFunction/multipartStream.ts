@@ -196,6 +196,7 @@ export default (
             }
           }
         }
+        console.info('gi gi gi', opts)
         if (opts.size) {
           streamProgress(file.stream, opts.size)
         }
@@ -221,6 +222,8 @@ export default (
         if (extension) {
           file.opts.extension = extension
         }
+        console.info('222gi gi gi', file)
+
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(

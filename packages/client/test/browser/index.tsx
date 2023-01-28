@@ -18,14 +18,31 @@ const init = async () => {
     log('Call hello', await (await fetch('http://localhost:8081/hello')).text())
   })
 
-  uploadButton('Stream filefun', async (f) => {
-    console.info(f)
-    log(
-      await based.stream('files', {
-        contents: f[0],
-      })
+  uploadButton('Stream file', async (files) => {
+    const results = await Promise.all(
+      [...files].map((f) =>
+        based.stream('files', {
+          contents: f,
+        })
+      )
     )
-    // log('Call hello', await based.call('hello', { x: true }))
+    results.forEach((r) => {
+      log(r)
+      log(
+        `<img style="width:250px" src="http://localhost:8081/file?id=${r.id}" />`
+      )
+    })
+  })
+
+  toggleButton('Disconnect', () => {
+    based.disconnect()
+    return () => {
+      based.connect({
+        url: async () => {
+          return 'ws://localhost:8081'
+        },
+      })
+    }
   })
 
   toggleButton('Counter', () => {

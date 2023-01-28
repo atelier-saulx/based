@@ -4,11 +4,19 @@ export type ReadableStream = {
   // _readableState?: object
 }
 
-export type StreamFunctionContents = {
-  contents: Buffer | ArrayBuffer | string | File | Blob
+export type StreamFunctionContents<
+  F = Buffer | ArrayBuffer | string | File | Blob
+> = {
+  contents: F
   payload?: any
   mimeType?: string
   serverKey?: string
+}
+
+export const isFileContents = (
+  contents: StreamFunctionContents
+): contents is StreamFunctionContents<File> => {
+  return contents.contents instanceof File
 }
 
 export type StreamFunctionStream = {

@@ -18,6 +18,6 @@ export class DataStream extends Duplex {
   }
 
   [util.inspect.custom]() {
-    return 'BasedStream'
+    return '[BasedStream]'
   }
 }

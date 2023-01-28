@@ -1,5 +1,6 @@
 import { BasedClient } from '..'
 import {
+  isFileContents,
   StreamFunctionOpts,
   StreamFunctionPath,
   StreamFunctionStream,
@@ -64,10 +65,15 @@ export default async (
     return fetch(client, name, options)
   }
 
+  if (isBrowser && isFileContents(options)) {
+    return uploadFileBrowser(client, name, options)
+  }
+
   if (isBrowser && options.contents instanceof global.Blob) {
     if (!options.mimeType) {
       options.mimeType = options.contents.type
     }
+
     // want to stream this XHR browser / stream + http nodejs
     return fetch(client, name, options)
   }
@@ -78,10 +84,6 @@ export default async (
   ) {
     // want to stream this XHR browser / stream + http nodejs
     return fetch(client, name, options)
-  }
-
-  if (isBrowser && options.contents instanceof File) {
-    return uploadFileBrowser(client, name, options)
   }
 
   throw new Error(

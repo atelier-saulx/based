@@ -1,4 +1,7 @@
 import { createSimpleServer } from '@based/server'
+import { readStream } from '@saulx/utils'
+
+const files: { [key: string]: { file: Buffer; mimeType: string } } = {}
 
 const start = async () => {
   await createSimpleServer({
@@ -12,14 +15,28 @@ const start = async () => {
       },
     },
     functions: {
+      file: {
+        function: async (based, payload) => {
+          return payload.id
+        },
+        customHttpResponse: async (id, payload, ctx) => {
+          ctx.session?.res.writeHeader('cache-control', 'immutable')
+          ctx.session?.res.writeHeader('mime-type', files[id].mimeType)
+          ctx.session?.res.end(files[id].file)
+          return true
+        },
+      },
       hello: async () => {
         return 'This is a response from hello'
       },
       files: {
         stream: true,
-        function: async (based, payload) => {
-          console.log('!??!!', payload)
-          return 'go go go'
+        function: async (based, x) => {
+          const { stream, mimeType } = x
+          console.log(x)
+          const id = (~~(Math.random() * 9999999)).toString(16)
+          files[id] = { file: await readStream(stream), mimeType }
+          return { success: 'filetime', id, mimeType }
         },
       },
     },

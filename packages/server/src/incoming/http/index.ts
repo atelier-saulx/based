@@ -157,6 +157,8 @@ export const httpHandler = (
       })
     })
   } else if (route.stream === true) {
+    console.log('STREAM STREA12?!@??M!')
+
     if (method !== 'post') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
