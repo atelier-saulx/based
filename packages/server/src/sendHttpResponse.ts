@@ -47,6 +47,8 @@ export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
             'Cache-Control',
             'max-age=0, must-revalidate'
           )
+          // TODO check this
+          // ctx.session.res.writeHeader('Mime-Type', '')
           ctx.session.res.writeHeader('Content-Type', cType)
           if (encoding) {
             ctx.session.res.writeHeader('Content-Encoding', encoding)

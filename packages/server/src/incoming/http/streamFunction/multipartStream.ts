@@ -196,14 +196,21 @@ export default (
             }
           }
         }
-        console.info('gi gi gi', opts)
+        console.info('MP1:', file)
         if (opts.size) {
           streamProgress(file.stream, opts.size)
         }
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
-            fn({ payload: { ...payload, ...file.opts }, stream: file.stream })
+            fn({
+              payload: {},
+              fileName: file.opts.name,
+              mimeType: file.opts.type,
+              extension: file.opts.extension,
+              size: file.opts.size,
+              stream: file.stream,
+            })
           )
         }
         continue
@@ -222,12 +229,19 @@ export default (
         if (extension) {
           file.opts.extension = extension
         }
-        console.info('222gi gi gi', file)
+        console.info('MP2:', file)
 
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
-            fn({ payload: { ...payload, ...file.opts }, stream: file.stream })
+            fn({
+              payload: {},
+              fileName: file.opts.name,
+              mimeType: file.opts.type,
+              extension: file.opts.extension,
+              size: file.opts.size,
+              stream: file.stream,
+            })
           )
         }
         continue

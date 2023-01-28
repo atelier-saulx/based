@@ -21,11 +21,7 @@ export const httpStreamFunction = (
     return
   }
 
-  console.log('STREAM STREAM!')
-
   const size = ctx.session.headers['content-length']
-
-  console.info('SIZE', size)
 
   if (route.maxPayloadSize > -1 && route.maxPayloadSize < size) {
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
@@ -36,7 +32,6 @@ export const httpStreamFunction = (
 
   // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
-    console.info('go time!')
     const files: any[] = []
     let thisIsFn: BasedFunction
 

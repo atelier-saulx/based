@@ -27,9 +27,9 @@ const init = async () => {
       )
     )
     results.forEach((r) => {
-      log(r)
+      // log(r)
       log(
-        `<img style="width:250px" src="http://localhost:8081/file?id=${r.id}" />`
+        `<span><img style="height:250px" src="http://localhost:8081/file?id=${r.id}" /></span>`
       )
     })
   })

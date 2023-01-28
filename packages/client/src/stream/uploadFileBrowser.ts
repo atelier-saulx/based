@@ -38,7 +38,7 @@ const drainQueue = (
       const body = new global.FormData()
       for (const options of q) {
         const { contents, payload, mimeType } = options[0]
-        const meta = `${mimeType}|${contents.size}|${JSON.stringify(payload)}`
+        const meta = `size=${contents.size}|payload=${JSON.stringify(payload)}`
         body.append(meta, contents)
       }
       try {

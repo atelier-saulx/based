@@ -33,8 +33,10 @@ const start = async () => {
         stream: true,
         function: async (based, x) => {
           const { stream, mimeType } = x
-          console.log(x)
-          const id = (~~(Math.random() * 9999999)).toString(16)
+          const id = (~~(Math.random() * 999999999)).toString(16)
+          x.stream.on('progress', (p) =>
+            console.info(p, x.fileName, x.mimeType)
+          )
           files[id] = { file: await readStream(stream), mimeType }
           return { success: 'filetime', id, mimeType }
         },
