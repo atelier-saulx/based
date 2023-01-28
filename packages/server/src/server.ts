@@ -172,7 +172,7 @@ export class BasedServer {
           resolve(this)
         } else {
           console.info(
-            picocolors.red('🤮  Based-edge-server error on port:'),
+            picocolors.red('🤮  Based-server error on port:'),
             this.port
           )
           reject(new Error('Cannot start based-server on port: ' + this.port))

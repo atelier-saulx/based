@@ -2,8 +2,6 @@ import { BasedClient } from '@based/client'
 import { logs, button, toggleButton } from './ui'
 
 const init = async () => {
-  document.body.style.padding = '10px'
-
   const based = new BasedClient()
 
   based.connect({
@@ -30,6 +28,14 @@ const init = async () => {
 
   based.on('authstate-change', (d) => {
     log('authstate-change', d)
+  })
+
+  based.on('connect', (d) => {
+    log('connect', d)
+  })
+
+  based.on('disconnect', (d) => {
+    log('disconnect', d)
   })
 
   toggleButton('setAuthState', () => {

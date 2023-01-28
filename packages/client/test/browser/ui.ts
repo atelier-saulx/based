@@ -1,5 +1,16 @@
 import { padLeft } from '@saulx/utils'
 
+document.body.style.padding = '10px'
+document.body.style.display = 'flex'
+document.body.style.height = '100vh'
+document.body.style.width = '100vh'
+document.body.style.overflow = 'hidden'
+document.body.style.flexDirection = 'column'
+
+const buttonHolder = document.createElement('div')
+buttonHolder.style.width = '100%'
+document.body.appendChild(buttonHolder)
+
 export const button = (label: string, fn: () => void) => {
   const button = document.createElement('button')
   button.innerHTML = label
@@ -12,7 +23,7 @@ export const button = (label: string, fn: () => void) => {
   button.style.margin = '10px'
   button.style.fontFamily = 'Andale Mono'
   button.onclick = fn
-  document.body.appendChild(button)
+  buttonHolder.appendChild(button)
 }
 
 export const toggleButton = (label: string, fn: () => () => void) => {
@@ -38,12 +49,12 @@ export const toggleButton = (label: string, fn: () => () => void) => {
       button.style.color = '#fff'
     }
   }
-  document.body.appendChild(button)
+  buttonHolder.appendChild(button)
 }
 
 export const logs = (): ((...args: any[]) => void) => {
   const div = document.createElement('div')
-  const logs: string[] = []
+  let logs: string[] = []
   div.style.padding = '16px'
   div.style.border = '2px solid #000'
   div.style.borderRadius = '4px'
@@ -51,12 +62,22 @@ export const logs = (): ((...args: any[]) => void) => {
   div.style.fontWeight = 'bold'
   div.style.cursor = 'pointer'
   div.style.fontFamily = 'Andale Mono'
-  div.style.height = '400px'
+  div.style.height = '100%'
   div.style.margin = '10px'
   div.style.overflowY = 'scroll'
   div.onclick = () => {}
   document.body.appendChild(div)
-  return (...args) => {
+
+  document.onkeydown = (e) => {
+    var key = e.keyCode || e.charCode || 0
+    console.log(key, e.metaKey)
+    if (e.metaKey && key === 75) {
+      logs = []
+      updateLog('cleared logs...')
+    }
+  }
+
+  const updateLog = (...args) => {
     const d = new Date()
     logs.push(
       `<div style="margin-top:4px;margin-bottom:8px"><span style="font-size:12px;color:#ccc">${d.getHours()}:${padLeft(
@@ -85,4 +106,6 @@ export const logs = (): ((...args: any[]) => void) => {
 
     div.scrollTop = div.scrollHeight
   }
+
+  return updateLog
 }

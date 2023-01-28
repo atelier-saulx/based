@@ -1,21 +1,34 @@
 import { createSimpleServer } from '@based/server'
 
-createSimpleServer({
-  port: 8081,
-  functions: {
-    hello: async () => {
-      return 'here!'
+const start = async () => {
+  await createSimpleServer({
+    port: 8081,
+    auth: {
+      verifyAuthState: (based, ctx, authState) => {
+        if (authState.token === 'power' && !authState.userId) {
+          return { ...authState, userId: 'power-user-id' }
+        }
+        return true
+      },
     },
-  },
-  queryFunctions: {
-    counter: (based, payload, update) => {
-      let cnt = 0
-      const int = setInterval(() => {
-        update({ cnt: ++cnt })
-      }, payload.speed)
-      return () => {
-        clearInterval(int)
-      }
+    functions: {
+      hello: async () => {
+        return 'here!'
+      },
     },
-  },
-})
+    queryFunctions: {
+      counter: (based, payload, update) => {
+        let cnt = 0
+        update({ cnt })
+        const int = setInterval(() => {
+          update({ cnt: ++cnt })
+        }, payload.speed)
+        return () => {
+          clearInterval(int)
+        }
+      },
+    },
+  })
+}
+
+start()
