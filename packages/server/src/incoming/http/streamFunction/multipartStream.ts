@@ -217,7 +217,10 @@ export default (
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
         file.opts.type = mimeType
-        file.opts.extension = getExtension(mimeType)
+        const extension = getExtension(mimeType)
+        if (extension) {
+          file.opts.extension = extension
+        }
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(

@@ -62,7 +62,7 @@ const connect = (
       })
 
       const ws = (connection.ws = new WebSocket(realUrl, [
-        encodeAuthState(client.authState, true),
+        encodeAuthState(client.authState),
       ]))
 
       ws.onerror = () => {

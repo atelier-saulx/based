@@ -167,7 +167,10 @@ export const httpHandler = (
     const extension = req.getHeader('content-extension')
 
     if (extension) {
-      ctx.session.headers['content-type'] = mimeTypes.lookup(extension)
+      const mime = mimeTypes.lookup(extension)
+      if (mime) {
+        ctx.session.headers['content-type'] = mime
+      }
     }
 
     httpStreamFunction(
