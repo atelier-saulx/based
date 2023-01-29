@@ -1,6 +1,7 @@
 import createDataStream from './stream'
 import { BasedServer } from '../../../server'
 import { sendError } from '../../../sendError'
+import getExtension from './getExtension'
 import {
   BasedFunctionRoute,
   isObservableFunctionSpec,
@@ -96,6 +97,7 @@ export const httpStreamFunction = (
               stream,
               contentLength: size,
               mimeType: type,
+              extension: getExtension(type) || '',
             }
 
             const fn = spec.function

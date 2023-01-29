@@ -14,7 +14,18 @@ class Emitter {
 
   emit(type: Event, val: EventMap[Event]) {
     if (this.listeners[type]) {
-      this.listeners[type].forEach((fn) => fn(val))
+      const lis = this.listeners[type]
+      for (let i = 0, len = lis.length; i < lis.length; i++) {
+        const fn = lis[i]
+        // @ts-ignore
+        fn(val)
+        if (len > lis.length) {
+          if (lis[i] !== fn) {
+            i--
+            len = lis.length
+          }
+        }
+      }
     }
   }
 
@@ -59,9 +70,11 @@ class Emitter {
       if (!fn) {
         delete this.listeners[type]
       } else {
-        for (let i = 0, len = listeners.length; i < len; i++) {
+        for (let i = 0; i < listeners.length; i++) {
           if (listeners[i] === fn) {
+            console.log('REMOVE LISTENER')
             listeners.splice(i, 1)
+            i--
             break
           }
         }

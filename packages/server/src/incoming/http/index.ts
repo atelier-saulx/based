@@ -47,9 +47,6 @@ export const httpHandler = (
     ctx.session = null
   })
 
-  res.writeHeader('Access-Control-Allow-Origin', '*')
-  res.writeHeader('Access-Control-Allow-Headers', '*')
-
   const ip = getIp(res)
 
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.http, 1)) {
@@ -108,6 +105,10 @@ export const httpHandler = (
     endRateLimitHttp(res)
     return
   }
+
+  // double check impact
+  res.writeHeader('Access-Control-Allow-Origin', '*')
+  res.writeHeader('Access-Control-Allow-Headers', '*')
 
   const query = req.getQuery()
   if (query) {

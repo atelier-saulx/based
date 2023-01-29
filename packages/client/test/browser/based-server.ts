@@ -1,9 +1,22 @@
 import { createSimpleServer } from '@based/server'
 import { readStream } from '@saulx/utils'
+import fs from 'node:fs'
+import { join } from 'path'
 
-const files: { [key: string]: { file: Buffer; mimeType: string } } = {}
+const files: { [key: string]: { file: string; mimeType: string } } = {}
+
+const TMP = join(__dirname, 'tmp')
 
 const start = async () => {
+  fs.readdir(TMP, (err, files) => {
+    if (err) throw err
+    for (const file of files) {
+      fs.unlink(join(TMP, file), (err) => {
+        if (err) throw err
+      })
+    }
+  })
+
   await createSimpleServer({
     port: 8081,
     auth: {
@@ -17,12 +30,23 @@ const start = async () => {
     functions: {
       file: {
         function: async (based, payload) => {
-          return payload.id
+          if (files[payload.id].mimeType.includes('image')) {
+            return {
+              file: await readStream(
+                fs.createReadStream(files[payload.id].file)
+              ),
+              mimeType: files[payload.id].mimeType,
+            }
+          }
+          return {
+            file: fs.readFileSync(join(__dirname, 'based.png')),
+            mimeTye: 'image/png',
+          }
         },
-        customHttpResponse: async (id, payload, ctx) => {
+        customHttpResponse: async (result, payload, ctx) => {
           ctx.session?.res.writeHeader('cache-control', 'immutable')
-          ctx.session?.res.writeHeader('mime-type', files[id].mimeType)
-          ctx.session?.res.end(files[id].file)
+          ctx.session?.res.writeHeader('mime-type', result.mimeType)
+          ctx.session?.res.end(result.file)
           return true
         },
       },
@@ -30,15 +54,18 @@ const start = async () => {
         return 'This is a response from hello'
       },
       files: {
+        maxPayloadSize: 1e10,
         stream: true,
         function: async (based, x) => {
-          const { stream, mimeType } = x
+          const { stream, mimeType, payload } = x
           const id = (~~(Math.random() * 999999999)).toString(16)
           x.stream.on('progress', (p) =>
-            console.info(p, x.fileName, x.mimeType)
+            console.info(p, x.fileName, x.mimeType, stream)
           )
-          files[id] = { file: await readStream(stream), mimeType }
-          return { success: 'filetime', id, mimeType }
+          const p = join(TMP, id + '.' + x.extension)
+          stream.pipe(fs.createWriteStream(p))
+          files[id] = { file: p, mimeType }
+          return { success: 'filetime', id, mimeType, payload }
         },
       },
     },

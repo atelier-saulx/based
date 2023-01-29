@@ -36,7 +36,10 @@ export type BasedStreamFunction<P = any, K = any> = BasedFunction<
     payload?: P
     mimeType: string
     contentLength: number
-    stream: Stream
+    stream: Stream & {
+      size: number
+      receivedBytes: number
+    }
     fileName?: string
     extension?: string
   },

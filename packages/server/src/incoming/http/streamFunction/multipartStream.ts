@@ -14,44 +14,14 @@ export type FileOptions = {
   size?: number
   type: string
   extension: string
-} & { [key: string]: string }
+  payload: any
+}
 
 type FileDescriptor = {
   opts: Partial<FileOptions>
   stream: DataStream
   isDone: boolean
   headersSet: number
-}
-
-const streamProgress = (stream: DataStream, size: number) => {
-  stream.emit('progress', 0)
-  if (size < 200000) {
-    stream.on('end', () => {
-      stream.emit('progress', 1)
-    })
-  } else {
-    let progress = 0
-    let total = 0
-    let setInProgress = false
-    const updateProgress = () => {
-      if (!setInProgress) {
-        setInProgress = true
-        setTimeout(() => {
-          stream.emit('progress', progress)
-          setInProgress = false
-        }, 250)
-      }
-    }
-    stream.on('end', () => {
-      progress = 1
-      updateProgress()
-    })
-    stream.on('data', (chunk) => {
-      total += chunk.byteLength
-      progress = total / size
-      updateProgress()
-    })
-  }
 }
 
 // only use this if you have individual file else its just all
@@ -118,7 +88,6 @@ export default (
                   if (progress === 1) {
                     file.isDone = true
                   }
-                  file.stream.emit('progress', progress)
                 }
               }
               setInProgress = false
@@ -148,11 +117,7 @@ export default (
         } else {
           file.stream.end()
         }
-        if (!file.opts.size && !file.isDone) {
-          file.stream.emit('progress', 1)
-        }
         file.isDone = true
-
         prevLine = null
         if (line === boundary + '--') {
           continue
@@ -173,42 +138,46 @@ export default (
       const file = files[files.length - 1]
 
       if (!file) {
-        // TODO: invalid file
+        // TODO: invalid file error
         return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
       }
 
       if (!isWriting && line.includes('Content-Disposition')) {
         const meta = line.match(/name="(.*?)"/)?.[1]
         if (!meta) {
-          // TODO: invalid file
+          // TODO: invalid file error
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
         const opts = file.opts
         opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
-        const disposition = meta.split('|')
-        for (const seg of disposition) {
-          if (/=/.test(seg)) {
-            const [k, v] = seg.split('=')
-            if (k === 'size') {
-              opts[k] = Number(v)
-            } else {
-              opts[k] = v
+
+        const firstCommaIndex = meta.indexOf(',')
+        if (firstCommaIndex !== -1 && /^size=/.test(meta)) {
+          const size = meta.slice(5, firstCommaIndex)
+          if (size) {
+            const sizeNr = Number(size)
+            file.opts.size = sizeNr
+            file.stream.size = sizeNr
+          }
+          const payloadRaw = meta.slice(firstCommaIndex + 1)
+          if (payloadRaw !== undefined && payloadRaw !== '') {
+            try {
+              file.opts.payload = JSON.parse(payloadRaw)
+            } catch (err) {
+              file.opts.payload = payloadRaw
             }
           }
         }
-        console.info('MP1:', file)
-        if (opts.size) {
-          streamProgress(file.stream, opts.size)
-        }
+
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
             fn({
-              payload: {},
+              payload: file.opts.payload || {},
               fileName: file.opts.name,
               mimeType: file.opts.type,
               extension: file.opts.extension,
-              size: file.opts.size,
+              size: file.opts.size || 0,
               stream: file.stream,
             })
           )
@@ -229,13 +198,12 @@ export default (
         if (extension) {
           file.opts.extension = extension
         }
-        console.info('MP2:', file)
 
         isWriting = setHeader(file)
         if (isWriting) {
           promiseQ.push(
             fn({
-              payload: {},
+              payload: file.opts.payload,
               fileName: file.opts.name,
               mimeType: file.opts.type,
               extension: file.opts.extension,

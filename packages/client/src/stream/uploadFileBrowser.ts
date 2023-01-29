@@ -1,7 +1,6 @@
 import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents } from './types'
 import getUrlFromOpts from '../getUrlFromOpts'
-// import { parsePayload } from './parsePayload'
 const inProgress: { [url: string]: boolean } = {}
 
 const queue: {
@@ -27,19 +26,19 @@ const drainQueue = (
 ) => {
   if (!inProgress[functionName]) {
     inProgress[functionName] = true
+
     setTimeout(async () => {
-      console.info('Drain file q')
       inProgress[functionName] = false
-
       const url = await getUrl(client)
-
       const q = queue[functionName]
+
       queue[functionName] = []
       const body = new global.FormData()
-      for (const options of q) {
-        const { contents, payload, mimeType } = options[0]
-        const meta = `size=${contents.size}|payload=${JSON.stringify(payload)}`
-        body.append(meta, contents)
+      for (let i = 0; i < q.length; i++) {
+        const options = q[i][0]
+        const { contents, payload } = options
+        const p = payload || {}
+        body.append(`size=${contents.size},${JSON.stringify(p)}`, contents)
       }
       try {
         const xhr = new global.XMLHttpRequest()
@@ -47,7 +46,7 @@ const drainQueue = (
           const progress =
             // @ts-ignore
             (100 * (p.loaded || p.position)) / (p.totalSize || p.total)
-          console.info(progress, 'upload...')
+          console.info(progress, 'upload§...')
         }
         xhr.onerror = (p) => {
           console.error('error!', p, 'flap', xhr.responseText)
@@ -90,9 +89,12 @@ export default async (
   functionName: string,
   options: StreamFunctionContents<File>
 ) => {
+  console.info('😍 staged:', options.contents.name)
+
   if (!client.connected) {
     await client.once('connect')
   }
+  console.info('connected done!', options.contents.name)
 
   // key is something special
 

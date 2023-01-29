@@ -1,4 +1,5 @@
 import { BasedClient } from '@based/client'
+import { padLeft } from '@saulx/utils'
 import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
@@ -20,16 +21,27 @@ const init = async () => {
 
   uploadButton('Stream file', async (files) => {
     const results = await Promise.all(
-      [...files].map((f) =>
-        based.stream('files', {
+      [...files].map(async (f) => {
+        const giantArray: any[] = []
+        for (let i = 0; i < 2; i++) {
+          giantArray.push({
+            i,
+            bla: padLeft('mysnur', Math.random() * 10 + 10, 'flap'),
+          })
+        }
+        const x = await based.stream('files', {
           contents: f,
+          payload: giantArray,
         })
-      )
+        console.info('FILE', f.name, 'complete')
+        return x
+      })
     )
+    console.info('--- results done???')
     results.forEach((r) => {
       // log(r)
       log(
-        `<span><img style="height:250px" src="http://localhost:8081/file?id=${r.id}" /></span>`
+        `<span><img style="height:50px" src="http://localhost:8081/file?id=${r.id}" /></span>`
       )
     })
   })
