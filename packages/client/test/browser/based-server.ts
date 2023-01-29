@@ -58,7 +58,7 @@ const start = async () => {
         stream: true,
         function: async (based, x) => {
           const { stream, mimeType, payload } = x
-          const id = (~~(Math.random() * 999999999)).toString(16)
+          const id = x.fileName || 'untitled'
           x.stream.on('progress', (p) =>
             console.info(p, x.fileName, x.mimeType, stream)
           )

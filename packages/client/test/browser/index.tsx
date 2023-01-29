@@ -46,6 +46,17 @@ const init = async () => {
     })
   })
 
+  uploadButton('Stream doesNotExist', async (files) => {
+    await Promise.all(
+      [...files].map(async (f) => {
+        const x = await based.stream('doesNotExist', {
+          contents: f,
+        })
+        return x
+      })
+    )
+  })
+
   toggleButton('Disconnect', () => {
     based.disconnect()
     return () => {

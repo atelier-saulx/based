@@ -18,7 +18,7 @@ import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
 import { parseAuthState } from '../../auth'
 import { parsePayload } from '../../protocol'
-import mimeTypes from 'mime-types'
+import { end } from '../../sendHttpResponse'
 
 let clientId = 0
 
@@ -107,8 +107,6 @@ export const httpHandler = (
   }
 
   // double check impact
-  res.writeHeader('Access-Control-Allow-Origin', '*')
-  res.writeHeader('Access-Control-Allow-Headers', '*')
 
   const query = req.getQuery()
   if (query) {
@@ -140,6 +138,11 @@ export const httpHandler = (
   }
 
   if (route.query === true) {
+    if (method !== 'post' && method !== 'get') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
+    }
+
     if (route.stream) {
       sendError(
         server,
@@ -158,6 +161,11 @@ export const httpHandler = (
       })
     })
   } else if (route.stream === true) {
+    if (method === 'options') {
+      end(ctx)
+      return
+    }
+
     if (method !== 'post') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
@@ -168,15 +176,6 @@ export const httpHandler = (
       return
     }
 
-    const extension = req.getHeader('content-extension')
-
-    if (extension) {
-      const mime = mimeTypes.lookup(extension)
-      if (mime) {
-        ctx.session.headers['content-type'] = mime
-      }
-    }
-
     httpStreamFunction(
       server,
       ctx,
@@ -184,6 +183,11 @@ export const httpHandler = (
       route
     )
   } else {
+    if (method !== 'post' && method !== 'get') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
+    }
+
     handleRequest(server, method, ctx, route, (payload) => {
       authorizeRequest(server, ctx, payload, route, () => {
         httpFunction(route, ctx, server, payload)

@@ -11,6 +11,7 @@ import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
 import { sendHttpResponse } from '../../../sendHttpResponse'
+import mimeTypes from 'mime-types'
 
 export const httpStreamFunction = (
   server: BasedServer,
@@ -29,10 +30,14 @@ export const httpStreamFunction = (
     return
   }
 
-  const type = ctx.session.headers['content-type']
+  let type = ctx.session.headers['content-type']
 
   // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
+    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+    // return
+
     const files: any[] = []
     let thisIsFn: BasedFunction
 
@@ -77,6 +82,15 @@ export const httpStreamFunction = (
       })
 
     return
+  }
+
+  const extension = ctx.session.req.getHeader('content-extension')
+
+  if (extension) {
+    const mime = mimeTypes.lookup(extension)
+    if (mime) {
+      type = ctx.session.headers['content-type'] = mime
+    }
   }
 
   const stream = createDataStream(server, route, ctx, size)

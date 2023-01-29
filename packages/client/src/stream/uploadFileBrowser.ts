@@ -49,7 +49,14 @@ const drainQueue = (
           console.info(progress, 'upload§...')
         }
         xhr.onerror = (p) => {
-          console.error('error!', p, 'flap', xhr.responseText)
+          console.error(
+            'error!',
+            p,
+            'flap',
+            xhr.responseText,
+            xhr.status,
+            xhr.statusText
+          )
         }
         xhr.timeout = 1e3 * 60 * 60 * 24
         xhr.onabort = (p) => {
@@ -59,6 +66,7 @@ const drainQueue = (
           console.error('on timeout', p)
         }
         xhr.onload = () => {
+          console.info('-->', xhr.response)
           try {
             const x = JSON.parse(xhr.response)
             for (let i = 0; i < x.length; i++) {

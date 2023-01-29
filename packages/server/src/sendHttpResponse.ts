@@ -8,8 +8,11 @@ export const end = (
   if (!ctx.session) {
     return
   }
-  // ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-  // ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+  const type = ctx.session.headers['content-type']
+  if (!(type && type.startsWith('multipart/form-data'))) {
+    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+  }
 
   // only allowed headers
   if (payload === undefined) {
