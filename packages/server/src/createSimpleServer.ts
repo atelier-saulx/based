@@ -121,10 +121,7 @@ export async function createSimpleServer(
     port: props.port,
     auth: props.auth,
     cert: props.cert,
-    ws: {
-      open: props?.ws?.open,
-      close: props?.ws?.close,
-    },
+    ws: props.ws,
     disableRest: props.disableRest,
     key: props.key,
     functions: {
