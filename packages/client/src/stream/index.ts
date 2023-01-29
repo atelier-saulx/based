@@ -36,7 +36,8 @@ const isStreamFunctionStream = (
 export default async (
   client: BasedClient,
   name: string,
-  options: StreamFunctionOpts
+  options: StreamFunctionOpts,
+  progressListener?: (progress: number) => void
 ): Promise<any> => {
   if (isStreamFunctionPath(options)) {
     if (isBrowser) {
@@ -66,7 +67,7 @@ export default async (
   }
 
   if (isBrowser && isFileContents(options)) {
-    return uploadFileBrowser(client, name, options)
+    return uploadFileBrowser(client, name, options, progressListener)
   }
 
   if (isBrowser && options.contents instanceof global.Blob) {

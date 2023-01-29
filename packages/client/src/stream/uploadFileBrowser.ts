@@ -55,7 +55,7 @@ const drainQueue = (
         xhr.upload.onprogress = (p: ProgressEvent) => {
           const progress =
             // @ts-ignore
-            (100 * (p.loaded || p.position)) / (p.totalSize || p.total)
+            (p.loaded || p.position) / (p.totalSize || p.total)
           q.forEach((item) => {
             if (item.progressListener) {
               item.progressListener(progress)
@@ -86,6 +86,8 @@ const drainQueue = (
           try {
             const x = JSON.parse(xhr.response)
             // go handle errors here?
+
+            console.log('???', x)
             for (let i = 0; i < x.length; i++) {
               q[i].resolve(x[i])
             }
@@ -111,15 +113,11 @@ export default async (
   options: StreamFunctionContents<File>,
   progressListener?: (progress: number) => void
 ) => {
-  console.info('😍 staged:', options.contents.name)
-
   if (!client.connected) {
     await client.once('connect')
   }
-  console.info('connected done!', options.contents.name)
 
-  // key is something special
-
+  // TODO: key is something special
   if (!queue[functionName]) {
     queue[functionName] = []
   }

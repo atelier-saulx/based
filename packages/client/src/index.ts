@@ -206,8 +206,12 @@ export class BasedClient extends Emitter {
   // TODO make this
   // -------- Stream-Function
   // File, NodeReadStream, payload, one with a timer
-  stream(name: string, stream: StreamFunctionOpts): Promise<any> {
-    return startStream(this, name, stream)
+  stream(
+    name: string,
+    stream: StreamFunctionOpts,
+    progressListener?: (progress: number) => void
+  ): Promise<any> {
+    return startStream(this, name, stream, progressListener)
   }
 
   // -------- Auth

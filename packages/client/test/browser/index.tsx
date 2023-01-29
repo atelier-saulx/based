@@ -18,7 +18,9 @@ const init = async () => {
     log('Call hello', await (await fetch('http://localhost:8081/hello')).text())
   })
 
+  // add number of files!
   uploadButton('Stream file', async (files, progress) => {
+    log('uploading', files.length + ' files')
     const results = await Promise.all(
       [...files].map(async (f) => {
         const payload: any[] = []
@@ -35,7 +37,7 @@ const init = async () => {
             payload,
           },
           (p) => {
-            console.info(p)
+            progress(p)
           }
         )
         return x
