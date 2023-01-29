@@ -72,7 +72,6 @@ class Emitter {
       } else {
         for (let i = 0; i < listeners.length; i++) {
           if (listeners[i] === fn) {
-            console.log('REMOVE LISTENER')
             listeners.splice(i, 1)
             i--
             break

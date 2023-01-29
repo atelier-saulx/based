@@ -4,11 +4,12 @@ import getUrlFromOpts from '../getUrlFromOpts'
 import { convertDataToBasedError, BasedErrorCode } from '../types/error'
 const inProgress: { [url: string]: boolean } = {}
 
-type QueueItem = [
-  StreamFunctionContents<File>,
-  (x: any) => void,
-  (err: Error) => void
-]
+type QueueItem = {
+  options: StreamFunctionContents<File>
+  resolve: (x: any) => void
+  reject: (err: Error) => void
+  progressListener?: (progress: number) => void
+}
 
 const queue: {
   [functionName: string]: QueueItem[]
@@ -23,9 +24,8 @@ const getUrl = async (client: BasedClient): Promise<string> => {
 }
 
 const reject = (err: Error, q: QueueItem[]) => {
-  q.forEach(([, , reject]) => {
-    // tmp
-    reject(err)
+  q.forEach((item) => {
+    item.reject(err)
   })
 }
 
@@ -45,7 +45,7 @@ const drainQueue = (
       queue[functionName] = []
       const body = new global.FormData()
       for (let i = 0; i < q.length; i++) {
-        const options = q[i][0]
+        const options = q[i].options
         const { contents, payload } = options
         const p = payload || {}
         body.append(`size=${contents.size},${JSON.stringify(p)}`, contents)
@@ -56,8 +56,11 @@ const drainQueue = (
           const progress =
             // @ts-ignore
             (100 * (p.loaded || p.position)) / (p.totalSize || p.total)
-
-          console.info(progress, 'upload')
+          q.forEach((item) => {
+            if (item.progressListener) {
+              item.progressListener(progress)
+            }
+          })
         }
         xhr.onerror = (p) => {
           if (xhr.status === 0 && !xhr.statusText) {
@@ -84,7 +87,7 @@ const drainQueue = (
             const x = JSON.parse(xhr.response)
             // go handle errors here?
             for (let i = 0; i < x.length; i++) {
-              q[i][1](x[i])
+              q[i].resolve(x[i])
             }
           } catch (err) {
             reject(err, q)
@@ -95,8 +98,8 @@ const drainQueue = (
         xhr.setRequestHeader('Authorization', authorization)
         xhr.send(body)
       } catch (err) {
+        console.warn('Something unexpected happened with file upload', err)
         reject(err, q)
-        console.error('Something wrong with xhr upload', err)
       }
     }, 500)
   }
@@ -105,7 +108,8 @@ const drainQueue = (
 export default async (
   client: BasedClient,
   functionName: string,
-  options: StreamFunctionContents<File>
+  options: StreamFunctionContents<File>,
+  progressListener?: (progress: number) => void
 ) => {
   console.info('😍 staged:', options.contents.name)
 
@@ -121,7 +125,7 @@ export default async (
   }
 
   return new Promise((resolve, reject) => {
-    queue[functionName].push([options, resolve, reject])
+    queue[functionName].push({ options, resolve, reject, progressListener })
     drainQueue(client, functionName, encodeAuthState(client.authState))
   })
 }

@@ -18,7 +18,7 @@ const init = async () => {
     log('Call hello', await (await fetch('http://localhost:8081/hello')).text())
   })
 
-  uploadButton('Stream file', async (files) => {
+  uploadButton('Stream file', async (files, progress) => {
     const results = await Promise.all(
       [...files].map(async (f) => {
         const payload: any[] = []
@@ -28,10 +28,16 @@ const init = async () => {
             bla: 'hello',
           })
         }
-        const x = await based.stream('files', {
-          contents: f,
-          payload,
-        })
+        const x = await based.stream(
+          'files',
+          {
+            contents: f,
+            payload,
+          },
+          (p) => {
+            console.info(p)
+          }
+        )
         return x
       })
     )
