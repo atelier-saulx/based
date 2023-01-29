@@ -153,7 +153,7 @@ export class BasedClient extends Emitter {
     if (opts) {
       this.url = await getUrlFromOpts(opts)
       if (this.opts) {
-        console.warn('replace client connect opts')
+        console.warn('    Replace based client connect opts')
         this.disconnect()
       }
       this.opts = opts

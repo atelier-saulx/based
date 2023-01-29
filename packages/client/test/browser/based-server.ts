@@ -1,4 +1,6 @@
 import { createSimpleServer } from '@based/server'
+import { BasedFunction, BasedQueryFunction } from '@based/functions'
+
 import { readStream } from '@saulx/utils'
 import fs from 'node:fs'
 import { join } from 'path'
@@ -6,6 +8,25 @@ import { join } from 'path'
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
 const TMP = join(__dirname, 'tmp')
+
+const hello: BasedFunction<void, string> = async () => {
+  return 'This is a response from hello'
+}
+
+const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
+  based,
+  payload,
+  update
+) => {
+  let cnt = 0
+  update({ cnt })
+  const int = setInterval(() => {
+    update({ cnt: ++cnt })
+  }, payload.speed)
+  return () => {
+    clearInterval(int)
+  }
+}
 
 const start = async () => {
   fs.readdir(TMP, (err, files) => {
@@ -54,9 +75,7 @@ const start = async () => {
           return true
         },
       },
-      hello: async () => {
-        return 'This is a response from hello'
-      },
+      hello,
       files: {
         maxPayloadSize: 1e10,
         stream: true,
@@ -81,16 +100,7 @@ const start = async () => {
       },
     },
     queryFunctions: {
-      counter: (based, payload, update) => {
-        let cnt = 0
-        update({ cnt })
-        const int = setInterval(() => {
-          update({ cnt: ++cnt })
-        }, payload.speed)
-        return () => {
-          clearInterval(int)
-        }
-      },
+      counter,
     },
   })
 }
