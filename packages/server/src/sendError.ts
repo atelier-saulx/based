@@ -1,4 +1,3 @@
-import uws from '@based/uws'
 import { end } from './sendHttpResponse'
 import { BasedServer } from './server'
 import {
@@ -9,27 +8,7 @@ import {
   isWsSession,
 } from '@based/functions'
 import { valueToBuffer, encodeErrorResponse } from './protocol'
-import {
-  BasedErrorCode,
-  ErrorPayload,
-  BasedErrorData,
-  createError,
-} from './error'
-
-const sendHttpErrorMessage = (
-  res: uws.HttpResponse,
-  error: BasedErrorData
-): string => {
-  const { code, message, statusCode, statusMessage } = error
-  res.writeStatus(`${statusCode} ${statusMessage}`)
-  // res.writeHeader('Access-Control-Allow-Origin', '*')
-  // res.writeHeader('Access-Control-Allow-Headers', 'content-type')
-  res.writeHeader('Content-Type', 'application/json')
-  return JSON.stringify({
-    error: message,
-    code,
-  })
-}
+import { BasedErrorCode, ErrorPayload, createError } from './error'
 
 export function sendHttpError<T extends BasedErrorCode>(
   server: BasedServer,
@@ -41,12 +20,22 @@ export function sendHttpError<T extends BasedErrorCode>(
     return
   }
   ctx.session.res.cork(() => {
+    const { code, message, statusCode, statusMessage } = createError(
+      server,
+      ctx,
+      basedCode,
+      payload
+    )
+    ctx.session.res.writeStatus(`${statusCode} ${statusMessage}`)
+    if (ctx.session.method !== 'options') {
+      ctx.session.res.writeHeader('Content-Type', 'application/json')
+    }
     end(
       ctx,
-      sendHttpErrorMessage(
-        ctx.session.res,
-        createError(server, ctx, basedCode, payload)
-      )
+      JSON.stringify({
+        error: message,
+        code,
+      })
     )
   })
 }

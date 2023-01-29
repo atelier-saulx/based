@@ -34,9 +34,11 @@ export const httpStreamFunction = (
 
   // replace this with transder encoding 'chunked'
   if (type && type.startsWith('multipart/form-data')) {
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-    // return
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+      ctx.session.corsSend = true
+    })
 
     const files: any[] = []
     let thisIsFn: BasedFunction

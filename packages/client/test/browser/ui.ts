@@ -112,8 +112,15 @@ export const logs = (): ((...args: any[]) => void) => {
         '0'
       )}</span> ${args
         .map((v) => {
+          if (v instanceof Error) {
+            return `<span style="color:red;">${v.message}</span>`
+          }
           if (typeof v === 'object') {
-            return JSON.stringify(v, null, 2)
+            return `<pre style="font-family:Andale Mono">${JSON.stringify(
+              v,
+              null,
+              2
+            )}</pre>`
           }
           return v
         })

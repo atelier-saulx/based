@@ -24,7 +24,7 @@ type FileDescriptor = {
   headersSet: number
 }
 
-// only use this if you have individual file else its just all
+// only use this if you have an individual file else its just all
 const setHeader = (file: FileDescriptor): boolean => {
   file.headersSet++
   if (file.headersSet === 2) {
@@ -152,14 +152,14 @@ export default (
         opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
 
         const firstCommaIndex = meta.indexOf(',')
-        if (firstCommaIndex !== -1 && /^size=/.test(meta)) {
+        if (firstCommaIndex !== -1 && meta.startsWith('size=')) {
           const size = meta.slice(5, firstCommaIndex)
           if (size) {
             const sizeNr = Number(size)
             file.opts.size = sizeNr
             file.stream.size = sizeNr
           }
-          const payloadRaw = meta.slice(firstCommaIndex + 1)
+          const payloadRaw = decodeURI(meta.slice(firstCommaIndex + 1))
           if (payloadRaw !== undefined && payloadRaw !== '') {
             try {
               file.opts.payload = JSON.parse(payloadRaw)

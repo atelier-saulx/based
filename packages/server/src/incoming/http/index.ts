@@ -53,11 +53,12 @@ export const httpHandler = (
     return
   }
 
+  const method = req.getMethod()
   const url = req.getUrl()
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
 
-  const method = req.getMethod()
+  console.info('INCOMING', url, path, route, method)
 
   if (route === false) {
     sendError(
@@ -138,6 +139,7 @@ export const httpHandler = (
   }
 
   if (route.query === true) {
+    // handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
@@ -183,6 +185,7 @@ export const httpHandler = (
       route
     )
   } else {
+    // handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return

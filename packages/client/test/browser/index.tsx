@@ -1,5 +1,4 @@
 import { BasedClient } from '@based/client'
-import { padLeft } from '@saulx/utils'
 import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
@@ -22,39 +21,42 @@ const init = async () => {
   uploadButton('Stream file', async (files) => {
     const results = await Promise.all(
       [...files].map(async (f) => {
-        const giantArray: any[] = []
+        const payload: any[] = []
         for (let i = 0; i < 2; i++) {
-          giantArray.push({
+          payload.push({
             i,
-            bla: padLeft('mysnur', Math.random() * 10 + 10, 'flap'),
+            bla: 'hello',
           })
         }
         const x = await based.stream('files', {
           contents: f,
-          payload: giantArray,
+          payload,
         })
-        console.info('FILE', f.name, 'complete')
         return x
       })
     )
-    console.info('--- results done???')
     results.forEach((r) => {
-      // log(r)
+      r.correctPayload = r.payload.length === 2
+      log(r)
       log(
-        `<span><img style="height:50px" src="http://localhost:8081/file?id=${r.id}" /></span>`
+        `<span><img style="height:150px" src="http://localhost:8081/file?id=${r.id}" /></span>`
       )
     })
   })
 
   uploadButton('Stream doesNotExist', async (files) => {
-    await Promise.all(
-      [...files].map(async (f) => {
-        const x = await based.stream('doesNotExist', {
-          contents: f,
+    try {
+      await Promise.all(
+        [...files].map(async (f) => {
+          const x = await based.stream('doesNotExist', {
+            contents: f,
+          })
+          return x
         })
-        return x
-      })
-    )
+      )
+    } catch (err) {
+      log(err)
+    }
   })
 
   toggleButton('Disconnect', () => {

@@ -1,14 +1,17 @@
 import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents } from './types'
 import getUrlFromOpts from '../getUrlFromOpts'
+import { convertDataToBasedError, BasedErrorCode } from '../types/error'
 const inProgress: { [url: string]: boolean } = {}
 
+type QueueItem = [
+  StreamFunctionContents<File>,
+  (x: any) => void,
+  (err: Error) => void
+]
+
 const queue: {
-  [functionName: string]: [
-    StreamFunctionContents<File>,
-    (x: any) => void,
-    (err: Error) => void
-  ][]
+  [functionName: string]: QueueItem[]
 } = {}
 
 const getUrl = async (client: BasedClient): Promise<string> => {
@@ -17,6 +20,13 @@ const getUrl = async (client: BasedClient): Promise<string> => {
     url = await url()
   }
   return url.replace(/^ws/, 'http')
+}
+
+const reject = (err: Error, q: QueueItem[]) => {
+  q.forEach(([, , reject]) => {
+    // tmp
+    reject(err)
+  })
 }
 
 const drainQueue = (
@@ -46,38 +56,38 @@ const drainQueue = (
           const progress =
             // @ts-ignore
             (100 * (p.loaded || p.position)) / (p.totalSize || p.total)
-          console.info(progress, 'upload§...')
+
+          console.info(progress, 'upload')
         }
         xhr.onerror = (p) => {
-          console.error(
-            'error!',
-            p,
-            'flap',
-            xhr.responseText,
-            xhr.status,
-            xhr.statusText
-          )
+          if (xhr.status === 0 && !xhr.statusText) {
+            const err = convertDataToBasedError({
+              message: `[${functionName}] Function not found`,
+              code: BasedErrorCode.FunctionNotFound,
+            })
+            reject(err, q)
+          } else {
+            // go handle this!
+            console.error(p)
+          }
         }
         xhr.timeout = 1e3 * 60 * 60 * 24
-        xhr.onabort = (p) => {
-          console.error('abort', p)
+        xhr.onabort = () => {
+          const err = new Error('File upload aborted before it finished')
+          reject(err, q)
         }
-        xhr.ontimeout = (p) => {
-          console.error('on timeout', p)
+        xhr.ontimeout = () => {
+          console.error('on timeout')
         }
         xhr.onload = () => {
-          console.info('-->', xhr.response)
           try {
             const x = JSON.parse(xhr.response)
+            // go handle errors here?
             for (let i = 0; i < x.length; i++) {
               q[i][1](x[i])
             }
           } catch (err) {
-            console.error('something wrong with file upload', err)
-            q.forEach(([, , reject]) => {
-              // tmp
-              reject(err)
-            })
+            reject(err, q)
           }
         }
         xhr.open('POST', url + '/' + functionName)
@@ -85,7 +95,7 @@ const drainQueue = (
         xhr.setRequestHeader('Authorization', authorization)
         xhr.send(body)
       } catch (err) {
-        /* handle error */
+        reject(err, q)
         console.error('Something wrong with xhr upload', err)
       }
     }, 500)

@@ -8,18 +8,18 @@ export const end = (
   if (!ctx.session) {
     return
   }
-  const type = ctx.session.headers['content-type']
-  if (!(type && type.startsWith('multipart/form-data'))) {
+
+  if (!ctx.session.corsSend) {
     ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
     ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
   }
 
-  // only allowed headers
-  if (payload === undefined) {
+  if (payload === undefined || ctx.session.method === 'options') {
     ctx.session.res.end()
   } else {
     ctx.session.res.end(payload)
   }
+
   ctx.session.res = null
   ctx.session.req = null
   ctx.session = null
