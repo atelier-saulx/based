@@ -18,6 +18,28 @@ const init = async () => {
     log('Call hello', await (await fetch('http://localhost:8081/hello')).text())
   })
 
+  button('Fetch stream files', async () => {
+    const payload: any[] = []
+    for (let i = 0; i < 2000; i++) {
+      payload.push({
+        i,
+        bla: 'hello',
+      })
+    }
+    log(
+      'Fetch stream files',
+      await (
+        await fetch('http://localhost:8081/files', {
+          method: 'post',
+          body: JSON.stringify(payload),
+          headers: {
+            'content-type': 'application/json',
+          },
+        })
+      ).text()
+    )
+  })
+
   // add number of files!
   uploadButton('Stream file', async (files, progress) => {
     log('uploading', files.length + ' files')

@@ -14,7 +14,7 @@ export type AuthState = {
 export type Authorize = (
   based: BasedFunctionClient,
   context: Context<HttpSession | WebSocketSession>,
-  name: string,
+  name: string, // name as generic dope
   payload?: any
 ) => Promise<boolean>
 

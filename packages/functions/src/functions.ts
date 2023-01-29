@@ -2,14 +2,14 @@ import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 import { Stream } from 'stream'
 
-export type ObservableUpdateFunction = {
+export type ObservableUpdateFunction<K = any> = {
   (
-    data: any,
+    data: K,
     checksum?: number,
     diff?: any,
     fromChecksum?: number,
     isDeflate?: boolean,
-    rawData?: any,
+    rawData?: K,
     // todo fix there errors TODO: make extra package 'errors' for client and server
     err?: any
   ): void
@@ -31,29 +31,31 @@ export type BasedFunction<P = any, K = any> = (
   ctx: Context
 ) => Promise<K>
 
-export type BasedStreamFunction<P = any, K = any> = BasedFunction<
-  {
-    payload?: P
-    mimeType: string
+export type StreamPayload<P = any> = {
+  payload?: P
+  mimeType: string
+  size: number
+  stream: Stream & {
     size: number
-    stream: Stream & {
-      size: number
-      receivedBytes: number
-    }
-    fileName?: string
-    extension?: string
-  },
+    receivedBytes: number
+  }
+  fileName?: string
+  extension?: string
+}
+
+export type BasedStreamFunction<P = any, K = any> = BasedFunction<
+  StreamPayload<P>,
   K
 >
 
-export type BasedQueryFunction<P = any> =
+export type BasedQueryFunction<P = any, K = any> =
   | ((
       based: BasedFunctionClient,
       payload: P,
-      update: ObservableUpdateFunction
+      update: ObservableUpdateFunction<K>
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
       payload: P,
-      update: ObservableUpdateFunction
+      update: ObservableUpdateFunction<K>
     ) => () => void)

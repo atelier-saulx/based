@@ -20,6 +20,10 @@ const start = async () => {
   await createSimpleServer({
     port: 8081,
     auth: {
+      authorize: async (based, ctx, name, payload) => {
+        console.info('Auth', name, payload)
+        return true
+      },
       verifyAuthState: (based, ctx, authState) => {
         if (authState.token === 'power' && !authState.userId) {
           return { ...authState, userId: 'power-user-id' }

@@ -6,7 +6,12 @@ import {
   BasedFunctionRoute,
   isObservableFunctionSpec,
 } from '../../../functions'
-import { HttpSession, Context, BasedFunction } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  BasedFunction,
+  StreamPayload,
+} from '@based/functions'
 import { authorizeRequest } from '../authorize'
 import { BasedErrorCode } from '../../../error'
 import multipartStream from './multipartStream'
@@ -48,7 +53,7 @@ export const httpStreamFunction = (
         authorizeRequest(
           server,
           ctx,
-          p.payload,
+          p,
           route,
           () => {
             if (!thisIsFn) {
@@ -97,27 +102,26 @@ export const httpStreamFunction = (
 
   const stream = createDataStream(server, route, ctx, size)
 
+  const streamPayload: StreamPayload = {
+    payload,
+    stream,
+    size,
+    mimeType: type,
+    extension: getExtension(type) || '',
+  }
+
   // destroy stream from context
   authorizeRequest(
     server,
     ctx,
-    payload,
+    streamPayload,
     route,
-    (payload) => {
+    () => {
       server.functions
         .install(route.name)
         .then((spec) => {
           if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-            const streamPayload = {
-              payload,
-              stream,
-              size,
-              mimeType: type,
-              extension: getExtension(type) || '',
-            }
-
             const fn = spec.function
-
             fn(server.client, streamPayload, ctx)
               .catch((err) => {
                 stream.destroy()
