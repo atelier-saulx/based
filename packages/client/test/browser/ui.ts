@@ -28,15 +28,14 @@ export const button = (label: string, fn: () => void) => {
 
 export const uploadButton = (
   label: string,
-  fn: (files: File[], p?: (progress: number) => void) => void
+  fn: (files: File[], p: (progress: number) => void) => void
 ) => {
   const button = document.createElement('label')
 
-  button.innerHTML = `<span style="cursor:pointer"><div><div></div></div>${label}</span>
+  button.innerHTML = `<span style="cursor:pointer">${label}</span>
 <input multiple type="file" style="display: none">`
 
   button.style.padding = '16px'
-  button.style.paddingLeft = '46px'
   button.style.border = '2px solid #000'
   button.style.borderRadius = '4px'
   button.style.fontSize = '14px'
@@ -46,30 +45,18 @@ export const uploadButton = (
   button.style.margin = '10px'
   button.style.fontFamily = 'Andale Mono'
 
-  // @ts-ignore
-  const loader: HTMLDivElement = button.children[0].children[0]
-  loader.style.height = '20px'
-  loader.style.width = '20px'
-  loader.style.position = 'absolute'
-  loader.style.top = '12px'
-  loader.style.left = '14px'
-  loader.style.borderRadius = '50%'
-  loader.style.overflow = 'hidden'
-  loader.style.border = '2px solid #000'
+  const info = button.children[0]
 
-  // @ts-ignore
-  const loaderFill: HTMLDivElement = loader.children[0]
-  loaderFill.style.backgroundColor = 'black'
-  loaderFill.style.minHeight = '0px'
-  loaderFill.style.minWidth = '20px'
-  loaderFill.style.transition = 'minHeight 0.2s'
   const update = (p) => {
-    loaderFill.style = Math.round(p * 20) + 'px'
+    info.innerHTML = Math.round(p * 100) + '%'
+    if (p === 1) {
+      info.innerHTML = label
+    }
   }
 
   button.children[1].addEventListener('input', () => {
     // @ts-ignore
-    fn(button.children[1].files)
+    fn(button.children[1].files, update)
   })
 
   buttonHolder.appendChild(button)

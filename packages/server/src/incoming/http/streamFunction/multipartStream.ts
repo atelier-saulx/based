@@ -37,6 +37,49 @@ const toBuffer = (str: string, firstWritten: boolean): Buffer => {
   return Buffer.from(firstWritten ? str + '\r\n' : str, 'binary')
 }
 
+const handleMeta = (
+  file: FileDescriptor,
+  line: string,
+  meta: string,
+  isWriting: boolean,
+  promiseQ: any[],
+  fn: (payload: any) => Promise<any>
+): boolean => {
+  const opts = file.opts
+  opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
+  const firstCommaIndex = meta.indexOf(',')
+  if (firstCommaIndex !== -1 && meta.startsWith('size=')) {
+    const size = meta.slice(5, firstCommaIndex)
+    if (size) {
+      const sizeNr = Number(size)
+      file.opts.size = sizeNr
+      file.stream.size = sizeNr
+    }
+    const payloadRaw = decodeURI(meta.slice(firstCommaIndex + 1))
+    if (payloadRaw !== undefined && payloadRaw !== '') {
+      try {
+        file.opts.payload = JSON.parse(payloadRaw)
+      } catch (err) {
+        file.opts.payload = payloadRaw
+      }
+    }
+  }
+  isWriting = setHeader(file)
+  if (isWriting) {
+    promiseQ.push(
+      fn({
+        payload: file.opts.payload || {},
+        fileName: file.opts.name,
+        mimeType: file.opts.type,
+        extension: file.opts.extension,
+        size: file.opts.size || 0,
+        stream: file.stream,
+      })
+    )
+  }
+  return isWriting
+}
+
 export default (
   ctx: Context<HttpSession>,
   server: BasedServer,
@@ -58,6 +101,7 @@ export default (
   let boundary = null
   let prevLine: string
   let isWriting = false
+  let collectMeta: string
   let total = 0
   let progress = 0
 
@@ -142,46 +186,33 @@ export default (
         return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
       }
 
-      if (!isWriting && line.includes('Content-Disposition')) {
+      if (!isWriting && collectMeta) {
+        console.log('COLLECT', line)
+        // multi line span!
+        const fullMeta = collectMeta + line
+        const meta = fullMeta.match(/name="(.*?)"/)?.[1]
+        if (!meta) {
+          console.info('collect lines!!! (no error)')
+          collectMeta = fullMeta
+          continue
+        }
+        collectMeta = ''
+        isWriting = handleMeta(file, line, meta, isWriting, promiseQ, fn)
+        continue
+      }
+
+      if (!collectMeta && !isWriting && line.includes('Content-Disposition')) {
         const meta = line.match(/name="(.*?)"/)?.[1]
         if (!meta) {
+          if (/name="(.*?)/.test(line)) {
+            collectMeta = line
+            continue
+          }
           // TODO: invalid file error
+          console.info('ILLEGAL FILE NO META', line)
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
-        const opts = file.opts
-        opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
-
-        const firstCommaIndex = meta.indexOf(',')
-        if (firstCommaIndex !== -1 && meta.startsWith('size=')) {
-          const size = meta.slice(5, firstCommaIndex)
-          if (size) {
-            const sizeNr = Number(size)
-            file.opts.size = sizeNr
-            file.stream.size = sizeNr
-          }
-          const payloadRaw = decodeURI(meta.slice(firstCommaIndex + 1))
-          if (payloadRaw !== undefined && payloadRaw !== '') {
-            try {
-              file.opts.payload = JSON.parse(payloadRaw)
-            } catch (err) {
-              file.opts.payload = payloadRaw
-            }
-          }
-        }
-
-        isWriting = setHeader(file)
-        if (isWriting) {
-          promiseQ.push(
-            fn({
-              payload: file.opts.payload || {},
-              fileName: file.opts.name,
-              mimeType: file.opts.type,
-              extension: file.opts.extension,
-              size: file.opts.size || 0,
-              stream: file.stream,
-            })
-          )
-        }
+        isWriting = handleMeta(file, line, meta, isWriting, promiseQ, fn)
         continue
       }
 
@@ -191,6 +222,7 @@ export default (
         )?.[1]
         if (!mimeType) {
           // TODO: invalid file (can speficy in route potentialy...)
+          console.info('ILLEGAL FILE NO MIMETYPE')
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
         file.opts.type = mimeType
