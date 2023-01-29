@@ -24,7 +24,7 @@ export const isFileContents = (
 export type StreamFunctionStream = {
   contents: ReadableStream
   payload?: any
-  contentLength: number
+  size: number
   mimeType?: string
   serverKey?: string
   extension?: string
@@ -47,5 +47,4 @@ export type StreamHeaders = {
   'Content-Length'?: string
   'Content-Type': string
   Authorization: string
-  Payload?: string
 }

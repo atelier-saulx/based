@@ -17,7 +17,6 @@ import {
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
 import { parseAuthState } from '../../auth'
-import { parsePayload } from '../../protocol'
 import { end } from '../../sendHttpResponse'
 
 let clientId = 0
@@ -172,18 +171,14 @@ export const httpHandler = (
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
+
     if (ctx.session.headers['content-length'] === 0) {
       // zero is also not allowed for streams
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
       return
     }
 
-    httpStreamFunction(
-      server,
-      ctx,
-      parsePayload(ctx.session.req.getHeader('payload')),
-      route
-    )
+    httpStreamFunction(server, ctx, route)
   } else {
     // handle HEAD
     if (method !== 'post' && method !== 'get') {

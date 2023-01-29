@@ -42,7 +42,10 @@ const start = async () => {
     port: 8081,
     auth: {
       authorize: async (based, ctx, name, payload) => {
-        console.info('Auth', name, payload)
+        console.info('--> Auth', name, payload)
+        if (name === 'notAllowedFiles') {
+          return false
+        }
         return true
       },
       verifyAuthState: (based, ctx, authState) => {
@@ -76,6 +79,18 @@ const start = async () => {
         },
       },
       hello,
+      brokenFiles: {
+        stream: true,
+        function: async () => {
+          throw new Error('broken')
+        },
+      },
+      notAllowedFiles: {
+        stream: true,
+        function: async () => {
+          return { hello: true }
+        },
+      },
       files: {
         maxPayloadSize: 1e10,
         stream: true,

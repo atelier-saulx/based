@@ -85,11 +85,18 @@ const drainQueue = (
         xhr.onload = () => {
           try {
             const x = JSON.parse(xhr.response)
-            // go handle errors here?
-
-            console.log('???', x)
             for (let i = 0; i < x.length; i++) {
-              q[i].resolve(x[i])
+              const result = x[i]
+              if (
+                result.code &&
+                result.route &&
+                result.message &&
+                result.statusCode
+              ) {
+                q[i].reject(convertDataToBasedError(result))
+              } else {
+                q[i].resolve(x[i])
+              }
             }
           } catch (err) {
             reject(err, q)

@@ -22,16 +22,15 @@ test.serial('stream functions (small over http + file)', async (t) => {
   })
 
   const result = await (
-    await fetch('http://localhost:9910/hello', {
+    await fetch('http://localhost:9910/hello?bla', {
       method: 'post',
       headers: {
-        payload: 'bla',
         'content-type': 'application/json',
       },
       body: JSON.stringify({ name: 'my snurky' }),
     })
   ).json()
-  t.deepEqual(result, { bla: true, payload: 'bla' })
+  t.deepEqual(result, { bla: true, payload: { bla: true } })
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
   server.destroy()

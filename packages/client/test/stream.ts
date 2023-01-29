@@ -49,16 +49,13 @@ test.serial('stream functions - streamContents', async (t) => {
         idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
-        function: async (
-          based,
-          { stream, payload, mimeType, contentLength }
-        ) => {
+        function: async (based, { stream, payload, mimeType, size }) => {
           let cnt = 0
           stream.on('data', () => {
             cnt++
           })
           await readStream(stream)
-          return { payload, cnt, mimeType, contentLength }
+          return { payload, cnt, mimeType, size }
         },
       },
     },
@@ -96,14 +93,13 @@ test.serial('stream functions - streamContents', async (t) => {
   streamBits()
   const s = await client.stream('hello', {
     payload: { power: true },
-    contentLength: payload.byteLength,
+    size: payload.byteLength,
     mimeType: 'pipo',
     contents: stream,
   })
   t.true(s.cnt > 5)
-  t.is(s.contentLength, payload.byteLength)
   t.is(s.mimeType, 'pipo')
-  t.is(s.contentLength, payload.byteLength)
+  t.is(s.size, payload.byteLength)
   t.deepEqual(s.payload, { power: true })
   client.disconnect()
   await server.destroy()
@@ -157,7 +153,7 @@ test.serial('stream functions - streamContents error', async (t) => {
   await t.throwsAsync(
     client.stream('hello', {
       payload: { power: true },
-      contentLength: payload.byteLength,
+      size: payload.byteLength,
       contents: stream,
     })
   )

@@ -1,5 +1,5 @@
 import { DataStream } from './DataStream'
-import { HttpSession, Context } from '@based/functions'
+import { HttpSession, Context, StreamPayload } from '@based/functions'
 import { BasedErrorCode } from '../../../error'
 import { sendError } from '../../../sendError'
 import { sendHttpResponse } from '../../../sendHttpResponse'
@@ -43,7 +43,7 @@ const handleMeta = (
   meta: string,
   isWriting: boolean,
   promiseQ: any[],
-  fn: (payload: any) => Promise<any>
+  fn: (payload: StreamPayload) => Promise<any>
 ): boolean => {
   const opts = file.opts
   opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
@@ -83,14 +83,9 @@ const handleMeta = (
 export default (
   ctx: Context<HttpSession>,
   server: BasedServer,
-  payload: any,
   route: BasedFunctionRoute,
-  fn: (payload: any) => Promise<any>
+  fn: (payload: StreamPayload) => Promise<any>
 ) => {
-  if (!payload || (!payload && typeof payload !== 'object')) {
-    payload = {}
-  }
-
   const files: FileDescriptor[] = []
 
   const contentLength = ctx.session.headers['content-length']
@@ -256,7 +251,7 @@ export default (
       Promise.allSettled(promiseQ).then((results) => {
         const r = results.map((v) => {
           if (v.status === 'rejected') {
-            return { err: v.reason }
+            return v.reason
           } else {
             return v.value
           }

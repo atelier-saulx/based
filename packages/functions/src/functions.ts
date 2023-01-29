@@ -1,6 +1,6 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
-import { Stream } from 'stream'
+import { Duplex } from 'stream'
 
 export type ObservableUpdateFunction<K = any> = {
   (
@@ -35,7 +35,7 @@ export type StreamPayload<P = any> = {
   payload?: P
   mimeType: string
   size: number
-  stream: Stream & {
+  stream: Duplex & {
     size: number
     receivedBytes: number
   }

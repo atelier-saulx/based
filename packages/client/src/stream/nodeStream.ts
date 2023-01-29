@@ -10,8 +10,8 @@ import {
 } from './types'
 import { BasedClient, encodeAuthState } from '..'
 import getUrlFromOpts from '../getUrlFromOpts'
-import { parsePayload } from './parsePayload'
 import { convertDataToBasedError } from '../types/error'
+import { serializeQuery } from '@saulx/utils'
 
 const stat = promisify(fs.stat)
 
@@ -41,7 +41,7 @@ export const uploadFilePath = async (
       contents: fs.createReadStream(options.path),
       mimeType: options.mimeType,
       extension: options.path.match(/\.(.*?)$/)?.[1],
-      contentLength: info.size,
+      size: info.size,
       payload: options.payload,
       serverKey: options.serverKey,
     })
@@ -54,14 +54,15 @@ const streamRequest = (
   stream: Readable,
   name: string,
   url: string,
-  headers: StreamHeaders
+  headers: StreamHeaders,
+  query: string
 ) => {
   const [, protocol, host, port] = parseUrlRe.exec(url)
-
+  // query
   const httpOptions = {
     port,
     host: host,
-    path: '/' + name,
+    path: '/' + name + query,
     method: 'POST',
     headers,
   }
@@ -120,7 +121,7 @@ export const uploadFileStream = async (
   }
 
   const headers: StreamHeaders = {
-    'Content-Length': String(options.contentLength),
+    'Content-Length': String(options.size),
     'Content-Type': options.mimeType || 'text/plain',
     Authorization: encodeAuthState(client.authState),
   }
@@ -129,9 +130,10 @@ export const uploadFileStream = async (
     headers['Content-Extension'] = options.extension
   }
 
+  let q = ''
   if (options.payload) {
-    headers.Payload = parsePayload(options.payload)
+    q = '?' + serializeQuery(options.payload)
   }
 
-  return streamRequest(options.contents, name, url, headers)
+  return streamRequest(options.contents, name, url, headers, q)
 }

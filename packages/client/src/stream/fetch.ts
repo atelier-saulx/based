@@ -2,7 +2,7 @@ import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents, StreamHeaders } from './types'
 import fetch from 'cross-fetch'
 import getUrlFromOpts from '../getUrlFromOpts'
-import { parsePayload } from './parsePayload'
+import { serializeQuery } from '@saulx/utils'
 
 export default async (
   client: BasedClient,
@@ -24,11 +24,12 @@ export default async (
     Authorization: encodeAuthState(client.authState),
   }
 
+  let q = ''
   if (options.payload) {
-    headers.Payload = parsePayload(options.payload)
+    q = '?' + serializeQuery(options.payload)
   }
 
-  const result = await fetch(url.replace(/^ws/, 'http') + '/' + name, {
+  const result = await fetch(url.replace(/^ws/, 'http') + '/' + name + q, {
     method: 'POST',
     cache: 'no-cache',
     headers,
