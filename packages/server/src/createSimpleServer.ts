@@ -1,6 +1,11 @@
 import { AuthConfig } from './auth'
 import { BasedFunctionSpec, BasedObservableFunctionSpec } from './functions'
-import { BasedQueryFunction, BasedFunction } from '@based/functions'
+import {
+  BasedQueryFunction,
+  BasedFunction,
+  Context,
+  Session,
+} from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
 
@@ -18,6 +23,10 @@ export type SimpleServerOptions = {
   disableRest?: boolean
   cert?: string
   auth?: AuthConfig
+  ws?: {
+    open: (client: Context<Session>) => void
+    close: (client: Context<Session>) => void
+  }
   install?: (opts: {
     server: BasedServer
     name: string
@@ -112,6 +121,7 @@ export async function createSimpleServer(
     port: props.port,
     auth: props.auth,
     cert: props.cert,
+    ws: props.ws,
     disableRest: props.disableRest,
     key: props.key,
     functions: {
