@@ -36,6 +36,38 @@ const init = async () => {
             contents: f,
             payload,
           },
+          progress
+        )
+        return x
+      })
+    )
+    results.forEach((r) => {
+      r.correctPayload = r.payload.length === 2
+      log(r)
+      log(
+        `<span><img style="height:150px" src="http://localhost:8081/file?id=${r.id}" /></span>`
+      )
+    })
+  })
+
+  // add number of files!
+  uploadButton('Stream file large payload', async (files, progress) => {
+    log('uploading', files.length + ' files')
+    const results = await Promise.all(
+      [...files].map(async (f) => {
+        const payload: any[] = []
+        for (let i = 0; i < 2e4; i++) {
+          payload.push({
+            i,
+            bla: 'hello',
+          })
+        }
+        const x = await based.stream(
+          'files',
+          {
+            contents: f,
+            payload,
+          },
           (p) => {
             progress(p)
           }
@@ -44,8 +76,12 @@ const init = async () => {
       })
     )
     results.forEach((r) => {
-      r.correctPayload = r.payload.length === 2
-      log(r)
+      log(
+        'correct-payload',
+        r.payload.length === 2e4,
+        'array-length',
+        r.payload.length
+      )
       log(
         `<span><img style="height:150px" src="http://localhost:8081/file?id=${r.id}" /></span>`
       )

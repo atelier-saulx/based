@@ -187,12 +187,9 @@ export default (
       }
 
       if (!isWriting && collectMeta) {
-        console.log('COLLECT', line)
-        // multi line span!
         const fullMeta = collectMeta + line
         const meta = fullMeta.match(/name="(.*?)"/)?.[1]
         if (!meta) {
-          console.info('collect lines!!! (no error)')
           collectMeta = fullMeta
           continue
         }
@@ -209,7 +206,6 @@ export default (
             continue
           }
           // TODO: invalid file error
-          console.info('ILLEGAL FILE NO META', line)
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
         isWriting = handleMeta(file, line, meta, isWriting, promiseQ, fn)
@@ -222,9 +218,9 @@ export default (
         )?.[1]
         if (!mimeType) {
           // TODO: invalid file (can speficy in route potentialy...)
-          console.info('ILLEGAL FILE NO MIMETYPE')
           return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
         }
+
         file.opts.type = mimeType
         const extension = getExtension(mimeType)
         if (extension) {

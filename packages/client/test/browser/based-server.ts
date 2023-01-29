@@ -57,7 +57,7 @@ const start = async () => {
         maxPayloadSize: 1e10,
         stream: true,
         function: async (based, x) => {
-          const { stream, mimeType, payload } = x
+          const { stream, mimeType, payload, size } = x
           const id = x.fileName || 'untitled'
           x.stream.on('progress', (p) =>
             console.info(p, x.fileName, x.mimeType, stream)
@@ -65,7 +65,14 @@ const start = async () => {
           const p = join(TMP, id + '.' + x.extension)
           stream.pipe(fs.createWriteStream(p))
           files[id] = { file: p, mimeType }
-          return { success: 'filetime', id, mimeType, payload }
+          return {
+            success: 'filetime',
+            id,
+            mimeType,
+            payload,
+            size,
+            rb: stream.receivedBytes,
+          }
         },
       },
     },

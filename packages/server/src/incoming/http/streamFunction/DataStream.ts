@@ -33,6 +33,7 @@ export class DataStream extends Duplex {
     if (!this.size) {
       this.size = this.receivedBytes
     }
+    this.receivedBytes = this.size
     if (this.progessTimer) {
       clearTimeout(this.progessTimer)
       this.progessTimer = null

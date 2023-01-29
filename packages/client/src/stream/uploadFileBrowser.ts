@@ -1,5 +1,5 @@
 import { BasedClient, encodeAuthState } from '..'
-import { StreamFunctionContents } from './types'
+import { StreamFunctionContents, ProgressListener } from './types'
 import getUrlFromOpts from '../getUrlFromOpts'
 import { convertDataToBasedError, BasedErrorCode } from '../types/error'
 const inProgress: { [url: string]: boolean } = {}
@@ -8,7 +8,7 @@ type QueueItem = {
   options: StreamFunctionContents<File>
   resolve: (x: any) => void
   reject: (err: Error) => void
-  progressListener?: (progress: number) => void
+  progressListener?: ProgressListener
 }
 
 const queue: {
@@ -58,7 +58,7 @@ const drainQueue = (
             (p.loaded || p.position) / (p.totalSize || p.total)
           q.forEach((item) => {
             if (item.progressListener) {
-              item.progressListener(progress)
+              item.progressListener(progress, q.length)
             }
           })
         }
@@ -111,7 +111,7 @@ export default async (
   client: BasedClient,
   functionName: string,
   options: StreamFunctionContents<File>,
-  progressListener?: (progress: number) => void
+  progressListener?: ProgressListener
 ) => {
   if (!client.connected) {
     await client.once('connect')

@@ -1,5 +1,16 @@
 import { padLeft } from '@saulx/utils'
 
+const debounce = (callback: Function, wait: number = 1) => {
+  let timeoutId: NodeJS.Timeout
+  return (...args) => {
+    window.clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => {
+      // eslint-disable-next-line
+      callback.apply(null, args)
+    }, wait)
+  }
+}
+
 document.body.style.padding = '10px'
 document.body.style.display = 'flex'
 document.body.style.height = '100vh'
@@ -47,12 +58,12 @@ export const uploadButton = (
 
   const info = button.children[0]
 
-  const update = (p) => {
+  const update = debounce((p) => {
     info.innerHTML = Math.round(p * 100) + '%'
     if (p === 1) {
       info.innerHTML = label
     }
-  }
+  })
 
   button.children[1].addEventListener('input', () => {
     // @ts-ignore
@@ -124,7 +135,7 @@ export const logs = (): ((...args: any[]) => void) => {
         3,
         '0'
       )}</span> ${args
-        .map((v) => {
+        .map((v, i) => {
           if (v instanceof Error) {
             return `<span style="color:red;">${v.message}</span>`
           }
@@ -135,9 +146,10 @@ export const logs = (): ((...args: any[]) => void) => {
               2
             )}</pre>`
           }
-          return v
+          return i % 2 ? v + ', ' : v + ': '
         })
-        .join(': ')}</div>`
+        .join('')
+        .slice(0, -2)}</div>`
     )
 
     if (logs.length > 250) {

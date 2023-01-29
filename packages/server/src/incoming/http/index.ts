@@ -58,7 +58,7 @@ export const httpHandler = (
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
 
-  console.info('INCOMING', url, path, route, method)
+  // console.info('INCOMING', url, path, route, method)
 
   if (route === false) {
     sendError(

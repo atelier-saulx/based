@@ -111,7 +111,7 @@ export const httpStreamFunction = (
             const streamPayload = {
               payload,
               stream,
-              contentLength: size,
+              size,
               mimeType: type,
               extension: getExtension(type) || '',
             }

@@ -4,6 +4,8 @@ export type ReadableStream = {
   // _readableState?: object
 }
 
+export type ProgressListener = (progress: number, files: number) => void
+
 export type StreamFunctionContents<
   F = Buffer | ArrayBuffer | string | File | Blob
 > = {
