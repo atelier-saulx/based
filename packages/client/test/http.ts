@@ -13,6 +13,29 @@ import { encodeAuthState } from '../src/index'
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
+test.serial.only('functions (custom headers)', async (t) => {
+  const server = await createSimpleServer({
+    port: 9910,
+    functions: {
+      hello: {
+        headers: ['bla'],
+        function: async (based, payload, ctx) => {
+          return ctx.session?.headers.bla
+        },
+      },
+    },
+  })
+  const x = await (
+    await fetch('http://localhost:9910/hello', {
+      headers: {
+        bla: 'snurp',
+      },
+    })
+  ).text()
+  t.is(x, 'snurp')
+  await server.destroy()
+})
+
 test.serial('functions (over http)', async (t) => {
   const store: {
     [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
@@ -194,30 +217,6 @@ test.serial('get (over http)', async (t) => {
   t.is(Object.keys(server.functions.specs).length, 0)
 
   server.destroy()
-})
-
-test.serial.only('functions (custom headers)', async (t) => {
-  const server = await createSimpleServer({
-    functions: {
-      hello: {
-        function: async (based, payload, ctx) => {
-          console.info(ctx.session?.headers)
-          return 'snap je'
-        },
-      },
-    },
-  })
-
-  const x = await (
-    await fetch('http://localhost:9910', {
-      headers: {
-        bla: 'snurp',
-      },
-    })
-  ).text()
-
-  t.is(x, 'snap je')
-  await server.destroy()
 })
 
 test.serial('functions (over http + contentEncoding)', async (t) => {

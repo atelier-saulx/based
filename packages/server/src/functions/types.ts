@@ -8,17 +8,15 @@ import { BasedServer } from '../server'
 
 type Route = {
   name: string
-  headers?: string[]
   path?: string
   maxPayloadSize?: number
   rateLimitTokens?: number
   public?: boolean
+  headers?: string[]
   internalOnly?: boolean
 }
 
-export type BasedFunctionRoute = Route & {
-  httpHeaders?: string[]
-}
+export type BasedFunctionRoute = Route
 
 export type BasedQueryFunctionRoute = Route & {
   query: true
@@ -26,7 +24,6 @@ export type BasedQueryFunctionRoute = Route & {
 
 export type BasedStreamFunctionRoute = Route & {
   stream: true
-  httpHeaders?: string[]
 }
 
 export type BasedQueryFunctionSpec = {

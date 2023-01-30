@@ -104,6 +104,12 @@ export const httpHandler = (
     },
   }
 
+  if (route.headers) {
+    for (const header of route.headers) {
+      ctx.session.headers[header] = req.getHeader(header)
+    }
+  }
+
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.http)
   ) {
