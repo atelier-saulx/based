@@ -38,8 +38,8 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     return { name, stream }
   }
 
-  renewAuthState(ctx: Context<Session>): void {
-    this.server.auth.renewAuthState(ctx)
+  renewAuthState(ctx: Context<Session>, authState?: AuthState): void {
+    this.server.auth.renewAuthState(ctx, authState)
   }
 
   sendAuthState(ctx: Context<Session>, authState: AuthState): void {
