@@ -78,7 +78,7 @@ export async function createSimpleServer(
           function: fn,
           name,
           checksum: 1,
-          maxPayloadSize: 543,
+          maxPayloadSize: 5e4,
           rateLimitTokens: 1,
         }
       } else {
