@@ -1,6 +1,7 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
+import fetch from 'cross-fetch'
 
 test.serial('nested functions internal only', async (t) => {
   const client = new BasedClient()
@@ -24,5 +25,7 @@ test.serial('nested functions internal only', async (t) => {
   t.is(await client.call('hello'), 'internal')
   await t.throwsAsync(client.call('snuix'))
   await t.throwsAsync(client.call('helloInternal'))
+  const r = await fetch('http://localhost:9910/helloInternal')
+  t.is(r.status, 404)
   await server.destroy()
 })
