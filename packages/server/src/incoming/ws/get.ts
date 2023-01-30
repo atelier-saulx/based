@@ -10,7 +10,6 @@ import {
   createObs,
   destroyObs,
   subscribeNext,
-  verifyRoute,
   getObs,
   hasObs,
   start,
@@ -18,11 +17,19 @@ import {
   ActiveObservable,
   sendObsGetError,
 } from '../../observable'
-import { BasedFunctionRoute } from '../../functions'
+import { BasedQueryFunctionRoute } from '../../functions'
 import { WebSocketSession, Context } from '@based/functions'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'
+import { verifyRoute } from '../../verifyRoute'
+import {
+  AuthErrorHandler,
+  authorize,
+  IsAuthorizedHandler,
+} from '../../authorize'
+import { installFn } from '../../installFn'
+import { BinaryMessageHandler } from './types'
 
 const sendGetData = (
   server: BasedServer,
@@ -51,12 +58,11 @@ const getFromExisting = (
   server: BasedServer,
   id: number,
   ctx: Context<WebSocketSession>,
-  checksum: number,
-  name: string
+  checksum: number
 ) => {
   const obs = getObs(server, id)
   if (obs.error) {
-    sendObsGetError(server, ctx, id, name, obs.error)
+    sendObsGetError(server, ctx, id, obs.error)
     return
   }
   if (obs.cache) {
@@ -65,59 +71,62 @@ const getFromExisting = (
   }
   subscribeNext(obs, (err) => {
     if (err) {
-      sendObsGetError(server, ctx, id, name, err)
+      sendObsGetError(server, ctx, id, err)
     } else {
       sendGetData(server, id, obs, checksum, ctx)
     }
   })
 }
 
-const install = (
-  server: BasedServer,
-  name: string,
-  ctx: Context<WebSocketSession>,
-  route: BasedFunctionRoute,
-  id: number,
-  checksum: number,
-  payload: any
-) => {
-  server.functions
-    .install(name)
-    .then((spec) => {
-      if (!ctx.session) {
-        return
-      }
-      if (!verifyRoute(server, name, spec, ctx)) {
-        return
-      }
-      if (hasObs(server, id)) {
-        getFromExisting(server, id, ctx, checksum, name)
-        return
-      }
-      const obs = createObs(server, name, id, payload, true)
-      if (!ctx.session?.obs.has(id)) {
-        subscribeNext(obs, (err) => {
-          if (err) {
-            sendObsGetError(server, ctx, id, name, err)
-          } else {
-            sendGetData(server, id, obs, checksum, ctx)
-          }
-        })
-      }
-      start(server, id)
-    })
-    .catch(() => {
-      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
-    })
+const isAuthorized: IsAuthorizedHandler<
+  WebSocketSession,
+  BasedQueryFunctionRoute
+> = (route, server, ctx, payload, id, checksum) => {
+  if (hasObs(server, id)) {
+    getFromExisting(server, id, ctx, checksum)
+    return
+  }
+  installFn(server, ctx, route, id).then((spec) => {
+    if (spec === null) {
+      return
+    }
+    if (hasObs(server, id)) {
+      getFromExisting(server, id, ctx, checksum)
+      return
+    }
+    const obs = createObs(server, route.name, id, payload, true)
+    if (!ctx.session?.obs.has(id)) {
+      subscribeNext(obs, (err) => {
+        if (err) {
+          sendObsGetError(server, ctx, id, err)
+        } else {
+          sendGetData(server, id, obs, checksum, ctx)
+        }
+      })
+    }
+    start(server, id)
+  })
 }
 
-export const getMessage = (
-  arr: Uint8Array,
-  start: number,
-  len: number,
-  isDeflate: boolean,
-  ctx: Context<WebSocketSession>,
-  server: BasedServer
+const isNotAuthorized: AuthErrorHandler<
+  WebSocketSession,
+  BasedQueryFunctionRoute
+> = (route, server, ctx, payload, id, checksum) => {
+  ctx.session.unauthorizedObs.add({
+    id,
+    checksum,
+    name: route.name,
+    payload,
+  })
+}
+
+export const getMessage: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
   const nameLen = arr[start + 20]
@@ -129,10 +138,17 @@ export const getMessage = (
     return false
   }
 
-  const route = verifyRoute(server, name, server.functions.route(name), ctx)
+  const route = verifyRoute(
+    server,
+    ctx,
+    'query',
+    server.functions.route(name),
+    name,
+    id
+  )
 
   // TODO: add strictness setting - if strict return false here
-  if (!route) {
+  if (route === null) {
     return true
   }
 
@@ -144,7 +160,10 @@ export const getMessage = (
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+      route,
+      observableId: id,
+    })
     return true
   }
 
@@ -155,41 +174,16 @@ export const getMessage = (
     )
   )
 
-  if (route.public === true) {
-    if (hasObs(server, id)) {
-      getFromExisting(server, id, ctx, checksum, name)
-      return
-    }
-    install(server, name, ctx, route, id, checksum, payload)
-    return true
-  }
-
-  server.auth
-    .authorize(server.client, ctx, name, payload)
-    .then((ok) => {
-      if (!ctx.session) {
-        return false
-      }
-      if (!ok) {
-        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-          route,
-          observableId: id,
-        })
-        return false
-      }
-      if (hasObs(server, id)) {
-        getFromExisting(server, id, ctx, checksum, name)
-        return
-      }
-      install(server, name, ctx, route, id, checksum, payload)
-    })
-    .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
-        route,
-        observableId: id,
-        err,
-      })
-    })
+  authorize(
+    route,
+    server,
+    ctx,
+    payload,
+    isAuthorized,
+    id,
+    checksum,
+    isNotAuthorized
+  )
 
   return true
 }

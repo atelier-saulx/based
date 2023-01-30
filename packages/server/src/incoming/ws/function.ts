@@ -6,61 +6,47 @@ import {
   valueToBuffer,
   parsePayload,
 } from '../../protocol'
-import { BasedServer } from '../../server'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
-import { WebSocketSession, Context } from '@based/functions'
+import { BasedFunctionRoute } from '../../functions'
+import { WebSocketSession } from '@based/functions'
 import { rateLimitRequest } from '../../security'
+import { verifyRoute } from '../../verifyRoute'
+import { installFn } from '../../installFn'
+import { authorize, IsAuthorizedHandler } from '../../authorize'
+import { BinaryMessageHandler } from './types'
 
-const sendFunction = (
-  server: BasedServer,
-  ctx: Context<WebSocketSession>,
-  route: BasedFunctionRoute,
-  payload: any,
-  requestId: number
-) => {
-  server.functions
-    .install(route.name)
-    .then((spec) => {
-      if (!ctx.session) {
-        return
-      }
-      if (spec && !isObservableFunctionSpec(spec)) {
-        spec
-          .function(server.client, payload, ctx)
-          .then(async (v) => {
-            ctx.session?.send(
-              encodeFunctionResponse(requestId, valueToBuffer(v)),
-              true,
-              false
-            )
-          })
-          .catch((err) => {
-            sendError(server, ctx, BasedErrorCode.FunctionError, {
-              route,
-              requestId,
-              err,
-            })
-          })
-      }
+const sendFunction: IsAuthorizedHandler<
+  WebSocketSession,
+  BasedFunctionRoute
+> = async (route, server, ctx, payload, requestId) => {
+  const spec = await installFn(server, ctx, route, requestId)
+  spec
+    ?.function(server.client, payload, ctx)
+    .then(async (v) => {
+      ctx.session?.send(
+        encodeFunctionResponse(requestId, valueToBuffer(v)),
+        true,
+        false
+      )
     })
-    .catch(() =>
-      sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
-        name: route.name,
+    .catch((err) => {
+      sendError(server, ctx, BasedErrorCode.FunctionError, {
+        route,
         requestId,
+        err,
       })
-    )
+    })
 }
 
-export const functionMessage = (
-  arr: Uint8Array,
-  start: number,
-  len: number,
-  isDeflate: boolean,
-  ctx: Context<WebSocketSession>,
-  server: BasedServer
-): boolean => {
+export const functionMessage: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
+) => {
   // | 4 header | 3 id | 1 name length | * name | * payload |
   const requestId = readUint8(arr, start + 4, 3)
   const nameLen = arr[start + 7]
@@ -70,14 +56,17 @@ export const functionMessage = (
     return false
   }
 
-  const route = server.functions.route(name)
+  const route = verifyRoute(
+    server,
+    ctx,
+    'fn',
+    server.functions.route(name),
+    name,
+    requestId
+  )
 
   // TODO: add strictness setting - if strict return false here
-  if (!route) {
-    sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
-      name,
-      requestId,
-    })
+  if (route === null) {
     return true
   }
 
@@ -88,25 +77,9 @@ export const functionMessage = (
     return false
   }
 
-  if (route.query === true) {
-    sendError(server, ctx, BasedErrorCode.FunctionIsObservable, {
-      name,
-      requestId,
-    })
-    return true
-  }
-
   if (len > route.maxPayloadSize) {
     sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-      name,
-      requestId,
-    })
-    return true
-  }
-
-  if (route.stream === true) {
-    sendError(server, ctx, BasedErrorCode.FunctionIsStream, {
-      name,
+      route,
       requestId,
     })
     return true
@@ -119,36 +92,7 @@ export const functionMessage = (
     )
   )
 
-  if (route.public === true) {
-    sendFunction(server, ctx, route, payload, requestId)
-    return true
-  }
-
-  // TODO: make this fn a bit nicer.... remove nestedness...
-  server.auth
-    .authorize(server.client, ctx, name, payload)
-    .then((ok) => {
-      if (!ctx.session) {
-        return false
-      }
-
-      if (!ok) {
-        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-          requestId,
-          route,
-        })
-        return false
-      }
-
-      sendFunction(server, ctx, route, payload, requestId)
-    })
-    .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
-        requestId,
-        route,
-        err,
-      })
-    })
+  authorize(route, server, ctx, payload, sendFunction, requestId)
 
   return true
 }

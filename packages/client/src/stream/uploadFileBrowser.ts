@@ -85,6 +85,7 @@ const drainQueue = (
         xhr.onload = () => {
           try {
             const x = JSON.parse(xhr.response)
+            console.info('--->', x)
             for (let i = 0; i < x.length; i++) {
               const result = x[i]
               if (

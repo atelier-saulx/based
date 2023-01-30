@@ -1,8 +1,6 @@
-import type { BasedFunctionSpec, BasedObservableFunctionSpec } from './types'
+import type { BasedSpec } from './types'
 
-export const fnIsTimedOut = (
-  spec: BasedObservableFunctionSpec | BasedFunctionSpec
-): boolean => {
+export const fnIsTimedOut = (spec: BasedSpec): boolean => {
   if (spec.timeoutCounter !== -1) {
     if (spec.timeoutCounter === 0) {
       return true
@@ -14,9 +12,7 @@ export const fnIsTimedOut = (
   return false
 }
 
-export const updateTimeoutCounter = (
-  spec: BasedObservableFunctionSpec | BasedFunctionSpec
-) => {
+export const updateTimeoutCounter = (spec: BasedSpec) => {
   if (spec.timeoutCounter !== -1) {
     spec.timeoutCounter =
       spec.idleTimeout === -1 ? -1 : Math.ceil(spec.idleTimeout / 1e3 / 3)

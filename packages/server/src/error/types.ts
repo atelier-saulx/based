@@ -1,4 +1,4 @@
-import { BasedFunctionRoute } from '../functions'
+import { BasedRoute } from '../functions'
 
 export const EMPTY_ROUTE = {
   name: 'no-route',
@@ -16,6 +16,7 @@ export enum BasedErrorCode {
   FunctionIsObservable = 40403,
   FunctionIsStream = 40404,
   CannotStreamToObservableFunction = 40405,
+  FunctionIsNotStream = 40406,
   AuthorizeRejectedError = 40301,
   InvalidPayload = 40001,
   PayloadTooLarge = 40002,
@@ -28,21 +29,33 @@ export enum BasedErrorCode {
   MissingAuthStateProtocolHeader = 40030,
 }
 
-export type BasedError<T extends BasedErrorCode = BasedErrorCode> = Error & {
-  code: T
-}
-
 type FunctionErrorProps = {
-  err: Error
+  err: Error | string
   requestId?: number
-  route: BasedFunctionRoute
+  route: BasedRoute
 }
 
 type ObservableFunctionErrorProps = {
   observableId: number
-  err: Error
-  route: BasedFunctionRoute
+  err: Error | string
+  route: BasedRoute
 }
+
+type FunctionBasicPayload = {
+  route: BasedRoute
+  requestId?: number
+}
+
+type BasedErrorPayload =
+  | {
+      observableId: number
+      route: BasedRoute
+    }
+  | {
+      requestId: number
+      route: BasedRoute
+    }
+  | { route: BasedRoute }
 
 export type ErrorPayload = {
   [BasedErrorCode.RateLimit]: {}
@@ -53,42 +66,31 @@ export type ErrorPayload = {
   [BasedErrorCode.AuthorizeFunctionError]:
     | FunctionErrorProps
     | ObservableFunctionErrorProps
-  [BasedErrorCode.AuthorizeRejectedError]:
-    | {
-        observableId: number
-        route: BasedFunctionRoute
-      }
-    | {
-        requestId?: number
-        route: BasedFunctionRoute
-      }
+  [BasedErrorCode.AuthorizeRejectedError]: BasedErrorPayload
   [BasedErrorCode.ObserveCallbackError]: {
     err: Error
     observableId: number
-    route?: BasedFunctionRoute
+    route: BasedRoute
   }
   [BasedErrorCode.NoOservableCacheAvailable]: {
     observableId: number
-    route: BasedFunctionRoute
+    route: BasedRoute
   }
-  [BasedErrorCode.FunctionIsStream]: BasedFunctionRoute & { requestId?: number }
-  [BasedErrorCode.FunctionNotFound]: BasedFunctionRoute & { requestId?: number }
-  [BasedErrorCode.FunctionIsNotObservable]: BasedFunctionRoute & {
-    requestId?: number
+  [BasedErrorCode.FunctionIsNotStream]: FunctionBasicPayload
+  [BasedErrorCode.FunctionIsStream]: BasedErrorPayload
+  [BasedErrorCode.FunctionNotFound]: BasedErrorPayload
+  [BasedErrorCode.FunctionIsNotObservable]: {
+    route: BasedRoute
+    observableId?: number
   }
-  [BasedErrorCode.FunctionIsObservable]: BasedFunctionRoute & {
-    requestId?: number
-  }
-  [BasedErrorCode.CannotStreamToObservableFunction]: BasedFunctionRoute & {
-    requestId?: number
-  }
-
-  [BasedErrorCode.InvalidPayload]: BasedFunctionRoute & { requestId?: number }
-  [BasedErrorCode.PayloadTooLarge]: BasedFunctionRoute & { requestId?: number }
-  [BasedErrorCode.ChunkTooLarge]: BasedFunctionRoute
-  [BasedErrorCode.UnsupportedContentEncoding]: BasedFunctionRoute
-  [BasedErrorCode.LengthRequired]: BasedFunctionRoute
-  [BasedErrorCode.MethodNotAllowed]: BasedFunctionRoute
+  [BasedErrorCode.FunctionIsObservable]: FunctionBasicPayload
+  [BasedErrorCode.CannotStreamToObservableFunction]: FunctionBasicPayload
+  [BasedErrorCode.InvalidPayload]: BasedErrorPayload
+  [BasedErrorCode.PayloadTooLarge]: BasedErrorPayload
+  [BasedErrorCode.ChunkTooLarge]: BasedRoute
+  [BasedErrorCode.UnsupportedContentEncoding]: BasedRoute
+  [BasedErrorCode.LengthRequired]: BasedRoute
+  [BasedErrorCode.MethodNotAllowed]: BasedRoute
 }
 
 export type ErrorHandler<T extends BasedErrorCode> = {
@@ -98,12 +100,11 @@ export type ErrorHandler<T extends BasedErrorCode> = {
 }
 
 export type BasedErrorData<T extends BasedErrorCode = BasedErrorCode> = {
-  route: BasedFunctionRoute
+  route: BasedRoute
   message: string
   code: T
   statusCode: number
   statusMessage: string
   requestId?: number
   observableId?: number
-  err?: BasedError<T>
 }

@@ -3,10 +3,14 @@ import { BasedServer } from '../../server'
 import { HttpSession, Context } from '@based/functions'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
-import { BasedFunctionRoute } from '../../functions'
+import {
+  BasedFunctionRoute,
+  isFunctionRoute,
+  isQueryFunctionRoute,
+  isStreamFunctionRoute,
+} from '../../functions'
 import { httpGet } from './get'
 import { readBody } from './readBody'
-import { authorizeRequest } from './authorize'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import {
@@ -17,6 +21,7 @@ import {
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
 import { parseAuthState } from '../../auth'
+import { authorize } from '../../authorize'
 import { end } from '../../sendHttpResponse'
 
 let clientId = 0
@@ -57,8 +62,6 @@ export const httpHandler = (
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
 
-  // console.info('INCOMING', url, path, route, method)
-
   if (route === false) {
     sendError(
       server,
@@ -75,7 +78,9 @@ export const httpHandler = (
         },
       },
       BasedErrorCode.FunctionNotFound,
-      path[1] ? { name: path[1] } : { name: '', path: url }
+      path[1]
+        ? { route: { name: path[1] } }
+        : { route: { name: '', path: url } }
     )
     return
   }
@@ -137,59 +142,47 @@ export const httpHandler = (
     }
   }
 
-  if (route.query === true) {
+  if (isQueryFunctionRoute(route)) {
     // handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
-
-    if (route.stream) {
-      sendError(
-        server,
-        ctx,
-        BasedErrorCode.CannotStreamToObservableFunction,
-        route
-      )
       return
     }
     const checksumRaw = req.getHeader('if-none-match')
     const checksumNum = Number(checksumRaw)
     const checksum = !isNaN(checksumNum) ? checksumNum : 0
     handleRequest(server, method, ctx, route, (payload) => {
-      authorizeRequest(server, ctx, payload, route, () => {
-        httpGet(route, payload, ctx, server, checksum)
-      })
+      httpGet(route, payload, ctx, server, checksum)
     })
-  } else if (route.stream === true) {
+    return
+  }
+
+  if (isStreamFunctionRoute(route)) {
     if (method === 'options') {
       end(ctx)
       return
     }
-
     if (method !== 'post') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-
     if (ctx.session.headers['content-length'] === 0) {
       // zero is also not allowed for streams
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
       return
     }
-
     httpStreamFunction(server, ctx, route)
-  } else {
+    return
+  }
+
+  if (isFunctionRoute(route)) {
     // handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
-
     handleRequest(server, method, ctx, route, (payload) => {
-      authorizeRequest(server, ctx, payload, route, () => {
-        httpFunction(route, ctx, server, payload)
-      })
+      authorize(route, server, ctx, payload, httpFunction)
     })
   }
 }

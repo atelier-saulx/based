@@ -6,14 +6,14 @@ export class DataStream extends Duplex {
   public receivedBytes: number = 0
   public progessTimer: NodeJS.Timeout
 
-  constructor() {
+  constructor(size: number) {
     super()
+    this.size = size
     this.emit('progress', 0)
   }
 
   _read() {}
 
-  // writableHighWaterMark:
   _write(chunk, encoding, callback) {
     this.receivedBytes += chunk.byteLength
     if (this.size && this.size > 20000) {

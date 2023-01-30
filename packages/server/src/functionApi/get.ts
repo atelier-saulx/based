@@ -1,7 +1,7 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError, BasedErrorData } from '../error'
 import { Context } from '@based/functions'
-import { BasedFunctionRoute, isObservableFunctionSpec } from '../functions'
+import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../functions'
 import {
   genObservableId,
   hasObs,
@@ -11,6 +11,8 @@ import {
   destroyObs,
   start,
 } from '../observable'
+import { verifyRoute } from '../verifyRoute'
+import { installFn } from '../installFn'
 
 const getObsData = (
   resolve: (x: any) => any,
@@ -26,7 +28,7 @@ const getObsData = (
       createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
         route,
         observableId: id,
-        err: obs.error,
+        err: obs.error.message,
       })
     )
     return
@@ -38,13 +40,7 @@ const getObsData = (
   subscribeNext(obs, (err) => {
     destroyObs(server, id)
     if (err) {
-      reject(
-        createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
-          observableId: id,
-          route,
-          err,
-        })
-      )
+      reject(err)
     } else {
       resolve(obs.rawData || obs.cache)
     }
@@ -58,61 +54,41 @@ export const get = (
   payload: any
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
-    const route = server.functions.route(name)
-
-    if (!route) {
-      reject(
-        createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
+    let route: BasedQueryFunctionRoute
+    try {
+      route = verifyRoute(
+        server,
+        server.client.ctx,
+        'query',
+        server.functions.route(name),
+        name
       )
+      if (route === null) {
+        return
+      }
+    } catch (err) {
+      reject(err)
       return
     }
-
-    if (route.query === false) {
-      reject(
-        createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-          name,
-        })
-      )
-      return
-    }
-
     const id = genObservableId(name, payload)
     if (!hasObs(server, id)) {
-      server.functions
-        .install(name)
-        .then((fn) => {
-          if (!fn) {
-            reject(
-              createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-                name,
-              })
-            )
-            return
-          }
-          if (!isObservableFunctionSpec(fn)) {
-            reject(
-              createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-                name,
-              })
-            )
-            return
-          }
-
-          if (!hasObs(server, id)) {
-            createObs(server, name, id, payload, true)
-            getObsData(resolve, reject, server, id, ctx, route)
-            start(server, id)
-          } else {
-            getObsData(resolve, reject, server, id, ctx, route)
-          }
-        })
-        .catch(() =>
+      installFn(server, server.client.ctx, route).then((spec) => {
+        if (!spec) {
           reject(
             createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-              name,
+              route,
             })
           )
-        )
+          return
+        }
+        if (!hasObs(server, id)) {
+          createObs(server, name, id, payload, true)
+          getObsData(resolve, reject, server, id, ctx, route)
+          start(server, id)
+        } else {
+          getObsData(resolve, reject, server, id, ctx, route)
+        }
+      })
     } else {
       getObsData(resolve, reject, server, id, ctx, route)
     }

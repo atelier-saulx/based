@@ -7,6 +7,7 @@ import { BasedServer } from '../../server'
 import { enableSubscribe } from './observable'
 import { rateLimitRequest } from '../../security'
 import { AuthState, WebSocketSession, Context } from '@based/functions'
+import { BinaryMessageHandler } from './types'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
@@ -19,14 +20,14 @@ const parse = (payload: string) => {
   }
 }
 
-export const authMessage = (
-  arr: Uint8Array,
-  start: number,
-  len: number,
-  isDeflate: boolean,
-  ctx: Context<WebSocketSession>,
-  server: BasedServer
-): boolean => {
+export const authMessage: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
+) => {
   // TODO: Allow AUTH to be called over http to refresh a token
   if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
     ctx.session.close()
@@ -53,9 +54,17 @@ export const authMessage = (
   if (ctx.session.unauthorizedObs.size) {
     ctx.session.unauthorizedObs.forEach((obs) => {
       const { id, name, checksum, payload } = obs
-      enableSubscribe(server, ctx, id, checksum, name, payload, {
-        name,
-      })
+      enableSubscribe(
+        {
+          name,
+          query: true,
+        },
+        server,
+        ctx,
+        payload,
+        id,
+        checksum
+      )
     })
     ctx.session.unauthorizedObs.clear()
   }

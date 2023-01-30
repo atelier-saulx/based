@@ -1,6 +1,6 @@
 import { HttpSession, Context } from '@based/functions'
 import zlib from 'node:zlib'
-import { BasedFunctionRoute } from '../../functions'
+import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../../functions'
 import { BasedErrorCode } from '../../error'
 import { BasedServer } from '../../server'
 import { sendError } from '../../sendError'
@@ -18,7 +18,7 @@ export const parseHttpPayload = (
   server: BasedServer,
   ctx: Context<HttpSession>,
   data: Uint8Array,
-  route: BasedFunctionRoute
+  route: BasedFunctionRoute | BasedQueryFunctionRoute
 ): any => {
   const contentType = ctx.session.headers['content-type']
   if (contentType === 'application/json' || !contentType) {
@@ -28,7 +28,7 @@ export const parseHttpPayload = (
       parsedData = data.byteLength ? JSON.parse(str) : undefined
       return parsedData
     } catch (err) {
-      sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+      sendError(server, ctx, BasedErrorCode.InvalidPayload, { route })
     }
   } else if (
     contentType.startsWith('text') ||
@@ -44,7 +44,7 @@ export const readBody = (
   server: BasedServer,
   ctx: Context<HttpSession>,
   onData: (data: any | void) => void,
-  route: BasedFunctionRoute
+  route: BasedFunctionRoute | BasedQueryFunctionRoute
 ) => {
   if (!ctx.session) {
     return
@@ -53,7 +53,7 @@ export const readBody = (
   const contentLen = ctx.session.headers['content-length']
 
   if (contentLen > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, { route })
     return
   }
 
@@ -73,7 +73,7 @@ export const readBody = (
       ctx.session.res.onData((c, isLast) => {
         size += c.byteLength
         if (size > route.maxPayloadSize) {
-          sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
+          sendError(server, ctx, BasedErrorCode.PayloadTooLarge, { route })
           uncompressStream.destroy()
           return
         }
@@ -111,7 +111,7 @@ export const readBody = (
         onData(parseHttpPayload(server, ctx, buf, route))
       })
     } else {
-      sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+      sendError(server, ctx, BasedErrorCode.InvalidPayload, { route })
     }
   } else {
     const buf = new Uint8Array(contentLen)
@@ -121,7 +121,7 @@ export const readBody = (
 
       size += len
       if (size > route.maxPayloadSize) {
-        sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
+        sendError(server, ctx, BasedErrorCode.PayloadTooLarge, { route })
         return
       }
       if (c.byteLength > MAX_CHUNK_SIZE) {

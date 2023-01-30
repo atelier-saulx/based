@@ -1,10 +1,11 @@
 import type { BasedServer } from '../server'
 import {
-  BasedFunctionRoute,
-  BasedFunctionSpec,
-  BasedObservableFunctionSpec,
+  BasedRoute,
+  BasedSpec,
   FunctionConfig,
-  isObservableFunctionSpec,
+  isQueryFunctionSpec,
+  isStreamFunctionSpec,
+  isQueryFunctionRoute,
 } from './types'
 import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -22,12 +23,22 @@ export class BasedFunctions {
 
   installsInProgress: { [name: string]: Promise<any> } = {}
 
+  maxPayLoadSizeDefaults: {
+    stream: number
+    query: number
+    function: number
+  } = {
+    stream: 5e6,
+    query: 500,
+    function: 5e3,
+  }
+
   paths: {
     [path: string]: string
   } = {}
 
   specs: {
-    [name: string]: (BasedFunctionSpec | BasedObservableFunctionSpec) & {
+    [name: string]: BasedSpec & {
       maxPayloadSize: number
       rateLimitTokens: number
     }
@@ -49,7 +60,7 @@ export class BasedFunctions {
       const q = []
       for (const name in this.specs) {
         const spec = this.specs[name]
-        if (spec.query && this.server.activeObservables[name]) {
+        if (isQueryFunctionSpec(spec) && this.server.activeObservables[name]) {
           updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
           q.push(this.uninstall(name, spec))
@@ -84,7 +95,7 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  async updateFunction(spec: BasedObservableFunctionSpec | BasedFunctionSpec) {
+  async updateFunction(spec: BasedSpec) {
     const { name } = spec
     const prevSpec = this.specs[name]
     if (prevSpec) {
@@ -110,7 +121,7 @@ export class BasedFunctions {
 
   private async installGaurdedFromConfig(
     name: string
-  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+  ): Promise<BasedSpec | false> {
     if (this.installsInProgress[name]) {
       return this.installsInProgress[name]
     }
@@ -123,9 +134,7 @@ export class BasedFunctions {
     return s
   }
 
-  async install(
-    name: string
-  ): Promise<BasedObservableFunctionSpec | BasedFunctionSpec | false> {
+  async install(name: string): Promise<BasedSpec | false> {
     let spec = this.getFromStore(name)
 
     if (spec) {
@@ -145,13 +154,11 @@ export class BasedFunctions {
     return this.paths[path]
   }
 
-  route(name?: string, path?: string): BasedFunctionRoute | false {
+  route(name?: string, path?: string): BasedRoute | false {
     return this.config.route({ server: this.server, name, path })
   }
 
-  getFromStore(
-    name: string
-  ): BasedObservableFunctionSpec | BasedFunctionSpec | false {
+  getFromStore(name: string): BasedSpec | false {
     const spec = this.specs[name]
     if (spec) {
       if (this.beingUninstalled[name]) {
@@ -163,7 +170,7 @@ export class BasedFunctions {
     return false
   }
 
-  update(spec: BasedObservableFunctionSpec | BasedFunctionSpec): boolean {
+  update(spec: BasedSpec): boolean {
     if (!spec) {
       return false
     }
@@ -186,12 +193,13 @@ export class BasedFunctions {
       this.paths[spec.path] = spec.name
     }
 
-    // make constants for these...
     if (!spec.maxPayloadSize) {
-      if (spec.query) {
-        spec.maxPayloadSize = 500
+      if (isQueryFunctionSpec(spec)) {
+        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.query
+      } else if (isStreamFunctionSpec(spec)) {
+        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.stream
       } else {
-        spec.maxPayloadSize = 5e3
+        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.function
       }
     }
 
@@ -205,7 +213,7 @@ export class BasedFunctions {
     this.specs[spec.name] = spec
 
     if (this.specs[spec.name] && this.server.activeObservables[spec.name]) {
-      if (!isObservableFunctionSpec(spec)) {
+      if (!isQueryFunctionSpec(spec)) {
         for (const [id] of this.server.activeObservables[spec.name]) {
           destroyObs(this.server, id)
         }
@@ -222,14 +230,11 @@ export class BasedFunctions {
   }
 
   remove(name: string): boolean {
-    // Does not call unregister!
     const spec = this.specs[name]
-
     if (!spec) {
       return false
     }
-
-    if (isObservableFunctionSpec(spec)) {
+    if (isQueryFunctionRoute(spec)) {
       const activeObs = this.server.activeObservables[name]
       if (activeObs) {
         for (const [id] of activeObs) {
@@ -238,16 +243,11 @@ export class BasedFunctions {
         delete this.server.activeObservables[name]
       }
     }
-
     delete this.specs[name]
-
     return true
   }
 
-  async uninstall(
-    name: string,
-    spec?: BasedObservableFunctionSpec | BasedFunctionSpec | false
-  ): Promise<boolean> {
+  async uninstall(name: string, spec?: BasedSpec | false): Promise<boolean> {
     if (this.beingUninstalled[name]) {
       console.error('Allready being unregistered...', name)
     }

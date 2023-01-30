@@ -47,7 +47,7 @@ export type HttpSession = {
 export type InternalSessionObservable = {
   id: number
   name: string
-  type: 'observable'
+  type: 'query'
 }
 
 export type InternalSessionClient = {
@@ -87,6 +87,15 @@ export const isWsContext = (
   ctx: Context<Session>
 ): ctx is Context<WebSocketSession> => {
   if (ctx.session && isWsSession(ctx.session)) {
+    return true
+  }
+  return false
+}
+
+export const isClientContext = (
+  ctx: Context<Session>
+): ctx is Context<WebSocketSession> => {
+  if (ctx.session && 'authState' in ctx.session) {
     return true
   }
   return false

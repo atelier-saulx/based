@@ -18,7 +18,7 @@ type EventMap = {
 
 type Event = keyof EventMap
 
-type Listener<T> = (context: Context, data?: T, err?: Error) => void
+type Listener<T> = (context: Context, data?: T, err?: Error | string) => void
 
 type RateLimit = {
   ws: number
@@ -119,7 +119,12 @@ export class BasedServer {
     initNetwork(this, opts)
   }
 
-  emit(type: Event, client: Context, val: EventMap[Event], err?: Error) {
+  emit(
+    type: Event,
+    client: Context,
+    val: EventMap[Event],
+    err?: Error | string
+  ) {
     if (this.listeners[type]) {
       this.listeners[type].forEach((fn) => fn(client, val, err))
     }

@@ -1,7 +1,8 @@
-import { BasedFunctionRoute } from '../functions'
 import { BasedErrorCode, ErrorPayload, ErrorHandler } from './types'
 
-const addName = (payload: BasedFunctionRoute): string => {
+const addName = (
+  payload: { name: string } & { [key: string]: unknown }
+): string => {
   return payload.name ? `[${payload.name}] ` : ''
 }
 
@@ -24,7 +25,7 @@ export const errorTypeHandlers: ErrorType = {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
     message: (payload) => {
-      if (!payload.err.message) {
+      if (typeof payload.err === 'string' || !payload.err.message) {
         return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
       }
       return (
@@ -48,14 +49,24 @@ export const errorTypeHandlers: ErrorType = {
     statusCode: 500,
     statusMessage: 'Internal Server Error',
     message: (payload) => {
-      if (payload.err && !payload.err.message && !payload.err.name) {
+      if (
+        payload.err &&
+        (typeof payload.err === 'string' ||
+          (!payload.err.message && !payload.err.name))
+      ) {
         return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
       }
       return `[${payload.route.name}] ${
-        payload.err.name && payload.err.name !== 'Error'
+        typeof payload.err !== 'string' &&
+        payload.err.name &&
+        payload.err.name !== 'Error'
           ? `[${payload.err.name}] `
           : ''
-      }${payload.err.message || ''}`
+      }${
+        typeof payload.err === 'string'
+          ? payload.err
+          : payload.err.message || ''
+      }`
     },
   },
   [BasedErrorCode.FunctionNotFound]: {
@@ -63,8 +74,10 @@ export const errorTypeHandlers: ErrorType = {
     statusMessage: 'Not Found',
     message: (payload) => {
       return (
-        addName(payload) +
-        `Function not found${payload.path ? ` path '${payload.path}'` : ''}`
+        addName(payload.route) +
+        `Function not found${
+          payload.route.path ? ` path '${payload.route.path}'` : ''
+        }`
       )
     },
   },
@@ -72,26 +85,36 @@ export const errorTypeHandlers: ErrorType = {
     statusCode: 400,
     statusMessage: 'Incorrect Protocol',
     message: (payload) => {
-      return addName(payload) + 'Cannot use stream functions over websockets'
+      return (
+        addName(payload.route) + 'Cannot use stream functions over websockets'
+      )
+    },
+  },
+  [BasedErrorCode.FunctionIsNotStream]: {
+    statusCode: 400,
+    statusMessage: 'Function is Not Stream',
+    message: (payload) => {
+      return addName(payload.route) + 'Cannot stream to a normal function'
     },
   },
   [BasedErrorCode.FunctionIsNotObservable]: {
     statusCode: 400,
     statusMessage: 'Function Is Not Observable',
     message: (payload) =>
-      addName(payload) + 'Cannot observe non observable functions',
+      addName(payload.route) + 'Cannot observe non observable functions',
   },
   [BasedErrorCode.FunctionIsObservable]: {
     statusCode: 400,
     statusMessage: 'Function Is Observable',
     message: (payload) =>
-      addName(payload) + 'Cannot call observable functions as a standard one',
+      addName(payload.route) +
+      'Cannot call observable functions as a standard one',
   },
   [BasedErrorCode.CannotStreamToObservableFunction]: {
     statusCode: 404,
     statusMessage: 'Not Found',
     message: (payload) => {
-      return addName(payload) + 'Cannot stream to observable function'
+      return addName(payload.route) + 'Cannot stream to observable function'
     },
   },
   [BasedErrorCode.AuthorizeFunctionError]: {
@@ -108,7 +131,7 @@ export const errorTypeHandlers: ErrorType = {
   [BasedErrorCode.InvalidPayload]: {
     statusCode: 400,
     statusMessage: 'Bad Request',
-    message: (payload) => addName(payload) + 'Invalid payload',
+    message: (payload) => addName(payload.route) + 'Invalid payload',
   },
   [BasedErrorCode.NoBinaryProtocol]: {
     statusCode: 400,
@@ -118,7 +141,7 @@ export const errorTypeHandlers: ErrorType = {
   [BasedErrorCode.PayloadTooLarge]: {
     statusCode: 413,
     statusMessage: 'Payload Too Large',
-    message: (payload) => addName(payload) + ' PayloadTooLarge',
+    message: (payload) => addName(payload.route) + ' PayloadTooLarge',
   },
   [BasedErrorCode.ChunkTooLarge]: {
     statusCode: 413,

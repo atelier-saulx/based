@@ -6,9 +6,8 @@ import {
 } from '@based/functions'
 import { BasedServer } from '../server'
 
-export type BasedRoute = {
+export type BasedFunctionRoute = {
   name: string
-  query?: boolean
   headers?: string[]
   path?: string
   maxPayloadSize?: number
@@ -16,81 +15,135 @@ export type BasedRoute = {
   public?: boolean
 }
 
-export type BasedStreamFunctionRoute = BasedRoute & {
-  stream?: true
+export type BasedQueryFunctionRoute = BasedFunctionRoute & {
+  query: true
 }
 
-export type BasedFunctionRoute =
-  | (BasedRoute & { stream?: false })
-  | BasedStreamFunctionRoute
+export type BasedStreamFunctionRoute = BasedFunctionRoute & {
+  stream: true
+}
 
-export type BasedObservableFunctionSpec = BasedFunctionRoute & {
-  name: string
+export type BasedQueryFunctionSpec = {
   checksum: number
-  query: true
   function: BasedQueryFunction
-  customHttpResponse?: CustomHttpResponse
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   timeoutCounter?: number
-}
+} & BasedQueryFunctionRoute
 
-export type BasedFunctionSpec =
-  | (BasedStreamFunctionRoute & {
-      name: string
-      observable?: false
-      customHttpResponse?: CustomHttpResponse
-      checksum: number
-      function: BasedStreamFunction
-      maxExecTime?: number // in ms - very nice too have
-      idleTimeout?: number // in ms
-      timeoutCounter?: number // in ms
-    })
-  | ((BasedRoute & { stream?: false }) & {
-      name: string
-      observable?: false
-      customHttpResponse?: CustomHttpResponse
-      checksum: number
-      function: BasedFunction
-      maxExecTime?: number // in ms - very nice too have
-      idleTimeout?: number // in ms
-      timeoutCounter?: number // in ms
-    })
+export type BasedStreamFunctionSpec = {
+  checksum: number
+  function: BasedStreamFunction
+  maxExecTime?: number // in ms - very nice too have
+  idleTimeout?: number // in ms
+  timeoutCounter?: number // in ms
+} & BasedStreamFunctionRoute
+
+export type BasedFunctionSpec = {
+  customHttpResponse?: CustomHttpResponse
+  checksum: number
+  function: BasedFunction
+  maxExecTime?: number // in ms - very nice too have
+  idleTimeout?: number // in ms
+  timeoutCounter?: number // in ms
+} & BasedFunctionRoute
+
+export type BasedRoute =
+  | BasedFunctionRoute
+  | BasedQueryFunctionRoute
+  | BasedStreamFunctionRoute
+
+export type BasedSpec<R extends BasedRoute = BasedRoute> =
+  R extends BasedQueryFunctionRoute
+    ? BasedQueryFunctionSpec
+    : R extends BasedStreamFunctionRoute
+    ? BasedStreamFunctionSpec
+    : BasedFunctionSpec
 
 export type FunctionConfig = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   maxWorkers?: number
   importWrapperPath?: string
+  maxPayLoadSizeDefaults?: {
+    stream: number
+    query: number
+    function: number
+  }
   route: (opts: { server: BasedServer; name?: string; path?: string }) =>
     | false
     | (BasedFunctionRoute & {
         maxPayloadSize: number
         rateLimitTokens: number
       })
-
   install: (opts: {
     server: BasedServer
     name: string
-    function?: BasedFunctionSpec | BasedObservableFunctionSpec
-  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
-
+    function?: BasedFunctionSpec | BasedQueryFunctionSpec
+  }) => Promise<
+    false | BasedQueryFunctionSpec | BasedStreamFunctionSpec | BasedFunctionSpec
+  >
   uninstall: (opts: {
     server: BasedServer
     name: string
-    function: BasedObservableFunctionSpec | BasedFunctionSpec
+    function:
+      | BasedQueryFunctionSpec
+      | BasedStreamFunctionSpec
+      | BasedFunctionSpec
   }) => Promise<boolean>
 }
 
-export enum FunctionType {
-  authorize,
-  observe,
-  function,
-  streamFunction,
+// specs
+
+export function isQueryFunctionSpec(
+  fn: BasedQueryFunctionSpec | BasedStreamFunctionSpec | BasedFunctionSpec
+): fn is BasedQueryFunctionSpec {
+  return (fn as BasedQueryFunctionSpec).query === true
 }
 
-export function isObservableFunctionSpec(
-  fn: BasedObservableFunctionSpec | BasedFunctionSpec
-): fn is BasedObservableFunctionSpec {
-  return (fn as BasedObservableFunctionSpec).query
+export function isStreamFunctionSpec(
+  fn: BasedQueryFunctionSpec | BasedFunctionSpec | BasedStreamFunctionSpec
+): fn is BasedQueryFunctionSpec {
+  return (fn as BasedStreamFunctionSpec).stream === true
+}
+
+export function isFunctionSpec(
+  fn: BasedQueryFunctionSpec | BasedFunctionSpec | BasedStreamFunctionSpec
+): fn is BasedSpec {
+  return !('stream' in fn) && !('query' in fn)
+}
+
+export function isSpec(fn: any): fn is BasedSpec {
+  return (
+    fn &&
+    typeof fn === 'object' &&
+    (isFunctionSpec(fn) || isStreamFunctionSpec(fn) || isQueryFunctionSpec(fn))
+  )
+}
+
+// routes
+
+export function isQueryFunctionRoute(
+  fn: BasedFunctionRoute | BasedQueryFunctionRoute | BasedStreamFunctionRoute
+): fn is BasedQueryFunctionRoute {
+  return (fn as BasedQueryFunctionRoute).query === true
+}
+
+export function isStreamFunctionRoute(
+  fn: BasedFunctionRoute | BasedQueryFunctionRoute | BasedStreamFunctionRoute
+): fn is BasedStreamFunctionRoute {
+  return (fn as BasedStreamFunctionRoute).stream === true
+}
+
+export function isFunctionRoute(
+  fn: BasedFunctionRoute | BasedQueryFunctionRoute | BasedStreamFunctionRoute
+): fn is BasedFunctionRoute {
+  return !('stream' in fn) && !('query' in fn)
+}
+
+export function isRoute(route: any): route is BasedRoute {
+  if (route && typeof route === 'object' && 'name' in route) {
+    return true
+  }
+  return false
 }

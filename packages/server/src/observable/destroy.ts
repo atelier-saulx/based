@@ -1,4 +1,4 @@
-import { isObservableFunctionSpec } from '../functions'
+import { isQueryFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
 
 export const destroyObs = (server: BasedServer, id: number) => {
@@ -30,7 +30,7 @@ export const destroyObs = (server: BasedServer, id: number) => {
 
   const spec = server.functions.specs[obs.name]
 
-  if (!spec || !isObservableFunctionSpec(spec)) {
+  if (!spec || !isQueryFunctionSpec(spec)) {
     console.warn('Cannot find observable function spec!', obs.name)
     return
   }

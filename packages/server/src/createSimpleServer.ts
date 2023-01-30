@@ -1,5 +1,13 @@
 import { AuthConfig } from './auth'
-import { BasedFunctionSpec, BasedObservableFunctionSpec } from './functions'
+import {
+  BasedFunctionSpec,
+  BasedQueryFunctionSpec,
+  BasedStreamFunctionSpec,
+  BasedSpec,
+  isSpec,
+  isQueryFunctionSpec,
+  isStreamFunctionSpec,
+} from './functions'
 import {
   BasedQueryFunction,
   BasedFunction,
@@ -8,14 +16,7 @@ import {
 } from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
-
-const whiteSpace = (nr: number) => {
-  let str = ''
-  for (let i = 0; i < nr; i++) {
-    str += ' '
-  }
-  return str
-}
+import { padLeft } from '@saulx/utils'
 
 export type SimpleServerOptions = {
   port?: number
@@ -30,18 +31,20 @@ export type SimpleServerOptions = {
   install?: (opts: {
     server: BasedServer
     name: string
-    function?: BasedFunctionSpec | BasedObservableFunctionSpec
-  }) => Promise<false | BasedObservableFunctionSpec | BasedFunctionSpec>
+    function?: BasedSpec
+  }) => Promise<false | BasedSpec>
   uninstall?: (opts: {
     server: BasedServer
     name: string
-    function: BasedObservableFunctionSpec | BasedFunctionSpec
+    function: BasedSpec
   }) => Promise<boolean>
   functions?: {
-    [key: string]: BasedFunction | Partial<BasedFunctionSpec>
+    [key: string]:
+      | BasedFunction
+      | Partial<BasedFunctionSpec | BasedStreamFunctionSpec>
   }
   queryFunctions?: {
-    [key: string]: BasedQueryFunction | Partial<BasedObservableFunctionSpec>
+    [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
 }
 
@@ -52,40 +55,34 @@ export async function createSimpleServer(
   const { functions, queryFunctions } = props
 
   const functionStore: {
-    [key: string]:
-      | (BasedFunctionSpec & {
-          maxPayloadSize: number
-          rateLimitTokens: number
-        })
-      | (BasedObservableFunctionSpec & {
-          maxPayloadSize: number
-          rateLimitTokens: number
-        })
+    [key: string]: BasedSpec & {
+      maxPayloadSize: number
+      rateLimitTokens: number
+    }
   } = {}
 
   for (const name in functions) {
     if (functions[name]) {
       const fn = functions[name]
-      if (isFunctionSpec(fn)) {
+      if (isSpec(fn)) {
         functionStore[name] = {
           function: fn.function,
           name,
-          observable: false,
           checksum: 1,
-          // 200MB default max size for stream
-          maxPayloadSize: fn.stream ? 200e6 : 5e3,
-          rateLimitTokens: fn.stream ? 5 : 1,
+          maxPayloadSize: isStreamFunctionSpec(fn) ? 200e6 : 5e3,
+          rateLimitTokens: 1,
           ...fn,
         }
-      } else {
+      } else if (typeof fn === 'function') {
         functionStore[name] = {
           function: fn,
           name,
-          observable: false,
           checksum: 1,
           maxPayloadSize: 5e3,
           rateLimitTokens: 1,
         }
+      } else {
+        console.error(name, fn, 'Is not a function!')
       }
     }
   }
@@ -93,8 +90,7 @@ export async function createSimpleServer(
   for (const name in queryFunctions) {
     if (queryFunctions[name]) {
       const fn = queryFunctions[name]
-
-      if (isObsFunctionSpec(fn)) {
+      if (isSpec(fn)) {
         functionStore[name] = {
           checksum: 1,
           query: true,
@@ -104,7 +100,7 @@ export async function createSimpleServer(
           rateLimitTokens: 5,
           ...fn,
         }
-      } else {
+      } else if (typeof fn === 'function') {
         functionStore[name] = {
           checksum: 1,
           query: true,
@@ -113,6 +109,8 @@ export async function createSimpleServer(
           maxPayloadSize: 500,
           rateLimitTokens: 5,
         }
+      } else {
+        console.error(name, fn, 'Is not a query function!')
       }
     }
   }
@@ -175,36 +173,24 @@ export async function createSimpleServer(
   }
 
   for (const name in functionStore) {
-    const obs = functionStore[name].query
+    const obs = isQueryFunctionSpec(functionStore[name])
       ? '[query]'
-      : functionStore[name].stream
+      : isStreamFunctionSpec(functionStore[name])
       ? '[stream]'
       : ''
     const pub = functionStore[name].public ? 'public' : 'private'
     console.info(
       '      ',
       picocolors.white(name),
-      whiteSpace(longestName + 2 - name.length),
+      padLeft('', longestName + 2 - name.length, ' '),
       picocolors.gray(pub),
-      whiteSpace(8 - pub.length),
+      padLeft('', 8 - pub.length, ' '),
       picocolors.green(obs),
-      whiteSpace(14 - obs.length),
+      padLeft('', 14 - obs.length, ' '),
       functionStore[name].path || ''
     )
   }
 
   const basedServer = new BasedServer(properProps)
   return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
-}
-
-export function isFunctionSpec(
-  fn: BasedFunction | Partial<BasedFunctionSpec>
-): fn is Partial<BasedFunctionSpec> {
-  return 'function' in fn || false
-}
-
-export function isObsFunctionSpec(
-  fn: BasedQueryFunction | Partial<BasedObservableFunctionSpec>
-): fn is Partial<BasedObservableFunctionSpec> {
-  return 'function' in fn || false
 }

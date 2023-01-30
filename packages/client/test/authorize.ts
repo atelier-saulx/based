@@ -63,6 +63,7 @@ test.serial('authorize functions', async (t) => {
   )
 
   await coreClient.setAuthState({ token })
+
   await t.notThrowsAsync(
     coreClient.call('hello', {
       bla: true,
@@ -165,7 +166,7 @@ test.serial('authorize after observe', async (t) => {
   await wait(500)
   t.is(receiveCnt, 0)
   await coreClient.setAuthState({ token })
-  await wait(500)
+  await wait(1500)
 
   // @ts-ignore - totally incorrect typescript error...
   clearInterval(counter)

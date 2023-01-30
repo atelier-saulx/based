@@ -1,7 +1,7 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
 import { Context } from '@based/functions'
-import { isObservableFunctionSpec } from '../functions'
+import { verifyRoute } from '../verifyRoute'
 import {
   genObservableId,
   hasObs,
@@ -11,6 +11,7 @@ import {
   subscribeFunction,
   unsubscribeFunction,
 } from '../observable'
+import { installFn } from '../installFn'
 
 export const observe = (
   server: BasedServer,
@@ -20,16 +21,16 @@ export const observe = (
   update: ObservableUpdateFunction,
   error: ObserveErrorListener
 ): (() => void) => {
-  const route = server.functions.route(name)
+  const route = verifyRoute(
+    server,
+    ctx,
+    'query',
+    server.functions.route(name),
+    name
+  )
 
-  if (!route) {
-    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
-  }
-
-  if (route.query !== true) {
-    throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-      name,
-    })
+  if (route === null) {
+    return
   }
 
   const id = genObservableId(name, payload)
@@ -48,46 +49,23 @@ export const observe = (
     return close
   }
 
-  server.functions
-    .install(name)
-    .then((spec) => {
-      if (isClosed) {
-        return
-      }
-      if (spec === false) {
-        error(
-          createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-            name,
-          })
-        )
-        return
-      }
-
-      if (!isObservableFunctionSpec(spec)) {
-        error(
-          createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
-            name,
-          })
-        )
-        return
-      }
-
-      if (!hasObs(server, id)) {
-        createObs(server, name, id, payload)
-      }
-
-      subscribeFunction(server, id, update)
-    })
-    .catch(() => {
-      if (isClosed) {
-        return
-      }
+  installFn(server, server.client.ctx, route).then((spec) => {
+    if (isClosed) {
+      return
+    }
+    if (spec === null) {
       error(
         createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-          name,
+          route,
         })
       )
-    })
+      return
+    }
+    if (!hasObs(server, id)) {
+      createObs(server, name, id, payload)
+    }
+    subscribeFunction(server, id, update)
+  })
 
   return close
 }

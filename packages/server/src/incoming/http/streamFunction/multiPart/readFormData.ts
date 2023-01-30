@@ -1,11 +1,10 @@
-import { DataStream } from './DataStream'
+import { DataStream } from '../DataStream'
 import { HttpSession, Context, StreamPayload } from '@based/functions'
-import { BasedErrorCode } from '../../../error'
-import { sendError } from '../../../sendError'
-import { sendHttpResponse } from '../../../sendHttpResponse'
-import getExtension from './getExtension'
-import { BasedServer } from '../../../server'
-import { BasedFunctionRoute } from '../../../functions'
+import { BasedErrorCode } from '../../../../error'
+import { sendError } from '../../../../sendError'
+import getExtension from '../getExtension'
+import { BasedServer } from '../../../../server'
+import { BasedFunctionRoute } from '../../../../functions'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -42,8 +41,7 @@ const handleMeta = (
   line: string,
   meta: string,
   isWriting: boolean,
-  promiseQ: any[],
-  fn: (payload: StreamPayload) => Promise<any>
+  fileCallback: (payload: StreamPayload) => void
 ): boolean => {
   const opts = file.opts
   opts.name = line.match(/filename="(.*?)"/)?.[1] || 'untitled'
@@ -66,16 +64,14 @@ const handleMeta = (
   }
   isWriting = setHeader(file)
   if (isWriting) {
-    promiseQ.push(
-      fn({
-        payload: file.opts.payload || {},
-        fileName: file.opts.name,
-        mimeType: file.opts.type,
-        extension: file.opts.extension,
-        size: file.opts.size || 0,
-        stream: file.stream,
-      })
-    )
+    fileCallback({
+      payload: file.opts.payload || {},
+      fileName: file.opts.name,
+      mimeType: file.opts.type,
+      extension: file.opts.extension,
+      size: file.opts.size || 0,
+      stream: file.stream,
+    })
   }
   return isWriting
 }
@@ -84,13 +80,12 @@ export default (
   ctx: Context<HttpSession>,
   server: BasedServer,
   route: BasedFunctionRoute,
-  fn: (payload: StreamPayload) => Promise<any>
+  onFile: (payload: StreamPayload) => void,
+  isReady: () => void
 ) => {
   const files: FileDescriptor[] = []
 
   const contentLength = ctx.session.headers['content-length']
-
-  const promiseQ: Promise<any>[] = []
 
   let setInProgress = false
   let boundary = null
@@ -165,7 +160,7 @@ export default (
 
       if (line === boundary && !isWriting) {
         const file = {
-          stream: new DataStream(),
+          stream: new DataStream(0),
           headersSet: 0,
           opts: {},
           isDone: false,
@@ -178,7 +173,7 @@ export default (
 
       if (!file) {
         // TODO: invalid file error
-        return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+        return sendError(server, ctx, BasedErrorCode.InvalidPayload, { route })
       }
 
       if (!isWriting && collectMeta) {
@@ -189,7 +184,7 @@ export default (
           continue
         }
         collectMeta = ''
-        isWriting = handleMeta(file, line, meta, isWriting, promiseQ, fn)
+        isWriting = handleMeta(file, line, meta, isWriting, onFile)
         continue
       }
 
@@ -201,9 +196,11 @@ export default (
             continue
           }
           // TODO: invalid file error
-          return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+          return sendError(server, ctx, BasedErrorCode.InvalidPayload, {
+            route,
+          })
         }
-        isWriting = handleMeta(file, line, meta, isWriting, promiseQ, fn)
+        isWriting = handleMeta(file, line, meta, isWriting, onFile)
         continue
       }
 
@@ -213,7 +210,9 @@ export default (
         )?.[1]
         if (!mimeType) {
           // TODO: invalid file (can speficy in route potentialy...)
-          return sendError(server, ctx, BasedErrorCode.InvalidPayload, route)
+          return sendError(server, ctx, BasedErrorCode.InvalidPayload, {
+            route,
+          })
         }
 
         file.opts.type = mimeType
@@ -224,16 +223,14 @@ export default (
 
         isWriting = setHeader(file)
         if (isWriting) {
-          promiseQ.push(
-            fn({
-              payload: file.opts.payload,
-              fileName: file.opts.name,
-              mimeType: file.opts.type,
-              extension: file.opts.extension,
-              size: file.opts.size,
-              stream: file.stream,
-            })
-          )
+          onFile({
+            payload: file.opts.payload,
+            fileName: file.opts.name,
+            mimeType: file.opts.type,
+            extension: file.opts.extension,
+            size: file.opts.size,
+            stream: file.stream,
+          })
         }
         continue
       }
@@ -248,16 +245,7 @@ export default (
     }
 
     if (isLast) {
-      Promise.allSettled(promiseQ).then((results) => {
-        const r = results.map((v) => {
-          if (v.status === 'rejected') {
-            return v.reason
-          } else {
-            return v.value
-          }
-        })
-        sendHttpResponse(ctx, r)
-      })
+      isReady()
     }
   })
 }

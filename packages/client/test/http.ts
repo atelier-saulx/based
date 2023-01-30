@@ -1,7 +1,7 @@
 import test from 'ava'
 import createServer, {
   BasedFunctionSpec,
-  BasedObservableFunctionSpec,
+  BasedQueryFunctionSpec,
   createSimpleServer,
 } from '@based/server'
 import { wait } from '@saulx/utils'
@@ -15,11 +15,16 @@ const gzip = promisify(zlib.gzip)
 
 test.serial('functions (over http)', async (t) => {
   const store: {
-    [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
+    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
+      maxPayloadSize: number
+      rateLimitTokens: 1
+    }
   } = {
     hello: {
       path: '/flap',
       name: 'hello',
+      maxPayloadSize: 1e6,
+      rateLimitTokens: 1,
       checksum: 1,
       function: async (based, payload) => {
         if (payload) {
@@ -52,12 +57,7 @@ test.serial('functions (over http)', async (t) => {
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
-              return {
-                name: store[name].name,
-                query: store[name].query,
-                maxPayloadSize: 1e6,
-                rateLimitTokens: 1,
-              }
+              return store[name]
             }
           }
         }
@@ -113,13 +113,20 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial.only('get (over http)', async (t) => {
+test.serial('get (over http)', async (t) => {
   const store: {
-    [key: string]: BasedFunctionSpec | BasedObservableFunctionSpec
+    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
+      maxPayloadSize: number
+      rateLimitTokens: 1
+    }
   } = {
     hello: {
       path: '/counter',
       name: 'hello',
+      maxPayloadSize: 1e6,
+      rateLimitTokens: 1,
+      memCacheTimeout: 3e3,
+      idleTimeout: 1e3,
       checksum: 1,
       query: true,
       function: async (based, payload, update) => {
@@ -144,22 +151,12 @@ test.serial.only('get (over http)', async (t) => {
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
-              return {
-                name: store[name].name,
-                query: store[name].query,
-                maxPayloadSize: 1e6,
-                rateLimitTokens: 1,
-              }
+              return store[name]
             }
           }
         }
         if (name && store[name]) {
-          return {
-            name,
-            query: store[name].query,
-            maxPayloadSize: 1e6,
-            rateLimitTokens: 1,
-          }
+          return store[name]
         }
         return false
       },
@@ -200,11 +197,18 @@ test.serial.only('get (over http)', async (t) => {
 })
 
 test.serial('functions (over http + contentEncoding)', async (t) => {
-  const store: { [key: string]: BasedFunctionSpec } = {
+  const store: {
+    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
+      maxPayloadSize: number
+      rateLimitTokens: 1
+    }
+  } = {
     hello: {
       path: '/flap',
       name: 'hello',
       checksum: 1,
+      maxPayloadSize: 1e11,
+      rateLimitTokens: 1,
       function: async (based, payload) => {
         await wait(100)
         if (payload) {
@@ -237,22 +241,13 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         if (path) {
           for (const name in store) {
             if (store[name].path === path) {
-              return {
-                maxPayloadSize: 1e11,
-                name: store[name].name,
-                query: store[name].query,
-                rateLimitTokens: 1,
-              }
+              return store[name]
             }
           }
         }
 
         if (name && store[name]) {
-          return {
-            name,
-            maxPayloadSize: 1e11,
-            rateLimitTokens: 1,
-          }
+          return store[name]
         }
         return false
       },

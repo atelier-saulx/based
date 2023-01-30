@@ -1,7 +1,8 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
 import { Context } from '@based/functions'
-import { isObservableFunctionSpec } from '../functions'
+import { verifyRoute } from '../verifyRoute'
+import { installFn } from '../installFn'
 
 export const callFunction = async (
   server: BasedServer,
@@ -9,27 +10,23 @@ export const callFunction = async (
   ctx: Context,
   payload: any
 ): Promise<any> => {
-  const route = server.functions.route(name)
+  const route = verifyRoute(
+    server,
+    server.client.ctx,
+    'fn',
+    server.functions.route(name),
+    name
+  )
 
-  if (!route) {
-    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
+  if (route === null) {
+    return
   }
 
-  if (route.query === true) {
-    throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
-      name,
-    })
-  }
-
-  const fn = await server.functions.install(name)
+  const fn = await installFn(server, server.client.ctx, route)
 
   if (!fn) {
-    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, { name })
-  }
-
-  if (isObservableFunctionSpec(fn)) {
-    throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
-      name,
+    throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
+      route,
     })
   }
 
@@ -37,7 +34,7 @@ export const callFunction = async (
     return fn.function(server.client, payload, ctx)
   } catch (err) {
     throw createError(server, ctx, BasedErrorCode.FunctionError, {
-      route: { name },
+      route,
       err,
     })
   }

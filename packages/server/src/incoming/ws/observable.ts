@@ -4,61 +4,61 @@ import {
   readUint8,
   parsePayload,
 } from '../../protocol'
-import { BasedServer } from '../../server'
-import {
-  createObs,
-  unsubscribeWs,
-  subscribeWs,
-  verifyRoute,
-  hasObs,
-} from '../../observable'
+import { createObs, unsubscribeWs, subscribeWs, hasObs } from '../../observable'
 import { BasedErrorCode } from '../../error'
-import { WebSocketSession, Context } from '@based/functions'
-import { BasedFunctionRoute } from '../../functions'
+import { WebSocketSession } from '@based/functions'
+import { BasedQueryFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'
+import { verifyRoute } from '../../verifyRoute'
+import { installFn } from '../../installFn'
+import {
+  authorize,
+  IsAuthorizedHandler,
+  AuthErrorHandler,
+} from '../../authorize'
+import { BinaryMessageHandler } from './types'
 
-export const enableSubscribe = (
-  server: BasedServer,
-  ctx: Context<WebSocketSession>,
-  id: number,
-  checksum: number,
-  name: string,
-  payload: any,
-  route: BasedFunctionRoute
-) => {
+export const enableSubscribe: IsAuthorizedHandler<
+  WebSocketSession,
+  BasedQueryFunctionRoute
+> = (route, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     subscribeWs(server, id, checksum, ctx)
     return
   }
-
-  server.functions
-    .install(name)
-    .then((spec) => {
-      if (!verifyRoute(server, name, spec, ctx)) {
-        return
-      }
-      if (!ctx.session?.obs.has(id)) {
-        return
-      }
-      if (!hasObs(server, id)) {
-        createObs(server, name, id, payload)
-      }
-      ctx.session.subscribe(String(id))
-      subscribeWs(server, id, checksum, ctx)
-    })
-    .catch(() => {
-      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
-    })
+  // TODO: big perf optmization possible here (only return a promise if its not there)
+  installFn(server, ctx, route, id).then((spec) => {
+    if (spec === null || !ctx.session.obs.has(id)) {
+      return
+    }
+    if (!hasObs(server, id)) {
+      createObs(server, route.name, id, payload)
+    }
+    ctx.session.subscribe(String(id))
+    subscribeWs(server, id, checksum, ctx)
+  })
 }
 
-export const subscribeMessage = (
-  arr: Uint8Array,
-  start: number,
-  len: number,
-  isDeflate: boolean,
-  ctx: Context<WebSocketSession>,
-  server: BasedServer
+const isNotAuthorized: AuthErrorHandler<
+  WebSocketSession,
+  BasedQueryFunctionRoute
+> = (route, server, ctx, payload, id, checksum) => {
+  ctx.session.unauthorizedObs.add({
+    id,
+    checksum,
+    name: route.name,
+    payload,
+  })
+}
+
+export const subscribeMessage: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
 ) => {
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
@@ -72,10 +72,17 @@ export const subscribeMessage = (
     return false
   }
 
-  const route = verifyRoute(server, name, server.functions.route(name), ctx)
+  const route = verifyRoute(
+    server,
+    ctx,
+    'query',
+    server.functions.route(name),
+    name,
+    id
+  )
 
   // TODO: add strictness setting - if strict return false here
-  if (!route) {
+  if (route === null) {
     return true
   }
 
@@ -87,7 +94,10 @@ export const subscribeMessage = (
   }
 
   if (route.maxPayloadSize !== -1 && len > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, route)
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+      route,
+      observableId: id,
+    })
     return true
   }
 
@@ -105,48 +115,27 @@ export const subscribeMessage = (
 
   ctx.session.obs.add(id)
 
-  if (route.public === true) {
-    enableSubscribe(server, ctx, id, checksum, name, payload, route)
-    return true
-  }
-
-  server.auth
-    .authorize(server.client, ctx, name, payload)
-    .then((ok) => {
-      if (!ctx.session?.obs.has(id)) {
-        return
-      }
-      if (!ok) {
-        ctx.session.unauthorizedObs.add({
-          id,
-          checksum,
-          name,
-          payload,
-        })
-        sendError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-          route,
-          observableId: id,
-        })
-        return
-      }
-      enableSubscribe(server, ctx, id, checksum, name, payload, route)
-    })
-    .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.AuthorizeFunctionError, {
-        route,
-        observableId: id,
-        err,
-      })
-    })
+  authorize(
+    route,
+    server,
+    ctx,
+    payload,
+    enableSubscribe,
+    id,
+    checksum,
+    isNotAuthorized
+  )
 
   return true
 }
 
-export const unsubscribeMessage = (
-  arr: Uint8Array,
-  start: number,
-  ctx: Context<WebSocketSession>,
-  server: BasedServer
+export const unsubscribeMessage: BinaryMessageHandler = (
+  arr,
+  start,
+  len,
+  isDeflate,
+  ctx,
+  server
 ) => {
   // | 4 header | 8 id |
   if (!ctx.session) {

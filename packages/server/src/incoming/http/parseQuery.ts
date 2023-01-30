@@ -12,8 +12,10 @@ export default (ctx: Context<HttpSession>): ReturnType<typeof parseQuery> => {
   try {
     ctx.session.parsedQuery = parseQuery(ctx.session.query)
 
+    // TODO chekc if this is a good idea (can also call it 'autState')
     if (
-      !ctx.session.authState &&
+      !ctx.session.authState.token &&
+      !ctx.session.authState.refreshToken &&
       ctx.session.parsedQuery &&
       'token' in ctx.session.parsedQuery
     ) {

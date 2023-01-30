@@ -1,10 +1,10 @@
 import { BasedServer } from '../server'
 import { ActiveObservable, ObservableUpdateFunction } from './types'
 import { extendCache } from './extendCache'
-import { BasedError, BasedErrorCode } from '../error'
+import { BasedErrorCode, BasedErrorData } from '../error'
 import { sendObsWs } from './send'
 import { getObs } from './get'
-import { sendError } from '../sendError'
+import { sendErrorData } from '../sendError'
 import { WebSocketSession, Context } from '@based/functions'
 
 export const subscribeWs = (
@@ -24,13 +24,7 @@ export const subscribeWs = (
   obs.clients.add(ctx.session.id)
 
   if (obs.error) {
-    sendError(server, ctx, obs.error.code, {
-      err: obs.error,
-      observableId: id,
-      route: {
-        name: obs.name,
-      },
-    })
+    sendErrorData(ctx, obs.error)
     return
   }
 
@@ -65,7 +59,7 @@ export const subscribeFunction = (
 
 export const subscribeNext = (
   obs: ActiveObservable,
-  onNext: (err?: BasedError<BasedErrorCode.ObservableFunctionError>) => void
+  onNext: (err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>) => void
 ) => {
   extendCache(obs)
   if (!obs.onNextData) {

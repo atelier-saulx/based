@@ -1,6 +1,6 @@
 import { BasedServer } from '../../server'
 import { HttpSession, Context } from '@based/functions'
-import { BasedFunctionRoute, isObservableFunctionSpec } from '../../functions'
+import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../../functions'
 import { end } from '../../sendHttpResponse'
 import { compress } from '../../compress'
 import {
@@ -19,6 +19,8 @@ import { parseQuery } from '@saulx/utils'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { promisify } from 'node:util'
+import { authorize, IsAuthorizedHandler } from '../../authorize'
+import { installFn } from '../../installFn'
 
 const inflate = promisify(zlib.inflate)
 
@@ -120,7 +122,7 @@ const getFromExisting = (
   const obs = getObs(server, id)
 
   if (obs.error) {
-    sendObsGetError(server, ctx, obs.id, obs.name, obs.error)
+    sendObsGetError(server, ctx, obs.id, obs.error)
     return
   }
 
@@ -133,17 +135,48 @@ const getFromExisting = (
     if (!ctx.session) {
       return
     }
-
     if (err) {
-      sendObsGetError(server, ctx, obs.id, obs.name, err)
+      sendObsGetError(server, ctx, obs.id, err)
     } else {
       sendGetResponse(route, server, id, obs, checksum, ctx)
     }
   })
 }
 
+const isAuthorized: IsAuthorizedHandler<
+  HttpSession,
+  BasedQueryFunctionRoute
+> = (route, server, ctx, payload, id, checksum) => {
+  const name = route.name
+
+  if (hasObs(server, id)) {
+    getFromExisting(server, id, ctx, route, checksum)
+    return
+  }
+
+  installFn(server, ctx, route, id).then((spec) => {
+    if (spec === null) {
+      return
+    }
+    if (hasObs(server, id)) {
+      getFromExisting(server, id, ctx, route, checksum)
+      return
+    }
+
+    const obs = createObs(server, name, id, payload, true)
+    subscribeNext(obs, (err) => {
+      if (err) {
+        sendObsGetError(server, ctx, obs.id, err)
+      } else {
+        sendGetResponse(route, server, id, obs, checksum, ctx)
+      }
+    })
+    start(server, id)
+  })
+}
+
 export const httpGet = (
-  route: BasedFunctionRoute,
+  route: BasedQueryFunctionRoute,
   payload: any,
   ctx: Context<HttpSession>,
   server: BasedServer,
@@ -159,48 +192,13 @@ export const httpGet = (
     } catch (err) {}
   }
 
-  const name = route.name
-  const id = genObservableId(name, payload)
-
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, route, checksum)
-    return
-  }
-
-  server.functions
-    .install(name)
-    .then((spec) => {
-      if (!ctx.session) {
-        return
-      }
-      if (!spec) {
-        sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
-        return
-      }
-
-      if (!isObservableFunctionSpec(spec)) {
-        sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, route)
-        return
-      }
-
-      if (hasObs(server, id)) {
-        getFromExisting(server, id, ctx, route, checksum)
-        return
-      }
-
-      const obs = createObs(server, name, id, payload, true)
-      subscribeNext(obs, (err) => {
-        if (err) {
-          sendObsGetError(server, ctx, obs.id, obs.name, err)
-        } else {
-          sendGetResponse(route, server, id, obs, checksum, ctx)
-        }
-      })
-      start(server, id)
-    })
-    .catch((err) => {
-      // TODO: error type
-      console.error('Internal: Unxpected error in observable', err)
-      sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
-    })
+  authorize(
+    route,
+    server,
+    ctx,
+    payload,
+    isAuthorized,
+    genObservableId(route.name, payload),
+    checksum
+  )
 }

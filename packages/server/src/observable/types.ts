@@ -1,4 +1,4 @@
-import { BasedError, BasedErrorCode, BasedErrorData } from '../error'
+import { BasedErrorCode, BasedErrorData } from '../error'
 
 export type ObservableUpdateFunction = {
   (
@@ -15,11 +15,8 @@ export type ObservableUpdateFunction = {
 
 export type ObserveErrorListener = (
   err:
-    | BasedError<BasedErrorCode.ObservableFunctionError>
     | BasedErrorData<BasedErrorCode.ObservableFunctionError>
-    | BasedError<BasedErrorCode.FunctionIsNotObservable>
     | BasedErrorData<BasedErrorCode.FunctionIsNotObservable>
-    | BasedError<BasedErrorCode.FunctionNotFound>
     | BasedErrorData<BasedErrorCode.FunctionNotFound>
 ) => void
 
@@ -31,7 +28,7 @@ export type ActiveObservable = {
   functionObserveClients: Set<ObservableUpdateFunction>
   clients: Set<number>
   onNextData?: Set<
-    (err?: BasedError<BasedErrorCode.ObservableFunctionError>) => void
+    (err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>) => void
   >
   isDestroyed: boolean
   payload: any
@@ -43,5 +40,5 @@ export type ActiveObservable = {
   checksum?: number
   closeFunction?: () => void
   beingDestroyed?: NodeJS.Timeout
-  error?: BasedError<BasedErrorCode.ObservableFunctionError> | null
+  error?: BasedErrorData<BasedErrorCode.ObservableFunctionError> | null
 }

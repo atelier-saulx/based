@@ -27,7 +27,10 @@ const reader = (
   }
 
   // type 2 = unsubscribe
-  if (type === 2 && unsubscribeMessage(arr, start, ctx, server)) {
+  if (
+    type === 2 &&
+    unsubscribeMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
     return next
   }
 

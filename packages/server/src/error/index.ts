@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { BasedFunctionRoute } from '../functions'
+import { isRoute } from '../functions'
 import { Context } from '@based/functions'
 import {
   BasedErrorCode,
@@ -11,30 +11,20 @@ import {
 import { errorTypeHandlers } from './errorTypeHandlers'
 export * from './types'
 
-const isBasedFunctionRoute = (route: any): route is BasedFunctionRoute => {
-  if (route && typeof route === 'object' && 'name' in route) {
-    return true
-  }
-  return false
-}
-
-export function createError<T extends BasedErrorCode>(
-  server: BasedServer,
-  context: Context,
+export function createErrorData<T extends BasedErrorCode>(
   code: T,
   payload: ErrorPayload[T]
-): BasedErrorData<T> {
+) {
   const type = errorTypeHandlers[code]
-
   const route = !payload
     ? EMPTY_ROUTE
-    : isBasedFunctionRoute(payload)
+    : isRoute(payload)
     ? payload
     : 'route' in payload
     ? payload.route
     : EMPTY_ROUTE
 
-  const errorData: BasedErrorData<T> = {
+  return {
     code,
     statusCode: type.statusCode,
     statusMessage: type.statusMessage,
@@ -44,20 +34,25 @@ export function createError<T extends BasedErrorCode>(
       path: route.path,
     },
   }
+}
 
+export function createError<T extends BasedErrorCode>(
+  server: BasedServer,
+  context: Context,
+  code: T,
+  payload: ErrorPayload[T]
+): BasedErrorData<T> {
+  const errorData: BasedErrorData<T> = createErrorData(code, payload)
   if ('requestId' in payload) {
     errorData.requestId = payload.requestId
   }
-
   if ('observableId' in payload) {
     errorData.observableId = payload.observableId
   }
-
   if ('err' in payload) {
     server.emit('error', context, errorData, payload.err)
   } else {
     server.emit('error', context, errorData)
   }
-
   return errorData
 }

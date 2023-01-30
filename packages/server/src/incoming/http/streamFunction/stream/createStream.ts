@@ -1,10 +1,10 @@
-import { DataStream } from './DataStream'
+import { DataStream } from '../DataStream'
 import { HttpSession, Context } from '@based/functions'
-import { BasedFunctionRoute } from '../../../functions'
-import { sendError } from '../../../sendError'
+import { BasedFunctionRoute } from '../../../../functions'
+import { sendError } from '../../../../sendError'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../../error'
-import { BasedServer } from '../../../server'
+import { BasedErrorCode } from '../../../../error'
+import { BasedServer } from '../../../../server'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -18,13 +18,7 @@ export default (
   ctx: Context<HttpSession>,
   size: number
 ): DataStream => {
-  const stream = new DataStream()
-  let total = 0
-  let progress = 0
-  let setInProgress = false
-  stream.emit('progress', progress)
-  const emitProgress = size > 200000
-
+  const stream = new DataStream(size)
   const contentEncoding = ctx.session.headers['content-encoding']
 
   if (contentEncoding) {
@@ -38,31 +32,14 @@ export default (
     }
     if (uncompressStream) {
       ctx.session.res.onData((c, isLast) => {
-        total += c.byteLength
         if (c.byteLength > MAX_CHUNK_SIZE) {
           sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
           uncompressStream.destroy()
           stream.destroy()
           return
         }
-
         const buf = Buffer.alloc(c.byteLength, Buffer.from(c))
-
-        if (emitProgress) {
-          progress = total / size
-          if (!setInProgress) {
-            setInProgress = true
-            setTimeout(() => {
-              stream.emit('progress', progress)
-              setInProgress = false
-            }, 250)
-          }
-        }
-
         if (isLast) {
-          if (!emitProgress) {
-            stream.emit('progress', 1)
-          }
           uncompressStream.end(buf)
         } else {
           if (!uncompressStream.write(buf)) {
@@ -82,26 +59,12 @@ export default (
     }
   } else {
     ctx.session.res.onData((c, isLast) => {
-      total += c.byteLength
       if (c.byteLength > MAX_CHUNK_SIZE) {
         sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
         stream.destroy()
         return
       }
-      if (emitProgress) {
-        progress = total / size
-        if (!setInProgress) {
-          setInProgress = true
-          setTimeout(() => {
-            stream.emit('progress', progress)
-            setInProgress = false
-          }, 250)
-        }
-      }
       if (isLast) {
-        if (!emitProgress) {
-          stream.emit('progress', 1)
-        }
         stream.end(Buffer.from(c))
       } else {
         stream.write(Buffer.from(c))
