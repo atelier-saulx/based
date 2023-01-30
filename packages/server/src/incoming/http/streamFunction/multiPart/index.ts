@@ -1,19 +1,71 @@
-import {
-  HttpSession,
-  Context,
-  // StreamPayload,
-  // BasedStreamFunction,
-} from '@based/functions'
+import { HttpSession, Context, StreamPayload } from '@based/functions'
 import { BasedServer } from '../../../../server'
-import { BasedStreamFunctionRoute } from '../../../../functions'
-// import { sendError } from '../../../../sendError'
-// import getExtension from '../getExtension'
-// import { authorizeRequest } from '../../authorize'
-// import { BasedErrorCode, BasedErrorData, createError } from '../../../../error'
-// import { BasedErrorData } from '../../../../error'
-
-// import { sendHttpResponse } from '../../../../sendHttpResponse'
+import {
+  BasedStreamFunctionRoute,
+  BasedStreamFunctionSpec,
+} from '../../../../functions'
+import { installFn } from '../../../../installFn'
 import readFormData from './readFormData'
+import {
+  BasedErrorCode,
+  BasedErrorData,
+  createErrorData,
+} from '../../../../error'
+import { sendHttpResponse } from '../../../../sendHttpResponse'
+
+const handleFile = async (
+  server: BasedServer,
+  ctx: Context<HttpSession>,
+  installedFn: Promise<BasedStreamFunctionSpec | null>,
+  file: StreamPayload,
+  route: BasedStreamFunctionRoute
+): Promise<
+  | { value: any }
+  | {
+      error: BasedErrorData<
+        | BasedErrorCode.FunctionError
+        | BasedErrorCode.FunctionNotFound
+        | BasedErrorCode.AuthorizeFunctionError
+        | BasedErrorCode.AuthorizeRejectedError
+      >
+    }
+> => {
+  try {
+    const ok = await server.auth.authorize(server.client, ctx, route.name, file)
+    if (!ok) {
+      return {
+        error: createErrorData(BasedErrorCode.AuthorizeRejectedError, {
+          route,
+        }),
+      }
+    }
+  } catch (err) {
+    return {
+      error: createErrorData(BasedErrorCode.AuthorizeFunctionError, {
+        route,
+        err,
+      }),
+    }
+  }
+
+  const spec = await installedFn
+
+  if (spec === null) {
+    return {
+      error: createErrorData(BasedErrorCode.FunctionNotFound, {
+        route,
+      }),
+    }
+  }
+  try {
+    const value = await spec.function(server.client, file, ctx)
+    return { value }
+  } catch (err) {
+    return {
+      error: createErrorData(BasedErrorCode.FunctionError, { err, route }),
+    }
+  }
+}
 
 export const multiPart = (
   server: BasedServer,
@@ -26,102 +78,17 @@ export const multiPart = (
     ctx.session.corsSend = true
   })
 
-  // const fileHandlers: {
-  //   resolve: (payload: StreamPayload) => void
-  //   reject: (err: BasedErrorData) => void
-  //   payload: StreamPayload
-  // }[] = []
+  const installedFn = installFn(server, server.client.ctx, route)
 
-  // let installFn: Promise<BasedStreamFunction>
+  const pendingFiles: ReturnType<typeof handleFile>[] = []
 
-  /*
-    if (spec && !isObservableFunctionSpec(spec) && spec.stream) {
-          installedFn = spec.function
-          if (fileHandlers.length) {
-            for (const file of fileHandlers) {
-              installedFn(server.client, file.payload, ctx)
-                .then(file.resolve)
-                .catch((err) =>
-                  file.reject(
-                    createError(server, ctx, BasedErrorCode.FunctionError, {
-                      route,
-                      err,
-                    })
-                  )
-                )
-            }
-          }
-        } else {
-          sendError(server, ctx, BasedErrorCode.FunctionNotFound, route)
-        }
-   // Promise.allSettled(promiseQ)
-        //   .then((results) => {
-        //     const r = results.map((v) => {
-        //       if (v.status === 'rejected') {
-        //         return v.reason
-        //       } else {
-        //         return v.value
-        //       }
-        //     })
-        //     sendHttpResponse(ctx, r)
-        //   })
-        //   .catch((err) => {
-        //     console.info('???', err)
-        //   })
-  */
-
-  const onFile = () => {
-    console.log('this is rdy...')
-
-    // authorizeRequest(
-    //   server,
-    //   ctx,
-    //   payload,
-    //   route,
-    //   (payload) => {
-    //     if (!installedFn) {
-    //       fileHandlers.push({ payload, resolve, reject })
-    //     } else {
-    //       installedFn(server.client, payload, ctx)
-    //         .then(resolve)
-    //         .catch((err) => {
-    //           payload.stream.destroy()
-    //           reject(
-    //             createError(server, ctx, BasedErrorCode.FunctionError, {
-    //               route,
-    //               err,
-    //             })
-    //           )
-    //         })
-    //     }
-    //   },
-    //   (server, ctx, payload, err) => {
-    //     payload.stream.destroy()
-    //     if (err) {
-    //       reject(
-    //         createError(
-    //           server,
-    //           ctx,
-    //           BasedErrorCode.AuthorizeFunctionError,
-    //           {
-    //             route,
-    //             err,
-    //           }
-    //         )
-    //       )
-    //       return
-    //     }
-    //     reject(
-    //       createError(server, ctx, BasedErrorCode.AuthorizeRejectedError, {
-    //         route,
-    //       })
-    //     )
-    //   }
-    // )
+  const onFile = (file: StreamPayload) => {
+    pendingFiles.push(handleFile(server, ctx, installedFn, file, route))
   }
 
-  const ready = () => {
-    console.log('xx')
+  const ready = async () => {
+    const results = await Promise.all(pendingFiles)
+    sendHttpResponse(ctx, results)
   }
 
   readFormData(ctx, server, route, onFile, ready)

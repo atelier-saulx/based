@@ -125,34 +125,36 @@ const init = async () => {
     }
   })
 
-  uploadButton('Stream brokenFiles', async (files) => {
-    try {
-      await Promise.all(
-        [...files].map(async (f) => {
-          const x = await based.stream('brokenFiles', {
+  uploadButton('Stream brokenFiles', async (files, progress) => {
+    const results = await Promise.allSettled(
+      [...files].map(async (f) => {
+        const x = await based.stream(
+          'brokenFiles',
+          {
             contents: f,
-          })
-          return x
-        })
-      )
-    } catch (err) {
-      log(err)
-    }
+          },
+          progress
+        )
+        return x
+      })
+    )
+    log(results)
   })
 
-  uploadButton('Stream notAllowedFiles', async (files) => {
-    try {
-      await Promise.all(
-        [...files].map(async (f) => {
-          const x = await based.stream('notAllowedFiles', {
+  uploadButton('Stream notAllowedFiles', async (files, progress) => {
+    const results = await Promise.allSettled(
+      [...files].map(async (f) => {
+        const x = await based.stream(
+          'notAllowedFiles',
+          {
             contents: f,
-          })
-          return x
-        })
-      )
-    } catch (err) {
-      log(err)
-    }
+          },
+          progress
+        )
+        return x
+      })
+    )
+    log(results)
   })
 
   toggleButton('Disconnect', () => {

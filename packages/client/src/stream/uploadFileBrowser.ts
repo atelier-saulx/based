@@ -85,18 +85,12 @@ const drainQueue = (
         xhr.onload = () => {
           try {
             const x = JSON.parse(xhr.response)
-            console.info('--->', x)
             for (let i = 0; i < x.length; i++) {
               const result = x[i]
-              if (
-                result.code &&
-                result.route &&
-                result.message &&
-                result.statusCode
-              ) {
-                q[i].reject(convertDataToBasedError(result))
+              if (result.error) {
+                q[i].reject(convertDataToBasedError(result.error))
               } else {
-                q[i].resolve(x[i])
+                q[i].resolve(x[i].value)
               }
             }
           } catch (err) {

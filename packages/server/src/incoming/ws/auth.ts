@@ -28,7 +28,6 @@ export const authMessage: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  // TODO: Allow AUTH to be called over http to refresh a token
   if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
     ctx.session.close()
     return false

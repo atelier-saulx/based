@@ -80,7 +80,7 @@ const testShared = async (t, coreClient, server) => {
   await server.destroy()
 }
 
-test.serial.only('nested functions (raw api)', async (t) => {
+test.serial('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
