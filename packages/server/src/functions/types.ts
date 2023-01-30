@@ -6,21 +6,27 @@ import {
 } from '@based/functions'
 import { BasedServer } from '../server'
 
-export type BasedFunctionRoute = {
+type Route = {
   name: string
   headers?: string[]
   path?: string
   maxPayloadSize?: number
   rateLimitTokens?: number
   public?: boolean
+  internalOnly?: boolean
 }
 
-export type BasedQueryFunctionRoute = BasedFunctionRoute & {
+export type BasedFunctionRoute = Route & {
+  httpHeaders?: string[]
+}
+
+export type BasedQueryFunctionRoute = Route & {
   query: true
 }
 
-export type BasedStreamFunctionRoute = BasedFunctionRoute & {
+export type BasedStreamFunctionRoute = Route & {
   stream: true
+  httpHeaders?: string[]
 }
 
 export type BasedQueryFunctionSpec = {

@@ -58,6 +58,24 @@ export const verifyRoute = <T extends FnType>(
     return null
   }
 
+  if (route.internalOnly === true && isClientContext(ctx)) {
+    sendError(
+      server,
+      ctx,
+      BasedErrorCode.FunctionNotFound,
+      type === 'query'
+        ? {
+            route: { name },
+            observableId: id,
+          }
+        : {
+            route: { name },
+            requestId: id,
+          }
+    )
+    return null
+  }
+
   if (type === 'query') {
     if (!isQueryFunctionRoute(route)) {
       if (!isClientContext(ctx)) {

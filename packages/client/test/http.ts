@@ -196,6 +196,30 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
+test.serial.only('functions (custom headers)', async (t) => {
+  const server = await createSimpleServer({
+    functions: {
+      hello: {
+        function: async (based, payload, ctx) => {
+          console.info(ctx.session?.headers)
+          return 'snap je'
+        },
+      },
+    },
+  })
+
+  const x = await (
+    await fetch('http://localhost:9910', {
+      headers: {
+        bla: 'snurp',
+      },
+    })
+  ).text()
+
+  t.is(x, 'snap je')
+  await server.destroy()
+})
+
 test.serial('functions (over http + contentEncoding)', async (t) => {
   const store: {
     [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
