@@ -18,7 +18,7 @@ export const verifyRoute = <T extends FnType>(
   server: BasedServer,
   ctx: Context = server.client.ctx,
   type: T,
-  route: BasedRoute | false,
+  route: BasedRoute | null,
   name: string,
   id?: number
 ):

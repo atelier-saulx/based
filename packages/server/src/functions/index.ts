@@ -121,7 +121,7 @@ export class BasedFunctions {
 
   private async installGaurdedFromConfig(
     name: string
-  ): Promise<BasedSpec | false> {
+  ): Promise<BasedSpec | null> {
     if (this.installsInProgress[name]) {
       return this.installsInProgress[name]
     }
@@ -134,7 +134,7 @@ export class BasedFunctions {
     return s
   }
 
-  async install(name: string): Promise<BasedSpec | false> {
+  async install(name: string): Promise<BasedSpec | null> {
     let spec = this.getFromStore(name)
 
     if (spec) {
@@ -147,18 +147,18 @@ export class BasedFunctions {
       this.update(spec)
       return this.getFromStore(name)
     }
-    return false
+    return null
   }
 
   getNameFromPath(path: string): string {
     return this.paths[path]
   }
 
-  route(name?: string, path?: string): BasedRoute | false {
+  route(name?: string, path?: string): BasedRoute | null {
     return this.config.route({ server: this.server, name, path })
   }
 
-  getFromStore(name: string): BasedSpec | false {
+  getFromStore(name: string): BasedSpec | null {
     const spec = this.specs[name]
     if (spec) {
       if (this.beingUninstalled[name]) {
@@ -167,7 +167,7 @@ export class BasedFunctions {
       updateTimeoutCounter(spec)
       return spec
     }
-    return false
+    return null
   }
 
   update(spec: BasedSpec): boolean {

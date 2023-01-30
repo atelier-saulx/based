@@ -47,7 +47,7 @@ export const installFn = async <R extends BasedRoute>(
     if (!ctx.session) {
       return null
     }
-    if (spec === false) {
+    if (spec === null) {
       functionNotFound(server, ctx, route, isQuery, id)
       return null
     }

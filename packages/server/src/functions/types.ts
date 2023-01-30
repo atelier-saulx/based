@@ -71,7 +71,7 @@ export type FunctionConfig = {
     function: number
   }
   route: (opts: { server: BasedServer; name?: string; path?: string }) =>
-    | false
+    | null
     | (BasedFunctionRoute & {
         maxPayloadSize: number
         rateLimitTokens: number
@@ -81,7 +81,7 @@ export type FunctionConfig = {
     name: string
     function?: BasedFunctionSpec | BasedQueryFunctionSpec
   }) => Promise<
-    false | BasedQueryFunctionSpec | BasedStreamFunctionSpec | BasedFunctionSpec
+    null | BasedQueryFunctionSpec | BasedStreamFunctionSpec | BasedFunctionSpec
   >
   uninstall: (opts: {
     server: BasedServer

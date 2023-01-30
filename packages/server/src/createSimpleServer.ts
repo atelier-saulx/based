@@ -32,7 +32,7 @@ export type SimpleServerOptions = {
     server: BasedServer
     name: string
     function?: BasedSpec
-  }) => Promise<false | BasedSpec>
+  }) => Promise<null | BasedSpec>
   uninstall?: (opts: {
     server: BasedServer
     name: string
@@ -136,7 +136,7 @@ export async function createSimpleServer(
           if (functionStore[name]) {
             return functionStore[name]
           } else {
-            return false
+            return null
           }
         }),
       route: ({ path, name }) => {
@@ -153,7 +153,7 @@ export async function createSimpleServer(
         if (functionStore[name]) {
           return functionStore[name]
         }
-        return false
+        return null
       },
     },
   }

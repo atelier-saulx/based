@@ -64,7 +64,7 @@ test.serial('functions (over http)', async (t) => {
         if (name && store[name]) {
           return { name, maxPayloadSize: 1e6, rateLimitTokens: 1 }
         }
-        return false
+        return null
       },
       uninstall: async () => {
         await wait(1e3)
@@ -74,7 +74,7 @@ test.serial('functions (over http)', async (t) => {
         if (store[name]) {
           return store[name]
         } else {
-          return false
+          return null
         }
       },
     },
@@ -158,7 +158,7 @@ test.serial('get (over http)', async (t) => {
         if (name && store[name]) {
           return store[name]
         }
-        return false
+        return null
       },
       uninstall: async () => {
         return true
@@ -167,7 +167,7 @@ test.serial('get (over http)', async (t) => {
         if (store[name]) {
           return store[name]
         } else {
-          return false
+          return null
         }
       },
     },
@@ -249,7 +249,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         if (name && store[name]) {
           return store[name]
         }
-        return false
+        return null
       },
 
       uninstall: async () => {
@@ -261,7 +261,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         if (store[name]) {
           return store[name]
         } else {
-          return false
+          return null
         }
       },
     },

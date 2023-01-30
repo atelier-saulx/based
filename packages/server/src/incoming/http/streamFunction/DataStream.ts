@@ -44,7 +44,15 @@ export class DataStream extends Duplex {
 
   [util.inspect.custom]() {
     if (this.size) {
-      return `[BasedStream ${~~((this.receivedBytes / this.size) * 100)}%]`
+      const rb =
+        this.receivedBytes < 1000
+          ? Math.round(this.receivedBytes / 1024) + 'kb'
+          : Math.round(this.receivedBytes / 1024 / 1024) + 'mb'
+
+      return `[BasedStream ${~~(
+        (this.receivedBytes / this.size) *
+        100
+      )}% ${rb}]`
     } else {
       return `[BasedStream]`
     }
