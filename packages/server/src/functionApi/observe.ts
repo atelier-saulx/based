@@ -23,14 +23,14 @@ export const observe = (
 ): (() => void) => {
   const route = verifyRoute(
     server,
-    ctx,
+    server.client.ctx,
     'query',
     server.functions.route(name),
     name
   )
 
   if (route === null) {
-    return
+    throw new Error(`[${name}] No session in ctx`)
   }
 
   const id = genObservableId(name, payload)

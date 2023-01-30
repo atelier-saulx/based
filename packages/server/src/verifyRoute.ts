@@ -16,7 +16,7 @@ type FnType = 'query' | 'stream' | 'fn'
 
 export const verifyRoute = <T extends FnType>(
   server: BasedServer,
-  ctx: Context,
+  ctx: Context = server.client.ctx,
   type: T,
   route: BasedRoute | false,
   name: string,
@@ -29,6 +29,7 @@ export const verifyRoute = <T extends FnType>(
       : BasedFunctionRoute)
   | null => {
   if (!ctx.session) {
+    console.warn('VERIFY ROUTE NO SESSION', name)
     return null
   }
 

@@ -80,7 +80,7 @@ const testShared = async (t, coreClient, server) => {
   await server.destroy()
 }
 
-test.serial('nested functions (raw api)', async (t) => {
+test.serial.only('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
@@ -89,7 +89,14 @@ test.serial('nested functions (raw api)', async (t) => {
       obsWithNestedLvl2: {
         memCacheTimeout: 1e3,
         function: (based, payload, update) => {
-          return observe(server, 'obsWithNested', {}, 'json', update, () => {})
+          return observe(
+            server,
+            'obsWithNested',
+            based.server.client.ctx,
+            'json',
+            update,
+            () => {}
+          )
         },
       },
       obsWithNested: {
@@ -98,7 +105,7 @@ test.serial('nested functions (raw api)', async (t) => {
           return observe(
             server,
             payload === 'json' ? 'objectCounter' : 'counter',
-            {},
+            based.server.client.ctx,
             payload,
             update,
             () => {}

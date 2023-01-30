@@ -1,7 +1,7 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError, BasedErrorData } from '../error'
 import { Context } from '@based/functions'
-import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../functions'
+import { BasedQueryFunctionRoute } from '../functions'
 import {
   genObservableId,
   hasObs,
@@ -20,7 +20,7 @@ const getObsData = (
   server: BasedServer,
   id: number,
   ctx: Context,
-  route: BasedFunctionRoute
+  route: BasedQueryFunctionRoute
 ) => {
   const obs = getObs(server, id)
   if (obs.error) {
@@ -33,10 +33,12 @@ const getObsData = (
     )
     return
   }
+
   if (obs.cache) {
     resolve(obs.rawData || obs.cache)
     return
   }
+
   subscribeNext(obs, (err) => {
     destroyObs(server, id)
     if (err) {
@@ -64,12 +66,14 @@ export const get = (
         name
       )
       if (route === null) {
+        reject(new Error(`[${name}] No session in ctx`))
         return
       }
     } catch (err) {
       reject(err)
       return
     }
+
     const id = genObservableId(name, payload)
     if (!hasObs(server, id)) {
       installFn(server, server.client.ctx, route).then((spec) => {
@@ -81,6 +85,7 @@ export const get = (
           )
           return
         }
+
         if (!hasObs(server, id)) {
           createObs(server, name, id, payload, true)
           getObsData(resolve, reject, server, id, ctx, route)

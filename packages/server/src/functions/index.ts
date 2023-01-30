@@ -29,8 +29,8 @@ export class BasedFunctions {
     function: number
   } = {
     stream: 5e6,
-    query: 500,
-    function: 5e3,
+    query: 2500,
+    function: 20e3,
   }
 
   paths: {

@@ -69,8 +69,8 @@ export async function createSimpleServer(
           function: fn.function,
           name,
           checksum: 1,
-          maxPayloadSize: isStreamFunctionSpec(fn) ? 200e6 : 5e3,
-          rateLimitTokens: 1,
+          maxPayloadSize: isStreamFunctionSpec(fn) ? 200e6 : 5e4,
+          rateLimitTokens: 10,
           ...fn,
         }
       } else if (typeof fn === 'function') {
@@ -78,7 +78,7 @@ export async function createSimpleServer(
           function: fn,
           name,
           checksum: 1,
-          maxPayloadSize: 5e3,
+          maxPayloadSize: 543,
           rateLimitTokens: 1,
         }
       } else {
@@ -96,8 +96,8 @@ export async function createSimpleServer(
           query: true,
           function: fn.function,
           name,
-          maxPayloadSize: 500,
-          rateLimitTokens: 5,
+          maxPayloadSize: 5000,
+          rateLimitTokens: 1,
           ...fn,
         }
       } else if (typeof fn === 'function') {
@@ -106,8 +106,8 @@ export async function createSimpleServer(
           query: true,
           function: fn,
           name,
-          maxPayloadSize: 500,
-          rateLimitTokens: 5,
+          maxPayloadSize: 5000,
+          rateLimitTokens: 1,
         }
       } else {
         console.error(name, fn, 'Is not a query function!')
