@@ -1,7 +1,5 @@
 import { createSimpleServer } from '@based/server'
 import { BasedFunction, BasedQueryFunction } from '@based/functions'
-
-import { readStream } from '@saulx/utils'
 import fs from 'node:fs'
 import { join } from 'path'
 
@@ -57,24 +55,38 @@ const start = async () => {
     },
     functions: {
       file: {
+        headers: ['range'],
         function: async (based, payload) => {
-          if (files[payload.id].mimeType.includes('image')) {
-            return {
-              file: await readStream(
-                fs.createReadStream(files[payload.id].file)
-              ),
-              mimeType: files[payload.id].mimeType,
-            }
-          }
+          const x = fs.statSync(files[payload.id].file)
           return {
-            file: fs.readFileSync(join(__dirname, 'based.png')),
-            mimeTye: 'image/png',
+            file: fs.createReadStream(files[payload.id].file),
+            mimeType: files[payload.id].mimeType,
+            size: x.size,
           }
         },
         customHttpResponse: async (result, payload, ctx) => {
-          ctx.session?.res.writeHeader('cache-control', 'immutable')
-          ctx.session?.res.writeHeader('mime-type', result.mimeType)
-          ctx.session?.res.end(result.file)
+          ctx.session?.res.cork(() => {
+            ctx.session?.res.writeStatus('200 OK')
+
+            // ctx.session?.res.writeHeader('Access-Control-Allow-Origin', '*')
+            // ctx.session?.res.writeHeader('Access-Control-Allow-Headers', '*')
+            // ctx.session?.res.writeHeader('Cache-Control', 'immutable')
+            ctx.session?.res.writeHeader('Content-Type', result.mimeType)
+            console.log(result.size, ctx.session?.headers)
+            // ctx.session?.res.writeHeader('Content-Length', result.size)
+
+            result.file.on('data', (d) => {
+              // console.info('chunk', d)
+              ctx.session?.res.write(d)
+            })
+
+            result.file.on('end', () => {
+              // console.log('END', d)
+              ctx.session?.res.end()
+            })
+          })
+          // ctx.session?.res.end(result.file)
+          // send(ctx, result.file)
           return true
         },
       },

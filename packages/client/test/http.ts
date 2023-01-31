@@ -13,7 +13,7 @@ import { encodeAuthState } from '../src/index'
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial.only('functions (custom headers)', async (t) => {
+test.serial('functions (custom headers)', async (t) => {
   const server = await createSimpleServer({
     port: 9910,
     functions: {

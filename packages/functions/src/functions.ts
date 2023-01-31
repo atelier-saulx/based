@@ -22,7 +22,8 @@ export type ObserveErrorListener = (err: any) => void
 export type CustomHttpResponse = (
   result: any,
   payload: any,
-  client: Context<HttpSession>
+  ctx: Context<HttpSession>,
+  sendHttpResponse: (ctx: Context<HttpSession>, result: any) => void
 ) => Promise<boolean>
 
 export type BasedFunction<P = any, K = any> = (

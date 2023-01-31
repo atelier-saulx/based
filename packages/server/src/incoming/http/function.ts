@@ -24,11 +24,16 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
         }
         if (
           spec.customHttpResponse &&
-          (await spec.customHttpResponse(result, payload, ctx))
+          (await spec.customHttpResponse(
+            result,
+            payload,
+            ctx,
+            sendHttpResponse
+          ))
         ) {
-          return
+          // return
         }
-        sendHttpResponse(ctx, result)
+        // sendHttpResponse(ctx, result)
       })
       .catch((err) => {
         sendError(server, ctx, BasedErrorCode.FunctionError, {
