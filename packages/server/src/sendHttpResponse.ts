@@ -57,7 +57,7 @@ export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
     result.on('data', (d) => {
       ctx.session?.res.write(d)
     })
-    result.on('end', (d) => {
+    result.on('end', () => {
       ctx.session?.res.end()
     })
     return
