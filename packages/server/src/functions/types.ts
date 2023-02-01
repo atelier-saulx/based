@@ -27,6 +27,7 @@ export type BasedStreamFunctionRoute = Route & {
 }
 
 export type BasedQueryFunctionSpec = {
+  customHttpResponse?: CustomHttpResponse
   checksum: number
   function: BasedQueryFunction
   memCacheTimeout?: number // in ms
@@ -35,6 +36,7 @@ export type BasedQueryFunctionSpec = {
 } & BasedQueryFunctionRoute
 
 export type BasedStreamFunctionSpec = {
+  // for streams no custom http response is possible scince they get multiplexed
   checksum: number
   function: BasedStreamFunction
   maxExecTime?: number // in ms - very nice too have

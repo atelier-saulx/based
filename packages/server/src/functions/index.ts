@@ -38,6 +38,7 @@ export class BasedFunctions {
   } = {}
 
   specs: {
+    // is required here (will be filled in automaticly)
     [name: string]: BasedSpec & {
       maxPayloadSize: number
       rateLimitTokens: number

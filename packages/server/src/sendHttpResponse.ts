@@ -10,6 +10,7 @@ export const end = (
     return
   }
 
+  // check for 'headers set'
   if (!ctx.session.corsSend) {
     ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
     ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
@@ -27,6 +28,8 @@ export const end = (
 }
 
 export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
+  // handle custom http response here...
+
   if (!ctx.session) {
     return
   }

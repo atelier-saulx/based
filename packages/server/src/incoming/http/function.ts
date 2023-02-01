@@ -23,6 +23,13 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
           return
         }
         if (
+          /* change signature
+            add (based, result, payload, ctx)
+            based.send(ctx, {
+              headers: {},
+              payload
+            }) ?
+          */
           spec.customHttpResponse &&
           (await spec.customHttpResponse(
             result,
