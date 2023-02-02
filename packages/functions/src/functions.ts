@@ -19,12 +19,17 @@ export type ObservableUpdateFunction<K = any> = {
 // TODO: use error package
 export type ObserveErrorListener = (err: any) => void
 
-export type CustomHttpResponse = (
-  result: any,
-  payload: any,
-  ctx: Context<HttpSession>,
-  sendHttpResponse: (ctx: Context<HttpSession>, result: any) => void
-) => Promise<boolean>
+export type HttpResponse<P = any, K = any> = (
+  based: BasedFunctionClient,
+  payload: P,
+  responseData: K,
+  send: (
+    responseData: any,
+    headers?: { [header: string]: string },
+    status?: string
+  ) => void,
+  ctx: Context<HttpSession>
+) => Promise<void>
 
 export type BasedFunction<P = any, K = any> = (
   based: BasedFunctionClient,
