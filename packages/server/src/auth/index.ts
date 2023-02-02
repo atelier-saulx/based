@@ -48,7 +48,7 @@ export class BasedAuth {
     }
   }
 
-  renewAuthState(ctx: Context, authState?: AuthState) {
+  renewAuthState(ctx: Context) {
     if (!ctx.session) {
       return
     }
@@ -57,13 +57,11 @@ export class BasedAuth {
       return
     }
 
-    const verified =
-      authState ||
-      this.server.auth.verifyAuthState(
-        this.server.client,
-        <Context<HttpSession> | Context<WebSocketSession>>ctx,
-        ctx.session.authState
-      )
+    const verified = this.server.auth.verifyAuthState(
+      this.server.client,
+      <Context<HttpSession> | Context<WebSocketSession>>ctx,
+      ctx.session.authState
+    )
     if (verified === true) {
       return
     }
