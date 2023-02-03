@@ -19,15 +19,17 @@ export type ObservableUpdateFunction<K = any> = {
 // TODO: use error package
 export type ObserveErrorListener = (err: any) => void
 
+export type SendHttpResponse = (
+  responseData: any,
+  headers?: { [header: string]: string | string[] },
+  status?: string | number
+) => void
+
 export type HttpResponse<P = any, K = any> = (
   based: BasedFunctionClient,
   payload: P,
   responseData: K,
-  send: (
-    responseData: any,
-    headers?: { [header: string]: string },
-    status?: string
-  ) => void,
+  send: SendHttpResponse,
   ctx: Context<HttpSession>
 ) => Promise<void>
 

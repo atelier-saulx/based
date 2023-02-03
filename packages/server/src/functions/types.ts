@@ -1,7 +1,7 @@
 import {
   BasedQueryFunction,
   BasedFunction,
-  CustomHttpResponse,
+  HttpResponse,
   BasedStreamFunction,
 } from '@based/functions'
 import { BasedServer } from '../server'
@@ -27,7 +27,7 @@ export type BasedStreamFunctionRoute = Route & {
 }
 
 export type BasedQueryFunctionSpec = {
-  customHttpResponse?: CustomHttpResponse
+  httpResponse?: HttpResponse
   checksum: number
   function: BasedQueryFunction
   memCacheTimeout?: number // in ms
@@ -45,7 +45,7 @@ export type BasedStreamFunctionSpec = {
 } & BasedStreamFunctionRoute
 
 export type BasedFunctionSpec = {
-  customHttpResponse?: CustomHttpResponse
+  httpResponse?: HttpResponse
   checksum: number
   function: BasedFunction
   maxExecTime?: number // in ms - very nice too have

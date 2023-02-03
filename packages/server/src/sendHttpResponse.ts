@@ -27,9 +27,13 @@ export const end = (
   ctx.session = null
 }
 
-export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
+export const sendHttpResponse = (
+  ctx: Context<HttpSession>,
+  result: any,
+  headers?: { [key: string]: string | string[] },
+  statusCode: string = '200 OK'
+) => {
   // handle custom http response here...
-
   if (!ctx.session) {
     return
   }
@@ -41,21 +45,29 @@ export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
   if (typeof result === 'string') {
     cType = 'text/plain'
     parsed = result
-  } else {
-    cType = 'application/json'
-    parsed = JSON.stringify(result)
-  }
-
-  if (result instanceof Readable || result instanceof Duplex) {
+  } else if (result instanceof Readable || result instanceof Duplex) {
     // received stream....
     ctx.session.res.cork(() => {
-      ctx.session.res.writeStatus('200 OK')
-      ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-      ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-      // ctx.session.res.writeHeader(
-      //   'Cache-Control',
-      //   'max-age=0, must-revalidate'
-      // )
+      ctx.session.res.writeStatus(statusCode)
+      if (headers) {
+        for (const header in headers) {
+          const value = headers[header]
+          ctx.session.res.writeHeader(
+            header,
+            Array.isArray(value) ? value.join(',') : value
+          )
+          if (
+            header === 'Access-Control-Allow-Origin' ||
+            header === 'access-control-allow-origin'
+          ) {
+            ctx.session.corsSend = true
+          }
+        }
+      }
+      if (!ctx.session.corsSend) {
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+      }
     })
     result.on('data', (d) => {
       ctx.session?.res.write(d)
@@ -64,26 +76,57 @@ export const sendHttpResponse = (ctx: Context<HttpSession>, result: any) => {
       ctx.session?.res.end()
     })
     return
+  } else {
+    cType = 'application/json'
+    parsed = JSON.stringify(result)
   }
 
-  compress(parsed, ctx.session.headers.encoding).then(
-    ({ payload, encoding }) => {
-      if (ctx.session.res) {
-        ctx.session.res.cork(() => {
-          ctx.session.res.writeStatus('200 OK')
+  compress(
+    parsed,
+    headers && ('Content-Encoding' in headers || 'content-encoding' in headers)
+      ? undefined
+      : ctx.session.headers.encoding
+  ).then(({ payload, encoding }) => {
+    if (ctx.session.res) {
+      ctx.session.res.cork(() => {
+        ctx.session.res.writeStatus(statusCode)
+
+        if (headers) {
+          for (const header in headers) {
+            const value = headers[header]
+            ctx.session.res.writeHeader(
+              header,
+              Array.isArray(value) ? value.join(',') : value
+            )
+            if (
+              header === 'Access-Control-Allow-Origin' ||
+              header === 'access-control-allow-origin'
+            ) {
+              ctx.session.corsSend = true
+            }
+          }
+          if (!('Cache-Control' in headers || 'cache-control' in headers)) {
+            ctx.session.res.writeHeader(
+              'Cache-Control',
+              'max-age=0, must-revalidate'
+            )
+          }
+          if (!('Content-Type' in headers || 'content-type' in headers)) {
+            ctx.session.res.writeHeader('Content-Type', cType)
+          }
+        } else {
           ctx.session.res.writeHeader(
             'Cache-Control',
             'max-age=0, must-revalidate'
           )
-          // TODO check this
-          // ctx.session.res.writeHeader('Mime-Type', '')
           ctx.session.res.writeHeader('Content-Type', cType)
-          if (encoding) {
-            ctx.session.res.writeHeader('Content-Encoding', encoding)
-          }
-          end(ctx, payload)
-        })
-      }
+        }
+
+        if (encoding) {
+          ctx.session.res.writeHeader('Content-Encoding', encoding)
+        }
+        end(ctx, payload)
+      })
     }
-  )
+  })
 }

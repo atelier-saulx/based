@@ -1,5 +1,5 @@
 import { BasedFunctionRoute } from '../../functions'
-import { HttpSession } from '@based/functions'
+import { HttpSession, SendHttpResponse } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
@@ -22,25 +22,21 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
         if (!ctx.session) {
           return
         }
-        if (
-          /* change signature
-            add (based, result, payload, ctx)
-            based.send(ctx, {
-              headers: {},
-              payload
-            }) ?
-          */
-          spec.customHttpResponse &&
-          (await spec.customHttpResponse(
-            result,
-            payload,
-            ctx,
-            sendHttpResponse
-          ))
-        ) {
-          // return
+
+        if (spec.httpResponse) {
+          const send: SendHttpResponse = (responseData, headers, status) => {
+            sendHttpResponse(
+              ctx,
+              responseData,
+              headers,
+              typeof status === 'string' ? status : String(status)
+            )
+          }
+          await spec.httpResponse(server.client, payload, result, send, ctx)
+          return
         }
-        // sendHttpResponse(ctx, result)
+
+        sendHttpResponse(ctx, result)
       })
       .catch((err) => {
         sendError(server, ctx, BasedErrorCode.FunctionError, {

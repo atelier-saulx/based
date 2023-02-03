@@ -64,7 +64,7 @@ const start = async () => {
             size: x.size,
           }
         },
-        customHttpResponse: async (result, payload, ctx) => {
+        httpResponse: async (result, payload, ctx) => {
           ctx.session?.res.cork(() => {
             ctx.session?.res.writeStatus('200 OK')
 
@@ -85,9 +85,6 @@ const start = async () => {
               ctx.session?.res.end()
             })
           })
-          // ctx.session?.res.end(result.file)
-          // send(ctx, result.file)
-          return true
         },
       },
       hello,

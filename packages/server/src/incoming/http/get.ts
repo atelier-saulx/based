@@ -24,6 +24,21 @@ import { installFn } from '../../installFn'
 
 const inflate = promisify(zlib.inflate)
 
+// const sendHttpCustom = () => {
+//   // if (spec.httpResponse) {
+//   //   const send: SendHttpResponse = (responseData, headers, status) => {
+//   //     sendHttpResponse(
+//   //       ctx,
+//   //       responseData,
+//   //       headers,
+//   //       typeof status === 'string' ? status : String(status)
+//   //     )
+//   //   }
+//   //   await spec.httpResponse(server.client, payload, result, send, ctx)
+//   //   return
+//   // }
+// }
+
 const sendCacheSwapEncoding = async (
   server: BasedServer,
   route: BasedFunctionRoute,
@@ -109,6 +124,7 @@ const sendGetResponse = (
   } else {
     sendNotModified(ctx)
   }
+
   destroyObs(server, id)
 }
 
