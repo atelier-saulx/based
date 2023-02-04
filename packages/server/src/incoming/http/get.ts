@@ -91,7 +91,7 @@ const sendNotModified = (ctx: Context<HttpSession>) => {
   })
 }
 
-const sendGetResponse = (
+const sendGetResponseInternal = (
   route: BasedFunctionRoute,
   server: BasedServer,
   id: number,
@@ -126,6 +126,17 @@ const sendGetResponse = (
   }
 
   destroyObs(server, id)
+}
+
+const sendGetResponse = (
+  route: BasedFunctionRoute,
+  server: BasedServer,
+  id: number,
+  obs: ActiveObservable,
+  checksum: number,
+  ctx: Context<HttpSession>
+) => {
+  sendGetResponseInternal(route, server, id, obs, checksum, ctx)
 }
 
 const getFromExisting = (

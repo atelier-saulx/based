@@ -8,6 +8,7 @@ import {
   BasedFunctionClient as BasedfunctionClientAbstract,
   Context,
   InternalSessionClient,
+  isClientContext,
   isWsContext,
   Session,
 } from '@based/functions'
@@ -38,8 +39,19 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     return { name, stream }
   }
 
-  renewAuthState(ctx: Context<Session>, authState?: AuthState): void {
-    this.server.auth.renewAuthState(ctx, authState)
+  renewAuthState(ctx: Context<Session>): void {
+    this.server.auth.renewAuthState(ctx)
+  }
+
+  setAuthState(ctx: Context<Session>, authState: AuthState): void {
+    if (!ctx.session) {
+      return
+    }
+    if (!isClientContext(ctx)) {
+      return
+    }
+    ctx.session.authState = authState
+    this.server.auth.renewAuthState(ctx)
   }
 
   sendAuthState(ctx: Context<Session>, authState: AuthState): void {
