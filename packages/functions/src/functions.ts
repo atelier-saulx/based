@@ -19,9 +19,11 @@ export type ObservableUpdateFunction<K = any> = {
 // TODO: use error package
 export type ObserveErrorListener = (err: any) => void
 
+export type HttpHeaders = { [header: string]: string | string[] }
+
 export type SendHttpResponse = (
   responseData: any,
-  headers?: { [header: string]: string | string[] },
+  headers?: HttpHeaders,
   status?: string | number
 ) => void
 

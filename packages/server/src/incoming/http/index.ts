@@ -9,7 +9,7 @@ import {
   isQueryFunctionRoute,
   isStreamFunctionRoute,
 } from '../../functions'
-import { httpGet } from './get'
+import { httpGet } from './query'
 import { readBody } from './readBody'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'

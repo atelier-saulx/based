@@ -1,4 +1,4 @@
-import { Context, HttpSession } from '@based/functions'
+import { Context, HttpSession, HttpHeaders } from '@based/functions'
 import { Duplex, Readable } from 'stream'
 import { compress } from './compress'
 
@@ -27,10 +27,29 @@ export const end = (
   ctx.session = null
 }
 
+export const sendHeaders = (
+  ctx: Context<HttpSession>,
+  headers: HttpHeaders
+) => {
+  for (const header in headers) {
+    const value = headers[header]
+    ctx.session.res.writeHeader(
+      header,
+      Array.isArray(value) ? value.join(',') : value
+    )
+    if (
+      header === 'Access-Control-Allow-Origin' ||
+      header === 'access-control-allow-origin'
+    ) {
+      ctx.session.corsSend = true
+    }
+  }
+}
+
 export const sendHttpResponse = (
   ctx: Context<HttpSession>,
   result: any,
-  headers?: { [key: string]: string | string[] },
+  headers?: HttpHeaders,
   statusCode: string = '200 OK'
 ) => {
   // handle custom http response here...
@@ -50,19 +69,7 @@ export const sendHttpResponse = (
     ctx.session.res.cork(() => {
       ctx.session.res.writeStatus(statusCode)
       if (headers) {
-        for (const header in headers) {
-          const value = headers[header]
-          ctx.session.res.writeHeader(
-            header,
-            Array.isArray(value) ? value.join(',') : value
-          )
-          if (
-            header === 'Access-Control-Allow-Origin' ||
-            header === 'access-control-allow-origin'
-          ) {
-            ctx.session.corsSend = true
-          }
-        }
+        sendHeaders(ctx, headers)
       }
       if (!ctx.session.corsSend) {
         ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')

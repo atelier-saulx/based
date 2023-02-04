@@ -1,7 +1,12 @@
 import { BasedServer } from '../../server'
-import { HttpSession, Context } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  SendHttpResponse,
+  HttpHeaders,
+} from '@based/functions'
 import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../../functions'
-import { end } from '../../sendHttpResponse'
+import { end, sendHeaders } from '../../sendHttpResponse'
 import { compress } from '../../compress'
 import {
   createObs,
@@ -24,27 +29,14 @@ import { installFn } from '../../installFn'
 
 const inflate = promisify(zlib.inflate)
 
-// const sendHttpCustom = () => {
-//   // if (spec.httpResponse) {
-//   //   const send: SendHttpResponse = (responseData, headers, status) => {
-//   //     sendHttpResponse(
-//   //       ctx,
-//   //       responseData,
-//   //       headers,
-//   //       typeof status === 'string' ? status : String(status)
-//   //     )
-//   //   }
-//   //   await spec.httpResponse(server.client, payload, result, send, ctx)
-//   //   return
-//   // }
-// }
-
 const sendCacheSwapEncoding = async (
   server: BasedServer,
   route: BasedFunctionRoute,
   ctx: Context<HttpSession>,
   buffer: Uint8Array,
-  checksum: number
+  checksum: number,
+  headers?: HttpHeaders,
+  status: string = '200 OK'
 ) => {
   try {
     const inflated = await inflate(buffer.slice(20))
@@ -56,7 +48,10 @@ const sendCacheSwapEncoding = async (
       return
     }
     ctx.session.res.cork(() => {
-      ctx.session.res.writeStatus('200 OK')
+      if (headers) {
+        sendHeaders(ctx, headers)
+      }
+      ctx.session.res.writeStatus(status)
       if (encoding) {
         ctx.session.res.writeHeader('Content-Encoding', encoding)
       }
@@ -72,10 +67,15 @@ const sendCache = (
   ctx: Context<HttpSession>,
   buffer: Uint8Array,
   checksum: number,
-  isDeflate: boolean
+  isDeflate: boolean,
+  headers?: HttpHeaders,
+  status: string = '200 OK'
 ) => {
   ctx.session.res.cork(() => {
-    ctx.session.res.writeStatus('200 OK')
+    if (headers) {
+      sendHeaders(ctx, headers)
+    }
+    ctx.session.res.writeStatus(status)
     ctx.session.res.writeHeader('ETag', String(checksum))
     if (isDeflate) {
       ctx.session.res.writeHeader('Content-Encoding', 'deflate')
@@ -84,9 +84,16 @@ const sendCache = (
   })
 }
 
-const sendNotModified = (ctx: Context<HttpSession>) => {
+const sendNotModified = (
+  ctx: Context<HttpSession>,
+  headers?: HttpHeaders,
+  status: string = '304 Not Modified'
+) => {
   ctx.session.res.cork(() => {
-    ctx.session.res.writeStatus('304 Not Modified')
+    if (headers) {
+      sendHeaders(ctx, headers)
+    }
+    ctx.session.res.writeStatus(status)
     end(ctx)
   })
 }
@@ -97,15 +104,15 @@ const sendGetResponseInternal = (
   id: number,
   obs: ActiveObservable,
   checksum: number,
-  ctx: Context<HttpSession>
+  ctx: Context<HttpSession>,
+  headers?: HttpHeaders,
+  status?: string
 ) => {
   if (!ctx.session) {
     destroyObs(server, id)
     return
   }
-
   const encoding = ctx.session.headers.encoding
-
   if (checksum === 0 || checksum !== obs.checksum) {
     if (!obs.cache) {
       sendError(server, ctx, BasedErrorCode.NoOservableCacheAvailable, {
@@ -114,28 +121,53 @@ const sendGetResponseInternal = (
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
-        sendCache(ctx, obs.cache, obs.checksum, true)
+        sendCache(ctx, obs.cache, obs.checksum, true, headers, status)
       } else {
-        sendCacheSwapEncoding(server, route, ctx, obs.cache, obs.checksum)
+        sendCacheSwapEncoding(
+          server,
+          route,
+          ctx,
+          obs.cache,
+          obs.checksum,
+          headers,
+          status
+        )
       }
     } else {
-      sendCache(ctx, obs.cache, obs.checksum, false)
+      sendCache(ctx, obs.cache, obs.checksum, false, headers, status)
     }
   } else {
     sendNotModified(ctx)
   }
-
   destroyObs(server, id)
 }
 
 const sendGetResponse = (
-  route: BasedFunctionRoute,
+  route: BasedQueryFunctionRoute,
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
   checksum: number,
   ctx: Context<HttpSession>
 ) => {
+  if ('httpResponse' in route) {
+    // response data does not work for query responses
+    const send: SendHttpResponse = (responseData, headers, status) => {
+      sendGetResponseInternal(
+        route,
+        server,
+        id,
+        obs,
+        checksum,
+        ctx,
+        headers,
+        typeof status === 'string' ? status : String(status)
+      )
+    }
+    route.httpResponse(server.client, obs.payload, obs.cache, send, ctx)
+    return
+  }
+
   sendGetResponseInternal(route, server, id, obs, checksum, ctx)
 }
 
@@ -143,7 +175,7 @@ const getFromExisting = (
   server: BasedServer,
   id: number,
   ctx: Context<HttpSession>,
-  route: BasedFunctionRoute,
+  route: BasedQueryFunctionRoute,
   checksum: number
 ) => {
   const obs = getObs(server, id)
