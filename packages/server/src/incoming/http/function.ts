@@ -29,7 +29,11 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
               ctx,
               responseData,
               headers,
-              typeof status === 'string' ? status : String(status)
+              status !== undefined
+                ? typeof status === 'string'
+                  ? status
+                  : String(status)
+                : undefined
             )
           }
           await spec.httpResponse(server.client, payload, result, send, ctx)
