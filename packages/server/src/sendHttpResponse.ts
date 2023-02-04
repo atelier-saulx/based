@@ -35,7 +35,11 @@ export const sendHeaders = (
     const value = headers[header]
     ctx.session.res.writeHeader(
       header,
-      Array.isArray(value) ? value.join(',') : value
+      Array.isArray(value)
+        ? value.join(',')
+        : typeof value === 'string'
+        ? value
+        : String(value)
     )
     if (
       header === 'Access-Control-Allow-Origin' ||
@@ -97,21 +101,8 @@ export const sendHttpResponse = (
     if (ctx.session.res) {
       ctx.session.res.cork(() => {
         ctx.session.res.writeStatus(statusCode)
-
         if (headers) {
-          for (const header in headers) {
-            const value = headers[header]
-            ctx.session.res.writeHeader(
-              header,
-              Array.isArray(value) ? value.join(',') : value
-            )
-            if (
-              header === 'Access-Control-Allow-Origin' ||
-              header === 'access-control-allow-origin'
-            ) {
-              ctx.session.corsSend = true
-            }
-          }
+          sendHeaders(ctx, headers)
           if (!('Cache-Control' in headers || 'cache-control' in headers)) {
             ctx.session.res.writeHeader(
               'Cache-Control',

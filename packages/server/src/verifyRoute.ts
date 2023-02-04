@@ -29,7 +29,7 @@ export const verifyRoute = <T extends FnType>(
       : BasedFunctionRoute)
   | null => {
   if (!ctx.session) {
-    console.warn('VERIFY ROUTE NO SESSION', name)
+    // console.warn('VERIFY ROUTE NO SESSION', name)
     return null
   }
 

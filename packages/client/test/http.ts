@@ -55,18 +55,17 @@ test.serial('functions (over http)', async (t) => {
         }
         return 'flap'
       },
-      customHttpResponse: async (result, payload, context) => {
-        if (!context.session) {
-          return false
+      httpResponse: async (based, payload, responseData, send, ctx) => {
+        if (!ctx.session) {
+          return
         }
-        const res = context.session.res
+        const res = ctx.session.res
         res.writeStatus('200 OkiDoki')
-        if (typeof result === 'object') {
-          res.end(JSON.stringify(result))
-          return true
+        if (typeof responseData === 'object') {
+          res.end(JSON.stringify(responseData))
+          return
         }
-        res.end('yesh ' + result)
-        return true
+        res.end('yesh ' + responseData)
       },
     },
   }
@@ -239,17 +238,16 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
         }
         return 'flap'
       },
-      customHttpResponse: async (result, payload, context) => {
-        if (!context.session) {
-          return false
+      httpResponse: async (based, payload, responseData, send, ctx) => {
+        if (!ctx.session) {
+          return
         }
-        context.session.res.writeStatus('200 OkiDoki')
-        if (typeof result === 'object') {
-          context.session.res.end(JSON.stringify(result))
-          return true
+        ctx.session.res.writeStatus('200 OkiDoki')
+        if (typeof responseData === 'object') {
+          ctx.session.res.end(JSON.stringify(responseData))
+          return
         }
-        context.session.res.end('yesh ' + result)
-        return true
+        ctx.session.res.end('yesh ' + responseData)
       },
     },
   }
