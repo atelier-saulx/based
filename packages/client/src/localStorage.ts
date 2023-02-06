@@ -63,7 +63,7 @@ export const initStorage = async (client: BasedClient) => {
       let totalSize = Number(localStorage.getItem('@based-size') || 0)
 
       if (totalSize < 0) {
-        console.error('Based - Corrupt localStorage - clear')
+        console.error('Based - Corrupt localStorage (negative size) - clear')
         localStorage.clear()
         totalSize = 0
       }
@@ -73,7 +73,10 @@ export const initStorage = async (client: BasedClient) => {
       const keys = Object.keys(localStorage)
 
       if (keys.length === 1 && totalSize > 0) {
-        console.error('Based - Corrupt localStorage - clear', totalSize)
+        console.error(
+          'Based - Corrupt localStorage (size but no keys) - clear',
+          totalSize
+        )
         localStorage.clear()
         totalSize = 0
       }
@@ -88,12 +91,10 @@ export const initStorage = async (client: BasedClient) => {
           }
         }
       }
-      // tmp...
     } catch (err) {
       console.error('Based - Cannot read localStorage')
     }
     return
-    // Object.entries(localStorage)
   }
 
   console.info('handling of node js storage!') // will just point to a file...
