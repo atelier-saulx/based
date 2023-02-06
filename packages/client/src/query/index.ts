@@ -6,6 +6,7 @@ import {
 import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
 import { genObserveId } from '../genObserveId'
 import { BasedClient } from '..'
+import { removeStorage, setStorage } from '../localStorage'
 
 // Can extend this as a query builder
 
@@ -14,12 +15,19 @@ export class BasedQuery {
   public query: any
   public name: string
   public client: BasedClient
+  public persistent?: boolean
 
-  constructor(client: BasedClient, name: string, payload: any) {
+  constructor(
+    client: BasedClient,
+    name: string,
+    payload: any,
+    persistent?: boolean
+  ) {
     this.query = payload
     this.id = genObserveId(name, payload)
     this.client = client
     this.name = name
+    this.persistent = persistent
   }
 
   get cache(): any {
@@ -27,6 +35,10 @@ export class BasedQuery {
   }
 
   clearCache() {
+    // remove localstorage
+    if (this.persistent) {
+      removeStorage(this.client, '@based-cache-' + this.id)
+    }
     this.client.cache.delete(this.id)
   }
 
@@ -65,7 +77,20 @@ export class BasedQuery {
     }
 
     if (cachedData) {
-      onData(cachedData.value, cachedData.checksum)
+      if (!cachedData.persistent && this.persistent) {
+        cachedData.persistent = true
+        setStorage(this.client, '@based-cache-' + this.id, cachedData)
+      }
+
+      if (cachedData.checksum !== -1) {
+        onData(cachedData.value, cachedData.checksum)
+      }
+    } else if (this.persistent) {
+      this.client.cache.set(this.id, {
+        persistent: true,
+        checksum: -1,
+        value: null,
+      })
     }
 
     return () => {

@@ -183,7 +183,9 @@ export const sendAuth = async (
   }
 
   if (client.authRequest.inProgress) {
-    console.warn('[Based] Authentication still in progress - wait until done')
+    console.warn(
+      '[Based] Authentication still in progress - waiting until done'
+    )
     await client.authRequest.promise
   }
 

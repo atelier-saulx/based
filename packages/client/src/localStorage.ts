@@ -1,4 +1,4 @@
-// can make a plugin for node? that you can store it presitent on disk
+// make a plugin for node that you can store it persitent on disk
 
 import { BasedClient } from '.'
 
