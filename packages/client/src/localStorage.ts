@@ -112,8 +112,8 @@ export const initStorage = async (client: BasedClient) => {
     } catch (err) {
       console.error('Based - Cannot read localStorage')
     }
-    return
+    // return
   }
 
-  console.info('handling of node js storage!') // will just point to a file...
+  //   console.info('handling of node js storage!') // will just point to a file...
 }
