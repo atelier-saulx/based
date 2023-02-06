@@ -16,12 +16,9 @@ type Route = {
   internalOnly?: boolean
 }
 
-export type BasedFunctionRoute = Route & {
-  httpResponse?: HttpResponse
-}
+export type BasedFunctionRoute = Route
 
 export type BasedQueryFunctionRoute = Route & {
-  httpResponse?: HttpResponse
   query: true
 }
 
@@ -35,6 +32,7 @@ export type BasedQueryFunctionSpec = {
   memCacheTimeout?: number // in ms
   idleTimeout?: number // in ms
   timeoutCounter?: number
+  httpResponse?: HttpResponse
 } & BasedQueryFunctionRoute
 
 export type BasedStreamFunctionSpec = {
@@ -49,6 +47,7 @@ export type BasedStreamFunctionSpec = {
 export type BasedFunctionSpec = {
   checksum: number
   function: BasedFunction
+  httpResponse?: HttpResponse
   maxExecTime?: number // in ms - very nice too have
   idleTimeout?: number // in ms
   timeoutCounter?: number // in ms

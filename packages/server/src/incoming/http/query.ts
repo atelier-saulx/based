@@ -5,7 +5,11 @@ import {
   SendHttpResponse,
   HttpHeaders,
 } from '@based/functions'
-import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../../functions'
+import {
+  BasedFunctionRoute,
+  BasedQueryFunctionRoute,
+  BasedQueryFunctionSpec,
+} from '../../functions'
 import { end, sendHeaders } from '../../sendHttpResponse'
 import { compress } from '../../compress'
 import {
@@ -144,13 +148,14 @@ const sendGetResponseInternal = (
 
 const sendGetResponse = (
   route: BasedQueryFunctionRoute,
+  spec: BasedQueryFunctionSpec,
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
   checksum: number,
   ctx: Context<HttpSession>
 ) => {
-  if ('httpResponse' in route) {
+  if ('httpResponse' in spec) {
     // response data does not work for query responses
     const send: SendHttpResponse = (responseData, headers, status) => {
       sendGetResponseInternal(
@@ -164,7 +169,7 @@ const sendGetResponse = (
         typeof status === 'string' ? status : String(status)
       )
     }
-    route.httpResponse(server.client, obs.payload, obs.cache, send, ctx)
+    spec.httpResponse(server.client, obs.payload, obs.cache, send, ctx)
     return
   }
 
@@ -176,6 +181,7 @@ const getFromExisting = (
   id: number,
   ctx: Context<HttpSession>,
   route: BasedQueryFunctionRoute,
+  spec: BasedQueryFunctionSpec,
   checksum: number
 ) => {
   const obs = getObs(server, id)
@@ -186,7 +192,7 @@ const getFromExisting = (
   }
 
   if (obs.cache) {
-    sendGetResponse(route, server, id, obs, checksum, ctx)
+    sendGetResponse(route, spec, server, id, obs, checksum, ctx)
     return
   }
 
@@ -197,7 +203,7 @@ const getFromExisting = (
     if (err) {
       sendObsGetError(server, ctx, obs.id, err)
     } else {
-      sendGetResponse(route, server, id, obs, checksum, ctx)
+      sendGetResponse(route, spec, server, id, obs, checksum, ctx)
     }
   })
 }
@@ -208,17 +214,17 @@ const isAuthorized: IsAuthorizedHandler<
 > = (route, server, ctx, payload, id, checksum) => {
   const name = route.name
 
-  if (hasObs(server, id)) {
-    getFromExisting(server, id, ctx, route, checksum)
-    return
-  }
+  // if (hasObs(server, id)) {
+  //   getFromExisting(server, id, ctx, route, checksum)
+  //   return
+  // }
 
   installFn(server, ctx, route, id).then((spec) => {
     if (spec === null) {
       return
     }
     if (hasObs(server, id)) {
-      getFromExisting(server, id, ctx, route, checksum)
+      getFromExisting(server, id, ctx, route, spec, checksum)
       return
     }
 
@@ -227,7 +233,7 @@ const isAuthorized: IsAuthorizedHandler<
       if (err) {
         sendObsGetError(server, ctx, obs.id, err)
       } else {
-        sendGetResponse(route, server, id, obs, checksum, ctx)
+        sendGetResponse(route, spec, server, id, obs, checksum, ctx)
       }
     })
     start(server, id)
