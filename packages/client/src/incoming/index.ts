@@ -4,6 +4,7 @@ import { applyPatch } from '@saulx/diff'
 import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
+import { updateAuthState } from '../authState/updateAuthState'
 
 const getName = (client: BasedClient, id: number): string => {
   const sub = client.observeState.get(id)
@@ -254,15 +255,16 @@ export const incoming = async (
       if (payload === true) {
         client.authRequest.resolve?.(client.authState)
       } else if ('error' in payload) {
-        client.authState = payload
+        // make a function updateAuthState
+        updateAuthState(client, payload)
         client.emit('authstate-change', client.authState)
         client.authRequest.reject?.(new Error(payload.error))
       } else {
         if (!deepEqual(client.authState, payload)) {
-          client.authState = payload
+          updateAuthState(client, payload)
           client.emit('authstate-change', client.authState)
         } else {
-          client.authState = payload
+          updateAuthState(client, payload)
         }
         client.authRequest.resolve?.(client.authState)
       }

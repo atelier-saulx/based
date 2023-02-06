@@ -24,8 +24,9 @@ import { incoming } from './incoming'
 import { BasedQuery } from './query'
 import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
+import { initStorage } from './localStorage'
 
-export * from './parseAuthState'
+export * from './authState/parseAuthState'
 
 // auth observer
 export class BasedClient extends Emitter {
@@ -39,7 +40,12 @@ export class BasedClient extends Emitter {
     if (opts) {
       this.connect(opts)
     }
+    initStorage(this)
   }
+
+  // --------- Local Storage
+  storageSize: number = 0
+  maxStorageSize: number = 1e6 // 1mb
 
   // --------- Connection State
   opts: BasedOpts

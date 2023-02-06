@@ -1,4 +1,4 @@
-import { AuthState } from './types'
+import { AuthState } from '../types'
 import {
   decodeBase64,
   encodeBase64,

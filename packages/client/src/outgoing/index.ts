@@ -1,5 +1,6 @@
 import { BasedClient } from '..'
 import { AuthState, GenericObject } from '../types'
+import { updateAuthState } from '../authState/updateAuthState'
 import {
   encodeAuthMessage,
   encodeFunctionMessage,
@@ -186,7 +187,7 @@ export const sendAuth = async (
     await client.authRequest.promise
   }
 
-  client.authState = authState
+  updateAuthState(client, authState)
   client.emit('authstate-change', client.authState)
 
   if (client.connected) {

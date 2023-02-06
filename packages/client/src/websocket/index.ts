@@ -2,7 +2,7 @@ import urlLoader from './urlLoader'
 import { Connection } from './types'
 import { BasedClient } from '..'
 import WebSocket from 'isomorphic-ws'
-import { encodeAuthState } from '../parseAuthState'
+import { encodeAuthState } from '../authState/parseAuthState'
 
 type ActiveFn = (isActive: boolean) => void
 
