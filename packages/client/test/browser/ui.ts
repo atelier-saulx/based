@@ -73,7 +73,11 @@ export const uploadButton = (
   buttonHolder.appendChild(button)
 }
 
-export const toggleButton = (label: string, fn: () => () => void) => {
+export const toggleButton = (
+  label: string,
+  fn: () => () => void,
+  isToggle = false
+) => {
   const button = document.createElement('button')
   button.innerHTML = label
   button.style.padding = '16px'
@@ -85,7 +89,7 @@ export const toggleButton = (label: string, fn: () => () => void) => {
   button.style.margin = '10px'
   button.style.fontFamily = 'Andale Mono'
   let cl: any = fn
-  button.onclick = () => {
+  const onClick = () => {
     cl = cl()
     if (!cl) {
       button.style.backgroundColor = '#fff'
@@ -96,6 +100,10 @@ export const toggleButton = (label: string, fn: () => () => void) => {
       button.style.color = '#fff'
     }
   }
+  if (isToggle) {
+    onClick()
+  }
+  button.onclick = onClick
   buttonHolder.appendChild(button)
 }
 

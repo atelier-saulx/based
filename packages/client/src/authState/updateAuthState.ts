@@ -1,7 +1,12 @@
 import { AuthState } from '../types'
 import { BasedClient } from '..'
+import { setStorage, removeStorage } from '../localStorage'
 
 export const updateAuthState = (client: BasedClient, authState: AuthState) => {
-  console.info('go go go')
+  if (authState.persistent) {
+    setStorage(client, '@based-authState', authState)
+  } else {
+    removeStorage(client, '@based-authState')
+  }
   client.authState = authState
 }

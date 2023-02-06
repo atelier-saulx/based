@@ -67,21 +67,11 @@ const start = async () => {
         httpResponse: async (based, payload, responseData, send, ctx) => {
           ctx.session?.res.cork(() => {
             ctx.session?.res.writeStatus('200 OK')
-
-            // ctx.session?.res.writeHeader('Access-Control-Allow-Origin', '*')
-            // ctx.session?.res.writeHeader('Access-Control-Allow-Headers', '*')
-            // ctx.session?.res.writeHeader('Cache-Control', 'immutable')
             ctx.session?.res.writeHeader('Content-Type', responseData.mimeType)
-            console.log(responseData.size, ctx.session?.headers)
-            // ctx.session?.res.writeHeader('Content-Length', result.size)
-
             responseData.file.on('data', (d) => {
-              // console.info('chunk', d)
               ctx.session?.res.write(d)
             })
-
             responseData.file.on('end', () => {
-              // console.log('END', d)
               ctx.session?.res.end()
             })
           })

@@ -180,14 +180,19 @@ const init = async () => {
     })
   })
 
-  toggleButton('setAuthState', () => {
-    based.setAuthState({
-      token: 'power',
-    })
-    return () => {
-      based.clearAuthState()
-    }
-  })
+  toggleButton(
+    'setAuthState',
+    () => {
+      based.setAuthState({
+        token: 'power',
+        persistent: true,
+      })
+      return () => {
+        based.clearAuthState()
+      }
+    },
+    !!based.authState.token
+  )
 
   based.on('authstate-change', (d) => {
     log('authstate-change', d)
