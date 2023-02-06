@@ -45,7 +45,7 @@ export class BasedClient extends Emitter {
 
   // --------- Local Storage
   storageSize: number = 0
-  maxStorageSize: number = 5e6 // 5mb
+  maxStorageSize: number = 5e6 - 500 // ~5mb
 
   // --------- Connection State
   opts: BasedOpts
