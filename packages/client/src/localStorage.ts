@@ -84,11 +84,29 @@ export const initStorage = async (client: BasedClient) => {
       console.info('Based - init localstorage', keys, totalSize)
 
       if (totalSize > 0) {
-        if (keys.includes('@based-authState')) {
-          const authState = getStorage(client, '@based-authState')
-          if (authState) {
-            client.setAuthState(authState)
+        for (const key of keys) {
+          if (key === '@based-size' || !key.startsWith('@based')) {
+            continue
           }
+
+          if (key === '@based-authState') {
+            const authState = getStorage(client, '@based-authState')
+            if (authState) {
+              client.setAuthState(authState)
+            }
+            continue
+          }
+
+          const [, id] = key.split('@based-cache-')
+
+          if (!id) {
+            console.warn('Based - clear corrupt localStorage item')
+            removeStorage(client, key)
+            continue
+          }
+
+          const value = getStorage(client, key)
+          client.cache.set(Number(id), value)
         }
       }
     } catch (err) {

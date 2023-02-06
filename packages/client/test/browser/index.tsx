@@ -181,6 +181,18 @@ const init = async () => {
   })
 
   toggleButton(
+    'Query fn persist',
+    () => {
+      return based
+        .query('staticSub', { special: 1 }, { persistent: true })
+        .subscribe((d) => {
+          log('static Sub', d)
+        })
+    },
+    true
+  )
+
+  toggleButton(
     'setAuthState',
     () => {
       based.setAuthState({

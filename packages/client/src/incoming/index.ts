@@ -5,6 +5,7 @@ import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState'
+import { setStorage } from '../localStorage'
 
 const getName = (client: BasedClient, id: number): string => {
   const sub = client.observeState.get(id)
@@ -167,6 +168,11 @@ export const incoming = async (
 
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
+
+        if (observable.persistent) {
+          setStorage(client, '@based-cache-' + id, cachedData)
+        }
+
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(cachedData.value, checksum)
         }
@@ -205,6 +211,7 @@ export const incoming = async (
       }
 
       // handle max size etc / localstorage etc
+
       client.cache.set(id, {
         value: payload,
         checksum,
@@ -214,6 +221,11 @@ export const incoming = async (
 
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
+
+        if (observable.persistent) {
+          setStorage(client, '@based-cache-' + id, { value: payload, checksum })
+        }
+
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }

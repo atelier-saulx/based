@@ -45,7 +45,7 @@ export class BasedClient extends Emitter {
 
   // --------- Local Storage
   storageSize: number = 0
-  maxStorageSize: number = 1e6 // 1mb
+  maxStorageSize: number = 5e6 // 5mb
 
   // --------- Connection State
   opts: BasedOpts
@@ -197,8 +197,12 @@ export class BasedClient extends Emitter {
   }
 
   // ---------- Query
-  query(name: string, payload?: any): BasedQuery {
-    return new BasedQuery(this, name, payload)
+  query(
+    name: string,
+    payload?: any,
+    opts?: { persistent: boolean }
+  ): BasedQuery {
+    return new BasedQuery(this, name, payload, opts)
   }
 
   // -------- Call-Function

@@ -101,7 +101,9 @@ export const toggleButton = (
     }
   }
   if (isToggle) {
-    onClick()
+    window.requestAnimationFrame(() => {
+      onClick()
+    })
   }
   button.onclick = onClick
   buttonHolder.appendChild(button)

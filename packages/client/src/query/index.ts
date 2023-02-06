@@ -15,19 +15,19 @@ export class BasedQuery {
   public query: any
   public name: string
   public client: BasedClient
-  public persistent?: boolean
+  public persistent: boolean
 
   constructor(
     client: BasedClient,
     name: string,
     payload: any,
-    persistent?: boolean
+    opts?: { persistent: boolean }
   ) {
     this.query = payload
     this.id = genObserveId(name, payload)
     this.client = client
     this.name = name
-    this.persistent = persistent
+    this.persistent = opts?.persistent || false
   }
 
   get cache(): any {
@@ -59,6 +59,7 @@ export class BasedQuery {
         payload: this.query,
         name: this.name,
         subscribers,
+        persistent: this.persistent || false,
       })
       addObsToQueue(
         this.client,
@@ -69,6 +70,12 @@ export class BasedQuery {
       )
     } else {
       const obs = this.client.observeState.get(this.id)
+      if (this.persistent && !obs.persistent) {
+        obs.persistent = true
+        if (cachedData) {
+          setStorage(this.client, '@based-cache-' + this.id, cachedData)
+        }
+      }
       subscriberId = obs.subscribers.size + 1
       obs.subscribers.set(subscriberId, {
         onError,
@@ -77,20 +84,7 @@ export class BasedQuery {
     }
 
     if (cachedData) {
-      if (!cachedData.persistent && this.persistent) {
-        cachedData.persistent = true
-        setStorage(this.client, '@based-cache-' + this.id, cachedData)
-      }
-
-      if (cachedData.checksum !== -1) {
-        onData(cachedData.value, cachedData.checksum)
-      }
-    } else if (this.persistent) {
-      this.client.cache.set(this.id, {
-        persistent: true,
-        checksum: -1,
-        value: null,
-      })
+      onData(cachedData.value, cachedData.checksum)
     }
 
     return () => {

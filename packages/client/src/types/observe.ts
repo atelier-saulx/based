@@ -14,6 +14,7 @@ export type CloseObserve = () => void
 export type ObserveState = Map<
   number,
   {
+    persistent?: boolean
     payload: any
     name: string
     subscribers: Map<
