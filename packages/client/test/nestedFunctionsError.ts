@@ -83,7 +83,6 @@ test.serial('nested qeury functions fn does not exist error', async (t) => {
   t.is(errors.length, 1)
   t.is(errors[0].code, 40401)
 
-  // @ts-ignore
   client.destroy()
   await server.destroy()
 })
