@@ -12,8 +12,10 @@ import {
 } from '@based/functions'
 import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
+import parseJSONAuthState from './parseJSONAuthState'
 
 export { parseAuthState }
+export { parseJSONAuthState }
 
 export type AuthConfig = {
   authorize?: Authorize

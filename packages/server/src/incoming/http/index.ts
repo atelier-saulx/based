@@ -20,7 +20,7 @@ import {
 } from '../../security'
 import parseQuery from './parseQuery'
 import { getIp } from '../../ip'
-import { parseAuthState } from '../../auth'
+import { parseAuthState, parseJSONAuthState } from '../../auth'
 import { authorize } from '../../authorize'
 import { end } from '../../sendHttpResponse'
 
@@ -92,11 +92,10 @@ export const httpHandler = (
     if (authorization) {
       authState = parseAuthState(authorization)
     } else {
+      // TODO: remove this when c++ client can encode
       const authorization: string = req.getHeader('json-authorization')
       if (authorization) {
-        try {
-          authState = JSON.parse(decodeURI(authorization))
-        } catch (err) {}
+        authState = parseJSONAuthState(authorization)
       }
     }
   }
