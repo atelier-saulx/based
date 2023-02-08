@@ -13,6 +13,12 @@ export const removeStorage = (client: BasedClient, key: string) => {
   }
 }
 
+const clearStorage = () => {
+  if (isBrowser) {
+    const keys = Object.keys(localStorage)
+  }
+}
+
 export const setStorage = (client: BasedClient, key: string, value: any) => {
   if (isBrowser) {
     try {

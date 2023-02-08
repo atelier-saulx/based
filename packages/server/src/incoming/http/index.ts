@@ -1,6 +1,6 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpSession, Context } from '@based/functions'
+import { HttpSession, Context, AuthState } from '@based/functions'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
 import {
@@ -85,7 +85,21 @@ export const httpHandler = (
     return
   }
 
-  const authorization = req.getHeader('authorization')
+  let authState: AuthState = {}
+
+  if (route.public !== true) {
+    const authorization: string = req.getHeader('authorization')
+    if (authorization) {
+      authState = parseAuthState(authorization)
+    } else {
+      const authorization: string = req.getHeader('json-authorization')
+      if (authorization) {
+        try {
+          authState = JSON.parse(decodeURI(authorization))
+        } catch (err) {}
+      }
+    }
+  }
 
   const ctx: Context<HttpSession> = {
     session: {
@@ -95,7 +109,7 @@ export const httpHandler = (
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
-      authState: authorization ? parseAuthState(authorization) : {},
+      authState,
       headers: {
         'content-type': req.getHeader('content-type'),
         'content-encoding': req.getHeader('content-encoding'),
