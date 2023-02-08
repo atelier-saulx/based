@@ -64,10 +64,12 @@ export type BasedQueryFunction<P = any, K = any> =
   | ((
       based: BasedFunctionClient,
       payload: P,
-      update: ObservableUpdateFunction<K>
+      update: ObservableUpdateFunction<K>,
+      error?: ObserveErrorListener
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
       payload: P,
-      update: ObservableUpdateFunction<K>
+      update: ObservableUpdateFunction<K>,
+      error?: ObserveErrorListener
     ) => () => void)

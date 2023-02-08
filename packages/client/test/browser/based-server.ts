@@ -69,8 +69,7 @@ const start = async () => {
   await createSimpleServer({
     port: 8081,
     auth: {
-      authorize: async (based, ctx, name, payload) => {
-        console.info('--> Auth', name, payload)
+      authorize: async (based, ctx, name) => {
         if (name === 'notAllowedFiles') {
           return false
         }
