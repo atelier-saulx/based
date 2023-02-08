@@ -4,9 +4,7 @@ import { createSimpleServer } from '@based/server'
 
 test.serial('install fn perf', async (t) => {
   const client = new BasedClient()
-
   let cnt = 0
-
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -28,23 +26,18 @@ test.serial('install fn perf', async (t) => {
             q.push(based.call('hello2'))
           }
           await Promise.all(q)
-          console.info(Date.now() - d, 'ms')
-
           return Date.now() - d
         },
       },
     },
   })
-
   server.on('error', console.error)
-
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
-
   const time = await client.call('hello')
-  console.info(time, '  ', cnt)
   t.is(cnt, 100000)
+  t.true(time < 1e3)
 })
