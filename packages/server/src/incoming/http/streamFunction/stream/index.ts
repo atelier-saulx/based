@@ -19,7 +19,7 @@ export const singleStream = (
   size: number
 ) => {
   const extension = ctx.session.req.getHeader('content-extension')
-  const fileName = ctx.session.req.getHeader('content-name')
+  const fileName = ctx.session.req.getHeader('content-name') || ''
 
   if (extension) {
     const mime = mimeTypes.lookup(extension)
@@ -60,7 +60,6 @@ export const singleStream = (
         const fn = spec.function
         fn(server.client, streamPayload, ctx)
           .catch((err) => {
-            // stream.destroy()
             sendError(server, ctx, BasedErrorCode.FunctionError, {
               err,
               route,
