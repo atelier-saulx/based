@@ -24,6 +24,10 @@ export default async (
     Authorization: encodeAuthState(client.authState),
   }
 
+  if (options.fileName) {
+    headers['Content-Name'] = options.fileName
+  }
+
   let q = ''
   if (options.payload) {
     q = '?' + serializeQuery(options.payload)

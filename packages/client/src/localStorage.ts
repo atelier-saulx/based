@@ -1,5 +1,3 @@
-// make a plugin for node that you can store it persitent on disk
-
 import { BasedClient } from '.'
 
 const isBrowser = typeof window !== 'undefined'

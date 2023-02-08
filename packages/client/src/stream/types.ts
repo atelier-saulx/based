@@ -12,6 +12,7 @@ export type StreamFunctionContents<
   contents: F
   payload?: any
   mimeType?: string
+  fileName?: string
   serverKey?: string
 }
 
@@ -26,6 +27,7 @@ export type StreamFunctionStream = {
   payload?: any
   size: number
   mimeType?: string
+  fileName?: string
   serverKey?: string
   extension?: string
 }
@@ -34,6 +36,7 @@ export type StreamFunctionPath = {
   path: string
   payload?: any
   mimeType?: string
+  fileName?: string
   serverKey?: string
 }
 
@@ -46,5 +49,6 @@ export type StreamHeaders = {
   'Content-Extension'?: string
   'Content-Length'?: string
   'Content-Type': string
+  'Content-Name'?: string
   Authorization: string
 }

@@ -126,6 +126,10 @@ export const uploadFileStream = async (
     Authorization: encodeAuthState(client.authState),
   }
 
+  if (options.fileName) {
+    headers['Content-Name'] = options.fileName
+  }
+
   if (!options.mimeType && options.extension) {
     headers['Content-Extension'] = options.extension
   }

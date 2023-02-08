@@ -19,6 +19,8 @@ export const singleStream = (
   size: number
 ) => {
   const extension = ctx.session.req.getHeader('content-extension')
+  const fileName = ctx.session.req.getHeader('content-name')
+
   if (extension) {
     const mime = mimeTypes.lookup(extension)
     if (mime) {
@@ -40,6 +42,7 @@ export const singleStream = (
     stream,
     size,
     mimeType: type,
+    fileName,
     extension: getExtension(type) || '',
   }
 
