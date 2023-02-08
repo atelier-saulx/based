@@ -48,20 +48,21 @@ const clearStorage = () => {
 export const setStorage = (client: BasedClient, key: string, value: any) => {
   if (isBrowser) {
     try {
-      const blob2 = new Blob([JSON.stringify(value)])
-
       const prev = localStorage.getItem(key)
+
+      const stringifiedJson = JSON.stringify(value)
+
       const encoded = encodeBase64(
-        fflate.deflateSync(stringToUtf8(JSON.stringify(value)))
+        fflate.deflateSync(stringToUtf8(stringifiedJson))
       )
+
       const blob = new Blob([encoded])
       const size = blob.size
-
-      console.info(blob2.size / blob.size, 'x', 'compression!')
 
       if (prev) {
         client.storageSize -= new Blob([prev]).size
       }
+
       client.storageSize += size
       if (client.storageSize > client.maxStorageSize) {
         console.info('Based - Max localStorage size reached - clear')

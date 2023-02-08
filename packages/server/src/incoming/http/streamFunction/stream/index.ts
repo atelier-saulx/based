@@ -50,7 +50,7 @@ export const singleStream = (
     route,
     server,
     ctx,
-    payload,
+    streamPayload,
     () => {
       installFn(server, ctx, route).then((spec) => {
         if (spec === null) {
