@@ -16,6 +16,17 @@ export const removeStorage = (client: BasedClient, key: string) => {
 const clearStorage = () => {
   if (isBrowser) {
     const keys = Object.keys(localStorage)
+    try {
+      for (const key of keys) {
+        if (key.startsWith('@based')) {
+          localStorage.removeItem(key)
+        }
+      }
+    } catch (err) {
+      try {
+        localStorage.clear()
+      } catch (err) {}
+    }
   }
 }
 
@@ -31,7 +42,8 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
       client.storageSize += size
       if (client.storageSize > client.maxStorageSize) {
         console.info('Based - Max localStorage size reached - clear')
-        localStorage.clear()
+        // localStorage.clear()
+        clearStorage()
         client.storageSize = 0
         if (client.authState.persistent === true) {
           setStorage(client, '@based-authState', client.authState)
@@ -68,7 +80,7 @@ export const initStorage = async (client: BasedClient) => {
 
       if (totalSize < 0) {
         console.error('Based - Corrupt localStorage (negative size) - clear')
-        localStorage.clear()
+        clearStorage()
         totalSize = 0
       }
 
@@ -81,7 +93,7 @@ export const initStorage = async (client: BasedClient) => {
           'Based - Corrupt localStorage (size but no keys) - clear',
           totalSize
         )
-        localStorage.clear()
+        clearStorage()
         totalSize = 0
       }
 
