@@ -41,6 +41,21 @@ const staticSub: BasedQueryFunction<
   return () => {}
 }
 
+const staticSubHuge: BasedQueryFunction<
+  { special: number },
+  { title: string; id: number }[]
+> = (based, payload, update) => {
+  const data: { title: string; id: number }[] = []
+  for (let i = 0; i < 100000; i++) {
+    data.push({
+      id: i,
+      title: 'yes ' + i,
+    })
+  }
+  update(data)
+  return () => {}
+}
+
 const start = async () => {
   fs.readdir(TMP, (err, files) => {
     if (err) throw err
@@ -131,6 +146,7 @@ const start = async () => {
     queryFunctions: {
       counter,
       staticSub,
+      staticSubHuge,
     },
   })
 }

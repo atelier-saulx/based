@@ -195,6 +195,39 @@ const init = async () => {
   )
 
   toggleButton(
+    'Query fn persist HUGE',
+    () => {
+      return based
+        .query('staticSubHuge', { special: 1 }, { persistent: true })
+        .subscribe((d, checksum) => {
+          // @ts-ignore
+          window.download = () => {
+            const blob = new Blob([JSON.stringify(d)], {
+              type: 'text/plain;charset=utf-8',
+            })
+            const url = window.URL || window.webkitURL
+            const link = url.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.download = 'HUGEFile.json'
+            a.href = link
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+          }
+
+          log(
+            'static Sub Huge is there!',
+            d.length / 1000 + 'k items',
+            'checksum',
+            checksum,
+            '<a style="text-decoration:underline;" onclick="window.download()">Download the file</a>'
+          )
+        })
+    },
+    true
+  )
+
+  toggleButton(
     'setAuthState',
     () => {
       based.setAuthState({
