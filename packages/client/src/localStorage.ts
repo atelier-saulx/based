@@ -1,6 +1,19 @@
 import { BasedClient } from '.'
+import fflate from 'fflate'
+import {
+  decodeBase64,
+  encodeBase64,
+  stringToUtf8,
+  uft8ToString,
+} from '@saulx/utils'
 
 const isBrowser = typeof window !== 'undefined'
+
+function decode(dataURI) {
+  const data = decodeBase64(dataURI)
+  const uncompressed = uft8ToString(fflate.inflateSync(data))
+  return JSON.parse(uncompressed)
+}
 
 export const removeStorage = (client: BasedClient, key: string) => {
   if (isBrowser) {
@@ -25,7 +38,9 @@ const clearStorage = () => {
     } catch (err) {
       try {
         localStorage.clear()
-      } catch (err) {}
+      } catch (err) {
+        console.error(`Based - Error clearing localStorage`)
+      }
     }
   }
 }
@@ -33,16 +48,23 @@ const clearStorage = () => {
 export const setStorage = (client: BasedClient, key: string, value: any) => {
   if (isBrowser) {
     try {
+      const blob2 = new Blob([JSON.stringify(value)])
+
       const prev = localStorage.getItem(key)
-      const encoded = JSON.stringify(value)
-      const size = new Blob([encoded]).size
+      const encoded = encodeBase64(
+        fflate.deflateSync(stringToUtf8(JSON.stringify(value)))
+      )
+      const blob = new Blob([encoded])
+      const size = blob.size
+
+      console.info(blob2.size / blob.size, 'x', 'compression!')
+
       if (prev) {
         client.storageSize -= new Blob([prev]).size
       }
       client.storageSize += size
       if (client.storageSize > client.maxStorageSize) {
         console.info('Based - Max localStorage size reached - clear')
-        // localStorage.clear()
         clearStorage()
         client.storageSize = 0
         if (client.authState.persistent === true) {
@@ -53,7 +75,7 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
       localStorage.setItem('@based-size', String(client.storageSize))
       localStorage.setItem(key, encoded)
     } catch (err) {
-      console.error(`Based - Error writing ${key} to localStorage`)
+      console.error(`Based - Error writing ${key} to localStorage`, err)
     }
   }
 }
@@ -63,7 +85,7 @@ export const getStorage = (client: BasedClient, key: string): any => {
     try {
       const value = localStorage.getItem(key)
       if (value !== undefined) {
-        return JSON.parse(value)
+        return decode(value)
       }
       return
     } catch (err) {
