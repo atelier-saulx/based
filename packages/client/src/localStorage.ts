@@ -9,10 +9,11 @@ import {
 
 const isBrowser = typeof window !== 'undefined'
 
-function decode(dataURI) {
+const decode = (dataURI: string): any => {
   const data = decodeBase64(dataURI)
   const uncompressed = uft8ToString(fflate.inflateSync(data))
-  return JSON.parse(uncompressed)
+  const parsed = JSON.parse(uncompressed)
+  return parsed
 }
 
 export const removeStorage = (client: BasedClient, key: string) => {
@@ -92,16 +93,11 @@ export const getStorage = (client: BasedClient, key: string): any => {
     try {
       const value = localStorage.getItem(key)
       if (value !== undefined) {
-        //   stringifiedJson.length > 30
         if (value.length < 70 && key !== '@based-authState') {
-          console.info('Uncompressed...')
           try {
             return JSON.parse(value)
-          } catch (err) {
-            console.info(' do try to decode...')
-          }
+          } catch (err) {}
         }
-
         return decode(value)
       }
       return
@@ -169,7 +165,6 @@ export const initStorage = async (client: BasedClient) => {
     } catch (err) {
       console.error('Based - Cannot read localStorage')
     }
-    // return
   }
 
   //   console.info('handling of node js storage!') // will just point to a file...
