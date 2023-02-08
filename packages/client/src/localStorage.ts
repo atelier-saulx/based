@@ -52,9 +52,15 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
 
       const stringifiedJson = JSON.stringify(value)
 
-      const encoded = encodeBase64(
-        fflate.deflateSync(stringToUtf8(stringifiedJson))
-      )
+      const encoded =
+        stringifiedJson.length > 70 || key === '@based-authState'
+          ? encodeBase64(fflate.deflateSync(stringToUtf8(stringifiedJson)))
+          : stringifiedJson
+
+      // console.info(
+      //   'COMPRESSION',
+      //   new Blob([stringifiedJson]).size / new Blob([encoded]).size
+      // )
 
       const blob = new Blob([encoded])
       const size = blob.size
@@ -86,6 +92,16 @@ export const getStorage = (client: BasedClient, key: string): any => {
     try {
       const value = localStorage.getItem(key)
       if (value !== undefined) {
+        //   stringifiedJson.length > 30
+        if (value.length < 70 && key !== '@based-authState') {
+          console.info('Uncompressed...')
+          try {
+            return JSON.parse(value)
+          } catch (err) {
+            console.info(' do try to decode...')
+          }
+        }
+
         return decode(value)
       }
       return
@@ -120,7 +136,9 @@ export const initStorage = async (client: BasedClient) => {
         totalSize = 0
       }
 
-      console.info('Based - init localstorage', keys, totalSize)
+      console.info(
+        `Based - init localstorage stored ${~~(totalSize / 1024) + 'kb'}`
+      )
 
       if (totalSize > 0) {
         for (const key of keys) {

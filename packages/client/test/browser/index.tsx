@@ -175,9 +175,11 @@ const init = async () => {
   })
 
   toggleButton('Counter slow', () => {
-    return based.query('counter', { speed: 1e3 }).subscribe((d) => {
-      log('Counter slow', d)
-    })
+    return based
+      .query('counter', { speed: 1e3 }, { persistent: true })
+      .subscribe((d) => {
+        log('Counter slow', d)
+      })
   })
 
   toggleButton(
