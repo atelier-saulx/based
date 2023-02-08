@@ -21,19 +21,21 @@ export const observe = (
   update: ObservableUpdateFunction,
   error: ObserveErrorListener
 ): (() => void) => {
+  const id = genObservableId(name, payload)
+
   const route = verifyRoute(
     server,
     server.client.ctx,
     'query',
     server.functions.route(name),
-    name
+    name,
+    id
   )
 
   if (route === null) {
     throw new Error(`[${name}] No session in ctx`)
   }
 
-  const id = genObservableId(name, payload)
   let isClosed = false
 
   const close = () => {

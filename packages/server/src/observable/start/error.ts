@@ -30,6 +30,8 @@ export const errorListener = (
             },
           }
         )
+      : err.observableId !== obs.id
+      ? { ...err, observableId: obs.id }
       : err
 
   if (obs.clients.size) {

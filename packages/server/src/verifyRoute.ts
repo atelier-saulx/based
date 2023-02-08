@@ -81,6 +81,7 @@ export const verifyRoute = <T extends FnType>(
       if (!isClientContext(ctx)) {
         throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
           route,
+          observableId: id,
         })
       }
       sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
@@ -96,6 +97,7 @@ export const verifyRoute = <T extends FnType>(
       if (!isClientContext(ctx)) {
         throw createError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
           route,
+          requestId: id,
         })
       }
       sendError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
@@ -109,12 +111,14 @@ export const verifyRoute = <T extends FnType>(
   if (type === 'fn' && !isFunctionRoute(route)) {
     if (!isClientContext(ctx)) {
       if (isStreamFunctionRoute(route)) {
-        throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+        throw createError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
           route,
+          requestId: id,
         })
       }
       throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
         route,
+        requestId: id,
       })
     }
     if (isStreamFunctionRoute(route)) {

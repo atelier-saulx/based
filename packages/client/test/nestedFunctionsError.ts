@@ -51,40 +51,39 @@ test.serial('nested functions fn does not exist error', async (t) => {
   await server.destroy()
 })
 
-test.serial.only(
-  'nested qeury functions fn does not exist error',
-  async (t) => {
-    const client = new BasedClient()
-    const server = await createSimpleServer({
-      port: 9910,
-      queryFunctions: {
-        hello: async (based, payload, update) => {
-          console.error('yo yo yo')
-          return based
-            .query('blabla')
-            .subscribe(update, (err) => console.error(err))
-        },
+test.serial('nested qeury functions fn does not exist error', async (t) => {
+  const client = new BasedClient()
+  const server = await createSimpleServer({
+    port: 9910,
+    queryFunctions: {
+      hello: async (based, payload, update) => {
+        return based.query('blabla').subscribe(update)
       },
-    })
-    await client.connect({
-      url: 'ws://localhost:9910',
-    })
+    },
+  })
+  await client.connect({
+    url: 'ws://localhost:9910',
+  })
 
-    client.query('hello').subscribe(
-      (d) => {
-        console.log(d)
-      },
-      (err) => {
-        console.error(err)
-      }
-    )
+  const errors: any[] = []
+  let r = 0
 
-    await wait(2e3)
+  client.query('hello').subscribe(
+    () => {
+      r++
+    },
+    (err) => {
+      errors.push(err)
+    }
+  )
 
-    t.true(true)
+  await wait(500)
 
-    // @ts-ignore
-    client.destroy()
-    await server.destroy()
-  }
-)
+  t.is(r, 0)
+  t.is(errors.length, 1)
+  t.is(errors[0].code, 40401)
+
+  // @ts-ignore
+  client.destroy()
+  await server.destroy()
+})
