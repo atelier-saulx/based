@@ -7,6 +7,8 @@ import { join } from 'path'
 import { readFileSync } from 'node:fs'
 
 test.serial('stream functions - buffer contents', async (t) => {
+  const progressEvents: number[] = []
+
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -15,6 +17,9 @@ test.serial('stream functions - buffer contents', async (t) => {
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload }) => {
+          stream.on('progress', (d) => {
+            progressEvents.push(d)
+          })
           await readStream(stream)
           return payload
         },
@@ -34,6 +39,9 @@ test.serial('stream functions - buffer contents', async (t) => {
     contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
   })
   t.deepEqual(s, { power: true })
+
+  t.true(progressEvents.length > 0)
+  t.is(progressEvents[progressEvents.length - 1], 1)
   // cycles of 3 secs
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
@@ -42,6 +50,8 @@ test.serial('stream functions - buffer contents', async (t) => {
 })
 
 test.serial('stream functions - streamContents', async (t) => {
+  const progressEvents: number[] = []
+
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -51,6 +61,9 @@ test.serial('stream functions - streamContents', async (t) => {
         stream: true,
         function: async (based, { stream, payload, mimeType, size }) => {
           let cnt = 0
+          stream.on('progress', (d) => {
+            progressEvents.push(d)
+          })
           stream.on('data', () => {
             cnt++
           })
@@ -97,6 +110,9 @@ test.serial('stream functions - streamContents', async (t) => {
     mimeType: 'pipo',
     contents: stream,
   })
+
+  t.true(progressEvents.length > 0)
+  t.is(progressEvents[progressEvents.length - 1], 1)
   t.true(s.cnt > 5)
   t.is(s.mimeType, 'pipo')
   t.is(s.size, payload.byteLength)

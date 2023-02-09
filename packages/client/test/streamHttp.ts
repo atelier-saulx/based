@@ -8,12 +8,17 @@ import { promisify } from 'node:util'
 const gzip = promisify(zlib.gzip)
 
 test.serial('stream functions (small over http + file)', async (t) => {
+  const progressEvents: number[] = []
+
   const server = await createSimpleServer({
     port: 9910,
     functions: {
       hello: {
         stream: true,
         function: async (based, { stream, payload }) => {
+          stream.on('progress', (d) => {
+            progressEvents.push(d)
+          })
           await readStream(stream)
           return { payload, bla: true }
         },
@@ -31,12 +36,18 @@ test.serial('stream functions (small over http + file)', async (t) => {
     })
   ).json()
   t.deepEqual(result, { bla: true, payload: { bla: true } })
+
+  t.true(progressEvents.length > 0)
+  t.is(progressEvents[progressEvents.length - 1], 1)
+
   await wait(6e3)
   t.is(Object.keys(server.functions.specs).length, 0)
   server.destroy()
 })
 
 test.serial('stream functions (over http + stream)', async (t) => {
+  let progressEvents: number[] = []
+
   const server = await createSimpleServer({
     port: 9910,
     functions: {
@@ -44,6 +55,9 @@ test.serial('stream functions (over http + stream)', async (t) => {
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream }) => {
+          stream.on('progress', (d) => {
+            progressEvents.push(d)
+          })
           const buf = await readStream(stream)
           console.info('is end...', buf.byteLength)
           return 'bla'
@@ -70,6 +84,11 @@ test.serial('stream functions (over http + stream)', async (t) => {
 
   t.is(result, 'bla')
 
+  t.true(progressEvents.length > 0)
+  t.is(progressEvents[progressEvents.length - 1], 1)
+
+  progressEvents = []
+
   const x = await gzip(JSON.stringify(bigBod))
 
   try {
@@ -89,6 +108,9 @@ test.serial('stream functions (over http + stream)', async (t) => {
     console.info('ERROR', err)
     t.fail('Crash with uncompressing')
   }
+
+  t.true(progressEvents.length > 0)
+  t.is(progressEvents[progressEvents.length - 1], 1)
 
   await wait(6e3)
 
