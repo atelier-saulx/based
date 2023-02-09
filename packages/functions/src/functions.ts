@@ -1,6 +1,6 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
-import { Duplex } from 'stream'
+import { BasedDataStream } from './DataStream'
 
 export type ObservableUpdateFunction<K = any> = {
   (
@@ -47,10 +47,7 @@ export type StreamPayload<P = any> = {
   payload?: P
   mimeType: string
   size: number
-  stream: Duplex & {
-    size: number
-    receivedBytes: number
-  }
+  stream: BasedDataStream
   fileName?: string
   extension?: string
 }

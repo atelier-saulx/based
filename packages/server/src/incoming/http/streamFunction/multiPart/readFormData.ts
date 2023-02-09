@@ -1,5 +1,9 @@
-import { DataStream } from '../../../../DataStream'
-import { HttpSession, Context, StreamPayload } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  StreamPayload,
+  BasedDataStream,
+} from '@based/functions'
 import { BasedErrorCode } from '../../../../error'
 import { sendError } from '../../../../sendError'
 import getExtension from '../getExtension'
@@ -18,7 +22,7 @@ export type FileOptions = {
 
 type FileDescriptor = {
   opts: Partial<FileOptions>
-  stream: DataStream
+  stream: BasedDataStream
   isDone: boolean
   headersSet: number
 }
@@ -160,7 +164,7 @@ export default (
 
       if (line === boundary && !isWriting) {
         const file = {
-          stream: new DataStream(0),
+          stream: new BasedDataStream(0),
           headersSet: 0,
           opts: {},
           isDone: false,

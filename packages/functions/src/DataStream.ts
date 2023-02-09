@@ -1,7 +1,8 @@
 import { Duplex } from 'stream'
 import util from 'node:util'
 
-export class DataStream extends Duplex {
+// prob want to move this to based functions
+export class BasedDataStream extends Duplex {
   public size: number = 0
   public receivedBytes: number = 0
   public progessTimer: NodeJS.Timeout

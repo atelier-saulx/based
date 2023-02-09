@@ -1,5 +1,4 @@
-import { DataStream } from '../../../../DataStream'
-import { HttpSession, Context } from '@based/functions'
+import { HttpSession, Context, BasedDataStream } from '@based/functions'
 import { BasedFunctionRoute } from '../../../../functions'
 import { sendError } from '../../../../sendError'
 import zlib from 'node:zlib'
@@ -17,8 +16,8 @@ export default (
   route: BasedFunctionRoute,
   ctx: Context<HttpSession>,
   size: number
-): DataStream => {
-  const stream = new DataStream(size)
+): BasedDataStream => {
+  const stream = new BasedDataStream(size)
   const contentEncoding = ctx.session.headers['content-encoding']
 
   if (contentEncoding) {
