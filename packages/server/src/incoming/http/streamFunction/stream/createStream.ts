@@ -1,4 +1,4 @@
-import { DataStream } from '../DataStream'
+import { DataStream } from '../../../../DataStream'
 import { HttpSession, Context } from '@based/functions'
 import { BasedFunctionRoute } from '../../../../functions'
 import { sendError } from '../../../../sendError'

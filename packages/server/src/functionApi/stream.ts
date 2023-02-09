@@ -27,6 +27,7 @@ export const stream = async (
 
   const fn = await installFn(server, server.client.ctx, route)
 
+  // fix
   if (!fn) {
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
       route,
