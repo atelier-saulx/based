@@ -38,42 +38,39 @@ export type BasedStreamFunctionRoute = Route & {
   stream: true
 }
 
-export type BasedQueryFunctionSpec = {
+export type BasedInstallableFunctionSpec = {
   checksum: number
+  /** in ms */
+  idleTimeout?: number
+  /** in ms */
+  timeoutCounter?: number
+}
+
+export type BasedQueryFunctionSpec = {
   function: BasedQueryFunction
   /** How long should this subscription remain in memory after all subscribers are gone, in ms */
   memCacheTimeout?: number
-  /** in ms */
-  idleTimeout?: number
-  timeoutCounter?: number
   /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
-} & BasedQueryFunctionRoute
+} & BasedQueryFunctionRoute &
+  BasedInstallableFunctionSpec
 
 export type BasedStreamFunctionSpec = {
   // for streams no custom http response is possible scince they get multiplexed
-  checksum: number
   function: BasedStreamFunction
   /** in ms */
   maxExecTime?: number
-  /** in ms */
-  idleTimeout?: number
-  /** in ms */
-  timeoutCounter?: number
-} & BasedStreamFunctionRoute
+} & BasedStreamFunctionRoute &
+  BasedInstallableFunctionSpec
 
 export type BasedFunctionSpec = {
-  checksum: number
   function: BasedFunction
   /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
   /** in ms */
   maxExecTime?: number
-  /** in ms */
-  idleTimeout?: number
-  /** in ms */
-  timeoutCounter?: number
-} & BasedFunctionRoute
+} & BasedFunctionRoute &
+  BasedInstallableFunctionSpec
 
 export type BasedRoute =
   | BasedFunctionRoute
