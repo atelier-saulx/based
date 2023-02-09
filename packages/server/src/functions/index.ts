@@ -85,9 +85,6 @@ export class BasedFunctions {
     if (this.config.memCacheTimeout === undefined) {
       this.config.memCacheTimeout = 3e3
     }
-    if (this.config.maxWorkers === undefined) {
-      this.config.maxWorkers = 1
-    }
 
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
