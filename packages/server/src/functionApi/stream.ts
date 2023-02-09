@@ -3,6 +3,25 @@ import { BasedErrorCode, createError } from '../error'
 import { Context, BasedDataStream } from '@based/functions'
 import { verifyRoute } from '../verifyRoute'
 import { installFn } from '../installFn'
+import { Duplex, Readable } from 'stream'
+
+export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
+  contents: F
+  payload?: any
+  mimeType?: string
+  fileName?: string
+}
+
+export type StreamFunctionStream = {
+  contents: BasedDataStream | Readable | Duplex
+  payload?: any
+  size: number
+  mimeType?: string
+  fileName?: string
+  extension?: string
+}
+
+export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream
 
 //  payload parsing
 
