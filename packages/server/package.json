@@ -1,6 +1,6 @@
 {
-  "name": "@based/server",
-  "version": "4.0.3",
+  "name": "@based/edge-server",
+  "version": "0.6.5",
   "license": "MIT",
   "main": "./dist/index.js",
   "files": [

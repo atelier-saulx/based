@@ -7,12 +7,24 @@ import {
 import { BasedServer } from '../server'
 
 type Route = {
+  /** Function name */
   name: string
+  /** In addition to the name, a function can have a custom path for HTTP requests.
+   * For example: `path: 'my/custom/path'` will result in the function being
+   * available with a request to `edgeurl.based.io/my/custom/path`
+   */
   path?: string
+  /** In bytes. `-1` indicates no size limit */
   maxPayloadSize?: number
+  /** Cost in tokens for this function call.  */
   rateLimitTokens?: number
+  /** A function marked as `public` will skip the call to authorize. */
   public?: boolean
+  /** Array of headers that this function expects to receive. */
   headers?: string[]
+  /** A function marked as `internalOnly` will only be accessible from other server side functions,
+   * and not through the public internet.
+   */
   internalOnly?: boolean
 }
 
@@ -29,9 +41,12 @@ export type BasedStreamFunctionRoute = Route & {
 export type BasedQueryFunctionSpec = {
   checksum: number
   function: BasedQueryFunction
-  memCacheTimeout?: number // in ms
-  idleTimeout?: number // in ms
+  /** How long should this subscription remain in memory after all subscribers are gone, in ms */
+  memCacheTimeout?: number
+  /** in ms */
+  idleTimeout?: number
   timeoutCounter?: number
+  /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
 } & BasedQueryFunctionRoute
 
@@ -39,18 +54,25 @@ export type BasedStreamFunctionSpec = {
   // for streams no custom http response is possible scince they get multiplexed
   checksum: number
   function: BasedStreamFunction
-  maxExecTime?: number // in ms - very nice too have
-  idleTimeout?: number // in ms
-  timeoutCounter?: number // in ms
+  /** in ms */
+  maxExecTime?: number
+  /** in ms */
+  idleTimeout?: number
+  /** in ms */
+  timeoutCounter?: number
 } & BasedStreamFunctionRoute
 
 export type BasedFunctionSpec = {
   checksum: number
   function: BasedFunction
+  /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
-  maxExecTime?: number // in ms - very nice too have
-  idleTimeout?: number // in ms
-  timeoutCounter?: number // in ms
+  /** in ms */
+  maxExecTime?: number
+  /** in ms */
+  idleTimeout?: number
+  /** in ms */
+  timeoutCounter?: number
 } & BasedFunctionRoute
 
 export type BasedRoute =
@@ -66,10 +88,10 @@ export type BasedSpec<R extends BasedRoute = BasedRoute> =
     : BasedFunctionSpec
 
 export type FunctionConfig = {
-  memCacheTimeout?: number // in ms
-  idleTimeout?: number // in ms
-  maxWorkers?: number
-  importWrapperPath?: string
+  /** in ms */
+  memCacheTimeout?: number
+  /** in ms */
+  idleTimeout?: number
   maxPayLoadSizeDefaults?: {
     stream: number
     query: number

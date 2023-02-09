@@ -4,7 +4,7 @@ import { WebSocketSession } from '@based/functions'
 import { blockIncomingRequest } from '../security'
 import { BasedServer } from '../server'
 import { getIp } from '../ip'
-import { BasedErrorCode } from '../error'
+// import { BasedErrorCode } from '../error'
 
 let clientId = 0
 
@@ -20,18 +20,21 @@ const upgradeInternal = (
   const ua = req.getHeader('user-agent')
 
   if (!secWebSocketProtocol) {
-    server.emit(
-      'error',
-      {
-        session: {
-          ua,
-          ip,
-        },
-      },
-      { code: BasedErrorCode.MissingAuthStateProtocolHeader }
-    )
-    res.close()
-    return
+    // server.emit(
+    //   'error',
+    //   {
+    //     session: {
+    //       ua,
+    //       ip,
+    //     },
+    //   },
+    //   { code: BasedErrorCode.MissingAuthStateProtocolHeader }
+    // )
+    // res.close()
+    // return
+
+    // TODO: fix this, no bueno
+    console.warn('No sec-websocket-protocol in handshake...')
   }
 
   const query = req.getQuery()
@@ -45,7 +48,9 @@ const upgradeInternal = (
       ua,
       ip,
       id: ++clientId,
-      authState: parseAuthState(secWebSocketProtocol),
+      authState: secWebSocketProtocol
+        ? parseAuthState(secWebSocketProtocol)
+        : {},
       obs: new Set(),
       unauthorizedObs: new Set(),
     },
