@@ -1,6 +1,7 @@
 import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
+import { streamFunction, StreamFunctionOpts } from '../stream'
 import util from 'node:util'
 
 import {
@@ -34,9 +35,13 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     return new BasedQuery(this.ctx, name, payload)
   }
 
-  async stream(name: string, stream?: any): Promise<any> {
+  async stream(
+    name: string,
+    streamOpts: StreamFunctionOpts,
+    ctx: Context = this.ctx
+  ): Promise<any> {
     // make later
-    return { name, stream }
+    return streamFunction(this.server, name, ctx, streamOpts)
   }
 
   renewAuthState(ctx: Context<Session>): void {
