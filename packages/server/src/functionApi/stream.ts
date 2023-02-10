@@ -5,6 +5,7 @@ import { verifyRoute } from '../verifyRoute'
 import { installFn } from '../installFn'
 import { Duplex, Readable } from 'stream'
 
+// maybe make a type pkg
 export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
   contents: F
   payload?: any
