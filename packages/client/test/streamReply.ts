@@ -30,11 +30,15 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
   client.connect({
     url: async () => 'ws://localhost:9910',
   })
-  const r = await fetch('http://localhost:9910/mySnur')
+  const r1 = await fetch('http://localhost:9910/mySnur')
+  const result = await r1.text()
+  t.deepEqual(result, readFileSync(filePath).toString())
+
+  const r = await fetch('http://localhost:9910/mimeSnur')
   t.is(r.headers.get('content-type'), 'application/json')
   t.is(r.headers.get('flapje'), '123')
-  const result = await r.text()
-  t.deepEqual(result, readFileSync(filePath).toString())
+  const result2 = await r.text()
+  t.deepEqual(result2, readFileSync(filePath).toString())
   client.disconnect()
   await server.destroy()
 })

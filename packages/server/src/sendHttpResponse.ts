@@ -63,7 +63,6 @@ export const sendHttpResponse = (
 
   let cType: string
 
-  // for functions there is never cache (idea is they are used to execute - observable fns are for cache)
   let parsed: string
   if (typeof result === 'string') {
     cType = 'text/plain'
