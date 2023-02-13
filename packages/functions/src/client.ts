@@ -1,6 +1,7 @@
 import { AuthState } from './auth'
 import { Context } from './context'
 import { BasedQuery } from './query'
+import { StreamFunctionOpts } from './stream'
 
 export abstract class BasedFunctionClient {
   server: any
@@ -9,7 +10,11 @@ export abstract class BasedFunctionClient {
 
   abstract query(name: string, payload?: any): BasedQuery
 
-  abstract stream(name: string, stream?: any, ctx?: Context): Promise<any>
+  abstract stream(
+    name: string,
+    payload: StreamFunctionOpts,
+    ctx?: Context
+  ): Promise<any>
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
 

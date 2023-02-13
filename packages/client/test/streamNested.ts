@@ -9,21 +9,21 @@ test.serial('stream nested functions', async (t) => {
     port: 9910,
     functions: {
       mySnur: async (based, payload) => {
-        console.info('go go go stream for sho')
-        return based.stream('hello', payload)
+        return based.stream('hello', {
+          contents: 'power stream',
+          payload,
+        })
       },
       hello: {
         idleTimeout: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload }) => {
-          console.info('     nested stream')
-
           stream.on('progress', (d) => {
             progressEvents.push(d)
           })
-          await readStream(stream)
-          return payload
+          const result = await readStream(stream)
+          return { payload, result: result.toString() }
         },
       },
     },
@@ -36,14 +36,12 @@ test.serial('stream nested functions', async (t) => {
   for (let i = 0; i < 10; i++) {
     bigBod.push({ flap: 'snurp', i })
   }
-  const s = await client.stream('mySnur', {
-    payload: { power: true },
-    contents: Buffer.from(JSON.stringify(bigBod), 'base64'),
-  })
+  const { payload, result } = await client.call('mySnur', { power: true })
 
   await wait(2e3)
 
-  t.deepEqual(s, { power: true })
+  t.deepEqual(payload, { power: true })
+  t.deepEqual(result, 'power stream')
 
   t.true(progressEvents.length > 0)
   t.is(progressEvents[progressEvents.length - 1], 1)

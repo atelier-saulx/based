@@ -1,7 +1,7 @@
 import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
-import { streamFunction, StreamFunctionOpts } from '../stream'
+import { streamFunction } from '../stream'
 import util from 'node:util'
 
 import {
@@ -11,6 +11,7 @@ import {
   InternalSessionClient,
   isClientContext,
   isWsContext,
+  StreamFunctionOpts,
   Session,
 } from '@based/functions'
 

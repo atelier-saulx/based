@@ -1,43 +1,15 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError } from '../error'
-import { Context, BasedDataStream, StreamPayload } from '@based/functions'
+import {
+  Context,
+  BasedDataStream,
+  StreamPayload,
+  StreamFunctionOpts,
+  isStreamFunctionOpts,
+} from '@based/functions'
 import { verifyRoute } from '../verifyRoute'
 import { installFn } from '../installFn'
 import { Duplex, Readable } from 'stream'
-
-// maybe make a type pkg
-export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
-  contents: F
-  payload?: any
-  mimeType?: string
-  fileName?: string
-}
-
-export type StreamFunctionStream =
-  | {
-      contents: Readable | Duplex
-      payload?: any
-      size: number
-      mimeType?: string
-      fileName?: string
-      extension?: string
-    }
-  | {
-      contents: BasedDataStream
-      payload?: any
-      size?: number
-      mimeType?: string
-      fileName?: string
-      extension?: string
-    }
-
-export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream
-
-const isStreamFunctionOpts = (
-  opts: StreamFunctionContents | StreamFunctionStream
-): opts is StreamFunctionStream => {
-  return opts.contents instanceof Duplex || opts.contents instanceof Readable
-}
 
 const wrapStream = (
   stream: BasedDataStream | Readable | Duplex,
@@ -107,6 +79,10 @@ export const streamFunction = async (
       size: stream.size,
       payload: streamOpts.payload,
     }
+
+    process.nextTick(() => {
+      stream.end(contents)
+    })
   }
 
   try {

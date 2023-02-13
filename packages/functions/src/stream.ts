@@ -1,4 +1,4 @@
-import { Duplex } from 'stream'
+import { Duplex, Readable } from 'stream'
 import util from 'node:util'
 
 // prob want to move this to based functions
@@ -58,4 +58,38 @@ export class BasedDataStream extends Duplex {
       return `[BasedStream]`
     }
   }
+}
+
+// maybe make a type pkg
+export type StreamFunctionContents<F = Buffer | ArrayBuffer | string> = {
+  contents: F
+  payload?: any
+  mimeType?: string
+  fileName?: string
+}
+
+export type StreamFunctionStream =
+  | {
+      contents: Readable | Duplex
+      payload?: any
+      size: number
+      mimeType?: string
+      fileName?: string
+      extension?: string
+    }
+  | {
+      contents: BasedDataStream
+      payload?: any
+      size?: number
+      mimeType?: string
+      fileName?: string
+      extension?: string
+    }
+
+export type StreamFunctionOpts = StreamFunctionContents | StreamFunctionStream
+
+export const isStreamFunctionOpts = (
+  opts: StreamFunctionContents | StreamFunctionStream
+): opts is StreamFunctionStream => {
+  return opts.contents instanceof Duplex || opts.contents instanceof Readable
 }
