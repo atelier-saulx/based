@@ -31,6 +31,7 @@ export type SimpleServerOptions = {
   queryFunctions?: {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
+  silent?: boolean
 } & Omit<ServerOptions, 'functions'>
 
 export async function createSimpleServer(
@@ -138,11 +139,13 @@ export async function createSimpleServer(
     },
   }
 
-  console.info(
-    '   ',
-    picocolors.white('Based-server'),
-    `starting with functions`
-  )
+  if (!props.silent) {
+    console.info(
+      '   ',
+      picocolors.white('Based-server'),
+      `starting with functions`
+    )
+  }
 
   let longestName = 0
 
@@ -159,18 +162,22 @@ export async function createSimpleServer(
       ? '[stream]'
       : ''
     const pub = functionStore[name].public ? 'public' : 'private'
-    console.info(
-      '      ',
-      picocolors.white(name),
-      padLeft('', longestName + 2 - name.length, ' '),
-      picocolors.gray(pub),
-      padLeft('', 8 - pub.length, ' '),
-      picocolors.green(obs),
-      padLeft('', 14 - obs.length, ' '),
-      functionStore[name].path || ''
-    )
+    if (!props.silent) {
+      console.info(
+        '      ',
+        picocolors.white(name),
+        padLeft('', longestName + 2 - name.length, ' '),
+        picocolors.gray(pub),
+        padLeft('', 8 - pub.length, ' '),
+        picocolors.green(obs),
+        padLeft('', 14 - obs.length, ' '),
+        functionStore[name].path || ''
+      )
+    }
   }
 
   const basedServer = new BasedServer(properProps)
-  return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
+  return props.port
+    ? basedServer.start(props.port, sharedSocket, props.silent)
+    : basedServer
 }
