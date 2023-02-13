@@ -35,7 +35,6 @@ export type ServerOptions = {
   rateLimit?: RateLimit
   client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
-  workerRequest?: (type: string, payload?: any) => void | Promise<any>
   ws?: {
     open: (client: Context) => void
     close: (client: Context) => void
@@ -109,9 +108,6 @@ export class BasedServer {
       this.client = opts.client(this)
     } else {
       this.client = new BasedServerFunctionClient(this)
-    }
-    if (opts.workerRequest) {
-      this.workerRequest = opts.workerRequest
     }
     if (opts.rateLimit) {
       this.rateLimit = opts.rateLimit

@@ -1,4 +1,3 @@
-import { AuthConfig } from './auth'
 import {
   BasedFunctionSpec,
   BasedQueryFunctionSpec,
@@ -8,26 +7,12 @@ import {
   isQueryFunctionSpec,
   isStreamFunctionSpec,
 } from './functions'
-import {
-  BasedQueryFunction,
-  BasedFunction,
-  Context,
-  Session,
-} from '@based/functions'
+import { BasedQueryFunction, BasedFunction } from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
 import { padLeft } from '@saulx/utils'
 
 export type SimpleServerOptions = {
-  port?: number
-  key?: string
-  disableRest?: boolean
-  cert?: string
-  auth?: AuthConfig
-  ws?: {
-    open: (client: Context<Session>) => void
-    close: (client: Context<Session>) => void
-  }
   install?: (opts: {
     server: BasedServer
     name: string
@@ -46,7 +31,7 @@ export type SimpleServerOptions = {
   queryFunctions?: {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
-}
+} & Omit<ServerOptions, 'functions'>
 
 export async function createSimpleServer(
   props: SimpleServerOptions,
@@ -116,12 +101,7 @@ export async function createSimpleServer(
   }
 
   const properProps: ServerOptions = {
-    port: props.port,
-    auth: props.auth,
-    cert: props.cert,
-    ws: props.ws,
-    disableRest: props.disableRest,
-    key: props.key,
+    ...props,
     functions: {
       memCacheTimeout: 3e3,
       idleTimeout: 1e3, // never needs to uninstall

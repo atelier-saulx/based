@@ -39,6 +39,7 @@ export type BasedStreamFunctionRoute = Route & {
 }
 
 export type BasedInstallableFunctionSpec = {
+  /** Hash of the BasedFunction */
   checksum: number
   /** in ms */
   idleTimeout?: number

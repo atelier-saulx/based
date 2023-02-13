@@ -18,8 +18,11 @@ export { parseAuthState }
 export { parseJSONAuthState }
 
 export type AuthConfig = {
+  /** This function is called before any BasedFunction that isn't public.
+   * The BasedFunction requested will only execute if `authorize` returns `true`. */
   authorize?: Authorize
   authorizeConnection?: AuthorizeConnection
+  /** This function is called every time `authorize` is called, to verify the AuthState of the user. */
   verifyAuthState?: VerifyAuthState
 }
 
@@ -50,6 +53,9 @@ export class BasedAuth {
     }
   }
 
+  /** Calls `verifyAuthState` on the current session's authState.
+   * If it's in a wsContext, sends the new verified authState to the client and updates the session's authState.
+   */
   renewAuthState(ctx: Context) {
     if (!ctx.session) {
       return
@@ -81,6 +87,7 @@ export class BasedAuth {
     return parseAuthState(authState)
   }
 
+  /** Sets the `authState` on the client. */
   sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {
     ctx.session?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
   }
