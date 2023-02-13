@@ -1,6 +1,6 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
-import { BasedDataStream } from './DataStream'
+import { BasedDataStream } from './stream'
 
 export type ObservableUpdateFunction<K = any> = {
   (
