@@ -18,5 +18,5 @@ export abstract class BasedFunctionClient {
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
 
-  abstract renewAuthState(ctx: Context): void
+  abstract renewAuthState(ctx: Context, authState?: AuthState): void
 }

@@ -4,7 +4,7 @@ import { parseQuery } from '@saulx/utils'
 import { BasedFunctionClient } from './client'
 
 export type WebSocketSession = {
-  // State can be used for anyting - for us the based class instance
+  // State can be used for anything - for us the based class instance
   state?: any
   query: string
   ua: string
@@ -24,7 +24,7 @@ export type WebSocketSession = {
 } & WebSocket
 
 export type HttpSession = {
-  // State can be used for anyting - for us the based class instance
+  // State can be used for anything - for us the based class instance
   state?: any
   res: HttpResponse
   req: HttpRequest
@@ -64,11 +64,15 @@ export type MinimalExternalSession = {
   ip: string
 }
 
-export type Session =
+export type Session = (
   | WebSocketSession
   | HttpSession
   | InternalSession
   | MinimalExternalSession
+) & {
+  /** Only available in Ws and Http contexts */
+  authState?: AuthState
+}
 
 export type Context<S extends Session = Session> = {
   session?: S

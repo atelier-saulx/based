@@ -22,7 +22,10 @@ export type AuthConfig = {
    * The BasedFunction requested will only execute if `authorize` returns `true`. */
   authorize?: Authorize
   authorizeConnection?: AuthorizeConnection
-  /** This function is called every time `authorize` is called, to verify the AuthState of the user. */
+  /** This function is called every time an authState is set.
+   * @returns `true` if the authState is valid and does not need to be updated
+   * @returns `AuthState` object if the authState of the session needs to be updated
+   */
   verifyAuthState?: VerifyAuthState
 }
 
@@ -56,7 +59,7 @@ export class BasedAuth {
   /** Calls `verifyAuthState` on the current session's authState.
    * If it's in a wsContext, sends the new verified authState to the client and updates the session's authState.
    */
-  renewAuthState(ctx: Context) {
+  renewAuthState(ctx: Context, authState?: AuthState) {
     if (!ctx.session) {
       return
     }
@@ -68,7 +71,7 @@ export class BasedAuth {
     const verified = this.server.auth.verifyAuthState(
       this.server.client,
       <Context<HttpSession> | Context<WebSocketSession>>ctx,
-      ctx.session.authState
+      authState || ctx.session.authState
     )
     if (verified === true) {
       return
