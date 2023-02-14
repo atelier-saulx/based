@@ -6,6 +6,7 @@ import { wait } from '@saulx/utils'
 test.serial('query functions', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       counter: (based, payload, update) => {

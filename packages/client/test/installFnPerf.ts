@@ -6,6 +6,7 @@ test.serial('install fn perf', async (t) => {
   const client = new BasedClient()
   let cnt = 0
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello2: {

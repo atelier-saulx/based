@@ -67,6 +67,7 @@ const start = async () => {
   })
 
   await createSimpleServer({
+    idleTimeout: 1e3,
     port: 8081,
     auth: {
       authorize: async (based, ctx, name) => {

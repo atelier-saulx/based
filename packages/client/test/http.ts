@@ -15,6 +15,7 @@ const gzip = promisify(zlib.gzip)
 
 test.serial('functions (custom headers)', async (t) => {
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -342,6 +343,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
 test.serial('auth', async (t) => {
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       flap: async () => {

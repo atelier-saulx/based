@@ -32,6 +32,10 @@ export type SimpleServerOptions = {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
   silent?: boolean
+  /* default time to keep query results in mem cache */
+  memCacheTimeout?: number
+  /* time to uninstall funcitons defaults to endless */
+  idleTimeout?: number
 } & Omit<ServerOptions, 'functions'>
 
 export async function createSimpleServer(
@@ -104,8 +108,8 @@ export async function createSimpleServer(
   const properProps: ServerOptions = {
     ...props,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 1e3, // never needs to uninstall
+      memCacheTimeout: props.memCacheTimeout || 3e3,
+      idleTimeout: props.idleTimeout || -1, // never needs to uninstall
       uninstall:
         props.uninstall ||
         (async () => {

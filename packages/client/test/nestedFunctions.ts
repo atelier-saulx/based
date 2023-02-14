@@ -84,6 +84,7 @@ test.serial('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       obsWithNestedLvl2: {
@@ -170,6 +171,7 @@ test.serial('nested functions (fancy api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       obsWithNestedLvl2: {

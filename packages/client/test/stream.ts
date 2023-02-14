@@ -10,6 +10,7 @@ test.serial('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -53,6 +54,7 @@ test.serial('stream functions - streamContents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -123,6 +125,7 @@ test.serial('stream functions - streamContents', async (t) => {
 
 test.serial('stream functions - streamContents error', async (t) => {
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -179,6 +182,7 @@ test.serial('stream functions - streamContents error', async (t) => {
 
 test.serial('stream functions - path', async (t) => {
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -213,6 +217,7 @@ test.serial('stream functions - path', async (t) => {
 
 test.serial('stream functions - path json', async (t) => {
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
