@@ -4,6 +4,7 @@ import { createSimpleServer } from '@based/server'
 
 test.serial('connect', async (t) => {
   const serverA = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: async (based, payload) => {
@@ -16,6 +17,7 @@ test.serial('connect', async (t) => {
   })
 
   const serverB = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9911,
     functions: {
       hello: async (based, payload) => {

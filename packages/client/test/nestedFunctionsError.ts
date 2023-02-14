@@ -7,6 +7,7 @@ import { wait } from '@saulx/utils'
 test.serial('nested functions internal only', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       helloInternal: {
@@ -35,6 +36,7 @@ test.serial('nested functions internal only', async (t) => {
 test.serial('nested functions fn does not exist error', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: async (based, payload, ctx) => {
@@ -54,6 +56,7 @@ test.serial('nested functions fn does not exist error', async (t) => {
 test.serial('nested qeury functions fn does not exist error', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       hello: async (based, payload, update) => {

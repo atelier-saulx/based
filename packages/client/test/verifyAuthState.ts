@@ -8,6 +8,7 @@ test.serial('verify auth state', async (t) => {
   const client = new BasedClient()
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     auth: {
       verifyAuthState: (based, ctx, authState) => {

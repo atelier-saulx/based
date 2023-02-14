@@ -31,6 +31,11 @@ export type SimpleServerOptions = {
   queryFunctions?: {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
+  silent?: boolean
+  /* default time to keep query results in mem cache */
+  memCacheTimeout?: number
+  /* time to uninstall funcitons defaults to endless */
+  idleTimeout?: number
 } & Omit<ServerOptions, 'functions'>
 
 export async function createSimpleServer(
@@ -103,8 +108,8 @@ export async function createSimpleServer(
   const properProps: ServerOptions = {
     ...props,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 1e3, // never needs to uninstall
+      memCacheTimeout: props.memCacheTimeout || 3e3,
+      idleTimeout: props.idleTimeout || -1, // never needs to uninstall
       uninstall:
         props.uninstall ||
         (async () => {
@@ -138,11 +143,13 @@ export async function createSimpleServer(
     },
   }
 
-  console.info(
-    '   ',
-    picocolors.white('Based-server'),
-    `starting with functions`
-  )
+  if (!props.silent) {
+    console.info(
+      '   ',
+      picocolors.white('Based-server'),
+      `starting with functions`
+    )
+  }
 
   let longestName = 0
 
@@ -159,18 +166,22 @@ export async function createSimpleServer(
       ? '[stream]'
       : ''
     const pub = functionStore[name].public ? 'public' : 'private'
-    console.info(
-      '      ',
-      picocolors.white(name),
-      padLeft('', longestName + 2 - name.length, ' '),
-      picocolors.gray(pub),
-      padLeft('', 8 - pub.length, ' '),
-      picocolors.green(obs),
-      padLeft('', 14 - obs.length, ' '),
-      functionStore[name].path || ''
-    )
+    if (!props.silent) {
+      console.info(
+        '      ',
+        picocolors.white(name),
+        padLeft('', longestName + 2 - name.length, ' '),
+        picocolors.gray(pub),
+        padLeft('', 8 - pub.length, ' '),
+        picocolors.green(obs),
+        padLeft('', 14 - obs.length, ' '),
+        functionStore[name].path || ''
+      )
+    }
   }
 
   const basedServer = new BasedServer(properProps)
-  return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
+  return props.port
+    ? basedServer.start(props.port, sharedSocket, props.silent)
+    : basedServer
 }

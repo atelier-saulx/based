@@ -11,6 +11,7 @@ test.serial('stream functions (small over http + file)', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -49,6 +50,7 @@ test.serial('stream functions (over http + stream)', async (t) => {
   let progressEvents: number[] = []
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {

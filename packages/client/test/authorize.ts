@@ -5,9 +5,9 @@ import { BasedError, BasedErrorCode } from '../src/types/error'
 import { wait } from '@saulx/utils'
 
 const setup = async () => {
-  const coreClient = new BasedClient()
-
+  const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: async (based, payload) => {
@@ -35,7 +35,7 @@ const setup = async () => {
       },
     },
   })
-  return { coreClient, server }
+  return { client, server }
 }
 
 test.serial('authorize functions', async (t) => {
@@ -43,29 +43,29 @@ test.serial('authorize functions', async (t) => {
 
   const token = 'mock_token'
 
-  const { coreClient, server } = await setup()
+  const { client, server } = await setup()
 
   t.teardown(() => {
-    coreClient.disconnect()
+    client.disconnect()
     server.destroy()
   })
 
-  await coreClient.connect({
+  await client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
 
   await t.throwsAsync(
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     })
   )
 
-  await coreClient.setAuthState({ token })
+  await client.setAuthState({ token })
 
   await t.notThrowsAsync(
-    coreClient.call('hello', {
+    client.call('hello', {
       bla: true,
     })
   )
@@ -76,23 +76,23 @@ test.serial('authorize observe', async (t) => {
 
   const token = 'mock_token'
 
-  const { coreClient, server } = await setup()
+  const { client, server } = await setup()
 
   let counter: NodeJS.Timer
 
   t.teardown(() => {
-    coreClient.disconnect()
+    client.disconnect()
     server.destroy()
   })
 
-  await coreClient.connect({
+  await client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
 
   await new Promise((resolve) => {
-    coreClient
+    client
       .query('counter', {
         myQuery: 123,
       })
@@ -105,11 +105,11 @@ test.serial('authorize observe', async (t) => {
       )
   })
 
-  await coreClient.setAuthState({ token })
+  await client.setAuthState({ token })
   await wait(500)
 
   await new Promise((resolve) => {
-    coreClient
+    client
       .query('counter', {
         myQuery: 123,
       })
@@ -133,15 +133,15 @@ test.serial('authorize after observe', async (t) => {
 
   const token = 'mock_token'
 
-  const { coreClient, server } = await setup()
+  const { client, server } = await setup()
   let counter: NodeJS.Timer
 
   t.teardown(() => {
-    coreClient.disconnect()
+    client.disconnect()
     server.destroy()
   })
 
-  await coreClient.connect({
+  await client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
@@ -150,7 +150,7 @@ test.serial('authorize after observe', async (t) => {
 
   let receiveCnt = 0
 
-  coreClient
+  client
     .query('counter', {
       myQuery: 123,
     })
@@ -165,7 +165,7 @@ test.serial('authorize after observe', async (t) => {
 
   await wait(500)
   t.is(receiveCnt, 0)
-  await coreClient.setAuthState({ token })
+  await client.setAuthState({ token })
   await wait(1500)
 
   // @ts-ignore - totally incorrect typescript error...

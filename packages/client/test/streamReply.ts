@@ -8,6 +8,7 @@ import fetch from 'cross-fetch'
 test.serial('reply with a stream from call fn (http)', async (t) => {
   const filePath = join(__dirname, './browser/tmp.json')
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       mySnur: async () => {
@@ -46,7 +47,7 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
 // extra protocol....
 // test.serial('reply with a stream from call fn (http)', async (t) => {
 //   const filePath = join(__dirname, './browser/tmp.json')
-//   const server = await createSimpleServer({
+//   const server = await createSimpleServer({ idleTimeout: 1e3,
 //     port: 9910,
 //     functions: {
 //       mySnur: async () => {

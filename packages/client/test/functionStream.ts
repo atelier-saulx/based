@@ -9,6 +9,7 @@ test.serial('function Stream (http)', async (t) => {
   const p = join(__dirname, '../package.json')
 
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     functions: {
       hello: {

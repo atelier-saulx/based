@@ -7,6 +7,7 @@ import { BasedError, BasedErrorCode } from '../src/types/error'
 const setup = async () => {
   const coreClient = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       checkPayload: {
@@ -153,6 +154,7 @@ test.serial('authorize get', async (t) => {
 test.serial('getWhen', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
+    idleTimeout: 1e3,
     port: 9910,
     queryFunctions: {
       flap: (based, _payload, update) => {

@@ -163,7 +163,11 @@ export class BasedServer {
     }
   }
 
-  async start(port?: number, sharedSocket?: boolean): Promise<BasedServer> {
+  async start(
+    port?: number,
+    sharedSocket?: boolean,
+    silent?: boolean
+  ): Promise<BasedServer> {
     if (!port) {
       port = this.port
     } else {
@@ -173,7 +177,8 @@ export class BasedServer {
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {
         if (listenSocket) {
-          console.info('    Based-server listening on port:', this.port)
+          if (!silent)
+            console.info('    Based-server listening on port:', this.port)
           this.listenSocket = listenSocket
           resolve(this)
         } else {
@@ -187,8 +192,8 @@ export class BasedServer {
     })
   }
 
-  async destroy() {
-    console.info(picocolors.gray('    Destroy Based-server\n'))
+  async destroy(silent?: boolean) {
+    if (!silent) console.info(picocolors.gray('    Destroy Based-server\n'))
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
       this.listenSocket = null
