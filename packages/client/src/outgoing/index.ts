@@ -196,6 +196,7 @@ export const sendAuth = async (
     client.connection.ws.send(encodeAuthMessage(authState))
   }
 
+  // hello
   client.authRequest.promise = new Promise<AuthState>((resolve, reject) => {
     client.authRequest.inProgress = true
     client.authRequest.resolve = resolve
