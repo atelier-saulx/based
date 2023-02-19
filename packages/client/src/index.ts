@@ -26,7 +26,11 @@ import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
 import { initStorage } from './localStorage'
 import { BasedChannel } from './channel'
-import { ChannelQueue, ChannelPublishQueue } from './types/channel'
+import {
+  ChannelQueue,
+  ChannelPublishQueue,
+  ChannelState,
+} from './types/channel'
 
 export * from './authState/parseAuthState'
 
@@ -81,6 +85,8 @@ export class BasedClient extends Emitter {
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = new Map()
   requestId: number = 0 // max 3 bytes (0 to 16777215)
+  // --------- Channel State
+  channelState: ChannelState = new Map()
   // --------- Observe State
   observeState: ObserveState = new Map()
   // --------- Get State

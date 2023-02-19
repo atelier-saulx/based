@@ -53,6 +53,8 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   const id = readUint8(arr, start + 4, 8)
   const name = decodeName(arr, start + 13, start + 13 + nameLen)
 
+  console.log('hello channel?>??')
+
   if (!name || !id) {
     return false
   }

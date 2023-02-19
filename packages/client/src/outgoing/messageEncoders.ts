@@ -131,11 +131,14 @@ export const encodeSubscribeChannelMessage = (
   storeUint8(buff, header, 0, 4)
   storeUint8(buff, id, 4, 8)
   buff[12] = n.length
+
+  console.log('????', buff, n, p, len)
+
   if (p) {
     return { buffers: [buff, n, p], len }
-  } else {
-    return { buffers: [buff, n], len }
   }
+
+  return { buffers: [buff, n], len }
 }
 
 export const encodeObserveMessage = (
@@ -175,9 +178,8 @@ export const encodeObserveMessage = (
   buff[20] = n.length
   if (p) {
     return { buffers: [buff, n, p], len }
-  } else {
-    return { buffers: [buff, n], len }
   }
+  return { buffers: [buff, n], len }
 }
 
 export const encodeFunctionMessage = (
@@ -201,7 +203,6 @@ export const encodeFunctionMessage = (
     return { buffers: [buff, n, p], len }
   }
   return { buffers: [buff, n], len }
-  // l += len
 }
 
 export const encodePublishMessage = (

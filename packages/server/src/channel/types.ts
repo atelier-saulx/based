@@ -1,6 +1,6 @@
 import { ChannelMessageFunction } from '@based/functions'
 
-export type Channel = {
+export type ActiveChannel = {
   name: string
   id: number
   channelId: any

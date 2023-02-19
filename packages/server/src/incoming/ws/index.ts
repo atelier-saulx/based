@@ -21,6 +21,8 @@ const reader = (
   const { len, isDeflate, type } = decodeHeader(readUint8(arr, start, 4))
   const next = len + start
 
+  console.info('incoming', type)
+
   // type 0 = function
   if (type === 0 && functionMessage(arr, start, len, isDeflate, ctx, server)) {
     return next

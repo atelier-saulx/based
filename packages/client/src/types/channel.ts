@@ -26,3 +26,12 @@ export type ChannelQueue = Map<
 
 export type ChannelPublishQueueItem = [number, any]
 export type ChannelPublishQueue = ChannelPublishQueueItem[]
+
+export type ChannelState = Map<
+  number,
+  {
+    payload: any
+    name: string
+    subscribers: Map<number, ChannelMessageFunction>
+  }
+>

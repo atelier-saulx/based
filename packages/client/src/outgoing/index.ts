@@ -59,6 +59,8 @@ export const drainQueue = (client: BasedClient) => {
         const buffs = []
         let l = 0
 
+        console.info('??? drain time')
+
         // ------- Channel
         for (const [id, o] of channel) {
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
@@ -170,6 +172,23 @@ export const addChannelSubscribeToQueue = (
     return
   }
   client.channelQueue.set(id, [5, name, payload])
+  drainQueue(client)
+}
+
+export const addChannelPublishIdentifier = (
+  client: BasedClient,
+  name: string,
+  id: number,
+  payload: GenericObject
+) => {
+  const type = client.channelQueue.get(id)?.[0]
+  if (type === 5 || type === 6) {
+    return
+  }
+  if (type === 7) {
+    console.warn('Case not handled yet... ubsub and req for info for channel')
+  }
+  client.channelQueue.set(id, [6, name, payload])
   drainQueue(client)
 }
 

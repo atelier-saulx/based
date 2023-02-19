@@ -68,7 +68,7 @@ export class BasedFunctions {
           updateTimeoutCounter(spec)
         } else if (
           isChannelFunctionSpec(spec) &&
-          this.server.activeChannel[name]
+          this.server.activeChannels[name]
         ) {
           updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
