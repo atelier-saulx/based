@@ -43,7 +43,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
   len,
-  isDeflate,
+  isChannelIdRequester,
   ctx,
   server
 ) => {
@@ -55,6 +55,13 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
 
   if (!name || !id) {
     return false
+  }
+
+  // isDeflate is used to actualy subscribe
+
+  if (isChannelIdRequester) {
+    console.info('ONLY FOR PUBLISH isChannelIdRequester')
+    // just make a map for the id and thats it!
   }
 
   console.info('incoming channel sub', name, id)

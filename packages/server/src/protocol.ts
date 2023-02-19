@@ -70,6 +70,7 @@ export const encodeHeader = (
   //   4 = authData
   //   5 = errorData
   //   6 = channelMessage
+  //   7 = requestChannelId TODO: later...
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (Number(isDeflate) | 0)

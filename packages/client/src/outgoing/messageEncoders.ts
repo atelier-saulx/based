@@ -1,7 +1,7 @@
 import fflate from 'fflate'
 import { AuthState } from '../types/auth'
-import { FunctionQueueItem, ObserveQueue } from '../types'
-import { ChannelQueue } from '../types/channel'
+import { FunctionQueueItem, GetObserveQueue, ObserveQueue } from '../types'
+import { ChannelPublishQueueItem, ChannelQueue } from '../types/channel'
 
 const encoder = new TextEncoder()
 
@@ -42,14 +42,17 @@ const encodeHeader = (
   return nr
 }
 
-const encodePayload = (payload: any): [boolean, Uint8Array] | [boolean] => {
+const encodePayload = (
+  payload: any,
+  noDeflate = false
+): [boolean, Uint8Array] | [boolean] => {
   let p: Uint8Array
   let isDeflate = false
   if (payload !== undefined) {
     p = encoder.encode(
       typeof payload === 'string' ? payload : JSON.stringify(payload)
     )
-    if (p.length > 150) {
+    if (!noDeflate && p.length > 150) {
       p = fflate.deflateSync(p)
       isDeflate = true
     }
@@ -60,7 +63,7 @@ const encodePayload = (payload: any): [boolean, Uint8Array] | [boolean] => {
 
 export const encodeGetObserveMessage = (
   id: number,
-  o: any
+  o: GetObserveQueue extends Map<any, infer I> ? I : never
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o
@@ -68,7 +71,6 @@ export const encodeGetObserveMessage = (
   // Type 3 = get
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
-  // try to reduce ifs
   if (type === 3) {
     const n = encoder.encode(name)
     len += 1 + n.length
@@ -90,6 +92,7 @@ export const encodeGetObserveMessage = (
       return { buffers: [buff, n], len }
     }
   }
+
   return { buffers: [], len: 0 }
 }
 
@@ -103,6 +106,9 @@ export const encodeSubscribeChannelMessage = (
   // Type 5 = subscribe
   // | 4 header | 8 id | 1 name length | * name | * payload |
 
+  // Type 7 = unsubscribe
+  // | 4 header | 8 id |
+
   if (type === 7) {
     const header = encodeHeader(type, false, 12)
     const buff = new Uint8Array(4 + 8)
@@ -113,13 +119,14 @@ export const encodeSubscribeChannelMessage = (
 
   const n = encoder.encode(name)
   len += 1 + n.length
-  const [isDeflate, p] = encodePayload(payload)
+  const [, p] = encodePayload(payload, true)
+  const isRequestSubscriber = type === 6
   if (p) {
     len += p.length
   }
   const buffLen = 8
   len += buffLen
-  const header = encodeHeader(type, isDeflate, len)
+  const header = encodeHeader(5, isRequestSubscriber, len)
   const buff = new Uint8Array(1 + 4 + buffLen)
   storeUint8(buff, header, 0, 4)
   storeUint8(buff, id, 4, 8)
@@ -195,6 +202,26 @@ export const encodeFunctionMessage = (
   }
   return { buffers: [buff, n], len }
   // l += len
+}
+
+export const encodePublishMessage = (
+  f: ChannelPublishQueueItem
+): { buffers: Uint8Array[]; len: number } => {
+  // | 4 header | 8 id | * payload |
+  let len = 12
+  const [id, payload] = f
+  const [isDeflate, p] = encodePayload(payload)
+  if (p) {
+    len += p.length
+  }
+  const header = encodeHeader(0, isDeflate, len)
+  const buff = new Uint8Array(4 + 3 + 1)
+  storeUint8(buff, header, 0, 4)
+  storeUint8(buff, id, 4, 8)
+  if (p) {
+    return { buffers: [buff, p], len }
+  }
+  return { buffers: [buff], len }
 }
 
 export const encodeAuthMessage = (authState: AuthState) => {

@@ -6,6 +6,8 @@ import {
   encodeFunctionMessage,
   encodeGetObserveMessage,
   encodeObserveMessage,
+  encodePublishMessage,
+  encodeSubscribeChannelMessage,
 } from './messageEncoders'
 import { deepEqual } from '@saulx/utils'
 
@@ -43,11 +45,13 @@ export const drainQueue = (client: BasedClient) => {
 
       if (
         client.functionQueue.length ||
+        client.publishQueue.length ||
         client.observeQueue.size ||
         client.getObserveQueue.size ||
         client.channelQueue.size
       ) {
         const channel = client.channelQueue
+        const publish = client.publishQueue
         const fn = client.functionQueue
         const obs = client.observeQueue
         const get = client.getObserveQueue
@@ -55,9 +59,9 @@ export const drainQueue = (client: BasedClient) => {
         const buffs = []
         let l = 0
 
-        // ------- GetObserve
+        // ------- Channel
         for (const [id, o] of channel) {
-          const { buffers, len } = encodeGetObserveMessage(id, o)
+          const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len
         }
@@ -83,6 +87,13 @@ export const drainQueue = (client: BasedClient) => {
           l += len
         }
 
+        // ------- Publish
+        for (const f of publish) {
+          const { buffers, len } = encodePublishMessage(f)
+          buffs.push(...buffers)
+          l += len
+        }
+
         const n = new Uint8Array(l)
         let c = 0
 
@@ -92,6 +103,7 @@ export const drainQueue = (client: BasedClient) => {
         }
 
         client.functionQueue = []
+        client.publishQueue = []
         client.observeQueue.clear()
         client.getObserveQueue.clear()
         client.channelQueue.clear()
@@ -112,8 +124,7 @@ export const stopDrainQueue = (client: BasedClient) => {
   }
 }
 
-// ------------ function ---------------
-
+// ------------ Function ---------------
 export const addToFunctionQueue = (
   client: BasedClient,
   payload: GenericObject,
@@ -138,8 +149,7 @@ export const addToFunctionQueue = (
   drainQueue(client)
 }
 
-// ------------ channel ---------------
-
+// ------------ Channel ---------------
 export const addChannelCloseToQueue = (client: BasedClient, id: number) => {
   const type = client.channelQueue.get(id)?.[0]
   if (type === 7) {
@@ -163,8 +173,16 @@ export const addChannelSubscribeToQueue = (
   drainQueue(client)
 }
 
-// ------------ observable ---------------
+export const addToPublishQueue = (
+  client: BasedClient,
+  id: number,
+  payload: any
+) => {
+  client.publishQueue.push([id, payload])
+  drainQueue(client)
+}
 
+// ------------ Observable ---------------
 export const addObsCloseToQueue = (client: BasedClient, id: number) => {
   const type = client.observeQueue.get(id)?.[0]
   if (type === 2) {
@@ -203,8 +221,7 @@ export const addGetToQueue = (
   drainQueue(client)
 }
 
-// ------------ auth ---------------
-
+// ------------ Auth ---------------
 export const sendAuth = async (
   client: BasedClient,
   authState: AuthState
