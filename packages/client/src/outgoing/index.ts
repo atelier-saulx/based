@@ -63,7 +63,6 @@ export const drainQueue = (client: BasedClient) => {
 
         // ------- Channel
         for (const [id, o] of channel) {
-          console.info('add sub msg', id, o)
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len

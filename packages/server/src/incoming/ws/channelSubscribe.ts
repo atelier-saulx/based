@@ -81,8 +81,6 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     // just make a map for the id and thats it!
   }
 
-  console.info('incoming channel sub', name, '???', id)
-
   const route = verifyRoute(
     server,
     ctx,
@@ -112,7 +110,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (isChannelIdRequester) {
-    console.info('dont sub just make the id and exit')
+    console.info('MAKE MAKE dont sub just make the id and exit put put')
     return true
   }
 
