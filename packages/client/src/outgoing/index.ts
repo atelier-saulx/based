@@ -61,8 +61,6 @@ export const drainQueue = (client: BasedClient) => {
         const buffs = []
         let l = 0
 
-        console.info('??? drain time')
-
         // ------- Channel
         for (const [id, o] of channel) {
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
@@ -169,8 +167,6 @@ export const addChannelSubscribeToQueue = (
   id: number,
   payload: GenericObject
 ) => {
-  console.log('ADD SU???')
-
   const type = client.channelQueue.get(id)?.[0]
   if (type === 5) {
     return

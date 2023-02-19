@@ -4,18 +4,18 @@ import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
 
 test.serial('Subscribe channel', async (t) => {
+  let closeCalled = false
   const server = await createSimpleServer({
     idleTimeout: 1e3,
     port: 9910,
     channels: {
       mychannel: (based, payload, update) => {
-        console.info('start channel', based, payload)
         let cnt = 0
         const interval = setInterval(() => {
           update(++cnt)
         }, 100)
         return () => {
-          console.info('CLOSE')
+          closeCalled = true
           clearInterval(interval)
         }
       },
@@ -37,7 +37,7 @@ test.serial('Subscribe channel', async (t) => {
   await wait(1100)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
-  t.true(true)
+  t.true(closeCalled)
   client.disconnect()
   await server.destroy()
 })
