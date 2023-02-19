@@ -339,7 +339,6 @@ export const incoming = async (
       // else emit ERROR maybe?
     } // ------- Channel data
     else if (type === 6) {
-      console.log('channel data incoming')
       // | 4 header | 8 id | * payload |
       const id = readUint8(buffer, 4, 8)
 

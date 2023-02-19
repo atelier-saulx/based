@@ -16,13 +16,11 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const id = readUint8(arr, start + 4, 8)
 
   if (!server.activeChannelsById.has(id)) {
-    console.info('CANNOT find channel id fix fix fix')
+    console.info('CANNOT find channel id fix fix fix REQUEST FOR INFO ETC')
     return true
   }
 
   const channel = server.activeChannelsById.get(id)
-
-  console.info('  --> ', channel.name, channel.payload)
 
   const name = channel.name
 
@@ -55,6 +53,15 @@ export const channelPublishMessage: BinaryMessageHandler = (
     decodePayload(new Uint8Array(arr.slice(start + 12, start + len)), isDeflate)
   )
 
+  if (route.public) {
+    installFn(server, ctx, route)
+      .then((spec) => {
+        spec?.publish(server.client, channel.payload, payload, channel.id, ctx)
+      })
+      .catch(() => {})
+    return true
+  }
+
   server.auth
     .authorize(server.client, ctx, route.name, payload)
     .then((ok) => {
@@ -64,9 +71,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
       return installFn(server, ctx, route)
     })
     .then((spec) => {
-      if (spec) {
-        spec.publish(server.client, channel.payload, payload, channel.id, ctx)
-      }
+      spec?.publish(server.client, channel.payload, payload, channel.id, ctx)
     })
     .catch(() => {})
 
