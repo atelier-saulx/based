@@ -1,5 +1,6 @@
 import zlib from 'node:zlib'
 
+// use saulx util decoder for speed (test!)
 const textDecoder = new TextDecoder()
 
 export const COMPRESS_FROM_BYTES = 150
@@ -82,7 +83,7 @@ export const valueToBuffer = (payload: any): Buffer => {
   if (payload === undefined) {
     return Buffer.from([])
   }
-  // only stringify if not string...
+  // TODO: only stringify if not string...
   return Buffer.from(JSON.stringify(payload))
 }
 
@@ -121,7 +122,7 @@ export const encodeFunctionResponse = (
   // | 4 header | 3 id | * payload |
 
   let isDeflate = false
-  // implement later
+  // TODO: implement for streams!
   const chunks = 1
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
@@ -161,9 +162,6 @@ export const encodeGetResponse = (id: number): Uint8Array => {
 
 export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
   const prevId = payload.slice(4, 12)
-  // if (readUint8(prevId, 0, 8) !== readUint8(payload, 4, 8)) {
-  // throw new Error('INCORRECT PARSING')
-  // }
   storeUint8(payload, id, 4, 8)
   return prevId
 }
@@ -172,32 +170,25 @@ export const encodeChannelMessage = (
   id: number,
   buffer: Buffer
 ): [Uint8Array, boolean] => {
-  // Type 1 (full data) // TODO: include crc32 4 Bytes
+  // Type 1 (full data)
   // | 4 header | 8 id | * payload |
 
   let isDeflate = false
-  // implement later
-  const chunks = 1
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
 
-  if (chunks === 1) {
-    const msgSize = 16 + buffer.length
-    const header = encodeHeader(1, isDeflate, msgSize)
-    const array = new Uint8Array(4 + msgSize)
-    storeUint8(array, header, 0, 4)
-    storeUint8(array, id, 4, 8)
-    if (buffer.length) {
-      array.set(buffer, 12)
-    }
-    return [array, isDeflate]
-  } else {
-    console.warn('chunk not implemented yet')
-    return [new Uint8Array(0), false]
+  const msgSize = 16 + buffer.length
+  const header = encodeHeader(1, isDeflate, msgSize)
+  const array = new Uint8Array(4 + msgSize)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 4, 8)
+  if (buffer.length) {
+    array.set(buffer, 12)
   }
+  return [array, isDeflate]
 }
 
 export const encodeObservableResponse = (
@@ -205,33 +196,26 @@ export const encodeObservableResponse = (
   checksum: number,
   buffer: Buffer
 ): [Uint8Array, boolean] => {
-  // Type 1 (full data) // TODO: include crc32 4 Bytes
+  // Type 1 (full data)
   // | 4 header | 8 id | 8 checksum | * payload |
 
   let isDeflate = false
-  // implement later
-  const chunks = 1
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
 
-  if (chunks === 1) {
-    const msgSize = 16 + buffer.length
-    const header = encodeHeader(1, isDeflate, msgSize)
-    const array = new Uint8Array(4 + msgSize)
-    storeUint8(array, header, 0, 4)
-    storeUint8(array, id, 4, 8)
-    storeUint8(array, checksum, 12, 8)
-    if (buffer.length) {
-      array.set(buffer, 20)
-    }
-    return [array, isDeflate]
-  } else {
-    console.warn('chunk not implemented yet')
-    return [new Uint8Array(0), false]
+  const msgSize = 16 + buffer.length
+  const header = encodeHeader(1, isDeflate, msgSize)
+  const array = new Uint8Array(4 + msgSize)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 4, 8)
+  storeUint8(array, checksum, 12, 8)
+  if (buffer.length) {
+    array.set(buffer, 20)
   }
+  return [array, isDeflate]
 }
 
 export const encodeObservableDiffResponse = (
@@ -240,34 +224,27 @@ export const encodeObservableDiffResponse = (
   previousChecksum: number,
   buffer: Buffer
 ): Uint8Array => {
-  // Type 2 (diff data) // TODO: include crc32 4 Bytes
+  // Type 2 (diff data)
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
 
   let isDeflate = false
-  // implement later
-  const chunks = 1
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
 
-  if (chunks === 1) {
-    const msgSize = 24 + buffer.length
-    const header = encodeHeader(2, isDeflate, msgSize)
-    const array = new Uint8Array(4 + msgSize)
-    storeUint8(array, header, 0, 4)
-    storeUint8(array, id, 4, 8)
-    storeUint8(array, checksum, 12, 8)
-    storeUint8(array, previousChecksum, 20, 8)
-    if (buffer.length) {
-      array.set(buffer, 28)
-    }
-    return array
-  } else {
-    console.warn('chunk not implemented yet')
-    return new Uint8Array(0)
+  const msgSize = 24 + buffer.length
+  const header = encodeHeader(2, isDeflate, msgSize)
+  const array = new Uint8Array(4 + msgSize)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 4, 8)
+  storeUint8(array, checksum, 12, 8)
+  storeUint8(array, previousChecksum, 20, 8)
+  if (buffer.length) {
+    array.set(buffer, 28)
   }
+  return array
 }
 
 const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
@@ -292,17 +269,14 @@ const encodeSimpleResponse = (type: number, buffer: Buffer): Uint8Array => {
 
 export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
   // Type 4
-
   return encodeSimpleResponse(4, buffer)
 }
 
 export const encodeErrorResponse = (buffer: Buffer): Uint8Array => {
   // Type 5
-
   return encodeSimpleResponse(5, buffer)
 }
 
-// decode cached data
 export const decode = (buffer: Uint8Array): any => {
   const header = readUint8(buffer, 0, 4)
   const { isDeflate, len, type } = decodeHeader(header)
@@ -315,5 +289,4 @@ export const decode = (buffer: Uint8Array): any => {
     const end = len + 4
     return decodePayload(buffer.slice(start, end), isDeflate)
   }
-  // decode diff as well
 }

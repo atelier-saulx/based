@@ -26,9 +26,11 @@ const sendFunction: IsAuthorizedHandler<
   spec
     ?.function(server.client, payload, ctx)
     .then(async (v) => {
+      // TODO: allow chunked reply!
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
+
       ctx.session?.send(
         encodeFunctionResponse(requestId, valueToBuffer(v)),
         true,
