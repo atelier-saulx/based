@@ -14,7 +14,9 @@ export const decodeHeader = (
   //   2 = unsubscribe
   //   3 = get from observable
   //   4 = auth
-  //   5 = error
+  //   5 = subscribeChannel
+  //   6 = publishChannel
+  //   7 = unsubscribeChannel
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4
@@ -64,6 +66,10 @@ export const encodeHeader = (
   //   0 = functionData
   //   1 = subscriptionData
   //   2 = subscriptionDiffData
+  //   3 = get
+  //   4 = authData
+  //   5 = errorData
+  //   6 = channelMessage
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (Number(isDeflate) | 0)
@@ -160,6 +166,38 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
   // }
   storeUint8(payload, id, 4, 8)
   return prevId
+}
+
+export const encodeChannelMessage = (
+  id: number,
+  buffer: Buffer
+): [Uint8Array, boolean] => {
+  // Type 1 (full data) // TODO: include crc32 4 Bytes
+  // | 4 header | 8 id | * payload |
+
+  let isDeflate = false
+  // implement later
+  const chunks = 1
+
+  if (buffer.length > COMPRESS_FROM_BYTES) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+
+  if (chunks === 1) {
+    const msgSize = 16 + buffer.length
+    const header = encodeHeader(1, isDeflate, msgSize)
+    const array = new Uint8Array(4 + msgSize)
+    storeUint8(array, header, 0, 4)
+    storeUint8(array, id, 4, 8)
+    if (buffer.length) {
+      array.set(buffer, 12)
+    }
+    return [array, isDeflate]
+  } else {
+    console.warn('chunk not implemented yet')
+    return [new Uint8Array(0), false]
+  }
 }
 
 export const encodeObservableResponse = (

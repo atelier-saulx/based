@@ -29,6 +29,9 @@ const encodeHeader = (
   //   2 = unsubscribe
   //   3 = get from observable
   //   4 = auth
+  //   5 = subscribeChannel
+  //   6 = publishChannel
+  //   7 = unsubscribeChannel
   // isDeflate (1 bit)
   // len (28 bits)
 

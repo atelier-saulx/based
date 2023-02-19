@@ -23,6 +23,7 @@ export const decodeHeader = (
   //   3 = get
   //   4 = authData
   //   5 = errorData
+  //   6 = channelMessage
   // isDeflate (1 bit)
   // len (28 bits)
   const len = nr >> 4

@@ -6,6 +6,11 @@ import { authMessage } from './auth'
 import { getMessage } from './get'
 import { WebSocketSession, Context } from '@based/functions'
 import { BasedErrorCode, createError } from '../../error'
+import {
+  channelSubscribeMessage,
+  unsubscribeChannelMessage,
+} from './channelSubscribe'
+import { channelPublishMessage } from './channelPublish'
 
 const reader = (
   server: BasedServer,
@@ -41,6 +46,30 @@ const reader = (
 
   // type 4 = auth
   if (type === 4 && authMessage(arr, start, len, isDeflate, ctx, server)) {
+    return next
+  }
+
+  // type 5 = channelSubscribe
+  if (
+    type === 5 &&
+    channelSubscribeMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
+    return next
+  }
+
+  // type 6 = channelPublish
+  if (
+    type === 6 &&
+    channelPublishMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
+    return next
+  }
+
+  // type 7 = channelUnsubscribe
+  if (
+    type === 7 &&
+    unsubscribeChannelMessage(arr, start, len, isDeflate, ctx, server)
+  ) {
     return next
   }
 
