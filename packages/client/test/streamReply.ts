@@ -44,7 +44,7 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
   await server.destroy()
 })
 
-// extra protocol....
+// extra protocol in WS
 // test.serial('reply with a stream from call fn (http)', async (t) => {
 //   const filePath = join(__dirname, './browser/tmp.json')
 //   const server = await createSimpleServer({ idleTimeout: 1e3,

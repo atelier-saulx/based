@@ -25,6 +25,7 @@ import { BasedQuery } from './query'
 import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
 import { initStorage } from './localStorage'
+import { BasedChannel } from './channel'
 
 export * from './authState/parseAuthState'
 
@@ -194,6 +195,11 @@ export class BasedClient extends Emitter {
     for (const i in this) {
       delete this[i]
     }
+  }
+
+  // ---------- Channel
+  channel(name: string, payload?: any): BasedChannel {
+    return new BasedChannel(this, name, payload)
   }
 
   // ---------- Query

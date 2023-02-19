@@ -1,6 +1,7 @@
 import { BasedServer } from '../../server'
 import { callFunction } from '../callFunction'
 import { BasedQuery } from './query'
+import { BasedChannel } from './channel'
 import { streamFunction } from '../stream'
 import util from 'node:util'
 
@@ -34,6 +35,10 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
 
   query(name: string, payload?: any): BasedQuery {
     return new BasedQuery(this.ctx, name, payload)
+  }
+
+  channel(name: string, payload?: any): BasedChannel {
+    return new BasedChannel(this.ctx, name, payload)
   }
 
   async stream(
