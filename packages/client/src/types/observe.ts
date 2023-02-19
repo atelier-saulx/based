@@ -5,7 +5,7 @@ export type ObserveOpts = {
   maxCacheTime?: number
 }
 
-export type ObserveDataListener = (data: any, checksum: number) => void
+export type ObserveDataListener<K = any> = (data: K, checksum: number) => void
 
 export type ObserveErrorListener = (err: BasedError) => void
 

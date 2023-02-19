@@ -10,9 +10,9 @@ import { removeStorage, setStorage } from '../localStorage'
 
 // Can extend this as a query builder
 
-export class BasedQuery {
+export class BasedQuery<P = any, K = any> {
   public id: number
-  public query: any
+  public query: P
   public name: string
   public client: BasedClient
   public persistent: boolean
@@ -20,7 +20,7 @@ export class BasedQuery {
   constructor(
     client: BasedClient,
     name: string,
-    payload: any,
+    payload: P,
     opts?: { persistent: boolean }
   ) {
     this.query = payload
@@ -43,7 +43,7 @@ export class BasedQuery {
   }
 
   subscribe(
-    onData: ObserveDataListener,
+    onData: ObserveDataListener<K>,
     onError?: ObserveErrorListener
   ): CloseObserve {
     let subscriberId: number
@@ -99,7 +99,7 @@ export class BasedQuery {
 
   async getWhen(
     condition: (data: any, checksum: number) => boolean
-  ): Promise<any> {
+  ): Promise<K> {
     return new Promise((resolve) => {
       const close = this.subscribe((data, checksum) => {
         if (condition(data, checksum)) {
@@ -110,7 +110,7 @@ export class BasedQuery {
     })
   }
 
-  async get(): Promise<any> {
+  async get(): Promise<K> {
     return new Promise((resolve, reject) => {
       if (this.client.getState.has(this.id)) {
         this.client.getState.get(this.id).push([resolve, reject])

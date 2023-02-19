@@ -70,3 +70,11 @@ export type BasedQueryFunction<P = any, K = any> =
       update: ObservableUpdateFunction<K>,
       error?: ObserveErrorListener
     ) => () => void)
+
+export type BasedChannelFunction<P = any, K = any> = (
+  based: BasedFunctionClient,
+  channelId: P,
+  publish: ChannelMessageFunction<K>
+) => [() => void, ChannelMessageFunction<K>]
+
+export type ChannelMessageFunction<K = any> = (message: K) => void

@@ -1,14 +1,14 @@
 import { ObservableUpdateFunction, ObserveErrorListener } from './functions'
 
-export abstract class BasedQuery {
+export abstract class BasedQuery<K = any> {
   abstract subscribe(
-    onData: ObservableUpdateFunction,
+    onData: ObservableUpdateFunction<K>,
     onError?: ObserveErrorListener
   ): () => void
 
   abstract getWhen(
-    condition: (data: any, checksum: number) => boolean
+    condition: (data: K, checksum: number) => boolean
   ): Promise<any>
 
-  abstract get(): Promise<any>
+  abstract get(): Promise<K>
 }
