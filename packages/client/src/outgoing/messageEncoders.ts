@@ -1,6 +1,7 @@
 import fflate from 'fflate'
 import { AuthState } from '../types/auth'
-import { FunctionQueueItem } from '../types'
+import { FunctionQueueItem, ObserveQueue } from '../types'
+import { ChannelQueue } from '../types/channel'
 
 const encoder = new TextEncoder()
 
@@ -92,9 +93,47 @@ export const encodeGetObserveMessage = (
   return { buffers: [], len: 0 }
 }
 
+export const encodeSubscribeChannelMessage = (
+  id: number,
+  o: ChannelQueue extends Map<any, infer I> ? I : never
+): { buffers: Uint8Array[]; len: number } => {
+  let len = 4
+  const [type, name, payload] = o
+
+  // Type 5 = subscribe
+  // | 4 header | 8 id | 1 name length | * name | * payload |
+
+  if (type === 7) {
+    const header = encodeHeader(type, false, 12)
+    const buff = new Uint8Array(4 + 8)
+    storeUint8(buff, header, 0, 4)
+    storeUint8(buff, id, 4, 8)
+    return { buffers: [buff], len: 12 }
+  }
+
+  const n = encoder.encode(name)
+  len += 1 + n.length
+  const [isDeflate, p] = encodePayload(payload)
+  if (p) {
+    len += p.length
+  }
+  const buffLen = 8
+  len += buffLen
+  const header = encodeHeader(type, isDeflate, len)
+  const buff = new Uint8Array(1 + 4 + buffLen)
+  storeUint8(buff, header, 0, 4)
+  storeUint8(buff, id, 4, 8)
+  buff[12] = n.length
+  if (p) {
+    return { buffers: [buff, n, p], len }
+  } else {
+    return { buffers: [buff, n], len }
+  }
+}
+
 export const encodeObserveMessage = (
   id: number,
-  o: any
+  o: ObserveQueue extends Map<any, infer I> ? I : never
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, checksum, payload] = o

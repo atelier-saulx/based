@@ -51,10 +51,7 @@ export type ObserveQueue = Map<
       string, // name
       number // checksum
     ]
-  | [
-      2,
-      string // name
-    ]
+  | [2]
 >
 
 // Type of subscriptions

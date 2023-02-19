@@ -92,7 +92,7 @@ export class BasedQuery<P = any, K = any> {
       obs.subscribers.delete(subscriberId)
       if (obs.subscribers.size === 0) {
         this.client.observeState.delete(this.id)
-        addObsCloseToQueue(this.client, this.name, this.id)
+        addObsCloseToQueue(this.client, this.id)
       }
     }
   }

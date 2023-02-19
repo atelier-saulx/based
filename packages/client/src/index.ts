@@ -26,6 +26,7 @@ import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
 import { initStorage } from './localStorage'
 import { BasedChannel } from './channel'
+import { ChannelQueue } from './types/channel'
 
 export * from './authState/parseAuthState'
 
@@ -67,6 +68,7 @@ export class BasedClient extends Emitter {
   // --------- Queue
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
+  channelQueue: ChannelQueue = new Map()
   getObserveQueue: GetObserveQueue = new Map()
   drainInProgress: boolean = false
   drainTimeout: ReturnType<typeof setTimeout>

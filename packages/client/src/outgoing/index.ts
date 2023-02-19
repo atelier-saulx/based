@@ -44,14 +44,23 @@ export const drainQueue = (client: BasedClient) => {
       if (
         client.functionQueue.length ||
         client.observeQueue.size ||
-        client.getObserveQueue.size
+        client.getObserveQueue.size ||
+        client.channelQueue.size
       ) {
+        const channel = client.channelQueue
         const fn = client.functionQueue
         const obs = client.observeQueue
         const get = client.getObserveQueue
 
         const buffs = []
         let l = 0
+
+        // ------- GetObserve
+        for (const [id, o] of channel) {
+          const { buffers, len } = encodeGetObserveMessage(id, o)
+          buffs.push(...buffers)
+          l += len
+        }
 
         // ------- GetObserve
         for (const [id, o] of get) {
@@ -85,6 +94,7 @@ export const drainQueue = (client: BasedClient) => {
         client.functionQueue = []
         client.observeQueue.clear()
         client.getObserveQueue.clear()
+        client.channelQueue.clear()
 
         client.connection.ws.send(n)
         idleTimeout(client)
@@ -101,6 +111,8 @@ export const stopDrainQueue = (client: BasedClient) => {
     client.drainInProgress = false
   }
 }
+
+// ------------ function ---------------
 
 export const addToFunctionQueue = (
   client: BasedClient,
@@ -126,16 +138,39 @@ export const addToFunctionQueue = (
   drainQueue(client)
 }
 
-export const addObsCloseToQueue = (
+// ------------ channel ---------------
+
+export const addChannelCloseToQueue = (client: BasedClient, id: number) => {
+  const type = client.channelQueue.get(id)?.[0]
+  if (type === 7) {
+    return
+  }
+  client.channelQueue.set(id, [7])
+  drainQueue(client)
+}
+
+export const addChannelSubscribeToQueue = (
   client: BasedClient,
   name: string,
-  id: number
+  id: number,
+  payload: GenericObject
 ) => {
+  const type = client.channelQueue.get(id)?.[0]
+  if (type === 5) {
+    return
+  }
+  client.channelQueue.set(id, [5, name, payload])
+  drainQueue(client)
+}
+
+// ------------ observable ---------------
+
+export const addObsCloseToQueue = (client: BasedClient, id: number) => {
   const type = client.observeQueue.get(id)?.[0]
   if (type === 2) {
     return
   }
-  client.observeQueue.set(id, [2, name])
+  client.observeQueue.set(id, [2])
   drainQueue(client)
 }
 
@@ -167,6 +202,8 @@ export const addGetToQueue = (
   client.getObserveQueue.set(id, [3, name, checksum, payload])
   drainQueue(client)
 }
+
+// ------------ auth ---------------
 
 export const sendAuth = async (
   client: BasedClient,

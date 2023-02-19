@@ -47,52 +47,55 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  // | 4 header | 3 id | 1 name length | * name | * payload |
-  const requestId = readUint8(arr, start + 4, 3)
-  const nameLen = arr[start + 7]
-  const name = decodeName(arr, start + 8, start + 8 + nameLen)
+  // | 4 header | 8 id | 1 name length | * name | * payload |
 
-  if (!name || !requestId) {
+  const nameLen = arr[start + 20]
+  const id = readUint8(arr, start + 4, 8)
+  const name = decodeName(arr, start + 13, start + 13 + nameLen)
+
+  if (!name || !id) {
     return false
   }
 
-  const route = verifyRoute(
-    server,
-    ctx,
-    'fn',
-    server.functions.route(name),
-    name,
-    requestId
-  )
+  console.info('incoming channel sub', name, id)
 
-  // TODO: add strictness setting - if strict return false here
-  if (route === null) {
-    return true
-  }
+  // const route = verifyRoute(
+  //   server,
+  //   ctx,
+  //   'fn',
+  //   server.functions.route(name),
+  //   name,
+  //   requestId
+  // )
 
-  if (
-    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
-  ) {
-    ctx.session.close()
-    return false
-  }
+  // // TODO: add strictness setting - if strict return false here
+  // if (route === null) {
+  //   return true
+  // }
 
-  if (len > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-      route,
-      requestId,
-    })
-    return true
-  }
+  // if (
+  //   rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+  // ) {
+  //   ctx.session.close()
+  //   return false
+  // }
 
-  const payload = parsePayload(
-    decodePayload(
-      new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-      isDeflate
-    )
-  )
+  // if (len > route.maxPayloadSize) {
+  //   sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+  //     route,
+  //     requestId,
+  //   })
+  //   return true
+  // }
 
-  authorize(route, server, ctx, payload, sendFunction, requestId)
+  // const payload = parsePayload(
+  //   decodePayload(
+  //     new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+  //     isDeflate
+  //   )
+  // )
+
+  // authorize(route, server, ctx, payload, sendFunction, requestId)
 
   return true
 }

@@ -63,7 +63,6 @@ export const subscribeMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | 8 checksum | 1 name length | * name | * payload |
 
   const nameLen = arr[start + 20]
-
   const id = readUint8(arr, start + 4, 8)
   const checksum = readUint8(arr, start + 12, 8)
   const name = decodeName(arr, start + 21, start + 21 + nameLen)

@@ -1,6 +1,5 @@
 import zlib from 'node:zlib'
 
-// use saulx util decoder for speed (test!)
 const textDecoder = new TextDecoder()
 
 export const COMPRESS_FROM_BYTES = 150
@@ -123,6 +122,7 @@ export const encodeFunctionResponse = (
 
   let isDeflate = false
   // TODO: implement for streams!
+  // chunk isChunk | isNotCunk | isLastchunk 0|1 (use 1 bye for now?)
   const chunks = 1
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
