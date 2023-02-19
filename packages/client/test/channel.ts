@@ -25,17 +25,32 @@ test.serial('Subscribe channel', async (t) => {
   await client.connect({
     url: async () => 'ws://localhost:9910',
   })
-
+  const numbers: any[] = []
   const closeChannel = client
     .channel('mychannel', { bla: true })
     .subscribe((msg) => {
-      console.info(msg)
+      numbers.push(msg)
     })
-
-  await wait(2e3)
-
+  await wait(500)
+  t.true(numbers.length > 2)
   closeChannel()
+  await wait(1100)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
   t.true(true)
   client.disconnect()
   await server.destroy()
 })
+
+/*
+ xx: {
+        publish: (msg) => {
+          console.info('publish', msg)
+        },
+        function: () => {
+          return () => {
+            
+          }
+        },
+      },
+*/

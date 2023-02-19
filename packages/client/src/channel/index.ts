@@ -51,7 +51,6 @@ export class BasedChannel<P = any, K = any> {
       const obs = this.client.channelState.get(this.id)
       obs.subscribers.delete(subscriberId)
       if (obs.subscribers.size === 0) {
-        // this.client.channelState.delete(this.id) // later
         addChannelCloseToQueue(this.client, this.id)
       }
     }

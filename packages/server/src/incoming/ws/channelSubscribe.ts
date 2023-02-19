@@ -15,7 +15,12 @@ import {
   AuthErrorHandler,
 } from '../../authorize'
 import { BinaryMessageHandler } from './types'
-import { hasChannel, subscribeChannel, createChannel } from '../../channel'
+import {
+  hasChannel,
+  subscribeChannel,
+  createChannel,
+  unsubscribeChannel,
+} from '../../channel'
 
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
@@ -145,8 +150,8 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
   start,
   len,
   isDeflate,
-  ctx
-  // server
+  ctx,
+  server
 ) => {
   // | 4 header | 8 id |
   if (!ctx.session) {
@@ -159,10 +164,9 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
     return false
   }
 
-  console.info('unsub channel', id)
-  // if (unsubscribeWs(server, id, ctx)) {
-  //   ctx.session.unsubscribe(String(id))
-  // }
+  if (unsubscribeChannel(server, id, ctx)) {
+    ctx.session.unsubscribe(String(id))
+  }
 
   return true
 }
