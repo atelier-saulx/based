@@ -43,6 +43,9 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
+  if (!ctx.session.unauthorizedObs) {
+    ctx.session.unauthorizedObs = new Set()
+  }
   ctx.session.unauthorizedObs.add({
     id,
     checksum,

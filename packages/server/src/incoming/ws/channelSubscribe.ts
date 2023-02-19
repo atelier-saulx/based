@@ -22,7 +22,7 @@ import {
   unsubscribeChannel,
 } from '../../channel'
 
-export const enableSubscribe: IsAuthorizedHandler<
+export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
 > = (route, server, ctx, payload, id) => {
@@ -45,14 +45,15 @@ export const enableSubscribe: IsAuthorizedHandler<
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
-> = () => {
-  // route, server, ctx, payload, id
-  // later
-  // ctx.session.unauthorizedObs.add({
-  //   id,
-  //   name: route.name,
-  //   payload,
-  // })
+> = (route, server, ctx, payload, id) => {
+  if (!ctx.session.unauthorizedChannels) {
+    ctx.session.unauthorizedChannels = new Set()
+  }
+  ctx.session.unauthorizedChannels.add({
+    id,
+    name: route.name,
+    payload,
+  })
 }
 
 export const channelSubscribeMessage: BinaryMessageHandler = (
@@ -134,7 +135,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     server,
     ctx,
     payload,
-    enableSubscribe,
+    enableChannelSubscribe,
     id,
     0,
     isNotAuthorized

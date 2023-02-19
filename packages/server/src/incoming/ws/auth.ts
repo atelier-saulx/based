@@ -8,6 +8,7 @@ import { enableSubscribe } from './observable'
 import { rateLimitRequest } from '../../security'
 import { AuthState, WebSocketSession, Context } from '@based/functions'
 import { BinaryMessageHandler } from './types'
+import { enableChannelSubscribe } from './channelSubscribe'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
@@ -50,7 +51,7 @@ export const authMessage: BinaryMessageHandler = (
     return true
   }
 
-  if (ctx.session.unauthorizedObs.size) {
+  if (ctx.session.unauthorizedObs?.size) {
     ctx.session.unauthorizedObs.forEach((obs) => {
       const { id, name, checksum, payload } = obs
       enableSubscribe(
@@ -66,6 +67,23 @@ export const authMessage: BinaryMessageHandler = (
       )
     })
     ctx.session.unauthorizedObs.clear()
+  }
+
+  if (ctx.session.unauthorizedChannels?.size) {
+    ctx.session.unauthorizedChannels.forEach((channel) => {
+      const { id, name, payload } = channel
+      enableChannelSubscribe(
+        {
+          name,
+          channel: true,
+        },
+        server,
+        ctx,
+        payload,
+        id
+      )
+    })
+    ctx.session.unauthorizedChannels.clear()
   }
 
   sendAuthMessage(ctx, verified)
