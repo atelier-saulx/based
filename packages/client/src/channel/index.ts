@@ -23,7 +23,10 @@ export class BasedChannel<P = any, K = any> {
 
   subscribe(onMessage: ChannelMessageFunction): () => void {
     let subscriberId: number
-    if (!this.client.channelState.has(this.id)) {
+    if (
+      !this.client.channelState.has(this.id) ||
+      this.client.channelState.get(this.id).subscribers.size === 0
+    ) {
       subscriberId = 1
       const subscribers = new Map()
       subscribers.set(subscriberId, onMessage)
@@ -32,7 +35,6 @@ export class BasedChannel<P = any, K = any> {
         name: this.name,
         subscribers,
       })
-
       addChannelSubscribeToQueue(
         this.client,
         this.name,

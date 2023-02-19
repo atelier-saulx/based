@@ -7,6 +7,19 @@ test.serial('Subscribe channel', async (t) => {
   const server = await createSimpleServer({
     idleTimeout: 1e3,
     port: 9910,
+    channels: {
+      mychannel: (based, payload, update) => {
+        console.info('start channel', based, payload)
+        let cnt = 0
+        const interval = setInterval(() => {
+          update(++cnt)
+        }, 100)
+        return () => {
+          console.info('CLOSE')
+          clearInterval(interval)
+        }
+      },
+    },
   })
   const client = new BasedClient()
   await client.connect({

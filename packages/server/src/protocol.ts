@@ -170,26 +170,23 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
 export const encodeChannelMessage = (
   id: number,
   buffer: Buffer
-): [Uint8Array, boolean] => {
-  // Type 1 (full data)
+): Uint8Array => {
+  // Type 6 (full data)
   // | 4 header | 8 id | * payload |
-
   let isDeflate = false
-
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
-
   const msgSize = 16 + buffer.length
-  const header = encodeHeader(1, isDeflate, msgSize)
+  const header = encodeHeader(6, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
   storeUint8(array, header, 0, 4)
   storeUint8(array, id, 4, 8)
   if (buffer.length) {
     array.set(buffer, 12)
   }
-  return [array, isDeflate]
+  return array
 }
 
 export const encodeObservableResponse = (

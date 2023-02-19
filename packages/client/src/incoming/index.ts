@@ -336,8 +336,45 @@ export const incoming = async (
           client.getState.delete(payload.observableId)
         }
       }
-
       // else emit ERROR maybe?
+    } // ------- Channel data
+    else if (type === 6) {
+      // | 4 header | 8 id | * payload |
+      const id = readUint8(buffer, 4, 8)
+
+      const start = 12
+      const end = len + 4
+      let payload: any
+
+      // if not empty response, parse it
+      if (len !== 8) {
+        const r = new TextDecoder().decode(
+          isDeflate
+            ? fflate.inflateSync(buffer.slice(start, end))
+            : buffer.slice(start, end)
+        )
+        try {
+          payload = JSON.parse(r)
+        } catch (err) {}
+        payload = r
+      }
+
+      let found = false
+
+      if (client.channelState.has(id)) {
+        const observable = client.channelState.get(id)
+        for (const [, handlers] of observable.subscribers) {
+          handlers(payload)
+        }
+        found = true
+      }
+
+      if (!found) {
+        console.warn(
+          'Cannot find channel handler for incoming id (allready removed)',
+          id
+        )
+      }
     }
     // ---------------------------------
   } catch (err) {

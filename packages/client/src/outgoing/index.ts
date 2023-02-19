@@ -33,7 +33,9 @@ export const drainQueue = (client: BasedClient) => {
     !client.drainInProgress &&
     (client.functionQueue.length ||
       client.observeQueue.size ||
-      client.getObserveQueue.size)
+      client.getObserveQueue.size ||
+      client.channelQueue.size ||
+      client.publishQueue.length)
   ) {
     client.drainInProgress = true
     const drainOutgoing = () => {
@@ -45,10 +47,10 @@ export const drainQueue = (client: BasedClient) => {
 
       if (
         client.functionQueue.length ||
-        client.publishQueue.length ||
         client.observeQueue.size ||
         client.getObserveQueue.size ||
-        client.channelQueue.size
+        client.channelQueue.size ||
+        client.publishQueue.length
       ) {
         const channel = client.channelQueue
         const publish = client.publishQueue
@@ -167,6 +169,8 @@ export const addChannelSubscribeToQueue = (
   id: number,
   payload: GenericObject
 ) => {
+  console.log('ADD SU???')
+
   const type = client.channelQueue.get(id)?.[0]
   if (type === 5) {
     return

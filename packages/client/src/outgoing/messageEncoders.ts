@@ -132,8 +132,6 @@ export const encodeSubscribeChannelMessage = (
   storeUint8(buff, id, 4, 8)
   buff[12] = n.length
 
-  console.log('????', buff, n, p, len)
-
   if (p) {
     return { buffers: [buff, n, p], len }
   }

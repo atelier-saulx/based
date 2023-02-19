@@ -7,6 +7,7 @@ export type ActiveChannel = {
   functionChannelClients: Set<ChannelMessageFunction>
   clients: Set<number>
   isDestroyed: boolean
+  beingDestroyed?: NodeJS.Timeout
   closeFunction?: () => void
 }
 
