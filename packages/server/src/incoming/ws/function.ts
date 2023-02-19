@@ -15,6 +15,8 @@ import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
 import { authorize, IsAuthorizedHandler } from '../../authorize'
 import { BinaryMessageHandler } from './types'
+import { Duplex, Readable } from 'stream'
+import { readStream } from '@saulx/utils'
 
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
@@ -24,6 +26,9 @@ const sendFunction: IsAuthorizedHandler<
   spec
     ?.function(server.client, payload, ctx)
     .then(async (v) => {
+      if (v && (v instanceof Duplex || v instanceof Readable)) {
+        v = await readStream(v)
+      }
       ctx.session?.send(
         encodeFunctionResponse(requestId, valueToBuffer(v)),
         true,
