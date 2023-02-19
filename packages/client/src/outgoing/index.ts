@@ -63,6 +63,7 @@ export const drainQueue = (client: BasedClient) => {
 
         // ------- Channel
         for (const [id, o] of channel) {
+          console.info('add sub msg', id, o)
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len
@@ -269,7 +270,6 @@ export const sendAuth = async (
     client.connection.ws.send(encodeAuthMessage(authState))
   }
 
-  // hello
   client.authRequest.promise = new Promise<AuthState>((resolve, reject) => {
     client.authRequest.inProgress = true
     client.authRequest.resolve = resolve

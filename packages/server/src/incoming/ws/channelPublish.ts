@@ -1,43 +1,8 @@
-import {
-  readUint8,
-  decodeName,
-  decodePayload,
-  encodeFunctionResponse,
-  valueToBuffer,
-  parsePayload,
-} from '../../protocol'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
-import { BasedFunctionRoute } from '../../functions'
-import { WebSocketSession } from '@based/functions'
+import { readUint8, decodePayload, parsePayload } from '../../protocol'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
-import { authorize, IsAuthorizedHandler } from '../../authorize'
 import { BinaryMessageHandler } from './types'
-
-const sendFunction: IsAuthorizedHandler<
-  WebSocketSession,
-  BasedFunctionRoute
-> = async (route, server, ctx, payload, requestId) => {
-  const spec = await installFn(server, ctx, route, requestId)
-  spec
-    ?.function(server.client, payload, ctx)
-    .then(async (v) => {
-      ctx.session?.send(
-        encodeFunctionResponse(requestId, valueToBuffer(v)),
-        true,
-        false
-      )
-    })
-    .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        requestId,
-        err,
-      })
-    })
-}
 
 export const channelPublishMessage: BinaryMessageHandler = (
   arr,
@@ -47,25 +12,29 @@ export const channelPublishMessage: BinaryMessageHandler = (
   ctx,
   server
 ) => {
-  // | 4 header | 3 id | 1 name length | * name | * payload |
-  const requestId = readUint8(arr, start + 4, 3)
-  const nameLen = arr[start + 7]
-  const name = decodeName(arr, start + 8, start + 8 + nameLen)
+  // | 4 header | 8 id | * payload |
+  const id = readUint8(arr, start + 4, 8)
 
-  if (!name || !requestId) {
-    return false
+  if (!server.activeChannelsById.has(id)) {
+    console.info('CANNOT find channel id fix fix fix')
+    return true
   }
+
+  const channel = server.activeChannelsById.get(id)
+
+  console.info('  --> ', channel.name, channel.payload)
+
+  const name = channel.name
 
   const route = verifyRoute(
     server,
     ctx,
-    'fn',
+    'channel',
     server.functions.route(name),
-    name,
-    requestId
+    name
   )
 
-  // TODO: add strictness setting - if strict return false here
+  // // TODO: add strictness setting - if strict return false here
   if (route === null) {
     return true
   }
@@ -78,21 +47,28 @@ export const channelPublishMessage: BinaryMessageHandler = (
   }
 
   if (len > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-      route,
-      requestId,
-    })
+    // TODO: emit error
     return true
   }
 
   const payload = parsePayload(
-    decodePayload(
-      new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-      isDeflate
-    )
+    decodePayload(new Uint8Array(arr.slice(start + 12, start + len)), isDeflate)
   )
 
-  authorize(route, server, ctx, payload, sendFunction, requestId)
+  server.auth
+    .authorize(server.client, ctx, route.name, payload)
+    .then((ok) => {
+      if (!ctx.session || !ok) {
+        return
+      }
+      return installFn(server, ctx, route)
+    })
+    .then((spec) => {
+      if (spec) {
+        spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+      }
+    })
+    .catch(() => {})
 
   return true
 }

@@ -91,12 +91,15 @@ export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
   if (!isDeflate) {
     return textDecoder.decode(payload)
   }
-
-  const buffer = zlib.inflateRawSync(payload)
-  return textDecoder.decode(buffer)
+  try {
+    const buffer = zlib.inflateRawSync(payload)
+    return textDecoder.decode(buffer)
+  } catch (err) {
+    console.error('Error deflating payload', err)
+  }
 }
 
-export const parsePayload = (payload: any) => {
+export const parsePayload = (payload: any): any => {
   if (typeof payload === 'string') {
     try {
       return JSON.parse(payload)
@@ -178,7 +181,7 @@ export const encodeChannelMessage = (
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
-  const msgSize = 16 + buffer.length
+  const msgSize = 8 + buffer.length
   const header = encodeHeader(6, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
   storeUint8(array, header, 0, 4)

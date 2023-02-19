@@ -17,7 +17,7 @@ export const createChannel = (
   }
 
   const channel: ActiveChannel = {
-    channelId: payload,
+    payload,
     clients: new Set(),
     functionChannelClients: new Set(),
     id,

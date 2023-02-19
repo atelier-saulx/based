@@ -18,7 +18,7 @@ export const destroyChannel = (server: BasedServer, id: number) => {
     if (channel.beingDestroyed) {
       console.warn(
         `Channel being destroyed while clients/workers/getListeners are present ${channel.name} ${channel.id}`,
-        channel.channelId
+        channel.payload
       )
     }
     return

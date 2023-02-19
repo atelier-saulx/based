@@ -213,8 +213,8 @@ export const encodePublishMessage = (
   if (p) {
     len += p.length
   }
-  const header = encodeHeader(0, isDeflate, len)
-  const buff = new Uint8Array(4 + 3 + 1)
+  const header = encodeHeader(6, isDeflate, len)
+  const buff = new Uint8Array(4 + 8)
   storeUint8(buff, header, 0, 4)
   storeUint8(buff, id, 4, 8)
   if (p) {

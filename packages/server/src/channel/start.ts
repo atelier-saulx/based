@@ -17,10 +17,10 @@ export const start = (server: BasedServer, id: number) => {
     return
   }
 
-  const payload = channel.channelId
+  const payload = channel.payload
 
   try {
-    channel.closeFunction = spec.function(server.client, payload, (msg) => {
+    channel.closeFunction = spec.function(server.client, payload, id, (msg) => {
       updateChannelListener(server, channel, msg)
     })
   } catch (err) {

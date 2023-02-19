@@ -10,12 +10,12 @@ import { ChannelMessageFunction } from '../types/channel'
 
 export class BasedChannel<P = any, K = any> {
   public id: number
-  public channelId: P
+  public payload: P
   public name: string
   public client: BasedClient
 
   constructor(client: BasedClient, name: string, payload: P) {
-    this.channelId = payload
+    this.payload = payload
     this.id = genObserveId(name, payload)
     this.client = client
     this.name = name
@@ -31,16 +31,11 @@ export class BasedChannel<P = any, K = any> {
       const subscribers = new Map()
       subscribers.set(subscriberId, onMessage)
       this.client.channelState.set(this.id, {
-        payload: this.channelId,
+        payload: this.payload,
         name: this.name,
         subscribers,
       })
-      addChannelSubscribeToQueue(
-        this.client,
-        this.name,
-        this.id,
-        this.channelId
-      )
+      addChannelSubscribeToQueue(this.client, this.name, this.id, this.payload)
     } else {
       const obs = this.client.channelState.get(this.id)
       subscriberId = obs.subscribers.size + 1
@@ -60,17 +55,13 @@ export class BasedChannel<P = any, K = any> {
     // perf optmization
     if (!this.client.channelState.has(this.id)) {
       this.client.channelState.set(this.id, {
-        payload: this.channelId,
+        payload: this.payload,
         name: this.name,
         subscribers: new Map(),
         // last publish?
       })
-      addChannelPublishIdentifier(
-        this.client,
-        this.name,
-        this.id,
-        this.channelId
-      )
+      console.info('??? add identiefier...')
+      addChannelPublishIdentifier(this.client, this.name, this.id, this.payload)
     }
     addToPublishQueue(this.client, this.id, message)
   }
