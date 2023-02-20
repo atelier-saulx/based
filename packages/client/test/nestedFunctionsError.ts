@@ -53,7 +53,7 @@ test.serial('nested functions fn does not exist error', async (t) => {
   await server.destroy()
 })
 
-test.serial('nested qeury functions fn does not exist error', async (t) => {
+test.serial('nested query functions fn does not exist error', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
