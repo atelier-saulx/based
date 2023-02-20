@@ -126,14 +126,17 @@ export async function createSimpleServer(
         }),
       route: ({ path, name }) => {
         if (path) {
+          let rootFn
           for (const name in functionStore) {
-            if (functionStore[name].path === path) {
+            const fnPath = functionStore[name].path
+            if (fnPath === path) {
               return functionStore[name]
             }
+            if (!rootFn && fnPath === '/') {
+              rootFn = functionStore[name]
+            }
           }
-          if (!name && functionStore[path]) {
-            return functionStore[path]
-          }
+          return functionStore[path] || rootFn || null
         }
         if (functionStore[name]) {
           return functionStore[name]
