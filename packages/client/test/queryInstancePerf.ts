@@ -7,6 +7,9 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
   const client = new BasedClient()
   let initCnt = 0
   const server = await createSimpleServer({
+    ws: {
+      maxBackpressureSize: 1e10,
+    },
     uninstallAfterIdleTime: 1e3,
     closeAfterIdleTime: {
       query: 100,
@@ -20,7 +23,11 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     port: 9910,
     queryFunctions: {
       counter: (based, payload, update) => {
-        update({ cnt: 1, payload })
+        const bla: number[] = []
+        for (let i = 0; i < 100; i++) {
+          bla.push(i)
+        }
+        update({ cnt: 1, payload, bla })
         initCnt++
         return () => {}
       },
@@ -37,6 +44,12 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
 
   let subCnt = 0
 
+  console.info(
+    `Mem before ${
+      Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    } MB`
+  )
+
   const closers: (() => void)[] = []
   for (let i = 0; i < 1e5; i++) {
     closers.push(
@@ -50,10 +63,16 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     )
   }
 
-  await wait(2500)
+  await wait(10000)
   closers[0]()
 
-  await wait(2500)
+  console.info(
+    `Mem while active ${
+      Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    } MB`
+  )
+
+  await wait(10000)
   t.is(server.activeObservablesById.size, 1e5 - 1)
   t.is(Object.keys(server.activeObservables).length, 1)
   t.is(initCnt, 1e5)
