@@ -56,7 +56,6 @@ export async function createSimpleServer(
   sharedSocket?: boolean
 ): Promise<BasedServer> {
   const { functions, queryFunctions, channels } = props
-
   const functionStore: {
     [key: string]: BasedSpec & {
       maxPayloadSize: number
@@ -174,20 +173,19 @@ export async function createSimpleServer(
           }
         }),
       route: ({ path, name }) => {
+        let rootFn
         if (path) {
           for (const name in functionStore) {
-            if (functionStore[name].path === path) {
+            const fnPath = functionStore[name].path
+            if (fnPath === path) {
               return functionStore[name]
             }
-          }
-          if (!name && functionStore[path]) {
-            return functionStore[path]
+            if (!rootFn && fnPath === '/') {
+              rootFn = functionStore[name]
+            }
           }
         }
-        if (functionStore[name]) {
-          return functionStore[name]
-        }
-        return null
+        return functionStore[name] || rootFn || null
       },
     },
   }
