@@ -20,7 +20,7 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     port: 9910,
     queryFunctions: {
       counter: (based, payload, update) => {
-        update(1)
+        update({ cnt: 1, payload })
         initCnt++
         return () => {}
       },
@@ -50,10 +50,10 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     )
   }
 
-  await wait(500)
+  await wait(2500)
   closers[0]()
 
-  await wait(5000)
+  await wait(2500)
   t.is(server.activeObservablesById.size, 1e5 - 1)
   t.is(Object.keys(server.activeObservables).length, 1)
   t.is(initCnt, 1e5)

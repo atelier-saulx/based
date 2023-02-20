@@ -35,11 +35,8 @@ export default (
   app.ws('/*', {
     maxPayloadLength: 1024 * 1024 * 20, // 10 mb max payload
     idleTimeout: 100,
-    maxBackpressure: 1024 * 1024 * 20,
-
-    // @ts-ignore
+    maxBackpressure: 1024 * 1024 * 10,
     closeOnBackpressureLimit: 1024 * 1024 * 20,
-    // closeOnBackpressureLimit: 1024 * 1024 * 10,
     // No compression handled in the protocol
     // compression: uws.SHARED_COMPRESSOR,
     upgrade: server.auth?.authorizeConnection
@@ -82,7 +79,7 @@ export default (
       session.c = null
     },
     drain: () => {
-      console.info('drain')
+      // console.info('drain')
       // lets handle drain efficiently (or more efficiently at least)
       // call client.drain can be much more efficient
       // if (ws.client && ws.client.backpressureQueue) {
