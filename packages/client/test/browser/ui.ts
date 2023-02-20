@@ -1,7 +1,7 @@
 import { padLeft } from '@saulx/utils'
 
 const debounce = (callback: Function, wait: number = 1) => {
-  let timeoutId: NodeJS.Timeout
+  let timeoutId: ReturnType<typeof setTimeout>
   return (...args) => {
     window.clearTimeout(timeoutId)
     timeoutId = setTimeout(() => {

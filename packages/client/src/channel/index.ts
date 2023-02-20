@@ -7,6 +7,7 @@ import {
   addToPublishQueue,
 } from '../outgoing'
 import { ChannelMessageFunction } from '../types/channel'
+import { cleanUpChannels } from './cleanUp'
 
 export class BasedChannel<P = any, K = any> {
   public id: number
@@ -34,18 +35,21 @@ export class BasedChannel<P = any, K = any> {
         payload: this.payload,
         name: this.name,
         subscribers,
+        removeTimer: -1,
       })
       addChannelSubscribeToQueue(this.client, this.name, this.id, this.payload)
     } else {
-      const obs = this.client.channelState.get(this.id)
-      subscriberId = obs.subscribers.size + 1
-      obs.subscribers.set(subscriberId, onMessage)
+      const channel = this.client.channelState.get(this.id)
+      channel.removeTimer = -1
+      subscriberId = channel.subscribers.size + 1
+      channel.subscribers.set(subscriberId, onMessage)
     }
 
     return () => {
-      const obs = this.client.channelState.get(this.id)
-      obs.subscribers.delete(subscriberId)
-      if (obs.subscribers.size === 0) {
+      const channel = this.client.channelState.get(this.id)
+      channel.subscribers.delete(subscriberId)
+      if (channel.subscribers.size === 0) {
+        channel.removeTimer = 2
         addChannelCloseToQueue(this.client, this.id)
       }
     }
@@ -58,8 +62,16 @@ export class BasedChannel<P = any, K = any> {
         payload: this.payload,
         name: this.name,
         subscribers: new Map(),
+        removeTimer: 2, // 2x 30sec
       })
+      cleanUpChannels(this.client)
       addChannelPublishIdentifier(this.client, this.name, this.id, this.payload)
+    } else {
+      const channel = this.client.channelState.get(this.id)
+      if (channel.removeTimer !== -1 && channel.removeTimer < 2) {
+        channel.removeTimer = 2 // 2x 30sec
+        cleanUpChannels(this.client)
+      }
     }
     addToPublishQueue(this.client, this.id, message)
   }

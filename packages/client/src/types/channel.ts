@@ -33,5 +33,6 @@ export type ChannelState = Map<
     payload: any
     name: string
     subscribers: Map<number, ChannelMessageFunction>
+    removeTimer?: number
   }
 >
