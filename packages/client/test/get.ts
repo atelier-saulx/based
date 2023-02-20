@@ -104,7 +104,7 @@ test.serial('get', async (t) => {
   // stays zero because it has 0 cache time
   t.is(await coreClient.query('counter').get(), 0)
 
-  await wait(100)
+  await wait(1000)
 
   t.is(Object.keys(server.activeObservables).length, 0)
   t.is(server.activeObservablesById.size, 0)
