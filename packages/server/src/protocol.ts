@@ -70,6 +70,7 @@ export const encodeHeader = (
   //   4 = authData
   //   5 = errorData
   //   6 = channelMessage
+  //   7 = requestChannelId TODO: later...
   // isDeflate (1 bit)
   // len (28 bits)
   const encodedMeta = (type << 1) + (Number(isDeflate) | 0)
@@ -90,12 +91,15 @@ export const decodePayload = (payload: Uint8Array, isDeflate: boolean): any => {
   if (!isDeflate) {
     return textDecoder.decode(payload)
   }
-
-  const buffer = zlib.inflateRawSync(payload)
-  return textDecoder.decode(buffer)
+  try {
+    const buffer = zlib.inflateRawSync(payload)
+    return textDecoder.decode(buffer)
+  } catch (err) {
+    console.error('Error deflating payload', err)
+  }
 }
 
-export const parsePayload = (payload: any) => {
+export const parsePayload = (payload: any): any => {
   if (typeof payload === 'string') {
     try {
       return JSON.parse(payload)
@@ -169,26 +173,23 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
 export const encodeChannelMessage = (
   id: number,
   buffer: Buffer
-): [Uint8Array, boolean] => {
-  // Type 1 (full data)
+): Uint8Array => {
+  // Type 6 (full data)
   // | 4 header | 8 id | * payload |
-
   let isDeflate = false
-
   if (buffer.length > COMPRESS_FROM_BYTES) {
     isDeflate = true
     buffer = zlib.deflateRawSync(buffer, {})
   }
-
-  const msgSize = 16 + buffer.length
-  const header = encodeHeader(1, isDeflate, msgSize)
+  const msgSize = 8 + buffer.length
+  const header = encodeHeader(6, isDeflate, msgSize)
   const array = new Uint8Array(4 + msgSize)
   storeUint8(array, header, 0, 4)
   storeUint8(array, id, 4, 8)
   if (buffer.length) {
     array.set(buffer, 12)
   }
-  return [array, isDeflate]
+  return array
 }
 
 export const encodeObservableResponse = (

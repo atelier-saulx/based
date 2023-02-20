@@ -6,6 +6,7 @@ import {
   isQueryFunctionSpec,
   isStreamFunctionSpec,
   isQueryFunctionRoute,
+  isChannelFunctionSpec,
 } from './types'
 import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -32,6 +33,8 @@ export class BasedFunctions {
     query: 2500,
     function: 20e3,
   }
+
+  // channel id map
 
   paths: {
     [path: string]: string
@@ -62,6 +65,11 @@ export class BasedFunctions {
       for (const name in this.specs) {
         const spec = this.specs[name]
         if (isQueryFunctionSpec(spec) && this.server.activeObservables[name]) {
+          updateTimeoutCounter(spec)
+        } else if (
+          isChannelFunctionSpec(spec) &&
+          this.server.activeChannels[name]
+        ) {
           updateTimeoutCounter(spec)
         } else if (fnIsTimedOut(spec)) {
           q.push(this.uninstall(name, spec))

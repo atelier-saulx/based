@@ -27,7 +27,6 @@ export const enableSubscribe: IsAuthorizedHandler<
     subscribeWs(server, id, checksum, ctx)
     return
   }
-  // TODO: big perf optmization possible here (only return a promise if its not there)
   installFn(server, ctx, route, id).then((spec) => {
     if (spec === null || !ctx.session.obs.has(id)) {
       return
@@ -44,6 +43,9 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
+  if (!ctx.session.unauthorizedObs) {
+    ctx.session.unauthorizedObs = new Set()
+  }
   ctx.session.unauthorizedObs.add({
     id,
     checksum,

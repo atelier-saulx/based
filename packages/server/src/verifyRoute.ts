@@ -7,12 +7,13 @@ import {
   isQueryFunctionRoute,
   isStreamFunctionRoute,
   isFunctionRoute,
+  BasedChannelFunctionRoute,
 } from './functions'
 import { sendError } from './sendError'
 import { BasedErrorCode, createError } from './error'
 import { BasedServer } from './server'
 
-type FnType = 'query' | 'stream' | 'fn'
+type FnType = 'query' | 'stream' | 'fn' | 'channel'
 
 export const verifyRoute = <T extends FnType>(
   server: BasedServer,
@@ -22,14 +23,15 @@ export const verifyRoute = <T extends FnType>(
   name: string,
   id?: number
 ):
-  | (T extends 'query'
+  | (T extends 'channel'
+      ? BasedChannelFunctionRoute
+      : T extends 'query'
       ? BasedQueryFunctionRoute
       : T extends 'stream'
       ? BasedStreamFunctionRoute
       : BasedFunctionRoute)
   | null => {
   if (!ctx.session) {
-    // console.warn('VERIFY ROUTE NO SESSION', name)
     return null
   }
 
@@ -41,6 +43,12 @@ export const verifyRoute = <T extends FnType>(
         },
       })
     }
+
+    if (type === 'channel') {
+      // tmp
+      return null
+    }
+
     sendError(
       server,
       ctx,
@@ -106,6 +114,10 @@ export const verifyRoute = <T extends FnType>(
       })
       return null
     }
+  }
+
+  if (type === 'channel') {
+    // lulllz TODO: proper error handling!
   }
 
   if (type === 'fn' && !isFunctionRoute(route)) {

@@ -13,9 +13,14 @@ export type WebSocketSession = {
   method: string
   authState: AuthState
   obs: Set<number>
-  unauthorizedObs: Set<{
+  unauthorizedObs?: Set<{
     id: number
     checksum: number
+    name: string
+    payload: any
+  }>
+  unauthorizedChannels?: Set<{
+    id: number
     name: string
     payload: any
   }>

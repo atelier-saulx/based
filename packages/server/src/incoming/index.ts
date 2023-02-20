@@ -3,6 +3,7 @@ import uws from '@based/uws'
 import { upgradeAuthorize, upgrade } from './upgrade'
 import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
+import { unsubscribeChannelIgnoreClient } from '../channel'
 import { httpHandler } from './http'
 import { WebSocketSession, Context } from '@based/functions'
 import { sendAndVerifyAuthMessage } from './ws/auth'
@@ -60,9 +61,11 @@ export default (
       }
     },
     close: (ws: WebSocketSession) => {
-      // cl--
       ws.obs.forEach((id) => {
-        unsubscribeWsIgnoreClient(server, id, ws.c)
+        if (unsubscribeWsIgnoreClient(server, id, ws.c)) {
+          // This is here for channels so we do not need to keep a seperate obs set on clients
+          unsubscribeChannelIgnoreClient(server, id, ws.c)
+        }
       })
       wsListeners.close(ws.c)
       // Looks really ugly but same impact on memory and GC as using the ws directly

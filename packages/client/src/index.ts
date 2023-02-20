@@ -26,11 +26,14 @@ import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
 import { initStorage } from './localStorage'
 import { BasedChannel } from './channel'
-import { ChannelQueue } from './types/channel'
+import {
+  ChannelQueue,
+  ChannelPublishQueue,
+  ChannelState,
+} from './types/channel'
 
 export * from './authState/parseAuthState'
 
-// auth observer
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -66,6 +69,7 @@ export class BasedClient extends Emitter {
 
   isDrainingStreams: boolean = false
   // --------- Queue
+  publishQueue: ChannelPublishQueue = []
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
   channelQueue: ChannelQueue = new Map()
@@ -81,6 +85,8 @@ export class BasedClient extends Emitter {
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = new Map()
   requestId: number = 0 // max 3 bytes (0 to 16777215)
+  // --------- Channel State
+  channelState: ChannelState = new Map()
   // --------- Observe State
   observeState: ObserveState = new Map()
   // --------- Get State
@@ -220,9 +226,7 @@ export class BasedClient extends Emitter {
     })
   }
 
-  // TODO make this
   // -------- Stream-Function
-  // File, NodeReadStream, payload, one with a timer
   stream(
     name: string,
     stream: StreamFunctionOpts,

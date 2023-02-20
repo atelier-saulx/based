@@ -18,8 +18,20 @@ export type ChannelQueue = Map<
       5,
       string // name
     ]
+  // 6 means register channel id
+  | [6, string, any]
+  | [6, string]
   | [7]
 >
 
-export type ChannelPublishQueueItem = [string, any, any]
+export type ChannelPublishQueueItem = [number, any]
 export type ChannelPublishQueue = ChannelPublishQueueItem[]
+
+export type ChannelState = Map<
+  number,
+  {
+    payload: any
+    name: string
+    subscribers: Map<number, ChannelMessageFunction>
+  }
+>

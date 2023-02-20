@@ -6,8 +6,13 @@ import {
   isSpec,
   isQueryFunctionSpec,
   isStreamFunctionSpec,
+  BasedChannelFunctionSpec,
 } from './functions'
-import { BasedQueryFunction, BasedFunction } from '@based/functions'
+import {
+  BasedQueryFunction,
+  BasedFunction,
+  BasedChannelFunction,
+} from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
 import { padLeft } from '@saulx/utils'
@@ -31,6 +36,9 @@ export type SimpleServerOptions = {
   queryFunctions?: {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
   }
+  channels?: {
+    [key: string]: BasedChannelFunction | Partial<BasedChannelFunctionSpec>
+  }
   silent?: boolean
   /* default time to keep query results in mem cache */
   memCacheTimeout?: number
@@ -42,7 +50,7 @@ export async function createSimpleServer(
   props: SimpleServerOptions,
   sharedSocket?: boolean
 ): Promise<BasedServer> {
-  const { functions, queryFunctions } = props
+  const { functions, queryFunctions, channels } = props
 
   const functionStore: {
     [key: string]: BasedSpec & {
@@ -101,6 +109,42 @@ export async function createSimpleServer(
         }
       } else {
         console.error(name, fn, 'Is not a query function!')
+      }
+    }
+  }
+
+  for (const name in channels) {
+    if (channels[name]) {
+      const fn = channels[name]
+      if (isSpec(fn)) {
+        functionStore[name] = {
+          checksum: 1,
+          channel: true,
+          function: fn.function,
+          publish:
+            fn.publish ||
+            ((msg) => {
+              console.warn('Publish to channel (no handler defined)', name, msg)
+            }),
+          name,
+          maxPayloadSize: 500,
+          rateLimitTokens: 1,
+          ...fn,
+        }
+      } else if (typeof fn === 'function') {
+        functionStore[name] = {
+          checksum: 1,
+          channel: true,
+          publish: (msg) => {
+            console.warn('Publish to channel (no handler defined)', name, msg)
+          },
+          function: fn,
+          name,
+          maxPayloadSize: 500,
+          rateLimitTokens: 1,
+        }
+      } else {
+        console.error(name, fn, 'Is not a channel function!')
       }
     }
   }

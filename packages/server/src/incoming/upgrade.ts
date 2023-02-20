@@ -52,7 +52,6 @@ const upgradeInternal = (
         ? parseAuthState(secWebSocketProtocol)
         : {},
       obs: new Set(),
-      unauthorizedObs: new Set(),
     },
     secWebSocketKey,
     secWebSocketProtocol,

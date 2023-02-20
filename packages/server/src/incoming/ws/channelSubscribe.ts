@@ -2,54 +2,71 @@ import {
   readUint8,
   decodeName,
   decodePayload,
-  encodeFunctionResponse,
-  valueToBuffer,
   parsePayload,
 } from '../../protocol'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
-import { BasedFunctionRoute } from '../../functions'
+import { BasedChannelFunctionRoute } from '../../functions'
 import { WebSocketSession } from '@based/functions'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
-import { authorize, IsAuthorizedHandler } from '../../authorize'
+import {
+  authorize,
+  IsAuthorizedHandler,
+  AuthErrorHandler,
+} from '../../authorize'
 import { BinaryMessageHandler } from './types'
+import {
+  hasChannel,
+  subscribeChannel,
+  createChannel,
+  unsubscribeChannel,
+} from '../../channel'
 
-const sendFunction: IsAuthorizedHandler<
+export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
-  BasedFunctionRoute
-> = async (route, server, ctx, payload, requestId) => {
-  const spec = await installFn(server, ctx, route, requestId)
-  spec
-    ?.function(server.client, payload, ctx)
-    .then(async (v) => {
-      ctx.session?.send(
-        encodeFunctionResponse(requestId, valueToBuffer(v)),
-        true,
-        false
-      )
-    })
-    .catch((err) => {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        route,
-        requestId,
-        err,
-      })
-    })
+  BasedChannelFunctionRoute
+> = (route, server, ctx, payload, id) => {
+  if (hasChannel(server, id)) {
+    subscribeChannel(server, id, ctx)
+    return
+  }
+  installFn(server, ctx, route, id).then((spec) => {
+    if (spec === null || !ctx.session.obs.has(id)) {
+      return
+    }
+    if (!hasChannel(server, id)) {
+      createChannel(server, route.name, id, payload)
+    }
+    ctx.session.subscribe(String(id))
+    subscribeChannel(server, id, ctx)
+  })
+}
+
+const isNotAuthorized: AuthErrorHandler<
+  WebSocketSession,
+  BasedChannelFunctionRoute
+> = (route, server, ctx, payload, id) => {
+  if (!ctx.session.unauthorizedChannels) {
+    ctx.session.unauthorizedChannels = new Set()
+  }
+  ctx.session.unauthorizedChannels.add({
+    id,
+    name: route.name,
+    payload,
+  })
 }
 
 export const channelSubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
   len,
-  isDeflate,
+  isChannelIdRequester,
   ctx,
   server
 ) => {
   // | 4 header | 8 id | 1 name length | * name | * payload |
 
-  const nameLen = arr[start + 20]
+  const nameLen = arr[start + 12]
   const id = readUint8(arr, start + 4, 8)
   const name = decodeName(arr, start + 13, start + 13 + nameLen)
 
@@ -57,45 +74,70 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     return false
   }
 
-  console.info('incoming channel sub', name, id)
+  // isDeflate is used to actualy subscribe
 
-  // const route = verifyRoute(
-  //   server,
-  //   ctx,
-  //   'fn',
-  //   server.functions.route(name),
-  //   name,
-  //   requestId
-  // )
+  if (isChannelIdRequester) {
+    console.info('ONLY FOR PUBLISH isChannelIdRequester')
+    // just make a map for the id and thats it!
+  }
+
+  const route = verifyRoute(
+    server,
+    ctx,
+    'channel',
+    server.functions.route(name),
+    name
+  )
 
   // // TODO: add strictness setting - if strict return false here
-  // if (route === null) {
-  //   return true
-  // }
+  if (route === null) {
+    return true
+  }
 
-  // if (
-  //   rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
-  // ) {
-  //   ctx.session.close()
-  //   return false
-  // }
+  if (
+    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+  ) {
+    ctx.session.close()
+    return false
+  }
 
-  // if (len > route.maxPayloadSize) {
-  //   sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-  //     route,
-  //     requestId,
-  //   })
-  //   return true
-  // }
+  if (len > route.maxPayloadSize) {
+    // sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+    //   route,
+    //   requestId,
+    // })
+    return true
+  }
 
-  // const payload = parsePayload(
-  //   decodePayload(
-  //     new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-  //     isDeflate
-  //   )
-  // )
+  if (isChannelIdRequester) {
+    console.info('MAKE MAKE dont sub just make the id and exit put put')
+    return true
+  }
 
-  // authorize(route, server, ctx, payload, sendFunction, requestId)
+  if (ctx.session?.obs.has(id)) {
+    // allready subscribed to this id
+    return true
+  }
+
+  const payload = parsePayload(
+    decodePayload(
+      new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+      false
+    )
+  )
+
+  ctx.session.obs.add(id)
+
+  authorize(
+    route,
+    server,
+    ctx,
+    payload,
+    enableChannelSubscribe,
+    id,
+    0,
+    isNotAuthorized
+  )
 
   return true
 }
@@ -105,8 +147,8 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
   start,
   len,
   isDeflate,
-  ctx
-  // server
+  ctx,
+  server
 ) => {
   // | 4 header | 8 id |
   if (!ctx.session) {
@@ -119,10 +161,9 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
     return false
   }
 
-  console.info('unsub channel', id)
-  // if (unsubscribeWs(server, id, ctx)) {
-  //   ctx.session.unsubscribe(String(id))
-  // }
+  if (unsubscribeChannel(server, id, ctx)) {
+    ctx.session.unsubscribe(String(id))
+  }
 
   return true
 }

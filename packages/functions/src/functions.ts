@@ -73,8 +73,17 @@ export type BasedQueryFunction<P = any, K = any> =
 
 export type BasedChannelFunction<P = any, K = any> = (
   based: BasedFunctionClient,
-  channelId: P,
-  publish: ChannelMessageFunction<K>
-) => [() => void, ChannelMessageFunction<K>]
+  payload: P,
+  id: number,
+  update: ChannelMessageFunction<K>
+) => () => void
+
+export type BasedChannelPublishFunction<P = any, K = any> = (
+  based: BasedFunctionClient,
+  payload: P,
+  message: K,
+  id: number,
+  ctx: Context
+) => void
 
 export type ChannelMessageFunction<K = any> = (message: K) => void

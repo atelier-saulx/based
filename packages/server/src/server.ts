@@ -8,6 +8,7 @@ import { BasedErrorCode, BasedErrorData } from './error'
 import { wait } from '@saulx/utils'
 import picocolors = require('picocolors')
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi'
+import { ActiveChannel } from './channel'
 import util from 'node:util'
 
 type EventMap = {
@@ -89,6 +90,12 @@ export class BasedServer {
   } = {}
 
   public activeObservablesById: Map<number, ActiveObservable> = new Map()
+
+  public activeChannels: {
+    [name: string]: Map<number, ActiveChannel>
+  } = {}
+
+  public activeChannelsById: Map<number, ActiveChannel> = new Map()
 
   public listeners: {
     [E in Event]?: Listener<EventMap[E]>[]

@@ -4,6 +4,7 @@ import {
   BasedChannelFunction,
   HttpResponse,
   BasedStreamFunction,
+  BasedChannelPublishFunction,
 } from '@based/functions'
 import { BasedServer } from '../server'
 
@@ -80,6 +81,8 @@ export type BasedFunctionSpec = {
 
 export type BasedChannelFunctionSpec = {
   function: BasedChannelFunction
+  /** Publish allows custom publish functions to channels */
+  publish: BasedChannelPublishFunction
 } & BasedChannelFunctionRoute &
   BasedInstallableFunctionSpec
 

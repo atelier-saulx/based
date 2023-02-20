@@ -9,6 +9,7 @@ import { BasedClient } from '..'
 import { removeStorage, setStorage } from '../localStorage'
 
 // Can extend this as a query builder
+// TODO: maybe add user bound as option (will clear / set on a-state chage)
 
 export class BasedQuery<P = any, K = any> {
   public id: number
@@ -35,7 +36,6 @@ export class BasedQuery<P = any, K = any> {
   }
 
   clearCache() {
-    // remove localstorage
     if (this.persistent) {
       removeStorage(this.client, '@based-cache-' + this.id)
     }
