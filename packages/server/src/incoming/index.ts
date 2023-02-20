@@ -33,9 +33,13 @@ export default (
   }
 
   app.ws('/*', {
-    maxPayloadLength: 1024 * 1024 * 10, // 10 mb max payload
+    maxPayloadLength: 1024 * 1024 * 20, // 10 mb max payload
     idleTimeout: 100,
-    maxBackpressure: 1024,
+    maxBackpressure: 1024 * 1024 * 20,
+
+    // @ts-ignore
+    closeOnBackpressureLimit: 1024 * 1024 * 20,
+    // closeOnBackpressureLimit: 1024 * 1024 * 10,
     // No compression handled in the protocol
     // compression: uws.SHARED_COMPRESSOR,
     upgrade: server.auth?.authorizeConnection
@@ -46,32 +50,36 @@ export default (
           upgrade(server, res, req, ctx)
         },
     message: (ws, data, isBinary) => {
-      message(server, ws.c, data, isBinary)
+      const session = ws.getUserData()
+      message(server, session.c, data, isBinary)
     },
+
     open: (ws: WebSocketSession) => {
       if (ws) {
         const ctx: Context<WebSocketSession> = {
           session: ws,
         }
-        ws.c = ctx
+        const session = ws.getUserData()
+        session.c = ctx
         wsListeners.open(ctx)
-        if (ctx.session.authState.token || ctx.session.authState.refreshToken) {
+        if (session.authState.token || session.authState.refreshToken) {
           sendAndVerifyAuthMessage(server, ctx)
         }
       }
     },
     close: (ws: WebSocketSession) => {
-      ws.obs.forEach((id) => {
-        if (unsubscribeWsIgnoreClient(server, id, ws.c)) {
+      const session = ws.getUserData()
+      session.obs.forEach((id) => {
+        if (unsubscribeWsIgnoreClient(server, id, session.c)) {
           // This is here for channels so we do not need to keep a seperate obs set on clients
-          unsubscribeChannelIgnoreClient(server, id, ws.c)
+          unsubscribeChannelIgnoreClient(server, id, session.c)
         }
       })
-      wsListeners.close(ws.c)
+      wsListeners.close(session.c)
       // Looks really ugly but same impact on memory and GC as using the ws directly
       // and better for dc's when functions etc are in progress
-      ws.c.session = null
-      ws.c = null
+      session.c.session = null
+      session.c = null
     },
     drain: () => {
       console.info('drain')
@@ -88,7 +96,6 @@ export default (
     app.post('/*', (res, req) => httpHandler(server, req, res))
     app.options('/*', (res, req) => httpHandler(server, req, res))
   }
-  // REST make this configurable
-  // .options('/*', (res, req) => httpHandler(server, req, res))
+
   server.uwsApp = app
 }

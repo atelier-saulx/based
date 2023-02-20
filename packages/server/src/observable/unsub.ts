@@ -12,7 +12,6 @@ export const unsubscribeFunction = (
   if (!obs) {
     return
   }
-
   if (obs.functionObserveClients.delete(update)) {
     destroyObs(server, id)
     return true
@@ -24,15 +23,17 @@ export const unsubscribeWs = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  if (!ctx.session?.obs.has(id)) {
+  const session = ctx.session?.getUserData()
+  if (!session || !session.obs.has(id)) {
     return
   }
   const obs = server.activeObservablesById.get(id)
-  ctx.session.obs.delete(id)
+  session.obs.delete(id)
   if (!obs) {
     return
   }
-  if (obs.clients.delete(ctx.session.id)) {
+  ctx.session.unsubscribe(String(id))
+  if (obs.clients.delete(session.id)) {
     destroyObs(server, id)
     return true
   }
@@ -43,13 +44,14 @@ export const unsubscribeWsIgnoreClient = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  if (!ctx.session) {
+  const session = ctx.session?.getUserData()
+  if (!session) {
     return
   }
   const obs = server.activeObservablesById.get(id)
   if (!obs) {
     return true
   }
-  obs.clients.delete(ctx.session.id)
+  obs.clients.delete(session.id)
   destroyObs(server, id)
 }

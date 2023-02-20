@@ -11,13 +11,14 @@ export const subscribeChannel = (
   id: number,
   ctx: Context<WebSocketSession>
 ) => {
-  if (!ctx.session) {
+  const session = ctx.session.getUserData()
+  if (!session) {
     return
   }
   ctx.session.subscribe(String(id))
   const channel = getChannelAndStopRemove(server, id)
-  ctx.session.obs.add(id)
-  channel.clients.add(ctx.session.id)
+  session.obs.add(id)
+  channel.clients.add(session.id)
 }
 
 export const subscribeChannelFunction = (

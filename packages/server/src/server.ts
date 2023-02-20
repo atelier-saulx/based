@@ -85,6 +85,10 @@ export class BasedServer {
 
   public requestsCounterTimeout: NodeJS.Timeout
 
+  public obsCleanTimeout: NodeJS.Timeout
+
+  public obsCleanupCycle: number = 30e3
+
   public activeObservables: {
     [name: string]: Map<number, ActiveObservable>
   } = {}

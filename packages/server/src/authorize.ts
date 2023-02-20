@@ -97,7 +97,10 @@ export const authorize = <
     .authorize(server.client, ctx, route.name, payload)
     .then((ok) => {
       if (!ctx.session || !ok) {
-        if (!authError(route, server, ctx, payload, id, checksum)) {
+        if (
+          ctx.session &&
+          !authError(route, server, ctx, payload, id, checksum)
+        ) {
           defaultAuthError(route, server, ctx, payload, id, checksum)
         }
         return
@@ -105,7 +108,10 @@ export const authorize = <
       isAuthorized(route, server, ctx, payload, id, checksum)
     })
     .catch((err) => {
-      if (!authError(route, server, ctx, payload, id, checksum, err)) {
+      if (
+        ctx.session &&
+        !authError(route, server, ctx, payload, id, checksum, err)
+      ) {
         defaultAuthError(route, server, ctx, payload, id, checksum, err)
       }
     })

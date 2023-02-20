@@ -5,7 +5,6 @@ import {
   ChannelMessageFunction,
 } from '@based/functions'
 import { destroyChannel } from './destroy'
-import {} from './types'
 
 export const unsubscribeFunction = (
   server: BasedServer,
@@ -27,15 +26,20 @@ export const unsubscribeChannel = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  if (!ctx.session?.obs.has(id)) {
+  const session = ctx.session.getUserData()
+  if (!session) {
     return
   }
+  if (!session.obs.has(id)) {
+    return
+  }
+  ctx.session.unsubscribe(String(id))
   const channel = server.activeChannelsById.get(id)
-  ctx.session.obs.delete(id)
+  session.obs.delete(id)
   if (!channel) {
     return
   }
-  if (channel.clients.delete(ctx.session.id)) {
+  if (channel.clients.delete(session.id)) {
     destroyChannel(server, id)
     return true
   }
@@ -46,10 +50,14 @@ export const unsubscribeChannelIgnoreClient = (
   id: number,
   ctx: Context<WebSocketSession>
 ) => {
+  const session = ctx.session.getUserData()
+  if (!session) {
+    return
+  }
   const channel = server.activeChannelsById.get(id)
   if (!channel) {
     return
   }
-  channel.clients.delete(ctx.session.id)
+  channel.clients.delete(session.id)
   destroyChannel(server, id)
 }

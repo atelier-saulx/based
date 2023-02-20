@@ -28,13 +28,14 @@ export const enableSubscribe: IsAuthorizedHandler<
     return
   }
   installFn(server, ctx, route, id).then((spec) => {
-    if (spec === null || !ctx.session.obs.has(id)) {
+    const session = ctx.session?.getUserData()
+    if (spec === null || !session.obs.has(id)) {
       return
     }
     if (!hasObs(server, id)) {
       createObs(server, route.name, id, payload)
     }
-    ctx.session.subscribe(String(id))
+    // ctx.session.subscribe(String(id)) TODO; check if this is nessecary...
     subscribeWs(server, id, checksum, ctx)
   })
 }
@@ -43,10 +44,11 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
-  if (!ctx.session.unauthorizedObs) {
-    ctx.session.unauthorizedObs = new Set()
+  const session = ctx.session?.getUserData()
+  if (!session.unauthorizedObs) {
+    session.unauthorizedObs = new Set()
   }
-  ctx.session.unauthorizedObs.add({
+  session.unauthorizedObs.add({
     id,
     checksum,
     name: route.name,
@@ -102,8 +104,10 @@ export const subscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  if (ctx.session?.obs.has(id)) {
-    // allready subscribed to this id
+  const session = ctx.session.getUserData()
+
+  if (session.obs.has(id)) {
+    // Allready subscribed to this id
     return true
   }
 
@@ -114,7 +118,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     )
   )
 
-  ctx.session.obs.add(id)
+  session.obs.add(id)
 
   authorize(
     route,

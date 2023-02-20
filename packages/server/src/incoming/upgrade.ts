@@ -1,6 +1,5 @@
 import uws from '@based/uws'
 import { parseAuthState } from '../auth'
-import { WebSocketSession } from '@based/functions'
 import { blockIncomingRequest } from '../security'
 import { BasedServer } from '../server'
 import { getIp } from '../ip'
@@ -43,7 +42,7 @@ const upgradeInternal = (
 
   res.writeStatus('101 Switching Protocols')
   res.upgrade(
-    <WebSocketSession>{
+    {
       query,
       ua,
       ip,

@@ -13,15 +13,17 @@ export const subscribeWs = (
   checksum: number,
   ctx: Context<WebSocketSession>
 ) => {
-  if (!ctx.session) {
+  const session = ctx.session?.getUserData()
+
+  if (!session) {
     return
   }
 
   ctx.session.subscribe(String(id))
   const obs = getObsAndStopRemove(server, id)
 
-  ctx.session.obs.add(id)
-  obs.clients.add(ctx.session.id)
+  session.obs.add(id)
+  obs.clients.add(session.id)
 
   if (obs.error) {
     sendErrorData(ctx, obs.error)

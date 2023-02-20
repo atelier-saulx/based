@@ -20,8 +20,8 @@ export const updateDestroyTimer = (
     server.functions.config.closeAfterIdleTime.channel
   channel.timeTillDestroy = closeAfterIdleTime
   channel.closeAfterIdleTime = closeAfterIdleTime
-  const closeTime = closeAfterIdleTime / 2
-  if (closeAfterIdleTime * 2 < server.channelCleanupCycle) {
+  const closeTime = Math.round(closeAfterIdleTime / 2)
+  if (closeTime < server.channelCleanupCycle) {
     server.channelCleanupCycle = closeTime
   }
 }
@@ -46,6 +46,7 @@ export const destroyChannel = (server: BasedServer, id: number) => {
         `Channel being destroyed while listeners are present ${channel.name} ${channel.id}`,
         channel.payload
       )
+      channel.timeTillDestroy = null
     }
     return
   }

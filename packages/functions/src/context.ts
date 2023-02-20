@@ -3,7 +3,7 @@ import { WebSocket, HttpRequest, HttpResponse } from './uws'
 import { parseQuery } from '@saulx/utils'
 import { BasedFunctionClient } from './client'
 
-export type WebSocketSession = {
+export type WebSocketSession = WebSocket<{
   // State can be used for anything - for us the based class instance
   state?: any
   query: string
@@ -26,7 +26,7 @@ export type WebSocketSession = {
   }>
   // Optimization so we dont need to keep track of websockets outside of uws
   c?: Context<WebSocketSession>
-} & WebSocket
+}>
 
 export type HttpSession = {
   // State can be used for anything - for us the based class instance
@@ -103,15 +103,22 @@ export const isWsContext = (
 
 export const isClientContext = (
   ctx: Context<Session>
-): ctx is Context<WebSocketSession> => {
-  if (ctx.session && 'authState' in ctx.session) {
+): ctx is Context<WebSocketSession | HttpSession> => {
+  if (ctx.session && (isWsSession(ctx.session) || isHttpSession(ctx.session))) {
+    return true
+  }
+  return false
+}
+
+export const isHttpSession = (session: Session): session is HttpSession => {
+  if ('res' in session) {
     return true
   }
   return false
 }
 
 export const isWsSession = (session: Session): session is WebSocketSession => {
-  if (!('res' in session) && 'ip' in session && 'id' in session) {
+  if ('send' in session) {
     return true
   }
   return false
