@@ -16,10 +16,10 @@ export const sendObsWs = (
   }
   if (obs.reusedCache) {
     const prevId = updateId(buffer, obs.id)
-    ctx.session.send(buffer, true, false)
+    ctx.session.ws.send(buffer, true, false)
     buffer.set(prevId, 4)
   } else {
-    ctx.session.send(buffer, true, false)
+    ctx.session.ws.send(buffer, true, false)
   }
 }
 

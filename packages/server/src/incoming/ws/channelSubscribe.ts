@@ -33,14 +33,14 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
     return
   }
   installFn(server, ctx, route, id).then((spec) => {
-    const session = ctx.session?.getUserData()
+    const session = ctx.session
     if (spec === null || !session || !session.obs.has(id)) {
       return
     }
     if (!hasChannel(server, id)) {
       createChannel(server, route.name, id, payload)
     }
-    ctx.session.subscribe(String(id))
+    ctx.session.ws.subscribe(String(id))
     subscribeChannel(server, id, ctx)
   })
 }
@@ -49,7 +49,7 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
 > = (route, server, ctx, payload, id) => {
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
   if (!session.unauthorizedChannels) {
     session.unauthorizedChannels = new Set()
   }
@@ -101,7 +101,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       server.rateLimit.ws
     )
   ) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 
@@ -140,7 +140,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
 
   if (session.obs.has(id)) {
     // Allready subscribed to this id
@@ -190,7 +190,7 @@ export const unsubscribeChannelMessage: BinaryMessageHandler = (
   }
 
   if (unsubscribeChannel(server, id, ctx)) {
-    ctx.session.unsubscribe(String(id))
+    ctx.session.ws.unsubscribe(String(id))
   }
 
   return true

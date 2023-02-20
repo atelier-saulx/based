@@ -89,7 +89,7 @@ export const message = (
     createError(server, ctx, BasedErrorCode.NoBinaryProtocol, {
       buffer: msg,
     })
-    ctx.session.close()
+    ctx.session.ws.close()
     return
   }
 
@@ -101,7 +101,7 @@ export const message = (
     const n = reader(server, ctx, uint8View, next)
     if (n === undefined) {
       // Malformed message close client - maybe a bit too extreme...
-      ctx.session.close()
+      ctx.session.ws.close()
       return
     }
     next = n

@@ -11,7 +11,7 @@ import { BinaryMessageHandler } from './types'
 import { enableChannelSubscribe } from './channelSubscribe'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
-  ctx.session?.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
+  ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
 
 const parse = (payload: string) => {
   try {
@@ -30,7 +30,7 @@ export const authMessage: BinaryMessageHandler = (
   server
 ) => {
   if (rateLimitRequest(server, ctx, 10, server.rateLimit.ws)) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 
@@ -44,7 +44,7 @@ export const authMessage: BinaryMessageHandler = (
 
   const verified = server.auth.verifyAuthState(server.client, ctx, authState)
 
-  const session = ctx.session.getUserData()
+  const session = ctx.session
   session.authState = verified === true ? authState : verified
 
   if (verified !== true && verified.error) {
@@ -96,7 +96,7 @@ export const sendAndVerifyAuthMessage = (
   server: BasedServer,
   ctx: Context<WebSocketSession>
 ) => {
-  const session = ctx.session.getUserData()
+  const session = ctx.session
 
   if (!session) {
     return

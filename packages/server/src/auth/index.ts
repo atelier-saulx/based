@@ -92,6 +92,10 @@ export class BasedAuth {
 
   /** Sets the `authState` on the client. */
   sendAuthState(ctx: Context<WebSocketSession>, authState: AuthState) {
-    ctx.session?.send(encodeAuthResponse(valueToBuffer(authState)), true, false)
+    ctx.session?.ws.send(
+      encodeAuthResponse(valueToBuffer(authState)),
+      true,
+      false
+    )
   }
 }

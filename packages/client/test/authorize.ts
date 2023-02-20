@@ -30,8 +30,8 @@ const setup = async () => {
       },
     },
     auth: {
-      authorize: async (based, context) => {
-        return context.session?.authState.token === 'mock_token'
+      authorize: async (based, ctx) => {
+        return ctx.session?.authState.token === 'mock_token'
       },
     },
   })
