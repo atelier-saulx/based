@@ -35,7 +35,6 @@ export const enableSubscribe: IsAuthorizedHandler<
     if (!hasObs(server, id)) {
       createObs(server, route.name, id, payload)
     }
-    // ctx.session.subscribe(String(id)) TODO; check if this is nessecary...
     subscribeWs(server, id, checksum, ctx)
   })
 }
