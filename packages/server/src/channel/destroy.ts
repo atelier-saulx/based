@@ -1,6 +1,7 @@
 import { isChannelFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
 
+// dont use timer just use counter to remove it over time
 export const destroyChannel = (server: BasedServer, id: number) => {
   const channel = server.activeChannelsById.get(id)
 

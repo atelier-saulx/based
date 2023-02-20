@@ -10,7 +10,7 @@ import {
   createObs,
   destroyObs,
   subscribeNext,
-  getObs,
+  getObsAndStopRemove,
   hasObs,
   start,
   sendObsWs,
@@ -60,7 +60,7 @@ const getFromExisting = (
   ctx: Context<WebSocketSession>,
   checksum: number
 ) => {
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
   if (obs.error) {
     sendObsGetError(server, ctx, id, obs.error)
     return

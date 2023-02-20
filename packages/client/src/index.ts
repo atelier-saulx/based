@@ -90,7 +90,7 @@ export class BasedClient extends Emitter {
   // --------- Channel State
   channelState: ChannelState = new Map()
   channelCleanTimeout?: ReturnType<typeof setTimeout>
-  channelCleanupTime: number = 30e3
+  channelCleanupCycle: number = 30e3
   // --------- Observe State
   observeState: ObserveState = new Map()
   // --------- Get State

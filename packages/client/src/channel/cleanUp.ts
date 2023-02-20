@@ -3,6 +3,7 @@ import { BasedClient } from '..'
 export const cleanUpChannels = (client: BasedClient) => {
   if (!client.channelCleanTimeout) {
     client.channelCleanTimeout = setTimeout(() => {
+      client.channelCleanTimeout = null
       if (client.connected) {
         let keepRunning = false
         client.channelState.forEach((value, key) => {
@@ -21,6 +22,6 @@ export const cleanUpChannels = (client: BasedClient) => {
       } else {
         cleanUpChannels(client)
       }
-    }, 30e3)
+    }, client.channelCleanupCycle)
   }
 }

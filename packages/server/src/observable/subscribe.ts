@@ -3,7 +3,7 @@ import { ActiveObservable, ObservableUpdateFunction } from './types'
 import { extendCache } from './extendCache'
 import { BasedErrorCode, BasedErrorData } from '../error'
 import { sendObsWs } from './send'
-import { getObs } from './get'
+import { getObsAndStopRemove } from './get'
 import { sendErrorData } from '../sendError'
 import { WebSocketSession, Context } from '@based/functions'
 
@@ -18,7 +18,7 @@ export const subscribeWs = (
   }
 
   ctx.session.subscribe(String(id))
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
 
   ctx.session.obs.add(id)
   obs.clients.add(ctx.session.id)
@@ -42,11 +42,9 @@ export const subscribeFunction = (
   id: number,
   update: ObservableUpdateFunction
 ) => {
-  // TODO: FIX THIS
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
   if (obs.functionObserveClients.add(update))
     if (obs.cache) {
-      // will make this better!
       update(
         obs.cache,
         obs.checksum,

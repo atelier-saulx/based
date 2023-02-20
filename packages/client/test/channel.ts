@@ -109,6 +109,7 @@ test.serial.only('Channel publish no subscribe', async (t) => {
     },
   })
   const client = new BasedClient()
+  client.channelCleanupCycle = 100
   await client.connect({
     url: async () => 'ws://localhost:9910',
   })
@@ -117,6 +118,7 @@ test.serial.only('Channel publish no subscribe', async (t) => {
   client.channel('a', { bla: true }).publish(3)
   await wait(500)
   t.deepEqual(r, [1, 2, 3])
+  t.is(client.channelState.size, 0)
   await wait(500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)

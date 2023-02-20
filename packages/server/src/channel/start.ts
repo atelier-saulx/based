@@ -16,23 +16,21 @@ export const startChannel = (
 
   const spec = server.functions.specs[channel.name]
 
+  const payload = channel.payload
+
   if (!spec || !isChannelFunctionSpec(spec)) {
-    console.warn('Cannot find channel function spec!', channel.name)
+    console.warn(
+      'Start channel - cannot find channel function spec',
+      channel.name
+    )
     return
   }
-
-  const payload = channel.payload
 
   if (!fromInstall || channel.isActive) {
     channel.isActive = true
     try {
-      channel.closeFunction = spec.function(
-        server.client,
-        payload,
-        id,
-        (msg) => {
-          updateChannelListener(server, channel, msg)
-        }
+      channel.closeFunction = spec.function(server.client, payload, id, (msg) =>
+        updateChannelListener(server, channel, msg)
       )
     } catch (err) {}
   }

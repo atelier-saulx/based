@@ -20,8 +20,8 @@ import {
   subscribeChannel,
   createChannel,
   unsubscribeChannel,
-  getChannel,
   destroyChannel,
+  extendChannel,
 } from '../../channel'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
@@ -77,11 +77,6 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     return false
   }
 
-  if (isChannelIdRequester) {
-    console.info('ONLY FOR PUBLISH isChannelIdRequester')
-    // just make a map for the id and thats it!
-  }
-
   const route = verifyRoute(
     server,
     ctx,
@@ -96,7 +91,13 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (
-    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+    rateLimitRequest(
+      server,
+      ctx,
+      // Requesting the id multiple times is something that should not happen - so probably a bad actor
+      isChannelIdRequester ? route.rateLimitTokens * 5 : route.rateLimitTokens,
+      server.rateLimit.ws
+    )
   ) {
     ctx.session.close()
     return false
@@ -111,23 +112,16 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (isChannelIdRequester) {
-    if (
-      rateLimitRequest(
-        server,
-        ctx,
-        // Higher amount of rate limit because you are gaming the system if this happens
-        route.rateLimitTokens * 5,
-        server.rateLimit.ws
-      )
-    ) {
-      ctx.session.close()
-      return false
-    }
-
-    // TODO: may need to add authorization here....
+    // TODO: Add authorization here....
     if (!hasChannel(server, id)) {
-      // This has to be done instant
-      createChannel(server, name, id, true)
+      const payload = parsePayload(
+        decodePayload(
+          new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+          false
+        )
+      )
+      // This has to be done instantly so publish can be received immediatly
+      createChannel(server, name, id, payload, true)
       installFn(server, ctx, route, id).then((spec) => {
         if (spec === null) {
           server.activeChannels[name].delete(id)
@@ -137,10 +131,10 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
         }
         destroyChannel(server, id)
       })
-    } else {
-      getChannel(server, id)
-      destroyChannel(server, id)
+      return true
     }
+
+    extendChannel(server, server.activeChannelsById.get(id))
     return true
   }
 

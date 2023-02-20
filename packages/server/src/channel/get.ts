@@ -1,10 +1,13 @@
 import { ActiveChannel } from './types'
 import { BasedServer } from '../server'
-import { extendChannel } from './extend'
+import { stopRemoveChannel } from './extend'
 
-export const getChannel = (server: BasedServer, id: number): ActiveChannel => {
+export const getChannelAndStopRemove = (
+  server: BasedServer,
+  id: number
+): ActiveChannel => {
   const obs = server.activeChannelsById.get(id)
-  extendChannel(obs)
+  stopRemoveChannel(obs)
   return obs
 }
 
