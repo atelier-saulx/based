@@ -3,7 +3,7 @@ import { WebSocket, HttpRequest, HttpResponse } from './uws'
 import { parseQuery } from '@saulx/utils'
 import { BasedFunctionClient } from './client'
 
-export type WebSocketSession = WebSocket<{
+export type WebSocketSession = {
   // State can be used for anything - for us the based class instance
   state?: any
   query: string
@@ -26,7 +26,10 @@ export type WebSocketSession = WebSocket<{
   }>
   // Optimization so we dont need to keep track of websockets outside of uws
   c?: Context<WebSocketSession>
-}>
+  ws?: BasedWebSocket
+}
+
+export type BasedWebSocket = WebSocket<WebSocketSession>
 
 export type HttpSession = {
   // State can be used for anything - for us the based class instance

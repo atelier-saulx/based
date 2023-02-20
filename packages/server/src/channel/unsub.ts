@@ -26,14 +26,14 @@ export const unsubscribeChannel = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  const session = ctx.session.getUserData()
+  const session = ctx.session
   if (!session) {
     return
   }
   if (!session.obs.has(id)) {
     return
   }
-  ctx.session.unsubscribe(String(id))
+  ctx.session.ws.unsubscribe(String(id))
   const channel = server.activeChannelsById.get(id)
   session.obs.delete(id)
   if (!channel) {
@@ -50,7 +50,7 @@ export const unsubscribeChannelIgnoreClient = (
   id: number,
   ctx: Context<WebSocketSession>
 ) => {
-  const session = ctx.session.getUserData()
+  const session = ctx.session
   if (!session) {
     return
   }

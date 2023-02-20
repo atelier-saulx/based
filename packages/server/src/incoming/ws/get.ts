@@ -45,7 +45,7 @@ const sendGetData = (
   if (checksum === 0) {
     sendObsWs(ctx, obs.cache, obs)
   } else if (checksum === obs.checksum) {
-    ctx.session.send(encodeGetResponse(id), true, false)
+    ctx.session.ws.send(encodeGetResponse(id), true, false)
   } else if (obs.diffCache && obs.previousChecksum === checksum) {
     sendObsWs(ctx, obs.diffCache, obs)
   } else {
@@ -90,7 +90,7 @@ const isAuthorized: IsAuthorizedHandler<
     if (spec === null) {
       return
     }
-    const session = ctx.session?.getUserData()
+    const session = ctx.session
     if (!session) {
       return
     }
@@ -116,7 +116,7 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
@@ -163,7 +163,7 @@ export const getMessage: BinaryMessageHandler = (
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
   ) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 

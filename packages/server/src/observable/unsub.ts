@@ -23,16 +23,16 @@ export const unsubscribeWs = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
   if (!session || !session.obs.has(id)) {
     return
   }
+  ctx.session.ws.unsubscribe(String(id))
   const obs = server.activeObservablesById.get(id)
   session.obs.delete(id)
   if (!obs) {
     return
   }
-  ctx.session.unsubscribe(String(id))
   if (obs.clients.delete(session.id)) {
     destroyObs(server, id)
     return true
@@ -44,7 +44,7 @@ export const unsubscribeWsIgnoreClient = (
   id: number,
   ctx: Context<WebSocketSession>
 ): true | void => {
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
   if (!session) {
     return
   }

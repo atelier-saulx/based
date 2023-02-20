@@ -42,7 +42,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
   ) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 

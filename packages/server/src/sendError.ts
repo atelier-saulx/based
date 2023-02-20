@@ -58,8 +58,11 @@ export function sendErrorData(
   if (isHttpContext(ctx)) {
     sendHttpErrorData(errorData, ctx)
   } else if (isWsSession(ctx.session)) {
-    const ws: WebSocketSession = ctx.session
-    ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
+    ctx.session.ws.send(
+      encodeErrorResponse(valueToBuffer(errorData)),
+      true,
+      false
+    )
   }
 }
 
@@ -76,7 +79,10 @@ export function sendError<T extends BasedErrorCode>(
     return sendHttpError(server, ctx, basedCode, payload)
   } else if (isWsSession(ctx.session)) {
     const errorData = createError(server, ctx, basedCode, payload)
-    const ws: WebSocketSession = ctx.session
-    ws.send(encodeErrorResponse(valueToBuffer(errorData)), true, false)
+    ctx.session.ws.send(
+      encodeErrorResponse(valueToBuffer(errorData)),
+      true,
+      false
+    )
   }
 }

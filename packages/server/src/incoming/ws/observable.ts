@@ -28,7 +28,7 @@ export const enableSubscribe: IsAuthorizedHandler<
     return
   }
   installFn(server, ctx, route, id).then((spec) => {
-    const session = ctx.session?.getUserData()
+    const session = ctx.session
     if (spec === null || !session.obs.has(id)) {
       return
     }
@@ -43,7 +43,7 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
-  const session = ctx.session?.getUserData()
+  const session = ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
   }
@@ -91,7 +91,7 @@ export const subscribeMessage: BinaryMessageHandler = (
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
   ) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 
@@ -103,7 +103,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  const session = ctx.session.getUserData()
+  const session = ctx.session
 
   if (session.obs.has(id)) {
     // Allready subscribed to this id
@@ -153,7 +153,7 @@ export const unsubscribeMessage: BinaryMessageHandler = (
   }
 
   if (unsubscribeWs(server, id, ctx)) {
-    ctx.session.unsubscribe(String(id))
+    ctx.session.ws.unsubscribe(String(id))
   }
 
   return true

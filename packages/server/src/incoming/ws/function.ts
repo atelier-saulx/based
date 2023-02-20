@@ -30,8 +30,7 @@ const sendFunction: IsAuthorizedHandler<
       if (v && (v instanceof Duplex || v instanceof Readable)) {
         v = await readStream(v)
       }
-
-      ctx.session?.send(
+      ctx.session?.ws.send(
         encodeFunctionResponse(requestId, valueToBuffer(v)),
         true,
         false
@@ -80,7 +79,7 @@ export const functionMessage: BinaryMessageHandler = (
   if (
     rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
   ) {
-    ctx.session.close()
+    ctx.session.ws.close()
     return false
   }
 

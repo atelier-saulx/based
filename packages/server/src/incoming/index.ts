@@ -5,7 +5,7 @@ import { message } from './ws'
 import { unsubscribeWsIgnoreClient } from '../observable'
 import { unsubscribeChannelIgnoreClient } from '../channel'
 import { httpHandler } from './http'
-import { WebSocketSession, Context } from '@based/functions'
+import { WebSocketSession, Context, BasedWebSocket } from '@based/functions'
 import { sendAndVerifyAuthMessage } from './ws/auth'
 
 export default (
@@ -51,12 +51,13 @@ export default (
       message(server, session.c, data, isBinary)
     },
 
-    open: (ws: WebSocketSession) => {
+    open: (ws: BasedWebSocket) => {
       if (ws) {
-        const ctx: Context<WebSocketSession> = {
-          session: ws,
-        }
         const session = ws.getUserData()
+        const ctx: Context<WebSocketSession> = {
+          session,
+        }
+        session.ws = ws
         session.c = ctx
         wsListeners.open(ctx)
         if (session.authState.token || session.authState.refreshToken) {
@@ -64,7 +65,7 @@ export default (
         }
       }
     },
-    close: (ws: WebSocketSession) => {
+    close: (ws: BasedWebSocket) => {
       const session = ws.getUserData()
       session.obs.forEach((id) => {
         if (unsubscribeWsIgnoreClient(server, id, session.c)) {
@@ -75,6 +76,7 @@ export default (
       wsListeners.close(session.c)
       // Looks really ugly but same impact on memory and GC as using the ws directly
       // and better for dc's when functions etc are in progress
+      session.ws = null
       session.c.session = null
       session.c = null
     },
