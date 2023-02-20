@@ -62,6 +62,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
   len,
+  // isDeflate is used differently here
   isChannelIdRequester,
   ctx,
   server
@@ -75,8 +76,6 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   if (!name || !id) {
     return false
   }
-
-  // isDeflate is used to actualy subscribe
 
   if (isChannelIdRequester) {
     console.info('ONLY FOR PUBLISH isChannelIdRequester')
@@ -112,8 +111,22 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (isChannelIdRequester) {
+    if (
+      rateLimitRequest(
+        server,
+        ctx,
+        // Higher amount of rate limit because you are gaming the system if this happens
+        route.rateLimitTokens * 5,
+        server.rateLimit.ws
+      )
+    ) {
+      ctx.session.close()
+      return false
+    }
+
+    // TODO: may need to add authorization here....
     if (!hasChannel(server, id)) {
-      // this has to be done instant
+      // This has to be done instant
       createChannel(server, name, id, true)
       installFn(server, ctx, route, id).then((spec) => {
         if (spec === null) {
@@ -132,7 +145,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (ctx.session?.obs.has(id)) {
-    // allready subscribed to this id
+    // Allready subscribed to this id
     return true
   }
 
