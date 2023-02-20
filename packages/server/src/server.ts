@@ -37,12 +37,13 @@ export type ServerOptions = {
   client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
   ws?: {
-    open: (client: Context) => void
-    close: (client: Context) => void
+    maxBackpressureSize?: number
+    open?: (client: Context) => void
+    close?: (client: Context) => void
   }
   http?: {
-    open: (client: Context) => void
-    close: (client: Context) => void
+    open?: (client: Context) => void
+    close?: (client: Context) => void
   }
 }
 

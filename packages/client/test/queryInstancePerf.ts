@@ -37,6 +37,12 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
 
   let subCnt = 0
 
+  console.info(
+    `Mem before ${
+      Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    } MB`
+  )
+
   const closers: (() => void)[] = []
   for (let i = 0; i < 1e5; i++) {
     closers.push(
@@ -49,6 +55,12 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
         })
     )
   }
+
+  console.info(
+    `Mem while active ${
+      Math.round((process.memoryUsage().heapUsed / 1024 / 1024) * 100) / 100
+    } MB`
+  )
 
   await wait(2500)
   closers[0]()

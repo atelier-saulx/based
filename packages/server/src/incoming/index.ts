@@ -10,7 +10,7 @@ import { sendAndVerifyAuthMessage } from './ws/auth'
 
 export default (
   server: BasedServer,
-  { key, cert, port, ws: wsListeners, disableRest }: ServerOptions
+  { key, cert, port, ws: wsOptions = {}, disableRest }: ServerOptions
 ) => {
   const app =
     key && cert
@@ -25,18 +25,23 @@ export default (
     server.port = port
   }
 
-  if (!wsListeners) {
-    wsListeners = {
-      open: () => undefined,
-      close: () => undefined,
-    }
+  if (!wsOptions.close) {
+    wsOptions.close = () => undefined
+  }
+
+  if (!wsOptions.open) {
+    wsOptions.open = () => undefined
+  }
+
+  if (!wsOptions.maxBackpressureSize) {
+    wsOptions.maxBackpressureSize = 1024 * 1024 * 10
   }
 
   app.ws('/*', {
     maxPayloadLength: 1024 * 1024 * 20, // 10 mb max payload
     idleTimeout: 100,
-    maxBackpressure: 1024 * 1024 * 10,
-    closeOnBackpressureLimit: 1024 * 1024 * 10,
+    maxBackpressure: wsOptions.maxBackpressureSize,
+    closeOnBackpressureLimit: wsOptions.maxBackpressureSize,
     // No compression handled in the protocol
     // compression: uws.SHARED_COMPRESSOR,
     upgrade: server.auth?.authorizeConnection
@@ -59,7 +64,7 @@ export default (
         }
         session.ws = ws
         session.c = ctx
-        wsListeners.open(ctx)
+        wsOptions.open(ctx)
         if (session.authState.token || session.authState.refreshToken) {
           sendAndVerifyAuthMessage(server, ctx)
         }
@@ -73,7 +78,7 @@ export default (
           unsubscribeChannelIgnoreClient(server, id, session.c)
         }
       })
-      wsListeners.close(session.c)
+      wsOptions.close(session.c)
       // Looks really ugly but same impact on memory and GC as using the ws directly
       // and better for dc's when functions etc are in progress
       session.ws = null
