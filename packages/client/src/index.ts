@@ -34,6 +34,8 @@ import {
 
 export * from './authState/parseAuthState'
 
+export { AuthState, BasedQuery }
+
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
@@ -166,11 +168,11 @@ export class BasedClient extends Emitter {
   // --------- Connect
   public async connect(opts?: BasedOpts) {
     if (opts) {
-      this.url = await getUrlFromOpts(opts)
       if (this.opts) {
         this.disconnect()
       }
       this.opts = opts
+      this.url = await getUrlFromOpts(opts)
     }
     if (!this.opts) {
       console.error('Configure opts to connect')

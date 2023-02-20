@@ -12,6 +12,7 @@ export type BasedOpts = {
   name?: string
   key?: string
   url?: string | (() => Promise<string>)
+  discoveryUrls?: string[]
   params?: {
     [key: string]: string | number
   }
