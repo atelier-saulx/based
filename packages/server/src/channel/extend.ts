@@ -1,16 +1,14 @@
 import { ActiveChannel } from './types'
-import { destroyChannel } from './destroy'
 import { BasedServer } from '../server'
 
 export const stopRemoveChannel = (channel: ActiveChannel) => {
-  if (channel.beingDestroyed) {
-    clearTimeout(channel.beingDestroyed)
-    channel.beingDestroyed = null
+  if (channel.timeTillDestroy) {
+    channel.timeTillDestroy = null
   }
 }
 
 export const extendChannel = (server: BasedServer, channel: ActiveChannel) => {
-  // TODO: optmize this
-  stopRemoveChannel(channel)
-  destroyChannel(server, channel.id)
+  if (channel.closeAfterIdleTime && channel.timeTillDestroy !== null) {
+    channel.timeTillDestroy = channel.closeAfterIdleTime
+  }
 }

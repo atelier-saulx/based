@@ -24,6 +24,7 @@ export const createChannel = (
     name,
     isDestroyed: false,
     isActive: false,
+    timeTillDestroy: null,
   }
 
   if (!server.activeChannels[name]) {

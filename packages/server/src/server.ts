@@ -91,6 +91,10 @@ export class BasedServer {
 
   public activeObservablesById: Map<number, ActiveObservable> = new Map()
 
+  public channelCleanTimeout: NodeJS.Timeout
+
+  public channelCleanupCycle: number = 30e3
+
   public activeChannels: {
     [name: string]: Map<number, ActiveChannel>
   } = {}
