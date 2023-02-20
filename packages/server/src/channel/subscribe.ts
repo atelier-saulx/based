@@ -15,16 +15,13 @@ export const subscribeChannel = (
     return
   }
   ctx.session.subscribe(String(id))
-  const obs = getChannelAndStopRemove(server, id)
+  const channel = getChannelAndStopRemove(server, id)
   ctx.session.obs.add(id)
-  obs.clients.add(ctx.session.id)
+  channel.clients.add(ctx.session.id)
 }
 
 export const subscribeChannelFunction = (
   server: BasedServer,
   id: number,
   update: ChannelMessageFunction
-) => {
-  const obs = getChannelAndStopRemove(server, id)
-  obs.functionChannelClients.add(update)
-}
+) => getChannelAndStopRemove(server, id).functionChannelClients.add(update)
