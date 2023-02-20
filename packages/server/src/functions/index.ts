@@ -289,6 +289,10 @@ export class BasedFunctions {
 
     this.beingUninstalled[name] = true
 
+    if (spec.uninstall) {
+      await spec.uninstall()
+    }
+
     if (
       await this.config.uninstall({
         server: this.server,
