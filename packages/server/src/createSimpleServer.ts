@@ -56,7 +56,6 @@ export async function createSimpleServer(
   sharedSocket?: boolean
 ): Promise<BasedServer> {
   const { functions, queryFunctions, channels } = props
-  console.log('WTF')
   const functionStore: {
     [key: string]: BasedSpec & {
       maxPayloadSize: number
@@ -186,7 +185,6 @@ export async function createSimpleServer(
             }
           }
         }
-        console.log({ path, name }, functionStore[name] || rootFn || null)
         return functionStore[name] || rootFn || null
       },
     },
