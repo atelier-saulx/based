@@ -239,7 +239,7 @@ export interface HttpRequest {
   /** Loops over all headers. */
   forEach(cb: (key: string, value: string) => void): void
   /** Setting yield to true is to say that this route handler did not handle the route, causing the router to continue looking for a matching route handler, or fail. */
-  setYield(yield: boolean): HttpRequest
+  setYield(y: boolean): HttpRequest
 }
 
 /** A structure holding settings and handlers for a WebSocket URL route handler. */
