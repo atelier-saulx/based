@@ -7,18 +7,18 @@ import { BasedError, BasedErrorCode } from '../src/types/error'
 const setup = async () => {
   const coreClient = new BasedClient()
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       checkPayload: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: (based, payload, update) => {
           update(payload.power)
           return () => {}
         },
       },
       counter: {
-        memCacheTimeout: 0,
+        closeAfterIdleTime: 0,
         function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)
@@ -31,7 +31,7 @@ const setup = async () => {
         },
       },
       'counter-cached': {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)
@@ -154,7 +154,7 @@ test.serial('authorize get', async (t) => {
 test.serial('getWhen', async (t) => {
   const client = new BasedClient()
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       flap: (based, _payload, update) => {

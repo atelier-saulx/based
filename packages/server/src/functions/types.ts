@@ -3,10 +3,44 @@ import {
   BasedFunction,
   BasedChannelFunction,
   HttpResponse,
+  UninstallFunction,
   BasedStreamFunction,
   BasedChannelPublishFunction,
 } from '@based/functions'
 import { BasedServer } from '../server'
+
+export type FunctionConfig = {
+  /** Default number to close channels & queries when no subscribers are active in ms */
+  closeAfterIdleTime?: {
+    query: number
+    channel: number
+  }
+  /** Default time to uinstall function after it has been idle in ms */
+  uninstallAfterIdleTime?: number
+  /** Default max payload sizes in bytes */
+  maxPayLoadSizeDefaults?: {
+    stream: number
+    query: number
+    function: number
+    channel: number
+  }
+  route: (opts: { server: BasedServer; name?: string; path?: string }) =>
+    | null
+    | (BasedFunctionRoute & {
+        maxPayloadSize: number
+        rateLimitTokens: number
+      })
+  install: (opts: {
+    server: BasedServer
+    name: string
+    function?: BasedSpec
+  }) => Promise<null | BasedSpec>
+  uninstall: (opts: {
+    server: BasedServer
+    name: string
+    function: BasedSpec
+  }) => Promise<boolean>
+}
 
 type Route = {
   /** Function name */
@@ -45,27 +79,29 @@ export type BasedChannelFunctionRoute = Route & {
 }
 
 export type BasedInstallableFunctionSpec = {
-  /** Hash of the BasedFunction */
+  /** Version hash of the BasedFunction */
   checksum: number
-  /** in ms */
-  idleTimeout?: number
-  /** in ms */
+  /** Uinstall function after it has been idle, in ms */
+  uninstallAfterIdleTime?: number
+  /** In ms */
   timeoutCounter?: number
+  /** Hook that fires on uninstall of the function e.g. to clean up database connections */
+  uninstall?: UninstallFunction
 }
 
 export type BasedQueryFunctionSpec = {
   function: BasedQueryFunction
-  /** How long should this subscription remain in memory after all subscribers are gone, in ms */
-  memCacheTimeout?: number
+  /** How long should the query function remain active after all subscribers are gone, in ms */
+  closeAfterIdleTime?: number
   /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
 } & BasedQueryFunctionRoute &
   BasedInstallableFunctionSpec
 
 export type BasedStreamFunctionSpec = {
-  // for streams no custom http response is possible scince they get multiplexed
+  // For streams no custom http response is possible scince they get multiplexed
   function: BasedStreamFunction
-  /** in ms */
+  /** Maximum allowed execution time, in ms */
   maxExecTime?: number
 } & BasedStreamFunctionRoute &
   BasedInstallableFunctionSpec
@@ -74,7 +110,7 @@ export type BasedFunctionSpec = {
   function: BasedFunction
   /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
   httpResponse?: HttpResponse
-  /** in ms */
+  /** Maximum allowed execution time, in ms */
   maxExecTime?: number
 } & BasedFunctionRoute &
   BasedInstallableFunctionSpec
@@ -83,6 +119,8 @@ export type BasedChannelFunctionSpec = {
   function: BasedChannelFunction
   /** Publish allows custom publish functions to channels */
   publish: BasedChannelPublishFunction
+  /** How long should the channel remain active after all subscribers ae gone, in ms */
+  closeAfterIdleTime?: number
 } & BasedChannelFunctionRoute &
   BasedInstallableFunctionSpec
 
@@ -100,34 +138,6 @@ export type BasedSpec<R extends BasedRoute = BasedRoute> =
     : R extends BasedStreamFunctionRoute
     ? BasedStreamFunctionSpec
     : BasedFunctionSpec
-
-export type FunctionConfig = {
-  /** in ms */
-  memCacheTimeout?: number
-  /** in ms */
-  idleTimeout?: number
-  maxPayLoadSizeDefaults?: {
-    stream: number
-    query: number
-    function: number
-  }
-  route: (opts: { server: BasedServer; name?: string; path?: string }) =>
-    | null
-    | (BasedFunctionRoute & {
-        maxPayloadSize: number
-        rateLimitTokens: number
-      })
-  install: (opts: {
-    server: BasedServer
-    name: string
-    function?: BasedSpec
-  }) => Promise<null | BasedSpec>
-  uninstall: (opts: {
-    server: BasedServer
-    name: string
-    function: BasedSpec
-  }) => Promise<boolean>
-}
 
 // ---------- specs -------------
 export function isChannelFunctionSpec(

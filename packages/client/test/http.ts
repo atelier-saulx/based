@@ -15,7 +15,7 @@ const gzip = promisify(zlib.gzip)
 
 test.serial('functions (custom headers)', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
@@ -74,8 +74,8 @@ test.serial('functions (over http)', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 1e3,
+      closeAfterIdleTime: { query: 3e3, channel: 3e3 },
+      uninstallAfterIdleTime: 1e3,
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -148,8 +148,8 @@ test.serial('get (over http)', async (t) => {
       name: 'hello',
       maxPayloadSize: 1e6,
       rateLimitTokens: 1,
-      memCacheTimeout: 3e3,
-      idleTimeout: 1e3,
+      closeAfterIdleTime: 3e3,
+      uninstallAfterIdleTime: 1e3,
       checksum: 1,
       query: true,
       function: async (based, payload, update) => {
@@ -168,8 +168,8 @@ test.serial('get (over http)', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
+      closeAfterIdleTime: { query: 3e3, channel: 3e3 },
+      uninstallAfterIdleTime: 3e3,
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -256,9 +256,8 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   const server = await createServer({
     port: 9910,
     functions: {
-      memCacheTimeout: 3e3,
-      idleTimeout: 3e3,
-
+      closeAfterIdleTime: { query: 3e3, channel: 3e3 },
+      uninstallAfterIdleTime: 3e3,
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -343,7 +342,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 
 test.serial('auth', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       flap: async () => {

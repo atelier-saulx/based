@@ -10,11 +10,11 @@ test.serial('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload }) => {
@@ -54,11 +54,11 @@ test.serial('stream functions - streamContents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload, mimeType, size }) => {
@@ -125,11 +125,11 @@ test.serial('stream functions - streamContents', async (t) => {
 
 test.serial('stream functions - streamContents error', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async () => {
@@ -182,11 +182,11 @@ test.serial('stream functions - streamContents error', async (t) => {
 
 test.serial('stream functions - path', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, x) => {
@@ -217,11 +217,11 @@ test.serial('stream functions - path', async (t) => {
 
 test.serial('stream functions - path json', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, x) => {

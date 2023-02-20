@@ -12,7 +12,7 @@ const setup = async () => {
   const client = new BasedClient()
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: {

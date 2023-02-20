@@ -6,6 +6,7 @@ export type ActiveChannel = {
   payload: any
   functionChannelClients: Set<ChannelMessageFunction>
   clients: Set<number>
+  isActive: boolean
   isDestroyed: boolean
   beingDestroyed?: NodeJS.Timeout
   closeFunction?: () => void

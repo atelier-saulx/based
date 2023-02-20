@@ -11,6 +11,7 @@ import {
 import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
 import { destroyObs, start } from '../observable'
+import { destroyChannel, startChannel } from '../channel'
 export * from './types'
 
 export class BasedFunctions {
@@ -28,13 +29,13 @@ export class BasedFunctions {
     stream: number
     query: number
     function: number
+    channel: number
   } = {
     stream: 5e6,
     query: 2500,
     function: 20e3,
+    channel: 500,
   }
-
-  // channel id map
 
   paths: {
     [path: string]: string
@@ -87,11 +88,14 @@ export class BasedFunctions {
       this.config = config
     }
 
-    if (this.config.idleTimeout === undefined) {
-      this.config.idleTimeout = 60e3 // 1 min
+    if (this.config.uninstallAfterIdleTime === undefined) {
+      this.config.uninstallAfterIdleTime = 60e3 // 1 min
     }
-    if (this.config.memCacheTimeout === undefined) {
-      this.config.memCacheTimeout = 3e3
+    if (this.config.closeAfterIdleTime === undefined) {
+      this.config.closeAfterIdleTime = {
+        query: 3e3, // 3 seconds
+        channel: 60e3, // 3 1 Min
+      }
     }
 
     if (this.unregisterTimeout) {
@@ -186,13 +190,15 @@ export class BasedFunctions {
       return false
     }
 
-    if (!spec.idleTimeout) {
-      spec.idleTimeout = this.config.idleTimeout
+    if (!spec.uninstallAfterIdleTime) {
+      spec.uninstallAfterIdleTime = this.config.uninstallAfterIdleTime
     }
 
     if (spec.timeoutCounter === undefined) {
       spec.timeoutCounter =
-        spec.idleTimeout === 0 ? -1 : Math.ceil(spec.idleTimeout / 1e3)
+        spec.uninstallAfterIdleTime === 0
+          ? -1
+          : Math.ceil(spec.uninstallAfterIdleTime / 1e3)
     }
 
     if (spec.path) {
@@ -200,7 +206,9 @@ export class BasedFunctions {
     }
 
     if (!spec.maxPayloadSize) {
-      if (isQueryFunctionSpec(spec)) {
+      if (isChannelFunctionSpec(spec)) {
+        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.channel
+      } else if (isQueryFunctionSpec(spec)) {
         spec.maxPayloadSize = this.maxPayLoadSizeDefaults.query
       } else if (isStreamFunctionSpec(spec)) {
         spec.maxPayloadSize = this.maxPayLoadSizeDefaults.stream
@@ -218,7 +226,22 @@ export class BasedFunctions {
     // @ts-ignore maxpayload and rlimit tokens added on line 184...
     this.specs[spec.name] = spec
 
-    if (this.specs[spec.name] && this.server.activeObservables[spec.name]) {
+    if (this.specs[spec.name] && this.server.activeChannels[spec.name]) {
+      if (!isChannelFunctionSpec(spec)) {
+        for (const [id] of this.server.activeChannels[spec.name]) {
+          destroyChannel(this.server, id)
+        }
+      } else {
+        if (previousChecksum !== spec.checksum) {
+          for (const [id] of this.server.activeChannels[spec.name]) {
+            startChannel(this.server, id, true)
+          }
+        }
+      }
+    } else if (
+      this.specs[spec.name] &&
+      this.server.activeObservables[spec.name]
+    ) {
       if (!isQueryFunctionSpec(spec)) {
         for (const [id] of this.server.activeObservables[spec.name]) {
           destroyObs(this.server, id)

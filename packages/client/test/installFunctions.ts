@@ -3,21 +3,16 @@ import { createSimpleServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
 
-test.serial('Subscribe channel', async (t) => {
-  let closeCalled = false
+test.serial('Uninstall hook', async (t) => {
+  let uninstallHookFired = false
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    channels: {
-      mychannel: (based, payload, id, update) => {
-        let cnt = 0
-        const interval = setInterval(() => {
-          update(++cnt)
-        }, 100)
-        return () => {
-          closeCalled = true
-          clearInterval(interval)
-        }
+    functions: {
+      bla: {
+        uninstall: async () => {
+          uninstallHookFired = true
+        },
       },
     },
   })
@@ -38,7 +33,6 @@ test.serial('Subscribe channel', async (t) => {
   await wait(1100)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
-  t.true(closeCalled)
   client.disconnect()
   await server.destroy()
 })

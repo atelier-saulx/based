@@ -36,11 +36,10 @@ export const destroyObs = (server: BasedServer, id: number) => {
   }
 
   if (!obs.beingDestroyed) {
-    const memCacheTimeout =
-      spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
-
+    const closeAfterIdleTime =
+      spec.closeAfterIdleTime ??
+      server.functions.config.closeAfterIdleTime.query
     obs.beingDestroyed = setTimeout(() => {
-      // console.info(`   Destroy observable ${obs.name} ${obs.id}`, obs.payload)
       obs.beingDestroyed = null
       if (!server.activeObservables[obs.name]) {
         console.info('Trying to destroy a removed observable function')
@@ -56,6 +55,6 @@ export const destroyObs = (server: BasedServer, id: number) => {
       if (obs.closeFunction) {
         obs.closeFunction()
       }
-    }, memCacheTimeout)
+    }, closeAfterIdleTime)
   }
 }

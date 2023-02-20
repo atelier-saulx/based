@@ -84,11 +84,11 @@ test.serial('nested functions (raw api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       obsWithNestedLvl2: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: (based, payload, update) => {
           return observe(
             server,
@@ -101,7 +101,7 @@ test.serial('nested functions (raw api)', async (t) => {
         },
       },
       obsWithNested: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           return observe(
             server,
@@ -114,7 +114,7 @@ test.serial('nested functions (raw api)', async (t) => {
         },
       },
       objectCounter: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           const largeThing: { bla: any[] } = { bla: [] }
           for (let i = 0; i < 1e4; i++) {
@@ -136,7 +136,7 @@ test.serial('nested functions (raw api)', async (t) => {
         },
       },
       counter: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)
@@ -171,17 +171,17 @@ test.serial('nested functions (fancy api)', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       obsWithNestedLvl2: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: (based, payload, update) => {
           return based.query('obsWithNested', 'json').subscribe(update)
         },
       },
       obsWithNested: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           return based
             .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
@@ -189,7 +189,7 @@ test.serial('nested functions (fancy api)', async (t) => {
         },
       },
       objectCounter: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           const largeThing: { bla: any[] } = { bla: [] }
           for (let i = 0; i < 1e4; i++) {
@@ -211,7 +211,7 @@ test.serial('nested functions (fancy api)', async (t) => {
         },
       },
       counter: {
-        memCacheTimeout: 1e3,
+        closeAfterIdleTime: 1e3,
         function: async (based, payload, update) => {
           let cnt = 0
           update(cnt)

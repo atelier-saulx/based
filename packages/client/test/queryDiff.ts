@@ -7,7 +7,7 @@ test.serial('observablesDiff', async (t) => {
   const coreClient = new BasedClient()
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       counter: async (based, payload, update) => {

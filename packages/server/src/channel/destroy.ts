@@ -32,11 +32,10 @@ export const destroyChannel = (server: BasedServer, id: number) => {
   }
 
   if (!channel.beingDestroyed) {
-    // const memCacheTimeout =
-    //   spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
-
+    const closeAfterIdleTime =
+      spec.closeAfterIdleTime ??
+      server.functions.config.closeAfterIdleTime.channel
     channel.beingDestroyed = setTimeout(() => {
-      // console.info(`   Destroy observable ${obs.name} ${obs.id}`, obs.payload)
       channel.beingDestroyed = null
       if (!server.activeChannels[channel.name]) {
         console.info('Trying to destroy a removed channel function')
@@ -50,8 +49,9 @@ export const destroyChannel = (server: BasedServer, id: number) => {
       server.activeChannelsById.delete(id)
       channel.isDestroyed = true
       if (channel.closeFunction) {
+        channel.isActive = false
         channel.closeFunction()
       }
-    }, 1e3) // later
+    }, closeAfterIdleTime) // later
   }
 }

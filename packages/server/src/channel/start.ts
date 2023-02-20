@@ -2,7 +2,11 @@ import { BasedServer } from '../server'
 import { isChannelFunctionSpec } from '../functions'
 import { updateChannelListener } from './update'
 
-export const start = (server: BasedServer, id: number) => {
+export const startChannel = (
+  server: BasedServer,
+  id: number,
+  fromInstall?: boolean
+) => {
   const channel = server.activeChannelsById.get(id)
 
   if (channel.closeFunction) {
@@ -19,13 +23,17 @@ export const start = (server: BasedServer, id: number) => {
 
   const payload = channel.payload
 
-  try {
-    channel.closeFunction = spec.function(server.client, payload, id, (msg) => {
-      updateChannelListener(server, channel, msg)
-    })
-  } catch (err) {
-    if (!channel.isDestroyed) {
-      console.warn('is wrong')
-    }
+  if (!fromInstall || channel.isActive) {
+    channel.isActive = true
+    try {
+      channel.closeFunction = spec.function(
+        server.client,
+        payload,
+        id,
+        (msg) => {
+          updateChannelListener(server, channel, msg)
+        }
+      )
+    } catch (err) {}
   }
 }

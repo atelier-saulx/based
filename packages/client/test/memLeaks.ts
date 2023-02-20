@@ -5,7 +5,7 @@ import { wait } from '@saulx/utils'
 
 test.serial('mem tests', async (t) => {
   await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: async () => {
