@@ -52,15 +52,13 @@ export class BasedChannel<P = any, K = any> {
   }
 
   publish(message: K): void {
-    // perf optmization
     if (!this.client.channelState.has(this.id)) {
+      // This is a perf optmization to not send payload + name
       this.client.channelState.set(this.id, {
         payload: this.payload,
         name: this.name,
         subscribers: new Map(),
-        // last publish?
       })
-      console.info('??? add identiefier...')
       addChannelPublishIdentifier(this.client, this.name, this.id, this.payload)
     }
     addToPublishQueue(this.client, this.id, message)
