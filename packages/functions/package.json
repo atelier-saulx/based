@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts",
-    "watch": "npm run build -- --watch",
+    "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "sideEffects": false,
