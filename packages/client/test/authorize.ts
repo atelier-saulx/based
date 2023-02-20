@@ -7,7 +7,7 @@ import { wait } from '@saulx/utils'
 const setup = async () => {
   const client = new BasedClient()
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       hello: async (based, payload) => {
@@ -78,7 +78,7 @@ test.serial('authorize observe', async (t) => {
 
   const { client, server } = await setup()
 
-  let counter: NodeJS.Timer
+  let counter: ReturnType<typeof setTimeout>
 
   t.teardown(() => {
     client.disconnect()
@@ -134,7 +134,7 @@ test.serial('authorize after observe', async (t) => {
   const token = 'mock_token'
 
   const { client, server } = await setup()
-  let counter: NodeJS.Timer
+  let counter: ReturnType<typeof setTimeout>
 
   t.teardown(() => {
     client.disconnect()

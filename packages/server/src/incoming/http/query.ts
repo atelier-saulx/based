@@ -15,7 +15,7 @@ import { compress } from '../../compress'
 import {
   createObs,
   destroyObs,
-  getObs,
+  getObsAndStopRemove,
   hasObs,
   sendObsGetError,
   subscribeNext,
@@ -184,7 +184,7 @@ const getFromExisting = (
   spec: BasedQueryFunctionSpec,
   checksum: number
 ) => {
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
 
   if (obs.error) {
     sendObsGetError(server, ctx, obs.id, obs.error)

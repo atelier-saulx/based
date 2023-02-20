@@ -7,6 +7,7 @@ import {
   isQueryFunctionSpec,
   isStreamFunctionSpec,
   BasedChannelFunctionSpec,
+  isChannelFunctionSpec,
 } from './functions'
 import {
   BasedQueryFunction,
@@ -39,11 +40,15 @@ export type SimpleServerOptions = {
   channels?: {
     [key: string]: BasedChannelFunction | Partial<BasedChannelFunctionSpec>
   }
+  /* Prevents printing server logs */
   silent?: boolean
-  /* default time to keep query results in mem cache */
-  memCacheTimeout?: number
-  /* time to uninstall funcitons defaults to endless */
-  idleTimeout?: number
+  /* Default time to keep channels and queries open for a while after all subscribers are gone */
+  closeAfterIdleTime?: {
+    channel: number
+    query: number
+  }
+  /* Time to uninstall functions defaults to endless */
+  uninstallAfterIdleTime?: number
 } & Omit<ServerOptions, 'functions'>
 
 export async function createSimpleServer(
@@ -152,8 +157,8 @@ export async function createSimpleServer(
   const properProps: ServerOptions = {
     ...props,
     functions: {
-      memCacheTimeout: props.memCacheTimeout || 3e3,
-      idleTimeout: props.idleTimeout || -1, // never needs to uninstall
+      closeAfterIdleTime: props.closeAfterIdleTime,
+      uninstallAfterIdleTime: props.uninstallAfterIdleTime || -1, // never needs to uninstall
       uninstall:
         props.uninstall ||
         (async () => {
@@ -204,7 +209,9 @@ export async function createSimpleServer(
   }
 
   for (const name in functionStore) {
-    const obs = isQueryFunctionSpec(functionStore[name])
+    const obs = isChannelFunctionSpec(functionStore[name])
+      ? '[channel]'
+      : isQueryFunctionSpec(functionStore[name])
       ? '[query]'
       : isStreamFunctionSpec(functionStore[name])
       ? '[stream]'

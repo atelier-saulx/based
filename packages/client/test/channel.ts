@@ -6,7 +6,7 @@ import { wait } from '@saulx/utils'
 test.serial('Subscribe channel', async (t) => {
   let closeCalled = false
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     channels: {
       mychannel: (based, payload, id, update) => {
@@ -43,22 +43,19 @@ test.serial('Subscribe channel', async (t) => {
   await server.destroy()
 })
 
-test.serial('Channel publish', async (t) => {
+test.serial('Channel publish + subscribe', async (t) => {
   let closeCalled = false
 
   const listeners: Map<number, (msg: any) => void> = new Map()
 
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     channels: {
       a: {
-        // better api.. update
-        // based, payload, msg, ctx, id
         publish: (based, payload, msg, id) => {
           listeners.get(id)?.(msg)
         },
-        // add id as arg
         function: (based, payload, id, update) => {
           listeners.set(id, update)
           return () => {
@@ -76,18 +73,12 @@ test.serial('Channel publish', async (t) => {
   const closeChannel = client.channel('a', { bla: true }).subscribe((msg) => {
     r.push(msg)
   })
-
   await wait(100)
-
   client.channel('a', { bla: true }).publish(1)
   client.channel('a', { bla: true }).publish(2)
   client.channel('a', { bla: true }).publish(3)
-
   await wait(500)
-
-  console.info(r)
-
-  t.true(r.length > 2)
+  t.deepEqual(r, ['1', '2', '3'])
   closeChannel()
   await wait(1100)
   t.is(Object.keys(server.activeChannels).length, 0)
@@ -97,6 +88,48 @@ test.serial('Channel publish', async (t) => {
   await server.destroy()
 })
 
-/*
- 
-*/
+test.serial.only('Channel publish no subscribe', async (t) => {
+  const r: any[] = []
+
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    channels: {
+      a: {
+        closeAfterIdleTime: 10,
+        // based, payload, msg, ctx, id
+        publish: (based, payload, msg) => {
+          r.push(msg)
+        },
+        // add id as arg
+        function: () => {
+          return () => {}
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.channelCleanupCycle = 100
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  client.channel('a', { bla: true }).publish(1)
+  client.channel('a', { bla: true }).publish(2)
+  client.channel('a', { bla: true }).publish(3)
+  await wait(100)
+  client.channel('a', { bla: true }).publish(4)
+  await wait(500)
+  t.deepEqual(r, [1, 2, 3, 4])
+  t.is(client.channelState.size, 0)
+  await wait(500)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  client.disconnect()
+  await server.destroy()
+})
+
+// update channel function (reinstall active)
+
+// timer
+
+// disconnect / reconnect re create channel

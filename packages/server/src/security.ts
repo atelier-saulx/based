@@ -1,7 +1,12 @@
 import { BasedErrorCode } from './error'
 import type { BasedServer } from './server'
 import uws from '@based/uws'
-import { HttpSession, WebSocketSession, Context } from '@based/functions'
+import {
+  HttpSession,
+  WebSocketSession,
+  Context,
+  isWsSession,
+} from '@based/functions'
 
 enum IsBlocked {
   notBlocked = 0,
@@ -62,7 +67,9 @@ export const rateLimitRequest = (
   if (!ctx.session) {
     return false
   }
-  const ip = ctx.session.ip
+  const ip = isWsSession(ctx.session)
+    ? ctx.session.getUserData().ip
+    : ctx.session.ip
   const code = incomingRequestCounter(server, ip, tokens, max)
   if (code === 0) {
     return false

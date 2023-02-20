@@ -3,6 +3,7 @@ import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
 import { BinaryMessageHandler } from './types'
+import { extendChannel, hasChannel } from '../../channel'
 
 export const channelPublishMessage: BinaryMessageHandler = (
   arr,
@@ -15,12 +16,13 @@ export const channelPublishMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | * payload |
   const id = readUint8(arr, start + 4, 8)
 
-  if (!server.activeChannelsById.has(id)) {
+  if (!hasChannel(server, id)) {
     console.info('CANNOT find channel id fix fix fix REQUEST FOR INFO ETC')
     return true
   }
 
   const channel = server.activeChannelsById.get(id)
+  extendChannel(server, channel)
 
   const name = channel.name
 

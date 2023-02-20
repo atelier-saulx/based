@@ -10,7 +10,7 @@ import {
   createObs,
   destroyObs,
   subscribeNext,
-  getObs,
+  getObsAndStopRemove,
   hasObs,
   start,
   sendObsWs,
@@ -60,7 +60,7 @@ const getFromExisting = (
   ctx: Context<WebSocketSession>,
   checksum: number
 ) => {
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
   if (obs.error) {
     sendObsGetError(server, ctx, id, obs.error)
     return
@@ -90,12 +90,16 @@ const isAuthorized: IsAuthorizedHandler<
     if (spec === null) {
       return
     }
+    const session = ctx.session?.getUserData()
+    if (!session) {
+      return
+    }
     if (hasObs(server, id)) {
       getFromExisting(server, id, ctx, checksum)
       return
     }
     const obs = createObs(server, route.name, id, payload, true)
-    if (!ctx.session?.obs.has(id)) {
+    if (!session.obs.has(id)) {
       subscribeNext(obs, (err) => {
         if (err) {
           sendObsGetError(server, ctx, id, err)
@@ -112,10 +116,11 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
 > = (route, server, ctx, payload, id, checksum) => {
-  if (!ctx.session.unauthorizedObs) {
-    ctx.session.unauthorizedObs = new Set()
+  const session = ctx.session?.getUserData()
+  if (!session.unauthorizedObs) {
+    session.unauthorizedObs = new Set()
   }
-  ctx.session.unauthorizedObs.add({
+  session.unauthorizedObs.add({
     id,
     checksum,
     name: route.name,

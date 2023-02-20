@@ -4,7 +4,7 @@ import fetch from 'cross-fetch'
 
 test.serial('custom http response', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     queryFunctions: {
       bla: {

@@ -89,10 +89,14 @@ export class BasedQuery<P = any, K = any> {
 
     return () => {
       const obs = this.client.observeState.get(this.id)
-      obs.subscribers.delete(subscriberId)
-      if (obs.subscribers.size === 0) {
-        this.client.observeState.delete(this.id)
-        addObsCloseToQueue(this.client, this.id)
+      if (obs) {
+        obs.subscribers.delete(subscriberId)
+        if (obs.subscribers.size === 0) {
+          this.client.observeState.delete(this.id)
+          addObsCloseToQueue(this.client, this.id)
+        }
+      } else {
+        console.warn('Subscription allready removed', this.query, this.name)
       }
     }
   }

@@ -1,11 +1,37 @@
 import { isChannelFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
+import { cleanUpChannels } from './cleanup'
+import { ActiveChannel } from './types'
 
+export const updateDestroyTimer = (
+  server: BasedServer,
+  channel: ActiveChannel
+) => {
+  const spec = server.functions.specs[channel.name]
+  if (!spec || !isChannelFunctionSpec(spec)) {
+    console.warn(
+      'destroyChannel - Cannot find channel function spec -',
+      channel.name
+    )
+    return
+  }
+  const closeAfterIdleTime =
+    spec.closeAfterIdleTime ??
+    server.functions.config.closeAfterIdleTime.channel
+  channel.timeTillDestroy = closeAfterIdleTime
+  channel.closeAfterIdleTime = closeAfterIdleTime
+  const closeTime = Math.round(closeAfterIdleTime / 2)
+  if (closeTime < server.channelCleanupCycle) {
+    server.channelCleanupCycle = closeTime
+  }
+}
+
+// dont use timer just use counter to remove it over time
 export const destroyChannel = (server: BasedServer, id: number) => {
   const channel = server.activeChannelsById.get(id)
 
   if (!channel) {
-    console.error('isChannelFunctionSpec', id, 'does not exists')
+    console.error('channel', id, 'does not exists')
     return
   }
 
@@ -15,43 +41,18 @@ export const destroyChannel = (server: BasedServer, id: number) => {
   }
 
   if (channel.clients.size || channel.functionChannelClients.size) {
-    if (channel.beingDestroyed) {
+    if (channel.timeTillDestroy) {
       console.warn(
-        `Channel being destroyed while clients/workers/getListeners are present ${channel.name} ${channel.id}`,
+        `Channel being destroyed while listeners are present ${channel.name} ${channel.id}`,
         channel.payload
       )
+      channel.timeTillDestroy = null
     }
     return
   }
 
-  const spec = server.functions.specs[channel.name]
-
-  if (!spec || !isChannelFunctionSpec(spec)) {
-    console.warn('Cannot find channel function spec!', channel.name)
-    return
-  }
-
-  if (!channel.beingDestroyed) {
-    // const memCacheTimeout =
-    //   spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
-
-    channel.beingDestroyed = setTimeout(() => {
-      // console.info(`   Destroy observable ${obs.name} ${obs.id}`, obs.payload)
-      channel.beingDestroyed = null
-      if (!server.activeChannels[channel.name]) {
-        console.info('Trying to destroy a removed channel function')
-        server.activeChannelsById.delete(id)
-        return
-      }
-      server.activeChannels[channel.name].delete(id)
-      if (server.activeChannels[channel.name].size === 0) {
-        delete server.activeChannels[channel.name]
-      }
-      server.activeChannelsById.delete(id)
-      channel.isDestroyed = true
-      if (channel.closeFunction) {
-        channel.closeFunction()
-      }
-    }, 1e3) // later
+  if (channel.timeTillDestroy === null) {
+    updateDestroyTimer(server, channel)
+    cleanUpChannels(server)
   }
 }

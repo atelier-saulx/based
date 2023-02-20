@@ -1,6 +1,6 @@
 import { BasedServer } from '../server'
 import { ActiveChannel } from './types'
-import { start } from './start'
+import { startChannel } from './start'
 import { hasChannel } from './get'
 
 export const createChannel = (
@@ -11,7 +11,7 @@ export const createChannel = (
   noStart?: boolean
 ): ActiveChannel => {
   if (hasChannel(server, id)) {
-    const msg = `Allready has observable ${name} ${id}`
+    const msg = `Allready has channel ${name} ${id}`
     console.error(msg)
     throw new Error(msg)
   }
@@ -23,6 +23,8 @@ export const createChannel = (
     id,
     name,
     isDestroyed: false,
+    isActive: false,
+    timeTillDestroy: null,
   }
 
   if (!server.activeChannels[name]) {
@@ -32,10 +34,8 @@ export const createChannel = (
   server.activeChannels[name].set(id, channel)
   server.activeChannelsById.set(id, channel)
 
-  if (noStart) {
-    return channel
+  if (!noStart) {
+    startChannel(server, id)
   }
-
-  start(server, id)
   return channel
 }

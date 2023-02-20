@@ -7,7 +7,7 @@ import {
   hasObs,
   createObs,
   subscribeNext,
-  getObs,
+  getObsAndStopRemove,
   destroyObs,
   start,
 } from '../observable'
@@ -22,7 +22,7 @@ const getObsData = (
   ctx: Context,
   route: BasedQueryFunctionRoute
 ) => {
-  const obs = getObs(server, id)
+  const obs = getObsAndStopRemove(server, id)
   if (obs.error) {
     reject(
       createError(server, ctx, BasedErrorCode.ObservableFunctionError, {

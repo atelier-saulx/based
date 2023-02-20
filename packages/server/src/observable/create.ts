@@ -25,6 +25,7 @@ export const createObs = (
     name,
     isDestroyed: false,
     startId: 0,
+    timeTillDestroy: null,
   }
 
   if (!server.activeObservables[name]) {

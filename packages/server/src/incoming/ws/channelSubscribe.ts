@@ -20,6 +20,8 @@ import {
   subscribeChannel,
   createChannel,
   unsubscribeChannel,
+  destroyChannel,
+  extendChannel,
 } from '../../channel'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
@@ -31,7 +33,8 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
     return
   }
   installFn(server, ctx, route, id).then((spec) => {
-    if (spec === null || !ctx.session.obs.has(id)) {
+    const session = ctx.session?.getUserData()
+    if (spec === null || !session || !session.obs.has(id)) {
       return
     }
     if (!hasChannel(server, id)) {
@@ -46,10 +49,11 @@ const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
 > = (route, server, ctx, payload, id) => {
-  if (!ctx.session.unauthorizedChannels) {
-    ctx.session.unauthorizedChannels = new Set()
+  const session = ctx.session?.getUserData()
+  if (!session.unauthorizedChannels) {
+    session.unauthorizedChannels = new Set()
   }
-  ctx.session.unauthorizedChannels.add({
+  session.unauthorizedChannels.add({
     id,
     name: route.name,
     payload,
@@ -60,6 +64,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
   len,
+  // isDeflate is used differently here
   isChannelIdRequester,
   ctx,
   server
@@ -72,13 +77,6 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
 
   if (!name || !id) {
     return false
-  }
-
-  // isDeflate is used to actualy subscribe
-
-  if (isChannelIdRequester) {
-    console.info('ONLY FOR PUBLISH isChannelIdRequester')
-    // just make a map for the id and thats it!
   }
 
   const route = verifyRoute(
@@ -95,7 +93,13 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (
-    rateLimitRequest(server, ctx, route.rateLimitTokens, server.rateLimit.ws)
+    rateLimitRequest(
+      server,
+      ctx,
+      // Requesting the id multiple times is something that should not happen - so probably a bad actor
+      isChannelIdRequester ? route.rateLimitTokens * 5 : route.rateLimitTokens,
+      server.rateLimit.ws
+    )
   ) {
     ctx.session.close()
     return false
@@ -110,12 +114,36 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (isChannelIdRequester) {
-    console.info('MAKE MAKE dont sub just make the id and exit put put')
+    // TODO: Add authorization here....
+    if (!hasChannel(server, id)) {
+      const payload = parsePayload(
+        decodePayload(
+          new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+          false
+        )
+      )
+      // This has to be done instantly so publish can be received immediatly
+      createChannel(server, name, id, payload, true)
+      installFn(server, ctx, route, id).then((spec) => {
+        if (spec === null) {
+          server.activeChannels[name].delete(id)
+          delete server.activeChannels[name]
+          server.activeChannelsById.delete(id)
+          return
+        }
+        destroyChannel(server, id)
+      })
+      return true
+    }
+
+    extendChannel(server, server.activeChannelsById.get(id))
     return true
   }
 
-  if (ctx.session?.obs.has(id)) {
-    // allready subscribed to this id
+  const session = ctx.session?.getUserData()
+
+  if (session.obs.has(id)) {
+    // Allready subscribed to this id
     return true
   }
 
@@ -126,7 +154,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     )
   )
 
-  ctx.session.obs.add(id)
+  session.obs.add(id)
 
   authorize(
     route,

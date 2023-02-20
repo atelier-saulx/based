@@ -30,7 +30,6 @@ export type ActiveObservable = {
   onNextData?: Set<
     (err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>) => void
   >
-  isDestroyed: boolean
   payload: any
   diffCache?: Uint8Array
   cache?: Uint8Array
@@ -39,6 +38,8 @@ export type ActiveObservable = {
   isDeflate?: boolean
   checksum?: number
   closeFunction?: () => void
-  beingDestroyed?: NodeJS.Timeout
   error?: BasedErrorData<BasedErrorCode.ObservableFunctionError> | null
+  closeAfterIdleTime?: number
+  timeTillDestroy: number | null
+  isDestroyed: boolean
 }

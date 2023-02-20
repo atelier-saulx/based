@@ -44,15 +44,16 @@ export const authMessage: BinaryMessageHandler = (
 
   const verified = server.auth.verifyAuthState(server.client, ctx, authState)
 
-  ctx.session.authState = verified === true ? authState : verified
+  const session = ctx.session.getUserData()
+  session.authState = verified === true ? authState : verified
 
   if (verified !== true && verified.error) {
     sendAuthMessage(ctx, verified)
     return true
   }
 
-  if (ctx.session.unauthorizedObs?.size) {
-    ctx.session.unauthorizedObs.forEach((obs) => {
+  if (session.unauthorizedObs?.size) {
+    session.unauthorizedObs.forEach((obs) => {
       const { id, name, checksum, payload } = obs
       enableSubscribe(
         {
@@ -66,11 +67,11 @@ export const authMessage: BinaryMessageHandler = (
         checksum
       )
     })
-    ctx.session.unauthorizedObs.clear()
+    session.unauthorizedObs.clear()
   }
 
-  if (ctx.session.unauthorizedChannels?.size) {
-    ctx.session.unauthorizedChannels.forEach((channel) => {
+  if (session.unauthorizedChannels?.size) {
+    session.unauthorizedChannels.forEach((channel) => {
       const { id, name, payload } = channel
       enableChannelSubscribe(
         {
@@ -83,7 +84,7 @@ export const authMessage: BinaryMessageHandler = (
         id
       )
     })
-    ctx.session.unauthorizedChannels.clear()
+    session.unauthorizedChannels.clear()
   }
 
   sendAuthMessage(ctx, verified)
@@ -95,14 +96,16 @@ export const sendAndVerifyAuthMessage = (
   server: BasedServer,
   ctx: Context<WebSocketSession>
 ) => {
-  if (!ctx.session) {
+  const session = ctx.session.getUserData()
+
+  if (!session) {
     return
   }
 
   const verified = server.auth.verifyAuthState(
     server.client,
     ctx,
-    ctx.session.authState
+    session.authState
   )
 
   if (verified === true) {
@@ -110,7 +113,7 @@ export const sendAndVerifyAuthMessage = (
     return
   }
 
-  ctx.session.authState = verified
+  session.authState = verified
 
   sendAuthMessage(ctx, verified)
 }

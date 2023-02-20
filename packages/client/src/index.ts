@@ -15,6 +15,8 @@ import connectWebsocket from './websocket'
 import Emitter from './Emitter'
 import getUrlFromOpts from './getUrlFromOpts'
 import {
+  addChannelPublishIdentifier,
+  addChannelSubscribeToQueue,
   addObsToQueue,
   addToFunctionQueue,
   drainQueue,
@@ -89,6 +91,8 @@ export class BasedClient extends Emitter {
   requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Channel State
   channelState: ChannelState = new Map()
+  channelCleanTimeout?: ReturnType<typeof setTimeout>
+  channelCleanupCycle: number = 30e3
   // --------- Observe State
   observeState: ObserveState = new Map()
   // --------- Get State
@@ -158,6 +162,17 @@ export class BasedClient extends Emitter {
       }
     }
 
+    // Resend all channels
+    for (const [id, channel] of this.channelState) {
+      if (!this.channelQueue.has(id)) {
+        if (channel.subscribers.size) {
+          addChannelSubscribeToQueue(this, channel.name, id, channel.payload)
+        } else {
+          addChannelPublishIdentifier(this, channel.name, id, channel.payload)
+        }
+      }
+    }
+
     drainQueue(this)
   }
 
@@ -221,14 +236,14 @@ export class BasedClient extends Emitter {
     return new BasedQuery(this, name, payload, opts)
   }
 
-  // -------- Call-Function
+  // -------- Function
   call(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
     })
   }
 
-  // -------- Stream-Function
+  // -------- Stream
   stream(
     name: string,
     stream: StreamFunctionOpts,

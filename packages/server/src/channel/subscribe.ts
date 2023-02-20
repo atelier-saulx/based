@@ -1,5 +1,5 @@
 import { BasedServer } from '../server'
-import { getChannel } from './get'
+import { getChannelAndStopRemove } from './get'
 import {
   WebSocketSession,
   Context,
@@ -11,20 +11,18 @@ export const subscribeChannel = (
   id: number,
   ctx: Context<WebSocketSession>
 ) => {
-  if (!ctx.session) {
+  const session = ctx.session.getUserData()
+  if (!session) {
     return
   }
   ctx.session.subscribe(String(id))
-  const obs = getChannel(server, id)
-  ctx.session.obs.add(id)
-  obs.clients.add(ctx.session.id)
+  const channel = getChannelAndStopRemove(server, id)
+  session.obs.add(id)
+  channel.clients.add(session.id)
 }
 
 export const subscribeChannelFunction = (
   server: BasedServer,
   id: number,
   update: ChannelMessageFunction
-) => {
-  const obs = getChannel(server, id)
-  obs.functionChannelClients.add(update)
-}
+) => getChannelAndStopRemove(server, id).functionChannelClients.add(update)

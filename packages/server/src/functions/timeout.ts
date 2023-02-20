@@ -5,7 +5,7 @@ export const fnIsTimedOut = (spec: BasedSpec): boolean => {
     if (spec.timeoutCounter === 0) {
       return true
     }
-    if (spec.idleTimeout > 0 && spec.timeoutCounter > 0) {
+    if (spec.uninstallAfterIdleTime > 0 && spec.timeoutCounter > 0) {
       spec.timeoutCounter--
     }
   }
@@ -15,6 +15,8 @@ export const fnIsTimedOut = (spec: BasedSpec): boolean => {
 export const updateTimeoutCounter = (spec: BasedSpec) => {
   if (spec.timeoutCounter !== -1) {
     spec.timeoutCounter =
-      spec.idleTimeout === -1 ? -1 : Math.ceil(spec.idleTimeout / 1e3 / 3)
+      spec.uninstallAfterIdleTime === -1
+        ? -1
+        : Math.ceil(spec.uninstallAfterIdleTime / 1e3 / 3)
   }
 }

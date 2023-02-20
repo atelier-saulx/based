@@ -1,16 +1,38 @@
 import { isQueryFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
+import { cleanUpObs } from './cleanup'
+import { ActiveObservable } from './types'
 
+export const updateDestroyTimer = (
+  server: BasedServer,
+  channel: ActiveObservable
+) => {
+  const spec = server.functions.specs[channel.name]
+  if (!spec || !isQueryFunctionSpec(spec)) {
+    console.warn('destroyObs - Cannot find obs function spec -', channel.name)
+    return
+  }
+  const closeAfterIdleTime =
+    spec.closeAfterIdleTime ?? server.functions.config.closeAfterIdleTime.query
+  channel.timeTillDestroy = closeAfterIdleTime
+  channel.closeAfterIdleTime = closeAfterIdleTime
+  const closeTime = Math.round(closeAfterIdleTime / 2)
+  if (closeTime < server.obsCleanupCycle) {
+    server.obsCleanupCycle = closeTime
+  }
+}
+
+// dont use timer just use counter to remove it over time
 export const destroyObs = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
-    console.error('Observable', id, 'does not exists')
+    console.error('obs', id, 'does not exists')
     return
   }
 
   if (obs.isDestroyed) {
-    console.error('Obs allready destroyed', obs.name)
+    console.error('obs allready destroyed', obs.name)
     return
   }
 
@@ -19,43 +41,18 @@ export const destroyObs = (server: BasedServer, id: number) => {
     obs.functionObserveClients.size ||
     obs.onNextData?.size
   ) {
-    if (obs.beingDestroyed) {
+    if (obs.timeTillDestroy) {
+      obs.timeTillDestroy = null
       console.warn(
-        `Obs being destroyed while clients/workers/getListeners are present ${obs.name} ${obs.id}`,
+        `Obs being destroyed while listeners are present ${obs.name} ${obs.id}`,
         obs.payload
       )
     }
     return
   }
 
-  const spec = server.functions.specs[obs.name]
-
-  if (!spec || !isQueryFunctionSpec(spec)) {
-    console.warn('Cannot find observable function spec!', obs.name)
-    return
-  }
-
-  if (!obs.beingDestroyed) {
-    const memCacheTimeout =
-      spec.memCacheTimeout ?? server.functions.config.memCacheTimeout
-
-    obs.beingDestroyed = setTimeout(() => {
-      // console.info(`   Destroy observable ${obs.name} ${obs.id}`, obs.payload)
-      obs.beingDestroyed = null
-      if (!server.activeObservables[obs.name]) {
-        console.info('Trying to destroy a removed observable function')
-        server.activeObservablesById.delete(id)
-        return
-      }
-      server.activeObservables[obs.name].delete(id)
-      if (server.activeObservables[obs.name].size === 0) {
-        delete server.activeObservables[obs.name]
-      }
-      server.activeObservablesById.delete(id)
-      obs.isDestroyed = true
-      if (obs.closeFunction) {
-        obs.closeFunction()
-      }
-    }, memCacheTimeout)
+  if (obs.timeTillDestroy === null) {
+    updateDestroyTimer(server, obs)
+    cleanUpObs(server)
   }
 }

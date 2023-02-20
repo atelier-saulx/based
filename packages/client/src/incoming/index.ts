@@ -196,7 +196,6 @@ export const incoming = async (
       const checksum = readUint8(buffer, 12, 8)
 
       // console.info('Incoming sub data', getName(client, id), id, checksum)
-
       const start = 20
       const end = len + 4
       let payload: any
@@ -245,6 +244,8 @@ export const incoming = async (
 
       if (!found) {
         console.warn('Cannot find sub for incoming id (allready removed)', id)
+      } else {
+        // console.info('-->', id)
       }
     }
 

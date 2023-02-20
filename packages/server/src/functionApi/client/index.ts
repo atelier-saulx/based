@@ -14,6 +14,7 @@ import {
   isWsContext,
   StreamFunctionOpts,
   Session,
+  isHttpContext,
 } from '@based/functions'
 
 export class BasedFunctionClient extends BasedfunctionClientAbstract {
@@ -58,10 +59,19 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     if (!ctx.session) {
       return
     }
+
     if (!isClientContext(ctx)) {
       return
     }
-    ctx.session.authState = authState
+
+    if (isWsContext(ctx)) {
+      const session = ctx.session.getUserData()
+      session.authState = authState
+    } else if (isHttpContext(ctx)) {
+      // TODO: ts cannot figure out that this is http ctx...
+      ctx.session.authState = authState
+    }
+
     this.server.auth.renewAuthState(ctx)
   }
 

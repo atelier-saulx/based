@@ -11,7 +11,7 @@ const statAsync = promisify(stat)
 test.serial('stream nested functions (string)', async (t) => {
   const progressEvents: number[] = []
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       mySnur: async (based, payload) => {
@@ -21,7 +21,7 @@ test.serial('stream nested functions (string)', async (t) => {
         })
       },
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload }) => {
@@ -60,7 +60,7 @@ test.serial('stream nested functions (stream)', async (t) => {
   const progressEvents: number[] = []
   const filePath = join(__dirname, './browser/tmp.json')
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       mySnur: async (based, payload) => {
@@ -71,7 +71,7 @@ test.serial('stream nested functions (stream)', async (t) => {
         })
       },
       hello: {
-        idleTimeout: 1,
+        uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
         stream: true,
         function: async (based, { stream, payload }) => {

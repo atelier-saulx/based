@@ -6,7 +6,7 @@ import { BasedClient } from '../src/index'
 
 test.serial('rate limit', async (t) => {
   const server = await createSimpleServer({
-    idleTimeout: 1e3,
+    uninstallAfterIdleTime: 1e3,
     port: 9910,
     functions: {
       flap: async () => {
