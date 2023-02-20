@@ -5,7 +5,7 @@ export const destroyChannel = (server: BasedServer, id: number) => {
   const channel = server.activeChannelsById.get(id)
 
   if (!channel) {
-    console.error('isChannelFunctionSpec', id, 'does not exists')
+    console.error('channel', id, 'does not exists')
     return
   }
 
@@ -17,10 +17,11 @@ export const destroyChannel = (server: BasedServer, id: number) => {
   if (channel.clients.size || channel.functionChannelClients.size) {
     if (channel.beingDestroyed) {
       console.warn(
-        `Channel being destroyed while clients/workers/getListeners are present ${channel.name} ${channel.id}`,
+        `Channel being destroyed while listeners are present ${channel.name} ${channel.id}`,
         channel.payload
       )
     }
+
     return
   }
 

@@ -96,6 +96,7 @@ test.serial.only('Channel publish no subscribe', async (t) => {
     port: 9910,
     channels: {
       a: {
+        closeAfterIdleTime: 10,
         // based, payload, msg, ctx, id
         publish: (based, payload, msg) => {
           r.push(msg)
@@ -115,8 +116,8 @@ test.serial.only('Channel publish no subscribe', async (t) => {
   client.channel('a', { bla: true }).publish(2)
   client.channel('a', { bla: true }).publish(3)
   await wait(500)
-  console.info(r)
-  t.deepEqual(r, ['1', '2', '3'])
+  t.deepEqual(r, [1, 2, 3])
+  await wait(500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   client.disconnect()

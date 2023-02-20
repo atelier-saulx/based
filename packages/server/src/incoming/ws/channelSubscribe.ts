@@ -20,6 +20,8 @@ import {
   subscribeChannel,
   createChannel,
   unsubscribeChannel,
+  getChannel,
+  destroyChannel,
 } from '../../channel'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
@@ -110,7 +112,22 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (isChannelIdRequester) {
-    console.info('MAKE MAKE dont sub just make the id and exit put put')
+    if (!hasChannel(server, id)) {
+      // this has to be done instant
+      createChannel(server, name, id, true)
+      installFn(server, ctx, route, id).then((spec) => {
+        if (spec === null) {
+          server.activeChannels[name].delete(id)
+          delete server.activeChannels[name]
+          server.activeChannelsById.delete(id)
+          return
+        }
+        destroyChannel(server, id)
+      })
+    } else {
+      getChannel(server, id)
+      destroyChannel(server, id)
+    }
     return true
   }
 
