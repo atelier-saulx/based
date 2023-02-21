@@ -59,7 +59,10 @@ export class BasedAuth {
   /** Calls `verifyAuthState` on the current session's authState.
    * If it's in a wsContext, sends the new verified authState to the client and updates the session's authState.
    */
-  renewAuthState(ctx: Context, authState?: AuthState) {
+  async renewAuthState(
+    ctx: Context,
+    authState?: AuthState
+  ): Promise<AuthState> {
     if (!ctx.session) {
       return
     }
@@ -68,7 +71,7 @@ export class BasedAuth {
       return
     }
 
-    const verified = this.server.auth.verifyAuthState(
+    const verified = await this.server.auth.verifyAuthState(
       this.server.client,
       <Context<HttpSession> | Context<WebSocketSession>>ctx,
       authState || ctx.session.authState
@@ -80,6 +83,8 @@ export class BasedAuth {
     if (isWsContext(ctx)) {
       this.sendAuthState(ctx, verified)
     }
+
+    return verified
   }
 
   encodeAuthState(authState: AuthState): string {

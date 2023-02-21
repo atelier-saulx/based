@@ -42,78 +42,90 @@ export const authMessage: BinaryMessageHandler = (
 
   const authState: AuthState = parse(payload)
 
-  const verified = server.auth.verifyAuthState(server.client, ctx, authState)
+  server.auth
+    .verifyAuthState(server.client, ctx, authState)
+    .then((verified) => {
+      const session = ctx.session
+      if (!session) {
+        return
+      }
 
-  const session = ctx.session
-  session.authState = verified === true ? authState : verified
+      session.authState = verified === true ? authState : verified
 
-  if (verified !== true && verified.error) {
-    sendAuthMessage(ctx, verified)
-    return true
-  }
+      if (verified !== true && verified.error) {
+        sendAuthMessage(ctx, verified)
+        return true
+      }
 
-  if (session.unauthorizedObs?.size) {
-    session.unauthorizedObs.forEach((obs) => {
-      const { id, name, checksum, payload } = obs
-      enableSubscribe(
-        {
-          name,
-          query: true,
-        },
-        server,
-        ctx,
-        payload,
-        id,
-        checksum
-      )
+      if (session.unauthorizedObs?.size) {
+        session.unauthorizedObs.forEach((obs) => {
+          const { id, name, checksum, payload } = obs
+          enableSubscribe(
+            {
+              name,
+              query: true,
+            },
+            server,
+            ctx,
+            payload,
+            id,
+            checksum
+          )
+        })
+        session.unauthorizedObs.clear()
+      }
+
+      if (session.unauthorizedChannels?.size) {
+        session.unauthorizedChannels.forEach((channel) => {
+          const { id, name, payload } = channel
+          enableChannelSubscribe(
+            {
+              name,
+              channel: true,
+            },
+            server,
+            ctx,
+            payload,
+            id
+          )
+        })
+        session.unauthorizedChannels.clear()
+      }
+      sendAuthMessage(ctx, verified)
     })
-    session.unauthorizedObs.clear()
-  }
-
-  if (session.unauthorizedChannels?.size) {
-    session.unauthorizedChannels.forEach((channel) => {
-      const { id, name, payload } = channel
-      enableChannelSubscribe(
-        {
-          name,
-          channel: true,
-        },
-        server,
-        ctx,
-        payload,
-        id
-      )
+    .catch((err) => {
+      const session = ctx.session
+      if (!session) {
+        return
+      }
+      const authState = {
+        error: err.message,
+      }
+      session.authState = authState
+      sendAuthMessage(ctx, authState)
     })
-    session.unauthorizedChannels.clear()
-  }
 
-  sendAuthMessage(ctx, verified)
   return true
 }
 
 // send and verify
-export const sendAndVerifyAuthMessage = (
+export const sendAndVerifyAuthMessage = async (
   server: BasedServer,
   ctx: Context<WebSocketSession>
-) => {
+): Promise<void> => {
   const session = ctx.session
-
   if (!session) {
     return
   }
-
-  const verified = server.auth.verifyAuthState(
-    server.client,
-    ctx,
-    session.authState
-  )
-
+  const verified = await server.auth
+    .verifyAuthState(server.client, ctx, session.authState)
+    .catch((err) => {
+      return { error: err.message }
+    })
   if (verified === true) {
     sendAuthMessage(ctx, true)
     return
   }
-
   session.authState = verified
-
   sendAuthMessage(ctx, verified)
 }

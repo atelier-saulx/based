@@ -11,7 +11,7 @@ test.serial('verify auth state', async (t) => {
     uninstallAfterIdleTime: 1e3,
     port: 9910,
     auth: {
-      verifyAuthState: (based, ctx, authState) => {
+      verifyAuthState: async (based, ctx, authState) => {
         if (authState.token === '9000') {
           return { ...authState, type: 'over9000' }
         }

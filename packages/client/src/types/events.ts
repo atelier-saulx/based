@@ -5,10 +5,19 @@ export type EventMap = {
   disconnect: true
   connect: true
   debug: {
+    //   0 = functionData
+    //   1 = subscriptionData
+    //   2 = subscriptionDiffData
+    //   3 = get
+    //   4 = authData
+    //   5 = errorData
+    //   6 = channelMessage
+    //   7 = requesChannelName
     type: string
-    direction: 'up' | 'down'
-    binary?: Uint8Array
-    data: any
+    header: { type: number; isDeflate: boolean; len: number }
+    len: number
+    payload: any
+    direction: 'outgoing' | 'incoming'
   }
   'authstate-change': AuthState
 }
