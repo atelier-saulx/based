@@ -344,6 +344,7 @@ export const incoming = async (
             debugChannelReqId(client, id, 'register')
           }
         }
+
         client.connection.ws.send(buffer)
         if (debug) {
           debugChannelReqId(client, id, 'publish', buffer, isDeflate)

@@ -102,6 +102,14 @@ test.serial('Channel publish no subscribe', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
+    ws: {
+      maxBackpressureSize: 2e6,
+    },
+    rateLimit: {
+      ws: 1e6,
+      http: 1e6,
+      drain: 1e6,
+    },
     channels: {
       a: {
         rateLimitTokens: 0,
@@ -137,12 +145,20 @@ test.serial('Channel publish no subscribe', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('Channel publish requestId', async (t) => {
+test.serial.only('Channel publish requestId (10k messages)', async (t) => {
   const r: any[] = []
 
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
+    ws: {
+      maxBackpressureSize: 2e6,
+    },
+    rateLimit: {
+      ws: 1e6,
+      http: 1e6,
+      drain: 1e6,
+    },
     channels: {
       a: {
         closeAfterIdleTime: 10,
@@ -186,13 +202,13 @@ test.serial.only('Channel publish requestId', async (t) => {
   t.deepEqual(r, [1, 2, 3, 4])
   await wait(1000)
   const results: string[] = []
-  for (let i = 0; i < 500; i++) {
-    const x = `no id ${i}`
+  for (let i = 0; i < 10000; i++) {
+    const x = `no id ${i} hello gone! 🙏`
     results.push(x)
     client.channel('a', { bla: true }).publish(x)
   }
   await wait(1500)
-  t.is(rePublish, 500)
+  t.is(rePublish, 10000)
   t.is(registerChannelId, 2)
   t.deepEqual(r, [1, 2, 3, 4, ...results])
   t.is(Object.keys(server.activeChannels).length, 0)

@@ -1,6 +1,6 @@
 import { BasedClient } from '..'
-import { getTargetInfo } from '../getTargetInfo'
 import fflate from 'fflate'
+import { getTargetInfo } from '../getTargetInfo'
 
 export const debugChannelReqId = (
   client: BasedClient,
@@ -27,21 +27,31 @@ export const debugChannelReqId = (
     })
     return
   }
-  if (buffer) {
-    let payload: string
-    const v = buffer.slice(12)
-    if (isDeflate) {
-      payload = new TextDecoder().decode(fflate.inflateSync(v))
-    } else {
-      payload = new TextDecoder().decode(v)
-    }
-    client.emit('debug', {
-      type: 'rePublishChannel',
-      direction: 'outgoing',
-      target,
-      payload,
-    })
+
+  if (!buffer) {
+    return
   }
+
+  let r: any
+  let p: string
+  const v = buffer.slice(12)
+  if (isDeflate) {
+    p = new TextDecoder().decode(fflate.inflateSync(v))
+  } else {
+    p = new TextDecoder().decode(v)
+  }
+  try {
+    r = p ? JSON.parse(p) : undefined
+  } catch (e) {
+    r = p
+  }
+
+  client.emit('debug', {
+    type: 'rePublishChannel',
+    direction: 'outgoing',
+    target,
+    payload: r,
+  })
 }
 
 export const debugFunction = (
