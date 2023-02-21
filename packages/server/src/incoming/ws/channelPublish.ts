@@ -17,7 +17,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const id = readUint8(arr, start + 4, 8)
 
   if (!hasChannel(server, id)) {
-    if (rateLimitRequest(server, ctx, 5, server.rateLimit.ws)) {
+    if (rateLimitRequest(server, ctx, 1, server.rateLimit.ws)) {
       ctx.session.ws.close()
       return false
     }

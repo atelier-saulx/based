@@ -126,7 +126,6 @@ export const drainQueue = (client: BasedClient) => {
 
         const n = new Uint8Array(l)
         let c = 0
-
         for (const b of buffs) {
           n.set(b, c)
           c += b.length

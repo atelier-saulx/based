@@ -98,6 +98,9 @@ export const message = (
   const len = uint8View.length
   let next = 0
   while (next < len) {
+    if (!ctx.session) {
+      return
+    }
     const n = reader(server, ctx, uint8View, next)
     if (n === undefined) {
       // Malformed message close client - maybe a bit too extreme...

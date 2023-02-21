@@ -104,6 +104,7 @@ test.serial('Channel publish no subscribe', async (t) => {
     port: 9910,
     channels: {
       a: {
+        rateLimitTokens: 0,
         closeAfterIdleTime: 10,
         // based, payload, msg, ctx, id
         publish: (based, payload, msg) => {
@@ -157,6 +158,21 @@ test.serial.only('Channel publish requestId', async (t) => {
     },
   })
   const client = new BasedClient()
+
+  let rePublish = 0
+  let registerChannelId = 0
+  client.on('debug', (d) => {
+    if (d.type === 'publishChannel') {
+      return
+    }
+    if (d.type === 'registerChannelId') {
+      registerChannelId++
+    }
+    if (d.type === 'rePublishChannel') {
+      rePublish++
+    }
+  })
+
   client.channelCleanupCycle = 10e3
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -169,11 +185,16 @@ test.serial.only('Channel publish requestId', async (t) => {
   await wait(500)
   t.deepEqual(r, [1, 2, 3, 4])
   await wait(1000)
-  client.channel('a', { bla: true }).publish('should not exist!')
-
+  const results: string[] = []
+  for (let i = 0; i < 500; i++) {
+    const x = `no id ${i}`
+    results.push(x)
+    client.channel('a', { bla: true }).publish(x)
+  }
   await wait(1500)
-  t.deepEqual(r, [1, 2, 3, 4, 'should not exist!'])
-
+  t.is(rePublish, 500)
+  t.is(registerChannelId, 2)
+  t.deepEqual(r, [1, 2, 3, 4, ...results])
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   client.disconnect()

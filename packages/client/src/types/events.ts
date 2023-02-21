@@ -30,7 +30,7 @@ type DebugEvent =
         | 'auth'
         | 'error'
         | 'channelMessage'
-        | 'requesChannelName'
+        | 'registerChannelId'
       direction: 'incoming'
       payload?: any
       target: { name?: string; id?: number; payload?: any }
@@ -48,6 +48,7 @@ type DebugEvent =
         | 'publishChannel'
         | 'unsubscribeChannel'
         | 'registerChannelId'
+        | 'rePublishChannel'
       direction: 'outgoing'
       payload?: any
       target: { name?: string; id?: number; payload?: any }

@@ -1,17 +1,45 @@
 import { BasedClient } from '..'
 import { getTargetInfo } from '../getTargetInfo'
+import fflate from 'fflate'
 
 export const debugChannelReqId = (
   client: BasedClient,
   id: number,
-  type: 'register' | 'not-found' | 'publish' = 'publish'
+  type: 'register' | 'not-found' | 'publish',
+  buffer?: Uint8Array,
+  isDeflate?: boolean
 ) => {
+  if (type === 'not-found') {
+    client.emit('debug', {
+      type: 'registerChannelId',
+      direction: 'incoming',
+      target: { id },
+      msg: 'Cannot find channel',
+    })
+    return
+  }
   const target = getTargetInfo(client, id, 'channel')
   if (type === 'register') {
     client.emit('debug', {
       type: 'registerChannelId',
       direction: 'outgoing',
       target,
+    })
+    return
+  }
+  if (buffer) {
+    let payload: string
+    const v = buffer.slice(12)
+    if (isDeflate) {
+      payload = new TextDecoder().decode(fflate.inflateSync(v))
+    } else {
+      payload = new TextDecoder().decode(v)
+    }
+    client.emit('debug', {
+      type: 'rePublishChannel',
+      direction: 'outgoing',
+      target,
+      payload,
     })
   }
 }

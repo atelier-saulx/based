@@ -13,6 +13,7 @@ import {
   debugAuth,
   debugError,
   debugChannel,
+  debugChannelReqId,
 } from './debug'
 import {
   parseArrayBuffer,
@@ -312,7 +313,9 @@ export const incoming = async (
       const id = readUint8(buffer, 4, 8)
       const channel = client.channelState.get(id)
       if (!id) {
-        console.info('cannot find channel', channel, id)
+        if (debug) {
+          debugChannelReqId(client, id, 'not-found')
+        }
       } else {
         if (!channel.inTransit) {
           channel.inTransit = true
@@ -337,8 +340,14 @@ export const incoming = async (
               channel.inTransit = false
             }
           }, 5e3)
+          if (debug) {
+            debugChannelReqId(client, id, 'register')
+          }
         }
         client.connection.ws.send(buffer)
+        if (debug) {
+          debugChannelReqId(client, id, 'publish', buffer, isDeflate)
+        }
       }
     } else if (type === 7) {
       // | 4 header | 1 subType |
