@@ -4,6 +4,6 @@ export const defaultAuthorize: Authorize = async () => {
   return true
 }
 
-export const defaultVerifyAuthState: VerifyAuthState = () => {
+export const defaultVerifyAuthState: VerifyAuthState = async () => {
   return true
 }

@@ -25,7 +25,7 @@ export type VerifyAuthState = (
   based: BasedFunctionClient,
   context: Context<HttpSession | WebSocketSession>,
   authState: AuthState
-) => true | AuthState
+) => Promise<true | AuthState>
 
 export type AuthorizeConnection = (
   based: BasedFunctionClient,
