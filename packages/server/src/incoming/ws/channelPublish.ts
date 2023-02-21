@@ -17,7 +17,11 @@ export const channelPublishMessage: BinaryMessageHandler = (
   const id = readUint8(arr, start + 4, 8)
 
   if (!hasChannel(server, id)) {
-    console.info('CANNOT find channel id fix fix fix REQUEST FOR INFO ETC')
+    if (rateLimitRequest(server, ctx, 5, server.rateLimit.ws)) {
+      ctx.session.ws.close()
+      return false
+    }
+    ctx.session.ws.send(arr.slice(start, start + len), true, false)
     return true
   }
 

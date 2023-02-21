@@ -1,6 +1,21 @@
 import { BasedClient } from '..'
 import { getTargetInfo } from '../getTargetInfo'
 
+export const debugChannelReqId = (
+  client: BasedClient,
+  id: number,
+  type: 'register' | 'not-found' | 'publish' = 'publish'
+) => {
+  const target = getTargetInfo(client, id, 'channel')
+  if (type === 'register') {
+    client.emit('debug', {
+      type: 'registerChannelId',
+      direction: 'outgoing',
+      target,
+    })
+  }
+}
+
 export const debugFunction = (
   client: BasedClient,
   payload: any,

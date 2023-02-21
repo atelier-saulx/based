@@ -136,8 +136,46 @@ test.serial('Channel publish no subscribe', async (t) => {
   await server.destroy()
 })
 
-// update channel function (reinstall active)
+test.serial.only('Channel publish requestId', async (t) => {
+  const r: any[] = []
 
-// timer
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    channels: {
+      a: {
+        closeAfterIdleTime: 10,
+        // based, payload, msg, ctx, id
+        publish: (based, payload, msg) => {
+          r.push(msg)
+        },
+        // add id as arg
+        function: () => {
+          return () => {}
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.channelCleanupCycle = 10e3
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  client.channel('a', { bla: true }).publish(1)
+  client.channel('a', { bla: true }).publish(2)
+  client.channel('a', { bla: true }).publish(3)
+  await wait(100)
+  client.channel('a', { bla: true }).publish(4)
+  await wait(500)
+  t.deepEqual(r, [1, 2, 3, 4])
+  await wait(1000)
+  client.channel('a', { bla: true }).publish('should not exist!')
 
-// disconnect / reconnect re create channel
+  await wait(1500)
+  t.deepEqual(r, [1, 2, 3, 4, 'should not exist!'])
+
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  client.disconnect()
+  await server.destroy()
+})

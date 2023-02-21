@@ -20,6 +20,7 @@ import {
   readUint8,
   requestFullData,
 } from './protocol'
+import { encodeSubscribeChannelMessage } from '../outgoing/protocol'
 
 export const incoming = async (
   client: BasedClient,
@@ -304,40 +305,79 @@ export const incoming = async (
         debugError(client, payload)
       }
       // else emit ERROR maybe?
-    } // ------- Channel data
+    } // ------- 6
     else if (type === 6) {
       // | 4 header | 8 id | * payload |
+      // get id add last send on the state
       const id = readUint8(buffer, 4, 8)
-
-      const start = 12
-      const end = len + 4
-      let payload: any
-
-      // if not empty response, parse it
-      if (len !== 8) {
-        const r = new TextDecoder().decode(
-          isDeflate
-            ? fflate.inflateSync(buffer.slice(start, end))
-            : buffer.slice(start, end)
-        )
-        try {
-          payload = JSON.parse(r)
-        } catch (err) {}
-        payload = r
-      }
-
-      let found = false
-
-      if (client.channelState.has(id)) {
-        const observable = client.channelState.get(id)
-        for (const [, handlers] of observable.subscribers) {
-          handlers(payload)
+      const channel = client.channelState.get(id)
+      if (!id) {
+        console.info('cannot find channel', channel, id)
+      } else {
+        if (!channel.inTransit) {
+          channel.inTransit = true
+          const { buffers, len } = encodeSubscribeChannelMessage(id, [
+            6,
+            channel.name,
+            channel.payload,
+          ])
+          const n = new Uint8Array(len)
+          let c = 0
+          for (const b of buffers) {
+            n.set(b, c)
+            c += b.length
+          }
+          client.connection.ws.send(n)
+          if (channel.removeTimer !== -1 && channel.removeTimer < 2) {
+            channel.removeTimer += 1
+          }
+          setTimeout(() => {
+            const channel = client.channelState.get(id)
+            if (channel) {
+              channel.inTransit = false
+            }
+          }, 5e3)
         }
-        found = true
+        client.connection.ws.send(buffer)
       }
+    } else if (type === 7) {
+      // | 4 header | 1 subType |
+      const subType = readUint8(buffer, 4, 1)
 
-      if (debug) {
-        debugChannel(client, id, payload, found)
+      if (subType === 0) {
+        // | 4 header | 1 subType | 8 id | * payload |
+        const id = readUint8(buffer, 5, 8)
+
+        const start = 13
+        const end = len + 5
+        let payload: any
+
+        // if not empty response, parse it
+        if (len !== 9) {
+          const r = new TextDecoder().decode(
+            isDeflate
+              ? fflate.inflateSync(buffer.slice(start, end))
+              : buffer.slice(start, end)
+          )
+          try {
+            payload = JSON.parse(r)
+          } catch (err) {}
+          payload = r
+        }
+
+        let found = false
+
+        if (client.channelState.has(id)) {
+          const observable = client.channelState.get(id)
+          for (const [, handlers] of observable.subscribers) {
+            handlers(payload)
+          }
+          found = true
+        }
+
+        if (debug) {
+          debugChannel(client, id, payload, found)
+        }
       }
     }
     // ---------------------------------

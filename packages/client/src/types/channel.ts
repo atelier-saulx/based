@@ -33,9 +33,10 @@ export type ChannelPublishQueue = ChannelPublishQueueItem[]
 export type ChannelState = Map<
   number,
   {
+    inTransit?: boolean
     payload: any
     name: string
     subscribers: Map<number, ChannelMessageFunction>
-    removeTimer?: number
+    removeTimer: number
   }
 >

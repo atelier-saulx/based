@@ -170,28 +170,6 @@ export const updateId = (payload: Uint8Array, id: number): Uint8Array => {
   return prevId
 }
 
-export const encodeChannelMessage = (
-  id: number,
-  buffer: Buffer
-): Uint8Array => {
-  // Type 6 (full data)
-  // | 4 header | 8 id | * payload |
-  let isDeflate = false
-  if (buffer.length > COMPRESS_FROM_BYTES) {
-    isDeflate = true
-    buffer = zlib.deflateRawSync(buffer, {})
-  }
-  const msgSize = 8 + buffer.length
-  const header = encodeHeader(6, isDeflate, msgSize)
-  const array = new Uint8Array(4 + msgSize)
-  storeUint8(array, header, 0, 4)
-  storeUint8(array, id, 4, 8)
-  if (buffer.length) {
-    array.set(buffer, 12)
-  }
-  return array
-}
-
 export const encodeObservableResponse = (
   id: number,
   checksum: number,
@@ -227,7 +205,6 @@ export const encodeObservableDiffResponse = (
 ): Uint8Array => {
   // Type 2 (diff data)
   // | 4 header | 8 id | 8 checksum | 8 previousChecksum | * diff |
-
   let isDeflate = false
 
   if (buffer.length > COMPRESS_FROM_BYTES) {
@@ -276,6 +253,29 @@ export const encodeAuthResponse = (buffer: Buffer): Uint8Array => {
 export const encodeErrorResponse = (buffer: Buffer): Uint8Array => {
   // Type 5
   return encodeSimpleResponse(5, buffer)
+}
+
+export const encodeChannelMessage = (
+  id: number,
+  buffer: Buffer
+): Uint8Array => {
+  // Type 7.0 (fill data)
+  // | 4 header | 1 subType | 8 id | * payload |
+  let isDeflate = false
+  if (buffer.length > COMPRESS_FROM_BYTES) {
+    isDeflate = true
+    buffer = zlib.deflateRawSync(buffer, {})
+  }
+  const msgSize = 8 + buffer.length + 1
+  const header = encodeHeader(7, isDeflate, msgSize)
+  const array = new Uint8Array(4 + msgSize)
+  storeUint8(array, 0, 4, 1)
+  storeUint8(array, header, 0, 4)
+  storeUint8(array, id, 5, 8)
+  if (buffer.length) {
+    array.set(buffer, 13)
+  }
+  return array
 }
 
 export const decode = (buffer: Uint8Array): any => {

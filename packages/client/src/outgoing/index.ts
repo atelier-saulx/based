@@ -8,7 +8,7 @@ import {
   encodeObserveMessage,
   encodePublishMessage,
   encodeSubscribeChannelMessage,
-} from './messageEncoders'
+} from './protocol'
 import { deepEqual } from '@saulx/utils'
 import {
   debugChannel,

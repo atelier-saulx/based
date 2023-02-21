@@ -1,4 +1,9 @@
-import type { Context, BasedFunctionClient } from '@based/functions'
+import type {
+  Context,
+  BasedFunctionClient,
+  WebSocketSession,
+  HttpSession,
+} from '@based/functions'
 import type { ActiveObservable } from './observable'
 import uws from '@based/uws'
 import initNetwork from './incoming'
@@ -38,12 +43,12 @@ export type ServerOptions = {
   auth?: AuthConfig
   ws?: {
     maxBackpressureSize?: number
-    open?: (client: Context) => void
-    close?: (client: Context) => void
+    open?: (client: Context<WebSocketSession>) => void
+    close?: (client: Context<WebSocketSession>) => void
   }
   http?: {
-    open?: (client: Context) => void
-    close?: (client: Context) => void
+    open?: (client: Context<HttpSession>) => void
+    close?: (client: Context<HttpSession>) => void
   }
 }
 
