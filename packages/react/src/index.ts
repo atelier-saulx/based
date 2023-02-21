@@ -22,15 +22,18 @@ export const Provider = ({
 
 export const useAuthState = (): AuthState => {
   const client: BasedClient = useContext(Ctx)
-  const [state, setState] = useState<AuthState>(client.authState)
+  const [state, setState] = useState<AuthState>(client?.authState || {})
 
   useEffect(() => {
-    const listener = (authState) => {
-      setState(authState)
+    if (client) {
+      setState(client.authState)
+      const listener = (authState) => {
+        setState(authState)
+      }
+      client.on('authstate-change', listener)
+      return () => client.off('authstate-change', listener)
     }
-    client.on('authstate-change', listener)
-    return () => client.off('authstate-change', listener)
-  }, [])
+  }, [client])
 
   return state
 }
