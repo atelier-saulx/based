@@ -27,7 +27,7 @@ export const cleanUpChannels = (server: BasedServer) => {
     server.channelCleanTimeout = setTimeout(() => {
       server.channelCleanTimeout = null
       let keepRunning = false
-      let shortestCycleTime = 0
+      let shortestCycleTime: number
       server.activeChannelsById.forEach((channel) => {
         if (channel.timeTillDestroy !== null) {
           channel.timeTillDestroy -= cycleTime

@@ -23,18 +23,25 @@ const destroyObs = (server: BasedServer, obs: ActiveObservable) => {
 
 export const cleanUpObs = (server: BasedServer) => {
   if (!server.obsCleanTimeout) {
+    console.info(server.obsCleanupCycle)
     const cycleTime = Math.max(server.obsCleanupCycle, 500)
     server.obsCleanTimeout = setTimeout(() => {
+      const d = Date.now()
+      let cnt = 0
       server.obsCleanTimeout = null
       let keepRunning = false
-      let shortestCycleTime = 0
+      let shortestCycleTime: number
       server.activeObservablesById.forEach((obs) => {
         if (obs.timeTillDestroy !== null) {
           obs.timeTillDestroy -= cycleTime
           if (obs.timeTillDestroy < 1) {
+            cnt++
             destroyObs(server, obs)
           } else {
-            if (obs.timeTillDestroy < shortestCycleTime) {
+            if (
+              shortestCycleTime === undefined ||
+              obs.timeTillDestroy < shortestCycleTime
+            ) {
               shortestCycleTime = obs.timeTillDestroy
             }
             keepRunning = true
@@ -42,9 +49,19 @@ export const cleanUpObs = (server: BasedServer) => {
         }
       })
       if (keepRunning) {
-        server.obsCleanupCycle = Math.round(shortestCycleTime / 2)
+        server.obsCleanupCycle = shortestCycleTime
         cleanUpObs(server)
       }
+      console.info(
+        'Cleanup time',
+        cycleTime,
+        'new',
+        server.obsCleanupCycle,
+        Date.now() - d,
+        'ms',
+        cnt,
+        'obs cleaned up'
+      )
     }, cycleTime)
   }
 }

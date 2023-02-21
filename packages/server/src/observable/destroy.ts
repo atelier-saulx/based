@@ -17,6 +17,7 @@ export const updateDestroyTimer = (
   channel.timeTillDestroy = closeAfterIdleTime
   channel.closeAfterIdleTime = closeAfterIdleTime
   const closeTime = Math.round(closeAfterIdleTime / 2)
+
   if (closeTime < server.obsCleanupCycle) {
     server.obsCleanupCycle = closeTime
   }
