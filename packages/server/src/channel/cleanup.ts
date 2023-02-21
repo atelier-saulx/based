@@ -34,7 +34,10 @@ export const cleanUpChannels = (server: BasedServer) => {
           if (channel.timeTillDestroy < 1) {
             destroyChannel(server, channel)
           } else {
-            if (channel.timeTillDestroy < shortestCycleTime) {
+            if (
+              shortestCycleTime === undefined ||
+              channel.timeTillDestroy < shortestCycleTime
+            ) {
               shortestCycleTime = channel.timeTillDestroy
             }
             keepRunning = true
