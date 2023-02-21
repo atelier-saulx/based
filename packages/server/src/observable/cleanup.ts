@@ -23,7 +23,6 @@ const destroyObs = (server: BasedServer, obs: ActiveObservable) => {
 
 export const cleanUpObs = (server: BasedServer) => {
   if (!server.obsCleanTimeout) {
-    console.info(server.obsCleanupCycle)
     const cycleTime = Math.max(server.obsCleanupCycle, 500)
     server.obsCleanTimeout = setTimeout(() => {
       // const d = Date.now()
