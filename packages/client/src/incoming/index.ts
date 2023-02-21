@@ -6,6 +6,7 @@ import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState'
 import { setStorage } from '../localStorage'
+import { debugFunction } from './debug'
 
 const getName = (client: BasedClient, id: number): string => {
   const sub = client.observeState.get(id)
@@ -113,12 +114,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'function',
-          direction: 'incoming',
-          payload,
-          id,
-        })
+        debugFunction(client, payload, id)
       }
     }
 
@@ -208,12 +204,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'subscriptionDiff',
-          direction: 'incoming',
-          id,
-          payload: diff,
-        })
+        //
       }
     }
 
