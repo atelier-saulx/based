@@ -1,5 +1,10 @@
 import { BasedClient } from '..'
-import { ChannelQueueItem } from '../types/channel'
+import {
+  FunctionQueueItem,
+  GetObserveQueueItem,
+  ObserveQueueItem,
+} from '../types'
+import { ChannelPublishQueueItem, ChannelQueueItem } from '../types/channel'
 
 export const debugChannel = (
   client: BasedClient,
@@ -20,5 +25,56 @@ export const debugChannel = (
       : o[2]
       ? { name: o[1], payload: o[2] }
       : { name: o[1] }),
+  })
+}
+
+export const debugGet = (
+  client: BasedClient,
+  id: number,
+  o: GetObserveQueueItem
+) => {
+  client.emit('debug', {
+    direction: 'outgoing',
+    type: 'get',
+    id,
+    payload: { name: o[1], checksum: o[2], payload: o[3] },
+  })
+}
+
+export const debugObserve = (
+  client: BasedClient,
+  id: number,
+  o: ObserveQueueItem
+) => {
+  client.emit('debug', {
+    direction: 'outgoing',
+    type: o[0] === 2 ? 'unsubscribe' : 'subscribe',
+    id,
+    ...(o[0] === 2
+      ? undefined
+      : o[3]
+      ? { name: o[1], checksum: o[2], payload: o[3] }
+      : { name: o[1], checksum: o[2] }),
+  })
+}
+
+export const debugFunction = (client: BasedClient, f: FunctionQueueItem) => {
+  client.emit('debug', {
+    direction: 'outgoing',
+    type: 'function',
+    name: f[1],
+    ...(f[2] ? { payload: f[2] } : undefined),
+  })
+}
+
+export const debugPublish = (
+  client: BasedClient,
+  f: ChannelPublishQueueItem
+) => {
+  client.emit('debug', {
+    direction: 'outgoing',
+    type: 'publishChannel',
+    id: f[0],
+    payload: f[1],
   })
 }
