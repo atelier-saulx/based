@@ -45,6 +45,8 @@ export const drainQueue = (client: BasedClient) => {
         return
       }
 
+      const debug = client.listeners.debug
+
       if (
         client.functionQueue.length ||
         client.observeQueue.size ||
@@ -66,6 +68,24 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len
+
+          if (debug) {
+            client.emit('debug', {
+              direction: 'outgoing',
+              type:
+                o[0] === 7
+                  ? 'unsubscribeChannel'
+                  : o[0] === 6
+                  ? 'registerChannelId'
+                  : 'subscribeChannel',
+              id,
+              ...(o[0] === 7
+                ? undefined
+                : o[2]
+                ? { name: o[1], payload: o[2] }
+                : { name: o[1] }),
+            })
+          }
         }
 
         // ------- GetObserve
@@ -73,6 +93,15 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeGetObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
+
+          if (debug) {
+            client.emit('debug', {
+              direction: 'outgoing',
+              type: 'get',
+              id,
+              payload: { name: o[1], checksum: o[2], payload: o[3] },
+            })
+          }
         }
 
         // ------- Observe
@@ -80,6 +109,19 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
+
+          if (debug) {
+            client.emit('debug', {
+              direction: 'outgoing',
+              type: o[0] === 2 ? 'unsubscribe' : 'subscribe',
+              id,
+              ...(o[0] === 2
+                ? undefined
+                : o[3]
+                ? { name: o[1], checksum: o[2], payload: o[3] }
+                : { name: o[1], checksum: o[2] }),
+            })
+          }
         }
 
         // ------- Function
@@ -87,12 +129,31 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeFunctionMessage(f)
           buffs.push(...buffers)
           l += len
+
+          if (debug) {
+            client.emit('debug', {
+              direction: 'outgoing',
+              type: 'function',
+              name: f[1],
+              ...(f[2] ? { payload: f[2] } : undefined),
+            })
+          }
         }
 
         // ------- Publish
         for (const f of publish) {
           const { buffers, len } = encodePublishMessage(f)
           buffs.push(...buffers)
+
+          if (debug) {
+            client.emit('debug', {
+              direction: 'outgoing',
+              type: 'publishChannel',
+              id: f[0],
+              payload: f[1],
+            })
+          }
+
           l += len
         }
 

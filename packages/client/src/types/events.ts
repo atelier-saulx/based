@@ -1,24 +1,65 @@
 import { AuthState } from './auth'
 
+// incoming
+//   0 = function
+//   1 = subscription
+//   2 = subscriptionDiff
+//   3 = get
+//   4 = authData
+//   5 = errorData
+//   6 = channelMessage
+//   7 = requesChannelName
+
+// outgoing
+//   0 = function
+//   1 = subscribe
+//   2 = unsubscribe
+//   3 = get from observable
+//   4 = auth
+//   5 = subscribeChannel
+//   6 = publishChannel
+//   7 = unsubscribeChannel
+
+type DebugEvent =
+  | {
+      type:
+        | 'function'
+        | 'subscribe'
+        | 'subscriptionDiff'
+        | 'get'
+        | 'auth'
+        | 'error'
+        | 'channelMessage'
+        | 'requesChannelName'
+      direction: 'incoming'
+      payload?: any
+      id?: number
+      name?: string
+      msg?: string
+    }
+  | {
+      type:
+        | 'function'
+        | 'subscribe'
+        | 'unsubscribe'
+        | 'get'
+        | 'auth'
+        | 'subscribeChannel'
+        | 'publishChannel'
+        | 'unsubscribeChannel'
+        | 'registerChannelId'
+      direction: 'outgoing'
+      payload?: any
+      id?: number
+      name?: string
+      msg?: string
+    }
+
 export type EventMap = {
   reconnect: true
   disconnect: true
   connect: true
-  debug: {
-    //   0 = functionData
-    //   1 = subscriptionData
-    //   2 = subscriptionDiffData
-    //   3 = get
-    //   4 = authData
-    //   5 = errorData
-    //   6 = channelMessage
-    //   7 = requesChannelName
-    type: string
-    header: { type: number; isDeflate: boolean; len: number }
-    len: number
-    payload: any
-    direction: 'outgoing' | 'incoming'
-  }
+  debug: DebugEvent
   'authstate-change': AuthState
 }
 

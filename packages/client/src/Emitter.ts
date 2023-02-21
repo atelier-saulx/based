@@ -12,7 +12,7 @@ class Emitter {
     [E in Event]?: Listener<EventMap[E]>[]
   } = {}
 
-  emit(type: Event, val: EventMap[Event]) {
+  emit<E extends Event>(type: E, val: EventMap[E]) {
     if (this.listeners[type]) {
       const lis = this.listeners[type]
       for (let i = 0, len = lis.length; i < lis.length; i++) {

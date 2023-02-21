@@ -78,6 +78,8 @@ export const incoming = async (
   client: BasedClient,
   data: any /* TODO: type */
 ) => {
+  const debug = client.listeners.debug
+
   try {
     const d = data.data
 
@@ -109,6 +111,15 @@ export const incoming = async (
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
       }
+
+      if (debug) {
+        client.emit('debug', {
+          type: 'function',
+          direction: 'incoming',
+          payload,
+          id,
+        })
+      }
     }
 
     // ------- Get checksum is up to date
@@ -121,6 +132,14 @@ export const incoming = async (
           resolve(client.cache.get(id).value)
         }
         client.getState.delete(id)
+      }
+
+      if (debug) {
+        client.emit('debug', {
+          type: 'get',
+          direction: 'incoming',
+          id,
+        })
       }
     }
 
@@ -187,6 +206,15 @@ export const incoming = async (
         }
         client.getState.delete(id)
       }
+
+      if (debug) {
+        client.emit('debug', {
+          type: 'subscriptionDiff',
+          direction: 'incoming',
+          id,
+          payload: diff,
+        })
+      }
     }
 
     // ------- Subscription data
@@ -242,10 +270,14 @@ export const incoming = async (
         found = true
       }
 
-      if (!found) {
-        console.warn('Cannot find sub for incoming id (allready removed)', id)
-      } else {
-        // console.info('-->', id)
+      if (debug) {
+        client.emit('debug', {
+          type: 'subscribe',
+          direction: 'incoming',
+          id,
+          payload,
+          ...(!found ? { msg: 'Cannot find subscription handler' } : undefined),
+        })
       }
     }
 
@@ -282,6 +314,14 @@ export const incoming = async (
           updateAuthState(client, payload)
         }
         client.authRequest.resolve?.(client.authState)
+      }
+
+      if (debug) {
+        client.emit('debug', {
+          type: 'auth',
+          direction: 'incoming',
+          payload,
+        })
       }
     }
 
@@ -337,6 +377,14 @@ export const incoming = async (
           client.getState.delete(payload.observableId)
         }
       }
+
+      if (debug) {
+        client.emit('debug', {
+          type: 'error',
+          direction: 'incoming',
+          payload,
+        })
+      }
       // else emit ERROR maybe?
     } // ------- Channel data
     else if (type === 6) {
@@ -370,11 +418,14 @@ export const incoming = async (
         found = true
       }
 
-      if (!found) {
-        console.warn(
-          'Cannot find channel handler for incoming id (allready removed)',
-          id
-        )
+      if (debug) {
+        client.emit('debug', {
+          type: 'channelMessage',
+          direction: 'incoming',
+          payload,
+          id,
+          ...(!found ? { msg: 'Cannot find channel handler' } : undefined),
+        })
       }
     }
     // ---------------------------------
