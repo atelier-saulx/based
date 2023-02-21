@@ -19,13 +19,6 @@ export class BasedChannel extends BasedChannelAbstract {
     super()
     this.ctx = ctx
     this.payload = payload
-    console.log(
-      'OK OK THIS',
-      typeof payload,
-      payload,
-      name,
-      genObservableId(name, payload)
-    )
     this.id = genObservableId(name, payload)
     this.name = name
   }
