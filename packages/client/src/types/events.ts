@@ -33,8 +33,7 @@ type DebugEvent =
         | 'requesChannelName'
       direction: 'incoming'
       payload?: any
-      id?: number
-      info: { name?: string; id?: number; payload?: any }
+      target: { name?: string; id?: number; payload?: any }
       msg?: string
       checksum?: number
     }
@@ -51,7 +50,7 @@ type DebugEvent =
         | 'registerChannelId'
       direction: 'outgoing'
       payload?: any
-      info: { name?: string; id?: number; payload?: any }
+      target: { name?: string; id?: number; payload?: any }
       msg?: string
       checksum?: number
     }

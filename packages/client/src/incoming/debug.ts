@@ -1,19 +1,5 @@
 import { BasedClient } from '..'
-
-const getInfo = (
-  client: BasedClient,
-  id: number,
-  type: 'channel' | 'sub'
-): { name: string; payload?: any; id: number } => {
-  const sub =
-    type === 'sub' ? client.observeState.get(id) : client.channelState.get(id)
-  if (!sub) {
-    return { name: `[Cannot find ${id}]`, id }
-  }
-  return sub.payload
-    ? { name: sub.name, payload: sub.payload, id }
-    : { name: sub.name, id }
-}
+import { getTargetInfo } from '../getTargetInfo'
 
 export const debugFunction = (
   client: BasedClient,
@@ -24,7 +10,7 @@ export const debugFunction = (
     type: 'function',
     direction: 'incoming',
     payload,
-    info: { id },
+    target: { id },
   })
 }
 
@@ -41,7 +27,7 @@ export const debugDiff = (
       direction: 'incoming',
       payload,
       checksum,
-      info: getInfo(client, id, 'sub'),
+      target: getTargetInfo(client, id, 'sub'),
       msg: 'Cannot apply corrupt patch',
     })
     return
@@ -49,10 +35,9 @@ export const debugDiff = (
   client.emit('debug', {
     type: 'subscriptionDiff',
     direction: 'incoming',
-    id,
     checksum,
     payload,
-    info: getInfo(client, id, 'sub'),
+    target: getTargetInfo(client, id, 'sub'),
   })
 }
 
@@ -60,7 +45,7 @@ export const debugGet = (client: BasedClient, id: number) => {
   client.emit('debug', {
     type: 'get',
     direction: 'incoming',
-    info: { id },
+    target: { id },
     msg: 'Cache is up to date',
   })
 }
@@ -77,7 +62,7 @@ export const debugSubscribe = (
     direction: 'incoming',
     payload,
     checksum,
-    info: getInfo(client, id, 'sub'),
+    target: getTargetInfo(client, id, 'sub'),
     ...(!found ? { msg: 'Cannot find subscription handler' } : undefined),
   })
 }
@@ -87,7 +72,7 @@ export const debugAuth = (client: BasedClient, payload: any) => {
     type: 'auth',
     direction: 'incoming',
     payload,
-    info: {},
+    target: {},
   })
 }
 
@@ -96,7 +81,7 @@ export const debugError = (client: BasedClient, payload: any) => {
     type: 'error',
     direction: 'incoming',
     payload,
-    info: {},
+    target: {},
   })
 }
 
@@ -110,7 +95,7 @@ export const debugChannel = (
     type: 'channelMessage',
     direction: 'incoming',
     payload,
-    info: getInfo(client, id, 'channel'),
+    target: getTargetInfo(client, id, 'channel'),
     ...(!found ? { msg: 'Cannot find channel handler' } : undefined),
   })
 }
