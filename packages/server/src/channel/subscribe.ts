@@ -5,6 +5,7 @@ import {
   Context,
   ChannelMessageFunction,
 } from '@based/functions'
+import { startChannel } from './start'
 
 export const subscribeChannel = (
   server: BasedServer,
@@ -19,10 +20,19 @@ export const subscribeChannel = (
   const channel = getChannelAndStopRemove(server, id)
   session.obs.add(id)
   channel.clients.add(session.id)
+  if (!channel.isActive) {
+    startChannel(server, id)
+  }
 }
 
 export const subscribeChannelFunction = (
   server: BasedServer,
   id: number,
   update: ChannelMessageFunction
-) => getChannelAndStopRemove(server, id).functionChannelClients.add(update)
+) => {
+  const channel = getChannelAndStopRemove(server, id)
+  channel.functionChannelClients.add(update)
+  if (!channel.isActive) {
+    startChannel(server, id)
+  }
+}

@@ -306,7 +306,7 @@ export const incoming = async (
         debugError(client, payload)
       }
       // else emit ERROR maybe?
-    } // ------- 6
+    } // ------- Re-Publish send channel name + payload
     else if (type === 6) {
       // | 4 header | 8 id | * payload |
       // get id add last send on the state
@@ -350,7 +350,8 @@ export const incoming = async (
           debugChannelReqId(client, id, 'publish', buffer, isDeflate)
         }
       }
-    } else if (type === 7) {
+    } // ----------- Channel message
+    else if (type === 7) {
       // | 4 header | 1 subType |
       const subType = readUint8(buffer, 4, 1)
 
@@ -371,8 +372,9 @@ export const incoming = async (
           )
           try {
             payload = JSON.parse(r)
-          } catch (err) {}
-          payload = r
+          } catch (err) {
+            payload = r
+          }
         }
 
         let found = false

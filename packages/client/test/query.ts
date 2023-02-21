@@ -50,7 +50,7 @@ test.serial('query functions', async (t) => {
 
   await wait(500)
   close()
-  server.functions.update({
+  await server.functions.update({
     query: true,
     name: 'counter',
     checksum: 2,

@@ -105,7 +105,7 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  async updateFunction(spec: BasedSpec) {
+  async update(spec: BasedSpec) {
     const { name } = spec
     const prevSpec = this.specs[name]
     if (prevSpec) {
@@ -120,12 +120,12 @@ export class BasedFunctions {
           function: prevSpec,
           name,
         })
-        this.update(spec)
+        this.updateInternal(spec)
       } else {
-        this.update(spec)
+        this.updateInternal(spec)
       }
     } else {
-      this.update(spec)
+      this.updateInternal(spec)
     }
   }
 
@@ -154,7 +154,7 @@ export class BasedFunctions {
     spec = await this.installGaurdedFromConfig(name)
 
     if (spec) {
-      this.update(spec)
+      this.updateInternal(spec)
       return this.getFromStore(name)
     }
     return null
@@ -180,7 +180,7 @@ export class BasedFunctions {
     return null
   }
 
-  update(spec: BasedSpec): boolean {
+  updateInternal(spec: BasedSpec): boolean {
     if (!spec) {
       return false
     }
