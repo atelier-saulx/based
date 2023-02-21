@@ -1,79 +1,25 @@
 import { BasedClient } from '..'
 import fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
-import { addGetToQueue } from '../outgoing'
 import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState'
 import { setStorage } from '../localStorage'
-import { debugFunction } from './debug'
-
-const getName = (client: BasedClient, id: number): string => {
-  const sub = client.observeState.get(id)
-  return sub?.name
-}
-
-export const decodeHeader = (
-  nr: number
-): { type: number; isDeflate: boolean; len: number } => {
-  // 4 bytes
-  // type (3 bits)
-  //   0 = functionData
-  //   1 = subscriptionData
-  //   2 = subscriptionDiffData
-  //   3 = get
-  //   4 = authData
-  //   5 = errorData
-  //   6 = channelMessage
-  //   7 = requesChannelName
-  // isDeflate (1 bit)
-  // len (28 bits)
-  const len = nr >> 4
-  const meta = nr & 15
-  const type = meta >> 1
-  const isDeflate = meta & 1
-  return {
-    type,
-    isDeflate: isDeflate === 1,
-    len,
-  }
-}
-
-export const readUint8 = (
-  buff: Uint8Array,
-  start: number,
-  len: number
-): number => {
-  let n = 0
-  const s = len - 1 + start
-  for (let i = s; i >= start; i--) {
-    n = n * 256 + buff[i]
-  }
-  return n
-}
-
-const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
-  if (typeof window === 'undefined') {
-    if (d instanceof Buffer) {
-      return new Uint8Array(d)
-    }
-  } else {
-    if (d instanceof Blob) {
-      const buffer = await d.arrayBuffer()
-      return new Uint8Array(buffer)
-    }
-  }
-  throw new Error('Recieved incorrect data')
-}
-
-const requestFullData = (client: BasedClient, id: number) => {
-  const sub = client.observeState.get(id)
-  if (!sub) {
-    console.warn(`Cannot find query function name for id from diff [id]`)
-    return
-  }
-  addGetToQueue(client, sub.name, id, sub.payload)
-}
+import {
+  debugDiff,
+  debugFunction,
+  debugGet,
+  debugSubscribe,
+  debugAuth,
+  debugError,
+  debugChannel,
+} from './debug'
+import {
+  parseArrayBuffer,
+  decodeHeader,
+  readUint8,
+  requestFullData,
+} from './protocol'
 
 export const incoming = async (
   client: BasedClient,
@@ -131,11 +77,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'get',
-          direction: 'incoming',
-          id,
-        })
+        debugGet(client, id)
       }
     }
 
@@ -178,7 +120,9 @@ export const incoming = async (
         cachedData.value = applyPatch(cachedData.value, diff)
         cachedData.checksum = checksum
       } catch (err) {
-        console.warn('Cannot apply corrupt patch for ' + getName(client, id))
+        if (debug) {
+          debugDiff(client, diff, id, true)
+        }
         requestFullData(client, id)
         return
       }
@@ -204,7 +148,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        //
+        debugDiff(client, diff, id)
       }
     }
 
@@ -214,12 +158,11 @@ export const incoming = async (
       const id = readUint8(buffer, 4, 8)
       const checksum = readUint8(buffer, 12, 8)
 
-      // console.info('Incoming sub data', getName(client, id), id, checksum)
       const start = 20
       const end = len + 4
       let payload: any
 
-      // if not empty response, parse it
+      // If not empty response, parse it
       if (len !== 16) {
         payload = JSON.parse(
           new TextDecoder().decode(
@@ -229,8 +172,6 @@ export const incoming = async (
           )
         )
       }
-
-      // handle max size etc / localstorage etc
 
       client.cache.set(id, {
         value: payload,
@@ -262,13 +203,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'subscribe',
-          direction: 'incoming',
-          id,
-          payload,
-          ...(!found ? { msg: 'Cannot find subscription handler' } : undefined),
-        })
+        debugSubscribe(client, id, payload, found)
       }
     }
 
@@ -308,11 +243,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'auth',
-          direction: 'incoming',
-          payload,
-        })
+        debugAuth(client, payload)
       }
     }
 
@@ -370,11 +301,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'error',
-          direction: 'incoming',
-          payload,
-        })
+        debugError(client, payload)
       }
       // else emit ERROR maybe?
     } // ------- Channel data
@@ -410,13 +337,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        client.emit('debug', {
-          type: 'channelMessage',
-          direction: 'incoming',
-          payload,
-          id,
-          ...(!found ? { msg: 'Cannot find channel handler' } : undefined),
-        })
+        debugChannel(client, id, payload, found)
       }
     }
     // ---------------------------------
