@@ -37,9 +37,7 @@ export type GetState = Map<
 // 2 = unsubscribe
 export type ObserveType = 1 | 2
 
-// fix this format dont need an array ay all object makes more sense...
-export type ObserveQueue = Map<
-  number, // id
+export type ObserveQueueItem =
   | [
       1,
       string, // name
@@ -52,12 +50,16 @@ export type ObserveQueue = Map<
       number // checksum
     ]
   | [2]
+
+// fix this format dont need an array ay all object makes more sense...
+export type ObserveQueue = Map<
+  number, // id
+  ObserveQueueItem
 >
 
 // Type of subscriptions
 // 3 = get
-export type GetObserveQueue = Map<
-  number, // id
+export type GetObserveQueueItem =
   | [
       3,
       string, // name
@@ -69,4 +71,8 @@ export type GetObserveQueue = Map<
       string, // name
       number // checksum,
     ]
+
+export type GetObserveQueue = Map<
+  number, // id
+  GetObserveQueueItem
 >

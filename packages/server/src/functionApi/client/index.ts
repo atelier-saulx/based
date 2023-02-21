@@ -49,8 +49,11 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     return streamFunction(this.server, name, ctx, streamOpts)
   }
 
-  renewAuthState(ctx: Context<Session>, authState?: AuthState): void {
-    this.server.auth.renewAuthState(ctx, authState)
+  renewAuthState(
+    ctx: Context<Session>,
+    authState?: AuthState
+  ): Promise<AuthState> {
+    return this.server.auth.renewAuthState(ctx, authState)
   }
 
   setAuthState(ctx: Context<Session>, authState: AuthState): void {

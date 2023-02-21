@@ -7,8 +7,7 @@ export type ChannelMessageFunction<K = any> = (message: K) => void
 
 export type ChannelType = 5 | 7
 
-export type ChannelQueue = Map<
-  number, // id
+export type ChannelQueueItem =
   | [
       5,
       string, // name
@@ -22,6 +21,10 @@ export type ChannelQueue = Map<
   | [6, string, any]
   | [6, string]
   | [7]
+
+export type ChannelQueue = Map<
+  number, // id
+  ChannelQueueItem
 >
 
 export type ChannelPublishQueueItem = [number, any]

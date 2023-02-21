@@ -1,7 +1,7 @@
 import fflate from 'fflate'
 import { AuthState } from '../types/auth'
 import { FunctionQueueItem, GetObserveQueue, ObserveQueue } from '../types'
-import { ChannelPublishQueueItem, ChannelQueue } from '../types/channel'
+import { ChannelPublishQueueItem, ChannelQueueItem } from '../types/channel'
 
 const encoder = new TextEncoder()
 
@@ -98,7 +98,7 @@ export const encodeGetObserveMessage = (
 
 export const encodeSubscribeChannelMessage = (
   id: number,
-  o: ChannelQueue extends Map<any, infer I> ? I : never
+  o: ChannelQueueItem
 ): { buffers: Uint8Array[]; len: number } => {
   let len = 4
   const [type, name, payload] = o
