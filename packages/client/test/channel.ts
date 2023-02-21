@@ -219,7 +219,7 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('Nested channel publish + subscribe', async (t) => {
+test.serial('Nested channel publish + subscribe', async (t) => {
   let closeCalled = false
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = await createSimpleServer({
