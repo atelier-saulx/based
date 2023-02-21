@@ -119,11 +119,13 @@ export const encodeSubscribeChannelMessage = (
 
   const n = encoder.encode(name)
   len += 1 + n.length
-  const [, p] = encodePayload(payload, true)
   const isRequestSubscriber = type === 6
+
+  const [, p] = encodePayload(payload, true)
   if (p) {
     len += p.length
   }
+
   const buffLen = 8
   len += buffLen
   const header = encodeHeader(5, isRequestSubscriber, len)

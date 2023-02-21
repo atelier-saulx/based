@@ -55,9 +55,15 @@ export const channelPublishMessage: BinaryMessageHandler = (
     return true
   }
 
-  const payload = parsePayload(
-    decodePayload(new Uint8Array(arr.slice(start + 12, start + len)), isDeflate)
-  )
+  const payload =
+    len === 12
+      ? undefined
+      : parsePayload(
+          decodePayload(
+            new Uint8Array(arr.slice(start + 12, start + len)),
+            isDeflate
+          )
+        )
 
   if (route.public) {
     installFn(server, ctx, route)

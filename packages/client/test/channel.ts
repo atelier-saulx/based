@@ -218,3 +218,70 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
   client.disconnect()
   await server.destroy()
 })
+
+test.serial.only('Nested channel publish + subscribe', async (t) => {
+  let closeCalled = false
+  const listeners: Map<number, (msg: any) => void> = new Map()
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    closeAfterIdleTime: {
+      channel: 0,
+      query: 0,
+    },
+    functions: {
+      helloPublish: async (based) => {
+        based.channel('a').publish('from helloPublish')
+        return 'hello!'
+      },
+    },
+    channels: {
+      a: {
+        publish: (based, payload, msg, id) => {
+          listeners.get(id)?.(msg)
+        },
+        function: (based, payload, id, update) => {
+          console.info('SUB', id, payload)
+          listeners.set(id, update)
+          return () => {
+            closeCalled = true
+          }
+        },
+      },
+      b: {
+        publish: () => {},
+        function: (based, payload, id, update) => {
+          console.info('???', String(payload))
+          return based.channel('a', payload).subscribe((msg) => {
+            console.info('channel timesss')
+            update(msg)
+          })
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  const r: any[] = []
+  const r2: any[] = []
+  const closeChannel = client.channel('a').subscribe((msg) => {
+    r.push(msg)
+  })
+  const closeChannel2 = client.channel('b').subscribe((msg) => {
+    r2.push(msg)
+  })
+  await client.call('helloPublish')
+  await wait(500)
+  t.deepEqual(r, ['from helloPublish'])
+  t.deepEqual(r2, r)
+  closeChannel2()
+  closeChannel()
+  await wait(1500)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  t.true(closeCalled)
+  client.disconnect()
+  await server.destroy()
+})

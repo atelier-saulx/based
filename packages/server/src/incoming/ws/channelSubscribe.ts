@@ -116,12 +116,15 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   if (isChannelIdRequester) {
     // TODO: Add authorization here....
     if (!hasChannel(server, id)) {
-      const payload = parsePayload(
-        decodePayload(
-          new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-          false
-        )
-      )
+      const payload =
+        len === nameLen + 13
+          ? undefined
+          : parsePayload(
+              decodePayload(
+                new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+                false
+              )
+            )
       // This has to be done instantly so publish can be received immediatly
       createChannel(server, name, id, payload, true)
       installFn(server, ctx, route, id).then((spec) => {
@@ -147,12 +150,15 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  const payload = parsePayload(
-    decodePayload(
-      new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
-      false
-    )
-  )
+  const payload =
+    len === nameLen + 13
+      ? undefined
+      : parsePayload(
+          decodePayload(
+            new Uint8Array(arr.slice(start + 13 + nameLen, start + len)),
+            false
+          )
+        )
 
   session.obs.add(id)
 

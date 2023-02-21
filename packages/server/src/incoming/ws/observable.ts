@@ -110,12 +110,15 @@ export const subscribeMessage: BinaryMessageHandler = (
     return true
   }
 
-  const payload = parsePayload(
-    decodePayload(
-      new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
-      isDeflate
-    )
-  )
+  const payload =
+    len === nameLen + 21
+      ? undefined
+      : parsePayload(
+          decodePayload(
+            new Uint8Array(arr.slice(start + 21 + nameLen, start + len)),
+            isDeflate
+          )
+        )
 
   session.obs.add(id)
 

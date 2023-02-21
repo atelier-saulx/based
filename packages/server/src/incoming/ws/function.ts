@@ -91,12 +91,15 @@ export const functionMessage: BinaryMessageHandler = (
     return true
   }
 
-  const payload = parsePayload(
-    decodePayload(
-      new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
-      isDeflate
-    )
-  )
+  const payload =
+    len === nameLen + 8
+      ? undefined
+      : parsePayload(
+          decodePayload(
+            new Uint8Array(arr.slice(start + 8 + nameLen, start + len)),
+            isDeflate
+          )
+        )
 
   authorize(route, server, ctx, payload, sendFunction, requestId)
 
