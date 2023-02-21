@@ -7,6 +7,10 @@ test.serial('Subscribe channel', async (t) => {
   let closeCalled = false
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
+    closeAfterIdleTime: {
+      channel: 0,
+      query: 0,
+    },
     port: 9910,
     channels: {
       mychannel: (based, payload, id, update) => {
@@ -35,7 +39,7 @@ test.serial('Subscribe channel', async (t) => {
   await wait(500)
   t.true(numbers.length > 2)
   closeChannel()
-  await wait(1100)
+  await wait(4e3)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   t.true(closeCalled)
@@ -51,6 +55,10 @@ test.serial('Channel publish + subscribe', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
+    closeAfterIdleTime: {
+      channel: 0,
+      query: 0,
+    },
     channels: {
       a: {
         publish: (based, payload, msg, id) => {
@@ -80,7 +88,7 @@ test.serial('Channel publish + subscribe', async (t) => {
   await wait(500)
   t.deepEqual(r, ['1', '2', '3'])
   closeChannel()
-  await wait(1100)
+  await wait(1500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   t.true(closeCalled)
@@ -88,7 +96,7 @@ test.serial('Channel publish + subscribe', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('Channel publish no subscribe', async (t) => {
+test.serial('Channel publish no subscribe', async (t) => {
   const r: any[] = []
 
   const server = await createSimpleServer({
@@ -121,7 +129,7 @@ test.serial.only('Channel publish no subscribe', async (t) => {
   await wait(500)
   t.deepEqual(r, [1, 2, 3, 4])
   t.is(client.channelState.size, 0)
-  await wait(500)
+  await wait(1500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   client.disconnect()

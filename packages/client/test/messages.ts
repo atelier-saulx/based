@@ -38,9 +38,8 @@ test.serial('message incoming/outgoing', async (t) => {
 
   let debugMessages = 0
 
-  client.on('debug', (d) => {
+  client.on('debug', () => {
     debugMessages++
-    console.info(d)
   })
 
   client.connect({
