@@ -127,8 +127,14 @@ export async function createSimpleServer(
           function: fn.function,
           publish:
             fn.publish ||
-            ((msg) => {
-              console.warn('Publish to channel (no handler defined)', name, msg)
+            ((based, payload, msg, id) => {
+              console.warn(
+                '     ↓ Publish to channel (no handler defined)',
+                name,
+                payload,
+                msg,
+                id
+              )
             }),
           name,
           maxPayloadSize: 500,
@@ -139,8 +145,14 @@ export async function createSimpleServer(
         functionStore[name] = {
           checksum: 1,
           channel: true,
-          publish: (msg) => {
-            console.warn('Publish to channel (no handler defined)', name, msg)
+          publish: (based, payload, msg, id) => {
+            console.warn(
+              '     ↓ Publish to channel (no handler defined)',
+              name,
+              payload,
+              msg,
+              id
+            )
           },
           function: fn,
           name,

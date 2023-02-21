@@ -65,6 +65,8 @@ test.serial('message incoming/outgoing', async (t) => {
 
   await wait(300)
 
+  client.channel('a', { blablabla: 'blablabla' }).publish('blablabla')
+
   close()
   closeChannel()
 
