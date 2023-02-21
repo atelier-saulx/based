@@ -121,7 +121,7 @@ export const incoming = async (
         cachedData.checksum = checksum
       } catch (err) {
         if (debug) {
-          debugDiff(client, diff, id, true)
+          debugDiff(client, diff, id, checksum, true)
         }
         requestFullData(client, id)
         return
@@ -148,7 +148,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        debugDiff(client, diff, id)
+        debugDiff(client, diff, checksum, id)
       }
     }
 
@@ -203,7 +203,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        debugSubscribe(client, id, payload, found)
+        debugSubscribe(client, id, payload, checksum, found)
       }
     }
 

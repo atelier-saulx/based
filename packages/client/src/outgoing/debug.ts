@@ -19,12 +19,14 @@ export const debugChannel = (
         : o[0] === 6
         ? 'registerChannelId'
         : 'subscribeChannel',
-    id,
-    ...(o[0] === 7
-      ? undefined
-      : o[2]
-      ? { name: o[1], payload: o[2] }
-      : { name: o[1] }),
+    info: {
+      id,
+      ...(o[0] === 7
+        ? undefined
+        : o[2]
+        ? { name: o[1], payload: o[2] }
+        : { name: o[1] }),
+    },
   })
 }
 
@@ -36,8 +38,8 @@ export const debugGet = (
   client.emit('debug', {
     direction: 'outgoing',
     type: 'get',
-    id,
-    payload: { name: o[1], checksum: o[2], payload: o[3] },
+    info: { id, name: o[1], payload: o[3] },
+    checksum: o[2],
   })
 }
 
@@ -49,12 +51,14 @@ export const debugObserve = (
   client.emit('debug', {
     direction: 'outgoing',
     type: o[0] === 2 ? 'unsubscribe' : 'subscribe',
-    id,
-    ...(o[0] === 2
-      ? undefined
-      : o[3]
-      ? { name: o[1], checksum: o[2], payload: o[3] }
-      : { name: o[1], checksum: o[2] }),
+    info: {
+      id,
+      ...(o[0] === 2
+        ? undefined
+        : o[3]
+        ? { name: o[1], checksum: o[2], payload: o[3] }
+        : { name: o[1], checksum: o[2] }),
+    },
   })
 }
 
@@ -62,8 +66,10 @@ export const debugFunction = (client: BasedClient, f: FunctionQueueItem) => {
   client.emit('debug', {
     direction: 'outgoing',
     type: 'function',
-    name: f[1],
-    ...(f[2] ? { payload: f[2] } : undefined),
+    info: {
+      name: f[1],
+      ...(f[2] ? { payload: f[2] } : undefined),
+    },
   })
 }
 
@@ -74,7 +80,9 @@ export const debugPublish = (
   client.emit('debug', {
     direction: 'outgoing',
     type: 'publishChannel',
-    id: f[0],
+    info: {
+      id: f[0],
+    },
     payload: f[1],
   })
 }

@@ -34,8 +34,9 @@ type DebugEvent =
       direction: 'incoming'
       payload?: any
       id?: number
-      name?: string
+      info: { name?: string; id?: number; payload?: any }
       msg?: string
+      checksum?: number
     }
   | {
       type:
@@ -50,9 +51,9 @@ type DebugEvent =
         | 'registerChannelId'
       direction: 'outgoing'
       payload?: any
-      id?: number
-      name?: string
+      info: { name?: string; id?: number; payload?: any }
       msg?: string
+      checksum?: number
     }
 
 export type EventMap = {

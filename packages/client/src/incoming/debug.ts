@@ -1,13 +1,18 @@
 import { BasedClient } from '..'
 
-const getSubName = (client: BasedClient, id: number): string => {
-  const sub = client.observeState.get(id)
-  return sub?.name || '[Cannot find name]'
-}
-
-const getChannelame = (client: BasedClient, id: number): string => {
-  const sub = client.channelState.get(id)
-  return sub?.name || '[Cannot find name]'
+const getInfo = (
+  client: BasedClient,
+  id: number,
+  type: 'channel' | 'sub'
+): { name: string; payload?: any; id: number } => {
+  const sub =
+    type === 'sub' ? client.observeState.get(id) : client.channelState.get(id)
+  if (!sub) {
+    return { name: `[Cannot find ${id}]`, id }
+  }
+  return sub.payload
+    ? { name: sub.name, payload: sub.payload, id }
+    : { name: sub.name, id }
 }
 
 export const debugFunction = (
@@ -19,7 +24,7 @@ export const debugFunction = (
     type: 'function',
     direction: 'incoming',
     payload,
-    id,
+    info: { id },
   })
 }
 
@@ -27,15 +32,16 @@ export const debugDiff = (
   client: BasedClient,
   payload: any,
   id: number,
+  checksum: number,
   corrupt?: boolean
 ) => {
   if (corrupt) {
     client.emit('debug', {
       type: 'subscriptionDiff',
       direction: 'incoming',
-      id,
       payload,
-      name: getSubName(client, id),
+      checksum,
+      info: getInfo(client, id, 'sub'),
       msg: 'Cannot apply corrupt patch',
     })
     return
@@ -44,8 +50,9 @@ export const debugDiff = (
     type: 'subscriptionDiff',
     direction: 'incoming',
     id,
+    checksum,
     payload,
-    name: getSubName(client, id),
+    info: getInfo(client, id, 'sub'),
   })
 }
 
@@ -53,7 +60,8 @@ export const debugGet = (client: BasedClient, id: number) => {
   client.emit('debug', {
     type: 'get',
     direction: 'incoming',
-    id,
+    info: { id },
+    msg: 'Cache is up to date',
   })
 }
 
@@ -61,14 +69,15 @@ export const debugSubscribe = (
   client: BasedClient,
   id: number,
   payload: any,
+  checksum: number,
   found: boolean
 ) => {
   client.emit('debug', {
     type: 'subscribe',
     direction: 'incoming',
-    id,
     payload,
-    name: getSubName(client, id),
+    checksum,
+    info: getInfo(client, id, 'sub'),
     ...(!found ? { msg: 'Cannot find subscription handler' } : undefined),
   })
 }
@@ -78,6 +87,7 @@ export const debugAuth = (client: BasedClient, payload: any) => {
     type: 'auth',
     direction: 'incoming',
     payload,
+    info: {},
   })
 }
 
@@ -86,6 +96,7 @@ export const debugError = (client: BasedClient, payload: any) => {
     type: 'error',
     direction: 'incoming',
     payload,
+    info: {},
   })
 }
 
@@ -99,8 +110,7 @@ export const debugChannel = (
     type: 'channelMessage',
     direction: 'incoming',
     payload,
-    id,
-    name: getChannelame(client, id),
+    info: getInfo(client, id, 'channel'),
     ...(!found ? { msg: 'Cannot find channel handler' } : undefined),
   })
 }
