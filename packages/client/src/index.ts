@@ -220,6 +220,7 @@ export class BasedClient extends Emitter {
     this.connected = false
   }
 
+  // ---------- Destroy
   public isDestroyed?: boolean
   public async destroy(noStorage?: boolean) {
     if (!noStorage) {
@@ -288,3 +289,10 @@ export class BasedClient extends Emitter {
 }
 
 export { BasedOpts }
+
+export default function based(
+  opts: BasedOpts,
+  settings?: Settings
+): BasedClient {
+  return new BasedClient(opts, settings)
+}
