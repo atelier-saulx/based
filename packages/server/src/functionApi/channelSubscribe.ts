@@ -64,7 +64,7 @@ export const subscribeChannel = (
       return
     }
     if (!hasChannel(server, id)) {
-      createChannel(server, name, id, payload)
+      createChannel(server, name, id, payload, true)
     }
     subscribeChannelFunction(server, id, update)
   })

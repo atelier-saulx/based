@@ -283,7 +283,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
   await server.destroy()
 })
 
-test.serial('Channel publish + subscribe errors', async (t) => {
+test.serial.only('Channel publish + subscribe errors', async (t) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
@@ -336,15 +336,27 @@ test.serial('Channel publish + subscribe errors', async (t) => {
           throw new Error('bla')
         },
       },
+      c: {
+        publish: (based, payload, msg) => {
+          based.channel('b', payload).publish(msg)
+        },
+        function: (based, payload, id, update, error) => {
+          return based.channel('b', payload).subscribe(
+            (msg) => {
+              update(msg)
+            },
+            (err) => {
+              error(err)
+            }
+          )
+        },
+      },
     },
   })
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
   })
-  // client.on('debug', (err) => {
-  // console.info(err)
-  // })
   const r: any[] = []
   const close1 = client.channel('a').subscribe(
     () => {},
@@ -358,6 +370,13 @@ test.serial('Channel publish + subscribe errors', async (t) => {
       r.push(err)
     }
   )
+  const close3 = client.channel('c', 1).subscribe(
+    () => {},
+    (err) => {
+      r.push(err)
+    }
+  )
+  client.channel('c', 1).publish('hello')
   client.channel('b').publish('hello')
   try {
     await client.call('helloPublish')
@@ -367,10 +386,11 @@ test.serial('Channel publish + subscribe errors', async (t) => {
   }
   await client.call('yes')
   await wait(200)
-  t.is(r.length, 3)
+  t.is(r.length, 4)
   t.is(r[0].code, 40301)
   close1()
   close2()
+  close3()
   await wait(1500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)

@@ -89,8 +89,12 @@ export const startChannel = (
   if (!fromInstall || channel.isActive) {
     channel.isActive = true
     try {
-      channel.closeFunction = spec.function(server.client, payload, id, (msg) =>
-        updateChannelListener(server, channel, msg)
+      channel.closeFunction = spec.function(
+        server.client,
+        payload,
+        id,
+        (msg) => updateChannelListener(server, channel, msg),
+        (err) => errorChannelListener(server, channel, err)
       )
     } catch (err) {
       errorChannelListener(server, channel, err)

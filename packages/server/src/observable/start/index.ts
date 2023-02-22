@@ -50,7 +50,9 @@ export const start = (server: BasedServer, id: number) => {
   const startId = ++obs.startId
 
   try {
-    const r = spec.function(server.client, payload, update)
+    const r = spec.function(server.client, payload, update, (err) => {
+      errorListener(server, obs, err)
+    })
     if (r instanceof Promise) {
       r.then((close) => {
         if (obs.isDestroyed || startId !== obs.startId) {

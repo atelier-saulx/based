@@ -62,20 +62,21 @@ export type BasedQueryFunction<P = any, K = any> =
       based: BasedFunctionClient,
       payload: P,
       update: ObservableUpdateFunction<K>,
-      error?: ObserveErrorListener
+      error: ObserveErrorListener
     ) => Promise<() => void>)
   | ((
       based: BasedFunctionClient,
       payload: P,
       update: ObservableUpdateFunction<K>,
-      error?: ObserveErrorListener
+      error: ObserveErrorListener
     ) => () => void)
 
 export type BasedChannelFunction<P = any, K = any> = (
   based: BasedFunctionClient,
   payload: P,
   id: number,
-  update: ChannelMessageFunction<K>
+  update: ChannelMessageFunction<K>,
+  error: (err?: any) => void
 ) => () => void
 
 export type BasedChannelPublishFunction<P = any, K = any> = (
