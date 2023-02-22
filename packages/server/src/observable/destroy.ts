@@ -28,7 +28,7 @@ export const destroyObs = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
 
   if (!obs) {
-    console.error('obs', id, 'does not exists')
+    console.error('destroyObs', id, 'does not exist!')
     return
   }
 

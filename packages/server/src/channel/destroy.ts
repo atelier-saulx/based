@@ -31,7 +31,7 @@ export const destroyChannel = (server: BasedServer, id: number) => {
   const channel = server.activeChannelsById.get(id)
 
   if (!channel) {
-    console.error('channel', id, 'does not exists')
+    console.error('destroyChannel', id, 'does not exist!')
     return
   }
 

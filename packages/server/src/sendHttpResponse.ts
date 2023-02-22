@@ -64,11 +64,25 @@ export const sendHttpResponse = (
   let cType: string
 
   let parsed: string
-  if (typeof result === 'string') {
+
+  if (result === undefined) {
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeStatus(statusCode)
+      if (headers) {
+        sendHeaders(ctx, headers)
+      }
+      if (!ctx.session.corsSend) {
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+      }
+      result.end()
+    })
+    return
+  } else if (typeof result === 'string') {
     cType = 'text/plain'
     parsed = result
+    // TODO: more check here
   } else if (result instanceof Readable || result instanceof Duplex) {
-    // received stream....
     ctx.session.res.cork(() => {
       ctx.session.res.writeStatus(statusCode)
       if (headers) {

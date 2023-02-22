@@ -2,6 +2,7 @@ import test from 'ava'
 import { createSimpleServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
+import fetch from 'cross-fetch'
 
 test.serial('Subscribe channel', async (t) => {
   let closeCalled = false
@@ -283,7 +284,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('Channel publish + subscribe errors', async (t) => {
+test.serial('Channel publish + subscribe errors', async (t) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
@@ -391,6 +392,56 @@ test.serial.only('Channel publish + subscribe errors', async (t) => {
   close1()
   close2()
   close3()
+  await wait(1500)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  client.disconnect()
+  await server.destroy()
+})
+
+test.serial('Channel publish over rest', async (t) => {
+  const r: any[] = []
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    channels: {
+      a: {
+        rateLimitTokens: 0,
+        closeAfterIdleTime: 10,
+        publish: (based, payload, msg) => {
+          r.push({ payload, msg })
+        },
+        function: () => {
+          return () => {}
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  client.channelCleanupCycle = 100
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+
+  await fetch('http://localhost:9910/a?msg=bla&channelid=snurp')
+  await fetch('http://localhost:9910/a?msg=bla&type=pageView')
+  await fetch('http://localhost:9910/a?flapdrol=pageView')
+  await fetch('http://localhost:9910/a?gur')
+
+  await fetch('http://localhost:9910/a', {
+    method: 'post',
+    body: 'hello this is me!',
+  })
+
+  t.deepEqual(r, [
+    { payload: 'snurp', msg: 'bla' },
+    { payload: { type: 'pageView' }, msg: 'bla' },
+    { payload: undefined, msg: { flapdrol: 'pageView' } },
+    { payload: undefined, msg: { gur: true } },
+    { payload: undefined, msg: 'hello this is me!' },
+  ])
+
+  t.is(client.channelState.size, 0)
   await wait(1500)
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)

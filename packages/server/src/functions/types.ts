@@ -117,10 +117,12 @@ export type BasedFunctionSpec = {
 
 export type BasedChannelFunctionSpec = {
   function: BasedChannelFunction
-  /** Publish allows custom publish functions to channels */
+  /** Publish allows publishing to channels */
   publish: BasedChannelPublishFunction
   /** How long should the channel remain active after all subscribers ae gone, in ms */
   closeAfterIdleTime?: number
+  /** When in an HTTP context, this function is called to wrap the return value of the publish endpoint, and inject headers and a status code */
+  httpResponse?: HttpResponse
 } & BasedChannelFunctionRoute &
   BasedInstallableFunctionSpec
 

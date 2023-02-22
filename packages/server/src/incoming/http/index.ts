@@ -5,6 +5,7 @@ import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
 import {
   BasedFunctionRoute,
+  isChannelFunctionRoute,
   isFunctionRoute,
   isQueryFunctionRoute,
   isStreamFunctionRoute,
@@ -23,6 +24,7 @@ import { getIp } from '../../ip'
 import { parseAuthState, parseJSONAuthState } from '../../auth'
 import { authorize } from '../../authorize'
 import { end } from '../../sendHttpResponse'
+import { httpPublish } from './publish'
 
 let clientId = 0
 
@@ -130,8 +132,6 @@ export const httpHandler = (
     return
   }
 
-  // double check impact
-
   const query = req.getQuery()
   if (query) {
     ctx.session.query = query
@@ -147,7 +147,7 @@ export const httpHandler = (
     method === 'post' &&
     ctx.session.headers['content-length'] === undefined
   ) {
-    // zero allowed, but not for streams
+    // Zero allowed, but not for streams
     sendError(server, ctx, BasedErrorCode.LengthRequired, route)
     return
   }
@@ -162,7 +162,7 @@ export const httpHandler = (
   }
 
   if (isQueryFunctionRoute(route)) {
-    // handle HEAD
+    // Handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
@@ -186,7 +186,7 @@ export const httpHandler = (
       return
     }
     if (ctx.session.headers['content-length'] === 0) {
-      // zero is also not allowed for streams
+      // Zero is also not allowed for streams
       sendError(server, ctx, BasedErrorCode.LengthRequired, route)
       return
     }
@@ -195,13 +195,23 @@ export const httpHandler = (
   }
 
   if (isFunctionRoute(route)) {
-    // handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, httpFunction)
+    })
+    return
+  }
+
+  if (isChannelFunctionRoute(route)) {
+    if (method !== 'post' && method !== 'get') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
+    }
+    handleRequest(server, method, ctx, route, (payload) => {
+      authorize(route, server, ctx, payload, httpPublish)
     })
   }
 }
