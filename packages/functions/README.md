@@ -1,16 +1,16 @@
 # @based/functions
 
-To be with based cloud functions, adds types and utilities.
+To be used with based cloud functions, adds types and utilities.
 
 - Example based function
 
 ```typescript
 import { BasedFunction } from '@based/functions'
 
-const submitVote: BasedFunction<
-  { target: number },
-  { status: 'ok' | 'not-ok' }
-> = async (based, { target }) => {
+const submitVote: BasedFunction<{ target: number }, 'ok' | 'not-ok'> = async (
+  based,
+  { target }
+) => {
   if (target > 10) {
     return 'ok'
   }
