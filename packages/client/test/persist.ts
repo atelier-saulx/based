@@ -3,12 +3,17 @@ import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
+import { mkdir } from 'node:fs/promises'
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
+  const persistentStorage = join(__dirname, '/browser/tmp/')
+
+  await mkdir(persistentStorage).catch(() => {})
+
   const client = new BasedClient(
     {},
     {
-      persistentStorage: join(__dirname, '/browser/tmp/'),
+      persistentStorage,
     }
   )
   const server = await createSimpleServer({
@@ -76,7 +81,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const client2 = new BasedClient(
     {},
     {
-      persistentStorage: join(__dirname, '/browser/tmp/'),
+      persistentStorage,
     }
   )
 
