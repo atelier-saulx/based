@@ -41,14 +41,14 @@ const data = await client
 
 // Get updates, persitent stores results in localStorage
 const unsubscribe = client
-  .query('db', { $id: 'fwe2233', title: true }, { persistent: true})
+  .query('db', { $id: 'fwe2233', title: true }, { persistent: true })
   .subscribe((data) => console.log(data))
 
 // Channels are stateless streams
-const unsubscribeChannel = client.channel('events', { type: 'page-view })
+const unsubscribeChannel = client.channel('events', { type: 'page-view' })
   .subscribe(event => console.log(event))
 
 client
-  .channel('events', { type: 'page-view })
+  .channel('events', { type: 'page-view' })
   .publish({ id: 'mypage' })
 ```
