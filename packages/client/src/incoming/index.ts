@@ -22,6 +22,7 @@ import {
   requestFullData,
 } from './protocol'
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol'
+import { getTargetInfo } from '../getTargetInfo'
 
 export const incoming = async (
   client: BasedClient,
@@ -285,7 +286,10 @@ export const incoming = async (
             if (handlers.onError) {
               handlers.onError(error)
             } else {
-              console.error(error)
+              console.error(
+                getTargetInfo(client, payload.channelId, 'channel'),
+                error
+              )
             }
           }
         }
@@ -300,10 +304,14 @@ export const incoming = async (
             if (handlers.onError) {
               handlers.onError(error)
             } else {
-              console.error(error)
+              console.error(
+                getTargetInfo(client, payload.observableId, 'sub'),
+                error
+              )
             }
           }
         }
+
         if (client.getState.has(payload.observableId)) {
           const error = convertDataToBasedError(payload)
           const get = client.getState.get(payload.observableId)

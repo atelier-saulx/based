@@ -4,6 +4,25 @@ import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
 import { BinaryMessageHandler } from './types'
 import { extendChannel, hasChannel } from '../../channel'
+import { IsAuthorizedHandler, authorize } from '../../authorize'
+import { WebSocketSession } from '@based/functions'
+import { BasedChannelFunctionRoute } from '../../functions'
+
+const publish: IsAuthorizedHandler<
+  WebSocketSession,
+  BasedChannelFunctionRoute
+> = (route, server, ctx, payload, id) => {
+  installFn(server, ctx, route).then((spec) => {
+    if (spec === null) {
+      return
+    }
+    const channel = server.activeChannelsById.get(id)
+    if (!channel) {
+      return
+    }
+    spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+  })
+}
 
 export const channelPublishMessage: BinaryMessageHandler = (
   arr,
@@ -72,18 +91,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     return true
   }
 
-  server.auth
-    .authorize(server.client, ctx, route.name, payload)
-    .then((ok) => {
-      if (!ctx.session || !ok) {
-        return
-      }
-      return installFn(server, ctx, route)
-    })
-    .then((spec) => {
-      spec?.publish(server.client, channel.payload, payload, channel.id, ctx)
-    })
-    .catch(() => {})
+  authorize(route, server, ctx, payload, publish, id)
 
   return true
 }
