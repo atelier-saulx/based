@@ -26,7 +26,7 @@ import { incoming } from './incoming'
 import { BasedQuery } from './query'
 import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
-import { initStorage, clearStorage } from './persistentStorage'
+import { initStorage, clearStorage, updateStorage } from './persistentStorage'
 import { BasedChannel } from './channel'
 import {
   ChannelQueue,
@@ -220,10 +220,13 @@ export class BasedClient extends Emitter {
     this.connected = false
   }
 
-  public destroy() {
+  public isDestroyed?: boolean
+  public async destroy() {
+    await updateStorage(this)
     clearTimeout(this.storageBeingWritten)
     clearTimeout(this.channelCleanTimeout)
     this.disconnect()
+    this.isDestroyed = true
     for (const i in this) {
       delete this[i]
     }
@@ -261,7 +264,7 @@ export class BasedClient extends Emitter {
 
   // -------- Auth
   setAuthState(authState: AuthState): Promise<AuthState> {
-    if (typeof authState === 'string' || typeof authState === 'object') {
+    if (typeof authState === 'object') {
       return sendAuth(this, authState)
     } else {
       throw new Error('Invalid auth() arguments')
@@ -273,8 +276,12 @@ export class BasedClient extends Emitter {
   }
 
   // -------- Storage layer
-  clearPersistentStorage() {
-    clearStorage(this)
+  clearStorage(): Promise<void> {
+    return clearStorage(this)
+  }
+
+  saveStorage(): Promise<void> {
+    return updateStorage(this)
   }
 }
 

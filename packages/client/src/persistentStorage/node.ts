@@ -5,34 +5,42 @@ import fs from 'fs'
 import { promisify } from 'util'
 
 const writeFile = promisify(fs.writeFile)
-const readFile = promisify(fs.readFile)
 const rm = promisify(fs.rm)
-const stat = promisify(fs.stat)
-
 const compress = promisify(gzip.gzip)
-const unzip = promisify(gzip.gunzip)
+
+export const store = async (client: BasedClient) => {
+  try {
+    clearTimeout(client.storageBeingWritten)
+    client.storageBeingWritten = null
+    const file = join(
+      client.storagePath,
+      'based-' + client.storageEnvKey + '.storage'
+    )
+    // [id, checksum, value]
+    const cache: any[] = []
+    client.cache.forEach((c, id) => {
+      if (c.persistent) {
+        cache.push(id, c.checksum, c.value)
+      }
+    })
+    const f: { cache: any[]; authState?: AuthState } = { cache }
+    if (client.authState.persistent) {
+      f.authState = client.authState
+    }
+    client.storageBeingWritten = null
+
+    await writeFile(file, await compress(JSON.stringify(f)))
+  } catch (err) {
+    console.error(
+      '    [Based-client] Cannot update persistent storage',
+      client.storagePath
+    )
+  }
+}
 
 const writeToStorage = (client: BasedClient) => {
   if (!client.storageBeingWritten) {
-    client.storageBeingWritten = setTimeout(async () => {
-      const file = join(
-        client.storagePath,
-        'based-' + client.storageEnvKey + '.storage'
-      )
-      // id, c, value
-      const cache: any[] = []
-      client.cache.forEach((c, id) => {
-        if (c.persistent) {
-          cache.push(id, c.checksum, c.value)
-        }
-      })
-      const f: { cache: any[]; authState?: AuthState } = { cache }
-      if (client.authState.persistent) {
-        f.authState = client.authState
-      }
-      client.storageBeingWritten = null
-      await writeFile(file, await compress(JSON.stringify(f)))
-    }, 1e3)
+    client.storageBeingWritten = setTimeout(() => store(client), 5e3)
   }
 }
 
@@ -44,19 +52,26 @@ export const initStorageNode = async (client: BasedClient) => {
   console.info('    [Based-client] Start persistent storage')
   console.info('   ', file)
   console.info('')
-  const s = await stat(file).catch(() => null)
   try {
+    const s = fs.statSync(file)
     if (s) {
-      const r = await readFile(file)
-      const unpacked = await unzip(r)
-      const c = JSON.parse(unpacked.toString())
       try {
-        for (let i = 0; i < c.length - 3; i += 3) {
-          // go go go
+        const r = fs.readFileSync(file)
+        const unpacked = gzip.gunzipSync(r)
+        const c = JSON.parse(unpacked.toString())
+        for (let i = 0; i < c.cache.length - 2; i += 3) {
+          client.cache.set(c.cache[i], {
+            checksum: c.cache[i + 1],
+            value: c.cache[i + 2],
+            persistent: true,
+          })
+        }
+        if (c.authState) {
+          client.setAuthState(c.authState)
         }
       } catch (err) {
         console.error('    [Based-client] Corrupt persistent storage - clear')
-        clearStorageNode(client)
+        await clearStorageNode(client)
       }
     } else {
       const x = await compress(JSON.stringify({ cache: [] }))

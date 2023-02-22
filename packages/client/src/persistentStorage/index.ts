@@ -29,6 +29,14 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
   }
 }
 
+export const updateStorage = async (client: BasedClient) => {
+  if (isBrowser) {
+    // not nessecary...
+  } else if (client.storagePath) {
+    return require('./node').store(client)
+  }
+}
+
 export const initStorage = async (client: BasedClient) => {
   if (isBrowser) {
     return initStorageBrowser(client)

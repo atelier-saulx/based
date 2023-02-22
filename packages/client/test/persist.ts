@@ -16,7 +16,7 @@ test.serial('persist (nodejs)', async (t) => {
     port: 9910,
     queryFunctions: {
       counter: (based, payload, update) => {
-        let cnt = 0
+        let cnt = 1
         update(cnt)
         const counter = setInterval(() => {
           update(++cnt)
@@ -27,14 +27,14 @@ test.serial('persist (nodejs)', async (t) => {
       },
     },
   })
+
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'
     },
   })
-  client.once('connect', (isConnected) => {
-    console.info('   connect', isConnected)
-  })
+
+  await client.setAuthState({ type: 'boeloe', token: '?', persistent: true })
 
   const r: any[] = []
 
@@ -50,12 +50,37 @@ test.serial('persist (nodejs)', async (t) => {
       r.push(d)
     })
 
-  await wait(1500)
-  console.info(r)
-
+  await wait(500)
   close()
-  t.true(true)
 
   await client.destroy()
+
+  const client2 = new BasedClient(
+    {},
+    {
+      persistentStorage: join(__dirname, '/browser/tmp/'),
+    }
+  )
+
+  t.is(client2.authState.type, 'boeloe')
+
+  let fromStorage: any
+  client2
+    .query(
+      'counter',
+      {
+        myQuery: 123,
+      },
+      { persistent: true }
+    )
+    .subscribe((d) => {
+      fromStorage = d
+    })
+
+  t.is(fromStorage, 1)
+
+  await wait(500)
+  await client2.clearStorage()
+  await client2.destroy()
   await server.destroy()
 })

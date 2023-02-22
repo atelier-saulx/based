@@ -23,6 +23,7 @@ import {
 } from './protocol'
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol'
 import { getTargetInfo } from '../getTargetInfo'
+import { CacheValue } from '../types'
 
 export const incoming = async (
   client: BasedClient,
@@ -177,10 +178,11 @@ export const incoming = async (
         )
       }
 
-      client.cache.set(id, {
+      const cacheData: CacheValue = {
         value: payload,
         checksum,
-      })
+      }
+      client.cache.set(id, cacheData)
 
       let found = false
 
@@ -188,7 +190,8 @@ export const incoming = async (
         const observable = client.observeState.get(id)
 
         if (observable.persistent) {
-          setStorage(client, '@based-cache-' + id, { value: payload, checksum })
+          cacheData.persistent = true
+          setStorage(client, '@based-cache-' + id, cacheData)
         }
 
         for (const [, handlers] of observable.subscribers) {
