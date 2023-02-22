@@ -4,7 +4,7 @@ import { applyPatch } from '@saulx/diff'
 import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState'
-import { setStorage } from '../localStorage'
+import { setStorage } from '../persistentStorage'
 import {
   debugDiff,
   debugFunction,

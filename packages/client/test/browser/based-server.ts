@@ -76,7 +76,7 @@ const start = async () => {
         }
         return true
       },
-      verifyAuthState: (based, ctx, authState) => {
+      verifyAuthState: async (based, ctx, authState) => {
         if (authState.token === 'power' && !authState.userId) {
           return { ...authState, userId: 'power-user-id' }
         }

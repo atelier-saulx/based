@@ -26,13 +26,14 @@ import { incoming } from './incoming'
 import { BasedQuery } from './query'
 import startStream from './stream'
 import { StreamFunctionOpts } from './stream/types'
-import { initStorage } from './localStorage'
+import { initStorage, clearStorage } from './persistentStorage'
 import { BasedChannel } from './channel'
 import {
   ChannelQueue,
   ChannelPublishQueue,
   ChannelState,
 } from './types/channel'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 export * from './authState/parseAuthState'
 
@@ -52,9 +53,10 @@ export class BasedClient extends Emitter {
     initStorage(this)
   }
 
-  // --------- Local Storage
+  // --------- Persistent Storage
   storageSize: number = 0
   maxStorageSize: number = 5e6 - 500 // ~5mb
+  storageEnvKey: number
   // --------- Connection State
   opts: BasedOpts
   connected: boolean = false
@@ -187,6 +189,7 @@ export class BasedClient extends Emitter {
       }
       this.opts = opts
       this.url = await getUrlFromOpts(opts)
+      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
     }
     if (!this.opts) {
       console.error('Configure opts to connect')
@@ -263,6 +266,11 @@ export class BasedClient extends Emitter {
 
   clearAuthState(): Promise<AuthState> {
     return sendAuth(this, {})
+  }
+
+  // -------- Storage layer
+  clearPersistentStorage() {
+    clearStorage(this)
   }
 }
 

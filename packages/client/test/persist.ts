@@ -2,10 +2,15 @@ import test from 'ava'
 import { BasedClient } from '../src/index'
 import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import fs from 'node:fs/promises'
+import { join } from 'node:path'
 
 test.serial('persist (nodejs)', async (t) => {
-  const client = new BasedClient()
+  const client = new BasedClient(
+    {},
+    {
+      persistentStorage: join(__dirname, '/browser/tmp/'),
+    }
+  )
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
@@ -31,15 +36,24 @@ test.serial('persist (nodejs)', async (t) => {
     console.info('   connect', isConnected)
   })
 
+  const r: any[] = []
+
   const close = client
-    .query('counter', {
-      myQuery: 123,
-    })
+    .query(
+      'counter',
+      {
+        myQuery: 123,
+      },
+      { persistent: true }
+    )
     .subscribe((d) => {
-      obs1Results.push(d)
+      r.push(d)
     })
 
   await wait(500)
+
+  console.info(r)
+
   t.true(true)
 
   await client.destroy()

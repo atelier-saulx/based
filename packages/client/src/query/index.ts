@@ -6,7 +6,7 @@ import {
 import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
 import { genObserveId } from '../genObserveId'
 import { BasedClient } from '..'
-import { removeStorage, setStorage } from '../localStorage'
+import { removeStorage, setStorage } from '../persistentStorage'
 
 // Can extend this as a query builder
 // TODO: maybe add user bound as option (will clear / set on a-state chage)
