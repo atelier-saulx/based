@@ -221,7 +221,7 @@ export class BasedClient extends Emitter {
   }
 
   public destroy() {
-    clearTimeout(client.storageBeingWritten)
+    clearTimeout(this.storageBeingWritten)
     clearTimeout(this.channelCleanTimeout)
     this.disconnect()
     for (const i in this) {
