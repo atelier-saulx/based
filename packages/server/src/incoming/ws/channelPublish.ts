@@ -92,7 +92,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
           )
         )
 
-  if (route.public) {
+  if (route.public || route.publisher?.public) {
     installFn(server, ctx, route)
       .then((spec) => {
         spec?.publish(server.client, channel.payload, payload, channel.id, ctx)

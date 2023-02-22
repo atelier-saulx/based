@@ -286,6 +286,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
 
 test.serial('Channel publish + subscribe errors', async (t) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
+  const aList: any[] = []
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
@@ -321,7 +322,11 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         },
       },
       a: {
+        publisher: {
+          public: true,
+        },
         publish: (based, payload, msg, id) => {
+          aList.push(msg)
           listeners.get(id)?.(msg)
         },
         function: (based, payload, id, update) => {
@@ -379,14 +384,20 @@ test.serial('Channel publish + subscribe errors', async (t) => {
   )
   client.channel('c', 1).publish('hello')
   client.channel('b').publish('hello')
+  client.channel('a').publish('powerful')
+
   try {
     await client.call('helloPublish')
     t.fail('helloPublish should throw')
   } catch (err) {
     t.true(err.message.includes('[gurd] Function not found'))
   }
+
   await client.call('yes')
   await wait(200)
+
+  t.is(aList[aList.length - 1], 'powerful')
+
   t.is(r.length, 4)
   t.is(r[0].code, 40301)
   close1()

@@ -194,6 +194,21 @@ export const httpHandler = (
     return
   }
 
+  if (isChannelFunctionRoute(route)) {
+    if (method !== 'post' && method !== 'get') {
+      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
+      return
+    }
+    handleRequest(server, method, ctx, route, (payload) => {
+      if (route.public || route.publisher?.public) {
+        httpPublish(route, server, ctx, payload)
+      } else {
+        authorize(route, server, ctx, payload, httpPublish)
+      }
+    })
+    return
+  }
+
   if (isFunctionRoute(route)) {
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
@@ -201,17 +216,6 @@ export const httpHandler = (
     }
     handleRequest(server, method, ctx, route, (payload) => {
       authorize(route, server, ctx, payload, httpFunction)
-    })
-    return
-  }
-
-  if (isChannelFunctionRoute(route)) {
-    if (method !== 'post' && method !== 'get') {
-      sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
-      return
-    }
-    handleRequest(server, method, ctx, route, (payload) => {
-      authorize(route, server, ctx, payload, httpPublish)
     })
   }
 }
