@@ -9,7 +9,7 @@ import { BasedFunction } from '@based/functions'
 
 const submitVote: BasedFunction<
   { target: number },
-  { status: 'ok' | 'not-ok' }
+  'ok' | 'not-ok'
 > = async (based, { target }) => {
   if (target > 10) {
     return 'ok'
