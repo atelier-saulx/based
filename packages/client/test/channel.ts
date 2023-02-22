@@ -241,7 +241,6 @@ test.serial('Nested channel publish + subscribe', async (t) => {
           listeners.get(id)?.(msg)
         },
         function: (based, payload, id, update) => {
-          console.info('SUB', id, payload)
           listeners.set(id, update)
           return () => {
             closeCalled = true
@@ -251,9 +250,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
       b: {
         publish: () => {},
         function: (based, payload, id, update) => {
-          console.info('???', String(payload))
           return based.channel('a', payload).subscribe((msg) => {
-            console.info('channel timesss')
             update(msg)
           })
         },
