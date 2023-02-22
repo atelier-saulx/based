@@ -88,4 +88,9 @@ export type BasedChannelPublishFunction<P = any, K = any> = (
 
 export type ChannelMessageFunction<K = any> = (message: K) => void
 
+export type ChannelMessageFunctionInternal<K = any> = (
+  message: K,
+  err?: any
+) => void
+
 export type UninstallFunction = () => Promise<void>

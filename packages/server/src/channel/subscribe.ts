@@ -3,7 +3,7 @@ import { getChannelAndStopRemove } from './get'
 import {
   WebSocketSession,
   Context,
-  ChannelMessageFunction,
+  ChannelMessageFunctionInternal,
 } from '@based/functions'
 import { startChannel } from './start'
 
@@ -28,7 +28,7 @@ export const subscribeChannel = (
 export const subscribeChannelFunction = (
   server: BasedServer,
   id: number,
-  update: ChannelMessageFunction
+  update: ChannelMessageFunctionInternal
 ) => {
   const channel = getChannelAndStopRemove(server, id)
   channel.functionChannelClients.add(update)

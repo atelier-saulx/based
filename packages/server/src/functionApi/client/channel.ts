@@ -23,13 +23,24 @@ export class BasedChannel extends BasedChannelAbstract {
     this.name = name
   }
 
-  subscribe(onMessage: ChannelMessageFunction): () => void {
+  subscribe(
+    onMessage: ChannelMessageFunction,
+    onError?: (err: any) => void
+  ): () => void {
     return subscribeChannel(
       this.ctx.session.client.server,
       this.name,
       this.id,
       this.payload,
-      onMessage
+      (msg, err) => {
+        if (err) {
+          if (onError) {
+            onError(err)
+          }
+          return
+        }
+        onMessage(msg)
+      }
     )
   }
 

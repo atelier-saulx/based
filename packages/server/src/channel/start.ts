@@ -56,10 +56,9 @@ const errorChannelListener = (
     )
   }
   if (channel.functionChannelClients.size) {
-    // TODO: later
-    // channel.functionChannelClients.forEach((fnUpdate) => {
-    //   fnUpdate(msg)
-    // })
+    channel.functionChannelClients.forEach((fnUpdate) => {
+      fnUpdate(null, err)
+    })
   }
 }
 

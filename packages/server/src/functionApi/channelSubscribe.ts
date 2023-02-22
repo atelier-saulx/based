@@ -1,6 +1,5 @@
 import { BasedServer } from '../server'
-// import { BasedErrorCode, createError } from '../error'
-import { ChannelMessageFunction } from '@based/functions'
+import { ChannelMessageFunctionInternal } from '@based/functions'
 import { verifyRoute } from '../verifyRoute'
 import {
   unsubscribeFunction,
@@ -9,13 +8,14 @@ import {
   createChannel,
 } from '../channel'
 import { installFn } from '../installFn'
+import { createError, BasedErrorCode } from '../error'
 
 export const subscribeChannel = (
   server: BasedServer,
   name: string,
   id: number,
   payload: any,
-  update: ChannelMessageFunction
+  update: ChannelMessageFunctionInternal
 ): (() => void) => {
   const route = verifyRoute(
     server,
@@ -50,9 +50,17 @@ export const subscribeChannel = (
       return
     }
     if (spec === null) {
-      // createError(server, ctx, BasedErrorCode.FunctionNotFound, {
-      //   route,
-      // })
+      update(
+        null,
+        createError(
+          server,
+          server.client.ctx,
+          BasedErrorCode.FunctionNotFound,
+          {
+            route,
+          }
+        )
+      )
       return
     }
     if (!hasChannel(server, id)) {
