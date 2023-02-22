@@ -20,6 +20,5 @@ export type BasedOpts = {
 
 export type Settings = {
   maxCacheSize?: number
-  maxCacheTime?: number
   persistentStorage?: string
 }
