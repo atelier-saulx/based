@@ -1,7 +1,10 @@
 import { AuthState, BasedClient } from '..'
-import { join } from 'node:path'
-import gzip from 'node:zlib'
-import fs from 'node:fs/promises'
+import { join } from 'path'
+import gzip from 'zlib'
+import fs from 'fs/promises'
+import { promisify } from 'util'
+
+const compress = promisify(gzip.createGzip)
 
 // total gets gzipped
 
