@@ -42,13 +42,16 @@ export { AuthState, BasedQuery }
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
-    if (settings) {
-      for (const k in settings) {
-        this[k] = settings[k]
-      }
-    }
-    if (opts) {
+    if (opts && Object.keys(opts).length > 0) {
+      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
       this.connect(opts)
+    }
+    if (settings?.persistentStorage) {
+      this.storagePath = settings.persistentStorage
+    }
+    if (settings?.maxCacheSize) {
+      console.warn('MaxCacheSize setting not implemented yet...')
+      this.maxCacheSize = settings.maxCacheSize
     }
     initStorage(this)
   }
@@ -56,7 +59,8 @@ export class BasedClient extends Emitter {
   // --------- Persistent Storage
   storageSize: number = 0
   maxStorageSize: number = 5e6 - 500 // ~5mb
-  storageEnvKey: number
+  storageEnvKey: number = 0
+  storagePath?: string
   // --------- Connection State
   opts: BasedOpts
   connected: boolean = false
@@ -85,7 +89,6 @@ export class BasedClient extends Emitter {
   // --------- Cache State
   localStorage: boolean = false
   maxCacheSize: number = 4e6 // in bytes
-  maxCacheTime: number = 2630e3 // in seconds (1 month default)
   cache: Cache = new Map()
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = new Map()
@@ -189,7 +192,6 @@ export class BasedClient extends Emitter {
       }
       this.opts = opts
       this.url = await getUrlFromOpts(opts)
-      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
     }
     if (!this.opts) {
       console.error('Configure opts to connect')

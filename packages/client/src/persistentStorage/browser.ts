@@ -45,10 +45,9 @@ export const setStorageBrowser = (
   key: string,
   value: any
 ) => {
-  const env = client.storageEnvKey || 0
-  key += '-' + env
   try {
     const prev = localStorage.getItem(key)
+    const env = client.storageEnvKey
 
     const stringifiedJson = JSON.stringify(value)
 
@@ -87,8 +86,8 @@ export const setStorageBrowser = (
 }
 
 export const getStorageBrowser = (client: BasedClient, key: string): any => {
-  const env = client.storageEnvKey || 0
-  key += '-' + env
+  const env = client.storageEnvKey
+
   try {
     const value = localStorage.getItem(key)
     if (value !== undefined) {
@@ -106,6 +105,8 @@ export const getStorageBrowser = (client: BasedClient, key: string): any => {
 }
 
 export const initStorageBrowser = async (client: BasedClient) => {
+  const env = client.storageEnvKey
+
   try {
     // compress as option!
     let totalSize = Number(localStorage.getItem('@based-size') || 0)
@@ -139,15 +140,25 @@ export const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
-        if (key === '@based-authState') {
-          const authState = getStorageBrowser(client, '@based-authState')
+        if (key === '@based-authState-' + env) {
+          const authState = getStorageBrowser(client, key)
           if (authState) {
             client.setAuthState(authState)
           }
           continue
         }
 
-        const [, id] = key.split('@based-cache-')
+        const [, x] = key.split('@based-cache-')
+
+        if (!x) {
+          continue
+        }
+
+        const [id, e] = x.split('-')
+
+        if (e !== String(env)) {
+          continue
+        }
 
         if (!id) {
           console.warn('Based - clear corrupt localStorage item')

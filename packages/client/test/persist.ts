@@ -50,10 +50,10 @@ test.serial('persist (nodejs)', async (t) => {
       r.push(d)
     })
 
-  await wait(500)
-
+  await wait(1500)
   console.info(r)
 
+  close()
   t.true(true)
 
   await client.destroy()
