@@ -45,10 +45,10 @@ const unsubscribe = client
   .subscribe((data) => console.log(data))
 
 // Channels are stateless streams
-const unsubscribeChannel = client.channel('events', { type: 'page-view })
+const unsubscribeChannel = client.channel('events', { type: 'page-view' })
   .subscribe(event => console.log(event))
 
 client
-  .channel('events', { type: 'page-view })
+  .channel('events', { type: 'page-view' })
   .publish({ id: 'mypage' })
 ```
