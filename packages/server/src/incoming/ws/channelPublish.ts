@@ -7,6 +7,8 @@ import { extendChannel, hasChannel } from '../../channel'
 import { IsAuthorizedHandler, authorize } from '../../authorize'
 import { WebSocketSession } from '@based/functions'
 import { BasedChannelFunctionRoute } from '../../functions'
+import { sendError } from '../../sendError'
+import { BasedErrorCode } from '../../error'
 
 const publish: IsAuthorizedHandler<
   WebSocketSession,
@@ -20,7 +22,15 @@ const publish: IsAuthorizedHandler<
     if (!channel) {
       return
     }
-    spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+    try {
+      spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+    } catch (err) {
+      sendError(server, ctx, BasedErrorCode.FunctionError, {
+        channelId: id,
+        err,
+        route,
+      })
+    }
   })
 }
 

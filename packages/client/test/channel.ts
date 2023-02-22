@@ -282,3 +282,98 @@ test.serial('Nested channel publish + subscribe', async (t) => {
   client.disconnect()
   await server.destroy()
 })
+
+test.serial.only('Channel publish + subscribe errors', async (t) => {
+  const listeners: Map<number, (msg: any) => void> = new Map()
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    closeAfterIdleTime: {
+      channel: 0,
+      query: 0,
+    },
+    auth: {
+      authorize: async (based, ctx, name) => {
+        if (name === 'a') {
+          return false
+        }
+        return true
+      },
+    },
+    functions: {
+      helloPublish: async (based) => {
+        based.channel('gurd').publish('from helloPublish')
+        return 'hello!'
+      },
+      yes: async (based) => {
+        based.channel('b').publish('from helloPublish')
+        return 'hello!'
+      },
+    },
+    channels: {
+      x: {
+        publish: () => {
+          throw new Error('publish wrong')
+        },
+        function: () => {
+          throw new Error('bla')
+        },
+      },
+      a: {
+        publish: (based, payload, msg, id) => {
+          listeners.get(id)?.(msg)
+        },
+        function: (based, payload, id, update) => {
+          listeners.set(id, update)
+          return () => {}
+        },
+      },
+      b: {
+        publish: () => {
+          throw new Error('publish wrong')
+        },
+        function: () => {
+          throw new Error('bla')
+        },
+      },
+    },
+  })
+  const client = new BasedClient()
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  // client.on('debug', (err) => {
+  // console.info(err)
+  // })
+  const r: any[] = []
+  const close1 = client.channel('a').subscribe(
+    () => {},
+    (err) => {
+      r.push(err)
+    }
+  )
+  const close2 = client.channel('b').subscribe(
+    () => {},
+    (err) => {
+      r.push(err)
+    }
+  )
+  client.channel('b').publish('hello')
+  try {
+    await client.call('helloPublish')
+    t.fail('helloPublish should throw')
+  } catch (err) {
+    t.true(err.message.includes('[gurd] Function not found'))
+  }
+  await client.call('yes')
+  await wait(200)
+  t.is(r.length, 3)
+  t.is(r[0].code, 40301)
+  close1()
+  close2()
+  await wait(1500)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  client.disconnect()
+  await server.destroy()
+})

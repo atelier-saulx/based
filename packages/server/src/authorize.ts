@@ -1,5 +1,9 @@
 import { BasedServer } from './server'
-import { BasedRoute, isQueryFunctionRoute } from './functions'
+import {
+  BasedRoute,
+  isChannelFunctionRoute,
+  isQueryFunctionRoute,
+} from './functions'
 import { sendError } from './sendError'
 import { BasedErrorCode } from './error'
 import { HttpSession, Context, WebSocketSession } from '@based/functions'
@@ -45,6 +49,15 @@ export const defaultAuthError: AuthErrorHandler = (
   const code = err
     ? BasedErrorCode.AuthorizeFunctionError
     : BasedErrorCode.AuthorizeRejectedError
+
+  if (id && isChannelFunctionRoute(route)) {
+    sendError(server, ctx, code, {
+      route,
+      err,
+      channelId: id,
+    })
+    return
+  }
 
   if (id && isQueryFunctionRoute(route)) {
     sendError(server, ctx, code, {

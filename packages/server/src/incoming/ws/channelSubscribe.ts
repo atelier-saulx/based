@@ -40,9 +40,8 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
       return
     }
     if (!hasChannel(server, id)) {
-      createChannel(server, route.name, id, payload)
+      createChannel(server, route.name, id, payload, true)
     }
-    ctx.session.ws.subscribe(String(id))
     subscribeChannel(server, id, ctx)
   })
 }

@@ -37,14 +37,14 @@ const errorChannelListener = (
           BasedErrorCode.FunctionError,
           {
             err,
-            observableId: channel.id,
+            channelId: channel.id,
             route: {
               name: channel.name,
             },
           }
         )
       : err.observableId !== channel.id
-      ? { ...err, observableId: channel.id }
+      ? { ...err, channelId: channel.id }
       : err
 
   if (channel.clients.size) {
