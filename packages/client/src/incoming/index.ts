@@ -134,6 +134,7 @@ export const incoming = async (
         const observable = client.observeState.get(id)
 
         if (observable.persistent) {
+          cachedData.persistent = true
           setStorage(client, '@based-cache-' + id, cachedData)
         }
 

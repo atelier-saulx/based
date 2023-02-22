@@ -1,11 +1,34 @@
+import { AuthState, BasedClient } from '..'
+import { join } from 'node:path'
+import gzip from 'node:zlib'
 import fs from 'node:fs/promises'
-import { BasedClient } from '..'
-import { join } from 'path'
 
-// periodic writing to file?
-// or on beforeExit hook
+// total gets gzipped
 
-// also add key..
+const writeToStorage = (client: BasedClient) => {
+  if (!client.storageBeingWritten) {
+    client.storageBeingWritten = setTimeout(() => {
+      client.storageBeingWritten = null
+      // id, c, value
+      const cache: any[] = []
+
+      client.cache.forEach((c, id) => {
+        if (c.persistent) {
+          cache.push(id, c.checksum, c.value)
+        }
+      })
+      const f: { cache: any[]; authState?: AuthState } = { cache }
+      if (client.authState.persistent) {
+        f.authState = client.authState
+      }
+
+      fs.writeFile(client.storagePath, JSON.stringify(f))
+    }, 1e3)
+    // just write the cache and authState
+    //   client.storageStaged
+  }
+}
+
 export const initStorageNode = async (client: BasedClient) => {
   const file = join(
     client.storagePath,
@@ -31,21 +54,21 @@ export const initStorageNode = async (client: BasedClient) => {
 }
 
 export const clearStorageNode = async (client: BasedClient) => {
-  console.info('lullz lets clear!')
+  clearTimeout(client.storageBeingWritten)
+  return fs.rm(client.storagePath)
 }
 
 export const removeStorageNode = (client: BasedClient, key: string) => {
   console.info('removeStorageNode', key)
+  writeToStorage(client)
 }
 
 export const setStorageNode = (
   client: BasedClient,
+  // eslint-disable-next-line
   key: string,
+  // eslint-disable-next-line
   value: any
 ) => {
-  console.info('setStorageNode', key)
-}
-
-export const getStorageNode = (client: BasedClient, key: string) => {
-  console.info('getStorageNode', key)
+  writeToStorage(client)
 }

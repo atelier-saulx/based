@@ -85,7 +85,7 @@ export const setStorageBrowser = (
   }
 }
 
-export const getStorageBrowser = (client: BasedClient, key: string): any => {
+const getStorageBrowser = (client: BasedClient, key: string): any => {
   const env = client.storageEnvKey
 
   try {

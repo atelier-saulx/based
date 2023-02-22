@@ -61,6 +61,7 @@ export class BasedClient extends Emitter {
   maxStorageSize: number = 5e6 - 500 // ~5mb
   storageEnvKey: number = 0
   storagePath?: string
+  storageBeingWritten?: ReturnType<typeof setTimeout>
   // --------- Connection State
   opts: BasedOpts
   connected: boolean = false
@@ -220,6 +221,7 @@ export class BasedClient extends Emitter {
   }
 
   public destroy() {
+    clearTimeout(client.storageBeingWritten)
     clearTimeout(this.channelCleanTimeout)
     this.disconnect()
     for (const i in this) {

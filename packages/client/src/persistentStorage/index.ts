@@ -1,28 +1,20 @@
 import { BasedClient } from '..'
 import {
-  getStorageBrowser,
   initStorageBrowser,
   setStorageBrowser,
   removeStorageBrowser,
   clearStorageBrowser,
 } from './browser'
-import {
-  clearStorageNode,
-  initStorageNode,
-  removeStorageNode,
-  getStorageNode,
-  setStorageNode,
-} from './node'
 
 const isBrowser = typeof window !== 'undefined'
 
 export const removeStorage = (client: BasedClient, key: string) => {
   const env = client.storageEnvKey
-  key += '-' + env
   if (isBrowser) {
+    key += '-' + env
     removeStorageBrowser(client, key)
   } else if (client.storagePath) {
-    removeStorageNode(client, key)
+    require('./node').removeStorageNode(client, key)
   }
 }
 
@@ -30,19 +22,10 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
   const env = client.storageEnvKey
   key += '-' + env
   if (isBrowser) {
+    key += '-' + env
     setStorageBrowser(client, key, value)
   } else if (client.storagePath) {
-    setStorageNode(client, key, value)
-  }
-}
-
-export const getStorage = (client: BasedClient, key: string): any => {
-  const env = client.storageEnvKey
-  key += '-' + env
-  if (isBrowser) {
-    return getStorageBrowser(client, key)
-  } else if (client.storagePath) {
-    return getStorageNode(client, key)
+    require('./node').setStorageNode(client, key, value)
   }
 }
 
@@ -50,7 +33,7 @@ export const initStorage = async (client: BasedClient) => {
   if (isBrowser) {
     return initStorageBrowser(client)
   } else if (client.storagePath) {
-    return initStorageNode(client)
+    return require('./node').initStorageNode(client)
   }
 }
 
@@ -58,6 +41,6 @@ export const clearStorage = async (client: BasedClient) => {
   if (isBrowser) {
     return clearStorageBrowser()
   } else if (client.storagePath) {
-    return clearStorageNode(client)
+    return require('./node').clearStorageNode(client)
   }
 }

@@ -3,5 +3,6 @@ export type Cache = Map<
   {
     value: any
     checksum: number
+    persistent?: boolean
   }
 >
