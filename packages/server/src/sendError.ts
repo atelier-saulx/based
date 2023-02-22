@@ -1,0 +1,88 @@
+import { end } from './sendHttpResponse'
+import { BasedServer } from './server'
+import {
+  HttpSession,
+  WebSocketSession,
+  Context,
+  isHttpContext,
+  isWsSession,
+} from '@based/functions'
+import { valueToBuffer, encodeErrorResponse } from './protocol'
+import {
+  BasedErrorCode,
+  ErrorPayload,
+  createError,
+  BasedErrorData,
+} from './error'
+
+const sendHttpErrorData = (
+  errorData: BasedErrorData,
+  ctx: Context<HttpSession>
+) => {
+  const { code, message, statusCode, statusMessage } = errorData
+  ctx.session.res.cork(() => {
+    ctx.session.res.writeStatus(`${statusCode} ${statusMessage}`)
+    if (ctx.session.method !== 'options') {
+      ctx.session.res.writeHeader('Content-Type', 'application/json')
+    }
+    end(
+      ctx,
+      JSON.stringify({
+        error: message,
+        code,
+      })
+    )
+  })
+}
+
+export function sendHttpError<T extends BasedErrorCode>(
+  server: BasedServer,
+  ctx: Context<HttpSession>,
+  basedCode: T,
+  payload: ErrorPayload[T]
+) {
+  if (!ctx.session) {
+    return
+  }
+  const errData = createError(server, ctx, basedCode, payload)
+  sendHttpErrorData(errData, ctx)
+}
+
+export function sendErrorData(
+  ctx: Context<WebSocketSession | HttpSession>,
+  errorData: BasedErrorData
+): void {
+  if (!ctx.session) {
+    return
+  }
+  if (isHttpContext(ctx)) {
+    sendHttpErrorData(errorData, ctx)
+  } else if (isWsSession(ctx.session)) {
+    ctx.session.ws.send(
+      encodeErrorResponse(valueToBuffer(errorData)),
+      true,
+      false
+    )
+  }
+}
+
+export function sendError<T extends BasedErrorCode>(
+  server: BasedServer,
+  ctx: Context<WebSocketSession | HttpSession>,
+  basedCode: T,
+  payload: ErrorPayload[T]
+): void {
+  if (!ctx.session) {
+    return
+  }
+  if (isHttpContext(ctx)) {
+    return sendHttpError(server, ctx, basedCode, payload)
+  } else if (isWsSession(ctx.session)) {
+    const errorData = createError(server, ctx, basedCode, payload)
+    ctx.session.ws.send(
+      encodeErrorResponse(valueToBuffer(errorData)),
+      true,
+      false
+    )
+  }
+}

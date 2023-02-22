@@ -1,7 +1,0 @@
-add_compile_options(-target arm64-apple-ios15.0-macabi)
-add_link_options(-target arm64-apple-ios15.0-macabi)
-set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "iPhone Developer")
-set(ARCH_FOLDER "Catalyst")
-# set(CMAKE_XCODE_ATTRIBUTE_AD_HOC_CODE_SIGNING_ALLOWED YES)
-# set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED NO)
-# set_property(DIRECTORY . PROPERTY XCODE_ATTRIBUTE_ENABLE_BITCODE "NO")

@@ -1,4 +1,4 @@
-export type Listener = (val?: any) => void
+import { EventMap, Event, Listener } from './types'
 
 class Emitter {
   constructor() {
@@ -8,15 +8,28 @@ class Emitter {
     })
   }
 
-  listeners: { [event: string]: Listener[] } = {}
+  listeners: {
+    [E in Event]?: Listener<EventMap[E]>[]
+  } = {}
 
-  emit(type: string, val: any) {
+  emit<E extends Event>(type: E, val: EventMap[E]) {
     if (this.listeners[type]) {
-      this.listeners[type].forEach((fn) => fn(val))
+      const lis = this.listeners[type]
+      for (let i = 0, len = lis.length; i < lis.length; i++) {
+        const fn = lis[i]
+        // @ts-ignore
+        fn(val)
+        if (len > lis.length) {
+          if (lis[i] !== fn) {
+            i--
+            len = lis.length
+          }
+        }
+      }
     }
   }
 
-  on(type: string, fn: Listener) {
+  on<E extends Event>(type: E, fn: Listener<EventMap[E]>) {
     if (!this.listeners[type]) {
       this.listeners[type] = []
     }
@@ -27,24 +40,45 @@ class Emitter {
     this.listeners = {}
   }
 
-  once(type: string, fn: Listener) {
-    this.on(type, (v) => {
+  once<E extends Event>(type: E): Promise<EventMap[E]>
+
+  once<E extends Event>(type: E, fn: Listener<EventMap[E]>): void
+
+  once<E extends Event>(
+    type: E,
+    fn?: Listener<EventMap[E]>
+  ): Promise<EventMap[E]> | void {
+    if (!fn) {
+      return new Promise((resolve) => {
+        const listener = (v: EventMap[E]) => {
+          resolve(v)
+          this.off(type, listener)
+        }
+        this.on(type, listener)
+      })
+    }
+    const listener = (v: EventMap[E]) => {
       fn(v)
-      this.removeListener(type, fn)
-    })
+      this.off(type, listener)
+    }
+    this.on(type, listener)
   }
 
-  removeListener(type: string, fn: Listener) {
+  off<E extends Event>(type: E, fn?: Listener<EventMap[E]>) {
     const listeners = this.listeners[type]
     if (listeners) {
       if (!fn) {
         delete this.listeners[type]
       } else {
-        for (let i = 0, len = listeners.length; i < len; i++) {
+        for (let i = 0; i < listeners.length; i++) {
           if (listeners[i] === fn) {
             listeners.splice(i, 1)
+            i--
             break
           }
+        }
+        if (listeners.length === 0) {
+          delete this.listeners[type]
         }
       }
     }

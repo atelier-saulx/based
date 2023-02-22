@@ -1,7 +1,8 @@
 import urlLoader from './urlLoader'
 import { Connection } from './types'
-import { BasedClient } from '../'
+import { BasedClient } from '..'
 import WebSocket from 'isomorphic-ws'
+import { encodeAuthState } from '../authState/parseAuthState'
 
 type ActiveFn = (isActive: boolean) => void
 
@@ -9,6 +10,7 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 
 let activeTimer: NodeJS.Timeout
 
+// Disconnect in the browser when a window is inactive (on the background) for 30 seconds
 if (typeof window !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
@@ -31,7 +33,6 @@ const connect = (
   url: string | (() => Promise<string>),
   connection: Connection = {
     destroy: () => {
-      // console.info('remove')
       activityListeners.delete(connection)
     },
   },
@@ -60,10 +61,18 @@ const connect = (
         }
       })
 
-      const ws = (connection.ws = new WebSocket(realUrl))
+      const ws = (connection.ws = new WebSocket(realUrl, [
+        encodeAuthState(client.authState),
+      ]))
 
-      ws.onerror = () => {}
-      ws.onmessage = (d) => client.onData(d)
+      ws.onerror = () => {
+        // console.error()
+      }
+
+      ws.onmessage = (d) => {
+        client.onData(d)
+      }
+
       ws.onopen = () => {
         if (isActive) {
           if (connection.disconnected) {
@@ -76,6 +85,7 @@ const connect = (
           client.onOpen()
         }
       }
+
       ws.onclose = () => {
         if (isActive) {
           if (connection.disconnected) {
@@ -86,7 +96,8 @@ const connect = (
             client,
             url,
             connection,
-            Math.min(1250, Math.min(time + 500)),
+            // relatively low backoff but will make it faster if multiple servers are down
+            Math.min(2000, Math.min(time + ~~(Math.random() * 500) + 100)),
             true
           )
         }

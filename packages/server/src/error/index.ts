@@ -1,0 +1,61 @@
+import { BasedServer } from '../server'
+import { isRoute } from '../functions'
+import { Context } from '@based/functions'
+import {
+  BasedErrorCode,
+  ErrorPayload,
+  BasedErrorData,
+  EMPTY_ROUTE,
+} from './types'
+
+import { errorTypeHandlers } from './errorTypeHandlers'
+export * from './types'
+
+export function createErrorData<T extends BasedErrorCode>(
+  code: T,
+  payload: ErrorPayload[T]
+) {
+  const type = errorTypeHandlers[code]
+  const route = !payload
+    ? EMPTY_ROUTE
+    : isRoute(payload)
+    ? payload
+    : 'route' in payload
+    ? payload.route
+    : EMPTY_ROUTE
+
+  return {
+    code,
+    statusCode: type.statusCode,
+    statusMessage: type.statusMessage,
+    message: type.message(payload),
+    route: {
+      name: route.name,
+      path: route.path,
+    },
+  }
+}
+
+export function createError<T extends BasedErrorCode>(
+  server: BasedServer,
+  context: Context,
+  code: T,
+  payload: ErrorPayload[T]
+): BasedErrorData<T> {
+  const errorData: BasedErrorData<T> = createErrorData(code, payload)
+  if ('requestId' in payload) {
+    errorData.requestId = payload.requestId
+  }
+  if ('observableId' in payload) {
+    errorData.observableId = payload.observableId
+  }
+  if ('channelId' in payload) {
+    errorData.channelId = payload.channelId
+  }
+  if ('err' in payload) {
+    server.emit('error', context, errorData, payload.err)
+  } else {
+    server.emit('error', context, errorData)
+  }
+  return errorData
+}

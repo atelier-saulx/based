@@ -1,482 +1,175 @@
 import test from 'ava'
-import createServer from '@based/server'
-import based from '../src'
-import { start } from '@saulx/selva-server'
-import jwt from 'jsonwebtoken'
-import { deepEqual, wait } from '@saulx/utils'
-import { publicKey, privateKey } from './shared/keys'
+import { BasedClient } from '../src/index'
+import { createSimpleServer } from '@based/server'
+import { BasedError, BasedErrorCode } from '../src/types/error'
+import { wait } from '@saulx/utils'
 
-let db
-
-test.before(async () => {
-  const selvaServer = await start({
-    port: 9099,
-  })
-  db = selvaServer.selvaClient
-  await selvaServer.selvaClient.updateSchema({
-    types: {
-      thing: {
-        fields: {
-          name: { type: 'string' },
-          nested: {
-            type: 'object',
-            properties: {
-              something: { type: 'string' },
-            },
-          },
-        },
+const setup = async () => {
+  const client = new BasedClient()
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    port: 9910,
+    functions: {
+      hello: async (based, payload) => {
+        if (payload) {
+          return payload
+        }
+        return 'flap'
+      },
+    },
+    queryFunctions: {
+      counter: async (based, payload, update) => {
+        let cnt = 0
+        update(cnt)
+        const counter = setInterval(() => {
+          update(++cnt)
+        }, 1000)
+        return () => {
+          clearInterval(counter)
+        }
+      },
+    },
+    auth: {
+      authorize: async (based, ctx) => {
+        return ctx.session?.authState.token === 'mock_token'
       },
     },
   })
-})
-
-test.after(async () => {
-  await db.destroy()
-})
+  return { client, server }
+}
 
 test.serial('authorize functions', async (t) => {
-  // shared observable
+  t.timeout(1000)
 
-  const server = await createServer({
-    port: 9100,
-    db: {
-      host: 'localhost',
-      port: 9099,
-    },
-    config: {
-      secrets: {
-        'tally-jwt': publicKey,
-      },
-      authorizeConnection: async () => {
-        return true
-      },
+  const token = 'mock_token'
 
-      // this will be different
-      authorize: async ({ user, payload, name, type }) => {
-        // extra option is URN audience checks
-        // timeout etc can also be automatic
+  const { client, server } = await setup()
 
-        const token = user && (await user.token('tally-jwt'))
-
-        // pass where its called from
-
-        // based.auth(await based.secret('myspecialapiuser'))
-
-        // from Internal / External
-
-        if (!token || token.foo !== 'bar') {
-          return false
-        }
-
-        if (type === 'observe' && payload?.gurdy && !name) {
-          return false
-        }
-
-        if (name === 'ale' && payload?.wrong) {
-          throw new Error('very wrong yes')
-        }
-
-        if (name === 'advanced' && payload?.flappie) {
-          return false
-        }
-
-        if (name === 'hello' && payload?.no) {
-          return false
-        }
-
-        if (name === 'ale' && payload?.flap) {
-          return false
-        }
-
-        return true
-      },
-      functions: {
-        jim: {
-          observable: false,
-          authorize: async () => {
-            return false
-          },
-          function: async () => {
-            return { x: true }
-          },
-        },
-        ale: {
-          observable: false,
-          function: async ({ based }) => {
-            return based.get({
-              $id: 'root',
-              id: true,
-              type: true,
-            })
-          },
-        },
-        advanced: {
-          shared: true,
-          observable: true,
-          function: async ({ payload, update, based }) => {
-            return based.observe(payload, (data) => {
-              update(data)
-            })
-          },
-        },
-        hello: {
-          observable: false,
-          function: async ({ based, payload }) => {
-            return based.call('ale', payload)
-          },
-        },
-      },
-    },
+  t.teardown(() => {
+    client.disconnect()
+    server.destroy()
   })
 
-  const token = jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' })
-
-  const client = based({
+  await client.connect({
     url: async () => {
-      return 'ws://localhost:9100'
+      return 'ws://localhost:9910'
     },
-    // can pass auth here as well
   })
 
-  // can also await
-  client.auth(token)
-
-  try {
-    await client.call('jim')
-    t.fail('Unauthorized request "jim" did not throw!')
-  } catch (err) {
-    t.is(err.name, 'AuthorizationError from call "jim"')
-  }
-
-  let errCnt = 0
-
-  try {
-    await client.call('ale', { wrong: true })
-    t.fail('Unauthorized request did not throw!')
-  } catch (err) {
-    t.true(err.message.includes('very wrong yes'))
-    t.is(err.name, 'AuthorizationError from call "ale"')
-  }
-
-  await client.call('ale')
-
-  const x = await client.call('hello', { yes: true })
-
-  t.deepEqual(x, {
-    id: 'root',
-    type: 'root',
-  })
-
-  try {
-    await client.call('hello', { flap: true })
-    t.fail('Unauthorized request did not throw!')
-  } catch (err) {
-    t.true(err.message.includes('Function ale unauthorized request'))
-    t.is(err.name, 'AuthorizationError from hello')
-  }
-
-  try {
-    await client.call('hello', { no: true })
-    t.fail('Unauthorized request did not throw!')
-  } catch (err) {
-    t.is(err.name, 'AuthorizationError from call "hello"')
-  }
-
-  const unsub = await client.observe(
-    {
-      things: {
-        name: true,
-        id: true,
-        nested: true,
-        $list: {
-          $find: {
-            $traverse: 'children',
-            $filter: {
-              $operator: '=',
-              $value: 'thing',
-              $field: 'type',
-            },
-          },
-        },
-      },
-    },
-    () => {}
-  )
-
-  unsub()
-
-  await client.observe(
-    {
-      gurdy: {},
-    },
-    () => {},
-    () => {
-      errCnt++
-    }
-  )
-
-  const unsub2 = await client.observe(
-    'advanced',
-    {
-      things: {
-        name: true,
-        id: true,
-        nested: true,
-        $list: {
-          $find: {
-            $traverse: 'children',
-            $filter: {
-              $operator: '=',
-              $value: 'thing',
-              $field: 'type',
-            },
-          },
-        },
-      },
-    },
-    () => {}
-  )
-
-  unsub2()
-
-  await client.observe(
-    'advanced',
-    {
-      flappie: true,
-    },
-    () => {},
-    () => {
-      errCnt++
-    }
-  )
-
-  try {
-    await client.get('advanced', {
-      flappie: true,
+  await t.throwsAsync(
+    client.call('hello', {
+      bla: true,
     })
-    t.fail('Unauthorized observe advanced request did not throw!')
-  } catch (err) {
-    t.is(err.name, 'AuthorizationError from observe "advanced"')
-  }
-
-  // no hard crash plz
-  await client.observe(
-    'advanced',
-    {
-      gurdy: {},
-    },
-    () => {},
-    () => {
-      errCnt++
-    }
   )
 
-  client.auth(false)
+  await client.setAuthState({ token })
 
-  t.is(errCnt, 3)
-
-  try {
-    await client.get({ $id: 'root', $all: true })
-    t.fail('No token not working')
-  } catch (err) {
-    t.true(err.message.includes('Unauthorized request'))
-  }
-
-  await server.destroy()
-  client.disconnect()
+  await t.notThrowsAsync(
+    client.call('hello', {
+      bla: true,
+    })
+  )
 })
 
-test.serial('authorize login / out functions', async (t) => {
-  const server = await createServer({
-    port: 9100,
-    db: {
-      host: 'localhost',
-      port: 9099,
-    },
-    config: {
-      secrets: {
-        'tally-jwt': publicKey,
-      },
-      authorizeConnection: async () => {
-        return true
-      },
-      functions: {
-        advanced: {
-          observable: true,
-          shared: true,
-          function: async ({ payload, update, based }) => {
-            return based.observe(payload, (data) => {
-              update(data)
-            })
-          },
-        },
-      },
-      authorize: async ({ user, payload, name, type, callStack }) => {
-        if (!user && callStack.length === 0) {
-          return false
-        }
+test.serial('authorize observe', async (t) => {
+  t.timeout(12000)
 
-        const token = user ? await user.token('tally-jwt') : false
+  const token = 'mock_token'
 
-        if (
-          type === 'observe' &&
-          deepEqual(payload, {
-            $id: 'root',
-            $all: true,
-          })
-        ) {
-          return true
-        }
+  const { client, server } = await setup()
 
-        if (
-          callStack.length === 0 &&
-          (!token || !(token.foo === 'bar' || token.admin))
-        ) {
-          return false
-        }
+  let counter: ReturnType<typeof setTimeout>
 
-        if (
-          !name &&
-          type === 'observe' &&
-          deepEqual(payload, {
-            $id: 'root',
-            id: true,
-          }) &&
-          callStack[0] !== 'advanced'
-        ) {
-          return false
-        }
-
-        return true
-      },
-    },
+  t.teardown(() => {
+    client.disconnect()
+    server.destroy()
   })
 
-  const token = jwt.sign({ foo: 'bar' }, privateKey, { algorithm: 'RS256' })
-
-  const client = based({
+  await client.connect({
     url: async () => {
-      return 'ws://localhost:9100'
+      return 'ws://localhost:9910'
     },
   })
 
-  let errorCnt = 0
-  let receivedCnt = 0
-  let publicSub = 0
+  await new Promise((resolve) => {
+    client
+      .query('counter', {
+        myQuery: 123,
+      })
+      .subscribe(
+        () => {},
+        (err: BasedError) => {
+          t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
+          resolve(err)
+        }
+      )
+  })
 
-  await client.observe(
-    {
-      $id: 'root',
-      $all: true,
-    },
-    () => {
-      publicSub++
-    }
-  )
+  await client.setAuthState({ token })
+  await wait(500)
 
-  await client.observe(
-    {
-      things: {
-        name: true,
-        id: true,
-        nested: true,
-        $list: {
-          $find: {
-            $traverse: 'children',
-            $filter: {
-              $operator: '=',
-              $value: 'thing',
-              $field: 'type',
-            },
-          },
+  await new Promise((resolve) => {
+    client
+      .query('counter', {
+        myQuery: 123,
+      })
+      .subscribe(
+        (d) => {
+          resolve(d)
         },
+        (err: BasedError) => {
+          t.fail('Should not error when authed')
+          resolve(err)
+        }
+      )
+  })
+
+  // @ts-ignore - totally incorrect typescript error...
+  clearInterval(counter)
+})
+
+test.serial('authorize after observe', async (t) => {
+  t.timeout(12000)
+
+  const token = 'mock_token'
+
+  const { client, server } = await setup()
+  let counter: ReturnType<typeof setTimeout>
+
+  t.teardown(() => {
+    client.disconnect()
+    server.destroy()
+  })
+
+  await client.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  await wait(500)
+
+  let receiveCnt = 0
+
+  client
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe(
+      () => {
+        receiveCnt++
       },
-    },
-    () => {
-      receivedCnt++
-    },
-    () => {
-      errorCnt++
-    }
-  )
+      (err: BasedError) => {
+        t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
+      }
+    )
 
-  client.auth(token)
+  await wait(500)
+  t.is(receiveCnt, 0)
+  await client.setAuthState({ token })
+  await wait(1500)
 
-  await wait(1e3)
+  // @ts-ignore - totally incorrect typescript error...
+  clearInterval(counter)
 
-  await client.observe(
-    {
-      things: {
-        name: true,
-        id: true,
-        nested: true,
-        $list: {
-          $find: {
-            $traverse: 'children',
-            $filter: {
-              $operator: '=',
-              $value: 'thing',
-              $field: 'type',
-            },
-          },
-        },
-      },
-    },
-    () => {
-      receivedCnt++
-    },
-    () => {
-      errorCnt++
-    }
-  )
-
-  client.auth(false)
-
-  await wait(1e3)
-
-  client.auth(token)
-
-  await wait(1e3)
-
-  t.is(errorCnt, 3, 'received 3 errors')
-  t.is(receivedCnt, 4, 'received data 4 times')
-  t.is(publicSub, 1, 'received public data 1 time')
-
-  let errorCnt2 = 0
-  let receivedCnt2 = 0
-
-  await client.observe(
-    {
-      $id: 'root',
-      id: true,
-    },
-    () => {
-      receivedCnt2++
-    },
-    () => {
-      errorCnt2++
-    }
-  )
-
-  t.is(errorCnt2, 1, 'received 1 error for strict')
-  t.is(receivedCnt2, 0, 'received data 0 times for strict')
-
-  await client.observe(
-    'advanced',
-    {
-      $id: 'root',
-      id: true,
-    },
-    () => {
-      receivedCnt2++
-    }
-  )
-
-  t.is(errorCnt2, 1)
-  t.is(receivedCnt2, 1)
-
-  await server.destroy()
-  client.disconnect()
-
-  t.pass()
+  t.true(receiveCnt > 0)
 })

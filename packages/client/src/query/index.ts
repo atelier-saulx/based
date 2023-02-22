@@ -1,0 +1,148 @@
+import {
+  ObserveDataListener,
+  ObserveErrorListener,
+  CloseObserve,
+} from '../types'
+import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
+import { genObserveId } from '../genObserveId'
+import { BasedClient } from '..'
+import { removeStorage, setStorage } from '../persistentStorage'
+
+// Can extend this as a query builder
+// TODO: maybe add user bound as option (will clear / set on a-state chage)
+
+export class BasedQuery<P = any, K = any> {
+  public id: number
+  public query: P
+  public name: string
+  public client: BasedClient
+  public persistent: boolean
+
+  constructor(
+    client: BasedClient,
+    name: string,
+    payload: P,
+    opts?: { persistent: boolean }
+  ) {
+    this.query = payload
+    this.id = genObserveId(name, payload)
+    this.client = client
+    this.name = name
+    this.persistent = opts?.persistent || false
+  }
+
+  get cache(): any {
+    return this.client.cache.get(this.id) || null
+  }
+
+  clearCache() {
+    if (this.persistent) {
+      removeStorage(this.client, '@based-cache-' + this.id)
+    }
+    this.client.cache.delete(this.id)
+  }
+
+  subscribe(
+    onData: ObserveDataListener<K>,
+    onError?: ObserveErrorListener
+  ): CloseObserve {
+    let subscriberId: number
+    const cachedData = this.client.cache.get(this.id)
+    if (!this.client.observeState.has(this.id)) {
+      subscriberId = 1
+      const subscribers = new Map()
+      subscribers.set(subscriberId, {
+        onError,
+        onData,
+      })
+      this.client.observeState.set(this.id, {
+        payload: this.query,
+        name: this.name,
+        subscribers,
+        persistent: this.persistent || false,
+      })
+      addObsToQueue(
+        this.client,
+        this.name,
+        this.id,
+        this.query,
+        cachedData?.checksum || 0
+      )
+    } else {
+      const obs = this.client.observeState.get(this.id)
+      if (this.persistent && !obs.persistent) {
+        obs.persistent = true
+        if (cachedData) {
+          setStorage(this.client, '@based-cache-' + this.id, cachedData)
+        }
+      }
+      subscriberId = obs.subscribers.size + 1
+      obs.subscribers.set(subscriberId, {
+        onError,
+        onData,
+      })
+    }
+
+    if (cachedData) {
+      onData(cachedData.value, cachedData.checksum)
+    }
+
+    return () => {
+      const obs = this.client.observeState.get(this.id)
+      if (obs) {
+        obs.subscribers.delete(subscriberId)
+        if (obs.subscribers.size === 0) {
+          this.client.observeState.delete(this.id)
+          addObsCloseToQueue(this.client, this.id)
+        }
+      } else {
+        console.warn('Subscription allready removed', this.query, this.name)
+      }
+    }
+  }
+
+  async getWhen(
+    condition: (data: any, checksum: number) => boolean
+  ): Promise<K> {
+    return new Promise((resolve) => {
+      const close = this.subscribe((data, checksum) => {
+        if (condition(data, checksum)) {
+          resolve(data)
+          close()
+        }
+      })
+    })
+  }
+
+  async get(): Promise<K> {
+    return new Promise((resolve, reject) => {
+      if (this.client.getState.has(this.id)) {
+        this.client.getState.get(this.id).push([resolve, reject])
+        return
+      }
+      this.client.getState.set(this.id, [])
+      const cachedData = this.client.cache.get(this.id)
+      if (this.client.observeState.has(this.id)) {
+        if (this.client.observeQueue.has(this.id)) {
+          const [type] = this.client.observeQueue.get(this.id)
+          if (type === 1) {
+            this.client.getState.get(this.id).push([resolve, reject])
+            return
+          }
+        }
+        if (cachedData) {
+          resolve(cachedData.value)
+          return
+        }
+      }
+      this.client.getState.get(this.id).push([resolve, reject])
+      addGetToQueue(
+        this.client,
+        this.name,
+        this.id,
+        this.query,
+        cachedData?.checksum || 0
+      )
+    })
+  }
+}

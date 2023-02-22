@@ -1,1025 +1,298 @@
-import Emitter from './Emitter'
+import {
+  BasedOpts,
+  AuthState,
+  FunctionResponseListeners,
+  Settings,
+  FunctionQueue,
+  ObserveState,
+  ObserveQueue,
+  Cache,
+  GetObserveQueue,
+} from './types'
+import { GetState } from './types/observe'
+import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
+import Emitter from './Emitter'
+import getUrlFromOpts from './getUrlFromOpts'
 import {
-  RequestTypes,
-  GenericObject,
-  Configuration,
-  Query,
-  DigestOptions,
-  SetOptions,
-  Copy,
-  SendTokenOptions,
-  TrackOpts,
-  AnalyticsTypes,
-  AnalyticsResult,
-  AnalyticsOpts,
-  AnalyticsTypesOpts,
-  isAnalyticsTypesOpts,
-  isAnalyticsHistoryOpts,
-  AnalyticsHistoryOpts,
-  FileUploadOptions,
-  FileUploadSrc,
-  FileUploadPath,
-  FileUploadStream,
-  AnalyticsHistoryResult,
-  GetOptions,
-  RegisterOpts,
-  LoginOpts,
-} from '@based/types'
+  addChannelPublishIdentifier,
+  addChannelSubscribeToQueue,
+  addObsToQueue,
+  addToFunctionQueue,
+  drainQueue,
+  sendAuth,
+} from './outgoing'
+import { incoming } from './incoming'
+import { BasedQuery } from './query'
+import startStream from './stream'
+import { StreamFunctionOpts } from './stream/types'
+import { initStorage, clearStorage, updateStorage } from './persistentStorage'
+import { BasedChannel } from './channel'
 import {
-  addSubscriber,
-  generateSubscriptionId,
-  addGetSubscriber,
-  removeSubscriber,
-} from './subscriptions'
-import { addRequest } from './request'
-import { BasedClient } from './Client'
-import findPrefix from './findPrefix'
-import createError from './createError'
-import { hashCompact } from '@saulx/hash'
-import sendToken from './token'
-import track, { genKey as generateTrackingKey } from './track'
-import { CompoundObservable, IObservable, Observable } from './observable'
-import { login, logout, register } from './auth'
-import file from './file'
-import getService, { getClusterUrl } from '@based/get-service'
-import { deepCopy } from '@saulx/utils'
-import {
-  BasedGraphQL,
-  createOperations,
-  parseGraphql,
-  handleGraphqlVariables,
-} from '@based/graphql'
+  ChannelQueue,
+  ChannelPublishQueue,
+  ChannelState,
+} from './types/channel'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
-export * from '@based/types'
+export * from './authState/parseAuthState'
 
-export {
-  BasedGraphQL,
-  createOperations as createGraphqlOperations,
-  parseGraphql,
-  handleGraphqlVariables,
-  generateTrackingKey,
-  addSubscriber,
-  addGetSubscriber,
-  removeSubscriber,
-  addRequest,
-  generateSubscriptionId,
-  BasedClient,
-  Observable,
-}
+export { AuthState, BasedQuery }
 
-export declare interface Based {
-  on(event: 'schema', listener: Function): this
-  on(event: 'auth', listener: Function): this
-  on(event: 'connect', listener: Function): this
-  on(event: 'disconnect', listener: Function): this
-  on(event: 'reconnect', listener: Function): this
-  on(event: 'renewToken', listener: Function): this
-  once(event: 'schema', listener: Function): this
-  once(event: 'auth', listener: Function): this
-  once(event: 'connect', listener: Function): this
-  once(event: 'disconnect', listener: Function): this
-  once(event: 'reconnect', listener: Function): this
-  once(event: 'renewToken', listener: Function): this
-}
-
-export class Based extends Emitter {
-  public client: BasedClient
-  public graphql: {
-    query: (
-      q: string | BasedGraphQL,
-      variables?: Record<string, any>
-    ) => Promise<GenericObject>
-
-    live: (
-      q: string | BasedGraphQL,
-      variables?: Record<string, any>
-    ) => Promise<IObservable>
-  }
-
-  constructor(opts?: { url: string | (() => Promise<string>) }) {
+export class BasedClient extends Emitter {
+  constructor(opts?: BasedOpts, settings?: Settings) {
     super()
-    this.client = new BasedClient(this)
-    Object.defineProperty(this, 'client', {
-      enumerable: false,
-      writable: true,
-    })
-    if (opts && opts.url) {
-      this.connect(opts.url)
+    if (opts && Object.keys(opts).length > 0) {
+      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
+      this.connect(opts)
     }
-
-    this.graphql = {
-      query: this.gqlQuery.bind(this),
-      live: this.gqlLive.bind(this),
+    if (settings?.persistentStorage) {
+      this.storagePath = settings.persistentStorage
     }
+    if (settings?.maxCacheSize) {
+      console.warn('MaxCacheSize setting not implemented yet...')
+      this.maxCacheSize = settings.maxCacheSize
+    }
+    initStorage(this)
   }
 
-  public connect(url?: string | (() => Promise<string>)) {
-    if (!url && this._url) {
-      if (!this.client.connection) {
-        this.client.connection = connectWebsocket(this.client, this._url)
+  // --------- Persistent Storage
+  storageSize: number = 0
+  maxStorageSize: number = 5e6 - 500 // ~5mb
+  storageEnvKey: number = 0
+  storagePath?: string
+  storageBeingWritten?: ReturnType<typeof setTimeout>
+  // --------- Connection State
+  opts: BasedOpts
+  connected: boolean = false
+  connection: Connection
+  url: string | (() => Promise<string>)
+  // --------- Stream
+  outgoingStreams: Map<
+    string,
+    {
+      stream: any
+      resolve: (result: any) => void
+      reject: (err: Error) => void
+    }[]
+  > = new Map()
+
+  isDrainingStreams: boolean = false
+  // --------- Queue
+  publishQueue: ChannelPublishQueue = []
+  functionQueue: FunctionQueue = []
+  observeQueue: ObserveQueue = new Map()
+  channelQueue: ChannelQueue = new Map()
+  getObserveQueue: GetObserveQueue = new Map()
+  drainInProgress: boolean = false
+  drainTimeout: ReturnType<typeof setTimeout>
+  idlePing: ReturnType<typeof setTimeout>
+  // --------- Cache State
+  localStorage: boolean = false
+  maxCacheSize: number = 4e6 // in bytes
+  cache: Cache = new Map()
+  // --------- Function State
+  functionResponseListeners: FunctionResponseListeners = new Map()
+  requestId: number = 0 // max 3 bytes (0 to 16777215)
+  // --------- Channel State
+  channelState: ChannelState = new Map()
+  channelCleanTimeout?: ReturnType<typeof setTimeout>
+  channelCleanupCycle: number = 30e3
+  // --------- Observe State
+  observeState: ObserveState = new Map()
+  // --------- Get State
+  getState: GetState = new Map()
+  // -------- Auth state
+  authState: AuthState = {}
+  authRequest: {
+    authState: AuthState
+    promise: Promise<AuthState>
+    resolve: (result: AuthState) => void
+    reject: (err: Error) => void
+    inProgress: boolean
+  } = {
+    authState: null,
+    promise: null,
+    resolve: null,
+    reject: null,
+    inProgress: false,
+  }
+
+  // --------- Internal Events
+  onClose() {
+    this.connected = false
+    // Rare edge case where server got dc'ed while sending the queue - before recieving result)
+    if (this.functionResponseListeners.size > this.functionQueue.length) {
+      this.functionResponseListeners.forEach((p, k) => {
+        if (
+          !this.functionQueue.find(([id]) => {
+            if (id === k) {
+              return true
+            }
+            return false
+          })
+        ) {
+          p[1](
+            new Error(
+              `Server disconnected before function result was processed`
+            )
+          )
+          this.functionResponseListeners.delete(k)
+        }
+      })
+    }
+    this.emit('disconnect', true)
+  }
+
+  onReconnect() {
+    this.connected = true
+    this.emit('reconnect', true)
+  }
+
+  onOpen() {
+    this.connected = true
+    this.emit('connect', true)
+
+    // Resend all subscriptions
+    for (const [id, obs] of this.observeState) {
+      if (!this.observeQueue.has(id)) {
+        const cachedData = this.cache.get(id)
+        addObsToQueue(
+          this,
+          obs.name,
+          id,
+          obs.payload,
+          cachedData?.checksum || 0
+        )
       }
-    } else {
-      this._url = url
-      this.client.connection = connectWebsocket(this.client, url)
     }
+
+    // Resend all channels
+    for (const [id, channel] of this.channelState) {
+      if (!this.channelQueue.has(id)) {
+        if (channel.subscribers.size) {
+          addChannelSubscribeToQueue(this, channel.name, id, channel.payload)
+        } else {
+          addChannelPublishIdentifier(this, channel.name, id, channel.payload)
+        }
+      }
+    }
+
+    drainQueue(this)
   }
 
-  private _url: string | (() => Promise<string>)
+  onData(data: any) {
+    incoming(this, data)
+  }
 
-  public opts: BasedOpts
+  // --------- Connect
+  public async connect(opts?: BasedOpts) {
+    if (opts) {
+      if (this.opts) {
+        this.disconnect()
+      }
+      this.opts = opts
+      this.url = await getUrlFromOpts(opts)
+    }
+    if (!this.opts) {
+      console.error('Configure opts to connect')
+      return
+    }
+    if (this.url && !this.connection) {
+      this.connection = connectWebsocket(this, this.url)
+    }
+  }
 
   public disconnect() {
-    if (this.client.connection) {
-      this.client.connection.disconnected = true
-      this.client.connection.destroy()
-      if (this.client.connection.ws) {
-        this.client.connection.ws.close()
+    if (this.connection) {
+      this.connection.disconnected = true
+      this.connection.destroy()
+      if (this.connection.ws) {
+        this.connection.ws.close()
       }
-      if (this.client.connected) {
-        this.client.onClose()
+      if (this.connected) {
+        this.onClose()
       }
-      delete this.client.connection
+      delete this.connection
     }
-    this.client.connected = false
+    clearTimeout(this.drainTimeout)
+    clearTimeout(this.idlePing)
+    this.connected = false
   }
 
-  public observeUntil(
-    query: Query,
-    condition: (data: GenericObject, checksum: number) => boolean,
-    onData?: (data: any, checksum: number) => void
-  ): Promise<GenericObject> {
+  // ---------- Destroy
+  public isDestroyed?: boolean
+  public async destroy(noStorage?: boolean) {
+    if (!noStorage) {
+      await updateStorage(this)
+    }
+    clearTimeout(this.storageBeingWritten)
+    clearTimeout(this.channelCleanTimeout)
+    this.disconnect()
+    this.isDestroyed = true
+    for (const i in this) {
+      delete this[i]
+    }
+  }
+
+  // ---------- Channel
+  channel(name: string, payload?: any): BasedChannel {
+    return new BasedChannel(this, name, payload)
+  }
+
+  // ---------- Query
+  query(
+    name: string,
+    payload?: any,
+    opts?: { persistent: boolean }
+  ): BasedQuery {
+    return new BasedQuery(this, name, payload, opts)
+  }
+
+  // -------- Function
+  call(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
-      let close
-      let isResolved = false
-      this.observe(query, (d, checksum) => {
-        if (onData) {
-          onData(d, checksum)
-        }
-        if (condition(d, checksum)) {
-          isResolved = true
-          if (close) {
-            close()
-          }
-          resolve(d)
-        }
-      })
-        .then((c) => {
-          if (isResolved) {
-            close()
-          } else {
-            close = c
-          }
-        })
-        .catch((err) => {
-          reject(err)
-        })
+      addToFunctionQueue(this, payload, name, resolve, reject)
     })
   }
 
-  public gql(literals: string | readonly string[], ...args: any[]) {
-    if (typeof literals === 'string') {
-      literals = [literals]
-    }
-
-    let result = literals[0]
-
-    args.forEach((arg, i) => {
-      if (arg && arg.kind === 'Document') {
-        result += arg.loc.source.body
-      } else {
-        result += arg
-      }
-      result += literals[i + 1]
-    })
-
-    return createOperations(
-      { schemas: this.client.configuration.schema },
-      parseGraphql(result)
-    )
-  }
-
-  public gqlDb(
-    db: string = 'default'
-  ): (literals: string | readonly string[], ...args: any[]) => BasedGraphQL {
-    return (literals, ...args) => {
-      if (typeof literals === 'string') {
-        literals = [literals]
-      }
-
-      let result = literals[0]
-
-      args.forEach((arg, i) => {
-        if (arg && arg.kind === 'Document') {
-          result += arg.loc.source.body
-        } else {
-          result += arg
-        }
-        result += literals[i + 1]
-      })
-
-      return createOperations(
-        { schemas: this.client.configuration.schema, db },
-        parseGraphql(result)
-      )
-    }
-  }
-
-  public observe(
-    query: Query,
-    onData: (data: any, checksum: number) => void,
-    onErr?: (err: Error) => void
-  ): Promise<() => void>
-
-  public observe(
+  // -------- Stream
+  stream(
     name: string,
-    onData: (data: any, checksum: number) => void,
-    onErr?: (err: Error) => void
-  ): Promise<() => void>
-
-  public observe(
-    name: string,
-    payload: any,
-    onData: (data: any, checksum: number) => void,
-    onErr?: (err: Error) => void
-  ): Promise<() => void>
-
-  public observe(
-    a: string | Query,
-    b: any | ((data: any, checksum: number) => void),
-    c?: (data: any, checksum: number) => void | ((err: Error) => void),
-    d?: (err: Error) => void
-  ): Promise<() => void> {
-    if (typeof a === 'string') {
-      return new Promise((resolve, reject) => {
-        const noPayload = typeof b === 'function'
-        const onData = noPayload ? b : c
-        const onErr = noPayload ? c : d
-        addSubscriber(
-          this.client,
-          noPayload ? undefined : b, // not only query should be any
-          <(data: any, checksum: number) => void>onData,
-          (err, subscriptionId, subscriberId, _data, isAuthError) => {
-            if (err && !isAuthError) {
-              // maybe log also
-              reject(err)
-            } else {
-              const unsubscribe = () => {
-                removeSubscriber(this.client, subscriptionId, subscriberId)
-              }
-              resolve(unsubscribe)
-            }
-          },
-          <(err: Error) => void>onErr,
-          undefined,
-          a
-        )
-      })
-    } else {
-      return new Promise((resolve, reject) => {
-        addSubscriber(
-          this.client,
-          a,
-          <(data: any, checksum: number) => void>b,
-          (err, subscriptionId, subscriberId, _data, isAuthError) => {
-            if (err && !isAuthError) {
-              // maybe log also
-              reject(err)
-            } else {
-              const unsubscribe = () => {
-                removeSubscriber(this.client, subscriptionId, subscriberId)
-              }
-              resolve(unsubscribe)
-            }
-          },
-          <(err: Error) => void>c
-        )
-      })
-    }
-  }
-
-  public createObservable(query: Query): Observable
-
-  public createObservable(name: string, payload?: any): Observable
-
-  public createObservable(a: string | Query, payload?: any): Observable {
-    if (typeof a === 'string') {
-      return new Observable(this.client, a, payload)
-    } else {
-      return new Observable(this.client, a)
-    }
-  }
-
-  public observeSchema(
-    name: string,
-    onData: (data: any, checksum: number) => void,
-    onErr?: (err: Error) => void
-  ): Promise<() => void>
-
-  public observeSchema(
-    onData: (data: any, checksum: number) => void,
-    onErr?: (err: Error) => void
-  ): Promise<() => void>
-
-  public observeSchema(
-    a: string | ((data: any, checksum: number) => void),
-    b: ((data: any, checksum: number) => void) | ((err: Error) => void),
-    c?: (err: Error) => void
-  ): Promise<() => void> {
-    return new Promise((resolve, reject) => {
-      const db = typeof a === 'string' ? a : 'default'
-      const onData = typeof a === 'string' ? b : a
-      const onErr = typeof a === 'string' ? c : b
-      addSubscriber(
-        this.client,
-        { $subscribe_schema: db },
-        (data, checksum) => {
-          if (!this.client.configuration) {
-            this.client.configuration = {
-              dbs: [],
-              schema: {},
-              functions: {},
-            } as any // TODO: FIX
-          }
-
-          this.client.configuration.schema[db] = data
-          onData(data, checksum)
-        },
-        (err, subscriptionId, subscriberId, _data, isAuthError) => {
-          if (err && !isAuthError) {
-            // maybe log also
-            reject(err)
-          } else {
-            const unsubscribe = () => {
-              removeSubscriber(this.client, subscriptionId, subscriberId)
-            }
-            resolve(unsubscribe)
-          }
-        },
-        <(err: Error) => void>onErr
-      )
-    })
-  }
-
-  public get(query: Query): Promise<GenericObject>
-
-  public get(name: string, payload?: any): Promise<GenericObject>
-
-  public get(a: string | Query, payload?: any): Promise<GenericObject> {
-    if (typeof a === 'string') {
-      return new Promise((resolve, reject) => {
-        addGetSubscriber(
-          this.client,
-          payload,
-          (err, _subscriber, _subId, data) => {
-            if (err) {
-              reject(err)
-            } else {
-              resolve(data)
-            }
-          },
-          0,
-          a
-        )
-      })
-    } else {
-      return new Promise((resolve, reject) => {
-        addRequest(this.client, RequestTypes.Get, a, resolve, reject)
-      })
-    }
-  }
-
-  public file(
-    opts:
-      | FileUploadOptions
-      | File
-      | FileUploadSrc
-      | FileUploadPath
-      | FileUploadStream
+    stream: StreamFunctionOpts,
+    progressListener?: (progress: number) => void
   ): Promise<any> {
-    if (global.File && opts instanceof File) {
-      opts = { contents: opts }
-    }
-    // @ts-ignore
-    return file(this, opts)
+    return startStream(this, name, stream, progressListener)
   }
 
-  public call(name: string, payload?: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      addRequest(this.client, RequestTypes.Call, payload, resolve, reject, name)
-    })
-  }
-
-  public async id(type: string, opts?: any) {
-    let prefix = findPrefix(this.client, type)
-    if (!prefix) {
-      await this.schema()
-      prefix = findPrefix(this.client, type)
-    }
-    if (!prefix) {
-      throw createError({
-        message: `Type does not exist ${type}`,
-        type: 'Invalid type',
-        payload: opts
-          ? { type, opts }
-          : {
-              type,
-            },
-      })
-    }
-    if (opts) {
-      const optsHash = hashCompact(opts, 8, true)
-      return prefix + optsHash
+  // -------- Auth
+  setAuthState(authState: AuthState): Promise<AuthState> {
+    if (typeof authState === 'object') {
+      return sendAuth(this, authState)
     } else {
-      return (
-        prefix +
-        hashCompact(Math.floor(Math.random() * 99999999999) + '' + Date.now())
-      )
+      throw new Error('Invalid auth() arguments')
     }
   }
 
-  public digest(payload: DigestOptions): Promise<{ id: string }> {
-    return new Promise((resolve, reject) => {
-      addRequest(this.client, RequestTypes.Digest, payload, resolve, reject)
-    })
+  clearAuthState(): Promise<AuthState> {
+    return sendAuth(this, {})
   }
 
-  public set(payload: SetOptions): Promise<{ id: string }> {
-    return new Promise((resolve, reject) => {
-      addRequest(this.client, RequestTypes.Set, payload, resolve, reject)
-    })
+  // -------- Storage layer
+  clearStorage(): Promise<void> {
+    return clearStorage(this)
   }
 
-  public bulkUpdate(payload: SetOptions, query: any): Promise<{ id: string }> {
-    return new Promise((resolve, reject) => {
-      addRequest(
-        this.client,
-        RequestTypes.BulkUpdate,
-        { payload, query },
-        resolve,
-        reject
-      )
-    })
-  }
-
-  public copy(payload: Copy): Promise<{ ids: string[] }> {
-    return new Promise((resolve, reject) => {
-      addRequest(this.client, RequestTypes.Copy, payload, resolve, reject)
-    })
-  }
-
-  private async gqlQuery(
-    q: string | BasedGraphQL,
-    variables: Record<string, any> = {}
-  ): Promise<GenericObject> {
-    let op: BasedGraphQL
-    if (typeof q === 'string') {
-      op = this.gql(q)
-    } else {
-      op = q
-    }
-
-    try {
-      op = handleGraphqlVariables(op, op, variables)
-
-      if (op.opType === 'GET') {
-        const queryObj: GetOptions = { $db: op.db }
-        const fnReplies: { key: string; reply: any }[] = []
-        for (const key in op.ops) {
-          if (op.ops[key].fnObserve) {
-            const resp = await this.get(
-              <string>op.ops[key].fnObserve.name,
-              op.ops[key].fnObserve.payload
-            )
-
-            fnReplies.push({ key, reply: resp })
-            continue
-          }
-
-          if (op.ops[key].get) {
-            queryObj[key] = op.ops[key].get
-          }
-        }
-
-        const getResult = await this.get(queryObj)
-        for (const { key, reply } of fnReplies) {
-          getResult[key] = reply
-        }
-
-        return { data: getResult }
-      }
-
-      const reply = {}
-      await Promise.all(
-        Object.entries(op.ops).map(async ([k, o]) => {
-          if (o.delete) {
-            reply[k] = await this.delete(o.delete)
-            return
-          } else if (o.fnCall) {
-            reply[k] = await this.call(<string>o.fnCall.name, o.fnCall.payload)
-            return
-          }
-
-          const { id } = await this.set(o.set)
-          if (!o.get) {
-            const res: any = {}
-            res.id = id
-
-            const type =
-              this.client?.configuration?.schema?.[op.db]
-                ?.prefixToTypeMapping?.[id.slice(0, 2)]
-            if (type) {
-              res.type = type
-            }
-
-            reply[k] = res
-            return
-          }
-
-          const getOpts: GetOptions = deepCopy(o.get)
-          getOpts.$id = id
-
-          const getData = await this.get(getOpts)
-          reply[k] = getData
-        })
-      )
-
-      return { data: reply }
-    } catch (e) {
-      return { errors: [{ message: e.message, locations: e.locations }] }
-    }
-  }
-
-  private async gqlLive(
-    q: string | BasedGraphQL,
-    variables: Record<string, any> = {}
-  ): Promise<IObservable> {
-    let op: BasedGraphQL
-    if (typeof q === 'string') {
-      op = this.gql(q)
-    } else {
-      op = q
-    }
-
-    op = handleGraphqlVariables(op, op, variables)
-
-    if (op.opType === 'GET') {
-      const fns: { key: string; fn: { name: string; payload: any } }[] = []
-      const queryObj: GetOptions = {}
-      for (const key in op.ops) {
-        if (op.ops[key].fnObserve) {
-          const { name, payload } = op.ops[key].fnObserve
-          fns.push({ key, fn: { name: <string>name, payload } })
-          continue
-        }
-        queryObj[key] = op.ops[key].get
-      }
-
-      if (fns?.length) {
-        const allObs = fns.map((fn) => {
-          return {
-            obs: new Observable(this.client, <string>fn.fn.name, fn.fn.payload),
-            key: fn.key,
-          }
-        })
-
-        const queryObs = new Observable(this.client, {
-          $db: op.db,
-          ...queryObj,
-        })
-
-        allObs.push({ key: '', obs: queryObs })
-
-        return new CompoundObservable(this.client, allObs)
-      }
-
-      return new Observable(this.client, { $db: op.db, data: queryObj })
-    }
-
-    const queryObj = {}
-    await Promise.all(
-      Object.entries(op.ops).map(async ([k, op]) => {
-        if (op.delete) {
-          queryObj[k] = await this.delete(op.delete)
-          return
-        } else if (op.fnCall) {
-          queryObj[k] = await this.call(
-            <string>op.fnCall.name,
-            op.fnCall.payload
-          )
-          return
-        }
-
-        const { id } = await this.set(op.set)
-
-        const getOpts: GetOptions = deepCopy(op.get)
-        getOpts.$id = id
-
-        queryObj[k] = getOpts
-      })
-    )
-
-    return new Observable(this.client, { $db: op.db, data: queryObj })
-  }
-
-  // will become a special request
-  public analytics(opts: AnalyticsHistoryOpts): Promise<AnalyticsHistoryResult>
-
-  public analytics(opts: AnalyticsTypesOpts): Promise<AnalyticsTypes>
-
-  public analytics(opts: AnalyticsOpts): Promise<AnalyticsResult>
-
-  public analytics(
-    opts: AnalyticsTypesOpts,
-    onData: (data: AnalyticsTypes, checksum: number) => void
-  ): Promise<() => void>
-
-  public analytics(
-    opts: AnalyticsOpts,
-    onData: (data: AnalyticsResult, checksum: number) => void
-  ): Promise<() => void>
-
-  public analytics(
-    opts: AnalyticsHistoryOpts,
-    onData: (data: AnalyticsHistoryResult, checksum: number) => void
-  ): Promise<() => void>
-
-  public analytics(
-    opts: AnalyticsOpts | AnalyticsTypesOpts | AnalyticsHistoryOpts,
-    onData?:
-      | ((data: AnalyticsResult, checksum: number) => void)
-      | ((data: AnalyticsTypes, checksum: number) => void)
-      | ((data: AnalyticsHistoryResult, checksum: number) => void)
-  ): Promise<
-    (() => void) | AnalyticsResult | AnalyticsTypes | AnalyticsHistoryResult
-  > {
-    return new Promise((resolve, reject) => {
-      if (onData) {
-        addSubscriber(
-          this.client,
-          opts,
-          onData,
-          (err, subscriptionId, subscriberId, _data, isAuthError) => {
-            if (err && !isAuthError) {
-              reject(err)
-            } else {
-              const unsubscribe = () => {
-                removeSubscriber(this.client, subscriptionId, subscriberId)
-              }
-              resolve(unsubscribe)
-            }
-          },
-          (err) => console.error(err),
-          undefined,
-          'analytics'
-        )
-      } else {
-        addGetSubscriber(
-          this.client,
-          opts,
-          (err, _subscriber, _subId, data) => {
-            if (err) {
-              reject(err)
-            } else {
-              if (isAnalyticsHistoryOpts(opts)) {
-                resolve(data as AnalyticsHistoryResult)
-              } else if (isAnalyticsTypesOpts(opts)) {
-                resolve(data as AnalyticsTypes)
-              } else {
-                resolve(data as AnalyticsResult)
-              }
-            }
-          },
-          0,
-          'analytics'
-        )
-      }
-    })
-  }
-
-  public track(
-    type: string,
-    params?: { [key: string]: number | string | boolean }
-  ): void {
-    track(this.client, type, params)
-  }
-
-  public clearAnalytics(
-    type: string,
-    params?: { [key: string]: number | string | boolean }
-  ): void {
-    track(this.client, type, params, false, false, undefined, true)
-  }
-
-  public untrack(
-    type: string,
-    params?: { [key: string]: number | string | boolean }
-  ): void {
-    track(this.client, type, params, true)
-  }
-
-  public event(
-    type: string,
-    params?: { [key: string]: number | string | boolean },
-    opts?: TrackOpts
-  ): void {
-    track(this.client, type, params, false, true, opts)
-  }
-
-  public delete(payload: {
-    $id: string
-    $db?: string
-  }): Promise<{ isDeleted: boolean }> {
-    return new Promise((resolve, reject) => {
-      addRequest(this.client, RequestTypes.Delete, payload, resolve, reject)
-    })
-  }
-
-  public schema(): Promise<Configuration> {
-    return new Promise((resolve, reject) => {
-      const resolver = (config: Configuration) => {
-        this.client.configuration = config
-        resolve(config)
-      }
-      addRequest(
-        this.client,
-        RequestTypes.GetConfiguration,
-        0,
-        resolver,
-        reject
-      )
-    })
-  }
-
-  public removeType(
-    type: string,
-    db: string = 'default'
-  ): Promise<{ removed: boolean }> {
-    return new Promise((resolve, reject) => {
-      addRequest(
-        this.client,
-        RequestTypes.RemoveType,
-        { type, db },
-        resolve,
-        reject
-      )
-    })
-  }
-
-  public removeField(
-    type: string,
-    path: string | string[],
-    db: string = 'default'
-  ): Promise<{ removed: boolean }> {
-    return new Promise((resolve, reject) => {
-      if (!path || path.length === 0) {
-        reject(new Error('Path cannot be empty'))
-      } else {
-        if (!Array.isArray(path)) {
-          path = [path]
-        }
-
-        addRequest(
-          this.client,
-          RequestTypes.RemoveField,
-          { type, db, path },
-          resolve,
-          reject
-        )
-      }
-    })
-  }
-
-  public updateSchema(
-    configuration:
-      | {
-          schema?: GenericObject // FOR NOW
-          db?: string
-        }
-      | {
-          schema?: GenericObject // FOR NOW
-          db?: string
-        }[]
-  ): Promise<GenericObject> {
-    return new Promise((resolve, reject) => {
-      addRequest(
-        this.client,
-        RequestTypes.Configuration,
-        configuration,
-        resolve,
-        reject
-      )
-    })
-  }
-
-  public getToken() {
-    return this.client.token
-  }
-
-  // allow localstorage
-  public auth(
-    token: string | false,
-    options?: SendTokenOptions
-  ): Promise<false | string | number> {
-    return new Promise((resolve) => {
-      if (token && token === this.client.token) {
-        if (!this.client.beingAuth) {
-          resolve(token)
-        } else {
-          this.client.auth.push((v) => {
-            if (v) {
-              resolve(token)
-            } else {
-              resolve(false)
-            }
-          })
-        }
-      } else {
-        this.client.auth.push(resolve)
-        if (
-          (token && token !== this.client.token) ||
-          (token === false && this.client.token)
-        ) {
-          if (
-            typeof token === 'string' &&
-            options?.id &&
-            options.refreshToken
-          ) {
-            if (options.localStorage === false) {
-              this.client.tokenToLocalStorage = false
-            } else {
-              this.client.tokenToLocalStorage = true
-            }
-            this.client.updateUserState(options.id, token, options.refreshToken)
-          } else {
-            if (typeof token === 'string') {
-              const { renewOptions, refreshToken, ...redactedOptions } =
-                options || {}
-              if (renewOptions) {
-                this.client.renewOptions = renewOptions
-              }
-              if (refreshToken) {
-                this.client.renewOptions = {
-                  ...this.client.renewOptions,
-                  refreshToken,
-                }
-              }
-              sendToken(this.client, token, redactedOptions)
-            } else {
-              // this is very important
-              // may need to add a req Id (and a timer how long it takes)
-              sendToken(this.client)
-            }
-            this.emit('auth', token)
-          }
-        }
-      }
-    })
-  }
-
-  // observeAuth
-
-  public async login(
-    opts: LoginOpts & { localStorage?: boolean }
-  ): Promise<GenericObject> {
-    if (opts.localStorage === false) {
-      this.client.tokenToLocalStorage = false
-    } else {
-      this.client.tokenToLocalStorage = true
-    }
-    return login(this.client, opts)
-  }
-
-  public async register(
-    opts: RegisterOpts & { localStorage?: boolean }
-  ): Promise<GenericObject> {
-    if (opts.localStorage === false) {
-      this.client.tokenToLocalStorage = false
-    } else {
-      this.client.tokenToLocalStorage = true
-    }
-    return register(this.client, opts)
-  }
-
-  public logout(): Promise<GenericObject> {
-    return logout(this.client)
-  }
-
-  public observeAuth(
-    userDataListener: (
-      data:
-        | {
-            id: string
-            token: string
-          }
-        | false
-    ) => void
-  ): Promise<() => void> {
-    return new Promise((resolve) => {
-      // store a user state somehwere..
-
-      if (this.client.user && this.client.token) {
-        userDataListener({
-          id: this.client.user,
-          token: this.client.token,
-        })
-      } else {
-        userDataListener(false)
-      }
-
-      const authListener = (d) => {
-        if (d && this.client.user && this.client.token) {
-          userDataListener({
-            id: this.client.user,
-            token: this.client.token,
-          })
-        } else {
-          userDataListener(false)
-        }
-      }
-
-      this.on('auth', authListener)
-
-      resolve(() => {
-        this.removeListener('auth', authListener)
-      })
-    })
+  saveStorage(): Promise<void> {
+    return updateStorage(this)
   }
 }
 
-// auth as admin // auth as based
+export { BasedOpts }
 
-const addParamsToUrl = (url, params) => {
-  if (params) {
-    let firstChecked
-    url += /\?/.test(url) ? '&' : '?'
-    for (const key in params) {
-      const value = params[key]
-      url += firstChecked ? `&${key}=${value}` : `${key}=${value}`
-      firstChecked = true
-    }
-  }
-
-  return url
+export default function based(
+  opts: BasedOpts,
+  settings?: Settings
+): BasedClient {
+  return new BasedClient(opts, settings)
 }
-
-export type BasedOpts = {
-  env?: string
-  project?: string
-  org?: string
-  cluster?: string
-  name?: string
-  key?: string
-  url?: string | (() => Promise<string>)
-  params?: {
-    [key: string]: string | number
-  }
-}
-
-const based = (opts: BasedOpts, BasedClass = Based): Based => {
-  let {
-    env,
-    project,
-    org,
-    url,
-    key,
-    name = '@based/hub',
-    cluster,
-    params,
-  } = opts
-
-  /*
-  observeSchema
-
-  */
-
-  if (!url) {
-    cluster = opts.cluster = getClusterUrl(cluster)
-
-    url = async () => {
-      const { url } = await getService(
-        {
-          env,
-          project,
-          org,
-          key,
-          name,
-          optionalKey: true,
-        },
-        0,
-        cluster
-      )
-      return addParamsToUrl(url, params)
-    }
-  }
-
-  if (url) {
-    const client = new BasedClass()
-    client.opts = opts
-    client.client.initUserState()
-    client.connect(url)
-    return client
-  }
-}
-
-export default based
