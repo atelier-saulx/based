@@ -283,7 +283,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
   await server.destroy()
 })
 
-test.serial.only('Channel publish + subscribe errors', async (t) => {
+test.serial('Channel publish + subscribe errors', async (t) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
