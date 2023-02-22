@@ -26,6 +26,7 @@ export type BasedErrorData = {
   stack?: string
   requestId?: number
   observableId?: number
+  channelId?: number
   code: BasedErrorCode
   statusCode?: number
 }
@@ -39,7 +40,7 @@ export const convertDataToBasedError = (
   payload: BasedErrorData,
   stack?: string
 ): BasedError => {
-  const { message, /* requestId, */ code } = payload
+  const { message, code } = payload
   const msg =
     message[0] === '[' ? message : `[${BasedErrorCode[code]}] ` + message
   const error = new BasedError(msg)

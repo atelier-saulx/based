@@ -4,6 +4,8 @@ import {
   decodePayload,
   parsePayload,
 } from '../../protocol'
+import { BasedErrorCode } from '../../error'
+import { sendError } from '../../sendError'
 import { BasedChannelFunctionRoute } from '../../functions'
 import { WebSocketSession } from '@based/functions'
 import { rateLimitRequest } from '../../security'
@@ -106,10 +108,10 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
   }
 
   if (len > route.maxPayloadSize) {
-    // sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-    //   route,
-    //   requestId,
-    // })
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+      route,
+      channelId: id,
+    })
     return true
   }
 

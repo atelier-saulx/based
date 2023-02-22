@@ -45,30 +45,6 @@ export const errorTypeHandlers: ErrorType = {
       return 'Error in server side observer'
     },
   },
-  [BasedErrorCode.ObservableFunctionError]: {
-    statusCode: 500,
-    statusMessage: 'Internal Server Error',
-    message: (payload) => {
-      if (
-        payload.err &&
-        (typeof payload.err === 'string' ||
-          (!payload.err.message && !payload.err.name))
-      ) {
-        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
-      }
-      return `[${payload.route.name}] ${
-        typeof payload.err !== 'string' &&
-        payload.err.name &&
-        payload.err.name !== 'Error'
-          ? `[${payload.err.name}] `
-          : ''
-      }${
-        typeof payload.err === 'string'
-          ? payload.err
-          : payload.err.message || ''
-      }`
-    },
-  },
   [BasedErrorCode.FunctionNotFound]: {
     statusCode: 404,
     statusMessage: 'Not Found',
@@ -81,47 +57,29 @@ export const errorTypeHandlers: ErrorType = {
       )
     },
   },
-  [BasedErrorCode.FunctionIsStream]: {
+  [BasedErrorCode.FunctionIsWrongType]: {
     statusCode: 400,
     statusMessage: 'Incorrect Protocol',
     message: (payload) => {
-      return (
-        addName(payload.route) + 'Cannot use stream functions over websockets'
-      )
-    },
-  },
-  [BasedErrorCode.FunctionIsNotStream]: {
-    statusCode: 400,
-    statusMessage: 'Function is Not Stream',
-    message: (payload) => {
-      return addName(payload.route) + 'Cannot stream to a normal function'
-    },
-  },
-  [BasedErrorCode.FunctionIsNotObservable]: {
-    statusCode: 400,
-    statusMessage: 'Function Is Not Observable',
-    message: (payload) =>
-      addName(payload.route) + 'Cannot observe non observable functions',
-  },
-  [BasedErrorCode.FunctionIsObservable]: {
-    statusCode: 400,
-    statusMessage: 'Function Is Observable',
-    message: (payload) =>
-      addName(payload.route) +
-      'Cannot call observable functions as a standard one',
-  },
-  [BasedErrorCode.CannotStreamToObservableFunction]: {
-    statusCode: 404,
-    statusMessage: 'Not Found',
-    message: (payload) => {
-      return addName(payload.route) + 'Cannot stream to observable function'
+      return addName(payload.route) + 'Target function is of wrong type'
     },
   },
   [BasedErrorCode.AuthorizeFunctionError]: {
     statusCode: 403,
     statusMessage: 'Forbidden',
-    message: (payload) =>
-      addName(payload.route) + 'Error in authorize function',
+    message: (payload) => {
+      if (typeof payload.err === 'string' || !payload.err.message) {
+        return `[${payload.route.name}] ${JSON.stringify(payload.err)}`
+      }
+      return (
+        addName(payload.route) +
+        `${
+          payload.err.name && payload.err.name !== 'Error'
+            ? `[${payload.err.name}] `
+            : ''
+        }${payload.err.message || ''}`
+      )
+    },
   },
   [BasedErrorCode.AuthorizeRejectedError]: {
     statusCode: 403,

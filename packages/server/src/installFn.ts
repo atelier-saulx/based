@@ -1,6 +1,9 @@
 import {
   BasedRoute,
   BasedSpec,
+  isChannelFunctionRoute,
+  isChannelFunctionSpec,
+  isFunctionSpec,
   isQueryFunctionRoute,
   isQueryFunctionSpec,
   isStreamFunctionRoute,
@@ -16,6 +19,7 @@ const functionNotFound = (
   ctx: Context,
   route: BasedRoute,
   isQuery: boolean,
+  isChannel: boolean,
   id?: number
 ) => {
   if (!isClientContext(ctx)) {
@@ -24,7 +28,14 @@ const functionNotFound = (
   if (isQuery) {
     sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
       route,
-      requestId: id,
+      observableId: id,
+    })
+    return
+  }
+  if (isChannel) {
+    sendError(server, ctx, BasedErrorCode.FunctionNotFound, {
+      route,
+      channelId: id,
     })
     return
   }
@@ -42,74 +53,66 @@ export const installFn = async <R extends BasedRoute>(
 ): Promise<null | BasedSpec<R>> => {
   const isQuery = isQueryFunctionRoute(route)
   const isStream = !isQuery && isStreamFunctionRoute(route)
+  const isChannel = !isStream && !isQuery && isChannelFunctionRoute(route)
+
   try {
     const spec = await server.functions.install(route.name)
     if (!ctx.session) {
       return null
     }
+
     if (spec === null) {
-      functionNotFound(server, ctx, route, isQuery, id)
+      functionNotFound(server, ctx, route, isQuery, isChannel, id)
       return null
+    }
+
+    if (isChannel && !isChannelFunctionSpec(spec)) {
+      if (!isClientContext(ctx)) {
+        return null
+      }
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
+        route,
+        observableId: id,
+      })
     }
 
     if (isQuery && !isQueryFunctionSpec(spec)) {
       if (!isClientContext(ctx)) {
         return null
       }
-      sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
         route,
         observableId: id,
       })
       return null
     }
+
     if (isStream && !isStreamFunctionSpec(spec)) {
       if (!isClientContext(ctx)) {
         return null
       }
-      if (isQueryFunctionSpec(spec)) {
-        sendError(
-          server,
-          ctx,
-          BasedErrorCode.CannotStreamToObservableFunction,
-          {
-            route,
-            requestId: id,
-          }
-        )
-        return null
-      }
-      sendError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
         route,
-        requestId: id,
+        observableId: id,
       })
       return null
     }
-    if (!isStream && !isQuery) {
-      if (isQueryFunctionSpec(spec)) {
-        if (!isClientContext(ctx)) {
-          return null
-        }
-        sendError(server, ctx, BasedErrorCode.FunctionIsObservable, {
-          route,
-          requestId: id,
-        })
+
+    if (!isStream && !isQuery && !isChannel && !isFunctionSpec(spec)) {
+      if (!isClientContext(ctx)) {
         return null
       }
-      if (isStreamFunctionSpec(spec)) {
-        if (!isClientContext(ctx)) {
-          return null
-        }
-        sendError(server, ctx, BasedErrorCode.FunctionIsStream, {
-          route,
-          requestId: id,
-        })
-        return null
-      }
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
+        route,
+        observableId: id,
+      })
+      return null
     }
-    // @ts-ignore fixed by chekcing the specs
+
+    // @ts-ignore Fixed by chekcing the specs
     return spec
   } catch (err) {
-    functionNotFound(server, ctx, route, isQuery, id)
+    functionNotFound(server, ctx, route, isQuery, isChannel, id)
   }
   return null
 }

@@ -16,7 +16,7 @@ import { installFn } from '../installFn'
 
 const getObsData = (
   resolve: (x: any) => any,
-  reject: (err: BasedErrorData<BasedErrorCode.ObservableFunctionError>) => void,
+  reject: (err: BasedErrorData<BasedErrorCode.FunctionError>) => void,
   server: BasedServer,
   id: number,
   ctx: Context,
@@ -25,7 +25,7 @@ const getObsData = (
   const obs = getObsAndStopRemove(server, id)
   if (obs.error) {
     reject(
-      createError(server, ctx, BasedErrorCode.ObservableFunctionError, {
+      createError(server, ctx, BasedErrorCode.FunctionError, {
         route,
         observableId: id,
         err: obs.error.message,

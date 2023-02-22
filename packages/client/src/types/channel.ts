@@ -1,3 +1,5 @@
+import { BasedError } from './error'
+
 export type ChannelMessageFunction<K = any> = (message: K) => void
 
 // Type of subscriptions
@@ -36,7 +38,10 @@ export type ChannelState = Map<
     inTransit?: boolean
     payload: any
     name: string
-    subscribers: Map<number, ChannelMessageFunction>
+    subscribers: Map<
+      number,
+      { onMessage: ChannelMessageFunction; onError?: (err: BasedError) => void }
+    >
     removeTimer: number
   }
 >

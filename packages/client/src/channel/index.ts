@@ -7,6 +7,7 @@ import {
   addToPublishQueue,
 } from '../outgoing'
 import { ChannelMessageFunction } from '../types/channel'
+import { BasedError } from '../types/error'
 import { cleanUpChannels } from './cleanUp'
 
 export class BasedChannel<P = any, K = any> {
@@ -22,7 +23,10 @@ export class BasedChannel<P = any, K = any> {
     this.name = name
   }
 
-  subscribe(onMessage: ChannelMessageFunction): () => void {
+  subscribe(
+    onMessage: ChannelMessageFunction,
+    onError?: (err: BasedError) => void
+  ): () => void {
     let subscriberId: number
     if (
       !this.client.channelState.has(this.id) ||
@@ -30,7 +34,7 @@ export class BasedChannel<P = any, K = any> {
     ) {
       subscriberId = 1
       const subscribers = new Map()
-      subscribers.set(subscriberId, onMessage)
+      subscribers.set(subscriberId, { onMessage, onError })
       this.client.channelState.set(this.id, {
         payload: this.payload,
         name: this.name,
@@ -42,7 +46,7 @@ export class BasedChannel<P = any, K = any> {
       const channel = this.client.channelState.get(this.id)
       channel.removeTimer = -1
       subscriberId = channel.subscribers.size + 1
-      channel.subscribers.set(subscriberId, onMessage)
+      channel.subscribers.set(subscriberId, { onMessage, onError })
     }
 
     return () => {

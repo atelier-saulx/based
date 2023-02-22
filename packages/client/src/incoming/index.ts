@@ -277,9 +277,22 @@ export const incoming = async (
         }
       }
 
+      if (payload.channelId) {
+        if (client.channelState.has(payload.channelId)) {
+          const error = convertDataToBasedError(payload)
+          const channel = client.channelState.get(payload.channelId)
+          for (const [, handlers] of channel.subscribers) {
+            if (handlers.onError) {
+              handlers.onError(error)
+            } else {
+              console.error(error)
+            }
+          }
+        }
+      }
+
       if (payload.observableId) {
         client.cache.delete(payload.observableId)
-
         if (client.observeState.has(payload.observableId)) {
           const error = convertDataToBasedError(payload)
           const observable = client.observeState.get(payload.observableId)
@@ -382,7 +395,7 @@ export const incoming = async (
         if (client.channelState.has(id)) {
           const observable = client.channelState.get(id)
           for (const [, handlers] of observable.subscribers) {
-            handlers(payload)
+            handlers.onMessage(payload)
           }
           found = true
         }

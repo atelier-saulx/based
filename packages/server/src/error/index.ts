@@ -49,6 +49,9 @@ export function createError<T extends BasedErrorCode>(
   if ('observableId' in payload) {
     errorData.observableId = payload.observableId
   }
+  if ('channelId' in payload) {
+    errorData.channelId = payload.channelId
+  }
   if ('err' in payload) {
     server.emit('error', context, errorData, payload.err)
   } else {

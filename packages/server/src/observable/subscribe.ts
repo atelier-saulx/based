@@ -59,7 +59,7 @@ export const subscribeFunction = (
 
 export const subscribeNext = (
   obs: ActiveObservable,
-  onNext: (err?: BasedErrorData<BasedErrorCode.ObservableFunctionError>) => void
+  onNext: (err?: BasedErrorData<BasedErrorCode.FunctionError>) => void
 ) => {
   extendCache(obs)
   if (!obs.onNextData) {

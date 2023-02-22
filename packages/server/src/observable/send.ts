@@ -27,7 +27,7 @@ export const sendObsGetError = (
   server: BasedServer,
   ctx: Context<WebSocketSession | HttpSession>,
   id: number,
-  err: BasedErrorData<BasedErrorCode.ObservableFunctionError>
+  err: BasedErrorData<BasedErrorCode.FunctionError>
 ) => {
   sendErrorData(ctx, err)
   destroyObs(server, id)

@@ -8,6 +8,7 @@ import {
   isStreamFunctionRoute,
   isFunctionRoute,
   BasedChannelFunctionRoute,
+  isChannelFunctionRoute,
 } from './functions'
 import { sendError } from './sendError'
 import { BasedErrorCode, createError } from './error'
@@ -44,16 +45,16 @@ export const verifyRoute = <T extends FnType>(
       })
     }
 
-    if (type === 'channel') {
-      // tmp
-      return null
-    }
-
     sendError(
       server,
       ctx,
       BasedErrorCode.FunctionNotFound,
-      type === 'query'
+      type === 'channel'
+        ? {
+            route: { name },
+            channelId: id,
+          }
+        : type === 'query'
         ? {
             route: { name },
             observableId: id,
@@ -87,12 +88,12 @@ export const verifyRoute = <T extends FnType>(
   if (type === 'query') {
     if (!isQueryFunctionRoute(route)) {
       if (!isClientContext(ctx)) {
-        throw createError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+        throw createError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
           route,
           observableId: id,
         })
       }
-      sendError(server, ctx, BasedErrorCode.FunctionIsNotObservable, {
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
         route: { name },
         observableId: id,
       })
@@ -103,12 +104,12 @@ export const verifyRoute = <T extends FnType>(
   if (type === 'stream') {
     if (!isStreamFunctionRoute(route)) {
       if (!isClientContext(ctx)) {
-        throw createError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
+        throw createError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
           route,
           requestId: id,
         })
       }
-      sendError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
         route: { name },
         requestId: id,
       })
@@ -117,29 +118,29 @@ export const verifyRoute = <T extends FnType>(
   }
 
   if (type === 'channel') {
-    // lulllz TODO: proper error handling!
+    if (!isChannelFunctionRoute(route)) {
+      if (!isClientContext(ctx)) {
+        throw createError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
+          route,
+          channelId: id,
+        })
+      }
+      sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
+        route: { name },
+        channelId: id,
+      })
+      return null
+    }
   }
 
   if (type === 'fn' && !isFunctionRoute(route)) {
     if (!isClientContext(ctx)) {
-      if (isStreamFunctionRoute(route)) {
-        throw createError(server, ctx, BasedErrorCode.FunctionIsNotStream, {
-          route,
-          requestId: id,
-        })
-      }
-      throw createError(server, ctx, BasedErrorCode.FunctionIsObservable, {
+      throw createError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
         route,
         requestId: id,
       })
     }
-    if (isStreamFunctionRoute(route)) {
-      sendError(server, ctx, BasedErrorCode.FunctionIsStream, {
-        route,
-        requestId: id,
-      })
-    }
-    sendError(server, ctx, BasedErrorCode.FunctionIsObservable, {
+    sendError(server, ctx, BasedErrorCode.FunctionIsWrongType, {
       route,
       requestId: id,
     })

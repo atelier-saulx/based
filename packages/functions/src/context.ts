@@ -58,13 +58,22 @@ export type InternalSessionObservable = {
   type: 'query'
 }
 
+export type InternalSessionChannel = {
+  id: number
+  name: string
+  type: 'channel'
+}
+
 export type InternalSessionClient = {
   client: BasedFunctionClient
   type: 'client'
 }
 
 // Internal session for internal functions
-export type InternalSession = InternalSessionClient | InternalSessionObservable
+export type InternalSession =
+  | InternalSessionClient
+  | InternalSessionObservable
+  | InternalSessionChannel
 
 // used for minimal security errors (e.g. rate limit)
 export type MinimalExternalSession = {

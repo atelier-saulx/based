@@ -38,7 +38,6 @@ export const channelPublishMessage: BinaryMessageHandler = (
     name
   )
 
-  // // TODO: add strictness setting - if strict return false here
   if (route === null) {
     return true
   }
@@ -51,7 +50,6 @@ export const channelPublishMessage: BinaryMessageHandler = (
   }
 
   if (len > route.maxPayloadSize) {
-    // TODO: emit error
     return true
   }
 

@@ -6,7 +6,7 @@ import { encodeErrorResponse, valueToBuffer } from '../../protocol'
 export const errorListener = (
   server: BasedServer,
   obs: ActiveObservable,
-  err: Error | BasedErrorData<BasedErrorCode.ObservableFunctionError>
+  err: Error | BasedErrorData<BasedErrorCode.FunctionError>
 ) => {
   delete obs.cache
   delete obs.diffCache
@@ -21,7 +21,7 @@ export const errorListener = (
       ? createError(
           server,
           { session: { type: 'query', id: obs.id, name: obs.name } },
-          BasedErrorCode.ObservableFunctionError,
+          BasedErrorCode.FunctionError,
           {
             err,
             observableId: obs.id,
@@ -43,6 +43,7 @@ export const errorListener = (
     )
   }
 
+  // TODO: Change this make it one error handler
   if (obs.functionObserveClients.size) {
     obs.functionObserveClients.forEach((fnUpdate) => {
       fnUpdate(
