@@ -4,7 +4,7 @@ import { createSimpleServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 
-test.serial('persist (nodejs)', async (t) => {
+test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const client = new BasedClient(
     {},
     {
@@ -24,6 +24,14 @@ test.serial('persist (nodejs)', async (t) => {
         return () => {
           clearInterval(counter)
         }
+      },
+      bigData: (based, payload, update) => {
+        const x: any[] = []
+        for (let i = 0; i < 1e6; i++) {
+          x.push(i)
+        }
+        update(x)
+        return () => {}
       },
     },
   })
@@ -50,7 +58,17 @@ test.serial('persist (nodejs)', async (t) => {
       r.push(d)
     })
 
-  await wait(500)
+  client
+    .query(
+      'bigData',
+      {
+        myQuery: 123,
+      },
+      { persistent: true }
+    )
+    .subscribe(() => {})
+
+  await wait(2500)
   close()
 
   await client.destroy()
@@ -77,10 +95,26 @@ test.serial('persist (nodejs)', async (t) => {
       fromStorage = d
     })
 
-  t.is(fromStorage, 1)
+  let x: any
+
+  client2
+    .query(
+      'bigData',
+      {
+        myQuery: 123,
+      },
+      { persistent: true }
+    )
+    .subscribe((d) => {
+      x = d
+    })
+
+  t.is(fromStorage, 3)
+
+  t.is(x.length, 1e6)
 
   await wait(500)
   await client2.clearStorage()
-  await client2.destroy()
+  await client2.destroy(true)
   await server.destroy()
 })
