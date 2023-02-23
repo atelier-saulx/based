@@ -109,7 +109,7 @@ export class BasedFunctions {
     const { name } = spec
     const prevSpec = this.specs[name]
     if (prevSpec) {
-      if (prevSpec.function !== spec.function) {
+      if (prevSpec.checksum !== spec.checksum) {
         if (this.beingUninstalled[name]) {
           delete this.beingUninstalled[name]
         }
