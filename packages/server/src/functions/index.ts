@@ -124,8 +124,6 @@ export class BasedFunctions {
       } else {
         this.updateInternal(spec)
       }
-    } else {
-      this.updateInternal(spec)
     }
   }
 

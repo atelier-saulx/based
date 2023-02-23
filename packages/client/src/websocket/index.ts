@@ -68,6 +68,8 @@ const connect = (
       let isError = false
 
       ws.onerror = (err) => {
+        // TODO: add a websocket close number
+        // also for rateLimit
         if (err.message && err.message.includes('401')) {
           isError = true
         }
@@ -103,7 +105,7 @@ const connect = (
             // relatively low backoff but will make it faster if multiple servers are down
             isError
               ? 10e3
-              : Math.min(2000, Math.min(time + ~~(Math.random() * 500) + 100)),
+              : Math.min(2500, time + ~~(Math.random() * 500) + 100),
             true
           )
         }

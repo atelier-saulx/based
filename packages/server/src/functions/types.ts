@@ -76,7 +76,6 @@ export type BasedStreamFunctionRoute = Route & {
 
 export type BasedChannelFunctionRoute = Route & {
   channel: true
-
   publisher?: {
     public?: true
   }
