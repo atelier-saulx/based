@@ -38,7 +38,7 @@ test.serial('Subscribe channel', async (t) => {
     })
   await wait(500)
   t.true(numbers.length > 2)
-  await server.functions.update({
+  await server.functions.updateInternal({
     channel: true,
     name: 'mychannel',
     checksum: 2,
