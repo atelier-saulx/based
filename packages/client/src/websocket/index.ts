@@ -104,7 +104,7 @@ const connect = (
             connection,
             // relatively low backoff but will make it faster if multiple servers are down
             isError
-              ? 10e3
+              ? 5e3
               : Math.min(2500, time + ~~(Math.random() * 500) + 100),
             true
           )

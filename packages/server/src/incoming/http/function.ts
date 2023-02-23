@@ -25,16 +25,16 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
 
         if (spec.httpResponse) {
           const send: SendHttpResponse = (responseData, headers, status) => {
-            sendHttpResponse(
-              ctx,
-              responseData,
-              headers,
-              status !== undefined
-                ? typeof status === 'string'
-                  ? status
-                  : String(status)
-                : undefined
-            )
+            if (status) {
+              sendHttpResponse(ctx, responseData, headers)
+            } else {
+              sendHttpResponse(
+                ctx,
+                responseData,
+                headers,
+                typeof status === 'string' ? status : String(status)
+              )
+            }
           }
           await spec.httpResponse(server.client, payload, result, send, ctx)
           return
