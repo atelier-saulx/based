@@ -16,8 +16,8 @@ export default createServer
 export { compress } from './compress'
 export { sendHttpResponse } from './sendHttpResponse'
 export { sendError } from './sendError'
-export { createSimpleServer } from './createSimpleServer'
-
+export * from './createSimpleServer'
+export * from './server'
 export * from './functions/types'
 export * from './error'
 export * from './functionApi'

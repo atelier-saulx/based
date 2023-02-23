@@ -36,6 +36,7 @@ export type ServerOptions = {
   port?: number
   key?: string
   disableRest?: boolean
+  disableWs?: boolean
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit

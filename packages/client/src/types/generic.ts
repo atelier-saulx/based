@@ -4,6 +4,8 @@ export type GenericObject = {
 }
 
 // -------- generic based ---------
+
+// REPLACE WITH DISCOVER PKG
 export type BasedOpts = {
   env?: string
   project?: string
