@@ -7,7 +7,7 @@ import { promisify } from 'node:util'
 
 const gzip = promisify(zlib.gzip)
 
-test.serial('stream functions (small over http + file)', async (t) => {
+test.serial.only('stream functions (small over http + file)', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({

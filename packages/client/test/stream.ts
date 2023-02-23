@@ -6,7 +6,7 @@ import { Duplex } from 'node:stream'
 import { join } from 'path'
 import { readFileSync } from 'node:fs'
 
-test.serial('stream functions - buffer contents', async (t) => {
+test.serial.only('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
