@@ -38,6 +38,30 @@ export const useAuthState = (): AuthState => {
   return state
 }
 
+export const useConnected = () => {
+  const client: BasedClient = useContext(Ctx)
+  const [connected, setConnected] = useState(client.connected)
+
+  useEffect(() => {
+    if (client) {
+      setConnected(client.connected)
+      const listener = () => {
+        setConnected(client.connected)
+      }
+      client.on('disconnect', listener)
+      client.on('reconnect', listener)
+      client.on('connect', listener)
+      return () => {
+        client.off('disconnect', listener)
+        client.off('reconnect', listener)
+        client.off('connect', listener)
+      }
+    }
+  }, [client])
+
+  return { connected }
+}
+
 export const useQuery = (
   name?: string,
   payload?: any,
@@ -51,7 +75,7 @@ export const useQuery = (
 } => {
   const client: BasedClient = useContext(Ctx)
 
-  if (name) {
+  if (client && name) {
     const q = client.query(name, payload, opts)
     const { id, cache } = q
     const [checksum, update] = useState(cache?.checksum)
