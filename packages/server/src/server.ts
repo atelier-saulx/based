@@ -17,7 +17,7 @@ import { ActiveChannel } from './channel'
 import util from 'node:util'
 
 type EventMap = {
-  error: BasedErrorData
+  error: BasedErrorData | BasedErrorCode
   ratelimit: void
   log: any
 }

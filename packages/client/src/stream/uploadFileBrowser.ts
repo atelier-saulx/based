@@ -1,6 +1,6 @@
 import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents, ProgressListener } from './types'
-import getUrlFromOpts from '../getUrlFromOpts'
+import parseOpts from '@based/opts'
 import { convertDataToBasedError, BasedErrorCode } from '../types/error'
 const inProgress: { [url: string]: boolean } = {}
 
@@ -16,10 +16,8 @@ const queue: {
 } = {}
 
 const getUrl = async (client: BasedClient): Promise<string> => {
-  let url = await getUrlFromOpts(client.opts)
-  if (typeof url === 'function') {
-    url = await url()
-  }
+  const url = await parseOpts(client.opts, true)
+
   return url.replace(/^ws/, 'http')
 }
 

@@ -65,8 +65,12 @@ const connect = (
         encodeAuthState(client.authState),
       ]))
 
-      ws.onerror = () => {
-        // console.error()
+      let isError = false
+
+      ws.onerror = (err) => {
+        if (err.message && err.message.includes('401')) {
+          isError = true
+        }
       }
 
       ws.onmessage = (d) => {
@@ -97,7 +101,9 @@ const connect = (
             url,
             connection,
             // relatively low backoff but will make it faster if multiple servers are down
-            Math.min(2000, Math.min(time + ~~(Math.random() * 500) + 100)),
+            isError
+              ? 10e3
+              : Math.min(2000, Math.min(time + ~~(Math.random() * 500) + 100)),
             true
           )
         }

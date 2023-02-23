@@ -13,7 +13,6 @@ import { GetState } from './types/observe'
 import { Connection } from './websocket/types'
 import connectWebsocket from './websocket'
 import Emitter from './Emitter'
-import getUrlFromOpts from './getUrlFromOpts'
 import {
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
@@ -34,8 +33,11 @@ import {
   ChannelState,
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import parseOpts from '@based/opts'
 
 export * from './authState/parseAuthState'
+
+export * from './types/error'
 
 export { AuthState, BasedQuery }
 
@@ -66,7 +68,7 @@ export class BasedClient extends Emitter {
   opts: BasedOpts
   connected: boolean = false
   connection: Connection
-  url: string | (() => Promise<string>)
+  url: () => Promise<string>
   // --------- Stream
   outgoingStreams: Map<
     string,
@@ -192,7 +194,7 @@ export class BasedClient extends Emitter {
         this.disconnect()
       }
       this.opts = opts
-      this.url = await getUrlFromOpts(opts)
+      this.url = () => parseOpts(opts)
     }
     if (!this.opts) {
       console.error('Configure opts to connect')

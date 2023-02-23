@@ -5,7 +5,8 @@ export type GenericObject = {
 
 // -------- generic based ---------
 
-// REPLACE WITH DISCOVER PKG
+export type BasedUrlFn = () => Promise<string>
+
 export type BasedOpts = {
   env?: string
   project?: string
@@ -13,7 +14,8 @@ export type BasedOpts = {
   cluster?: string
   name?: string
   key?: string
-  url?: string | (() => Promise<string>)
+  optionalKey?: boolean
+  url?: string | BasedUrlFn
   discoveryUrls?: string[]
   params?: {
     [key: string]: string | number
