@@ -25,7 +25,10 @@ export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
 
         if (spec.httpResponse) {
           const send: SendHttpResponse = (responseData, headers, status) => {
-            if (status) {
+            if (!ctx.session) {
+              return
+            }
+            if (!status) {
               sendHttpResponse(ctx, responseData, headers)
             } else {
               sendHttpResponse(
