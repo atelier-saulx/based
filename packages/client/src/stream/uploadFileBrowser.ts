@@ -15,12 +15,6 @@ const queue: {
   [functionName: string]: QueueItem[]
 } = {}
 
-const getUrl = async (client: BasedClient): Promise<string> => {
-  const url = await parseOpts(client.opts, true)
-
-  return url.replace(/^ws/, 'http')
-}
-
 const reject = (err: Error, q: QueueItem[]) => {
   q.forEach((item) => {
     item.reject(err)
@@ -37,7 +31,7 @@ const drainQueue = (
 
     setTimeout(async () => {
       inProgress[functionName] = false
-      const url = await getUrl(client)
+      const url = await parseOpts(client.opts, true)
       const q = queue[functionName]
 
       queue[functionName] = []
