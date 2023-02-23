@@ -242,7 +242,5 @@ export async function createSimpleServer(
   }
 
   const basedServer = new BasedServer(properProps)
-  return props.port
-    ? basedServer.start(props.port, sharedSocket, props.silent)
-    : basedServer
+  return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
 }
