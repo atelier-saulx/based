@@ -215,7 +215,8 @@ export class BasedServer {
   }
 
   async destroy(silent?: boolean) {
-    if (!silent) console.info(picocolors.gray('    Destroy Based-server\n'))
+    if (!silent)
+      console.info(picocolors.gray(`    Destroy Based-server ${this.port} \n`))
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
       this.listenSocket = null
