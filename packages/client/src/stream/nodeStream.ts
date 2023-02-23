@@ -9,7 +9,7 @@ import {
   StreamHeaders,
 } from './types'
 import { BasedClient, encodeAuthState } from '..'
-import getUrlFromOpts from '../getUrlFromOpts'
+import parseOpts from '@based/opts'
 import { convertDataToBasedError } from '../types/error'
 import { serializeQuery } from '@saulx/utils'
 
@@ -115,10 +115,7 @@ export const uploadFileStream = async (
   }
 
   // key is something special
-  let url = await getUrlFromOpts(client.opts)
-  if (typeof url === 'function') {
-    url = await url()
-  }
+  const url = await parseOpts(client.opts, true)
 
   const headers: StreamHeaders = {
     'Content-Length': String(options.size),

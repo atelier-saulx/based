@@ -1,8 +1,8 @@
 import { BasedClient, encodeAuthState } from '..'
 import { StreamFunctionContents, StreamHeaders } from './types'
 import fetch from 'cross-fetch'
-import getUrlFromOpts from '../getUrlFromOpts'
 import { serializeQuery } from '@saulx/utils'
+import parseOpts from '@based/opts'
 
 export default async (
   client: BasedClient,
@@ -13,11 +13,7 @@ export default async (
     await client.once('connect')
   }
 
-  // key is something special
-  let url = await getUrlFromOpts(client.opts)
-  if (typeof url === 'function') {
-    url = await url()
-  }
+  const url = await parseOpts(client.opts, true)
 
   const headers: StreamHeaders = {
     'Content-Type': options.mimeType || 'text/plain',
@@ -33,7 +29,7 @@ export default async (
     q = '?' + serializeQuery(options.payload)
   }
 
-  const result = await fetch(url.replace(/^ws/, 'http') + '/' + name + q, {
+  const result = await fetch(url + '/' + name + q, {
     method: 'POST',
     cache: 'no-cache',
     headers,
