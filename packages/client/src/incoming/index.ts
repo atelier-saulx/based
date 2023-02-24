@@ -246,7 +246,7 @@ export const incoming = async (
         } else {
           updateAuthState(client, payload)
         }
-        client.authRequest.resolve?.(client.authState)
+        client.authRequest?.resolve?.(client.authState)
       }
 
       if (debug) {
