@@ -1,6 +1,7 @@
 import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 import { BasedDataStream } from './stream'
+import { Authorize } from './auth'
 
 export type ObservableUpdateFunction<K = any> = {
   (
@@ -95,3 +96,31 @@ export type ChannelMessageFunctionInternal<K = any> = (
 ) => void
 
 export type UninstallFunction = () => Promise<void>
+
+// TODO finish this
+export type BasedFunctionConfig =
+  | {
+      type: 'channel'
+      function: BasedChannelFunction
+      // publish: () => void
+    }
+  | {
+      type: 'function'
+      function: BasedFunction
+      // publish: () => void
+    }
+  | {
+      type: 'authorize'
+      function: Authorize
+      // publish: () => void
+    }
+  | {
+      type: 'query'
+      function: BasedQueryFunction
+      // publish: () => void
+    }
+  | {
+      type: 'stream'
+      function: BasedStreamFunction
+      // publish: () => void
+    }

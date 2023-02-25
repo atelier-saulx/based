@@ -42,6 +42,7 @@ export type FunctionConfig = {
   }) => Promise<boolean>
 }
 
+// TODO: add authorize
 type Route = {
   /** Function name */
   name: string
@@ -62,6 +63,8 @@ type Route = {
    * and not through the public internet.
    */
   internalOnly?: boolean
+  /** Can hold extra information about a spec */
+  data?: any
 }
 
 export type BasedFunctionRoute = Route
