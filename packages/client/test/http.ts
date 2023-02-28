@@ -5,7 +5,8 @@ import createServer, {
   createSimpleServer,
 } from '@based/server'
 import { wait } from '@saulx/utils'
-import fetch from 'cross-fetch'
+// NOTE: use node 18's fetch
+// import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { encodeAuthState } from '../src/index'
@@ -163,6 +164,39 @@ test.serial('get (over http)', async (t) => {
         }
       },
     },
+    obj: {
+      path: '/obj',
+      name: 'obj',
+      maxPayloadSize: 1e6,
+      rateLimitTokens: 1,
+      checksum: 1,
+      query: true,
+      function: async (based, payload, update) => {
+        // this breaks with native fetch only, and only when size > x
+        update({
+          bada: {
+            bing: 'bada',
+          },
+          boomboom: {
+            venga: 'venga',
+          },
+          lil: {
+            wayoo: 'wicked',
+          },
+          wicked: {
+            jungle: 'is-massive',
+          },
+          everybody: {
+            leggo: 'shine',
+          },
+          time: {
+            flip: 'flap',
+          },
+        })
+
+        return () => {}
+      },
+    },
   }
 
   const server = await createServer({
@@ -195,6 +229,10 @@ test.serial('get (over http)', async (t) => {
       },
     },
   })
+
+  const resultObj = await (await fetch('http://localhost:9910/obj')).json()
+
+  t.is(typeof resultObj, 'object')
 
   const result = await (await fetch('http://localhost:9910/counter')).text()
 
