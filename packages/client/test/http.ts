@@ -5,8 +5,7 @@ import createServer, {
   createSimpleServer,
 } from '@based/server'
 import { wait } from '@saulx/utils'
-// NOTE: use node 18's fetch
-// import fetch from 'cross-fetch'
+import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { encodeAuthState } from '../src/index'
