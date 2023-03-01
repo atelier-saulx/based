@@ -97,30 +97,91 @@ export type ChannelMessageFunctionInternal<K = any> = (
 
 export type UninstallFunction = () => Promise<void>
 
-// TODO finish this
+type FunctionConfigShared = {
+  /** Function name */
+  name: string
+  /** In addition to the name, a function can have a custom path for HTTP requests.
+   * For example: `path: 'my/custom/path'` will result in the function being
+   * available with a request to `env.based.io/my/custom/path`
+   */
+  path?: string
+  /** In bytes. `-1` indicates no size limit */
+  maxPayloadSize?: number
+  /** Cost in tokens for this function call.  */
+  rateLimitTokens?: number
+  /** A function marked as `public` will skip the call to authorize. */
+  public?: boolean
+  /** Array of headers that this function expects to receive. */
+  headers?: string[]
+  /** A function marked as `internalOnly` will only be accessible from other server side functions,
+   * and not through the public internet.
+   */
+  internalOnly?: boolean
+  /** Can hold extra information about a spec */
+  data?: any
+  /** Unistall after idle, in ms */
+  uninstallAfterIdleTime?: number
+  /** Hook that fires on uninstall of the function e.g. to clean up database connections */
+  uninstall?: UninstallFunction
+}
+
 export type BasedFunctionConfig =
-  | {
+  | ({
+      /** Function type `channel, function, query, stream, authorize` */
       type: 'channel'
-      function: BasedChannelFunction
-      // publish: () => void
-    }
-  | {
+      /** Channel subscriber 
+        
+       ```js
+       const subscribe = (based, payload, id, update) => {
+          let cnt = 0
+          const interval = setInterval(() => {
+            update(++cnt)
+          })
+          return () => clearInterval(cnt)
+       }
+       ```
+      */
+      subscriber?: BasedChannelFunction
+      /** Channel publisher 
+        
+       ```js
+       const publisher = (based, payload, msg, id) => {
+          publishToChannel(id, msg)
+       }
+       ```
+      */
+      publisher?: BasedChannelPublishFunction
+      /** Makes only the publisher public */
+      publicPublisher?: boolean
+      name: string
+      /** How long should the channel subscriber remain active after all subscribers are gone, in ms */
+      closeAfterIdleTime?: number
+    } & FunctionConfigShared)
+  | ({
+      /** Function type `channel, function, query, stream, authorize` */
       type: 'function'
       function: BasedFunction
-      // publish: () => void
-    }
-  | {
-      type: 'authorize'
-      function: Authorize
-      // publish: () => void
-    }
-  | {
+      name: string
+      httpResponse?: HttpResponse
+    } & FunctionConfigShared)
+  | ({
+      /** Function type `channel, function, query, stream, authorize` */
       type: 'query'
       function: BasedQueryFunction
-      // publish: () => void
-    }
-  | {
+      name: string
+      httpResponse?: HttpResponse
+      /** How long should the query function remain active after all subscribers are gone, in ms */
+      closeAfterIdleTime?: number
+    } & FunctionConfigShared)
+  | ({
+      /** Function type `channel, function, query, stream, authorize` */
       type: 'stream'
       function: BasedStreamFunction
-      // publish: () => void
+      name: string
+    } & FunctionConfigShared)
+  | {
+      /** Function type `channel, function, query, stream, authorize` */
+      type: 'authorize'
+      function: Authorize
+      name: string
     }
