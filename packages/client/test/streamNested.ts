@@ -20,6 +20,8 @@ test.serial('stream nested functions (string)', async (t) => {
           payload,
         })
       },
+    },
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
@@ -70,6 +72,8 @@ test.serial('stream nested functions (stream)', async (t) => {
           payload,
         })
       },
+    },
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,

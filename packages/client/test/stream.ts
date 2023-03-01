@@ -6,17 +6,16 @@ import { Duplex } from 'node:stream'
 import { join } from 'path'
 import { readFileSync } from 'node:fs'
 
-test.serial.only('stream functions - buffer contents', async (t) => {
+test.serial('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []
 
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    functions: {
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
-        stream: true,
         function: async (based, { stream, payload }) => {
           stream.on('progress', (d) => {
             progressEvents.push(d)
@@ -56,11 +55,10 @@ test.serial('stream functions - streamContents', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    functions: {
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
-        stream: true,
         function: async (based, { stream, payload, mimeType, size }) => {
           let cnt = 0
           stream.on('progress', (d) => {
@@ -127,11 +125,10 @@ test.serial('stream functions - streamContents error', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    functions: {
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
-        stream: true,
         function: async () => {
           throw new Error('bla')
         },
@@ -184,11 +181,10 @@ test.serial('stream functions - path', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    functions: {
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
-        stream: true,
         function: async (based, x) => {
           const { payload, stream, mimeType } = x
           const file = (await readStream(stream)).toString()
@@ -219,11 +215,10 @@ test.serial('stream functions - path json', async (t) => {
   const server = await createSimpleServer({
     uninstallAfterIdleTime: 1e3,
     port: 9910,
-    functions: {
+    streams: {
       hello: {
         uninstallAfterIdleTime: 1,
         maxPayloadSize: 1e9,
-        stream: true,
         function: async (based, x) => {
           const { payload, stream, mimeType } = x
           const file = (await readStream(stream)).toString()
