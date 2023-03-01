@@ -105,6 +105,7 @@ export const blockIncomingRequest = (
       'error',
       {
         session: {
+          headers: {},
           ua: req.getHeader('user-agent'),
           ip,
         },

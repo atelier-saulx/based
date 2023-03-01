@@ -11,7 +11,6 @@ import { BasedQueryFunctionRoute } from '../../functions'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
-import { installFn } from '../../installFn'
 import {
   authorize,
   IsAuthorizedHandler,
@@ -22,21 +21,19 @@ import { BinaryMessageHandler } from './types'
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
-> = (route, server, ctx, payload, id, checksum) => {
+> = (route, psec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     subscribeWs(server, id, checksum, ctx)
     return
   }
-  installFn(server, ctx, route, id).then((spec) => {
-    const session = ctx.session
-    if (spec === null || !session.obs.has(id)) {
-      return
-    }
-    if (!hasObs(server, id)) {
-      createObs(server, route.name, id, payload)
-    }
-    subscribeWs(server, id, checksum, ctx)
-  })
+  const session = ctx.session
+  if (!session.obs.has(id)) {
+    return
+  }
+  if (!hasObs(server, id)) {
+    createObs(server, route.name, id, payload)
+  }
+  subscribeWs(server, id, checksum, ctx)
 }
 
 const isNotAuthorized: AuthErrorHandler<
@@ -130,6 +127,7 @@ export const subscribeMessage: BinaryMessageHandler = (
     enableSubscribe,
     id,
     checksum,
+    false,
     isNotAuthorized
   )
 

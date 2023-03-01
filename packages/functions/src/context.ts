@@ -19,6 +19,7 @@ export type WebSocketSession = {
     name: string
     payload: any
   }>
+  headers: { [key: string]: string }
   unauthorizedChannels?: Set<{
     id: number
     name: string
@@ -55,17 +56,20 @@ export type HttpSession = {
 export type InternalSessionObservable = {
   id: number
   name: string
+  headers: { [key: string]: string }
   type: 'query'
 }
 
 export type InternalSessionChannel = {
   id: number
   name: string
+  headers: { [key: string]: string }
   type: 'channel'
 }
 
 export type InternalSessionClient = {
   client: BasedFunctionClient
+  headers: { [key: string]: string }
   type: 'client'
 }
 
@@ -79,6 +83,7 @@ export type InternalSession =
 export type MinimalExternalSession = {
   ua: string
   ip: string
+  headers: { [key: string]: string }
 }
 
 export type Session = (

@@ -9,6 +9,11 @@ import { rateLimitRequest } from '../../security'
 import { AuthState, WebSocketSession, Context } from '@based/functions'
 import { BinaryMessageHandler } from './types'
 import { enableChannelSubscribe } from './channelSubscribe'
+import { installFn } from '../../installFn'
+import {
+  BasedChannelFunctionRoute,
+  BasedQueryFunctionRoute,
+} from '../../functions'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
@@ -60,17 +65,17 @@ export const authMessage: BinaryMessageHandler = (
       if (session.unauthorizedObs?.size) {
         session.unauthorizedObs.forEach((obs) => {
           const { id, name, checksum, payload } = obs
-          enableSubscribe(
-            {
-              name,
-              query: true,
-            },
-            server,
-            ctx,
-            payload,
-            id,
-            checksum
-          )
+          const route: BasedQueryFunctionRoute = {
+            name,
+            query: true,
+          }
+          installFn(server, ctx, route, id).then((spec) => {
+            if (spec) {
+              enableSubscribe(route, spec, server, ctx, payload, id, checksum)
+            } else {
+              // someting wrong...
+            }
+          })
         })
         session.unauthorizedObs.clear()
       }
@@ -78,16 +83,15 @@ export const authMessage: BinaryMessageHandler = (
       if (session.unauthorizedChannels?.size) {
         session.unauthorizedChannels.forEach((channel) => {
           const { id, name, payload } = channel
-          enableChannelSubscribe(
-            {
-              name,
-              channel: true,
-            },
-            server,
-            ctx,
-            payload,
-            id
-          )
+          const route: BasedChannelFunctionRoute = {
+            name,
+            channel: true,
+          }
+          installFn(server, ctx, route, id).then((spec) => {
+            if (spec) {
+              enableChannelSubscribe(route, spec, server, ctx, payload, id)
+            }
+          })
         })
         session.unauthorizedChannels.clear()
       }

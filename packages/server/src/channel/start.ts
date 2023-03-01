@@ -33,7 +33,14 @@ const errorChannelListener = (
     err instanceof Error
       ? createError(
           server,
-          { session: { type: 'channel', id: channel.id, name: channel.name } },
+          {
+            session: {
+              type: 'channel',
+              id: channel.id,
+              name: channel.name,
+              headers: {},
+            },
+          },
           BasedErrorCode.FunctionError,
           {
             err,

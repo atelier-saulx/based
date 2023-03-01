@@ -29,7 +29,6 @@ import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { promisify } from 'node:util'
 import { authorize, IsAuthorizedHandler } from '../../authorize'
-import { installFn } from '../../installFn'
 
 const inflate = promisify(zlib.inflate)
 
@@ -211,33 +210,23 @@ const getFromExisting = (
 const isAuthorized: IsAuthorizedHandler<
   HttpSession,
   BasedQueryFunctionRoute
-> = (route, server, ctx, payload, id, checksum) => {
+> = (route, spec, server, ctx, payload, id, checksum) => {
   const name = route.name
 
-  // if (hasObs(server, id)) {
-  //   getFromExisting(server, id, ctx, route, checksum)
-  //   return
-  // }
+  if (hasObs(server, id)) {
+    getFromExisting(server, id, ctx, route, spec, checksum)
+    return
+  }
 
-  installFn(server, ctx, route, id).then((spec) => {
-    if (spec === null) {
-      return
+  const obs = createObs(server, name, id, payload, true)
+  subscribeNext(obs, (err) => {
+    if (err) {
+      sendObsGetError(server, ctx, obs.id, err)
+    } else {
+      sendGetResponse(route, spec, server, id, obs, checksum, ctx)
     }
-    if (hasObs(server, id)) {
-      getFromExisting(server, id, ctx, route, spec, checksum)
-      return
-    }
-
-    const obs = createObs(server, name, id, payload, true)
-    subscribeNext(obs, (err) => {
-      if (err) {
-        sendObsGetError(server, ctx, obs.id, err)
-      } else {
-        sendGetResponse(route, spec, server, id, obs, checksum, ctx)
-      }
-    })
-    start(server, id)
   })
+  start(server, id)
 }
 
 export const httpGet = (

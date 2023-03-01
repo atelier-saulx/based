@@ -1,6 +1,7 @@
 import { BasedServer } from './server'
 import {
   BasedRoute,
+  BasedSpec,
   isChannelFunctionRoute,
   isQueryFunctionRoute,
 } from './functions'
@@ -16,7 +17,8 @@ export type IsAuthorizedHandler<
   R extends BasedRoute = BasedRoute,
   P = any
 > = (
-  spec: R,
+  route: R,
+  spec: BasedSpec<R>,
   server: BasedServer,
   ctx: Context<S>,
   payload: P,
@@ -96,6 +98,7 @@ export const authorize = <
   isAuthorized: IsAuthorizedHandler<S, R, P>,
   id?: number,
   checksum?: number,
+  isPublic: boolean = false,
   authError: AuthErrorHandler<S, R, P> = defaultAuthError
 ) => {
   if (!ctx.session) {
@@ -103,12 +106,16 @@ export const authorize = <
   }
 
   installFn(server, ctx, route, id).then((spec) => {
-    if (route.public === true) {
-      isAuthorized(route, server, ctx, payload, id, checksum)
+    if (spec === null) {
       return
     }
 
-    const authorize = spec?.authorize || server.auth.authorize
+    if (route.public === true || isPublic) {
+      isAuthorized(route, spec, server, ctx, payload, id, checksum)
+      return
+    }
+
+    const authorize = spec.authorize || server.auth.authorize
 
     authorize(server.client, ctx, route.name, payload)
       .then((ok) => {
@@ -121,7 +128,7 @@ export const authorize = <
           }
           return
         }
-        isAuthorized(route, server, ctx, payload, id, checksum)
+        isAuthorized(route, spec, server, ctx, payload, id, checksum)
       })
       .catch((err) => {
         if (

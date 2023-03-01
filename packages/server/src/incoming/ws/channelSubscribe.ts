@@ -29,21 +29,19 @@ import {
 export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
-> = (route, server, ctx, payload, id) => {
+> = (route, spec, server, ctx, payload, id) => {
   if (hasChannel(server, id)) {
     subscribeChannel(server, id, ctx)
     return
   }
-  installFn(server, ctx, route, id).then((spec) => {
-    const session = ctx.session
-    if (spec === null || !session || !session.obs.has(id)) {
-      return
-    }
-    if (!hasChannel(server, id)) {
-      createChannel(server, route.name, id, payload, true)
-    }
-    subscribeChannel(server, id, ctx)
-  })
+  const session = ctx.session
+  if (!session || !session.obs.has(id)) {
+    return
+  }
+  if (!hasChannel(server, id)) {
+    createChannel(server, route.name, id, payload, true)
+  }
+  subscribeChannel(server, id, ctx)
 }
 
 const isNotAuthorized: AuthErrorHandler<
@@ -184,6 +182,7 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     enableChannelSubscribe,
     id,
     0,
+    false,
     isNotAuthorized
   )
 
