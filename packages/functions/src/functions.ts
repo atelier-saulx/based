@@ -80,15 +80,15 @@ export type BasedChannelFunction<P = any, K = any> = (
   error: (err?: any) => void
 ) => () => void
 
-export type BasedChannelPublishFunction<P = any, K = any> = (
+export type BasedChannelPublishFunction<P = any, M = any> = (
   based: BasedFunctionClient,
   payload: P,
-  message: K,
+  message: M,
   id: number,
   ctx: Context
 ) => void
 
-export type ChannelMessageFunction<K = any> = (message: K) => void
+export type ChannelMessageFunction<M = any> = (message: M) => void
 
 export type ChannelMessageFunctionInternal<K = any> = (
   message: K,
