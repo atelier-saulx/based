@@ -188,6 +188,23 @@ export class BasedClient extends Emitter {
   }
 
   // --------- Connect
+  /**
+  Connect to a server or based cluster
+  
+  ```javascript
+  // Connects to a specific based server
+  client.connect({
+    url: 'ws://localhost:9910'
+  })
+
+  // Connects to an environment in the based cloud
+  client.connect({
+    org: 'saulx',
+    project: 'demo',
+    env: 'production'
+  })
+  ```
+   */
   public async connect(opts?: BasedOpts) {
     if (opts) {
       if (this.opts) {
@@ -205,6 +222,13 @@ export class BasedClient extends Emitter {
     }
   }
 
+  /**
+  Disconnect the client
+  
+  ```javascript
+  client.disconnect()
+  ```
+   */
   public disconnect() {
     if (this.connection) {
       this.connection.disconnected = true
@@ -224,6 +248,18 @@ export class BasedClient extends Emitter {
 
   // ---------- Destroy
   public isDestroyed?: boolean
+
+  /**
+  Destroy the client, will remove all internals and cannot be resued,
+  will update localStorage with the all `persistent` queries in memory
+  
+  ```javascript
+  await client.destroy()
+
+  // Do not update localStorage with current state
+  await client.destroy(true)
+  ```
+   */
   public async destroy(noStorage?: boolean) {
     if (!noStorage) {
       await updateStorage(this)
@@ -238,11 +274,47 @@ export class BasedClient extends Emitter {
   }
 
   // ---------- Channel
+
+  /**
+  Subscribe or publish to a channel, channels are stateless
+  
+  ```javascript
+  client.channel('events', { type: 'pageview' })
+    .subscribe(event => console.info(event))
+
+  client.channel('events', { type: 'pageview' })
+    .publish({ type: 'pageview', path: '/home' })
+  ```
+   */
   channel(name: string, payload?: any): BasedChannel {
     return new BasedChannel(this, name, payload)
   }
 
   // ---------- Query
+  /**
+  Query, subscribe or get from a query function, query functions keep their current state memcached
+  
+  ```javascript
+  // Receive updates 
+  client.query('db', { 
+    $id: 'userid',
+    posts: true
+  }).subscribe(data => console.info(data))
+
+  // Receive updates, and store in localStorage 
+  client.query('db', { 
+    $id: 'userid',
+    posts: true
+  }, { persistent: true })
+    .subscribe(data => console.info(data))
+
+  // Get the current state of a user
+  await client.query('db', { 
+    $id: 'userid',
+    email: true
+  }).get()
+  ```
+  */
   query(
     name: string,
     payload?: any,
@@ -252,6 +324,17 @@ export class BasedClient extends Emitter {
   }
 
   // -------- Function
+  /**
+  Callable function, mostly used for modifications
+  
+  ```javascript
+  await client.call('db:set', { 
+    type: 'fruit', 
+    subType: 'apple', 
+    name: 'jonagold' 
+  })
+  ```
+  */
   call(name: string, payload?: any): Promise<any> {
     return new Promise((resolve, reject) => {
       addToFunctionQueue(this, payload, name, resolve, reject)
@@ -259,6 +342,13 @@ export class BasedClient extends Emitter {
   }
 
   // -------- Stream
+  /**
+  Stream large payload to a `stream-function`
+  
+  ```javascript
+  await client.stream('db:file', file)
+  ```
+  */
   stream(
     name: string,
     stream: StreamFunctionOpts,
@@ -268,6 +358,14 @@ export class BasedClient extends Emitter {
   }
 
   // -------- Auth
+  /**
+  Set auth state on client and server, `persistent` 
+  will keep the authState in localStorage
+  
+  ```javascript
+  await client.setAuthState({ token: 'token', persitent: true })
+  ```
+  */
   setAuthState(authState: AuthState): Promise<AuthState> {
     if (typeof authState === 'object') {
       return sendAuth(this, authState)
@@ -276,15 +374,36 @@ export class BasedClient extends Emitter {
     }
   }
 
+  /**
+  Removes the current authState on server and client
+  
+  ```javascript
+  await client.clearAuthState()
+  ```
+  */
   clearAuthState(): Promise<AuthState> {
     return sendAuth(this, {})
   }
 
   // -------- Storage layer
+  /**
+  Clear localStorage (removes storage file if configured for node.js)
+  
+  ```javascript
+  await client.clearStorage()
+  ```
+  */
   clearStorage(): Promise<void> {
     return clearStorage(this)
   }
 
+  /**
+  Save current state of all cached query functions that have `persistent` set to true
+  
+  ```javascript
+  await client.saveStorage()
+  ```
+  */
   saveStorage(): Promise<void> {
     return updateStorage(this)
   }
@@ -292,6 +411,23 @@ export class BasedClient extends Emitter {
 
 export { BasedOpts }
 
+/**
+  Creates a based client
+  
+  ```javascript
+  // Connects to a specific based server
+  const client = based({
+    url: 'ws://localhost:9910'
+  })
+
+  // Connects to an environment in the based cloud
+  const client = based({
+    org: 'saulx',
+    project: 'demo',
+    env: 'production'
+  })
+  ```
+*/
 export default function based(
   opts: BasedOpts,
   settings?: Settings
