@@ -385,19 +385,15 @@ test.serial('Channel publish + subscribe errors', async (t) => {
   client.channel('c', 1).publish('hello')
   client.channel('b').publish('hello')
   client.channel('a').publish('powerful')
-
   try {
     await client.call('helloPublish')
     t.fail('helloPublish should throw')
   } catch (err) {
     t.true(err.message.includes('[gurd] Function not found'))
   }
-
   await client.call('yes')
   await wait(200)
-
   t.is(aList[aList.length - 1], 'powerful')
-
   t.is(r.length, 4)
   t.is(r[0].code, 40301)
   close1()
@@ -454,6 +450,43 @@ test.serial('Channel publish over rest', async (t) => {
 
   t.is(client.channelState.size, 0)
   await wait(1500)
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  client.disconnect()
+  await server.destroy()
+})
+
+test.serial.only('Channel publish non existing channel', async (t) => {
+  const server = await createSimpleServer({
+    uninstallAfterIdleTime: 1e3,
+    closeAfterIdleTime: { channel: 10, query: 10 },
+    port: 9910,
+  })
+  const client = new BasedClient()
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+
+  let incoming = 0
+  let outgoing = 0
+  client.on('debug', (d) => {
+    if (d.direction === 'outgoing') {
+      outgoing++
+    } else {
+      incoming++
+    }
+  })
+
+  client.channel('c', 1).publish('hello')
+  client.channel('b').publish('hello')
+  client.channel('a').publish('powerful')
+
+  await wait(1500)
+  t.is(outgoing, 6)
+  t.is(incoming, 9)
+
+  await wait(6000)
+
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
   client.disconnect()

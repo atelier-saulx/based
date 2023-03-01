@@ -78,6 +78,14 @@ export const startChannel = (
 
   const payload = channel.payload
 
+  if (fromInstall) {
+    channel.doesNotExist = false
+  }
+
+  if (channel.doesNotExist) {
+    return
+  }
+
   if (!spec || !isChannelFunctionSpec(spec)) {
     console.warn(
       'Start channel - cannot find channel function spec',

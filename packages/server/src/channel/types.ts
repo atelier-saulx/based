@@ -4,6 +4,7 @@ export type ActiveChannel = {
   name: string
   id: number
   payload: any
+  doesNotExist?: boolean
   functionChannelClients: Set<ChannelMessageFunctionInternal>
   clients: Set<number>
   isActive: boolean

@@ -88,9 +88,11 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     name
   )
 
-  // // TODO: add strictness setting - if strict return false here
-  if (route === null) {
-    return true
+  const tmpRoute: BasedChannelFunctionRoute = route || {
+    rateLimitTokens: 10,
+    maxPayloadSize: 500,
+    name,
+    channel: true,
   }
 
   if (
@@ -98,23 +100,21 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
       server,
       ctx,
       // Requesting the id multiple times is something that should not happen - so probably a bad actor
-      isChannelIdRequester ? route.rateLimitTokens * 5 : route.rateLimitTokens,
+      isChannelIdRequester
+        ? tmpRoute.rateLimitTokens * 5
+        : tmpRoute.rateLimitTokens,
       server.rateLimit.ws
     )
   ) {
-    ctx.session.ws.close()
     return false
   }
 
-  if (len > route.maxPayloadSize) {
-    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
-      route,
-      channelId: id,
-    })
-    return true
-  }
-
   if (isChannelIdRequester) {
+    if (len > tmpRoute.maxPayloadSize * 100) {
+      // if size is crazy large then do this must be a mallcontent
+      ctx.session.ws.close()
+      return false
+    }
     // TODO: Add authorization here....
     if (!hasChannel(server, id)) {
       const payload =
@@ -127,13 +127,13 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
               )
             )
       // This has to be done instantly so publish can be received immediatly
-      createChannel(server, name, id, payload, true)
-      installFn(server, ctx, route, id).then((spec) => {
+      const channel = createChannel(server, name, id, payload, true)
+
+      installFn(server, ctx, tmpRoute, id).then((spec) => {
         if (spec === null) {
-          server.activeChannels[name].delete(id)
-          delete server.activeChannels[name]
-          server.activeChannelsById.delete(id)
-          return
+          channel.doesNotExist = true
+        } else {
+          channel.doesNotExist = false
         }
         destroyChannel(server, id)
       })
@@ -141,6 +141,19 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     }
 
     extendChannel(server, server.activeChannelsById.get(id))
+    return true
+  }
+
+  // // TODO: add strictness setting - if strict return false here
+  if (route === null) {
+    return true
+  }
+
+  if (len > tmpRoute.maxPayloadSize) {
+    sendError(server, ctx, BasedErrorCode.PayloadTooLarge, {
+      route: tmpRoute,
+      channelId: id,
+    })
     return true
   }
 

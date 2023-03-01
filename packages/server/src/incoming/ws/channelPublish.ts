@@ -45,6 +45,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | * payload |
   const id = readUint8(arr, start + 4, 8)
 
+  // how to determine it does not exist?
   if (!hasChannel(server, id)) {
     if (rateLimitRequest(server, ctx, 1, server.rateLimit.ws)) {
       ctx.session.ws.close()
