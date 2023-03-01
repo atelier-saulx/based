@@ -485,7 +485,7 @@ test.serial.only('Channel publish non existing channel', async (t) => {
   t.is(outgoing, 6)
   t.is(incoming, 9)
 
-  await wait(6000)
+  await wait(1500)
 
   t.is(Object.keys(server.activeChannels).length, 0)
   t.is(server.activeChannelsById.size, 0)
