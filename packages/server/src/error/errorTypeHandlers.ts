@@ -21,6 +21,11 @@ export const errorTypeHandlers: ErrorType = {
     statusMessage: 'Rate limit',
     message: () => 'rate limt',
   },
+  [BasedErrorCode.IncorrectAccessKey]: {
+    statusCode: 429,
+    statusMessage: 'Rate limit',
+    message: () => 'rate limt',
+  },
   [BasedErrorCode.FunctionError]: {
     statusCode: 500,
     statusMessage: 'Internal Server Error',

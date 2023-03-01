@@ -105,27 +105,21 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  async update(spec: BasedSpec) {
-    const { name } = spec
+  async update(name: string, checksum: number) {
     const prevSpec = this.specs[name]
-    if (prevSpec) {
-      if (prevSpec.function !== spec.function) {
-        if (this.beingUninstalled[name]) {
-          delete this.beingUninstalled[name]
-        }
-        updateTimeoutCounter(spec)
-        await this.installGaurdedFromConfig(name)
-        await this.config.uninstall({
-          server: this.server,
-          function: prevSpec,
-          name,
-        })
-        this.updateInternal(spec)
-      } else {
+    if (prevSpec && prevSpec.checksum !== checksum) {
+      if (this.beingUninstalled[name]) {
+        delete this.beingUninstalled[name]
+      }
+      const spec = await this.installGaurdedFromConfig(name)
+      await this.config.uninstall({
+        server: this.server,
+        function: prevSpec,
+        name,
+      })
+      if (spec) {
         this.updateInternal(spec)
       }
-    } else {
-      this.updateInternal(spec)
     }
   }
 

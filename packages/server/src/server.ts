@@ -17,7 +17,7 @@ import { ActiveChannel } from './channel'
 import util from 'node:util'
 
 type EventMap = {
-  error: BasedErrorData
+  error: BasedErrorData | BasedErrorCode
   ratelimit: void
   log: any
 }
@@ -37,6 +37,7 @@ export type ServerOptions = {
   key?: string
   disableRest?: boolean
   disableWs?: boolean
+  silent?: boolean
   cert?: string
   functions?: FunctionConfig
   rateLimit?: RateLimit
@@ -64,6 +65,8 @@ export class BasedServer {
   public port: number
 
   public uwsApp: uws.TemplatedApp
+
+  public silent: boolean
 
   public rateLimit: RateLimit = {
     ws: 2e3,
@@ -123,6 +126,9 @@ export class BasedServer {
   }
 
   constructor(opts: ServerOptions) {
+    if (opts.silent) {
+      this.silent = opts.silent
+    }
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
     if (opts.client) {
@@ -185,11 +191,7 @@ export class BasedServer {
     }
   }
 
-  async start(
-    port?: number,
-    sharedSocket?: boolean,
-    silent?: boolean
-  ): Promise<BasedServer> {
+  async start(port?: number, sharedSocket?: boolean): Promise<BasedServer> {
     if (!port) {
       port = this.port
     } else {
@@ -199,7 +201,7 @@ export class BasedServer {
     return new Promise((resolve, reject) => {
       this.uwsApp.listen(this.port, sharedSocket ? 0 : 1, (listenSocket) => {
         if (listenSocket) {
-          if (!silent)
+          if (!this.silent)
             console.info('    Based-server listening on port:', this.port)
           this.listenSocket = listenSocket
           resolve(this)
@@ -214,8 +216,9 @@ export class BasedServer {
     })
   }
 
-  async destroy(silent?: boolean) {
-    if (!silent) console.info(picocolors.gray('    Destroy Based-server\n'))
+  async destroy() {
+    if (!this.silent)
+      console.info(picocolors.gray(`    Destroy Based-server ${this.port} \n`))
     if (this.listenSocket) {
       uws.us_listen_socket_close(this.listenSocket)
       this.listenSocket = null

@@ -8,15 +8,18 @@ export const updateDestroyTimer = (
   channel: ActiveChannel
 ) => {
   const spec = server.functions.specs[channel.name]
-  if (!spec || !isChannelFunctionSpec(spec)) {
-    console.warn(
-      'destroyChannel - Cannot find channel function spec -',
+  if (spec && !isChannelFunctionSpec(spec)) {
+    console.error(
+      'channel updateDestroyTimer - Not channel spec!',
+      spec,
       channel.name
     )
     return
   }
+
   const closeAfterIdleTime =
-    spec.closeAfterIdleTime ??
+    // @ts-ignore
+    spec?.closeAfterIdleTime ??
     server.functions.config.closeAfterIdleTime.channel
   channel.timeTillDestroy = closeAfterIdleTime
   channel.closeAfterIdleTime = closeAfterIdleTime

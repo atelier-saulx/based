@@ -28,7 +28,6 @@ import {
   authorize,
   IsAuthorizedHandler,
 } from '../../authorize'
-import { installFn } from '../../installFn'
 import { BinaryMessageHandler } from './types'
 
 const sendGetData = (
@@ -81,35 +80,30 @@ const getFromExisting = (
 const isAuthorized: IsAuthorizedHandler<
   WebSocketSession,
   BasedQueryFunctionRoute
-> = (route, server, ctx, payload, id, checksum) => {
+> = (route, spec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     getFromExisting(server, id, ctx, checksum)
     return
   }
-  installFn(server, ctx, route, id).then((spec) => {
-    if (spec === null) {
-      return
-    }
-    const session = ctx.session
-    if (!session) {
-      return
-    }
-    if (hasObs(server, id)) {
-      getFromExisting(server, id, ctx, checksum)
-      return
-    }
-    const obs = createObs(server, route.name, id, payload, true)
-    if (!session.obs.has(id)) {
-      subscribeNext(obs, (err) => {
-        if (err) {
-          sendObsGetError(server, ctx, id, err)
-        } else {
-          sendGetData(server, id, obs, checksum, ctx)
-        }
-      })
-    }
-    start(server, id)
-  })
+  const session = ctx.session
+  if (!session) {
+    return
+  }
+  if (hasObs(server, id)) {
+    getFromExisting(server, id, ctx, checksum)
+    return
+  }
+  const obs = createObs(server, route.name, id, payload, true)
+  if (!session.obs.has(id)) {
+    subscribeNext(obs, (err) => {
+      if (err) {
+        sendObsGetError(server, ctx, id, err)
+      } else {
+        sendGetData(server, id, obs, checksum, ctx)
+      }
+    })
+  }
+  start(server, id)
 }
 
 const isNotAuthorized: AuthErrorHandler<
@@ -193,6 +187,7 @@ export const getMessage: BinaryMessageHandler = (
     isAuthorized,
     id,
     checksum,
+    false,
     isNotAuthorized
   )
 

@@ -19,6 +19,7 @@ export enum BasedErrorCode {
   MethodNotAllowed = 40501,
   RateLimit = 40029,
   MissingAuthStateProtocolHeader = 40030,
+  IncorrectAccessKey = 40031,
 }
 
 export type BasedErrorData = {

@@ -1,12 +1,14 @@
 import { BasedServer } from './server'
 import {
   BasedRoute,
+  BasedSpec,
   isChannelFunctionRoute,
   isQueryFunctionRoute,
 } from './functions'
 import { sendError } from './sendError'
 import { BasedErrorCode } from './error'
 import { HttpSession, Context, WebSocketSession } from '@based/functions'
+import { installFn } from './installFn'
 
 type ClientSession = HttpSession | WebSocketSession
 
@@ -16,6 +18,7 @@ export type IsAuthorizedHandler<
   P = any
 > = (
   route: R,
+  spec: BasedSpec<R>,
   server: BasedServer,
   ctx: Context<S>,
   payload: P,
@@ -95,37 +98,45 @@ export const authorize = <
   isAuthorized: IsAuthorizedHandler<S, R, P>,
   id?: number,
   checksum?: number,
+  isPublic: boolean = false,
   authError: AuthErrorHandler<S, R, P> = defaultAuthError
 ) => {
   if (!ctx.session) {
     return
   }
 
-  if (route.public === true) {
-    isAuthorized(route, server, ctx, payload, id, checksum)
-    return
-  }
+  installFn(server, ctx, route, id).then((spec) => {
+    if (spec === null) {
+      return
+    }
 
-  server.auth
-    .authorize(server.client, ctx, route.name, payload)
-    .then((ok) => {
-      if (!ctx.session || !ok) {
+    if (route.public === true || isPublic) {
+      isAuthorized(route, spec, server, ctx, payload, id, checksum)
+      return
+    }
+
+    const authorize = spec.authorize || server.auth.authorize
+
+    authorize(server.client, ctx, route.name, payload)
+      .then((ok) => {
+        if (!ctx.session || !ok) {
+          if (
+            ctx.session &&
+            !authError(route, server, ctx, payload, id, checksum)
+          ) {
+            defaultAuthError(route, server, ctx, payload, id, checksum)
+          }
+          return
+        }
+        isAuthorized(route, spec, server, ctx, payload, id, checksum)
+      })
+      .catch((err) => {
         if (
           ctx.session &&
-          !authError(route, server, ctx, payload, id, checksum)
+          !authError(route, server, ctx, payload, id, checksum, err)
         ) {
-          defaultAuthError(route, server, ctx, payload, id, checksum)
+          defaultAuthError(route, server, ctx, payload, id, checksum, err)
         }
-        return
-      }
-      isAuthorized(route, server, ctx, payload, id, checksum)
-    })
-    .catch((err) => {
-      if (
-        ctx.session &&
-        !authError(route, server, ctx, payload, id, checksum, err)
-      ) {
-        defaultAuthError(route, server, ctx, payload, id, checksum, err)
-      }
-    })
+      })
+  })
 }

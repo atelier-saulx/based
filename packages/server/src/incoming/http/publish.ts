@@ -1,4 +1,7 @@
-import { BasedChannelFunctionRoute } from '../../functions'
+import {
+  BasedChannelFunctionRoute,
+  BasedChannelFunctionSpec,
+} from '../../functions'
 import { HttpSession, SendHttpResponse } from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
@@ -15,6 +18,7 @@ import {
 
 export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
   route: BasedChannelFunctionRoute,
+  spec: BasedChannelFunctionSpec,
   server,
   ctx,
   payload

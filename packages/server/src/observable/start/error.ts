@@ -20,7 +20,9 @@ export const errorListener = (
     err instanceof Error
       ? createError(
           server,
-          { session: { type: 'query', id: obs.id, name: obs.name } },
+          {
+            session: { type: 'query', id: obs.id, name: obs.name, headers: {} },
+          },
           BasedErrorCode.FunctionError,
           {
             err,

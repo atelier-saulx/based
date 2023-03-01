@@ -22,6 +22,7 @@ export enum BasedErrorCode {
   MethodNotAllowed = 40501,
   RateLimit = 40029,
   MissingAuthStateProtocolHeader = 40030,
+  IncorrectAccessKey = 40031,
 }
 
 type FunctionErrorProps = {
@@ -65,6 +66,7 @@ type BasedFunctionError =
 export type ErrorPayload = {
   [BasedErrorCode.FunctionNotFound]: BasedErrorPayload
   [BasedErrorCode.RateLimit]: {}
+  [BasedErrorCode.IncorrectAccessKey]: {}
   [BasedErrorCode.MissingAuthStateProtocolHeader]: {}
   [BasedErrorCode.NoBinaryProtocol]: { buffer: ArrayBuffer }
   [BasedErrorCode.FunctionError]: BasedFunctionError

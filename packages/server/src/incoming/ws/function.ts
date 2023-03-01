@@ -12,19 +12,19 @@ import { BasedFunctionRoute } from '../../functions'
 import { WebSocketSession } from '@based/functions'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
-import { installFn } from '../../installFn'
 import { authorize, IsAuthorizedHandler } from '../../authorize'
 import { BinaryMessageHandler } from './types'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@saulx/utils'
 
+// combine authorize with installfn AuthorizeAndInstall
+
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedFunctionRoute
-> = async (route, server, ctx, payload, requestId) => {
-  const spec = await installFn(server, ctx, route, requestId)
+> = async (route, spec, server, ctx, payload, requestId) => {
   spec
-    ?.function(server.client, payload, ctx)
+    .function(server.client, payload, ctx)
     .then(async (v) => {
       // TODO: allow chunked reply!
       if (v && (v instanceof Duplex || v instanceof Readable)) {

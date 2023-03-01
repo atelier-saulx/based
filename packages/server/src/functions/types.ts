@@ -6,6 +6,7 @@ import {
   UninstallFunction,
   BasedStreamFunction,
   BasedChannelPublishFunction,
+  Authorize,
 } from '@based/functions'
 import { BasedServer } from '../server'
 
@@ -42,6 +43,7 @@ export type FunctionConfig = {
   }) => Promise<boolean>
 }
 
+// TODO: add authorize
 type Route = {
   /** Function name */
   name: string
@@ -62,6 +64,8 @@ type Route = {
    * and not through the public internet.
    */
   internalOnly?: boolean
+  /** Can hold extra information about a spec */
+  data?: any
 }
 
 export type BasedFunctionRoute = Route
@@ -76,7 +80,6 @@ export type BasedStreamFunctionRoute = Route & {
 
 export type BasedChannelFunctionRoute = Route & {
   channel: true
-
   publisher?: {
     public?: true
   }
@@ -91,6 +94,8 @@ export type BasedInstallableFunctionSpec = {
   timeoutCounter?: number
   /** Hook that fires on uninstall of the function e.g. to clean up database connections */
   uninstall?: UninstallFunction
+  /** Specific authorize for this function */
+  authorize?: Authorize
 }
 
 export type BasedQueryFunctionSpec = {

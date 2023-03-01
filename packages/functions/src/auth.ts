@@ -29,5 +29,6 @@ export type VerifyAuthState = (
 
 export type AuthorizeConnection = (
   based: BasedFunctionClient,
-  req: HttpRequest
+  req: HttpRequest,
+  ip: string
 ) => Promise<boolean>

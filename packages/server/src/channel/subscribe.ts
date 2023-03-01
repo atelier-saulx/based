@@ -20,7 +20,7 @@ export const subscribeChannel = (
   const channel = getChannelAndStopRemove(server, id)
   session.obs.add(id)
   channel.clients.add(session.id)
-  if (!channel.isActive) {
+  if (!channel.isActive && !channel.doesNotExist) {
     startChannel(server, id)
   }
 }
@@ -32,7 +32,7 @@ export const subscribeChannelFunction = (
 ) => {
   const channel = getChannelAndStopRemove(server, id)
   channel.functionChannelClients.add(update)
-  if (!channel.isActive) {
+  if (!channel.isActive && !channel.doesNotExist) {
     startChannel(server, id)
   }
 }

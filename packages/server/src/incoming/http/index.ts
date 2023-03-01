@@ -123,6 +123,13 @@ export const httpHandler = (
     for (const header of route.headers) {
       ctx.session.headers[header] = req.getHeader(header)
     }
+    ctx.session.res.writeHeader(
+      'Access-Control-Allow-Headers',
+      route.headers.join(',')
+    )
+    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    ctx.session.corsSend = true
   }
 
   if (
@@ -200,11 +207,16 @@ export const httpHandler = (
       return
     }
     handleRequest(server, method, ctx, route, (payload) => {
-      if (route.public || route.publisher?.public) {
-        httpPublish(route, server, ctx, payload)
-      } else {
-        authorize(route, server, ctx, payload, httpPublish)
-      }
+      authorize(
+        route,
+        server,
+        ctx,
+        payload,
+        httpPublish,
+        undefined,
+        undefined,
+        route.publisher?.public || route.public
+      )
     })
     return
   }

@@ -75,7 +75,7 @@ export const sendHttpResponse = (
         ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
         ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
       }
-      result.end()
+      ctx.session.res.end()
     })
     return
   } else if (typeof result === 'string') {

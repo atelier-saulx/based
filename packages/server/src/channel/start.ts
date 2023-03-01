@@ -33,7 +33,14 @@ const errorChannelListener = (
     err instanceof Error
       ? createError(
           server,
-          { session: { type: 'channel', id: channel.id, name: channel.name } },
+          {
+            session: {
+              type: 'channel',
+              id: channel.id,
+              name: channel.name,
+              headers: {},
+            },
+          },
           BasedErrorCode.FunctionError,
           {
             err,
@@ -77,6 +84,14 @@ export const startChannel = (
   const spec = server.functions.specs[channel.name]
 
   const payload = channel.payload
+
+  if (fromInstall) {
+    channel.doesNotExist = false
+  }
+
+  if (channel.doesNotExist) {
+    return
+  }
 
   if (!spec || !isChannelFunctionSpec(spec)) {
     console.warn(

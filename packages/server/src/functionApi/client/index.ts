@@ -23,7 +23,7 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     super()
     this.server = server
     this.ctx = {
-      session: { type: 'client', client: this },
+      session: { type: 'client', client: this, headers: {} },
     }
   }
 

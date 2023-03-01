@@ -32,7 +32,6 @@ test.serial('custom http response', async (t) => {
       },
     },
   })
-
   const rawResp = await fetch('http://localhost:9910/hello')
   t.is(rawResp.headers.get('blabla'), '1,2,3,4')
   const result = await rawResp.text()
@@ -40,7 +39,7 @@ test.serial('custom http response', async (t) => {
   const rawRespGet = await fetch('http://localhost:9910/bla')
   t.is(rawRespGet.headers.get('blabla'), '1,2,3,4')
   const resultGet = await rawRespGet.text()
-  // get is by default json parsed
+  // Get is by default json parsed
   t.is(resultGet, '"?"')
   await server.destroy()
 })

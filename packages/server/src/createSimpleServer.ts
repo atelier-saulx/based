@@ -13,6 +13,7 @@ import {
   BasedQueryFunction,
   BasedFunction,
   BasedChannelFunction,
+  BasedStreamFunction,
 } from '@based/functions'
 import picocolors from 'picocolors'
 import { BasedServer, ServerOptions } from './server'
@@ -30,9 +31,10 @@ export type SimpleServerOptions = {
     function: BasedSpec
   }) => Promise<boolean>
   functions?: {
-    [key: string]:
-      | BasedFunction
-      | Partial<BasedFunctionSpec | BasedStreamFunctionSpec>
+    [key: string]: BasedFunction | Partial<BasedFunctionSpec>
+  }
+  streams?: {
+    [key: string]: BasedStreamFunction | Partial<BasedStreamFunctionSpec>
   }
   queryFunctions?: {
     [key: string]: BasedQueryFunction | Partial<BasedQueryFunctionSpec>
@@ -55,7 +57,7 @@ export async function createSimpleServer(
   props: SimpleServerOptions,
   sharedSocket?: boolean
 ): Promise<BasedServer> {
-  const { functions, queryFunctions, channels } = props
+  const { functions, queryFunctions, streams, channels } = props
   const functionStore: {
     [key: string]: BasedSpec & {
       maxPayloadSize: number
@@ -71,8 +73,8 @@ export async function createSimpleServer(
           function: fn.function,
           name,
           checksum: 1,
-          maxPayloadSize: isStreamFunctionSpec(fn) ? 200e6 : 5e4,
-          rateLimitTokens: 10,
+          maxPayloadSize: 5e4,
+          rateLimitTokens: 1,
           ...fn,
         }
       } else if (typeof fn === 'function') {
@@ -113,6 +115,34 @@ export async function createSimpleServer(
         }
       } else {
         console.error(name, fn, 'Is not a query function!')
+      }
+    }
+  }
+
+  for (const name in streams) {
+    if (streams[name]) {
+      const fn = streams[name]
+      if (isSpec(fn)) {
+        functionStore[name] = {
+          checksum: 1,
+          stream: true,
+          function: fn.function,
+          name,
+          maxPayloadSize: 1e9,
+          rateLimitTokens: 10,
+          ...fn,
+        }
+      } else if (typeof fn === 'function') {
+        functionStore[name] = {
+          checksum: 1,
+          stream: true,
+          function: fn,
+          name,
+          maxPayloadSize: 1e9,
+          rateLimitTokens: 10,
+        }
+      } else {
+        console.error(name, fn, 'Is not a stream function!')
       }
     }
   }
@@ -185,6 +215,7 @@ export async function createSimpleServer(
           }
         }),
       route: ({ path, name }) => {
+        // TODO fix typez
         let rootFn
         if (path) {
           for (const name in functionStore) {
@@ -242,7 +273,5 @@ export async function createSimpleServer(
   }
 
   const basedServer = new BasedServer(properProps)
-  return props.port
-    ? basedServer.start(props.port, sharedSocket, props.silent)
-    : basedServer
+  return props.port ? basedServer.start(props.port, sharedSocket) : basedServer
 }

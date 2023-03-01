@@ -1,7 +1,6 @@
 import { readUint8, decodePayload, parsePayload } from '../../protocol'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
-import { installFn } from '../../installFn'
 import { BinaryMessageHandler } from './types'
 import { extendChannel, hasChannel } from '../../channel'
 import { IsAuthorizedHandler, authorize } from '../../authorize'
@@ -13,25 +12,20 @@ import { BasedErrorCode } from '../../error'
 const publish: IsAuthorizedHandler<
   WebSocketSession,
   BasedChannelFunctionRoute
-> = (route, server, ctx, payload, id) => {
-  installFn(server, ctx, route).then((spec) => {
-    if (spec === null) {
-      return
-    }
-    const channel = server.activeChannelsById.get(id)
-    if (!channel) {
-      return
-    }
-    try {
-      spec.publish(server.client, channel.payload, payload, channel.id, ctx)
-    } catch (err) {
-      sendError(server, ctx, BasedErrorCode.FunctionError, {
-        channelId: id,
-        err,
-        route,
-      })
-    }
-  })
+> = (route, spec, server, ctx, payload, id) => {
+  const channel = server.activeChannelsById.get(id)
+  if (!channel) {
+    return
+  }
+  try {
+    spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+  } catch (err) {
+    sendError(server, ctx, BasedErrorCode.FunctionError, {
+      channelId: id,
+      err,
+      route,
+    })
+  }
 }
 
 export const channelPublishMessage: BinaryMessageHandler = (
@@ -45,6 +39,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
   // | 4 header | 8 id | * payload |
   const id = readUint8(arr, start + 4, 8)
 
+  // how to determine it does not exist?
   if (!hasChannel(server, id)) {
     if (rateLimitRequest(server, ctx, 1, server.rateLimit.ws)) {
       ctx.session.ws.close()
@@ -92,16 +87,16 @@ export const channelPublishMessage: BinaryMessageHandler = (
           )
         )
 
-  if (route.public || route.publisher?.public) {
-    installFn(server, ctx, route)
-      .then((spec) => {
-        spec?.publish(server.client, channel.payload, payload, channel.id, ctx)
-      })
-      .catch(() => {})
-    return true
-  }
-
-  authorize(route, server, ctx, payload, publish, id)
+  authorize(
+    route,
+    server,
+    ctx,
+    payload,
+    publish,
+    id,
+    undefined,
+    route.publisher?.public
+  )
 
   return true
 }

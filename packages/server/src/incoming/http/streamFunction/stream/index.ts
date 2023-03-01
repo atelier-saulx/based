@@ -78,6 +78,7 @@ export const singleStream = (
     },
     undefined,
     undefined,
+    false,
     () => {
       stream.destroy()
     }

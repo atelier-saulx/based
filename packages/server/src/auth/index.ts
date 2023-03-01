@@ -76,10 +76,13 @@ export class BasedAuth {
       <Context<HttpSession> | Context<WebSocketSession>>ctx,
       authState || ctx.session.authState
     )
-    if (verified === true) {
+
+    if (verified === true || !ctx.session) {
       return
     }
+
     ctx.session.authState = verified
+
     if (isWsContext(ctx)) {
       this.sendAuthState(ctx, verified)
     }
