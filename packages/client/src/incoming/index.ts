@@ -29,6 +29,10 @@ export const incoming = async (
   client: BasedClient,
   data: any /* TODO: type */
 ) => {
+  if (client.isDestroyed) {
+    return
+  }
+
   const debug = client.listeners.debug
 
   try {
@@ -411,7 +415,6 @@ export const incoming = async (
           }
           found = true
         }
-
         if (debug) {
           debugChannel(client, id, payload, found)
         }
