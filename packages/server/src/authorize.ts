@@ -7,6 +7,7 @@ import {
 import { sendError } from './sendError'
 import { BasedErrorCode } from './error'
 import { HttpSession, Context, WebSocketSession } from '@based/functions'
+import { installFn } from './installFn'
 
 type ClientSession = HttpSession | WebSocketSession
 
@@ -15,7 +16,7 @@ export type IsAuthorizedHandler<
   R extends BasedRoute = BasedRoute,
   P = any
 > = (
-  route: R,
+  spec: R,
   server: BasedServer,
   ctx: Context<S>,
   payload: P,
@@ -101,31 +102,34 @@ export const authorize = <
     return
   }
 
-  if (route.public === true) {
-    isAuthorized(route, server, ctx, payload, id, checksum)
-    return
-  }
+  installFn(server, ctx, route, id).then((spec) => {
+    if (route.public === true) {
+      isAuthorized(route, server, ctx, payload, id, checksum)
+      return
+    }
 
-  server.auth
-    .authorize(server.client, ctx, route.name, payload)
-    .then((ok) => {
-      if (!ctx.session || !ok) {
+    const authorize = spec?.authorize || server.auth.authorize
+
+    authorize(server.client, ctx, route.name, payload)
+      .then((ok) => {
+        if (!ctx.session || !ok) {
+          if (
+            ctx.session &&
+            !authError(route, server, ctx, payload, id, checksum)
+          ) {
+            defaultAuthError(route, server, ctx, payload, id, checksum)
+          }
+          return
+        }
+        isAuthorized(route, server, ctx, payload, id, checksum)
+      })
+      .catch((err) => {
         if (
           ctx.session &&
-          !authError(route, server, ctx, payload, id, checksum)
+          !authError(route, server, ctx, payload, id, checksum, err)
         ) {
-          defaultAuthError(route, server, ctx, payload, id, checksum)
+          defaultAuthError(route, server, ctx, payload, id, checksum, err)
         }
-        return
-      }
-      isAuthorized(route, server, ctx, payload, id, checksum)
-    })
-    .catch((err) => {
-      if (
-        ctx.session &&
-        !authError(route, server, ctx, payload, id, checksum, err)
-      ) {
-        defaultAuthError(route, server, ctx, payload, id, checksum, err)
-      }
-    })
+      })
+  })
 }

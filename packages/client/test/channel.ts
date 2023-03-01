@@ -493,7 +493,7 @@ test.serial('Channel publish non existing channel', async (t) => {
   await server.destroy()
 })
 
-test.serial.only(
+test.serial(
   'Channel high load multi client subscribe and publish',
   async (t) => {
     const listeners: Map<number, (msg: any) => void> = new Map()

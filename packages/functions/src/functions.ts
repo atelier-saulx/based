@@ -123,6 +123,8 @@ type FunctionConfigShared = {
   uninstallAfterIdleTime?: number
   /** Hook that fires on uninstall of the function e.g. to clean up database connections */
   uninstall?: UninstallFunction
+  /** Specific authorize for this function */
+  authorize?: Authorize
 }
 
 export type BasedFunctionConfig =

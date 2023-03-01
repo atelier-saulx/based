@@ -18,6 +18,8 @@ import { BinaryMessageHandler } from './types'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@saulx/utils'
 
+// combine authorize with installfn AuthorizeAndInstall
+
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedFunctionRoute
