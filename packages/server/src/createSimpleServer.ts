@@ -215,7 +215,7 @@ export async function createSimpleServer(
           }
         }),
       route: ({ path, name }) => {
-        // TODO fix type
+        // TODO fix typez
         let rootFn
         if (path) {
           for (const name in functionStore) {
