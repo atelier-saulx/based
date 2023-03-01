@@ -30,8 +30,23 @@ const handleFile = async (
       >
     }
 > => {
+  const spec = await installedFn
+
+  if (spec === null) {
+    return {
+      error: createErrorData(BasedErrorCode.FunctionNotFound, {
+        route,
+      }),
+    }
+  }
+
   try {
-    const ok = await server.auth.authorize(server.client, ctx, route.name, file)
+    const ok = await (spec.authorize || server.auth.authorize)(
+      server.client,
+      ctx,
+      route.name,
+      file
+    )
     if (!ok) {
       return {
         error: createErrorData(BasedErrorCode.AuthorizeRejectedError, {
@@ -48,15 +63,6 @@ const handleFile = async (
     }
   }
 
-  const spec = await installedFn
-
-  if (spec === null) {
-    return {
-      error: createErrorData(BasedErrorCode.FunctionNotFound, {
-        route,
-      }),
-    }
-  }
   try {
     const value = await spec.function(server.client, file, ctx)
     return { value }
