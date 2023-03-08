@@ -250,32 +250,6 @@ export type CountryCode =
   | 'AX'
 
 type Char =
-  | 'a'
-  | 'b'
-  | 'c'
-  | 'd'
-  | 'e'
-  | 'f'
-  | 'g'
-  | 'h'
-  | 'i'
-  | 'j'
-  | 'k'
-  | 'l'
-  | 'm'
-  | 'n'
-  | 'o'
-  | 'p'
-  | 'q'
-  | 'r'
-  | 's'
-  | 't'
-  | 'u'
-  | 'v'
-  | 'w'
-  | 'x'
-  | 'y'
-  | 'z'
   | 'A'
   | 'B'
   | 'C'
@@ -302,11 +276,47 @@ type Char =
   | 'X'
   | 'Y'
   | 'Z'
+  | '0'
+  | '1'
+  | '2'
+  | '3'
+  | '4'
+  | '5'
+  | '6'
+  | '7'
+  | '8'
+  | '9'
+
+export type GeoRegionISO = `${Char}${Char}` | `${Char}${Char}${Char}`
 
 export type Geo = {
   country: CountryCode
+  /**
+  Ip formatted as ipv6
+
+  e.g. `2001:0db8:85a3:0000:0000:8a2e:0370:7334`
+  */
   ip: string
-  region: `${Char}${Char}`
+  /**
+  Region subdivisions
+
+  e.g. `[{ iso: 'NH', name: 'north-holland' }]`
+  */
+  regions: {
+    iso: GeoRegionISO
+    name?: string
+  }[]
   lat: number
   long: number
+  /**
+  Accuracy Radius (km)
+  */
+  accuracy: number
+  /**
+  City name 
+
+  e.g. `Amsterdam`
+  */
+  city?: string
+  postalCode?: string
 }

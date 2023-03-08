@@ -1,8 +1,10 @@
-import type {
+import {
   Context,
   BasedFunctionClient,
   WebSocketSession,
   HttpSession,
+  Geo,
+  isClientContext,
 } from '@based/functions'
 import type { ActiveObservable } from './observable'
 import uws from '@based/uws'
@@ -35,6 +37,7 @@ type RateLimit = {
 export type ServerOptions = {
   port?: number
   key?: string
+  geo?: (ctx: Context) => Promise<Geo>
   disableRest?: boolean
   disableWs?: boolean
   silent?: boolean
@@ -75,6 +78,24 @@ export class BasedServer {
   }
 
   public listenSocket: any
+
+  public geo: (ctx: Context) => Promise<Geo> = async (ctx: Context) => {
+    if (!ctx.session) {
+      throw new Error('Session expired while parsing geo location')
+    }
+    if (isClientContext(ctx)) {
+      return {
+        country: 'NL',
+        ip: ctx.session.ip,
+        accuracy: 0,
+        long: 0,
+        lat: 0,
+        regions: [],
+      }
+    } else {
+      throw new Error('Cannot parse geo location from a non external context')
+    }
+  }
 
   public blockedIps: Set<string> = new Set()
 
@@ -139,6 +160,9 @@ export class BasedServer {
     }
     if (opts.rateLimit) {
       this.rateLimit = opts.rateLimit
+    }
+    if (opts.geo) {
+      this.geo = opts.geo
     }
     initNetwork(this, opts)
   }

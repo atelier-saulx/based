@@ -24,7 +24,7 @@ export abstract class BasedFunctionClient {
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
 
-  abstract geo(ctx: Context): Geo
+  abstract geo(ctx: Context): Promise<Geo>
 
   abstract renewAuthState(
     ctx: Context,

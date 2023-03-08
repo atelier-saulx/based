@@ -27,6 +27,10 @@ export class BasedFunctionClient extends BasedfunctionClientAbstract {
     }
   }
 
+  geo(ctx: Context) {
+    return this.server.geo(ctx)
+  }
+
   // TODO: CTX - Transpile the ctx in there by static analysis for "call" & "stream"
   call(name: string, payload?: any, ctx: Context = this.ctx): Promise<any> {
     return callFunction(this.server, name, ctx, payload)
