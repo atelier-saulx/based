@@ -3,10 +3,12 @@ import { BasedChannel } from './channel'
 import { Context } from './context'
 import { BasedQuery } from './query'
 import { StreamFunctionOpts } from './stream'
+import { Geo } from './geo'
 
-// TODO: this is the place where we will add extra specifications
 export abstract class BasedFunctionClient {
   server: any
+
+  db: any
 
   abstract call(name: string, payload?: any, ctx?: Context): Promise<any>
 
@@ -21,6 +23,8 @@ export abstract class BasedFunctionClient {
   ): Promise<any>
 
   abstract sendAuthState(ctx: Context, authState: AuthState): void
+
+  abstract geo(ctx: Context): Geo
 
   abstract renewAuthState(
     ctx: Context,
