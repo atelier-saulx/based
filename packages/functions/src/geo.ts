@@ -290,7 +290,7 @@ type Char =
 export type GeoRegionISO = `${Char}${Char}` | `${Char}${Char}${Char}`
 
 export type Geo = {
-  country: CountryCode
+  country: CountryCode | 'unknown'
   /**
   Ip formatted as ipv6
 
