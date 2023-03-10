@@ -5,12 +5,13 @@ import {
   ReactNode,
   useState,
   useEffect,
+  FC,
 } from 'react'
 import { BasedClient, AuthState } from '@based/client'
 
 const Ctx = createContext<BasedClient>()
 
-export const Provider = ({
+export const Provider: FC = ({
   client,
   children,
 }: {
