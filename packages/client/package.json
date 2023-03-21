@@ -35,7 +35,7 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.20",
-    "@based/functions": "^1.1.0",
+    "@based/functions": "^1.2.2",
     "concurrently": "^7.1.0",
     "@saulx/utils": "^3.2.1",
     "@saulx/aristotle": "^4.3.0",
