@@ -24,12 +24,12 @@ test.serial('http get falsy check', async (t) => {
   for (let i = 0; i < 100; i++) {
     const r1 = await (await fetch('http://localhost:9910/bla')).json()
     t.is(r1, 0)
-    await wait(1e3)
+    await wait(100)
 
     const r2 = await (await fetch('http://localhost:9910/bla')).text()
     t.is(r2, '0')
 
-    await wait(1e3)
+    await wait(100)
     const r3 = await (await fetch('http://localhost:9910/bla')).text()
     t.is(r3, '0')
   }
