@@ -1,24 +1,21 @@
 import { BasedErrorCode, BasedErrorData } from '../error'
 
-export type ObservableUpdateFunction = {
-  (
-    data: any,
-    checksum?: number,
-    diff?: any,
-    fromChecksum?: number,
-    isDeflate?: boolean,
-    rawData?: any,
-    err?: Error | BasedErrorData<BasedErrorCode.FunctionError>
-  ): void
-  __internalObs__?: true
-}
+export type ObservableError =
+  | BasedErrorData<BasedErrorCode.FunctionError>
+  | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
+  | BasedErrorData<BasedErrorCode.FunctionNotFound>
 
-export type ObserveErrorListener = (
-  err:
-    | BasedErrorData<BasedErrorCode.FunctionError>
-    | BasedErrorData<BasedErrorCode.FunctionIsWrongType>
-    | BasedErrorData<BasedErrorCode.FunctionNotFound>
+export type ObservableUpdateFunction = (
+  data: any,
+  checksum?: number,
+  err?: null | ObservableError,
+  cache?: Uint8Array,
+  diff?: any,
+  fromChecksum?: number,
+  isDeflate?: boolean
 ) => void
+
+export type ObserveErrorListener = (err: ObservableError) => void
 
 export type ActiveObservable = {
   startId: number
@@ -27,7 +24,7 @@ export type ActiveObservable = {
   reusedCache: boolean
   functionObserveClients: Set<ObservableUpdateFunction>
   clients: Set<number>
-  onNextData?: Set<(err?: BasedErrorData<BasedErrorCode.FunctionError>) => void>
+  onNextData?: Set<(err?: ObservableError) => void>
   payload: any
   diffCache?: Uint8Array
   cache?: Uint8Array
@@ -36,7 +33,7 @@ export type ActiveObservable = {
   isDeflate?: boolean
   checksum?: number
   closeFunction?: () => void
-  error?: BasedErrorData<BasedErrorCode.FunctionError> | null
+  error?: ObservableError | null
   closeAfterIdleTime?: number
   timeTillDestroy: number | null
   isDestroyed: boolean

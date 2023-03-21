@@ -3,21 +3,16 @@ import { BasedFunctionClient } from './client'
 import { BasedDataStream } from './stream'
 import { Authorize } from './auth'
 
-export type ObservableUpdateFunction<K = any> = {
-  (
-    data: K,
-    checksum?: number,
-    diff?: any,
-    fromChecksum?: number,
-    isDeflate?: boolean,
-    rawData?: K,
-    // todo fix there errors TODO: make extra package 'errors' for client and server
-    err?: any
-  ): void
-  __internalObs__?: true
-}
+export type ObservableUpdateFunction<K = any> = (
+  data: K,
+  checksum?: number,
+  err?: any,
+  cache?: Uint8Array,
+  diff?: any,
+  fromChecksum?: number,
+  isDeflate?: boolean
+) => void
 
-// TODO: use error package
 export type ObserveErrorListener = (err: any) => void
 
 export type HttpHeaders = {

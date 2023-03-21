@@ -8,7 +8,6 @@ import { genObservableId } from '../../observable'
 import { publish } from '../publish'
 import { subscribeChannel } from '../channelSubscribe'
 
-// add generics...
 export class BasedChannel extends BasedChannelAbstract {
   public payload: any
   public name: string

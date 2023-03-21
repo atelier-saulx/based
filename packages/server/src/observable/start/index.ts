@@ -24,11 +24,11 @@ export const start = (server: BasedServer, id: number) => {
   const update: ObservableUpdateFunction = (
     data,
     checksum,
+    err,
+    cache,
     diff,
     fromChecksum,
-    isDeflate,
-    rawData,
-    err
+    isDeflate
   ) => {
     if (err) {
       errorListener(server, obs, err)
@@ -39,14 +39,13 @@ export const start = (server: BasedServer, id: number) => {
       obs,
       data,
       checksum,
+      cache,
       diff,
       fromChecksum,
-      isDeflate,
-      rawData
+      isDeflate
     )
   }
 
-  update.__internalObs__ = true
   const startId = ++obs.startId
 
   try {

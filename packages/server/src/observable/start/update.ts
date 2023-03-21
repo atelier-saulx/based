@@ -15,10 +15,10 @@ export const updateListener = (
   obs: ActiveObservable,
   data: any,
   checksum?: number,
+  reusedData?: Uint8Array,
   diff?: any,
   previousChecksum?: number,
-  isDeflate?: boolean,
-  rawData?: any
+  isDeflate?: boolean
 ) => {
   if (checksum === undefined) {
     if (data === undefined) {
@@ -34,17 +34,15 @@ export const updateListener = (
 
   if (checksum !== obs.checksum) {
     let encodedData: Uint8Array
-    if (data instanceof Uint8Array) {
+    if (reusedData) {
       obs.reusedCache = true
-      encodedData = data
+      encodedData = reusedData
       if (diff) {
         obs.diffCache = diff
         obs.previousChecksum = previousChecksum
       }
-      if (rawData) {
-        obs.rawData = rawData
-      } else {
-        // go go go just read id and put it
+      if (data) {
+        obs.rawData = data
       }
       if (!isDeflate) {
         isDeflate = false
@@ -108,12 +106,13 @@ export const updateListener = (
     if (obs.functionObserveClients.size) {
       obs.functionObserveClients.forEach((fnUpdate) => {
         fnUpdate(
-          obs.cache,
+          obs.rawData,
           obs.checksum,
+          obs.error,
+          obs.cache,
           obs.diffCache,
           obs.previousChecksum,
-          obs.isDeflate,
-          obs.rawData
+          obs.isDeflate
         )
       })
     }

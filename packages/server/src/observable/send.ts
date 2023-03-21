@@ -2,9 +2,8 @@ import { Context, WebSocketSession, HttpSession } from '@based/functions'
 import { updateId } from '../protocol'
 import { BasedServer } from '../server'
 import { destroyObs } from './destroy'
-import { BasedErrorCode, BasedErrorData } from '../error'
 import { sendErrorData } from '../sendError'
-import { ActiveObservable } from './types'
+import { ActiveObservable, ObservableError } from './types'
 
 export const sendObsWs = (
   ctx: Context<WebSocketSession>,
@@ -27,7 +26,7 @@ export const sendObsGetError = (
   server: BasedServer,
   ctx: Context<WebSocketSession | HttpSession>,
   id: number,
-  err: BasedErrorData<BasedErrorCode.FunctionError>
+  err: ObservableError
 ) => {
   sendErrorData(ctx, err)
   destroyObs(server, id)

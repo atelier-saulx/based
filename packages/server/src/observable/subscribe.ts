@@ -48,8 +48,10 @@ export const subscribeFunction = (
   if (obs.functionObserveClients.add(update))
     if (obs.cache) {
       update(
-        obs.cache,
+        obs.rawData,
         obs.checksum,
+        null,
+        obs.cache,
         obs.diffCache,
         obs.previousChecksum,
         obs.isDeflate

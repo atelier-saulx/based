@@ -1,12 +1,12 @@
-import { ActiveObservable } from '../types'
+import { ActiveObservable, ObservableError } from '../types'
 import { BasedServer } from '../../server'
-import { BasedErrorCode, BasedErrorData, createError } from '../../error'
+import { createError, BasedErrorCode } from '../../error'
 import { encodeErrorResponse, valueToBuffer } from '../../protocol'
 
 export const errorListener = (
   server: BasedServer,
   obs: ActiveObservable,
-  err: Error | BasedErrorData<BasedErrorCode.FunctionError>
+  err: Error | ObservableError
 ) => {
   delete obs.cache
   delete obs.diffCache
@@ -49,13 +49,13 @@ export const errorListener = (
   if (obs.functionObserveClients.size) {
     obs.functionObserveClients.forEach((fnUpdate) => {
       fnUpdate(
-        obs.cache,
+        obs.rawData,
         obs.checksum,
+        obs.error,
+        obs.cache,
         obs.diffCache,
         obs.previousChecksum,
-        obs.isDeflate,
-        obs.rawData,
-        obs.error
+        obs.isDeflate
       )
     })
   }
