@@ -41,6 +41,12 @@ export const convertDataToBasedError = (
   payload: BasedErrorData,
   stack?: string
 ): BasedError => {
+  if (!payload || typeof payload !== 'object') {
+    const err = new BasedError(`Payload: ${payload}`)
+    err.code = BasedErrorCode.FunctionError
+    err.name = 'Invalid returned payload'
+    return err
+  }
   const { message, code } = payload
   const msg =
     message[0] === '[' ? message : `[${BasedErrorCode[code]}] ` + message
