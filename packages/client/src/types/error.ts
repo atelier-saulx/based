@@ -48,8 +48,13 @@ export const convertDataToBasedError = (
     return err
   }
   const { message, code } = payload
-  const msg =
-    message[0] === '[' ? message : `[${BasedErrorCode[code]}] ` + message
+  const msg = message
+    ? message[0] === '['
+      ? message
+      : `[${BasedErrorCode[code]}] ` + message
+    : !code
+    ? JSON.stringify(payload, null, 2)
+    : 'Cannot read error msg'
   const error = new BasedError(msg)
   error.stack = stack ? msg + ' ' + stack : msg
   error.name = BasedErrorCode[code]
