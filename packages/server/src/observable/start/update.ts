@@ -35,6 +35,7 @@ export const updateListener = (
   if (checksum !== obs.checksum) {
     let encodedData: Uint8Array
     if (reusedData) {
+      // if reusedData we assume forwarding of all data
       obs.reusedCache = true
       encodedData = reusedData
       if (diff) {
@@ -51,7 +52,19 @@ export const updateListener = (
       obs.reusedCache = false
       const buff = valueToBuffer(data)
 
-      if (previousChecksum === undefined) {
+      if (diff) {
+        if (typeof data === 'object' && data !== null) {
+          obs.rawData = data
+          if (!obs.checksum || diff === true) {
+            diff = null
+          } else {
+            obs.previousChecksum = obs.checksum
+          }
+        } else {
+          delete obs.rawData
+          diff = null
+        }
+      } else if (previousChecksum === undefined) {
         if (typeof data === 'object' && data !== null) {
           if (obs.rawData) {
             diff = createPatch(obs.rawData, data)
@@ -63,7 +76,7 @@ export const updateListener = (
         }
       }
 
-      // keep track globally of total mem usage
+      // TODO: Keep track globally of total mem usage
       ;[encodedData, isDeflate] = encodeObservableResponse(
         obs.id,
         checksum,
