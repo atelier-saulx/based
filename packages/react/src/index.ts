@@ -2,21 +2,19 @@ import {
   useContext,
   createContext,
   createElement,
-  ReactNode,
   useState,
   useEffect,
+  FC,
+  ReactNode,
 } from 'react'
 import { BasedClient, AuthState } from '@based/client'
 
-const Ctx = createContext<BasedClient>()
+const Ctx = createContext<BasedClient>(null)
 
-export const Provider = ({
-  client,
-  children,
-}: {
+export const Provider: FC<{
   client: BasedClient
   children: ReactNode
-}) => {
+}> = ({ client, children }) => {
   return createElement(Ctx.Provider, { value: client }, children)
 }
 
