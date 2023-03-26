@@ -10,7 +10,7 @@
   },
   "sideEffects": false,
   "dependencies": {
-    "@saulx/utils": "^3.2.1"
+    "@saulx/utils": "^3.2.2"
   },
   "devDependencies": {
     "ts-node": "10.9.1",
