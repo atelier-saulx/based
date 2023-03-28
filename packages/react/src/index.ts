@@ -60,7 +60,7 @@ export const useConnected = () => {
   return { connected }
 }
 
-export const useQuery = (
+export const useQuery = <T = any>(
   name?: string,
   payload?: any,
   opts?: {
@@ -68,7 +68,7 @@ export const useQuery = (
   }
 ): {
   loading: boolean
-  data?: any
+  data?: T
   checksum?: number
 } => {
   const client: BasedClient = useContext(Ctx)
