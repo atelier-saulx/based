@@ -215,6 +215,7 @@ export async function createSimpleServer(
           }
         }),
       route: ({ server, path, name }) => {
+        // TODO: too slow will create a dedicated ROUTE thing later
         let rootFn
         if (path) {
           for (const name in functionStore) {
@@ -226,15 +227,18 @@ export async function createSimpleServer(
               rootFn = functionStore[name]
             }
           }
-          for (const name in server.functions.specs) {
-            const fnPath = server.functions.specs[name].path
-            if (fnPath === path) {
-              return server.functions.specs[name]
-            }
-            if (!rootFn && fnPath === '/') {
-              rootFn = server.functions.specs[name]
-            }
-          }
+          // this will not work for now... will go into ROUTES
+          // addRoutes // addSpecs(, true) // makes them info routes as well
+          // easier to reaosn about
+          // for (const name in server.functions.specs) {
+          //   const fnPath = server.functions.specs[name].path
+          //   if (fnPath === path) {
+          //     return server.functions.specs[name]
+          //   }
+          //   if (!rootFn && fnPath === '/') {
+          //     rootFn = server.functions.specs[name]
+          //   }
+          // }
         }
         return (
           functionStore[name] || server.functions.specs[name] || rootFn || null
