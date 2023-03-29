@@ -17,8 +17,14 @@ const publish: IsAuthorizedHandler<
   if (!channel) {
     return
   }
+
   try {
-    spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+    if (spec.relay) {
+      const client = server.clients[spec.relay]
+      client.channel(channel.name, channel.payload).publish(payload)
+    } else {
+      spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+    }
   } catch (err) {
     sendError(server, ctx, BasedErrorCode.FunctionError, {
       channelId: id,

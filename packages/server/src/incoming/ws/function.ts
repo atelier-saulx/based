@@ -22,7 +22,38 @@ import { readStream } from '@saulx/utils'
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
   BasedFunctionRoute
-> = async (route, spec, server, ctx, payload, requestId) => {
+> = (route, spec, server, ctx, payload, requestId) => {
+  if (spec.relay) {
+    const client = server.clients[spec.relay]
+    if (!client) {
+      sendError(server, ctx, BasedErrorCode.FunctionError, {
+        route,
+        requestId,
+        err: new Error('Cannot find client ' + spec.relay),
+      })
+      return
+    }
+
+    client
+      .call(spec.name, payload)
+      .then(async (v) => {
+        ctx.session?.ws.send(
+          encodeFunctionResponse(requestId, valueToBuffer(v)),
+          true,
+          false
+        )
+      })
+      .catch((err) => {
+        sendError(server, ctx, BasedErrorCode.FunctionError, {
+          route,
+          requestId,
+          err,
+        })
+      })
+
+    return
+  }
+
   spec
     .function(server.client, payload, ctx)
     .then(async (v) => {

@@ -107,6 +107,7 @@ export class BasedFunctions {
 
   async update(name: string, checksum: number) {
     const prevSpec = this.specs[name]
+
     if (prevSpec && prevSpec.checksum !== checksum) {
       if (this.beingUninstalled[name]) {
         delete this.beingUninstalled[name]

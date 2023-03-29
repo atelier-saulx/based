@@ -3,6 +3,7 @@ import { isQueryFunctionSpec } from '../../functions'
 import { updateListener } from './update'
 import { errorListener } from './error'
 import { ObservableUpdateFunction } from '../types'
+import { relay } from './relay'
 
 export const start = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -48,28 +49,43 @@ export const start = (server: BasedServer, id: number) => {
 
   const startId = ++obs.startId
 
-  try {
-    const r = spec.function(server.client, payload, update, (err) => {
-      errorListener(server, obs, err)
-    })
-    if (r instanceof Promise) {
-      r.then((close) => {
-        if (obs.isDestroyed || startId !== obs.startId) {
-          close()
-        } else {
-          obs.closeFunction = close
-        }
-      }).catch((err) => {
-        if (!(obs.isDestroyed || startId !== obs.startId)) {
-          errorListener(server, obs, err)
-        }
-      })
-    } else {
-      obs.closeFunction = r
+  if (spec.relay) {
+    const client = server.clients[spec.relay]
+
+    if (!client) {
+      errorListener(
+        server,
+        obs,
+        new Error(`Relay client ${spec.relay} does not exist`)
+      )
+      return
     }
-  } catch (err) {
-    if (!(obs.isDestroyed || startId !== obs.startId)) {
-      errorListener(server, obs, err)
+
+    relay(server, obs, client, update)
+  } else {
+    try {
+      const r = spec.function(server.client, payload, update, (err) => {
+        errorListener(server, obs, err)
+      })
+      if (r instanceof Promise) {
+        r.then((close) => {
+          if (obs.isDestroyed || startId !== obs.startId) {
+            close()
+          } else {
+            obs.closeFunction = close
+          }
+        }).catch((err) => {
+          if (!(obs.isDestroyed || startId !== obs.startId)) {
+            errorListener(server, obs, err)
+          }
+        })
+      } else {
+        obs.closeFunction = r
+      }
+    } catch (err) {
+      if (!(obs.isDestroyed || startId !== obs.startId)) {
+        errorListener(server, obs, err)
+      }
     }
   }
 }

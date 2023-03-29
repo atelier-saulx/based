@@ -5,6 +5,8 @@ import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 
+// ADD default persist (on client)
+
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 

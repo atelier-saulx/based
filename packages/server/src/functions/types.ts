@@ -98,13 +98,23 @@ export type BasedInstallableFunctionSpec = {
   authorize?: Authorize
 }
 
-export type BasedQueryFunctionSpec = {
-  function: BasedQueryFunction
-  /** How long should the query function remain active after all subscribers are gone, in ms */
-  closeAfterIdleTime?: number
-  /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
-  httpResponse?: HttpResponse
-} & BasedQueryFunctionRoute &
+export type BasedQueryFunctionSpec = (
+  | {
+      relay?: false
+      function: BasedQueryFunction
+      /** How long should the query function remain active after all subscribers are gone, in ms */
+      closeAfterIdleTime?: number
+      /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
+      httpResponse?: HttpResponse
+    }
+  | {
+      relay: string
+      function?: BasedQueryFunction
+      closeAfterIdleTime?: number
+      httpResponse?: HttpResponse
+    }
+) &
+  BasedQueryFunctionRoute &
   BasedInstallableFunctionSpec
 
 export type BasedStreamFunctionSpec = {
@@ -115,24 +125,50 @@ export type BasedStreamFunctionSpec = {
 } & BasedStreamFunctionRoute &
   BasedInstallableFunctionSpec
 
-export type BasedFunctionSpec = {
-  function: BasedFunction
-  /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
-  httpResponse?: HttpResponse
-  /** Maximum allowed execution time, in ms */
-  maxExecTime?: number
-} & BasedFunctionRoute &
+export type BasedFunctionSpec = (
+  | {
+      relay: string
+      function?: BasedFunction
+      /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
+      httpResponse?: HttpResponse
+      /** Maximum allowed execution time, in ms */
+      maxExecTime?: number
+    }
+  | {
+      relay?: false
+      function: BasedFunction
+      /** When in an HTTP context, this function is called to wrap the return value of the BasedFunction, and inject headers and a status code */
+      httpResponse?: HttpResponse
+      /** Maximum allowed execution time, in ms */
+      maxExecTime?: number
+    }
+) &
+  BasedFunctionRoute &
   BasedInstallableFunctionSpec
 
-export type BasedChannelFunctionSpec = {
-  function: BasedChannelFunction
-  /** Publish allows publishing to channels */
-  publish: BasedChannelPublishFunction
-  /** How long should the channel remain active after all subscribers ae gone, in ms */
-  closeAfterIdleTime?: number
-  /** When in an HTTP context, this function is called to wrap the return value of the publish endpoint, and inject headers and a status code */
-  httpResponse?: HttpResponse
-} & BasedChannelFunctionRoute &
+export type BasedChannelFunctionSpec = (
+  | {
+      relay?: false
+      function: BasedChannelFunction
+      /** Publish allows publishing to channels */
+      publish: BasedChannelPublishFunction
+      /** How long should the channel remain active after all subscribers ae gone, in ms */
+      closeAfterIdleTime?: number
+      /** When in an HTTP context, this function is called to wrap the return value of the publish endpoint, and inject headers and a status code */
+      httpResponse?: HttpResponse
+    }
+  | {
+      relay: string
+      function?: BasedChannelFunction
+      /** Publish allows publishing to channels */
+      publish?: BasedChannelPublishFunction
+      /** How long should the channel remain active after all subscribers ae gone, in ms */
+      closeAfterIdleTime?: number
+      /** When in an HTTP context, this function is called to wrap the return value of the publish endpoint, and inject headers and a status code */
+      httpResponse?: HttpResponse
+    }
+) &
+  BasedChannelFunctionRoute &
   BasedInstallableFunctionSpec
 
 export type BasedRoute =

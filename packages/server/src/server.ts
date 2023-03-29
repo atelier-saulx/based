@@ -35,6 +35,7 @@ type RateLimit = {
 }
 
 export type ServerOptions = {
+  clients?: { [key: string]: any } // for now any...
   port?: number
   key?: string
   geo?: (ctx: Context) => Promise<Geo>
@@ -59,6 +60,8 @@ export type ServerOptions = {
 
 // extend emitter
 export class BasedServer {
+  public clients: { [key: string]: any } // for now any...
+
   public client: BasedServerFunctionClient
 
   public functions: BasedFunctions
@@ -150,6 +153,7 @@ export class BasedServer {
     if (opts.silent) {
       this.silent = opts.silent
     }
+    this.clients = opts.clients ?? {}
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
     if (opts.client) {

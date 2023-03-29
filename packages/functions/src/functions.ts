@@ -169,7 +169,8 @@ export type BasedFunctionConfig =
       httpResponse?: HttpResponse
       /** How long should the query function remain active after all subscribers are gone, in ms */
       closeAfterIdleTime?: number
-    } & FunctionConfigShared)
+    } &
+      FunctionConfigShared)
   | ({
       /** Function type `channel, function, query, stream, authorize` */
       type: 'stream'

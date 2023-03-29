@@ -101,7 +101,27 @@ export const startChannel = (
     return
   }
 
-  if (!fromInstall || channel.isActive) {
+  if (spec.relay) {
+    const client = server.clients[spec.relay]
+    if (!client) {
+      errorChannelListener(
+        server,
+        channel,
+        new Error(`Relay client ${spec.relay} does not exist`)
+      )
+      return
+    }
+    channel.closeFunction = client
+      .channel(channel.name, channel.payload)
+      .subscribe(
+        (msg) => {
+          updateChannelListener(server, channel, msg)
+        },
+        (err) => {
+          errorChannelListener(server, channel, err)
+        }
+      )
+  } else if (!fromInstall || channel.isActive) {
     channel.isActive = true
     try {
       channel.closeFunction = spec.function(
