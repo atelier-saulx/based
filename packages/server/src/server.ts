@@ -17,6 +17,7 @@ import picocolors = require('picocolors')
 import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi'
 import { ActiveChannel } from './channel'
 import util from 'node:util'
+import type { BasedClient } from '@based/client'
 
 type EventMap = {
   error: BasedErrorData | BasedErrorCode
@@ -35,7 +36,7 @@ type RateLimit = {
 }
 
 export type ServerOptions = {
-  clients?: { [key: string]: any } // for now any...
+  clients?: { [key: string]: BasedClient }
   port?: number
   key?: string
   geo?: (ctx: Context) => Promise<Geo>
@@ -60,7 +61,7 @@ export type ServerOptions = {
 
 // extend emitter
 export class BasedServer {
-  public clients: { [key: string]: any } // for now any...
+  public clients: { [key: string]: BasedClient }
 
   public client: BasedServerFunctionClient
 
