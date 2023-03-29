@@ -51,7 +51,6 @@ export const start = (server: BasedServer, id: number) => {
 
   if (spec.relay) {
     const client = server.clients[spec.relay]
-
     if (!client) {
       errorListener(
         server,
@@ -60,7 +59,6 @@ export const start = (server: BasedServer, id: number) => {
       )
       return
     }
-
     relay(server, obs, client, update)
   } else {
     try {
