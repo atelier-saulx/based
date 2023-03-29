@@ -64,6 +64,10 @@ export class BasedFunctions {
   addSpecs(specs: BasedFullFunctionSpec) {
     for (const key in specs) {
       const s = specs[key]
+      if (!s.uninstallAfterIdleTime) {
+        // When this is used you prob dont want to uninstall anything...
+        s.uninstallAfterIdleTime = -1
+      }
       this.updateInternal(s)
     }
   }

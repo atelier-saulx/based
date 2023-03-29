@@ -283,7 +283,7 @@ export class BasedClient extends Emitter {
     .subscribe(event => console.info(event))
 
   client.channel('events', { type: 'pageview' })
-    .publish({ type: 'pageview', path: '/home' })
+    .publish({ path: '/home' })
   ```
    */
   channel(name: string, payload?: any): BasedChannel {

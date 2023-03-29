@@ -214,8 +214,7 @@ export async function createSimpleServer(
             return null
           }
         }),
-      route: ({ path, name }) => {
-        // TODO fix typez
+      route: ({ server, path, name }) => {
         let rootFn
         if (path) {
           for (const name in functionStore) {
@@ -227,8 +226,19 @@ export async function createSimpleServer(
               rootFn = functionStore[name]
             }
           }
+          for (const name in server.functions.specs) {
+            const fnPath = server.functions.specs[name].path
+            if (fnPath === path) {
+              return server.functions.specs[name]
+            }
+            if (!rootFn && fnPath === '/') {
+              rootFn = server.functions.specs[name]
+            }
+          }
         }
-        return functionStore[name] || rootFn || null
+        return (
+          functionStore[name] || server.functions.specs[name] || rootFn || null
+        )
       },
     },
   }
