@@ -7,6 +7,7 @@ import {
   isStreamFunctionSpec,
   isQueryFunctionRoute,
   isChannelFunctionSpec,
+  BasedFullFunctionSpec,
 } from './types'
 import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -57,6 +58,13 @@ export class BasedFunctions {
     this.server = server
     if (config) {
       this.updateConfig(config)
+    }
+  }
+
+  addSpecs(specs: BasedFullFunctionSpec) {
+    for (const key in specs) {
+      const s = specs[key]
+      this.updateInternal(s)
     }
   }
 

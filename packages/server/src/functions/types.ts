@@ -249,3 +249,10 @@ export function isRoute(route: any): route is BasedRoute {
   }
   return false
 }
+
+export type BasedFullFunctionSpec = {
+  [name: string]: BasedSpec & {
+    maxPayloadSize?: number
+    rateLimitTokens?: number
+  }
+}
