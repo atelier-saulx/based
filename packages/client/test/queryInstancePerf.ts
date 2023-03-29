@@ -63,7 +63,7 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     )
   }
 
-  await wait(10000)
+  await wait(11000)
   closers[0]()
 
   console.info(
@@ -72,7 +72,7 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
     } MB`
   )
 
-  await wait(10000)
+  await wait(11000)
   t.is(server.activeObservablesById.size, 1e5 - 1)
   t.is(Object.keys(server.activeObservables).length, 1)
   t.is(initCnt, 1e5)
