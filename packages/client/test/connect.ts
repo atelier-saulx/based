@@ -1,33 +1,43 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 
 test.serial('connect', async (t) => {
-  const serverA = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const serverA = new BasedServer({
     port: 9910,
     functions: {
-      hello: async (based, payload) => {
-        if (payload) {
-          return payload.length
-        }
-        return 'flap'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          function: async (based, payload) => {
+            if (payload) {
+              return payload.length
+            }
+            return 'flap'
+          },
+        },
       },
     },
   })
+  await serverA.start()
 
-  const serverB = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const serverB = new BasedServer({
     port: 9911,
     functions: {
-      hello: async (based, payload) => {
-        if (payload) {
-          return payload.length
-        }
-        return 'flip'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          function: async (based, payload) => {
+            if (payload) {
+              return payload.length
+            }
+            return 'flip'
+          },
+        },
       },
     },
   })
+  await serverB.start()
 
   const client = new BasedClient()
 
