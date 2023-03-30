@@ -278,12 +278,12 @@ export class BasedFunctions {
     if (this.updateRoute(spec) === null) {
       return false
     }
-    if (!spec.uninstallAfterIdleTime) {
+    if (spec.uninstallAfterIdleTime === undefined) {
       spec.uninstallAfterIdleTime = this.config.uninstallAfterIdleTime
     }
     if (spec.timeoutCounter === undefined) {
       spec.timeoutCounter =
-        spec.uninstallAfterIdleTime === 0
+        spec.uninstallAfterIdleTime === 0 || spec.uninstallAfterIdleTime === -1
           ? -1
           : Math.ceil(spec.uninstallAfterIdleTime / 1e3)
     }
