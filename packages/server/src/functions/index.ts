@@ -88,6 +88,7 @@ export class BasedFunctions {
         channel: 60e3, // 3 1 Min
       }
     }
+
     if (this.config.route === undefined) {
       this.config.route = ({ name, path }) => {
         if (path) {
@@ -156,8 +157,8 @@ export class BasedFunctions {
       if (s === null) {
         continue
       }
-      if (!s.uninstallAfterIdleTime) {
-        s.uninstallAfterIdleTime = -1
+      if (s.uninstallAfterIdleTime === undefined) {
+        s.uninstallAfterIdleTime = 0
       }
       this.updateInternal(s)
     }
@@ -167,7 +168,7 @@ export class BasedFunctions {
     for (const key in routes) {
       const nRoute = this.completeRoute(this.routes[key], key)
       if (nRoute !== null) {
-        this.updateRoute(nRoute)
+        this.updateRoute(nRoute, key)
       }
     }
   }
@@ -187,6 +188,7 @@ export class BasedFunctions {
         rateLimitTokens: number
       }) {
     if (this.completeRoute(spec, name) === null) {
+      console.error('cannot completeSpec', name, spec)
       return null
     }
     // if (!spec.function) {
@@ -237,7 +239,7 @@ export class BasedFunctions {
         route.maxPayloadSize = this.maxPayLoadSizeDefaults.function
       }
     }
-    if (!nRoute.rateLimitTokens) {
+    if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
     }
     return nRoute
@@ -247,14 +249,15 @@ export class BasedFunctions {
     route: BasedRoute & {
       maxPayloadSize?: number
       rateLimitTokens?: number
-    }
+    },
+    name?: string
   ):
     | null
     | (BasedRoute & {
         maxPayloadSize: number
         rateLimitTokens: number
       }) {
-    const realRoute = this.completeRoute(route)
+    const realRoute = this.completeRoute(route, name)
     if (realRoute === null) {
       return null
     }
