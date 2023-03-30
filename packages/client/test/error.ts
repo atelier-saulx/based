@@ -1,6 +1,6 @@
 import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 import { BasedQueryFunction, ObservableUpdateFunction } from '@based/functions'
 
@@ -34,18 +34,29 @@ const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
   const coreClient = new BasedClient()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      throwingFunction,
-      errorFunction,
-    },
-    queryFunctions: {
-      counter,
-      errorTimer,
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        throwingFunction: {
+          function: throwingFunction,
+        },
+        errorFunction: {
+          function: errorFunction,
+        },
+        counter: {
+          query: true,
+          function: counter,
+        },
+        errorTimer: {
+          query: true,
+          function: errorTimer,
+        },
+      },
     },
   })
+  await server.start()
 
   t.teardown(() => {
     coreClient.disconnect()
