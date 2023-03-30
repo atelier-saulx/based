@@ -1,40 +1,48 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 import { wait } from '@saulx/utils'
+import { Authorize, BasedFunction, BasedQueryFunction } from '@based/functions'
 
 const setup = async () => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: async (based, payload) => {
-        if (payload) {
-          return payload
-        }
-        return 'flap'
-      },
-    },
-    queryFunctions: {
-      counter: async (based, payload, update) => {
-        let cnt = 0
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          function: (async (_, payload) => {
+            if (payload) {
+              return payload
+            }
+            return 'flap'
+          }) as BasedFunction,
+        },
+        counter: {
+          query: true,
+          function: (async (_, __, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          }) as BasedQueryFunction,
+        },
       },
     },
     auth: {
-      authorize: async (based, ctx) => {
+      authorize: (async (_, ctx) => {
         return ctx.session?.authState.token === 'mock_token'
-      },
+      }) as Authorize,
     },
   })
+
+  await server.start()
   return { client, server }
 }
 
