@@ -1,36 +1,68 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('functions', async (t) => {
   const coreClient = new BasedClient()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      checkPayload: async (based, payload) => {
-        return payload.power
-      },
-      hello: {
-        maxPayloadSize: 1e8,
-        function: async (based, payload) => {
-          if (payload) {
-            return JSON.stringify(payload).length
-          }
-          return 'flap'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        checkPayload: {
+          function: async (based, payload) => {
+            return payload.power
+          },
         },
-      },
-      lotsOfData: async () => {
-        let str = ''
-        for (let i = 0; i < 200000; i++) {
-          str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-        }
-        return str
+        hello: {
+          maxPayloadSize: 1e8,
+          function: async (based, payload) => {
+            if (payload) {
+              return JSON.stringify(payload).length
+            }
+            return 'flap'
+          },
+        },
+        lotsOfData: {
+          function: async () => {
+            let str = ''
+            for (let i = 0; i < 200000; i++) {
+              str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+            }
+            return str
+          },
+        },
       },
     },
   })
+  await server.start()
+  // const server = await createSimpleServer({
+  //   uninstallAfterIdleTime: 1e3,
+  //   port: 9910,
+  //   functions: {
+  //     checkPayload: async (based, payload) => {
+  //       return payload.power
+  //     },
+  //     hello: {
+  //       maxPayloadSize: 1e8,
+  //       function: async (based, payload) => {
+  //         if (payload) {
+  //           return JSON.stringify(payload).length
+  //         }
+  //         return 'flap'
+  //       },
+  //     },
+  //     lotsOfData: async () => {
+  //       let str = ''
+  //       for (let i = 0; i < 200000; i++) {
+  //         str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+  //       }
+  //       return str
+  //     },
+  //   },
+  // })
 
   server.on('error', console.error)
 
