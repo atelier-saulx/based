@@ -91,12 +91,15 @@ export class BasedFunctions {
     if (this.config.route === undefined) {
       this.config.route = ({ name, path }) => {
         if (path) {
-          name = this.getNameFromPath(path)
-          if (!name) {
-            name = this.paths['/']
+          const fromPath = this.getNameFromPath(path)
+          const r = this.routes[fromPath] || this.routes[name]
+          if (r) {
+            return r
           }
-        }
-        if (!name) {
+          const rootPath = this.paths['/']
+          if (rootPath) {
+            return this.routes[rootPath]
+          }
           return null
         }
         return this.routes[name]
