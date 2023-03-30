@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import {
   isWsContext,
   AuthState,
@@ -11,28 +11,33 @@ import {
 const setup = async () => {
   const client = new BasedClient()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: {
-        maxPayloadSize: 1e8,
-        function: async (based, payload) => {
-          if (payload) {
-            return payload.length
-          }
-          return 'flap'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          maxPayloadSize: 1e8,
+          function: async (based, payload) => {
+            if (payload) {
+              return payload.length
+            }
+            return 'flap'
+          },
         },
-      },
-      lotsOfData: async () => {
-        let str = ''
-        for (let i = 0; i < 200000; i++) {
-          str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-        }
-        return str
+        lotsOfData: {
+          function: async () => {
+            let str = ''
+            for (let i = 0; i < 200000; i++) {
+              str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
+            }
+            return str
+          },
+        },
       },
     },
   })
+  await server.start()
   return { client, server }
 }
 

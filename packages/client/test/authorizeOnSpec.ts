@@ -1,68 +1,70 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('Specific authorize on spec', async (t) => {
   let authCalled = 0
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
-    closeAfterIdleTime: { channel: 10, query: 10 },
+  const server = new BasedServer({
     port: 9910,
     rateLimit: {
       ws: 1e9,
       drain: 1e3,
       http: 1e3,
     },
-    streams: {
-      snax: {
-        authorize: async () => {
-          authCalled++
-          return true
-        },
-        function: async () => {
-          return 'bla'
-        },
-      },
-    },
-    queryFunctions: {
-      slax: {
-        authorize: async () => {
-          authCalled++
-          return true
-        },
-        function: (based, payload, update) => {
-          update('slax')
-          return () => {}
-        },
-      },
-    },
-    channels: {
-      klax: {
-        authorize: async () => {
-          authCalled++
-          return true
-        },
-        publish: () => {},
-        function: (based, payload, id, update) => {
-          update('slax')
-          return () => {}
-        },
-      },
-    },
     functions: {
-      bla: async () => 'x',
-      hello: {
-        authorize: async () => {
-          authCalled++
-          return true
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: { channel: 10, query: 10 },
+      specs: {
+        snax: {
+          stream: true,
+          authorize: async () => {
+            authCalled++
+            return true
+          },
+          function: async () => {
+            return 'bla'
+          },
         },
-        function: async () => {
-          return 'hello'
+        slax: {
+          query: true,
+          authorize: async () => {
+            authCalled++
+            return true
+          },
+          function: (_, __, update) => {
+            update('slax')
+            return () => {}
+          },
+        },
+        klax: {
+          channel: true,
+          authorize: async () => {
+            authCalled++
+            return true
+          },
+          publish: () => {},
+          function: (_, __, ___, update) => {
+            update('slax')
+            return () => {}
+          },
+        },
+        bla: {
+          function: async () => 'x',
+        },
+        hello: {
+          authorize: async () => {
+            authCalled++
+            return true
+          },
+          function: async () => {
+            return 'hello'
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient({
     url: 'ws://localhost:9910',
   })
@@ -83,6 +85,5 @@ test.serial('Specific authorize on spec', async (t) => {
   })
   t.is(authCalled, 5)
   await wait(1e3)
-  t.is(1, 1)
   await server.destroy()
 })
