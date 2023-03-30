@@ -69,16 +69,19 @@ export class BasedFunctions {
     }
   }
 
-  updateConfig(config: FunctionConfig) {
-    // set all defaults
+  updateConfig(fullConfig: FunctionConfig) {
+    const { routes, specs, ...config } = fullConfig
+
     if (this.config) {
       deepMerge(this.config, config)
     } else {
       this.config = config
     }
+
     if (this.config.uninstallAfterIdleTime === undefined) {
       this.config.uninstallAfterIdleTime = 60e3 // 1 min
     }
+
     if (this.config.closeAfterIdleTime === undefined) {
       this.config.closeAfterIdleTime = {
         query: 3e3, // 3 seconds
@@ -112,9 +115,18 @@ export class BasedFunctions {
       }
     }
 
+    if (routes) {
+      this.addRoutes(routes)
+    }
+
+    if (specs) {
+      this.addSpecs(specs)
+    }
+
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
+
     this.uninstallLoop()
   }
 
@@ -209,7 +221,7 @@ export class BasedFunctions {
         console.error('No route name!', route)
         return null
       }
-      nRoute[name] = name
+      nRoute.name = name
     }
     if (!route.maxPayloadSize) {
       if (isChannelFunctionRoute(nRoute)) {

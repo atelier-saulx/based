@@ -41,6 +41,8 @@ export type FunctionConfig = {
     name: string
     function: BasedSpec
   }) => Promise<boolean>
+  specs?: BasedSpecs
+  routes?: BasedRoutes
 }
 
 // TODO: add authorize
@@ -250,16 +252,20 @@ export function isRoute(route: any): route is BasedRoute {
   return false
 }
 
-export type BasedRoutes = Partial<{
-  [name: string]: BasedRoute & {
-    maxPayloadSize?: number
-    rateLimitTokens?: number
-  }
-}>
+export type BasedRoutes = {
+  [name: string]: Partial<
+    BasedRoute & {
+      maxPayloadSize?: number
+      rateLimitTokens?: number
+    }
+  >
+}
 
-export type BasedSpecs = Partial<{
-  [name: string]: BasedSpec & {
-    maxPayloadSize?: number
-    rateLimitTokens?: number
-  }
-}>
+export type BasedSpecs = {
+  [name: string]: Partial<
+    BasedSpec & {
+      maxPayloadSize?: number
+      rateLimitTokens?: number
+    }
+  >
+}

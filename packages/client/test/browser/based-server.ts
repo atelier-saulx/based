@@ -1,4 +1,4 @@
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedFunction, BasedQueryFunction } from '@based/functions'
 import fs from 'node:fs'
 import { join } from 'path'
@@ -66,8 +66,7 @@ const start = async () => {
     }
   })
 
-  await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 8081,
     auth: {
       authorize: async (based, ctx, name) => {
@@ -84,71 +83,88 @@ const start = async () => {
       },
     },
     functions: {
-      file: {
-        headers: ['range'],
-        function: async (based, payload) => {
-          const x = fs.statSync(files[payload.id].file)
-          return {
-            file: fs.createReadStream(files[payload.id].file),
-            mimeType: files[payload.id].mimeType,
-            size: x.size,
-          }
-        },
-        httpResponse: async (based, payload, responseData, send, ctx) => {
-          ctx.session?.res.cork(() => {
-            ctx.session?.res.writeStatus('200 OK')
-            ctx.session?.res.writeHeader('Content-Type', responseData.mimeType)
-            responseData.file.on('data', (d) => {
-              ctx.session?.res.write(d)
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        file: {
+          headers: ['range'],
+          function: async (based, payload) => {
+            const x = fs.statSync(files[payload.id].file)
+            return {
+              file: fs.createReadStream(files[payload.id].file),
+              mimeType: files[payload.id].mimeType,
+              size: x.size,
+            }
+          },
+          httpResponse: async (based, payload, responseData, send, ctx) => {
+            ctx.session?.res.cork(() => {
+              ctx.session?.res.writeStatus('200 OK')
+              ctx.session?.res.writeHeader(
+                'Content-Type',
+                responseData.mimeType
+              )
+              responseData.file.on('data', (d) => {
+                ctx.session?.res.write(d)
+              })
+              responseData.file.on('end', () => {
+                ctx.session?.res.end()
+              })
             })
-            responseData.file.on('end', () => {
-              ctx.session?.res.end()
-            })
-          })
+          },
+        },
+        hello: {
+          function: hello,
+        },
+        brokenFiles: {
+          stream: true,
+          function: async () => {
+            throw new Error('broken')
+          },
+        },
+        notAllowedFiles: {
+          stream: true,
+          function: async () => {
+            return { hello: true }
+          },
+        },
+        files: {
+          maxPayloadSize: 1e10,
+          stream: true,
+          function: async (based, x) => {
+            const { stream, mimeType, payload, size } = x
+            const id = x.fileName || 'untitled'
+            x.stream.on('progress', (p) =>
+              console.info(p, x.fileName, x.mimeType, stream)
+            )
+            const p = join(TMP, id + '.' + x.extension)
+            stream.pipe(fs.createWriteStream(p))
+            files[id] = { file: p, mimeType }
+            return {
+              success: 'filetime',
+              id,
+              mimeType,
+              payload,
+              size,
+              rb: stream.receivedBytes,
+            }
+          },
+        },
+        counter: {
+          query: true,
+          function: counter,
+        },
+        staticSub: {
+          query: true,
+          function: staticSub,
+        },
+        staticSubHuge: {
+          query: true,
+          function: staticSubHuge,
         },
       },
-      hello,
-      brokenFiles: {
-        stream: true,
-        function: async () => {
-          throw new Error('broken')
-        },
-      },
-      notAllowedFiles: {
-        stream: true,
-        function: async () => {
-          return { hello: true }
-        },
-      },
-      files: {
-        maxPayloadSize: 1e10,
-        stream: true,
-        function: async (based, x) => {
-          const { stream, mimeType, payload, size } = x
-          const id = x.fileName || 'untitled'
-          x.stream.on('progress', (p) =>
-            console.info(p, x.fileName, x.mimeType, stream)
-          )
-          const p = join(TMP, id + '.' + x.extension)
-          stream.pipe(fs.createWriteStream(p))
-          files[id] = { file: p, mimeType }
-          return {
-            success: 'filetime',
-            id,
-            mimeType,
-            payload,
-            size,
-            rb: stream.receivedBytes,
-          }
-        },
-      },
-    },
-    queryFunctions: {
-      counter,
-      staticSub,
-      staticSubHuge,
     },
   })
+
+  server.start()
 }
 
 start()
