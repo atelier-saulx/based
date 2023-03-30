@@ -58,7 +58,36 @@ export type ServerOptions = {
   }
 }
 
-// extend emitter
+/**
+Based server
+
+```js
+const server = new BasedServer({
+  port: 9910,
+  functions: {
+    specs: {
+      hello: {
+        function: async () => 'hello'
+      },
+      counter: {
+        type: 'query',
+        function: () => () => {}
+      }
+    }
+  }
+})
+
+server.functions.addSpecs({ 
+  hello: { function: async () => 'hello' } 
+})
+
+server.functions.addRoutes({ 
+  bla: { type: 'query  } 
+})
+
+await server.start()
+```
+*/
 export class BasedServer {
   public clients: { [key: string]: any } // for now any...
 

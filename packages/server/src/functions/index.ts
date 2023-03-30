@@ -4,10 +4,12 @@ import {
   BasedSpec,
   FunctionConfig,
   isQueryFunctionSpec,
-  isStreamFunctionSpec,
   isQueryFunctionRoute,
   isChannelFunctionSpec,
-  BasedFullFunctionSpec,
+  BasedSpecs,
+  BasedRoutes,
+  isChannelFunctionRoute,
+  isStreamFunctionRoute,
 } from './types'
 import { deepMerge, deepEqual } from '@saulx/utils'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
@@ -43,8 +45,14 @@ export class BasedFunctions {
   } = {}
 
   specs: {
-    // is required here (will be filled in automaticly)
     [name: string]: BasedSpec & {
+      maxPayloadSize: number
+      rateLimitTokens: number
+    }
+  } = {}
+
+  routes: {
+    [name: string]: BasedRoute & {
       maxPayloadSize: number
       rateLimitTokens: number
     }
@@ -61,45 +69,13 @@ export class BasedFunctions {
     }
   }
 
-  addSpecs(specs: BasedFullFunctionSpec) {
-    for (const key in specs) {
-      const s = specs[key]
-      if (!s.uninstallAfterIdleTime) {
-        // When this is used you prob dont want to uninstall anything...
-        s.uninstallAfterIdleTime = -1
-      }
-      this.updateInternal(s)
-    }
-  }
-
-  uninstallLoop() {
-    this.unregisterTimeout = setTimeout(async () => {
-      const q = []
-      for (const name in this.specs) {
-        const spec = this.specs[name]
-        if (isQueryFunctionSpec(spec) && this.server.activeObservables[name]) {
-          updateTimeoutCounter(spec)
-        } else if (
-          isChannelFunctionSpec(spec) &&
-          this.server.activeChannels[name]
-        ) {
-          updateTimeoutCounter(spec)
-        } else if (fnIsTimedOut(spec)) {
-          q.push(this.uninstall(name, spec))
-        }
-      }
-      await Promise.all(q)
-      this.uninstallLoop()
-    }, 3e3)
-  }
-
   updateConfig(config: FunctionConfig) {
+    // set all defaults
     if (this.config) {
       deepMerge(this.config, config)
     } else {
       this.config = config
     }
-
     if (this.config.uninstallAfterIdleTime === undefined) {
       this.config.uninstallAfterIdleTime = 60e3 // 1 min
     }
@@ -109,57 +85,49 @@ export class BasedFunctions {
         channel: 60e3, // 3 1 Min
       }
     }
+    if (this.config.route === undefined) {
+      this.config.route = ({ name, path }) => {
+        if (path) {
+          name = this.getNameFromPath(path)
+          if (!name) {
+            name = this.paths['/']
+          }
+        }
+        if (!name) {
+          return null
+        }
+        return this.routes[name]
+      }
+    }
+
+    if (this.config.install === undefined) {
+      this.config.install = async ({ name }) => {
+        return this.getFromStore(name)
+      }
+    }
+
+    if (this.config.uninstall === undefined) {
+      this.config.uninstall = async () => {
+        return true
+      }
+    }
 
     if (this.unregisterTimeout) {
       clearTimeout(this.unregisterTimeout)
     }
-
     this.uninstallLoop()
   }
 
-  async update(name: string, checksum: number) {
-    const prevSpec = this.specs[name]
-
-    if (prevSpec && prevSpec.checksum !== checksum) {
-      if (this.beingUninstalled[name]) {
-        delete this.beingUninstalled[name]
-      }
-      const spec = await this.installGaurdedFromConfig(name)
-      await this.config.uninstall({
-        server: this.server,
-        function: prevSpec,
-        name,
-      })
-      if (spec) {
-        this.updateInternal(spec)
-      }
-    }
-  }
-
-  private async installGaurdedFromConfig(
-    name: string
-  ): Promise<BasedSpec | null> {
-    if (this.installsInProgress[name]) {
-      return this.installsInProgress[name]
-    }
-    this.installsInProgress[name] = this.config.install({
-      server: this.server,
-      name,
-    })
-    const s = await this.installsInProgress[name]
-    delete this.installsInProgress[name]
-    return s
+  route(name?: string, path?: string): BasedRoute | null {
+    return this.config.route({ server: this.server, name, path })
   }
 
   async install(name: string): Promise<BasedSpec | null> {
     let spec = this.getFromStore(name)
-
     if (spec) {
       return spec
     }
-
     spec = await this.installGaurdedFromConfig(name)
-
     if (spec) {
       this.updateInternal(spec)
       return this.getFromStore(name)
@@ -167,72 +135,147 @@ export class BasedFunctions {
     return null
   }
 
-  getNameFromPath(path: string): string {
-    return this.paths[path]
-  }
-
-  route(name?: string, path?: string): BasedRoute | null {
-    return this.config.route({ server: this.server, name, path })
-  }
-
-  getFromStore(name: string): BasedSpec | null {
-    const spec = this.specs[name]
-    if (spec) {
-      if (this.beingUninstalled[name]) {
-        delete this.beingUninstalled[name]
+  addSpecs(specs: BasedSpecs) {
+    for (const key in specs) {
+      const s = this.completeSpec(specs[key], key)
+      if (s === null) {
+        continue
       }
-      updateTimeoutCounter(spec)
-      return spec
+      if (!s.uninstallAfterIdleTime) {
+        s.uninstallAfterIdleTime = -1
+      }
+      this.updateInternal(s)
     }
-    return null
+  }
+
+  addRoutes(routes: BasedRoutes) {
+    for (const key in routes) {
+      const nRoute = this.completeRoute(this.routes[key], key)
+      if (nRoute !== null) {
+        this.updateRoute(nRoute)
+      }
+    }
+  }
+
+  completeSpec(
+    spec: Partial<
+      BasedSpec & {
+        maxPayloadSize?: number
+        rateLimitTokens?: number
+      }
+    >,
+    name?: string
+  ):
+    | null
+    | (BasedSpec & {
+        maxPayloadSize: number
+        rateLimitTokens: number
+      }) {
+    if (this.completeRoute(spec, name) === null) {
+      return null
+    }
+    // if (!spec.function) {
+    // if channel
+    // channel publish
+    // }
+    // spec.function
+    const nSpec = spec as BasedSpec & {
+      maxPayloadSize: number
+      rateLimitTokens: number
+    }
+    return nSpec
+  }
+
+  completeRoute(
+    route: Partial<
+      BasedRoute & {
+        maxPayloadSize?: number
+        rateLimitTokens?: number
+      }
+    >,
+    name?: string
+  ):
+    | null
+    | (BasedRoute & {
+        maxPayloadSize: number
+        rateLimitTokens: number
+      }) {
+    const nRoute = route as BasedRoute & {
+      maxPayloadSize: number
+      rateLimitTokens: number
+    }
+    if (!nRoute.name) {
+      if (!name) {
+        console.error('No route name!', route)
+        return null
+      }
+      nRoute[name] = name
+    }
+    if (!route.maxPayloadSize) {
+      if (isChannelFunctionRoute(nRoute)) {
+        route.maxPayloadSize = this.maxPayLoadSizeDefaults.channel
+      } else if (isQueryFunctionRoute(nRoute)) {
+        route.maxPayloadSize = this.maxPayLoadSizeDefaults.query
+      } else if (isStreamFunctionRoute(nRoute)) {
+        route.maxPayloadSize = this.maxPayLoadSizeDefaults.stream
+      } else {
+        route.maxPayloadSize = this.maxPayLoadSizeDefaults.function
+      }
+    }
+    if (!nRoute.rateLimitTokens) {
+      nRoute.rateLimitTokens = 1
+    }
+    return nRoute
+  }
+
+  updateRoute(
+    route: BasedRoute & {
+      maxPayloadSize?: number
+      rateLimitTokens?: number
+    }
+  ):
+    | null
+    | (BasedRoute & {
+        maxPayloadSize: number
+        rateLimitTokens: number
+      }) {
+    const realRoute = this.completeRoute(route)
+    if (realRoute === null) {
+      return null
+    }
+    if (realRoute.path) {
+      this.paths[realRoute.path] = realRoute.name
+    }
+    this.routes[route.name] = realRoute
+    return realRoute
   }
 
   updateInternal(spec: BasedSpec): boolean {
     if (!spec) {
       return false
     }
-
-    // Case when functions are installed exactly at the same time
     if (deepEqual(spec, this.specs[spec.name])) {
       return false
     }
-
+    if (this.updateRoute(spec) === null) {
+      return false
+    }
     if (!spec.uninstallAfterIdleTime) {
       spec.uninstallAfterIdleTime = this.config.uninstallAfterIdleTime
     }
-
     if (spec.timeoutCounter === undefined) {
       spec.timeoutCounter =
         spec.uninstallAfterIdleTime === 0
           ? -1
           : Math.ceil(spec.uninstallAfterIdleTime / 1e3)
     }
-
     if (spec.path) {
       this.paths[spec.path] = spec.name
     }
 
-    if (!spec.maxPayloadSize) {
-      if (isChannelFunctionSpec(spec)) {
-        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.channel
-      } else if (isQueryFunctionSpec(spec)) {
-        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.query
-      } else if (isStreamFunctionSpec(spec)) {
-        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.stream
-      } else {
-        spec.maxPayloadSize = this.maxPayLoadSizeDefaults.function
-      }
-    }
-
-    if (!spec.rateLimitTokens) {
-      spec.rateLimitTokens = 1
-    }
-
     const previousChecksum = this.specs[spec.name]?.checksum ?? -1
-
-    // @ts-ignore maxpayload and rlimit tokens added on line 184...
+    // @ts-ignore maxpayload and rlimit tokens added....
     this.specs[spec.name] = spec
-
     if (this.specs[spec.name] && this.server.activeChannels[spec.name]) {
       if (!isChannelFunctionSpec(spec)) {
         for (const [id] of this.server.activeChannels[spec.name]) {
@@ -261,8 +304,108 @@ export class BasedFunctions {
         }
       }
     }
-
     return true
+  }
+
+  uninstallLoop() {
+    this.unregisterTimeout = setTimeout(async () => {
+      const q = []
+      for (const name in this.specs) {
+        const spec = this.specs[name]
+        if (isQueryFunctionSpec(spec) && this.server.activeObservables[name]) {
+          updateTimeoutCounter(spec)
+        } else if (
+          isChannelFunctionSpec(spec) &&
+          this.server.activeChannels[name]
+        ) {
+          updateTimeoutCounter(spec)
+        } else if (fnIsTimedOut(spec)) {
+          q.push(this.uninstall(name, spec))
+        }
+      }
+      await Promise.all(q)
+      this.uninstallLoop()
+    }, 3e3)
+  }
+
+  async update(name: string, checksum: number) {
+    const prevSpec = this.specs[name]
+    if (prevSpec && prevSpec.checksum !== checksum) {
+      if (this.beingUninstalled[name]) {
+        delete this.beingUninstalled[name]
+      }
+      const spec = await this.installGaurdedFromConfig(name)
+      await this.config.uninstall({
+        server: this.server,
+        function: prevSpec,
+        name,
+      })
+      if (spec) {
+        this.updateInternal(spec)
+      }
+    }
+  }
+
+  async uninstall(name: string, spec?: BasedSpec | false): Promise<boolean> {
+    if (this.beingUninstalled[name]) {
+      console.error('Allready being unregistered...', name)
+    }
+    if (!spec && spec !== false) {
+      spec = this.specs[name]
+    }
+    if (!spec) {
+      return false
+    }
+    this.beingUninstalled[name] = true
+    if (spec.uninstall) {
+      await spec.uninstall()
+    }
+    if (
+      await this.config.uninstall({
+        server: this.server,
+        function: spec,
+        name,
+      })
+    ) {
+      if (this.beingUninstalled[name]) {
+        delete this.beingUninstalled[name]
+        return this.remove(name)
+      } else {
+        console.info('got requested while being unregistered', name)
+      }
+    }
+    return false
+  }
+
+  private async installGaurdedFromConfig(
+    name: string
+  ): Promise<BasedSpec | null> {
+    if (this.installsInProgress[name]) {
+      return this.installsInProgress[name]
+    }
+    this.installsInProgress[name] = this.config.install({
+      server: this.server,
+      name,
+    })
+    const s = await this.installsInProgress[name]
+    delete this.installsInProgress[name]
+    return s
+  }
+
+  getNameFromPath(path: string): string {
+    return this.paths[path]
+  }
+
+  getFromStore(name: string): BasedSpec | null {
+    const spec = this.specs[name]
+    if (spec) {
+      if (this.beingUninstalled[name]) {
+        delete this.beingUninstalled[name]
+      }
+      updateTimeoutCounter(spec)
+      return spec
+    }
+    return null
   }
 
   remove(name: string): boolean {
@@ -279,42 +422,16 @@ export class BasedFunctions {
         delete this.server.activeObservables[name]
       }
     }
-    delete this.specs[name]
-    return true
-  }
-
-  async uninstall(name: string, spec?: BasedSpec | false): Promise<boolean> {
-    if (this.beingUninstalled[name]) {
-      console.error('Allready being unregistered...', name)
-    }
-    if (!spec && spec !== false) {
-      spec = this.specs[name]
-    }
-    if (!spec) {
-      return false
-    }
-
-    this.beingUninstalled[name] = true
-
-    if (spec.uninstall) {
-      await spec.uninstall()
-    }
-
-    if (
-      await this.config.uninstall({
-        server: this.server,
-        function: spec,
-        name,
-      })
-    ) {
-      if (this.beingUninstalled[name]) {
-        delete this.beingUninstalled[name]
-        return this.remove(name)
-      } else {
-        console.info('got requested while being unregistered', name)
+    if (isChannelFunctionSpec(spec)) {
+      const activeChannel = this.server.activeChannels[name]
+      if (activeChannel) {
+        for (const [id] of activeChannel) {
+          destroyChannel(this.server, id)
+        }
+        delete this.server.activeChannels[name]
       }
     }
-
-    return false
+    delete this.specs[name]
+    return true
   }
 }

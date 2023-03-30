@@ -25,18 +25,18 @@ export type FunctionConfig = {
     function: number
     channel: number
   }
-  route: (opts: { server: BasedServer; name?: string; path?: string }) =>
+  route?: (opts: { server: BasedServer; name?: string; path?: string }) =>
     | null
     | (BasedFunctionRoute & {
         maxPayloadSize: number
         rateLimitTokens: number
       })
-  install: (opts: {
+  install?: (opts: {
     server: BasedServer
     name: string
     function?: BasedSpec
   }) => Promise<null | BasedSpec>
-  uninstall: (opts: {
+  uninstall?: (opts: {
     server: BasedServer
     name: string
     function: BasedSpec
@@ -250,9 +250,16 @@ export function isRoute(route: any): route is BasedRoute {
   return false
 }
 
-export type BasedFullFunctionSpec = {
+export type BasedRoutes = Partial<{
+  [name: string]: BasedRoute & {
+    maxPayloadSize?: number
+    rateLimitTokens?: number
+  }
+}>
+
+export type BasedSpecs = Partial<{
   [name: string]: BasedSpec & {
     maxPayloadSize?: number
     rateLimitTokens?: number
   }
-}
+}>
