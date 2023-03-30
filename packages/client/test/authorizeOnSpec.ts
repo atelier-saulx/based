@@ -85,6 +85,5 @@ test.serial('Specific authorize on spec', async (t) => {
   })
   t.is(authCalled, 5)
   await wait(1e3)
-  t.is(1, 1)
   await server.destroy()
 })
