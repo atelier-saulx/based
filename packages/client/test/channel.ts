@@ -1,31 +1,37 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
 test.serial('Subscribe channel', async (t) => {
   let closeCalled = false
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
-    closeAfterIdleTime: {
-      channel: 0,
-      query: 0,
-    },
+  const server = new BasedServer({
     port: 9910,
-    channels: {
-      mychannel: (based, payload, id, update) => {
-        let cnt = 0
-        const interval = setInterval(() => {
-          update(++cnt)
-        }, 100)
-        return () => {
-          closeCalled = true
-          clearInterval(interval)
-        }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
+      },
+      specs: {
+        mychannel: {
+          channel: true,
+          function: (based, payload, id, update) => {
+            let cnt = 0
+            const interval = setInterval(() => {
+              update(++cnt)
+            }, 100)
+            return () => {
+              closeCalled = true
+              clearInterval(interval)
+            }
+          },
+        },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -38,7 +44,8 @@ test.serial('Subscribe channel', async (t) => {
     })
   await wait(500)
   t.true(numbers.length > 2)
-  await server.functions.updateInternal({
+  // await server.functions.updateInternal({
+  server.functions.updateInternal({
     channel: true,
     name: 'mychannel',
     checksum: 2,
@@ -69,27 +76,31 @@ test.serial('Subscribe channel', async (t) => {
 test.serial('Channel publish + subscribe', async (t) => {
   let closeCalled = false
   const listeners: Map<number, (msg: any) => void> = new Map()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    closeAfterIdleTime: {
-      channel: 0,
-      query: 0,
-    },
-    channels: {
-      a: {
-        publish: (based, payload, msg, id) => {
-          listeners.get(id)?.(msg)
-        },
-        function: (based, payload, id, update) => {
-          listeners.set(id, update)
-          return () => {
-            closeCalled = true
-          }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
+      },
+      specs: {
+        a: {
+          channel: true,
+          publish: (based, payload, msg, id) => {
+            listeners.get(id)?.(msg)
+          },
+          function: (based, payload, id, update) => {
+            listeners.set(id, update)
+            return () => {
+              closeCalled = true
+            }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -115,22 +126,30 @@ test.serial('Channel publish + subscribe', async (t) => {
 
 test.serial('Channel publish no subscribe', async (t) => {
   const r: any[] = []
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    channels: {
-      a: {
-        rateLimitTokens: 0,
-        closeAfterIdleTime: 10,
-        publish: (based, payload, msg) => {
-          r.push(msg)
-        },
-        function: () => {
-          return () => {}
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
+      },
+      specs: {
+        a: {
+          channel: true,
+          rateLimitTokens: 0,
+          closeAfterIdleTime: 10,
+          publish: (based, payload, msg) => {
+            r.push(msg)
+          },
+          function: () => {
+            return () => {}
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.channelCleanupCycle = 100
   await client.connect({
@@ -153,8 +172,7 @@ test.serial('Channel publish no subscribe', async (t) => {
 
 test.serial('Channel publish requestId (10k messages)', async (t) => {
   const r: any[] = []
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     ws: {
       maxBackpressureSize: 2e6,
@@ -164,20 +182,29 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
       http: 1e6,
       drain: 1e6,
     },
-    channels: {
-      a: {
-        closeAfterIdleTime: 10,
-        // based, payload, msg, ctx, id
-        publish: (based, payload, msg) => {
-          r.push(msg)
-        },
-        // add id as arg
-        function: () => {
-          return () => {}
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
+      },
+      specs: {
+        a: {
+          channel: true,
+          closeAfterIdleTime: 10,
+          // based, payload, msg, ctx, id
+          publish: (based, payload, msg) => {
+            r.push(msg)
+          },
+          // add id as arg
+          function: () => {
+            return () => {}
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   let rePublish = 0
   let registerChannelId = 0
@@ -223,41 +250,54 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
 test.serial('Nested channel publish + subscribe', async (t) => {
   let closeCalled = false
   const listeners: Map<number, (msg: any) => void> = new Map()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    closeAfterIdleTime: {
-      channel: 0,
-      query: 0,
+    ws: {
+      maxBackpressureSize: 2e6,
+    },
+    rateLimit: {
+      ws: 1e6,
+      http: 1e6,
+      drain: 1e6,
     },
     functions: {
-      helloPublish: async (based) => {
-        based.channel('a').publish('from helloPublish')
-        return 'hello!'
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
       },
-    },
-    channels: {
-      a: {
-        publish: (based, payload, msg, id) => {
-          listeners.get(id)?.(msg)
+      specs: {
+        helloPublish: {
+          function: async (based) => {
+            based.channel('a').publish('from helloPublish')
+            return 'hello!'
+          },
         },
-        function: (based, payload, id, update) => {
-          listeners.set(id, update)
-          return () => {
-            closeCalled = true
-          }
+        a: {
+          channel: true,
+          publish: (based, payload, msg, id) => {
+            listeners.get(id)?.(msg)
+          },
+          function: (based, payload, id, update) => {
+            listeners.set(id, update)
+            return () => {
+              closeCalled = true
+            }
+          },
         },
-      },
-      b: {
-        publish: () => {},
-        function: (based, payload, id, update) => {
-          return based.channel('a', payload).subscribe((msg) => {
-            update(msg)
-          })
+        b: {
+          channel: true,
+          publish: () => {},
+          function: (based, payload, id, update) => {
+            return based.channel('a', payload).subscribe((msg) => {
+              update(msg)
+            })
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -287,13 +327,8 @@ test.serial('Nested channel publish + subscribe', async (t) => {
 test.serial('Channel publish + subscribe errors', async (t) => {
   const listeners: Map<number, (msg: any) => void> = new Map()
   const aList: any[] = []
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    closeAfterIdleTime: {
-      channel: 0,
-      query: 0,
-    },
     auth: {
       authorize: async (based, ctx, name) => {
         if (name === 'a') {
@@ -303,62 +338,76 @@ test.serial('Channel publish + subscribe errors', async (t) => {
       },
     },
     functions: {
-      helloPublish: async (based) => {
-        based.channel('gurd').publish('from helloPublish')
-        return 'hello!'
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        channel: 0,
+        query: 0,
       },
-      yes: async (based) => {
-        based.channel('b').publish('from helloPublish')
-        return 'hello!'
-      },
-    },
-    channels: {
-      x: {
-        publish: () => {
-          throw new Error('publish wrong')
+      specs: {
+        helloPublish: {
+          function: async (based) => {
+            based.channel('gurd').publish('from helloPublish')
+            return 'hello!'
+          },
         },
-        function: () => {
-          throw new Error('bla')
+        yes: {
+          function: async (based) => {
+            based.channel('b').publish('from helloPublish')
+            return 'hello!'
+          },
         },
-      },
-      a: {
-        publisher: {
-          public: true,
+        x: {
+          channel: true,
+          publish: () => {
+            throw new Error('publish wrong')
+          },
+          function: () => {
+            throw new Error('bla')
+          },
         },
-        publish: (based, payload, msg, id) => {
-          aList.push(msg)
-          listeners.get(id)?.(msg)
+        a: {
+          channel: true,
+          publisher: {
+            public: true,
+          },
+          publish: (based, payload, msg, id) => {
+            aList.push(msg)
+            listeners.get(id)?.(msg)
+          },
+          function: (based, payload, id, update) => {
+            listeners.set(id, update)
+            return () => {}
+          },
         },
-        function: (based, payload, id, update) => {
-          listeners.set(id, update)
-          return () => {}
+        b: {
+          channel: true,
+          publish: () => {
+            throw new Error('publish wrong')
+          },
+          function: () => {
+            throw new Error('bla')
+          },
         },
-      },
-      b: {
-        publish: () => {
-          throw new Error('publish wrong')
-        },
-        function: () => {
-          throw new Error('bla')
-        },
-      },
-      c: {
-        publish: (based, payload, msg) => {
-          based.channel('b', payload).publish(msg)
-        },
-        function: (based, payload, id, update, error) => {
-          return based.channel('b', payload).subscribe(
-            (msg) => {
-              update(msg)
-            },
-            (err) => {
-              error(err)
-            }
-          )
+        c: {
+          channel: true,
+          publish: (based, payload, msg) => {
+            based.channel('b', payload).publish(msg)
+          },
+          function: (based, payload, id, update, error) => {
+            return based.channel('b', payload).subscribe(
+              (msg) => {
+                update(msg)
+              },
+              (err) => {
+                error(err)
+              }
+            )
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -408,22 +457,26 @@ test.serial('Channel publish + subscribe errors', async (t) => {
 
 test.serial('Channel publish over rest', async (t) => {
   const r: any[] = []
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    channels: {
-      a: {
-        rateLimitTokens: 0,
-        closeAfterIdleTime: 10,
-        publish: (based, payload, msg) => {
-          r.push({ payload, msg })
-        },
-        function: () => {
-          return () => {}
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        a: {
+          channel: true,
+          rateLimitTokens: 0,
+          closeAfterIdleTime: 10,
+          publish: (based, payload, msg) => {
+            r.push({ payload, msg })
+          },
+          function: () => {
+            return () => {}
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.channelCleanupCycle = 100
   await client.connect({
@@ -457,11 +510,14 @@ test.serial('Channel publish over rest', async (t) => {
 })
 
 test.serial('Channel publish non existing channel', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
-    closeAfterIdleTime: { channel: 10, query: 10 },
+  const server = new BasedServer({
     port: 9910,
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: { channel: 10, query: 10 },
+    },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',
@@ -498,30 +554,34 @@ test.serial(
   async (t) => {
     const listeners: Map<number, (msg: any) => void> = new Map()
 
-    const server = await createSimpleServer({
-      uninstallAfterIdleTime: 1e3,
-      closeAfterIdleTime: { channel: 10, query: 10 },
+    const server = new BasedServer({
       port: 9910,
       rateLimit: {
         ws: 1e9,
         drain: 1e3,
         http: 0,
       },
-      channels: {
-        a: {
-          publisher: {
-            public: true,
-          },
-          publish: (based, payload, msg, id) => {
-            listeners.get(id)?.(msg)
-          },
-          function: (based, payload, id, update) => {
-            listeners.set(id, update)
-            return () => {}
+      functions: {
+        uninstallAfterIdleTime: 1e3,
+        closeAfterIdleTime: { channel: 10, query: 10 },
+        specs: {
+          a: {
+            channel: true,
+            publisher: {
+              public: true,
+            },
+            publish: (based, payload, msg, id) => {
+              listeners.get(id)?.(msg)
+            },
+            function: (based, payload, id, update) => {
+              listeners.set(id, update)
+              return () => {}
+            },
           },
         },
       },
     })
+    await server.start()
 
     const incomingPerClient: Map<number, number> = new Map()
 

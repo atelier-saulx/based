@@ -17,6 +17,7 @@ test.serial('Specific authorize on spec', async (t) => {
       closeAfterIdleTime: { channel: 10, query: 10 },
       specs: {
         snax: {
+          name: 'snax',
           stream: true,
           authorize: async () => {
             authCalled++
