@@ -4,7 +4,7 @@ import {
   Context,
   InternalSessionClient,
 } from '@based/functions'
-import { genObservableId } from '../../observable'
+import { genObservableId } from '../../query'
 import { publish } from '../publish'
 import { subscribeChannel } from '../channelSubscribe'
 

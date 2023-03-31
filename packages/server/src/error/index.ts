@@ -1,6 +1,5 @@
 import { BasedServer } from '../server'
-import { isRoute } from '../functions'
-import { Context } from '@based/functions'
+import { Context, isAnyBasedRoute } from '@based/functions'
 import {
   BasedErrorCode,
   ErrorPayload,
@@ -18,7 +17,7 @@ export function createErrorData<T extends BasedErrorCode>(
   const type = errorTypeHandlers[code]
   const route = !payload
     ? EMPTY_ROUTE
-    : isRoute(payload)
+    : isAnyBasedRoute(payload)
     ? payload
     : 'route' in payload
     ? payload.route
@@ -32,6 +31,7 @@ export function createErrorData<T extends BasedErrorCode>(
     route: {
       name: route.name,
       path: route.path,
+      type: route.type,
     },
   }
 }

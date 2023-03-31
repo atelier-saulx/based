@@ -1,14 +1,15 @@
 import {
-  BasedChannelFunctionRoute,
-  BasedChannelFunctionSpec,
-} from '../../functions'
-import { HttpSession, SendHttpResponse } from '@based/functions'
+  HttpSession,
+  SendHttpResponse,
+  BasedRoute,
+  BasedFunctionConfig,
+} from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { installFn } from '../../installFn'
 import { IsAuthorizedHandler } from '../../authorize'
-import { genObservableId } from '../../observable'
+import { genObservableId } from '../../query'
 import {
   hasChannel,
   createChannel,
@@ -17,8 +18,8 @@ import {
 } from '../../channel'
 
 export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
-  route: BasedChannelFunctionRoute,
-  spec: BasedChannelFunctionSpec,
+  route: BasedRoute<'channel'>,
+  spec: BasedFunctionConfig<'channel'>,
   server,
   ctx,
   payload
@@ -68,7 +69,7 @@ export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
     }
 
     try {
-      spec.publish(server.client, channelPayload, msg, id, ctx)
+      spec.publisher(server.client, channelPayload, msg, id, ctx)
       if (spec.httpResponse) {
         const send: SendHttpResponse = (responseData, headers, status) => {
           sendHttpResponse(

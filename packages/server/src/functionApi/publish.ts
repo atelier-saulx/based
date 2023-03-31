@@ -27,7 +27,7 @@ export const publish = (
       return
     }
     try {
-      return fn.publish(server.client, payload, msg, id, ctx)
+      return fn.publisher(server.client, payload, msg, id, ctx)
     } catch (err) {
       // Will emit the error
       createError(server, ctx, BasedErrorCode.FunctionError, {

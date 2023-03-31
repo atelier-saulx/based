@@ -8,16 +8,17 @@ test.serial('addSpecs', async (t) => {
     port: 9910,
     functions: {
       uninstallAfterIdleTime: 1e3,
-      specs: {
+      configs: {
         bla: {
-          query: true,
-          function: (based, payload, update) => {
+          type: 'query',
+          fn: (based, payload, update) => {
             update('?')
             return () => {}
           },
         },
         bye: {
-          function: async () => {
+          type: 'function',
+          fn: async () => {
             return 'flap'
           },
         },
@@ -31,9 +32,10 @@ test.serial('addSpecs', async (t) => {
     url: 'ws://localhost:9910',
   })
 
-  server.functions.addSpecs({
+  server.functions.add({
     hello: {
-      function: async () => 'x',
+      type: 'function',
+      fn: async () => 'x',
     },
   })
 
@@ -59,10 +61,10 @@ test.serial('addSpecs', async (t) => {
   // To solve this we need a new protocol msg
   // what it will do will send fns added
   // that will then resend re-subscribe requests for errored subs
-  server.functions.addSpecs({
+  server.functions.add({
     cookie: {
-      query: true,
-      function: (based, payload, update) => {
+      type: 'query',
+      fn: (based, payload, update) => {
         update('SNUR')
         return () => {}
       },

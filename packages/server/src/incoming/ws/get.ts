@@ -16,9 +16,8 @@ import {
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
-} from '../../observable'
-import { BasedQueryFunctionRoute } from '../../functions'
-import { WebSocketSession, Context } from '@based/functions'
+} from '../../query'
+import { WebSocketSession, Context, BasedRoute } from '@based/functions'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'
@@ -79,7 +78,7 @@ const getFromExisting = (
 
 const isAuthorized: IsAuthorizedHandler<
   WebSocketSession,
-  BasedQueryFunctionRoute
+  BasedRoute<'query'>
 > = (route, spec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     getFromExisting(server, id, ctx, checksum)
@@ -108,7 +107,7 @@ const isAuthorized: IsAuthorizedHandler<
 
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
-  BasedQueryFunctionRoute
+  BasedRoute<'query'>
 > = (route, server, ctx, payload, id, checksum) => {
   const session = ctx.session
   if (!session.unauthorizedObs) {

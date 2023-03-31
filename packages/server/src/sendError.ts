@@ -6,6 +6,7 @@ import {
   Context,
   isHttpContext,
   isWsSession,
+  BasedRoute,
 } from '@based/functions'
 import { valueToBuffer, encodeErrorResponse } from './protocol'
 import {
@@ -75,6 +76,49 @@ export function sendError<T extends BasedErrorCode>(
   if (!ctx.session) {
     return
   }
+  if (isHttpContext(ctx)) {
+    return sendHttpError(server, ctx, basedCode, payload)
+  } else if (isWsSession(ctx.session)) {
+    const errorData = createError(server, ctx, basedCode, payload)
+    ctx.session.ws.send(
+      encodeErrorResponse(valueToBuffer(errorData)),
+      true,
+      false
+    )
+  }
+}
+
+export function sendSimpleError<T extends BasedErrorCode>(
+  server: BasedServer,
+  ctx: Context<WebSocketSession | HttpSession>,
+  basedCode: T,
+  route: BasedRoute,
+  id?: number,
+  payload?: ErrorPayload[T]
+): void {
+  if (!ctx.session) {
+    return
+  }
+  if (!payload) {
+    // @ts-ignore tmp for now
+    payload = id
+      ? route.type === 'query'
+        ? {
+            route,
+            observableId: id,
+          }
+        : route.type === 'channel'
+        ? {
+            route,
+            channelId: id,
+          }
+        : {
+            route,
+            requestId: id,
+          }
+      : { route }
+  }
+
   if (isHttpContext(ctx)) {
     return sendHttpError(server, ctx, basedCode, payload)
   } else if (isWsSession(ctx.session)) {

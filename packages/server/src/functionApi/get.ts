@@ -1,7 +1,6 @@
 import { BasedServer } from '../server'
 import { BasedErrorCode, createError, BasedErrorData } from '../error'
-import { Context } from '@based/functions'
-import { BasedQueryFunctionRoute } from '../functions'
+import { Context, BasedRoute } from '@based/functions'
 import {
   genObservableId,
   hasObs,
@@ -10,7 +9,7 @@ import {
   getObsAndStopRemove,
   destroyObs,
   start,
-} from '../observable'
+} from '../query'
 import { verifyRoute } from '../verifyRoute'
 import { installFn } from '../installFn'
 
@@ -20,7 +19,7 @@ const getObsData = (
   server: BasedServer,
   id: number,
   ctx: Context,
-  route: BasedQueryFunctionRoute
+  route: BasedRoute<'query'>
 ) => {
   const obs = getObsAndStopRemove(server, id)
   if (obs.error) {
@@ -56,7 +55,7 @@ export const get = (
   payload: any
 ): Promise<any> => {
   return new Promise((resolve, reject) => {
-    let route: BasedQueryFunctionRoute
+    let route: BasedRoute<'query'>
     try {
       route = verifyRoute(
         server,

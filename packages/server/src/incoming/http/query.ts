@@ -4,12 +4,9 @@ import {
   Context,
   SendHttpResponse,
   HttpHeaders,
+  BasedRoute,
+  BasedFunctionConfig,
 } from '@based/functions'
-import {
-  BasedFunctionRoute,
-  BasedQueryFunctionRoute,
-  BasedQueryFunctionSpec,
-} from '../../functions'
 import { end, sendHeaders } from '../../sendHttpResponse'
 import { compress } from '../../compress'
 import {
@@ -22,7 +19,7 @@ import {
   ActiveObservable,
   start,
   genObservableId,
-} from '../../observable'
+} from '../../query'
 import zlib from 'node:zlib'
 import { parseQuery } from '@saulx/utils'
 import { BasedErrorCode } from '../../error'
@@ -34,7 +31,7 @@ const inflate = promisify(zlib.inflate)
 
 const sendCacheSwapEncoding = async (
   server: BasedServer,
-  route: BasedFunctionRoute,
+  route: BasedRoute<'query'>,
   ctx: Context<HttpSession>,
   buffer: Uint8Array,
   checksum: number,
@@ -102,7 +99,7 @@ const sendNotModified = (
 }
 
 const sendGetResponseInternal = (
-  route: BasedFunctionRoute,
+  route: BasedRoute<'query'>,
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
@@ -120,7 +117,7 @@ const sendGetResponseInternal = (
     if (!obs.cache) {
       sendError(server, ctx, BasedErrorCode.NoOservableCacheAvailable, {
         observableId: id,
-        route: { name: obs.name },
+        route: { name: obs.name, type: 'query' },
       })
     } else if (obs.isDeflate) {
       if (typeof encoding === 'string' && encoding.includes('deflate')) {
@@ -146,8 +143,8 @@ const sendGetResponseInternal = (
 }
 
 const sendGetResponse = (
-  route: BasedQueryFunctionRoute,
-  spec: BasedQueryFunctionSpec,
+  route: BasedRoute<'query'>,
+  spec: BasedFunctionConfig<'query'>,
   server: BasedServer,
   id: number,
   obs: ActiveObservable,
@@ -179,8 +176,8 @@ const getFromExisting = (
   server: BasedServer,
   id: number,
   ctx: Context<HttpSession>,
-  route: BasedQueryFunctionRoute,
-  spec: BasedQueryFunctionSpec,
+  route: BasedRoute<'query'>,
+  spec: BasedFunctionConfig<'query'>,
   checksum: number
 ) => {
   const obs = getObsAndStopRemove(server, id)
@@ -207,10 +204,15 @@ const getFromExisting = (
   })
 }
 
-const isAuthorized: IsAuthorizedHandler<
-  HttpSession,
-  BasedQueryFunctionRoute
-> = (route, spec, server, ctx, payload, id, checksum) => {
+const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
+  route,
+  spec,
+  server,
+  ctx,
+  payload,
+  id,
+  checksum
+) => {
   const name = route.name
 
   if (hasObs(server, id)) {
@@ -230,7 +232,7 @@ const isAuthorized: IsAuthorizedHandler<
 }
 
 export const httpGet = (
-  route: BasedQueryFunctionRoute,
+  route: BasedRoute<'query'>,
   payload: any,
   ctx: Context<HttpSession>,
   server: BasedServer,

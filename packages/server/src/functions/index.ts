@@ -1,20 +1,21 @@
 import type { BasedServer } from '../server'
+import { Optional } from 'utility-types'
 import {
   BasedRoute,
-  BasedSpec,
-  FunctionConfig,
-  isQueryFunctionSpec,
-  isQueryFunctionRoute,
-  isChannelFunctionSpec,
-  BasedSpecs,
+  BasedFunctionConfig,
+  BasedFunctionConfigs,
   BasedRoutes,
-  isChannelFunctionRoute,
-  isStreamFunctionRoute,
-} from './types'
+  isBasedFunctionConfig,
+  BasedFunctionConfigComplete,
+  BasedRouteComplete,
+} from '@based/functions'
 import { deepMerge, deepEqual } from '@saulx/utils'
+import { FunctionConfig } from './types'
 import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
-import { destroyObs, start } from '../observable'
+import { destroyObs, start } from '../query'
 import { destroyChannel, startChannel } from '../channel'
+import { genVersion } from './genVersion'
+
 export * from './types'
 
 export class BasedFunctions {
@@ -45,17 +46,11 @@ export class BasedFunctions {
   } = {}
 
   specs: {
-    [name: string]: BasedSpec & {
-      maxPayloadSize: number
-      rateLimitTokens: number
-    }
+    [name: string]: BasedFunctionConfigComplete
   } = {}
 
   routes: {
-    [name: string]: BasedRoute & {
-      maxPayloadSize: number
-      rateLimitTokens: number
-    }
+    [name: string]: BasedRouteComplete
   } = {}
 
   beingUninstalled: {
@@ -70,7 +65,7 @@ export class BasedFunctions {
   }
 
   updateConfig(fullConfig: FunctionConfig) {
-    const { routes, specs, ...config } = fullConfig
+    const { routes, configs, ...config } = fullConfig
 
     if (this.config) {
       deepMerge(this.config, config)
@@ -123,8 +118,8 @@ export class BasedFunctions {
       this.addRoutes(routes)
     }
 
-    if (specs) {
-      this.addSpecs(specs)
+    if (configs) {
+      this.add(configs)
     }
 
     if (this.unregisterTimeout) {
@@ -134,11 +129,11 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
-  route(name?: string, path?: string): BasedRoute | null {
+  route(name?: string, path?: string): BasedRouteComplete | null {
     return this.config.route({ server: this.server, name, path })
   }
 
-  async install(name: string): Promise<BasedSpec | null> {
+  async install(name: string): Promise<BasedFunctionConfigComplete | null> {
     let spec = this.getFromStore(name)
     if (spec) {
       return spec
@@ -151,7 +146,7 @@ export class BasedFunctions {
     return null
   }
 
-  addSpecs(specs: BasedSpecs) {
+  add(specs: BasedFunctionConfigs) {
     for (const key in specs) {
       const s = this.completeSpec(specs[key], key)
       if (s === null) {
@@ -174,72 +169,39 @@ export class BasedFunctions {
   }
 
   completeSpec(
-    spec: Partial<
-      BasedSpec & {
-        maxPayloadSize?: number
-        rateLimitTokens?: number
-      }
-    >,
+    spec: Optional<BasedFunctionConfig, 'name'>,
     name?: string
-  ):
-    | null
-    | (BasedSpec & {
-        maxPayloadSize: number
-        rateLimitTokens: number
-      }) {
+  ): null | BasedFunctionConfigComplete {
     if (this.completeRoute(spec, name) === null) {
       console.error('cannot completeSpec', name, spec)
       return null
     }
-    // if (!spec.function) {
-    // if channel
-    // channel publish
-    // }
-    // spec.function
-    const nSpec = spec as BasedSpec & {
-      maxPayloadSize: number
-      rateLimitTokens: number
+    if (!spec.version) {
+      // @ts-ignore added name allready
+      spec.version = genVersion(spec)
     }
+    const nSpec = spec as BasedFunctionConfigComplete
     return nSpec
   }
 
   completeRoute(
-    route: Partial<
-      BasedRoute & {
-        maxPayloadSize?: number
-        rateLimitTokens?: number
-      }
-    >,
+    route: Optional<BasedRoute, 'name'>,
     name?: string
-  ):
-    | null
-    | (BasedRoute & {
-        maxPayloadSize: number
-        rateLimitTokens: number
-      }) {
-    const nRoute = route as BasedRoute & {
-      maxPayloadSize: number
-      rateLimitTokens: number
+  ): null | BasedRouteComplete {
+    const nRoute = route as BasedRouteComplete
+    if (!nRoute.type) {
+      console.error('Type is required for based-routes', name)
+      return null
     }
-
     if (!nRoute.name) {
       if (!name) {
-        console.error('No route name!', route)
+        console.error('No based-route name', route)
         return null
       }
       nRoute.name = name
     }
-
     if (!route.maxPayloadSize) {
-      if (isChannelFunctionRoute(nRoute)) {
-        route.maxPayloadSize = this.maxPayLoadSizeDefaults.channel
-      } else if (isQueryFunctionRoute(nRoute)) {
-        route.maxPayloadSize = this.maxPayLoadSizeDefaults.query
-      } else if (isStreamFunctionRoute(nRoute)) {
-        route.maxPayloadSize = this.maxPayLoadSizeDefaults.stream
-      } else {
-        route.maxPayloadSize = this.maxPayLoadSizeDefaults.function
-      }
+      route.maxPayloadSize = this.maxPayLoadSizeDefaults[route.type]
     }
     if (nRoute.rateLimitTokens === undefined) {
       nRoute.rateLimitTokens = 1
@@ -248,10 +210,7 @@ export class BasedFunctions {
   }
 
   updateRoute(
-    route: BasedRoute & {
-      maxPayloadSize?: number
-      rateLimitTokens?: number
-    },
+    route: BasedRouteComplete,
     name?: string
   ):
     | null
@@ -270,7 +229,7 @@ export class BasedFunctions {
     return realRoute
   }
 
-  updateInternal(spec: BasedSpec): boolean {
+  updateInternal(spec: BasedFunctionConfigComplete): boolean {
     if (!spec) {
       return false
     }
@@ -293,16 +252,16 @@ export class BasedFunctions {
       this.paths[spec.path] = spec.name
     }
 
-    const previousChecksum = this.specs[spec.name]?.checksum ?? -1
+    const previousChecksum = this.specs[spec.name]?.version ?? -1
     // @ts-ignore maxpayload and rlimit tokens added....
     this.specs[spec.name] = spec
     if (this.specs[spec.name] && this.server.activeChannels[spec.name]) {
-      if (!isChannelFunctionSpec(spec)) {
+      if (!isBasedFunctionConfig('channel', spec)) {
         for (const [id] of this.server.activeChannels[spec.name]) {
           destroyChannel(this.server, id)
         }
       } else {
-        if (previousChecksum !== spec.checksum) {
+        if (previousChecksum !== spec.version) {
           for (const [id] of this.server.activeChannels[spec.name]) {
             startChannel(this.server, id, true)
           }
@@ -312,12 +271,12 @@ export class BasedFunctions {
       this.specs[spec.name] &&
       this.server.activeObservables[spec.name]
     ) {
-      if (!isQueryFunctionSpec(spec)) {
+      if (!isBasedFunctionConfig('query', spec)) {
         for (const [id] of this.server.activeObservables[spec.name]) {
           destroyObs(this.server, id)
         }
       } else {
-        if (previousChecksum !== spec.checksum) {
+        if (previousChecksum !== spec.version) {
           for (const [id] of this.server.activeObservables[spec.name]) {
             start(this.server, id)
           }
@@ -332,10 +291,13 @@ export class BasedFunctions {
       const q = []
       for (const name in this.specs) {
         const spec = this.specs[name]
-        if (isQueryFunctionSpec(spec) && this.server.activeObservables[name]) {
+        if (
+          isBasedFunctionConfig('query', spec) &&
+          this.server.activeObservables[name]
+        ) {
           updateTimeoutCounter(spec)
         } else if (
-          isChannelFunctionSpec(spec) &&
+          isBasedFunctionConfig('channel', spec) &&
           this.server.activeChannels[name]
         ) {
           updateTimeoutCounter(spec)
@@ -350,14 +312,14 @@ export class BasedFunctions {
 
   async update(name: string, checksum: number) {
     const prevSpec = this.specs[name]
-    if (prevSpec && prevSpec.checksum !== checksum) {
+    if (prevSpec && prevSpec.version !== checksum) {
       if (this.beingUninstalled[name]) {
         delete this.beingUninstalled[name]
       }
       const spec = await this.installGaurdedFromConfig(name)
       await this.config.uninstall({
         server: this.server,
-        function: prevSpec,
+        config: prevSpec,
         name,
       })
       if (spec) {
@@ -366,11 +328,14 @@ export class BasedFunctions {
     }
   }
 
-  async uninstall(name: string, spec?: BasedSpec | false): Promise<boolean> {
+  async uninstall(
+    name: string,
+    spec?: BasedFunctionConfig | BasedFunctionConfigComplete | null
+  ): Promise<boolean> {
     if (this.beingUninstalled[name]) {
       console.error('Allready being unregistered...', name)
     }
-    if (!spec && spec !== false) {
+    if (!spec && spec !== null) {
       spec = this.specs[name]
     }
     if (!spec) {
@@ -383,7 +348,7 @@ export class BasedFunctions {
     if (
       await this.config.uninstall({
         server: this.server,
-        function: spec,
+        config: spec,
         name,
       })
     ) {
@@ -399,7 +364,7 @@ export class BasedFunctions {
 
   private async installGaurdedFromConfig(
     name: string
-  ): Promise<BasedSpec | null> {
+  ): Promise<BasedFunctionConfigComplete | null> {
     if (this.installsInProgress[name]) {
       return this.installsInProgress[name]
     }
@@ -416,7 +381,7 @@ export class BasedFunctions {
     return this.paths[path]
   }
 
-  getFromStore(name: string): BasedSpec | null {
+  getFromStore(name: string): BasedFunctionConfigComplete | null {
     const spec = this.specs[name]
     if (spec) {
       if (this.beingUninstalled[name]) {
@@ -433,7 +398,7 @@ export class BasedFunctions {
     if (!spec) {
       return false
     }
-    if (isQueryFunctionRoute(spec)) {
+    if (isBasedFunctionConfig('query', spec)) {
       const activeObs = this.server.activeObservables[name]
       if (activeObs) {
         for (const [id] of activeObs) {
@@ -442,7 +407,7 @@ export class BasedFunctions {
         delete this.server.activeObservables[name]
       }
     }
-    if (isChannelFunctionSpec(spec)) {
+    if (isBasedFunctionConfig('channel', spec)) {
       const activeChannel = this.server.activeChannels[name]
       if (activeChannel) {
         for (const [id] of activeChannel) {

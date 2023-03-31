@@ -1,5 +1,9 @@
-import { HttpSession, Context, BasedDataStream } from '@based/functions'
-import { BasedFunctionRoute } from '../../../../functions'
+import {
+  HttpSession,
+  Context,
+  BasedDataStream,
+  BasedRoute,
+} from '@based/functions'
 import { sendError } from '../../../../sendError'
 import zlib from 'node:zlib'
 import { BasedErrorCode } from '../../../../error'
@@ -13,7 +17,7 @@ const UNCOMPRESS_OPTS = {
 
 export default (
   server: BasedServer,
-  route: BasedFunctionRoute,
+  route: BasedRoute<'stream'>,
   ctx: Context<HttpSession>,
   size: number
 ): BasedDataStream => {

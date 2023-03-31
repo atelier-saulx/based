@@ -1,15 +1,14 @@
 import uws from '@based/uws'
 import { BasedServer } from '../../server'
-import { HttpSession, Context, AuthState } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  AuthState,
+  isBasedRoute,
+  BasedRoute,
+} from '@based/functions'
 import { httpFunction } from './function'
 import { httpStreamFunction } from './streamFunction'
-import {
-  BasedFunctionRoute,
-  isChannelFunctionRoute,
-  isFunctionRoute,
-  isQueryFunctionRoute,
-  isStreamFunctionRoute,
-} from '../../functions'
 import { httpGet } from './query'
 import { readBody } from './readBody'
 import { BasedErrorCode } from '../../error'
@@ -32,7 +31,7 @@ const handleRequest = (
   server: BasedServer,
   method: string,
   ctx: Context<HttpSession>,
-  route: BasedFunctionRoute,
+  route: BasedRoute,
   ready: (payload?: any) => void
 ) => {
   if (method === 'post') {
@@ -81,8 +80,8 @@ export const httpHandler = (
       },
       BasedErrorCode.FunctionNotFound,
       path[1]
-        ? { route: { name: path[1] } }
-        : { route: { name: '', path: url } }
+        ? { route: { name: path[1], type: 'function' } }
+        : { route: { name: '', path: url, type: 'function' } }
     )
     return
   }
@@ -168,7 +167,7 @@ export const httpHandler = (
     }
   }
 
-  if (isQueryFunctionRoute(route)) {
+  if (isBasedRoute('query', route)) {
     // Handle HEAD
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
@@ -183,7 +182,7 @@ export const httpHandler = (
     return
   }
 
-  if (isStreamFunctionRoute(route)) {
+  if (isBasedRoute('stream', route)) {
     if (method === 'options') {
       end(ctx)
       return
@@ -201,7 +200,7 @@ export const httpHandler = (
     return
   }
 
-  if (isChannelFunctionRoute(route)) {
+  if (isBasedRoute('channel', route)) {
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return
@@ -215,13 +214,13 @@ export const httpHandler = (
         httpPublish,
         undefined,
         undefined,
-        route.publisher?.public || route.public
+        route.publicPublisher || route.public
       )
     })
     return
   }
 
-  if (isFunctionRoute(route)) {
+  if (isBasedRoute('function', route)) {
     if (method !== 'post' && method !== 'get') {
       sendError(server, ctx, BasedErrorCode.MethodNotAllowed, route)
       return

@@ -1,7 +1,6 @@
 import { BasedServer } from '../../../server'
 import { sendError } from '../../../sendError'
-import { BasedStreamFunctionRoute } from '../../../functions'
-import { HttpSession, Context } from '@based/functions'
+import { HttpSession, Context, BasedRoute } from '@based/functions'
 import { BasedErrorCode } from '../../../error'
 import { multiPart } from './multiPart'
 import { singleStream } from './stream'
@@ -9,7 +8,7 @@ import { singleStream } from './stream'
 export const httpStreamFunction = (
   server: BasedServer,
   ctx: Context<HttpSession>,
-  route: BasedStreamFunctionRoute
+  route: BasedRoute<'stream'>
 ) => {
   if (!ctx.session) {
     return

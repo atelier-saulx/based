@@ -6,7 +6,7 @@ import {
   Geo,
   isClientContext,
 } from '@based/functions'
-import type { ActiveObservable } from './observable'
+import type { ActiveObservable } from './query'
 import uws from '@based/uws'
 import initNetwork from './incoming'
 import { BasedFunctions, FunctionConfig } from './functions'

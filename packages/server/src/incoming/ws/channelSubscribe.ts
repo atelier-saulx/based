@@ -6,8 +6,7 @@ import {
 } from '../../protocol'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { BasedChannelFunctionRoute } from '../../functions'
-import { WebSocketSession } from '@based/functions'
+import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
 import { installFn } from '../../installFn'
@@ -28,7 +27,7 @@ import {
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
-  BasedChannelFunctionRoute
+  BasedRoute<'channel'>
 > = (route, spec, server, ctx, payload, id) => {
   if (hasChannel(server, id)) {
     subscribeChannel(server, id, ctx)
@@ -46,7 +45,7 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
 
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
-  BasedChannelFunctionRoute
+  BasedRoute<'channel'>
 > = (route, server, ctx, payload, id) => {
   const session = ctx.session
   if (!session.unauthorizedChannels) {
@@ -86,11 +85,11 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     name
   )
 
-  const tmpRoute: BasedChannelFunctionRoute = route || {
+  const tmpRoute: BasedRoute<'channel'> = route || {
     rateLimitTokens: 10,
     maxPayloadSize: 500,
     name,
-    channel: true,
+    type: 'channel',
   }
 
   if (

@@ -1,9 +1,9 @@
 import { BasedServer } from '../../server'
-import { isQueryFunctionSpec } from '../../functions'
 import { updateListener } from './update'
 import { errorListener } from './error'
 import { ObservableUpdateFunction } from '../types'
 import { relay } from './relay'
+import { isBasedFunctionConfig } from '@based/functions'
 
 export const start = (server: BasedServer, id: number) => {
   const obs = server.activeObservablesById.get(id)
@@ -15,7 +15,7 @@ export const start = (server: BasedServer, id: number) => {
 
   const spec = server.functions.specs[obs.name]
 
-  if (!spec || !isQueryFunctionSpec(spec)) {
+  if (!spec || !isBasedFunctionConfig('query', spec)) {
     console.warn('Cannot find observable function spec!', obs.name)
     return
   }
@@ -50,7 +50,7 @@ export const start = (server: BasedServer, id: number) => {
   const startId = ++obs.startId
 
   if (spec.relay) {
-    const client = server.clients[spec.relay]
+    const client = server.clients[spec.relay.client]
     if (!client) {
       errorListener(
         server,
@@ -62,7 +62,7 @@ export const start = (server: BasedServer, id: number) => {
     relay(server, obs, client, update)
   } else {
     try {
-      const r = spec.function(server.client, payload, update, (err) => {
+      const r = spec.fn(server.client, payload, update, (err) => {
         errorListener(server, obs, err)
       })
       if (r instanceof Promise) {

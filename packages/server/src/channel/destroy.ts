@@ -1,4 +1,4 @@
-import { isChannelFunctionSpec } from '../functions'
+import { isBasedFunctionConfig } from '@based/functions'
 import { BasedServer } from '../server'
 import { cleanUpChannels } from './cleanup'
 import { ActiveChannel } from './types'
@@ -8,7 +8,7 @@ export const updateDestroyTimer = (
   channel: ActiveChannel
 ) => {
   const spec = server.functions.specs[channel.name]
-  if (spec && !isChannelFunctionSpec(spec)) {
+  if (spec && !isBasedFunctionConfig('channel', spec)) {
     console.error(
       'channel updateDestroyTimer - Not channel spec!',
       spec,

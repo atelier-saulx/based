@@ -29,6 +29,7 @@ export const errorListener = (
             observableId: obs.id,
             route: {
               name: obs.name,
+              type: 'query',
             },
           }
         )

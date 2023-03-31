@@ -8,8 +8,7 @@ import {
 } from '../../protocol'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
-import { BasedFunctionRoute } from '../../functions'
-import { WebSocketSession } from '@based/functions'
+import { WebSocketSession, BasedRoute } from '@based/functions'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
 import { authorize, IsAuthorizedHandler } from '../../authorize'
@@ -21,10 +20,10 @@ import { readStream } from '@saulx/utils'
 
 const sendFunction: IsAuthorizedHandler<
   WebSocketSession,
-  BasedFunctionRoute
+  BasedRoute<'function'>
 > = (route, spec, server, ctx, payload, requestId) => {
   if (spec.relay) {
-    const client = server.clients[spec.relay]
+    const client = server.clients[spec.relay.client]
     if (!client) {
       sendError(server, ctx, BasedErrorCode.FunctionError, {
         route,
@@ -55,7 +54,7 @@ const sendFunction: IsAuthorizedHandler<
   }
 
   spec
-    .function(server.client, payload, ctx)
+    .fn(server.client, payload, ctx)
     .then(async (v) => {
       // TODO: allow chunked reply!
       if (v && (v instanceof Duplex || v instanceof Readable)) {
@@ -96,7 +95,7 @@ export const functionMessage: BinaryMessageHandler = (
   const route = verifyRoute(
     server,
     ctx,
-    'fn',
+    'function',
     server.functions.route(name),
     name,
     requestId

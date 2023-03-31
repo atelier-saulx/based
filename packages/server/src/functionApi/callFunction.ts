@@ -13,7 +13,7 @@ export const callFunction = async (
   const route = verifyRoute(
     server,
     server.client.ctx,
-    'fn',
+    'function',
     server.functions.route(name),
     name
   )
@@ -31,7 +31,7 @@ export const callFunction = async (
   }
 
   try {
-    return fn.function(server.client, payload, ctx)
+    return fn.fn(server.client, payload, ctx)
   } catch (err) {
     throw createError(server, ctx, BasedErrorCode.FunctionError, {
       route,

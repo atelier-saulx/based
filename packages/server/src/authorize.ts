@@ -1,13 +1,14 @@
 import { BasedServer } from './server'
-import {
-  BasedRoute,
-  BasedSpec,
-  isChannelFunctionRoute,
-  isQueryFunctionRoute,
-} from './functions'
 import { sendError } from './sendError'
 import { BasedErrorCode } from './error'
-import { HttpSession, Context, WebSocketSession } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  WebSocketSession,
+  BasedRoute,
+  BasedFunctionConfig,
+  isBasedRoute,
+} from '@based/functions'
 import { installFn } from './installFn'
 
 type ClientSession = HttpSession | WebSocketSession
@@ -18,7 +19,7 @@ export type IsAuthorizedHandler<
   P = any
 > = (
   route: R,
-  spec: BasedSpec<R>,
+  spec: BasedFunctionConfig<R['type']>,
   server: BasedServer,
   ctx: Context<S>,
   payload: P,
@@ -53,7 +54,7 @@ export const defaultAuthError: AuthErrorHandler = (
     ? BasedErrorCode.AuthorizeFunctionError
     : BasedErrorCode.AuthorizeRejectedError
 
-  if (id && isChannelFunctionRoute(route)) {
+  if (id && isBasedRoute('channel', route)) {
     sendError(server, ctx, code, {
       route,
       err,
@@ -62,7 +63,7 @@ export const defaultAuthError: AuthErrorHandler = (
     return
   }
 
-  if (id && isQueryFunctionRoute(route)) {
+  if (id && isBasedRoute('query', route)) {
     sendError(server, ctx, code, {
       route,
       err,

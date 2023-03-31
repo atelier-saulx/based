@@ -1,7 +1,4 @@
-import {
-  ObservableUpdateFunction,
-  ObserveErrorListener,
-} from '../../observable'
+import { ObservableUpdateFunction, ObserveErrorListener } from '../../query'
 import { observe } from '../observe'
 import { get } from '../get'
 import {

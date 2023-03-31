@@ -2,6 +2,7 @@ import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 import { BasedDataStream } from './stream'
 import { Authorize } from './auth'
+import { Required } from 'utility-types'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,
@@ -94,7 +95,7 @@ export type UninstallFunction = () => Promise<void>
 
 type FunctionConfigShared = {
   /** Function name */
-  name: string
+  name?: string
   /** In addition to the name, a function can have a custom path for HTTP requests.
    * For example: `path: 'my/custom/path'` will result in the function being
    * available with a request to `env.based.io/my/custom/path`
@@ -114,72 +115,178 @@ type FunctionConfigShared = {
   internalOnly?: boolean
   /** Can hold extra information about a spec */
   data?: any
-  /** Unistall after idle, in ms */
+  /** Unistall after idle, in ms -1 indicates endless */
   uninstallAfterIdleTime?: number
   /** Hook that fires on uninstall of the function e.g. to clean up database connections */
   uninstall?: UninstallFunction
   /** Specific authorize for this function */
   authorize?: Authorize
+  /** Relay allows functions to relay traffic to another `@based/server` 
+    `Currently not supported for `stream` 
+  
+    ```js
+    new BasedServer({ 
+    clients: { events: BasedClient },
+    functions: { 
+      specs: 
+        somethingToRelay: { 
+          relay: { client: 'events', target: 'hello' }, 
+          type: 'function' 
+        })
+      }
+    }
+    })
+    ```
+  */
+  relay?: {
+    client: string
+    target?: string
+  }
+  /** Function version */
+  version?: number
+  /** Used inernaly to check if a function is ready to uninstall */
+  timeoutCounter?: number
 }
 
-export type BasedFunctionConfig =
-  | ({
-      /** Function type `channel, function, query, stream, authorize` */
-      type: 'channel'
-      /** Channel subscriber 
-        
-       ```js
-       const subscribe = (based, payload, id, update) => {
-          let cnt = 0
-          const interval = setInterval(() => {
-            update(++cnt)
-          })
-          return () => clearInterval(cnt)
-       }
-       ```
-      */
-      subscriber?: BasedChannelFunction
-      /** Channel publisher 
-        
-       ```js
-       const publisher = (based, payload, msg, id) => {
-          publishToChannel(id, msg)
-       }
-       ```
-      */
-      publisher?: BasedChannelPublishFunction
-      /** Makes only the publisher public */
-      publicPublisher?: boolean
-      name: string
-      /** How long should the channel subscriber remain active after all subscribers are gone, in ms */
-      closeAfterIdleTime?: number
-    } & FunctionConfigShared)
-  | ({
-      /** Function type `channel, function, query, stream, authorize` */
-      type: 'function'
-      function: BasedFunction
-      name: string
-      httpResponse?: HttpResponse
-    } & FunctionConfigShared)
-  | ({
-      /** Function type `channel, function, query, stream, authorize` */
-      type: 'query'
-      function: BasedQueryFunction
-      name: string
-      httpResponse?: HttpResponse
-      /** How long should the query function remain active after all subscribers are gone, in ms */
-      closeAfterIdleTime?: number
-    } &
-      FunctionConfigShared)
-  | ({
-      /** Function type `channel, function, query, stream, authorize` */
-      type: 'stream'
-      function: BasedStreamFunction
-      name: string
-    } & FunctionConfigShared)
-  | {
-      /** Function type `channel, function, query, stream, authorize` */
-      type: 'authorize'
-      function: Authorize
-      name: string
-    }
+export type BasedFunctionTypes = 'channel' | 'query' | 'function' | 'stream'
+
+export type BasedChannelFunctionConfig = {
+  /** Function type `channel, function, query, stream, authorize` */
+  type: 'channel'
+  /** Channel subscriber 
+    
+   ```js
+   const subscribe = (based, payload, id, update) => {
+      let cnt = 0
+      const interval = setInterval(() => {
+        update(++cnt)
+      })
+      return () => clearInterval(cnt)
+   }
+   ```
+  */
+  subscriber?: BasedChannelFunction
+  /** Channel publisher 
+    
+   ```js
+   const publisher = (based, payload, msg, id) => {
+      publishToChannel(id, msg)
+   }
+   ```
+  */
+  publisher?: BasedChannelPublishFunction
+  /** Makes only the publisher public */
+  publicPublisher?: boolean
+  /** How long should the channel subscriber remain active after all subscribers are gone, in ms */
+  closeAfterIdleTime?: number
+  /** Only for Publisher */
+  httpResponse?: HttpResponse
+} & FunctionConfigShared
+
+export type BasedCallFunctionConfig = {
+  /** Function type `channel, function, query, stream` */
+  type: 'function'
+  fn: BasedFunction
+  httpResponse?: HttpResponse
+} & FunctionConfigShared
+
+export type BasedQueryFunctionConfig = {
+  /** Function type `channel, function, query, stream` */
+  type: 'query'
+  fn: BasedQueryFunction
+  httpResponse?: HttpResponse
+  /** How long should the query function remain active after all subscribers are gone, in ms */
+  closeAfterIdleTime?: number
+} & FunctionConfigShared
+
+export type BasedStreamFunctionConfig = {
+  /** Function type `channel, function, query, stream` */
+  type: 'stream'
+  fn: BasedStreamFunction
+} & FunctionConfigShared
+
+export type BasedFunctionConfig<
+  T extends BasedFunctionTypes = BasedFunctionTypes
+> = T extends 'channel'
+  ? BasedChannelFunctionConfig
+  : T extends 'function'
+  ? BasedCallFunctionConfig
+  : T extends 'query'
+  ? BasedQueryFunctionConfig
+  : T extends 'stream'
+  ? BasedStreamFunctionConfig
+  :
+      | BasedChannelFunctionConfig
+      | BasedCallFunctionConfig
+      | BasedQueryFunctionConfig
+      | BasedStreamFunctionConfig
+
+export type BasedAuthorizeFunctionConfig = {
+  /** Function type `authorize` */
+  type: 'authorize'
+  function: Authorize
+}
+
+export type BasedRoute<
+  T extends BasedFunctionTypes = BasedFunctionTypes,
+  R extends keyof BasedFunctionConfig = 'type' | 'name'
+> = Required<Partial<BasedFunctionConfig<T>>, R>
+
+export type BasedFunctionConfigComplete<
+  T extends BasedFunctionTypes = BasedFunctionTypes
+> = Required<
+  BasedFunctionConfig<T>,
+  'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
+>
+
+export type BasedRouteComplete<
+  T extends BasedFunctionTypes = BasedFunctionTypes
+> = Required<
+  Partial<BasedFunctionConfig<T>>,
+  'type' | 'name' | 'maxPayloadSize' | 'rateLimitTokens'
+>
+
+export function isBasedRoute<T extends BasedFunctionTypes>(
+  type: T,
+  route: any
+): route is BasedRoute<T> {
+  return (
+    route &&
+    typeof route === 'object' &&
+    route.type === type &&
+    typeof route.name === 'string'
+  )
+}
+
+export function isAnyBasedRoute(route: any): route is BasedRoute {
+  return (
+    route &&
+    typeof route === 'object' &&
+    (route.type === 'channel' ||
+      route.type === 'query' ||
+      route.type === 'function' ||
+      route.type === 'stream') &&
+    typeof route.name === 'string'
+  )
+}
+
+export function isBasedFunctionConfig<T extends BasedFunctionTypes>(
+  type: T,
+  config: any
+): config is BasedFunctionConfig<T> {
+  return isBasedRoute(type, config)
+}
+
+export function isAnyBasedFunctionConfig(
+  config: any
+): config is BasedFunctionConfig {
+  return isAnyBasedRoute(config)
+}
+
+export type BasedRoutes = {
+  [name: string]: BasedRoute<BasedFunctionTypes, 'type'>
+}
+
+export type BasedFunctionConfigs = {
+  [name: string]: BasedFunctionConfig<BasedFunctionTypes>
+}

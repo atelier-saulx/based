@@ -4,16 +4,17 @@ import {
   encodeAuthResponse,
 } from '../../protocol'
 import { BasedServer } from '../../server'
-import { enableSubscribe } from './observable'
+import { enableSubscribe } from './query'
 import { rateLimitRequest } from '../../security'
-import { AuthState, WebSocketSession, Context } from '@based/functions'
+import {
+  AuthState,
+  WebSocketSession,
+  Context,
+  BasedRoute,
+} from '@based/functions'
 import { BinaryMessageHandler } from './types'
 import { enableChannelSubscribe } from './channelSubscribe'
 import { installFn } from '../../installFn'
-import {
-  BasedChannelFunctionRoute,
-  BasedQueryFunctionRoute,
-} from '../../functions'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
@@ -65,9 +66,9 @@ export const authMessage: BinaryMessageHandler = (
       if (session.unauthorizedObs?.size) {
         session.unauthorizedObs.forEach((obs) => {
           const { id, name, checksum, payload } = obs
-          const route: BasedQueryFunctionRoute = {
+          const route: BasedRoute<'query'> = {
             name,
-            query: true,
+            type: 'query',
           }
           installFn(server, ctx, route, id).then((spec) => {
             if (spec) {
@@ -83,9 +84,9 @@ export const authMessage: BinaryMessageHandler = (
       if (session.unauthorizedChannels?.size) {
         session.unauthorizedChannels.forEach((channel) => {
           const { id, name, payload } = channel
-          const route: BasedChannelFunctionRoute = {
+          const route: BasedRoute<'channel'> = {
             name,
-            channel: true,
+            type: 'channel',
           }
           installFn(server, ctx, route, id).then((spec) => {
             if (spec) {

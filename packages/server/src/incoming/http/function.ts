@@ -1,19 +1,23 @@
-import { BasedFunctionRoute, BasedFunctionSpec } from '../../functions'
-import { HttpSession, SendHttpResponse } from '@based/functions'
+import {
+  HttpSession,
+  SendHttpResponse,
+  BasedRoute,
+  BasedFunctionConfig,
+} from '@based/functions'
 import { sendHttpResponse } from '../../sendHttpResponse'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { IsAuthorizedHandler } from '../../authorize'
 
 export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
-  route: BasedFunctionRoute,
-  spec: BasedFunctionSpec,
+  route: BasedRoute<'function'>,
+  spec: BasedFunctionConfig<'function'>,
   server,
   ctx,
   payload
 ) => {
   spec
-    .function(server.client, payload, ctx)
+    .fn(server.client, payload, ctx)
     .then(async (result) => {
       if (!ctx.session) {
         return

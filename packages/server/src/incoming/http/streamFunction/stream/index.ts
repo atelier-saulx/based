@@ -2,8 +2,12 @@ import createDataStream from './createStream'
 import { BasedServer } from '../../../../server'
 import { sendError } from '../../../../sendError'
 import getExtension from '../getExtension'
-import { BasedStreamFunctionRoute } from '../../../../functions'
-import { HttpSession, Context, StreamPayload } from '@based/functions'
+import {
+  HttpSession,
+  Context,
+  StreamPayload,
+  BasedRoute,
+} from '@based/functions'
 import { BasedErrorCode } from '../../../../error'
 import { sendHttpResponse } from '../../../../sendHttpResponse'
 import mimeTypes from 'mime-types'
@@ -14,7 +18,7 @@ import { authorize } from '../../../../authorize'
 export const singleStream = (
   server: BasedServer,
   ctx: Context<HttpSession>,
-  route: BasedStreamFunctionRoute,
+  route: BasedRoute<'stream'>,
   type: string,
   size: number
 ) => {
@@ -57,7 +61,7 @@ export const singleStream = (
           stream.destroy()
           return
         }
-        const fn = spec.function
+        const fn = spec.fn
         fn(server.client, streamPayload, ctx)
           .catch((err) => {
             sendError(server, ctx, BasedErrorCode.FunctionError, {

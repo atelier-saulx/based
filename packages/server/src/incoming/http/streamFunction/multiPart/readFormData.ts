@@ -3,12 +3,12 @@ import {
   Context,
   StreamPayload,
   BasedDataStream,
+  BasedRoute,
 } from '@based/functions'
 import { BasedErrorCode } from '../../../../error'
 import { sendError } from '../../../../sendError'
 import getExtension from '../getExtension'
 import { BasedServer } from '../../../../server'
-import { BasedFunctionRoute } from '../../../../functions'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 
@@ -83,7 +83,7 @@ const handleMeta = (
 export default (
   ctx: Context<HttpSession>,
   server: BasedServer,
-  route: BasedFunctionRoute,
+  route: BasedRoute<'stream'>,
   onFile: (payload: StreamPayload) => void,
   isReady: () => void
 ) => {

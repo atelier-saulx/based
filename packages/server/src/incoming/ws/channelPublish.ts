@@ -4,15 +4,18 @@ import { verifyRoute } from '../../verifyRoute'
 import { BinaryMessageHandler } from './types'
 import { extendChannel, hasChannel } from '../../channel'
 import { IsAuthorizedHandler, authorize } from '../../authorize'
-import { WebSocketSession } from '@based/functions'
-import { BasedChannelFunctionRoute } from '../../functions'
+import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError'
 import { BasedErrorCode } from '../../error'
 
-const publish: IsAuthorizedHandler<
-  WebSocketSession,
-  BasedChannelFunctionRoute
-> = (route, spec, server, ctx, payload, id) => {
+const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
+  route,
+  spec,
+  server,
+  ctx,
+  payload,
+  id
+) => {
   const channel = server.activeChannelsById.get(id)
   if (!channel) {
     return
@@ -20,10 +23,10 @@ const publish: IsAuthorizedHandler<
 
   try {
     if (spec.relay) {
-      const client = server.clients[spec.relay]
+      const client = server.clients[spec.relay.client]
       client.channel(channel.name, channel.payload).publish(payload)
     } else {
-      spec.publish(server.client, channel.payload, payload, channel.id, ctx)
+      spec.publisher(server.client, channel.payload, payload, channel.id, ctx)
     }
   } catch (err) {
     sendError(server, ctx, BasedErrorCode.FunctionError, {
@@ -101,7 +104,7 @@ export const channelPublishMessage: BinaryMessageHandler = (
     publish,
     id,
     undefined,
-    route.publisher?.public
+    route.publicPublisher
   )
 
   return true

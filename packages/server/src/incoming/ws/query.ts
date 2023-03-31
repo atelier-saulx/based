@@ -4,10 +4,9 @@ import {
   readUint8,
   parsePayload,
 } from '../../protocol'
-import { createObs, unsubscribeWs, subscribeWs, hasObs } from '../../observable'
+import { createObs, unsubscribeWs, subscribeWs, hasObs } from '../../query'
 import { BasedErrorCode } from '../../error'
-import { WebSocketSession } from '@based/functions'
-import { BasedQueryFunctionRoute } from '../../functions'
+import { WebSocketSession, BasedRoute } from '@based/functions'
 import { sendError } from '../../sendError'
 import { rateLimitRequest } from '../../security'
 import { verifyRoute } from '../../verifyRoute'
@@ -20,7 +19,7 @@ import { BinaryMessageHandler } from './types'
 
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
-  BasedQueryFunctionRoute
+  BasedRoute<'query'>
 > = (route, psec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     subscribeWs(server, id, checksum, ctx)
@@ -38,7 +37,7 @@ export const enableSubscribe: IsAuthorizedHandler<
 
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
-  BasedQueryFunctionRoute
+  BasedRoute<'query'>
 > = (route, server, ctx, payload, id, checksum) => {
   const session = ctx.session
   if (!session.unauthorizedObs) {

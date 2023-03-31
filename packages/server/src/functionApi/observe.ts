@@ -10,7 +10,7 @@ import {
   ObserveErrorListener,
   subscribeFunction,
   unsubscribeFunction,
-} from '../observable'
+} from '../query'
 import { installFn } from '../installFn'
 
 export const observe = (

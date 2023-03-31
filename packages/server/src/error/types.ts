@@ -1,8 +1,9 @@
-import { BasedRoute } from '../functions'
+import { BasedRoute } from '@based/functions'
 
-export const EMPTY_ROUTE = {
+export const EMPTY_ROUTE: BasedRoute = {
   name: 'no-route',
   path: '',
+  type: 'function',
 }
 
 export enum BasedErrorCode {

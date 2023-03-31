@@ -1,9 +1,11 @@
-import { HttpSession, Context, StreamPayload } from '@based/functions'
-import { BasedServer } from '../../../../server'
 import {
-  BasedStreamFunctionRoute,
-  BasedStreamFunctionSpec,
-} from '../../../../functions'
+  HttpSession,
+  Context,
+  StreamPayload,
+  BasedRoute,
+  BasedFunctionConfig,
+} from '@based/functions'
+import { BasedServer } from '../../../../server'
 import { installFn } from '../../../../installFn'
 import readFormData from './readFormData'
 import {
@@ -16,9 +18,9 @@ import { sendHttpResponse } from '../../../../sendHttpResponse'
 const handleFile = async (
   server: BasedServer,
   ctx: Context<HttpSession>,
-  installedFn: Promise<BasedStreamFunctionSpec | null>,
+  installedFn: Promise<BasedFunctionConfig<'stream'> | null>,
   file: StreamPayload,
-  route: BasedStreamFunctionRoute
+  route: BasedRoute<'stream'>
 ): Promise<
   | { value: any }
   | {
@@ -64,7 +66,7 @@ const handleFile = async (
   }
 
   try {
-    const value = await spec.function(server.client, file, ctx)
+    const value = await spec.fn(server.client, file, ctx)
     return { value }
   } catch (err) {
     return {
@@ -76,7 +78,7 @@ const handleFile = async (
 export const multiPart = (
   server: BasedServer,
   ctx: Context<HttpSession>,
-  route: BasedStreamFunctionRoute
+  route: BasedRoute<'stream'>
 ) => {
   ctx.session.res.cork(() => {
     ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')

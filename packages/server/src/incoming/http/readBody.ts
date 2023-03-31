@@ -1,6 +1,5 @@
-import { HttpSession, Context } from '@based/functions'
+import { HttpSession, Context, BasedRoute } from '@based/functions'
 import zlib from 'node:zlib'
-import { BasedFunctionRoute, BasedQueryFunctionRoute } from '../../functions'
 import { BasedErrorCode } from '../../error'
 import { BasedServer } from '../../server'
 import { sendError } from '../../sendError'
@@ -18,7 +17,7 @@ export const parseHttpPayload = (
   server: BasedServer,
   ctx: Context<HttpSession>,
   data: Uint8Array,
-  route: BasedFunctionRoute | BasedQueryFunctionRoute
+  route: BasedRoute
 ): any => {
   const contentType = ctx.session.headers['content-type']
   if (contentType === 'application/json' || !contentType) {
@@ -44,7 +43,7 @@ export const readBody = (
   server: BasedServer,
   ctx: Context<HttpSession>,
   onData: (data: any | void) => void,
-  route: BasedFunctionRoute | BasedQueryFunctionRoute
+  route: BasedRoute
 ) => {
   if (!ctx.session) {
     return

@@ -1,5 +1,4 @@
 import { BasedServer } from '../server'
-import { isChannelFunctionSpec } from '../functions'
 import { ActiveChannel } from './types'
 import {
   valueToBuffer,
@@ -7,6 +6,7 @@ import {
   encodeErrorResponse,
 } from '../protocol'
 import { BasedErrorData, BasedErrorCode, createError } from '../error'
+import { isBasedFunctionConfig } from '@based/functions'
 
 const updateChannelListener = (
   server: BasedServer,
@@ -47,6 +47,7 @@ const errorChannelListener = (
             channelId: channel.id,
             route: {
               name: channel.name,
+              type: 'channel',
             },
           }
         )
@@ -93,7 +94,7 @@ export const startChannel = (
     return
   }
 
-  if (!spec || !isChannelFunctionSpec(spec)) {
+  if (!spec || !isBasedFunctionConfig('channel', spec)) {
     console.warn(
       'Start channel - cannot find channel function spec',
       channel.name
@@ -102,7 +103,7 @@ export const startChannel = (
   }
 
   if (spec.relay) {
-    const client = server.clients[spec.relay]
+    const client = server.clients[spec.relay.client]
     if (!client) {
       errorChannelListener(
         server,
@@ -124,7 +125,7 @@ export const startChannel = (
   } else if (!fromInstall || channel.isActive) {
     channel.isActive = true
     try {
-      channel.closeFunction = spec.function(
+      channel.closeFunction = spec.subscriber(
         server.client,
         payload,
         id,

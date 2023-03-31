@@ -86,7 +86,7 @@ export const streamFunction = async (
   }
 
   try {
-    return fn.function(server.client, file, ctx)
+    return fn.fn(server.client, file, ctx)
   } catch (err) {
     throw createError(server, ctx, BasedErrorCode.FunctionError, {
       route,

@@ -1,14 +1,14 @@
-import { isQueryFunctionSpec } from '../functions'
 import { BasedServer } from '../server'
 import { cleanUpObs } from './cleanup'
 import { ActiveObservable } from './types'
+import { isBasedFunctionConfig } from '@based/functions'
 
 export const updateDestroyTimer = (
   server: BasedServer,
   channel: ActiveObservable
 ) => {
   const spec = server.functions.specs[channel.name]
-  if (!spec || !isQueryFunctionSpec(spec)) {
+  if (!spec || !isBasedFunctionConfig('query', spec)) {
     console.warn('destroyObs - Cannot find obs function spec -', channel.name)
     return
   }

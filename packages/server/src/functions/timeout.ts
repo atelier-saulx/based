@@ -1,6 +1,6 @@
-import type { BasedSpec } from './types'
+import type { BasedFunctionConfigComplete } from '@based/functions'
 
-export const fnIsTimedOut = (spec: BasedSpec): boolean => {
+export const fnIsTimedOut = (spec: BasedFunctionConfigComplete): boolean => {
   if (spec.timeoutCounter !== -1) {
     if (spec.timeoutCounter === 0) {
       return true
@@ -12,7 +12,7 @@ export const fnIsTimedOut = (spec: BasedSpec): boolean => {
   return false
 }
 
-export const updateTimeoutCounter = (spec: BasedSpec) => {
+export const updateTimeoutCounter = (spec: BasedFunctionConfigComplete) => {
   if (spec.timeoutCounter !== -1) {
     spec.timeoutCounter =
       spec.uninstallAfterIdleTime === -1
