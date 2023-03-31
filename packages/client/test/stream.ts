@@ -1,5 +1,5 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
@@ -9,23 +9,27 @@ import { readFileSync } from 'node:fs'
 test.serial('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        function: async (based, { stream, payload }) => {
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          await readStream(stream)
-          return payload
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          function: async (based, { stream, payload }) => {
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            await readStream(stream)
+            return payload
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',
@@ -52,27 +56,31 @@ test.serial('stream functions - buffer contents', async (t) => {
 test.serial('stream functions - streamContents', async (t) => {
   const progressEvents: number[] = []
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        function: async (based, { stream, payload, mimeType, size }) => {
-          let cnt = 0
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          stream.on('data', () => {
-            cnt++
-          })
-          await readStream(stream)
-          return { payload, cnt, mimeType, size }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          function: async (based, { stream, payload, mimeType, size }) => {
+            let cnt = 0
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            stream.on('data', () => {
+              cnt++
+            })
+            await readStream(stream)
+            return { payload, cnt, mimeType, size }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',
@@ -122,19 +130,23 @@ test.serial('stream functions - streamContents', async (t) => {
 })
 
 test.serial('stream functions - streamContents error', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        function: async () => {
-          throw new Error('bla')
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          function: async () => {
+            throw new Error('bla')
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',
@@ -178,21 +190,25 @@ test.serial('stream functions - streamContents error', async (t) => {
 })
 
 test.serial('stream functions - path', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        function: async (based, x) => {
-          const { payload, stream, mimeType } = x
-          const file = (await readStream(stream)).toString()
-          return { payload, file, mimeType }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          function: async (based, x) => {
+            const { payload, stream, mimeType } = x
+            const file = (await readStream(stream)).toString()
+            return { payload, file, mimeType }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',
@@ -212,21 +228,25 @@ test.serial('stream functions - path', async (t) => {
 })
 
 test.serial('stream functions - path json', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        function: async (based, x) => {
-          const { payload, stream, mimeType } = x
-          const file = (await readStream(stream)).toString()
-          return { payload, file, mimeType }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          function: async (based, x) => {
+            const { payload, stream, mimeType } = x
+            const file = (await readStream(stream)).toString()
+            return { payload, file, mimeType }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',

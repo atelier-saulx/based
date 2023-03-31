@@ -1,37 +1,41 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 
 test.serial('install fn perf', async (t) => {
   const client = new BasedClient()
   let cnt = 0
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello2: {
-        maxPayloadSize: 1e8,
-        function: async () => {
-          cnt++
-          return 'flap'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello2: {
+          maxPayloadSize: 1e8,
+          function: async () => {
+            cnt++
+            return 'flap'
+          },
         },
-      },
-      hello: {
-        public: true,
-        maxPayloadSize: 1e8,
-        function: async (based) => {
-          const d = Date.now()
-          const q = []
-          for (let i = 0; i < 1e5; i++) {
-            // @ts-ignore
-            q.push(based.call('hello2'))
-          }
-          await Promise.all(q)
-          return Date.now() - d
+        hello: {
+          public: true,
+          maxPayloadSize: 1e8,
+          function: async (based) => {
+            const d = Date.now()
+            const q = []
+            for (let i = 0; i < 1e5; i++) {
+              // @ts-ignore
+              q.push(based.call('hello2'))
+            }
+            await Promise.all(q)
+            return Date.now() - d
+          },
         },
       },
     },
   })
+  await server.start()
+
   server.on('error', console.error)
   client.connect({
     url: async () => {

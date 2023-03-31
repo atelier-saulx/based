@@ -1,14 +1,13 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('verify auth state', async (t) => {
   t.timeout(4000)
   const client = new BasedClient()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     auth: {
       verifyAuthState: async (based, ctx, authState) => {
@@ -47,14 +46,20 @@ test.serial('verify auth state', async (t) => {
       },
     },
     functions: {
-      hello: async (based, payload) => {
-        if (payload) {
-          return payload.length
-        }
-        return 'flap'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          function: async (based, payload) => {
+            if (payload) {
+              return payload.length
+            }
+            return 'flap'
+          },
+        },
       },
     },
   })
+  await server.start()
 
   await client.connect({ url: 'ws://localhost:9910' })
 

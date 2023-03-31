@@ -1,19 +1,14 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('query functions perf (100k query fn instances)', async (t) => {
   const client = new BasedClient()
   let initCnt = 0
-  const server = await createSimpleServer({
+  const server = new BasedServer({
     ws: {
       maxBackpressureSize: 1e10,
-    },
-    uninstallAfterIdleTime: 1e3,
-    closeAfterIdleTime: {
-      query: 100,
-      channel: 60e3,
     },
     rateLimit: {
       ws: 3e6,
@@ -21,18 +16,56 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
       http: 3e6,
     },
     port: 9910,
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        const bla: number[] = []
-        for (let i = 0; i < 100; i++) {
-          bla.push(i)
-        }
-        update({ cnt: 1, payload, bla })
-        initCnt++
-        return () => {}
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: {
+        query: 100,
+        channel: 60e3,
+      },
+      specs: {
+        counter: {
+          query: true,
+          function: (based, payload, update) => {
+            const bla: number[] = []
+            for (let i = 0; i < 100; i++) {
+              bla.push(i)
+            }
+            update({ cnt: 1, payload, bla })
+            initCnt++
+            return () => {}
+          },
+        },
       },
     },
   })
+  await server.start()
+  // const server = await createSimpleServer({
+  //   ws: {
+  //     maxBackpressureSize: 1e10,
+  //   },
+  //   uninstallAfterIdleTime: 1e3,
+  //   closeAfterIdleTime: {
+  //     query: 100,
+  //     channel: 60e3,
+  //   },
+  //   rateLimit: {
+  //     ws: 3e6,
+  //     drain: 3e6,
+  //     http: 3e6,
+  //   },
+  //   port: 9910,
+  //   queryFunctions: {
+  //     counter: (based, payload, update) => {
+  //       const bla: number[] = []
+  //       for (let i = 0; i < 100; i++) {
+  //         bla.push(i)
+  //       }
+  //       update({ cnt: 1, payload, bla })
+  //       initCnt++
+  //       return () => {}
+  //     },
+  //   },
+  // })
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'

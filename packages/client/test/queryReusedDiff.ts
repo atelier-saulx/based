@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import createPatch from '@saulx/diff'
 
@@ -11,27 +11,34 @@ test.serial('query reuse diff', async (t) => {
     x: 1,
   }
   let checksum = 1
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        // initial will prevent copying
-        update(data, checksum, null, undefined, true)
-        const counter = setInterval(() => {
-          const p = createPatch(data, {
-            x: data.x + 1,
-            bla: true,
-          })
-          data.x += 1
-          update(data, ++checksum, null, undefined, p)
-        }, 100)
-        return () => {
-          clearInterval(counter)
-        }
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        counter: {
+          query: true,
+          function: (based, payload, update) => {
+            // initial will prevent copying
+            update(data, checksum, null, undefined, true)
+            const counter = setInterval(() => {
+              const p = createPatch(data, {
+                x: data.x + 1,
+                bla: true,
+              })
+              data.x += 1
+              update(data, ++checksum, null, undefined, p)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
       },
     },
   })
+  await server.start()
+
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'

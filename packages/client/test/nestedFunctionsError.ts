@@ -1,26 +1,32 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { wait } from '@saulx/utils'
 
 test.serial('nested functions internal only', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      helloInternal: {
-        internalOnly: true,
-        function: async () => {
-          return 'internal'
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        helloInternal: {
+          internalOnly: true,
+          function: async () => {
+            return 'internal'
+          },
         },
-      },
-      hello: async (based, payload, ctx) => {
-        return based.call('helloInternal', payload, ctx)
+        hello: {
+          function: async (based, payload, ctx) => {
+            return based.call('helloInternal', payload, ctx)
+          },
+        },
       },
     },
   })
+  await server.start()
+
   await client.connect({
     url: 'ws://localhost:9910',
   })
@@ -35,15 +41,21 @@ test.serial('nested functions internal only', async (t) => {
 
 test.serial('nested functions fn does not exist error', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: async (based, payload, ctx) => {
-        return based.call('blabla', payload, ctx)
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          function: async (based, payload, ctx) => {
+            return based.call('blabla', payload, ctx)
+          },
+        },
       },
     },
   })
+  await server.start()
+
   await client.connect({
     url: 'ws://localhost:9910',
   })
@@ -55,15 +67,22 @@ test.serial('nested functions fn does not exist error', async (t) => {
 
 test.serial('nested query functions fn does not exist error', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      hello: async (based, payload, update) => {
-        return based.query('blabla').subscribe(update)
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          query: true,
+          function: async (based, payload, update) => {
+            return based.query('blabla').subscribe(update)
+          },
+        },
       },
     },
   })
+  await server.start()
+
   await client.connect({
     url: 'ws://localhost:9910',
   })

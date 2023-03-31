@@ -1,55 +1,105 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { BasedError, BasedErrorCode } from '../src/types/error'
 
 const setup = async () => {
   const coreClient = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      checkPayload: {
-        closeAfterIdleTime: 1e3,
-        function: (based, payload, update) => {
-          update(payload.power)
-          return () => {}
-        },
-      },
-      counter: {
-        closeAfterIdleTime: 0,
-        function: async (based, payload, update) => {
-          let cnt = 0
-          update(cnt)
-          const counter = setInterval(() => {
-            update(++cnt)
-          }, 1000)
-          return () => {
-            clearInterval(counter)
-          }
-        },
-      },
-      'counter-cached': {
-        closeAfterIdleTime: 1e3,
-        function: async (based, payload, update) => {
-          let cnt = 0
-          update(cnt)
-          const counter = setInterval(() => {
-            update(++cnt)
-          }, 1000)
-          return () => {
-            clearInterval(counter)
-          }
-        },
-      },
-    },
     functions: {
-      nestedGetCheckPayload: async (based, payload) => {
-        return based.query('checkPayload', payload).get()
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        checkPayload: {
+          query: true,
+          closeAfterIdleTime: 1e3,
+          function: (based, payload, update) => {
+            update(payload.power)
+            return () => {}
+          },
+        },
+        counter: {
+          query: true,
+          closeAfterIdleTime: 0,
+          function: async (based, payload, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        'counter-cached': {
+          query: true,
+          closeAfterIdleTime: 1e3,
+          function: async (based, payload, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        nestedGetCheckPayload: {
+          function: async (based, payload) => {
+            return based.query('checkPayload', payload).get()
+          },
+        },
       },
     },
   })
+  await server.start()
+  // const server = await createSimpleServer({
+  //   uninstallAfterIdleTime: 1e3,
+  //   port: 9910,
+  //   queryFunctions: {
+  //     checkPayload: {
+  //       closeAfterIdleTime: 1e3,
+  //       function: (based, payload, update) => {
+  //         update(payload.power)
+  //         return () => {}
+  //       },
+  //     },
+  //     counter: {
+  //       closeAfterIdleTime: 0,
+  //       function: async (based, payload, update) => {
+  //         let cnt = 0
+  //         update(cnt)
+  //         const counter = setInterval(() => {
+  //           update(++cnt)
+  //         }, 1000)
+  //         return () => {
+  //           clearInterval(counter)
+  //         }
+  //       },
+  //     },
+  //     'counter-cached': {
+  //       closeAfterIdleTime: 1e3,
+  //       function: async (based, payload, update) => {
+  //         let cnt = 0
+  //         update(cnt)
+  //         const counter = setInterval(() => {
+  //           update(++cnt)
+  //         }, 1000)
+  //         return () => {
+  //           clearInterval(counter)
+  //         }
+  //       },
+  //     },
+  //   },
+  //   functions: {
+  //     nestedGetCheckPayload: async (based, payload) => {
+  //       return based.query('checkPayload', payload).get()
+  //     },
+  //   },
+  // })
   return { coreClient, server }
 }
 
@@ -153,23 +203,46 @@ test.serial('authorize get', async (t) => {
 
 test.serial('getWhen', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      flap: (based, _payload, update) => {
-        let cnt = 0
-        const interval = setInterval(() => {
-          cnt++
-          update({ count: cnt, status: cnt > 1 })
-        }, 100)
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        flap: {
+          query: true,
+          function: (based, _payload, update) => {
+            let cnt = 0
+            const interval = setInterval(() => {
+              cnt++
+              update({ count: cnt, status: cnt > 1 })
+            }, 100)
 
-        return () => {
-          clearInterval(interval)
-        }
+            return () => {
+              clearInterval(interval)
+            }
+          },
+        },
       },
     },
   })
+  await server.start()
+  // const server = await createSimpleServer({
+  //   uninstallAfterIdleTime: 1e3,
+  //   port: 9910,
+  //   queryFunctions: {
+  //     flap: (based, _payload, update) => {
+  //       let cnt = 0
+  //       const interval = setInterval(() => {
+  //         cnt++
+  //         update({ count: cnt, status: cnt > 1 })
+  //       }, 100)
+  //
+  //       return () => {
+  //         clearInterval(interval)
+  //       }
+  //     },
+  //   },
+  // })
 
   t.teardown(() => {
     client.disconnect()

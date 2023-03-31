@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
@@ -18,30 +18,39 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
       persistentStorage,
     }
   )
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        let cnt = 1
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
-      },
-      bigData: (based, payload, update) => {
-        const x: any[] = []
-        for (let i = 0; i < 1e6; i++) {
-          x.push(i)
-        }
-        update(x)
-        return () => {}
+    functions: {
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        counter: {
+          query: true,
+          function: (based, payload, update) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        bigData: {
+          query: true,
+          function: (based, payload, update) => {
+            const x: any[] = []
+            for (let i = 0; i < 1e6; i++) {
+              x.push(i)
+            }
+            update(x)
+            return () => {}
+          },
+        },
       },
     },
   })
+  await server.start()
 
   client.connect({
     url: async () => {

@@ -1,6 +1,5 @@
 import test from 'ava'
-// import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { createReadStream, readFileSync } from 'fs'
 import { join } from 'path'
@@ -8,18 +7,22 @@ import { join } from 'path'
 test.serial('function Stream (http)', async (t) => {
   const p = join(__dirname, '../package.json')
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: {
-        maxPayloadSize: 1e8,
-        function: async () => {
-          return createReadStream(p)
+      uninstallAfterIdleTime: 1e3,
+      specs: {
+        hello: {
+          maxPayloadSize: 1e8,
+          function: async () => {
+            return createReadStream(p)
+          },
         },
       },
     },
   })
+
+  await server.start()
 
   server.on('error', console.error)
 
