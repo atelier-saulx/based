@@ -9,11 +9,11 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         checkPayload: {
           query: true,
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             update(payload.power)
             return () => {}
@@ -22,6 +22,7 @@ const setup = async () => {
         counter: {
           query: true,
           closeAfterIdleTime: 0,
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, update) => {
             let cnt = 0
             update(cnt)
@@ -36,6 +37,7 @@ const setup = async () => {
         'counter-cached': {
           query: true,
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, update) => {
             let cnt = 0
             update(cnt)
@@ -48,6 +50,7 @@ const setup = async () => {
           },
         },
         nestedGetCheckPayload: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             return based.query('checkPayload', payload).get()
           },
@@ -56,50 +59,6 @@ const setup = async () => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   queryFunctions: {
-  //     checkPayload: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: (based, payload, update) => {
-  //         update(payload.power)
-  //         return () => {}
-  //       },
-  //     },
-  //     counter: {
-  //       closeAfterIdleTime: 0,
-  //       function: async (based, payload, update) => {
-  //         let cnt = 0
-  //         update(cnt)
-  //         const counter = setInterval(() => {
-  //           update(++cnt)
-  //         }, 1000)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //     'counter-cached': {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         let cnt = 0
-  //         update(cnt)
-  //         const counter = setInterval(() => {
-  //           update(++cnt)
-  //         }, 1000)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //   },
-  //   functions: {
-  //     nestedGetCheckPayload: async (based, payload) => {
-  //       return based.query('checkPayload', payload).get()
-  //     },
-  //   },
-  // })
   return { coreClient, server }
 }
 
@@ -206,10 +165,10 @@ test.serial('getWhen', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         flap: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, _payload, update) => {
             let cnt = 0
             const interval = setInterval(() => {
@@ -226,23 +185,6 @@ test.serial('getWhen', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   queryFunctions: {
-  //     flap: (based, _payload, update) => {
-  //       let cnt = 0
-  //       const interval = setInterval(() => {
-  //         cnt++
-  //         update({ count: cnt, status: cnt > 1 })
-  //       }, 100)
-  //
-  //       return () => {
-  //         clearInterval(interval)
-  //       }
-  //     },
-  //   },
-  // })
 
   t.teardown(() => {
     client.disconnect()

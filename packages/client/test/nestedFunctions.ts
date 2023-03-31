@@ -86,11 +86,11 @@ test.serial('nested functions (raw api)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         obsWithNestedLvl2: {
           query: true,
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             return observe(
               server,
@@ -105,6 +105,7 @@ test.serial('nested functions (raw api)', async (t) => {
         obsWithNested: {
           query: true,
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, update) => {
             return observe(
               server,
@@ -118,6 +119,7 @@ test.serial('nested functions (raw api)', async (t) => {
         },
         objectCounter: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: async (based, payload, update) => {
             const largeThing: { bla: any[] } = { bla: [] }
@@ -142,6 +144,7 @@ test.serial('nested functions (raw api)', async (t) => {
         },
         counter: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: async (based, payload, update) => {
             let cnt = 0
@@ -155,6 +158,7 @@ test.serial('nested functions (raw api)', async (t) => {
           },
         },
         fnWithNested: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, context) => {
             const x = await callFunction(server, 'hello', context, payload)
             await get(server, 'obsWithNested', context, 'json')
@@ -162,6 +166,7 @@ test.serial('nested functions (raw api)', async (t) => {
           },
         },
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             if (payload) {
               return payload
@@ -173,86 +178,6 @@ test.serial('nested functions (raw api)', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   queryFunctions: {
-  //     obsWithNestedLvl2: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: (based, payload, update) => {
-  //         return observe(
-  //           server,
-  //           'obsWithNested',
-  //           based.server.client.ctx,
-  //           'json',
-  //           update,
-  //           () => {}
-  //         )
-  //       },
-  //     },
-  //     obsWithNested: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         return observe(
-  //           server,
-  //           payload === 'json' ? 'objectCounter' : 'counter',
-  //           based.server.client.ctx,
-  //           payload,
-  //           update,
-  //           () => {}
-  //         )
-  //       },
-  //     },
-  //     objectCounter: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         const largeThing: { bla: any[] } = { bla: [] }
-  //         for (let i = 0; i < 1e4; i++) {
-  //           largeThing.bla.push({
-  //             title: 'snurp',
-  //             cnt: i,
-  //             snurp: ~~(Math.random() * 19999),
-  //           })
-  //         }
-  //         update(largeThing)
-  //         const counter = setInterval(() => {
-  //           largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-  //             ~~(Math.random() * 19999)
-  //           update(largeThing)
-  //         }, 1)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //     counter: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         let cnt = 0
-  //         update(cnt)
-  //         const counter = setInterval(() => {
-  //           update(++cnt)
-  //         }, 1000)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //   },
-  //   functions: {
-  //     fnWithNested: async (based, payload, context) => {
-  //       const x = await callFunction(server, 'hello', context, payload)
-  //       await get(server, 'obsWithNested', context, 'json')
-  //       return x
-  //     },
-  //     hello: async (based, payload) => {
-  //       if (payload) {
-  //         return payload
-  //       }
-  //       return 'flap'
-  //     },
-  //   },
-  // })
 
   await testShared(t, coreClient, server)
 })
@@ -263,10 +188,10 @@ test.serial('nested functions (fancy api)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         obsWithNestedLvl2: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: (based, payload, update) => {
             return based.query('obsWithNested', 'json').subscribe(update)
@@ -274,6 +199,7 @@ test.serial('nested functions (fancy api)', async (t) => {
         },
         obsWithNested: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: async (based, payload, update) => {
             return based
@@ -283,6 +209,7 @@ test.serial('nested functions (fancy api)', async (t) => {
         },
         objectCounter: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: async (based, payload, update) => {
             const largeThing: { bla: any[] } = { bla: [] }
@@ -307,6 +234,7 @@ test.serial('nested functions (fancy api)', async (t) => {
         },
         counter: {
           closeAfterIdleTime: 1e3,
+          uninstallAfterIdleTime: 1e3,
           query: true,
           function: async (based, payload, update) => {
             let cnt = 0
@@ -320,6 +248,7 @@ test.serial('nested functions (fancy api)', async (t) => {
           },
         },
         fnWithNested: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, context) => {
             const x = await based.call('hello', payload, context)
             await based.query('obsWithNested', 'json').get()
@@ -327,6 +256,7 @@ test.serial('nested functions (fancy api)', async (t) => {
           },
         },
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             if (payload) {
               return payload
@@ -338,74 +268,6 @@ test.serial('nested functions (fancy api)', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   queryFunctions: {
-  //     obsWithNestedLvl2: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: (based, payload, update) => {
-  //         return based.query('obsWithNested', 'json').subscribe(update)
-  //       },
-  //     },
-  //     obsWithNested: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         return based
-  //           .query(payload === 'json' ? 'objectCounter' : 'counter', payload)
-  //           .subscribe(update)
-  //       },
-  //     },
-  //     objectCounter: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         const largeThing: { bla: any[] } = { bla: [] }
-  //         for (let i = 0; i < 1e4; i++) {
-  //           largeThing.bla.push({
-  //             title: 'snurp',
-  //             cnt: i,
-  //             snurp: ~~(Math.random() * 19999),
-  //           })
-  //         }
-  //         update(largeThing)
-  //         const counter = setInterval(() => {
-  //           largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-  //             ~~(Math.random() * 19999)
-  //           update(largeThing)
-  //         }, 1)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //     counter: {
-  //       closeAfterIdleTime: 1e3,
-  //       function: async (based, payload, update) => {
-  //         let cnt = 0
-  //         update(cnt)
-  //         const counter = setInterval(() => {
-  //           update(++cnt)
-  //         }, 1000)
-  //         return () => {
-  //           clearInterval(counter)
-  //         }
-  //       },
-  //     },
-  //   },
-  //   functions: {
-  //     fnWithNested: async (based, payload, context) => {
-  //       const x = await based.call('hello', payload, context)
-  //       await based.query('obsWithNested', 'json').get()
-  //       return x
-  //     },
-  //     hello: async (based, payload) => {
-  //       if (payload) {
-  //         return payload
-  //       }
-  //       return 'flap'
-  //     },
-  //   },
-  // })
 
   await testShared(t, coreClient, server)
 })

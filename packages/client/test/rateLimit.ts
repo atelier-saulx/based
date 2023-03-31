@@ -8,9 +8,9 @@ test.serial('rate limit', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         flap: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             return {}
           },
@@ -19,15 +19,6 @@ test.serial('rate limit', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   functions: {
-  //     flap: async () => {
-  //       return {}
-  //     },
-  //   },
-  // })
 
   const coreClient = new BasedClient()
 

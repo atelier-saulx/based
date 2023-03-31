@@ -8,9 +8,9 @@ test.serial('Uninstall hook', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         bla: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             return 'x'
           },
@@ -23,20 +23,6 @@ test.serial('Uninstall hook', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   functions: {
-  //     bla: {
-  //       function: async () => {
-  //         return 'x'
-  //       },
-  //       uninstall: async () => {
-  //         uninstallHookFired = true
-  //       },
-  //     },
-  //   },
-  // })
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',

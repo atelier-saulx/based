@@ -9,10 +9,10 @@ test.serial('observablesDiff', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload, update) => {
             const largeThing: { bla: any[] } = { bla: [] }
             for (let i = 0; i < 1e4; i++) {

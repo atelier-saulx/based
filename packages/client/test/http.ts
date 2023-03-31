@@ -17,9 +17,9 @@ test.serial('functions (custom headers)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
+          uninstallAfterIdleTime: 1e3,
           headers: ['bla'],
           function: async (based, payload, ctx) => {
             return ctx.session?.headers.bla
@@ -387,9 +387,9 @@ test.serial('auth', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         flap: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             return 'hello this is fun!!!'
           },
@@ -406,23 +406,6 @@ test.serial('auth', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   functions: {
-  //     flap: async () => {
-  //       return 'hello this is fun!!!'
-  //     },
-  //   },
-  //   auth: {
-  //     authorize: async (based, context) => {
-  //       if (context.session?.authState.token === 'bla') {
-  //         return true
-  //       }
-  //       return false
-  //     },
-  //   },
-  // })
 
   const r1 = await (
     await fetch('http://localhost:9910/flap', {
