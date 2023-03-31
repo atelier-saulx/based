@@ -45,13 +45,12 @@ test.serial('addSpecs', async (t) => {
   // let msgCnt = 0
 
   client.query('cookie').subscribe(
-    (d) => {
+    () => {
       // msgCnt++
-      console.info('cookie time', d)
+      // console.info('cookie time', d)
     },
-    (err) => {
+    () => {
       errCnt++
-      console.error('cookie error', err)
     }
   )
 
