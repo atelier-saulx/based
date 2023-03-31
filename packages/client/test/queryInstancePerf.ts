@@ -21,11 +21,11 @@ test.serial('query functions perf (100k query fn instances)', async (t) => {
         query: 100,
         channel: 60e3,
       },
-      specs: {
+      configs: {
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, payload, update) => {
             const bla: number[] = []
             for (let i = 0; i < 100; i++) {
               bla.push(i)

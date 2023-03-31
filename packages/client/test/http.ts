@@ -1,14 +1,11 @@
 import test from 'ava'
-import createServer, {
-  BasedFunctionSpec,
-  BasedQueryFunctionSpec,
-  BasedServer,
-} from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { encodeAuthState } from '../src/index'
+import { BasedFunctionConfigComplete } from '@based/functions'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
@@ -17,11 +14,12 @@ test.serial('functions (custom headers)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
           headers: ['bla'],
-          function: async (based, payload, ctx) => {
+          fn: async (_, __, ctx) => {
             return ctx.session?.headers.bla
           },
         },
@@ -42,24 +40,22 @@ test.serial('functions (custom headers)', async (t) => {
 
 test.serial('functions (over http)', async (t) => {
   const store: {
-    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
-      maxPayloadSize: number
-      rateLimitTokens: 1
-    }
+    [key: string]: BasedFunctionConfigComplete
   } = {
     hello: {
+      type: 'function',
       path: '/flap',
       name: 'hello',
       maxPayloadSize: 1e6,
       rateLimitTokens: 1,
-      checksum: 1,
-      function: async (based, payload) => {
+      version: 1,
+      fn: async (_, payload) => {
         if (payload) {
           return payload
         }
         return 'flap'
       },
-      httpResponse: async (based, payload, responseData, send, ctx) => {
+      httpResponse: async (_, __, responseData, ___, ctx) => {
         if (!ctx.session) {
           return
         }
@@ -88,7 +84,12 @@ test.serial('functions (over http)', async (t) => {
           }
         }
         if (name && store[name]) {
-          return { name, maxPayloadSize: 1e6, rateLimitTokens: 1 }
+          return {
+            type: store[name].type,
+            name,
+            maxPayloadSize: 1e6,
+            rateLimitTokens: 1,
+          }
         }
         return null
       },
@@ -142,21 +143,18 @@ test.serial('functions (over http)', async (t) => {
 
 test.serial('get (over http)', async (t) => {
   const store: {
-    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
-      maxPayloadSize: number
-      rateLimitTokens: 1
-    }
+    [key: string]: BasedFunctionConfigComplete
   } = {
     hello: {
+      type: 'query',
       path: '/counter',
       name: 'hello',
       maxPayloadSize: 1e6,
       rateLimitTokens: 1,
       closeAfterIdleTime: 3e3,
       uninstallAfterIdleTime: 1e3,
-      checksum: 1,
-      query: true,
-      function: async (based, payload, update) => {
+      version: 1,
+      fn: async (_, __, update) => {
         let cnt = 0
         update(cnt)
         const counter = setInterval(() => {
@@ -168,13 +166,13 @@ test.serial('get (over http)', async (t) => {
       },
     },
     obj: {
+      type: 'query',
       path: '/obj',
       name: 'obj',
       maxPayloadSize: 1e6,
       rateLimitTokens: 1,
-      checksum: 1,
-      query: true,
-      function: async (based, payload, update) => {
+      version: 1,
+      fn: async (_, __, update) => {
         // this breaks with native fetch only, and only when size > x
         update({
           bada: {
@@ -263,25 +261,23 @@ test.serial('get (over http)', async (t) => {
 
 test.serial('functions (over http + contentEncoding)', async (t) => {
   const store: {
-    [key: string]: (BasedFunctionSpec | BasedQueryFunctionSpec) & {
-      maxPayloadSize: number
-      rateLimitTokens: 1
-    }
+    [key: string]: BasedFunctionConfigComplete
   } = {
     hello: {
+      type: 'function',
       path: '/flap',
       name: 'hello',
-      checksum: 1,
+      version: 1,
       maxPayloadSize: 1e11,
       rateLimitTokens: 1,
-      function: async (based, payload) => {
+      fn: async (_, payload) => {
         await wait(100)
         if (payload) {
           return payload
         }
         return 'flap'
       },
-      httpResponse: async (based, payload, responseData, send, ctx) => {
+      httpResponse: async (_, __, responseData, ___, ctx) => {
         if (!ctx.session) {
           return
         }
@@ -387,17 +383,18 @@ test.serial('auth', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         flap: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             return 'hello this is fun!!!'
           },
         },
       },
     },
     auth: {
-      authorize: async (based, context) => {
+      authorize: async (_, context) => {
         if (context.session?.authState.token === 'bla') {
           return true
         }

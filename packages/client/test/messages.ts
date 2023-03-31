@@ -8,11 +8,11 @@ test.serial('message incoming/outgoing', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         a: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, ___, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {
@@ -24,9 +24,9 @@ test.serial('message incoming/outgoing', async (t) => {
           },
         },
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {

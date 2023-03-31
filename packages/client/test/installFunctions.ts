@@ -8,10 +8,11 @@ test.serial('Uninstall hook', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         bla: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             return 'x'
           },
         },

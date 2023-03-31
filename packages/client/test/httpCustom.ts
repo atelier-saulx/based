@@ -6,26 +6,27 @@ test.serial('custom http response', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         bla: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          httpResponse: async (based, payload, responseData, send) => {
+          httpResponse: async (_, __, responseData, send) => {
             send(responseData, {
               blabla: [1, 2, 3, 4],
             })
           },
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             update('?')
             return () => {}
           },
         },
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             return 'flap'
           },
-          httpResponse: async (based, payload, responseData, send) => {
+          httpResponse: async (_, __, responseData, send) => {
             send(responseData, {
               blabla: [1, 2, 3, 4],
             })

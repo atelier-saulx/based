@@ -13,10 +13,11 @@ test.serial('stream nested functions (string)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         mySnur: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (based, payload) => {
             return based.stream('hello', {
               contents: 'power stream',
               payload,
@@ -24,10 +25,10 @@ test.serial('stream nested functions (string)', async (t) => {
           },
         },
         hello: {
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          stream: true,
-          function: async (based, { stream, payload }) => {
+          fn: async (_, { stream, payload }) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
@@ -67,10 +68,11 @@ test.serial('stream nested functions (stream)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         mySnur: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (based, payload) => {
             return based.stream('hello', {
               contents: createReadStream(filePath),
               size: (await statAsync(filePath)).size,
@@ -79,10 +81,10 @@ test.serial('stream nested functions (stream)', async (t) => {
           },
         },
         hello: {
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          stream: true,
-          function: async (based, { stream, payload }) => {
+          fn: async (_, { stream, payload }) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })

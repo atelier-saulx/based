@@ -6,10 +6,11 @@ test.serial('connect', async (t) => {
   const serverA = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (_, payload) => {
             if (payload) {
               return payload.length
             }
@@ -24,10 +25,11 @@ test.serial('connect', async (t) => {
   const serverB = new BasedServer({
     port: 9911,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (_, payload) => {
             if (payload) {
               return payload.length
             }

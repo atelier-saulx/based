@@ -9,10 +9,10 @@ test.serial('query simple', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         nested: {
-          query: true,
-          function: (based, payload, update) => {
+          type: 'query',
+          fn: (_, __, update) => {
             const d: { x: number[] } = { x: [] }
             for (let i = 0; i < 1e3; i++) {
               d.x.push(i)
@@ -31,8 +31,8 @@ test.serial('query simple', async (t) => {
           },
         },
         bla: {
-          query: true,
-          function: (based, payload, update) => {
+          type: 'query',
+          fn: (based, _, update) => {
             update(1)
             return based.query('nested').subscribe((r) => {
               internal.push(r)

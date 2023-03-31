@@ -8,10 +8,10 @@ const throwingFunction = async () => {
   throw new Error('This is error message')
 }
 
-const counter: BasedQueryFunction = (based, payload, update) => {
+const counter: BasedQueryFunction = (_, __, update) => {
   update({ yeye: 'yeye' })
   throw new Error('bla')
-  return () => undefined
+  // return () => undefined
 }
 
 const errorFunction = async () => {
@@ -20,7 +20,7 @@ const errorFunction = async () => {
   return wawa[3].yeye
 }
 
-const errorTimer = (based, payload, update: ObservableUpdateFunction) => {
+const errorTimer = (_: any, __: any, update: ObservableUpdateFunction) => {
   const int = setInterval(() => {
     update(undefined, undefined, new Error('lol'))
   }, 10)
@@ -37,24 +37,26 @@ const setup = async (t: ExecutionContext) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         throwingFunction: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: throwingFunction,
+          fn: throwingFunction,
         },
         errorFunction: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: errorFunction,
+          fn: errorFunction,
         },
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: counter,
+          fn: counter,
         },
         errorTimer: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: errorTimer,
+          fn: errorTimer,
         },
       },
     },
@@ -159,7 +161,7 @@ test.serial('throw in an interval', async (t) => {
     },
   })
   await t.throwsAsync(
-    new Promise((resolve, reject) =>
+    new Promise((_, reject) =>
       coreClient.query('errorTimer', {}).subscribe(() => {}, reject)
     )
   )

@@ -14,11 +14,11 @@ test.serial('query reuse diff', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             // initial will prevent copying
             update(data, checksum, null, undefined, true)
             const counter = setInterval(() => {

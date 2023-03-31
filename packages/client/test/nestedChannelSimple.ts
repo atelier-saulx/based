@@ -9,11 +9,11 @@ test.serial('channel simple', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         nested: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, ___, update) => {
             const d: { x: number[] } = { x: [] }
             for (let i = 0; i < 1e3; i++) {
               d.x.push(i)
@@ -32,8 +32,8 @@ test.serial('channel simple', async (t) => {
           },
         },
         bla: {
-          channel: true,
-          function: (based, payload, id, update) => {
+          type: 'channel',
+          subscriber: (based, _, __, update) => {
             update(1)
             return based.channel('nested').subscribe((r) => {
               internal.push(r)

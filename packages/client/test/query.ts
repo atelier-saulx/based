@@ -8,11 +8,11 @@ test.serial('query functions', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {
@@ -58,11 +58,13 @@ test.serial('query functions', async (t) => {
   await wait(500)
   close()
   server.functions.updateInternal({
-    query: true,
+    type: 'query',
     name: 'counter',
-    checksum: 2,
+    version: 2,
     uninstallAfterIdleTime: 1e3,
-    function: (based, payload, update) => {
+    maxPayloadSize: 1e9,
+    rateLimitTokens: 1,
+    fn: (_, __, update) => {
       let cnt = 0
       const counter = setInterval(() => {
         update('counter2:' + ++cnt)

@@ -13,11 +13,11 @@ test.serial('stream functions (small over http + file)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, { stream, payload }) => {
+          fn: async (_, { stream, payload }) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
@@ -55,12 +55,12 @@ test.serial('stream functions (over http + stream)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
           maxPayloadSize: 1e9,
           uninstallAfterIdleTime: 1e3,
-          stream: true,
-          function: async (based, { stream }) => {
+          type: 'stream',
+          fn: async (_, { stream }) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })

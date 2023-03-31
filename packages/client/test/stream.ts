@@ -12,12 +12,12 @@ test.serial('stream functions - buffer contents', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          function: async (based, { stream, payload }) => {
+          fn: async (_, { stream, payload }) => {
             stream.on('progress', (d) => {
               progressEvents.push(d)
             })
@@ -58,12 +58,12 @@ test.serial('stream functions - streamContents', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          function: async (based, { stream, payload, mimeType, size }) => {
+          fn: async (_, { stream, payload, mimeType, size }) => {
             let cnt = 0
             stream.on('progress', (d) => {
               progressEvents.push(d)
@@ -131,12 +131,12 @@ test.serial('stream functions - streamContents error', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          function: async () => {
+          fn: async () => {
             throw new Error('bla')
           },
         },
@@ -190,12 +190,12 @@ test.serial('stream functions - path', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          function: async (based, x) => {
+          fn: async (_, x) => {
             const { payload, stream, mimeType } = x
             const file = (await readStream(stream)).toString()
             return { payload, file, mimeType }
@@ -227,12 +227,12 @@ test.serial('stream functions - path json', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1,
           maxPayloadSize: 1e9,
-          function: async (based, x) => {
+          fn: async (_, x) => {
             const { payload, stream, mimeType } = x
             const file = (await readStream(stream)).toString()
             return { payload, file, mimeType }
