@@ -10,22 +10,24 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         mySnur: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             return createReadStream(filePath)
           },
         },
         mimeSnur: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          httpResponse: async (based, payload, responseData, send) => {
+          httpResponse: async (_, __, responseData, send) => {
             send(responseData, {
               'content-type': 'application/json',
               flapje: '123',
             })
           },
-          function: async () => {
+          fn: async () => {
             return createReadStream(filePath)
           },
         },

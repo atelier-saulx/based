@@ -9,17 +9,19 @@ test.serial('nested functions internal only', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         helloInternal: {
+          type: 'function',
           internalOnly: true,
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             return 'internal'
           },
         },
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload, ctx) => {
+          fn: async (based, payload, ctx) => {
             return based.call('helloInternal', payload, ctx)
           },
         },
@@ -45,10 +47,11 @@ test.serial('nested functions fn does not exist error', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload, ctx) => {
+          fn: async (based, payload, ctx) => {
             return based.call('blabla', payload, ctx)
           },
         },
@@ -71,11 +74,11 @@ test.serial('nested query functions fn does not exist error', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload, update) => {
+          fn: async (based, _, update) => {
             return based.query('blabla').subscribe(update)
           },
         },

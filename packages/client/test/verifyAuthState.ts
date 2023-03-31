@@ -10,7 +10,7 @@ test.serial('verify auth state', async (t) => {
   const server = new BasedServer({
     port: 9910,
     auth: {
-      verifyAuthState: async (based, ctx, authState) => {
+      verifyAuthState: async (_, __, authState) => {
         if (authState.token === '9000') {
           return { ...authState, type: 'over9000' }
         }
@@ -46,10 +46,11 @@ test.serial('verify auth state', async (t) => {
       },
     },
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (_, payload) => {
             if (payload) {
               return payload.length
             }

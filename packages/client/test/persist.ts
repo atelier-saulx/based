@@ -21,11 +21,11 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             let cnt = 1
             update(cnt)
             const counter = setInterval(() => {
@@ -37,9 +37,9 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
           },
         },
         bigData: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             const x: any[] = []
             for (let i = 0; i < 1e6; i++) {
               x.push(i)

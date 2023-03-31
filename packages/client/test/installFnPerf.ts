@@ -8,20 +8,22 @@ test.serial('install fn perf', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello2: {
+          type: 'function',
           maxPayloadSize: 1e8,
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             cnt++
             return 'flap'
           },
         },
         hello: {
+          type: 'function',
           public: true,
           maxPayloadSize: 1e8,
           uninstallAfterIdleTime: 1e3,
-          function: async (based) => {
+          fn: async (based) => {
             const d = Date.now()
             const q = []
             for (let i = 0; i < 1e5; i++) {

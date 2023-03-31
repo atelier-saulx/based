@@ -7,12 +7,12 @@ test.serial('http get falsy check', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         bla: {
-          query: true,
+          type: 'query',
           closeAfterIdleTime: 3e3,
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, __, update) => {
             update(0)
             return () => {}
           },
