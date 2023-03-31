@@ -1,6 +1,6 @@
 # Based
 
-Real time graph data platform, build for hyper-scale & progressive security
+Live graph data platform, build for hyper-scale & progressive security
 
 ### License
 
