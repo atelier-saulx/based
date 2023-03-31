@@ -65,24 +65,25 @@ Based server
 const server = new BasedServer({
   port: 9910,
   functions: {
-    specs: {
+    configs: {
       hello: {
-        function: async () => 'hello'
+        type: 'function',
+        fn: async () => 'hello'
       },
       counter: {
         type: 'query',
-        function: () => () => {}
+        fn: () => () => {}
       }
     }
   }
 })
 
-server.functions.addSpecs({ 
-  hello: { function: async () => 'hello' } 
+server.functions.add({ 
+  hello: { type: 'function', fn: async () => 'hello' } 
 })
 
 server.functions.addRoutes({ 
-  bla: { type: 'query  } 
+  bla: { type: 'query' } 
 })
 
 await server.start()
