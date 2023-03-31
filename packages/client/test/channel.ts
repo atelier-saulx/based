@@ -13,11 +13,11 @@ test.serial('Subscribe channel', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         mychannel: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, ___, update) => {
             let cnt = 0
             const interval = setInterval(() => {
               update(++cnt)
@@ -46,11 +46,13 @@ test.serial('Subscribe channel', async (t) => {
   t.true(numbers.length > 2)
   // await server.functions.updateInternal({
   server.functions.updateInternal({
-    channel: true,
+    type: 'channel',
     name: 'mychannel',
-    checksum: 2,
-    publish: () => {},
-    function: (based, payload, id, update) => {
+    version: 2,
+    maxPayloadSize: 1e9,
+    rateLimitTokens: 1,
+    publisher: () => {},
+    subscriber: (_, __, ___, update) => {
       let cnt = 0
       const interval = setInterval(() => {
         update('YES ' + ++cnt)
@@ -83,14 +85,14 @@ test.serial('Channel publish + subscribe', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         a: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: (based, payload, msg, id) => {
+          publisher: (_, __, msg, id) => {
             listeners.get(id)?.(msg)
           },
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, id, update) => {
             listeners.set(id, update)
             return () => {
               closeCalled = true
@@ -133,16 +135,16 @@ test.serial('Channel publish no subscribe', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         a: {
-          channel: true,
+          type: 'channel',
           rateLimitTokens: 0,
           closeAfterIdleTime: 10,
           uninstallAfterIdleTime: 1e3,
-          publish: (based, payload, msg) => {
+          publisher: (_, __, msg) => {
             r.push(msg)
           },
-          function: () => {
+          subscriber: () => {
             return () => {}
           },
         },
@@ -187,17 +189,17 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         a: {
-          channel: true,
+          type: 'channel',
           closeAfterIdleTime: 10,
           uninstallAfterIdleTime: 1e3,
           // based, payload, msg, ctx, id
-          publish: (based, payload, msg) => {
+          publisher: (_, __, msg) => {
             r.push(msg)
           },
           // add id as arg
-          function: () => {
+          subscriber: () => {
             return () => {}
           },
         },
@@ -265,21 +267,22 @@ test.serial('Nested channel publish + subscribe', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         helloPublish: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based) => {
+          fn: async (based) => {
             based.channel('a').publish('from helloPublish')
             return 'hello!'
           },
         },
         a: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: (based, payload, msg, id) => {
+          publisher: (_, __, msg, id) => {
             listeners.get(id)?.(msg)
           },
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, id, update) => {
             listeners.set(id, update)
             return () => {
               closeCalled = true
@@ -287,10 +290,10 @@ test.serial('Nested channel publish + subscribe', async (t) => {
           },
         },
         b: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: () => {},
-          function: (based, payload, id, update) => {
+          publisher: () => {},
+          subscriber: (based, payload, _, update) => {
             return based.channel('a', payload).subscribe((msg) => {
               update(msg)
             })
@@ -332,7 +335,7 @@ test.serial('Channel publish + subscribe errors', async (t) => {
   const server = new BasedServer({
     port: 9910,
     auth: {
-      authorize: async (based, ctx, name) => {
+      authorize: async (_, __, name) => {
         if (name === 'a') {
           return false
         }
@@ -344,63 +347,63 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         channel: 0,
         query: 0,
       },
-      specs: {
+      configs: {
         helloPublish: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based) => {
+          fn: async (based) => {
             based.channel('gurd').publish('from helloPublish')
             return 'hello!'
           },
         },
         yes: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based) => {
+          fn: async (based) => {
             based.channel('b').publish('from helloPublish')
             return 'hello!'
           },
         },
         x: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: () => {
+          publisher: () => {
             throw new Error('publish wrong')
           },
-          function: () => {
+          subscriber: () => {
             throw new Error('bla')
           },
         },
         a: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publisher: {
-            public: true,
-          },
-          publish: (based, payload, msg, id) => {
+          publicPublisher: true,
+          publisher: (_, __, msg, id) => {
             aList.push(msg)
             listeners.get(id)?.(msg)
           },
-          function: (based, payload, id, update) => {
+          subscriber: (_, __, id, update) => {
             listeners.set(id, update)
             return () => {}
           },
         },
         b: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: () => {
+          publisher: () => {
             throw new Error('publish wrong')
           },
-          function: () => {
+          subscriber: () => {
             throw new Error('bla')
           },
         },
         c: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
-          publish: (based, payload, msg) => {
+          publisher: (based, payload, msg) => {
             based.channel('b', payload).publish(msg)
           },
-          function: (based, payload, id, update, error) => {
+          subscriber: (based, payload, _, update, error) => {
             return based.channel('b', payload).subscribe(
               (msg) => {
                 update(msg)
@@ -467,16 +470,16 @@ test.serial('Channel publish over rest', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         a: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
           rateLimitTokens: 0,
           closeAfterIdleTime: 10,
-          publish: (based, payload, msg) => {
+          publisher: (_, payload, msg) => {
             r.push({ payload, msg })
           },
-          function: () => {
+          subscriber: () => {
             return () => {}
           },
         },
@@ -570,17 +573,15 @@ test.serial(
       },
       functions: {
         closeAfterIdleTime: { channel: 10, query: 10 },
-        specs: {
+        configs: {
           a: {
-            channel: true,
+            type: 'channel',
             uninstallAfterIdleTime: 1e3,
-            publisher: {
-              public: true,
-            },
-            publish: (based, payload, msg, id) => {
+            publicPublisher: true,
+            publisher: (_, __, msg, id) => {
               listeners.get(id)?.(msg)
             },
-            function: (based, payload, id, update) => {
+            subscriber: (_, __, id, update) => {
               listeners.set(id, update)
               return () => {}
             },

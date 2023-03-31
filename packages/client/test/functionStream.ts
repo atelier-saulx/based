@@ -10,11 +10,12 @@ test.serial('function Stream (http)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
           maxPayloadSize: 1e8,
-          function: async () => {
+          fn: async () => {
             return createReadStream(p)
           },
         },

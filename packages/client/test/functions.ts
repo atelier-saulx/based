@@ -9,16 +9,18 @@ test.serial('functions', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         checkPayload: {
-          function: async (based, payload) => {
+          type: 'function',
+          fn: async (_, payload) => {
             return payload.power
           },
           uninstallAfterIdleTime: 1e3,
         },
         hello: {
+          type: 'function',
           maxPayloadSize: 1e8,
-          function: async (based, payload) => {
+          fn: async (_, payload) => {
             if (payload) {
               return JSON.stringify(payload).length
             }
@@ -27,7 +29,8 @@ test.serial('functions', async (t) => {
           uninstallAfterIdleTime: 1e3,
         },
         lotsOfData: {
-          function: async () => {
+          type: 'function',
+          fn: async () => {
             let str = ''
             for (let i = 0; i < 200000; i++) {
               str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i

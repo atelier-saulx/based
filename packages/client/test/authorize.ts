@@ -10,10 +10,11 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: (async (_, payload) => {
+          fn: (async (_, payload) => {
             if (payload) {
               return payload
             }
@@ -21,9 +22,9 @@ const setup = async () => {
           }) as BasedFunction,
         },
         counter: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (async (_, __, update) => {
+          fn: (async (_, __, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {

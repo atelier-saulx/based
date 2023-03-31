@@ -14,54 +14,56 @@ test.serial('Specific authorize on spec', async (t) => {
     },
     functions: {
       closeAfterIdleTime: { channel: 10, query: 10 },
-      specs: {
+      configs: {
         snax: {
-          stream: true,
+          type: 'stream',
           uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
           },
-          function: async () => {
+          fn: async () => {
             return 'bla'
           },
         },
         slax: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
           },
-          function: (_, __, update) => {
+          fn: (_, __, update) => {
             update('slax')
             return () => {}
           },
         },
         klax: {
-          channel: true,
+          type: 'channel',
           uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
           },
-          publish: () => {},
-          function: (_, __, ___, update) => {
+          publisher: () => {},
+          subscriber: (_, __, ___, update) => {
             update('slax')
             return () => {}
           },
         },
         bla: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => 'x',
+          fn: async () => 'x',
         },
         hello: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
           },
-          function: async () => {
+          fn: async () => {
             return 'hello'
           },
         },

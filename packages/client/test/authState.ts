@@ -14,11 +14,12 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         hello: {
+          type: 'function',
           maxPayloadSize: 1e8,
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (_, payload) => {
             if (payload) {
               return payload.length
             }
@@ -26,8 +27,9 @@ const setup = async () => {
           },
         },
         lotsOfData: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async () => {
+          fn: async () => {
             let str = ''
             for (let i = 0; i < 200000; i++) {
               str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
@@ -167,7 +169,7 @@ test.serial('authState server clear', async (t) => {
   const serverAuthStates: Map<Number, AuthState> = new Map()
 
   server.auth.updateConfig({
-    authorize: async (server, ctx) => {
+    authorize: async (_, ctx) => {
       if (ctx.session) {
         serverSession = ctx.session
         serverAuthStates.set(ctx.session.id, ctx.session.authState)
@@ -267,7 +269,7 @@ test.serial('authState 16byte chars encoded on start', async (t) => {
   let aState: AuthState = {}
 
   server.auth.updateConfig({
-    authorize: async (based, context) => {
+    authorize: async (_, context) => {
       if (context.session) {
         aState = context.session.authState
       }

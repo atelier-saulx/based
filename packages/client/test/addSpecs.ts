@@ -10,7 +10,7 @@ test.serial('addSpecs', async (t) => {
       configs: {
         bla: {
           type: 'query',
-          fn: (based, payload, update) => {
+          fn: (_, __, update) => {
             update('?')
             return () => {}
           },
@@ -62,7 +62,7 @@ test.serial('addSpecs', async (t) => {
   server.functions.add({
     cookie: {
       type: 'query',
-      fn: (based, payload, update) => {
+      fn: (_, __, update) => {
         update('SNUR')
         return () => {}
       },

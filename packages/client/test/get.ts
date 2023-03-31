@@ -9,21 +9,21 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         checkPayload: {
-          query: true,
+          type: 'query',
           closeAfterIdleTime: 1e3,
           uninstallAfterIdleTime: 1e3,
-          function: (based, payload, update) => {
+          fn: (_, payload, update) => {
             update(payload.power)
             return () => {}
           },
         },
         counter: {
-          query: true,
+          type: 'query',
           closeAfterIdleTime: 0,
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload, update) => {
+          fn: async (_, __, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {
@@ -35,10 +35,10 @@ const setup = async () => {
           },
         },
         'counter-cached': {
-          query: true,
+          type: 'query',
           closeAfterIdleTime: 1e3,
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload, update) => {
+          fn: async (_, __, update) => {
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {
@@ -50,8 +50,9 @@ const setup = async () => {
           },
         },
         nestedGetCheckPayload: {
+          type: 'function',
           uninstallAfterIdleTime: 1e3,
-          function: async (based, payload) => {
+          fn: async (based, payload) => {
             return based.query('checkPayload', payload).get()
           },
         },
@@ -135,7 +136,7 @@ test.serial('authorize get', async (t) => {
   const { coreClient, server } = await setup()
 
   server.auth.updateConfig({
-    authorize: async (server, context) => {
+    authorize: async (_, context) => {
       return context.session?.authState.token === 'mock_token'
     },
   })
@@ -165,11 +166,11 @@ test.serial('getWhen', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      specs: {
+      configs: {
         flap: {
-          query: true,
+          type: 'query',
           uninstallAfterIdleTime: 1e3,
-          function: (based, _payload, update) => {
+          fn: (_, __, update) => {
             let cnt = 0
             const interval = setInterval(() => {
               cnt++
