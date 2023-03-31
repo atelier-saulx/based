@@ -2,7 +2,7 @@ import { Context, HttpSession } from './context'
 import { BasedFunctionClient } from './client'
 import { BasedDataStream } from './stream'
 import { Authorize } from './auth'
-import { Required } from 'utility-types'
+import type { Required } from 'utility-types'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,
@@ -93,6 +93,7 @@ export type ChannelMessageFunctionInternal<K = any> = (
 
 export type UninstallFunction = () => Promise<void>
 
+// ------------ Config -------------------
 type FunctionConfigShared = {
   /** Function name */
   name?: string
@@ -148,9 +149,14 @@ type FunctionConfigShared = {
   timeoutCounter?: number
 }
 
+type FunctionConfigSharedComplete = Required<
+  FunctionConfigShared,
+  'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
+>
+
 export type BasedFunctionTypes = 'channel' | 'query' | 'function' | 'stream'
 
-export type BasedChannelFunctionConfig = {
+type BasedChannelFunctionConfig = {
   /** Function type `channel, function, query, stream, authorize` */
   type: 'channel'
   /** Channel subscriber 
@@ -181,45 +187,61 @@ export type BasedChannelFunctionConfig = {
   closeAfterIdleTime?: number
   /** Only for Publisher */
   httpResponse?: HttpResponse
-} & FunctionConfigShared
+}
 
-export type BasedCallFunctionConfig = {
+type BasedCallFunctionConfig = {
   /** Function type `channel, function, query, stream` */
   type: 'function'
   fn: BasedFunction
   httpResponse?: HttpResponse
-} & FunctionConfigShared
+}
 
-export type BasedQueryFunctionConfig = {
+type BasedQueryFunctionConfig = {
   /** Function type `channel, function, query, stream` */
   type: 'query'
   fn: BasedQueryFunction
   httpResponse?: HttpResponse
   /** How long should the query function remain active after all subscribers are gone, in ms */
   closeAfterIdleTime?: number
-} & FunctionConfigShared
+}
 
-export type BasedStreamFunctionConfig = {
+type BasedStreamFunctionConfig = {
   /** Function type `channel, function, query, stream` */
   type: 'stream'
   fn: BasedStreamFunction
-} & FunctionConfigShared
+}
 
 export type BasedFunctionConfig<
   T extends BasedFunctionTypes = BasedFunctionTypes
 > = T extends 'channel'
-  ? BasedChannelFunctionConfig
+  ? BasedChannelFunctionConfig & FunctionConfigShared
   : T extends 'function'
-  ? BasedCallFunctionConfig
+  ? BasedCallFunctionConfig & FunctionConfigShared
   : T extends 'query'
-  ? BasedQueryFunctionConfig
+  ? BasedQueryFunctionConfig & FunctionConfigShared
   : T extends 'stream'
-  ? BasedStreamFunctionConfig
+  ? BasedStreamFunctionConfig & FunctionConfigShared
   :
-      | BasedChannelFunctionConfig
-      | BasedCallFunctionConfig
-      | BasedQueryFunctionConfig
-      | BasedStreamFunctionConfig
+      | (BasedChannelFunctionConfig & FunctionConfigShared)
+      | (BasedCallFunctionConfig & FunctionConfigShared)
+      | (BasedQueryFunctionConfig & FunctionConfigShared)
+      | (BasedStreamFunctionConfig & FunctionConfigShared)
+
+export type BasedFunctionConfigComplete<
+  T extends BasedFunctionTypes = BasedFunctionTypes
+> = T extends 'channel'
+  ? BasedChannelFunctionConfig & FunctionConfigSharedComplete
+  : T extends 'function'
+  ? BasedCallFunctionConfig & FunctionConfigSharedComplete
+  : T extends 'query'
+  ? BasedQueryFunctionConfig & FunctionConfigSharedComplete
+  : T extends 'stream'
+  ? BasedStreamFunctionConfig & FunctionConfigSharedComplete
+  :
+      | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
+      | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
+      | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
+      | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
 
 export type BasedAuthorizeFunctionConfig = {
   /** Function type `authorize` */
@@ -231,13 +253,6 @@ export type BasedRoute<
   T extends BasedFunctionTypes = BasedFunctionTypes,
   R extends keyof BasedFunctionConfig = 'type' | 'name'
 > = Required<Partial<BasedFunctionConfig<T>>, R>
-
-export type BasedFunctionConfigComplete<
-  T extends BasedFunctionTypes = BasedFunctionTypes
-> = Required<
-  BasedFunctionConfig<T>,
-  'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
->
 
 export type BasedRouteComplete<
   T extends BasedFunctionTypes = BasedFunctionTypes
