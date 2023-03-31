@@ -9,12 +9,12 @@ test.serial('functions', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         checkPayload: {
           function: async (based, payload) => {
             return payload.power
           },
+          uninstallAfterIdleTime: 1e3,
         },
         hello: {
           maxPayloadSize: 1e8,
@@ -24,6 +24,7 @@ test.serial('functions', async (t) => {
             }
             return 'flap'
           },
+          uninstallAfterIdleTime: 1e3,
         },
         lotsOfData: {
           function: async () => {
@@ -33,36 +34,12 @@ test.serial('functions', async (t) => {
             }
             return str
           },
+          uninstallAfterIdleTime: 1e3,
         },
       },
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   functions: {
-  //     checkPayload: async (based, payload) => {
-  //       return payload.power
-  //     },
-  //     hello: {
-  //       maxPayloadSize: 1e8,
-  //       function: async (based, payload) => {
-  //         if (payload) {
-  //           return JSON.stringify(payload).length
-  //         }
-  //         return 'flap'
-  //       },
-  //     },
-  //     lotsOfData: async () => {
-  //       let str = ''
-  //       for (let i = 0; i < 200000; i++) {
-  //         str += ' big string ' + ~~(Math.random() * 1000) + 'snur ' + i
-  //       }
-  //       return str
-  //     },
-  //   },
-  // })
 
   server.on('error', console.error)
 
