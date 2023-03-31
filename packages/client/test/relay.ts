@@ -1,47 +1,54 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('Relay', async (t) => {
   const relayClient = new BasedClient()
   const listeners: Map<number, (msg: any) => void> = new Map()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9911,
     functions: {
-      hello: async (based, payload) => {
-        return 'from hello ' + payload.snap
-      },
-    },
-    channels: {
-      a: {
-        publisher: {
-          public: true,
+      specs: {
+        hello: {
+          uninstallAfterIdleTime: 1e3,
+          function: async (based, payload) => {
+            return 'from hello ' + payload.snap
+          },
         },
-        publish: (based, payload, msg, id) => {
-          listeners.get(id)?.(msg)
+        a: {
+          channel: true,
+          uninstallAfterIdleTime: 1e3,
+          publisher: {
+            public: true,
+          },
+          publish: (based, payload, msg, id) => {
+            listeners.get(id)?.(msg)
+          },
+          function: (based, payload, id, update) => {
+            listeners.set(id, update)
+            return () => {}
+          },
         },
-        function: (based, payload, id, update) => {
-          listeners.set(id, update)
-          return () => {}
+        counter: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          function: (based, payload, update) => {
+            let cnt = 1
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
         },
-      },
-    },
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        let cnt = 1
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
       },
     },
   })
+  await server.start()
 
   relayClient.connect({
     url: async () => {
@@ -49,28 +56,31 @@ test.serial('Relay', async (t) => {
     },
   })
 
-  const serverWithProxy = await createSimpleServer({
+  const serverWithProxy = new BasedServer({
     clients: {
       events: relayClient,
     },
-    uninstallAfterIdleTime: 1e3,
     port: 9910,
-    channels: {
-      a: {
-        relay: 'events',
-      },
-    },
     functions: {
-      hello: {
-        relay: 'events',
-      },
-    },
-    queryFunctions: {
-      counter: {
-        relay: 'events',
+      specs: {
+        a: {
+          channel: true,
+          uninstallAfterIdleTime: 1e3,
+          relay: 'events',
+        },
+        hello: {
+          uninstallAfterIdleTime: 1e3,
+          relay: 'events',
+        },
+        counter: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          relay: 'events',
+        },
       },
     },
   })
+  await serverWithProxy.start()
 
   const client = new BasedClient()
 

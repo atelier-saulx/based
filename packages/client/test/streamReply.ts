@@ -1,5 +1,5 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { createReadStream, readFileSync } from 'fs'
 import { join } from 'path'
@@ -7,26 +7,32 @@ import fetch from 'cross-fetch'
 
 test.serial('reply with a stream from call fn (http)', async (t) => {
   const filePath = join(__dirname, './browser/tmp.json')
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      mySnur: async () => {
-        return createReadStream(filePath)
-      },
-      mimeSnur: {
-        httpResponse: async (based, payload, responseData, send) => {
-          send(responseData, {
-            'content-type': 'application/json',
-            flapje: '123',
-          })
+      specs: {
+        mySnur: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            return createReadStream(filePath)
+          },
         },
-        function: async () => {
-          return createReadStream(filePath)
+        mimeSnur: {
+          uninstallAfterIdleTime: 1e3,
+          httpResponse: async (based, payload, responseData, send) => {
+            send(responseData, {
+              'content-type': 'application/json',
+              flapje: '123',
+            })
+          },
+          function: async () => {
+            return createReadStream(filePath)
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',

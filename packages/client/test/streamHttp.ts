@@ -1,5 +1,5 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait, readStream } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
@@ -10,22 +10,25 @@ const gzip = promisify(zlib.gzip)
 test.serial('stream functions (small over http + file)', async (t) => {
   const progressEvents: number[] = []
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        stream: true,
-        function: async (based, { stream, payload }) => {
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          await readStream(stream)
-          return { payload, bla: true }
+    functions: {
+      specs: {
+        hello: {
+          stream: true,
+          uninstallAfterIdleTime: 1e3,
+          function: async (based, { stream, payload }) => {
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            await readStream(stream)
+            return { payload, bla: true }
+          },
         },
       },
     },
   })
+  await server.start()
 
   const result = await (
     await fetch('http://localhost:9910/hello?bla', {
@@ -49,24 +52,27 @@ test.serial('stream functions (small over http + file)', async (t) => {
 test.serial('stream functions (over http + stream)', async (t) => {
   let progressEvents: number[] = []
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    streams: {
-      hello: {
-        maxPayloadSize: 1e9,
-        stream: true,
-        function: async (based, { stream }) => {
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          const buf = await readStream(stream)
-          console.info('is end...', buf.byteLength)
-          return 'bla'
+    functions: {
+      specs: {
+        hello: {
+          maxPayloadSize: 1e9,
+          uninstallAfterIdleTime: 1e3,
+          stream: true,
+          function: async (based, { stream }) => {
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            const buf = await readStream(stream)
+            console.info('is end...', buf.byteLength)
+            return 'bla'
+          },
         },
       },
     },
   })
+  await server.start()
 
   const bigBod: any[] = []
 

@@ -1,19 +1,24 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import { BasedClient } from '../src/index'
 
 test.serial('rate limit', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      flap: async () => {
-        return {}
+      specs: {
+        flap: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            return {}
+          },
+        },
       },
     },
   })
+  await server.start()
 
   const coreClient = new BasedClient()
 

@@ -7,7 +7,6 @@ test.serial('addSpecs', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       configs: {
         bla: {
           type: 'query',

@@ -1,26 +1,33 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('query functions', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        let cnt = 0
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 1000)
-        return () => {
-          clearInterval(counter)
-        }
+    functions: {
+      specs: {
+        counter: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          function: (based, payload, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 1000)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
       },
     },
   })
+  await server.start()
+
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'
@@ -50,10 +57,11 @@ test.serial('query functions', async (t) => {
 
   await wait(500)
   close()
-  await server.functions.updateInternal({
+  server.functions.updateInternal({
     query: true,
     name: 'counter',
     checksum: 2,
+    uninstallAfterIdleTime: 1e3,
     function: (based, payload, update) => {
       let cnt = 0
       const counter = setInterval(() => {

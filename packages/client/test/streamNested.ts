@@ -1,5 +1,5 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { readStream, wait } from '@saulx/utils'
 import { stat, createReadStream, readFileSync } from 'fs'
@@ -10,32 +10,35 @@ const statAsync = promisify(stat)
 
 test.serial('stream nested functions (string)', async (t) => {
   const progressEvents: number[] = []
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      mySnur: async (based, payload) => {
-        return based.stream('hello', {
-          contents: 'power stream',
-          payload,
-        })
-      },
-    },
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        stream: true,
-        function: async (based, { stream, payload }) => {
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          const result = await readStream(stream)
-          return { payload, result: result.toString() }
+      specs: {
+        mySnur: {
+          uninstallAfterIdleTime: 1e3,
+          function: async (based, payload) => {
+            return based.stream('hello', {
+              contents: 'power stream',
+              payload,
+            })
+          },
+        },
+        hello: {
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          stream: true,
+          function: async (based, { stream, payload }) => {
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            const result = await readStream(stream)
+            return { payload, result: result.toString() }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',
@@ -61,33 +64,36 @@ test.serial('stream nested functions (string)', async (t) => {
 test.serial('stream nested functions (stream)', async (t) => {
   const progressEvents: number[] = []
   const filePath = join(__dirname, './browser/tmp.json')
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      mySnur: async (based, payload) => {
-        return based.stream('hello', {
-          contents: createReadStream(filePath),
-          size: (await statAsync(filePath)).size,
-          payload,
-        })
-      },
-    },
-    streams: {
-      hello: {
-        uninstallAfterIdleTime: 1,
-        maxPayloadSize: 1e9,
-        stream: true,
-        function: async (based, { stream, payload }) => {
-          stream.on('progress', (d) => {
-            progressEvents.push(d)
-          })
-          const result = await readStream(stream)
-          return { payload, result: result.toString() }
+      specs: {
+        mySnur: {
+          uninstallAfterIdleTime: 1e3,
+          function: async (based, payload) => {
+            return based.stream('hello', {
+              contents: createReadStream(filePath),
+              size: (await statAsync(filePath)).size,
+              payload,
+            })
+          },
+        },
+        hello: {
+          uninstallAfterIdleTime: 1,
+          maxPayloadSize: 1e9,
+          stream: true,
+          function: async (based, { stream, payload }) => {
+            stream.on('progress', (d) => {
+              progressEvents.push(d)
+            })
+            const result = await readStream(stream)
+            return { payload, result: result.toString() }
+          },
         },
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   client.connect({
     url: async () => 'ws://localhost:9910',

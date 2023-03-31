@@ -14,10 +14,10 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           maxPayloadSize: 1e8,
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             if (payload) {
               return payload.length
@@ -26,6 +26,7 @@ const setup = async () => {
           },
         },
         lotsOfData: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             let str = ''
             for (let i = 0; i < 200000; i++) {

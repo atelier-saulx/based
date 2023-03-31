@@ -1,37 +1,40 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 
 test.serial('custom http response', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      bla: {
-        httpResponse: async (based, payload, responseData, send) => {
-          send(responseData, {
-            blabla: [1, 2, 3, 4],
-          })
-        },
-        function: (based, payload, update) => {
-          update('?')
-          return () => {}
-        },
-      },
-    },
     functions: {
-      hello: {
-        function: async () => {
-          return 'flap'
+      specs: {
+        bla: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          httpResponse: async (based, payload, responseData, send) => {
+            send(responseData, {
+              blabla: [1, 2, 3, 4],
+            })
+          },
+          function: (based, payload, update) => {
+            update('?')
+            return () => {}
+          },
         },
-        httpResponse: async (based, payload, responseData, send) => {
-          send(responseData, {
-            blabla: [1, 2, 3, 4],
-          })
+        hello: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            return 'flap'
+          },
+          httpResponse: async (based, payload, responseData, send) => {
+            send(responseData, {
+              blabla: [1, 2, 3, 4],
+            })
+          },
         },
       },
     },
   })
+  await server.start()
   const rawResp = await fetch('http://localhost:9910/hello')
   t.is(rawResp.headers.get('blabla'), '1,2,3,4')
   const result = await rawResp.text()

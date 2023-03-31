@@ -13,12 +13,11 @@ test.serial('Specific authorize on spec', async (t) => {
       http: 1e3,
     },
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: { channel: 10, query: 10 },
       specs: {
         snax: {
-          name: 'snax',
           stream: true,
+          uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
@@ -29,6 +28,7 @@ test.serial('Specific authorize on spec', async (t) => {
         },
         slax: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
@@ -40,6 +40,7 @@ test.serial('Specific authorize on spec', async (t) => {
         },
         klax: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true
@@ -51,9 +52,11 @@ test.serial('Specific authorize on spec', async (t) => {
           },
         },
         bla: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => 'x',
         },
         hello: {
+          uninstallAfterIdleTime: 1e3,
           authorize: async () => {
             authCalled++
             return true

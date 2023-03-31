@@ -9,7 +9,6 @@ test.serial('Subscribe channel', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
@@ -17,6 +16,7 @@ test.serial('Subscribe channel', async (t) => {
       specs: {
         mychannel: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, id, update) => {
             let cnt = 0
             const interval = setInterval(() => {
@@ -79,7 +79,6 @@ test.serial('Channel publish + subscribe', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
@@ -87,6 +86,7 @@ test.serial('Channel publish + subscribe', async (t) => {
       specs: {
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: (based, payload, msg, id) => {
             listeners.get(id)?.(msg)
           },
@@ -129,7 +129,6 @@ test.serial('Channel publish no subscribe', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
@@ -139,6 +138,7 @@ test.serial('Channel publish no subscribe', async (t) => {
           channel: true,
           rateLimitTokens: 0,
           closeAfterIdleTime: 10,
+          uninstallAfterIdleTime: 1e3,
           publish: (based, payload, msg) => {
             r.push(msg)
           },
@@ -183,7 +183,6 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
       drain: 1e6,
     },
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
@@ -192,6 +191,7 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
         a: {
           channel: true,
           closeAfterIdleTime: 10,
+          uninstallAfterIdleTime: 1e3,
           // based, payload, msg, ctx, id
           publish: (based, payload, msg) => {
             r.push(msg)
@@ -261,13 +261,13 @@ test.serial('Nested channel publish + subscribe', async (t) => {
       drain: 1e6,
     },
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
       },
       specs: {
         helloPublish: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based) => {
             based.channel('a').publish('from helloPublish')
             return 'hello!'
@@ -275,6 +275,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
         },
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: (based, payload, msg, id) => {
             listeners.get(id)?.(msg)
           },
@@ -287,6 +288,7 @@ test.serial('Nested channel publish + subscribe', async (t) => {
         },
         b: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: () => {},
           function: (based, payload, id, update) => {
             return based.channel('a', payload).subscribe((msg) => {
@@ -338,19 +340,20 @@ test.serial('Channel publish + subscribe errors', async (t) => {
       },
     },
     functions: {
-      uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: {
         channel: 0,
         query: 0,
       },
       specs: {
         helloPublish: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based) => {
             based.channel('gurd').publish('from helloPublish')
             return 'hello!'
           },
         },
         yes: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based) => {
             based.channel('b').publish('from helloPublish')
             return 'hello!'
@@ -358,6 +361,7 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         },
         x: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: () => {
             throw new Error('publish wrong')
           },
@@ -367,6 +371,7 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         },
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publisher: {
             public: true,
           },
@@ -381,6 +386,7 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         },
         b: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: () => {
             throw new Error('publish wrong')
           },
@@ -390,6 +396,7 @@ test.serial('Channel publish + subscribe errors', async (t) => {
         },
         c: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publish: (based, payload, msg) => {
             based.channel('b', payload).publish(msg)
           },
@@ -460,10 +467,10 @@ test.serial('Channel publish over rest', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           rateLimitTokens: 0,
           closeAfterIdleTime: 10,
           publish: (based, payload, msg) => {
@@ -562,11 +569,11 @@ test.serial(
         http: 0,
       },
       functions: {
-        uninstallAfterIdleTime: 1e3,
         closeAfterIdleTime: { channel: 10, query: 10 },
         specs: {
           a: {
             channel: true,
+            uninstallAfterIdleTime: 1e3,
             publisher: {
               public: true,
             },

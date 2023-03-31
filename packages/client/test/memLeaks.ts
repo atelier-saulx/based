@@ -1,19 +1,24 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('mem tests', async (t) => {
-  await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: async () => {
-        await wait(3e3)
-        return 'hello'
+      specs: {
+        hello: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            await wait(3e3)
+            return 'hello'
+          },
+        },
       },
     },
   })
+  await server.start()
 
   console.info(
     `Mem before ${

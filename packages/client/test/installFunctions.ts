@@ -1,24 +1,28 @@
 import test from 'ava'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
 
 test.serial('Uninstall hook', async (t) => {
   let uninstallHookFired = false
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      bla: {
-        function: async () => {
-          return 'x'
+      specs: {
+        bla: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            return 'x'
+          },
         },
-        uninstall: async () => {
-          uninstallHookFired = true
-        },
+      },
+      uninstall: async () => {
+        uninstallHookFired = true
+        return true
       },
     },
   })
+  await server.start()
   const client = new BasedClient()
   await client.connect({
     url: async () => 'ws://localhost:9910',

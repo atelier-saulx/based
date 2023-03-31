@@ -2,7 +2,7 @@ import test from 'ava'
 import createServer, {
   BasedFunctionSpec,
   BasedQueryFunctionSpec,
-  createSimpleServer,
+  BasedServer,
 } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
@@ -14,18 +14,21 @@ const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
 test.serial('functions (custom headers)', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      hello: {
-        headers: ['bla'],
-        function: async (based, payload, ctx) => {
-          return ctx.session?.headers.bla
+      specs: {
+        hello: {
+          uninstallAfterIdleTime: 1e3,
+          headers: ['bla'],
+          function: async (based, payload, ctx) => {
+            return ctx.session?.headers.bla
+          },
         },
       },
     },
   })
+  await server.start()
   const x = await (
     await fetch('http://localhost:9910/hello', {
       headers: {
@@ -71,11 +74,11 @@ test.serial('functions (over http)', async (t) => {
     },
   }
 
-  const server = await createServer({
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       uninstallAfterIdleTime: 1e3,
+      closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       route: ({ name, path }) => {
         if (path) {
           for (const name in store) {
@@ -102,6 +105,7 @@ test.serial('functions (over http)', async (t) => {
       },
     },
   })
+  await server.start()
 
   const result = await (await fetch('http://localhost:9910/flap')).text()
 
@@ -198,7 +202,7 @@ test.serial('get (over http)', async (t) => {
     },
   }
 
-  const server = await createServer({
+  const server = new BasedServer({
     port: 9910,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
@@ -228,6 +232,7 @@ test.serial('get (over http)', async (t) => {
       },
     },
   })
+  await server.start()
 
   const resultObj = await (await fetch('http://localhost:9910/obj')).json()
 
@@ -290,7 +295,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
     },
   }
 
-  const server = await createServer({
+  const server = new BasedServer({
     port: 9910,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
@@ -324,6 +329,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
       },
     },
   })
+  await server.start()
 
   const result1 = await (
     await fetch('http://localhost:9910/flap', {
@@ -378,12 +384,16 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
 })
 
 test.serial('auth', async (t) => {
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
     functions: {
-      flap: async () => {
-        return 'hello this is fun!!!'
+      specs: {
+        flap: {
+          uninstallAfterIdleTime: 1e3,
+          function: async () => {
+            return 'hello this is fun!!!'
+          },
+        },
       },
     },
     auth: {
@@ -395,6 +405,7 @@ test.serial('auth', async (t) => {
       },
     },
   })
+  await server.start()
 
   const r1 = await (
     await fetch('http://localhost:9910/flap', {

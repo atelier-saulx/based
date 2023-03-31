@@ -1,40 +1,46 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('message incoming/outgoing', async (t) => {
   const client = new BasedClient()
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    channels: {
-      a: {
-        function: (based, payload, id, update) => {
-          let cnt = 0
-          update(cnt)
-          const counter = setInterval(() => {
-            update(++cnt)
-          }, 100)
-          return () => {
-            clearInterval(counter)
-          }
+    functions: {
+      specs: {
+        a: {
+          channel: true,
+          uninstallAfterIdleTime: 1e3,
+          function: (based, payload, id, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
+        counter: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          function: (based, payload, update) => {
+            let cnt = 0
+            update(cnt)
+            const counter = setInterval(() => {
+              update(++cnt)
+            }, 100)
+            return () => {
+              clearInterval(counter)
+            }
+          },
         },
       },
     },
-    queryFunctions: {
-      counter: (based, payload, update) => {
-        let cnt = 0
-        update(cnt)
-        const counter = setInterval(() => {
-          update(++cnt)
-        }, 100)
-        return () => {
-          clearInterval(counter)
-        }
-      },
-    },
   })
+  await server.start()
 
   let debugMessages = 0
 

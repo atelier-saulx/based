@@ -10,9 +10,9 @@ const setup = async () => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: (async (_, payload) => {
             if (payload) {
               return payload
@@ -22,6 +22,7 @@ const setup = async () => {
         },
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (async (_, __, update) => {
             let cnt = 0
             update(cnt)

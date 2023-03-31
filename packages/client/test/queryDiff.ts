@@ -1,37 +1,44 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { createSimpleServer } from '@based/server'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
 test.serial('observablesDiff', async (t) => {
   const coreClient = new BasedClient()
 
-  const server = await createSimpleServer({
-    uninstallAfterIdleTime: 1e3,
+  const server = new BasedServer({
     port: 9910,
-    queryFunctions: {
-      counter: async (based, payload, update) => {
-        const largeThing: { bla: any[] } = { bla: [] }
-        for (let i = 0; i < 1e4; i++) {
-          largeThing.bla.push({
-            title: 'snurp',
-            cnt: i,
-            snurp: ~~(Math.random() * 19999),
-          })
-        }
-        update(largeThing)
-        const counter = setInterval(() => {
-          largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-            ~~(Math.random() * 19999)
-          // diff is made on an extra cache layer
-          update(largeThing)
-        }, 1)
-        return () => {
-          clearInterval(counter)
-        }
+    functions: {
+      specs: {
+        counter: {
+          query: true,
+          uninstallAfterIdleTime: 1e3,
+          function: async (based, payload, update) => {
+            const largeThing: { bla: any[] } = { bla: [] }
+            for (let i = 0; i < 1e4; i++) {
+              largeThing.bla.push({
+                title: 'snurp',
+                cnt: i,
+                snurp: ~~(Math.random() * 19999),
+              })
+            }
+            update(largeThing)
+            const counter = setInterval(() => {
+              largeThing.bla[
+                ~~(Math.random() * largeThing.bla.length - 1)
+              ].snup = ~~(Math.random() * 19999)
+              // diff is made on an extra cache layer
+              update(largeThing)
+            }, 1)
+            return () => {
+              clearInterval(counter)
+            }
+          },
+        },
       },
     },
   })
+  await server.start()
 
   coreClient.connect({
     url: async () => {
