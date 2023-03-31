@@ -221,6 +221,7 @@ export class BasedFunctions {
       maxPayloadSize: number
       rateLimitTokens: number
     }
+
     if (!nRoute.name) {
       if (!name) {
         console.error('No route name!', route)
@@ -228,6 +229,7 @@ export class BasedFunctions {
       }
       nRoute.name = name
     }
+
     if (!route.maxPayloadSize) {
       if (isChannelFunctionRoute(nRoute)) {
         route.maxPayloadSize = this.maxPayLoadSizeDefaults.channel

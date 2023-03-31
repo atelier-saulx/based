@@ -1,8 +1,8 @@
 # Based
 
----
+Live graph data platform, build for hyper-scale & progressive security
 
-## License
+### License
 
 Licensed under the MIT License, Copyright © 2021-present [Saulx](https://www.saulx.com/).
 
