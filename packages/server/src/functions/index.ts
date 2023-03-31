@@ -94,11 +94,11 @@ export class BasedFunctions {
           }
           const rootPath = this.paths['/']
           if (rootPath) {
-            return this.routes[rootPath]
+            return this.routes[rootPath] || null
           }
           return null
         }
-        return this.routes[name]
+        return this.routes[name] || null
       }
     }
 
