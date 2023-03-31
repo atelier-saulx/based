@@ -66,16 +66,16 @@ test.serial('Relay', async (t) => {
         a: {
           channel: true,
           uninstallAfterIdleTime: 1e3,
-          relay: 'events',
+          relay: { client: 'events' },
         },
         hello: {
           uninstallAfterIdleTime: 1e3,
-          relay: 'events',
+          relay: { client: 'events' },
         },
         counter: {
           query: true,
           uninstallAfterIdleTime: 1e3,
-          relay: 'events',
+          relay: { client: 'events' },
         },
       },
     },
