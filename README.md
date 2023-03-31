@@ -1,5 +1,7 @@
 # Based
 
+Real time data platform, build for hyperscale & progressive security.
+
 ---
 
 ## License
