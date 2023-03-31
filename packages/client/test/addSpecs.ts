@@ -7,16 +7,17 @@ test.serial('addSpecs', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         bla: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             update('?')
             return () => {}
           },
         },
         bye: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             return 'flap'
           },

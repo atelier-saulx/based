@@ -13,9 +13,9 @@ test.serial('stream nested functions (string)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         mySnur: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             return based.stream('hello', {
               contents: 'power stream',
@@ -67,9 +67,9 @@ test.serial('stream nested functions (stream)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         mySnur: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             return based.stream('hello', {
               contents: createReadStream(filePath),

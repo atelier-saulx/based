@@ -12,7 +12,6 @@ test.serial('stream functions - buffer contents', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           stream: true,
@@ -59,7 +58,6 @@ test.serial('stream functions - streamContents', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           stream: true,
@@ -133,7 +131,6 @@ test.serial('stream functions - streamContents error', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           stream: true,
@@ -193,7 +190,6 @@ test.serial('stream functions - path', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           stream: true,
@@ -231,7 +227,6 @@ test.serial('stream functions - path json', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
           stream: true,

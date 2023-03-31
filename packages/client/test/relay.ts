@@ -10,15 +10,16 @@ test.serial('Relay', async (t) => {
   const server = new BasedServer({
     port: 9911,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             return 'from hello ' + payload.snap
           },
         },
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           publisher: {
             public: true,
           },
@@ -32,6 +33,7 @@ test.serial('Relay', async (t) => {
         },
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             let cnt = 1
             update(cnt)
@@ -60,17 +62,19 @@ test.serial('Relay', async (t) => {
     },
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           relay: 'events',
         },
         hello: {
+          uninstallAfterIdleTime: 1e3,
           relay: 'events',
         },
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           relay: 'events',
         },
       },

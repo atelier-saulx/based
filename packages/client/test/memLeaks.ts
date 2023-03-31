@@ -7,9 +7,9 @@ test.serial('mem tests', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             await wait(3e3)
             return 'hello'

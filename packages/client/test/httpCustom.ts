@@ -6,10 +6,10 @@ test.serial('custom http response', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         bla: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           httpResponse: async (based, payload, responseData, send) => {
             send(responseData, {
               blabla: [1, 2, 3, 4],
@@ -21,6 +21,7 @@ test.serial('custom http response', async (t) => {
           },
         },
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async () => {
             return 'flap'
           },

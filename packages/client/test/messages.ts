@@ -8,10 +8,10 @@ test.serial('message incoming/outgoing', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         a: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, id, update) => {
             let cnt = 0
             update(cnt)
@@ -25,6 +25,7 @@ test.serial('message incoming/outgoing', async (t) => {
         },
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             let cnt = 0
             update(cnt)

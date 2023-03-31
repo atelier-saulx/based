@@ -46,9 +46,9 @@ test.serial('verify auth state', async (t) => {
       },
     },
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         hello: {
+          uninstallAfterIdleTime: 1e3,
           function: async (based, payload) => {
             if (payload) {
               return payload.length

@@ -21,10 +21,10 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             let cnt = 1
             update(cnt)
@@ -38,6 +38,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
         },
         bigData: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             const x: any[] = []
             for (let i = 0; i < 1e6; i++) {

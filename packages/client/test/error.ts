@@ -37,20 +37,23 @@ const setup = async (t: ExecutionContext) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         throwingFunction: {
+          uninstallAfterIdleTime: 1e3,
           function: throwingFunction,
         },
         errorFunction: {
+          uninstallAfterIdleTime: 1e3,
           function: errorFunction,
         },
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: counter,
         },
         errorTimer: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: errorTimer,
         },
       },

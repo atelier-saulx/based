@@ -8,10 +8,10 @@ test.serial('query functions', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         counter: {
           query: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, update) => {
             let cnt = 0
             update(cnt)
@@ -61,6 +61,7 @@ test.serial('query functions', async (t) => {
     query: true,
     name: 'counter',
     checksum: 2,
+    uninstallAfterIdleTime: 1e3,
     function: (based, payload, update) => {
       let cnt = 0
       const counter = setInterval(() => {

@@ -9,10 +9,10 @@ test.serial('channel simple', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
-      uninstallAfterIdleTime: 1e3,
       specs: {
         nested: {
           channel: true,
+          uninstallAfterIdleTime: 1e3,
           function: (based, payload, id, update) => {
             const d: { x: number[] } = { x: [] }
             for (let i = 0; i < 1e3; i++) {

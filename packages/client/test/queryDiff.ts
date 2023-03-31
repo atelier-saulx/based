@@ -39,32 +39,6 @@ test.serial('observablesDiff', async (t) => {
     },
   })
   await server.start()
-  // const server = await createSimpleServer({
-  //   uninstallAfterIdleTime: 1e3,
-  //   port: 9910,
-  //   queryFunctions: {
-  //     counter: async (based, payload, update) => {
-  //       const largeThing: { bla: any[] } = { bla: [] }
-  //       for (let i = 0; i < 1e4; i++) {
-  //         largeThing.bla.push({
-  //           title: 'snurp',
-  //           cnt: i,
-  //           snurp: ~~(Math.random() * 19999),
-  //         })
-  //       }
-  //       update(largeThing)
-  //       const counter = setInterval(() => {
-  //         largeThing.bla[~~(Math.random() * largeThing.bla.length - 1)].snup =
-  //           ~~(Math.random() * 19999)
-  //         // diff is made on an extra cache layer
-  //         update(largeThing)
-  //       }, 1)
-  //       return () => {
-  //         clearInterval(counter)
-  //       }
-  //     },
-  //   },
-  // })
 
   coreClient.connect({
     url: async () => {
