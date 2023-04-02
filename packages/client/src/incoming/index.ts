@@ -157,7 +157,7 @@ export const incoming = async (
       }
 
       if (debug) {
-        debugDiff(client, diff, checksum, id)
+        debugDiff(client, diff, id, checksum)
       }
     }
 
