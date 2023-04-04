@@ -199,7 +199,7 @@ const start = async () => {
           ) => {
             const Bucket = 'based-test-bucket'
 
-            const s = new PassThrough()
+            // const s = new PassThrough()
 
             // https://0f3245a938ac700e485dd7fa57b5d209.r2.cloudflarestorage.com/based-test-bucket
 
@@ -248,7 +248,6 @@ const start = async () => {
               await parallelUploads3.done()
             } catch (err) {
               console.log(total, 'vs', size)
-
               return { err, total, size }
             }
 
