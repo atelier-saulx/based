@@ -41,6 +41,35 @@ const init = async () => {
   })
 
   // add number of files!
+  uploadButton('Stream file to s3', async (files, progress) => {
+    log('uploading', files.length + ' files')
+    const results = await Promise.all(
+      [...files].map(async (f) => {
+        const payload: any[] = []
+        for (let i = 0; i < 2; i++) {
+          payload.push({
+            i,
+            bla: 'hello',
+          })
+        }
+        const x = await based.stream(
+          'files-s3',
+          {
+            contents: f,
+            payload,
+          },
+          progress
+        )
+        return x
+      })
+    )
+    results.forEach((r) => {
+      log(r)
+      log(`<span><img style="height:150px" src="${r.url}" /></span>`)
+    })
+  })
+
+  // add number of files!
   uploadButton('Stream file', async (files, progress) => {
     log('uploading', files.length + ' files')
     const results = await Promise.all(
@@ -182,50 +211,42 @@ const init = async () => {
       })
   })
 
-  toggleButton(
-    'Query fn persist',
-    () => {
-      return based
-        .query('staticSub', { special: 1 }, { persistent: true })
-        .subscribe((d) => {
-          log('static Sub', d)
-        })
-    },
-    true
-  )
+  toggleButton('Query fn persist', () => {
+    return based
+      .query('staticSub', { special: 1 }, { persistent: true })
+      .subscribe((d) => {
+        log('static Sub', d)
+      })
+  })
 
-  toggleButton(
-    'Query fn persist HUGE',
-    () => {
-      return based
-        .query('staticSubHuge', { special: 1 }, { persistent: true })
-        .subscribe((d, checksum) => {
-          // @ts-ignore
-          window.download = () => {
-            const blob = new Blob([JSON.stringify(d)], {
-              type: 'text/plain;charset=utf-8',
-            })
-            const url = window.URL || window.webkitURL
-            const link = url.createObjectURL(blob)
-            const a = document.createElement('a')
-            a.download = 'HUGEFile.json'
-            a.href = link
-            document.body.appendChild(a)
-            a.click()
-            document.body.removeChild(a)
-          }
+  toggleButton('Query fn persist HUGE', () => {
+    return based
+      .query('staticSubHuge', { special: 1 }, { persistent: true })
+      .subscribe((d, checksum) => {
+        // @ts-ignore
+        window.download = () => {
+          const blob = new Blob([JSON.stringify(d)], {
+            type: 'text/plain;charset=utf-8',
+          })
+          const url = window.URL || window.webkitURL
+          const link = url.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.download = 'HUGEFile.json'
+          a.href = link
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+        }
 
-          log(
-            'static Sub Huge is there!',
-            d.length / 1000 + 'k items',
-            'checksum',
-            checksum,
-            '<a style="text-decoration:underline;" onclick="window.download()">Download the file</a>'
-          )
-        })
-    },
-    true
-  )
+        log(
+          'static Sub Huge is there!',
+          d.length / 1000 + 'k items',
+          'checksum',
+          checksum,
+          '<a style="text-decoration:underline;" onclick="window.download()">Download the file</a>'
+        )
+      })
+  })
 
   toggleButton(
     'setAuthState',

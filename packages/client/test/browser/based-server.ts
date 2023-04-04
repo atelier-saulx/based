@@ -2,6 +2,9 @@ import { BasedServer } from '@based/server'
 import { BasedFunction, BasedQueryFunction } from '@based/functions'
 import fs from 'node:fs'
 import { join } from 'path'
+import { S3 } from '@aws-sdk/client-s3'
+import { Upload } from '@aws-sdk/lib-storage'
+import { PassThrough } from 'node:stream'
 
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
@@ -10,6 +13,39 @@ const TMP = join(__dirname, 'tmp')
 const hello: BasedFunction<void, string> = async () => {
   return 'This is a response from hello'
 }
+
+const path = join(__dirname, '../../../../../secrets/cloudflarer2.json')
+let fileSecrets: any = {}
+
+try {
+  fileSecrets = JSON.parse(fs.readFileSync(path).toString())
+} catch (err) {
+  console.info('No s3 credentials found - skip s3')
+}
+
+const { r2AccessKeyId, r2SecretAccessKey, cloudflareAccountId } = fileSecrets
+
+const s3Client: S3 = new S3({
+  region: 'auto',
+  endpoint: `https://${cloudflareAccountId}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: r2AccessKeyId,
+    secretAccessKey: r2SecretAccessKey,
+  },
+})
+
+// // inject header to tell cloudflare to create the bucket if doesnt exist
+// s3Client.middlewareStack.add(
+//   (next) => (args) => {
+//     // @ts-ignore
+//     if (args.request?.headers) {
+//       // @ts-ignore
+//       args.request.headers['cf-create-bucket-if-missing'] = 'true'
+//     }
+//     return next(args)
+//   },
+//   { step: 'build' }
+// )
 
 const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
   based,
@@ -84,10 +120,11 @@ const start = async () => {
     },
     functions: {
       uninstallAfterIdleTime: 1e3,
-      specs: {
+      configs: {
         file: {
+          type: 'function',
           headers: ['range'],
-          function: async (based, payload) => {
+          fn: async (based, payload) => {
             const x = fs.statSync(files[payload.id].file)
             return {
               file: fs.createReadStream(files[payload.id].file),
@@ -112,24 +149,28 @@ const start = async () => {
           },
         },
         hello: {
-          function: hello,
+          type: 'function',
+
+          fn: hello,
         },
         brokenFiles: {
-          stream: true,
-          function: async () => {
+          type: 'stream',
+
+          fn: async () => {
             throw new Error('broken')
           },
         },
         notAllowedFiles: {
-          stream: true,
-          function: async () => {
+          type: 'stream',
+
+          fn: async () => {
             return { hello: true }
           },
         },
         files: {
+          type: 'stream',
           maxPayloadSize: 1e10,
-          stream: true,
-          function: async (based, x) => {
+          fn: async (based, x) => {
             const { stream, mimeType, payload, size } = x
             const id = x.fileName || 'untitled'
             x.stream.on('progress', (p) =>
@@ -148,17 +189,85 @@ const start = async () => {
             }
           },
         },
+        filess3: {
+          name: 'files-s3',
+          type: 'stream',
+          maxPayloadSize: 1e10,
+          fn: async (
+            based,
+            { stream, extension, fileName, size, mimeType }
+          ) => {
+            const Bucket = 'based-test-bucket'
+
+            const s = new PassThrough()
+
+            // https://0f3245a938ac700e485dd7fa57b5d209.r2.cloudflarestorage.com/based-test-bucket
+
+            console.info('file to s3:', fileName, extension, size, mimeType)
+
+            if (!fileName) {
+              fileName = 'snapje'
+            }
+
+            const Key = `myfile-${fileName}`
+
+            const parallelUploads3 = new Upload({
+              client: s3Client,
+              // partSize: '5MB', // optional size of each part
+              params: {
+                Bucket,
+                Key,
+                Body: stream,
+                ContentType: mimeType,
+                ContentLength: size,
+              },
+            })
+
+            // stream.pipe(s)
+
+            stream.on('progress', (data) => {
+              console.info('progres', data)
+            })
+
+            let total = 0
+
+            stream.on('data', (c) => {
+              total += c.byteLength
+              console.info('chunk time!', c.byteLength)
+            })
+
+            // stream.on('end', () => {
+            //   console.info('WTF END!')
+            // })
+
+            parallelUploads3.on('httpUploadProgress', (progress) => {
+              console.info('uploading progress!', progress)
+            })
+
+            try {
+              await parallelUploads3.done()
+            } catch (err) {
+              console.log(total, 'vs', size)
+
+              return { err, total, size }
+            }
+
+            const baseUrl = `https://pub-525f4a7565e74326a2914f5f2718fa99.r2.dev`
+
+            return { Key, Bucket, url: `${baseUrl}/${encodeURIComponent(Key)}` }
+          },
+        },
         counter: {
-          query: true,
-          function: counter,
+          type: 'query',
+          fn: counter,
         },
         staticSub: {
-          query: true,
-          function: staticSub,
+          type: 'query',
+          fn: staticSub,
         },
         staticSubHuge: {
-          query: true,
-          function: staticSubHuge,
+          type: 'query',
+          fn: staticSubHuge,
         },
       },
     },

@@ -53,7 +53,7 @@ const handleMeta = (
   if (firstCommaIndex !== -1 && meta.startsWith('size=')) {
     const size = meta.slice(5, firstCommaIndex)
     if (size) {
-      const sizeNr = Number(size)
+      const sizeNr = Number(size) + 2
       file.opts.size = sizeNr
       file.stream.size = sizeNr
     }
