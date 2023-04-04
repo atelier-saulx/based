@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
-import { PassThrough } from 'node:stream'
+// import { PassThrough } from 'node:stream'
 
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
