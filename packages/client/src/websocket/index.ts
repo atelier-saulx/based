@@ -67,6 +67,7 @@ const connect = (
 
       let isError = false
 
+      ws.binaryType = 'blob'
       ws.onerror = (err) => {
         // TODO: add a websocket close number
         // also for rateLimit

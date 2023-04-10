@@ -94,8 +94,8 @@ export const useQuery = <T = any>(
   }
 
   // stubs
-  useEffect(() => {}, [null])
   useState()
+  useEffect(() => {}, [null])
 
   return { loading: true, data: null }
 }
