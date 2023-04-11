@@ -2,7 +2,6 @@ import uws from '@based/uws'
 import { parseAuthState } from '../auth'
 import { blockIncomingRequest } from '../security'
 import { BasedServer } from '../server'
-import { getIp } from '../ip'
 // import { BasedErrorCode } from '../error'
 
 let clientId = 0
@@ -66,7 +65,7 @@ export const upgrade = (
   // eslint-disable-next-line
   ctx: uws.us_socket_context_t
 ) => {
-  const ip = getIp(res)
+  const ip = server.getIp(res, req)
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
     return
   }
@@ -84,7 +83,7 @@ export const upgradeAuthorize = (
   res.onAborted(() => {
     aborted = true
   })
-  const ip = getIp(res)
+  const ip = server.getIp(res, req)
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.ws, 10)) {
     return
   }
