@@ -10,6 +10,23 @@ const setup = async () => {
     port: 9910,
     functions: {
       configs: {
+        any: {
+          type: 'query',
+          closeAfterIdleTime: 0,
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, payload, update) => {
+            update(payload)
+            return () => {}
+          },
+        },
+        nestedAny: {
+          type: 'function',
+          uninstallAfterIdleTime: 1e3,
+          fn: async (based, payload) => {
+            const bla = await based.query('any', payload).get()
+            return bla
+          },
+        },
         checkPayload: {
           type: 'query',
           closeAfterIdleTime: 1e3,
@@ -80,6 +97,23 @@ test.serial('get', async (t) => {
   coreClient.once('connect', (isConnected) => {
     console.info('connect', isConnected)
   })
+
+  const str = await coreClient.query('any', 'xxx').get()
+  t.is(str, 'xxx')
+  const nestedStr = await coreClient.call('nestedAny', 'xxx')
+  t.is(nestedStr, 'xxx')
+  const num = await coreClient.query('any', 19).get()
+  t.is(num, 19)
+  const nestedNum = await coreClient.call('nestedAny', 19)
+  t.is(nestedNum, 19)
+  const boolTrue = await coreClient.query('any', true).get()
+  t.is(boolTrue, true)
+  const nestedBoolTrue = await coreClient.call('nestedAny', true)
+  t.is(nestedBoolTrue, true)
+  const boolFalse = await coreClient.query('any', false).get()
+  t.is(boolFalse, false)
+  const nestedBoolFalse = await coreClient.call('nestedAny', false)
+  t.is(nestedBoolFalse, false)
 
   const power = await coreClient
     .query('checkPayload', {
