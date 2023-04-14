@@ -84,10 +84,11 @@ const start = async () => {
     },
     functions: {
       uninstallAfterIdleTime: 1e3,
-      specs: {
+      configs: {
         file: {
           headers: ['range'],
-          function: async (based, payload) => {
+          type: 'function',
+          fn: async (_based, payload) => {
             const x = fs.statSync(files[payload.id].file)
             return {
               file: fs.createReadStream(files[payload.id].file),
@@ -95,14 +96,14 @@ const start = async () => {
               size: x.size,
             }
           },
-          httpResponse: async (based, payload, responseData, send, ctx) => {
+          httpResponse: async (_based, _payload, responseData, _send, ctx) => {
             ctx.session?.res.cork(() => {
               ctx.session?.res.writeStatus('200 OK')
               ctx.session?.res.writeHeader(
                 'Content-Type',
                 responseData.mimeType
               )
-              responseData.file.on('data', (d) => {
+              responseData.file.on('data', (d: any) => {
                 ctx.session?.res.write(d)
               })
               responseData.file.on('end', () => {
@@ -112,24 +113,25 @@ const start = async () => {
           },
         },
         hello: {
-          function: hello,
+          type: 'function',
+          fn: hello,
         },
         brokenFiles: {
-          stream: true,
-          function: async () => {
+          type: 'stream',
+          fn: async () => {
             throw new Error('broken')
           },
         },
         notAllowedFiles: {
-          stream: true,
-          function: async () => {
+          type: 'stream',
+          fn: async () => {
             return { hello: true }
           },
         },
         files: {
           maxPayloadSize: 1e10,
-          stream: true,
-          function: async (based, x) => {
+          type: 'stream',
+          fn: async (_based, x) => {
             const { stream, mimeType, payload, size } = x
             const id = x.fileName || 'untitled'
             x.stream.on('progress', (p) =>
@@ -149,16 +151,16 @@ const start = async () => {
           },
         },
         counter: {
-          query: true,
-          function: counter,
+          type: 'query',
+          fn: counter,
         },
         staticSub: {
-          query: true,
-          function: staticSub,
+          type: 'query',
+          fn: staticSub,
         },
         staticSubHuge: {
-          query: true,
-          function: staticSubHuge,
+          type: 'query',
+          fn: staticSubHuge,
         },
       },
     },
