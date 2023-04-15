@@ -14,7 +14,11 @@ const hello: BasedFunction<void, string> = async () => {
   return 'This is a response from hello'
 }
 
-const path = join(__dirname, '../../../../../secrets/cloudflarer2.json')
+const path = join(
+  __dirname,
+  // ======= Add your credentials location here
+  '../../../../../based-cloud/packages/vault/src/local/keys/secrets.json'
+)
 let fileSecrets: any = {}
 
 try {
@@ -219,7 +223,10 @@ const start = async () => {
                 Key,
                 Body: stream,
                 ContentType: mimeType,
-                ContentLength: size,
+                // There is a bug when using this argument.
+                // Both in AWS and R2
+                // https://github.com/aws/aws-sdk-js-v3/issues/3915
+                // ContentLength: size,
               },
             })
 
@@ -251,7 +258,7 @@ const start = async () => {
               return { err, total, size }
             }
 
-            const baseUrl = `https://pub-525f4a7565e74326a2914f5f2718fa99.r2.dev`
+            const baseUrl = `https://pub-9d1a27a91117440c90400467ddba7c8b.r2.dev`
 
             return { Key, Bucket, url: `${baseUrl}/${encodeURIComponent(Key)}` }
           },
