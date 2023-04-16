@@ -38,6 +38,7 @@ export const installFn = async <R extends BasedRoute>(
   if (!route) {
     return null
   }
+
   const { type, name } = route
   try {
     const spec = await server.functions.install(name)

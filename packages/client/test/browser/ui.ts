@@ -136,7 +136,7 @@ export const logs = (): ((...args: any[]) => void) => {
   const updateLog = (...args) => {
     const d = new Date()
     logs.push(
-      `<div style="margin-top:4px;margin-bottom:8px"><span style="font-size:12px;color:#ccc">${d.getHours()}:${padLeft(
+      `<div style="margin-top:4px;margin-bottom:8px;user-select:text;"><span style="font-size:12px;color:#ccc">${d.getHours()}:${padLeft(
         '' + d.getMinutes(),
         2,
         '0'
@@ -147,10 +147,10 @@ export const logs = (): ((...args: any[]) => void) => {
       )}</span> ${args
         .map((v, i) => {
           if (v instanceof Error) {
-            return `<span style="color:red;">${v.message}</span>`
+            return `<span style="color:red;user-select:text;">${v.message}</span>`
           }
           if (typeof v === 'object') {
-            return `<pre style="font-family:Andale Mono">${JSON.stringify(
+            return `<pre style="font-family:Andale Mono;user-select:text;">${JSON.stringify(
               v,
               null,
               2

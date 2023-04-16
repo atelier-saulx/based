@@ -62,6 +62,8 @@ export const httpHandler = (
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
 
+  console.log('lullz', req, route)
+
   if (route === null || route.internalOnly === true) {
     sendError(
       server,

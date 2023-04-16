@@ -53,7 +53,7 @@ const handleMeta = (
   if (firstCommaIndex !== -1 && meta.startsWith('size=')) {
     const size = meta.slice(5, firstCommaIndex)
     if (size) {
-      const sizeNr = Number(size)
+      const sizeNr = Number(size) // + 2
       file.opts.size = sizeNr
       file.stream.size = sizeNr
     }
@@ -91,6 +91,8 @@ export default (
 
   const contentLength = ctx.session.headers['content-length']
 
+  console.info('get get', contentLength)
+
   let setInProgress = false
   let boundary = null
   let prevLine: string
@@ -99,15 +101,20 @@ export default (
   let total = 0
   let progress = 0
 
+  ctx.session.res.onAborted(() => {
+    console.log('??why?')
+  })
+
   ctx.session.res.onData((chunk, isLast) => {
+    console.info('go go go CHUNK TIME', chunk)
     // see if this goes ok... (clearing mem etc)
-    if (chunk.byteLength > MAX_CHUNK_SIZE) {
-      sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
-      for (const file of files) {
-        file.stream.destroy()
-      }
-      return
-    }
+    // if (chunk.byteLength > MAX_CHUNK_SIZE) {
+    //   sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
+    //   for (const file of files) {
+    //     file.stream.destroy()
+    //   }
+    //   return
+    // }
 
     let firstWritten = false
     const blocks = Buffer.from(chunk).toString('binary').split('\r\n')

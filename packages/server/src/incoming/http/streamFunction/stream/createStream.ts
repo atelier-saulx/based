@@ -62,11 +62,13 @@ export default (
     }
   } else {
     ctx.session.res.onData((c, isLast) => {
-      if (c.byteLength > MAX_CHUNK_SIZE) {
-        sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
-        stream.destroy()
-        return
-      }
+      console.log('END BLA')
+
+      // if (c.byteLength > MAX_CHUNK_SIZE) {
+      //   sendError(server, ctx, BasedErrorCode.ChunkTooLarge, route)
+      //   stream.destroy()
+      //   return
+      // }
       if (isLast) {
         stream.end(Buffer.from(c))
       } else {
