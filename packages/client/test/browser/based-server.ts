@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import http from 'node:http'
 // import { PassThrough } from 'node:stream'
 import uws from '@based/uws'
 
@@ -320,3 +321,23 @@ uws
       console.info('Failed to listen to port ' + 8082)
     }
   })
+
+// create a server object:
+http
+  .createServer(function (req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
+
+    if (req.method === 'post') {
+      req.on('data', (d) => {
+        console.info('CHUNK', d)
+      })
+
+      req.on('end', () => {
+        console.info('lullz')
+      })
+    } else {
+      res.end()
+    }
+  })
+  .listen(8083)

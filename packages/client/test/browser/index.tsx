@@ -42,7 +42,7 @@ const init = async () => {
 
   uploadButton('Stream basic', async (files, progressHandler) => {
     const body = new global.FormData()
-    const url = 'http://localhost:8082'
+    const url = 'http://localhost:8083'
     body.append('file', files[0])
     console.info('go go go', files)
     const xhr = new global.XMLHttpRequest()
