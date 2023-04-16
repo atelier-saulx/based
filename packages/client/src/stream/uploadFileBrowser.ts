@@ -40,6 +40,7 @@ const drainQueue = (
         const options = q[i].options
         const { contents, payload } = options
         const p = payload || {}
+        console.log('go go go', contents.size)
         body.append(`size=${contents.size},${JSON.stringify(p)}`, contents)
       }
       try {
@@ -55,6 +56,7 @@ const drainQueue = (
           })
         }
         xhr.onerror = (p) => {
+          console.error(p)
           if (xhr.status === 0 && !xhr.statusText) {
             const err = convertDataToBasedError({
               message: `[${functionName}] Function not found`,
@@ -89,7 +91,7 @@ const drainQueue = (
             reject(err, q)
           }
         }
-        xhr.open('POST', url + '/' + functionName)
+        xhr.open('POST', url + '/' + functionName, true)
         xhr.setRequestHeader('Content-Type', 'multipart/form-data')
         xhr.setRequestHeader('Authorization', authorization)
         xhr.send(body)

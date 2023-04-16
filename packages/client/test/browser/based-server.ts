@@ -5,6 +5,7 @@ import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
 // import { PassThrough } from 'node:stream'
+import uws from '@based/uws'
 
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
@@ -280,3 +281,42 @@ const start = async () => {
 }
 
 start()
+
+uws
+  .App({})
+  .options('/*', (res, req) => {
+    res.writeHeader('Access-Control-Allow-Origin', '*')
+    res.writeHeader('Access-Control-Allow-Headers', '*')
+    res.end('')
+  })
+  .post('/*', (res, req) => {
+    res.writeHeader('Access-Control-Allow-Origin', '*')
+    res.writeHeader('Access-Control-Allow-Headers', '*')
+    console.info('Posted to ' + req.getUrl())
+    res.onData((chunk, isLast) => {
+      /* Buffer this anywhere you want to */
+      console.info(
+        'Got chunk of data with length ' +
+          chunk.byteLength +
+          ', isLast: ' +
+          isLast
+      )
+
+      /* We respond when we are done */
+      if (isLast) {
+        res.end('Thanks for the data!')
+      }
+    })
+
+    res.onAborted(() => {
+      /* Request was prematurely aborted, stop reading */
+      console.info('Eh, okay. Thanks for nothing!')
+    })
+  })
+  .listen(8082, (token) => {
+    if (token) {
+      console.info('Listening to port ' + 8082)
+    } else {
+      console.info('Failed to listen to port ' + 8082)
+    }
+  })
