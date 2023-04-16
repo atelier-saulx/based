@@ -52,7 +52,7 @@ const s3Client: S3 = new S3({
 // )
 
 const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
-  based,
+  _based,
   payload,
   update
 ) => {
@@ -69,7 +69,7 @@ const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
 const staticSub: BasedQueryFunction<
   { special: number },
   { title: string; id: number }[]
-> = (based, payload, update) => {
+> = (_based, _payload, update) => {
   const data: { title: string; id: number }[] = []
   for (let i = 0; i < 1000; i++) {
     data.push({
@@ -84,7 +84,7 @@ const staticSub: BasedQueryFunction<
 const staticSubHuge: BasedQueryFunction<
   { special: number },
   { title: string; id: number }[]
-> = (based, payload, update) => {
+> = (_based, _payload, update) => {
   const data: { title: string; id: number }[] = []
   for (let i = 0; i < 100000; i++) {
     data.push({
@@ -109,13 +109,13 @@ const start = async () => {
   const server = new BasedServer({
     port: 8081,
     auth: {
-      authorize: async (based, ctx, name) => {
+      authorize: async (_based, _ctx, name) => {
         if (name === 'notAllowedFiles') {
           return false
         }
         return true
       },
-      verifyAuthState: async (based, ctx, authState) => {
+      verifyAuthState: async (_based, _ctx, authState) => {
         if (authState.token === 'power' && !authState.userId) {
           return { ...authState, userId: 'power-user-id' }
         }
@@ -128,7 +128,7 @@ const start = async () => {
         file: {
           type: 'function',
           headers: ['range'],
-          fn: async (based, payload) => {
+          fn: async (_based, payload) => {
             const x = fs.statSync(files[payload.id].file)
             return {
               file: fs.createReadStream(files[payload.id].file),
@@ -136,14 +136,14 @@ const start = async () => {
               size: x.size,
             }
           },
-          httpResponse: async (based, payload, responseData, send, ctx) => {
+          httpResponse: async (_based, _payload, responseData, _send, ctx) => {
             ctx.session?.res.cork(() => {
               ctx.session?.res.writeStatus('200 OK')
               ctx.session?.res.writeHeader(
                 'Content-Type',
                 responseData.mimeType
               )
-              responseData.file.on('data', (d) => {
+              responseData.file.on('data', (d: any) => {
                 ctx.session?.res.write(d)
               })
               responseData.file.on('end', () => {
@@ -154,19 +154,16 @@ const start = async () => {
         },
         hello: {
           type: 'function',
-
           fn: hello,
         },
         brokenFiles: {
           type: 'stream',
-
           fn: async () => {
             throw new Error('broken')
           },
         },
         notAllowedFiles: {
           type: 'stream',
-
           fn: async () => {
             return { hello: true }
           },
@@ -174,7 +171,7 @@ const start = async () => {
         files: {
           type: 'stream',
           maxPayloadSize: 1e10,
-          fn: async (based, x) => {
+          fn: async (_based, x) => {
             const { stream, mimeType, payload, size } = x
             const id = x.fileName || 'untitled'
             x.stream.on('progress', (p) =>
@@ -198,7 +195,7 @@ const start = async () => {
           type: 'stream',
           maxPayloadSize: 1e10,
           fn: async (
-            based,
+            _based,
             { stream, extension, fileName, size, mimeType }
           ) => {
             const Bucket = 'based-test-bucket'

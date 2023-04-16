@@ -40,12 +40,13 @@ export class BasedChannel<P = any, K = any> {
         name: this.name,
         subscribers,
         removeTimer: -1,
+        idCnt: 1,
       })
       addChannelSubscribeToQueue(this.client, this.name, this.id, this.payload)
     } else {
       const channel = this.client.channelState.get(this.id)
       channel.removeTimer = -1
-      subscriberId = channel.subscribers.size + 1
+      subscriberId = ++channel.idCnt
       channel.subscribers.set(subscriberId, { onMessage, onError })
     }
 
@@ -67,6 +68,7 @@ export class BasedChannel<P = any, K = any> {
         name: this.name,
         subscribers: new Map(),
         removeTimer: 2, // 2x 30sec
+        idCnt: 0,
       })
       cleanUpChannels(this.client)
       addChannelPublishIdentifier(this.client, this.name, this.id, this.payload)

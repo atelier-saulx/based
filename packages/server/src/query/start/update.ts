@@ -52,8 +52,12 @@ export const updateListener = (
       obs.reusedCache = false
       const buff = valueToBuffer(data)
 
-      if (diff) {
-        if (typeof data === 'object' && data !== null) {
+      const t = typeof data
+      if (t === 'string' || t === 'number' || t === 'boolean') {
+        obs.rawData = data
+        obs.previousChecksum = obs.checksum
+      } else if (diff) {
+        if (t === 'object' && data !== null) {
           obs.rawData = data
           if (!obs.checksum || diff === true) {
             diff = null
@@ -65,7 +69,7 @@ export const updateListener = (
           diff = null
         }
       } else if (previousChecksum === undefined) {
-        if (typeof data === 'object' && data !== null) {
+        if (t === 'object' && data !== null) {
           if (obs.rawData) {
             diff = createPatch(obs.rawData, data)
             obs.previousChecksum = obs.checksum

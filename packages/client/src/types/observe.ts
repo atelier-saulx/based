@@ -17,6 +17,7 @@ export type ObserveState = Map<
     persistent?: boolean
     payload: any
     name: string
+    idCnt: number
     subscribers: Map<
       number,
       {

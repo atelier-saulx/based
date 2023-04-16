@@ -10,7 +10,6 @@ import { removeStorage, setStorage } from '../persistentStorage'
 
 // Can extend this as a query builder
 // TODO: maybe add user bound as option (will clear / set on a-state chage)
-
 export class BasedQuery<P = any, K = any> {
   public id: number
   public query: P
@@ -60,6 +59,7 @@ export class BasedQuery<P = any, K = any> {
         name: this.name,
         subscribers,
         persistent: this.persistent || false,
+        idCnt: 1,
       })
       addObsToQueue(
         this.client,
@@ -76,7 +76,7 @@ export class BasedQuery<P = any, K = any> {
           setStorage(this.client, '@based-cache-' + this.id, cachedData)
         }
       }
-      subscriberId = obs.subscribers.size + 1
+      subscriberId = ++obs.idCnt
       obs.subscribers.set(subscriberId, {
         onError,
         onData,

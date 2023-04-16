@@ -20,11 +20,14 @@ export const parseHttpPayload = (
   route: BasedRoute
 ): any => {
   const contentType = ctx.session.headers['content-type']
-  if (contentType === 'application/json' || !contentType) {
+  if (!contentType || contentType.startsWith('application/json')) {
     const str = decoder.decode(data)
     let parsedData: any
     try {
-      parsedData = data.byteLength ? JSON.parse(str) : undefined
+      if (data.byteLength) {
+        parsedData = JSON.parse(str)
+        ctx.session.rawBody = str
+      }
       return parsedData
     } catch (err) {
       sendError(server, ctx, BasedErrorCode.InvalidPayload, { route })
