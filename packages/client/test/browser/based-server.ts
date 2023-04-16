@@ -284,7 +284,7 @@ const start = async () => {
 start()
 
 uws
-  .App({})
+  .App()
   .options('/*', (res, req) => {
     res.writeHeader('Access-Control-Allow-Origin', '*')
     res.writeHeader('Access-Control-Allow-Headers', '*')
@@ -302,13 +302,11 @@ uws
           ', isLast: ' +
           isLast
       )
-
       /* We respond when we are done */
       if (isLast) {
         res.end('Thanks for the data!')
       }
     })
-
     res.onAborted(() => {
       /* Request was prematurely aborted, stop reading */
       console.info('Eh, okay. Thanks for nothing!')
@@ -327,12 +325,10 @@ http
   .createServer(function (req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader('Access-Control-Allow-Headers', '*')
-
     if (req.method === 'post') {
       req.on('data', (d) => {
         console.info('CHUNK', d)
       })
-
       req.on('end', () => {
         console.info('lullz')
       })
