@@ -40,6 +40,39 @@ const init = async () => {
     )
   })
 
+  uploadButton('Stream basic', async (files, progressHandler) => {
+    const body = new global.FormData()
+    const url = 'http://localhost:8083'
+    body.append('file', files[0])
+    console.info('go go go', files)
+    const xhr = new global.XMLHttpRequest()
+    xhr.upload.onprogress = (p: ProgressEvent) => {
+      const progress =
+        // @ts-ignore
+        (p.loaded || p.position) / (p.totalSize || p.total)
+
+      console.info(progress)
+      progressHandler(progress)
+    }
+    xhr.onerror = (p) => {
+      console.error(p)
+    }
+    xhr.timeout = 1e3 * 60 * 60 * 24
+    xhr.onabort = () => {
+      console.error('abort')
+    }
+    xhr.ontimeout = () => {
+      console.error('on timeout')
+    }
+    xhr.onload = () => {
+      console.info('LOAD!')
+    }
+    console.log('???', url)
+    xhr.open('POST', url)
+    xhr.setRequestHeader('Content-Type', 'multipart/form-data')
+    xhr.send(body)
+  })
+
   // add number of files!
   uploadButton('Stream file to s3', async (files, progress) => {
     log('uploading', files.length + ' files')

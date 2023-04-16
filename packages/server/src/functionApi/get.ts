@@ -34,7 +34,7 @@ const getObsData = (
   }
 
   if (obs.cache) {
-    resolve(obs.rawData || obs.cache)
+    resolve(obs.rawData ?? obs.cache)
     return
   }
 
@@ -43,7 +43,7 @@ const getObsData = (
     if (err) {
       reject(err)
     } else {
-      resolve(obs.rawData || obs.cache)
+      resolve(obs.rawData ?? obs.cache)
     }
   })
 }

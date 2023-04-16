@@ -11,7 +11,7 @@ const activityListeners: Map<Connection, ActiveFn> = new Map()
 let activeTimer: NodeJS.Timeout
 
 // Disconnect in the browser when a window is inactive (on the background) for 30 seconds
-if (typeof window !== 'undefined') {
+if (typeof document !== 'undefined') {
   document.addEventListener('visibilitychange', function () {
     clearTimeout(activeTimer)
     if (document.hidden) {
@@ -67,6 +67,7 @@ const connect = (
 
       let isError = false
 
+      ws.binaryType = 'blob'
       ws.onerror = (err) => {
         // TODO: add a websocket close number
         // also for rateLimit

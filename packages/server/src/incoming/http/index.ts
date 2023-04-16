@@ -19,7 +19,6 @@ import {
   endRateLimitHttp,
 } from '../../security'
 import parseQuery from './parseQuery'
-import { getIp } from '../../ip'
 import { parseAuthState, parseJSONAuthState } from '../../auth'
 import { authorize } from '../../authorize'
 import { end } from '../../sendHttpResponse'
@@ -52,7 +51,7 @@ export const httpHandler = (
     ctx.session = null
   })
 
-  const ip = getIp(res)
+  const ip = server.getIp(res, req)
 
   if (blockIncomingRequest(server, ip, res, req, server.rateLimit.http, 1)) {
     return
@@ -62,6 +61,8 @@ export const httpHandler = (
   const url = req.getUrl()
   const path = url.split('/')
   const route = server.functions.route(path[1], url)
+
+  console.log('lullz', req, route)
 
   if (route === null || route.internalOnly === true) {
     sendError(

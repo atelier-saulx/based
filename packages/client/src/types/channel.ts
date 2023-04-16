@@ -43,5 +43,6 @@ export type ChannelState = Map<
       { onMessage: ChannelMessageFunction; onError?: (err: BasedError) => void }
     >
     removeTimer: number
+    idCnt: number
   }
 >

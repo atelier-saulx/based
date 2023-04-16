@@ -4,7 +4,9 @@ import fs from 'node:fs'
 import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
+import http from 'node:http'
 // import { PassThrough } from 'node:stream'
+import uws from '@based/uws'
 
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
@@ -14,7 +16,11 @@ const hello: BasedFunction<void, string> = async () => {
   return 'This is a response from hello'
 }
 
-const path = join(__dirname, '../../../../../secrets/cloudflarer2.json')
+const path = join(
+  __dirname,
+  // ======= Add your credentials location here
+  '../../../../../based-cloud/packages/vault/src/local/keys/secrets.json'
+)
 let fileSecrets: any = {}
 
 try {
@@ -48,7 +54,7 @@ const s3Client: S3 = new S3({
 // )
 
 const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
-  based,
+  _based,
   payload,
   update
 ) => {
@@ -65,7 +71,7 @@ const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
 const staticSub: BasedQueryFunction<
   { special: number },
   { title: string; id: number }[]
-> = (based, payload, update) => {
+> = (_based, _payload, update) => {
   const data: { title: string; id: number }[] = []
   for (let i = 0; i < 1000; i++) {
     data.push({
@@ -80,7 +86,7 @@ const staticSub: BasedQueryFunction<
 const staticSubHuge: BasedQueryFunction<
   { special: number },
   { title: string; id: number }[]
-> = (based, payload, update) => {
+> = (_based, _payload, update) => {
   const data: { title: string; id: number }[] = []
   for (let i = 0; i < 100000; i++) {
     data.push({
@@ -105,13 +111,13 @@ const start = async () => {
   const server = new BasedServer({
     port: 8081,
     auth: {
-      authorize: async (based, ctx, name) => {
+      authorize: async (_based, _ctx, name) => {
         if (name === 'notAllowedFiles') {
           return false
         }
         return true
       },
-      verifyAuthState: async (based, ctx, authState) => {
+      verifyAuthState: async (_based, _ctx, authState) => {
         if (authState.token === 'power' && !authState.userId) {
           return { ...authState, userId: 'power-user-id' }
         }
@@ -124,7 +130,7 @@ const start = async () => {
         file: {
           type: 'function',
           headers: ['range'],
-          fn: async (based, payload) => {
+          fn: async (_based, payload) => {
             const x = fs.statSync(files[payload.id].file)
             return {
               file: fs.createReadStream(files[payload.id].file),
@@ -132,14 +138,14 @@ const start = async () => {
               size: x.size,
             }
           },
-          httpResponse: async (based, payload, responseData, send, ctx) => {
+          httpResponse: async (_based, _payload, responseData, _send, ctx) => {
             ctx.session?.res.cork(() => {
               ctx.session?.res.writeStatus('200 OK')
               ctx.session?.res.writeHeader(
                 'Content-Type',
                 responseData.mimeType
               )
-              responseData.file.on('data', (d) => {
+              responseData.file.on('data', (d: any) => {
                 ctx.session?.res.write(d)
               })
               responseData.file.on('end', () => {
@@ -150,19 +156,16 @@ const start = async () => {
         },
         hello: {
           type: 'function',
-
           fn: hello,
         },
         brokenFiles: {
           type: 'stream',
-
           fn: async () => {
             throw new Error('broken')
           },
         },
         notAllowedFiles: {
           type: 'stream',
-
           fn: async () => {
             return { hello: true }
           },
@@ -170,7 +173,7 @@ const start = async () => {
         files: {
           type: 'stream',
           maxPayloadSize: 1e10,
-          fn: async (based, x) => {
+          fn: async (_based, x) => {
             const { stream, mimeType, payload, size } = x
             const id = x.fileName || 'untitled'
             x.stream.on('progress', (p) =>
@@ -194,7 +197,7 @@ const start = async () => {
           type: 'stream',
           maxPayloadSize: 1e10,
           fn: async (
-            based,
+            _based,
             { stream, extension, fileName, size, mimeType }
           ) => {
             const Bucket = 'based-test-bucket'
@@ -219,7 +222,10 @@ const start = async () => {
                 Key,
                 Body: stream,
                 ContentType: mimeType,
-                ContentLength: size,
+                // There is a bug when using this argument.
+                // Both in AWS and R2
+                // https://github.com/aws/aws-sdk-js-v3/issues/3915
+                // ContentLength: size,
               },
             })
 
@@ -251,7 +257,7 @@ const start = async () => {
               return { err, total, size }
             }
 
-            const baseUrl = `https://pub-525f4a7565e74326a2914f5f2718fa99.r2.dev`
+            const baseUrl = `https://pub-9d1a27a91117440c90400467ddba7c8b.r2.dev`
 
             return { Key, Bucket, url: `${baseUrl}/${encodeURIComponent(Key)}` }
           },
@@ -276,3 +282,58 @@ const start = async () => {
 }
 
 start()
+
+uws
+  .App()
+  .options('/*', (res, req) => {
+    res.writeHeader('Access-Control-Allow-Origin', '*')
+    res.writeHeader('Access-Control-Allow-Headers', '*')
+    res.end('')
+  })
+  .post('/*', (res, req) => {
+    res.writeHeader('Access-Control-Allow-Origin', '*')
+    res.writeHeader('Access-Control-Allow-Headers', '*')
+    console.info('Posted to ' + req.getUrl())
+    res.onData((chunk, isLast) => {
+      /* Buffer this anywhere you want to */
+      console.info(
+        'Got chunk of data with length ' +
+          chunk.byteLength +
+          ', isLast: ' +
+          isLast
+      )
+      /* We respond when we are done */
+      if (isLast) {
+        res.end('Thanks for the data!')
+      }
+    })
+    res.onAborted(() => {
+      /* Request was prematurely aborted, stop reading */
+      console.info('Eh, okay. Thanks for nothing!')
+    })
+  })
+  .listen(8082, (token) => {
+    if (token) {
+      console.info('Listening to port ' + 8082)
+    } else {
+      console.info('Failed to listen to port ' + 8082)
+    }
+  })
+
+// create a server object:
+http
+  .createServer(function (req, res) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Allow-Headers', '*')
+    if (req.method === 'post') {
+      req.on('data', (d) => {
+        console.info('CHUNK', d)
+      })
+      req.on('end', () => {
+        console.info('lullz')
+      })
+    } else {
+      res.end()
+    }
+  })
+  .listen(8083)

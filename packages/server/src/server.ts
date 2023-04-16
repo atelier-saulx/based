@@ -34,6 +34,8 @@ type RateLimit = {
   drain: number
 }
 
+type GetIp = (res: uws.HttpResponse, req: uws.HttpRequest) => string
+
 export type ServerOptions = {
   clients?: { [key: string]: any } // for now any...
   port?: number
@@ -56,6 +58,7 @@ export type ServerOptions = {
     open?: (client: Context<HttpSession>) => void
     close?: (client: Context<HttpSession>) => void
   }
+  getIp?: GetIp
 }
 
 /**
@@ -130,6 +133,10 @@ export class BasedServer {
     }
   }
 
+  public getIp: GetIp = (res: uws.HttpResponse): string => {
+    return Buffer.from(res.getRemoteAddressAsText()).toString()
+  }
+
   public blockedIps: Set<string> = new Set()
 
   // opposite of blockedIps can never get blocked
@@ -197,6 +204,9 @@ export class BasedServer {
     }
     if (opts.geo) {
       this.geo = opts.geo
+    }
+    if (opts.getIp) {
+      this.getIp = opts.getIp
     }
     initNetwork(this, opts)
   }
