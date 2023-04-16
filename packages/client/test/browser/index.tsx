@@ -5,9 +5,14 @@ const init = async () => {
   const based = new BasedClient()
 
   based.connect({
-    url: async () => {
-      return 'ws://localhost:8081'
-    },
+    env: 'framme',
+    project: 'test',
+    org: 'saulx',
+    cluster: 'test',
+    // name: '@based/env-hub',
+    // url: async () => {
+    //   return 'ws://localhost:8081'
+    // },
   })
 
   button('Call hello', async () => {
@@ -53,13 +58,29 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'files',
+          'db:file-upload',
           {
             contents: f,
             payload,
           },
           progress
         )
+        console.log('x= ', x)
+        log('x =', JSON.stringify(x, null, 2))
+        based
+          .query('db', {
+            $id: x.id,
+            $all: true,
+            //   $list: {
+            //     $find: {
+            //       $traverse: 'descendants',
+            //       $filter: { $field: 'type', $value: 'file', $operator: '=' },
+            //     },
+            // },
+          })
+          .subscribe((data) => log(data))
+
+        log(x)
         return x
       })
     )
@@ -85,7 +106,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'files',
+          'db:file-upload',
           {
             contents: f,
             payload,
