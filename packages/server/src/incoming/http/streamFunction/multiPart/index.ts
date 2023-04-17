@@ -33,7 +33,6 @@ const handleFile = async (
     }
 > => {
   const spec = await installedFn
-  console.log('FILEFILE')
 
   if (spec === null) {
     return {
@@ -86,8 +85,6 @@ export const multiPart = (
     ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
     ctx.session.corsSend = true
   })
-
-  console.info('whaaa121212122', route)
 
   const installedFn = installFn(server, server.client.ctx, route)
 
