@@ -87,7 +87,6 @@ export default (
         session.c = null
       },
       drain: () => {
-        // console.info('drain')
         // lets handle drain efficiently (or more efficiently at least)
         // call client.drain can be much more efficient
         // if (ws.client && ws.client.backpressureQueue) {

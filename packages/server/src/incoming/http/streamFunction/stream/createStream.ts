@@ -46,7 +46,7 @@ export default (
           uncompressStream.end(buf)
         } else {
           if (!uncompressStream.write(buf)) {
-            // console.info('BACKPRESSURE')
+            // do stuff
           }
         }
       })

@@ -10,8 +10,6 @@ export const httpStreamFunction = (
   ctx: Context<HttpSession>,
   route: BasedRoute<'stream'>
 ) => {
-  console.info('lullz222', route)
-
   if (!ctx.session) {
     return
   }

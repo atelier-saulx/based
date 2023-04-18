@@ -6,8 +6,6 @@ export const end = (
   ctx: Context<HttpSession>,
   payload?: string | Buffer | Uint8Array
 ) => {
-  console.info('END REQ', ctx)
-
   if (!ctx.session) {
     return
   }
