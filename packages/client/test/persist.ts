@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index'
-import { BasedServer } from '@based/server'
+import { BasedServer } from '../../server/src'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
@@ -134,4 +134,89 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   await client2.clearStorage()
   await client2.destroy(true)
   await server.destroy()
+})
+
+test.serial.failing('auth persist', async (t) => {
+  const persistentStorage = join(__dirname, '/browser/tmp/')
+  await mkdir(persistentStorage).catch(() => {})
+
+  const token = 'this is token'
+  const server = new BasedServer({
+    port: 9910,
+    auth: {
+      authorize: async (based, ctx) => {
+        await based.renewAuthState(ctx)
+        const userId = ctx.session?.authState.userId
+        if (!userId) return false
+        else return true
+      },
+    },
+    functions: {
+      configs: {
+        hello: {
+          name: 'hello',
+          type: 'function',
+          fn: async () => {
+            return { hello: 'ok' }
+          },
+        },
+        login: {
+          name: 'login',
+          type: 'function',
+          public: true,
+          fn: async (based, _payload, ctx) => {
+            based.renewAuthState(ctx, {
+              userId: 'thisIsId',
+              token,
+              persistent: true,
+            })
+            return { ok: true }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+
+  const client = new BasedClient(
+    {},
+    {
+      persistentStorage,
+    }
+  )
+  t.teardown(async () => {
+    await client.clearStorage()
+    await client.destroy()
+    await server.destroy()
+  })
+
+  await client.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await client.call('login')
+  await wait(200)
+  t.is(client.authState.token, token)
+
+  await t.notThrowsAsync(client.call('hello'))
+
+  const client2 = new BasedClient(
+    {},
+    {
+      persistentStorage,
+    }
+  )
+  t.teardown(async () => {
+    await client2.clearStorage()
+    await client2.destroy()
+  })
+  await client2.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+
+  await t.notThrowsAsync(client.call('hello'))
 })
