@@ -39,7 +39,7 @@ export default (
 
   if (!disableWs) {
     app.ws('/*', {
-      // maxPayloadLength: 1024 * 1024 * 20, // 10 mb max payload
+      maxPayloadLength: 1024 * 1024 * 30, // 20 mb max payload
       idleTimeout: 100,
       maxBackpressure: wsOptions.maxBackpressureSize,
       closeOnBackpressureLimit: wsOptions.maxBackpressureSize,
