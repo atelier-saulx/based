@@ -99,7 +99,6 @@ export const blockIncomingRequest = (
   if (code === 0) {
     return false
   }
-
   if (code === 2) {
     server.emit(
       'error',
@@ -113,8 +112,6 @@ export const blockIncomingRequest = (
       { code: BasedErrorCode.RateLimit }
     )
   }
-
   endRateLimitHttp(res)
-
   return true
 }
