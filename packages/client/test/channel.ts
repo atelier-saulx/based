@@ -172,6 +172,7 @@ test.serial('Channel publish no subscribe', async (t) => {
   await server.destroy()
 })
 
+// totally broken now..
 test.serial('Channel publish requestId (10k messages)', async (t) => {
   const r: any[] = []
   const server = new BasedServer({
