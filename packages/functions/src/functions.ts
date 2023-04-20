@@ -192,14 +192,14 @@ type BasedChannelFunctionConfig = {
 type BasedCallFunctionConfig = {
   /** Function type `channel, function, query, stream` */
   type: 'function'
-  fn: BasedFunction
+  fn?: BasedFunction
   httpResponse?: HttpResponse
 }
 
 type BasedQueryFunctionConfig = {
   /** Function type `channel, function, query, stream` */
   type: 'query'
-  fn: BasedQueryFunction
+  fn?: BasedQueryFunction
   httpResponse?: HttpResponse
   /** How long should the query function remain active after all subscribers are gone, in ms */
   closeAfterIdleTime?: number

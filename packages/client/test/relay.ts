@@ -3,7 +3,7 @@ import { BasedClient } from '../src/index'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
-test.serial.failing('Relay', async (t) => {
+test.serial('Relay', async (t) => {
   const relayClient = new BasedClient()
   const listeners: Map<number, (msg: any) => void> = new Map()
 
@@ -67,15 +67,11 @@ test.serial.failing('Relay', async (t) => {
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
         },
-        // TODO: fix type
-        // @ts-ignore
         hello: {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
         },
-        // TODO: fix type
-        // @ts-ignore
         counter: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
