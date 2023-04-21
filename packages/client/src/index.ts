@@ -34,6 +34,7 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
+import { retry } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
 
@@ -335,10 +336,42 @@ export class BasedClient extends Emitter {
   })
   ```
   */
-  call(name: string, payload?: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      addToFunctionQueue(this, payload, name, resolve, reject)
-    })
+  call(
+    name: string,
+    payload?: any,
+    opts?: {
+      retryStrategy: (
+        err: Error,
+        time: number,
+        retries: number
+      ) => 0 | null | undefined | false | number
+    }
+  ): Promise<any> {
+    const retryStrategy = opts?.retryStrategy
+    if (retryStrategy) {
+      return new Promise((resolve, reject) => {
+        let time = 0
+        let retries = 0
+        const retryReject = (err) => {
+          const newTime = retryStrategy(err, time, retries)
+          retries++
+          if (typeof newTime === 'number' && !isNaN(newTime)) {
+            if (newTime === 0) {
+              addToFunctionQueue(this, payload, name, resolve, retryReject)
+            } else {
+              setTimeout(() => {
+                addToFunctionQueue(this, payload, name, resolve, retryReject)
+              }, newTime)
+            }
+          }
+        }
+        return addToFunctionQueue(this, payload, name, resolve, retryReject)
+      })
+    } else {
+      return new Promise((resolve, reject) => {
+        return addToFunctionQueue(this, payload, name, resolve, reject)
+      })
+    }
   }
 
   // -------- Stream
