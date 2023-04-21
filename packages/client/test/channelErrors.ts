@@ -2,7 +2,6 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
-import fetch from 'cross-fetch'
 
 test.serial('Channel does not exist', async (t) => {
   const server = new BasedServer({ port: 9910 })
@@ -11,18 +10,15 @@ test.serial('Channel does not exist', async (t) => {
   await client.connect({
     url: async () => 'ws://localhost:9910',
   })
-
-  client.on('debug', (x) => {
-    console.log(x)
-  })
-
-  client.channel('bla').subscribe(() => {
-    console.log('bla')
-  })
-
+  let errCnt = 0
+  client.channel('bla').subscribe(
+    () => {},
+    (err) => {
+      errCnt++
+    }
+  )
   await wait(500)
-  t.true(true)
-
+  t.is(errCnt, 1)
   client.disconnect()
   await server.destroy()
 })
