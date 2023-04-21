@@ -68,7 +68,8 @@ export const channelPublishMessage: BinaryMessageHandler = (
     ctx,
     'channel',
     server.functions.route(name),
-    name
+    name,
+    id
   )
 
   if (route === null) {

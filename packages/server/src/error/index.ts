@@ -45,13 +45,12 @@ export function createError<T extends BasedErrorCode>(
   const errorData: BasedErrorData<T> = createErrorData(code, payload)
   if ('requestId' in payload) {
     errorData.requestId = payload.requestId
-  }
-  if ('observableId' in payload) {
+  } else if ('observableId' in payload) {
     errorData.observableId = payload.observableId
-  }
-  if ('channelId' in payload) {
+  } else if ('channelId' in payload) {
     errorData.channelId = payload.channelId
   }
+
   if ('err' in payload) {
     server.emit('error', context, errorData, payload.err)
   } else {

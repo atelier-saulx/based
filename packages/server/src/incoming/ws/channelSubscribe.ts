@@ -82,7 +82,8 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
     ctx,
     'channel',
     server.functions.route(name),
-    name
+    name,
+    id
   )
 
   const tmpRoute: BasedRoute<'channel'> = route || {

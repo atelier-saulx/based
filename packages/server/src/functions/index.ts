@@ -61,6 +61,8 @@ export class BasedFunctions {
     this.server = server
     if (config) {
       this.updateConfig(config)
+    } else {
+      this.updateConfig({})
     }
   }
 
