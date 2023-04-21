@@ -142,11 +142,13 @@ test.serial.only('auth persist', async (t) => {
   const server = new BasedServer({
     port: 9910,
     auth: {
-      authorize: async (based, ctx, name) => {
-        if (name) {
-          return true
+      verifyAuthState: async (_, ctx, authState) => {
+        if (authState.token !== ctx.session?.authState.token) {
+          return { ...authState, type: 'over9000' }
         }
-
+        return true
+      },
+      authorize: async (based, ctx, name) => {
         await based.renewAuthState(ctx)
         const userId = ctx.session?.authState.userId
         if (!userId) return false
@@ -167,7 +169,7 @@ test.serial.only('auth persist', async (t) => {
           type: 'function',
           public: true,
           fn: async (based, _payload, ctx) => {
-            based.renewAuthState(ctx, {
+            await based.renewAuthState(ctx, {
               userId: 'thisIsId',
               token,
               persistent: true,
@@ -199,7 +201,7 @@ test.serial.only('auth persist', async (t) => {
 
   await client.call('login')
 
-  await wait(1300)
+  await wait(300)
 
   t.is(client.authState.token, token)
 
@@ -207,7 +209,7 @@ test.serial.only('auth persist', async (t) => {
 
   await wait(300)
 
-  // await client.destroy()
+  await client.destroy()
 
   const client2 = new BasedClient(
     {},
@@ -216,8 +218,7 @@ test.serial.only('auth persist', async (t) => {
     }
   )
 
-  // console.info('>>>??S?sd', client2)
-  // t.is(client2.authState.token, token)
+  t.is(client2.authState.token, token)
 
   t.teardown(async () => {
     await client2.clearStorage()
