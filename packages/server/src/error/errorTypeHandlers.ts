@@ -21,6 +21,11 @@ export const errorTypeHandlers: ErrorType = {
     statusMessage: 'Rate limit',
     message: () => 'rate limt',
   },
+  [BasedErrorCode.Block]: {
+    statusCode: 429,
+    statusMessage: 'Blocked ip',
+    message: () => 'Blocked ip',
+  },
   [BasedErrorCode.IncorrectAccessKey]: {
     statusCode: 429,
     statusMessage: 'Rate limit',

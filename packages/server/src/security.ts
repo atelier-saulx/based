@@ -9,6 +9,9 @@ enum IsBlocked {
   firstBlocked = 2,
 }
 
+// TODO add tests and put on server
+const blockedEvents = new Set()
+
 const drainRequestCounter = (server: BasedServer) => {
   server.requestsCounterInProgress = true
   server.requestsCounterTimeout = setTimeout(() => {
@@ -22,6 +25,13 @@ const drainRequestCounter = (server: BasedServer) => {
     })
     if (server.rateLimitCounter.size) {
       drainRequestCounter(server)
+    }
+    if (blockedEvents.size) {
+      server.emit('error', server.client.ctx, {
+        code: BasedErrorCode.Block,
+        blockedEvents,
+      })
+      blockedEvents.clear()
     }
   }, 30e3)
 }
@@ -92,6 +102,9 @@ export const blockIncomingRequest = (
     return false
   }
   if (server.blockedIps.has(ip)) {
+    if (blockedEvents.size < 1e3) {
+      blockedEvents.add(ip)
+    }
     res.close()
     return true
   }

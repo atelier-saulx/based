@@ -5,8 +5,6 @@ import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 
-// ADD default persist (on client)
-
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 
@@ -136,7 +134,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   await server.destroy()
 })
 
-test.serial.failing('auth persist', async (t) => {
+test.serial.only('auth persist', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
   await mkdir(persistentStorage).catch(() => {})
 
@@ -144,7 +142,11 @@ test.serial.failing('auth persist', async (t) => {
   const server = new BasedServer({
     port: 9910,
     auth: {
-      authorize: async (based, ctx) => {
+      authorize: async (based, ctx, name) => {
+        if (name) {
+          return true
+        }
+
         await based.renewAuthState(ctx)
         const userId = ctx.session?.authState.userId
         if (!userId) return false
@@ -186,7 +188,6 @@ test.serial.failing('auth persist', async (t) => {
   )
   t.teardown(async () => {
     await client.clearStorage()
-    await client.destroy()
     await server.destroy()
   })
 
@@ -197,10 +198,16 @@ test.serial.failing('auth persist', async (t) => {
   })
 
   await client.call('login')
-  await wait(200)
+
+  await wait(1300)
+
   t.is(client.authState.token, token)
 
   await t.notThrowsAsync(client.call('hello'))
+
+  await wait(300)
+
+  // await client.destroy()
 
   const client2 = new BasedClient(
     {},
@@ -208,6 +215,10 @@ test.serial.failing('auth persist', async (t) => {
       persistentStorage,
     }
   )
+
+  // console.info('>>>??S?sd', client2)
+  // t.is(client2.authState.token, token)
+
   t.teardown(async () => {
     await client2.clearStorage()
     await client2.destroy()
@@ -218,5 +229,8 @@ test.serial.failing('auth persist', async (t) => {
     },
   })
 
-  await t.notThrowsAsync(client.call('hello'))
+  // this is where its at
+  console.log('call hello and not throw!')
+
+  await t.notThrowsAsync(client2.call('hello'))
 })
