@@ -9,8 +9,20 @@ const setup = async () => {
   const client = new BasedClient()
   const server = new BasedServer({
     port: 9910,
+
     functions: {
       configs: {
+        login: {
+          type: 'function',
+          public: true,
+          fn: async (based, payload, ctx) => {
+            await based.renewAuthState(ctx, {
+              token: payload.token,
+            })
+            return true
+          },
+        },
+
         hello: {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
@@ -38,6 +50,13 @@ const setup = async () => {
       },
     },
     auth: {
+      // TODO: make this the default...
+      verifyAuthState: async (_, ctx, authState) => {
+        if (authState.token !== ctx.session?.authState.token) {
+          return { ...authState }
+        }
+        return true
+      },
       authorize: (async (_, ctx) => {
         return ctx.session?.authState.token === 'mock_token'
       }) as Authorize,
@@ -144,7 +163,7 @@ test.serial('authorize after observe', async (t) => {
   const token = 'mock_token'
 
   const { client, server } = await setup()
-  let counter: ReturnType<typeof setTimeout>
+  let counter: ReturnType<typeof setInterval>
 
   t.teardown(() => {
     client.disconnect()
@@ -176,6 +195,54 @@ test.serial('authorize after observe', async (t) => {
   await wait(500)
   t.is(receiveCnt, 0)
   await client.setAuthState({ token })
+  await wait(1500)
+
+  // @ts-ignore - totally incorrect typescript error...
+  clearInterval(counter)
+
+  t.true(receiveCnt > 0)
+})
+
+test.serial('authorize from server after observe', async (t) => {
+  t.timeout(12000)
+
+  const token = 'mock_token'
+
+  const { client, server } = await setup()
+  let counter: ReturnType<typeof setInterval>
+
+  t.teardown(() => {
+    client.disconnect()
+    server.destroy()
+  })
+
+  await client.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  await wait(500)
+
+  let receiveCnt = 0
+
+  client
+    .query('counter', {
+      myQuery: 123,
+    })
+    .subscribe(
+      () => {
+        receiveCnt++
+      },
+      (err: BasedError) => {
+        t.is(err.code, BasedErrorCode.AuthorizeRejectedError)
+      }
+    )
+
+  await wait(500)
+  t.is(receiveCnt, 0)
+  await client.call('login', {
+    token,
+  })
   await wait(1500)
 
   // @ts-ignore - totally incorrect typescript error...

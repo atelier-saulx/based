@@ -13,6 +13,7 @@ import {
 import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
 import parseJSONAuthState from './parseJSONAuthState'
+import { reEvaulateUnauthorized } from '../incoming/ws/auth'
 
 export { parseAuthState }
 export { parseJSONAuthState }
@@ -84,6 +85,7 @@ export class BasedAuth {
     ctx.session.authState = verified
 
     if (isWsContext(ctx)) {
+      reEvaulateUnauthorized(this.server, ctx)
       this.sendAuthState(ctx, verified)
     }
 

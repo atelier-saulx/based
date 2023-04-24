@@ -27,6 +27,48 @@ const parse = (payload: string) => {
   }
 }
 
+export const reEvaulateUnauthorized = (
+  server: BasedServer,
+  ctx: Context<WebSocketSession>
+) => {
+  const session = ctx.session
+  if (!session) {
+    return
+  }
+  if (session.unauthorizedObs?.size) {
+    session.unauthorizedObs.forEach((obs) => {
+      const { id, name, checksum, payload } = obs
+      const route: BasedRoute<'query'> = {
+        name,
+        type: 'query',
+      }
+      installFn(server, ctx, route, id).then((spec) => {
+        if (spec) {
+          enableSubscribe(route, spec, server, ctx, payload, id, checksum)
+        } else {
+          // someting wrong...
+        }
+      })
+    })
+    session.unauthorizedObs.clear()
+  }
+  if (session.unauthorizedChannels?.size) {
+    session.unauthorizedChannels.forEach((channel) => {
+      const { id, name, payload } = channel
+      const route: BasedRoute<'channel'> = {
+        name,
+        type: 'channel',
+      }
+      installFn(server, ctx, route, id).then((spec) => {
+        if (spec) {
+          enableChannelSubscribe(route, spec, server, ctx, payload, id)
+        }
+      })
+    })
+    session.unauthorizedChannels.clear()
+  }
+}
+
 export const authMessage: BinaryMessageHandler = (
   arr,
   start,
@@ -63,39 +105,8 @@ export const authMessage: BinaryMessageHandler = (
         return true
       }
 
-      if (session.unauthorizedObs?.size) {
-        session.unauthorizedObs.forEach((obs) => {
-          const { id, name, checksum, payload } = obs
-          const route: BasedRoute<'query'> = {
-            name,
-            type: 'query',
-          }
-          installFn(server, ctx, route, id).then((spec) => {
-            if (spec) {
-              enableSubscribe(route, spec, server, ctx, payload, id, checksum)
-            } else {
-              // someting wrong...
-            }
-          })
-        })
-        session.unauthorizedObs.clear()
-      }
+      reEvaulateUnauthorized(server, ctx)
 
-      if (session.unauthorizedChannels?.size) {
-        session.unauthorizedChannels.forEach((channel) => {
-          const { id, name, payload } = channel
-          const route: BasedRoute<'channel'> = {
-            name,
-            type: 'channel',
-          }
-          installFn(server, ctx, route, id).then((spec) => {
-            if (spec) {
-              enableChannelSubscribe(route, spec, server, ctx, payload, id)
-            }
-          })
-        })
-        session.unauthorizedChannels.clear()
-      }
       sendAuthMessage(ctx, verified)
     })
     .catch((err) => {
