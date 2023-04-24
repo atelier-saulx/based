@@ -49,9 +49,6 @@ export const initStorageNode = async (client: BasedClient) => {
     client.storagePath,
     'based-' + client.storageEnvKey + '.storage'
   )
-  console.info('    [Based-client] Start persistent storage')
-  console.info('   ', file)
-  console.info('')
   try {
     const s = fs.statSync(file)
     if (s) {
