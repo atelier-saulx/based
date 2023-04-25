@@ -135,8 +135,6 @@ export const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
-        console.log('hello', env, key, '@based-authState-' + env)
-
         if (key === '@based-authState-' + env) {
           const authState = getStorageBrowser(client, key)
           if (authState) {
