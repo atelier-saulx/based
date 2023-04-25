@@ -89,6 +89,26 @@ export const httpHandler = (
 
   if (route.public !== true) {
     const authorization: string = req.getHeader('authorization')
+    if (authorization.length > 5e3) {
+      sendError(
+        server,
+        {
+          session: {
+            ua: req.getHeader('user-agent'),
+            ip,
+            method,
+            id: ++clientId,
+            headers: {},
+            authState: {},
+            res,
+            req,
+          },
+        },
+        BasedErrorCode.PayloadTooLarge,
+        { route: { name: 'authorize', type: 'function' } }
+      )
+      return
+    }
     if (authorization) {
       authState = parseAuthState(authorization)
     } else {

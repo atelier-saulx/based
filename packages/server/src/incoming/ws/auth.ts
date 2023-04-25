@@ -82,6 +82,10 @@ export const authMessage: BinaryMessageHandler = (
     return false
   }
 
+  if (len > 20000) {
+    return
+  }
+
   // | 4 header | * payload |
   const payload = decodePayload(
     new Uint8Array(arr.slice(start + 4, start + len)),
