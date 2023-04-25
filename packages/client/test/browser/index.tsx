@@ -2,17 +2,15 @@ import { BasedClient } from '@based/client'
 import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
-  const based = new BasedClient()
-
-  based.connect({
-    env: 'framme',
-    project: 'test',
-    org: 'saulx',
-    cluster: 'test',
+  const based = new BasedClient({
+    // env: 'framme',
+    // project: 'test',
+    // org: 'saulx',
+    // cluster: 'test',
     // name: '@based/env-hub',
-    // url: async () => {
-    //   return 'ws://localhost:8081'
-    // },
+    url: async () => {
+      return 'ws://localhost:8081'
+    },
   })
 
   button('Call hello', async () => {
@@ -301,6 +299,8 @@ const init = async () => {
         )
       })
   })
+
+  console.log('--->', based.authState.token)
 
   toggleButton(
     'setAuthState',

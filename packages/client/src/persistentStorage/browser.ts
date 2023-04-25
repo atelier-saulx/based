@@ -56,11 +56,6 @@ export const setStorageBrowser = (
         ? encodeBase64(fflate.deflateSync(stringToUtf8(stringifiedJson)))
         : stringifiedJson
 
-    // console.info(
-    //   'COMPRESSION',
-    //   new Blob([stringifiedJson]).size / new Blob([encoded]).size
-    // )
-
     const blob = new Blob([encoded])
     const size = blob.size
 
@@ -140,6 +135,8 @@ export const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
+        console.log('hello', env, key, '@based-authState-' + env)
+
         if (key === '@based-authState-' + env) {
           const authState = getStorageBrowser(client, key)
           if (authState) {
@@ -148,13 +145,13 @@ export const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
-        const [, x] = key.split('@based-cache-')
+        const [, keyValuePair] = key.split('@based-cache-')
 
-        if (!x) {
+        if (!keyValuePair) {
           continue
         }
 
-        const [id, e] = x.split('-')
+        const [id, e] = keyValuePair.split('-')
 
         if (e !== String(env)) {
           continue

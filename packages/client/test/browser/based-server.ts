@@ -40,19 +40,6 @@ const s3Client: S3 = new S3({
   },
 })
 
-// // inject header to tell cloudflare to create the bucket if doesnt exist
-// s3Client.middlewareStack.add(
-//   (next) => (args) => {
-//     // @ts-ignore
-//     if (args.request?.headers) {
-//       // @ts-ignore
-//       args.request.headers['cf-create-bucket-if-missing'] = 'true'
-//     }
-//     return next(args)
-//   },
-//   { step: 'build' }
-// )
-
 const counter: BasedQueryFunction<{ speed: number }, { cnt: number }> = (
   _based,
   payload,
@@ -201,10 +188,6 @@ const start = async () => {
             { stream, extension, fileName, size, mimeType }
           ) => {
             const Bucket = 'based-test-bucket'
-
-            // const s = new PassThrough()
-
-            // https://0f3245a938ac700e485dd7fa57b5d209.r2.cloudflarestorage.com/based-test-bucket
 
             console.info('file to s3:', fileName, extension, size, mimeType)
 
