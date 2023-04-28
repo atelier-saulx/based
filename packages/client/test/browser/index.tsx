@@ -3,14 +3,13 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    // env: 'framme',
-    // project: 'test',
-    // org: 'saulx',
-    // cluster: 'test',
-    // name: '@based/env-hub',
-    url: async () => {
-      return 'ws://localhost:8081'
-    },
+    env: 'ci',
+    project: 'test',
+    org: 'saulx',
+    cluster: 'production',
+    // url: async () => {
+    //   return 'ws://localhost:8081'
+    // },
   })
 
   button('Call hello', async () => {
