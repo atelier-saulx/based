@@ -224,7 +224,8 @@ export const addToPublishQueue = (
   id: number,
   payload: any
 ) => {
-  if (client.publishQueue.length > 500) {
+  // TODO: make this configurable at some point
+  if (client.publishQueue.length > client.maxPublishQueue) {
     client.publishQueue.shift()
   }
   client.publishQueue.push([id, payload])

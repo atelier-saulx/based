@@ -82,6 +82,7 @@ export class BasedClient extends Emitter {
 
   isDrainingStreams: boolean = false
   // --------- Queue
+  maxPublishQueue: number = 1000
   publishQueue: ChannelPublishQueue = []
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
