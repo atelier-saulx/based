@@ -224,6 +224,9 @@ export const addToPublishQueue = (
   id: number,
   payload: any
 ) => {
+  if (client.publishQueue.length > 150) {
+    client.publishQueue.shift()
+  }
   client.publishQueue.push([id, payload])
   drainQueue(client)
 }
