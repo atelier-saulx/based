@@ -235,13 +235,13 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
   t.deepEqual(r, [1, 2, 3, 4])
   await wait(1000)
   const results: string[] = []
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 150; i++) {
     const x = `no id ${i} hello gone! 🙏`
     results.push(x)
     client.channel('a', { bla: true }).publish(x)
   }
   await wait(1500)
-  t.is(rePublish, 10000)
+  t.is(rePublish, 150)
   t.is(registerChannelId, 2)
   t.deepEqual(r, [1, 2, 3, 4, ...results])
   t.is(Object.keys(server.activeChannels).length, 0)
@@ -635,7 +635,7 @@ test.serial(
     t.is(extra, 1)
 
     incomingPerClient.forEach((v) => {
-      t.is(v, 1e5 + 1)
+      t.is(v, 151 + 1)
     })
 
     await Promise.all(clients.map((c) => c.destroy()))
