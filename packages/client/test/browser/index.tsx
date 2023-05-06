@@ -6,14 +6,16 @@ const init = async () => {
     env: 'ci',
     project: 'test',
     org: 'saulx',
-    cluster: 'production',
+    // cluster: 'local',
+    // key: 'cms',
+    discoveryUrls: ['http://localhost:22826'],
     // url: async () => {
     //   return 'ws://localhost:8081'
     // },
   })
 
   button('Call hello', async () => {
-    log('Call hello', await based.call('hello', { x: true }))
+    log('Call hello', await based.call('simple-function', { x: true }))
   })
 
   button('Fetch hello', async () => {
