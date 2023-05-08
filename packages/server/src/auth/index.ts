@@ -85,7 +85,9 @@ export class BasedAuth {
     ctx.session.authState = verified
 
     if (isWsContext(ctx)) {
-      reEvaulateUnauthorized(this.server, ctx)
+      if (verified.token) {
+        reEvaulateUnauthorized(this.server, ctx)
+      }
       this.sendAuthState(ctx, verified)
     }
 
