@@ -14,6 +14,7 @@ import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
 import parseAuthState from './parseAuthState'
 import parseJSONAuthState from './parseJSONAuthState'
 import { reEvaulateUnauthorized } from '../incoming/ws/auth'
+import { deepEqual } from '@saulx/utils'
 
 export { parseAuthState }
 export { parseJSONAuthState }
@@ -79,6 +80,10 @@ export class BasedAuth {
     )
 
     if (verified === true || !ctx.session) {
+      return
+    }
+
+    if (typeof ctx.session.authState === 'object' && typeof verified === 'object' && deepEqual(ctx.session.authState, verified)) {
       return
     }
 
