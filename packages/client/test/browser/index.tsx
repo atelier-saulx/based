@@ -6,12 +6,8 @@ const init = async () => {
     env: 'ci',
     project: 'test',
     org: 'saulx',
-    // cluster: 'local',
-    // key: 'cms',
-    discoveryUrls: ['http://localhost:22826'],
-    // url: async () => {
-    //   return 'ws://localhost:8081'
-    // },
+    cluster: 'local',
+    key: 'cms',
   })
 
   button('Call hello', async () => {
