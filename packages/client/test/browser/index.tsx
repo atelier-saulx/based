@@ -3,15 +3,11 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    env: 'ci',
-    project: 'test',
-    org: 'saulx',
-    cluster: 'local',
-    key: 'cms',
+    url: 'ws://localhost:8081',
   })
 
   button('Call hello', async () => {
-    log('Call hello', await based.call('simple-function', { x: true }))
+    log('Call hello', await based.call('hello', { x: true }))
   })
 
   button('Fetch hello', async () => {
