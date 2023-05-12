@@ -67,6 +67,7 @@ export const httpHandler = (
       server,
       {
         session: {
+          origin: req.getHeader('origin'),
           ua: req.getHeader('user-agent'),
           ip,
           method,
