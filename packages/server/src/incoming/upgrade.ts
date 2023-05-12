@@ -38,6 +38,7 @@ const upgradeInternal = (
   const query = req.getQuery()
   const secWebSocketKey = req.getHeader('sec-websocket-key')
   const secWebSocketExtensions = req.getHeader('sec-websocket-extensions')
+  const origin = req.getHeader('origin')
 
   res.writeStatus('101 Switching Protocols')
   res.upgrade(
@@ -49,6 +50,7 @@ const upgradeInternal = (
       authState: secWebSocketProtocol
         ? parseAuthState(secWebSocketProtocol)
         : {},
+      origin,
       obs: new Set(),
     },
     secWebSocketKey,
