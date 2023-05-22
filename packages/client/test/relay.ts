@@ -77,6 +77,11 @@ test.serial('Relay', async (t) => {
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
         },
+        flap: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          relay: { client: 'events', target: 'counter' },
+        },
       },
     },
   })
@@ -106,6 +111,11 @@ test.serial('Relay', async (t) => {
   await wait(500)
 
   t.deepEqual(msges, ['bla'])
+
+  const count = await client.query('flap').get()
+  console.log(count)
+
+  t.true(count > 0)
 
   close()
   await client.destroy()

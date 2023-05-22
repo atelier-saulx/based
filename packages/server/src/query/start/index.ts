@@ -59,7 +59,7 @@ export const start = (server: BasedServer, id: number) => {
       )
       return
     }
-    relay(server, obs, client, update)
+    relay(server, spec.relay, obs, client, update)
   } else {
     try {
       const r = spec.fn(server.client, payload, update, (err) => {
