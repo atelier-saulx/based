@@ -67,6 +67,7 @@ export const httpHandler = (
       server,
       {
         session: {
+          origin: req.getHeader('origin'),
           ua: req.getHeader('user-agent'),
           ip,
           method,
@@ -97,6 +98,7 @@ export const httpHandler = (
             ua: req.getHeader('user-agent'),
             ip,
             method,
+            origin: req.getHeader('origin'),
             id: ++clientId,
             headers: {},
             authState: {},
@@ -125,6 +127,7 @@ export const httpHandler = (
       res,
       req,
       method,
+      origin: req.getHeader('origin'),
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,

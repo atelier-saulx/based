@@ -1,5 +1,9 @@
 import { BasedServer } from '@based/server'
-import { BasedFunction, BasedQueryFunction } from '@based/functions'
+import {
+  BasedFunction,
+  BasedQueryFunction,
+  isClientContext,
+} from '@based/functions'
 import fs from 'node:fs'
 import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
@@ -12,8 +16,11 @@ const files: { [key: string]: { file: string; mimeType: string } } = {}
 
 const TMP = join(__dirname, 'tmp')
 
-const hello: BasedFunction<void, string> = async () => {
-  return 'This is a response from hello'
+const hello: BasedFunction<void, string> = async (based, payload, ctx) => {
+  return (
+    'This is a response from hello ' +
+    (isClientContext(ctx) ? ctx.session?.origin : '')
+  )
 }
 
 const path = join(

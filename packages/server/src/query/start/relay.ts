@@ -6,12 +6,13 @@ import { errorListener } from './error'
 // this has to be super optmized!
 export const relay = (
   server: BasedServer,
+  relay: { target?: string; client: string },
   obs: ActiveObservable,
   client: any,
   update: ObservableUpdateFunction
 ) => {
   obs.closeFunction = client
-    .query(obs.name, obs.payload)
+    .query(relay.target ?? obs.name, obs.payload)
     .subscribe(update, (err) => {
       errorListener(server, obs, err)
     })
