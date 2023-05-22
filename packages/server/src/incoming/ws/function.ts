@@ -34,7 +34,7 @@ const sendFunction: IsAuthorizedHandler<
     }
 
     client
-      .call(spec.name, payload)
+      .call(spec.relay.target ?? spec.name, payload)
       .then(async (v) => {
         ctx.session?.ws.send(
           encodeFunctionResponse(requestId, valueToBuffer(v)),

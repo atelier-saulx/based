@@ -113,7 +113,7 @@ export const startChannel = (
       return
     }
     channel.closeFunction = client
-      .channel(channel.name, channel.payload)
+      .channel(spec.relay.target ?? channel.name, channel.payload)
       .subscribe(
         (msg) => {
           updateChannelListener(server, channel, msg)
