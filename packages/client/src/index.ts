@@ -397,7 +397,7 @@ export class BasedClient extends Emitter {
   will keep the authState in localStorage
   
   ```javascript
-  await client.setAuthState({ token: 'token', persitent: true })
+  await client.setAuthState({ token: 'token', persistent: true })
   ```
   */
   setAuthState(authState: AuthState): Promise<AuthState> {
