@@ -3,11 +3,15 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    // url: 'ws://localhost:8081',
+    url: 'ws://localhost:8081',
 
-    project: 'test',
-    env: 'production',
-    org: 'saulx',
+    // project: 'test',
+    // env: 'production',
+    // org: 'saulx',
+  })
+
+  button('Call longWait', async () => {
+    log('Call longWait', await based.call('longWait', { x: true }))
   })
 
   button('Call hello', async () => {
@@ -184,7 +188,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'db:file-upload',
+          'files',
           {
             contents: f,
             payload,
