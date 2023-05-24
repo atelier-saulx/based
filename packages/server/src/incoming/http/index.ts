@@ -144,15 +144,23 @@ export const httpHandler = (
     for (const header of route.headers) {
       ctx.session.headers[header] = req.getHeader(header)
     }
-    ctx.session.res.writeHeader(
-      'Access-Control-Allow-Headers',
-      route.headers.join(',')
-    )
-    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.corsSend = true
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeHeader(
+        'Access-Control-Allow-Headers',
+        'Authorization' + ',' + route.headers.join(',')
+      )
+      ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+      ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    })
   } else {
-    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeHeader(
+        'Access-Control-Allow-Headers',
+        'Authorization'
+      )
+      ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+      ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    })
   }
 
   if (

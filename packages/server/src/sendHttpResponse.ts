@@ -10,12 +10,6 @@ export const end = (
     return
   }
 
-  // check for 'headers set'
-  if (!ctx.session.corsSend) {
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-  }
-
   if (payload === undefined || ctx.session.method === 'options') {
     ctx.session.res.end()
   } else {
@@ -41,12 +35,6 @@ export const sendHeaders = (
         ? value
         : String(value)
     )
-    if (
-      header === 'Access-Control-Allow-Origin' ||
-      header === 'access-control-allow-origin'
-    ) {
-      ctx.session.corsSend = true
-    }
   }
 }
 
@@ -71,10 +59,7 @@ export const sendHttpResponse = (
       if (headers) {
         sendHeaders(ctx, headers)
       }
-      if (!ctx.session.corsSend) {
-        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-        ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-      }
+
       ctx.session.res.end()
     })
     return
@@ -87,10 +72,6 @@ export const sendHttpResponse = (
       ctx.session.res.writeStatus(statusCode)
       if (headers) {
         sendHeaders(ctx, headers)
-      }
-      if (!ctx.session.corsSend) {
-        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-        ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
       }
     })
     result.on('data', (d) => {

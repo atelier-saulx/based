@@ -46,7 +46,6 @@ export type HttpSession = {
   id: number // client-id
   authState: AuthState
   method: string
-  corsSend?: boolean
   rawBody?: string
   headers: {
     'content-length'?: number

@@ -4,6 +4,10 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 const init = async () => {
   const based = new BasedClient({
     url: 'ws://localhost:8081',
+
+    // project: 'test',
+    // env: 'production',
+    // org: 'saulx',
   })
 
   button('Call hello', async () => {
@@ -82,6 +86,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
+          // 'db:file-upload',
           'files-s3',
           {
             contents: f,
@@ -92,9 +97,19 @@ const init = async () => {
         return x
       })
     )
-    results.forEach((r) => {
-      log(r)
-      log(`<span><img style="height:150px" src="${r.url}" /></span>`)
+
+    results.forEach(async (r) => {
+      const x = r
+
+      // const x = await based
+      //   .query('db', {
+      //     $id: r.id,
+      //     $all: true,
+      //   })
+      //   .get()
+
+      log(x)
+      log(`<span><img style="height:150px" src="${x.src ?? x.url}" /></span>`)
     })
   })
 

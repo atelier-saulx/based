@@ -80,12 +80,6 @@ export const multiPart = (
   ctx: Context<HttpSession>,
   route: BasedRoute<'stream'>
 ) => {
-  ctx.session.res.cork(() => {
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-    ctx.session.corsSend = true
-  })
-
   const installedFn = installFn(server, server.client.ctx, route)
 
   const pendingFiles: ReturnType<typeof handleFile>[] = []

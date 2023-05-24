@@ -34,7 +34,6 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
-import { retry } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
 
