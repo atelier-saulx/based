@@ -111,7 +111,10 @@ export const sendHttpResponse = (
             'Cache-Control',
             'max-age=0, must-revalidate'
           )
-          ctx.session.res.writeHeader('Content-Type', cType)
+          ctx.session.res.writeHeader(
+            'Access-Control-Allow-Headers',
+            'Authorization'
+          )
         }
 
         if (encoding) {

@@ -1,7 +1,6 @@
 import { BasedServer } from '../server'
 import { ActiveObservable } from './types'
 
-// TODO: maybe share between obs and channel
 const destroyObs = (server: BasedServer, obs: ActiveObservable) => {
   const id = obs.id
   obs.timeTillDestroy = null
@@ -25,8 +24,6 @@ export const cleanUpObs = (server: BasedServer) => {
   if (!server.obsCleanTimeout) {
     const cycleTime = Math.max(server.obsCleanupCycle, 500)
     server.obsCleanTimeout = setTimeout(() => {
-      // const d = Date.now()
-      // let cnt = 0
       server.obsCleanTimeout = null
       let keepRunning = false
       let shortestCycleTime: number
@@ -51,16 +48,6 @@ export const cleanUpObs = (server: BasedServer) => {
         server.obsCleanupCycle = shortestCycleTime
         cleanUpObs(server)
       }
-      // console.info(
-      //   'Cleanup time',
-      //   cycleTime,
-      //   'new',
-      //   server.obsCleanupCycle,
-      //   Date.now() - d,
-      //   'ms',
-      //   cnt,
-      //   'obs cleaned up'
-      // )
     }, cycleTime)
   }
 }

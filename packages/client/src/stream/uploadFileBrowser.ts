@@ -56,11 +56,11 @@ const drainQueue = (
           })
         }
         xhr.onerror = (p) => {
-          console.error(p)
+          console.error('Based xhr error', p)
           if (xhr.status === 0 && !xhr.statusText) {
             const err = convertDataToBasedError({
-              message: `[${functionName}] Function not found`,
-              code: BasedErrorCode.FunctionNotFound,
+              message: `[${functionName}] XHR Error`,
+              code: BasedErrorCode.FunctionError,
             })
             reject(err, q)
           } else {

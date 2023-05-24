@@ -358,7 +358,10 @@ export class BasedFunctions {
         delete this.beingUninstalled[name]
         return this.remove(name)
       } else {
-        console.info('got requested while being unregistered', name)
+        console.info(
+          'Fn requested while being unregistered from uninstall',
+          name
+        )
       }
     }
     return false

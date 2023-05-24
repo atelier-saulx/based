@@ -3,11 +3,11 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    url: 'ws://localhost:8081',
+    // url: 'ws://localhost:8081',
 
-    // project: 'test',
-    // env: 'production',
-    // org: 'saulx',
+    project: 'test',
+    env: 'production',
+    org: 'saulx',
   })
 
   button('Call hello', async () => {
@@ -26,10 +26,20 @@ const init = async () => {
         bla: 'hello',
       })
     }
+
+    const url =
+      based.connection.ws.url
+        .replace('wss://', 'https://')
+        .split('/')
+        .slice(0, -1)
+        .join('/') + '/db:file-upload'
+
+    // 'http://localhost:8081/files'
+
     log(
       'Fetch stream files',
       await (
-        await fetch('http://localhost:8081/files', {
+        await fetch(url, {
           method: 'post',
           body: JSON.stringify(payload),
           headers: {
@@ -86,8 +96,8 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          // 'db:file-upload',
-          'files-s3',
+          'db:file-upload',
+          // 'files-s3',
           {
             contents: f,
             payload,
@@ -99,14 +109,14 @@ const init = async () => {
     )
 
     results.forEach(async (r) => {
-      const x = r
+      // const x = r
 
-      // const x = await based
-      //   .query('db', {
-      //     $id: r.id,
-      //     $all: true,
-      //   })
-      //   .get()
+      const x = await based
+        .query('db', {
+          $id: r.id,
+          $all: true,
+        })
+        .get()
 
       log(x)
       log(`<span><img style="height:150px" src="${x.src ?? x.url}" /></span>`)
