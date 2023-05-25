@@ -190,7 +190,6 @@ test.serial('authorize get', async (t) => {
     coreClient.query('counter').get()
   )
   t.is(error.code, BasedErrorCode.AuthorizeRejectedError)
-
   await coreClient.setAuthState({ token: 'mock_token' })
   await t.notThrowsAsync(coreClient.query('counter').get())
 })
