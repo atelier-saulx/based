@@ -153,6 +153,7 @@ const start = async () => {
         longWait: {
           type: 'function',
           fn: async () => {
+            console.log('lets wait long')
             await wait(60e3)
             return true
           },
