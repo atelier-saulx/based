@@ -92,6 +92,12 @@ test.serial('Relay', async (t) => {
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events', target: 'counter' },
         },
+        derp: {
+          type: 'function',
+          fn: async (based, payload) => {
+            return based.call('bye', payload)
+          },
+        },
       },
     },
   })
@@ -147,6 +153,11 @@ test.serial('Relay', async (t) => {
 
   const bye = await client.call('bye', { snap: 'je' })
   t.is(bye, 'from hello je')
+
+  const derp = await client.call('derp', { snap: 'je' })
+  t.is(derp, 'from hello je')
+
+  console.info(derp)
 
   await client.destroy()
   await server.destroy()
