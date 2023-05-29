@@ -157,8 +157,6 @@ test.serial('Relay', async (t) => {
   const derp = await client.call('derp', { snap: 'je' })
   t.is(derp, 'from hello je')
 
-  console.info(derp)
-
   await client.destroy()
   await server.destroy()
   await relayClient.destroy()
