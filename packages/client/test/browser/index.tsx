@@ -3,11 +3,11 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    url: 'ws://localhost:8081',
-
-    // project: 'test',
-    // env: 'production',
-    // org: 'saulx',
+    // url: 'ws://localhost:8081',
+    // cluster: 'local',
+    project: 'demo',
+    env: 'production',
+    org: 'saulx',
   })
 
   button('Call longWait', async () => {
