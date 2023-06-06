@@ -97,7 +97,7 @@ export const useQuery = <T = any>(
   useState()
   useEffect(() => {}, [null])
 
-  return { loading: true, data: null }
+  return { loading: true }
 }
 
 export const useClient = (): BasedClient => {
