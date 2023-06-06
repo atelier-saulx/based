@@ -92,7 +92,7 @@ export const sendHttpResponse = (
       ? undefined
       : ctx.session.headers.encoding
   ).then(({ payload, encoding }) => {
-    if (ctx.session.res) {
+    if (ctx.session?.res) {
       ctx.session.res.cork(() => {
         ctx.session.res.writeStatus(statusCode)
         if (headers) {
