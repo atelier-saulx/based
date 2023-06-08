@@ -138,7 +138,10 @@ export const initStorageBrowser = async (client: BasedClient) => {
         if (key === '@based-authState-' + env) {
           const authState = getStorageBrowser(client, key)
           if (authState) {
-            client.setAuthState(authState)
+            client.setAuthState(authState).catch((err) => {
+              console.error(err.message)
+              removeStorageBrowser(client, key)
+            })
           }
           continue
         }

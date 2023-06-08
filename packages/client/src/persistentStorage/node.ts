@@ -64,7 +64,10 @@ export const initStorageNode = async (client: BasedClient) => {
           })
         }
         if (c.authState) {
-          client.setAuthState(c.authState)
+          client.setAuthState(c.authState).catch(() => {
+            console.error('    [Based-client] Invalid authState')
+            clearStorageNode(client)
+          })
         }
       } catch (err) {
         console.error('    [Based-client] Corrupt persistent storage - clear')
