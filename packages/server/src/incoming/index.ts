@@ -54,7 +54,7 @@ export default (
           },
       message: (ws, data, isBinary) => {
         const session = ws.getUserData()
-        message(server, session.c, data, isBinary)
+        message(server, session, data, isBinary)
       },
 
       open: (ws: BasedWebSocket) => {
