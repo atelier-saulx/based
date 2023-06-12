@@ -73,17 +73,17 @@ test.serial('throttle channel', async (t) => {
     functions: {
       configs: {
         counter: {
-          type: 'query',
+          type: 'channel',
           throttle: 1000,
           uninstallAfterIdleTime: 1e3,
-          fn: (_, __, update) => {
+          publisher: () => {},
+          subscriber: (_, __, ___, update) => {
             let cnt = 0
-            update(cnt)
-            const counter = setInterval(() => {
-              update(++cnt)
+            const interval = setInterval(() => {
+              update('YES ' + ++cnt)
             }, 100)
             return () => {
-              clearInterval(counter)
+              clearInterval(interval)
             }
           },
         },
@@ -104,7 +104,7 @@ test.serial('throttle channel', async (t) => {
   const obs1Results: any[] = []
 
   const close = client
-    .query('counter', {
+    .channel('counter', {
       myQuery: 123,
     })
     .subscribe((d) => {

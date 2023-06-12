@@ -125,13 +125,47 @@ export const startChannel = (
   } else if (!fromInstall || channel.isActive) {
     channel.isActive = true
     try {
-      channel.closeFunction = spec.subscriber(
-        server.client,
-        payload,
-        id,
-        (msg) => updateChannelListener(server, channel, msg),
-        (err) => errorChannelListener(server, channel, err)
-      )
+      if (spec.throttle) {
+        let tempMsg: any
+        let isThrottled: boolean
+        let throtDebounced = false
+        let timer: NodeJS.Timeout
+
+        const update = (msg: any) => {
+          if (isThrottled) {
+            tempMsg = msg
+            throtDebounced = true
+          } else {
+            isThrottled = true
+            timer = setTimeout(() => {
+              if (throtDebounced && !channel.isDestroyed) {
+                updateChannelListener(server, channel, tempMsg)
+                // deref
+                tempMsg = null
+              }
+              throtDebounced = false
+              isThrottled = false
+            }, spec.throttle)
+            updateChannelListener(server, channel, msg)
+          }
+        }
+
+        channel.closeFunction = spec.subscriber(
+          server.client,
+          payload,
+          id,
+          update,
+          (err) => errorChannelListener(server, channel, err)
+        )
+      } else {
+        channel.closeFunction = spec.subscriber(
+          server.client,
+          payload,
+          id,
+          (msg) => updateChannelListener(server, channel, msg),
+          (err) => errorChannelListener(server, channel, err)
+        )
+      }
     } catch (err) {
       errorChannelListener(server, channel, err)
     }
