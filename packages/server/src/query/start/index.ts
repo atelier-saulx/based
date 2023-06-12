@@ -56,20 +56,17 @@ export const start = (server: BasedServer, id: number) => {
     ? (...args) => {
         if (isThrottled) {
           throttledArgs = args
-          if (!throtDebounced) {
-            throtDebounced = true
-            timer = setTimeout(() => {
-              throtDebounced = false
-              isThrottled = false
-              if (!obs.isDestroyed) {
-                // @ts-ignore
-                updateRaw(...throttledArgs)
-              }
-            }, spec.throttle)
-          }
+          throtDebounced = true
         } else {
           isThrottled = true
           timer = setTimeout(() => {
+            if (throtDebounced && !obs.isDestroyed) {
+              // @ts-ignore
+              updateRaw(...throttledArgs)
+              // deref
+              throttledArgs = null
+            }
+            throtDebounced = false
             isThrottled = false
           }, spec.throttle)
           // @ts-ignore

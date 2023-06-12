@@ -17,11 +17,9 @@ test.serial('throttle', async (t) => {
           throttle: 1000,
           uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
-            console.log(' go go go')
             let cnt = 0
             update(cnt)
             const counter = setInterval(() => {
-              console.log('UPDATE')
               update(++cnt)
             }, 100)
             return () => {
@@ -50,13 +48,10 @@ test.serial('throttle', async (t) => {
       myQuery: 123,
     })
     .subscribe((d) => {
-      console.info('datax')
       obs1Results.push(d)
     })
 
-  await wait(3000)
-
-  console.log('?xxx?', obs1Results)
+  await wait(2000)
 
   t.is(obs1Results.length, 3)
 
