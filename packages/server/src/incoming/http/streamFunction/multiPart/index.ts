@@ -91,28 +91,14 @@ export const multiPart = (
   const ready = async () => {
     const results = await Promise.all(pendingFiles)
     if (ctx.session) {
-      if (route.headers) {
-        for (const header of route.headers) {
-          ctx.session.headers[header] = ctx.session.req.getHeader(header)
-        }
-        ctx.session.res.cork(() => {
-          ctx.session.res.writeHeader(
-            'Access-Control-Allow-Headers',
-            'Authorization,Content-Type' + ',' + route.headers.join(',')
-          )
-          ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-          ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-        })
-      } else {
-        ctx.session.res.cork(() => {
-          ctx.session.res.writeHeader(
-            'Access-Control-Allow-Headers',
-            'Authorization,Content-Type'
-          )
-          ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-          ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-        })
-      }
+      ctx.session.res.cork(() => {
+        ctx.session.res.writeHeader(
+          'Access-Control-Allow-Headers',
+          'Authorization,Content-Type'
+        )
+        ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      })
       sendHttpResponse(ctx, results)
     }
   }

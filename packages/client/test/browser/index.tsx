@@ -5,8 +5,8 @@ const init = async () => {
   const based = new BasedClient({
     // url: 'ws://localhost:8081',
     // cluster: 'local',
-    project: 'demo',
-    env: 'production',
+    project: 'test',
+    env: 'framma',
     org: 'saulx',
   })
 
@@ -128,7 +128,7 @@ const init = async () => {
   })
 
   // add number of files!
-  uploadButton('Stream file', async (files, progress) => {
+  uploadButton('Stream file STREAMY', async (files, progress) => {
     log('uploading', files.length + ' files')
     const results = await Promise.all(
       [...files].map(async (f) => {
@@ -140,7 +140,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'db:file-upload',
+          'streamy',
           {
             contents: f,
             payload,
@@ -167,6 +167,10 @@ const init = async () => {
       })
     )
     results.forEach((r) => {
+      if (typeof r === 'string') {
+        return
+      }
+
       r.correctPayload = r.payload.length === 2
       log(r)
       log(

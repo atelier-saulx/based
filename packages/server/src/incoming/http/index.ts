@@ -146,9 +146,8 @@ export const httpHandler = (
 
   if (
     !(
-      method === 'post' &&
-      route.type === 'stream' &&
-      ctx.session.headers['content-type'].includes('multipart/form-data')
+      (method === 'post' && route.type === 'stream')
+      // ctx.session.headers['content-type'].includes('multipart/form-data')
     )
   ) {
     const defHeaders = 'Authorization,Content-Type'
