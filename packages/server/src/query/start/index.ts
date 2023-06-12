@@ -22,7 +22,7 @@ export const start = (server: BasedServer, id: number) => {
 
   const payload = obs.payload
 
-  const update: ObservableUpdateFunction = (
+  const updateRaw: ObservableUpdateFunction = (
     data,
     checksum,
     err,
@@ -47,40 +47,36 @@ export const start = (server: BasedServer, id: number) => {
     )
   }
 
-  // let isThrottled: boolean
-  // let throttledArgs: any[]
-  // let throtDebounced = false
-  // let timer: NodeJS.Timeout
+  let isThrottled: boolean
+  let throttledArgs: any[]
+  let throtDebounced = false
+  let timer: NodeJS.Timeout
 
-  // const update: ObservableUpdateFunction = spec.throttle
-  //   ? (...args) => {
-  //       console.info('go gop go', args)
-  //       if (isThrottled) {
-  //         console.info('IS THROTTLED', isThrottled)
-  //         throttledArgs = args
-  //         if (!throtDebounced) {
-  //           throtDebounced = true
-  //           timer = setTimeout(() => {
-  //             throtDebounced = false
-  //             isThrottled = false
-  //             if (!obs.isDestroyed) {
-  //               // @ts-ignore
-  //               updateRaw(...throttledArgs)
-  //             }
-  //           }, spec.throttle)
-  //         }
-  //       } else {
-  //         isThrottled = true
-
-  //         timer = setTimeout(() => {
-  //           isThrottled = false
-  //         }, spec.throttle)
-
-  //         // @ts-ignore
-  //         updateRaw(...args)
-  //       }
-  //     }
-  //   : updateRaw
+  const update: ObservableUpdateFunction = spec.throttle
+    ? (...args) => {
+        if (isThrottled) {
+          throttledArgs = args
+          if (!throtDebounced) {
+            throtDebounced = true
+            timer = setTimeout(() => {
+              throtDebounced = false
+              isThrottled = false
+              if (!obs.isDestroyed) {
+                // @ts-ignore
+                updateRaw(...throttledArgs)
+              }
+            }, spec.throttle)
+          }
+        } else {
+          isThrottled = true
+          timer = setTimeout(() => {
+            isThrottled = false
+          }, spec.throttle)
+          // @ts-ignore
+          updateRaw(...args)
+        }
+      }
+    : updateRaw
 
   const startId = ++obs.startId
 
