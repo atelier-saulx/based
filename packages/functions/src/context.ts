@@ -37,9 +37,9 @@ export type HttpSession = {
   // State can be used for anything - for us the based class instance
   state?: any
   res: HttpResponse
+  origin: string
   req: HttpRequest
   query?: string
-  origin: string
   parsedQuery?: ReturnType<typeof parseQuery>
   ua: string
   ip: string
@@ -85,7 +85,6 @@ export type InternalSession =
 export type MinimalExternalSession = {
   ua: string
   ip: string
-  origin: string
   headers: { [key: string]: string }
 }
 
@@ -95,6 +94,8 @@ export type Session = (
   | InternalSession
   | MinimalExternalSession
 ) & {
+  origin?: string
+
   /** Only available in Ws and Http contexts */
   authState?: AuthState
 }
