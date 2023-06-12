@@ -80,12 +80,6 @@ export const multiPart = (
   ctx: Context<HttpSession>,
   route: BasedRoute<'stream'>
 ) => {
-  ctx.session.res.cork(() => {
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
-    ctx.session.corsSend = true
-  })
-
   const installedFn = installFn(server, server.client.ctx, route)
 
   const pendingFiles: ReturnType<typeof handleFile>[] = []
@@ -96,7 +90,17 @@ export const multiPart = (
 
   const ready = async () => {
     const results = await Promise.all(pendingFiles)
-    sendHttpResponse(ctx, results)
+    if (ctx.session) {
+      ctx.session.res.cork(() => {
+        ctx.session.res.writeHeader(
+          'Access-Control-Allow-Headers',
+          'Authorization,Content-Type'
+        )
+        ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      })
+      sendHttpResponse(ctx, results)
+    }
   }
 
   readFormData(ctx, server, route, onFile, ready)

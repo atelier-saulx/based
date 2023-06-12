@@ -34,7 +34,6 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
-import { retry } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
 
@@ -82,6 +81,7 @@ export class BasedClient extends Emitter {
 
   isDrainingStreams: boolean = false
   // --------- Queue
+  maxPublishQueue: number = 1000
   publishQueue: ChannelPublishQueue = []
   functionQueue: FunctionQueue = []
   observeQueue: ObserveQueue = new Map()
@@ -396,7 +396,7 @@ export class BasedClient extends Emitter {
   will keep the authState in localStorage
   
   ```javascript
-  await client.setAuthState({ token: 'token', persitent: true })
+  await client.setAuthState({ token: 'token', persistent: true })
   ```
   */
   setAuthState(authState: AuthState): Promise<AuthState> {

@@ -11,6 +11,10 @@ type QueueItem = {
   progressListener?: ProgressListener
 }
 
+export const isStreaming = {
+  streaming: false,
+}
+
 const queue: {
   [functionName: string]: QueueItem[]
 } = {}
@@ -28,6 +32,8 @@ const drainQueue = (
 ) => {
   if (!inProgress[functionName]) {
     inProgress[functionName] = true
+
+    isStreaming.streaming = true
 
     setTimeout(async () => {
       inProgress[functionName] = false
@@ -56,11 +62,11 @@ const drainQueue = (
           })
         }
         xhr.onerror = (p) => {
-          console.error(p)
+          console.error('Based xhr error', p)
           if (xhr.status === 0 && !xhr.statusText) {
             const err = convertDataToBasedError({
-              message: `[${functionName}] Function not found`,
-              code: BasedErrorCode.FunctionNotFound,
+              message: `[${functionName}] XHR Error`,
+              code: BasedErrorCode.FunctionError,
             })
             reject(err, q)
           } else {
@@ -90,6 +96,7 @@ const drainQueue = (
           } catch (err) {
             reject(err, q)
           }
+          isStreaming.streaming = false
         }
         xhr.open('POST', url + '/' + functionName, true)
         xhr.setRequestHeader('Content-Type', 'multipart/form-data')

@@ -22,16 +22,34 @@ export const callFunction = async (
     return
   }
 
-  const fn = await installFn(server, server.client.ctx, route)
+  const spec = await installFn(server, server.client.ctx, route)
 
-  if (!fn) {
+  if (!spec) {
     throw createError(server, ctx, BasedErrorCode.FunctionNotFound, {
       route,
     })
   }
 
+  if (spec.relay) {
+    const client = server.clients[spec.relay.client]
+    if (!client) {
+      throw createError(server, ctx, BasedErrorCode.FunctionError, {
+        route,
+        err: new Error('Cannot find client ' + spec.relay),
+      })
+    }
+    try {
+      return client.call(spec.relay.target ?? spec.name, payload)
+    } catch (err) {
+      throw createError(server, ctx, BasedErrorCode.FunctionError, {
+        route,
+        err,
+      })
+    }
+  }
+
   try {
-    return fn.fn(server.client, payload, ctx)
+    return spec.fn(server.client, payload, ctx)
   } catch (err) {
     throw createError(server, ctx, BasedErrorCode.FunctionError, {
       route,

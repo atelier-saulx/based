@@ -22,7 +22,7 @@ export const start = (server: BasedServer, id: number) => {
 
   const payload = obs.payload
 
-  const update: ObservableUpdateFunction = (
+  const updateRaw: ObservableUpdateFunction = (
     data,
     checksum,
     err,
@@ -47,6 +47,34 @@ export const start = (server: BasedServer, id: number) => {
     )
   }
 
+  let isThrottled: boolean
+  let throttledArgs: any[]
+  let throtDebounced = false
+  let timer: NodeJS.Timeout
+
+  const update: ObservableUpdateFunction = spec.throttle
+    ? (...args) => {
+        if (isThrottled) {
+          throttledArgs = args
+          throtDebounced = true
+        } else {
+          isThrottled = true
+          timer = setTimeout(() => {
+            if (throtDebounced && !obs.isDestroyed) {
+              // @ts-ignore
+              updateRaw(...throttledArgs)
+              // deref
+              throttledArgs = null
+            }
+            throtDebounced = false
+            isThrottled = false
+          }, spec.throttle)
+          // @ts-ignore
+          updateRaw(...args)
+        }
+      }
+    : updateRaw
+
   const startId = ++obs.startId
 
   if (spec.relay) {
@@ -59,7 +87,7 @@ export const start = (server: BasedServer, id: number) => {
       )
       return
     }
-    relay(server, obs, client, update)
+    relay(server, spec.relay, obs, client, update)
   } else {
     try {
       const r = spec.fn(server.client, payload, update, (err) => {

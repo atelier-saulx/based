@@ -172,7 +172,6 @@ test.serial('Channel publish no subscribe', async (t) => {
   await server.destroy()
 })
 
-// totally broken now..
 test.serial('Channel publish requestId (10k messages)', async (t) => {
   const r: any[] = []
   const server = new BasedServer({
@@ -209,6 +208,7 @@ test.serial('Channel publish requestId (10k messages)', async (t) => {
   })
   await server.start()
   const client = new BasedClient()
+  client.maxPublishQueue = 1e9
   let rePublish = 0
   let registerChannelId = 0
   client.on('debug', (d) => {
@@ -560,92 +560,91 @@ test.serial('Channel publish non existing channel', async (t) => {
   await server.destroy()
 })
 
-test.serial(
-  'Channel high load multi client subscribe and publish',
-  async (t) => {
-    const listeners: Map<number, (msg: any) => void> = new Map()
+test('Channel high load multi client subscribe and publish', async (t) => {
+  const listeners: Map<number, (msg: any) => void> = new Map()
 
-    const server = new BasedServer({
-      port: 9910,
-      rateLimit: {
-        ws: 1e9,
-        drain: 1e3,
-        http: 0,
-      },
-      functions: {
-        closeAfterIdleTime: { channel: 10, query: 10 },
-        configs: {
-          a: {
-            type: 'channel',
-            uninstallAfterIdleTime: 1e3,
-            publicPublisher: true,
-            publisher: (_, __, msg, id) => {
-              listeners.get(id)?.(msg)
-            },
-            subscriber: (_, __, id, update) => {
-              listeners.set(id, update)
-              return () => {}
-            },
+  const server = new BasedServer({
+    port: 9910,
+    rateLimit: {
+      ws: 1e9,
+      drain: 1e3,
+      http: 0,
+    },
+    functions: {
+      closeAfterIdleTime: { channel: 10, query: 10 },
+      configs: {
+        a: {
+          type: 'channel',
+          uninstallAfterIdleTime: 1e3,
+          publicPublisher: true,
+          publisher: (_, __, msg, id) => {
+            listeners.get(id)?.(msg)
+          },
+          subscriber: (_, __, id, update) => {
+            listeners.set(id, update)
+            return () => {}
           },
         },
       },
-    })
-    await server.start()
+    },
+  })
+  await server.start()
 
-    const incomingPerClient: Map<number, number> = new Map()
+  const incomingPerClient: Map<number, number> = new Map()
 
-    const clients: BasedClient[] = []
-    for (let i = 0; i < 10; i++) {
-      const client = new BasedClient()
-      client.connect({
-        url: async () => 'ws://localhost:9910',
-      })
-      const id = i
-      client.channel('a').subscribe(() => {
-        const incoming = incomingPerClient.get(id) || 0
-        incomingPerClient.set(id, incoming + 1)
-      })
-      clients.push(client)
-    }
-
-    const publishClient = new BasedClient()
-    await publishClient.connect({
+  const clients: BasedClient[] = []
+  for (let i = 0; i < 10; i++) {
+    const client = new BasedClient()
+    client.connect({
       url: async () => 'ws://localhost:9910',
     })
-
-    const extraClient = new BasedClient()
-    extraClient.connect({
-      url: async () => 'ws://localhost:9910',
+    const id = i
+    client.channel('a').subscribe(() => {
+      const incoming = incomingPerClient.get(id) || 0
+      incomingPerClient.set(id, incoming + 1)
     })
-
-    for (let i = 0; i < 1e5; i++) {
-      publishClient.channel('a').publish({ i })
-    }
-
-    await wait(1e3)
-
-    let extra = 0
-    extraClient.channel('a').subscribe(() => {
-      extra++
-    })
-    publishClient.channel('a').publish({ i: 1000 })
-
-    await wait(6e3)
-
-    t.is(extra, 1)
-
-    incomingPerClient.forEach((v) => {
-      t.is(v, 1e5 + 1)
-    })
-
-    await Promise.all(clients.map((c) => c.destroy()))
-    await publishClient.destroy()
-    await extraClient.destroy()
-
-    await wait(1500)
-
-    t.is(Object.keys(server.activeChannels).length, 0)
-    t.is(server.activeChannelsById.size, 0)
-    await server.destroy()
+    clients.push(client)
   }
-)
+
+  const publishClient = new BasedClient()
+  await publishClient.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+
+  publishClient.maxPublishQueue = 1e9
+
+  const extraClient = new BasedClient()
+  extraClient.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+
+  for (let i = 0; i < 1e5; i++) {
+    publishClient.channel('a').publish({ i })
+  }
+
+  await wait(1e3)
+
+  let extra = 0
+  extraClient.channel('a').subscribe(() => {
+    extra++
+  })
+  publishClient.channel('a').publish({ i: 1000 })
+
+  await wait(6e3)
+
+  t.is(extra, 1)
+
+  incomingPerClient.forEach((v) => {
+    t.is(v, 1e5 + 1)
+  })
+
+  await Promise.all(clients.map((c) => c.destroy()))
+  await publishClient.destroy()
+  await extraClient.destroy()
+
+  await wait(1500)
+
+  t.is(Object.keys(server.activeChannels).length, 0)
+  t.is(server.activeChannelsById.size, 0)
+  await server.destroy()
+})

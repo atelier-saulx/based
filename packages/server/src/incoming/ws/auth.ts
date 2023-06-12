@@ -15,6 +15,7 @@ import {
 import { BinaryMessageHandler } from './types'
 import { enableChannelSubscribe } from './channelSubscribe'
 import { installFn } from '../../installFn'
+import { authorize } from '../../authorize'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)
@@ -43,14 +44,14 @@ export const reEvaulateUnauthorized = (
         type: 'query',
       }
       installFn(server, ctx, route, id).then((spec) => {
-        if (spec) {
-          enableSubscribe(route, spec, server, ctx, payload, id, checksum)
-        } else {
-          // someting wrong...
-        }
+        authorize(route, server, ctx, payload, () => {
+          session.unauthorizedObs.delete(obs)
+          if (spec) {
+            enableSubscribe(route, spec, server, ctx, payload, id, checksum)
+          }
+        })
       })
     })
-    session.unauthorizedObs.clear()
   }
   if (session.unauthorizedChannels?.size) {
     session.unauthorizedChannels.forEach((channel) => {
@@ -60,12 +61,14 @@ export const reEvaulateUnauthorized = (
         type: 'channel',
       }
       installFn(server, ctx, route, id).then((spec) => {
-        if (spec) {
-          enableChannelSubscribe(route, spec, server, ctx, payload, id)
-        }
+        authorize(route, server, ctx, payload, () => {
+          session.unauthorizedChannels.delete(channel)
+          if (spec) {
+            enableChannelSubscribe(route, spec, server, ctx, payload, id)
+          }
+        })
       })
     })
-    session.unauthorizedChannels.clear()
   }
 }
 

@@ -3,14 +3,15 @@ import { logs, button, toggleButton, uploadButton } from './ui'
 
 const init = async () => {
   const based = new BasedClient({
-    // env: 'framme',
-    // project: 'test',
-    // org: 'saulx',
-    // cluster: 'test',
-    // name: '@based/env-hub',
-    url: async () => {
-      return 'ws://localhost:8081'
-    },
+    // url: 'ws://localhost:8081',
+    // cluster: 'local',
+    project: 'test',
+    env: 'framma',
+    org: 'saulx',
+  })
+
+  button('Call longWait', async () => {
+    log('Call longWait', await based.call('longWait', { x: true }))
   })
 
   button('Call hello', async () => {
@@ -29,10 +30,20 @@ const init = async () => {
         bla: 'hello',
       })
     }
+
+    const url =
+      based.connection.ws.url
+        .replace('wss://', 'https://')
+        .split('/')
+        .slice(0, -1)
+        .join('/') + '/db:file-upload'
+
+    // 'http://localhost:8081/files'
+
     log(
       'Fetch stream files',
       await (
-        await fetch('http://localhost:8081/files', {
+        await fetch(url, {
           method: 'post',
           body: JSON.stringify(payload),
           headers: {
@@ -89,7 +100,8 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'files-s3',
+          'db:file-upload',
+          // 'files-s3',
           {
             contents: f,
             payload,
@@ -99,14 +111,24 @@ const init = async () => {
         return x
       })
     )
-    results.forEach((r) => {
-      log(r)
-      log(`<span><img style="height:150px" src="${r.url}" /></span>`)
+
+    results.forEach(async (r) => {
+      // const x = r
+
+      const x = await based
+        .query('db', {
+          $id: r.id,
+          $all: true,
+        })
+        .get()
+
+      log(x)
+      log(`<span><img style="height:150px" src="${x.src ?? x.url}" /></span>`)
     })
   })
 
   // add number of files!
-  uploadButton('Stream file', async (files, progress) => {
+  uploadButton('Stream file STREAMY', async (files, progress) => {
     log('uploading', files.length + ' files')
     const results = await Promise.all(
       [...files].map(async (f) => {
@@ -118,7 +140,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'db:file-upload',
+          'streamy',
           {
             contents: f,
             payload,
@@ -145,6 +167,10 @@ const init = async () => {
       })
     )
     results.forEach((r) => {
+      if (typeof r === 'string') {
+        return
+      }
+
       r.correctPayload = r.payload.length === 2
       log(r)
       log(
@@ -166,7 +192,7 @@ const init = async () => {
           })
         }
         const x = await based.stream(
-          'db:file-upload',
+          'files',
           {
             contents: f,
             payload,

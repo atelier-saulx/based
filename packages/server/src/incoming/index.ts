@@ -54,6 +54,7 @@ export default (
           },
       message: (ws, data, isBinary) => {
         const session = ws.getUserData()
+        // @ts-ignore
         message(server, session.c, data, isBinary)
       },
 

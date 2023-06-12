@@ -15,6 +15,20 @@ import { parseQuery } from '@saulx/utils'
 import { installFn } from '../../../../installFn'
 import { authorize } from '../../../../authorize'
 
+const ready = async (ctx: Context<HttpSession>, r: any) => {
+  if (ctx.session) {
+    ctx.session.res.cork(() => {
+      ctx.session.res.writeHeader(
+        'Access-Control-Allow-Headers',
+        'Authorization,Content-Type'
+      )
+      ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+      ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+    })
+    sendHttpResponse(ctx, r)
+  }
+}
+
 export const singleStream = (
   server: BasedServer,
   ctx: Context<HttpSession>,
@@ -71,10 +85,10 @@ export const singleStream = (
           })
           .then((r) => {
             if (stream.readableEnded || stream.listenerCount('data') === 0) {
-              sendHttpResponse(ctx, r)
+              ready(ctx, r)
             } else {
               stream.on('end', () => {
-                sendHttpResponse(ctx, r)
+                ready(ctx, r)
               })
             }
           })

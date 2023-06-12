@@ -67,15 +67,36 @@ test.serial('Relay', async (t) => {
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
         },
+        b: {
+          type: 'channel',
+          uninstallAfterIdleTime: 1e3,
+          relay: { client: 'events', target: 'a' },
+        },
         hello: {
           type: 'function',
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
         },
+        bye: {
+          type: 'function',
+          uninstallAfterIdleTime: 1e3,
+          relay: { client: 'events', target: 'hello' },
+        },
         counter: {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
           relay: { client: 'events' },
+        },
+        flap: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          relay: { client: 'events', target: 'counter' },
+        },
+        derp: {
+          type: 'function',
+          fn: async (based, payload) => {
+            return based.call('bye', payload)
+          },
         },
       },
     },
@@ -107,7 +128,35 @@ test.serial('Relay', async (t) => {
 
   t.deepEqual(msges, ['bla'])
 
+  const count = await client.query('flap').get()
+  console.log(count)
+
+  t.true(count > 0)
+
   close()
+
+  const msg2: string[] = []
+
+  const close2 = client.channel('b').subscribe((c) => {
+    msg2.push(c)
+  })
+
+  await wait(500)
+
+  client.channel('a').publish('bla')
+
+  await wait(500)
+
+  t.true(msg2.length > 0)
+
+  close2()
+
+  const bye = await client.call('bye', { snap: 'je' })
+  t.is(bye, 'from hello je')
+
+  const derp = await client.call('derp', { snap: 'je' })
+  t.is(derp, 'from hello je')
+
   await client.destroy()
   await server.destroy()
   await relayClient.destroy()

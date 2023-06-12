@@ -3,6 +3,7 @@ import { Connection } from './types'
 import { BasedClient } from '..'
 import WebSocket from 'isomorphic-ws'
 import { encodeAuthState } from '../authState/parseAuthState'
+import { isStreaming } from '../stream/uploadFileBrowser'
 
 type ActiveFn = (isActive: boolean) => void
 
@@ -50,10 +51,25 @@ const connect = (
       activityListeners.set(connection, (active) => {
         if (!connection.disconnected) {
           if (!active && isActive) {
-            console.warn('Send to background - close connection')
-            isActive = false
-            client.onClose()
-            ws.close()
+            if (
+              client.functionResponseListeners.size ||
+              isStreaming.streaming
+            ) {
+              console.warn(
+                'Send to background - streams or functions in progress try again in 10 seconds...'
+              )
+              clearTimeout(activeTimer)
+              activeTimer = setTimeout(() => {
+                activityListeners.forEach((fn) => {
+                  fn(false)
+                })
+              }, 10e3)
+            } else {
+              console.warn('Send to background - close connection')
+              isActive = false
+              client.onClose()
+              ws.close()
+            }
           } else if (!isActive && active) {
             activityListeners.delete(connection)
             connect(client, url, connection, 0, true)

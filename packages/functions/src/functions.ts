@@ -187,6 +187,8 @@ type BasedChannelFunctionConfig = {
   closeAfterIdleTime?: number
   /** Only for Publisher */
   httpResponse?: HttpResponse
+  /** Throttle amount of outgoing messages, in milliseconds */
+  throttle?: number
 }
 
 type BasedCallFunctionConfig = {
@@ -203,6 +205,8 @@ type BasedQueryFunctionConfig = {
   httpResponse?: HttpResponse
   /** How long should the query function remain active after all subscribers are gone, in ms */
   closeAfterIdleTime?: number
+  /** Throttle amount of outgoing messages, in milliseconds */
+  throttle?: number
 }
 
 type BasedStreamFunctionConfig = {

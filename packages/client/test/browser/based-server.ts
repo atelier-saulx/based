@@ -1,19 +1,24 @@
 import { BasedServer } from '@based/server'
-import { BasedFunction, BasedQueryFunction } from '@based/functions'
+import {
+  BasedFunction,
+  BasedQueryFunction,
+  isClientContext,
+} from '@based/functions'
 import fs from 'node:fs'
 import { join } from 'path'
 import { S3 } from '@aws-sdk/client-s3'
 import { Upload } from '@aws-sdk/lib-storage'
-import http from 'node:http'
-// import { PassThrough } from 'node:stream'
-import uws from '@based/uws'
+import { wait } from '@saulx/utils'
 
 const files: { [key: string]: { file: string; mimeType: string } } = {}
 
 const TMP = join(__dirname, 'tmp')
 
-const hello: BasedFunction<void, string> = async () => {
-  return 'This is a response from hello'
+const hello: BasedFunction<void, string> = async (based, payload, ctx) => {
+  return (
+    'This is a response from hello ' +
+    (isClientContext(ctx) ? ctx.session?.origin : '')
+  )
 }
 
 const path = join(
@@ -145,6 +150,14 @@ const start = async () => {
           type: 'function',
           fn: hello,
         },
+        longWait: {
+          type: 'function',
+          fn: async () => {
+            console.log('lets wait long')
+            await wait(60e3)
+            return true
+          },
+        },
         brokenFiles: {
           type: 'stream',
           fn: async () => {
@@ -266,57 +279,57 @@ const start = async () => {
 
 start()
 
-uws
-  .App()
-  .options('/*', (res, req) => {
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', '*')
-    res.end('')
-  })
-  .post('/*', (res, req) => {
-    res.writeHeader('Access-Control-Allow-Origin', '*')
-    res.writeHeader('Access-Control-Allow-Headers', '*')
-    console.info('Posted to ' + req.getUrl())
-    res.onData((chunk, isLast) => {
-      /* Buffer this anywhere you want to */
-      console.info(
-        'Got chunk of data with length ' +
-          chunk.byteLength +
-          ', isLast: ' +
-          isLast
-      )
-      /* We respond when we are done */
-      if (isLast) {
-        res.end('Thanks for the data!')
-      }
-    })
-    res.onAborted(() => {
-      /* Request was prematurely aborted, stop reading */
-      console.info('Eh, okay. Thanks for nothing!')
-    })
-  })
-  .listen(8082, (token) => {
-    if (token) {
-      console.info('Listening to port ' + 8082)
-    } else {
-      console.info('Failed to listen to port ' + 8082)
-    }
-  })
+// uws
+//   .App()
+//   .options('/*', (res, req) => {
+//     res.writeHeader('Access-Control-Allow-Origin', '*')
+//     res.writeHeader('Access-Control-Allow-Headers', '*')
+//     res.end('')
+//   })
+//   .post('/*', (res, req) => {
+//     res.writeHeader('Access-Control-Allow-Origin', '*')
+//     res.writeHeader('Access-Control-Allow-Headers', '*')
+//     console.info('Posted to ' + req.getUrl())
+//     res.onData((chunk, isLast) => {
+//       /* Buffer this anywhere you want to */
+//       console.info(
+//         'Got chunk of data with length ' +
+//           chunk.byteLength +
+//           ', isLast: ' +
+//           isLast
+//       )
+//       /* We respond when we are done */
+//       if (isLast) {
+//         res.end('Thanks for the data!')
+//       }
+//     })
+//     res.onAborted(() => {
+//       /* Request was prematurely aborted, stop reading */
+//       console.info('Eh, okay. Thanks for nothing!')
+//     })
+//   })
+//   .listen(8082, (token) => {
+//     if (token) {
+//       console.info('Listening to port ' + 8082)
+//     } else {
+//       console.info('Failed to listen to port ' + 8082)
+//     }
+//   })
 
-// create a server object:
-http
-  .createServer(function (req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Allow-Headers', '*')
-    if (req.method === 'post') {
-      req.on('data', (d) => {
-        console.info('CHUNK', d)
-      })
-      req.on('end', () => {
-        console.info('lullz')
-      })
-    } else {
-      res.end()
-    }
-  })
-  .listen(8083)
+// // create a server object:
+// http
+//   .createServer(function (req, res) {
+//     res.setHeader('Access-Control-Allow-Origin', '*')
+//     res.setHeader('Access-Control-Allow-Headers', '*')
+//     if (req.method === 'post') {
+//       req.on('data', (d) => {
+//         console.info('CHUNK', d)
+//       })
+//       req.on('end', () => {
+//         console.info('lullz')
+//       })
+//     } else {
+//       res.end()
+//     }
+//   })
+//   .listen(8083)

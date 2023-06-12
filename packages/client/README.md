@@ -9,7 +9,7 @@ import based from '@based/client'
 const client = based({
   env: 'myEnv',
   org: 'myOrg',
-  project: 'myProject'
+  project: 'myProject',
 })
 
 client.once('connect', (isConnected) => {
@@ -19,7 +19,7 @@ client.once('connect', (isConnected) => {
 // Authenticate and use localStorage or a file in node
 const authState = await client.setAuthState({
   token,
-  persistent: true
+  persistent: true,
 })
 
 // Call a function
@@ -35,20 +35,17 @@ await client.call('db:update-schema', {
 })
 
 // Get data once
-const data = await client
-  .query('db', { $id: 'fwe2233', title: true })
-  .get()
+const data = await client.query('db', { $id: 'fwe2233', title: true }).get()
 
-// Get updates, persitent stores results in localStorage
+// Get updates, persistent stores results in localStorage
 const unsubscribe = client
   .query('db', { $id: 'fwe2233', title: true }, { persistent: true })
   .subscribe((data) => console.log(data))
 
 // Channels are stateless streams
-const unsubscribeChannel = client.channel('events', { type: 'page-view' })
-  .subscribe(event => console.log(event))
-
-client
+const unsubscribeChannel = client
   .channel('events', { type: 'page-view' })
-  .publish({ id: 'mypage' })
+  .subscribe((event) => console.log(event))
+
+client.channel('events', { type: 'page-view' }).publish({ id: 'mypage' })
 ```

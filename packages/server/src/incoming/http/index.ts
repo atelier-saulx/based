@@ -67,6 +67,7 @@ export const httpHandler = (
       server,
       {
         session: {
+          origin: req.getHeader('origin'),
           ua: req.getHeader('user-agent'),
           ip,
           method,
@@ -97,6 +98,7 @@ export const httpHandler = (
             ua: req.getHeader('user-agent'),
             ip,
             method,
+            origin: req.getHeader('origin'),
             id: ++clientId,
             headers: {},
             authState: {},
@@ -125,6 +127,7 @@ export const httpHandler = (
       res,
       req,
       method,
+      origin: req.getHeader('origin'),
       ua: req.getHeader('user-agent'),
       ip,
       id: ++clientId,
@@ -137,19 +140,33 @@ export const httpHandler = (
     },
   }
 
-  if (route.headers) {
-    for (const header of route.headers) {
-      ctx.session.headers[header] = req.getHeader(header)
-    }
-    ctx.session.res.writeHeader(
-      'Access-Control-Allow-Headers',
-      route.headers.join(',')
+  if (
+    !(
+      (method === 'post' && route.type === 'stream')
+      // ctx.session.headers['content-type'].includes('multipart/form-data')
     )
-    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-    ctx.session.corsSend = true
-  } else {
-    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+  ) {
+    const defHeaders = 'Authorization,Content-Type'
+
+    if (route.headers) {
+      for (const header of route.headers) {
+        ctx.session.headers[header] = req.getHeader(header)
+      }
+      ctx.session.res.cork(() => {
+        ctx.session.res.writeHeader(
+          'Access-Control-Allow-Headers',
+          defHeaders + ',' + route.headers.join(',')
+        )
+        ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      })
+    } else {
+      ctx.session.res.cork(() => {
+        ctx.session.res.writeHeader('Access-Control-Allow-Headers', defHeaders)
+        ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+      })
+    }
   }
 
   if (

@@ -33,9 +33,11 @@ test.serial('query functions', async (t) => {
       return 'ws://localhost:9910'
     },
   })
+
   client.once('connect', (isConnected) => {
     console.info('   connect', isConnected)
   })
+
   const obs1Results: any[] = []
   const obs2Results: any[] = []
 

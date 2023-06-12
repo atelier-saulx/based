@@ -12,6 +12,7 @@ export type WebSocketSession = {
   id: number // client-id
   method: string
   authState: AuthState
+  origin: string
   obs: Set<number>
   unauthorizedObs?: Set<{
     id: number
@@ -38,13 +39,13 @@ export type HttpSession = {
   res: HttpResponse
   req: HttpRequest
   query?: string
+  origin: string
   parsedQuery?: ReturnType<typeof parseQuery>
   ua: string
   ip: string
   id: number // client-id
   authState: AuthState
   method: string
-  corsSend?: boolean
   rawBody?: string
   headers: {
     'content-length'?: number
@@ -84,6 +85,7 @@ export type InternalSession =
 export type MinimalExternalSession = {
   ua: string
   ip: string
+  origin: string
   headers: { [key: string]: string }
 }
 
