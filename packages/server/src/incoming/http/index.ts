@@ -140,11 +140,15 @@ export const httpHandler = (
     },
   }
 
+  // for get send it later
+
+  console.log(method, route, ctx.session.headers)
+
   if (
     !(
       method === 'post' &&
       route.type === 'stream' &&
-      ctx.session.headers['content-type'] === 'multipart/form-data'
+      ctx.session.headers['content-type'].includes('multipart/form-data')
     )
   ) {
     const defHeaders = 'Authorization,Content-Type'
