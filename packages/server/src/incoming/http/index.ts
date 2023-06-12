@@ -140,10 +140,6 @@ export const httpHandler = (
     },
   }
 
-  // for get send it later
-
-  console.log(method, route, ctx.session.headers)
-
   if (
     !(
       (method === 'post' && route.type === 'stream')
