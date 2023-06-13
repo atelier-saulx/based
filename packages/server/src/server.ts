@@ -49,6 +49,27 @@ export type ServerOptions = {
   rateLimit?: RateLimit
   client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
+
+  query?: {
+    subscribe?: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
+    unsubscribe?: (
+      obs: ActiveObservable,
+      ctx: Context<WebSocketSession>
+    ) => void
+    get?: (
+      obs: ActiveObservable,
+      ctx: Context<WebSocketSession | HttpSession>
+    ) => void
+  }
+
+  channel?: {
+    subscribe?: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
+    unsubscribe?: (
+      obs: ActiveObservable,
+      ctx: Context<WebSocketSession>
+    ) => void
+  }
+
   ws?: {
     maxBackpressureSize?: number
     open?: (client: Context<WebSocketSession>) => void
