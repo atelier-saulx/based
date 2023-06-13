@@ -8,6 +8,7 @@ import {
   ReactNode,
 } from 'react'
 import { BasedClient, AuthState } from '@based/client'
+import { BasedError } from '@based/client'
 
 const Ctx = createContext<BasedClient>(null)
 
@@ -34,6 +35,20 @@ export const useAuthState = (): AuthState => {
   }, [client])
 
   return state
+}
+
+const useLoadingListeners: Set<Function> = new Set()
+const hooksLoading: Set<number> = new Set()
+
+export const useLoading = () => {
+  const [isLoading, setLoading] = useState(hooksLoading.size > 0)
+  useEffect(() => {
+    useLoadingListeners.add(setLoading)
+    return () => {
+      useLoadingListeners.delete(setLoading)
+    }
+  }, [])
+  return isLoading
 }
 
 export const useConnected = () => {
@@ -69,6 +84,7 @@ export const useQuery = <T = any>(
 ): {
   loading: boolean
   data?: T
+  error?: BasedError
   checksum?: number
 } => {
   const client: BasedClient = useContext(Ctx)
@@ -76,24 +92,53 @@ export const useQuery = <T = any>(
   if (client && name) {
     const q = client.query(name, payload, opts)
     const { id, cache } = q
-    const [checksum, update] = useState(cache?.checksum)
+    const [checksumOrError, update] = useState<number | BasedError>(
+      cache?.checksum
+    )
 
     useEffect(() => {
-      const unsubscribe = q.subscribe((_, checksum) => {
-        update(checksum)
-      })
+      const unsubscribe = q.subscribe(
+        (_, checksum) => {
+          update(checksum)
+        },
+        (err) => {
+          update(err)
+        }
+      )
 
       return () => {
         unsubscribe()
       }
     }, [id])
 
-    return cache
-      ? { loading: false, data: cache.value, checksum }
-      : { loading: true }
+    if (checksumOrError) {
+      const isLoading = hooksLoading.size > 0
+      if (hooksLoading.delete(id)) {
+        if (!(hooksLoading.size > 0) && !isLoading) {
+          useLoadingListeners.forEach((fn) => {
+            fn(false)
+          })
+        }
+      }
+
+      if (typeof checksumOrError === 'number') {
+        return { loading: false, data: cache.value, checksum: checksumOrError }
+      }
+      return { loading: false, error: checksumOrError }
+    }
+
+    const isLoading = hooksLoading.size > 0
+    if (hooksLoading.add(id)) {
+      if (!isLoading) {
+        useLoadingListeners.forEach((fn) => {
+          fn(true)
+        })
+      }
+    }
+
+    return { loading: true }
   }
 
-  // stubs
   useState()
   useEffect(() => {}, [null])
 
@@ -101,6 +146,5 @@ export const useQuery = <T = any>(
 }
 
 export const useClient = (): BasedClient => {
-  const client = useContext(Ctx)
-  return client
+  return useContext(Ctx)
 }
