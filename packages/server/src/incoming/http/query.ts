@@ -182,6 +182,10 @@ const getFromExisting = (
 ) => {
   const obs = getObsAndStopRemove(server, id)
 
+  if (server.queryEvents) {
+    server.queryEvents.get(obs, ctx)
+  }
+
   if (obs.error) {
     sendObsGetError(server, ctx, obs.id, obs.error)
     return
@@ -221,6 +225,11 @@ const isAuthorized: IsAuthorizedHandler<HttpSession, BasedRoute<'query'>> = (
   }
 
   const obs = createObs(server, name, id, payload, true)
+
+  if (server.queryEvents) {
+    server.queryEvents.get(obs, ctx)
+  }
+
   subscribeNext(obs, (err) => {
     if (err) {
       sendObsGetError(server, ctx, obs.id, err)

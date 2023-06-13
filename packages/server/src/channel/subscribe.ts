@@ -16,8 +16,14 @@ export const subscribeChannel = (
   if (!session) {
     return
   }
+
   ctx.session.ws.subscribe(String(id))
   const channel = getChannelAndStopRemove(server, id)
+
+  if (server.channelEvents) {
+    server.channelEvents.subscribe(channel, ctx)
+  }
+
   session.obs.add(id)
   channel.clients.add(session.id)
   if (!channel.isActive && !channel.doesNotExist) {

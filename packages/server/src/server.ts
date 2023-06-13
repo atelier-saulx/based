@@ -36,6 +36,20 @@ type RateLimit = {
 
 type GetIp = (res: uws.HttpResponse, req: uws.HttpRequest) => string
 
+type QueryEvents = {
+  subscribe: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
+  unsubscribe: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
+  get: (
+    obs: ActiveObservable,
+    ctx: Context<WebSocketSession | HttpSession>
+  ) => void
+}
+
+type ChannelEvents = {
+  subscribe: (obs: ActiveChannel, ctx: Context<WebSocketSession>) => void
+  unsubscribe: (obs: ActiveChannel, ctx: Context<WebSocketSession>) => void
+}
+
 export type ServerOptions = {
   clients?: { [key: string]: any } // for now any...
   port?: number
@@ -50,25 +64,8 @@ export type ServerOptions = {
   client?: (server: BasedServer) => BasedFunctionClient
   auth?: AuthConfig
 
-  query?: {
-    subscribe?: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
-    unsubscribe?: (
-      obs: ActiveObservable,
-      ctx: Context<WebSocketSession>
-    ) => void
-    get?: (
-      obs: ActiveObservable,
-      ctx: Context<WebSocketSession | HttpSession>
-    ) => void
-  }
-
-  channel?: {
-    subscribe?: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
-    unsubscribe?: (
-      obs: ActiveObservable,
-      ctx: Context<WebSocketSession>
-    ) => void
-  }
+  query?: QueryEvents
+  channel?: ChannelEvents
 
   ws?: {
     maxBackpressureSize?: number
@@ -127,6 +124,10 @@ export class BasedServer {
   public uwsApp: uws.TemplatedApp
 
   public silent: boolean
+
+  public queryEvents: QueryEvents
+
+  public channelEvents: ChannelEvents
 
   public rateLimit: RateLimit = {
     ws: 2e3,
@@ -208,27 +209,41 @@ export class BasedServer {
   }
 
   constructor(opts: ServerOptions) {
+    if (opts.query) {
+      this.queryEvents = opts.query
+    }
+
+    if (opts.channel) {
+      this.channelEvents = opts.channel
+    }
+
     if (opts.silent) {
       this.silent = opts.silent
     }
+
     this.clients = opts.clients ?? {}
     this.functions = new BasedFunctions(this, opts.functions)
     this.auth = new BasedAuth(this, opts.auth)
+
     if (opts.client) {
       // @ts-ignore - allow different ones if you want a special client
       this.client = opts.client(this)
     } else {
       this.client = new BasedServerFunctionClient(this)
     }
+
     if (opts.rateLimit) {
       this.rateLimit = opts.rateLimit
     }
+
     if (opts.geo) {
       this.geo = opts.geo
     }
+
     if (opts.getIp) {
       this.getIp = opts.getIp
     }
+
     initNetwork(this, opts)
   }
 

@@ -30,6 +30,10 @@ export const subscribeWs = (
     return
   }
 
+  if (server.queryEvents) {
+    server.queryEvents.subscribe(obs, ctx)
+  }
+
   if (obs.cache && obs.checksum !== checksum) {
     if (obs.diffCache && obs.previousChecksum === checksum) {
       sendObsWs(ctx, obs.diffCache, obs)
@@ -45,7 +49,7 @@ export const subscribeFunction = (
   update: ObservableUpdateFunction
 ) => {
   const obs = getObsAndStopRemove(server, id)
-  if (obs.functionObserveClients.add(update))
+  if (obs.functionObserveClients.add(update)) {
     if (obs.cache) {
       update(
         obs.rawData,
@@ -57,6 +61,7 @@ export const subscribeFunction = (
         obs.isDeflate
       )
     }
+  }
 }
 
 export const subscribeNext = (

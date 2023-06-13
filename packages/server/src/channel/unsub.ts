@@ -40,6 +40,9 @@ export const unsubscribeChannel = (
     return
   }
   if (channel.clients.delete(session.id)) {
+    if (server.channelEvents) {
+      server.channelEvents.unsubscribe(channel, ctx)
+    }
     destroyChannel(server, id)
     return true
   }
@@ -58,6 +61,10 @@ export const unsubscribeChannelIgnoreClient = (
   if (!channel) {
     return
   }
-  channel.clients.delete(session.id)
+
+  if (channel.clients.delete(session.id) && server.channelEvents) {
+    server.channelEvents.unsubscribe(channel, ctx)
+  }
+
   destroyChannel(server, id)
 }

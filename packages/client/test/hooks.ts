@@ -2,15 +2,20 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src'
 import { wait } from '@saulx/utils'
-import { channel } from 'diagnostics_channel'
+import fetch from 'cross-fetch'
 
 test.serial('Channel hook', async (t) => {
-  let closeCalled = false
+  let subCnt = 0
+  let unSubCnt = 0
   const server = new BasedServer({
     port: 9910,
     channel: {
-      subscribe: (channel, ctx) => {},
-      unsubscribe: (channel, ctx) => {},
+      subscribe: (channel, ctx) => {
+        subCnt++
+      },
+      unsubscribe: (channel, ctx) => {
+        unSubCnt++
+      },
     },
     functions: {
       configs: {
@@ -23,7 +28,6 @@ test.serial('Channel hook', async (t) => {
               update(++cnt)
             }, 100)
             return () => {
-              closeCalled = true
               clearInterval(interval)
             }
           },
@@ -42,62 +46,71 @@ test.serial('Channel hook', async (t) => {
 
   await wait(500)
 
+  t.is(subCnt, 1)
+
   closeChannel()
-  await wait(4e3)
-  t.is(Object.keys(server.activeChannels).length, 0)
-  t.is(server.activeChannelsById.size, 0)
-  t.true(closeCalled)
+  await wait(500)
+
+  t.is(unSubCnt, 1)
+
   client.disconnect()
   await server.destroy()
 })
 
-// test.serial('Query hook', async (t) => {
-//   let closeCalled = false
-//   const listeners: Map<number, (msg: any) => void> = new Map()
-//   const server = new BasedServer({
-//     port: 9910,
-//     functions: {
-//       closeAfterIdleTime: {
-//         channel: 0,
-//         query: 0,
-//       },
-//       configs: {
-//         a: {
-//           type: 'channel',
-//           uninstallAfterIdleTime: 1e3,
-//           publisher: (_, __, msg, id) => {
-//             listeners.get(id)?.(msg)
-//           },
-//           subscriber: (_, __, id, update) => {
-//             listeners.set(id, update)
-//             return () => {
-//               closeCalled = true
-//             }
-//           },
-//         },
-//       },
-//     },
-//   })
-//   await server.start()
-//   const client = new BasedClient()
-//   await client.connect({
-//     url: async () => 'ws://localhost:9910',
-//   })
-//   const r: any[] = []
-//   const closeChannel = client.channel('a', { bla: true }).subscribe((msg) => {
-//     r.push(msg)
-//   })
-//   await wait(100)
-//   client.channel('a', { bla: true }).publish(1)
-//   client.channel('a', { bla: true }).publish(2)
-//   client.channel('a', { bla: true }).publish(3)
-//   await wait(500)
-//   t.deepEqual(r, [1, 2, 3])
-//   closeChannel()
-//   await wait(1500)
-//   t.is(Object.keys(server.activeChannels).length, 0)
-//   t.is(server.activeChannelsById.size, 0)
-//   t.true(closeCalled)
-//   client.disconnect()
-//   await server.destroy()
-// })
+test.serial('Query hook', async (t) => {
+  let subCnt = 0
+  let getCnt = 0
+  let unSubCnt = 0
+  const server = new BasedServer({
+    port: 9910,
+    query: {
+      subscribe: () => {
+        subCnt++
+      },
+      unsubscribe: () => {
+        unSubCnt++
+      },
+      get: () => {
+        getCnt++
+      },
+    },
+    functions: {
+      configs: {
+        myobs: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: (_, __, update) => {
+            update('fun')
+            return () => {}
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  const close = client.query('myobs', { bla: true }).subscribe((msg) => {})
+
+  await wait(500)
+
+  t.is(subCnt, 1)
+
+  close()
+  await wait(500)
+
+  t.is(unSubCnt, 1)
+
+  await client.query('myobs').get()
+
+  t.is(getCnt, 1)
+
+  await (await fetch('http://localhost:9910/myobs')).text()
+
+  t.is(getCnt, 2)
+
+  client.disconnect()
+  await server.destroy()
+})

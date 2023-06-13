@@ -34,6 +34,9 @@ export const unsubscribeWs = (
     return
   }
   if (obs.clients.delete(session.id)) {
+    if (server.queryEvents) {
+      server.queryEvents.unsubscribe(obs, ctx)
+    }
     destroyObs(server, id)
     return true
   }
@@ -52,6 +55,8 @@ export const unsubscribeWsIgnoreClient = (
   if (!obs) {
     return true
   }
-  obs.clients.delete(session.id)
+  if (obs.clients.delete(session.id) && server.queryEvents) {
+    server.queryEvents.unsubscribe(obs, ctx)
+  }
   destroyObs(server, id)
 }
