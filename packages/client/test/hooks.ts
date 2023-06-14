@@ -19,9 +19,16 @@ test.serial('Channel hook', async (t) => {
     },
     functions: {
       configs: {
+        blap: {
+          closeAfterIdleTime: 500,
+          type: 'channel',
+          subscriber: (based, payload, id, update) => {
+            return based.channel('mychannel').subscribe(update)
+          },
+        },
         mychannel: {
           type: 'channel',
-          uninstallAfterIdleTime: 1e3,
+          closeAfterIdleTime: 500,
           subscriber: (_, __, ___, update) => {
             let cnt = 0
             const interval = setInterval(() => {
@@ -52,6 +59,19 @@ test.serial('Channel hook', async (t) => {
   await wait(500)
 
   t.is(unSubCnt, 1)
+
+  const closeChannel2 = client
+    .channel('blap', { bla: true })
+    .subscribe((msg) => {})
+
+  await wait(500)
+
+  t.is(subCnt, 3)
+
+  closeChannel2()
+  await wait(1500)
+
+  t.is(unSubCnt, 3)
 
   client.disconnect()
   await server.destroy()

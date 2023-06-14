@@ -11,11 +11,14 @@ export const unsubscribeFunction = (
   id: number,
   update: ChannelMessageFunction
 ): true | void => {
-  const obs = server.activeChannelsById.get(id)
-  if (!obs) {
+  const channel = server.activeChannelsById.get(id)
+  if (!channel) {
     return
   }
-  if (obs.functionChannelClients.delete(update)) {
+  if (channel.functionChannelClients.delete(update)) {
+    if (server.channelEvents) {
+      server.channelEvents.unsubscribe(channel)
+    }
     destroyChannel(server, id)
     return true
   }

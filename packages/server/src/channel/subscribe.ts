@@ -37,7 +37,12 @@ export const subscribeChannelFunction = (
   update: ChannelMessageFunctionInternal
 ) => {
   const channel = getChannelAndStopRemove(server, id)
-  channel.functionChannelClients.add(update)
+
+  if (channel.functionChannelClients.add(update)) {
+    if (server.channelEvents) {
+      server.channelEvents.subscribe(channel)
+    }
+  }
   if (!channel.isActive && !channel.doesNotExist) {
     startChannel(server, id)
   }
