@@ -10,6 +10,12 @@ export const end = (
     return
   }
 
+  if (ctx.session.method !== 'options') {
+    ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
+    ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
+    ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
+  }
+
   if (payload === undefined || ctx.session.method === 'options') {
     ctx.session.res.end()
   } else {
@@ -95,6 +101,7 @@ export const sendHttpResponse = (
     if (ctx.session?.res) {
       ctx.session.res.cork(() => {
         ctx.session.res.writeStatus(statusCode)
+
         if (headers) {
           sendHeaders(ctx, headers)
           if (!('Cache-Control' in headers || 'cache-control' in headers)) {
@@ -110,10 +117,6 @@ export const sendHttpResponse = (
           ctx.session.res.writeHeader(
             'Cache-Control',
             'max-age=0, must-revalidate'
-          )
-          ctx.session.res.writeHeader(
-            'Access-Control-Allow-Headers',
-            'Authorization'
           )
         }
 

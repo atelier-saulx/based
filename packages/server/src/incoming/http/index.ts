@@ -140,14 +140,8 @@ export const httpHandler = (
     },
   }
 
-  if (
-    !(
-      (method === 'post' && route.type === 'stream')
-      // ctx.session.headers['content-type'].includes('multipart/form-data')
-    )
-  ) {
+  if (method === 'options') {
     const defHeaders = 'Authorization,Content-Type'
-
     if (route.headers) {
       for (const header of route.headers) {
         ctx.session.headers[header] = req.getHeader(header)
@@ -166,6 +160,10 @@ export const httpHandler = (
         ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
         ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
       })
+    }
+  } else if (route.headers) {
+    for (const header of route.headers) {
+      ctx.session.headers[header] = req.getHeader(header)
     }
   }
 
