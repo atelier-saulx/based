@@ -105,9 +105,9 @@ export const useQuery = <T = any>(
           update(err)
         }
       )
-
       return () => {
         unsubscribe()
+        update(0)
       }
     }, [id])
 
@@ -122,8 +122,13 @@ export const useQuery = <T = any>(
       }
 
       if (typeof checksumOrError === 'number') {
+        if (!cache) {
+          return { loading: true }
+        }
+
         return { loading: false, data: cache.value, checksum: checksumOrError }
       }
+
       return { loading: false, error: checksumOrError }
     }
 
