@@ -1,13 +1,15 @@
 import React, { useState } from 'react'
 import based from '@based/client'
 import { createRoot } from 'react-dom/client'
-import { Provider, useQuery } from '../src'
+import { Provider, useQuery, useLoading } from '../src'
 
 const client = based({
   url: 'ws://localhost:8081',
 })
 
 const Tester = () => {
+  const somethingIsLoading = useLoading()
+
   const [q, setP] = useState<any>({
     name: 'counter',
     payload: { bla: true },
@@ -29,6 +31,13 @@ const Tester = () => {
           display: 'flex',
         }}
       >
+        <div
+          style={{
+            width: 50,
+            height: 50,
+            background: somethingIsLoading ? 'red' : 'blue',
+          }}
+        ></div>
         {payloads.map((v) => {
           return (
             <div

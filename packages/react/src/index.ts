@@ -114,7 +114,7 @@ export const useQuery = <T = any>(
     if (checksumOrError) {
       const isLoading = hooksLoading.size > 0
       if (hooksLoading.delete(id)) {
-        if (!(hooksLoading.size > 0) && !isLoading) {
+        if (!(hooksLoading.size > 0) && isLoading) {
           useLoadingListeners.forEach((fn) => {
             fn(false)
           })
