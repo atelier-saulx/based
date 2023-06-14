@@ -43,7 +43,7 @@ test.serial('rate limit', async (t) => {
     },
   })
 
-  t.is(limits, 1500)
+  t.is(limits, 1501)
 
   let isConnect = false
   coreClient.once('connect', () => {

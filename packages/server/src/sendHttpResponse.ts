@@ -9,19 +9,16 @@ export const end = (
   if (!ctx.session) {
     return
   }
-
   if (ctx.session.method !== 'options') {
     ctx.session.res.writeHeader('Access-Control-Allow-Headers', '*')
     ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
     ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
   }
-
   if (payload === undefined || ctx.session.method === 'options') {
     ctx.session.res.end()
   } else {
     ctx.session.res.end(payload)
   }
-
   ctx.session.res = null
   ctx.session.req = null
   ctx.session = null
