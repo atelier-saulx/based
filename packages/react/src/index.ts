@@ -106,6 +106,12 @@ export const useQuery = <T = any>(
         }
       )
       return () => {
+        const isLoading = hooksLoading.size > 0
+        if (hooksLoading.delete(id) && !(hooksLoading.size > 0) && isLoading) {
+          useLoadingListeners.forEach((fn) => {
+            fn(false)
+          })
+        }
         unsubscribe()
         update(0)
       }
