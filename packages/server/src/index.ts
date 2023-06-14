@@ -8,4 +8,4 @@ export * from './functionApi'
 export * from './query/types'
 export * from './protocol'
 
-console.info('xxx', 'flap')
+console.info('xxx', 'flapWW>')
