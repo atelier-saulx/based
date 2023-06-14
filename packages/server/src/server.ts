@@ -37,17 +37,17 @@ type RateLimit = {
 type GetIp = (res: uws.HttpResponse, req: uws.HttpRequest) => string
 
 type QueryEvents = {
-  subscribe: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
-  unsubscribe: (obs: ActiveObservable, ctx: Context<WebSocketSession>) => void
+  subscribe: (obs: ActiveObservable, ctx?: Context<WebSocketSession>) => void
+  unsubscribe: (obs: ActiveObservable, ctx?: Context<WebSocketSession>) => void
   get: (
     obs: ActiveObservable,
-    ctx: Context<WebSocketSession | HttpSession>
+    ctx?: Context<WebSocketSession | HttpSession>
   ) => void
 }
 
 type ChannelEvents = {
-  subscribe: (obs: ActiveChannel, ctx: Context<WebSocketSession>) => void
-  unsubscribe: (obs: ActiveChannel, ctx: Context<WebSocketSession>) => void
+  subscribe: (obs: ActiveChannel, ctx?: Context<WebSocketSession>) => void
+  unsubscribe: (obs: ActiveChannel, ctx?: Context<WebSocketSession>) => void
 }
 
 export type ServerOptions = {

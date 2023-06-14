@@ -49,7 +49,12 @@ export const subscribeFunction = (
   update: ObservableUpdateFunction
 ) => {
   const obs = getObsAndStopRemove(server, id)
+
   if (obs.functionObserveClients.add(update)) {
+    if (server.queryEvents) {
+      server.queryEvents.subscribe(obs)
+    }
+
     if (obs.cache) {
       update(
         obs.rawData,

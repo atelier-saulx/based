@@ -22,6 +22,11 @@ const getObsData = (
   route: BasedRoute<'query'>
 ) => {
   const obs = getObsAndStopRemove(server, id)
+
+  if (server.queryEvents) {
+    server.queryEvents.get(obs)
+  }
+
   if (obs.error) {
     reject(
       createError(server, ctx, BasedErrorCode.FunctionError, {
@@ -74,6 +79,7 @@ export const get = (
     }
 
     const id = genObservableId(name, payload)
+
     if (!hasObs(server, id)) {
       installFn(server, server.client.ctx, route).then((spec) => {
         if (!spec) {

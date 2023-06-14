@@ -64,7 +64,7 @@ test.serial('Query hook', async (t) => {
   const server = new BasedServer({
     port: 9910,
     query: {
-      subscribe: () => {
+      subscribe: (obs, ctx) => {
         subCnt++
       },
       unsubscribe: () => {
@@ -76,9 +76,22 @@ test.serial('Query hook', async (t) => {
     },
     functions: {
       configs: {
+        flap: {
+          type: 'function',
+          fn: (based) => {
+            return based.query('myobs').get()
+          },
+        },
+        myobs2: {
+          type: 'query',
+          closeAfterIdleTime: 500,
+          fn: (based, payload, update) => {
+            return based.query('myobs').subscribe(update)
+          },
+        },
         myobs: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
+          closeAfterIdleTime: 500,
           fn: (_, __, update) => {
             update('fun')
             return () => {}
@@ -110,6 +123,25 @@ test.serial('Query hook', async (t) => {
   await (await fetch('http://localhost:9910/myobs')).text()
 
   t.is(getCnt, 2)
+
+  const close2 = client.query('myobs2', { bla: true }).subscribe((msg) => {})
+
+  await wait(500)
+
+  close2()
+
+  await wait(1500)
+
+  t.is(subCnt, 3)
+  t.is(unSubCnt, 3)
+
+  await client.call('flap')
+
+  t.is(getCnt, 3)
+
+  await (await fetch('http://localhost:9910/flap')).text()
+
+  t.is(getCnt, 4)
 
   client.disconnect()
   await server.destroy()
