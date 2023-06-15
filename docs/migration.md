@@ -127,8 +127,9 @@ Most of the changes with this new infrastructure happened on the server.
 
 Please make sure to include the `@based/functions` package in your project, where you can find function signatures, types, and helper functions useful for development.
 
-Users will now be able to deploy five types of functions:
+Users will now be able to deploy several types of functions:
 
+- `authorize`: specific type used for Authorize functions, either global or function-specific
 - `function`: these are pieces of code which have side-effects, ie: `db:set`
 - `query`: functions used to observe and retrieve data, ie: `db`
 - `stream`: functions used to stream data to, for example to upload files
@@ -140,6 +141,23 @@ Many of these functions have among their arguments a `BasedFunctionClient` insta
 - `BasedFunctionClient` is similar to a normal BasedClient, but has access to functions marked as `internalOnly`.
 - `Payload` is the payload sent by the BasedClient that invoked that function.
 - `Context` is an object containing session information. It contains the connection's information, such as IP, protocol context (WebSocket or HTTP), authState, User Agent, and more.
+
+### `authorize`
+
+This type of server function has the following signature:
+
+```ts
+type Authorize = (
+  based: BasedFunctionClient,
+  context: Context<HttpSession | WebSocketSession>,
+  name: string,
+  payload?: any
+) => Promise<boolean>
+```
+
+This function is used to check whether or not the request is authorized, by being executed right before the function being requested. The request is authorized if the function returns true, in which case the actual request is eecuted, and if the `authorize` returns false, the request doesn't move forward.
+
+This function can be exported as a selfstanding function, in which case it'll be called before every other function that isn't public, or can be exported with the name `authorize` from within another function module, in which case it'll overwrite the generic `authorize` in favour of the specific one.
 
 ### `function`
 
