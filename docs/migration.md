@@ -135,6 +135,7 @@ Users will now be able to deploy several types of functions:
 - `stream`: functions used to stream data to, for example to upload files
 - `channel`: stateless event streams, ie analytics
 - `job`: functions that are kept alive, useful for cronjobs and action triggered by a subscription or time
+- `app`: to serve front-end applications
 
 Many of these functions have among their arguments a `BasedFunctionClient` instance, a `Payload`, and a `Context`.
 
@@ -235,6 +236,10 @@ type BasedChannelFunction<P = any, K = any> = (
 ```
 
 ### `job`
+
+TODO
+
+### `app`
 
 TODO
 
