@@ -11,7 +11,7 @@
     "record",
     "struct"
   ],
-  "repository": "OlliV/data-record",
+  "repository": "https://github.com/atelier-saulx/based/tree/main/packages/data-record",
   "main": "lib/index.js",
   "files": [
     "lib/"
