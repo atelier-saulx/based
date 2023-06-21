@@ -91,14 +91,6 @@ export const multiPart = (
   const ready = async () => {
     const results = await Promise.all(pendingFiles)
     if (ctx.session) {
-      ctx.session.res.cork(() => {
-        ctx.session.res.writeHeader(
-          'Access-Control-Allow-Headers',
-          'Authorization,Content-Type'
-        )
-        ctx.session.res.writeHeader('Access-Control-Expose-Headers', '*')
-        ctx.session.res.writeHeader('Access-Control-Allow-Origin', '*')
-      })
       sendHttpResponse(ctx, results)
     }
   }
