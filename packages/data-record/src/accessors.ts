@@ -749,7 +749,7 @@ export function getWriteFuncs(buf: Buffer): {
 			encoding: Encoding
 		): number =>
 			// @ts-ignore
-			value.copy
+			v.copy
 				? // @ts-ignore
 				  v.copy(buf, offset, 0, len)
 				: // @ts-ignore
