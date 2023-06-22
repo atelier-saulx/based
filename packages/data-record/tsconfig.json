@@ -15,7 +15,7 @@
 		"strict": true,
 		"target": "ES2018",
 		"inlineSourceMap": true,
-		"types": ["node", "jest"],
+		"types": ["node", "@types/jest"],
 		"typeRoots": ["node_modules/@types"]
 	},
 	"include": ["./src"]
