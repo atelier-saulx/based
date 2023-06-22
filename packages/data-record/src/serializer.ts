@@ -57,15 +57,17 @@ export function serialize(
 
 		try {
 			if (z[2] > 0) {
-				// it's an array
-				let j = 0
-				for (let i = 0; i < z[2]; i++) {
-					// for each value
-					const d = v[j]
-					incrHeap(
-						ops[type](d, z[0] + i * typeSize, typeSize, heapOffset)
-					)
-					j++
+				if (v) {
+					// it's an array
+					let j = 0
+					for (let i = 0; i < z[2]; i++) {
+						// for each value
+						const d = v[j]
+						incrHeap(
+							ops[type](d, z[0] + i * typeSize, typeSize, heapOffset)
+						)
+						j++
+					}
 				}
 			} else {
 				// just a value
