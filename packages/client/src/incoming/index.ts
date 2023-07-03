@@ -1,5 +1,5 @@
 import { BasedClient } from '..'
-import fflate from 'fflate'
+import * as fflate from 'fflate'
 import { applyPatch } from '@saulx/diff'
 import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
