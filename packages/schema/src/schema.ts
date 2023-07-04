@@ -1,3 +1,5 @@
+import type { Language } from './languages'
+
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
 // but added a few extra types
@@ -32,7 +34,7 @@ export type BasedSchemaFieldType =
 
 export type BasedSchemaPattern = string // RE ^[A-Za-z_][A-Za-z0-9_]*$
 
-export type BasedSchemaLanguage = string // fix
+export type BasedSchemaLanguage = Language // fix
 
 export type BasedSchemaTypePrefix = string // fix
 
@@ -69,6 +71,7 @@ export type BasedSchemaFieldString = {
   type: 'string'
   minLength?: number
   maxLength?: number
+  contentMediaEncoding?: string // base64
   contentMediaType?: BasedSchemaContentMediaType
   pattern?: BasedSchemaPattern
   format?: 'email' | 'hostname' | 'ipv4' | 'ipv6' | 'uuid' | 'uri'
@@ -170,6 +173,7 @@ export type BasedSchemaFieldReference = {
   allowedTypes?: (string | { type?: string; $filter: any | any[] })[]
 } & BasedSchemaFieldShared
 
+// make extra package called based db - query (maybe in based-db)
 export type BasedSchemaFieldReferences = {
   type: 'references'
   bidirectional?: {
