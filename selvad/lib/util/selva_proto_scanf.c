@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
+#include "libdeflate.h"
 #include "cdefs.h"
 #include "endian.h"
 #include "util/selva_string.h"
@@ -125,6 +126,8 @@ struct placeholder_state {
     enum length_specifier length;
     enum type_specifier type;
 };
+
+static struct libdeflate_decompressor *decompressor;
 
 static void reset_placeholder(struct placeholder_state *ps)
 {
@@ -415,9 +418,9 @@ int selva_proto_scanf(struct finalizer * restrict fin, const void * restrict buf
                 memcpy(&flags, (char *)buf + buf_i + offsetof(struct selva_proto_string, flags), sizeof(flags));
                 memcpy(&len, (char *)buf + buf_i + offsetof(struct selva_proto_string, bsize), sizeof(len));
 
-                if ((ps.precision == -1 || ps.width >= 0) && (flags & SELVA_PROTO_STRING_FDEFLATE)) {
+                if (ps.precision == -1 && (flags & SELVA_PROTO_STRING_FDEFLATE)) {
                     /*
-                     * A compressed string must be captured as a selva_string with %p.
+                     * A compressed string cannot be passed as a direct pointer.
                      */
                     return SELVA_PROTO_EINTYPE;
                 }
@@ -432,13 +435,41 @@ int selva_proto_scanf(struct finalizer * restrict fin, const void * restrict buf
                 } else if (ps.width >= 0) {
                     /* copy to a buffer */
                     char *dest = va_arg(args, char *);
-                    size_t copy_size = min((size_t)ps.width, (size_t)len);
 
-                    /* RFE Should this fail if len !=/< ps.width */
+                    if (flags & SELVA_PROTO_STRING_FDEFLATE) {
+                        uint32_t uncompressed_size;
 
-                    memcpy(dest, str, copy_size);
-                    if (copy_size < (size_t)ps.width) {
-                        memset(dest + copy_size, '\0', (size_t)ps.width - copy_size);
+                        /* RFE min length? */
+                        if (len < sizeof(uncompressed_size) + 1) {
+                            return SELVA_PROTO_EBADMSG;
+                        }
+
+                        memcpy(&uncompressed_size, str, sizeof(uncompressed_size));
+                        if (uncompressed_size > (size_t)ps.width) { /* RFE how about \0? */
+                            return SELVA_PROTO_ENOBUFS;
+                        }
+
+                        const void *data = str;
+                        size_t data_len = len - sizeof(uncompressed_size);
+                        size_t nbytes_out = 0;
+                        enum libdeflate_result res;
+
+                        size_t copy_size = min((size_t)ps.width, (size_t)uncompressed_size);
+                        res = libdeflate_deflate_decompress(decompressor, data, data_len, dest, copy_size, &nbytes_out);
+                        if (res != 0 || nbytes_out != (size_t)uncompressed_size) {
+                            return SELVA_PROTO_EBADMSG;
+                        }
+                        if (nbytes_out < (size_t)ps.width) {
+                            memset(dest + nbytes_out, '\0', (size_t)ps.width - nbytes_out);
+                        }
+                    } else {
+                        size_t copy_size = min((size_t)ps.width, (size_t)len);
+
+                        /* RFE Should this fail if len !=/< ps.width */
+                        memcpy(dest, str, copy_size);
+                        if (copy_size < (size_t)ps.width) {
+                            memset(dest + copy_size, '\0', (size_t)ps.width - copy_size);
+                        }
                     }
                 } else {
                     /*
@@ -628,4 +659,12 @@ out:
     }
 
     return n;
+}
+
+__constructor static void init_selva_proto_scanf(void)
+{
+    decompressor = libdeflate_alloc_decompressor();
+    if (!decompressor) {
+        abort();
+    }
 }
