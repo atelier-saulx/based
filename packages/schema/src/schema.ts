@@ -47,9 +47,9 @@ export type BasedSchemaContentMediaType =
   | string
 
 export type BasedSchemaFieldShared = {
-  $id?: string // potentialy
-  $schema?: string // potentialy
-
+  $id?: string
+  $schema?: string
+  required?: boolean
   title?: string
   description?: string
   readOnly?: boolean
@@ -57,9 +57,6 @@ export type BasedSchemaFieldShared = {
   $comment?: string
   examples?: any[] // <--- make this generic
   default?: any // <-- make this generic
-  enum?: any[] // this changes behaviour pretty extreme
-  // important to type as well because we want to enum based on the type e.g. for references
-  const?: any
 
   // extra thing by us allow users to overwrite entire validations
   customValidator?: (value: any) => boolean
@@ -72,20 +69,19 @@ export type BasedSchemaFieldString = {
   type: 'string'
   minLength?: number
   maxLength?: number
-  contentEncoding?: string // example base64
   contentMediaType?: BasedSchemaContentMediaType
   pattern?: BasedSchemaPattern
-  format?:
-    | 'email'
-    | 'hostname'
-    | 'ipv4'
-    | 'ipv6'
-    | 'uuid'
-    | 'uri'
-    | 'uri-reference'
-    | 'uri-template'
-    | 'regex'
+  format?: 'email' | 'hostname' | 'ipv4' | 'ipv6' | 'uuid' | 'uri'
   // maybe add some more? e.g. phone
+} & BasedSchemaFieldShared
+
+export type BasedSchemaFieldEnum = {
+  enum: any[] // this changes behaviour pretty extreme
+  // important to type as well because we want to enum based on the type e.g. for references
+} & BasedSchemaFieldShared
+
+export type BasedSchemaFieldConst = {
+  const: any
 } & BasedSchemaFieldShared
 
 type NumberDefaults = {
@@ -124,12 +120,13 @@ export type BasedSchemaFieldPrimitive =
   | BasedSchemaFieldTimeStamp
   | BasedSchemaFieldJSON
   | BasedSchemaFieldBoolean
+  | BasedSchemaFieldEnum
+  | BasedSchemaFieldShared
 
 // -------------- Enumerable ---------------
 export type BasedSchemaFieldText = {
   type: 'text'
   required?: BasedSchemaLanguage[]
-  contentEncoding?: string // example base64
   contentMediaType?: BasedSchemaContentMediaType
 } & BasedSchemaFieldShared
 
@@ -144,12 +141,6 @@ export type BasedSchemaFieldObject = {
 export type BasedSchemaFieldRecord = {
   type: 'record'
   values: BasedSchemaField
-  propertyNames?: {
-    pattern?: BasedSchemaPattern
-  }
-  required?: string[]
-  minProperties?: number
-  maxProperties?: number
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldArray = {
@@ -175,7 +166,8 @@ export type BasedSchemaFieldReference = {
   bidirectional?: {
     fromField: string
   }
-  allowedTypes?: string[]
+  // TODO: selva filters { $operator: 'includes', $value: 'image/', $field: 'mimeType' }
+  allowedTypes?: (string | { type?: string; $filter: any | any[] })[]
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldReferences = {
@@ -183,7 +175,7 @@ export type BasedSchemaFieldReferences = {
   bidirectional?: {
     fromField: string
   }
-  allowedTypes?: string[]
+  allowedTypes?: (string | { type?: string; $filter: any | any[] })[]
 } & BasedSchemaFieldShared
 
 // return type can be typed - sort of
@@ -193,6 +185,7 @@ export type BasedSchemaField =
   | BasedSchemaFieldReference
   | BasedSchemaFieldReferences
   | {
+      required?: boolean
       $ref: string // to mimic json schema will just load it in place (so only for setting)
     }
 
@@ -200,7 +193,6 @@ export type BasedSchemaType = {
   fields: {
     [name: string]: BasedSchemaField
   }
-  required?: string[]
   title?: string
   description?: string
   prefix?: BasedSchemaTypePrefix
@@ -221,3 +213,5 @@ export type Schema = {
     [type: string]: BasedSchemaType
   }
 }
+
+// TODO: add required
