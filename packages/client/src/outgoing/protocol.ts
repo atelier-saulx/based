@@ -1,4 +1,4 @@
-import fflate from 'fflate'
+import * as fflate from 'fflate'
 import { AuthState } from '../types/auth'
 import { FunctionQueueItem, GetObserveQueue, ObserveQueue } from '../types'
 import { ChannelPublishQueueItem, ChannelQueueItem } from '../types/channel'
