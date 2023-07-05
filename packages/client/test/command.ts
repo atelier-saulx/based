@@ -4,7 +4,7 @@ import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
 test.serial('Command', async (t) => {
-  const TIME = 500
+  const TIME = 2500
 
   const server = await startOrigin({
     port: 8081,

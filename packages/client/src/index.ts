@@ -1,8 +1,9 @@
 import Emitter from './Emitter'
-import { addCommandToQueue } from './outgoing'
+import { addCommandToQueue, drainQueue } from './outgoing'
 import connect from './socket'
 import { Connection } from './socket/types'
 import { CommandQueue, CommandResponseListeners } from './types'
+import { incoming } from './incoming'
 
 type BasedDbClientOpts = { port: number; host: string }
 
@@ -26,7 +27,7 @@ export class BasedDbClient extends Emitter {
   }
 
   onData(data: Buffer) {
-    console.log('luzzzl', data)
+    incoming(this, data)
   }
 
   onReconnect() {
@@ -37,6 +38,7 @@ export class BasedDbClient extends Emitter {
   onOpen() {
     this.connected = true
     this.emit('connect', true)
+    drainQueue(this)
   }
 
   onClose() {
