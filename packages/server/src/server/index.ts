@@ -80,8 +80,8 @@ export class SelvaServer extends EventEmitter {
   }
 
   async destroy() {
-    if (!this.pm) {
-      this.pm.kill('SIGINT')
+    if (this.pm) {
+      this.pm.kill('SIGTERM')
       this.pm = undefined
     }
   }
