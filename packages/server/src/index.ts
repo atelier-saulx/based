@@ -177,6 +177,7 @@ export async function start(opts: Options) {
   return registry
 }
 
+// FIXME: remove this
 console.info('start server!')
 start({ port: 3000 })
   .then(() => {
