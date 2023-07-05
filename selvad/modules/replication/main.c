@@ -16,6 +16,7 @@
 #include "util/sdb_name.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
+#include "jemalloc.h"
 #include "endian.h"
 #include "module.h"
 #include "config.h"
@@ -57,7 +58,7 @@ struct replicawait_arg {
 
 static void *new_struct(size_t size, void *v)
 {
-    void *p = malloc(size);
+    void *p = selva_malloc(size);
 
     memcpy(p, v, size);
 
@@ -474,7 +475,7 @@ static void replicawait_cb(struct event *, void *arg)
     if (i == nr_replicas) {
         selva_send_ll(args->stream_resp, 1);
         selva_send_end(args->stream_resp);
-        free(args);
+        selva_free(args);
     } else {
         evl_set_timeout(&replicawait_interval, replicawait_cb, arg);
     }
