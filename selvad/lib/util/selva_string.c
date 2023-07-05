@@ -190,6 +190,9 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
     enum selva_string_flags xor_mask = SELVA_STRING_FREEZE | SELVA_STRING_MUTABLE;
 
     if (flags & SELVA_STRING_INTERN) {
+        if (!str) {
+            return NULL;
+        }
         flags |= SELVA_STRING_FREEZE;
     }
 
@@ -199,7 +202,7 @@ struct selva_string *selva_string_create(const char *str, size_t len, enum selva
 
     if (flags & SELVA_STRING_MUTABLE) {
         s = set_string(alloc_mutable(len), str, len, flags);
-    } else if (flags & SELVA_STRING_INTERN) {
+    } else if ((flags & SELVA_STRING_INTERN)) {
         s = selva_string_find_intern(str, len);
         if (!s) {
             s = set_string(alloc_immutable(len), str, len, flags);
