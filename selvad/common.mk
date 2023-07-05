@@ -18,8 +18,9 @@ CFLAGS := -std=gnu2x -O2 -fno-strict-aliasing -MMD -Wall -Wextra
 
 ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize
-	#-opt-info-vec-optimized
-	#-ftree-vectorizer-verbose=5 -fopt-info-vec-missed
+	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
+	#CFLAGS += -opt-info-vec-optimized
+	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
 
 	ifeq ($(uname_M),x86_64)
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
