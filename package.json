@@ -27,7 +27,7 @@
   "scripts": {
     "watch": "turbo run watch --parallel --no-cache",
     "build": "turbo run build",
-    "test": "turbo run test",
+    "test": "cd packages/client && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "packageManager": "npm@8.1.0",
