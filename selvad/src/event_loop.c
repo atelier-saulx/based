@@ -179,7 +179,7 @@ static void handle_fd_close_event(struct event *ev)
     int err;
 
     err = get_fdr(&fdr, fd);
-    if (unlikely(err)) {
+    if (err) {
         SELVA_LOG(SELVA_LOGL_WARN, "fd doesn't exist. fd: %d err: \"%s\"",
                   fd, selva_strerror(err));
         return;
