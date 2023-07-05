@@ -806,6 +806,14 @@ static int send_merge_text(
         struct SelvaObject *fields,
         struct SelvaObject *obj,
         struct selva_string *obj_path,
+        size_t *nr_fields_out) __attribute__((nonnull(7)));
+static int send_merge_text(
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        Selva_NodeId nodeId,
+        struct SelvaObject *fields,
+        struct SelvaObject *obj,
+        struct selva_string *obj_path,
         size_t *nr_fields_out) {
     if (SelvaObject_GetType(fields, obj_path) != SELVA_OBJECT_LONGLONG) {
         int err;
@@ -959,6 +967,15 @@ static int send_deep_merge(
         struct SelvaObject *fields,
         struct SelvaObject *obj,
         struct selva_string *obj_path,
+        size_t *nr_fields_out) __attribute__((nonnull(8)));
+static int send_deep_merge(
+        struct finalizer *fin,
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        Selva_NodeId nodeId,
+        struct SelvaObject *fields,
+        struct SelvaObject *obj,
+        struct selva_string *obj_path,
         size_t *nr_fields_out) {
     void *iterator;
     const char *key_name_str;
@@ -1035,6 +1052,15 @@ static int send_deep_merge(
     return 0;
 }
 
+static int send_node_object_merge(
+        struct finalizer *fin,
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        const struct SelvaHierarchyNode *node,
+        enum SelvaMergeStrategy merge_strategy,
+        struct selva_string *obj_path,
+        struct SelvaObject *fields,
+        size_t *nr_fields_out) __attribute__((nonnull(8)));
 static int send_node_object_merge(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -1167,6 +1193,14 @@ static int exec_fields_expression(
  * - selected node fields,
  * - just the node_id.
  */
+static void send_node(
+        struct finalizer *fin,
+        struct selva_server_response_out *resp,
+        SelvaHierarchy *hierarchy,
+        struct selva_string *lang,
+        struct SelvaHierarchyNode *node,
+        struct SelvaNodeSendParam *args,
+        size_t *merge_nr_fields) __attribute__((nonnull(7)));
 static void send_node(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -1412,10 +1446,10 @@ static size_t FindCommand_SendOrderedResult(
         ssize_t offset,
         ssize_t limit,
         struct SelvaNodeSendParam *args,
-        SVector *order_result,
-        size_t *merge_nr_fields) {
+        SVector *order_result) {
     struct TraversalOrderItem *item;
     struct SVectorIterator it;
+    size_t nr_fields = 0;
     size_t len = 0;
 
     /*
@@ -1436,7 +1470,7 @@ static size_t FindCommand_SendOrderedResult(
         }
 
         assert(PTAG_GETTAG(item->tagp) == TRAVERSAL_ORDER_ITEM_PTYPE_NODE);
-        send_node(fin, resp, hierarchy, lang, PTAG_GETP(item->tagp), args, merge_nr_fields);
+        send_node(fin, resp, hierarchy, lang, PTAG_GETP(item->tagp), args, &nr_fields);
 
         len++;
     }
@@ -1499,10 +1533,9 @@ static void postprocess_sort(
         ssize_t limit,
         struct SelvaNodeSendParam *args,
         SVector *result) {
-    size_t merge_nr_fields = 0;
 
     /* returns nr_nodes */
-    (void)FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, result, &merge_nr_fields);
+    (void)FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, result);
     /* Sent (merge_strategy == MERGE_STRATEGY_NONE) ? nr_nodes : merge_nr_fields nodes. */
     selva_send_array_end(resp);
 }
@@ -1562,7 +1595,7 @@ static void postprocess_inherit(
 
         }
 
-        FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, &order_result, NULL);
+        FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, &order_result);
         selva_send_array_end(resp);
     } else {
         struct SelvaHierarchyNode *node;
@@ -1581,11 +1614,13 @@ static void postprocess_inherit(
          */
         SVector_ForeachBegin(&it, result);
         while ((node = SVector_Foreach(&it))) {
+            size_t merge_nr_fields;
+
             if (limit-- == 0) {
                 break;
             }
 
-            send_node(fin, resp, hierarchy, lang, node, args, NULL);
+            send_node(fin, resp, hierarchy, lang, node, args, &merge_nr_fields);
         }
 
         selva_send_array_end(resp);
