@@ -1,4 +1,5 @@
-type ServerType = 'registry' | 'origin' | 'replica'
+type ServerType = 'origin' | 'replica'
+
 type ServerDescriptor = {
   name: string
   host: string
@@ -8,8 +9,6 @@ type ServerDescriptor = {
 
 import { ServerOptions } from '../types'
 import { EventEmitter } from 'events'
-import chalk from 'chalk'
-
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 
@@ -17,10 +16,9 @@ export class SelvaServer extends EventEmitter {
   public pm: ChildProcess
   public type: ServerType
   public port: number
-  public host: string
   public name: string
   public origin: ServerDescriptor
-  private backupDir: string
+  public backupDir: string
 
   constructor(serverType: ServerType) {
     super()
@@ -30,10 +28,6 @@ export class SelvaServer extends EventEmitter {
     this.on('error', () => {
       // console.error(err)
     })
-
-    // beforeExit.do(() => {
-    //   return this.destroy()
-    // })
   }
 
   async start(opts: ServerOptions) {
