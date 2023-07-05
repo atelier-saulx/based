@@ -230,6 +230,10 @@ struct selva_string *selva_string_createf(const char *fmt, ...)
     }
 
     s = selva_string_create(NULL, res, 0);
+    if (!s) {
+        return NULL;
+    }
+
     va_start(args, fmt);
     (void)vsnprintf(get_buf(s), s->len + 1, fmt, args);
     va_end(args);
@@ -244,6 +248,10 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
 
     flags &= suppported_flags;
     s = selva_string_create(NULL, size, flags);
+    if (!s) {
+        return NULL;
+    }
+
     s->len = fread(get_buf(s), 1, size, fp);
 
     update_crc(s);
