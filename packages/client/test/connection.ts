@@ -4,7 +4,7 @@ import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
 test.serial('Connection', async (t) => {
-  const TIME = 3000
+  const TIME = 500
 
   const server = await startOrigin({
     port: 8081,
@@ -52,7 +52,7 @@ test.serial('Connection', async (t) => {
     name: 'default',
   })
 
-  await wait(TIME)
+  await wait(TIME * 2)
 
   t.is(reConnectCnt, 1)
   t.is(connectCnt, 3)

@@ -1,6 +1,8 @@
 import Emitter from './Emitter'
+import { addCommandToQueue } from './outgoing'
 import connect from './socket'
 import { Connection } from './socket/types'
+import { CommandQueue, CommandResponseListeners } from './types'
 
 type BasedDbClientOpts = { port: number; host: string }
 
@@ -9,6 +11,14 @@ export class BasedDbClient extends Emitter {
   public connection: Connection
   public isDestroyed: boolean
   public opts: BasedDbClientOpts
+  public drainTimeout: NodeJS.Timeout
+  // --------- Queue
+  public commandQueue = []
+  public drainInProgress: boolean = false
+  // --------- Command State
+  public commandResponseListeners: CommandResponseListeners = new Map()
+  public seqId: number = 0
+  // ---------------
 
   constructor() {
     super()
@@ -65,9 +75,15 @@ export class BasedDbClient extends Emitter {
 
   destroy() {
     this.disconnect()
-    // for (const i in this) {
-    //   delete this[i]
-    // }
+    for (const i in this) {
+      delete this[i]
+    }
     this.isDestroyed = true
+  }
+
+  command(command: string, payload?: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      return addCommandToQueue(this, payload, command, resolve, reject)
+    })
   }
 }

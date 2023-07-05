@@ -19,8 +19,6 @@ const connect = (
 
     const socket = (connection.socket = new Socket())
 
-    let isError = false
-
     socket.connect(
       {
         port,
@@ -30,7 +28,7 @@ const connect = (
         if (connection.disconnected) {
           return
         }
-        time = 100
+        time = 200
         if (reconnect) {
           client.onReconnect()
         }
@@ -38,13 +36,7 @@ const connect = (
       }
     )
 
-    socket.on('error', (err) => {
-      // socket.destroy()
-      // console.info('ERROR', err)
-      // socket.destroy()
-      // for special codes
-      //   isError = true
-    })
+    socket.on('error', (err) => {})
 
     socket.on('data', (data) => {
       client.onData(data)
@@ -64,7 +56,7 @@ const connect = (
         host,
         connection,
         // relatively low backoff but will make it faster if multiple servers are down
-        isError ? 5e3 : Math.min(2500, time + ~~(Math.random() * 500) + 100),
+        Math.min(2500, time + ~~(Math.random() * 500) + 200),
         true
       )
     })
