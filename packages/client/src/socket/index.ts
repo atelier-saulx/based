@@ -15,6 +15,8 @@ const connect = (
       return
     }
 
+    console.info('RECONNECT')
+
     const socket = (connection.socket = new Socket())
 
     let isError = false
@@ -37,7 +39,9 @@ const connect = (
     )
 
     socket.on('error', (err) => {
-      console.info('erropr')
+      // socket.destroy()
+      // console.info('ERROR', err)
+      // socket.destroy()
       // for special codes
       //   isError = true
     })
@@ -46,19 +50,10 @@ const connect = (
       client.onData(data)
     })
 
-    socket.on('open', () => {
-      if (connection.disconnected) {
-        return
-      }
-      time = 100
-      if (reconnect) {
-        client.onReconnect()
-      }
-      client.onOpen()
-    })
-
     socket.on('close', () => {
+      socket.removeAllListeners()
       socket.destroy()
+      socket.unref()
       if (connection.disconnected) {
         return
       }

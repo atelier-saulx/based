@@ -4,6 +4,8 @@ import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
 test.serial('Connection', async (t) => {
+  const TIME = 3000
+
   const server = await startOrigin({
     port: 8081,
     name: 'default',
@@ -13,7 +15,7 @@ test.serial('Connection', async (t) => {
   let reConnectCnt = 0
   let disconnect = 0
 
-  await wait(500)
+  await wait(TIME)
 
   const client = new BasedDbClient()
 
@@ -31,26 +33,26 @@ test.serial('Connection', async (t) => {
 
   client.connect({ port: 8081, host: '127.0.0.1' })
 
-  await wait(500)
+  await wait(TIME)
 
   client.disconnect()
 
-  await wait(500)
+  await wait(TIME)
 
   client.connect({ port: 8081, host: '127.0.0.1' })
 
-  await wait(500)
+  await wait(TIME)
 
   await server.destroy()
 
-  await wait(500)
+  await wait(TIME)
 
   const server2 = await startOrigin({
     port: 8081,
     name: 'default',
   })
 
-  await wait(500)
+  await wait(TIME)
 
   t.is(reConnectCnt, 1)
   t.is(connectCnt, 3)

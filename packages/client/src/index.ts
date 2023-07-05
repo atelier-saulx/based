@@ -30,8 +30,10 @@ export class BasedDbClient extends Emitter {
   }
 
   onClose() {
-    this.connected = false
-    this.emit('disconnect', true)
+    if (this.connected) {
+      this.connected = false
+      this.emit('disconnect', true)
+    }
   }
 
   public connect(opts: { port: number; host: string }) {
@@ -49,7 +51,9 @@ export class BasedDbClient extends Emitter {
     if (this.connection) {
       this.connection.disconnected = true
       if (this.connection.socket) {
+        this.connection.socket.removeAllListeners()
         this.connection.socket.destroy()
+        this.connection.socket.unref()
       }
       if (this.connected) {
         this.onClose()
