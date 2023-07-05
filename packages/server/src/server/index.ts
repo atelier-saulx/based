@@ -1,4 +1,4 @@
-type ServerType = 'origin' | 'replica'
+type ServerType = 'registry' | 'origin' | 'replica'
 type ServerDescriptor = {
   name: string
   host: string

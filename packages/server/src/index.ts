@@ -7,6 +7,7 @@ import chalk from 'chalk'
 import getPort from 'get-port'
 
 import { Options, ServerOptions } from './types'
+import { SelvaServer, startServer } from './server'
 
 console.info('start server!')
 
