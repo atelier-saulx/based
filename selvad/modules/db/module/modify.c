@@ -95,6 +95,7 @@ static ssize_t string2selva_string(struct finalizer *fin, int8_t type, const cha
  * @param[out] dest_node_id Returns the node_id an alias is pointing to.
  * @return 0 if no match; 1 if match found.
  */
+static int find_first_alias(SelvaHierarchy *hierarchy, const SVector *alias_query, Selva_NodeId dest_node_id) __attribute__((access (read_only, 2), access(write_only, 3)));
 static int find_first_alias(SelvaHierarchy *hierarchy, const SVector *alias_query, Selva_NodeId dest_node_id) {
     struct SVectorIterator it;
     char *str;
