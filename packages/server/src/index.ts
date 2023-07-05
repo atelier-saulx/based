@@ -86,7 +86,6 @@ export async function startReplica(opts: Options) {
   return startServer('replica', parsedOpts)
 }
 
-// start all
 export async function start(opts: Options) {
   const parsedOpts = await resolveOpts(opts)
 
@@ -108,17 +107,3 @@ export async function start(opts: Options) {
 
   return origin
 }
-
-// FIXME: remove this
-console.info('start server!')
-start({ port: 3000 })
-  .then(() => {
-    console.log('STARTED')
-    setTimeout(() => {
-      process.exit(0)
-    }, 2e3)
-  })
-  .catch((e) => {
-    console.error(e)
-    process.exit(1)
-  })
