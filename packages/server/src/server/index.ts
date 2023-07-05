@@ -101,6 +101,8 @@ export class SelvaServer extends EventEmitter {
         this.backupFns
       )
     }
+
+    // TODO: add to registry
   }
 
   async destroy() {
