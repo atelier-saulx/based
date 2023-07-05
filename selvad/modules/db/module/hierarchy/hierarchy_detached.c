@@ -141,7 +141,7 @@ static struct selva_string *store_compressed(const Selva_NodeId node_id, struct 
      */
     fp = fopen(zpath_str, "wbx");
     if (!fp) {
-        NULL;
+        return NULL;
     }
 
     if (fwrite(compressed_str, compressed_len, 1, fp) != 1) {
