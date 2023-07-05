@@ -13,9 +13,9 @@
     "@saulx/diff": "^1.1.4",
     "@saulx/utils": "^3.2.2",
     "@based/client": "^4.7.6",
-    "get-port": "^7.0.0",
+    "get-port": "^5.1.1",
     "mkdirp": "^1.0.4",
-    "chalk": "^5.3.0"
+    "chalk": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",

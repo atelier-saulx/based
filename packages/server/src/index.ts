@@ -9,8 +9,6 @@ import getPort from 'get-port'
 import { Options, ServerOptions } from './types'
 import { SelvaServer, startServer } from './server'
 
-console.info('start server!')
-
 const resolveOpts = async (opts: Options): Promise<ServerOptions> => {
   let parsedOpts: ServerOptions
   if (typeof opts === 'function') {
@@ -178,3 +176,16 @@ export async function start(opts: Options) {
 
   return registry
 }
+
+console.info('start server!')
+start({ port: 3000 })
+  .then(() => {
+    console.log('STARTED')
+    setTimeout(() => {
+      process.exit(0)
+    }, 2e3)
+  })
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
