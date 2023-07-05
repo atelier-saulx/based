@@ -1,0 +1,45 @@
+{
+  "name": "@based/workspaces-db",
+  "version": "1.0.0",
+  "author": "Based",
+  "license": "MIT",
+  "homepage": "https://github.com/atelier-saulx/based-db#readme",
+  "bugs": {
+    "url": "https://github.com/atelier-saulx/based-db/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/atelier-saulx/based-db"
+  },
+  "private": true,
+  "description": "Based DB",
+  "keywords": [
+    "based",
+    "saulx"
+  ],
+  "workspaces": [
+    "packages/*"
+  ],
+  "prettier": "@saulx/prettier-config",
+  "eslintConfig": {
+    "extends": "@saulx/eslint-config"
+  },
+  "scripts": {
+    "watch": "turbo run watch --parallel --no-cache",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "clean": "turbo run clean && rimraf node_modules"
+  },
+  "packageManager": "npm@8.1.0",
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  },
+  "devDependencies": {
+    "turbo": "1.6.3",
+    "@saulx/eslint-config": "^1.1.1",
+    "@saulx/prettier-config": "^1.0.0",
+    "lint-staged": "12.1.2",
+    "rimraf": "^3.0.2",
+    "typescript": "^5.1.6"
+  }
+}
