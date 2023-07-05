@@ -610,7 +610,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
 
         err = get_key(obj, s, slen, 0, &key);
         if (ary_idx >= 0 &&
-            (err == SELVA_ENOENT || (err == 0 && (key->type != SELVA_OBJECT_ARRAY && nr_parts > nr_parts_found))) &&
+            (err == SELVA_ENOENT || (err == 0 && (key && key->type != SELVA_OBJECT_ARRAY && nr_parts > nr_parts_found))) &&
             (flags & SELVA_OBJECT_GETKEY_CREATE)) {
             /*
              * Expected an array.
@@ -635,7 +635,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
             if (err) {
                 return err;
             }
-        } else if ((err == SELVA_ENOENT || (err == 0 && key->type != SELVA_OBJECT_OBJECT && key->type != SELVA_OBJECT_ARRAY && nr_parts > nr_parts_found)) &&
+        } else if ((err == SELVA_ENOENT || (err == 0 && key && key->type != SELVA_OBJECT_OBJECT && key->type != SELVA_OBJECT_ARRAY && nr_parts > nr_parts_found)) &&
                    (flags & SELVA_OBJECT_GETKEY_CREATE)) {
             /*
              * Expected a nested object.
