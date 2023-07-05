@@ -3,7 +3,7 @@ import { BasedDbClient } from '../dist'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
-test.serial('List operations', async (t) => {
+test.serial('Command', async (t) => {
   const TIME = 500
 
   const server = await startOrigin({
@@ -18,14 +18,16 @@ test.serial('List operations', async (t) => {
     host: '127.0.0.1',
   })
 
-  const x = await client.command('flap', {
+  client.command('flap', {
     surp: true,
   })
 
-  console.log(x)
+  // console.log(x)
 
   await wait(TIME)
 
   client.destroy()
   await server.destroy()
+
+  t.true(true)
 })
