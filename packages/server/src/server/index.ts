@@ -9,12 +9,7 @@ type ServerDescriptor = {
 import { ServerOptions } from '../types'
 import { EventEmitter } from 'events'
 import chalk from 'chalk'
-import {
-  BackupFns,
-  saveAndBackUp,
-  scheduleBackups,
-  loadBackup,
-} from '../backups'
+
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 
@@ -25,9 +20,7 @@ export class SelvaServer extends EventEmitter {
   public host: string
   public name: string
   public origin: ServerDescriptor
-  private backupFns: BackupFns
   private backupDir: string
-  private backupCleanup: Function
 
   constructor(serverType: ServerType) {
     super()
@@ -49,18 +42,9 @@ export class SelvaServer extends EventEmitter {
     }
 
     this.port = opts.port
-    this.host = opts.host
     this.name = opts.name
 
-    if (opts.backups && opts.backups.backupFns) {
-      this.backupFns = await opts.backups.backupFns
-    }
-
     this.backupDir = opts.dir
-
-    if (opts.backups && opts.backups.loadBackup) {
-      await loadBackup(this.backupDir, this.backupFns)
-    }
 
     const execPath = path.join(
       __dirname,
@@ -93,16 +77,6 @@ export class SelvaServer extends EventEmitter {
       },
       stdio: 'inherit',
     })
-
-    if (this.type === 'origin' && opts.backups && opts.backups.scheduled) {
-      this.backupCleanup = scheduleBackups(
-        opts.dir,
-        opts.backups.scheduled.intervalInMinutes,
-        this.backupFns
-      )
-    }
-
-    // TODO: add to registry
   }
 
   async destroy() {
@@ -110,8 +84,6 @@ export class SelvaServer extends EventEmitter {
       this.pm.kill('SIGINT')
       this.pm = undefined
     }
-
-    // TODO: remove replica and origin from registry
   }
 }
 

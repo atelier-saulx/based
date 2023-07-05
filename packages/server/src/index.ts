@@ -1,11 +1,7 @@
-import os from 'os'
 import fs from 'fs'
 import { join } from 'path'
 import mkdirp from 'mkdirp'
-
 import chalk from 'chalk'
-import getPort from 'get-port'
-
 import { Options, ServerOptions } from './types'
 import { SelvaServer, startServer } from './server'
 
@@ -15,24 +11,6 @@ const resolveOpts = async (opts: Options): Promise<ServerOptions> => {
     parsedOpts = await opts()
   } else {
     parsedOpts = await opts
-  }
-  if (!parsedOpts.port) {
-    parsedOpts.port = await getPort()
-  }
-
-  if (!parsedOpts.host) {
-    const network = os.networkInterfaces()
-    let ip
-    for (const key in network) {
-      const r = network[key].find(
-        (v) => v.family === 'IPv4' && v.internal === false
-      )
-      if (r) {
-        ip = r
-        break
-      }
-    }
-    parsedOpts.host = (ip && ip.address) || '0.0.0.0'
   }
 
   if (!parsedOpts.dir) {
@@ -68,16 +46,8 @@ const validate = (
     }
   }
 
-  if (opts.name === 'registry') {
-    return `Registry is a reserved name`
-  }
-
   if (!opts.port) {
     return `no port provided`
-  }
-
-  if (!opts.host) {
-    return `no host provided`
   }
 
   if (typeof opts.port !== 'number') {
@@ -91,7 +61,7 @@ const validate = (
 
 export async function startOrigin(opts: Options): Promise<SelvaServer> {
   const parsedOpts = await resolveOpts(opts)
-  const err = validate(parsedOpts, ['registry', 'name'], [])
+  const err = validate(parsedOpts, ['name'], [])
   if (err) {
     console.error(`Error starting origin selva server ${chalk.red(err)}`)
     throw new Error(err)
@@ -105,7 +75,7 @@ export async function startOrigin(opts: Options): Promise<SelvaServer> {
 export async function startReplica(opts: Options) {
   const parsedOpts = await resolveOpts(opts)
 
-  const err = validate(parsedOpts, ['registry', 'name'], ['backups'])
+  const err = validate(parsedOpts, ['name'], ['backups'])
   if (err) {
     console.error(`Error starting replica selva server ${chalk.red(err)}`)
     throw new Error(err)
@@ -116,65 +86,27 @@ export async function startReplica(opts: Options) {
   return startServer('replica', parsedOpts)
 }
 
-export async function startRegistry(opts: Options): Promise<SelvaServer> {
-  const parsedOpts = await resolveOpts(opts)
-
-  const err = validate(
-    parsedOpts,
-    [],
-    ['registry', 'backups', 'name', 'default']
-  )
-
-  parsedOpts.name = 'registry'
-
-  if (err) {
-    console.error(`Error starting registry selva server ${chalk.red(err)}`)
-    throw new Error(err)
-  }
-  return startServer('registry', parsedOpts)
-}
-
+// start all
 export async function start(opts: Options) {
   const parsedOpts = await resolveOpts(opts)
 
   // TODO: for now all in different ports, fix later
-  const err = validate(
-    parsedOpts,
-    [],
-    ['registry', 'backups', 'name', 'default']
-  )
+  const err = validate(parsedOpts, [], ['backups', 'name', 'default'])
 
   if (err) {
     console.error(`Error starting selva server ${chalk.red(err)}`)
     throw new Error(err)
   }
 
-  const registry = await startServer('registry', {
-    ...parsedOpts,
-    name: 'registry',
-  })
-
   const origin = await startOrigin({
     name: 'default',
-    registry,
-    // @ts-ignore
-    dir: opts.dir,
-    pipeRedisLogs: parsedOpts.pipeRedisLogs || {
-      stdout: true,
-      stderr: true,
-    },
+    dir: parsedOpts.dir,
+    port: parsedOpts.port,
   })
 
-  registry.on('close', async () => {
-    // TODO: Remove comment
-    await origin.destroy()
-    // await timeseries.destroy()
-    // await tsRegistry.destroy()
-    // timeseriesPostgres.destroy() // not async
-    // await timeseriesWorker.destroy()
-  })
+  // TODO: sub manager
 
-  return registry
+  return origin
 }
 
 // FIXME: remove this
