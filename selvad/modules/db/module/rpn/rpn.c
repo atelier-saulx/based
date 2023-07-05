@@ -50,7 +50,7 @@ enum rpn_code {
 
 #define AUTO_OPERANDS(...) \
     struct rpn_operand *auto_operands[] __attribute__((cleanup(free_rpn_auto_operands))) = { __VA_ARGS__ __VA_OPT__(,) NULL }; \
-    for (size_t i = 0; i < num_elem(auto_operands) - 1; i++) { if (!auto_operands[i]) return RPN_ERR_BADSTK; }
+    if (!valid_rpn_auto_operands(auto_operands, num_elem(auto_operands) - 1)) return RPN_ERR_BADSTK
 
 #define OPERAND(ctx, x) \
     struct rpn_operand *x = pop(ctx)
@@ -122,6 +122,7 @@ const char *rpn_str_error[] = {
 
 static void free_rpn_operand(void *p);
 static void free_rpn_auto_operands(void *p);
+static int valid_rpn_auto_operands(struct rpn_operand *auto_operands[], size_t n);
 static void clear_stack(struct rpn_ctx *ctx);
 
 __constructor static void init_pool(void) {
@@ -348,6 +349,17 @@ static void free_rpn_auto_operands(void *p) {
         free_rpn_operand(auto_operands + i);
         auto_operands[i] = NULL;
     }
+}
+
+static int valid_rpn_auto_operands(struct rpn_operand *auto_operands[], size_t n)
+{
+    for (size_t i = 0; i < n; i++) {
+        if (!auto_operands[i]) {
+            return 0;
+        }
+    }
+
+    return 1;
 }
 
 static struct rpn_operand *pop(struct rpn_ctx *ctx) {
