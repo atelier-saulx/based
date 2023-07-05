@@ -35,11 +35,11 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "turbo": "1.6.3",
     "@saulx/eslint-config": "^1.1.1",
     "@saulx/prettier-config": "^1.0.0",
     "lint-staged": "12.1.2",
     "rimraf": "^3.0.2",
+    "turbo": "1.6.3",
     "typescript": "^5.1.6"
   }
 }
