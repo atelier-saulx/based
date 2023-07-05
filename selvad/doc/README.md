@@ -41,7 +41,7 @@ to the value for more complex or storage heavy types. The key itself
 knows the data type of the value.
 
 The `SelvaObject` data type is implemented in
-[selva_object](../module/selva_object.c).
+[selva_object](../modules/db/module/selva_object/selva_object.c).
 
 ## Selva Node
 
@@ -53,9 +53,9 @@ hierarchy system.
 
 Hierarchy fields `ancestors`, `children`, `descendants`, and `parents` are
 owned, managed, and traversed by the functions in
-[hierarchy.c](../module/hierarchy.c).
+[hierarchy.c](../modules/db/module/hierarchy.c).
 
-Node aliases (and `aliases` field) are handled by [alias.c](../module/alias.c).
+Node aliases (and `aliases` field) are handled by [alias.c](../modules/db/module/alias.c).
 
 ## Graph Link Types
 
@@ -142,28 +142,28 @@ See [Indexing](hierarchy/indexing.md).
 
 See
 
-- [find.c](../module/find.c),
-- [aggregate.c](../module/aggregate.c),
-- [inherit.c](../module/inherit.c).
+- [find.c](../modules/db/module/find.c),
+- [aggregate.c](../modules/db/module/aggregate.c),
+- [inherit.c](../modules/db/module/inherit.c).
 
 ### Hierarchy Commands
 
 Direct hierarchy manipulation.
 
-See [hierarchy.c](../module/hierarchy.c).
+See [hierarchy.c](../modules/db/module/hierarchy.c).
 
 ### Subscription Commands
 
-See [subscriptions.c](../module/subscriptions.c).
+See [subscriptions.c](../modules/db/module/subscriptions.c).
 
 ### Modify
 
 Create or update Selva nodes.
 
-See [modify.c](../module/modify.c).
+See [modify.c](../modules/db/module/modify.c).
 
 ### Selva Objects
 
 Direct SelvaObject manipulation for objects backed by a Redis key.
 
-See [selva_object](../module/selva_object.c).
+See [selva_object](../modules/db/module/selva_object.c).
