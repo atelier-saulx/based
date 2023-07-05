@@ -7,7 +7,7 @@ type BasedDbClientOpts = { port: number; host: string }
 export class BasedDbClient extends Emitter {
   public connected: boolean = false
   public connection: Connection
-
+  public isDestroyed: boolean
   public opts: BasedDbClientOpts
 
   constructor() {
@@ -57,5 +57,13 @@ export class BasedDbClient extends Emitter {
       delete this.connection
     }
     this.connected = false
+  }
+
+  destroy() {
+    this.disconnect()
+    // for (const i in this) {
+    //   delete this[i]
+    // }
+    this.isDestroyed = true
   }
 }

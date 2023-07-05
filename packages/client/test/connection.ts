@@ -3,55 +3,60 @@ import { BasedDbClient } from '../dist'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
-test.serial('create connection', async (t) => {
+test.serial('Connection', async (t) => {
   const server = await startOrigin({
     port: 8081,
     name: 'default',
   })
 
-  console.info('HELLO server started>? LD')
+  let connectCnt = 0
+  let reConnectCnt = 0
+  let disconnect = 0
 
-  await wait(1e3)
-  console.info('HELLO HELLO')
+  await wait(500)
 
   const client = new BasedDbClient()
 
   client.on('connect', () => {
-    console.info('CONNECT TIME!')
+    connectCnt++
   })
 
   client.on('disconnect', () => {
-    console.info('DISCONNECT  TIME!')
+    disconnect++
   })
 
   client.on('reconnect', () => {
-    console.info('reconnect  TIME!')
+    reConnectCnt++
   })
 
   client.connect({ port: 8081, host: '127.0.0.1' })
 
-  console.info('CONNECT')
-
-  await wait(1e3)
+  await wait(500)
 
   client.disconnect()
 
-  await wait(1e3)
+  await wait(500)
 
   client.connect({ port: 8081, host: '127.0.0.1' })
 
-  await wait(1e3)
+  await wait(500)
 
   await server.destroy()
 
-  await wait(1e3)
+  await wait(500)
 
   const server2 = await startOrigin({
     port: 8081,
     name: 'default',
   })
 
-  await wait(3e3)
+  await wait(500)
 
-  t.true(true)
+  t.is(reConnectCnt, 1)
+  t.is(connectCnt, 3)
+  t.is(disconnect, 2)
+
+  client.destroy()
+
+  await server2.destroy()
 })
