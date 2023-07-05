@@ -225,9 +225,6 @@ static int op_default_double(
 
     err = SelvaObject_SetDoubleDefault(obj, op->field, d);
     return (err) ? SELVA_OP_REPL_STATE_UNCHANGED : SELVA_OP_REPL_STATE_UPDATED;
-    if (err) {
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
 }
 
 static int op_double(
