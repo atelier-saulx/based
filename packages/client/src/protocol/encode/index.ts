@@ -7,8 +7,8 @@ import {
   TYPES,
   selva_proto_header_def,
   SELVA_PROTO_FRAME_SIZE_MAX,
-} from './types'
-import { crc32 } from './crc32c'
+} from '../types'
+import { crc32 } from '../crc32c'
 
 // TODO: split frames by payload size etc.
 export function encode(cmd: Command, seqno: number, payload: any): Buffer {

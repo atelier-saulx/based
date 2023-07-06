@@ -10,9 +10,9 @@ import {
   SELVA_PROTO_HDR_FREQ_RES,
   SelvaProtocolHeader,
   selva_proto_header_def,
-} from './types'
-import { crc32 } from './crc32c'
-import { VALUE_PARSERS } from './parse'
+} from '../types'
+import { crc32 } from '../crc32c'
+import { VALUE_PARSERS } from './valueParsers'
 
 export function findFrame(buf: Buffer): {
   header: SelvaProtocolHeader
