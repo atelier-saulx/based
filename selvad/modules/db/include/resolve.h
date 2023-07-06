@@ -25,6 +25,6 @@ int SelvaResolve_NodeId(
         struct SelvaHierarchy *hierarchy,
         struct selva_string **ids,
         size_t nr_ids,
-        Selva_NodeId node_id) __attribute__((access(read_only, 2), access(write_only, 4)));
+        Selva_NodeId node_id);
 
 #endif /* SELVA_RESOLVE */
