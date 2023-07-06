@@ -142,6 +142,12 @@ static int iswildcard(const char *field_str, size_t field_len) {
     return field_len == 1 && field_str[0] == WILDCARD_CHAR;
 }
 
+static int containswildcard(const char *field_str, size_t field_len) {
+    const char pattern[3] = {'.', WILDCARD_CHAR, '.'};
+
+    return !!memmem(field_str, field_len, pattern, sizeof(pattern));
+}
+
 static int send_edge_field(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -162,12 +168,7 @@ static int send_edge_field(
         return SELVA_ENOENT;
     }
 
-#if 0
-    if (field_len > 2 && field_str[field_len - 2] == '.' && field_str[field_len - 1] == '*') {
-        field_len -= 2;
-    } else if (memmem(field_str, field_len, ".*.", 3)) {
-#endif
-    if (memmem(field_str, field_len, ".*.", 3)) {
+    if (containswildcard(field_str, field_len)) {
         long resp_count = 0;
         int err;
 
@@ -436,7 +437,7 @@ static int send_node_field(
      * Check if we have a wildcard in the middle of the field name
      * and process it.
      */
-    if (memmem(field_str, field_len, ".*.", 3)) {
+    if (containswildcard(field_str, field_len)) {
         long resp_count = 0;
 
         err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, field_str, field_len, &resp_count, -1, 0);
@@ -550,7 +551,7 @@ static size_t send_node_fields_named(
             TO_STR(field);
             int res;
 
-            if (field_len == 1 && field_str[0] == WILDCARD_CHAR) {
+            if (iswildcard(field_str, field_len)) {
                 res = send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
                 if (res > 0) {
                     nr_fields += res;
@@ -660,7 +661,7 @@ static int send_array_object_field(
      * Check if we have a wildcard in the middle of the field name
      * and process it.
      */
-    if (strstr(field_str, ".*.")) {
+    if (containswildcard(field_str, field_len)) {
         long resp_count = 0;
 
         err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, field_str, field_len, &resp_count, -1, 0);
