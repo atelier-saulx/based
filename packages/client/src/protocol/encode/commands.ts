@@ -36,17 +36,56 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     let off = 0
 
     off += serializeId(head, off, id)
+
     off += serializeString(head, off, field)
     off += serializeString(head, off, valueId)
     off += serializeString(head, off, strVal)
 
-    console.log('lol', payload, id, field, valueId, strVal)
-    console.log('HEAD', head.toString('utf8'))
     return head
   },
   'object.get': (payload) => {
-    return Buffer.from(JSON.stringify(payload))
+    const [lang, nodeId, ...fields] = payload
+    const fields_len = () => {
+      if (!fields) return 0
+      return fields.reduce(
+        (acc, cur) =>
+          acc + selva_proto_string_def.size + Buffer.byteLength(cur),
+        0
+      )
+    }
+    const msg = Buffer.alloc(
+      selva_proto_string_def.size +
+        (lang ? Buffer.byteLength(lang) : 0) + // lang
+        selva_proto_string_def.size +
+        SELVA_NODE_ID_LEN +
+        fields_len()
+    )
+
+    let off = 0
+
+    // lang
+    off += serializeString(msg, off, lang || '')
+
+    off += serializeId(msg, off, nodeId)
+
+    // opt fields
+    for (const field of fields) {
+      off += serializeString(msg, off, field)
+    }
+
+    return msg
   },
+}
+
+function serializeId(head: Buffer, off: number, id: string): number {
+  let put = 0
+  put += serializeWithOffset(selva_proto_string_def, head, off, {
+    type: SELVA_PROTO_STRING,
+    bsize: SELVA_NODE_ID_LEN,
+  })
+  head.write(id, off + put, SELVA_NODE_ID_LEN, 'latin1')
+  put += SELVA_NODE_ID_LEN
+  return put
 }
 
 function serializeString(buf: Buffer, off: number, str: string): number {
@@ -62,17 +101,6 @@ function serializeString(buf: Buffer, off: number, str: string): number {
   }
 
   return wr1 + wr2
-}
-
-function serializeId(buf: Buffer, off: number, id: string): number {
-  const off1 = serializeWithOffset(selva_proto_string_def, buf, off, {
-    type: SELVA_PROTO_STRING,
-    bsize: SELVA_NODE_ID_LEN,
-  })
-
-  buf.write(id, off1, SELVA_NODE_ID_LEN, 'latin1')
-  const off2 = SELVA_NODE_ID_LEN
-  return off1 + off2
 }
 
 function serializeLongLong(buf, off, v) {

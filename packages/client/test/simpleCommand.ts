@@ -77,6 +77,12 @@ test.serial('object.set', async (t) => {
     'lololo yes',
   ])
   t.deepEqual(success[0], BigInt(1))
+  console.log('SUCCESS', success)
+
+  const getResult = await client.command('object.get', ['', 'root', 'title'])
+  console.log('get result', getResult)
+
+  t.deepEqual(getResult[0], 'lololo yes')
 
   client.destroy()
   await server.destroy()
