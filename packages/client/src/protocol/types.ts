@@ -5,6 +5,8 @@ export const TYPES = {
   ping: 0,
   echo: 1,
   lscmd: 2,
+  'object.get': 49,
+  'object.set': 53,
 }
 export type Command = keyof typeof TYPES
 export type SelvaProtocolHeader = {
