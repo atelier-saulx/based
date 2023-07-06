@@ -1,0 +1,106 @@
+import { deserialize } from 'data-record'
+import {
+  SELVA_PROTO_ARRAY,
+  SELVA_PROTO_ARRAY_END,
+  SELVA_PROTO_ARRAY_FDOUBLE,
+  SELVA_PROTO_ARRAY_FLONGLONG,
+  SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH,
+  SELVA_PROTO_CHECK_OFFSET,
+  SELVA_PROTO_HDR_FFIRST,
+  SELVA_PROTO_HDR_FREQ_RES,
+  SelvaProtocolHeader,
+  selva_proto_header_def,
+} from './types'
+import { crc32 } from './crc32c'
+import { VALUE_PARSERS } from './parse'
+
+export function findFrame(buf: Buffer): {
+  header: SelvaProtocolHeader
+  frame: Buffer
+  rest: Buffer
+} {
+  const header = deserialize(selva_proto_header_def, buf)
+  const frame = buf.subarray(0, header.frame_bsize)
+  const orig_chk = frame.readInt32LE(SELVA_PROTO_CHECK_OFFSET)
+  frame.writeUInt32LE(0, SELVA_PROTO_CHECK_OFFSET)
+  const comp_chk = crc32(frame, 0) | 0
+
+  if (orig_chk != comp_chk) {
+    throw new Error(`Invalid checksum: ${orig_chk} != ${comp_chk}`)
+  }
+
+  return {
+    header: header,
+    frame,
+    rest:
+      header.frame_bsize < buf.length ? buf.subarray(header.frame_bsize) : null,
+  }
+}
+
+export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
+  if (buf.length == 0) {
+    return
+  }
+
+  const result = []
+  let rest: Buffer | null = buf
+  do {
+    let v
+    ;[v, rest] = parseValue(rest)
+
+    if (v && v.type) {
+      if (v.type == SELVA_PROTO_ARRAY) {
+        if (v.flags & SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH) {
+          return decodeMessage(rest, -2)
+        } else if (v.flags & SELVA_PROTO_ARRAY_FLONGLONG) {
+          const a = []
+          for (let i = 0; i < v.length; i++) {
+            a.push(rest.readBigInt64LE(i * 8))
+          }
+          result.push(a)
+          rest = rest.slice(v.length * 8)
+        } else if (v.flags & SELVA_PROTO_ARRAY_FDOUBLE) {
+          const a = []
+          for (let i = 0; i < v.length; i++) {
+            a.push(rest.readDoubleLE(i * 8))
+          }
+          result.push(a)
+          rest = rest.slice(v.length * 8)
+        } else {
+          /* Read v.length values */
+          const [r, new_rest] = decodeMessage(rest, v.length)
+          if (r.length != v.length) {
+            throw new Error(`Invalid array size: ${r.length} != ${v.length}`)
+          }
+
+          result.push(r)
+          rest = new_rest
+        }
+      } else if (v.type == SELVA_PROTO_ARRAY_END) {
+        if (n != -2) {
+          throw new Error('Unexpected SELVA_PROTO_ARRAY_END')
+        }
+        break
+      }
+    } else {
+      result.push(v)
+    }
+
+    if (n > 0) {
+      n--
+    }
+  } while (rest && n)
+
+  return [result, rest]
+}
+
+export function parseValue(buf: Buffer): [any, Buffer | null] {
+  const type = buf.readUInt8(0)
+  const parser = VALUE_PARSERS[type]
+  if (!parser) {
+    throw new Error(`Invalid type: ${type}`)
+  }
+
+  const [v, vsize] = parser(buf)
+  return [v, vsize < buf.length ? buf.subarray(vsize) : null]
+}

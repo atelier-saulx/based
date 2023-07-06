@@ -1,4 +1,5 @@
 import { BasedDbClient } from '.'
+import { encode, Command } from './protocol'
 
 export const drainQueue = (client: BasedDbClient) => {
   if (
@@ -17,22 +18,23 @@ export const drainQueue = (client: BasedDbClient) => {
       if (client.commandQueue.length) {
         const commands = client.commandQueue
 
-        const buffs = []
-        let l = 0
-
         // ------- Command
         for (const c of commands) {
           console.log('PREP THIS COMMAND', c)
-          // const { buffers, len } = encodeFunctionMessage(f)
-          // buffs.push(...buffers)
-          // l += len
-        }
+          const buf = encode(c.command, c.seqno, c.payload)
+          client.connection.socket.write(buf, (err) => {
+            if (!err) {
+              return
+            }
 
-        const n = new Uint8Array(l)
-        let c = 0
-        for (const b of buffs) {
-          n.set(b, c)
-          c += b.length
+            console.error('Socket write error', err)
+            const [resolve, reject] = client.commandResponseListeners.get(
+              c.seqno
+            )
+
+            client.commandResponseListeners.delete(c.seqno)
+            addCommandToQueue(client, c.payload, c.command, resolve, reject)
+          })
         }
 
         client.commandQueue = []
@@ -58,14 +60,15 @@ export const stopDrainQueue = (client: BasedDbClient) => {
 export const addCommandToQueue = (
   client: BasedDbClient,
   payload: any,
-  command: string,
+  command: Command,
   resolve: (response: any) => void,
   reject: (err: Error) => void
-) => {
+): number => {
   client.seqId++
   const id = client.seqId
   client.commandResponseListeners.set(id, [resolve, reject])
-  client.commandQueue.push([id, command, payload])
+  client.commandQueue.push({ seqno: id, command, payload })
   drainQueue(client)
+  return id
 }
 // ------------------------------------------------

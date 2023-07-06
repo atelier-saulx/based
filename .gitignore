@@ -133,3 +133,5 @@ local-cloud/
 
 .turbo
 .vercel
+
+.ccls-cache

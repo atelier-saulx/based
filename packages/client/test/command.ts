@@ -18,9 +18,8 @@ test.serial('Command', async (t) => {
     host: '127.0.0.1',
   })
 
-  client.command('flap', {
-    surp: true,
-  })
+  const resp = await client.command('ping')
+  console.log('RESP', resp)
 
   // console.log(x)
 
