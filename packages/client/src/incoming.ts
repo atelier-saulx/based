@@ -9,24 +9,47 @@ import {
 
 const IGNORED_FIRST_BYTES = 2 * 8
 
-export const incoming = async (
-  client: BasedDbClient,
-  data: any /* TODO: type */
-) => {
+let queue: Buffer | null = null
+let cnt = 0
+
+export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
+  // TODO: check if the next thing starts with a frame
+  if (queue) {
+    data = Buffer.concat([queue, data])
+    queue = null
+  }
+
+  cnt++
+  console.log(cnt, !!data)
   // TODO: collect messages and then decode it all
-  console.log('luzzzl', data)
   if (client.isDestroyed) {
     return
   }
 
+  let processedBytes = 0
   let nextBuf = data
   const now = Date.now()
   do {
+    console.log(cnt, 'NEXT BUF', nextBuf.byteLength)
+
     const { header, frame, rest } = findFrame(nextBuf)
+    if (!frame && processedBytes + nextBuf.byteLength === data.byteLength) {
+      console.log(
+        'NOFRAME',
+        processedBytes + nextBuf.byteLength === data.byteLength
+      )
+      // we have an incomplete frame (wait for more data from node event loop)
+      queue = nextBuf
+      return
+    }
+
+    processedBytes += frame.byteLength
+
+    console.log(cnt, 'HEADER')
     nextBuf = rest
+    console.log('LOL', cnt)
 
     if (!(header.flags & SELVA_PROTO_HDR_FREQ_RES)) {
-      console.info('Look weird flags', header, frame)
       // TODO: error and clean up
       return
     }
@@ -78,6 +101,7 @@ export const incoming = async (
     }
 
     if (header.flags & SELVA_PROTO_HDR_FLAST) {
+      console.log('LAST FRAME', header, frame)
       const msg = Buffer.concat(incoming.bufs)
       const [resolve, reject] = client.commandResponseListeners.get(
         header.seqno
@@ -95,16 +119,4 @@ export const incoming = async (
       continue
     }
   } while (nextBuf)
-
-  const id = 0 // SEQ ID
-  const payload = 0
-  try {
-    if (client.commandResponseListeners.has(id)) {
-      client.commandResponseListeners.get(id)[0](payload)
-      client.commandResponseListeners.delete(id)
-    }
-    // ---------------------------------
-  } catch (err) {
-    console.error('Error parsing incoming data', err)
-  }
 }

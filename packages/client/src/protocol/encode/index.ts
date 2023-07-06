@@ -11,8 +11,7 @@ import {
 import { crc32 } from '../crc32c'
 import { COMMAND_ENCODERS } from './commands'
 
-// TODO: split frames by payload size etc.
-export function encode(cmd: Command, seqno: number, payload: any): Buffer {
+export function encode(cmd: Command, seqno: number, payload: any): Buffer[] {
   if (TYPES[cmd] === undefined) {
     throw new Error(`Unknown command: ${cmd}`)
   }
@@ -33,13 +32,10 @@ export function encode(cmd: Command, seqno: number, payload: any): Buffer {
       chk: 0,
     })
     frame.writeUInt32LE(crc32(frame, 0), SELVA_PROTO_CHECK_OFFSET)
-    return frame
+    return [frame]
   }
 
-  if (buf.length > SELVA_PROTO_FRAME_SIZE_MAX) {
-    throw new Error('Message too big')
-  }
-
+  const frames: Buffer[] = []
   for (let i = 0; i < buf.length; i += chunkSize) {
     const chunk = buf.slice(i, i + chunkSize)
     const frame = Buffer.allocUnsafe(selva_proto_header_def.size + chunk.length)
@@ -59,6 +55,8 @@ export function encode(cmd: Command, seqno: number, payload: any): Buffer {
     chunk.copy(frame, selva_proto_header_def.size)
     frame.writeUInt32LE(crc32(frame, 0), SELVA_PROTO_CHECK_OFFSET)
 
-    return frame
+    frames.push(frame)
   }
+
+  return frames
 }

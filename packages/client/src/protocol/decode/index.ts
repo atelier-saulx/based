@@ -16,7 +16,7 @@ import { VALUE_PARSERS } from './valueParsers'
 
 export function findFrame(buf: Buffer): {
   header: SelvaProtocolHeader
-  frame: Buffer
+  frame: Buffer | null
   rest: Buffer
 } {
   const header = deserialize(selva_proto_header_def, buf)
@@ -26,11 +26,19 @@ export function findFrame(buf: Buffer): {
   const comp_chk = crc32(frame, 0) | 0
 
   if (orig_chk != comp_chk) {
-    throw new Error(`Invalid checksum: ${orig_chk} != ${comp_chk}`)
+    console.log('ERRRRR')
+    return {
+      header,
+      frame: null,
+      rest:
+        header.frame_bsize < buf.length
+          ? buf.subarray(header.frame_bsize)
+          : null,
+    }
   }
 
   return {
-    header: header,
+    header,
     frame,
     rest:
       header.frame_bsize < buf.length ? buf.subarray(header.frame_bsize) : null,

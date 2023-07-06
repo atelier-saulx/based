@@ -21,20 +21,22 @@ export const drainQueue = (client: BasedDbClient) => {
         // ------- Command
         for (const c of commands) {
           console.log('PREP THIS COMMAND', c)
-          const buf = encode(c.command, c.seqno, c.payload)
-          client.connection.socket.write(buf, (err) => {
-            if (!err) {
-              return
-            }
+          const bufs = encode(c.command, c.seqno, c.payload)
+          for (const buf of bufs) {
+            client.connection.socket.write(buf, (err) => {
+              if (!err) {
+                return
+              }
 
-            console.error('Socket write error', err)
-            const [resolve, reject] = client.commandResponseListeners.get(
-              c.seqno
-            )
+              console.error('Socket write error', err)
+              const [resolve, reject] = client.commandResponseListeners.get(
+                c.seqno
+              )
 
-            client.commandResponseListeners.delete(c.seqno)
-            addCommandToQueue(client, c.payload, c.command, resolve, reject)
-          })
+              client.commandResponseListeners.delete(c.seqno)
+              addCommandToQueue(client, c.payload, c.command, resolve, reject)
+            })
+          }
         }
 
         client.commandQueue = []
