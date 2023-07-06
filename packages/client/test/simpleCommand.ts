@@ -18,12 +18,12 @@ test.serial('Command', async (t) => {
     host: '127.0.0.1',
   })
 
-  const resp = await client.command('ping')
-  console.log('RESP', resp)
+  const pong = await client.command('ping')
+  t.deepEqual(pong, ['pong'])
 
-  // console.log(x)
-
-  await wait(TIME)
+  const cmds = await client.command('lscmd')
+  console.log(cmds)
+  t.true(cmds.length > 5)
 
   client.destroy()
   await server.destroy()
