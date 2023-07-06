@@ -32,7 +32,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     buflen += selva_proto_string_def.size + Buffer.byteLength(valueId) // value type
     buflen += selva_proto_string_def.size + Buffer.byteLength(strVal) // value
 
-    const head = Buffer.alloc(buflen)
+    const head = Buffer.allocUnsafe(buflen)
     let off = 0
 
     off += serializeId(head, off, id)
@@ -53,7 +53,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
         0
       )
     }
-    const msg = Buffer.alloc(
+    const msg = Buffer.allocUnsafe(
       selva_proto_string_def.size +
         (lang ? Buffer.byteLength(lang) : 0) + // lang
         selva_proto_string_def.size +
