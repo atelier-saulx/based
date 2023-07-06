@@ -42,10 +42,10 @@ export const useWindow = (
     queries.current = []
     unsubs.current = {}
     optsHash.current = hash
-  }
 
-  if (!cache.current) {
-    cache.current = { items: [], loading: true, checksum: 0 }
+    if (!cache.current) {
+      cache.current = { items: [], loading: true, checksum: 0 }
+    }
   }
 
   useEffect(() => {
