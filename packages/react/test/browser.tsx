@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import based from '@based/client'
 import { createRoot } from 'react-dom/client'
-import { Provider, useQuery, useLoading } from '../src'
+import { Provider, useQuery, useLoading, useWindow } from '../src'
 
 const client = based({
   url: 'ws://localhost:8081',
@@ -37,10 +37,11 @@ const Tester = () => {
             height: 50,
             background: somethingIsLoading ? 'red' : 'blue',
           }}
-        ></div>
-        {payloads.map((v) => {
+        />
+        {payloads.map((v, i) => {
           return (
             <div
+              key={i}
               style={{
                 border: '1px solid green',
                 padding: 5,
@@ -53,9 +54,65 @@ const Tester = () => {
           )
         })}
       </div>
-
-      <pre>{JSON.stringify(x, null, 2)}</pre>
     </div>
+  )
+}
+
+const UseWindowTester = () => {
+  const [pages, setPages] = useState([1, 2])
+  const [size, setSize] = useState(4)
+  const { items, loading } = useWindow(
+    'fake-db',
+    ({ offset, limit }) => {
+      return {
+        offset,
+        limit,
+      }
+    },
+    {
+      path: ['things'], // where are the items in the response?
+      pages, // array of page numbers - starts at 1
+      size, // amount of items per page
+    }
+  )
+
+  return (
+    <>
+      <div style={{ display: 'flex' }}>
+        <pre>{JSON.stringify({ loading, items }, null, 2)}</pre>
+        <div>
+          {items.map((item, index) => {
+            return <div key={index}>{item?.id || '-'}</div>
+          })}
+        </div>
+      </div>
+      <button
+        style={{
+          background: 'lightgrey',
+          padding: 16,
+        }}
+        onClick={() => {
+          setPages(
+            pages.map((n) => {
+              return n + 3
+            })
+          )
+        }}
+      >
+        Move ({pages.join(',')})
+      </button>
+      <button
+        style={{
+          background: 'lightgrey',
+          padding: 16,
+        }}
+        onClick={() => {
+          setSize(size + 1)
+        }}
+      >
+        Resize ({size})
+      </button>
+    </>
   )
 }
 
@@ -68,6 +125,7 @@ function App() {
     >
       <Provider client={client}>
         <Tester />
+        <UseWindowTester />
       </Provider>
     </div>
   )
