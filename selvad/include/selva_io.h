@@ -25,8 +25,8 @@ struct SelvaDbVersionInfo {
 };
 
 enum selva_io_flags {
-    SELVA_IO_FLAGS_READ = 0x01,
-    SELVA_IO_FLAGS_WRITE = 0x02,
+    SELVA_IO_FLAGS_READ = 0x01, /*!< This is a read op. */
+    SELVA_IO_FLAGS_WRITE = 0x02, /*!< This is a write op. */
     SELVA_IO_FLAGS_COMPRESSED = 0x04, /* TODO */
     SELVA_IO_FLAGS_FILE_IO = 0x10, /*! Save to/Load from a file. Not set by caller. */
     SELVA_IO_FLAGS_STRING_IO = 0x20, /*!< Save to/Load from a file. Not set by caller. */
@@ -67,6 +67,9 @@ struct selva_io {
 
 #define SELVA_IO_FLAGS_MODE_MASK (SELVA_IO_FLAGS_READ | SELVA_IO_FLAGS_WRITE)
 
+/**
+ * Get the version info.
+ */
 SELVA_IO_EXPORT(void, selva_io_get_ver, struct SelvaDbVersionInfo *nfo);
 
 /**
@@ -74,7 +77,14 @@ SELVA_IO_EXPORT(void, selva_io_get_ver, struct SelvaDbVersionInfo *nfo);
  */
 SELVA_IO_EXPORT(int, selva_io_open_last_good, struct selva_io *io);
 
+/**
+ * Find the last good dump.
+ */
 SELVA_IO_EXPORT(int, selva_io_last_good_info, uint8_t hash[SELVA_IO_HASH_SIZE], struct selva_string **filename_out);
+
+/**
+ * Read selva_io_hash from a file.
+ */
 SELVA_IO_EXPORT(int, selva_io_read_hash, const char *filename, uint8_t hash[SELVA_IO_HASH_SIZE]);
 
 /**
