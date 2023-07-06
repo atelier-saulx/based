@@ -1,10 +1,7 @@
 import { useState, useEffect, useContext, useRef } from 'react'
 import { Ctx } from './Ctx'
 import { BasedClient, BasedQuery } from '@based/client'
-
-const resetHash = (opts) => {
-  return `${opts.size}.${opts.persistent}`
-}
+import { hash } from '@saulx/hash'
 
 type UseWindowState = {
   loading: boolean
@@ -20,7 +17,8 @@ export const useWindow = (
     pages: number[]
     size: number
     persistent?: boolean
-  }
+  },
+  dependencies?: any
 ): UseWindowState => {
   const [checksum, setCheckum] = useState(0)
   const cache = useRef<UseWindowState>()
@@ -28,10 +26,21 @@ export const useWindow = (
   const queries = useRef<BasedQuery[]>()
   const unsubs = useRef<{}>()
   const raf = useRef<number>()
-  const optsHash = useRef<string>()
-  const hash = resetHash(opts)
+  const currModifyHash = useRef<string>()
+  const currResetHash = useRef<number>()
+  const modifyHash = `${opts.size}.${opts.persistent}`
 
-  if (optsHash.current !== hash) {
+  if (dependencies) {
+    // complete reset
+    const resetHash = hash(dependencies)
+    if (currResetHash.current !== resetHash) {
+      currModifyHash.current = null
+      cache.current = null
+    }
+  }
+
+  if (currModifyHash.current !== modifyHash) {
+    // reset queries but keep cache
     for (const n in unsubs.current) {
       unsubs.current[n]()
     }
@@ -41,7 +50,7 @@ export const useWindow = (
     }
     queries.current = []
     unsubs.current = {}
-    optsHash.current = hash
+    currModifyHash.current = modifyHash
 
     if (!cache.current) {
       cache.current = { items: [], loading: true, checksum: 0 }
@@ -73,21 +82,19 @@ export const useWindow = (
         const q = client.query(name, payload, { persistent })
         queries.current[n] = q
       }
-      if (!(n in unsubs.current)) {
-        unsubs.current[n] = queries.current[n].subscribe(() => {
-          if (!raf.current) {
-            raf.current = requestAnimationFrame(() => {
-              raf.current = null
-              setCheckum(
-                queries.current.reduce((combined, { cache }) => {
-                  const checksum = cache?.checksum
-                  return checksum ? combined + checksum : combined
-                }, 0)
-              )
-            })
-          }
+      if (n in unsubs.current) return
+      unsubs.current[n] = queries.current[n].subscribe(() => {
+        if (raf.current) return
+        raf.current = requestAnimationFrame(() => {
+          raf.current = null
+          setCheckum(
+            queries.current.reduce((combined, { cache }) => {
+              const checksum = cache?.checksum
+              return checksum ? combined + checksum : combined
+            }, 0)
+          )
         })
-      }
+      })
     })
 
     // remove inactive subs
@@ -103,11 +110,14 @@ export const useWindow = (
     }
 
     let l = queries.current.length
+    cache.current.loading = false
+    cache.current.checksum = checksum
 
     while (l--) {
       const q = queries.current[l]
-      let i = size * l
       const m = size * l + size
+      let i = size * l
+
       if (q) {
         if (q.cache) {
           let data = q.cache.value
@@ -121,16 +131,18 @@ export const useWindow = (
               cache.current.items[i] = item
             }
           }
+        } else {
+          cache.current.loading = true
         }
       }
+
+      // fill up empty items with null
       for (; i < m; i++) {
         if (!(i in cache.current.items)) {
           cache.current.items[i] = null
         }
       }
     }
-
-    cache.current.checksum = checksum
   }
 
   return cache.current
