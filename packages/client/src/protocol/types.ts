@@ -18,6 +18,7 @@ export type SelvaProtocolHeader = {
   chk: number
 }
 
+export const SELVA_NODE_ID_LEN = 16
 export const SELVA_PROTO_FRAME_SIZE_MAX = 5840
 export const SELVA_PROTO_MSG_SIZE_MAX = 1073741824
 

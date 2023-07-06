@@ -9,6 +9,7 @@ import {
   SELVA_PROTO_FRAME_SIZE_MAX,
 } from '../types'
 import { crc32 } from '../crc32c'
+import { COMMAND_ENCODERS } from './commands'
 
 // TODO: split frames by payload size etc.
 export function encode(cmd: Command, seqno: number, payload: any): Buffer {
@@ -16,8 +17,7 @@ export function encode(cmd: Command, seqno: number, payload: any): Buffer {
     throw new Error(`Unknown command: ${cmd}`)
   }
 
-  // TODO: encoding, only ping works
-  const buf = null
+  const buf = COMMAND_ENCODERS[cmd]?.(payload) ?? null
   const chunkSize = SELVA_PROTO_FRAME_SIZE_MAX - selva_proto_header_def.size
 
   // Some commands don't take any payload
