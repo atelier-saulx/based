@@ -6,12 +6,6 @@ const resetHash = (opts) => {
   return `${opts.size}.${opts.persistent}`
 }
 
-// const resetHash = (opts) => {
-//   return `${opts.size}.${opts.path.join(',')}.${opts.pages.join(',')}.${
-//     opts.persistent
-//   }`
-// }
-
 type UseWindowState = {
   loading: boolean
   items: any[]
