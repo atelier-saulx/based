@@ -161,7 +161,7 @@ size_t SelvaObject_MemUsage(const void *value);
 /**
  * Delete a key an its value from a SelvaObject.
  */
-int SelvaObject_DelKeyStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+int SelvaObject_DelKeyStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 
 /**
  * Delete a key an its value from a SelvaObject.
@@ -171,7 +171,7 @@ int SelvaObject_DelKey(struct SelvaObject *obj, const struct selva_string *key_n
 /**
  * Check whether a key exists in a SelvaObject.
  */
-int SelvaObject_ExistsStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+int SelvaObject_ExistsStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 
 /**
  * Check whether a key exists in a SelvaObject.
@@ -190,35 +190,35 @@ int SelvaObject_ExistsTopLevel(struct SelvaObject *obj, const struct selva_strin
  * @{
  */
 
-int SelvaObject_GetDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double *out) __attribute__((access(write_only, 4)));
+int SelvaObject_GetDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double *out) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetDouble(struct SelvaObject *obj, const struct selva_string *key_name, double *out) __attribute__((access(write_only, 3)));
 
 /**
  * Set a double field value.
  * Can also handle array indexing.
  */
-int SelvaObject_SetDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value);
+int SelvaObject_SetDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetDouble(struct SelvaObject *obj, const struct selva_string *key_name, double value);
 
 /**
  * Set a double field to its default value if the field is unset.
  * Doesn't handle array indexing.
  */
-int SelvaObject_SetDoubleDefaultStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value);
+int SelvaObject_SetDoubleDefaultStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetDoubleDefault(struct SelvaObject *obj, const struct selva_string *key_name, double value);
 
 /**
  * Set a long long field to its default value if the field is unset.
  * Doesn't handle array indexing.
  */
-int SelvaObject_UpdateDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value);
+int SelvaObject_UpdateDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_UpdateDouble(struct SelvaObject *obj, const struct selva_string *key_name, double value);
 
 /**
  * Increment a double field value.
  * Can also handle array indexing.
  */
-int SelvaObject_IncrementDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double default_value, double incr, double *new);
+int SelvaObject_IncrementDoubleStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double default_value, double incr, double *new) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_IncrementDouble(struct SelvaObject *obj, const struct selva_string *key_name, double default_value, double incr, double *new);
 
 /**
@@ -231,35 +231,35 @@ int SelvaObject_IncrementDouble(struct SelvaObject *obj, const struct selva_stri
  * @{
  */
 
-int SelvaObject_GetLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long *out) __attribute__((access(write_only, 4)));
+int SelvaObject_GetLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long *out) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetLongLong(struct SelvaObject *obj, const struct selva_string *key_name, long long *out) __attribute__((access(write_only, 3)));
 
 /**
  * Set a long long field value.
  * Can also handle array indexing.
  */
-int SelvaObject_SetLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value);
+int SelvaObject_SetLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetLongLong(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
 
 /**
  * Set a long long field to its default value if the field is unset.
  * Doesn't handle array indexing.
  */
-int SelvaObject_SetLongLongDefaultStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value);
+int SelvaObject_SetLongLongDefaultStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetLongLongDefault(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
 
 /**
  * Update a long long field value.
  * Return SELVA_EEXIST if the current value equals value; Otherwise set value.
  */
-int SelvaObject_UpdateLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value);
+int SelvaObject_UpdateLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_UpdateLongLong(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
 
 /**
  * Increment a long long field value.
  * Can also handle array indexing.
  */
-int SelvaObject_IncrementLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long default_value, long long incr, long long *new);
+int SelvaObject_IncrementLongLongStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long default_value, long long incr, long long *new) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_IncrementLongLong(struct SelvaObject *obj, const struct selva_string *key_name, long long default_value, long long incr, long long *new);
 
 /**
@@ -272,7 +272,7 @@ int SelvaObject_IncrementLongLong(struct SelvaObject *obj, const struct selva_st
  * @{
  */
 
-int SelvaObject_GetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string **out) __attribute__((access(write_only, 4)));
+int SelvaObject_GetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string **out) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetString(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string **out) __attribute__((access(write_only, 3)));
 
 /**
@@ -281,7 +281,7 @@ int SelvaObject_GetString(struct SelvaObject *obj, const struct selva_string *ke
  * @param key_name is the name of the key ob obj. The argument is used only for lookup and does't need to be retained.
  * @param value is the value; the caller needs to make sure the string is retained.
  */
-int SelvaObject_SetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value);
+int SelvaObject_SetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetString(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value);
 
 /**
@@ -294,9 +294,9 @@ int SelvaObject_SetString(struct SelvaObject *obj, const struct selva_string *ke
  * @{
  */
 
-int SelvaObject_GetObjectStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObject **out) __attribute__((access(write_only, 4)));
+int SelvaObject_GetObjectStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObject **out) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetObject(struct SelvaObject *obj, const struct selva_string *key_name, struct SelvaObject **out) __attribute__((access(write_only, 3)));
-int SelvaObject_SetObjectStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObject *value);
+int SelvaObject_SetObjectStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObject *value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_SetObject(struct SelvaObject *obj, const struct selva_string *key_name, struct SelvaObject *in);
 
 /**
@@ -313,7 +313,7 @@ int SelvaObject_SetObject(struct SelvaObject *obj, const struct selva_string *ke
  * Add an element to a Hyperloglog field.
  * @returns 0 if the field was not modified; 1 if the field was modified; Otwherwise selva error;
  */
-int SelvaObject_AddHllStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, const void *el, size_t el_size);
+int SelvaObject_AddHllStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, const void *el, size_t el_size) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_AddHll(struct SelvaObject *obj, const struct selva_string *key_name, const void *el, size_t el_size);
 
 /**
@@ -326,19 +326,19 @@ int SelvaObject_AddHll(struct SelvaObject *obj, const struct selva_string *key_n
  * @{
  */
 
-int SelvaObject_AddDoubleSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value);
+int SelvaObject_AddDoubleSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_AddDoubleSet(struct SelvaObject *obj, const struct selva_string *key_name, double value);
-int SelvaObject_AddLongLongSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value);
+int SelvaObject_AddLongLongSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_AddLongLongSet(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
-int SelvaObject_AddStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value);
+int SelvaObject_AddStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_AddStringSet(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value);
-int SelvaObject_RemDoubleSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value);
+int SelvaObject_RemDoubleSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, double value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_RemDoubleSet(struct SelvaObject *obj, const struct selva_string *key_name, double value);
-int SelvaObject_RemLongLongSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value);
+int SelvaObject_RemLongLongSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_RemLongLongSet(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
-int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value);
+int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_RemStringSet(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value);
-struct SelvaSet *SelvaObject_GetSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+struct SelvaSet *SelvaObject_GetSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 struct SelvaSet *SelvaObject_GetSet(struct SelvaObject *obj, const struct selva_string *key_name);
 
 /**
@@ -352,18 +352,18 @@ struct SelvaSet *SelvaObject_GetSet(struct SelvaObject *obj, const struct selva_
  * @{
  */
 
-int SelvaObject_InsertArrayStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, void *p);
+int SelvaObject_InsertArrayStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, void *p) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_InsertArray(struct SelvaObject *obj, const struct selva_string *key_name, enum SelvaObjectType subtype, void *p);
-int SelvaObject_AssignArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, ssize_t idx, void *p);
+int SelvaObject_AssignArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, ssize_t idx, void *p) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_AssignArrayIndex(struct SelvaObject *obj, const struct selva_string *key_name, enum SelvaObjectType subtype, ssize_t idx, void *p);
-int SelvaObject_InsertArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, ssize_t idx, void *p);
+int SelvaObject_InsertArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, ssize_t idx, void *p) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_InsertArrayIndex(struct SelvaObject *obj, const struct selva_string *key_name, enum SelvaObjectType subtype, ssize_t idx, void *p);
-int SelvaObject_RemoveArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, ssize_t idx);
+int SelvaObject_RemoveArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, ssize_t idx) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_RemoveArrayIndex(struct SelvaObject *obj, const struct selva_string *key_name, ssize_t idx);
-int SelvaObject_GetArrayStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType *out_subtype, struct SVector **out_p) __attribute__((access(write_only, 5)));
+int SelvaObject_GetArrayStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType *out_subtype, struct SVector **out_p) __attribute__((access(read_only, 2, 3), access(write_only, 5)));
 int SelvaObject_GetArray(struct SelvaObject *obj, const struct selva_string *key_name, enum SelvaObjectType *out_subtype, struct SVector **out_p) __attribute__((access(write_only, 4)));
 size_t SelvaObject_GetArrayLen(struct SelvaObject *obj, const struct selva_string *key_name);
-size_t SelvaObject_GetArrayLenStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+size_t SelvaObject_GetArrayLenStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 
 /**
  * @}
@@ -381,7 +381,7 @@ size_t SelvaObject_GetArrayLenStr(struct SelvaObject *obj, const char *key_name_
  * @param opts is an optional pointer to SELVA_OBJECT_POINTER ops that can define
  *             how to free the data pointed by the pointer or how to serialize it.
  */
-int SelvaObject_SetPointerStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void *p, const struct SelvaObjectPointerOpts *opts) __attribute__((access(none, 4)));
+int SelvaObject_SetPointerStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void *p, const struct SelvaObjectPointerOpts *opts) __attribute__((access(read_only, 2, 3), access(none, 4)));
 
 /**
  * Set a pointer value.
@@ -390,7 +390,7 @@ int SelvaObject_SetPointerStr(struct SelvaObject *obj, const char *key_name_str,
  *             how to free the data pointed by the pointer or how to serialize it.
  */
 int SelvaObject_SetPointer(struct SelvaObject *obj, const struct selva_string *key_name, void *p, const struct SelvaObjectPointerOpts *opts) __attribute__((access(none, 3)));
-int SelvaObject_GetPointerStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void **out_p) __attribute__((access(write_only, 4)));
+int SelvaObject_GetPointerStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void **out_p) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetPointer(struct SelvaObject *obj, const struct selva_string *key_name, void **out_p) __attribute__((access(write_only, 3)));
 
 /**
@@ -398,7 +398,7 @@ int SelvaObject_GetPointer(struct SelvaObject *obj, const struct selva_string *k
  * The length of the matching part is returned.
  * @returns Length of the matching key_name; Otherwise an error code is returned.
  */
-int SelvaObject_GetPointerPartialMatchStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void **out_p) __attribute__((access(write_only, 4)));
+int SelvaObject_GetPointerPartialMatchStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, void **out_p) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 
 /**
  * @}
@@ -410,9 +410,9 @@ int SelvaObject_GetPointerPartialMatchStr(struct SelvaObject *obj, const char *k
  * @{
  */
 
-int SelvaObject_GetAnyLangStr(struct SelvaObject *obj, struct selva_string *lang, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) __attribute__((access(write_only, 5)));
+int SelvaObject_GetAnyLangStr(struct SelvaObject *obj, struct selva_string *lang, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) __attribute__((access(read_only, 3, 4), access(write_only, 5)));
 int SelvaObject_GetAnyLang(struct SelvaObject *obj, struct selva_string *lang, const struct selva_string *key_name, struct SelvaObjectAny *res) __attribute__((access(write_only, 4)));
-int SelvaObject_GetAnyStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) __attribute__((access(write_only, 4)));
+int SelvaObject_GetAnyStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetAny(struct SelvaObject *obj, const struct selva_string *key_name, struct SelvaObjectAny *res) __attribute__((access(write_only, 3)));
 
 /**
@@ -425,7 +425,7 @@ int SelvaObject_GetAny(struct SelvaObject *obj, const struct selva_string *key_n
  * @{
  */
 
-enum SelvaObjectType SelvaObject_GetTypeStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+enum SelvaObjectType SelvaObject_GetTypeStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 enum SelvaObjectType SelvaObject_GetType(struct SelvaObject *obj, const struct selva_string *key_name);
 
 /**
@@ -433,7 +433,7 @@ enum SelvaObjectType SelvaObject_GetType(struct SelvaObject *obj, const struct s
  * Return value can be the number of elements or a byte size of the value,
  * depending on the exact type.
  */
-ssize_t SelvaObject_LenStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len);
+ssize_t SelvaObject_LenStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 
 /**
  * Get the length of a SelvaObject or a key value.
@@ -459,9 +459,9 @@ const char *SelvaObject_Type2String(enum SelvaObjectType type, size_t *len);
  * @{
  */
 
-int SelvaObject_GetUserMetaStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, SelvaObjectMeta_t *meta) __attribute__((access(write_only, 4)));
+int SelvaObject_GetUserMetaStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, SelvaObjectMeta_t *meta) __attribute__((access(read_only, 2, 3), access(write_only, 4)));
 int SelvaObject_GetUserMeta(struct SelvaObject *obj, const struct selva_string *key_name, SelvaObjectMeta_t *meta) __attribute__((access(write_only, 3)));
-int SelvaObject_SetUserMetaStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, SelvaObjectMeta_t meta, SelvaObjectMeta_t *old_meta) __attribute__((access(write_only, 5)));
+int SelvaObject_SetUserMetaStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, SelvaObjectMeta_t meta, SelvaObjectMeta_t *old_meta) __attribute__((access(read_only, 2, 3), access(write_only, 5)));
 int SelvaObject_SetUserMeta(struct SelvaObject *obj, const struct selva_string *key_name, SelvaObjectMeta_t meta, SelvaObjectMeta_t *old_meta) __attribute__((access(write_only, 4)));
 
 /**
