@@ -83,3 +83,51 @@ test.serial('object.set', async (t) => {
 
   t.true(true)
 })
+
+// test.serial('object.set wrong arity', async (t) => {
+// const TIME = 2500
+//
+// const server = await startOrigin({
+// port: 8081,
+// name: 'default',
+// })
+//
+// const client = new BasedDbClient()
+//
+// client.connect({
+// port: 8081,
+// host: '127.0.0.1',
+// })
+//
+// await t.throwsAsync(client.command('object.set', ['root', 'title']))
+//
+// client.destroy()
+// await server.destroy()
+//
+// t.true(true)
+// })
+
+test.serial('object.set wrong node', async (t) => {
+  const TIME = 2500
+
+  const server = await startOrigin({
+    port: 8081,
+    name: 'default',
+  })
+
+  const client = new BasedDbClient()
+
+  client.connect({
+    port: 8081,
+    host: '127.0.0.1',
+  })
+
+  await t.throwsAsync(
+    client.command('object.set', ['durr', 'title', 's', 'lololo yes'])
+  )
+
+  client.destroy()
+  await server.destroy()
+
+  t.true(true)
+})

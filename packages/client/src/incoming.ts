@@ -39,7 +39,7 @@ export const incoming = async (
     ) {
       const msg = frame.subarray(IGNORED_FIRST_BYTES)
 
-      const [resolve, _reject] = client.commandResponseListeners.get(
+      const [resolve, reject] = client.commandResponseListeners.get(
         header.seqno
       )
 
@@ -47,7 +47,12 @@ export const incoming = async (
       client.commandResponseListeners.delete(header.seqno)
 
       const [parsed] = decodeMessage(msg, -1)
-      resolve(parsed)
+      if (parsed[0] instanceof Error) {
+        reject(parsed[0])
+      } else {
+        resolve(parsed)
+      }
+
       continue
     }
 
@@ -74,14 +79,18 @@ export const incoming = async (
 
     if (header.flags & SELVA_PROTO_HDR_FLAST) {
       const msg = Buffer.concat(incoming.bufs)
-      const [resolve, _reject] = client.commandResponseListeners.get(
+      const [resolve, reject] = client.commandResponseListeners.get(
         header.seqno
       )
       client.incomingMessageBuffers.delete(header.seqno)
       client.commandResponseListeners.delete(header.seqno)
 
       const [parsed] = decodeMessage(msg, -1)
-      resolve(parsed)
+      if (parsed[0] instanceof Error) {
+        reject(parsed[0])
+      } else {
+        resolve(parsed)
+      }
 
       continue
     }
