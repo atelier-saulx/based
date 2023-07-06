@@ -50,7 +50,7 @@ static int send_edge_field_value(
 static int deref_single_ref(
         const struct EdgeField *edge_field,
         Selva_NodeId node_id_out,
-        struct SelvaObject **obj_out) __attribute__((access(read_only, 1), access(write_only, 2)));
+        struct SelvaObject **obj_out) __attribute__((access(read_only, 1), access(write_only, 2), access(write_only, 3)));
 static int deref_single_ref(
         const struct EdgeField *edge_field,
         Selva_NodeId node_id_out,
