@@ -19,41 +19,33 @@ import {
   opSetDefCstring,
   OP_SET_TYPE,
 } from '../types'
+import { EncodeDefinition, makeBuf, write } from './serializer'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
+
+function defaultEncoder(schema: EncodeDefinition): (payload: any) => Buffer {
+  return (payload) => {
+    if (!Array.isArray(payload)) {
+      payload = [payload]
+    }
+
+    const buf = makeBuf(schema, payload)
+    write(buf, schema, payload)
+    return buf
+  }
+}
 
 export const COMMAND_ENCODERS: CommandEncoders = {
   ping: null,
   lscmd: null,
-  echo: (payload) => {
-    // TODO: optimize zeroing only id padding
-    const head = Buffer.alloc(selva_proto_string_def.size + payload.length)
-    let off = 0
-
-    off += serializeString(head, off, payload)
-    return head
-  },
-  'object.set': (payload) => {
-    const [id, field, valueId, value] = payload
-    const strVal = String(value)
-
-    let buflen = 0
-    buflen += selva_proto_string_def.size + SELVA_NODE_ID_LEN // id
-    buflen += selva_proto_string_def.size + Buffer.byteLength(field) // field
-    buflen += selva_proto_string_def.size + Buffer.byteLength(valueId) // value type
-    buflen += selva_proto_string_def.size + Buffer.byteLength(strVal) // value
-
-    const head = Buffer.alloc(buflen)
-    let off = 0
-
-    off += serializeId(head, off, id)
-
-    off += serializeString(head, off, field)
-    off += serializeString(head, off, valueId)
-    off += serializeString(head, off, strVal)
-
-    return head
-  },
+  echo: defaultEncoder([{ type: 'string' }]),
+  // id, field, valueId, value
+  'object.set': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' },
+    { type: 'string' },
+    { type: 'string' },
+  ]),
   'object.get': (payload) => {
     const [lang, nodeId, ...fields] = payload
     const fields_len = () => {
