@@ -12,6 +12,14 @@ import { Command } from './protocol/types'
 
 type BasedDbClientOpts = { port: number; host: string }
 
+/* TODO: very important
+Every once in a while check all the open commands
+- if it's a set, probably just wanna fail it (reject) and then clean up
+- if it's a get, maybe wanna retry it and not do anything, maybe have a counter or something and then reject also
+
+Only do counting if there is an active connection
+*/
+
 export class BasedDbClient extends Emitter {
   public connected: boolean = false
   public connection: Connection
