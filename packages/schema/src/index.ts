@@ -1,3 +1,5 @@
 export * from './types'
 
-export * from './validate'
+export * from './validateSchema'
+
+export * from './setWalker'

@@ -199,6 +199,7 @@ export type BasedSchemaType = {
   title?: string
   description?: string
   prefix?: BasedSchemaTypePrefix
+  examples?: any[]
   $defs?: { [key: string]: BasedSchemaField }
 }
 
@@ -206,14 +207,15 @@ export type BasedSchemaType = {
 export type BasedSchema = {
   languages: BasedSchemaLanguage[]
   root: BasedSchemaType
-
   // in our setup this is used as top level /$defs/[name]/
   // in our setup this is used as top level /types/[name]/$defs/[name]
   // #/$defs/name
-
   $defs: { [name: string]: BasedSchemaField }
   types: {
     [type: string]: BasedSchemaType
+  }
+  prefixToTypeMapping: {
+    [prefix: string]: string
   }
 }
 
