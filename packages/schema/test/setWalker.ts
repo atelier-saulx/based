@@ -32,6 +32,10 @@ const schema: BasedSchema = {
             blab: {
               type: 'references',
             },
+            blub: {
+              type: 'set',
+              items: { type: 'string' },
+            },
             firstName: {
               type: 'string',
               title: 'First name',
@@ -85,6 +89,7 @@ test.serial('collect correctly', async (t) => {
         lastName: 'de beer',
         bla: ['bl123', 'bl234'],
         blab: { $add: ['bl456'] },
+        blub: ['x'],
       },
       snurp: [
         {
@@ -104,6 +109,7 @@ test.serial('collect correctly', async (t) => {
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
+    { path: ['form', 'blub'], value: ['x'] },
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
