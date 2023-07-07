@@ -30,7 +30,7 @@ export function findFrame(buf: Buffer): {
   if (orig_chk != comp_chk) {
     console.log('ERRRRR')
 
-    frame.writeUInt32LE(orig_chk | 0, SELVA_PROTO_CHECK_OFFSET)
+    frame.writeInt32LE(orig_chk, SELVA_PROTO_CHECK_OFFSET)
     return {
       header,
       frame: null,

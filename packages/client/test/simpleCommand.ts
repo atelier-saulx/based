@@ -138,7 +138,7 @@ test.serial('object.set wrong node', async (t) => {
   t.true(true)
 })
 
-test.serial.only('object.set big multi-frame string', async (t) => {
+test.serial('object.set big multi-frame string', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -172,7 +172,7 @@ test.serial.only('object.set big multi-frame string', async (t) => {
   const getResult = await client.command('object.get', ['', 'root', 'title'])
   console.log('get result', getResult)
 
-  t.deepEqual(getResult[0], 'lololo yes')
+  t.deepEqual(getResult[0], str)
 
   client.destroy()
   await server.destroy()
