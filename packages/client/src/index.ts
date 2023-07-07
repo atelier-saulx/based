@@ -28,6 +28,8 @@ export class BasedDbClient extends Emitter {
   // TODO: periodic cleanup
   public incomingMessageBuffers: IncomingMessageBuffers = new Map()
 
+  public backpressureBlock: Buffer | null = null
+
   constructor() {
     super()
     console.info('make a new db client...')
@@ -80,6 +82,7 @@ export class BasedDbClient extends Emitter {
       delete this.connection
     }
     this.connected = false
+    this.backpressureBlock = null
   }
 
   destroy() {
