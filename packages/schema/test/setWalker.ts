@@ -83,7 +83,7 @@ test.serial('collect correctly', async (t) => {
       ],
     },
     (path, value, typeSchema, fieldSchema) => {
-      console.info(path, value, typeSchema, fieldSchema)
+      console.info(path, value)
     }
   )
 

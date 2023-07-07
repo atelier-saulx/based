@@ -33,6 +33,10 @@ export type BasedSchemaFieldType =
   | 'references'
   | 'text'
 
+export const isCollection = (type: string): boolean => {
+  return type === 'array' || type === 'object' || type === 'record'
+}
+
 export type BasedSchemaPattern = string // RE ^[A-Za-z_][A-Za-z0-9_]*$
 
 export type BasedSchemaLanguage = Language // fix
@@ -130,6 +134,10 @@ export type BasedSchemaFieldText = {
   type: 'text'
   required?: BasedSchemaLanguage[]
   contentMediaType?: BasedSchemaContentMediaType
+  minLength?: number
+  maxLength?: number
+  contentMediaEncoding?: string // base64
+  pattern?: BasedSchemaPattern
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldObject = {
