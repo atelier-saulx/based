@@ -12,7 +12,6 @@ const IGNORED_FIRST_BYTES = 2 * 8
 let cnt = 0
 
 export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
-  // TODO: check if the next thing starts with a frame
   if (client.backpressureBlock) {
     data = Buffer.concat([client.backpressureBlock, data])
     client.backpressureBlock = null
