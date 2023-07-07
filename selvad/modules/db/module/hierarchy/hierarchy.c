@@ -203,6 +203,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
         hierarchy = NULL;
         goto fail;
     }
+    assert(hierarchy->root && !memcmp(hierarchy->root->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)); /* should be set by now. */
 
     /*
      * Initialize auto compression.
@@ -287,6 +288,9 @@ static int create_node_object(struct SelvaHierarchy *hierarchy, SelvaHierarchyNo
             selva_string_free(type);
             return err;
         }
+
+        /* Establish fast access to the root. */
+        hierarchy->root = node;
     } else {
         struct selva_string *type;
 
@@ -364,6 +368,11 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
     SET_FOREACH(metadata_ctor_p, selva_HMCtor) {
         SelvaHierarchyMetadataConstructorHook *ctor = *metadata_ctor_p;
         ctor(node->id, &node->metadata);
+    }
+
+    if (unlikely(!memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE))) {
+        /* Establish fast access to the root. */
+        hierarchy->root = node;
     }
 
     return node;
@@ -452,16 +461,17 @@ static int repopulate_detached_head(struct SelvaHierarchy *hierarchy, SelvaHiera
  * the detached node index.
  */
 static SelvaHierarchyNode *find_node_index(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    struct SelvaHierarchySearchFilter filter;
-    SelvaHierarchyNode *node;
+    if (!memcmp(id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
+        return hierarchy->root;
+    } else {
+        struct SelvaHierarchySearchFilter filter;
+        SelvaHierarchyNode *node;
 
-    memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
+        memcpy(&filter.id, id, SELVA_NODE_ID_SIZE);
+        node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
 
-    SELVA_TRACE_BEGIN(find_inmem);
-    node = RB_FIND(hierarchy_index_tree, &hierarchy->index_head, (SelvaHierarchyNode *)(&filter));
-    SELVA_TRACE_END(find_inmem);
-
-    return node;
+        return node;
+    }
 }
 
 SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
@@ -471,7 +481,9 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
         /* We want to reduce the scope of `node` for dev safety. */
         SelvaHierarchyNode *node;
 
+        SELVA_TRACE_BEGIN(find_inmem);
         node = find_node_index(hierarchy, id);
+        SELVA_TRACE_END(find_inmem);
         if (node) {
             if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
                 return node;

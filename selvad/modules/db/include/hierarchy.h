@@ -86,7 +86,13 @@ struct SelvaHierarchy {
     struct mempool node_pool;
 
     /**
+     * Root node.
+     */
+    struct SelvaHierarchyNode *root;
+
+    /**
      * Orphan nodes aka heads of the hierarchy.
+     * Includes root.
      */
     SVector heads;
 
