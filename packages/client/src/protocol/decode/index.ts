@@ -28,8 +28,6 @@ export function findFrame(buf: Buffer): {
   const comp_chk = crc32(frame, 0) | 0
 
   if (orig_chk != comp_chk) {
-    console.log('ERRRRR')
-
     frame.writeInt32LE(orig_chk, SELVA_PROTO_CHECK_OFFSET)
     return {
       header,
