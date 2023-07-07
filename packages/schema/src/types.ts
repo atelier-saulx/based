@@ -51,7 +51,7 @@ export type BasedSchemaContentMediaType =
 export type BasedSchemaFieldShared = {
   $id?: string
   $schema?: string
-  required?: boolean
+  isRequired?: boolean
   title?: string
   description?: string
   readOnly?: boolean
@@ -59,10 +59,8 @@ export type BasedSchemaFieldShared = {
   $comment?: string
   examples?: any[] // <--- make this generic
   default?: any // <-- make this generic
-
   // extra thing by us allow users to overwrite entire validations
   customValidator?: (value: any) => boolean
-
   $defs?: { [key: string]: BasedSchemaField }
 }
 
@@ -212,10 +210,10 @@ export type BasedSchema = {
   // in our setup this is used as top level /types/[name]/$defs/[name]
   // #/$defs/name
 
-  $defs?: { [name: string]: BasedSchemaField }
+  $defs: { [name: string]: BasedSchemaField }
   types: {
     [type: string]: BasedSchemaType
   }
 }
 
-// TODO: add required
+export type BasedSchemaPartial = Partial<BasedSchema>

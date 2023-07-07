@@ -1,0 +1,56 @@
+import {
+  BasedSchema,
+  BasedSchemaType,
+  BasedSchemaPartial,
+  BasedSchemaField,
+} from './types'
+
+export const parseType = (
+  fromSchema: BasedSchemaPartial,
+  typeName: string,
+  type: BasedSchemaType
+) => {
+  if (
+    type.prefix &&
+    (typeof type.prefix !== 'string' || type.prefix.length !== 2)
+  ) {
+    throw new Error(
+      `Incorrect prefix "${type.prefix}" for type "${typeName}" has to be a string of 2 alphanumerical characters e.g. "Az", "ab", "cc", "10"`
+    )
+  }
+}
+
+export const parseField = (
+  fromSchema: BasedSchemaPartial,
+  path: string[],
+  field: BasedSchemaField
+) => {}
+
+export const validateSchema = (
+  schema: BasedSchemaPartial
+): BasedSchemaPartial => {
+  // rewrite schema things like required / required: []
+
+  if (typeof schema !== 'object') {
+    throw new Error('Schema is not an object')
+  }
+
+  if (schema.languages && !Array.isArray(schema.languages)) {
+    throw new Error('Languages needs to be an array')
+  }
+
+  if (schema.$defs) {
+    // first defs ofc
+  }
+
+  if (schema.root) {
+  }
+
+  if (schema.types) {
+    for (const type in schema.types) {
+      parseType(schema, type, schema.types[type])
+    }
+  }
+
+  return schema
+}
