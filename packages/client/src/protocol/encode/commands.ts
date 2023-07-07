@@ -16,6 +16,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ping: null,
   lscmd: null,
   echo: (payload) => {
+    // TODO: optimize zeroing only id padding
     const head = Buffer.alloc(selva_proto_string_def.size + payload.length)
     let off = 0
 
@@ -32,7 +33,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     buflen += selva_proto_string_def.size + Buffer.byteLength(valueId) // value type
     buflen += selva_proto_string_def.size + Buffer.byteLength(strVal) // value
 
-    const head = Buffer.allocUnsafe(buflen)
+    const head = Buffer.alloc(buflen)
     let off = 0
 
     off += serializeId(head, off, id)
@@ -41,7 +42,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     off += serializeString(head, off, valueId)
     off += serializeString(head, off, strVal)
 
-    console.log(head.slice(0, 32).toString('hex'))
     return head
   },
   'object.get': (payload) => {
@@ -54,7 +54,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
         0
       )
     }
-    const msg = Buffer.allocUnsafe(
+    const msg = Buffer.alloc(
       selva_proto_string_def.size +
         (lang ? Buffer.byteLength(lang) : 0) + // lang
         selva_proto_string_def.size +
