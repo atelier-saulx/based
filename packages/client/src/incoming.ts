@@ -9,16 +9,12 @@ import {
 
 const IGNORED_FIRST_BYTES = 2 * 8
 
-let cnt = 0
-
 export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
   if (client.backpressureBlock) {
     data = Buffer.concat([client.backpressureBlock, data])
     client.backpressureBlock = null
   }
 
-  cnt++
-  console.log(cnt, !!data)
   // TODO: collect messages and then decode it all
   if (client.isDestroyed) {
     return
@@ -28,14 +24,8 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
   let nextBuf: Buffer | null = data
   const now = Date.now()
   do {
-    console.log(cnt, 'NEXT BUF', nextBuf.byteLength)
-
     const { header, frame, rest } = findFrame(nextBuf)
     if (!frame && processedBytes + nextBuf.byteLength === data.byteLength) {
-      console.log(
-        'NOFRAME',
-        processedBytes + nextBuf.byteLength === data.byteLength
-      )
       // we have an incomplete frame (wait for more data from node event loop)
       client.backpressureBlock = nextBuf
       return
@@ -43,9 +33,7 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
 
     processedBytes += frame.byteLength
 
-    console.log(cnt, 'HEADER')
     nextBuf = rest
-    console.log('LOL', cnt)
 
     if (!(header.flags & SELVA_PROTO_HDR_FREQ_RES)) {
       // TODO: error and clean up
@@ -99,7 +87,6 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
     }
 
     if (header.flags & SELVA_PROTO_HDR_FLAST) {
-      console.log('LAST FRAME', header, frame)
       const msg = Buffer.concat(incoming.bufs)
       const [resolve, reject] = client.commandResponseListeners.get(
         header.seqno
