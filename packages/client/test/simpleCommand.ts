@@ -180,7 +180,7 @@ test.serial('object.set big multi-frame string', async (t) => {
   t.true(true)
 })
 
-test.serial.only('modify and and object.get', async (t) => {
+test.serial('modify and and object.get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -206,22 +206,26 @@ test.serial.only('modify and and object.get', async (t) => {
   t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED']])
   console.log('SUCCESS', resp)
 
-  const getResult = await client.command('object.get', [
-    '',
-    id,
-    'id',
-    'title',
-    'num',
-  ])
+  const getResult = await client.command('object.get', ['', id])
   console.log('get result', getResult)
 
-  console.log('lol', await client.command('object.get', ['', id]))
+  getResult.splice(
+    getResult.findIndex((x) => {
+      return x === 'createdAt'
+    }),
+    2
+  )
+  getResult.splice(
+    getResult.findIndex((x) => {
+      return x === 'updatedAt'
+    }),
+    2
+  )
 
-  t.deepEqual(getResult, [
-    ['id', id],
-    ['title', 'lololo yes'],
-    ['num', BigInt(15)],
-  ])
+  t.deepEqual(
+    getResult.sort(),
+    ['id', id, 'title', 'lololo yes', 'num', BigInt(15)].sort()
+  )
 
   client.destroy()
   await server.destroy()
