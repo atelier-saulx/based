@@ -1,21 +1,20 @@
 import {
-  BasedSchema,
-  BasedSchemaType,
   BasedSchemaPartial,
-  BasedSchemaField,
+  BasedSchemaFieldPartial,
+  BasedSchemaTypePartial,
 } from './types'
 
 export const parseType = (
   fromSchema: BasedSchemaPartial,
   typeName: string,
-  type: BasedSchemaType
+  type: BasedSchemaTypePartial
 ) => {
   if (
     type.prefix &&
     (typeof type.prefix !== 'string' || type.prefix.length !== 2)
   ) {
     throw new Error(
-      `Incorrect prefix "${type.prefix}" for type "${typeName}" has to be a string of 2 alphanumerical characters e.g. "Az", "ab", "cc", "10"`
+      `Incorrect prefix "${type.prefix}" for type "${typeName}" has to be a string of 2 alphanumerical characters e.g."Az", "ab", "cc", "10"`
     )
   }
 }
@@ -23,7 +22,7 @@ export const parseType = (
 export const parseField = (
   fromSchema: BasedSchemaPartial,
   path: string[],
-  field: BasedSchemaField
+  field: BasedSchemaFieldPartial
 ) => {}
 
 export const validateSchema = (

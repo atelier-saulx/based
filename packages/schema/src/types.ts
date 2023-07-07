@@ -1,4 +1,5 @@
 import type { Language } from './languages'
+import type { PartialDeep } from 'type-fest'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -216,4 +217,8 @@ export type BasedSchema = {
   }
 }
 
-export type BasedSchemaPartial = Partial<BasedSchema>
+export type BasedSchemaTypePartial = PartialDeep<BasedSchemaType>
+
+export type BasedSchemaFieldPartial = PartialDeep<BasedSchemaField>
+
+export type BasedSchemaPartial = PartialDeep<BasedSchema>
