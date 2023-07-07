@@ -153,12 +153,12 @@ test.serial('object.set big multi-frame string', async (t) => {
     host: '127.0.0.1',
   })
 
-  await wait(3e3)
-
   let str = ''
-  for (let i = 0; i < 11000; i++) {
+  for (let i = 0; i < 2000000; i++) {
     str += 'lololo yes'
   }
+
+  console.log(str.length / 1024 / 1024)
 
   const success = await client.command('object.set', [
     'root',
