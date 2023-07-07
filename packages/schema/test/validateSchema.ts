@@ -4,10 +4,32 @@ import { validateSchema } from '../src/index'
 test.serial('throw on invalid schema', async (t) => {
   const prefixError = t.throws(() => {
     validateSchema({
+      $defs: {
+        yuzi: {
+          type: 'string',
+          title: 'BLA',
+          description: 'SNURP',
+        },
+      },
       types: {
         bla: {
           prefix: 'fix',
-          fields: {},
+          fields: {
+            yuzi: {
+              type: 'object',
+              customValidator: (bla) => {
+                return true
+              },
+              properties: {
+                gurt: {
+                  $ref: '/$defs/yuzi',
+                },
+                flap: {
+                  enum: ['bla', 'blap', 'flip'],
+                },
+              },
+            },
+          },
         },
       },
     })
