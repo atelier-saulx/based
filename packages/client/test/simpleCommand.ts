@@ -154,7 +154,7 @@ test.serial.only('object.set big multi-frame string', async (t) => {
   })
 
   let str = ''
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < 11000; i++) {
     str += 'lololo yes'
   }
 

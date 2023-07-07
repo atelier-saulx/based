@@ -27,7 +27,7 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
   }
 
   let processedBytes = 0
-  let nextBuf = data
+  let nextBuf: Buffer | null = data
   const now = Date.now()
   do {
     console.log(cnt, 'NEXT BUF', nextBuf.byteLength)
