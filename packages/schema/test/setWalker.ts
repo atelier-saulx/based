@@ -69,6 +69,8 @@ const schema: BasedSchema = {
 }
 
 test.serial('collect correctly', async (t) => {
+  const results: { path: (string | number)[]; value: any }[] = []
+
   setWalker(
     schema,
     {
@@ -83,13 +85,19 @@ test.serial('collect correctly', async (t) => {
       ],
     },
     (path, value, typeSchema, fieldSchema) => {
-      console.info(path, value)
+      results.push({
+        path,
+        value,
+      })
     }
   )
 
-  // 'form.lastName' 'de beer', { bla }, { lastName field}
+  const result = [
+    { path: ['form', 'lastName'], value: 'de beer' },
+    { path: ['snurp', 0, 'x', 0], value: 1 },
+    { path: ['snurp', 0, 'x', 1], value: 2 },
+    { path: ['snurp', 0, 'x', 2], value: 3 },
+  ]
 
-  // 'snurp[0]x[0]' 1, { bla }, { type number }
-  // 'snurp[0]x[1]' 2, { bla }, { lastName field}
-  // 'snurp[0]x[2]' 3, { bla }, { lastName field}
+  t.deepEqual(results, result)
 })

@@ -25,7 +25,9 @@ const fieldWalker = (
     return
   }
 
-  if (value.$delete === true) {
+  const valueType = typeof value
+
+  if (value && valueType === 'object' && value.$delete === true) {
     collect(path, value, typeSchema, fieldSchema, target)
     return
   }
@@ -64,6 +66,14 @@ const fieldWalker = (
       )
     }
 
+    if (valueType !== 'object') {
+      throw new Error(
+        `Type: "${target.type}" Field: "${path.join(
+          '.'
+        )}" is not of type "${typeDef}"`
+      )
+    }
+
     for (const key in value) {
       // @ts-ignore
       const propDef = fieldSchema.properties[key]
@@ -89,7 +99,10 @@ const fieldWalker = (
   if ('type' in fieldSchema) {
     const typeDef = fieldSchema.type
 
-    if ((typeDef === 'number' || typeDef === 'integer') && isNaN(value)) {
+    if (
+      (typeDef === 'number' || typeDef === 'integer') &&
+      valueType !== 'number'
+    ) {
       throw new Error(
         `${value} is not a number "${path.join('.')}" on type "${target.type}"`
       )
@@ -103,15 +116,13 @@ const fieldWalker = (
       )
     }
 
-    if (typeDef === 'string' && typeof value !== 'string') {
+    if (typeDef === 'string' && valueType !== 'string') {
       throw new Error(
         `${value} is not a string "${path.join('.')}" on type "${target.type}"`
       )
     }
 
     if (typeDef === 'text') {
-      const valueType = typeof value
-
       if (target.$language && valueType === 'string') {
         collect(path, value, typeSchema, fieldSchema, target)
       }
