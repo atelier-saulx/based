@@ -16,6 +16,7 @@
 #include "selva_error.h"
 #include "selva_log.h"
 #include "util/cstrings.h"
+#include "util/fast_parsei.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva_db.h"
@@ -192,20 +193,6 @@ __used static int isnan_undefined(double x) {
     memcpy(&i, &x, sizeof(i));
 
     return i & 1;
-}
-
-/**
- * atou but faster and more unsafe.
- * This is way faster than strtoll() in glibc.
- */
-static int fast_atou(const char * str) {
-    int n = 0;
-
-    while (*str >= '0' && *str <= '9') {
-        n = n * 10 + (int)(*str++) - '0';
-    }
-
-    return n;
 }
 
 /**

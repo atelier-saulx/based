@@ -13,6 +13,7 @@
 #include "cdefs.h"
 #include "endian.h"
 #include "util/selva_string.h"
+#include "util/fast_parsei.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 
@@ -137,11 +138,11 @@ static void reset_placeholder(struct placeholder_state *ps)
     ps->type = TYPE_void;
 }
 
-static char *parse_width(const char *fmt, struct placeholder_state *ps)
+static const char *parse_width(const char *fmt, struct placeholder_state *ps)
 {
-    char *end;
+    const char *end;
 
-    ps->width = strtol(fmt, &end, 10);
+    ps->width = fast_strtou(fmt, &end);
     return end;
 }
 
