@@ -83,7 +83,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
       off += serializeString(msg, off, field)
     }
 
-    console.log('MSG', msg.toString('utf8'))
     return msg
   },
   modify: (payload) => {
