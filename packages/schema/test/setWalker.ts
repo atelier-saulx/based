@@ -36,6 +36,9 @@ const schema: BasedSchema = {
               type: 'set',
               items: { type: 'string' },
             },
+            json: {
+              type: 'json',
+            },
             firstName: {
               type: 'string',
               title: 'First name',
@@ -80,7 +83,6 @@ const schema: BasedSchema = {
 
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
-
   setWalker(
     schema,
     {
@@ -90,6 +92,7 @@ test.serial('collect correctly', async (t) => {
         bla: ['bl123', 'bl234'],
         blab: { $add: ['bl456'] },
         blub: ['x'],
+        json: { bla: 1, x: 2, y: 3 },
       },
       snurp: [
         {
@@ -104,16 +107,15 @@ test.serial('collect correctly', async (t) => {
       })
     }
   )
-
   const result = [
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
     { path: ['form', 'blub'], value: ['x'] },
+    { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
   ]
-
   t.deepEqual(results, result)
 })

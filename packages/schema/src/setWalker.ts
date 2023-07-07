@@ -99,6 +99,43 @@ const fieldWalker = (
   if ('type' in fieldSchema) {
     const typeDef = fieldSchema.type
 
+    if (typeDef === 'set') {
+      if (Array.isArray(value)) {
+        const parsedArray = []
+        const fieldDef = fieldSchema.items
+        for (let i = 0; i < value.length; i++) {
+          fieldWalker(
+            [...path, i],
+            value[i],
+            fieldDef,
+            typeSchema,
+            target,
+            (path, value) => {
+              parsedArray.push(value)
+            }
+          )
+        }
+        collect(path, parsedArray, typeSchema, fieldSchema, target)
+      } else {
+        collect(path, value, typeSchema, fieldSchema, target)
+      }
+      return
+    }
+
+    if (typeDef === 'json') {
+      try {
+        const parsedValue = JSON.stringify(value)
+        collect(path, parsedValue, typeSchema, fieldSchema, target)
+        return
+      } catch (err) {
+        throw new Error(
+          `${value} cannot be parsed to json "${path.join('.')}" on type "${
+            target.type
+          }"`
+        )
+      }
+    }
+
     if (
       (typeDef === 'number' || typeDef === 'integer') &&
       valueType !== 'number'
