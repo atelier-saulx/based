@@ -35,6 +35,9 @@ const schema: BasedSchema = {
             snurp: {
               type: 'reference',
             },
+            things: {
+              enum: ['yuzi', 'jux', 'mr tony', 9000],
+            },
             blub: {
               type: 'set',
               items: { type: 'string' },
@@ -97,6 +100,7 @@ test.serial('collect correctly', async (t) => {
         blub: ['x'],
         json: { bla: 1, x: 2, y: 3 },
         snurp: 'blx12',
+        things: 'mr tony',
       },
       snurp: [
         {
@@ -111,6 +115,7 @@ test.serial('collect correctly', async (t) => {
       })
     }
   )
+
   const result = [
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
