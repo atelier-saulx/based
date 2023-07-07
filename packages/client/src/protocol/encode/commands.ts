@@ -17,6 +17,7 @@ import {
   SELVA_PROTO_ARRAY,
   SELVA_PROTO_STRING_FBINARY,
   opSetDefCstring,
+  OP_SET_TYPE,
 } from '../types'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
@@ -175,6 +176,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
 
     return Buffer.concat([head, ...fieldsBuf])
   },
+  'hierarchy.find': (payload) => {
+    return Buffer.from('hello')
+  },
 }
 
 function serializeId(head: Buffer, off: number, id: string): number {
@@ -236,11 +240,4 @@ function serializeBin(buf: Buffer, off: number, v: Buffer) {
   const wr2 = v.copy(buf, off + wr1)
 
   return wr1 + wr2
-}
-
-const OP_SET_TYPE = {
-  char: 0,
-  reference: 1,
-  double: 2,
-  long_long: 3,
 }

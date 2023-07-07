@@ -8,6 +8,7 @@ export const TYPES = {
   'object.get': 49,
   'object.set': 53,
   modify: 68,
+  'hierarchy.find': 19,
 }
 export type Command = keyof typeof TYPES
 export type SelvaProtocolHeader = {
