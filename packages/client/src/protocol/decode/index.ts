@@ -21,15 +21,6 @@ export function findFrame(buf: Buffer): {
 } {
   const header: SelvaProtocolHeader = deserialize(selva_proto_header_def, buf)
 
-  if (header.msg_bsize > buf.byteLength) {
-    console.info('ITS A BIG')
-    return {
-      header,
-      frame: null,
-      rest: null,
-    }
-  }
-
   const frame = buf.subarray(0, header.frame_bsize)
   const orig_chk = frame.readInt32LE(SELVA_PROTO_CHECK_OFFSET)
 
@@ -38,6 +29,8 @@ export function findFrame(buf: Buffer): {
 
   if (orig_chk != comp_chk) {
     console.log('ERRRRR')
+
+    frame.writeUInt32LE(orig_chk | 0, SELVA_PROTO_CHECK_OFFSET)
     return {
       header,
       frame: null,

@@ -41,6 +41,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     off += serializeString(head, off, valueId)
     off += serializeString(head, off, strVal)
 
+    console.log(head.slice(0, 32).toString('hex'))
     return head
   },
   'object.get': (payload) => {
