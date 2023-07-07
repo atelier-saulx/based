@@ -55,7 +55,7 @@ test.serial('echo', async (t) => {
   t.true(true)
 })
 
-test.serial('object.set', async (t) => {
+test.serial('object.set and get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -173,6 +173,55 @@ test.serial('object.set big multi-frame string', async (t) => {
   console.log('get result', getResult)
 
   t.deepEqual(getResult[0], str)
+
+  client.destroy()
+  await server.destroy()
+
+  t.true(true)
+})
+
+test.serial.only('modify and and object.get', async (t) => {
+  const TIME = 2500
+
+  const server = await startOrigin({
+    port: 8081,
+    name: 'default',
+  })
+
+  const client = new BasedDbClient()
+
+  client.connect({
+    port: 8081,
+    host: '127.0.0.1',
+  })
+
+  const id = 'ma00000000000001'
+  const resp = await client.command('modify', [
+    id,
+    [
+      ['title', 'lololo yes'],
+      ['num', 15],
+    ],
+  ])
+  t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED']])
+  console.log('SUCCESS', resp)
+
+  const getResult = await client.command('object.get', [
+    '',
+    id,
+    'id',
+    'title',
+    'num',
+  ])
+  console.log('get result', getResult)
+
+  console.log('lol', await client.command('object.get', ['', id]))
+
+  t.deepEqual(getResult, [
+    ['id', id],
+    ['title', 'lololo yes'],
+    ['num', BigInt(15)],
+  ])
 
   client.destroy()
   await server.destroy()
