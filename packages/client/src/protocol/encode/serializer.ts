@@ -13,6 +13,7 @@ import { CompiledRecordDef, serialize } from 'data-record'
 
 export type EncodePrimiteTypes = {
   type: 'id' | 'string' | 'bin' | 'longlong' | 'double'
+  vararg?: true
 }
 export type EncodeArrayType = { type: 'array'; values: EncodeDefinition }
 export type EncodeType = EncodePrimiteTypes | EncodeArrayType
@@ -25,20 +26,24 @@ export function write(
   payload: any[]
 ): number {
   let off = 0
-  for (let i = 0; i < schema.length; i++) {
+  for (let i = 0; i < payload.length; i++) {
     const def = schema[i]
     const val = payload[i]
 
-    off += serializeValue(buf, off, def, val)
+    off += serializeValue(buf, off, def ?? schema[schema.length - 1], val)
   }
   return off
 }
 
-export function makeBuf(schema: EncodeDefinition, payload: any[]): Buffer {
+export function bufLen(schema: EncodeDefinition, payload: any[]): number {
   let len = 0
-  for (let i = 0; i < schema.length; i++) {
-    const def = schema[i]
+  for (let i = 0; i < payload.length; i++) {
+    let def = schema[i]
     const val = payload[i]
+
+    if (!def) {
+      def = def ?? schema[schema.length - 1]
+    }
 
     switch (def.type) {
       case 'id':
@@ -56,12 +61,14 @@ export function makeBuf(schema: EncodeDefinition, payload: any[]): Buffer {
       case 'double':
         len += selva_proto_double_def.size
         continue
+      case 'array':
+        len += bufLen(def.values, val)
       default:
         continue
     }
   }
 
-  return Buffer.alloc(len)
+  return len
 }
 
 function serializeValue(

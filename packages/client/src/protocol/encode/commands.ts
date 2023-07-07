@@ -19,7 +19,7 @@ import {
   opSetDefCstring,
   OP_SET_TYPE,
 } from '../types'
-import { EncodeDefinition, makeBuf, write } from './serializer'
+import { EncodeDefinition, bufLen, write } from './serializer'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
@@ -29,7 +29,7 @@ function defaultEncoder(schema: EncodeDefinition): (payload: any) => Buffer {
       payload = [payload]
     }
 
-    const buf = makeBuf(schema, payload)
+    const buf = Buffer.alloc(bufLen(schema, payload))
     write(buf, schema, payload)
     return buf
   }
@@ -46,38 +46,11 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' },
     { type: 'string' },
   ]),
-  'object.get': (payload) => {
-    const [lang, nodeId, ...fields] = payload
-    const fields_len = () => {
-      if (!fields) return 0
-      return fields.reduce(
-        (acc, cur) =>
-          acc + selva_proto_string_def.size + Buffer.byteLength(cur),
-        0
-      )
-    }
-    const msg = Buffer.alloc(
-      selva_proto_string_def.size +
-        (lang ? Buffer.byteLength(lang) : 0) + // lang
-        selva_proto_string_def.size +
-        SELVA_NODE_ID_LEN +
-        fields_len()
-    )
-
-    let off = 0
-
-    // lang
-    off += serializeString(msg, off, lang || '')
-
-    off += serializeId(msg, off, nodeId)
-
-    // opt fields
-    for (const field of fields) {
-      off += serializeString(msg, off, field)
-    }
-
-    return msg
-  },
+  'object.get': defaultEncoder([
+    { type: 'string' }, // lang
+    { type: 'id' },
+    { type: 'string', vararg: true }, // ...fields
+  ]),
   modify: (payload) => {
     const [nodeId, fields] = payload
 
