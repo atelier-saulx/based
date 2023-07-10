@@ -1,5 +1,6 @@
 import test from 'ava'
-import { BasedDbClient } from '../dist'
+import { BasedDbClient } from '../src'
+import { ModifyOpSetType } from '../src/protocol/encode/modify/types'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
@@ -248,7 +249,10 @@ test.serial.only('modify and and object.get', async (t) => {
       12.21,
       '5',
       'parents',
-      { setType: 1, $value: [id] },
+      {
+        setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+        $value: [id],
+      },
     ],
   ])
   console.log('RESP 2', resp2)
