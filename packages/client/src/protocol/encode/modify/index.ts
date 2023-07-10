@@ -4,24 +4,26 @@ import { encodeLongLong, encodeDouble } from './primitiveTypes'
 import { EncodeDefinition } from '../protocol'
 import { encodeSetOperation } from './set'
 
+// note: just the non-string values are represented here
 export const VALUE_TYPES = {
-  2: { type: 'string' },
-  0: { type: 'string' },
-  8: { type: 'bin' },
-  3: { type: 'bin' },
-  9: { type: 'bin' },
-  A: { type: 'bin' },
-  5: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_LONGLONG]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_LONGLONG]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_DOUBLE]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: { type: 'bin' },
 }
 
+function identity<T>(x: T): T {
+  return x
+}
+
+// note: only types with need for additional value encoding are present
 export const VALUE_ENCODERS = {
-  2: (x: string) => x,
-  0: (x: string) => x,
-  8: encodeLongLong,
-  3: encodeLongLong,
-  9: encodeDouble,
-  A: encodeDouble,
-  5: encodeSetOperation,
+  [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_LONGLONG]: encodeLongLong,
+  [ModifyArgType.SELVA_MODIFY_ARG_LONGLONG]: encodeLongLong,
+  [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_DOUBLE]: encodeDouble,
+  [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: encodeDouble,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: encodeSetOperation,
 }
 
 export function modify(payload: [nodeId: string, ...fields: any]) {
@@ -47,7 +49,9 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
       { type: 'string' },
       VALUE_TYPES[opType] || { type: 'string' }
     )
-    setFields.push(opType, name, VALUE_ENCODERS[opType](value))
+
+    const encoder = VALUE_ENCODERS[opType] || identity
+    setFields.push(opType, name, encoder(value))
   }
 
   const schema: EncodeDefinition = [{ type: 'array', values: defs }]
