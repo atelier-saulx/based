@@ -56,15 +56,24 @@ export const COMMAND_ENCODERS: CommandEncoders = {
       const value = fields[i + 2]
 
       switch (opType) {
+        case '2': // default string (set if not yet set)
         case '0': // string
           defs.push({ type: 'string' }, { type: 'string' }, { type: 'string' })
           setFields.push(opType, name, value)
           continue
+        case '8': // default longlong (set if not yet set)
         case '3': // number
           const iBuf = Buffer.allocUnsafe(8)
           iBuf.writeBigUInt64LE(BigInt(value))
           defs.push({ type: 'string' }, { type: 'string' }, { type: 'bin' })
           setFields.push(opType, name, iBuf)
+          continue
+        case '9': // default double (set if not yet set)
+        case 'A': //double
+          const dBuf = Buffer.allocUnsafe(8)
+          dBuf.writeDoubleLE(value)
+          defs.push({ type: 'string' }, { type: 'string' }, { type: 'bin' })
+          setFields.push(opType, name, dBuf)
           continue
         case '5': // set
           const opSet = createRecord(opSetDefCstring, {

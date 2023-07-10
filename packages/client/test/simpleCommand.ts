@@ -180,7 +180,7 @@ test.serial('object.set big multi-frame string', async (t) => {
   t.true(true)
 })
 
-test.serial('modify and and object.get', async (t) => {
+test.serial.only('modify and and object.get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -198,9 +198,9 @@ test.serial('modify and and object.get', async (t) => {
   const id = 'ma00000000000001'
   const resp = await client.command('modify', [
     id,
-    ['3', 'num', 15, '0', 'title', 'lololo yes'],
+    ['3', 'num', 15, '0', 'title', 'lololo yes', 'A', 'doubleStuff', 22.89],
   ])
-  t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED']])
+  t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED', 'UPDATED']])
   console.log('SUCCESS', resp)
 
   const getResult = await client.command('object.get', ['', id])
@@ -221,7 +221,16 @@ test.serial('modify and and object.get', async (t) => {
 
   t.deepEqual(
     getResult.sort(),
-    ['id', id, 'title', 'lololo yes', 'num', BigInt(15)].sort()
+    [
+      'id',
+      id,
+      'title',
+      'lololo yes',
+      'num',
+      BigInt(15),
+      'doubleStuff',
+      22.89,
+    ].sort()
   )
 
   client.destroy()
