@@ -25,6 +25,10 @@ const reference: Parser = async (
   target,
   handlers
 ) => {
+  // prob pass these as options
+  // value .default
+  // $value
+
   if (typeof value !== 'string') {
     throw createError(path, target.type, 'reference', value)
   }
@@ -95,6 +99,8 @@ const parsers: {
   [key: string]: Parser
 } = {
   enum: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+
     // @ts-ignore
     const enumValues = fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
@@ -107,8 +113,32 @@ const parsers: {
   },
 
   array: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+
     // TODO: ADD ARRAY OPERATORS
     const isArray = Array.isArray(value)
+
+    if (typeof value === 'object' && !isArray) {
+      const q: Promise<void>[] = []
+
+      if (value.$insert) {
+      }
+
+      if (value.$remove) {
+      }
+
+      if (value.$push) {
+      }
+
+      if (value.$assign) {
+      }
+
+      // fix
+      handlers.collect(path, value, typeSchema, fieldSchema, target)
+
+      return
+    }
+
     if (!isArray) {
       throw createError(path, target.type, 'array', value)
     }
@@ -130,6 +160,8 @@ const parsers: {
   },
 
   object: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+
     if (typeof value !== 'object') {
       throw createError(path, target.type, 'object', value)
     }
@@ -165,6 +197,8 @@ const parsers: {
   },
 
   set: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+
     const q: Promise<void>[] = []
     //   @ts-ignore
     const fieldDef = fieldSchema.items
@@ -230,6 +264,8 @@ const parsers: {
   },
 
   json: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+
     try {
       const parsedValue = JSON.stringify(value)
       handlers.collect(path, parsedValue, typeSchema, fieldSchema, target)
@@ -239,7 +275,9 @@ const parsers: {
   },
 
   number: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-    // Parse $add / $decr
+    // value .default
+    // $increment / $decrement
+
     if (typeof value !== 'number') {
       throw createError(path, target.type, 'number', value)
     }
@@ -247,7 +285,9 @@ const parsers: {
   },
 
   integer: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-    // Parse $add / $decr
+    // value .default
+    // $increment / $decrement
+
     if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
       throw createError(path, target.type, 'integer', value)
     }
@@ -255,6 +295,8 @@ const parsers: {
   },
 
   string: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // default
+
     if (typeof value !== 'string') {
       throw createError(path, target.type, 'string', value)
     }
@@ -270,6 +312,8 @@ const parsers: {
   },
 
   text: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // default
+
     const valueType = typeof value
     if (target.$language && valueType === 'string') {
       // @ts-ignore
@@ -335,6 +379,8 @@ const parsers: {
     target,
     handlers
   ) => {
+    // default
+
     if (Array.isArray(value)) {
       const handler = {
         ...handlers,

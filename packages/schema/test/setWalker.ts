@@ -20,6 +20,21 @@ const schema: BasedSchema = {
             },
           },
         },
+        specialArray: {
+          type: 'array',
+          values: {
+            type: 'string',
+          },
+        },
+        snurpArray: {
+          type: 'array',
+          values: {
+            type: 'number',
+          },
+        },
+        powerLevel: {
+          type: 'integer',
+        },
         form: {
           title: 'A registration form',
           description: 'A simple form example.',
@@ -90,11 +105,33 @@ const schema: BasedSchema = {
 // $value
 // array ops
 // $noRoot
-// $delete
+// $delete -> change for set / references
+// $merge: false,
+
+// $increment
+
+// $assign
+// $insert
 // $remove
-//
+// $push: 7,
+// $unshift (    $unshift: {$value: 123,$maxLen: 10,},)
+
+// $default
+//     $alias: 'maTestWithAlias',
+// aliases (set
 
 test.serial('collect correctly', async (t) => {
+  // $remove.$idx] for array
+
+  /*
+    $assign: {
+        $idx: 0,
+        $value: {
+          name: 'FLURP!',
+        },
+      },
+  */
+
   const results: { path: (string | number)[]; value: any }[] = []
   await setWalker(
     schema,
@@ -109,6 +146,18 @@ test.serial('collect correctly', async (t) => {
         snurp: 'blx12',
         things: 'mr tony',
         password: 'mypassword!',
+      },
+      snurpArray: {
+        $assign: {
+          $idx: 0,
+          $value: 100, // or { $increment: 10 }
+        },
+      },
+      specialArray: {
+        $insert: {
+          $value: ['a', 'b', 'c'],
+          $idx: 0,
+        },
       },
       snurp: [
         {
