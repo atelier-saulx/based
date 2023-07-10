@@ -32,6 +32,13 @@ export enum ModifyArgType {
   SELVA_MODIFY_ARG_STRING_ARRAY = '6' /*!< Array of C-strings. */,
 }
 
+export enum ModifyOpSetType {
+  SELVA_MODIFY_OP_SET_TYPE_CHAR = 0,
+  SELVA_MODIFY_OP_SET_TYPE_REFERENCE = 1 /*!< Items are of size SELVA_NODE_ID_SIZE. */,
+  SELVA_MODIFY_OP_SET_TYPE_DOUBLE = 2,
+  SELVA_MODIFY_OP_SET_TYPE_LONG_LONG = 3,
+}
+
 export const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<
   number,
   (t: any) => Buffer | null

@@ -180,7 +180,7 @@ test.serial('object.set big multi-frame string', async (t) => {
   t.true(true)
 })
 
-test.serial('modify and and object.get', async (t) => {
+test.serial.only('modify and and object.get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -203,7 +203,7 @@ test.serial('modify and and object.get', async (t) => {
   t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED', 'UPDATED']])
   console.log('SUCCESS', resp)
 
-  const getResult = await client.command('object.get', ['', id])
+  let getResult = await client.command('object.get', ['', id])
   console.log('get result', getResult)
 
   getResult.splice(
@@ -232,6 +232,59 @@ test.serial('modify and and object.get', async (t) => {
       22.89,
     ].sort()
   )
+
+  const id2 = 'ma00000000000002'
+  const resp2 = await client.command('modify', [
+    id2,
+    [
+      '3',
+      'num',
+      25,
+      '0',
+      'title',
+      'hmm no',
+      'A',
+      'doubleStuff',
+      12.21,
+      '5',
+      'parents',
+      { setType: 1, $value: [id] },
+    ],
+  ])
+  console.log('RESP 2', resp2)
+
+  getResult = await client.command('object.get', ['', id2])
+  console.log('get result', getResult)
+
+  getResult.splice(
+    getResult.findIndex((x) => {
+      return x === 'createdAt'
+    }),
+    2
+  )
+  getResult.splice(
+    getResult.findIndex((x) => {
+      return x === 'updatedAt'
+    }),
+    2
+  )
+
+  t.deepEqual(
+    getResult.sort(),
+    [
+      'id',
+      id2,
+      'title',
+      'hmm no',
+      'num',
+      BigInt(25),
+      'doubleStuff',
+      12.21,
+    ].sort()
+  )
+
+  getResult = await client.command('object.get', ['', id2, 'parents'])
+  console.log('PARENTS', getResult)
 
   client.destroy()
   await server.destroy()
