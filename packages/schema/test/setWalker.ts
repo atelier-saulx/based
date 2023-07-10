@@ -188,6 +188,14 @@ test.serial('collect correctly', async (t) => {
     { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
+    {
+      path: ['snurpArray'],
+      value: { $assign: { $idx: 0, $value: 100 } },
+    },
+    {
+      path: ['specialArray'],
+      value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
+    },
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
