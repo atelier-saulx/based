@@ -5,6 +5,7 @@ import {
   BasedSchemaLanguage,
   isCollection,
 } from './types'
+import { deepEqual } from '@saulx/utils'
 
 const fieldWalker = (
   path: (string | number)[],
@@ -25,11 +26,32 @@ const fieldWalker = (
     return
   }
 
+  // SPLIT UP AND CLEAN
+
   const valueType = typeof value
 
-  if (value && valueType === 'object' && value.$delete === true) {
+  const valueIsObject = value && valueType === 'object'
+
+  if (valueIsObject && value.$delete === true) {
     collect(path, value, typeSchema, fieldSchema, target)
     return
+  }
+
+  if ('enum' in fieldSchema) {
+    const enumValues = fieldSchema.enum
+
+    for (let i = 0; i < enumValues.length; i++) {
+      if (deepEqual(enumValues[i], value)) {
+        collect(path, i, typeSchema, fieldSchema, target)
+        return
+      }
+    }
+
+    throw new Error(
+      `Type: "${target.type}" Field: "${path.join(
+        '.'
+      )}" is not a valid value for enum`
+    )
   }
 
   if ('type' in fieldSchema && isCollection(fieldSchema.type)) {
