@@ -1,21 +1,7 @@
-import {
-  serialize,
-  CompiledRecordDef,
-  createRecord,
-  compile,
-} from 'data-record'
+import { createRecord } from 'data-record'
 import {
   Command,
-  SELVA_NODE_ID_LEN,
-  SELVA_PROTO_DOUBLE,
-  SELVA_PROTO_LONGLONG,
   SELVA_PROTO_STRING,
-  selva_proto_double_def,
-  selva_proto_longlong_def,
-  selva_proto_string_def,
-  selva_proto_array_def,
-  SELVA_PROTO_ARRAY,
-  SELVA_PROTO_STRING_FBINARY,
   opSetDefCstring,
   OP_SET_TYPE,
 } from '../types'
@@ -100,65 +86,4 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   'hierarchy.find': (payload) => {
     return Buffer.from('hello')
   },
-}
-
-function serializeId(head: Buffer, off: number, id: string): number {
-  let put = 0
-  put += serializeWithOffset(selva_proto_string_def, head, off, {
-    type: SELVA_PROTO_STRING,
-    bsize: SELVA_NODE_ID_LEN,
-  })
-  head.write(id, off + put, SELVA_NODE_ID_LEN, 'latin1')
-  put += SELVA_NODE_ID_LEN
-  return put
-}
-
-function serializeString(buf: Buffer, off: number, str: string): number {
-  const bsize = Buffer.byteLength(str, 'utf8')
-
-  const wr1 = serializeWithOffset(selva_proto_string_def, buf, off, {
-    type: SELVA_PROTO_STRING,
-    bsize,
-  })
-  const wr2 = buf.write(str, off + wr1, bsize, 'utf8')
-  if (wr2 != bsize) {
-    throw new Error('Buffer overflow')
-  }
-
-  return wr1 + wr2
-}
-
-function serializeLongLong(buf, off, v) {
-  return serializeWithOffset(selva_proto_longlong_def, buf, off, {
-    type: SELVA_PROTO_LONGLONG,
-    v: BigInt(v),
-  })
-}
-
-function serializeDouble(buf, off, v) {
-  return serializeWithOffset(selva_proto_double_def, buf, off, {
-    type: SELVA_PROTO_DOUBLE,
-    v,
-  })
-}
-
-function serializeWithOffset(
-  def: CompiledRecordDef,
-  buf: Buffer,
-  off: number,
-  obj: any
-): number {
-  serialize(def, buf.slice(off, off + def.size), obj)
-  return def.size
-}
-
-function serializeBin(buf: Buffer, off: number, v: Buffer) {
-  const wr1 = serializeWithOffset(selva_proto_string_def, buf, off, {
-    type: SELVA_PROTO_STRING,
-    flags: SELVA_PROTO_STRING_FBINARY,
-    bsize: v.length,
-  })
-  const wr2 = v.copy(buf, off + wr1)
-
-  return wr1 + wr2
 }
