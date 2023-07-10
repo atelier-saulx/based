@@ -45,9 +45,16 @@ export const fieldWalker = (
     throw createError(path, target.type, typeDef, path[path.length - 1])
   }
 
-  const validate = validators[typeDef]
-
-  validate(path, value, fieldSchema, typeSchema, target, collect)
+  if ('customValidator' in fieldSchema) {
+    const validate = fieldSchema.customValidator
+    if (!validate(value)) {
+      throw createError(path, target.type, typeDef, value)
+    }
+    collect(path, value, typeSchema, fieldSchema, target)
+  } else {
+    const validate = validators[typeDef]
+    validate(path, value, fieldSchema, typeSchema, target, collect)
+  }
   return
 }
 
