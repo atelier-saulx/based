@@ -4,8 +4,12 @@ import {
   BasedSchema,
   BasedSchemaLanguage,
   isCollection,
-} from './types'
+} from '../types'
 import { deepEqual } from '@saulx/utils'
+import { createError } from './handleError'
+
+// Collect is a pretty good place for checking if a user is allowed to set something
+// also make collect async
 
 const fieldWalker = (
   path: (string | number)[],
@@ -26,8 +30,6 @@ const fieldWalker = (
     return
   }
 
-  // SPLIT UP AND CLEAN
-
   const valueType = typeof value
 
   const valueIsObject = value && valueType === 'object'
@@ -45,11 +47,7 @@ const fieldWalker = (
         return
       }
     }
-    throw new Error(
-      `Type: "${target.type}" Field: "${path.join(
-        '.'
-      )}" is not a valid value for enum`
-    )
+    throw createError(path, target.type, 'enum', value)
   }
 
   if ('type' in fieldSchema && isCollection(fieldSchema.type)) {
@@ -59,11 +57,7 @@ const fieldWalker = (
 
     if (typeDef === 'array') {
       if (!isArray) {
-        throw new Error(
-          `Type: "${target.type}" Field: "${path.join(
-            '.'
-          )}" is not of type "array"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
 
       for (let i = 0; i < value.length; i++) {
@@ -79,29 +73,23 @@ const fieldWalker = (
       }
       return
     } else if (isArray) {
-      throw new Error(
-        `Type: "${target.type}" Field: "${path.join(
-          '.'
-        )}" is not of type "${typeDef}"`
-      )
+      throw createError(path, target.type, fieldSchema.type, value)
     }
 
     if (valueType !== 'object') {
-      throw new Error(
-        `Type: "${target.type}" Field: "${path.join(
-          '.'
-        )}" is not of type "${typeDef}"`
-      )
+      throw createError(path, target.type, fieldSchema.type, value)
     }
 
     for (const key in value) {
       // @ts-ignore
       const propDef = fieldSchema.properties[key]
       if (!propDef) {
-        throw new Error(
-          `Field does not exist in schema "${[...path, key].join(
-            '.'
-          )}" on type "${target.type}"`
+        throw createError(
+          [...path, key],
+          target.type,
+          fieldSchema.type,
+          value[key],
+          key
         )
       }
       fieldWalker(
@@ -137,6 +125,8 @@ const fieldWalker = (
         }
         collect(path, parsedArray, typeSchema, fieldSchema, target)
       } else {
+        // TODO PARSE IF VALID
+        // $add / $remove
         collect(path, value, typeSchema, fieldSchema, target)
       }
       return
@@ -148,11 +138,7 @@ const fieldWalker = (
         collect(path, parsedValue, typeSchema, fieldSchema, target)
         return
       } catch (err) {
-        throw new Error(
-          `${value} cannot be parsed to json "${path.join('.')}" on type "${
-            target.type
-          }"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
     }
 
@@ -160,61 +146,35 @@ const fieldWalker = (
       (typeDef === 'number' || typeDef === 'integer') &&
       valueType !== 'number'
     ) {
-      throw new Error(
-        `${value} is not a number "${path.join('.')}" on type "${target.type}"`
-      )
+      throw createError(path, target.type, fieldSchema.type, value)
     }
 
     if (typeDef === 'integer' && value - Math.floor(value) !== 0) {
-      throw new Error(
-        `${value} is not an integer "${path.join('.')}" on type "${
-          target.type
-        }"`
-      )
+      throw createError(path, target.type, fieldSchema.type, value)
     }
 
     if (typeDef === 'string') {
       if (valueType !== 'string') {
-        throw new Error(
-          `${value} is not a string "${path.join('.')}" on type "${
-            target.type
-          }"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
 
       if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-        throw new Error(
-          `${value} is smaller then minLength "${
-            fieldSchema.minLength
-          }" "${path.join('.')}" on type "${target.type}"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
 
       if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-        throw new Error(
-          `${value} is larger then maxLength "${
-            fieldSchema.maxLength
-          }" "${path.join('.')}" on type "${target.type}"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
     }
 
     if (typeDef === 'text') {
       if (target.$language && valueType === 'string') {
         if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-          throw new Error(
-            `${value} is smaller then minLength "${
-              fieldSchema.minLength
-            }" "${path.join('.')}" on type "${target.type}"`
-          )
+          throw createError(path, target.type, fieldSchema.type, value)
         }
 
         if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-          throw new Error(
-            `${value} is larger then maxLength "${
-              fieldSchema.maxLength
-            }" "${path.join('.')}" on type "${target.type}"`
-          )
+          throw createError(path, target.type, fieldSchema.type, value)
         }
 
         collect(
@@ -228,11 +188,7 @@ const fieldWalker = (
       }
 
       if (valueType !== 'object') {
-        throw new Error(
-          `${value} is not a language object "${path.join('.')}" on type "${
-            target.type
-          }"`
-        )
+        throw createError(path, target.type, fieldSchema.type, value)
       }
 
       for (const key in value) {
@@ -240,10 +196,11 @@ const fieldWalker = (
           fieldSchema.minLength &&
           value[key].length < fieldSchema.minLength
         ) {
-          throw new Error(
-            `${value[key]} is smaller then minLength "${
-              fieldSchema.minLength
-            }" "${path.join('.')}" on type "${target.type}"`
+          throw createError(
+            [...path, key],
+            target.type,
+            fieldSchema.type,
+            value
           )
         }
 
@@ -251,10 +208,11 @@ const fieldWalker = (
           fieldSchema.maxLength &&
           value[key].length > fieldSchema.maxLength
         ) {
-          throw new Error(
-            `${value[key]} is larger then maxLength "${
-              fieldSchema.maxLength
-            }" "${path.join('.')}" on type "${target.type}"`
+          throw createError(
+            [...path, key],
+            target.type,
+            fieldSchema.type,
+            value
           )
         }
 
@@ -264,10 +222,11 @@ const fieldWalker = (
         }
 
         if (typeof value[key] !== 'string') {
-          throw new Error(
-            `${value} is not a string "${[...path, key].join('.')}" on type "${
-              target.type
-            }"`
+          throw createError(
+            [...path, key],
+            target.type,
+            fieldSchema.type,
+            value
           )
         }
 
