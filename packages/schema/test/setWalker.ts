@@ -95,6 +95,7 @@ test.serial('collect correctly', async (t) => {
       $id: 'bl1',
       form: {
         lastName: 'de beer',
+        // why at the end?
         bla: ['bl123', 'bl234'],
         blab: { $add: ['bl456'] },
         blub: ['x'],
@@ -138,5 +139,6 @@ test.serial('collect correctly', async (t) => {
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
   ]
+
   t.deepEqual(results, result)
 })

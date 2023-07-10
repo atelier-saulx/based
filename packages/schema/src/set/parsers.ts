@@ -318,6 +318,7 @@ const parsers: {
         )
       }
     }
+
     handlers.collect(path, value, typeSchema, fieldSchema, target)
   },
 }
