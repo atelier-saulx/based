@@ -1,4 +1,4 @@
-import { compile } from 'data-record'
+import { compile, CompiledRecordDef } from 'data-record'
 
 // TODO: add all the commands
 export const TYPES = {
@@ -176,3 +176,12 @@ export const incrementDoubleDef = compile([
   { name: '$default', type: 'double_le' },
   { name: '$increment', type: 'double_le' },
 ])
+
+export const SET_OP_BY_TYPE: {
+  [OP_SET_TYPE: number]: CompiledRecordDef
+} = {
+  0: opSetDefCstring,
+  1: opSetDefCstring,
+  2: opSetDefDouble,
+  3: opSetDefInt64,
+}
