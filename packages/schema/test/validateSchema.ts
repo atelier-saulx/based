@@ -17,7 +17,7 @@ test.serial('throw on invalid schema', async (t) => {
           fields: {
             yuzi: {
               type: 'object',
-              customValidator: async (bla) => {
+              customValidator: async (value, path, target) => {
                 return true
               },
               properties: {
