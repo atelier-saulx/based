@@ -232,3 +232,10 @@ export type BasedSchemaTypePartial = PartialDeep<BasedSchemaType>
 export type BasedSchemaFieldPartial = PartialDeep<BasedSchemaField>
 
 export type BasedSchemaPartial = PartialDeep<BasedSchema>
+
+export type BasedSetTarget = {
+  type: string
+  $alias?: string
+  $id?: string
+  $language?: BasedSchemaLanguage
+}
