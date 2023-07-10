@@ -103,35 +103,26 @@ const schema: BasedSchema = {
 }
 
 // $value
-// array ops
+// $default
+
 // $noRoot
+
 // $delete -> change for set / references
+
 // $merge: false,
 
 // $increment
+// $decrement
 
 // $assign
 // $insert
 // $remove
 // $push: 7,
 // $unshift (    $unshift: {$value: 123,$maxLen: 10,},)
-
-// $default
 //     $alias: 'maTestWithAlias',
 // aliases (set
 
 test.serial('collect correctly', async (t) => {
-  // $remove.$idx] for array
-
-  /*
-    $assign: {
-        $idx: 0,
-        $value: {
-          name: 'FLURP!',
-        },
-      },
-  */
-
   const results: { path: (string | number)[]; value: any }[] = []
   await setWalker(
     schema,
@@ -150,7 +141,7 @@ test.serial('collect correctly', async (t) => {
       snurpArray: {
         $assign: {
           $idx: 0,
-          $value: 100, // or { $increment: 10 }
+          $value: 100,
         },
       },
       specialArray: {
