@@ -25,6 +25,8 @@ const reference: Parser = async (
   target,
   handlers
 ) => {
+  // $no root
+
   // prob pass these as options
   // value .default
   // $value
@@ -133,6 +135,7 @@ const parsers: {
       if (value.$assign) {
       }
 
+      // value.$value :/
       // fix
       handlers.collect(path, value, typeSchema, fieldSchema, target)
 
@@ -380,6 +383,7 @@ const parsers: {
     handlers
   ) => {
     // default
+    // $no root
 
     if (Array.isArray(value)) {
       const handler = {
