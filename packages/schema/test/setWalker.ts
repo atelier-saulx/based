@@ -101,6 +101,7 @@ test.serial('collect correctly', async (t) => {
         json: { bla: 1, x: 2, y: 3 },
         snurp: 'blx12',
         things: 'mr tony',
+        password: 'mypassword!',
       },
       snurp: [
         {
@@ -124,6 +125,7 @@ test.serial('collect correctly', async (t) => {
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
+    { path: ['form', 'password'], value: 'mypassword!' },
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },

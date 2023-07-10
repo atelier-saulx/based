@@ -39,14 +39,12 @@ const fieldWalker = (
 
   if ('enum' in fieldSchema) {
     const enumValues = fieldSchema.enum
-
     for (let i = 0; i < enumValues.length; i++) {
       if (deepEqual(enumValues[i], value)) {
         collect(path, i, typeSchema, fieldSchema, target)
         return
       }
     }
-
     throw new Error(
       `Type: "${target.type}" Field: "${path.join(
         '.'
@@ -175,15 +173,58 @@ const fieldWalker = (
       )
     }
 
-    if (typeDef === 'string' && valueType !== 'string') {
-      throw new Error(
-        `${value} is not a string "${path.join('.')}" on type "${target.type}"`
-      )
+    if (typeDef === 'string') {
+      if (valueType !== 'string') {
+        throw new Error(
+          `${value} is not a string "${path.join('.')}" on type "${
+            target.type
+          }"`
+        )
+      }
+
+      if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
+        throw new Error(
+          `${value} is smaller then minLength "${
+            fieldSchema.minLength
+          }" "${path.join('.')}" on type "${target.type}"`
+        )
+      }
+
+      if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
+        throw new Error(
+          `${value} is larger then maxLength "${
+            fieldSchema.maxLength
+          }" "${path.join('.')}" on type "${target.type}"`
+        )
+      }
     }
 
     if (typeDef === 'text') {
       if (target.$language && valueType === 'string') {
-        collect(path, value, typeSchema, fieldSchema, target)
+        if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
+          throw new Error(
+            `${value} is smaller then minLength "${
+              fieldSchema.minLength
+            }" "${path.join('.')}" on type "${target.type}"`
+          )
+        }
+
+        if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
+          throw new Error(
+            `${value} is larger then maxLength "${
+              fieldSchema.maxLength
+            }" "${path.join('.')}" on type "${target.type}"`
+          )
+        }
+
+        collect(
+          path,
+          { [target.$language]: value },
+          typeSchema,
+          fieldSchema,
+          target
+        )
+        return
       }
 
       if (valueType !== 'object') {
@@ -195,6 +236,28 @@ const fieldWalker = (
       }
 
       for (const key in value) {
+        if (
+          fieldSchema.minLength &&
+          value[key].length < fieldSchema.minLength
+        ) {
+          throw new Error(
+            `${value[key]} is smaller then minLength "${
+              fieldSchema.minLength
+            }" "${path.join('.')}" on type "${target.type}"`
+          )
+        }
+
+        if (
+          fieldSchema.maxLength &&
+          value[key].length > fieldSchema.maxLength
+        ) {
+          throw new Error(
+            `${value[key]} is larger then maxLength "${
+              fieldSchema.maxLength
+            }" "${path.join('.')}" on type "${target.type}"`
+          )
+        }
+
         if (typeof value[key] === 'object' && value[key].$delete === true) {
           collect([...path, key], null, typeSchema, fieldSchema, target)
           continue
