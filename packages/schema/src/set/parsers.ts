@@ -271,6 +271,8 @@ const parsers: {
     }
   },
 
+  reference,
+
   references: async (
     path,
     value,
@@ -279,12 +281,45 @@ const parsers: {
     target,
     handlers
   ) => {
-    // for loop
-    // check $add / $remove also for set
+    if (Array.isArray(value)) {
+      const handler = {
+        ...handlers,
+        collect: () => {},
+      }
+      await Promise.all(
+        value.map((v, i) => {
+          return reference(
+            [...path, i],
+            v,
+            fieldSchema,
+            typeSchema,
+            target,
+            handler
+          )
+        })
+      )
+    } else if (typeof value === 'object') {
+      const handler = {
+        ...handlers,
+        collect: () => {},
+      }
+      if (value.$add) {
+        await Promise.all(
+          value.$add.map((v, i) => {
+            return reference(
+              [...path, '$add', i],
+              v,
+              fieldSchema,
+              typeSchema,
+              target,
+              handler
+            )
+          })
+        )
+      }
+    }
     handlers.collect(path, value, typeSchema, fieldSchema, target)
   },
-
-  reference,
 }
 
 export default parsers
