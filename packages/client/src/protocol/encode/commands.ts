@@ -54,92 +54,48 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   modify: (payload) => {
     const [nodeId, fields] = payload
 
-    const head = Buffer.alloc(
-      selva_proto_array_def.size +
-        selva_proto_string_def.size +
-        SELVA_NODE_ID_LEN +
-        selva_proto_string_def.size +
-        0 // flags
-    )
-    let off = 0
+    const defs: EncodeDefinition = [
+      { type: 'id' },
+      { type: 'raw', rawType: SELVA_PROTO_STRING, bsize: 0 },
+    ]
 
-    off += serializeWithOffset(selva_proto_array_def, head, off, {
-      type: SELVA_PROTO_ARRAY,
-      length: 2 + 3 * fields.length,
-    })
+    const setFields: any[] = [
+      nodeId,
+      { type: 'raw', rawType: SELVA_PROTO_STRING, bsize: 0 },
+    ]
 
-    // nodeId
-    off += serializeId(head, off, nodeId)
+    for (let i = 0; i < fields.length; i += 3) {
+      const opType = fields[i]
+      const name = fields[i + 1]
+      const value = fields[i + 2]
 
-    // flags
-    off += serializeWithOffset(selva_proto_string_def, head, off, {
-      type: SELVA_PROTO_STRING,
-      bsize: 0,
-    })
-
-    const fieldsBuf = fields.map(([field, value]) => {
-      if (typeof value == 'string') {
-        const buf = Buffer.alloc(
-          selva_proto_string_def.size +
-            1 + // mod type
-            selva_proto_string_def.size +
-            Buffer.byteLength(field, 'utf8') +
-            selva_proto_string_def.size +
-            Buffer.byteLength(value, 'utf8')
-        )
-        let boff = 0
-
-        boff += serializeString(buf, boff, '0')
-        boff += serializeString(buf, boff, field)
-        boff += serializeString(buf, boff, value)
-
-        return buf
-      } else if (typeof value == 'number') {
-        const buf = Buffer.alloc(
-          selva_proto_string_def.size +
-            1 + // mod type
-            selva_proto_string_def.size +
-            Buffer.byteLength(field, 'utf8') +
-            selva_proto_string_def.size +
-            8
-        )
-        let boff = 0
-
-        const bv = Buffer.allocUnsafe(8)
-        bv.writeBigUInt64LE(BigInt(value))
-
-        boff += serializeString(buf, boff, '3')
-        boff += serializeString(buf, boff, field)
-        boff += serializeBin(buf, boff, bv) // We currently send nums as bin buffers
-
-        return buf
-      } else if (Array.isArray(value)) {
-        // set
-        const opSet = createRecord(opSetDefCstring, {
-          op_set_type: OP_SET_TYPE.char,
-          $value: value.map((s) => `${s}\0`).join(''),
-        })
-        const buf = Buffer.alloc(
-          selva_proto_string_def.size +
-            1 + // mod type
-            selva_proto_string_def.size +
-            Buffer.byteLength(field, 'utf8') +
-            selva_proto_string_def.size +
-            opSet.length
-        )
-        let boff = 0
-
-        boff += serializeString(buf, boff, '5')
-        boff += serializeString(buf, boff, field)
-        boff += serializeBin(buf, boff, opSet)
-
-        return buf
-      } else {
-        throw new Error()
+      switch (opType) {
+        case '0': // string
+          defs.push({ type: 'string' }, { type: 'string' }, { type: 'string' })
+          setFields.push(opType, name, value)
+          continue
+        case '3': // number
+          const iBuf = Buffer.allocUnsafe(8)
+          iBuf.writeBigUInt64LE(BigInt(value))
+          defs.push({ type: 'string' }, { type: 'string' }, { type: 'bin' })
+          setFields.push(opType, name, iBuf)
+          continue
+        case '5': // set
+          const opSet = createRecord(opSetDefCstring, {
+            op_set_type: OP_SET_TYPE.char,
+            $value: value.map((s: string) => `${s}\0`).join(''),
+          })
+          defs.push({ type: 'string' }, { type: 'string' }, { type: 'bin' })
+          setFields.push(opType, name, opSet)
+          continue
+        default:
+          continue
       }
-    })
+    }
 
-    return Buffer.concat([head, ...fieldsBuf])
+    const schema: EncodeDefinition = [{ type: 'array', values: defs }]
+    const buf = defaultEncoder(schema)([setFields])
+    return buf
   },
   'hierarchy.find': (payload) => {
     return Buffer.from('hello')

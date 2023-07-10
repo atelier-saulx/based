@@ -3,9 +3,11 @@ import {
   SELVA_PROTO_DOUBLE,
   SELVA_PROTO_LONGLONG,
   SELVA_PROTO_STRING,
+  SELVA_PROTO_ARRAY,
   selva_proto_double_def,
   selva_proto_longlong_def,
   selva_proto_string_def,
+  selva_proto_array_def,
   SELVA_PROTO_STRING_FBINARY,
 } from '../types'
 
@@ -15,28 +17,33 @@ export type EncodePrimiteTypes = {
   type: 'id' | 'string' | 'bin' | 'longlong' | 'double'
   vararg?: true
 }
+export type EncodeRawType = { type: 'raw'; rawType: number; bsize: number }
 export type EncodeArrayType = { type: 'array'; values: EncodeDefinition }
-export type EncodeType = EncodePrimiteTypes | EncodeArrayType
+export type EncodeType = EncodePrimiteTypes | EncodeArrayType | EncodeRawType
 
 export type EncodeDefinition = EncodeType[]
 
 export function write(
   buf: Buffer, // BYOB, bring your own buffer
   schema: EncodeDefinition,
-  payload: any[]
+  payload: any[],
+  off: number = 0
 ): number {
-  let off = 0
   for (let i = 0; i < payload.length; i++) {
     const def = schema[i]
     const val = payload[i]
 
     off += serializeValue(buf, off, def ?? schema[schema.length - 1], val)
   }
+
   return off
 }
 
-export function bufLen(schema: EncodeDefinition, payload: any[]): number {
-  let len = 0
+export function bufLen(
+  schema: EncodeDefinition,
+  payload: any[],
+  len: number = 0
+): number {
   for (let i = 0; i < payload.length; i++) {
     let def = schema[i]
     const val = payload[i]
@@ -61,8 +68,12 @@ export function bufLen(schema: EncodeDefinition, payload: any[]): number {
       case 'double':
         len += selva_proto_double_def.size
         continue
+      case 'raw':
+        len += selva_proto_string_def.size + val.bsize
+        continue
       case 'array':
-        len += bufLen(def.values, val)
+        len += selva_proto_array_def.size + bufLen(def.values, val, len)
+        continue
       default:
         continue
     }
@@ -88,8 +99,20 @@ function serializeValue(
       return serializeLongLong(buf, off, val)
     case 'double':
       return serializeDouble(buf, off, val)
+    case 'raw':
+      return serializeWithOffset(selva_proto_string_def, buf, off, {
+        type: val.rawType,
+        bsize: val.bsize,
+      })
     case 'array':
-      return write(buf, def.values, val)
+      let put = 0
+      put += serializeWithOffset(selva_proto_string_def, buf, off, {
+        type: SELVA_PROTO_ARRAY,
+        length: 2 + def.values.length,
+      })
+
+      put += write(buf, def.values, val, off + put)
+      return put
     default:
       return 0
   }

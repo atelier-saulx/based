@@ -198,10 +198,7 @@ test.serial('modify and and object.get', async (t) => {
   const id = 'ma00000000000001'
   const resp = await client.command('modify', [
     id,
-    [
-      ['title', 'lololo yes'],
-      ['num', 15],
-    ],
+    ['3', 'num', 15, '0', 'title', 'lololo yes'],
   ])
   t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED']])
   console.log('SUCCESS', resp)
