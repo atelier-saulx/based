@@ -122,6 +122,8 @@ const schema: BasedSchema = {
 //     $alias: 'maTestWithAlias',
 // aliases (set
 
+// parse formats for string e.g. uri / email etc
+
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
   await setWalker(
