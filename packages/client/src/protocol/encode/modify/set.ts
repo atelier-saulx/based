@@ -1,5 +1,5 @@
 import { createRecord } from 'data-record'
-import { opSetDefCstring, OP_SET_TYPE } from '../types'
+import { opSetDefCstring, OP_SET_TYPE } from '../../types'
 
 type SetType = 'reference' | 'char' | 'longlong' | 'double'
 
@@ -7,7 +7,7 @@ type SetType = 'reference' | 'char' | 'longlong' | 'double'
 // TODO: include delete_all option
 // TODO: include edge constraint stuff?
 export function encodeSetOperation(setOperation: {
-  setType: SetType
+  setType: string // value type code
   $value: any | any[]
   $add: any | any[]
   $delete: any | any[]

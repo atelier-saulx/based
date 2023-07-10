@@ -180,7 +180,7 @@ test.serial('object.set big multi-frame string', async (t) => {
   t.true(true)
 })
 
-test.serial.only('modify and and object.get', async (t) => {
+test.serial('modify and and object.get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
