@@ -18,9 +18,9 @@ export function encodeSetOperation({
   $value,
 }: {
   setType: number
-  $value: any | any[]
-  $add: any | any[]
-  $delete: any | any[]
+  $value?: any | any[]
+  $add?: any | any[]
+  $delete?: any | any[]
 }): Buffer {
   const encoder = SET_TYPE_TO_MODIFY_VALUE_TYPE[setType]
 
