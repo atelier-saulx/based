@@ -107,22 +107,26 @@ const parsers: {
   },
 
   array: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-    // TODO: ADD OPERATORS
+    // TODO: ADD ARRAY OPERATORS
     const isArray = Array.isArray(value)
     if (!isArray) {
       throw createError(path, target.type, 'array', value)
     }
+    const q: Promise<void>[] = []
     for (let i = 0; i < value.length; i++) {
-      fieldWalker(
-        [...path, i],
-        value[i],
-        // @ts-ignore
-        fieldSchema.values,
-        typeSchema,
-        target,
-        handlers
+      q.push(
+        fieldWalker(
+          [...path, i],
+          value[i],
+          // @ts-ignore
+          fieldSchema.values,
+          typeSchema,
+          target,
+          handlers
+        )
       )
     }
+    await Promise.all(q)
   },
 
   object: async (path, value, fieldSchema, typeSchema, target, handlers) => {
@@ -133,6 +137,7 @@ const parsers: {
     if (isArray) {
       throw createError(path, target.type, 'object', value)
     }
+    const q: Promise<void>[] = []
     for (const key in value) {
       // @ts-ignore
       const propDef = fieldSchema.properties[key]
@@ -145,34 +150,81 @@ const parsers: {
           key
         )
       }
-      fieldWalker(
-        [...path, key],
-        value[key],
-        propDef,
-        typeSchema,
-        target,
-        handlers
+      q.push(
+        fieldWalker(
+          [...path, key],
+          value[key],
+          propDef,
+          typeSchema,
+          target,
+          handlers
+        )
       )
     }
+    await Promise.all(q)
   },
 
   set: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    const q: Promise<void>[] = []
+    //   @ts-ignore
+    const fieldDef = fieldSchema.items
+
     if (Array.isArray(value)) {
-      const parsedArray = []
-      //   @ts-ignore
-      const fieldDef = fieldSchema.items
-      for (let i = 0; i < value.length; i++) {
-        fieldWalker([...path, i], value[i], fieldDef, typeSchema, target, {
-          ...handlers,
-          collect: (path, value) => {
-            parsedArray.push(value)
-          },
-        })
+      const handlerNest = {
+        ...handlers,
+        collect: (path, value) => {
+          parsedArray.push(value)
+        },
       }
+      const parsedArray = []
+      for (let i = 0; i < value.length; i++) {
+        q.push(
+          fieldWalker(
+            [...path, i],
+            value[i],
+            fieldDef,
+            typeSchema,
+            target,
+            handlerNest
+          )
+        )
+      }
+      await Promise.all(q)
       handlers.collect(path, parsedArray, typeSchema, fieldSchema, target)
     } else {
-      // TODO PARSE IF VALID
-      // $add / $remove
+      const handlerNest = {
+        ...handlers,
+        collect: (path, value) => {},
+      }
+      if (value.$add) {
+        for (let i = 0; i < value.$add.length; i++) {
+          q.push(
+            fieldWalker(
+              [...path, '$add', i],
+              value.$add[i],
+              fieldDef,
+              typeSchema,
+              target,
+              handlerNest
+            )
+          )
+        }
+      }
+      if (value.$delete) {
+        for (let i = 0; i < value.$add.length; i++) {
+          q.push(
+            fieldWalker(
+              [...path, '$delete', i],
+              value.$delete[i],
+              fieldDef,
+              typeSchema,
+              target,
+              handlerNest
+            )
+          )
+        }
+      }
+      await Promise.all(q)
       handlers.collect(path, value, typeSchema, fieldSchema, target)
     }
   },
@@ -187,6 +239,7 @@ const parsers: {
   },
 
   number: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // Parse $add / $decr
     if (typeof value !== 'number') {
       throw createError(path, target.type, 'number', value)
     }
@@ -194,6 +247,7 @@ const parsers: {
   },
 
   integer: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // Parse $add / $decr
     if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
       throw createError(path, target.type, 'integer', value)
     }
@@ -299,11 +353,11 @@ const parsers: {
         })
       )
     } else if (typeof value === 'object') {
-      const handler = {
-        ...handlers,
-        collect: () => {},
-      }
       if (value.$add) {
+        const handler = {
+          ...handlers,
+          collect: () => {},
+        }
         await Promise.all(
           value.$add.map((v, i) => {
             return reference(

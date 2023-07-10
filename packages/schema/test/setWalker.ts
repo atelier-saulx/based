@@ -87,6 +87,13 @@ const schema: BasedSchema = {
   },
 }
 
+// $value
+// array ops
+// $noRoot
+// $delete
+// $remove
+//
+
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
   await setWalker(
@@ -95,7 +102,6 @@ test.serial('collect correctly', async (t) => {
       $id: 'bl1',
       form: {
         lastName: 'de beer',
-        // why at the end?
         bla: ['bl123', 'bl234'],
         blab: { $add: ['bl456'] },
         blub: ['x'],
@@ -112,7 +118,10 @@ test.serial('collect correctly', async (t) => {
     },
     {
       collect: (path, value, typeSchema, fieldSchema) => {
-        console.info(path, value, fieldSchema)
+        console.info({
+          path,
+          value,
+        })
         results.push({
           path,
           value,
@@ -126,18 +135,16 @@ test.serial('collect correctly', async (t) => {
 
   const result = [
     { path: ['form', 'lastName'], value: 'de beer' },
-    { path: ['form', 'blub'], value: ['x'] },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
-
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
-
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
+    { path: ['form', 'blub'], value: ['x'] },
   ]
 
   t.deepEqual(results, result)

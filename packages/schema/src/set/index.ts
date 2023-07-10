@@ -53,7 +53,6 @@ export const fieldWalker = async (
 
   const parse = parsers[typeDef]
 
-  console.log('----->', path, value)
   await parse(path, value, fieldSchema, typeSchema, target, handlers)
 
   return
