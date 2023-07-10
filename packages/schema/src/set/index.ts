@@ -1,39 +1,38 @@
 import {
   BasedSchemaField,
   BasedSchemaType,
+  BasedSetHandlers,
   BasedSchema,
   BasedSetTarget,
 } from '../types'
 import { createError } from './handleError'
-import validators from './fieldValidator'
+import parsers from './parsers'
 
 // Collect is a pretty good place for checking if a user is allowed to set something
 // also make collect async
 
-export const fieldWalker = (
+// add extra function for loading required
+
+export const fieldWalker = async (
   path: (string | number)[],
   value: any,
   fieldSchema: BasedSchemaField,
   typeSchema: BasedSchemaType,
   target: BasedSetTarget,
-  collect: (
-    path: (string | number)[],
-    value: any, // parsed value
-    typeSchema: BasedSchemaType,
-    fieldSchema: BasedSchemaField,
-    target: BasedSetTarget
-  ) => void
-) => {
+  handlers: BasedSetHandlers
+): Promise<void> => {
   if ('$ref' in fieldSchema) {
     // TODO: when we have this it has to get it from the schema and redo the parsing with the correct fieldSchema
     return
   }
   const valueType = typeof value
+
   const valueIsObject = value && valueType === 'object'
   if (valueIsObject && value.$delete === true) {
-    collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect(path, value, typeSchema, fieldSchema, target)
     return
   }
+
   const typeDef =
     'type' in fieldSchema
       ? fieldSchema.type
@@ -46,29 +45,23 @@ export const fieldWalker = (
   }
 
   if ('customValidator' in fieldSchema) {
-    const validate = fieldSchema.customValidator
-    if (!validate(value)) {
+    const customValidator = fieldSchema.customValidator
+    if (!(await customValidator(value, path, target))) {
       throw createError(path, target.type, typeDef, value)
     }
-    collect(path, value, typeSchema, fieldSchema, target)
-  } else {
-    const validate = validators[typeDef]
-    validate(path, value, fieldSchema, typeSchema, target, collect)
   }
+
+  const parse = parsers[typeDef]
+  await parse(path, value, fieldSchema, typeSchema, target, handlers)
+
   return
 }
 
-export const setWalker = (
+export const setWalker = async (
   schema: BasedSchema,
   value: { [key: string]: any },
-  collect: (
-    path: (string | number)[],
-    value: any, // parsed value
-    typeSchema: BasedSchemaType,
-    fieldSchema: BasedSchemaField,
-    target: BasedSetTarget
-  ) => void
-): BasedSetTarget => {
+  handlers: BasedSetHandlers
+): Promise<BasedSetTarget> => {
   let type: string
 
   if (value.$id) {
@@ -95,6 +88,7 @@ export const setWalker = (
 
   const target: BasedSetTarget = {
     type,
+    schema,
   }
 
   if (value.$id) {
@@ -102,6 +96,8 @@ export const setWalker = (
   } else if (value.$alias) {
     target.$alias = value.$alias
   }
+
+  const q: Promise<void>[] = []
 
   for (const key in value) {
     if (key[0] === '$') {
@@ -113,10 +109,26 @@ export const setWalker = (
           `Field does not exist in schema "${key}" on type "${type}"`
         )
       } else {
-        fieldWalker([key], value[key], fieldSchema, schemaType, target, collect)
+        q.push(
+          fieldWalker(
+            [key],
+            value[key],
+            fieldSchema,
+            schemaType,
+            target,
+            handlers
+          )
+        )
       }
     }
   }
+
+  await Promise.all(q)
+
+  // required fields (collect them!)
+  //   if (!(await handlers.requiredFields(value, [], target))) {
+  //     throw new Error('Missing required fields')
+  //   }
 
   return target
 }

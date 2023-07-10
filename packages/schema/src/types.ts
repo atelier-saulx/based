@@ -18,6 +18,8 @@ import type { PartialDeep } from 'type-fest'
 
 // for refs etc check https://json-schema.org/understanding-json-schema/structuring.html#defs
 
+export type AllowedTypes = (string | { type?: string; $filter: any | any[] })[]
+
 export type BasedSchemaFieldType =
   | 'array'
   | 'object'
@@ -65,7 +67,11 @@ export type BasedSchemaFieldShared = {
   examples?: any[] // <--- make this generic
   default?: any // <-- make this generic
   // extra thing by us allow users to overwrite entire validations
-  customValidator?: (value: any) => boolean
+  customValidator?: (
+    value: any,
+    path: (number | string)[],
+    target: BasedSetTarget
+  ) => Promise<boolean>
   $defs?: { [key: string]: BasedSchemaField }
 }
 
@@ -177,7 +183,7 @@ export type BasedSchemaFieldReference = {
     fromField: string
   }
   // TODO: selva filters { $operator: 'includes', $value: 'image/', $field: 'mimeType' }
-  allowedTypes?: (string | { type?: string; $filter: any | any[] })[]
+  allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
 // make extra package called based db - query (maybe in based-db)
@@ -186,7 +192,7 @@ export type BasedSchemaFieldReferences = {
   bidirectional?: {
     fromField: string
   }
-  allowedTypes?: (string | { type?: string; $filter: any | any[] })[]
+  allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
 // return type can be typed - sort of
@@ -208,6 +214,7 @@ export type BasedSchemaType = {
   description?: string
   prefix?: BasedSchemaTypePrefix
   examples?: any[]
+  required?: string[]
   $defs?: { [key: string]: BasedSchemaField }
 }
 
@@ -237,5 +244,29 @@ export type BasedSetTarget = {
   type: string
   $alias?: string
   $id?: string
+  schema: BasedSchema
   $language?: BasedSchemaLanguage
+}
+
+export type BasedSetHandlers = {
+  collect: (
+    path: (string | number)[],
+    value: any,
+    typeSchema: BasedSchemaType,
+    fieldSchema: BasedSchemaField,
+    target: BasedSetTarget
+  ) => void
+
+  // has to be fixed / decided upon
+  // requiredFields: (
+  //   fromValue: { [key: string]: any },
+  //   path: (string | number)[],
+  //   target: BasedSetTarget
+  // ) => Promise<boolean>
+
+  // $filter
+  referenceFilterCondition: (
+    referenceId: string,
+    allowedTypes: AllowedTypes
+  ) => Promise<boolean>
 }
