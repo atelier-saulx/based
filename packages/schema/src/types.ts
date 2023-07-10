@@ -108,6 +108,11 @@ export type BasedSchemaFieldNumber = NumberDefaults & {
   type: 'number'
 }
 
+export type BasedSchemaFieldHyperLogLog = {
+  type: 'hyperloglog'
+  // allow any (objects become hashes)
+}
+
 export type BasedSchemaFieldInteger = NumberDefaults & {
   type: 'integer'
 } & BasedSchemaFieldShared
@@ -201,6 +206,7 @@ export type BasedSchemaField =
   | BasedSchemaFieldPrimitive
   | BasedSchemaFieldReference
   | BasedSchemaFieldReferences
+  | BasedSchemaFieldHyperLogLog
   | {
       isRequired?: boolean // our own
       $ref: string // to mimic json schema will just load it in place (so only for setting)
