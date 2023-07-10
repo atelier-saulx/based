@@ -89,7 +89,7 @@ const schema: BasedSchema = {
 
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
-  setWalker(
+  await setWalker(
     schema,
     {
       $id: 'bl1',
@@ -111,13 +111,13 @@ test.serial('collect correctly', async (t) => {
     },
     {
       collect: (path, value, typeSchema, fieldSchema) => {
+        console.info(path, value, fieldSchema)
         results.push({
           path,
           value,
         })
       },
       referenceFilterCondition: async () => {
-        //
         return true
       },
     }
@@ -125,16 +125,18 @@ test.serial('collect correctly', async (t) => {
 
   const result = [
     { path: ['form', 'lastName'], value: 'de beer' },
-    { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
-    { path: ['form', 'blab'], value: { $add: ['bl456'] } },
     { path: ['form', 'blub'], value: ['x'] },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
+
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
+
+    { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
+    { path: ['form', 'blab'], value: { $add: ['bl456'] } },
   ]
   t.deepEqual(results, result)
 })
