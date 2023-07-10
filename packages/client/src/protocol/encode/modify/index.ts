@@ -3,6 +3,7 @@ import { defaultEncoder } from '../defaultEncoder'
 import { encodeLongLong, encodeDouble } from './primitiveTypes'
 import { EncodeDefinition } from '../protocol'
 import { encodeSetOperation } from './set'
+import { ModifyArgType } from './types'
 
 // note: just the non-string values are represented here
 export const VALUE_TYPES = {

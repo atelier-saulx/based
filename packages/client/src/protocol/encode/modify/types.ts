@@ -1,4 +1,8 @@
-enum ModifyArgType {
+import { compile, CompiledRecordDef } from 'data-record'
+import { SELVA_NODE_ID_LEN } from '../../types'
+import { encodeDouble, encodeLongLong } from './primitiveTypes'
+
+export enum ModifyArgType {
   SELVA_MODIFY_ARG_INVALID = '\0',
   /* Node object string field operations. */
   SELVA_MODIFY_ARG_DEFAULT_STRING = '2' /*!< Set a string value if unset. */,
@@ -26,4 +30,80 @@ enum ModifyArgType {
   SELVA_MODIFY_ARG_OP_EDGE_META = 'G' /*!< Modify edge field metadata. */,
   /* Other ops. */
   SELVA_MODIFY_ARG_STRING_ARRAY = '6' /*!< Array of C-strings. */,
+}
+
+export const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<
+  number,
+  (t: any) => Buffer | null
+> = {
+  0: null,
+  1: null,
+  2: encodeDouble,
+  3: encodeLongLong,
+}
+
+export const OP_SET_TYPE = {
+  char: 0,
+  reference: 1,
+  double: 2,
+  long_long: 3,
+}
+
+export const doubleDef = compile([{ name: 'd', type: 'double_le' }])
+
+export const longLongDef = compile([{ name: 'd', type: 'int64_le' }])
+
+export const opSetDefCstring = compile([
+  { name: 'op_set_type', type: 'int8' },
+  { name: 'delete_all', type: 'int8' },
+  { name: 'constraint_id', type: 'uint16_le' },
+  /* 32 zeroed bytes */
+  { name: '$add', type: 'cstring_p' },
+  { name: '$delete', type: 'cstring_p' },
+  { name: '$value', type: 'cstring_p' },
+])
+
+export const opSetDefDouble = compile([
+  { name: 'op_set_type', type: 'int8' },
+  { name: 'delete_all', type: 'int8' },
+  /* 48 zeroed bytes */
+  { name: '$add', type: 'double_le_p' },
+  { name: '$delete', type: 'double_le_p' },
+  { name: '$value', type: 'double_le_p' },
+])
+
+export const opSetDefInt64 = compile([
+  { name: 'op_set_type', type: 'int8' },
+  { name: 'delete_all', type: 'int8' },
+  /* 48 zeroed bytes */
+  { name: '$add', type: 'int64_le_p' },
+  { name: '$delete', type: 'int64_le_p' },
+  { name: '$value', type: 'int64_le_p' },
+])
+
+export const edgeMetaDef = compile([
+  { name: 'op_code', type: 'int8' },
+  { name: 'delete_all', type: 'int8' },
+  { name: 'dst_node_id', type: 'cstring', size: SELVA_NODE_ID_LEN },
+  { name: 'meta_field_name', type: 'cstring_p' },
+  { name: 'meta_field_value', type: 'cstring_p' },
+])
+
+export const incrementDef = compile([
+  { name: '$default', type: 'int64_le' },
+  { name: '$increment', type: 'int64_le' },
+])
+
+export const incrementDoubleDef = compile([
+  { name: '$default', type: 'double_le' },
+  { name: '$increment', type: 'double_le' },
+])
+
+export const SET_OP_BY_TYPE: {
+  [OP_SET_TYPE: number]: CompiledRecordDef
+} = {
+  0: opSetDefCstring,
+  1: opSetDefCstring,
+  2: opSetDefDouble,
+  3: opSetDefInt64,
 }

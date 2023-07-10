@@ -1,14 +1,6 @@
 import { createRecord } from 'data-record'
-import { opSetDefCstring, OP_SET_TYPE, SET_OP_BY_TYPE } from '../../types'
-import { encodeDouble, encodeLongLong } from './primitiveTypes'
-
-const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<number, (t: any) => Buffer | null> =
-  {
-    0: null,
-    1: null,
-    2: encodeDouble,
-    3: encodeLongLong,
-  }
+import { opSetDefCstring, OP_SET_TYPE, SET_OP_BY_TYPE } from './types'
+import { SET_TYPE_TO_MODIFY_VALUE_TYPE } from './types'
 
 // TODO: make
 // TODO: include delete_all option
