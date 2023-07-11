@@ -5,6 +5,7 @@ const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
   integer: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   boolean: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
+  timestamp: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   float: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
   number: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
 }

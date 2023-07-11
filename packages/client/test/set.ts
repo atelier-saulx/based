@@ -87,6 +87,7 @@ test.serial.only('set primitive fields', async (t) => {
           num: { type: 'number' },
           int: { type: 'integer' },
           bool: { type: 'boolean' },
+          ts: { type: 'timestamp' },
         },
       },
     },
@@ -97,7 +98,9 @@ test.serial.only('set primitive fields', async (t) => {
     slug: '/hello-world',
     num: 25.5,
     int: 112,
-    // bool: true, // TODO
+    // TODO:
+    // ts: Date.now(),
+    // bool: true,
   })
 
   const getResult = await client.command('object.get', ['', 'po1'])
