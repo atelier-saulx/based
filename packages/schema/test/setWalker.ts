@@ -6,6 +6,10 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        visits: {
+          type: 'hyperloglog',
+        },
+
         snurp: {
           type: 'array',
           values: {
@@ -141,6 +145,11 @@ test.serial('collect correctly', async (t) => {
     schema,
     {
       $id: 'bl1',
+      visits: {
+        flap: true,
+        snurp: false,
+        ua: '123435',
+      },
       bla: false,
       time: now, // do more later
       setje: [1, 2, 3],
@@ -194,6 +203,7 @@ test.serial('collect correctly', async (t) => {
   )
 
   const result = [
+    { path: ['visits'], value: 4024394268910 },
     { path: ['bla'], value: false },
     { path: ['time'], value: now },
     { path: ['form', 'lastName'], value: 'de beer' },
