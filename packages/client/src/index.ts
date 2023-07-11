@@ -53,28 +53,9 @@ export class BasedDbClient extends Emitter {
     console.info('make a new db client...')
   }
 
-  async updateSchema(_opts: BasedSchemaPartial): Promise<BasedSchema> {
+  async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
     // TODO: make it
-    this.schema = {
-      languages: ['en', 'nl', 'de', 'fi'],
-      $defs: {},
-      prefixToTypeMapping: {
-        po: 'post',
-      },
-      root: {
-        prefix: 'ro',
-        fields: {},
-      },
-      types: {
-        post: {
-          prefix: 'po',
-          fields: {
-            slug: { type: 'string' },
-          },
-        },
-      },
-    }
-
+    this.schema = <BasedSchema>opts
     return this.schema
   }
 
@@ -85,20 +66,17 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
-    const collected: BasedSchemaCollectProps[] = []
+    const args: any[] = []
     const { $alias, $id, $language } = await setWalker(this.schema, opts, {
       // TODO: we will design how non-type generic filters work later
       referenceFilterCondition: async (id) => {
         return true
       },
-      collect: (props) => collected.push(props),
+      collect: (props) => args.push(...toModifyArgs(props)),
     })
 
-    // TODO: converted collected into modify args
-    const modifyArgs = toModifyArgs(collected)
-
     // TODO: deal with alias
-    await this.command('modify', [$id, modifyArgs])
+    await this.command('modify', [$id, args])
     return $id
   }
 

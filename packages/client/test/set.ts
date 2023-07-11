@@ -34,6 +34,7 @@ test.serial('set string field', async (t) => {
         prefix: 'po',
         fields: {
           slug: { type: 'string' },
+          num: { type: 'number' },
         },
       },
     },
@@ -42,6 +43,7 @@ test.serial('set string field', async (t) => {
   const id = await client.set({
     $id: 'po1',
     slug: '/hello-world',
+    num: 25,
   })
   console.log('ID', id)
 
