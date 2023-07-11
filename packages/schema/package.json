@@ -11,6 +11,7 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "@saulx/hash": "^2.0.0",
     "@saulx/utils": "^3.2.2"
   },
   "ava": {

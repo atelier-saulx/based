@@ -1,5 +1,6 @@
 import {
   BasedSchemaField,
+  BasedSchemaFieldEnum,
   BasedSchemaFieldInteger,
   BasedSchemaFieldNumber,
   BasedSchemaFieldTimeStamp,
@@ -10,6 +11,7 @@ import {
 import { deepEqual } from '@saulx/utils'
 import { createError } from './handleError'
 import { fieldWalker } from '.'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 type Parser = (
   path: (string | number)[],
@@ -37,6 +39,7 @@ const reference: Parser = async (
   if (typeof value !== 'string') {
     throw createError(path, target.type, 'reference', value)
   }
+
   if ('allowedTypes' in fieldSchema) {
     const prefix = value.slice(0, 2)
     const targetType = target.schema.prefixToTypeMapping[prefix]
@@ -103,10 +106,29 @@ const reference: Parser = async (
 const parsers: {
   [key: string]: Parser
 } = {
-  enum: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+  hyperloglog: async (
+    path,
+    value,
+    fieldSchema,
+    typeSchema,
+    target,
+    handlers
+  ) => {
     // value .default
+    if (value && typeof value === 'object') {
+      value = hashObjectIgnoreKeyOrder(value)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
 
-    // @ts-ignore
+  enum: async (
+    path,
+    value,
+    fieldSchema: BasedSchemaFieldEnum,
+    typeSchema,
+    target,
+    handlers
+  ) => {
     const enumValues = fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
       if (deepEqual(enumValues[i], value)) {
