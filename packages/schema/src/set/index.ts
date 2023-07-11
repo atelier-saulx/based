@@ -29,7 +29,7 @@ export const fieldWalker = async (
 
   const valueIsObject = value && valueType === 'object'
   if (valueIsObject && value.$delete === true) {
-    handlers.collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
     return
   }
 

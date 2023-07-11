@@ -255,24 +255,23 @@ export type BasedSetTarget = {
 }
 
 export type BasedSetHandlers = {
-  collect: (
-    path: (string | number)[],
-    value: any,
-    typeSchema: BasedSchemaType,
-    fieldSchema: BasedSchemaField,
+  collect: (props: {
+    path: (string | number)[]
+    value: any
+    typeSchema: BasedSchemaType
+    fieldSchema: BasedSchemaField
     target: BasedSetTarget
-  ) => void
+  }) => void
 
   // has to be fixed / decided upon
-  // requiredFields: (
-  //   fromValue: { [key: string]: any },
-  //   path: (string | number)[],
-  //   target: BasedSetTarget
-  // ) => Promise<boolean>
+  // ['bla[0].xxx', '']
+  // [bla, [0]', xxx]
+  // (number|string)[]
+  // typeschema, target) => Promise<boolean>
 
   // $filter
   referenceFilterCondition: (
     referenceId: string,
-    allowedTypes: AllowedTypes
+    $filter: any
   ) => Promise<boolean>
 }

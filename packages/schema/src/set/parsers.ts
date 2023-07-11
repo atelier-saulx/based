@@ -94,7 +94,7 @@ const reference: Parser = async (
       )
     }
   }
-  handlers.collect(path, value, typeSchema, fieldSchema, target)
+  handlers.collect({ path, value, typeSchema, fieldSchema, target })
 }
 
 const parsers: {
@@ -107,7 +107,7 @@ const parsers: {
     const enumValues = fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
       if (deepEqual(enumValues[i], value)) {
-        handlers.collect(path, i, typeSchema, fieldSchema, target)
+        handlers.collect({ path, value: i, typeSchema, fieldSchema, target })
         return
       }
     }
@@ -137,7 +137,7 @@ const parsers: {
 
       // value.$value :/
       // fix
-      handlers.collect(path, value, typeSchema, fieldSchema, target)
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
 
       return
     }
@@ -209,7 +209,7 @@ const parsers: {
     if (Array.isArray(value)) {
       const handlerNest = {
         ...handlers,
-        collect: (path, value) => {
+        collect: ({ path, value }) => {
           parsedArray.push(value)
         },
       }
@@ -227,11 +227,17 @@ const parsers: {
         )
       }
       await Promise.all(q)
-      handlers.collect(path, parsedArray, typeSchema, fieldSchema, target)
+      handlers.collect({
+        path,
+        value: parsedArray,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
     } else {
       const handlerNest = {
         ...handlers,
-        collect: (path, value) => {},
+        collect: ({ path, value }) => {},
       }
       if (value.$add) {
         for (let i = 0; i < value.$add.length; i++) {
@@ -262,7 +268,7 @@ const parsers: {
         }
       }
       await Promise.all(q)
-      handlers.collect(path, value, typeSchema, fieldSchema, target)
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
     }
   },
 
@@ -271,7 +277,13 @@ const parsers: {
 
     try {
       const parsedValue = JSON.stringify(value)
-      handlers.collect(path, parsedValue, typeSchema, fieldSchema, target)
+      handlers.collect({
+        path,
+        value: parsedValue,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
     } catch (err) {
       throw createError(path, target.type, 'json', value)
     }
@@ -284,7 +296,7 @@ const parsers: {
     if (typeof value !== 'number') {
       throw createError(path, target.type, 'number', value)
     }
-    handlers.collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 
   integer: async (path, value, fieldSchema, typeSchema, target, handlers) => {
@@ -294,7 +306,7 @@ const parsers: {
     if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
       throw createError(path, target.type, 'integer', value)
     }
-    handlers.collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 
   string: async (path, value, fieldSchema, typeSchema, target, handlers) => {
@@ -311,7 +323,7 @@ const parsers: {
     if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
       throw createError(path, target.type, 'string', value)
     }
-    handlers.collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 
   text: async (path, value, fieldSchema, typeSchema, target, handlers) => {
@@ -328,13 +340,13 @@ const parsers: {
         throw createError(path, target.type, 'text', value)
       }
 
-      handlers.collect(
+      handlers.collect({
         path,
-        { [target.$language]: value },
+        value: { [target.$language]: value },
         typeSchema,
         fieldSchema,
-        target
-      )
+        target,
+      })
       return
     }
 
@@ -354,7 +366,13 @@ const parsers: {
       }
 
       if (typeof value[key] === 'object' && value[key].$delete === true) {
-        handlers.collect([...path, key], null, typeSchema, fieldSchema, target)
+        handlers.collect({
+          path: [...path, key],
+          value: null,
+          typeSchema,
+          fieldSchema,
+          target,
+        })
         continue
       }
 
@@ -362,13 +380,13 @@ const parsers: {
         throw createError([...path, key], target.type, 'text', value)
       }
 
-      handlers.collect(
-        [...path, key],
-        value[key],
+      handlers.collect({
+        path: [...path, key],
+        value: value[key],
         typeSchema,
         fieldSchema,
-        target
-      )
+        target,
+      })
     }
   },
 
@@ -423,7 +441,7 @@ const parsers: {
       }
     }
 
-    handlers.collect(path, value, typeSchema, fieldSchema, target)
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 }
 

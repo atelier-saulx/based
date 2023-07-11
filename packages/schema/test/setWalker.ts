@@ -159,17 +159,13 @@ test.serial('collect correctly', async (t) => {
       ],
     },
     {
-      collect: (path, value, typeSchema, fieldSchema) => {
-        console.info({
-          path,
-          value,
-        })
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {
         results.push({
           path,
           value,
         })
       },
-      referenceFilterCondition: async () => {
+      referenceFilterCondition: async (id, filter) => {
         return true
       },
     }
