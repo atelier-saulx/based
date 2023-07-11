@@ -1,5 +1,8 @@
 import {
   BasedSchemaField,
+  BasedSchemaFieldInteger,
+  BasedSchemaFieldNumber,
+  BasedSchemaFieldTimeStamp,
   BasedSchemaType,
   BasedSetHandlers,
   BasedSetTarget,
@@ -289,7 +292,24 @@ const parsers: {
     }
   },
 
-  timestamp: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+  boolean: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+    // $increment / $decrement
+
+    if (typeof value !== 'boolean') {
+      throw createError(path, target.type, 'boolean', value)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
+
+  timestamp: async (
+    path,
+    value,
+    fieldSchema: BasedSchemaFieldTimeStamp,
+    typeSchema,
+    target,
+    handlers
+  ) => {
     if (typeof value === 'string') {
       if (value === 'now') {
         value = Date.now()
@@ -303,34 +323,71 @@ const parsers: {
     }
 
     // smaller then / larger then steps
-
     if (typeof value !== 'number') {
       throw createError(path, target.type, 'timestamp', value)
     }
-    handlers.collect({ path, value, typeSchema, fieldSchema, target })
-  },
 
-  boolean: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-    // value .default
-    // $increment / $decrement
-
-    if (typeof value !== 'boolean') {
-      throw createError(path, target.type, 'boolean', value)
+    if (fieldSchema.maximum) {
+      if (fieldSchema.exclusiveMaximum && value > value) {
+        throw createError(path, target.type, 'timestamp', value)
+      } else if (value >= value) {
+        throw createError(path, target.type, 'timestamp', value)
+      }
     }
+
+    if (fieldSchema.minimum) {
+      if (fieldSchema.exclusiveMinimum && value < value) {
+        throw createError(path, target.type, 'timestamp', value)
+      } else if (value <= value) {
+        throw createError(path, target.type, 'timestamp', value)
+      }
+    }
+
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 
-  number: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+  number: async (
+    path,
+    value,
+    fieldSchema: BasedSchemaFieldNumber,
+    typeSchema,
+    target,
+    handlers
+  ) => {
     // value .default
     // $increment / $decrement
 
     if (typeof value !== 'number') {
       throw createError(path, target.type, 'number', value)
     }
+
+    if (fieldSchema.maximum) {
+      if (fieldSchema.exclusiveMaximum && value > value) {
+        throw createError(path, target.type, 'number', value)
+      } else if (value >= value) {
+        throw createError(path, target.type, 'number', value)
+      }
+    }
+
+    if (fieldSchema.minimum) {
+      if (fieldSchema.exclusiveMinimum && value < value) {
+        throw createError(path, target.type, 'number', value)
+      } else if (value <= value) {
+        throw createError(path, target.type, 'number', value)
+      }
+    }
+
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 
-  integer: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+  integer: async (
+    path,
+    value,
+    fieldSchema: BasedSchemaFieldInteger,
+    typeSchema,
+    target,
+    handlers
+  ) => {
     // value .default
     // $increment / $decrement
 
@@ -339,6 +396,23 @@ const parsers: {
     if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
       throw createError(path, target.type, 'integer', value)
     }
+
+    if (fieldSchema.maximum) {
+      if (fieldSchema.exclusiveMaximum && value > value) {
+        throw createError(path, target.type, 'number', value)
+      } else if (value >= value) {
+        throw createError(path, target.type, 'number', value)
+      }
+    }
+
+    if (fieldSchema.minimum) {
+      if (fieldSchema.exclusiveMinimum && value < value) {
+        throw createError(path, target.type, 'number', value)
+      } else if (value <= value) {
+        throw createError(path, target.type, 'number', value)
+      }
+    }
+
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
 

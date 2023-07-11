@@ -35,6 +35,7 @@ export type BasedSchemaFieldType =
   | 'reference'
   | 'references'
   | 'text'
+  | 'hyperloglog'
 
 export const isCollection = (type: string): boolean => {
   return type === 'array' || type === 'object' || type === 'record'
@@ -112,7 +113,6 @@ export type BasedSchemaFieldNumber = NumberDefaults & {
 
 export type BasedSchemaFieldHyperLogLog = {
   type: 'hyperloglog'
-  // allow any (objects become hashes)
 }
 
 export type BasedSchemaFieldInteger = NumberDefaults & {
