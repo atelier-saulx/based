@@ -254,14 +254,16 @@ export type BasedSetTarget = {
   $language?: BasedSchemaLanguage
 }
 
+export type BasedSchemaCollectProps = {
+  path: (string | number)[]
+  value: any
+  typeSchema: BasedSchemaType
+  fieldSchema: BasedSchemaField
+  target: BasedSetTarget
+}
+
 export type BasedSetHandlers = {
-  collect: (props: {
-    path: (string | number)[]
-    value: any
-    typeSchema: BasedSchemaType
-    fieldSchema: BasedSchemaField
-    target: BasedSetTarget
-  }) => void
+  collect: (props: BasedSchemaCollectProps) => void
 
   // has to be fixed / decided upon
   // ['bla[0].xxx', '']
