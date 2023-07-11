@@ -1717,6 +1717,7 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
     /*
      * We don't care to check whether the pointers are actually sane.
      * It's enough to know that they are within the original allocation.
+     * TODO Make sure that the pointers can't wrap around.
      */
     if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end ||
         (ptrdiff_t)qo->edge_filter_str      + qo->edge_filter_len       > end ||

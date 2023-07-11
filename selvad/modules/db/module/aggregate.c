@@ -28,17 +28,59 @@
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
+#include "string_set.h"
 #include "subscriptions.h"
 #include "traversal.h"
 #include "find_index.h"
 
-enum SelvaHierarchy_AggregateType {
-    SELVA_AGGREGATE_TYPE_COUNT_NODE = '0',
-    SELVA_AGGREGATE_TYPE_COUNT_UNIQUE_FIELD = '1',
-    SELVA_AGGREGATE_TYPE_SUM_FIELD = '2',
-    SELVA_AGGREGATE_TYPE_AVG_FIELD = '3',
-    SELVA_AGGREGATE_TYPE_MIN_FIELD = '4',
-    SELVA_AGGREGATE_TYPE_MAX_FIELD = '5',
+struct SelvaAggregate_QueryOpts {
+    enum SelvaHierarchy_AggregateType {
+        SELVA_AGGREGATE_TYPE_COUNT_NODE = 0,
+        SELVA_AGGREGATE_TYPE_COUNT_UNIQUE_FIELD,
+        SELVA_AGGREGATE_TYPE_SUM_FIELD,
+        SELVA_AGGREGATE_TYPE_AVG_FIELD,
+        SELVA_AGGREGATE_TYPE_MIN_FIELD,
+        SELVA_AGGREGATE_TYPE_MAX_FIELD,
+    } agg_fn;
+
+    /**
+     * Traversal method/direction.
+     */
+    enum SelvaTraversal dir;
+    const char *dir_opt_str; /*!< Ref field name or expression. Optional. */
+    size_t dir_opt_len;
+
+    /**
+     * Expression to decide whether and edge should be visited.
+     */
+    const char *edge_filter_str;
+    size_t edge_filter_len;
+
+    /**
+     * Indexing hint.
+     * Optional.
+     */
+    const char *index_hints_str;
+    size_t index_hints_len;
+
+    /**
+     * Sort order of the results.
+     */
+    enum SelvaResultOrder order;
+    const char *order_by_field_str;
+    size_t order_by_field_len;
+
+    /**
+     * Skip the first n - 1 results.
+     * 0 for not offset.
+     */
+    ssize_t offset;
+
+    /**
+     * Limit the number of results.
+     * -1 for no limit (inf).
+     */
+    ssize_t limit;
 };
 
 struct AggregateCommand_Args;
@@ -481,6 +523,48 @@ static size_t AggregateCommand_AggregateOrderArrayResult(
     return len;
 }
 
+static int fixup_query_opts(struct SelvaAggregate_QueryOpts *qo, const char *base, size_t qo_len) {
+    uintptr_t dbase = (uintptr_t)base;
+    uintptr_t end = (uintptr_t)base + qo_len;
+
+    if (qo->dir_opt_len) {
+        qo->dir_opt_str += dbase;
+    } else {
+        qo->dir_opt_str = NULL;
+    }
+
+    if (qo->edge_filter_len) {
+        qo->edge_filter_str += dbase;
+    } else {
+        qo->edge_filter_str = NULL;
+    }
+
+    if (qo->index_hints_len) {
+        qo->index_hints_str += dbase;
+    } else {
+        qo->index_hints_str = NULL;
+    }
+
+    if (qo->order_by_field_len) {
+        qo->order_by_field_str += dbase;
+    } else {
+        qo->order_by_field_str = NULL;
+    }
+
+    /*
+     * We don't care to check whether the pointers are actually sane.
+     * It's enough to know that they are within the original allocation.
+     * TODO Make sure that the pointers can't wrap around.
+     */
+    if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end ||
+        (ptrdiff_t)qo->edge_filter_str      + qo->edge_filter_len       > end ||
+        (ptrdiff_t)qo->index_hints_str      + qo->index_hints_len       > end ||
+        (ptrdiff_t)qo->order_by_field_str   + qo->order_by_field_len    > end) {
+        return SELVA_EINVAL;
+    }
+    return 0;
+}
+
 static size_t AggregateCommand_SendAggregateResult(const struct AggregateCommand_Args *args) {
     switch (args->aggregate_type) {
     case SELVA_AGGREGATE_TYPE_COUNT_NODE:
@@ -500,237 +584,192 @@ static size_t AggregateCommand_SendAggregateResult(const struct AggregateCommand
     return 0;
 }
 
-void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+/**
+ * hierarchy.aggregate lang SelvaAggregate_QueryOpts ids filter_expr filter_args
+ */
+void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
-    struct selva_string **argv;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    const int ARGV_LANG      = 0;
-    const int ARGV_AGG_FN    = 1;
-    const int ARGV_DIRECTION = 2;
-    const int ARGV_REF_FIELD = 3;
-    int ARGV_INDEX_TXT       = 3;
-    __unused int ARGV_INDEX_VAL = 4;
-    int ARGV_ORDER_TXT       = 3;
-    int ARGV_ORDER_FLD       = 4;
-    int ARGV_ORDER_ORD       = 5;
-    int ARGV_OFFSET_TXT      = 3;
-    int ARGV_OFFSET_NUM      = 4;
-    int ARGV_LIMIT_TXT       = 3;
-    int ARGV_LIMIT_NUM       = 4;
-    int ARGV_FIELDS_TXT      = 3;
-    int ARGV_FIELDS_VAL      = 4;
-    int ARGV_NODE_IDS        = 3;
     int ARGV_FILTER_EXPR     = 4;
     int ARGV_FILTER_ARGS     = 5;
-#define SHIFT_ARGS(i) \
-    ARGV_INDEX_TXT += i; \
-    ARGV_INDEX_VAL += i; \
-    ARGV_ORDER_TXT += i; \
-    ARGV_ORDER_FLD += i; \
-    ARGV_ORDER_ORD += i; \
-    ARGV_OFFSET_TXT += i; \
-    ARGV_OFFSET_NUM += i; \
-    ARGV_LIMIT_TXT += i; \
-    ARGV_LIMIT_NUM += i; \
-    ARGV_FIELDS_TXT += i; \
-    ARGV_FIELDS_VAL += i; \
-    ARGV_NODE_IDS += i; \
-    ARGV_FILTER_EXPR += i; \
-    ARGV_FILTER_ARGS += i
 
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
-    if (argc < 0) {
-        selva_send_errorf(resp, argc, "Failed to parse args");
-        return;
-    } else if (argc < 6) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    struct selva_string *lang = argv[ARGV_LANG];
+    struct selva_string *lang;
+    const char *query_opts_str;
+    size_t query_opts_len;
+    struct SelvaAggregate_QueryOpts query_opts;
     SVECTOR_AUTOFREE(order_result); /*!< for order result. */
-    selvaobject_autofree struct SelvaObject *fields = NULL;
-    struct rpn_ctx *traversal_rpn_ctx = NULL;
-    struct rpn_expression *traversal_expression = NULL;
-    struct rpn_ctx *rpn_ctx = NULL;
-    struct selva_string *argv_filter_expr = NULL;
-    struct rpn_expression *filter_expression = NULL;
-    __selva_autofree selva_stringList index_hints = NULL;
+    const struct selva_string *ids;
+    struct selva_string *fields_raw = NULL;
+    struct selva_string *filter_expr = NULL;
+    struct selva_string **filter_expr_args = NULL;
+    __selva_autofree struct selva_string **index_hints = NULL;
     int nr_index_hints = 0;
 
-    /*
-     * Parse the traversal arguments.
-     */
-    enum SelvaTraversal dir;
-    const struct selva_string *ref_field = NULL;
-    err = SelvaTraversal_ParseDir2(&dir, argv[ARGV_DIRECTION]);
-    if (err) {
-        selva_send_errorf(resp, err, "Traversal argument");
-        goto out;
+    argc = selva_proto_scanf(&fin, buf, buf_len, "%p, %.*s, %p, %p, %p, ...",
+                             &lang,
+                             &query_opts_len, &query_opts_str,
+                             &ids,
+                             &fields_raw,
+                             &filter_expr,
+                             &filter_expr_args
+                            );
+    if (argc < 4) {
+        if (argc < 4) {
+            selva_send_error_arity(resp);
+        } else {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        }
+        return;
     }
-    if (argc <= ARGV_REF_FIELD &&
-        (dir & (SELVA_HIERARCHY_TRAVERSAL_ARRAY |
-                SELVA_HIERARCHY_TRAVERSAL_REF |
-                SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                SELVA_HIERARCHY_TRAVERSAL_EXPRESSION))) {
-        selva_send_error_arity(resp);
-        goto out;
+    if (query_opts_len < sizeof(query_opts)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
+        return;
+    } else {
+        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Invalid query opts");
+            return;
+        }
     }
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_ARRAY |
-               SELVA_HIERARCHY_TRAVERSAL_REF |
-               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
-        ref_field = argv[ARGV_REF_FIELD];
-        SHIFT_ARGS(1);
-    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                      SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        const struct selva_string *input = argv[ARGV_REF_FIELD];
-        TO_STR(input);
+    TO_STR(ids);
+
+    if (query_opts.agg_fn < 0 || query_opts.agg_fn > SELVA_AGGREGATE_TYPE_MAX_FIELD) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid function");
+        return;
+    }
+
+    if (!(query_opts.dir & (
+          SELVA_HIERARCHY_TRAVERSAL_NONE |
+          SELVA_HIERARCHY_TRAVERSAL_NODE |
+          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
+          SELVA_HIERARCHY_TRAVERSAL_SET |
+          SELVA_HIERARCHY_TRAVERSAL_REF |
+          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
+          SELVA_HIERARCHY_TRAVERSAL_PARENTS |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+         ) || __builtin_popcount(query_opts.dir) > 1
+       ) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid dir");
+        return;
+    }
+
+    struct selva_string *dir_expr = NULL;
+    __auto_free_rpn_ctx struct rpn_ctx *traversal_rpn_ctx = NULL;
+    __auto_free_rpn_expression struct rpn_expression *traversal_expression = NULL;
+    if (query_opts.dir & (
+         SELVA_HIERARCHY_TRAVERSAL_ARRAY |
+         SELVA_HIERARCHY_TRAVERSAL_REF |
+         SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) &&
+        query_opts.dir_opt_len == 0) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
+        return;
+    } else if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                 SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        dir_expr = selva_string_create(query_opts_str, query_opts_len, 0);
+        selva_string_auto_finalize(&fin, dir_expr);
+        const char *input = selva_string_to_str(dir_expr, NULL);
 
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input_str);
+        traversal_expression = rpn_compile(input);
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
-            goto out;
+            return;
         }
-        SHIFT_ARGS(1);
     }
 
-    const enum SelvaHierarchy_AggregateType agg_fn_type = selva_string_to_str(argv[ARGV_AGG_FN], NULL)[0];
     double initial_double_val = 0;
-    if (agg_fn_type == SELVA_AGGREGATE_TYPE_MAX_FIELD) {
+    if (query_opts.agg_fn == SELVA_AGGREGATE_TYPE_MAX_FIELD) {
         initial_double_val = DBL_MIN;
-    } else if (agg_fn_type == SELVA_AGGREGATE_TYPE_MIN_FIELD) {
+    } else if (query_opts.agg_fn == SELVA_AGGREGATE_TYPE_MIN_FIELD) {
         initial_double_val = DBL_MAX;
     }
 
-    /*
-     * Parse the indexing hint.
-     */
-    nr_index_hints = SelvaArgParser_IndexHints(&index_hints, argv + ARGV_INDEX_TXT, argc - ARGV_INDEX_TXT);
-    if (nr_index_hints < 0) {
-        selva_send_error(resp, nr_index_hints, NULL, 0);
-        return;
-    } else if (nr_index_hints > 0) {
-        SHIFT_ARGS(2 * nr_index_hints);
+    if (query_opts.index_hints_len) {
+        /* FIXME */
     }
 
-    /*
-     * Parse the order arg.
-     */
-    enum SelvaResultOrder order = SELVA_RESULT_ORDER_NONE;
     struct selva_string *order_by_field = NULL;
-    if (argc > ARGV_ORDER_ORD) {
-        err = SelvaTraversal_ParseOrderArg(&order_by_field, &order,
-                          argv[ARGV_ORDER_TXT],
-                          argv[ARGV_ORDER_FLD],
-                          argv[ARGV_ORDER_ORD]);
-        if (err == 0) {
-            SHIFT_ARGS(3);
-        } else if (err != SELVA_HIERARCHY_ENOENT) {
-            selva_send_errorf(resp, err, "order");
-            goto out;
+    if (!(query_opts.order == SELVA_RESULT_ORDER_NONE ||
+          query_opts.order == SELVA_RESULT_ORDER_ASC ||
+          query_opts.order == SELVA_RESULT_ORDER_DESC)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "order");
+        return;
+    } else if (query_opts.order == SELVA_RESULT_ORDER_ASC ||
+               query_opts.order == SELVA_RESULT_ORDER_DESC) {
+        if (query_opts.order_by_field_len == 0) {
+            selva_send_errorf(resp, SELVA_EINVAL, "order_by_field");
+            return;
         }
+
+        order_by_field = selva_string_create(query_opts.order_by_field_str, query_opts.order_by_field_len, 0);
+        selva_string_auto_finalize(&fin, order_by_field);
     }
 
-    /*
-     * Parse the offset arg.
-     */
-    ssize_t offset = 0;
-    if (argc > ARGV_OFFSET_NUM) {
-        err = SelvaArgParser_IntOpt(&offset, "offset", argv[ARGV_OFFSET_TXT], argv[ARGV_OFFSET_NUM]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "offset");
-            goto out;
-        }
-        if (offset < -1) {
-            selva_send_errorf(resp, err, "offset < -1");
-            goto out;
-        }
+    if (query_opts.offset < -1) {
+        selva_send_errorf(resp, SELVA_EINVAL, "offset < -1");
+        return;
     }
 
-    /*
-     * Parse the limit arg. -1 = inf
-     */
-    ssize_t limit = -1;
-    if (argc > ARGV_LIMIT_NUM) {
-        err = SelvaArgParser_IntOpt(&limit, "limit", argv[ARGV_LIMIT_TXT], argv[ARGV_LIMIT_NUM]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "limit");
-            goto out;
-        }
+    if (query_opts.limit < -1) {
+        selva_send_errorf(resp, SELVA_EINVAL, "limit < -1");
+        return;
     }
 
     /*
      * Parse fields.
      */
-    if (argc > ARGV_FIELDS_VAL) {
-        err = SelvaArgsParser_StringSetList(&fin, &fields, NULL, "fields", argv[ARGV_FIELDS_TXT], argv[ARGV_FIELDS_VAL]);
-        if (err == 0) {
-            if (SelvaObject_Len(fields, NULL) > 1) {
-                selva_send_errorf(resp, err, "fields");
-                goto out;
-            }
-
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "fields");
-            goto out;
-        }
+    selvaobject_autofree struct SelvaObject *fields = NULL;
+    err = string_set_parse(&fin, fields_raw, &fields, NULL);
+    if (err) {
+        selva_send_errorf(resp, err, "Parsing fields list failed");
+        return;
     }
 
     /*
      * Prepare the filter expression if given.
      */
+    __auto_free_rpn_ctx struct rpn_ctx *rpn_ctx = NULL;
+    __auto_free_rpn_expression struct rpn_expression *filter_expression = NULL;
     if (argc >= ARGV_FILTER_EXPR + 1) {
-        argv_filter_expr = argv[ARGV_FILTER_EXPR];
-        const int nr_reg = argc - ARGV_FILTER_ARGS + 2;
+        const int nr_reg = argc - ARGV_FILTER_ARGS;
 
         rpn_ctx = rpn_init(nr_reg);
-
-        /*
-         * Compile the filter expression.
-         */
-        filter_expression = rpn_compile(selva_string_to_str(argv_filter_expr, NULL));
+        filter_expression = rpn_compile(selva_string_to_str(filter_expr, NULL));
         if (!filter_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the filter expression");
-            goto out;
+            return;
         }
 
         /*
          * Get the filter expression arguments and set them to the registers.
          */
-        for (int i = ARGV_FILTER_ARGS; i < argc; i++) {
+        for (int i = 0; i < nr_reg; i++) {
             /* reg[0] is reserved for the current nodeId */
-            const size_t reg_i = i - ARGV_FILTER_ARGS + 1;
+            const size_t reg_i = i + 1;
             size_t str_len;
-            const char *str = selva_string_to_str(argv[i], &str_len);
+            const char *str = selva_string_to_str(filter_expr_args[i], &str_len);
 
             rpn_set_reg(rpn_ctx, reg_i, str, str_len + 1, 0);
         }
     }
 
-    if (argc <= ARGV_NODE_IDS) {
-        selva_send_error(resp, SELVA_HIERARCHY_EINVAL, NULL, 0);
-        goto out;
-    }
-
-    const struct selva_string *ids = argv[ARGV_NODE_IDS];
-    TO_STR(ids);
-
-    if (order != SELVA_RESULT_ORDER_NONE) {
-        SelvaTraversalOrder_InitOrderResult(&order_result, order, limit);
+    if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
+        SelvaTraversalOrder_InitOrderResult(&order_result, query_opts.order, query_opts.limit);
     }
 
     /*
@@ -739,8 +778,8 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     struct AggregateCommand_Args args = {
         .fin = &fin,
         .resp = resp,
-        .aggregate_type = agg_fn_type,
-        .agg = get_agg_func(agg_fn_type - '0'),
+        .aggregate_type = query_opts.agg_fn,
+        .agg = get_agg_func(query_opts.agg_fn),
         .aggregation_result_int = 0,
         .aggregation_result_double = initial_double_val,
         .item_count = 0,
@@ -749,7 +788,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     init_uniq(&args);
 
     ssize_t nr_nodes = 0;
-    size_t merge_nr_fields = 0;
+    size_t merge_nr_fields = 0; /* TODO Is this needed? */
     for (size_t i = 0; i < ids_len; i += SELVA_NODE_ID_SIZE) {
         Selva_NodeId nodeId;
 
@@ -770,23 +809,10 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
 
         /* find_indices_max == 0 => indexing disabled */
         if (nr_index_hints > 0 && selva_glob_config.find_indices_max > 0) {
-            struct selva_string *dir_expr = NULL;
-
-            if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                       SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-                /*
-                 * We know it's valid because it was already parsed and compiled once.
-                 * However, the indexing subsystem can't use the already compiled
-                 * expression because its lifetime is unpredictable and it's not easy
-                 * to change that.
-                 */
-                dir_expr = argv[ARGV_REF_FIELD];
-            }
-
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, dir, dir_expr, nodeId, order, order_by_field, index_hints, nr_index_hints, ind_icb);
+            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, index_hints, nr_index_hints, ind_icb);
         }
 
         /*
@@ -797,8 +823,8 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
          */
         if (ind_select >= 0 &&
             ids_len == SELVA_NODE_ID_SIZE &&
-            SelvaFindIndex_IsOrdered(ind_icb[ind_select], order, order_by_field)) {
-            order = SELVA_RESULT_ORDER_NONE;
+            SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
+            query_opts.order = SELVA_RESULT_ORDER_NONE;
             order_by_field = NULL; /* This controls sorting in the callback. */
         }
 
@@ -806,24 +832,24 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
          * Run BFS/DFS.
          */
         ssize_t tmp_limit = -1;
-        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(dir); /* Skip n nodes from the results. */
+        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir); /* Skip n nodes from the results. */
         args.find_args = (struct FindCommand_Args){
             .lang = lang,
             .nr_nodes = &nr_nodes,
-            .offset = (order == SELVA_RESULT_ORDER_NONE) ? offset + skip : skip,
-            .limit = (order == SELVA_RESULT_ORDER_NONE) ? &limit : &tmp_limit,
+            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset + skip : skip,
+            .limit = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? &query_opts.limit : &tmp_limit,
             .rpn_ctx = rpn_ctx,
             .filter = filter_expression,
             .send_param.fields = fields,
             .send_param.excluded_fields = NULL,
             .merge_nr_fields = &merge_nr_fields,
-            .send_param.order = order,
+            .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &order_result,
             .process_node = NULL, /* Not used. */
         };
 
-        if (limit == 0) {
+        if (query_opts.limit == 0) {
             break;
         }
 
@@ -832,39 +858,37 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
              * There is no need to run the filter again if the indexing was
              * executing the same filter already.
              */
-            if (argv_filter_expr && !selva_string_cmp(argv_filter_expr, index_hints[ind_select])) {
+            if (filter_expr && !selva_string_cmp(filter_expr, index_hints[ind_select])) {
                 args.find_args.rpn_ctx = NULL;
                 args.find_args.filter = NULL;
             }
 
             err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], AggregateCommand_NodeCb, &args);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && ref_field) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && query_opts.dir_opt_str) {
             const struct SelvaObjectArrayForeachCallback ary_cb = {
                 .cb = AggregateCommand_ArrayObjectCb,
                 .cb_arg = &args,
             };
-            TO_STR(ref_field);
 
-            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, ref_field_str, ref_field_len, &ary_cb);
-        } else if (ref_field &&
-                   (dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                           SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))) {
+            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, query_opts.dir_opt_str, query_opts.dir_opt_len, &ary_cb);
+        } else if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
+                                      SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                                      SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) &&
+                   query_opts.dir_opt_str) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = AggregateCommand_NodeCb,
                 .node_arg = &args,
             };
-            TO_STR(ref_field);
 
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, dir, ref_field_str, ref_field_len, &cb);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, &cb);
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = AggregateCommand_NodeCb,
                 .node_arg = &args,
             };
 
             err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, NULL, NULL, &cb);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = AggregateCommand_NodeCb,
                 .node_arg = &args,
@@ -877,7 +901,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                 .node_arg = &args,
             };
 
-            err = SelvaHierarchy_Traverse(hierarchy, nodeId, dir, &cb);
+            err = SelvaHierarchy_Traverse(hierarchy, nodeId, query_opts.dir, &cb);
         }
         if (err != 0) {
             /*
@@ -885,7 +909,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
              * it and ignore the error.
              */
             SELVA_LOG(SELVA_LOGL_ERR, "Aggregate failed. dir: %s node_id: \"%.*s\" err: \"%s\"",
-                      SelvaTraversal_Dir2str(dir),
+                      SelvaTraversal_Dir2str(query_opts.dir),
                       (int)SELVA_NODE_ID_SIZE, nodeId,
                       selva_strerror(err));
         }
@@ -900,12 +924,12 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
      * If an order request was requested then nothing was send to the client yet
      * and we need to do it now.
      */
-    if (order != SELVA_RESULT_ORDER_NONE) {
+    if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
         struct AggregateCommand_Args ord_args = {
             .fin = &fin,
             .resp = resp,
-            .aggregate_type = agg_fn_type,
-            .agg = get_agg_func(agg_fn_type - '0'),
+            .aggregate_type = query_opts.agg_fn,
+            .agg = get_agg_func(query_opts.agg_fn),
             .aggregation_result_int = 0,
             .aggregation_result_double = initial_double_val,
             .item_count = 0,
@@ -915,9 +939,9 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         };
 
         init_uniq(&ord_args);
-        nr_nodes = (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY)
-            ? AggregateCommand_AggregateOrderArrayResult(lang, &ord_args, hierarchy, offset, limit, fields, &order_result)
-            : AggregateCommand_AggregateOrderResult(lang, &ord_args, offset, limit, fields, &order_result);
+        nr_nodes = (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY)
+            ? AggregateCommand_AggregateOrderArrayResult(lang, &ord_args, hierarchy, query_opts.offset, query_opts.limit, fields, &order_result)
+            : AggregateCommand_AggregateOrderResult(lang, &ord_args, query_opts.offset, query_opts.limit, fields, &order_result);
         count_uniq(&args);
         AggregateCommand_SendAggregateResult(&ord_args);
         destroy_uniq(&args);
@@ -927,22 +951,11 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     }
 
     destroy_uniq(&args);
-
-out:
-    if (traversal_rpn_ctx) {
-        rpn_destroy(traversal_rpn_ctx);
-        rpn_destroy_expression(traversal_expression);
-    }
-    if (rpn_ctx) {
-        rpn_destroy(rpn_ctx);
-        rpn_destroy_expression(filter_expression);
-    }
-#undef SHIFT_ARGS
 }
 
 /**
  * Find node in set.
- * SELVA.inherit NODE_ID [TYPE1[TYPE2[...]]] [FIELD_NAME1[ FIELD_NAME2[ ...]]]
+ * aggregateIn NODE_ID [TYPE1[TYPE2[...]]] [FIELD_NAME1[ FIELD_NAME2[ ...]]]
  */
 void SelvaHierarchy_AggregateInCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     __auto_finalizer struct finalizer fin;
@@ -1205,8 +1218,8 @@ out:
 }
 
 static int Aggregate_OnLoad(void) {
-    selva_mk_command(CMD_ID_HIERARCHY_AGGREGATE, SELVA_CMD_MODE_PURE, "selva.aggregate", SelvaHierarchy_AggregateCommand);
-    selva_mk_command(CMD_ID_HIERARCHY_AGGREGATE_IN, SELVA_CMD_MODE_PURE, "selva.aggregateIn", SelvaHierarchy_AggregateInCommand);
+    selva_mk_command(CMD_ID_HIERARCHY_AGGREGATE, SELVA_CMD_MODE_PURE, "hierarchy.aggregate", SelvaHierarchy_AggregateCommand);
+    selva_mk_command(CMD_ID_HIERARCHY_AGGREGATE_IN, SELVA_CMD_MODE_PURE, "hierarchy.aggregateIn", SelvaHierarchy_AggregateInCommand);
 
     return 0;
 }
