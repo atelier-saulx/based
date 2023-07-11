@@ -1,5 +1,5 @@
 import { BasedClient } from '..'
-import fflate from 'fflate'
+import * as fflate from 'fflate'
 import {
   decodeBase64,
   encodeBase64,
