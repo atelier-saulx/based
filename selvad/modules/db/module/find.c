@@ -1674,6 +1674,32 @@ static void postprocess_inherit(
     }
 }
 
+static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, size_t qo_len) {
+    uintptr_t dbase = (uintptr_t)base;
+    uintptr_t end = (uintptr_t)base + qo_len;
+
+    qo->dir_opt_str += dbase;
+    qo->edge_filter_str += dbase;
+    qo->index_hints_str += dbase;
+    qo->order_by_field_str += dbase;
+    qo->merge_str += dbase;
+    qo->res_opt_str += dbase;
+
+    /*
+     * We don't care to check whether the pointers are actually sane.
+     * It's enough to know that they are within the original allocation.
+     */
+    if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end ||
+        (ptrdiff_t)qo->edge_filter_str      + qo->edge_filter_len       > end ||
+        (ptrdiff_t)qo->index_hints_str      + qo->index_hints_len       > end ||
+        (ptrdiff_t)qo->order_by_field_str   + qo->order_by_field_len    > end ||
+        (ptrdiff_t)qo->merge_str            + qo->merge_len             > end ||
+        (ptrdiff_t)qo->res_opt_str          + qo->res_opt_len           > end) {
+        return SELVA_EINVAL;
+    }
+    return 0;
+}
+
 /**
  * Find node(s) matching the query.
  *
@@ -1722,15 +1748,18 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
         return;
     }
-    if (query_opts_len != sizeof(query_opts)) {
+    if (query_opts_len < sizeof(query_opts)) {
         selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
         return;
     } else {
         memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Invalid query opts");
+            return;
+        }
     }
     TO_STR(ids);
-
-    /* TODO Fix query_opts pointers */
 
     if (!(query_opts.dir & (
           SELVA_HIERARCHY_TRAVERSAL_NONE |
