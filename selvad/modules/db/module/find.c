@@ -1678,12 +1678,41 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
     uintptr_t dbase = (uintptr_t)base;
     uintptr_t end = (uintptr_t)base + qo_len;
 
-    qo->dir_opt_str += dbase;
-    qo->edge_filter_str += dbase;
-    qo->index_hints_str += dbase;
-    qo->order_by_field_str += dbase;
-    qo->merge_str += dbase;
-    qo->res_opt_str += dbase;
+    if (qo->dir_opt_len) {
+        qo->dir_opt_str += dbase;
+    } else {
+        qo->dir_opt_str = NULL;
+    }
+
+    if (qo->edge_filter_len) {
+        qo->edge_filter_str += dbase;
+    } else {
+        qo->edge_filter_str = NULL;
+    }
+
+    if (qo->index_hints_len) {
+        qo->index_hints_str += dbase;
+    } else {
+        qo->index_hints_str = NULL;
+    }
+
+    if (qo->order_by_field_len) {
+        qo->order_by_field_str += dbase;
+    } else {
+        qo->order_by_field_str = NULL;
+    }
+
+    if (qo->merge_len) {
+        qo->merge_str += dbase;
+    } else {
+        qo->merge_str = NULL;
+    }
+
+    if (qo->res_opt_len) {
+        qo->res_opt_str += dbase;
+    } else {
+        qo->res_opt_str = NULL;
+    }
 
     /*
      * We don't care to check whether the pointers are actually sane.
@@ -2223,7 +2252,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     } else {
         selva_send_array_end(resp);
     }
-#undef SHIFT_ARGS
 }
 
 static int Find_OnLoad(void) {
