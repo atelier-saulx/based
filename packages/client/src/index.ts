@@ -1,3 +1,10 @@
+import {
+  BasedSchema,
+  BasedSchemaCollectProps,
+  BasedSchemaPartial,
+  setWalker,
+} from '@based/schema'
+
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
 import connect from './socket'
@@ -21,6 +28,8 @@ Only do counting if there is an active connection
 */
 
 export class BasedDbClient extends Emitter {
+  public schema: BasedSchema
+
   public connected: boolean = false
   public connection: Connection
   public isDestroyed: boolean
@@ -41,6 +50,53 @@ export class BasedDbClient extends Emitter {
   constructor() {
     super()
     console.info('make a new db client...')
+  }
+
+  async updateSchema(_opts: BasedSchemaPartial): Promise<BasedSchema> {
+    // TODO: make it
+    this.schema = {
+      languages: ['en', 'nl', 'de', 'fi'],
+      $defs: {},
+      prefixToTypeMapping: {
+        po: 'post',
+      },
+      root: {
+        prefix: 'ro',
+        fields: {},
+      },
+      types: {
+        post: {
+          prefix: 'po',
+          fields: {
+            slug: { type: 'string' },
+          },
+        },
+      },
+    }
+
+    return this.schema
+  }
+
+  // TODO: later take type from @based/schema
+  async set(opts: any): Promise<string> {
+    if (!this.schema) {
+      // TODO: schema subscription and wait for schema
+      throw new Error('No schema, bad')
+    }
+
+    const collected: BasedSchemaCollectProps[] = []
+    const { $alias, $id, $language } = await setWalker(this.schema, opts, {
+      // TODO: we will design how non-type generic filters work later
+      referenceFilterCondition: async (id) => {
+        return true
+      },
+      collect: (props) => collected.push(props),
+    })
+
+    // TODO: converted collected into modify args
+
+    // FIXME: placeholder
+    return $id
   }
 
   onData(data: Buffer) {
