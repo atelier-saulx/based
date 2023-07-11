@@ -229,7 +229,7 @@ const parsers: {
       await Promise.all(q)
       handlers.collect({
         path,
-        value: parsedArray,
+        value: { $value: parsedArray },
         typeSchema,
         fieldSchema,
         target,
@@ -289,6 +289,37 @@ const parsers: {
     }
   },
 
+  timestamp: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    if (typeof value === 'string') {
+      if (value === 'now') {
+        value = Date.now()
+      } else {
+        const d = new Date(value)
+        value = d.valueOf()
+        if (isNaN(value)) {
+          throw createError(path, target.type, 'timestamp', value)
+        }
+      }
+    }
+
+    // smaller then / larger then steps
+
+    if (typeof value !== 'number') {
+      throw createError(path, target.type, 'timestamp', value)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
+
+  boolean: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+    // $increment / $decrement
+
+    if (typeof value !== 'boolean') {
+      throw createError(path, target.type, 'boolean', value)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
+
   number: async (path, value, fieldSchema, typeSchema, target, handlers) => {
     // value .default
     // $increment / $decrement
@@ -302,6 +333,8 @@ const parsers: {
   integer: async (path, value, fieldSchema, typeSchema, target, handlers) => {
     // value .default
     // $increment / $decrement
+
+    // smaller then / larger then steps
 
     if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
       throw createError(path, target.type, 'integer', value)

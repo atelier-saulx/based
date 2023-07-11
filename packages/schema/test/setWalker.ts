@@ -20,6 +20,10 @@ const schema: BasedSchema = {
             },
           },
         },
+        setje: {
+          type: 'set',
+          items: { type: 'number' },
+        },
         specialArray: {
           type: 'array',
           values: {
@@ -34,6 +38,12 @@ const schema: BasedSchema = {
         },
         powerLevel: {
           type: 'integer',
+        },
+        bla: {
+          type: 'boolean',
+        },
+        time: {
+          type: 'timestamp',
         },
         form: {
           title: 'A registration form',
@@ -126,10 +136,14 @@ const schema: BasedSchema = {
 
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
+  const now = Date.now()
   await setWalker(
     schema,
     {
       $id: 'bl1',
+      bla: false,
+      time: now, // do more later
+      setje: [1, 2, 3],
       form: {
         lastName: 'de beer',
         bla: ['bl123', 'bl234'],
@@ -160,6 +174,14 @@ test.serial('collect correctly', async (t) => {
     },
     {
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+        console.dir(
+          {
+            path,
+            value,
+          },
+          { depth: 10 }
+        )
+
         results.push({
           path,
           value,
@@ -172,6 +194,8 @@ test.serial('collect correctly', async (t) => {
   )
 
   const result = [
+    { path: ['bla'], value: false },
+    { path: ['time'], value: now },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
@@ -190,7 +214,8 @@ test.serial('collect correctly', async (t) => {
     { path: ['snurp', 0, 'x', 2], value: 3 },
     { path: ['form', 'bla'], value: ['bl123', 'bl234'] },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
-    { path: ['form', 'blub'], value: ['x'] },
+    { path: ['setje'], value: { $value: [1, 2, 3] } },
+    { path: ['form', 'blub'], value: { $value: ['x'] } },
   ]
 
   t.deepEqual(results, result)

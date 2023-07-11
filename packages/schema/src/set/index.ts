@@ -10,7 +10,6 @@ import parsers from './parsers'
 
 // Collect is a pretty good place for checking if a user is allowed to set something
 // also make collect async
-
 // add extra function for loading required
 
 export const fieldWalker = async (

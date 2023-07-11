@@ -26,6 +26,7 @@ export type BasedSchemaFieldType =
   | 'record'
   | 'set'
   | 'string'
+  | 'boolean'
   | 'number'
   | 'float'
   | 'json'
@@ -88,11 +89,13 @@ export type BasedSchemaFieldString = {
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldEnum = {
+  type?: BasedSchemaFieldType
   enum: any[] // this changes behaviour pretty extreme
   // important to type as well because we want to enum based on the type e.g. for references
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldConst = {
+  type?: BasedSchemaFieldType
   const: any
 } & BasedSchemaFieldShared
 
@@ -208,6 +211,7 @@ export type BasedSchemaField =
   | BasedSchemaFieldReferences
   | BasedSchemaFieldHyperLogLog
   | {
+      type?: BasedSchemaFieldType
       isRequired?: boolean // our own
       $ref: string // to mimic json schema will just load it in place (so only for setting)
     }
