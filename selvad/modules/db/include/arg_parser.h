@@ -44,26 +44,6 @@ int SelvaArgsParser_StringList(
         const struct selva_string *arg_key,
         const struct selva_string *arg_val);
 
-/**
- * Parse a set of lists containing strings.
- * Exclusion prefix: '!'
- * Set separator: '\n'
- * List separator: '|'
- * Enf of sets: '\0'
- * The list_out object will be built as follows:
- * {
- *   '0': ['field1', 'field2'],
- *   '1': ['field3', 'field4'],
- * }
- */
-int SelvaArgsParser_StringSetList(
-        struct finalizer *finalizer,
-        struct SelvaObject **list_out,
-        struct selva_string **excluded_out,
-        const char *name,
-        const struct selva_string *arg_key,
-        const struct selva_string *arg_val);
-
 int SelvaArgParser_Enum(
         const struct SelvaArgParser_EnumType types[],
         const struct selva_string *arg);

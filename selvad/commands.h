@@ -138,12 +138,9 @@
  */
 #define CMD_ID_HIERARCHY_AGGREGATE 21
 
-/**
- * Aggregate in list.
- * module: db
- * cmd: hierarchy.aggregateIn
+/*
+ * HOLE 22
  */
-#define CMD_ID_HIERARCHY_AGGREGATE_IN 22
 
 /**
  * Edge add constraints.
