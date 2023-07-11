@@ -88,6 +88,13 @@ test.serial.only('set primitive fields', async (t) => {
           int: { type: 'integer' },
           bool: { type: 'boolean' },
           ts: { type: 'timestamp' },
+          obj: {
+            type: 'object',
+            properties: {
+              a: { type: 'number' },
+              b: { type: 'string' },
+            },
+          },
         },
       },
     },
@@ -101,6 +108,10 @@ test.serial.only('set primitive fields', async (t) => {
     // TODO:
     // ts: Date.now(),
     // bool: true,
+    obj: {
+      a: 11,
+      b: 'hello',
+    },
   })
 
   const getResult = await client.command('object.get', ['', 'po1'])
