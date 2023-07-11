@@ -116,7 +116,7 @@ const parsers: {
   ) => {
     // value .default
     if (value && typeof value === 'object') {
-      value = hashObjectIgnoreKeyOrder(value)
+      value = hashObjectIgnoreKeyOrder(value).toString(16)
     }
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },

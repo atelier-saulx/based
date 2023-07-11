@@ -203,7 +203,7 @@ test.serial('collect correctly', async (t) => {
   )
 
   const result = [
-    { path: ['visits'], value: 4024394268910 },
+    { path: ['visits'], value: '3a9009740ee' },
     { path: ['bla'], value: false },
     { path: ['time'], value: now },
     { path: ['form', 'lastName'], value: 'de beer' },
