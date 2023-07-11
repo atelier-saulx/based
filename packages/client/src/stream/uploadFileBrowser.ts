@@ -46,7 +46,6 @@ const drainQueue = (
         const options = q[i].options
         const { contents, payload } = options
         const p = payload || {}
-        console.log('go go go', contents.size)
         body.append(`size=${contents.size},${JSON.stringify(p)}`, contents)
       }
       try {
