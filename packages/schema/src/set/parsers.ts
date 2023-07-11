@@ -527,6 +527,7 @@ const parsers: {
           )
         })
       )
+      value = { $value: value }
     } else if (typeof value === 'object') {
       if (value.$add) {
         const handler = {
