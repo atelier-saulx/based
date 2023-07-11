@@ -28,7 +28,6 @@ export type BasedSchemaFieldType =
   | 'string'
   | 'boolean'
   | 'number'
-  | 'float'
   | 'json'
   | 'integer'
   | 'timestamp'
@@ -214,6 +213,36 @@ export type BasedSchemaField =
       isRequired?: boolean // our own
       $ref: string // to mimic json schema will just load it in place (so only for setting)
     }
+
+// | 'array'
+// | 'object'
+// | 'record'
+// | 'set'
+// | 'string'
+// | 'boolean'
+// | 'number'
+// | 'json'
+// | 'integer'
+// | 'timestamp'
+// | 'reference'
+// | 'references'
+// | 'text'
+// | 'hyperloglog'
+export type BasedSchemaFields = {
+  array: BasedSchemaFieldArray
+  object: BasedSchemaFieldObject
+  record: BasedSchemaFieldRecord
+  string: BasedSchemaFieldString
+  boolean: BasedSchemaFieldBoolean
+  number: BasedSchemaFieldNumber
+  json: BasedSchemaFieldJSON
+  integer: BasedSchemaFieldInteger
+  timestamp: BasedSchemaFieldTimeStamp
+  reference: BasedSchemaFieldReference
+  references: BasedSchemaFieldReferences
+  text: BasedSchemaFieldText
+  hyperloglog: BasedSchemaFieldHyperLogLog
+}
 
 export type BasedSchemaType = {
   fields: {
