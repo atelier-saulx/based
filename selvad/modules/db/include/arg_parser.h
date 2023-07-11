@@ -19,27 +19,8 @@ struct SelvaArgParser_EnumType {
     int id;
 };
 
-/**
- * Parse an option with key string.
- * TXT INT_VALUE
- * @param value[out] pointer to a storage for the parser ssize_t value.
- * @param name a pointer to the key string.
- * @param txt a pointer to the key string argument.
- * @param num a pointer to the value string argument.
- */
-int SelvaArgParser_IntOpt(
-        ssize_t *value, const char *name,
-        const struct selva_string *txt,
-        const struct selva_string *num);
-
 int SelvaArgParser_StrOpt(
         const char **value,
-        const char *name,
-        const struct selva_string *arg_key,
-        const struct selva_string *arg_val);
-int SelvaArgsParser_StringList(
-        struct finalizer *finalizer,
-        selva_stringList *out,
         const char *name,
         const struct selva_string *arg_key,
         const struct selva_string *arg_val);
