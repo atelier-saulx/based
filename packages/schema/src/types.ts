@@ -214,20 +214,6 @@ export type BasedSchemaField =
       $ref: string // to mimic json schema will just load it in place (so only for setting)
     }
 
-// | 'array'
-// | 'object'
-// | 'record'
-// | 'set'
-// | 'string'
-// | 'boolean'
-// | 'number'
-// | 'json'
-// | 'integer'
-// | 'timestamp'
-// | 'reference'
-// | 'references'
-// | 'text'
-// | 'hyperloglog'
 export type BasedSchemaFields = {
   array: BasedSchemaFieldArray
   object: BasedSchemaFieldObject
