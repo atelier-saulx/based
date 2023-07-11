@@ -85,6 +85,8 @@ test.serial.only('set primitive fields', async (t) => {
         fields: {
           slug: { type: 'string' },
           num: { type: 'number' },
+          int: { type: 'integer' },
+          bool: { type: 'boolean' },
         },
       },
     },
@@ -93,7 +95,9 @@ test.serial.only('set primitive fields', async (t) => {
   await client.set({
     $id: 'po1',
     slug: '/hello-world',
-    num: 25,
+    num: 25.5,
+    int: 112,
+    // bool: true, // TODO
   })
 
   const getResult = await client.command('object.get', ['', 'po1'])
