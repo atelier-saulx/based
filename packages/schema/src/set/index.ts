@@ -32,12 +32,7 @@ export const fieldWalker = async (
     return
   }
 
-  const typeDef =
-    'type' in fieldSchema
-      ? fieldSchema.type
-      : 'enum' in fieldSchema
-      ? 'enum'
-      : ''
+  const typeDef = fieldSchema.type ?? ('enum' in fieldSchema ? 'enum' : '')
 
   if (!typeDef) {
     throw createError(path, target.type, typeDef, path[path.length - 1])

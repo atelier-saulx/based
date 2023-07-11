@@ -57,6 +57,7 @@ export type BasedSchemaContentMediaType =
   | string
 
 export type BasedSchemaFieldShared = {
+  type?: BasedSchemaFieldType
   $id?: string
   $schema?: string
   isRequired?: boolean
@@ -89,13 +90,11 @@ export type BasedSchemaFieldString = {
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldEnum = {
-  type?: BasedSchemaFieldType
   enum: any[] // this changes behaviour pretty extreme
   // important to type as well because we want to enum based on the type e.g. for references
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldConst = {
-  type?: BasedSchemaFieldType
   const: any
 } & BasedSchemaFieldShared
 
