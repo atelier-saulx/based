@@ -16,6 +16,7 @@ import {
 } from './types'
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
+import { toModifyArgs } from './set'
 
 type BasedDbClientOpts = { port: number; host: string }
 
@@ -94,8 +95,10 @@ export class BasedDbClient extends Emitter {
     })
 
     // TODO: converted collected into modify args
+    const modifyArgs = toModifyArgs(collected)
 
-    // FIXME: placeholder
+    // TODO: deal with alias
+    await this.command('modify', [$id, modifyArgs])
     return $id
   }
 
