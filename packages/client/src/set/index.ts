@@ -1,5 +1,5 @@
 import { BasedSchemaCollectProps } from '@based/schema'
-import { ModifyArgType } from '../protocol/encode/modify/types'
+import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -18,12 +18,22 @@ const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
 
 export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
   const { fieldSchema, path, value } = props
-  // @ts-ignore
+  const strPath = path.join('.')
+
+  if (fieldSchema.type === 'references') {
+    return [
+      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+      strPath,
+      { ...value, setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE },
+    ]
+  }
+
   const opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
+
   if (!opType) {
     console.error('Unsupported field type', path, fieldSchema, value)
     return []
   }
 
-  return [opType, path.join('.'), value]
+  return [opType, strPath, value]
 }

@@ -83,6 +83,7 @@ test.serial.only('set primitive fields', async (t) => {
       post: {
         prefix: 'po',
         fields: {
+          parents: { type: 'references' },
           slug: { type: 'string' },
           num: { type: 'number' },
           int: { type: 'integer' },
@@ -105,13 +106,18 @@ test.serial.only('set primitive fields', async (t) => {
     slug: '/hello-world',
     num: 25.5,
     int: 112,
-    // TODO:
-    // ts: Date.now(),
-    // bool: true,
+    ts: Date.now(),
+    bool: true,
     obj: {
       a: 11,
       b: 'hello',
     },
+  })
+
+  await client.set({
+    $id: 'po2',
+    slug: '/second-post',
+    parents: ['po1'],
   })
 
   const getResult = await client.command('object.get', ['', 'po1'])
