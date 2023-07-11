@@ -25,7 +25,6 @@
 #include "selva_log.h"
 #include "selva_proto.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "hierarchy.h"
 #include "rpn.h"
 #include "db_config.h"
@@ -34,6 +33,7 @@
 #include "selva_onload.h"
 #include "selva_set.h"
 #include "selva_trace.h"
+#include "string_set.h"
 #include "subscriptions.h"
 #include "edge.h"
 #include "traversal.h"
@@ -41,6 +41,73 @@
 #include "find_index.h"
 
 #define WILDCARD_CHAR '*'
+
+struct SelvaFind_QueryOpts {
+    /**
+     * Traversal method/direction.
+     */
+    enum SelvaTraversal dir;
+    const char *dir_opt_str; /*!< Ref field name or expression. Optional. */
+    size_t dir_opt_len;
+
+    /**
+     * Expression to decide whether and edge should be visited.
+     */
+    const char *edge_filter_str;
+    size_t edge_filter_len;
+
+    /**
+     * Indexing hint.
+     * Optional.
+     */
+    const char *index_hints_str;
+    size_t index_hints_len;
+
+    /**
+     * Sort order of the results.
+     */
+    enum SelvaResultOrder order;
+    const char *order_by_field_str;
+    size_t order_by_field_len;
+
+    /**
+     * Skip the first n - 1 results.
+     * 0 for not offset.
+     */
+    ssize_t offset;
+
+    /**
+     * Limit the number of results.
+     * -1 for no limit (inf).
+     */
+    ssize_t limit;
+
+    enum SelvaMergeStrategy merge_strategy;
+    /**
+     * Merge path.
+     * Only used when SELVA_FIND_QUERY_RES_FIELDS.
+     */
+    const char *merge_str;
+    size_t merge_len;
+
+    /**
+     * Result type.
+     * What is expected to be returned to the client.
+     */
+    enum {
+        SELVA_FIND_QUERY_RES_IDS = 0,
+        SELVA_FIND_QUERY_RES_FIELDS,
+        SELVA_FIND_QUERY_RES_FIELDS_RPN,
+        SELVA_FIND_QUERY_RES_INHERIT_RPN,
+    } res_type __packed;
+
+    /**
+     * Result opt arg.
+     * field names or expression.
+     */
+    const char *res_opt_str;
+    size_t res_opt_len;
+};
 
 struct FindCommand_ArrayObjectCb {
     struct selva_server_response_out *resp;
@@ -79,27 +146,6 @@ static int send_all_node_data_fields(
         const char *field_prefix_str,
         size_t field_prefix_len,
         struct selva_string *excluded_fields);
-
-/*
- * Note that only the merge args supported by the query syntax needs to be
- * listed here. Specifically MERGE_STRATEGY_NAMED is implicit and
- * MERGE_STRATEGY_NONE is redundant.
- */
-const struct SelvaArgParser_EnumType merge_types[] = {
-    {
-        .name = "merge",
-        .id = MERGE_STRATEGY_ALL,
-    },
-    {
-        .name = "deepMerge",
-        .id = MERGE_STRATEGY_DEEP,
-    },
-    /* Must be last. */
-    {
-        .name = NULL,
-        .id = 0,
-    }
-};
 
 static int send_hierarchy_field(
         struct selva_server_response_out *resp,
@@ -230,7 +276,7 @@ static int send_edge_field(
             struct selva_string *act_field_name;
 
             act_field_name = selva_string_createf("%.*s%s", (int)field_prefix_len, field_prefix_str, field_str);
-            finalizer_add(fin, act_field_name, selva_string_free);
+            selva_string_auto_finalize(fin, act_field_name);
             selva_send_string(resp, act_field_name);
         } else {
             selva_send_str(resp, field_str, field_len);
@@ -585,7 +631,7 @@ static int send_node_fields(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
-        selva_stringList inherit_fields,
+        struct selva_string **inherit_fields,
         size_t nr_inherit_fields,
         struct selva_string *excluded_fields) {
     Selva_NodeId nodeId;
@@ -1219,7 +1265,7 @@ static void send_node(
     } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
         struct rpn_expression *expr = args->fields_expression ?: args->inherit_expression;
         selvaobject_autofree struct SelvaObject *fields = SelvaObject_New();
-        selva_stringList inherit_fields = NULL; /* allocated by exec_fields_expression() */
+        struct selva_string **inherit_fields = NULL; /* allocated by exec_fields_expression() */
         size_t nr_inherit_fields;
 
         assert(!(args->fields_expression && args->inherit_expression));
@@ -1631,241 +1677,191 @@ static void postprocess_inherit(
 /**
  * Find node(s) matching the query.
  *
- * SELVA.HIERARCHY.find
+ * hierarchy.find
  * lang
- * dir [field_name/expr]                                Traversal method/direction
- * ["edge_filter" expr]                                 Expression to decide whether and edge should be visited
- * ["index" [expr]]                                     Indexing hint
- * ["order" field asc|desc]                             Sort order of the results
- * ["offset" 1234]                                      Skip the first 1234 - 1 results
- * ["limit" 1234]                                       Limit the number of results (Optional)
- * ["merge" path]                                       Merge fields. fields option must be set
- * ["fields|fields_rpn|inherit_rpn" field_names|expr]   Return field values instead of node names
- * NODE_IDS                                             One or more node IDs concatenated (10 chars per ID)
+ * SelvaFind_QueryOpts
+ * ids
  * [expression]                                         RPN filter expression
  * [args...]                                            Register arguments for the RPN filter
- *
- * `dir` can be any string supported by `SelvaTraversal_ParseDir2()`.
- * The traversed field is typically either ancestors or descendants but it can
- * be any hierarchy or edge field.
  */
-static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    struct selva_string **argv;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    const int ARGV_LANG      = 0;
-    const int ARGV_DIRECTION = 1;
-    const int ARGV_REF_FIELD = 2;
-    int ARGV_EDGE_FILTER_TXT = 2;
-    int ARGV_EDGE_FILTER_VAL = 3;
-    int ARGV_INDEX_TXT       = 2;
-    __unused int ARGV_INDEX_VAL = 3;
-    int ARGV_ORDER_TXT       = 2;
-    int ARGV_ORDER_FLD       = 3;
-    int ARGV_ORDER_ORD       = 4;
-    int ARGV_OFFSET_TXT      = 2;
-    int ARGV_OFFSET_NUM      = 3;
-    int ARGV_LIMIT_TXT       = 2;
-    int ARGV_LIMIT_NUM       = 3;
-    int ARGV_MERGE_TXT       = 2;
-    int ARGV_MERGE_VAL       = 3;
-    int ARGV_FIELDS_TXT      = 2;
-    int ARGV_FIELDS_VAL      = 3;
-    int ARGV_NODE_IDS        = 2;
     int ARGV_FILTER_EXPR     = 3;
     int ARGV_FILTER_ARGS     = 4;
-#define SHIFT_ARGS(i) \
-    ARGV_EDGE_FILTER_TXT += i; \
-    ARGV_EDGE_FILTER_VAL += i; \
-    ARGV_INDEX_TXT += i; \
-    ARGV_INDEX_VAL += i; \
-    ARGV_ORDER_TXT += i; \
-    ARGV_ORDER_FLD += i; \
-    ARGV_ORDER_ORD += i; \
-    ARGV_OFFSET_TXT += i; \
-    ARGV_OFFSET_NUM += i; \
-    ARGV_LIMIT_TXT += i; \
-    ARGV_LIMIT_NUM += i; \
-    ARGV_MERGE_TXT += i; \
-    ARGV_MERGE_VAL += i; \
-    ARGV_FIELDS_TXT += i; \
-    ARGV_FIELDS_VAL += i; \
-    ARGV_NODE_IDS += i; \
-    ARGV_FILTER_EXPR += i; \
-    ARGV_FILTER_ARGS += i
 
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
+    struct selva_string *lang = NULL;
+    SVECTOR_AUTOFREE(traverse_result); /*!< for postprocessing the result. */
+    __selva_autofree struct selva_string **index_hints = NULL;
+    int nr_index_hints = 0;
+
+    const char *query_opts_str;
+    size_t query_opts_len;
+    struct SelvaFind_QueryOpts query_opts;
+    const struct selva_string *ids;
+    struct selva_string *filter_expr = NULL;
+    struct selva_string **filter_expr_args = NULL;
+
+    argc = selva_proto_scanf(&fin, buf, buf_len, "%p, %.*s, %p, %p, ...",
+                             &lang,
+                             &query_opts_len, &query_opts_str,
+                             &ids,
+                             &filter_expr,
+                             &filter_expr_args
+                            );
     if (argc < 3) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
+        if (argc < 3) {
             selva_send_error_arity(resp);
+        } else {
+            selva_send_errorf(resp, argc, "Failed to parse args");
         }
         return;
     }
+    if (query_opts_len != sizeof(query_opts)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
+        return;
+    } else {
+        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+    }
+    TO_STR(ids);
 
-    struct selva_string *lang = argv[ARGV_LANG];
-    SVECTOR_AUTOFREE(traverse_result); /*!< for postprocessing the result. */
+    /* TODO Fix query_opts pointers */
+
+    if (!(query_opts.dir & (
+          SELVA_HIERARCHY_TRAVERSAL_NONE |
+          SELVA_HIERARCHY_TRAVERSAL_NODE |
+          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
+          SELVA_HIERARCHY_TRAVERSAL_SET |
+          SELVA_HIERARCHY_TRAVERSAL_REF |
+          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
+          SELVA_HIERARCHY_TRAVERSAL_PARENTS |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
+          SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+         ) || __builtin_popcount(query_opts.dir) > 1
+       ) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid dir");
+        return;
+    }
+
+    struct selva_string *dir_expr = NULL;
     __auto_free_rpn_ctx struct rpn_ctx *traversal_rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *traversal_expression = NULL;
-    __auto_free_rpn_ctx struct rpn_ctx *edge_filter_ctx = NULL;
-    __auto_free_rpn_expression struct rpn_expression *edge_filter = NULL;
-    __selva_autofree selva_stringList index_hints = NULL;
-    int nr_index_hints = 0;
-
-    /*
-     * Parse the traversal arguments.
-     */
-    enum SelvaTraversal dir;
-    const struct selva_string *ref_field = NULL;
-    err = SelvaTraversal_ParseDir2(&dir, argv[ARGV_DIRECTION]);
-    if (err) {
-        selva_send_errorf(resp, err, "Traversal argument");
+    if (query_opts.dir & (
+         SELVA_HIERARCHY_TRAVERSAL_ARRAY |
+         SELVA_HIERARCHY_TRAVERSAL_REF |
+         SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) &&
+        query_opts.dir_opt_len == 0) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
         return;
-    }
-    if (argc <= ARGV_REF_FIELD &&
-        (dir & (SELVA_HIERARCHY_TRAVERSAL_ARRAY |
-                SELVA_HIERARCHY_TRAVERSAL_REF |
-                SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                SELVA_HIERARCHY_TRAVERSAL_EXPRESSION))) {
-        selva_send_error_arity(resp);
-        return;
-    }
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_ARRAY |
-               SELVA_HIERARCHY_TRAVERSAL_REF |
-               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
-        ref_field = argv[ARGV_REF_FIELD];
-        SHIFT_ARGS(1);
-    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                      SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        const struct selva_string *input = argv[ARGV_REF_FIELD];
-        TO_STR(input);
+    } else if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                 SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        dir_expr = selva_string_create(query_opts_str, query_opts_len, 0);
+        selva_string_auto_finalize(&fin, dir_expr);
+        const char *input = selva_string_to_str(dir_expr, NULL);
 
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input_str);
+        traversal_expression = rpn_compile(input);
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
             return;
         }
-        SHIFT_ARGS(1);
     }
 
-    if (argc > ARGV_EDGE_FILTER_VAL) {
-        const char *expr_str;
+    __auto_free_rpn_ctx struct rpn_ctx *edge_filter_ctx = NULL;
+    __auto_free_rpn_expression struct rpn_expression *edge_filter = NULL;
+    if (query_opts.edge_filter_len) {
+        if (!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION))) {
+            selva_send_errorf(resp, SELVA_EINVAL, "edge_filter can be only used with expression traversals");
+            return;
+        }
 
-        err = SelvaArgParser_StrOpt(&expr_str, "edge_filter", argv[ARGV_EDGE_FILTER_TXT], argv[ARGV_EDGE_FILTER_VAL]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
+        size_t len = query_opts.edge_filter_len;
+        char input[len + 1];
 
-            if (!(dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
-                         SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION))) {
-                selva_send_errorf(resp, SELVA_EINVAL, "edge_filter can be only used with expression traversals");
-                return;
-            }
+        memcpy(input, query_opts.edge_filter_str, len);
+        input[len] = '\0';
 
-            edge_filter_ctx = rpn_init(1);
-            edge_filter = rpn_compile(expr_str);
-            if (!edge_filter) {
-                selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
-                return;
-            }
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "edge_filter");
+        edge_filter_ctx = rpn_init(1);
+        edge_filter = rpn_compile(input);
+        if (!edge_filter) {
+            selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
             return;
         }
     }
 
-    /*
-     * Parse the indexing hint.
-     */
-    nr_index_hints = SelvaArgParser_IndexHints(&index_hints, argv + ARGV_INDEX_TXT, argc - ARGV_INDEX_TXT);
-    if (nr_index_hints < 0) {
-        selva_send_errorf(resp, nr_index_hints, "nr_index_hints");
-        return;
-    } else if (nr_index_hints > 0) {
-        SHIFT_ARGS(2 * nr_index_hints);
+    if (query_opts.index_hints_len) {
+        /*
+         * TODO Parse index hints
+         * We should be able to find an array of expressions
+         */
+#if 0
+        nr_index_hints = SelvaArgParser_IndexHints(&index_hints, argv + ARGV_INDEX_TXT, argc - ARGV_INDEX_TXT);
+        if (nr_index_hints < 0) {
+            selva_send_errorf(resp, nr_index_hints, "nr_index_hints");
+            return;
+        } else if (nr_index_hints > 0) {
+            SHIFT_ARGS(2 * nr_index_hints);
+        }
+#endif
     }
 
-    /*
-     * Parse the order arg.
-     */
-    enum SelvaResultOrder order = SELVA_RESULT_ORDER_NONE;
     struct selva_string *order_by_field = NULL;
-    if (argc > ARGV_ORDER_ORD) {
-        err = SelvaTraversal_ParseOrderArg(&order_by_field, &order,
-                          argv[ARGV_ORDER_TXT],
-                          argv[ARGV_ORDER_FLD],
-                          argv[ARGV_ORDER_ORD]);
-        if (err == 0) {
-            SHIFT_ARGS(3);
-        } else if (err != SELVA_HIERARCHY_ENOENT) {
-            selva_send_errorf(resp, err, "order");
+    if (!(query_opts.order == SELVA_RESULT_ORDER_NONE ||
+          query_opts.order == SELVA_RESULT_ORDER_ASC ||
+          query_opts.order == SELVA_RESULT_ORDER_DESC)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "order");
+        return;
+    } else if (query_opts.order == SELVA_RESULT_ORDER_ASC ||
+               query_opts.order == SELVA_RESULT_ORDER_DESC) {
+        if (query_opts.order_by_field_len == 0) {
+            selva_send_errorf(resp, SELVA_EINVAL, "order_by_field");
             return;
         }
+
+        order_by_field = selva_string_create(query_opts.order_by_field_str, query_opts.order_by_field_len, 0);
+        selva_string_auto_finalize(&fin, order_by_field);
     }
 
-    /*
-     * Parse the offset arg.
-     */
-    ssize_t offset = 0;
-    if (argc > ARGV_OFFSET_NUM) {
-        err = SelvaArgParser_IntOpt(&offset, "offset", argv[ARGV_OFFSET_TXT], argv[ARGV_OFFSET_NUM]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "offset");
-            return;
-        }
-        if (offset < -1) {
-            selva_send_errorf(resp, err, "offset < -1");
-            return;
-        }
+    if (query_opts.offset < -1) {
+        selva_send_errorf(resp, SELVA_EINVAL, "offset < -1");
+        return;
     }
 
-    /*
-     * Parse the limit arg. -1 = inf
-     */
-    ssize_t limit = -1;
-    if (argc > ARGV_LIMIT_NUM) {
-        err = SelvaArgParser_IntOpt(&limit, "limit", argv[ARGV_LIMIT_TXT], argv[ARGV_LIMIT_NUM]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "limit");
-            return;
-        }
+    if (query_opts.limit < -1) {
+        selva_send_errorf(resp, SELVA_EINVAL, "limit < -1");
+        return;
     }
 
-    /*
-     * Parse the merge flag.
-     */
-    enum SelvaMergeStrategy merge_strategy = MERGE_STRATEGY_NONE;
     struct selva_string *merge_path = NULL;
-    if (argc > ARGV_MERGE_VAL) {
-        err = SelvaArgParser_Enum(merge_types, argv[ARGV_MERGE_TXT]);
-        if (err != SELVA_ENOENT) {
-            if (err < 0) {
-                selva_send_errorf(resp, err, "invalid merge argument");
-                return;
-            }
-
-            if (limit != -1) {
-                selva_send_errorf(resp, err, "merge is not supported with limit");
-                return;
-            }
-
-            merge_strategy = err;
-            merge_path = argv[ARGV_MERGE_VAL];
-            SHIFT_ARGS(2);
+    if (query_opts.merge_strategy != MERGE_STRATEGY_NONE) {
+        if (query_opts.merge_strategy != MERGE_STRATEGY_ALL &&
+            query_opts.merge_strategy != MERGE_STRATEGY_NAMED &&
+            query_opts.merge_strategy != MERGE_STRATEGY_DEEP) {
+            selva_send_errorf(resp, SELVA_EINVAL, "invalid merge strategy");
+            return;
         }
+
+        if (query_opts.limit != -1) {
+            selva_send_errorf(resp, SELVA_EINVAL, "merge is not supported with limit");
+            return;
+        }
+
+        merge_path = selva_string_create(query_opts.merge_str, query_opts.merge_len, 0);
+        selva_string_auto_finalize(&fin, merge_path);
     }
 
     /*
@@ -1876,84 +1872,88 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     __auto_free_rpn_ctx struct rpn_ctx *fields_rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *fields_expression = NULL;
     __auto_free_rpn_expression struct rpn_expression *inherit_expression = NULL;
-    if (argc > ARGV_FIELDS_VAL) {
-        const char *argv_fields_txt = selva_string_to_str(argv[ARGV_FIELDS_TXT], NULL);
 
-        if (!strcmp("fields", argv_fields_txt)) {
-            if (merge_strategy == MERGE_STRATEGY_ALL) {
-                /* Having fields set turns a regular merge into a named merge. */
-                merge_strategy = MERGE_STRATEGY_NAMED;
-            } else if (merge_strategy != MERGE_STRATEGY_NONE) {
-                selva_send_errorf(resp, err, "Only the regular merge can be used with fields");
-                return;
-            }
-
-            err = SelvaArgsParser_StringSetList(&fin, &fields, &excluded_fields, "fields", argv[ARGV_FIELDS_TXT], argv[ARGV_FIELDS_VAL]);
-            if (err) {
-                selva_send_errorf(resp, err, "Parsing fields argument failed");
-                return;
-            }
-
-            SHIFT_ARGS(2);
-        } else if (!strcmp("fields_rpn", argv_fields_txt)) {
-            const char *expr_str = selva_string_to_str(argv[ARGV_FIELDS_VAL], NULL);
-
-            /*
-             * Note that fields_rpn and merge can't work together because the
-             * field names can't vary in a merge.
-             */
-            if (merge_strategy != MERGE_STRATEGY_NONE) {
-                selva_send_errorf(resp, SELVA_EINVAL, "fields_rpn with merge not supported");
-                return;
-            }
-
-            fields_rpn_ctx = rpn_init(1);
-            fields_expression = rpn_compile(expr_str);
-            if (!fields_expression) {
-                selva_send_errorf(resp, SELVA_RPN_ECOMP, "fields_rpn");
-                return;
-            }
-
-            SHIFT_ARGS(2);
-        } else if (!strcmp("inherit_rpn", argv_fields_txt)) {
-            const char *expr_str = selva_string_to_str(argv[ARGV_FIELDS_VAL], NULL);
-
-            if (merge_strategy != MERGE_STRATEGY_NONE) {
-                selva_send_errorf(resp, SELVA_EINVAL, "inherit with merge not supported");
-                return;
-            }
-
-            fields_rpn_ctx = rpn_init(1);
-            inherit_expression = rpn_compile(expr_str);
-            if (!inherit_expression) {
-                selva_send_errorf(resp, SELVA_RPN_ECOMP, "inherit_rpn");
-                return;
-            }
-
-            SHIFT_ARGS(2);
+    if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS) {
+        if (query_opts.merge_strategy != MERGE_STRATEGY_NAMED &&
+            query_opts.merge_strategy != MERGE_STRATEGY_NAMED) {
+            selva_send_errorf(resp, SELVA_EINVAL, "Only named merge is supported with fields");
+            return;
         }
+
+        struct selva_string *raw;
+
+        raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
+        selva_string_auto_finalize(&fin, raw);
+
+        err = string_set_parse(&fin, raw, &fields, &excluded_fields);
+        if (err) {
+            selva_send_errorf(resp, err, "Parsing fields list failed");
+            return;
+        }
+    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN) {
+        /*
+         * Note that fields_rpn and merge can't work together because the
+         * field names can't vary in a merge.
+         */
+        if (query_opts.merge_strategy != MERGE_STRATEGY_NONE) {
+            selva_send_errorf(resp, SELVA_EINVAL, "fields_rpn with merge not supported");
+            return;
+        }
+
+        size_t len = query_opts.res_opt_len;
+        char input[len + 1];
+
+        memcpy(input, query_opts.res_opt_str, len);
+        input[len] = '\0';
+
+        fields_rpn_ctx = rpn_init(1);
+        fields_expression = rpn_compile(input);
+        if (!fields_expression) {
+            selva_send_errorf(resp, SELVA_RPN_ECOMP, "fields_rpn");
+            return;
+        }
+    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
+        if (query_opts.merge_strategy != MERGE_STRATEGY_NONE) {
+            selva_send_errorf(resp, SELVA_EINVAL, "inherit with merge not supported");
+            return;
+        }
+
+        size_t len = query_opts.res_opt_len;
+        char input[len + 1];
+
+        memcpy(input, query_opts.res_opt_str, len);
+        input[len] = '\0';
+
+        fields_rpn_ctx = rpn_init(1);
+        inherit_expression = rpn_compile(input);
+        if (!inherit_expression) {
+            selva_send_errorf(resp, SELVA_RPN_ECOMP, "inherit_rpn");
+            return;
+        }
+    } else if (query_opts.res_type != SELVA_FIND_QUERY_RES_IDS) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid res_type");
+        return;
     }
-    if (merge_strategy != MERGE_STRATEGY_NONE && (!fields || SelvaTraversal_FieldsContains(fields, "*", 1))) {
+    if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
+        (!fields || SelvaTraversal_FieldsContains(fields, "*", 1))) {
         if (fields) {
             SelvaObject_Destroy(fields);
         }
 
-        /* Merge needs a fields object anyway but it must be empty. */
+        /* Merge needs a fields object but it must be empty. */
         fields = SelvaObject_New();
     }
 
     /*
      * Prepare the filter expression if given.
      */
-    struct selva_string *argv_filter_expr = NULL;
     __auto_free_rpn_ctx struct rpn_ctx *rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *filter_expression = NULL;
     if (argc >= ARGV_FILTER_EXPR + 1) {
-        argv_filter_expr = argv[ARGV_FILTER_EXPR];
-        const int nr_reg = argc - ARGV_FILTER_ARGS + 2;
+        const int nr_reg = argc - ARGV_FILTER_ARGS;
 
         rpn_ctx = rpn_init(nr_reg);
-        filter_expression = rpn_compile(selva_string_to_str(argv_filter_expr, NULL));
+        filter_expression = rpn_compile(selva_string_to_str(filter_expr, NULL));
         if (!filter_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the filter expression");
             return;
@@ -1962,40 +1962,32 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         /*
          * Get the filter expression arguments and set them to the registers.
          */
-        for (int i = ARGV_FILTER_ARGS; i < argc; i++) {
+        for (int i = 0; i < nr_reg; i++) {
             /* reg[0] is reserved for the current nodeId */
-            const size_t reg_i = i - ARGV_FILTER_ARGS + 1;
+            const size_t reg_i = i + 1;
             size_t str_len;
-            const char *str = selva_string_to_str(argv[i], &str_len);
+            const char *str = selva_string_to_str(filter_expr_args[i], &str_len);
 
             rpn_set_reg(rpn_ctx, reg_i, str, str_len + 1, 0);
         }
     }
 
-    if (argc <= ARGV_NODE_IDS) {
-        selva_send_errorf(resp, SELVA_HIERARCHY_EINVAL, "node_ids");
-        return;
-    }
-
-    const struct selva_string *ids = argv[ARGV_NODE_IDS];
-    TO_STR(ids);
-
     if (inherit_expression) {
         SVector_Init(&traverse_result, selva_glob_config.hierarchy_expected_resp_len, NULL);
-    } else if (order != SELVA_RESULT_ORDER_NONE) {
-        SelvaTraversalOrder_InitOrderResult(&traverse_result, order, limit);
+    } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
+        SelvaTraversalOrder_InitOrderResult(&traverse_result, query_opts.order, query_opts.limit);
     }
 
     selva_send_array(resp, -1);
 
-    if (nr_index_hints > 0) {
-        /*
-         * Limit and indexing can be only used together when an order is requested
-         * to guarantee a deterministic response order.
-         */
-        if (limit != -1 && order == SELVA_RESULT_ORDER_NONE) {
-            nr_index_hints = 0;
-        }
+    /*
+     * Limit and indexing can be only used together when an order is requested
+     * to guarantee a deterministic response order.
+     */
+    if (nr_index_hints > 0 &&
+        query_opts.limit != -1 &&
+        query_opts.order == SELVA_RESULT_ORDER_NONE) {
+        nr_index_hints = 0;
     }
 
     /*
@@ -2024,23 +2016,10 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
         /* find_indices_max == 0 => indexing disabled */
         if (nr_index_hints > 0 && selva_glob_config.find_indices_max > 0) {
-            struct selva_string *dir_expr = NULL;
-
-            if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                       SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-                /*
-                 * We know it's valid because it was already parsed and compiled once.
-                 * However, the indexing subsystem can't use the already compiled
-                 * expression because its lifetime is unpredictable and it's not easy
-                 * to change that.
-                 */
-                dir_expr = argv[ARGV_REF_FIELD];
-            }
-
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, dir, dir_expr, nodeId, order, order_by_field, index_hints, nr_index_hints, ind_icb);
+            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, index_hints, nr_index_hints, ind_icb);
         }
 
         /*
@@ -2051,8 +2030,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
          */
         if (ind_select >= 0 &&
             ids_len == SELVA_NODE_ID_SIZE &&
-            SelvaFindIndex_IsOrdered(ind_icb[ind_select], order, order_by_field)) {
-            order = SELVA_RESULT_ORDER_NONE;
+            SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
+            query_opts.order = SELVA_RESULT_ORDER_NONE;
             order_by_field = NULL; /* This controls sorting in the callback. */
         }
 
@@ -2060,17 +2039,17 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
          * Run BFS/DFS.
          */
         ssize_t tmp_limit = -1;
-        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(dir); /* Skip n nodes from the results. */
+        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir); /* Skip n nodes from the results. */
         struct FindCommand_Args args = {
             .fin = &fin,
             .resp = resp,
             .lang = lang,
             .nr_nodes = &nr_nodes,
-            .offset = (order == SELVA_RESULT_ORDER_NONE) ? offset + skip : skip,
-            .limit = (order == SELVA_RESULT_ORDER_NONE) ? &limit : &tmp_limit,
+            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset + skip : skip,
+            .limit = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? &query_opts.limit : &tmp_limit,
             .rpn_ctx = rpn_ctx,
             .filter = filter_expression,
-            .send_param.merge_strategy = merge_strategy,
+            .send_param.merge_strategy = query_opts.merge_strategy,
             .send_param.merge_path = merge_path,
             .merge_nr_fields = &merge_nr_fields,
             .send_param.fields = fields,
@@ -2078,19 +2057,19 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .send_param.fields_expression = fields_expression,
              .send_param.inherit_expression = inherit_expression,
             .send_param.excluded_fields = excluded_fields,
-            .send_param.order = order,
+            .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &traverse_result,
             .acc_tot = 0,
             .acc_take = 0,
         };
 
-        if (limit == 0) {
+        if (query_opts.limit == 0) {
             break;
         }
 
-        if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-            if (order != SELVA_RESULT_ORDER_NONE) {
+        if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
+            if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
                 args.process_obj = &process_array_obj_sort;
                 postprocess = &postprocess_array;
             } else {
@@ -2102,7 +2081,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
                 /* This will also handle sorting if it was requested. */
                 args.process_node = &process_node_inherit;
                 postprocess = &postprocess_inherit;
-            } else if (order != SELVA_RESULT_ORDER_NONE) {
+            } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
                 args.process_node = &process_node_sort;
                 postprocess = &postprocess_sort;
             } else {
@@ -2116,7 +2095,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
              * There is no need to run the filter again if the indexing was
              * executing the same filter already.
              */
-            if (argv_filter_expr && !selva_string_cmp(argv_filter_expr, index_hints[ind_select])) {
+            if (filter_expr && !selva_string_cmp(filter_expr, index_hints[ind_select])) {
                 args.rpn_ctx = NULL;
                 args.filter = NULL;
             }
@@ -2124,7 +2103,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             SELVA_TRACE_BEGIN(cmd_find_index);
             err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], FindCommand_NodeCb, &args);
             SELVA_TRACE_END(cmd_find_index);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && ref_field) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && query_opts.dir_opt_str) {
             struct FindCommand_ArrayObjectCb array_args = {
                 .find_args = &args,
             };
@@ -2132,25 +2111,26 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
                 .cb = FindCommand_ArrayObjectCb,
                 .cb_arg = &array_args,
             };
-            TO_STR(ref_field);
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
 
             SELVA_TRACE_BEGIN(cmd_find_array);
             err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, ref_field_str, ref_field_len, &ary_cb);
             SELVA_TRACE_END(cmd_find_array);
-        } else if ((dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                    SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
-                   && ref_field) {
+        } else if ((query_opts.dir &
+                    (SELVA_HIERARCHY_TRAVERSAL_REF |
+                     SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                     SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
+                   && query_opts.dir_opt_str) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = FindCommand_NodeCb,
                 .node_arg = &args,
             };
-            TO_STR(ref_field);
 
             SELVA_TRACE_BEGIN(cmd_find_refs);
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, dir, ref_field_str, ref_field_len, &cb);
+            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, &cb);
             SELVA_TRACE_END(cmd_find_refs);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = FindCommand_NodeCb,
                 .node_arg = &args,
@@ -2159,7 +2139,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             SELVA_TRACE_BEGIN(cmd_find_bfs_expression);
             err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, edge_filter_ctx, edge_filter, &cb);
             SELVA_TRACE_END(cmd_find_bfs_expression);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = FindCommand_NodeCb,
                 .node_arg = &args,
@@ -2175,7 +2155,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             };
 
             SELVA_TRACE_BEGIN(cmd_find_rest);
-            err = SelvaHierarchy_Traverse(hierarchy, nodeId, dir, &cb);
+            err = SelvaHierarchy_Traverse(hierarchy, nodeId, query_opts.dir, &cb);
             SELVA_TRACE_END(cmd_find_rest);
         }
         if (err != 0) {
@@ -2184,7 +2164,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
              * it and ignore the error.
              */
             SELVA_LOG(SELVA_LOGL_ERR, "Find failed. dir: %s node_id: \"%.*s\" err: \"%s\"",
-                      SelvaTraversal_Dir2str(dir),
+                      SelvaTraversal_Dir2str(query_opts.dir),
                       (int)SELVA_NODE_ID_SIZE, nodeId,
                       selva_strerror(err));
         }
@@ -2197,9 +2177,9 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
     if (postprocess) {
         struct SelvaNodeSendParam send_args = {
-            .order = order,
+            .order = query_opts.order,
             .order_field = order_by_field,
-            .merge_strategy = merge_strategy,
+            .merge_strategy = query_opts.merge_strategy,
             .merge_path = merge_path,
             .fields = fields,
             .fields_rpn_ctx = fields_rpn_ctx,
@@ -2209,7 +2189,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         };
 
         SELVA_TRACE_BEGIN(cmd_find_sort_result);
-        postprocess(&fin, resp, hierarchy, lang, offset, limit, &send_args, &traverse_result);
+        postprocess(&fin, resp, hierarchy, lang, query_opts.offset, query_opts.limit, &send_args, &traverse_result);
         SELVA_TRACE_END(cmd_find_sort_result);
     } else {
         selva_send_array_end(resp);
