@@ -201,13 +201,10 @@ test.serial('collect correctly', async (t) => {
     }
   )
 
-  // TODO: parse PUSH AND INSERT
-  // and add test
-
   const result = [
     { path: ['visits'], value: '3a9009740ee' },
     { path: ['bla'], value: false },
-    { path: ['time'], value: 1689173132966 },
+    { path: ['time'], value: now },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
