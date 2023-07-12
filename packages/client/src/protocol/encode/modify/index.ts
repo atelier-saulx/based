@@ -45,6 +45,12 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
     const name = fields[i + 1]
     const value = fields[i + 2]
 
+    if (value?.$delete === true) {
+      defs.push({ type: 'string' }, { type: 'string' }, { type: 'string' })
+      setFields.push(ModifyArgType.SELVA_MODIFY_ARG_OP_DEL, name, '')
+      continue
+    }
+
     defs.push(
       { type: 'string' },
       { type: 'string' },

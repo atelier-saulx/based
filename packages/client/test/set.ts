@@ -123,26 +123,29 @@ test.serial.only('set primitive fields', async (t) => {
     parents: ['po1'],
   })
 
+  getResult = await client.command('object.get', ['', 'po2', 'slug'])
+  console.log('getResult', getResult)
+
   let parents = await client.command('hierarchy.parents', ['po2'])
-  console.log('PARENTS', parents)
+  console.log('PARENTS po2', parents)
 
   let children = await client.command('hierarchy.children', ['po1'])
-  console.log('children', children)
+  console.log('children po1', children)
 
   await client.set({
     $id: 'po2',
-    slug: '/second-post',
+    slug: { $delete: true },
     parents: { $add: ['root'] },
   })
 
+  getResult = await client.command('object.get', ['', 'po2', 'slug'])
+  console.log('getResult', getResult)
+
   parents = await client.command('hierarchy.parents', ['po2'])
-  console.log('PARENTS', parents)
+  console.log('PARENTS po2', parents)
 
   children = await client.command('hierarchy.children', ['po1'])
-  console.log('children', children)
-
-  // TODO: remove
-  // await client.command('save', ['test.sdb'])
+  console.log('children po1', children)
 
   t.true(true)
 })
