@@ -123,5 +123,8 @@ test.serial.only('set primitive fields', async (t) => {
   const getResult = await client.command('object.get', ['', 'po1'])
   console.log('getResult', getResult)
 
+  // TODO: remove
+  // await client.command('save', ['test.sdb'])
+
   t.true(true)
 })

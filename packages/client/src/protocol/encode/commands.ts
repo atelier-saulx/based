@@ -5,6 +5,7 @@ import { modify } from './modify'
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
 export const COMMAND_ENCODERS: CommandEncoders = {
+  save: defaultEncoder([{ type: 'string' }]),
   ping: null,
   lscmd: null,
   echo: defaultEncoder([{ type: 'string' }]),
