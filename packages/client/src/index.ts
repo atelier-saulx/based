@@ -76,7 +76,15 @@ export class BasedDbClient extends Emitter {
     })
 
     // TODO: deal with alias
-    await this.command('modify', [$id, args])
+    const resp = await this.command('modify', [$id, args])
+    const err = resp?.[0]?.find((x: any) => {
+      return x instanceof Error
+    })
+
+    if (err) {
+      throw err
+    }
+
     return $id
   }
 
