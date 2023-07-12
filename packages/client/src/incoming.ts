@@ -15,7 +15,6 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
     client.backpressureBlock = null
   }
 
-  // TODO: collect messages and then decode it all
   if (client.isDestroyed) {
     return
   }
