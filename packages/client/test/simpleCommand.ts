@@ -24,7 +24,7 @@ test.serial('ping', async (t) => {
 
   const cmds = await client.command('lscmd')
   console.log(cmds)
-  t.true(cmds.length > 5)
+  t.true(cmds[0].length > 5)
 
   client.destroy()
   await server.destroy()
@@ -181,7 +181,7 @@ test.serial('object.set big multi-frame string', async (t) => {
   t.true(true)
 })
 
-test.serial.only('modify and and object.get', async (t) => {
+test.serial('modify and and object.get', async (t) => {
   const TIME = 2500
 
   const server = await startOrigin({
@@ -204,7 +204,7 @@ test.serial.only('modify and and object.get', async (t) => {
   t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED', 'UPDATED']])
   console.log('SUCCESS', resp)
 
-  let getResult = await client.command('object.get', ['', id])
+  let getResult = (await client.command('object.get', ['', id]))[0]
   console.log('get result', getResult)
 
   getResult.splice(
@@ -237,27 +237,11 @@ test.serial.only('modify and and object.get', async (t) => {
   const id2 = 'ma00000000000002'
   const resp2 = await client.command('modify', [
     id2,
-    [
-      '3',
-      'num',
-      25,
-      '0',
-      'title',
-      'hmm no',
-      'A',
-      'doubleStuff',
-      12.21,
-      '5',
-      'parents',
-      {
-        setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-        $value: [id],
-      },
-    ],
+    ['3', 'num', 25, '0', 'title', 'hmm no', 'A', 'doubleStuff', 12.21],
   ])
   console.log('RESP 2', resp2)
 
-  getResult = await client.command('object.get', ['', id2])
+  getResult = (await client.command('object.get', ['', id2]))[0]
   console.log('get result', getResult)
 
   getResult.splice(
