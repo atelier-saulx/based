@@ -88,6 +88,7 @@ test.serial.only('set primitive fields', async (t) => {
         prefix: 'po',
         fields: {
           parents: { type: 'references' },
+          children: { type: 'references' },
           slug: { type: 'string' },
           num: { type: 'number' },
           int: { type: 'integer' },
@@ -153,6 +154,11 @@ test.serial.only('set primitive fields', async (t) => {
 
   children = await client.command('hierarchy.children', ['po1'])
   console.log('CHILDREN po1', children)
+
+  console.log(
+    'ROOT CHILDREN',
+    await client.command('hierarchy.children', ['root'])
+  )
 
   t.true(true)
 })

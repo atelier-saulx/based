@@ -4,7 +4,7 @@ import { ModifyOpSetType, SET_OP_BY_TYPE } from './types'
 import { SET_TYPE_TO_MODIFY_VALUE_TYPE } from './types'
 
 function refsToStr(ary: string[] = []): string {
-  return ary.map((s: string) => `${s.padEnd(SELVA_NODE_ID_LEN)}`).join('')
+  return ary.map((s: string) => s.padEnd(SELVA_NODE_ID_LEN, '\0')).join('')
 }
 
 function strsToStr(ary: string[] = []): string {
@@ -23,7 +23,6 @@ export function encodeSetOperation({
   $delete?: any | any[]
 }): Buffer {
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
-    console.log('hmm', setType, $value)
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       contraint_id: 0, // TODO: impl. bidirectional
