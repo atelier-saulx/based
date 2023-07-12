@@ -55,8 +55,11 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       client.commandResponseListeners.delete(header.seqno)
 
       const [parsed] = decodeMessage(msg, -1)
-      if (parsed[0] instanceof Error) {
-        reject(parsed[0])
+      const err = parsed.find((x: any) => {
+        return x instanceof Error
+      })
+      if (err) {
+        reject(err)
       } else {
         resolve(parsed)
       }
@@ -94,8 +97,11 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       client.commandResponseListeners.delete(header.seqno)
 
       const [parsed] = decodeMessage(msg, -1)
-      if (parsed[0] instanceof Error) {
-        reject(parsed[0])
+      const err = parsed.find((x: any) => {
+        return x instanceof Error
+      })
+      if (err) {
+        reject(err)
       } else {
         resolve(parsed)
       }
