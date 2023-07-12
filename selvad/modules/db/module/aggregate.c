@@ -28,6 +28,7 @@
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
+#include "string_list.h"
 #include "string_set.h"
 #include "subscriptions.h"
 #include "traversal.h"
@@ -607,8 +608,6 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     struct selva_string *fields_raw = NULL;
     struct selva_string *filter_expr = NULL;
     struct selva_string **filter_expr_args = NULL;
-    __selva_autofree struct selva_string **index_hints = NULL;
-    int nr_index_hints = 0;
 
     argc = selva_proto_scanf(&fin, buf, buf_len, "%p, %.*s, %p, %p, %p, ...",
                              &lang,
@@ -699,8 +698,17 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         initial_double_val = DBL_MAX;
     }
 
+    struct selva_string **index_hints = NULL;
+    int nr_index_hints = 0;
     if (query_opts.index_hints_len) {
-        /* FIXME */
+        const struct selva_string *s;
+
+        index_hints = string_list_parse(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
+
+        s = index_hints[0];
+        while (s) {
+            s = index_hints[++nr_index_hints];
+        }
     }
 
     struct selva_string *order_by_field = NULL;

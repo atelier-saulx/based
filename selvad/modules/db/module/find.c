@@ -33,6 +33,7 @@
 #include "selva_onload.h"
 #include "selva_set.h"
 #include "selva_trace.h"
+#include "string_list.h"
 #include "string_set.h"
 #include "subscriptions.h"
 #include "edge.h"
@@ -1753,8 +1754,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
     struct selva_string *lang = NULL;
     SVECTOR_AUTOFREE(traverse_result); /*!< for postprocessing the result. */
-    __selva_autofree struct selva_string **index_hints = NULL;
-    int nr_index_hints = 0;
 
     const char *query_opts_str;
     size_t query_opts_len;
@@ -1862,20 +1861,17 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
     }
 
+    struct selva_string **index_hints = NULL;
+    int nr_index_hints = 0;
     if (query_opts.index_hints_len) {
-        /*
-         * TODO Parse index hints
-         * We should be able to find an array of expressions
-         */
-#if 0
-        nr_index_hints = SelvaArgParser_IndexHints(&index_hints, argv + ARGV_INDEX_TXT, argc - ARGV_INDEX_TXT);
-        if (nr_index_hints < 0) {
-            selva_send_errorf(resp, nr_index_hints, "nr_index_hints");
-            return;
-        } else if (nr_index_hints > 0) {
-            SHIFT_ARGS(2 * nr_index_hints);
+        const struct selva_string *s;
+
+        index_hints = string_list_parse(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
+
+        s = index_hints[0];
+        while (s) {
+            s = index_hints[++nr_index_hints];
         }
-#endif
     }
 
     struct selva_string *order_by_field = NULL;

@@ -4,6 +4,10 @@
  */
 #pragma once
 
+struct SelvaObject;
+struct finalizer;
+struct selva_string;
+
 /**
  * Parse a set of lists containing strings.
  * Exclusion prefix: '!'

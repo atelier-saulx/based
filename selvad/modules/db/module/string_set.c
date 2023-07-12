@@ -23,7 +23,8 @@ int string_set_parse(
         struct finalizer *finalizer,
         const struct selva_string *raw_in,
         struct SelvaObject **list_out,
-        struct selva_string **excluded_out) {
+        struct selva_string **excluded_out)
+{
     struct SelvaObject *obj = SelvaObject_New();
     struct selva_string *excl = NULL;
     const char *cur = selva_string_to_str(raw_in, NULL);

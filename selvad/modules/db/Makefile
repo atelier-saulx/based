@@ -43,6 +43,7 @@ OBJ := \
 	   module/selva_set/seta_in_setb.o \
 	   module/selva_type.o \
 	   module/shared_strings.o \
+	   module/string_list.o \
 	   module/string_set.o \
 	   module/subscriptions.o \
 	   module/update.o
