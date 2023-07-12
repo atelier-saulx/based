@@ -22,6 +22,58 @@ type Parsers = {
   [Key in keyof BasedSchemaFields]: Parser<Key>
 }
 
+const reference: Parser<'reference'> = async (
+  path,
+  value,
+  fieldSchema,
+  typeSchema,
+  target,
+  handlers
+) => {
+  // $no root
+  // prob pass these as options
+  // value .default
+  // $value
+
+  if (typeof value !== 'string') {
+    error(path, ParseError.incorrectFormat)
+  }
+
+  if ('allowedTypes' in fieldSchema) {
+    const prefix = value.slice(0, 2)
+    const targetType = target.schema.prefixToTypeMapping[prefix]
+    if (!targetType) {
+      error(path, ParseError.referenceIsIncorrectType)
+    }
+    let typeMatches = false
+    for (const t of fieldSchema.allowedTypes) {
+      if (typeof t === 'string') {
+        if (t === targetType) {
+          typeMatches = true
+          break
+        }
+      } else {
+        if (t.type && t.type === targetType) {
+          typeMatches = true
+          if (t.$filter) {
+            if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
+              error(path, ParseError.referenceIsIncorrectType)
+            }
+          }
+        } else if (!t.type && t.$filter) {
+          if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
+            error(path, ParseError.referenceIsIncorrectType)
+          }
+        }
+      }
+    }
+    if (typeMatches === false) {
+      error(path, ParseError.referenceIsIncorrectType)
+    }
+  }
+  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+}
+
 const parsers: Parsers = {
   // numbers
   number: async (path, value, fieldSchema) => {},
@@ -47,8 +99,59 @@ const parsers: Parsers = {
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   },
   // references
-  reference: async (path, value, fieldSchema) => {},
-  references: async (path, value, fieldSchema) => {},
+  reference,
+  references: async (
+    path,
+    value,
+    fieldSchema,
+    typeSchema,
+    target,
+    handlers
+  ) => {
+    // default
+    // $no root
+    if (Array.isArray(value)) {
+      const handler = {
+        ...handlers,
+        collect: () => {},
+      }
+      await Promise.all(
+        value.map((v, i) => {
+          return reference(
+            [...path, i],
+            v,
+            // not nice slow
+            { ...fieldSchema, type: 'reference' },
+            typeSchema,
+            target,
+            handler
+          )
+        })
+      )
+      value = { $value: value }
+    } else if (typeof value === 'object') {
+      if (value.$add) {
+        const handler = {
+          ...handlers,
+          collect: () => {},
+        }
+        await Promise.all(
+          value.$add.map((v, i) => {
+            return reference(
+              [...path, '$add', i],
+              v,
+              // not nice slow
+              { ...fieldSchema, type: 'reference' },
+              typeSchema,
+              target,
+              handler
+            )
+          })
+        )
+      }
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
   // collections
   set: async (path, value, fieldSchema, typeSchema, target, handlers) => {
     const q: Promise<void>[] = []
@@ -118,32 +221,99 @@ const parsers: Parsers = {
       handlers.collect({ path, value, typeSchema, fieldSchema, target })
     }
   },
-  object: async (path, value, fieldSchema) => {},
+  object: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    if (typeof value !== 'object') {
+      error(path, ParseError.incorrectFormat)
+    }
+    const isArray = Array.isArray(value)
+    if (isArray) {
+      error(path, ParseError.incorrectFormat)
+    }
+    const q: Promise<void>[] = []
+    for (const key in value) {
+      const propDef = fieldSchema.properties[key]
+      if (!propDef) {
+        error([...path, key], ParseError.fieldDoesNotExist)
+      }
+      q.push(
+        fieldWalker(
+          [...path, key],
+          value[key],
+          propDef,
+          typeSchema,
+          target,
+          handlers
+        )
+      )
+    }
+    await Promise.all(q)
+  },
   array: async (path, value, fieldSchema, typeSchema, target, handlers) => {
     const isArray = Array.isArray(value)
-
     if (typeof value === 'object' && !isArray) {
-      const q: Promise<void>[] = []
-
-      if (value.$insert) {
-        if (typeof value.$insert !== 'object') {
-          
+      const checkAssignOrInsert = async (type: string) => {
+        if (
+          typeof value[type] !== 'object' ||
+          value.$insert.$idx === undefined
+        ) {
+          error([...path, type], ParseError.incorrectFormat)
+        } else {
+          await fieldWalker(
+            [...path, type, '$value'],
+            value.$value,
+            fieldSchema,
+            typeSchema,
+            target,
+            {
+              ...handlers,
+              collect: () => {},
+            }
+          )
         }
       }
-
-      if (value.$remove) {
+      if (value.$insert) {
+        await checkAssignOrInsert('$insert')
       }
-
+      if (value.$remove && value.$remove.$idx === undefined) {
+        error([...path, '$remove'], ParseError.incorrectFormat)
+      }
       if (value.$push) {
+        const q: Promise<void>[] = []
+        const nestedHandler = {
+          ...handlers,
+          collect: () => {},
+        }
+        if (Array.isArray(value.$push)) {
+          for (let i = 0; i < value.length; i++) {
+            q.push(
+              fieldWalker(
+                [...path, i],
+                value[i],
+                fieldSchema.values,
+                typeSchema,
+                target,
+                nestedHandler
+              )
+            )
+          }
+        } else {
+          q.push(
+            fieldWalker(
+              [...path, '$push'],
+              value.$push,
+              fieldSchema.values,
+              typeSchema,
+              target,
+              nestedHandler
+            )
+          )
+        }
+        await Promise.all(q)
       }
-
       if (value.$assign) {
+        await checkAssignOrInsert('$assign')
       }
-
-      // value.$value :/
-      // fix
       handlers.collect({ path, value, typeSchema, fieldSchema, target })
-
       return
     }
 
@@ -168,9 +338,29 @@ const parsers: Parsers = {
   },
   record: async (path, value, fieldSchema) => {},
   // json
-  json: async (path, value, fieldSchema) => {},
+  json: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    try {
+      const parsedValue = JSON.stringify(value)
+      handlers.collect({
+        path,
+        value: parsedValue,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    } catch (err) {
+      throw err(path, ParseError.incorrectFormat)
+    }
+  },
   // boolean
-  boolean: async (path, value, fieldSchema) => {},
+  boolean: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    // value .default
+    // $increment / $decrement
+    if (typeof value !== 'boolean') {
+      error(path, ParseError.incorrectFormat)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
   // enum
   enum: async (path, value, fieldSchema, typeSchema, target, handlers) => {
     const enumValues = fieldSchema.enum
@@ -183,233 +373,6 @@ const parsers: Parsers = {
     error(path, ParseError.incorrectFormat)
   },
 }
-
-/*
-
-const reference: Parser<'reference'> = async (
-  path,
-  value,
-  fieldSchema,
-  typeSchema,
-  target,
-  handlers
-) => {
-  // $no root
-
-  // prob pass these as options
-  // value .default
-  // $value
-
-  if (typeof value !== 'string') {
-    throw createError(path, target.type, 'reference', value)
-  }
-
-  if ('allowedTypes' in fieldSchema) {
-    const prefix = value.slice(0, 2)
-    const targetType = target.schema.prefixToTypeMapping[prefix]
-    if (!targetType) {
-      throw createError(
-        path,
-        target.type,
-        'reference',
-        value,
-        '',
-        `${prefix} does not exist in database`
-      )
-    }
-    let typeMatches = false
-    for (const t of fieldSchema.allowedTypes) {
-      if (typeof t === 'string') {
-        if (t === targetType) {
-          typeMatches = true
-          break
-        }
-      } else {
-        if (t.type && t.type === targetType) {
-          typeMatches = true
-          if (t.$filter) {
-            if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
-              throw createError(
-                path,
-                target.type,
-                'reference',
-                value,
-                '',
-                `${targetType} does not match allowedReferences`
-              )
-            }
-          }
-        } else if (!t.type && t.$filter) {
-          if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
-            throw createError(
-              path,
-              target.type,
-              'reference',
-              value,
-              '',
-              `${targetType} does not match allowedReferences`
-            )
-          }
-        }
-      }
-    }
-    if (typeMatches === false) {
-      throw createError(
-        path,
-        target.type,
-        'reference',
-        value,
-        '',
-        `${targetType} does not match allowedReferences`
-      )
-    }
-  }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
-}
-*/
-
-// {
-
-//   [key: string]: Parser
-// } = {
-//
-
-//   object: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-//     // value .default
-
-//     if (typeof value !== 'object') {
-//       throw createError(path, target.type, 'object', value)
-//     }
-//     const isArray = Array.isArray(value)
-//     if (isArray) {
-//       throw createError(path, target.type, 'object', value)
-//     }
-//     const q: Promise<void>[] = []
-//     for (const key in value) {
-//       // @ts-ignore
-//       const propDef = fieldSchema.properties[key]
-//       if (!propDef) {
-//         throw createError(
-//           [...path, key],
-//           target.type,
-//           'object',
-//           value[key],
-//           key
-//         )
-//       }
-//       q.push(
-//         fieldWalker(
-//           [...path, key],
-//           value[key],
-//           propDef,
-//           typeSchema,
-//           target,
-//           handlers
-//         )
-//       )
-//     }
-//     await Promise.all(q)
-//   },
-
-//   set: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-//     // value .default
-
-//     const q: Promise<void>[] = []
-//     //   @ts-ignore
-//     const fieldDef = fieldSchema.items
-
-//     if (Array.isArray(value)) {
-//       const handlerNest = {
-//         ...handlers,
-//         collect: ({ path, value }) => {
-//           parsedArray.push(value)
-//         },
-//       }
-//       const parsedArray = []
-//       for (let i = 0; i < value.length; i++) {
-//         q.push(
-//           fieldWalker(
-//             [...path, i],
-//             value[i],
-//             fieldDef,
-//             typeSchema,
-//             target,
-//             handlerNest
-//           )
-//         )
-//       }
-//       await Promise.all(q)
-//       handlers.collect({
-//         path,
-//         value: { $value: parsedArray },
-//         typeSchema,
-//         fieldSchema,
-//         target,
-//       })
-//     } else {
-//       const handlerNest = {
-//         ...handlers,
-//         collect: ({ path, value }) => {},
-//       }
-//       if (value.$add) {
-//         for (let i = 0; i < value.$add.length; i++) {
-//           q.push(
-//             fieldWalker(
-//               [...path, '$add', i],
-//               value.$add[i],
-//               fieldDef,
-//               typeSchema,
-//               target,
-//               handlerNest
-//             )
-//           )
-//         }
-//       }
-//       if (value.$delete) {
-//         for (let i = 0; i < value.$add.length; i++) {
-//           q.push(
-//             fieldWalker(
-//               [...path, '$delete', i],
-//               value.$delete[i],
-//               fieldDef,
-//               typeSchema,
-//               target,
-//               handlerNest
-//             )
-//           )
-//         }
-//       }
-//       await Promise.all(q)
-//       handlers.collect({ path, value, typeSchema, fieldSchema, target })
-//     }
-//   },
-
-//   json: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-//     // value .default
-
-//     try {
-//       const parsedValue = JSON.stringify(value)
-//       handlers.collect({
-//         path,
-//         value: parsedValue,
-//         typeSchema,
-//         fieldSchema,
-//         target,
-//       })
-//     } catch (err) {
-//       throw createError(path, target.type, 'json', value)
-//     }
-//   },
-
-//   boolean: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-//     // value .default
-//     // $increment / $decrement
-
-//     if (typeof value !== 'boolean') {
-//       throw createError(path, target.type, 'boolean', value)
-//     }
-//     handlers.collect({ path, value, typeSchema, fieldSchema, target })
-//   },
 
 //   timestamp: async (
 //     path,
@@ -605,61 +568,5 @@ const reference: Parser<'reference'> = async (
 //       })
 //     }
 //   },
-
-//   reference,
-
-//   references: async (
-//     path,
-//     value,
-//     fieldSchema,
-//     typeSchema,
-//     target,
-//     handlers
-//   ) => {
-//     // default
-//     // $no root
-
-//     if (Array.isArray(value)) {
-//       const handler = {
-//         ...handlers,
-//         collect: () => {},
-//       }
-//       await Promise.all(
-//         value.map((v, i) => {
-//           return reference(
-//             [...path, i],
-//             v,
-//             fieldSchema,
-//             typeSchema,
-//             target,
-//             handler
-//           )
-//         })
-//       )
-//       value = { $value: value }
-//     } else if (typeof value === 'object') {
-//       if (value.$add) {
-//         const handler = {
-//           ...handlers,
-//           collect: () => {},
-//         }
-//         await Promise.all(
-//           value.$add.map((v, i) => {
-//             return reference(
-//               [...path, '$add', i],
-//               v,
-//               fieldSchema,
-//               typeSchema,
-//               target,
-//               handler
-//             )
-//           })
-//         )
-//       }
-//     }
-
-//     handlers.collect({ path, value, typeSchema, fieldSchema, target })
-//   },
-// }
 
 export default parsers

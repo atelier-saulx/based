@@ -5,6 +5,7 @@ export enum ParseError {
   'subceedsMinimum',
   'fieldDoesNotExist',
   'incorrectFormat',
+  'referenceIsIncorrectType',
 }
 
 export const error = (
