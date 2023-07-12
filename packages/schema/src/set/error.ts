@@ -7,6 +7,10 @@ export enum ParseError {
   'incorrectFormat',
 }
 
-export const error = (path: (number | string)[], error: ParseError) => {
-  throw new Error(`Type:  Field: "${path.join('.')}" ${ParseError[error]}`)
+export const error = (
+  path: (number | string)[],
+  error: ParseError,
+  type?: string // nice to give as option
+) => {
+  throw new Error(`Field: "${path.join('.')}" ${ParseError[error]}`)
 }
