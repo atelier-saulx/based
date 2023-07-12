@@ -48,8 +48,8 @@ export function findFrame(buf: Buffer): {
 }
 
 export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
-  if (buf.length == 0) {
-    return
+  if (!buf || buf.length == 0) {
+    return [[], null]
   }
 
   const result = []

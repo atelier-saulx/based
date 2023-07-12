@@ -9,6 +9,9 @@ export const TYPES = {
   'object.set': 53,
   modify: 68,
   'hierarchy.find': 19,
+  'hierarchy.edgeList': 29,
+  'hierarchy.parents': 27,
+  'hierarchy.children': 28,
   save: 15,
 }
 export type Command = keyof typeof TYPES

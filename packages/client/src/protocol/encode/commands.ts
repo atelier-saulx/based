@@ -9,11 +9,13 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ping: null,
   lscmd: null,
   echo: defaultEncoder([{ type: 'string' }]),
-  // id, field, valueId, value
   'object.set': defaultEncoder([
     { type: 'id' },
+    // field
     { type: 'string' },
+    // valueId
     { type: 'string' },
+    // value
     { type: 'string' },
   ]),
   'object.get': defaultEncoder([
@@ -25,4 +27,11 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   'hierarchy.find': (payload) => {
     return Buffer.from('hello')
   },
+  'hierarchy.edgeList': defaultEncoder([
+    { type: 'id' },
+    // field name
+    { type: 'string' },
+  ]),
+  'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
+  'hierarchy.children': defaultEncoder([{ type: 'id' }]),
 }
