@@ -64,12 +64,14 @@ static void setup_async_signals(void)
     sigdelset(&mask, SIGCHLD); /* We want to catch this where we use fork(). */
 #undef DEL_SIGNAL
 
+#ifdef __linux__
     /*
      * Don't catch real-time signals to make VTune work.
      */
     for (int sig_rt = SIGRTMIN; sig_rt < SIGRTMAX; sig_rt++) {
         sigdelset(&mask, sig_rt);
     }
+#endif
 
     sfd = evl_create_sigfd(&mask);
     if (sfd >= 0) {
