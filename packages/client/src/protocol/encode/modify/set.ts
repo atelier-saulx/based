@@ -27,7 +27,7 @@ export function encodeSetOperation({
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       contraint_id: 0, // TODO: impl. bidirectional
-      delete_all: false, // TODO
+      delete_all: $delete,
       $value: refsToStr($value),
       $add: refsToStr($add),
       $delete: refsToStr($delete),
@@ -35,6 +35,7 @@ export function encodeSetOperation({
   } else if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_CHAR) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: setType,
+      delete_all: $delete,
       $value: strsToStr($value),
       $add: strsToStr($add),
       $delete: strsToStr($delete),

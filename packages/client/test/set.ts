@@ -135,13 +135,13 @@ test.serial.only('set primitive fields', async (t) => {
   console.log('PARENTS po2', parents)
 
   let children = await client.command('hierarchy.children', ['po1'])
-  console.log('children po1', children)
+  console.log('CHILDREN po1', children)
 
   await client.set({
     $id: 'po2',
     slug: { $delete: true },
     parents: { $add: ['root'] },
-    // tags: { $delete: true },
+    // tags: { $delete: true }, // TODO
   })
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
@@ -152,7 +152,7 @@ test.serial.only('set primitive fields', async (t) => {
   console.log('PARENTS po2', parents)
 
   children = await client.command('hierarchy.children', ['po1'])
-  console.log('children po1', children)
+  console.log('CHILDREN po1', children)
 
   t.true(true)
 })
