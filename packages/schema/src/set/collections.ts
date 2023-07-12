@@ -123,25 +123,45 @@ export const array: Parser<'array'> = async (
 ) => {
   const isArray = Array.isArray(value)
   if (typeof value === 'object' && !isArray) {
-    const checkAssignOrInsert = async (type: string) => {
-      if (typeof value[type] !== 'object' || value.$insert.$idx === undefined) {
-        error([...path, type], ParseError.incorrectFormat)
-      } else {
-        await fieldWalker(
-          [...path, type, '$value'],
-          value.$value,
-          fieldSchema,
-          typeSchema,
-          target,
-          {
-            ...handlers,
-            collect: () => {},
-          }
-        )
-      }
-    }
     if (value.$insert) {
-      await checkAssignOrInsert('$insert')
+      if (
+        typeof value.$insert !== 'object' ||
+        value.$insert.$idx === undefined
+      ) {
+        error([...path, '$insert'], ParseError.incorrectFormat)
+      } else {
+        const nestedHandler = {
+          ...handlers,
+          collect: () => {},
+        }
+        const q: Promise<void>[] = []
+        if (Array.isArray(value.$insert.$value)) {
+          for (let i = 0; i < value.$insert.$value.length; i++) {
+            q.push(
+              fieldWalker(
+                [...path, 'insert', i],
+                value.$insert.$value[i],
+                fieldSchema.values,
+                typeSchema,
+                target,
+                nestedHandler
+              )
+            )
+          }
+        } else {
+          q.push(
+            fieldWalker(
+              [...path, '$insert'],
+              value.$insert.$value,
+              fieldSchema.values,
+              typeSchema,
+              target,
+              nestedHandler
+            )
+          )
+        }
+        await Promise.all(q)
+      }
     }
     if (value.$remove && value.$remove.$idx === undefined) {
       error([...path, '$remove'], ParseError.incorrectFormat)
@@ -153,11 +173,11 @@ export const array: Parser<'array'> = async (
         collect: () => {},
       }
       if (Array.isArray(value.$push)) {
-        for (let i = 0; i < value.length; i++) {
+        for (let i = 0; i < value.$push.length; i++) {
           q.push(
             fieldWalker(
               [...path, i],
-              value[i],
+              value.$push[i],
               fieldSchema.values,
               typeSchema,
               target,
@@ -180,7 +200,24 @@ export const array: Parser<'array'> = async (
       await Promise.all(q)
     }
     if (value.$assign) {
-      await checkAssignOrInsert('$assign')
+      if (
+        typeof value.$assign !== 'object' ||
+        value.$assign.$idx === undefined
+      ) {
+        error([...path, '$assign'], ParseError.incorrectFormat)
+      } else {
+        await fieldWalker(
+          [...path, '$assign', '$value'],
+          value.$assign.$value,
+          fieldSchema.values,
+          typeSchema,
+          target,
+          {
+            ...handlers,
+            collect: () => {},
+          }
+        )
+      }
     }
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
     return

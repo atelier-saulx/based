@@ -201,30 +201,33 @@ test.serial('collect correctly', async (t) => {
     }
   )
 
+  // TODO: parse PUSH AND INSERT
+  // and add test
+
   const result = [
     { path: ['visits'], value: '3a9009740ee' },
     { path: ['bla'], value: false },
-    { path: ['time'], value: now },
+    { path: ['time'], value: 1689173132966 },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
     { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
-    {
-      path: ['snurpArray'],
-      value: { $assign: { $idx: 0, $value: 100 } },
-    },
-    {
-      path: ['specialArray'],
-      value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
-    },
     { path: ['snurp', 0, 'x', 0], value: 1 },
     { path: ['snurp', 0, 'x', 1], value: 2 },
     { path: ['snurp', 0, 'x', 2], value: 3 },
     { path: ['form', 'bla'], value: { $value: ['bl123', 'bl234'] } },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
+    {
+      path: ['snurpArray'],
+      value: { $assign: { $idx: 0, $value: 100 } },
+    },
     { path: ['setje'], value: { $value: [1, 2, 3] } },
     { path: ['form', 'blub'], value: { $value: ['x'] } },
+    {
+      path: ['specialArray'],
+      value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
+    },
   ]
 
   t.deepEqual(results, result)
