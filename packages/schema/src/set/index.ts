@@ -5,12 +5,8 @@ import {
   BasedSchema,
   BasedSetTarget,
 } from '../types'
-import { createError } from './handleError'
+import { error, ParseError } from './error'
 import parsers from './parsers'
-
-// Collect is a pretty good place for checking if a user is allowed to set something
-// also make collect async
-// add extra function for loading required
 
 export const fieldWalker = async (
   path: (string | number)[],
@@ -35,13 +31,13 @@ export const fieldWalker = async (
   const typeDef = fieldSchema.type ?? ('enum' in fieldSchema ? 'enum' : '')
 
   if (!typeDef) {
-    throw createError(path, target.type, typeDef, path[path.length - 1])
+    error(path, ParseError.fieldDoesNotExist)
   }
 
   if ('customValidator' in fieldSchema) {
     const customValidator = fieldSchema.customValidator
     if (!(await customValidator(value, path, target))) {
-      throw createError(path, target.type, typeDef, value)
+      error(path, ParseError.incorrectFormat)
     }
   }
 
@@ -62,15 +58,13 @@ export const setWalker = async (
   if (value.$id) {
     type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
     if (!type) {
-      throw new Error(`Cannot find type for $id ${value.$id}`)
+      error([value.$id], ParseError.incorrectNodeType)
     }
   }
 
   if (value.type) {
     if (type && value.type !== type) {
-      throw new Error(
-        `type from "$id" ${value.$id} does not match "type" field ${value.type}`
-      )
+      error([value.$id, value.type], ParseError.incorrectNodeType)
     }
     type = value.type
   }
@@ -78,7 +72,7 @@ export const setWalker = async (
   const schemaType = schema.types[type]
 
   if (!schemaType) {
-    throw new Error(`Cannot find schema definition for type ${type}`)
+    error([type], ParseError.incorrectNodeType)
   }
 
   const target: BasedSetTarget = {
@@ -95,14 +89,10 @@ export const setWalker = async (
   const q: Promise<void>[] = []
 
   for (const key in value) {
-    if (key[0] === '$') {
-      console.info('key is operator', key)
-    } else {
+    if (key[0] !== '$') {
       const fieldSchema = schemaType.fields[key]
       if (!fieldSchema) {
-        throw new Error(
-          `Field does not exist in schema "${key}" on type "${type}"`
-        )
+        error([key], ParseError.fieldDoesNotExist)
       } else {
         q.push(
           fieldWalker(

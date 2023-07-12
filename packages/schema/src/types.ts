@@ -34,7 +34,7 @@ export type BasedSchemaFieldType =
   | 'reference'
   | 'references'
   | 'text'
-  | 'hyperloglog'
+  | 'cardinality'
 
 export const isCollection = (type: string): boolean => {
   return type === 'array' || type === 'object' || type === 'record'
@@ -57,12 +57,17 @@ export type BasedSchemaContentMediaType =
   | string
 
 export type BasedSchemaFieldShared = {
+  hooks?:
+    | { interval?: number; hook: string }
+    | { interval?: number; hook: string }[]
+
   type?: BasedSchemaFieldType
   $id?: string
   $schema?: string
   isRequired?: boolean
   title?: string
   description?: string
+  index?: number // Determines the order of fields
   readOnly?: boolean
   writeOnly?: boolean
   $comment?: string
@@ -90,13 +95,13 @@ export type BasedSchemaFieldString = {
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldEnum = {
-  enum: any[] // this changes behaviour pretty extreme
-  // important to type as well because we want to enum based on the type e.g. for references
+  enum: any[]
 } & BasedSchemaFieldShared
 
-export type BasedSchemaFieldConst = {
-  const: any
-} & BasedSchemaFieldShared
+// TODO: check if we want this later
+// export type BasedSchemaFieldConst = {
+//   const: any
+// } & BasedSchemaFieldShared
 
 type NumberDefaults = {
   multipleOf?: number
@@ -110,8 +115,8 @@ export type BasedSchemaFieldNumber = NumberDefaults & {
   type: 'number'
 }
 
-export type BasedSchemaFieldHyperLogLog = {
-  type: 'hyperloglog'
+export type BasedSchemaFieldCardinality = {
+  type: 'cardinality'
 }
 
 export type BasedSchemaFieldInteger = NumberDefaults & {
@@ -207,7 +212,7 @@ export type BasedSchemaField =
   | BasedSchemaFieldPrimitive
   | BasedSchemaFieldReference
   | BasedSchemaFieldReferences
-  | BasedSchemaFieldHyperLogLog
+  | BasedSchemaFieldCardinality
   | {
       type?: BasedSchemaFieldType
       isRequired?: boolean // our own
@@ -215,8 +220,10 @@ export type BasedSchemaField =
     }
 
 export type BasedSchemaFields = {
+  enum: BasedSchemaFieldEnum
   array: BasedSchemaFieldArray
   object: BasedSchemaFieldObject
+  set: BasedSchemaFieldSet
   record: BasedSchemaFieldRecord
   string: BasedSchemaFieldString
   boolean: BasedSchemaFieldBoolean
@@ -227,7 +234,7 @@ export type BasedSchemaFields = {
   reference: BasedSchemaFieldReference
   references: BasedSchemaFieldReferences
   text: BasedSchemaFieldText
-  hyperloglog: BasedSchemaFieldHyperLogLog
+  cardinality: BasedSchemaFieldCardinality
 }
 
 export type BasedSchemaType = {

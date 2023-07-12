@@ -7,9 +7,8 @@ const schema: BasedSchema = {
       prefix: 'bl',
       fields: {
         visits: {
-          type: 'hyperloglog',
+          type: 'cardinality',
         },
-
         snurp: {
           type: 'array',
           values: {

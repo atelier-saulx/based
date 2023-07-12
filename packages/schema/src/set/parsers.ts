@@ -1,18 +1,13 @@
 import {
-  BasedSchemaField,
-  BasedSchemaFieldEnum,
-  BasedSchemaFieldInteger,
-  BasedSchemaFieldNumber,
-  BasedSchemaFieldTimeStamp,
   BasedSchemaType,
   BasedSetHandlers,
   BasedSetTarget,
   BasedSchemaFields,
 } from '../types'
 import { deepEqual } from '@saulx/utils'
-import { createError } from './handleError'
 import { fieldWalker } from '.'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { error, ParseError } from './error'
 
 type Parser<K extends keyof BasedSchemaFields> = (
   path: (string | number)[],
@@ -22,6 +17,174 @@ type Parser<K extends keyof BasedSchemaFields> = (
   target: BasedSetTarget,
   handlers: BasedSetHandlers
 ) => Promise<void>
+
+type Parsers = {
+  [Key in keyof BasedSchemaFields]: Parser<Key>
+}
+
+const parsers: Parsers = {
+  // numbers
+  number: async (path, value, fieldSchema) => {},
+  integer: async (path, value, fieldSchema) => {},
+  timestamp: async (path, value, fieldSchema) => {},
+  // string
+  string: async (path, value, fieldSchema) => {},
+  text: async (path, value, fieldSchema) => {},
+  // cardinality
+  cardinality: async (
+    path,
+    value,
+    fieldSchema,
+    typeSchema,
+    target,
+    handlers
+  ) => {
+    if (value && typeof value === 'object') {
+      value = hashObjectIgnoreKeyOrder(value).toString(16)
+    } else {
+      value = hash(value).toString(16)
+    }
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  },
+  // references
+  reference: async (path, value, fieldSchema) => {},
+  references: async (path, value, fieldSchema) => {},
+  // collections
+  set: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    const q: Promise<void>[] = []
+    const fieldDef = fieldSchema.items
+    if (Array.isArray(value)) {
+      const handlerNest = {
+        ...handlers,
+        collect: ({ value }) => {
+          parsedArray.push(value)
+        },
+      }
+      const parsedArray = []
+      for (let i = 0; i < value.length; i++) {
+        q.push(
+          fieldWalker(
+            [...path, i],
+            value[i],
+            fieldDef,
+            typeSchema,
+            target,
+            handlerNest
+          )
+        )
+      }
+      await Promise.all(q)
+      handlers.collect({
+        path,
+        value: { $value: parsedArray },
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    } else {
+      const handlerNest = {
+        ...handlers,
+        collect: () => {},
+      }
+      if (value.$add) {
+        for (let i = 0; i < value.$add.length; i++) {
+          q.push(
+            fieldWalker(
+              [...path, '$add', i],
+              value.$add[i],
+              fieldDef,
+              typeSchema,
+              target,
+              handlerNest
+            )
+          )
+        }
+      }
+      if (value.$delete) {
+        for (let i = 0; i < value.$add.length; i++) {
+          q.push(
+            fieldWalker(
+              [...path, '$delete', i],
+              value.$delete[i],
+              fieldDef,
+              typeSchema,
+              target,
+              handlerNest
+            )
+          )
+        }
+      }
+      await Promise.all(q)
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    }
+  },
+  object: async (path, value, fieldSchema) => {},
+  array: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    const isArray = Array.isArray(value)
+
+    if (typeof value === 'object' && !isArray) {
+      const q: Promise<void>[] = []
+
+      if (value.$insert) {
+        if (typeof value.$insert !== 'object') {
+          
+        }
+      }
+
+      if (value.$remove) {
+      }
+
+      if (value.$push) {
+      }
+
+      if (value.$assign) {
+      }
+
+      // value.$value :/
+      // fix
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+
+      return
+    }
+
+    if (!isArray) {
+      error(path, ParseError.incorrectFieldType)
+    }
+
+    const q: Promise<void>[] = []
+    for (let i = 0; i < value.length; i++) {
+      q.push(
+        fieldWalker(
+          [...path, i],
+          value[i],
+          fieldSchema.values,
+          typeSchema,
+          target,
+          handlers
+        )
+      )
+    }
+    await Promise.all(q)
+  },
+  record: async (path, value, fieldSchema) => {},
+  // json
+  json: async (path, value, fieldSchema) => {},
+  // boolean
+  boolean: async (path, value, fieldSchema) => {},
+  // enum
+  enum: async (path, value, fieldSchema, typeSchema, target, handlers) => {
+    const enumValues = fieldSchema.enum
+    for (let i = 0; i < enumValues.length; i++) {
+      if (deepEqual(enumValues[i], value)) {
+        handlers.collect({ path, value: i, typeSchema, fieldSchema, target })
+        return
+      }
+    }
+    error(path, ParseError.incorrectFormat)
+  },
+}
+
+/*
 
 const reference: Parser<'reference'> = async (
   path,
@@ -103,106 +266,13 @@ const reference: Parser<'reference'> = async (
   }
   handlers.collect({ path, value, typeSchema, fieldSchema, target })
 }
-
-type Parsers = {
-  [Key in keyof BasedSchemaFields]: Parser<Key>
-}
-
-const parsers: Parsers = {
-  // numbers
-  number: async (path, value, fieldSchema) => {},
-  integer: async (path, value, fieldSchema) => {},
-  timestamp: async (path, value, fieldSchema) => {},
-  // string
-  string: async (path, value, fieldSchema) => {},
-  text: async (path, value, fieldSchema) => {},
-}
+*/
 
 // {
 
 //   [key: string]: Parser
 // } = {
 //
-//   hyperloglog: async (
-//     path,
-//     value,
-//     fieldSchema,
-//     typeSchema,
-//     target,
-//     handlers
-//   ) => {
-//     // value .default
-//     if (value && typeof value === 'object') {
-//       value = hashObjectIgnoreKeyOrder(value).toString(16)
-//     }
-//     handlers.collect({ path, value, typeSchema, fieldSchema, target })
-//   },
-
-//   enum: async (
-//     path,
-//     value,
-//     fieldSchema: BasedSchemaFieldEnum,
-//     typeSchema,
-//     target,
-//     handlers
-//   ) => {
-//     const enumValues = fieldSchema.enum
-//     for (let i = 0; i < enumValues.length; i++) {
-//       if (deepEqual(enumValues[i], value)) {
-//         handlers.collect({ path, value: i, typeSchema, fieldSchema, target })
-//         return
-//       }
-//     }
-//     throw createError(path, target.type, 'enum', value)
-//   },
-
-//   array: async (path, value, fieldSchema, typeSchema, target, handlers) => {
-//     // value .default
-
-//     // TODO: ADD ARRAY OPERATORS
-//     const isArray = Array.isArray(value)
-
-//     if (typeof value === 'object' && !isArray) {
-//       const q: Promise<void>[] = []
-
-//       if (value.$insert) {
-//       }
-
-//       if (value.$remove) {
-//       }
-
-//       if (value.$push) {
-//       }
-
-//       if (value.$assign) {
-//       }
-
-//       // value.$value :/
-//       // fix
-//       handlers.collect({ path, value, typeSchema, fieldSchema, target })
-
-//       return
-//     }
-
-//     if (!isArray) {
-//       throw createError(path, target.type, 'array', value)
-//     }
-//     const q: Promise<void>[] = []
-//     for (let i = 0; i < value.length; i++) {
-//       q.push(
-//         fieldWalker(
-//           [...path, i],
-//           value[i],
-//           // @ts-ignore
-//           fieldSchema.values,
-//           typeSchema,
-//           target,
-//           handlers
-//         )
-//       )
-//     }
-//     await Promise.all(q)
-//   },
 
 //   object: async (path, value, fieldSchema, typeSchema, target, handlers) => {
 //     // value .default
