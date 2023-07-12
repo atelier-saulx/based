@@ -58,40 +58,41 @@ export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
     let v
     ;[v, rest] = parseValue(rest)
 
-    if (v && v.type) {
-      if (v.type == SELVA_PROTO_ARRAY) {
-        if (v.flags & SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH) {
-          return decodeMessage(rest, -2)
-        } else if (v.flags & SELVA_PROTO_ARRAY_FLONGLONG) {
-          const a = []
-          for (let i = 0; i < v.length; i++) {
-            a.push(rest.readBigInt64LE(i * 8))
-          }
-          result.push(a)
-          rest = rest.slice(v.length * 8)
-        } else if (v.flags & SELVA_PROTO_ARRAY_FDOUBLE) {
-          const a = []
-          for (let i = 0; i < v.length; i++) {
-            a.push(rest.readDoubleLE(i * 8))
-          }
-          result.push(a)
-          rest = rest.slice(v.length * 8)
-        } else {
-          /* Read v.length values */
-          const [r, new_rest] = decodeMessage(rest, v.length)
-          if (r.length != v.length) {
-            throw new Error(`Invalid array size: ${r.length} != ${v.length}`)
-          }
+    if (v?.type == SELVA_PROTO_ARRAY) {
+      if (v.flags & SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH) {
+        const [r, new_rest] = decodeMessage(rest, -2)
 
-          result.push(r)
-          rest = new_rest
+        result.push(r)
+        rest = new_rest
+      } else if (v.flags & SELVA_PROTO_ARRAY_FLONGLONG) {
+        const a = []
+        for (let i = 0; i < v.length; i++) {
+          a.push(rest.readBigInt64LE(i * 8))
         }
-      } else if (v.type == SELVA_PROTO_ARRAY_END) {
-        if (n != -2) {
-          throw new Error('Unexpected SELVA_PROTO_ARRAY_END')
+        result.push(a)
+        rest = rest.slice(v.length * 8)
+      } else if (v.flags & SELVA_PROTO_ARRAY_FDOUBLE) {
+        const a = []
+        for (let i = 0; i < v.length; i++) {
+          a.push(rest.readDoubleLE(i * 8))
         }
-        break
+        result.push(a)
+        rest = rest.slice(v.length * 8)
+      } else {
+        /* Read v.length values */
+        const [r, new_rest] = decodeMessage(rest, v.length)
+        if (r.length != v.length) {
+          throw new Error(`Invalid array size: ${r.length} != ${v.length}`)
+        }
+
+        result.push(r)
+        rest = new_rest
       }
+    } else if (v?.type == SELVA_PROTO_ARRAY_END) {
+      if (n != -2) {
+        throw new Error('Unexpected SELVA_PROTO_ARRAY_END')
+      }
+      break
     } else {
       result.push(v)
     }
