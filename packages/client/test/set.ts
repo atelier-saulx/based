@@ -35,6 +35,10 @@ test.serial('set string to num field, should fail', async (t) => {
         fields: {
           slug: { type: 'string' },
           num: { type: 'number' },
+          tags: {
+            type: 'set',
+            items: { type: 'string' },
+          },
         },
       },
     },
@@ -125,6 +129,7 @@ test.serial.only('set primitive fields', async (t) => {
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
   console.log('getResult', getResult)
+  t.deepEqual(getResult, ['/second-post'])
 
   let parents = await client.command('hierarchy.parents', ['po2'])
   console.log('PARENTS po2', parents)
@@ -136,9 +141,11 @@ test.serial.only('set primitive fields', async (t) => {
     $id: 'po2',
     slug: { $delete: true },
     parents: { $add: ['root'] },
+    // tags: { $delete: true },
   })
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
+  t.deepEqual(getResult, [null])
   console.log('getResult', getResult)
 
   parents = await client.command('hierarchy.parents', ['po2'])
