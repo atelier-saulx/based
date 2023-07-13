@@ -659,27 +659,18 @@ static int send_node_fields(
     selva_send_array(resp, 2);
     selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId));
 
-    const ssize_t fields_len = SelvaObject_Len(fields, NULL);
-    if (fields_len < 0) {
-        return fields_len;
-    } else {
-        size_t nr_fields = 0;
-
-        selva_send_array(resp, -1);
-        nr_fields += send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
-        if (inherit_fields) {
-            /*
-             * This should only happen in the postprocess handling because
-             * otherwise we'll easily hit the reentrancy limit of the trx
-             * system.
-             */
-            nr_fields += Inherit_SendFields(resp, hierarchy, lang, nodeId, inherit_fields, nr_inherit_fields);
-        }
-
-        /* Sent 2 * nr_fields */
-        (void)nr_fields;
-        selva_send_array_end(resp);
+    selva_send_array(resp, -1);
+    (void)send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
+    if (inherit_fields) {
+        /*
+         * This should only happen in the postprocess handling because
+         * otherwise we'll easily hit the reentrancy limit of the trx
+         * system.
+         */
+        (void)Inherit_SendFields(resp, hierarchy, lang, nodeId, inherit_fields, nr_inherit_fields);
     }
+
+    selva_send_array_end(resp);
 
     return 0;
 }
@@ -774,10 +765,8 @@ static int send_array_object_fields(
     selva_send_str(resp, EMPTY_NODE_ID, SELVA_NODE_ID_SIZE);
 
     const ssize_t fields_len = SelvaObject_Len(fields, NULL);
-    if (fields_len < 0) {
-        return fields_len;
-    } else if (fields_len == 1 &&
-               SelvaTraversal_FieldsContains(fields, wildcard, sizeof(wildcard) - 1)) {
+    if (fields_len == 1 &&
+        SelvaTraversal_FieldsContains(fields, wildcard, sizeof(wildcard) - 1)) {
         err = SelvaObject_ReplyWithObject(resp, lang, obj, NULL, 0);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to send all fields for selva object in array. err: \"%s\"",
@@ -786,7 +775,6 @@ static int send_array_object_fields(
     } else {
         void *iterator;
         const SVector *vec;
-        size_t nr_fields = 0;
 
         selva_send_array(resp, -1);
 
@@ -803,14 +791,11 @@ static int send_array_object_fields(
                 if (res <= 0) {
                     continue;
                 } else {
-                    nr_fields += res;
                     break; /* Only send one of the fields in the list. */
                 }
             }
         }
 
-        /* Sent 2 * nr_fields */
-        (void)nr_fields;
         selva_send_array_end(resp);
     }
 
