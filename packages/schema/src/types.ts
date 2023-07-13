@@ -150,11 +150,12 @@ export type BasedSchemaFieldPrimitive =
 export type BasedSchemaFieldText = {
   type: 'text'
   required?: BasedSchemaLanguage[]
-  contentMediaType?: BasedSchemaContentMediaType
   minLength?: number
   maxLength?: number
   contentMediaEncoding?: string // base64
+  contentMediaType?: BasedSchemaContentMediaType
   pattern?: BasedSchemaPattern
+  format?: 'email' | 'hostname' | 'ipv4' | 'ipv6' | 'uuid' | 'uri'
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldObject = {

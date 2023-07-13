@@ -2,6 +2,11 @@ import { Parser } from './types'
 import { error, ParseError } from './error'
 import { BasedSchemaFieldString, BasedSchemaFieldText } from '../types'
 
+// format
+// pattern
+// default patterns
+// uri etc
+
 const validate = (
   path: (string | number)[],
   value: string,
