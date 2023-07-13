@@ -3,6 +3,7 @@ import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import { createRecord } from 'data-record'
+import { SelvaMergeStrategy } from '../src/protocol'
 
 test.serial('set string to num field, should fail', async (t) => {
   const TIME = 2500
@@ -172,12 +173,15 @@ test.serial.only('set primitive fields', async (t) => {
     createRecord(protocol.hierarchy_find_def, {
       dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+      limit: BigInt(-1),
+      offset: BigInt(0),
       res_opt_str: '*',
     }),
     'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
-    '',
+    '#1',
   ])
-  console.log('FINDDDD', find)
+  console.dir(find, { depth: 4 })
 
   t.true(true)
 })
