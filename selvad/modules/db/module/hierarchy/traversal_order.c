@@ -13,7 +13,6 @@
 #include "selva_db.h"
 #include "db_config.h"
 #include "hierarchy.h"
-#include "parsers.h"
 #include "selva_lang.h"
 #include "selva_object.h"
 #include "traversal.h"
@@ -30,72 +29,6 @@ struct order_data {
 };
 
 typedef int (*orderFunc)(const void ** restrict a_raw, const void ** restrict b_raw);
-
-static const struct parsers_enum order_types[] = {
-    {
-        .name = "none",
-        .id = SELVA_RESULT_ORDER_NONE,
-    },
-    {
-        .name = "asc",
-        .id = SELVA_RESULT_ORDER_ASC,
-    },
-    {
-        .name = "desc",
-        .id = SELVA_RESULT_ORDER_DESC,
-    },
-    /* Must be last. */
-    {
-        .name = NULL,
-        .id = 0,
-    }
-};
-
-int SelvaTraversal_ParseOrder(enum SelvaResultOrder *order, struct selva_string *ord) {
-    int res;
-
-    res = parse_enum(order_types, ord);
-    if (res < 0) {
-        *order = SELVA_RESULT_ORDER_NONE;
-        return res;
-    }
-
-    *order = (enum SelvaResultOrder)res;
-    return 0;
-}
-
-int SelvaTraversal_ParseOrderArg(
-        struct selva_string **order_by_field,
-        enum SelvaResultOrder *order,
-        const struct selva_string *txt,
-        struct selva_string *fld,
-        struct selva_string *ord) {
-    TO_STR(txt, fld);
-    int err;
-
-    if (strcmp("order", txt_str)) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    err = SelvaTraversal_ParseOrder(order, ord);
-    if (err) {
-        TO_STR(ord);
-
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid order \"%.*s\": %s",
-                  (int)ord_len, ord_str,
-                  selva_strerror(err));
-        return SELVA_HIERARCHY_EINVAL;
-    }
-
-    if (fld_len == 0 || fld_str[0] == '\0') {
-        *order = SELVA_RESULT_ORDER_NONE;
-        *order_by_field = NULL;
-    } else {
-        *order_by_field = *order == SELVA_RESULT_ORDER_NONE ? NULL : fld;
-    }
-
-    return 0;
-}
 
 static int SelvaTraversalOrder_CompareNone(const void ** restrict a_raw __unused, const void ** restrict b_raw __unused) {
     return 0;

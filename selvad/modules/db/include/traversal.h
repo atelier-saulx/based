@@ -277,17 +277,6 @@ typedef void (*SelvaHierarchyChildCallback)(
         void *arg);
 
 int SelvaTraversal_ParseDir2(enum SelvaTraversal *dir, const struct selva_string *arg);
-int SelvaTraversal_ParseOrder(enum SelvaResultOrder *order, struct selva_string *ord);
-
-/**
- * Parse an `order` argument in a command call.
- */
-int SelvaTraversal_ParseOrderArg(
-        struct selva_string **order_by_field,
-        enum SelvaResultOrder *order,
-        const struct selva_string *txt,
-        struct selva_string *fld,
-        struct selva_string *ord);
 
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
 int SelvaTraversal_GetSkip(enum SelvaTraversal dir);
