@@ -65,6 +65,17 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // fieldName
     { type: 'string' }, // meta value
   ]),
+  'object.incrby': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' }, // fieldName
+    { type: 'longlong' }, // incrby
+  ]),
+  'object.incrbydouble': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' }, // fieldName
+    { type: 'double' }, // incrby
+  ]),
+
   // modify related commands
   modify,
   // hierarchy

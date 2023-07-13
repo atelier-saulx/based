@@ -125,12 +125,19 @@ test.serial.only('set primitive fields', async (t) => {
   await client.set({
     $id: 'po2',
     slug: '/second-post',
+    int: 2,
     parents: ['po1'],
   })
+
+  await client.command('object.incrby', ['po2', 'int', 3])
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
   console.log('getResult', getResult)
   t.deepEqual(getResult, ['/second-post'])
+
+  getResult = await client.command('object.get', ['', 'po2', 'int'])
+  console.log('getResult', getResult)
+  t.deepEqual(getResult, [BigInt(5)])
 
   let parents = await client.command('hierarchy.parents', ['po2'])
   console.log('PARENTS po2', parents)

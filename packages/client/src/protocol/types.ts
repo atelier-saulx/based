@@ -32,9 +32,9 @@ export const TYPES = {
   'object.exists': 48,
   'object.len': 52,
   'object.setMeta': 57,
+  'object.incrby': 50,
+  'object.incrbydouble': 51,
   // TODO:
-  // #define CMD_ID_OBJECT_INCRBY 50
-  // #define CMD_ID_OBJECT_INCRBY_DOUBLE 51
   // #define CMD_ID_OBJECT_KEYS 54 // TODO: needs an optional argument
   // modify related commands
   modify: 68,
