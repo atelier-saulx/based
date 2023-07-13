@@ -19,20 +19,18 @@
 #include "selva_log.h"
 #include "selva_proto.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "db_config.h"
+#include "selva_db.h"
+#include "find_index.h"
 #include "hierarchy.h"
 #include "modify.h"
+#include "parsers.h"
 #include "rpn.h"
-#include "selva_db.h"
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"
-#include "string_list.h"
-#include "string_set.h"
 #include "subscriptions.h"
 #include "traversal.h"
-#include "find_index.h"
 
 struct SelvaAggregate_QueryOpts {
     enum SelvaHierarchy_AggregateType {
@@ -704,7 +702,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     if (query_opts.index_hints_len) {
         const struct selva_string *s;
 
-        index_hints = string_list_parse(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
+        index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
 
         s = index_hints[0];
         while (s) {
@@ -746,7 +744,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
      * Parse fields.
      */
     selvaobject_autofree struct SelvaObject *fields = NULL;
-    err = string_set_parse(&fin, fields_raw, &fields, NULL);
+    err = parse_string_set(&fin, fields_raw, &fields, NULL);
     if (err) {
         selva_send_errorf(resp, err, "Parsing fields list failed");
         return;

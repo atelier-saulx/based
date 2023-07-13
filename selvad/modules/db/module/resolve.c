@@ -10,7 +10,6 @@
 #include "util/finalizer.h"
 #include "selva_error.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "selva_proto.h"
 #include "hierarchy.h"
 #include "selva_db.h"

@@ -12,6 +12,7 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_object.h"
+#include "parsers.h"
 
 /* These could be constexpr if clang would have full C23 support. */
 #define EXCL_PREFIX     '!'

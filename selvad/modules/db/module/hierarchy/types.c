@@ -14,7 +14,6 @@
 #include "selva_db.h"
 #include "selva_onload.h"
 #include "selva_object.h"
-#include "arg_parser.h"
 #include "hierarchy.h"
 
 /**

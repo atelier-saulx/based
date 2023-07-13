@@ -17,7 +17,6 @@
 #include "selva_replication.h"
 #include "selva_server.h"
 #include "jemalloc.h"
-#include "arg_parser.h"
 #include "hierarchy.h"
 #include "rpn.h"
 #include "selva_object.h"

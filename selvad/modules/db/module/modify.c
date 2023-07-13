@@ -26,7 +26,6 @@
 #include "util/selva_proto_builder.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
-#include "arg_parser.h"
 #include "comparator.h"
 #include "db_config.h"
 #include "hierarchy.h"

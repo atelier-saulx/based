@@ -10,10 +10,10 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_log.h"
-#include "arg_parser.h"
 #include "selva_db.h"
 #include "db_config.h"
 #include "hierarchy.h"
+#include "parsers.h"
 #include "selva_lang.h"
 #include "selva_object.h"
 #include "traversal.h"
@@ -31,7 +31,7 @@ struct order_data {
 
 typedef int (*orderFunc)(const void ** restrict a_raw, const void ** restrict b_raw);
 
-static const struct SelvaArgParser_EnumType order_types[] = {
+static const struct parsers_enum order_types[] = {
     {
         .name = "none",
         .id = SELVA_RESULT_ORDER_NONE,
@@ -54,7 +54,7 @@ static const struct SelvaArgParser_EnumType order_types[] = {
 int SelvaTraversal_ParseOrder(enum SelvaResultOrder *order, struct selva_string *ord) {
     int res;
 
-    res = SelvaArgParser_Enum(order_types, ord);
+    res = parse_enum(order_types, ord);
     if (res < 0) {
         *order = SELVA_RESULT_ORDER_NONE;
         return res;

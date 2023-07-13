@@ -5,7 +5,6 @@ OBJ := \
 	   db.o \
 	   module/aggregate.o \
 	   module/alias.o \
-	   module/arg_parser.o \
 	   module/comparator.o \
 	   module/dump.o \
 	   module/edge/edge.o \
@@ -27,6 +26,9 @@ OBJ := \
 	   module/inherit/send_field.o \
 	   module/inherit/send_field_find.o \
 	   module/modify.o \
+	   module/parsers/enum.o \
+	   module/parsers/string_list.o \
+	   module/parsers/string_set.o \
 	   module/resolve.o \
 	   module/rpn/rpn.o \
 	   module/rpn/rpn_eval.o \
@@ -43,8 +45,6 @@ OBJ := \
 	   module/selva_set/seta_in_setb.o \
 	   module/selva_type.o \
 	   module/shared_strings.o \
-	   module/string_list.o \
-	   module/string_set.o \
 	   module/subscriptions.o \
 	   module/update.o
 DEP := $(OBJ:%.o=%.d)

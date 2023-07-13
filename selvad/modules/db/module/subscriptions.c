@@ -21,8 +21,8 @@
 #include "selva_log.h"
 #include "selva_proto.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "hierarchy.h"
+#include "parsers.h"
 #include "resolve.h"
 #include "rpn.h"
 #include "selva_object.h"
@@ -40,7 +40,7 @@ struct set_node_marker_data {
     struct Selva_SubscriptionMarker *marker;
 };
 
-static const struct SelvaArgParser_EnumType trigger_event_types[] = {
+static const struct parsers_enum trigger_event_types[] = {
     {
         .name = "created",
         .id = SELVA_SUBSCRIPTION_TRIGGER_TYPE_CREATED,
@@ -2300,7 +2300,7 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
     marker_id = ll;
 
     /* Parse event_type */
-    err = SelvaArgParser_Enum(trigger_event_types, argv[ARGV_EVENT_TYPE]);
+    err = parse_enum(trigger_event_types, argv[ARGV_EVENT_TYPE]);
     if (err < 0) {
         selva_send_errorf(resp, err, "Event type");
         return;

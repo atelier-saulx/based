@@ -17,7 +17,6 @@
 #include "selva_proto.h"
 #include "selva_replication.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "hierarchy.h"
 #include "selva_db.h"
 #include "selva_object.h"
@@ -285,11 +284,12 @@ void Edge_AddConstraintCommand(struct selva_server_response_out *resp, const voi
     }
 
     Selva_NodeType src_type;
-    err = SelvaArgParser_NodeType(src_type, argv[ARGV_SRC_NODE_TYPE]);
-    if (err) {
-        selva_send_errorf(resp, err, "source node type");
+    if (selva_string_get_len(argv[ARGV_SRC_NODE_TYPE]) < SELVA_NODE_TYPE_SIZE) {
+        selva_send_errorf(resp, SELVA_EINVAL, "source node type");
         return;
     }
+
+    memcpy(src_type, selva_string_to_str(argv[ARGV_SRC_NODE_TYPE], NULL), sizeof(Selva_NodeType));
 
     size_t flags_len;
     const char *flags_str = selva_string_to_str(argv[ARGV_CONSTRAINT_FLAGS], &flags_len);

@@ -28,12 +28,12 @@
 #include "selva_proto.h"
 #include "selva_replication.h"
 #include "selva_server.h"
-#include "arg_parser.h"
 #include "db_config.h"
 #include "dump.h"
 #include "edge.h"
 #include "find_index.h"
 #include "modify.h"
+#include "parsers.h"
 #include "rpn.h"
 #include "selva_object.h"
 #include "selva_onload.h"
@@ -3765,7 +3765,7 @@ static void SelvaHierarchy_CompressCommand(struct selva_server_response_out *res
     }
 
     if (argc == 2) {
-        static const struct SelvaArgParser_EnumType types_map[] = {
+        static const struct parsers_enum types_map[] = {
             {
                 .name = "mem",
                 .id = SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM,
@@ -3780,7 +3780,7 @@ static void SelvaHierarchy_CompressCommand(struct selva_server_response_out *res
             }
         };
 
-        err = SelvaArgParser_Enum(types_map, type_s);
+        err = parse_enum(types_map, type_s);
         if (err < 0) {
             selva_send_error(resp, err, "Type", 4);
             return;

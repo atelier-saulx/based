@@ -7,8 +7,9 @@
 #include "jemalloc.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
+#include "parsers.h"
 
-struct selva_string **string_list_parse(
+struct selva_string **parse_string_list(
         struct finalizer *fin,
         const char *in_str,
         size_t in_len)

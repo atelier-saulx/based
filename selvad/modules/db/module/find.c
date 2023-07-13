@@ -33,8 +33,7 @@
 #include "selva_onload.h"
 #include "selva_set.h"
 #include "selva_trace.h"
-#include "string_list.h"
-#include "string_set.h"
+#include "parsers.h"
 #include "subscriptions.h"
 #include "edge.h"
 #include "traversal.h"
@@ -1867,7 +1866,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     if (query_opts.index_hints_len) {
         const struct selva_string *s;
 
-        index_hints = string_list_parse(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
+        index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
 
         s = index_hints[0];
         while (s) {
@@ -1944,7 +1943,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
         selva_string_auto_finalize(&fin, raw);
 
-        err = string_set_parse(&fin, raw, &fields, &excluded_fields);
+        err = parse_string_set(&fin, raw, &fields, &excluded_fields);
         if (err) {
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
