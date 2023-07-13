@@ -8,20 +8,6 @@
 #include "selva_error.h"
 #include "arg_parser.h"
 
-int SelvaArgParser_StrOpt(const char **value, const char *name, const struct selva_string *arg_key, const struct selva_string *arg_val) {
-    TO_STR(arg_key, arg_val);
-
-    if (strcmp(name, arg_key_str)) {
-        return SELVA_ENOENT;
-    }
-
-    if (value) {
-        *value = arg_val_str;
-    }
-
-    return 0;
-}
-
 int SelvaArgParser_Enum(
         const struct SelvaArgParser_EnumType types[],
         const struct selva_string *arg) {

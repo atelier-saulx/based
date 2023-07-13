@@ -19,12 +19,6 @@ struct SelvaArgParser_EnumType {
     int id;
 };
 
-int SelvaArgParser_StrOpt(
-        const char **value,
-        const char *name,
-        const struct selva_string *arg_key,
-        const struct selva_string *arg_val);
-
 int SelvaArgParser_Enum(
         const struct SelvaArgParser_EnumType types[],
         const struct selva_string *arg);
