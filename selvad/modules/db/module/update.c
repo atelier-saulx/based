@@ -27,6 +27,21 @@
 #include "traversal.h"
 #include "modify.h"
 
+struct SelvaUpdate_QueryOpts {
+    /**
+     * Traversal method/direction.
+     */
+    enum SelvaTraversal dir;
+    const char *dir_opt_str; /*!< Ref field name or expression. Optional. */
+    size_t dir_opt_len;
+
+    /**
+     * Expression to decide whether and edge should be visited.
+     */
+    const char *edge_filter_str;
+    size_t edge_filter_len;
+};
+
 struct update_op {
     char type_code;
     struct selva_string *field;
@@ -433,6 +448,35 @@ static int update_node_cb(
     return 0;
 }
 
+/* FIXME letoh conversion */
+static int fixup_query_opts(struct SelvaUpdate_QueryOpts *qo, const char *base, size_t qo_len) {
+    uintptr_t dbase = (uintptr_t)base;
+    uintptr_t end = (uintptr_t)base + qo_len;
+
+    if (qo->dir_opt_len) {
+        qo->dir_opt_str += dbase;
+    } else {
+        qo->dir_opt_str = NULL;
+    }
+
+    if (qo->edge_filter_len) {
+        qo->edge_filter_str += dbase;
+    } else {
+        qo->edge_filter_str = NULL;
+    }
+
+    /*
+     * We don't care to check whether the pointers are actually sane.
+     * It's enough to know that they are within the original allocation.
+     * TODO Make sure that the pointers can't wrap around.
+     */
+    if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end ||
+        (ptrdiff_t)qo->edge_filter_str      + qo->edge_filter_len       > end) {
+        return SELVA_EINVAL;
+    }
+    return 0;
+}
+
 void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf, size_t len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
@@ -442,18 +486,13 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
 
     finalizer_init(&fin);
 
-    const int ARGV_DIRECTION = 0;
-    const int ARGV_REF_FIELD = 1;
-    int ARGV_EDGE_FILTER_TXT = 1;
-    int ARGV_EDGE_FILTER_VAL = 2;
-    int ARGV_NR_UPDATE_OPS   = 1;
-    __unused int ARGV_UPDATE_OPS = 2;
-    int ARGV_NODE_IDS        = 2;
-    int ARGV_FILTER_EXPR     = 2;
-    int ARGV_FILTER_ARGS     = 3;
+    const int ARGV_QUERY_OPTS       = 0;
+    int ARGV_NR_UPDATE_OPS          = 1;
+    __unused int ARGV_UPDATE_OPS    = 2;
+    int ARGV_NODE_IDS               = 2;
+    int ARGV_FILTER_EXPR            = 2;
+    int ARGV_FILTER_ARGS            = 3;
 #define SHIFT_ARGS(i) \
-    ARGV_EDGE_FILTER_TXT += i; \
-    ARGV_EDGE_FILTER_VAL += i; \
     ARGV_NR_UPDATE_OPS += i; \
     ARGV_UPDATE_OPS += i; \
     ARGV_NODE_IDS += i; \
@@ -461,13 +500,29 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
     ARGV_FILTER_ARGS += i
 
     argc = selva_proto_buf2strings(&fin, buf, len, &argv);
-    if (argc < 4) {
+    if (argc < 3) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
         } else {
             selva_send_error_arity(resp);
         }
         return;
+    }
+
+    size_t query_opts_len;
+    const char *query_opts_str = selva_string_to_str(argv[ARGV_QUERY_OPTS], &query_opts_len);
+    struct SelvaUpdate_QueryOpts query_opts;
+
+    if (query_opts_len < sizeof(query_opts)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
+        return;
+    } else {
+        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Invalid query opts");
+            return;
+        }
     }
 
     __auto_free_rpn_ctx struct rpn_ctx *traversal_rpn_ctx = NULL;
@@ -478,62 +533,50 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
     /*
      * Parse the traversal arguments.
      */
-    enum SelvaTraversal dir;
-    const struct selva_string *ref_field = NULL;
-    err = SelvaTraversal_ParseDir2(&dir, argv[ARGV_DIRECTION]);
-    if (err) {
-        selva_send_errorf(resp, err, "Traversal argument");
-        return;
-    }
-    if (argc <= ARGV_REF_FIELD &&
-        (dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                SELVA_HIERARCHY_TRAVERSAL_EXPRESSION))) {
-        selva_send_error_arity(resp);
-        return;
-    }
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
-        ref_field = argv[ARGV_REF_FIELD];
-        SHIFT_ARGS(1);
-    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                      SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        const struct selva_string *input = argv[ARGV_REF_FIELD];
-        TO_STR(input);
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
+                          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
+        if (!query_opts.dir_opt_str) {
+            selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
+            return;
+        }
+        /* NOP */
+    } else if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                 SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        if (!query_opts.dir_opt_str) {
+            selva_send_errorf(resp, SELVA_EINVAL, "Missing traversal expression");
+            return;
+        }
+
+        char input[query_opts.dir_opt_len + 1];
+
+        memcpy(input, query_opts.dir_opt_str, query_opts.dir_opt_len);
+        input[query_opts.dir_opt_len] = '\0';
 
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input_str);
+        traversal_expression = rpn_compile(input);
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
             return;
         }
-        SHIFT_ARGS(1);
     }
 
-    if (argc > ARGV_EDGE_FILTER_VAL) {
-        const char *expr_str;
+    if (query_opts.edge_filter_str) {
+        if (!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION))) {
+            selva_send_errorf(resp, SELVA_EINVAL, "edge_filter can be only used with expression traversals");
+            return;
+        }
 
-        err = SelvaArgParser_StrOpt(&expr_str, "edge_filter", argv[ARGV_EDGE_FILTER_TXT], argv[ARGV_EDGE_FILTER_VAL]);
-        if (err == 0) {
-            SHIFT_ARGS(2);
+        char input[query_opts.edge_filter_len + 1];
 
-            if (!(dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
-                         SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION))) {
-                selva_send_errorf(resp, SELVA_EINVAL, "edge_filter can be only used with expression traversals");
-                return;
-            }
+        memcpy(input, query_opts.edge_filter_str, query_opts.edge_filter_len);
+        input[query_opts.edge_filter_len] = '\0';
 
-            edge_filter_ctx = rpn_init(1);
-            edge_filter = rpn_compile(expr_str);
-            if (!edge_filter) {
-                selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
-                return;
-            }
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "edge_filter");
+        edge_filter_ctx = rpn_init(1);
+        edge_filter = rpn_compile(input);
+        if (!edge_filter) {
+            selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
             return;
         }
     }
@@ -608,20 +651,21 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             .filter = filter_expression,
         };
 
-        if ((dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                    SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
-                   && ref_field) {
+        if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
+                               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
+                   && query_opts.dir_opt_str) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = update_node_cb,
                 .node_arg = &args,
             };
-            TO_STR(ref_field);
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
 
             SELVA_TRACE_BEGIN(cmd_update_refs);
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, dir, ref_field_str, ref_field_len, &cb);
+            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
             SELVA_TRACE_END(cmd_update_refs);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = update_node_cb,
                 .node_arg = &args,
@@ -630,7 +674,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             SELVA_TRACE_BEGIN(cmd_update_bfs_expression);
             err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, edge_filter_ctx, edge_filter, &cb);
             SELVA_TRACE_END(cmd_update_bfs_expression);
-        } else if (dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = update_node_cb,
                 .node_arg = &args,
@@ -646,7 +690,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             };
 
             SELVA_TRACE_BEGIN(cmd_update_rest);
-            err = SelvaHierarchy_Traverse(hierarchy, nodeId, dir, &cb);
+            err = SelvaHierarchy_Traverse(hierarchy, nodeId, query_opts.dir, &cb);
             SELVA_TRACE_END(cmd_update_rest);
         }
         if (err != 0) {
@@ -655,7 +699,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
              * it and ignore the error.
              */
             SELVA_LOG(SELVA_LOGL_ERR, "Update failed. dir: %s node_id: \"%.*s\" err: \"%s\"",
-                      SelvaTraversal_Dir2str(dir),
+                      SelvaTraversal_Dir2str(query_opts.dir),
                       (int)SELVA_NODE_ID_SIZE, nodeId,
                       selva_strerror(err));
         }
