@@ -177,3 +177,23 @@ export const selva_proto_control_def = compile(
   [{ name: 'type', type: 'int8' }],
   { align: false }
 )
+
+export const hierarchy_find_def = compile(
+  [
+    { name: 'dir', type: 'int8' }, // enum
+    { name: 'dir_opt_str', type: 'cstring_p' },
+    { name: 'edge_filter_str', type: 'cstring_p' },
+    { name: 'index_hints_str', type: 'cstring_p' },
+    { name: 'order', type: 'int8' }, // enum
+    { name: 'order_by_field_str', type: 'cstring_p' },
+    { name: 'offset', type: 'int32_le' },
+    { name: 'limit', type: 'int32_le' },
+    { name: 'merge_strategy', type: 'int8' }, // enum
+    { name: 'merge_str', type: 'cstring_p' },
+    { name: 'res_type', type: 'int8' }, // enum
+    { name: 'res_opt_str', type: 'cstring_p' },
+  ],
+  {
+    align: true,
+  }
+)
