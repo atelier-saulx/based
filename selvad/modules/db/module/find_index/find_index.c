@@ -830,7 +830,7 @@ int SelvaFindIndex_Auto(
     if (selva_glob_config.find_indices_max == 0) {
         return SELVA_ENOTSUP;
     }
-    if (!(dir & allowed_dirs)) {
+    if (!(dir & allowed_dirs) || __builtin_popcount(dir) > 1) {
         /*
          * Only index some traversals.
          */
@@ -1130,9 +1130,9 @@ static void SelvaFindIndex_ListCommand(struct selva_server_response_out *resp, c
 static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    struct selva_string *direction;
+    enum SelvaTraversal dir;
     struct selva_string *ref_field;
-    struct selva_string *order_ord;
+    enum SelvaResultOrder order_ord;
     struct selva_string *order_field;
     Selva_NodeId node_id;
     struct selva_string *filter;
@@ -1145,12 +1145,12 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
         return;
     }
 
-    argc = selva_proto_scanf(&fin, buf, len, "%p, %p, %p, %p, %p, %p",
-                             &direction,
+    argc = selva_proto_scanf(&fin, buf, len, "%d, %p, %d, %p, %" SELVA_SCA_NODE_ID ", %p",
+                             &dir,
                              &ref_field,
                              &order_ord,
                              &order_field,
-                             &node_id,
+                             node_id,
                              &filter);
     if (argc != 6) {
         if (argc < 0) {
@@ -1161,13 +1161,6 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
         return;
     }
 
-    enum SelvaTraversal dir;
-    err = SelvaTraversal_ParseDir2(&dir, direction);
-    if (err) {
-        selva_send_errorf(resp, err, "Traversal direction");
-        return;
-    }
-
     struct selva_string *dir_expression;
     if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
         dir_expression = ref_field;
@@ -1175,13 +1168,6 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
         dir_expression = NULL;
     } else {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Traversal direction");
-        return;
-    }
-
-    enum SelvaResultOrder order;
-    err = SelvaTraversal_ParseOrder(&order, order_ord);
-    if (err) {
-        selva_send_errorf(resp, err, "order");
         return;
     }
 
@@ -1205,7 +1191,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     err = SelvaFindIndex_Auto(
             hierarchy,
             dir, dir_expression, node_id,
-            order, order != SELVA_RESULT_ORDER_NONE ? order_field : NULL,
+            order_ord, order_ord != SELVA_RESULT_ORDER_NONE ? order_field : NULL,
             filter, &icb);
     if ((err && err != SELVA_ENOENT) || !icb) {
         selva_send_errorf(resp, err, "Failed to create an index");
