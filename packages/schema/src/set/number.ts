@@ -1,5 +1,62 @@
 import { Parser } from './types'
 import { error, ParseError } from './error'
+import {
+  BasedSchemaFieldInteger,
+  BasedSchemaFieldNumber,
+  BasedSchemaFieldTimeStamp,
+} from '../types'
+
+const validate = (
+  path: (number | string)[],
+  value: any,
+  fieldSchema:
+    | BasedSchemaFieldInteger
+    | BasedSchemaFieldNumber
+    | BasedSchemaFieldTimeStamp
+): number => {
+  if (typeof value !== 'number') {
+    error(path, ParseError.incorrectFormat)
+  }
+  if (fieldSchema.maximum) {
+    if (fieldSchema.exclusiveMaximum && value > value) {
+      error(path, ParseError.exceedsMaximum)
+    } else if (value >= value) {
+      error(path, ParseError.exceedsMaximum)
+    }
+  }
+  if (fieldSchema.minimum) {
+    if (fieldSchema.exclusiveMinimum && value < value) {
+      error(path, ParseError.subceedsMinimum)
+    } else if (value <= value) {
+      error(path, ParseError.subceedsMinimum)
+    }
+  }
+  return value
+}
+
+const shared = (
+  path: (number | string)[],
+  value: any,
+  fieldSchema:
+    | BasedSchemaFieldInteger
+    | BasedSchemaFieldNumber
+    | BasedSchemaFieldTimeStamp
+): any => {
+  if (typeof value === 'object') {
+    if (value.$increment) {
+      validate([...path, '$increment'], value.$increment, fieldSchema)
+    }
+    if (value.$decrement) {
+      validate([...path, '$decrement'], value.$increment, fieldSchema)
+    }
+    if (value.$value) {
+      validate([...path], value.$value, fieldSchema)
+    }
+  } else {
+    validate(path, value, fieldSchema)
+  }
+  return value
+}
 
 export const timestamp: Parser<'timestamp'> = async (
   path,
@@ -20,27 +77,13 @@ export const timestamp: Parser<'timestamp'> = async (
       }
     }
   }
-  // // smaller then / larger then steps
-  // if (typeof value !== 'number') {
-  //   throw createError(path, target.type, 'timestamp', value)
-  // }
-
-  // if (fieldSchema.maximum) {
-  //   if (fieldSchema.exclusiveMaximum && value > value) {
-  //     throw createError(path, target.type, 'timestamp', value)
-  //   } else if (value >= value) {
-  //     throw createError(path, target.type, 'timestamp', value)
-  //   }
-  // }
-
-  // if (fieldSchema.minimum) {
-  //   if (fieldSchema.exclusiveMinimum && value < value) {
-  //     throw createError(path, target.type, 'timestamp', value)
-  //   } else if (value <= value) {
-  //     throw createError(path, target.type, 'timestamp', value)
-  //   }
-  // }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  handlers.collect({
+    path,
+    value: shared(path, value, fieldSchema),
+    typeSchema,
+    fieldSchema,
+    target,
+  })
 }
 
 export const number: Parser<'number'> = async (
@@ -51,14 +94,13 @@ export const number: Parser<'number'> = async (
   target,
   handlers
 ) => {
-  // value .default
-  // $increment / $decrement
-
-  if (typeof value !== 'number') {
-    error(path, ParseError.incorrectFormat)
-  }
-
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  handlers.collect({
+    path,
+    value: shared(path, value, fieldSchema),
+    typeSchema,
+    fieldSchema,
+    target,
+  })
 }
 
 export const integer: Parser<'integer'> = async (
@@ -69,10 +111,14 @@ export const integer: Parser<'integer'> = async (
   target,
   handlers
 ) => {
-  // value .default
-  // $increment / $decrement
   if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
     error(path, ParseError.incorrectFormat)
   }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  handlers.collect({
+    path,
+    value: shared(path, value, fieldSchema),
+    typeSchema,
+    fieldSchema,
+    target,
+  })
 }

@@ -134,25 +134,15 @@ export const array: Parser<'array'> = async (
           ...handlers,
           collect: () => {},
         }
+        const insert = Array.isArray(value.$insert.$value)
+          ? value.$insert.$value
+          : [value.$insert.$value]
         const q: Promise<void>[] = []
-        if (Array.isArray(value.$insert.$value)) {
-          for (let i = 0; i < value.$insert.$value.length; i++) {
-            q.push(
-              fieldWalker(
-                [...path, 'insert', i],
-                value.$insert.$value[i],
-                fieldSchema.values,
-                typeSchema,
-                target,
-                nestedHandler
-              )
-            )
-          }
-        } else {
+        for (let i = 0; i < insert.length; i++) {
           q.push(
             fieldWalker(
-              [...path, '$insert'],
-              value.$insert.$value,
+              [...path, 'insert', i],
+              insert[i],
               fieldSchema.values,
               typeSchema,
               target,
@@ -172,24 +162,12 @@ export const array: Parser<'array'> = async (
         ...handlers,
         collect: () => {},
       }
-      if (Array.isArray(value.$push)) {
-        for (let i = 0; i < value.$push.length; i++) {
-          q.push(
-            fieldWalker(
-              [...path, i],
-              value.$push[i],
-              fieldSchema.values,
-              typeSchema,
-              target,
-              nestedHandler
-            )
-          )
-        }
-      } else {
+      const push = Array.isArray(value.$push) ? value.$push : [value.$push]
+      for (let i = 0; i < push.length; i++) {
         q.push(
           fieldWalker(
-            [...path, '$push'],
-            value.$push,
+            [...path, i],
+            push[i],
             fieldSchema.values,
             typeSchema,
             target,
