@@ -27,8 +27,6 @@ export const boolean: Parser<'boolean'> = async (
   target,
   handlers
 ) => {
-  // value .default
-  // $increment / $decrement
   if (typeof value !== 'boolean') {
     error(path, ParseError.incorrectFormat)
   }
