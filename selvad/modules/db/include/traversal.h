@@ -276,8 +276,6 @@ typedef void (*SelvaHierarchyChildCallback)(
         struct SelvaHierarchyNode *child,
         void *arg);
 
-int SelvaTraversal_ParseDir2(enum SelvaTraversal *dir, const struct selva_string *arg);
-
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
 int SelvaTraversal_GetSkip(enum SelvaTraversal dir);
 const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -12,45 +12,6 @@
 #include "selva_lang.h"
 #include "selva_object.h"
 #include "traversal.h"
-
-int SelvaTraversal_ParseDir2(enum SelvaTraversal *dir, const struct selva_string *arg)
-{
-    TO_STR(arg);
-
-    if (!strcmp("none", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_NONE;
-    } else if (!strcmp("node", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_NODE;
-    } else if (!strcmp("array", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_ARRAY;
-    } else if (!strcmp("set", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_SET;
-    } else if (!strcmp("children", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
-    } else if (!strcmp("parents", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
-    } else if (!strcmp("ancestors", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS;
-    } else if (!strcmp("descendants", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS;
-    } else if (!strcmp("ref", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_REF;
-    } else if (!strcmp("edge_field", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
-    } else if (!strcmp("bfs_edge_field", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD;
-    } else if (!strcmp("bfs_expression", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION;
-    } else if (!strcmp("expression", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_EXPRESSION;
-    } else if (!strcmp("dfs_full", arg_str)) {
-        *dir = SELVA_HIERARCHY_TRAVERSAL_DFS_FULL;
-    } else {
-        return SELVA_SUBSCRIPTIONS_EINVAL;
-    }
-
-    return 0;
-}
 
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len)
 {
