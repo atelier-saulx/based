@@ -1,18 +1,73 @@
 import { compile } from 'data-record'
 
-// TODO: add all the commands
 export const TYPES = {
+  // system commands
   ping: 0,
   echo: 1,
   lscmd: 2,
+  debug: 8,
+  save: 15,
+  load: 14,
+  flush: 16,
+  // essential
+  // TODO:
+  'resolve.nodeid': 18,
+  lsaliases: 70,
+  replicasync: 71,
+  replicaof: 72,
+  replicainfo: 73,
+  replicawait: 75,
+  // #define CMD_ID_PUBLISH 76
+  // #define CMD_ID_SUBSCRIBE 77
+  // #define CMD_ID_UNSUBSCRIBE 78
+  // indexes
+  'index.list': 38,
+  // TODO:
+  // #define CMD_ID_INDEX_NEW 39
+  // #define CMD_ID_INDEX_DEL 40
+  // #define CMD_ID_INDEX_DEBUG 41
+  // object primitives
   'object.get': 49,
   'object.set': 53,
+  'object.del': 47,
+  'object.exists': 48,
+  'object.len': 52,
+  'object.setMeta': 57,
+  // TODO:
+  // #define CMD_ID_OBJECT_INCRBY 50
+  // #define CMD_ID_OBJECT_INCRBY_DOUBLE 51
+  // #define CMD_ID_OBJECT_KEYS 54 // TODO: needs an optional argument
+  // modify related commands
   modify: 68,
+  // TODO:
+  // #define CMD_ID_UPDATE 69
+  // hierarchy
   'hierarchy.find': 19,
   'hierarchy.edgeList': 29,
   'hierarchy.parents': 27,
   'hierarchy.children': 28,
-  save: 15,
+  // TODO:
+  // #define CMD_ID_HIERARCHY_FIND 19
+  // #define CMD_ID_HIERARCHY_INHERIT 20
+  // #define CMD_ID_HIERARCHY_AGGREGATE 21
+  // #define CMD_ID_HIERARCHY_ADDCONSTRAINT 23
+  // #define CMD_ID_HIERARCHY_DEL 25
+  // #define CMD_ID_HIERARCHY_HEADS 26
+  // #define CMD_ID_HIERARCHY_TYPES_ADD 35
+  // #define CMD_ID_HIERARCHY_TYPES_CLEAR 36
+  // #define CMD_ID_HIERARCHY_TYPES_LIST 37
+  // subscriptions
+  // TODO:
+  // #define CMD_ID_SUBSCRIPTIONS_ADD 58
+  // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 59
+  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
+  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
+  // #define CMD_ID_SUBSCRIPTIONS_REFRESH 62
+  // #define CMD_ID_SUBSCRIPTIONS_LIST 63
+  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 64
+  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 65
+  // #define CMD_ID_SUBSCRIPTIONS_DEL 66
+  // #define CMD_ID_SUBSCRIPTIONS_DELMARKER 67
 }
 export type Command = keyof typeof TYPES
 export type SelvaProtocolHeader = {

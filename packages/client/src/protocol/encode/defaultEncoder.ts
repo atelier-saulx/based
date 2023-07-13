@@ -13,3 +13,12 @@ export function defaultEncoder(
     return buf
   }
 }
+
+export function strEncoder(argc: number): (payload: any) => Buffer {
+  const schema: EncodeDefinition = []
+  for (let i = 0; i < argc; i++) {
+    schema.push({ type: 'string' })
+  }
+
+  return defaultEncoder(schema)
+}
