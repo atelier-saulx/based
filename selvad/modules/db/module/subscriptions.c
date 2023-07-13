@@ -2149,16 +2149,17 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
 void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    struct selva_string **argv;
+    const char *sub_id_str;
+    size_t sub_id_len;
+    struct selva_string **ids;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    const int ARGV_SUB_ID    = 0;
-    const int ARGV_IDS       = 1;
-
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
+    argc = selva_proto_scanf(&fin, buf, len, "%.*s, ...",
+                             &sub_id_len, &sub_id_str,
+                             &ids);
     if (argc < 2) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -2168,11 +2169,18 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
         return;
     }
 
+    /*
+     * Get the subscription id.
+     */
     Selva_SubscriptionId sub_id;
-    err = Selva_SubscriptionString2id(sub_id, argv[ARGV_SUB_ID]);
-    if (err) {
-        selva_send_errorf(resp, err, "Invalid Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
     /*
@@ -2190,10 +2198,10 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
 
     struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
     long long n = 0;
-    for (int i = ARGV_IDS; i < argc; i++) {
+    for (int i = 0; i < argc - 1; i++) {
         Selva_NodeId resolved_node_id;
 
-        if (SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ argv[i] }, 1, resolved_node_id) > 0) {
+        if (SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ ids[i] }, 1, resolved_node_id) > 0) {
             /*
              * Node exists.
              * Note that the subscription might have been created anyway.
@@ -2202,7 +2210,7 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
         }
 
         size_t arg_len;
-        const char *arg_str = selva_string_to_str(argv[i], &arg_len);
+        const char *arg_str = selva_string_to_str(ids[i], &arg_len);
         size_t key_len = arg_len + 1 + SELVA_SUBSCRIPTION_ID_STR_LEN;
         char key_str[key_len + 1];
 
