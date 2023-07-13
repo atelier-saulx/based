@@ -20,7 +20,7 @@
 #define LIST_SEPARATOR  '|'
 #define EOS             '\0'
 
-int string_set_parse(
+int parse_string_set(
         struct finalizer *finalizer,
         const struct selva_string *raw_in,
         struct SelvaObject **list_out,
