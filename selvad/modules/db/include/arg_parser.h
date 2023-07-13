@@ -26,14 +26,4 @@ int SelvaArgParser_NodeType(
         Selva_NodeType node_type,
         const struct selva_string *arg);
 
-/**
- * Parse index hints from Redis command args.
- * Parses index hints from argv until the first keyword mismatch.
- * @returns The number of index hints found.
- */
-int SelvaArgParser_IndexHints(
-        selva_stringList *out,
-        struct selva_string **argv,
-        int argc);
-
 #endif /* SELVA_ARG_PARSER */

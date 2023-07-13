@@ -35,29 +35,3 @@ int SelvaArgParser_NodeType(Selva_NodeType node_type, const struct selva_string 
     memcpy(node_type, str, sizeof(Selva_NodeType));
     return 0;
 }
-
-int SelvaArgParser_IndexHints(selva_stringList *out, struct selva_string **argv, int argc) {
-    struct selva_string **list = NULL;
-    int n = 0;
-
-    for (int i = 0; i < argc; i += 2) {
-        struct selva_string **new_list;
-
-        if (n > FIND_INDICES_MAX_HINTS_FIND) {
-            return SELVA_ENOBUFS;
-        }
-
-        if (i + 1 >= argc || strcmp("index", selva_string_to_str(argv[i], NULL))) {
-            break;
-        }
-
-        const size_t list_size = ++n * sizeof(struct selva_string *);
-        new_list = selva_realloc(list, list_size);
-
-        list = new_list;
-        list[n - 1] = argv[i + 1];
-    }
-
-    *out = list;
-    return n;
-}

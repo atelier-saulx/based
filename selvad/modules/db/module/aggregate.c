@@ -709,6 +709,9 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         s = index_hints[0];
         while (s) {
             s = index_hints[++nr_index_hints];
+            if (nr_index_hints >= FIND_INDICES_MAX_HINTS_FIND) {
+                break;
+            }
         }
     }
 
@@ -807,10 +810,6 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             continue;
         }
 
-        /*
-         * Note that SelvaArgParser_IndexHints() limits the nr_index_hints to
-         * FIND_INDICES_MAX_HINTS_FIND
-         */
         struct SelvaFindIndexControlBlock *ind_icb[max(nr_index_hints, 1)];
         int ind_select = -1; /* Selected index. The smallest of all found. */
 
