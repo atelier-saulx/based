@@ -59,6 +59,15 @@ static const struct SelvaArgParser_EnumType trigger_event_types[] = {
     }
 };
 
+struct Subscriptions_QueryOpts {
+    /**
+     * Traversal method/direction.
+     */
+    enum SelvaTraversal dir;
+    const char *dir_opt_str; /*!< Ref field name or expression. Optional. */
+    size_t dir_opt_len;
+};
+
 static void Selva_Subscription_reply(struct selva_server_response_out *resp, void *p);
 static const struct SelvaObjectPointerOpts subs_missing_obj_opts = {
     .ptr_type_id = SELVA_OBJECT_POINTER_SUBS_MISSING,
@@ -652,7 +661,7 @@ static int new_marker(
      * field updates. Otherwise hierarchy events are only sent when the
      * subscription needs a refresh.
      */
-    if (fields_str) {
+    if (*fields_str) {
         flags |= SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
         if (contains_hierarchy_fields(fields_str)) {
             flags |= SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
@@ -706,11 +715,13 @@ static void marker_set_action_owner_ctx(struct Selva_SubscriptionMarker *marker,
  * must not be set.
  * @param ref_field is the field used for traversal that must be a c-string.
  */
-static void marker_set_ref_field(struct Selva_SubscriptionMarker *marker, const char *ref_field) {
+static void marker_set_ref_field(struct Selva_SubscriptionMarker *marker, const char *ref_field_str, size_t ref_field_len) {
     assert((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_REF | SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) &&
            !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_TRIGGER));
 
-    marker->ref_field = selva_strdup(ref_field);
+    marker->ref_field = malloc(ref_field_len + 1);
+    memcpy(marker->ref_field, ref_field_str, ref_field_len);
+    marker->ref_field[ref_field_len] = '\0';
 }
 
 static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *marker, struct rpn_expression *traversal_expression) {
@@ -860,7 +871,7 @@ int SelvaSubscriptions_AddCallbackMarker(
     if (dir_expression) {
         marker_set_traversal_expression(marker, dir_expression);
     } else if (dir_field) {
-        marker_set_ref_field(marker, dir_field);
+        marker_set_ref_field(marker, dir_field, strlen(dir_field));
     }
 
     if (filter) {
@@ -1837,6 +1848,28 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
     selva_send_array_end(resp);
 }
 
+/* FIXME letoh conversion */
+static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base, size_t qo_len) {
+    uintptr_t dbase = (uintptr_t)base;
+    uintptr_t end = (uintptr_t)base + qo_len;
+
+    if (qo->dir_opt_len) {
+        qo->dir_opt_str += dbase;
+    } else {
+        qo->dir_opt_str = NULL;
+    }
+
+    /*
+     * We don't care to check whether the pointers are actually sane.
+     * It's enough to know that they are within the original allocation.
+     * TODO Make sure that the pointers can't wrap around.
+     */
+    if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end) {
+        return SELVA_EINVAL;
+    }
+    return 0;
+}
+
 /*
  * Add a new marker to the subscription.
  * KEY SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
@@ -1852,20 +1885,13 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     const int ARGV_SUB_ID        = 0;
     const int ARGV_MARKER_ID     = 1;
-    const int ARGV_MARKER_DIR    = 2;
-    const int ARGV_REF_FIELD     = 3;
+    const int ARGV_QUERY_OPTS    = 2;
     int ARGV_NODE_ID             = 3;
     int ARGV_FIELDS              = 4;
-    int ARGV_FIELD_NAMES         = 5;
-    int ARGV_FILTER_EXPR         = 4;
-    int ARGV_FILTER_ARGS         = 5;
-#define SHIFT_ARGS(i) \
-    ARGV_NODE_ID += i; \
-    ARGV_FIELDS += i; \
-    ARGV_FIELD_NAMES += i; \
-    ARGV_FILTER_EXPR += i; \
-    ARGV_FILTER_ARGS += i
+    int ARGV_FILTER_EXPR         = 5;
+    int ARGV_FILTER_ARGS         = 6;
 
+    /* TODO use selva_proto_scanf() */
     argc = selva_proto_buf2strings(&fin, buf, len, &argv);
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
@@ -1903,42 +1929,59 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         return;
     }
 
+    size_t query_opts_len;
+    const char *query_opts_str = selva_string_to_str(argv[ARGV_QUERY_OPTS], &query_opts_len);
+    struct Subscriptions_QueryOpts query_opts;
+
+    if (query_opts_len < sizeof(query_opts)) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
+        return;
+    } else {
+        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Invalid query opts");
+            return;
+        }
+    }
+
     /*
      * Parse the traversal argument.
      */
-    enum SelvaTraversal sub_dir;
-    const char *ref_field = NULL;
-    err = SelvaTraversal_ParseDir2(&sub_dir, argv[ARGV_MARKER_DIR]);
-    if (err ||
-        !(sub_dir &
+    if (!(query_opts.dir &
           (SELVA_HIERARCHY_TRAVERSAL_NONE | SELVA_HIERARCHY_TRAVERSAL_NODE | SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
            SELVA_HIERARCHY_TRAVERSAL_PARENTS | SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS | SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
            SELVA_HIERARCHY_TRAVERSAL_REF | SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
         )) {
-        selva_send_errorf(resp, err, "Traversal argument");
+        selva_send_errorf(resp, SELVA_EINVAL, "Traversal dir");
         return;
     }
 
-    if (sub_dir & (SELVA_HIERARCHY_TRAVERSAL_REF | SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) {
-        ref_field = selva_string_to_str(argv[ARGV_REF_FIELD], NULL);
-        SHIFT_ARGS(1);
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
+                          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+                          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) &&
+        !query_opts.dir_opt_str) {
+        selva_send_errorf(resp, SELVA_EINVAL, "dir opt required");
+        return;
     }
 
     struct rpn_expression *traversal_expression = NULL;
     struct rpn_ctx *filter_ctx = NULL;
     struct rpn_expression *filter_expression = NULL;
-    if (sub_dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        const struct selva_string *input = argv[ARGV_REF_FIELD];
-        TO_STR(input);
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        char input[query_opts.dir_opt_len + 1];
 
-        traversal_expression = rpn_compile(input_str);
+        memcpy(input, query_opts.dir_opt_str, query_opts.dir_opt_len);
+        input[query_opts.dir_opt_len] = '\0';
+
+        traversal_expression = rpn_compile(input);
         if (!traversal_expression) {
             err = SELVA_RPN_ECOMP;
             selva_send_errorf(resp, err, "Failed to compile the traversal expression");
             goto out;
         }
-        SHIFT_ARGS(1);
     }
 
     /*
@@ -1955,17 +1998,10 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
      * Get field names for change events.
      * Optional.
      */
-    const char *fields_str = NULL;
     size_t fields_len = 0;
-    if (argc > ARGV_FIELD_NAMES) {
-        err = SelvaArgParser_StrOpt(NULL, "fields", argv[ARGV_FIELDS], argv[ARGV_FIELD_NAMES]);
-        if (err == 0) {
-            fields_str = selva_string_to_str(argv[ARGV_FIELD_NAMES], &fields_len);
-            SHIFT_ARGS(2);
-        } else if (err != SELVA_ENOENT) {
-            selva_send_errorf(resp, err, "Fields");
-            goto out;
-        }
+    const char *fields_str = selva_string_to_str(argv[ARGV_FIELDS], &fields_len);
+    if (fields_len == 0) {
+        fields_str = NULL;
     }
 
     /*
@@ -2015,7 +2051,8 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     unsigned short marker_flags = 0;
 
-    if (sub_dir & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN | SELVA_HIERARCHY_TRAVERSAL_PARENTS)) {
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
+                          SELVA_HIERARCHY_TRAVERSAL_PARENTS)) {
         /*
          * RFE We might want to have an arg for REF flag
          * but currently it seems to be enough to support
@@ -2046,9 +2083,9 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     }
 
     marker_set_node_id(marker, node_id);
-    marker_set_dir(marker, sub_dir);
-    if (ref_field) {
-        marker_set_ref_field(marker, ref_field);
+    marker_set_dir(marker, query_opts.dir);
+    if (query_opts.dir_opt_str) {
+        marker_set_ref_field(marker, query_opts.dir_opt_str, query_opts.dir_opt_len);
     }
     if (traversal_expression) {
         marker_set_traversal_expression(marker, traversal_expression);
@@ -2068,7 +2105,6 @@ out:
     } else {
         selva_send_ll(resp, 1);
     }
-#undef SHIFT_ARGS
 }
 
 /*
