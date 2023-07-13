@@ -1989,7 +1989,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
     } else if (query_opts.res_type != SELVA_FIND_QUERY_RES_IDS) {
-        selva_send_errorf(resp, SELVA_EINVAL, "Invalid res_type");
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid res_type: %d", (int)query_opts.res_type);
         return;
     }
     if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
