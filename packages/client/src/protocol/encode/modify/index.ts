@@ -45,6 +45,11 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
     const name = fields[i + 1]
     const value = fields[i + 2]
 
+    if (name === 'type') {
+      // type is a protected field
+      continue
+    }
+
     if (
       value?.$delete === true &&
       opType !== ModifyArgType.SELVA_MODIFY_ARG_OP_SET

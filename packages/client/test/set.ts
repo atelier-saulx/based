@@ -88,6 +88,7 @@ test.serial.only('set primitive fields', async (t) => {
       post: {
         prefix: 'po',
         fields: {
+          type: { type: 'string' },
           aliases: { type: 'set', items: { type: 'string' } },
           parents: { type: 'references' },
           children: { type: 'references' },
@@ -130,6 +131,9 @@ test.serial.only('set primitive fields', async (t) => {
     slug: '/second-post',
     int: 2,
     parents: ['po1'],
+    aliases: {
+      $add: ['sec'],
+    },
   })
 
   await client.command('object.incrby', ['po2', 'int', 3])
@@ -149,7 +153,8 @@ test.serial.only('set primitive fields', async (t) => {
   console.log('CHILDREN po1', children)
 
   await client.set({
-    $id: 'po2',
+    $alias: 'sec',
+    type: 'post',
     slug: { $delete: true },
     parents: { $add: ['root'] },
     // tags: { $delete: true }, // TODO
@@ -186,10 +191,6 @@ test.serial.only('set primitive fields', async (t) => {
   console.dir(find, { depth: 4 })
 
   console.log('ALIASES', await client.command('lsaliases'))
-  console.log(
-    'resolving',
-    await client.command('resolve.nodeid', ['', 'hmm', 'main', 'po2'])
-  )
 
   t.true(true)
 })

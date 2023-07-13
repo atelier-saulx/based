@@ -77,8 +77,16 @@ export class BasedDbClient extends Emitter {
       collect: (props) => args.push(...toModifyArgs(props)),
     })
 
-    // TODO: deal with alias
-    const resp = await this.command('modify', [$id, args])
+    let id = $id
+    if (!id && $alias) {
+      const args = Array.isArray($alias) ? $alias : [$alias]
+      const resolved = await this.command('resolve.nodeid', ['', ...args])
+      id = resolved?.[0]
+    }
+
+    // TODO: if still no id, generate one
+
+    const resp = await this.command('modify', [id, args])
     const err = resp?.[0]?.find((x: any) => {
       return x instanceof Error
     })
@@ -87,7 +95,7 @@ export class BasedDbClient extends Emitter {
       throw err
     }
 
-    return $id
+    return resp?.[0]?.[0]
   }
 
   onData(data: Buffer) {
