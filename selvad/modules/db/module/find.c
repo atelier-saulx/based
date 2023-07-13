@@ -1932,7 +1932,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     __auto_free_rpn_expression struct rpn_expression *inherit_expression = NULL;
 
     if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS) {
-        if (query_opts.merge_strategy != MERGE_STRATEGY_NAMED &&
+        if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
             query_opts.merge_strategy != MERGE_STRATEGY_NAMED) {
             selva_send_errorf(resp, SELVA_EINVAL, "Only named merge is supported with fields");
             return;
