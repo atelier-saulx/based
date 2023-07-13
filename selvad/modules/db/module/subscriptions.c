@@ -1872,31 +1872,38 @@ static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base
 
 /*
  * Add a new marker to the subscription.
- * KEY SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
+ * SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
  */
 void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    struct selva_string **argv;
+    const char *sub_id_str;
+    size_t sub_id_len;
+    Selva_SubscriptionMarkerId marker_id;
+    const char *query_opts_str;
+    size_t query_opts_len;
+    Selva_NodeId node_id;
+    const char *fields_str = NULL;
+    size_t fields_len = 0;
+    struct selva_string *filter_expr = NULL;
+    struct selva_string **filter_args = NULL;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    const int ARGV_SUB_ID        = 0;
-    const int ARGV_MARKER_ID     = 1;
-    const int ARGV_QUERY_OPTS    = 2;
-    int ARGV_NODE_ID             = 3;
-    int ARGV_FIELDS              = 4;
-    int ARGV_FILTER_EXPR         = 5;
-    int ARGV_FILTER_ARGS         = 6;
-
-    /* TODO use selva_proto_scanf() */
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
+    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId ", %p, %" SELVA_SCA_NODE_ID ", %.*s, %p, ...",
+                             &sub_id_len, &sub_id_str,
+                             &marker_id,
+                             &query_opts_len, &query_opts_str,
+                             node_id,
+                             &fields_len, &fields_str,
+                             &filter_expr,
+                             &filter_args);
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
-    } else if (argc < ARGV_NODE_ID + 1) {
+    } else if (argc < 4) {
         selva_send_error_arity(resp);
         return;
     }
@@ -1905,23 +1912,15 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = Selva_SubscriptionString2id(sub_id, argv[ARGV_SUB_ID]);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
-
-    /*
-     * Get the marker id.
-     */
-    long long ll;
-    Selva_SubscriptionMarkerId marker_id;
-    err = selva_string_to_ll(argv[ARGV_MARKER_ID], &ll);
-    if (err) {
-        selva_send_errorf(resp, err, "Marker ID");
-        return;
-    }
-    marker_id = ll;
 
     if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
         /* Marker already created. */
@@ -1929,10 +1928,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         return;
     }
 
-    size_t query_opts_len;
-    const char *query_opts_str = selva_string_to_str(argv[ARGV_QUERY_OPTS], &query_opts_len);
     struct Subscriptions_QueryOpts query_opts;
-
     if (query_opts_len < sizeof(query_opts)) {
         selva_send_errorf(resp, SELVA_EINVAL, "Invalid query opts");
         return;
@@ -1984,22 +1980,6 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         }
     }
 
-    /*
-     * Get the nodeId.
-     */
-    Selva_NodeId node_id;
-    err = selva_string2node_id(node_id, argv[ARGV_NODE_ID]);
-    if (err) {
-        selva_send_errorf(resp, err, "node_id");
-        return;
-    }
-
-    /*
-     * Get field names for change events.
-     * Optional.
-     */
-    size_t fields_len = 0;
-    const char *fields_str = selva_string_to_str(argv[ARGV_FIELDS], &fields_len);
     if (fields_len == 0) {
         fields_str = NULL;
     }
@@ -2008,17 +1988,11 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
      * Parse & compile the filter expression.
      * Optional.
      */
-    if (argc >= ARGV_FILTER_EXPR + 1) {
-        const int nr_reg = argc - ARGV_FILTER_ARGS + 2;
-        const char *input;
-        size_t input_len;
+    if (argc >= 6) {
+        const int nr_reg = argc - 6;
+        const char *input = selva_string_to_str(filter_expr, NULL);
 
         filter_ctx = rpn_init(nr_reg);
-
-        /*
-         * Compile the filter expression.
-         */
-        input = selva_string_to_str(argv[ARGV_FILTER_EXPR], &input_len);
         filter_expression = rpn_compile(input);
         if (!filter_expression) {
             err = SELVA_RPN_ECOMP;
@@ -2029,9 +2003,9 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         /*
          * Get the filter expression arguments and set them to the registers.
          */
-        for (int i = ARGV_FILTER_ARGS; i < argc; i++) {
+        for (int i = 0; i < nr_reg; i++) {
             /* reg[0] is reserved for the current nodeId */
-            const size_t reg_i = i - ARGV_FILTER_ARGS + 1;
+            const size_t reg_i = i + 1;
             size_t str_len;
             const char *str;
             char *arg;
@@ -2040,7 +2014,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
              * Args needs to be duplicated so the strings don't get freed
              * when the command returns.
              */
-            str = selva_string_to_str(argv[i], &str_len);
+            str = selva_string_to_str(filter_args[i], &str_len);
             str_len++;
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
