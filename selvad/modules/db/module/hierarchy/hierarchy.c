@@ -3748,13 +3748,12 @@ static void SelvaHierarchy_CompressCommand(struct selva_server_response_out *res
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_NodeId nodeId;
-    struct selva_string *type_s;
     int argc, err;
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%" SELVA_SCA_NODE_ID ", %p",
-                             nodeId, &type_s);
+    argc = selva_proto_scanf(&fin, buf, len, "%" SELVA_SCA_NODE_ID ", %d",
+                             nodeId, &type);
     if (argc != 1 && argc != 2) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -3764,28 +3763,10 @@ static void SelvaHierarchy_CompressCommand(struct selva_server_response_out *res
         return;
     }
 
-    if (argc == 2) {
-        static const struct parsers_enum types_map[] = {
-            {
-                .name = "mem",
-                .id = SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM,
-            },
-            {
-                .name = "disk",
-                .id = SELVA_HIERARCHY_DETACHED_COMPRESSED_DISK,
-            },
-            {
-                .name = NULL,
-                .id = 0,
-            }
-        };
-
-        err = parse_enum(types_map, type_s);
-        if (err < 0) {
-            selva_send_error(resp, err, "Type", 4);
-            return;
-        }
-        type = err;
+    if (type != SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM &&
+        type != SELVA_HIERARCHY_DETACHED_COMPRESSED_DISK) {
+        selva_send_error(resp, SELVA_EINVAL, "type", 4);
+        return;
     }
 
     /*
