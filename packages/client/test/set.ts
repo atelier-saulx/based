@@ -88,6 +88,7 @@ test.serial.only('set primitive fields', async (t) => {
       post: {
         prefix: 'po',
         fields: {
+          aliases: { type: 'set', items: { type: 'string' } },
           parents: { type: 'references' },
           children: { type: 'references' },
           slug: { type: 'string' },
@@ -118,6 +119,7 @@ test.serial.only('set primitive fields', async (t) => {
       a: 11,
       b: 'hello',
     },
+    aliases: { $add: 'main' },
   })
 
   let getResult = await client.command('object.get', ['', 'po1'])
@@ -182,6 +184,11 @@ test.serial.only('set primitive fields', async (t) => {
     '#1',
   ])
   console.dir(find, { depth: 4 })
+
+  console.log(
+    'resolving',
+    await client.command('resolve.nodeid', ['', 'hmm', 'main', 'po2'])
+  )
 
   t.true(true)
 })
