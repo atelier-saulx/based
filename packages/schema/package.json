@@ -11,6 +11,7 @@
   },
   "sideEffects": false,
   "dependencies": {
+    "validator": "^13.9.0",
     "@saulx/hash": "^2.0.0",
     "@saulx/utils": "^3.2.2"
   },
