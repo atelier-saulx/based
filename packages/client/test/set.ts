@@ -1,11 +1,5 @@
 import test from 'ava'
-import {
-  BasedDbClient,
-  hierarchy_find_def,
-  SelvaFindResultType,
-  SelvaTraversal,
-  SELVA_NODE_ID_LEN,
-} from '../src'
+import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import { createRecord } from 'data-record'
@@ -175,12 +169,12 @@ test.serial.only('set primitive fields', async (t) => {
 
   const find = await client.command('hierarchy.find', [
     '',
-    createRecord(hierarchy_find_def, {
-      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-      res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+    createRecord(protocol.hierarchy_find_def, {
+      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
       res_opt_str: '*',
     }),
-    'root'.padEnd(SELVA_NODE_ID_LEN, '\0'),
+    'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '',
   ])
   console.log('FINDDDD', find)

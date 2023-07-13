@@ -18,7 +18,7 @@ import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
 
-export * from './protocol'
+export * as protocol from './protocol'
 
 export type BasedDbClientOpts = { port: number; host: string }
 
