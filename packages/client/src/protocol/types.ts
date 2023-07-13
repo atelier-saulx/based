@@ -34,8 +34,7 @@ export const COMMAND_TYPES = {
   'object.setMeta': 57,
   'object.incrby': 50,
   'object.incrbydouble': 51,
-  // TODO:
-  // #define CMD_ID_OBJECT_KEYS 54 // TODO: needs an optional argument
+  'object.keys': 54,
   // modify related commands
   modify: 68,
   // TODO:
