@@ -2238,23 +2238,27 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
 void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    struct selva_string **argv;
+    const char *sub_id_str;
+    size_t sub_id_len;
+    Selva_SubscriptionMarkerId marker_id;
+    const enum Selva_SubscriptionTriggerType event_type;
+    struct selva_string *filter_expr = NULL;
+    struct selva_string **filter_args = NULL;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    const int ARGV_SUB_ID        = 0;
-    const int ARGV_MARKER_ID     = 1;
-    const int ARGV_EVENT_TYPE    = 2;
-    int ARGV_FILTER_EXPR         = 3;
-    int ARGV_FILTER_ARGS         = 4;
-
-    argc = selva_proto_buf2strings(&fin, buf, len, &argv);
+    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId ", %d, %p, ...",
+                             &sub_id_len, &sub_id_str,
+                             &marker_id,
+                             &event_type,
+                             &filter_expr,
+                             &filter_args);
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
-    } else if (argc < ARGV_EVENT_TYPE + 1) {
+    } else if (argc < 3) {
         selva_send_error_arity(resp);
         return;
     }
@@ -2263,31 +2267,22 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = Selva_SubscriptionString2id(sub_id, argv[ARGV_SUB_ID]);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
-    /*
-     * Get the marker id.
-     */
-    long long ll;
-    Selva_SubscriptionMarkerId marker_id;
-    err = selva_string_to_ll(argv[ARGV_MARKER_ID], &ll);
-    if (err) {
-        selva_send_errorf(resp, err, "Marker ID");
+    if (event_type != SELVA_SUBSCRIPTION_TRIGGER_TYPE_CREATED &&
+        event_type != SELVA_SUBSCRIPTION_TRIGGER_TYPE_UPDATED &&
+        event_type != SELVA_SUBSCRIPTION_TRIGGER_TYPE_DELETED) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Event type");
         return;
     }
-    marker_id = ll;
-
-    /* Parse event_type */
-    err = parse_enum(trigger_event_types, argv[ARGV_EVENT_TYPE]);
-    if (err < 0) {
-        selva_send_errorf(resp, err, "Event type");
-        return;
-    }
-    const enum Selva_SubscriptionTriggerType event_type = err;
 
     if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
         /* Marker already created. */
@@ -2301,17 +2296,11 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
      */
     struct rpn_ctx *filter_ctx = NULL;
     struct rpn_expression *filter_expression = NULL;
-    if (argc >= ARGV_FILTER_EXPR + 1) {
-        const int nr_reg = argc - ARGV_FILTER_ARGS + 2;
-        const char *input;
-        size_t input_len;
+    if (argc >= 4) {
+        const int nr_reg = argc - 4;
+        const char *input = selva_string_to_str(filter_expr, NULL);
 
         filter_ctx = rpn_init(nr_reg);
-
-        /*
-         * Compile the filter expression.
-         */
-        input = selva_string_to_str(argv[ARGV_FILTER_EXPR], &input_len);
         filter_expression = rpn_compile(input);
         if (!filter_expression) {
             err = SELVA_RPN_ECOMP;
@@ -2322,9 +2311,9 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
         /*
          * Get the filter expression arguments and set them to the registers.
          */
-        for (int i = ARGV_FILTER_ARGS; i < argc; i++) {
+        for (int i = 0; i < nr_reg; i++) {
             /* reg[0] is reserved for the current nodeId */
-            const size_t reg_i = i - ARGV_FILTER_ARGS + 1;
+            const size_t reg_i = i + 1;
             size_t str_len;
             const char *str;
             char *arg;
@@ -2333,7 +2322,7 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
              * Args needs to be duplicated so the strings don't get freed
              * when the command returns.
              */
-            str = selva_string_to_str(argv[i], &str_len);
+            str = selva_string_to_str(filter_args[i], &str_len);
             str_len++;
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
