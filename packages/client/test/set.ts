@@ -176,7 +176,7 @@ test.serial.only('set primitive fields', async (t) => {
       merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
       limit: BigInt(-1),
       offset: BigInt(0),
-      res_opt_str: '*',
+      res_opt_str: '*\nparents\nchildren',
     }),
     'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '#1',
