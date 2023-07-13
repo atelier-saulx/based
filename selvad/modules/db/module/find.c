@@ -1675,6 +1675,7 @@ static void postprocess_inherit(
     }
 }
 
+/* FIXME letoh conversion */
 static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, size_t qo_len) {
     uintptr_t dbase = (uintptr_t)base;
     uintptr_t end = (uintptr_t)base + qo_len;
@@ -2181,9 +2182,11 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
                 .node_cb = FindCommand_NodeCb,
                 .node_arg = &args,
             };
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
 
             SELVA_TRACE_BEGIN(cmd_find_refs);
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, &cb);
+            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
             SELVA_TRACE_END(cmd_find_refs);
         } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {

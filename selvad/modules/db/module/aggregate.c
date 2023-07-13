@@ -524,6 +524,7 @@ static size_t AggregateCommand_AggregateOrderArrayResult(
     return len;
 }
 
+/* FIXME letoh conversion */
 static int fixup_query_opts(struct SelvaAggregate_QueryOpts *qo, const char *base, size_t qo_len) {
     uintptr_t dbase = (uintptr_t)base;
     uintptr_t end = (uintptr_t)base + qo_len;
@@ -877,8 +878,10 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                 .cb = AggregateCommand_ArrayObjectCb,
                 .cb_arg = &args,
             };
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
 
-            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, query_opts.dir_opt_str, query_opts.dir_opt_len, &ary_cb);
+            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, ref_field_str, ref_field_len, &ary_cb);
         } else if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
                                       SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
                                       SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) &&
@@ -887,8 +890,10 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                 .node_cb = AggregateCommand_NodeCb,
                 .node_arg = &args,
             };
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
 
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, &cb);
+            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
         } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = AggregateCommand_NodeCb,
