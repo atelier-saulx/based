@@ -80,9 +80,13 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   modify,
   // hierarchy
   'hierarchy.addConstraint': strEncoder(4), // <src node type>,<contraint flags>,<fwd field name>,<bck field name>
-  'hierarchy.find': (payload) => {
-    return Buffer.from('hello')
-  },
+  'hierarchy.find': defaultEncoder([
+    { type: 'string' }, // lang
+    { type: 'bin' }, // find query opts (
+    { type: 'string' }, // ids (concatenated)
+    { type: 'string' }, // filter expr (RPN string)
+    { type: 'string', vararg: true }, // filter args
+  ]),
   'hierarchy.edgeList': defaultEncoder([
     { type: 'id' },
     // field name

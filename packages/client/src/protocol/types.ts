@@ -178,19 +178,53 @@ export const selva_proto_control_def = compile(
   { align: false }
 )
 
+export enum SelvaTraversal {
+  SELVA_HIERARCHY_TRAVERSAL_NONE = 0x0000 /*!< Do nothing. */,
+  SELVA_HIERARCHY_TRAVERSAL_NODE = 0x0001 /*!< Visit just the given node. */,
+  SELVA_HIERARCHY_TRAVERSAL_ARRAY = 0x0002 /*!< Traverse an array. */,
+  SELVA_HIERARCHY_TRAVERSAL_SET = 0x0004 /*!< Traverse an array. */,
+  SELVA_HIERARCHY_TRAVERSAL_REF = 0x0008 /*!< Visit nodes pointed by a string ref field. */,
+  SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD = 0x0010 /*!< Visit nodes pointed by an edge field. */,
+  SELVA_HIERARCHY_TRAVERSAL_CHILDREN = 0x0020 /*!< Visit children of the given node. */,
+  SELVA_HIERARCHY_TRAVERSAL_PARENTS = 0x0040 /*!< Visit parents of the given node. */,
+  SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS = 0x0080 /*!< Visit ancestors of the given node using BFS. */,
+  SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS = 0x0100 /*!< Visit descendants of the given node using BFS. */,
+  SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS = 0x0200 /*!< Visit ancestors of the given node using DFS. */,
+  SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS = 0x0400 /*!< Visit descendants of the given node using DFS. */,
+  SELVA_HIERARCHY_TRAVERSAL_DFS_FULL = 0x0800 /*!< Full DFS traversal of the whole hierarchy. */,
+  SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD = 0x1000 /*!< Traverse an edge field according to its constraints using BFS. */,
+  SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION = 0x2000 /*!< Traverse with an expression returning a set of field names. */,
+  SELVA_HIERARCHY_TRAVERSAL_EXPRESSION = 0x4000 /*!< Visit fields with an expression returning a set of field names. */,
+}
+
+export enum SelvaMergeStrategy {
+  MERGE_STRATEGY_NONE = 0 /* No merge. */,
+  MERGE_STRATEGY_ALL,
+  MERGE_STRATEGY_NAMED,
+  MERGE_STRATEGY_DEEP,
+}
+
+export enum SelvaFindResultType {
+  SELVA_FIND_QUERY_RES_IDS = 0,
+  SELVA_FIND_QUERY_RES_FIELDS,
+  SELVA_FIND_QUERY_RES_FIELDS_RPN,
+  SELVA_FIND_QUERY_RES_INHERIT_RPN,
+}
+
+const enum_type = 'int32_le'
 export const hierarchy_find_def = compile(
   [
-    { name: 'dir', type: 'int8' }, // enum
+    { name: 'dir', type: enum_type },
     { name: 'dir_opt_str', type: 'cstring_p' },
     { name: 'edge_filter_str', type: 'cstring_p' },
     { name: 'index_hints_str', type: 'cstring_p' },
-    { name: 'order', type: 'int8' }, // enum
+    { name: 'order', type: enum_type },
     { name: 'order_by_field_str', type: 'cstring_p' },
     { name: 'offset', type: 'int32_le' },
     { name: 'limit', type: 'int32_le' },
-    { name: 'merge_strategy', type: 'int8' }, // enum
+    { name: 'merge_strategy', type: enum_type },
     { name: 'merge_str', type: 'cstring_p' },
-    { name: 'res_type', type: 'int8' }, // enum
+    { name: 'res_type', type: enum_type },
     { name: 'res_opt_str', type: 'cstring_p' },
   ],
   {

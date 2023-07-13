@@ -1,8 +1,14 @@
 import test from 'ava'
-import { BasedDbClient } from '../src'
-import { ModifyOpSetType } from '../src/protocol/encode/modify/types'
+import {
+  BasedDbClient,
+  hierarchy_find_def,
+  SelvaFindResultType,
+  SelvaTraversal,
+  SELVA_NODE_ID_LEN,
+} from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
+import { createRecord } from 'data-record'
 
 test.serial('set string to num field, should fail', async (t) => {
   const TIME = 2500
@@ -166,6 +172,18 @@ test.serial.only('set primitive fields', async (t) => {
     'ROOT CHILDREN',
     await client.command('hierarchy.children', ['root'])
   )
+
+  const find = await client.command('hierarchy.find', [
+    '',
+    createRecord(hierarchy_find_def, {
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      res_type: SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      res_opt_str: '*',
+    }),
+    'root'.padEnd(SELVA_NODE_ID_LEN, '\0'),
+    '',
+  ])
+  console.log('FINDDDD', find)
 
   t.true(true)
 })
