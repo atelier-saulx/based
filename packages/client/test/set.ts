@@ -119,7 +119,7 @@ test.serial.only('set primitive fields', async (t) => {
       a: 11,
       b: 'hello',
     },
-    aliases: { $add: 'main' },
+    aliases: { $add: ['main'] },
   })
 
   let getResult = await client.command('object.get', ['', 'po1'])
@@ -178,13 +178,14 @@ test.serial.only('set primitive fields', async (t) => {
       merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
       limit: BigInt(-1),
       offset: BigInt(0),
-      res_opt_str: '*\nparents\nchildren',
+      res_opt_str: '*\naliases\nparents\nchildren',
     }),
     'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '#1',
   ])
   console.dir(find, { depth: 4 })
 
+  console.log('ALIASES', await client.command('lsaliases'))
   console.log(
     'resolving',
     await client.command('resolve.nodeid', ['', 'hmm', 'main', 'po2'])

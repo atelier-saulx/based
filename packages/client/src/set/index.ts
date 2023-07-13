@@ -1,4 +1,4 @@
-import { BasedSchemaCollectProps } from '@based/schema'
+import { BasedSchemaCollectProps, BasedSchemaFieldSet } from '@based/schema'
 import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
@@ -8,6 +8,13 @@ const DB_TYPE_TO_MODIFY_TYPE = {
   timestamp: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   float: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
   number: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
+}
+
+const DB_TYPE_TO_SET_TYPE = {
+  references: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+  string: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_CHAR,
+  integer: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_LONG_LONG,
+  double: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_DOUBLE,
 }
 
 const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
@@ -25,6 +32,13 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
       ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
       strPath,
       { ...value, setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE },
+    ]
+  } else if (fieldSchema.type === 'set') {
+    const setFieldSchema = <BasedSchemaFieldSet>fieldSchema
+    return [
+      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+      strPath,
+      { ...value, setType: DB_TYPE_TO_SET_TYPE[setFieldSchema.items.type] },
     ]
   }
 
