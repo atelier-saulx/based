@@ -4,7 +4,7 @@ import {
   SELVA_PROTO_HDR_FFIRST,
   SELVA_PROTO_HDR_FLAST,
   SELVA_PROTO_CHECK_OFFSET,
-  TYPES,
+  COMMAND_TYPES,
   selva_proto_header_def,
   SELVA_PROTO_FRAME_SIZE_MAX,
 } from '../types'
@@ -12,7 +12,7 @@ import { crc32 } from '../crc32c'
 import { COMMAND_ENCODERS } from './commands'
 
 export function encode(cmd: Command, seqno: number, payload: any): Buffer[] {
-  if (TYPES[cmd] === undefined) {
+  if (COMMAND_TYPES[cmd] === undefined) {
     throw new Error(`Unknown command: ${cmd}`)
   }
 
@@ -24,7 +24,7 @@ export function encode(cmd: Command, seqno: number, payload: any): Buffer[] {
     const frame = Buffer.allocUnsafe(selva_proto_header_def.size)
 
     serialize(selva_proto_header_def, frame, {
-      cmd: TYPES[cmd],
+      cmd: COMMAND_TYPES[cmd],
       flags: SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
       seqno,
       frame_bsize: frame.length,
@@ -45,7 +45,7 @@ export function encode(cmd: Command, seqno: number, payload: any): Buffer[] {
     flags |= i + chunkSize >= buf.length ? SELVA_PROTO_HDR_FLAST : 0
 
     serialize(selva_proto_header_def, frame, {
-      cmd: TYPES[cmd],
+      cmd: COMMAND_TYPES[cmd],
       flags,
       seqno,
       frame_bsize: frame.length,

@@ -1,6 +1,6 @@
 import { compile } from 'data-record'
 
-export const TYPES = {
+export const COMMAND_TYPES = {
   // system commands
   ping: 0,
   echo: 1,
@@ -68,7 +68,7 @@ export const TYPES = {
   // #define CMD_ID_SUBSCRIPTIONS_DEL 66
   // #define CMD_ID_SUBSCRIPTIONS_DELMARKER 67
 }
-export type Command = keyof typeof TYPES
+export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {
   cmd: number
   flags: number
