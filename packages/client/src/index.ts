@@ -85,7 +85,6 @@ export class BasedDbClient extends Emitter {
       id = resolved?.[0]
     }
 
-    // TODO: if still no id, generate one
     if (!id) {
       id = genId(this.schema, opts.type)
     }
