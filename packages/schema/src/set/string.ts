@@ -1,13 +1,11 @@
 import { Parser } from './types'
 import { error, ParseError } from './error'
+import { BasedSchemaFieldString, BasedSchemaFieldText } from '../types'
 
-export const string: Parser<'string'> = async (
-  path,
-  value,
-  fieldSchema,
-  typeSchema,
-  target,
-  handlers
+const validate = (
+  path: (string | number)[],
+  value: string,
+  fieldSchema: BasedSchemaFieldText | BasedSchemaFieldString
 ) => {
   if (typeof value !== 'string') {
     throw error(path, ParseError.incorrectFormat)
@@ -18,6 +16,17 @@ export const string: Parser<'string'> = async (
   if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
     error(path, ParseError.exceedsMaximum)
   }
+}
+
+export const string: Parser<'string'> = async (
+  path,
+  value,
+  fieldSchema,
+  typeSchema,
+  target,
+  handlers
+) => {
+  validate(path, value, fieldSchema)
   handlers.collect({ path, value, typeSchema, fieldSchema, target })
 }
 
@@ -31,15 +40,7 @@ export const text: Parser<'text'> = async (
 ) => {
   const valueType = typeof value
   if (target.$language && valueType === 'string') {
-    // @ts-ignore
-    if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-      error(path, ParseError.subceedsMinimum)
-    }
-    // @ts-ignore
-    if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-      error(path, ParseError.exceedsMaximum)
-    }
-
+    validate(path, value, fieldSchema)
     handlers.collect({
       path,
       value: { [target.$language]: value },
@@ -55,19 +56,11 @@ export const text: Parser<'text'> = async (
   }
 
   for (const key in value) {
-    // @ts-ignore
-    if (fieldSchema.minLength && value[key].length < fieldSchema.minLength) {
-      error([...path, key], ParseError.subceedsMinimum)
-    }
-
-    // @ts-ignore
-    if (fieldSchema.maxLength && value[key].length > fieldSchema.maxLength) {
-      error([...path, key], ParseError.exceedsMaximum)
-    }
+    const newPath = [...path, key]
 
     if (typeof value[key] === 'object' && value[key].$delete === true) {
       handlers.collect({
-        path: [...path, key],
+        path: newPath,
         value: null,
         typeSchema,
         fieldSchema,
@@ -76,12 +69,10 @@ export const text: Parser<'text'> = async (
       continue
     }
 
-    if (typeof value[key] !== 'string') {
-      error([...path, key], ParseError.incorrectFormat)
-    }
+    validate(newPath, value[key], fieldSchema)
 
     handlers.collect({
-      path: [...path, key],
+      path: newPath,
       value: value[key],
       typeSchema,
       fieldSchema,
