@@ -99,7 +99,7 @@ struct SelvaFind_QueryOpts {
         SELVA_FIND_QUERY_RES_FIELDS,
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
         SELVA_FIND_QUERY_RES_INHERIT_RPN,
-    } res_type __packed;
+    } res_type;
 
     /**
      * Result opt arg.
