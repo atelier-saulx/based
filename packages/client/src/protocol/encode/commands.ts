@@ -79,6 +79,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   // modify related commands
   modify,
   // hierarchy
+  'hierarchy.addConstraint': strEncoder(4), // <src node type>,<contraint flags>,<fwd field name>,<bck field name>
   'hierarchy.find': (payload) => {
     return Buffer.from('hello')
   },
