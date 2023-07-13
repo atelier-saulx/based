@@ -175,6 +175,13 @@ test.serial.only('set primitive fields', async (t) => {
     await client.command('hierarchy.children', ['root'])
   )
 
+  await client.set({
+    $alias: '3rd',
+    type: 'post',
+    slug: '/third',
+    parents: ['po2'],
+  })
+
   const find = await client.command('hierarchy.find', [
     '',
     createRecord(protocol.hierarchy_find_def, {

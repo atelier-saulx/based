@@ -17,6 +17,7 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
+import genId from './id'
 
 export * as protocol from './protocol'
 
@@ -85,6 +86,9 @@ export class BasedDbClient extends Emitter {
     }
 
     // TODO: if still no id, generate one
+    if (!id) {
+      id = genId(this.schema, opts.type)
+    }
 
     const resp = await this.command('modify', [id, args])
     const err = resp?.[0]?.find((x: any) => {

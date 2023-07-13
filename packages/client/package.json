@@ -27,13 +27,15 @@
     "@saulx/utils": "^3.2.2",
     "@based/client": "^4.7.6",
     "@based/schema": "0.0.5",
-    "data-record": "^1.0.2"
+    "data-record": "^1.0.2",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
     "ava": "3.15.0",
     "ts-node": "10.9.1",
     "typescript": "^5.1.6",
-    "rimraf": "^3.0.2"
+    "rimraf": "^3.0.2",
+    "@types/uuid": "^9.0.2"
   }
 }
