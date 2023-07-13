@@ -20,6 +20,16 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   replicawait: null,
   // essential
   'resolve.nodeid': strEncoder(1), // concatenated ID strings in 1 arg
+  publish: defaultEncoder([
+    { type: 'longlong' }, // channel id
+    { type: 'string' }, // msg
+  ]),
+  subscribe: defaultEncoder([
+    { type: 'longlong' }, // channel id
+  ]),
+  unsubscribe: defaultEncoder([
+    { type: 'longlong' }, // channel id
+  ]),
   // indexes
   'index.list': null,
   // object primitives

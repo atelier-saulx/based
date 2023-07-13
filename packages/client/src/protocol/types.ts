@@ -9,17 +9,16 @@ export const TYPES = {
   save: 15,
   load: 14,
   flush: 16,
-  // essential
-  // TODO:
-  'resolve.nodeid': 18,
-  lsaliases: 70,
   replicasync: 71,
   replicaof: 72,
   replicainfo: 73,
   replicawait: 75,
-  // #define CMD_ID_PUBLISH 76
-  // #define CMD_ID_SUBSCRIBE 77
-  // #define CMD_ID_UNSUBSCRIBE 78
+  // essential
+  'resolve.nodeid': 18,
+  lsaliases: 70,
+  publish: 76,
+  subscribe: 77,
+  unsubscribe: 78,
   // indexes
   'index.list': 38,
   // TODO:
