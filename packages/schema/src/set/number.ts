@@ -47,7 +47,7 @@ const shared = (
       validate([...path, '$increment'], value.$increment, fieldSchema)
     }
     if (value.$decrement) {
-      validate([...path, '$decrement'], value.$increment, fieldSchema)
+      validate([...path, '$decrement'], value.$decrement, fieldSchema)
     }
     if (value.$value) {
       validate([...path], value.$value, fieldSchema)
