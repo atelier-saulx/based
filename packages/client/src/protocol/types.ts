@@ -46,11 +46,10 @@ export const COMMAND_TYPES = {
   'hierarchy.parents': 27,
   'hierarchy.children': 28,
   'hierarchy.addConstraint': 23,
+  'hierarchy.del': 25,
   // TODO:
-  // #define CMD_ID_HIERARCHY_FIND 19
   // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21
-  // #define CMD_ID_HIERARCHY_DEL 25
   // #define CMD_ID_HIERARCHY_HEADS 26
   // #define CMD_ID_HIERARCHY_TYPES_ADD 35
   // #define CMD_ID_HIERARCHY_TYPES_CLEAR 36
