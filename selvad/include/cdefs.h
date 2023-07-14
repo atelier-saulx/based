@@ -226,40 +226,6 @@
       __typeof__ (b) _b = (b); \
       _a > _b ? _a : _b; })
 
-#define TO_STR_1(_var) \
-    size_t _var##_len; \
-    const char * _var##_str = selva_string_to_str(_var, & _var##_len);
-
-#define TO_STR_2(_var, ...) \
-    TO_STR_1(_var) \
-    TO_STR_1(__VA_ARGS__)
-
-#define TO_STR_3(_var, ...) \
-    TO_STR_1(_var) \
-    TO_STR_2(__VA_ARGS__)
-
-#define TO_STR_4(_var, ...) \
-    TO_STR_1(_var) \
-    TO_STR_3(__VA_ARGS__)
-
-#define TO_STR_5(_var, ...) \
-    TO_STR_1(_var) \
-    TO_STR_5(__VA_ARGS__)
-
-#define TO_STR_6(_var, ...) \
-    TO_STR_1(_var) \
-    TO_STR_6(__VA_ARGS__)
-
-/**
- * Create C-string pointer variable(s) from `RedisModuleString` pointer(s).
- * If `name` is a pointer to `RedisModuleString` then this macro will define
- * symbols `name_str` and `name_len`. `name_str` is a `const char` pointer to
- * the C-string representation of `name` and `name_len` is a `size_t` variable
- * containing the the length of `name`.
- */
-#define TO_STR(...) \
-        CONCATENATE(TO_STR_, UTIL_NARG(__VA_ARGS__))(__VA_ARGS__)
-
 /**
  * Check if pointer has a const qualifier.
  */
