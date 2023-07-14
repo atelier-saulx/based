@@ -762,7 +762,6 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     init_uniq(&args);
 
     ssize_t nr_nodes = 0;
-    size_t merge_nr_fields = 0; /* TODO Is this needed? */
     for (size_t i = 0; i < ids_len; i += SELVA_NODE_ID_SIZE) {
         Selva_NodeId nodeId;
 
@@ -812,7 +811,6 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             .filter = filter_expression,
             .send_param.fields = fields,
             .send_param.excluded_fields = NULL,
-            .merge_nr_fields = &merge_nr_fields,
             .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &order_result,

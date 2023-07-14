@@ -138,7 +138,7 @@ static int send_node_field(
         const char *field_str,
         size_t field_len,
         struct selva_string *excluded_fields);
-static int send_all_node_data_fields(
+static void send_all_node_data_fields(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
@@ -380,7 +380,7 @@ static int send_edge_field(
                     selva_send_array(resp, -1);
                 }
 
-                (void)send_all_node_data_fields(fin, resp, lang, hierarchy, dst_node, NULL, 0, new_excluded_fields);
+                send_all_node_data_fields(fin, resp, lang, hierarchy, dst_node, NULL, 0, new_excluded_fields);
                 if (next_prefix_str) {
                     selva_send_array_end(resp);
                 }
@@ -404,6 +404,7 @@ static int send_edge_field(
 /**
  * Send a node field to the client.
  * @param excluded_fields can be set if certain field names should be excluded from the response; Otherwise NULL.
+ * @returns < 0 an error; = 0 nothing sent; 1 = field value sent
  */
 static int send_node_field(
         struct finalizer *fin,
@@ -534,7 +535,7 @@ static int send_node_field(
 /**
  * @param excluded_fields can be set if certain field names should be excluded from the response; Otherwise NULL.
  */
-static int send_all_node_data_fields(
+static void send_all_node_data_fields(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
@@ -546,7 +547,6 @@ static int send_all_node_data_fields(
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     void *iterator;
     const char *field_name_str;
-    int nr_fields = 0;
 
     iterator = SelvaObject_ForeachBegin(obj);
     while ((field_name_str = SelvaObject_ForeachKey(obj, &iterator))) {
@@ -554,9 +554,7 @@ static int send_all_node_data_fields(
         int res;
 
         res = send_node_field(fin, resp, lang, hierarchy, node, obj, field_prefix_str, field_prefix_len, field_name_str, field_name_len, excluded_fields);
-        if (res >= 0) {
-            nr_fields += res;
-        } else {
+        if (res < 0) {
             /* RFE errors are ignored for now. */
             Selva_NodeId node_id;
 
@@ -567,15 +565,13 @@ static int send_all_node_data_fields(
                       selva_strerror(res));
         }
     }
-
-    return nr_fields;
 }
 
 /**
  * Send named fields.
  * Should be only used by send_node_fields().
  */
-static size_t send_node_fields_named(
+static void send_node_fields_named(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
@@ -586,7 +582,6 @@ static size_t send_node_fields_named(
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     void *iterator;
     const SVector *vec;
-    size_t nr_fields = 0;
 
     iterator = SelvaObject_ForeachBegin(fields);
     while ((vec = SelvaObject_ForeachValue(fields, &iterator, NULL, SELVA_OBJECT_ARRAY))) {
@@ -598,28 +593,18 @@ static size_t send_node_fields_named(
             TO_STR(field);
             int res;
 
+            /* Only send one of the fields on the list. */
             if (iswildcard(field_str, field_len)) {
-                res = send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
-                if (res > 0) {
-                    nr_fields += res;
-                    /*
-                     * An interesting case here is a list like this:
-                     * `title\n*`
-                     * that would send the same field twice.
-                     */
-                    break;
-                }
+                send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
+                break;
             } else {
                 res = send_node_field(fin, resp, lang, hierarchy, node, obj, NULL, 0, field_str, field_len, excluded_fields);
                 if (res > 0) {
-                    nr_fields += res;
-                    break; /* Only send one of the fields in the list. */
+                    break;
                 }
             }
         }
     }
-
-    return nr_fields;
 }
 
 /**
@@ -661,7 +646,7 @@ static int send_node_fields(
     selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId));
 
     selva_send_array(resp, -1);
-    (void)send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
+    send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
     if (inherit_fields) {
         /*
          * This should only happen in the postprocess handling because
@@ -832,26 +817,15 @@ static int is_text_field(struct SelvaObject *obj, const char *key_name_str, size
     return meta == SELVA_OBJECT_META_SUBTYPE_TEXT;
 }
 
-static int send_merge_text(
+static void send_merge_text(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         Selva_NodeId nodeId,
         struct SelvaObject *fields,
         struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) __attribute__((nonnull(7)));
-static int send_merge_text(
-        struct selva_server_response_out *resp,
-        struct selva_string *lang,
-        Selva_NodeId nodeId,
-        struct SelvaObject *fields,
-        struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) {
+        struct selva_string *obj_path) {
     if (SelvaObject_GetType(fields, obj_path) != SELVA_OBJECT_LONGLONG) {
         int err;
-
-        ++*nr_fields_out;
 
         /*
          * Start a new array reply:
@@ -863,6 +837,7 @@ static int send_merge_text(
         selva_send_string(resp, obj_path);
         err = SelvaObject_ReplyWithObject(resp, lang, obj, NULL, 0);
         if (err) {
+            /* FIXME We should probably send something here. */
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to send \"%s\" (text) of node_id: \"%.*s\". err: \"%s\"",
                       selva_string_to_str(obj_path, NULL),
                       (int)SELVA_NODE_ID_SIZE, nodeId,
@@ -872,19 +847,16 @@ static int send_merge_text(
             (void)SelvaObject_SetLongLong(fields, obj_path, 1);
         }
     }
-
-    return 0;
 }
 
-static int send_merge_all(
+static void send_merge_all(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         Selva_NodeId nodeId,
         struct SelvaObject *fields,
         struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) {
+        struct selva_string *obj_path) {
     void *iterator;
     const char *key_name_str;
     TO_STR(obj_path);
@@ -904,7 +876,6 @@ static int send_merge_all(
             continue;
         }
 
-        ++*nr_fields_out;
         full_field_path = format_full_field_path(fin, obj_path_str, key_name_str);
 
         /*
@@ -929,19 +900,16 @@ static int send_merge_all(
         /* Mark the key as sent. */
         (void)SelvaObject_SetLongLongStr(fields, key_name_str, key_name_len, 1);
     }
-
-    return 0;
 }
 
-static int send_named_merge(
+static void send_named_merge(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         Selva_NodeId nodeId,
         struct SelvaObject *fields,
         struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) {
+        struct selva_string *obj_path) {
     void *iterator;
     const SVector *vec;
     const char *field_index;
@@ -961,7 +929,6 @@ static int send_named_merge(
                 continue;
             }
 
-            ++*nr_fields_out;
             full_field_path = format_full_field_path(fin, obj_path_str, selva_string_to_str(field, NULL));
 
             /*
@@ -988,8 +955,6 @@ static int send_named_merge(
             break; /* Only send the first existing field from the fields list. */
         }
     }
-
-    return 0;
 }
 
 static int send_deep_merge(
@@ -999,17 +964,7 @@ static int send_deep_merge(
         Selva_NodeId nodeId,
         struct SelvaObject *fields,
         struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) __attribute__((nonnull(8)));
-static int send_deep_merge(
-        struct finalizer *fin,
-        struct selva_server_response_out *resp,
-        struct selva_string *lang,
-        Selva_NodeId nodeId,
-        struct SelvaObject *fields,
-        struct SelvaObject *obj,
-        struct selva_string *obj_path,
-        size_t *nr_fields_out) {
+        struct selva_string *obj_path) {
     void *iterator;
     const char *key_name_str;
 
@@ -1043,7 +998,7 @@ static int send_deep_merge(
                 return SELVA_ENOENT;
             }
 
-            err = send_deep_merge(fin, resp, lang, nodeId, fields, next_obj, next_path, nr_fields_out);
+            err = send_deep_merge(fin, resp, lang, nodeId, fields, next_obj, next_path);
             if (err < 0) {
                 SELVA_LOG(SELVA_LOGL_ERR, "Deep merge failed %s",
                           selva_strerror(err));
@@ -1055,8 +1010,6 @@ static int send_deep_merge(
             }
         } else {
             int err;
-
-            ++*nr_fields_out;
 
             /*
              * Start a new array reply:
@@ -1092,17 +1045,7 @@ static int send_node_object_merge(
         const struct SelvaHierarchyNode *node,
         enum SelvaMergeStrategy merge_strategy,
         struct selva_string *obj_path,
-        struct SelvaObject *fields,
-        size_t *nr_fields_out) __attribute__((nonnull(8)));
-static int send_node_object_merge(
-        struct finalizer *fin,
-        struct selva_server_response_out *resp,
-        struct selva_string *lang,
-        const struct SelvaHierarchyNode *node,
-        enum SelvaMergeStrategy merge_strategy,
-        struct selva_string *obj_path,
-        struct SelvaObject *fields,
-        size_t *nr_fields_out) {
+        struct SelvaObject *fields) {
     Selva_NodeId nodeId;
     struct SelvaObject *node_obj;
     TO_STR(obj_path);
@@ -1139,22 +1082,23 @@ static int send_node_object_merge(
      *   ]
      * ```
      */
+    err = 0;
     if ((merge_strategy == MERGE_STRATEGY_ALL || merge_strategy == MERGE_STRATEGY_DEEP) &&
         is_text_field(node_obj, obj_path_str, obj_path_len)) {
         /*
          * If obj is a text field we can just send it directly and skip the rest of
          * the processing.
          */
-        err = send_merge_text(resp, lang, nodeId, fields, obj, obj_path, nr_fields_out);
+        send_merge_text(resp, lang, nodeId, fields, obj, obj_path);
     } else if (merge_strategy == MERGE_STRATEGY_ALL) {
         /* Send all keys from the nested object. */
-        err = send_merge_all(fin, resp, lang, nodeId, fields, obj, obj_path, nr_fields_out);
+        send_merge_all(fin, resp, lang, nodeId, fields, obj, obj_path);
     } else if (merge_strategy == MERGE_STRATEGY_NAMED) {
         /* Send named keys from the nested object. */
-        err = send_named_merge(fin, resp, lang, nodeId, fields, obj, obj_path, nr_fields_out);
+        send_named_merge(fin, resp, lang, nodeId, fields, obj, obj_path);
     } else if (merge_strategy == MERGE_STRATEGY_DEEP) {
         /* Deep merge all keys and nested objects. */
-        err = send_deep_merge(fin, resp, lang, nodeId, fields, obj, obj_path, nr_fields_out);
+        err = send_deep_merge(fin, resp, lang, nodeId, fields, obj, obj_path);
     } else {
         err = selva_send_errorf(resp, SELVA_ENOTSUP, "Merge strategy not supported: %d\n", (int)merge_strategy);
     }
@@ -1232,20 +1176,11 @@ static void send_node(
         SelvaHierarchy *hierarchy,
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,
-        struct SelvaNodeSendParam *args,
-        size_t *merge_nr_fields) __attribute__((nonnull(7)));
-static void send_node(
-        struct finalizer *fin,
-        struct selva_server_response_out *resp,
-        SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
-        struct SelvaHierarchyNode *node,
-        struct SelvaNodeSendParam *args,
-        size_t *merge_nr_fields) {
+        struct SelvaNodeSendParam *args) {
     int err;
 
     if (args->merge_strategy != MERGE_STRATEGY_NONE) {
-        err = send_node_object_merge(fin, resp, lang, node, args->merge_strategy, args->merge_path, args->fields, merge_nr_fields);
+        err = send_node_object_merge(fin, resp, lang, node, args->merge_strategy, args->merge_path, args->fields);
     } else if (args->fields) { /* Predefined list of fields. */
         err = send_node_fields(fin, resp, lang, hierarchy, node, args->fields, NULL, 0, args->excluded_fields);
     } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
@@ -1292,7 +1227,7 @@ static int process_node_send(
     ssize_t *nr_nodes = args->nr_nodes;
     ssize_t * restrict limit = args->limit;
 
-    send_node(args->fin, args->resp, hierarchy, args->lang, node, &args->send_param, args->merge_nr_fields);
+    send_node(args->fin, args->resp, hierarchy, args->lang, node, &args->send_param);
 
     *nr_nodes = *nr_nodes + 1;
     *limit = *limit - 1;
@@ -1482,7 +1417,6 @@ static size_t FindCommand_SendOrderedResult(
         SVector *order_result) {
     struct TraversalOrderItem *item;
     struct SVectorIterator it;
-    size_t nr_fields = 0;
     size_t len = 0;
 
     /*
@@ -1503,7 +1437,7 @@ static size_t FindCommand_SendOrderedResult(
         }
 
         assert(PTAG_GETTAG(item->tagp) == TRAVERSAL_ORDER_ITEM_PTYPE_NODE);
-        send_node(fin, resp, hierarchy, lang, PTAG_GETP(item->tagp), args, &nr_fields);
+        send_node(fin, resp, hierarchy, lang, PTAG_GETP(item->tagp), args);
 
         len++;
     }
@@ -1566,10 +1500,7 @@ static void postprocess_sort(
         ssize_t limit,
         struct SelvaNodeSendParam *args,
         SVector *result) {
-
-    /* returns nr_nodes */
     (void)FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, result);
-    /* Sent (merge_strategy == MERGE_STRATEGY_NONE) ? nr_nodes : merge_nr_fields nodes. */
     selva_send_array_end(resp);
 }
 
@@ -1647,13 +1578,11 @@ static void postprocess_inherit(
          */
         SVector_ForeachBegin(&it, result);
         while ((node = SVector_Foreach(&it))) {
-            size_t merge_nr_fields;
-
             if (limit-- == 0) {
                 break;
             }
 
-            send_node(fin, resp, hierarchy, lang, node, args, &merge_nr_fields);
+            send_node(fin, resp, hierarchy, lang, node, args);
         }
 
         selva_send_array_end(resp);
@@ -1988,7 +1917,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
      * Run for each NODE_ID.
      */
     ssize_t nr_nodes = 0;
-    size_t merge_nr_fields = 0;
     SelvaFind_Postprocess postprocess = NULL;
     for (size_t i = 0; i < ids_len; i += SELVA_NODE_ID_SIZE) {
         Selva_NodeId nodeId;
@@ -2041,7 +1969,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .filter = filter_expression,
             .send_param.merge_strategy = query_opts.merge_strategy,
             .send_param.merge_path = merge_path,
-            .merge_nr_fields = &merge_nr_fields,
             .send_param.fields = fields,
             .send_param.fields_rpn_ctx = fields_rpn_ctx,
             .send_param.fields_expression = fields_expression,

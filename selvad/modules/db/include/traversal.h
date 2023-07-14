@@ -214,7 +214,6 @@ struct FindCommand_Args {
     const struct rpn_expression *filter;
 
     struct SelvaNodeSendParam send_param;
-    size_t *merge_nr_fields;
 
 #if 0
     enum SelvaResultOrder order; /*!< Result order. */
