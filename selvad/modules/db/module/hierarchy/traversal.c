@@ -27,7 +27,7 @@ int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_
         while ((s = SVector_Foreach(&it))) {
             TO_STR(s);
 
-            if (s_len == field_name_len && !strcmp(s_str, field_name_str)) {
+            if (s_len == field_name_len && !memcmp(s_str, field_name_str, s_len)) {
                 return 1;
             }
         }
