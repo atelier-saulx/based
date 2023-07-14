@@ -66,13 +66,13 @@ struct SelvaModify_OpSet {
     int8_t delete_all; /*!< Delete all intems from the set. */
     uint16_t edge_constraint_id; /*!< Edge field constraint id when op_set_type is set to SELVA_MODIFY_OP_SET_TYPE_EDGE. */
 
-    char *$add;
+    const char *$add_str;
     size_t $add_len;
 
-    char *$delete;
+    const char *$delete_str;
     size_t $delete_len;
 
-    char *$value;
+    const char *$value_str;
     size_t $value_len;
 };
 
@@ -92,17 +92,17 @@ struct SelvaModify_OpEdgeMeta {
 
     char dst_node_id[SELVA_NODE_ID_SIZE];
 
-    char *meta_field_name_str;
+    const char *meta_field_name_str;
     size_t meta_field_name_len;
 
-    char *meta_field_value_str;
+    const char *meta_field_value_str;
     size_t meta_field_value_len;
 };
 
 struct SelvaModify_OpHll {
     uint64_t _spare; /*!< For future extensions. */
 
-    char *$add;
+    const char *$add_str;
     size_t $add_len;
 };
 

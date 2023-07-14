@@ -22,6 +22,7 @@
 #include "util/array_field.h"
 #include "util/bitmap.h"
 #include "util/cstrings.h"
+#include "util/data-record.h"
 #include "util/finalizer.h"
 #include "util/selva_proto_builder.h"
 #include "util/selva_string.h"
@@ -169,7 +170,7 @@ static int update_hierarchy(
 #endif
 
             err = SelvaModify_SetHierarchyParents(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value);
+                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str);
         } else { /* children */
 #if 0
             SELVA_LOG(SELVA_LOGL_DBG, "Set children of %.*s nr_nodes: %zu",
@@ -182,7 +183,7 @@ static int update_hierarchy(
 #endif
 
             err = SelvaModify_SetHierarchyChildren(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value);
+                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str);
         }
 
         return err;
@@ -205,7 +206,7 @@ static int update_hierarchy(
 #endif
 
                 err = SelvaModify_AddHierarchy(hierarchy, node_id,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$add,
+                        nr_nodes, (const Selva_NodeId *)setOpts->$add_str,
                         0, NULL);
             } else { /* children */
 #if 0
@@ -216,7 +217,7 @@ static int update_hierarchy(
 
                 err = SelvaModify_AddHierarchy(hierarchy, node_id,
                         0, NULL,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$add);
+                        nr_nodes, (const Selva_NodeId *)setOpts->$add_str);
             }
             if (err < 0) {
                 return err;
@@ -228,12 +229,12 @@ static int update_hierarchy(
 
             if (isFieldParents) { /* parents */
                 err = SelvaModify_DelHierarchy(hierarchy, node_id,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$delete,
+                        nr_nodes, (const Selva_NodeId *)setOpts->$delete_str,
                         0, NULL);
             } else { /* children */
                 err = SelvaModify_DelHierarchy(hierarchy, node_id,
                         0, NULL,
-                        nr_nodes, (const Selva_NodeId *)setOpts->$delete);
+                        nr_nodes, (const Selva_NodeId *)setOpts->$delete_str);
             }
             if (err < 0) {
                 return err;
@@ -267,9 +268,9 @@ static int update_edge(
         SVector_Init(&new_ids, setOpts->$value_len / SELVA_NODE_ID_SIZE, SelvaSVectorComparator_Node);
 
         for (size_t i = 0; i < setOpts->$value_len; i += SELVA_NODE_ID_SIZE) {
-            char *dst_node_id = setOpts->$value + i;
+            const char *dst_node_id = setOpts->$value_str + i;
 
-            SVector_Insert(&new_ids, dst_node_id);
+            SVector_Insert(&new_ids, (void *)dst_node_id);
         }
 
         struct EdgeField *edgeField = Edge_GetField(node, field_str, field_len);
@@ -303,7 +304,7 @@ static int update_edge(
          * Then we add the new arcs.
          */
         for (size_t i = 0; i < setOpts->$value_len; i += SELVA_NODE_ID_SIZE) {
-            const char *dst_node_id = setOpts->$value + i;
+            const char *dst_node_id = setOpts->$value_str + i;
             struct SelvaHierarchyNode *dst_node;
             int err;
 
@@ -352,7 +353,7 @@ static int update_edge(
                 struct SelvaHierarchyNode *dst_node;
                 int err;
 
-                err = SelvaHierarchy_UpsertNode(hierarchy, setOpts->$add + i, &dst_node);
+                err = SelvaHierarchy_UpsertNode(hierarchy, setOpts->$add_str + i, &dst_node);
                 if ((err && err != SELVA_HIERARCHY_EEXIST) || !dst_node) {
                     /* See similar case with $value */
                     SELVA_LOG(SELVA_LOGL_ERR, "Upserting a node failed. err: \"%s\"",
@@ -390,7 +391,7 @@ static int update_edge(
                      * It may or may not be better for caching to have the node_id in
                      * stack.
                      */
-                    memcpy(dst_node_id, setOpts->$delete + i, SELVA_NODE_ID_SIZE);
+                    memcpy(dst_node_id, setOpts->$delete_str + i, SELVA_NODE_ID_SIZE);
                     err = Edge_Delete(hierarchy, edgeField, node, dst_node_id);
                     if (!err) {
                         res++;
@@ -759,7 +760,7 @@ static int update_set(
         /*
          * Set new values.
          */
-        err = add_set_values(hierarchy, obj, node_id, field, setOpts->$value, setOpts->$value_len, setOpts->op_set_type, 1);
+        err = add_set_values(hierarchy, obj, node_id, field, setOpts->$value_str, setOpts->$value_len, setOpts->op_set_type, 1);
         if (err < 0) {
             return err;
         } else {
@@ -769,7 +770,7 @@ static int update_set(
         if (setOpts->$add_len > 0) {
             int err;
 
-            err = add_set_values(hierarchy, obj, node_id, field, setOpts->$add, setOpts->$add_len, setOpts->op_set_type, 0);
+            err = add_set_values(hierarchy, obj, node_id, field, setOpts->$add_str, setOpts->$add_len, setOpts->op_set_type, 0);
             if (err < 0) {
                 return err;
             } else {
@@ -780,7 +781,7 @@ static int update_set(
         if (setOpts->$delete_len > 0) {
             int err;
 
-            err = del_set_values(hierarchy, obj, field, setOpts->$delete, setOpts->$delete_len, setOpts->op_set_type);
+            err = del_set_values(hierarchy, obj, field, setOpts->$delete_str, setOpts->$delete_len, setOpts->op_set_type);
             if (err < 0) {
                 return err;
             }
@@ -937,8 +938,9 @@ static void parse_alias_query(struct selva_string **argv, int argc, SVector *out
     }
 }
 
-static int in_mem_range(const void *p, const void *start, size_t size) {
-    return (ptrdiff_t)p >= (ptrdiff_t)start && (ptrdiff_t)p < (ptrdiff_t)start + (ptrdiff_t)size;
+static int opset_fixup(struct SelvaModify_OpSet *op, size_t size) {
+    DATA_RECORD_FIXUP_CSTRING_P(op, op, size, $add, $delete, $value);
+    return 0;
 }
 
 struct SelvaModify_OpSet *SelvaModify_OpSet_align(struct finalizer *fin, const struct selva_string *data) {
@@ -953,20 +955,18 @@ struct SelvaModify_OpSet *SelvaModify_OpSet_align(struct finalizer *fin, const s
 
     op = selva_malloc(data_len);
     finalizer_add(fin, op, selva_free);
-
     memcpy(op, data_str, data_len);
-    op->$add    = op->$add    ? ((char *)op + (ptrdiff_t)op->$add)    : NULL;
-    op->$delete = op->$delete ? ((char *)op + (ptrdiff_t)op->$delete) : NULL;
-    op->$value  = op->$value  ? ((char *)op + (ptrdiff_t)op->$value)  : NULL;
 
-    if (!(((!op->$add    && op->$add_len == 0)    || (in_mem_range(op->$add,    op, data_len) && in_mem_range(op->$add    + op->$add_len    - 1,  op, data_len))) &&
-          ((!op->$delete && op->$delete_len == 0) || (in_mem_range(op->$delete, op, data_len) && in_mem_range(op->$delete + op->$delete_len - 1,  op, data_len))) &&
-          ((!op->$value  && op->$value_len == 0)  || (in_mem_range(op->$value,  op, data_len) && in_mem_range(op->$value  + op->$value_len  - 1,  op, data_len)))
-       )) {
+    if (opset_fixup(op, data_len)) {
         return NULL;
     }
 
     return op;
+}
+
+static int opedgemeta_fixup(struct SelvaModify_OpEdgeMeta *op, size_t size) {
+    DATA_RECORD_FIXUP_CSTRING_P(op, op, size, meta_field_name, meta_field_value);
+    return 0;
 }
 
 static struct SelvaModify_OpEdgeMeta *SelvaModify_OpEdgeMeta_align(struct finalizer *fin, const struct selva_string *data) {
@@ -981,21 +981,20 @@ static struct SelvaModify_OpEdgeMeta *SelvaModify_OpEdgeMeta_align(struct finali
 
     op = selva_malloc(data_len);
     finalizer_add(fin, op, selva_free);
-
     memcpy(op, data_str, data_len);
     if (!op->meta_field_name_str || !op->meta_field_value_str) {
         return NULL;
     }
 
-    op->meta_field_name_str = ((char *)op + (ptrdiff_t)op->meta_field_name_str);
-    op->meta_field_value_str = ((char *)op + (ptrdiff_t)op->meta_field_value_str);
-
-    if (!((in_mem_range(op->meta_field_name_str,  op, data_len) && in_mem_range(op->meta_field_name_str  + op->meta_field_name_len  - 1, op, data_len)) &&
-          (in_mem_range(op->meta_field_value_str, op, data_len) && in_mem_range(op->meta_field_value_str + op->meta_field_value_len - 1, op, data_len)))) {
+    if (opedgemeta_fixup(op, data_len)) {
         return NULL;
     }
 
     return op;
+}
+
+static int in_mem_range(const void *p, const void *start, size_t size) {
+    return (ptrdiff_t)p >= (ptrdiff_t)start && (ptrdiff_t)p < (ptrdiff_t)start + (ptrdiff_t)size;
 }
 
 const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *size_out) {
@@ -1010,7 +1009,7 @@ const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *siz
     }
 
     memcpy(&size, data_str + offsetof(struct SelvaModify_OpHll, $add_len), sizeof(size));
-    memcpy(&p, data_str + offsetof(struct SelvaModify_OpHll, $add), sizeof(char *));
+    memcpy(&p, data_str + offsetof(struct SelvaModify_OpHll, $add_str), sizeof(char *));
     p = data_str + (uintptr_t)p;
 
     if (size == 0 ||
@@ -1928,11 +1927,11 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         while ((alias = SVector_Foreach(&it))) {
             struct SelvaModify_OpSet opSet = {
                 .op_set_type = SELVA_MODIFY_OP_SET_TYPE_CHAR,
-                .$add = alias,
+                .$add_str = alias,
                 .$add_len = strlen(alias) + 1, /* This is safe because the ultimate source is a selva_string. */
-                .$delete = NULL,
+                .$delete_str = NULL,
                 .$delete_len = 0,
-                .$value = NULL,
+                .$value_str = NULL,
                 .$value_len = 0,
             };
 
