@@ -8,6 +8,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include "util/auto_free.h"
+#include "util/data-record.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 #include "selva_db.h"
@@ -448,31 +449,8 @@ static int update_node_cb(
 }
 
 /* FIXME letoh conversion */
-static int fixup_query_opts(struct SelvaUpdate_QueryOpts *qo, const char *base, size_t qo_len) {
-    uintptr_t dbase = (uintptr_t)base;
-    uintptr_t end = (uintptr_t)base + qo_len;
-
-    if (qo->dir_opt_len) {
-        qo->dir_opt_str += dbase;
-    } else {
-        qo->dir_opt_str = NULL;
-    }
-
-    if (qo->edge_filter_len) {
-        qo->edge_filter_str += dbase;
-    } else {
-        qo->edge_filter_str = NULL;
-    }
-
-    /*
-     * We don't care to check whether the pointers are actually sane.
-     * It's enough to know that they are within the original allocation.
-     * TODO Make sure that the pointers can't wrap around.
-     */
-    if ((ptrdiff_t)qo->dir_opt_str          + qo->dir_opt_len           > end ||
-        (ptrdiff_t)qo->edge_filter_str      + qo->edge_filter_len       > end) {
-        return SELVA_EINVAL;
-    }
+static int fixup_query_opts(struct SelvaUpdate_QueryOpts *qo, const char *base, size_t size) {
+    DATA_RECORD_FIXUP_CSTRING_P(qo, base, size, dir_opt, edge_filter);
     return 0;
 }
 
