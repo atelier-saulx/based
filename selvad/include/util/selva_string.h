@@ -283,11 +283,239 @@ ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t 
 
 #define TO_STR_5(_var, ...) \
     TO_STR_1(_var) \
-    TO_STR_5(__VA_ARGS__)
+    TO_STR_4(__VA_ARGS__)
 
 #define TO_STR_6(_var, ...) \
     TO_STR_1(_var) \
+    TO_STR_5(__VA_ARGS__)
+
+#define TO_STR_7(_var, ...) \
+    TO_STR_1(_var) \
     TO_STR_6(__VA_ARGS__)
+
+#define TO_STR_8(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_7(__VA_ARGS__)
+
+#define TO_STR_9(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_7(__VA_ARGS__)
+
+#define TO_STR_10(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_9(__VA_ARGS__)
+
+#define TO_STR_11(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_10(__VA_ARGS__)
+
+#define TO_STR_12(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_11(__VA_ARGS__)
+
+#define TO_STR_13(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_12(__VA_ARGS__)
+
+#define TO_STR_14(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_13(__VA_ARGS__)
+
+#define TO_STR_15(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_14(__VA_ARGS__)
+
+#define TO_STR_16(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_15(__VA_ARGS__)
+
+#define TO_STR_17(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_16(__VA_ARGS__)
+
+#define TO_STR_18(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_17(__VA_ARGS__)
+
+#define TO_STR_19(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_18(__VA_ARGS__)
+
+#define TO_STR_20(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_19(__VA_ARGS__)
+
+#define TO_STR_21(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_20(__VA_ARGS__)
+
+#define TO_STR_22(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_21(__VA_ARGS__)
+
+#define TO_STR_23(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_22(__VA_ARGS__)
+
+#define TO_STR_24(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_23(__VA_ARGS__)
+
+#define TO_STR_25(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_24(__VA_ARGS__)
+
+#define TO_STR_26(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_25(__VA_ARGS__)
+
+#define TO_STR_27(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_26(__VA_ARGS__)
+
+#define TO_STR_28(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_27(__VA_ARGS__)
+
+#define TO_STR_29(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_28(__VA_ARGS__)
+
+#define TO_STR_30(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_29(__VA_ARGS__)
+
+#define TO_STR_31(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_30(__VA_ARGS__)
+
+#define TO_STR_32(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_31(__VA_ARGS__)
+
+#define TO_STR_33(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_32(__VA_ARGS__)
+
+#define TO_STR_34(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_33(__VA_ARGS__)
+
+#define TO_STR_35(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_34(__VA_ARGS__)
+
+#define TO_STR_36(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_35(__VA_ARGS__)
+
+#define TO_STR_37(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_36(__VA_ARGS__)
+
+#define TO_STR_38(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_37(__VA_ARGS__)
+
+#define TO_STR_39(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_38(__VA_ARGS__)
+
+#define TO_STR_40(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_39(__VA_ARGS__)
+
+#define TO_STR_41(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_40(__VA_ARGS__)
+
+#define TO_STR_42(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_41(__VA_ARGS__)
+
+#define TO_STR_43(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_42(__VA_ARGS__)
+
+#define TO_STR_44(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_43(__VA_ARGS__)
+
+#define TO_STR_45(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_44(__VA_ARGS__)
+
+#define TO_STR_46(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_45(__VA_ARGS__)
+
+#define TO_STR_47(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_46(__VA_ARGS__)
+
+#define TO_STR_48(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_47(__VA_ARGS__)
+
+#define TO_STR_49(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_48(__VA_ARGS__)
+
+#define TO_STR_50(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_49(__VA_ARGS__)
+
+#define TO_STR_51(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_50(__VA_ARGS__)
+
+#define TO_STR_52(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_51(__VA_ARGS__)
+
+#define TO_STR_53(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_52(__VA_ARGS__)
+
+#define TO_STR_54(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_53(__VA_ARGS__)
+
+#define TO_STR_55(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_54(__VA_ARGS__)
+
+#define TO_STR_56(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_55(__VA_ARGS__)
+
+#define TO_STR_57(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_56(__VA_ARGS__)
+
+#define TO_STR_58(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_57(__VA_ARGS__)
+
+#define TO_STR_59(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_58(__VA_ARGS__)
+
+#define TO_STR_60(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_59(__VA_ARGS__)
+
+#define TO_STR_61(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_60(__VA_ARGS__)
+
+#define TO_STR_62(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_61(__VA_ARGS__)
+
+#define TO_STR_63(_var, ...) \
+    TO_STR_1(_var) \
+    TO_STR_62(__VA_ARGS__)
 
 /**
  * Create C-string pointer variable(s) from `RedisModuleString` pointer(s).
