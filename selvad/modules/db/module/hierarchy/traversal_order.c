@@ -9,11 +9,9 @@
 #include "util/ptag.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
-#include "selva_log.h"
 #include "selva_db.h"
 #include "db_config.h"
 #include "hierarchy.h"
-#include "selva_lang.h"
 #include "selva_object.h"
 #include "traversal.h"
 

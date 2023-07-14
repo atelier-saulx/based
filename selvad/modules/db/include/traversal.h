@@ -6,9 +6,8 @@
 #ifndef SELVA_TRAVERSAL_H
 #define SELVA_TRAVERSAL_H
 
-#include "util/svector.h"
-
 struct FindCommand_Args;
+struct SVector;
 struct SelvaHierarchy;
 struct SelvaHierarchyNode;
 struct SelvaObjectAny;
@@ -200,7 +199,7 @@ typedef void (*SelvaFind_Postprocess)(
         ssize_t offset,
         ssize_t limit,
         struct SelvaNodeSendParam *args,
-        SVector *result);
+        struct SVector *result);
 
 struct FindCommand_Args {
     struct finalizer *fin;
@@ -220,7 +219,7 @@ struct FindCommand_Args {
 #if 0
     enum SelvaResultOrder order; /*!< Result order. */
 #endif
-    SVector *result; /*!< Results of the find for postprocessing. Wrapped in TraversalOrderItem structs if sorting is requested. */
+    struct SVector *result; /*!< Results of the find for postprocessing. Wrapped in TraversalOrderItem structs if sorting is requested. */
 
     struct Selva_SubscriptionMarker *marker; /*!< Used by FindInSub. */
 
@@ -286,7 +285,7 @@ const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir);
  * @param order is the order requested.
  * @param limit is the expected length for the final SVector. Generally this can be the same as limit size of the response. 0 = auto.
  */
-void SelvaTraversalOrder_InitOrderResult(SVector *order_result, enum SelvaResultOrder order, ssize_t limit);
+void SelvaTraversalOrder_InitOrderResult(struct SVector *order_result, enum SelvaResultOrder order, ssize_t limit);
 
 /**
  * Destroy an order_result SVector and free its items properly.
@@ -294,7 +293,7 @@ void SelvaTraversalOrder_InitOrderResult(SVector *order_result, enum SelvaResult
  * function should be called with a ctx too. Alternatively the order_result
  * SVector can be declared with SVECTOR_AUTOFREE().
  */
-void SelvaTraversalOrder_DestroyOrderResult(struct finalizer *fin, SVector *order_result);
+void SelvaTraversalOrder_DestroyOrderResult(struct finalizer *fin, struct SVector *order_result);
 
 /**
  * Create a new node based TraversalOrderItem that can be sorted.

@@ -2,14 +2,9 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <stddef.h>
 #include <sys/types.h>
-#include "util/funmap.h"
 #include "util/selva_string.h"
-#include "selva_error.h"
-#include "selva_db.h"
-#include "hierarchy.h"
-#include "selva_lang.h"
+#include "util/svector.h"
 #include "selva_object.h"
 #include "traversal.h"
 
