@@ -7,7 +7,8 @@ export const reference: Parser<'reference'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   // $no root
   // prob pass these as options
@@ -50,7 +51,9 @@ export const reference: Parser<'reference'> = async (
       error(path, ParseError.referenceIsIncorrectType)
     }
   }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  if (!noCollect) {
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  }
 }
 
 export const references: Parser<'references'> = async (
@@ -59,15 +62,12 @@ export const references: Parser<'references'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   // default
   // $no root
   if (Array.isArray(value)) {
-    const handler = {
-      ...handlers,
-      collect: () => {},
-    }
     await Promise.all(
       value.map((v, i) => {
         return reference(
@@ -77,17 +77,14 @@ export const references: Parser<'references'> = async (
           { ...fieldSchema, type: 'reference' },
           typeSchema,
           target,
-          handler
+          handlers,
+          true
         )
       })
     )
     value = { $value: value }
   } else if (typeof value === 'object') {
     if (value.$add) {
-      const handler = {
-        ...handlers,
-        collect: () => {},
-      }
       await Promise.all(
         value.$add.map((v, i) => {
           return reference(
@@ -97,11 +94,14 @@ export const references: Parser<'references'> = async (
             { ...fieldSchema, type: 'reference' },
             typeSchema,
             target,
-            handler
+            handlers,
+            true
           )
         })
       )
     }
   }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  if (!noCollect) {
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  }
 }

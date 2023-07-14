@@ -14,7 +14,8 @@ export const fieldWalker = async (
   fieldSchema: BasedSchemaField,
   typeSchema: BasedSchemaType,
   target: BasedSetTarget,
-  handlers: BasedSetHandlers
+  handlers: BasedSetHandlers,
+  noCollect?: boolean
 ): Promise<void> => {
   if ('$ref' in fieldSchema) {
     // TODO: when we have this it has to get it from the schema and redo the parsing with the correct fieldSchema
@@ -24,7 +25,9 @@ export const fieldWalker = async (
 
   const valueIsObject = value && valueType === 'object'
   if (valueIsObject && value.$delete === true) {
-    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    if (!noCollect) {
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    }
     return
   }
 
@@ -43,7 +46,7 @@ export const fieldWalker = async (
 
   const parse = parsers[typeDef]
 
-  await parse(path, value, fieldSchema, typeSchema, target, handlers)
+  await parse(path, value, fieldSchema, typeSchema, target, handlers, noCollect)
 
   return
 }

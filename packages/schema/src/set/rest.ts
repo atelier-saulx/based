@@ -25,12 +25,15 @@ export const boolean: Parser<'boolean'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   if (typeof value !== 'boolean') {
     error(path, ParseError.incorrectFormat)
   }
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  if (!noCollect) {
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  }
 }
 
 export const enumParser: Parser<'enum'> = async (
@@ -39,12 +42,15 @@ export const enumParser: Parser<'enum'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   const enumValues = fieldSchema.enum
   for (let i = 0; i < enumValues.length; i++) {
     if (deepEqual(enumValues[i], value)) {
-      handlers.collect({ path, value: i, typeSchema, fieldSchema, target })
+      if (!noCollect) {
+        handlers.collect({ path, value: i, typeSchema, fieldSchema, target })
+      }
       return
     }
   }
@@ -57,17 +63,20 @@ export const json: Parser<'json'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   try {
     const parsedValue = JSON.stringify(value)
-    handlers.collect({
-      path,
-      value: parsedValue,
-      typeSchema,
-      fieldSchema,
-      target,
-    })
+    if (!noCollect) {
+      handlers.collect({
+        path,
+        value: parsedValue,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    }
   } catch (err) {
     throw err(path, ParseError.incorrectFormat)
   }

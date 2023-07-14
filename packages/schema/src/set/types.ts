@@ -11,7 +11,8 @@ export type Parser<K extends keyof BasedSchemaFields> = (
   fieldSchema: BasedSchemaFields[K],
   typeSchema: BasedSchemaType,
   target: BasedSetTarget,
-  handlers: BasedSetHandlers
+  handlers: BasedSetHandlers,
+  noCollect?: boolean
 ) => Promise<void>
 
 export type Parsers = {

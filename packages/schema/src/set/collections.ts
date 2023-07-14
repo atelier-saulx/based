@@ -8,43 +8,34 @@ export const set: Parser<'set'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   const q: Promise<void>[] = []
   const fieldDef = fieldSchema.items
   if (Array.isArray(value)) {
-    const handlerNest = {
-      ...handlers,
-      collect: ({ value }) => {
-        parsedArray.push(value)
-      },
-    }
     const parsedArray = []
     for (let i = 0; i < value.length; i++) {
       q.push(
-        fieldWalker(
-          [...path, i],
-          value[i],
-          fieldDef,
-          typeSchema,
-          target,
-          handlerNest
-        )
+        fieldWalker([...path, i], value[i], fieldDef, typeSchema, target, {
+          ...handlers,
+          collect: ({ value }) => {
+            parsedArray.push(value)
+          },
+        })
       )
     }
     await Promise.all(q)
-    handlers.collect({
-      path,
-      value: { $value: parsedArray },
-      typeSchema,
-      fieldSchema,
-      target,
-    })
-  } else {
-    const handlerNest = {
-      ...handlers,
-      collect: () => {},
+    if (!noCollect) {
+      handlers.collect({
+        path,
+        value: { $value: parsedArray },
+        typeSchema,
+        fieldSchema,
+        target,
+      })
     }
+  } else {
     if (value.$add) {
       for (let i = 0; i < value.$add.length; i++) {
         q.push(
@@ -54,7 +45,8 @@ export const set: Parser<'set'> = async (
             fieldDef,
             typeSchema,
             target,
-            handlerNest
+            handlers,
+            true
           )
         )
       }
@@ -68,13 +60,16 @@ export const set: Parser<'set'> = async (
             fieldDef,
             typeSchema,
             target,
-            handlerNest
+            handlers,
+            true
           )
         )
       }
     }
     await Promise.all(q)
-    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    if (!noCollect) {
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    }
   }
 }
 
@@ -84,7 +79,8 @@ export const object: Parser<'object'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   if (typeof value !== 'object') {
     error(path, ParseError.incorrectFormat)
@@ -106,7 +102,8 @@ export const object: Parser<'object'> = async (
         propDef,
         typeSchema,
         target,
-        handlers
+        handlers,
+        noCollect
       )
     )
   }
@@ -119,7 +116,8 @@ export const array: Parser<'array'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   const isArray = Array.isArray(value)
   if (typeof value === 'object' && !isArray) {
@@ -130,10 +128,6 @@ export const array: Parser<'array'> = async (
       ) {
         error([...path, '$insert'], ParseError.incorrectFormat)
       } else {
-        const nestedHandler = {
-          ...handlers,
-          collect: () => {},
-        }
         const insert = Array.isArray(value.$insert.$value)
           ? value.$insert.$value
           : [value.$insert.$value]
@@ -146,7 +140,8 @@ export const array: Parser<'array'> = async (
               fieldSchema.values,
               typeSchema,
               target,
-              nestedHandler
+              handlers,
+              true
             )
           )
         }
@@ -158,10 +153,6 @@ export const array: Parser<'array'> = async (
     }
     if (value.$push) {
       const q: Promise<void>[] = []
-      const nestedHandler = {
-        ...handlers,
-        collect: () => {},
-      }
       const push = Array.isArray(value.$push) ? value.$push : [value.$push]
       for (let i = 0; i < push.length; i++) {
         q.push(
@@ -171,7 +162,8 @@ export const array: Parser<'array'> = async (
             fieldSchema.values,
             typeSchema,
             target,
-            nestedHandler
+            handlers,
+            true
           )
         )
       }
@@ -190,21 +182,19 @@ export const array: Parser<'array'> = async (
           fieldSchema.values,
           typeSchema,
           target,
-          {
-            ...handlers,
-            collect: () => {},
-          }
+          handlers,
+          true
         )
       }
     }
-    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    if (!noCollect) {
+      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+    }
     return
   }
-
   if (!isArray) {
     error(path, ParseError.incorrectFieldType)
   }
-
   const q: Promise<void>[] = []
   for (let i = 0; i < value.length; i++) {
     q.push(
@@ -214,7 +204,8 @@ export const array: Parser<'array'> = async (
         fieldSchema.values,
         typeSchema,
         target,
-        handlers
+        handlers,
+        noCollect
       )
     )
   }

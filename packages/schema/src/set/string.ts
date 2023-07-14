@@ -101,10 +101,13 @@ export const string: Parser<'string'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   validate(path, value, fieldSchema)
-  handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  if (!noCollect) {
+    handlers.collect({ path, value, typeSchema, fieldSchema, target })
+  }
 }
 
 export const text: Parser<'text'> = async (
@@ -113,18 +116,21 @@ export const text: Parser<'text'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   const valueType = typeof value
   if (target.$language && valueType === 'string') {
     validate(path, value, fieldSchema)
-    handlers.collect({
-      path,
-      value: { [target.$language]: value },
-      typeSchema,
-      fieldSchema,
-      target,
-    })
+    if (!noCollect) {
+      handlers.collect({
+        path,
+        value: { [target.$language]: value },
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    }
     return
   }
 
@@ -135,25 +141,44 @@ export const text: Parser<'text'> = async (
   for (const key in value) {
     const newPath = [...path, key]
 
-    if (typeof value[key] === 'object' && value[key].$delete === true) {
-      handlers.collect({
-        path: newPath,
-        value: null,
-        typeSchema,
-        fieldSchema,
-        target,
-      })
+    if (typeof value[key] === 'object') {
+      if (value[key].$value) {
+        text(
+          [...path, key, '$value'],
+          value[key].$value,
+          fieldSchema,
+          typeSchema,
+          target,
+          handlers,
+          true
+        )
+      }
+
+      // if (value[key].$default) {
+      // }
+
+      if (!noCollect) {
+        handlers.collect({
+          path: newPath,
+          value: null,
+          typeSchema,
+          fieldSchema,
+          target,
+        })
+      }
       continue
     }
 
     validate(newPath, value[key], fieldSchema)
 
-    handlers.collect({
-      path: newPath,
-      value: value[key],
-      typeSchema,
-      fieldSchema,
-      target,
-    })
+    if (!noCollect) {
+      handlers.collect({
+        path: newPath,
+        value: value[key],
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    }
   }
 }

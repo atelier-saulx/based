@@ -64,7 +64,8 @@ export const timestamp: Parser<'timestamp'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
   if (typeof value === 'string') {
     if (value === 'now') {
@@ -77,13 +78,16 @@ export const timestamp: Parser<'timestamp'> = async (
       }
     }
   }
-  handlers.collect({
-    path,
-    value: shared(path, value, fieldSchema),
-    typeSchema,
-    fieldSchema,
-    target,
-  })
+  const parsedValue = shared(path, value, fieldSchema)
+  if (!noCollect) {
+    handlers.collect({
+      path,
+      value: parsedValue,
+      typeSchema,
+      fieldSchema,
+      target,
+    })
+  }
 }
 
 export const number: Parser<'number'> = async (
@@ -92,15 +96,19 @@ export const number: Parser<'number'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
-  handlers.collect({
-    path,
-    value: shared(path, value, fieldSchema),
-    typeSchema,
-    fieldSchema,
-    target,
-  })
+  const parsedValue = shared(path, value, fieldSchema)
+  if (!noCollect) {
+    handlers.collect({
+      path,
+      value: parsedValue,
+      typeSchema,
+      fieldSchema,
+      target,
+    })
+  }
 }
 
 export const integer: Parser<'integer'> = async (
@@ -109,16 +117,20 @@ export const integer: Parser<'integer'> = async (
   fieldSchema,
   typeSchema,
   target,
-  handlers
+  handlers,
+  noCollect
 ) => {
-  if (typeof value !== 'number' || value - Math.floor(value) !== 0) {
+  if (typeof value === 'number' && value - Math.floor(value) !== 0) {
     error(path, ParseError.incorrectFormat)
   }
-  handlers.collect({
-    path,
-    value: shared(path, value, fieldSchema),
-    typeSchema,
-    fieldSchema,
-    target,
-  })
+  const parsedValue = shared(path, value, fieldSchema)
+  if (!noCollect) {
+    handlers.collect({
+      path,
+      value: parsedValue,
+      typeSchema,
+      fieldSchema,
+      target,
+    })
+  }
 }
