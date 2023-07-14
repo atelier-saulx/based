@@ -9,6 +9,9 @@ const schema: BasedSchema = {
         visits: {
           type: 'cardinality',
         },
+        blub: {
+          type: 'number',
+        },
         snurp: {
           type: 'array',
           values: {
@@ -148,6 +151,9 @@ test.serial('collect correctly', async (t) => {
         flap: true,
         snurp: false,
         ua: '123435',
+      },
+      blub: {
+        $increment: 1,
       },
       bla: false,
       time: now, // do more later
