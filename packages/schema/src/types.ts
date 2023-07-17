@@ -340,6 +340,7 @@ export type BasedSetTarget = {
   $id?: string
   schema: BasedSchema
   $language?: BasedSchemaLanguage
+  required: (number | string)[][]
 }
 
 export type BasedSchemaCollectProps = {
@@ -353,13 +354,10 @@ export type BasedSchemaCollectProps = {
 export type BasedSetHandlers = {
   collect: (props: BasedSchemaCollectProps) => void
 
-  // has to be fixed / decided upon
-  // ['bla[0].xxx', '']
-  // [bla, [0]', xxx]
-  // (number|string)[]
-  // typeschema, target) => Promise<boolean>
+  // add collectNeedRequired
 
-  // $filter
+  checkRequiredFields: (path: (string | number)[]) => Promise<boolean>
+
   referenceFilterCondition: (
     referenceId: string,
     $filter: any

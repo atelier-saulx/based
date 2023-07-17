@@ -111,6 +111,13 @@ export const object: Parser<'object'> = async (
     )
   }
   await Promise.all(q)
+  if (fieldSchema.required) {
+    for (const req of fieldSchema.required) {
+      if (!(req in value)) {
+        target.required.push([...path, req])
+      }
+    }
+  }
 }
 
 // unshift // only allow 1 command
