@@ -10,7 +10,7 @@ Selvad
 Directory Structure
 -------------------
 
-- [doc/README.md](doc) documentation
+- [doc/](doc/README.md) documentation
 - `src/` contains sources for the main executable (event loop and module loader)
 - `modules/` contains sources for loadable modules (selva)
 - `lib/` contains libraries that can be used in modules (e.g. util, deflate, jemalloc)
