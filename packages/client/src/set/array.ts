@@ -16,27 +16,35 @@ export function arrayOpToModify(props: BasedSchemaCollectProps) {
   const { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
-  const args = []
   const iPath = [...path]
   let vals = []
 
   const valSchema = (<BasedSchemaFieldArray>fieldSchema).values
 
   const valType = DB_TYPE_TO_ARY_TYPE[valSchema.type]
+  let opArgs = []
 
   console.log('interesting', path, value)
   if (value.$push) {
-    args.push(ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH, strPath, valType)
+    opArgs = [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH, strPath, [valType]]
 
     vals = value.$push
     iPath.push(-1)
   } else if (value.$unshift) {
-    args.push(ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT, strPath, valType)
+    opArgs = [
+      ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT,
+      strPath,
+      [valType, 0],
+    ]
 
     vals = [...value.$unshift].reverse()
     iPath.push(0)
   } else if (value.$insert) {
-    args.push(ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT, strPath, valType)
+    opArgs = [
+      ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT,
+      strPath,
+      [valType, value.$insert.$idx],
+    ]
 
     vals = [...value.$insert.$value].reverse()
     iPath.push(value.$insert.$idx)
@@ -51,12 +59,14 @@ export function arrayOpToModify(props: BasedSchemaCollectProps) {
     return [
       ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE,
       strPath,
-      value.$remove.$idx,
+      [value.$remove.$idx],
     ]
   }
 
+  const args = []
   for (const v of vals) {
     args.push(
+      ...opArgs,
       ...toModifyArgs(<any>{
         fieldSchema: valSchema,
         path: iPath,

@@ -151,8 +151,8 @@ test.serial.only('set primitive fields', async (t) => {
     $id: 'po1',
     arys: {
       ints: { $assign: { $idx: 1, $value: 6 } },
-      floats: { $unshift: [0.0] },
-      strs: { $push: ['gh'] },
+      floats: { $unshift: [-1.1, 0.0] },
+      strs: { $push: 'gh' },
       objs: { $remove: { $idx: 2 } },
     },
   })
