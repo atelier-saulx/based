@@ -16,14 +16,12 @@ export function arrayOpToModify(props: BasedSchemaCollectProps) {
   const { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
-  const iPath = [...path]
-  let vals = []
-
   const valSchema = (<BasedSchemaFieldArray>fieldSchema).values
-
   const valType = DB_TYPE_TO_ARY_TYPE[valSchema.type]
-  let opArgs = []
 
+  const iPath = [...path]
+  let opArgs = []
+  let vals = []
   if (value.$push) {
     opArgs = [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH, strPath, [valType]]
 
