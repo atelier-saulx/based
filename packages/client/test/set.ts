@@ -147,6 +147,16 @@ test.serial.only('set primitive fields', async (t) => {
     },
   })
 
+  await client.set({
+    $id: 'po1',
+    arys: {
+      ints: { $assign: { $idx: 1, $value: 6 } },
+      floats: { $unshift: 0.0 },
+      strs: { $push: 'gh' },
+      objs: { $remove: { $idx: 2 } },
+    },
+  })
+
   let getResult = await client.command('object.get', ['', 'po1'])
   console.log('getResult', getResult)
 
