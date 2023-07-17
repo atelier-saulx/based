@@ -57,7 +57,7 @@ function getFields(
         }
       }
 
-      expr[type] = { $all: e }
+      expr[type] = { $all: type === '$any' ? e : [...$any, ...e] }
     }
 
     return {
