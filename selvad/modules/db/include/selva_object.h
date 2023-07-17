@@ -510,6 +510,9 @@ struct SelvaObjectSetForeachCallback {
  * Visiting all subobjects can be achieved by using
  * SelvaObject_ForeachValueType() and recursing when a SELVA_OBJECT_OBJECT is
  * found.
+ * Notice that the lifetime of the returned pointers might be limited.
+ * Especially in the case of SELVA_OBJECT_HLL the value pointer by the returned
+ * pointer is rewritten on every iteration.
  * @param name_out is a direct pointer to the name and it will be rendered invalid if the key is deleted.
  */
 void *SelvaObject_ForeachValue(

@@ -803,7 +803,9 @@ static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key
         return SELVA_ENOENT;
     }
 
-    /* FIXME What if there was an index given? */
+    /*
+     * Note that SELVA_OBJECT_GETKEY_DELETE ignores the array index.
+     */
     if (flags & SELVA_OBJECT_GETKEY_DELETE) {
         remove_key(obj, key);
         key = NULL;
@@ -2350,7 +2352,15 @@ void *SelvaObject_ForeachValue(const struct SelvaObject *obj, SelvaObject_Iterat
     case SELVA_OBJECT_ARRAY:
         return key->array;
     case SELVA_OBJECT_HLL:
-        /* FIXME */
+        if (key->value) {
+            /* This is kinda dangerous and not reentrant. */
+            static long long v;
+
+            v = hll_count(key->value);
+            return &v;
+        } else {
+            return NULL;
+        }
         break;
     }
 
@@ -2393,8 +2403,12 @@ void *SelvaObject_ForeachValueType(
     case SELVA_OBJECT_ARRAY:
         return key->array;
     case SELVA_OBJECT_HLL:
-        /* FIXME */
-        break;
+        /*
+         * Not supported.
+         * We can't do the trick with a static variable here because the caller
+         * may recurse.
+         */
+        return NULL;
     }
 
     return NULL;
