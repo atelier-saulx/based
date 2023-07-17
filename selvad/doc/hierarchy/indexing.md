@@ -32,7 +32,7 @@ unusable.
 
 The indexing result sets can be used by find queries to speed up finding the
 result of the query. A find query may include an optional indexing hint
-filter (see [RPN expression](expressions.md)) that can be used to form an
+filter (see [RPN expression](../expressions.md)) that can be used to form an
 index. The hints are cached in a `SelvaObject` and the ones that are seen
 frequently are turned into an actual indexing entry with a result set.
 

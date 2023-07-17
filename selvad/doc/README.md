@@ -17,7 +17,7 @@ Hierarchy implements a number of different ways to traverse the graph
 utilizing not only the family tree -like relationships but also other
 possible reference and relationship types. The traversal methods can
 also filter out nodes from the results by using
-[RPN Filter Expressions](hierarchy/expressions.md) with the traversal
+[RPN Filter Expressions](expressions.md) with the traversal
 methods, which can, most importantly, access the node fields and do
 comparison and boolean operations against the fields.
 
