@@ -11,6 +11,9 @@ export const set: Parser<'set'> = async (
   handlers,
   noCollect
 ) => {
+  if (value && typeof value === 'object' && value.$value) {
+    value = value.$value
+  }
   const q: Promise<void>[] = []
   const fieldDef = fieldSchema.items
   if (Array.isArray(value)) {
@@ -51,12 +54,12 @@ export const set: Parser<'set'> = async (
         )
       }
     }
-    if (value.$delete) {
-      for (let i = 0; i < value.$add.length; i++) {
+    if (value.$remove) {
+      for (let i = 0; i < value.$remove.length; i++) {
         q.push(
           fieldWalker(
             path,
-            value.$delete[i],
+            value.$remove[i],
             fieldDef,
             typeSchema,
             target,
