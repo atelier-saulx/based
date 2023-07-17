@@ -180,6 +180,7 @@ export const array: Parser<'array'> = async (
         error(path, ParseError.multipleOperationsNotAllowed)
       }
 
+      // TODO: FIX PUSH PARSING
       const q: Promise<void>[] = []
       const push = Array.isArray(value.$push) ? value.$push : [value.$push]
       for (let i = 0; i < push.length; i++) {
@@ -207,6 +208,8 @@ export const array: Parser<'array'> = async (
       const unshift = Array.isArray(value.$unshift)
         ? value.$unshift
         : [value.$unshift]
+
+      // TODO: FIX UNSHIFT PARSING
       for (let i = 0; i < unshift.length; i++) {
         q.push(
           fieldWalker(
