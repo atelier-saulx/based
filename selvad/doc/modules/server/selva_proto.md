@@ -43,7 +43,7 @@ Call stack
 
 
 The Selva Protocol (`selva_proto`) is defined in the
-[selva\_proto.h](../include/selva_proto.h) header file.
+[selva\_proto.h](../../../include/selva_proto.h) header file.
 
 **Key features of the protocol:**
 
@@ -74,7 +74,7 @@ List of Commands
 The message encoding is expected to use the provided `selva_proto` encapsulation
 headers unless otherwise specified.
 
-See [commands.h](../commands.h).
+See [commands.h](../../../commands.h).
 
 selva\_proto\_scanf
 -------------------
