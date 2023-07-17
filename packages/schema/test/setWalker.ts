@@ -215,9 +215,11 @@ test.serial('collect correctly', async (t) => {
     { path: ['blub'], value: { $increment: 1 } },
     { path: ['time'], value: now },
     { path: ['form', 'snurp'], value: 'blx12' },
-    { path: ['snurp', 0, 'x', 0], value: 1 },
-    { path: ['snurp', 0, 'x', 1], value: 2 },
-    { path: ['snurp', 0, 'x', 2], value: 3 },
+    {
+      path: ['snurpArray', 0],
+      value: 100,
+    },
+
     { path: ['bla'], value: false },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
@@ -225,16 +227,19 @@ test.serial('collect correctly', async (t) => {
     { path: ['form', 'password'], value: 'mypassword!' },
     { path: ['form', 'bla'], value: { $value: ['bl123', 'bl234'] } },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
-    {
-      path: ['snurpArray'],
-      value: { $assign: { $idx: 0, $value: 100 } },
-    },
+
     { path: ['setje'], value: { $value: [1, 2, 3] } },
     { path: ['form', 'blub'], value: { $value: ['x'] } },
     {
       path: ['specialArray'],
       value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
     },
+
+    { path: ['snurp'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x', 0], value: 1 },
+    { path: ['snurp', 0, 'x', 1], value: 2 },
+    { path: ['snurp', 0, 'x', 2], value: 3 },
   ]
 
   console.log(results)

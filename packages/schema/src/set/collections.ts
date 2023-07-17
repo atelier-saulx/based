@@ -126,6 +126,7 @@ export const array: Parser<'array'> = async (
   let parsedValue = value
   let opCount = 0
   let has$Value = false
+
   if (typeof parsedValue === 'object' && !isArray) {
     if (value.$value) {
       opCount++
@@ -229,20 +230,20 @@ export const array: Parser<'array'> = async (
       }
       if (
         typeof value.$assign !== 'object' ||
-        value.$assign.$idx === undefined
+        typeof value.$assign.$idx !== 'number'
       ) {
         error(path, ParseError.incorrectFormat)
-      } else {
-        await fieldWalker(
-          path,
-          value.$assign.$value,
-          fieldSchema.values,
-          typeSchema,
-          target,
-          handlers,
-          true
-        )
       }
+      await fieldWalker(
+        [...path, value.$assign.$idx],
+        value.$assign.$value,
+        fieldSchema.values,
+        typeSchema,
+        target,
+        handlers,
+        noCollect
+      )
+      return
     }
     if (!has$Value && !noCollect) {
       handlers.collect({
@@ -261,6 +262,15 @@ export const array: Parser<'array'> = async (
     error(path, ParseError.incorrectFieldType)
   }
   const q: Promise<void>[] = []
+  const collector: any[] = []
+  const nHandler = noCollect
+    ? handlers
+    : {
+        ...handlers,
+        collect: (collect) => {
+          collector.push(collect)
+        },
+      }
   for (let i = 0; i < parsedValue.length; i++) {
     q.push(
       fieldWalker(
@@ -269,12 +279,25 @@ export const array: Parser<'array'> = async (
         fieldSchema.values,
         typeSchema,
         target,
-        handlers,
+        nHandler,
         noCollect
       )
     )
   }
   await Promise.all(q)
+
+  if (!noCollect) {
+    handlers.collect({
+      path,
+      typeSchema,
+      fieldSchema,
+      target,
+      value: { $delete: true },
+    })
+    for (const c of collector) {
+      handlers.collect(c)
+    }
+  }
 }
 
 export const record: Parser<'record'> = async (path, value, fieldSchema) => {}
