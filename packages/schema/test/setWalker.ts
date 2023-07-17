@@ -194,7 +194,7 @@ test.serial('collect correctly', async (t) => {
         })
       },
       checkRequiredFields: async (path) => {
-        return false
+        return true
       },
       referenceFilterCondition: async (id, filter) => {
         return true
@@ -300,7 +300,7 @@ test.serial('collect correctly', async (t) => {
   ])
 })
 
-test.only('required', async (t) => {
+test('required', async (t) => {
   const schema: BasedSchema = {
     types: {
       bla: {
