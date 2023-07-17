@@ -1,6 +1,7 @@
 import { BasedSchemaCollectProps, BasedSchemaFieldSet } from '@based/schema'
 import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
 import { arrayOpToModify } from './array'
+import { joinPath } from '../util'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -26,7 +27,7 @@ const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
 
 export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
   const { fieldSchema, path, value } = props
-  const strPath = path.join('.')
+  const strPath = joinPath(path)
 
   if (fieldSchema.type === 'references') {
     return [
