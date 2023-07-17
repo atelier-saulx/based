@@ -6,6 +6,9 @@ export enum ParseError {
   'fieldDoesNotExist',
   'incorrectFormat',
   'referenceIsIncorrectType',
+  'valueAndDefault',
+  'defaultNotSupported',
+  'multipleOperationsNotAllowed',
 }
 
 export const error = (

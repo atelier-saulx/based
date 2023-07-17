@@ -12,6 +12,9 @@ const schema: BasedSchema = {
         blub: {
           type: 'number',
         },
+        flap: {
+          type: 'number',
+        },
         snurp: {
           type: 'array',
           values: {
@@ -210,29 +213,112 @@ test.serial('collect correctly', async (t) => {
   const result = [
     { path: ['visits'], value: '3a9009740ee' },
     { path: ['blub'], value: { $increment: 1 } },
-    { path: ['bla'], value: false },
     { path: ['time'], value: now },
+    { path: ['form', 'snurp'], value: 'blx12' },
+    {
+      path: ['snurpArray', 0],
+      value: 100,
+    },
+
+    { path: ['bla'], value: false },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
-    { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
-    { path: ['snurp', 0, 'x', 0], value: 1 },
-    { path: ['snurp', 0, 'x', 1], value: 2 },
-    { path: ['snurp', 0, 'x', 2], value: 3 },
     { path: ['form', 'bla'], value: { $value: ['bl123', 'bl234'] } },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
-    {
-      path: ['snurpArray'],
-      value: { $assign: { $idx: 0, $value: 100 } },
-    },
+
     { path: ['setje'], value: { $value: [1, 2, 3] } },
     { path: ['form', 'blub'], value: { $value: ['x'] } },
     {
       path: ['specialArray'],
       value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
     },
+
+    { path: ['snurp'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x', 0], value: 1 },
+    { path: ['snurp', 0, 'x', 1], value: 2 },
+    { path: ['snurp', 0, 'x', 2], value: 3 },
   ]
 
+  console.log(results)
+
   t.deepEqual(results, result)
+
+  console.info('DID COMPARSION!')
+
+  const results2: any[] = []
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      blub: {
+        $value: 4,
+      },
+      flap: {
+        $default: 1,
+      },
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+        console.dir(
+          {
+            path,
+            value,
+          },
+          { depth: 10 }
+        )
+        results2.push({
+          path,
+          value,
+        })
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(results2, [
+    { path: ['blub'], value: { $value: 4 } },
+    { path: ['flap'], value: { $default: 1 } },
+  ])
+
+  const results3: any[] = []
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      snurpArray: {
+        $push: 1,
+      },
+      specialArray: {
+        $push: { $value: 'flap' },
+      },
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+        console.dir(
+          {
+            path,
+            value,
+          },
+          { depth: 10 }
+        )
+        results3.push({
+          path,
+          value,
+        })
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(results3, [
+    { path: ['snurpArray'], value: { $push: [1] } },
+    { path: ['specialArray'], value: { $push: [{ $value: 'flap' }] } },
+  ])
 })
