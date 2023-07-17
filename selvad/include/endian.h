@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -7,6 +7,16 @@
 #define _SELVA_ENDIAN_H_
 
 #include <stdint.h>
+
+/*
+ * NOTICE
+ * This header conflicts with `endian.h` on Linux/glibc and gets included at
+ * least by `sys/types.h`. This is not a big problem because we implement the
+ * same functionality + some extras.
+ * The original header could be included with `#include_next`. Isn't it pretty
+ * stupid that we can override system headers included by system headers in
+ * this way?
+ */
 
 _Static_assert(sizeof(double) == 8, "Only 64bit doubles are supported");
 
