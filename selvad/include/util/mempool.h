@@ -8,6 +8,7 @@
 
 #include "cdefs.h"
 #include "queue.h"
+#include "stdint.h"
 
 /**
  * A structure describing a slab in the pool allocator.
