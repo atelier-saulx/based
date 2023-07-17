@@ -12,6 +12,9 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_DOUBLE]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: { type: 'bin' },
 }
 
 function identity<T>(x: T): T {
