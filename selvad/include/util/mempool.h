@@ -6,9 +6,9 @@
 #ifndef _UTIL_MEMPOOL_H_
 #define _UTIL_MEMPOOL_H_
 
+#include <stdint.h>
 #include "cdefs.h"
 #include "queue.h"
-#include "stdint.h"
 
 /**
  * A structure describing a slab in the pool allocator.
