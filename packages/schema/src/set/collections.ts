@@ -120,12 +120,24 @@ export const array: Parser<'array'> = async (
   handlers,
   noCollect
 ) => {
-  const isArray = Array.isArray(value)
+  // $value
+
+  let isArray = Array.isArray(value)
   let parsedValue = value
   let opCount = 0
-  if (typeof value === 'object' && !isArray) {
+  let has$Value = false
+  if (typeof parsedValue === 'object' && !isArray) {
+    if (value.$value) {
+      opCount++
+      has$Value = true
+      parsedValue = value.$value
+      isArray = Array.isArray(parsedValue)
+    }
     if (value.$insert) {
       opCount++
+      if (opCount > 1) {
+        error(path, ParseError.multipleOperationsNotAllowed)
+      }
       if (
         typeof value.$insert !== 'object' ||
         value.$insert.$idx === undefined
@@ -190,7 +202,6 @@ export const array: Parser<'array'> = async (
       if (opCount > 1) {
         error(path, ParseError.multipleOperationsNotAllowed)
       }
-
       const q: Promise<void>[] = []
       const unshift = Array.isArray(value.$unshift)
         ? value.$unshift
@@ -216,7 +227,6 @@ export const array: Parser<'array'> = async (
       if (opCount > 1) {
         error(path, ParseError.multipleOperationsNotAllowed)
       }
-
       if (
         typeof value.$assign !== 'object' ||
         value.$assign.$idx === undefined
@@ -234,8 +244,7 @@ export const array: Parser<'array'> = async (
         )
       }
     }
-
-    if (!noCollect) {
+    if (!has$Value && !noCollect) {
       handlers.collect({
         path,
         value: parsedValue,
@@ -244,17 +253,19 @@ export const array: Parser<'array'> = async (
         target,
       })
     }
-    return
+    if (!has$Value) {
+      return
+    }
   }
   if (!isArray) {
     error(path, ParseError.incorrectFieldType)
   }
   const q: Promise<void>[] = []
-  for (let i = 0; i < value.length; i++) {
+  for (let i = 0; i < parsedValue.length; i++) {
     q.push(
       fieldWalker(
         [...path, i],
-        value[i],
+        parsedValue[i],
         fieldSchema.values,
         typeSchema,
         target,
