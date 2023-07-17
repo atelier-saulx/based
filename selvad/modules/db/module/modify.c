@@ -1196,21 +1196,37 @@ static enum selva_op_repl_state modify_op(
     TO_STR(field, value);
 
     if (type_code == SELVA_MODIFY_ARG_OP_INCREMENT) {
-        /* FIXME Must copy the data to avoid alignment issues and le/be */
-        const struct SelvaModify_OpIncrement *incrementOpts = (const struct SelvaModify_OpIncrement *)value_str;
+        struct SelvaModify_OpIncrement incrementOpts;
         int err;
 
-        err = SelvaObject_IncrementLongLong(obj, field, incrementOpts->$default, incrementOpts->$increment, NULL);
+        if (value_len < sizeof(incrementOpts)) {
+            selva_send_error(resp, SELVA_EINVAL, NULL, 0);
+            return SELVA_OP_REPL_STATE_UNCHANGED;
+        }
+
+        memcpy(&incrementOpts, value_str, sizeof(incrementOpts));
+        incrementOpts.$default = letoh(incrementOpts.$default);
+        incrementOpts.$increment = letoh(incrementOpts.$increment);
+
+        err = SelvaObject_IncrementLongLong(obj, field, incrementOpts.$default, incrementOpts.$increment, NULL);
         if (err) {
             selva_send_error(resp, err, NULL, 0);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
     } else if (type_code == SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE) {
-        /* FIXME Must copy the data to avoid alignment issues and le/be */
-        const struct SelvaModify_OpIncrementDouble *incrementOpts = (const struct SelvaModify_OpIncrementDouble*)value_str;
+        struct SelvaModify_OpIncrementDouble incrementOpts;
         int err;
 
-        err = SelvaObject_IncrementDouble(obj, field, incrementOpts->$default, incrementOpts->$increment, NULL);
+        if (value_len < sizeof(incrementOpts)) {
+            selva_send_error(resp, SELVA_EINVAL, NULL, 0);
+            return SELVA_OP_REPL_STATE_UNCHANGED;
+        }
+
+        memcpy(&incrementOpts, value_str, sizeof(incrementOpts));
+        incrementOpts.$default = ledoubletoh((char *)&incrementOpts.$default);
+        incrementOpts.$increment = ledoubletoh((char *)&incrementOpts.$increment);
+
+        err = SelvaObject_IncrementDouble(obj, field, incrementOpts.$default, incrementOpts.$increment, NULL);
         if (err) {
             selva_send_error(resp, err, NULL, 0);
             return SELVA_OP_REPL_STATE_UNCHANGED;
