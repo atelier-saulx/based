@@ -120,7 +120,7 @@ export const object: Parser<'object'> = async (
   }
 }
 
-// unshift // only allow 1 command
+// IF REQUIRED AND PUSH OR UNSHIFT just throw here scince we dont need to parse at all...
 export const array: Parser<'array'> = async (
   path,
   value,
@@ -193,7 +193,8 @@ export const array: Parser<'array'> = async (
       for (let i = 0; i < push.length; i++) {
         q.push(
           fieldWalker(
-            path,
+            // exception
+            [...path, '$push', i],
             push[i],
             fieldSchema.values,
             typeSchema,
@@ -220,7 +221,8 @@ export const array: Parser<'array'> = async (
       for (let i = 0; i < unshift.length; i++) {
         q.push(
           fieldWalker(
-            path,
+            // exception
+            [...path, '$unshift', i],
             unshift[i],
             fieldSchema.values,
             typeSchema,
