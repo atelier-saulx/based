@@ -5,7 +5,7 @@ export function joinPath(path: (string | number)[]): string {
 
   let str = `${path[0]}`
 
-  for (let i = 0; i < path.length; i++) {
+  for (let i = 1; i < path.length; i++) {
     const v = path[i]
     if (typeof v === 'number') {
       str += `[${v}]`
