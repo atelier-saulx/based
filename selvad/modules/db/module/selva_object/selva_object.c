@@ -3008,7 +3008,7 @@ static int load_hll(struct selva_io *io, struct SelvaObject *obj, const struct s
     selva_string_free(value);
 
     if (!key->value) {
-        /* FIXME Must not set value if hll is not valid */
+        SELVA_LOG(SELVA_LOGL_CRIT, "Error while loading a hll");
         return SELVA_EINVAL;
     }
 
