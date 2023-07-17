@@ -123,13 +123,10 @@ export const array: Parser<'array'> = async (
   handlers,
   noCollect
 ) => {
-  // $value
-
   let isArray = Array.isArray(value)
   let parsedValue = value
   let opCount = 0
   let has$Value = false
-
   if (typeof parsedValue === 'object' && !isArray) {
     if (value.$value) {
       opCount++
