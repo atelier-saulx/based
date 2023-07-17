@@ -2,6 +2,7 @@ import { Parser } from './types'
 import { error, ParseError } from './error'
 import { BasedSchemaFieldString, BasedSchemaFieldText } from '../types'
 import validators from 'validator'
+import { parseValueAndDefault } from './parseDefaultAndValue'
 
 const formatPatterns: Record<
   BasedSchemaFieldString['format'],
@@ -104,6 +105,19 @@ export const string: Parser<'string'> = async (
   handlers,
   noCollect
 ) => {
+  if (
+    await parseValueAndDefault(
+      path,
+      value,
+      fieldSchema,
+      typeSchema,
+      target,
+      handlers,
+      noCollect
+    )
+  ) {
+    return
+  }
   validate(path, value, fieldSchema)
   if (!noCollect) {
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
@@ -138,6 +152,21 @@ export const text: Parser<'text'> = async (
     error(path, ParseError.incorrectFormat)
   }
 
+  if (
+    target.$language &&
+    (await parseValueAndDefault(
+      path,
+      value,
+      fieldSchema,
+      typeSchema,
+      target,
+      handlers,
+      noCollect
+    ))
+  ) {
+    return
+  }
+
   for (const key in value) {
     const newPath = [...path, key]
 
@@ -153,10 +182,6 @@ export const text: Parser<'text'> = async (
           true
         )
       }
-
-      // if (value[key].$default) {
-      // }
-
       if (!noCollect) {
         handlers.collect({
           path: newPath,
@@ -169,7 +194,9 @@ export const text: Parser<'text'> = async (
       continue
     }
 
-    validate(newPath, value[key], fieldSchema)
+    // if
+
+    // validate(newPath, value[key], fieldSchema)
 
     if (!noCollect) {
       handlers.collect({

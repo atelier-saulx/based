@@ -17,6 +17,17 @@ const validate = (
   if (typeof value !== 'number') {
     error(path, ParseError.incorrectFormat)
   }
+  if (fieldSchema.type === 'integer' && value - Math.floor(value) !== 0) {
+    error(path, ParseError.incorrectFormat)
+  }
+  if (
+    fieldSchema.multipleOf &&
+    value / fieldSchema.multipleOf -
+      Math.floor(value / fieldSchema.multipleOf) !==
+      0
+  ) {
+    error(path, ParseError.incorrectFormat)
+  }
   if (fieldSchema.maximum) {
     if (fieldSchema.exclusiveMaximum && value > value) {
       error(path, ParseError.exceedsMaximum)
@@ -49,8 +60,14 @@ const shared = (
     if (value.$decrement) {
       validate([...path, '$decrement'], value.$decrement, fieldSchema)
     }
-    if (value.$value) {
-      validate([...path], value.$value, fieldSchema)
+    if (value.$value !== undefined) {
+      validate(path, value.$value, fieldSchema)
+    }
+    if (value.$default !== undefined) {
+      if (value.$value !== undefined) {
+        error(path, ParseError.valueAndDefault)
+      }
+      validate(path, value.$default, fieldSchema)
     }
   } else {
     validate(path, value, fieldSchema)
@@ -74,7 +91,7 @@ export const timestamp: Parser<'timestamp'> = async (
       const d = new Date(value)
       value = d.valueOf()
       if (isNaN(value)) {
-        throw error(path, ParseError.incorrectFormat)
+        error(path, ParseError.incorrectFormat)
       }
     }
   }
@@ -120,9 +137,6 @@ export const integer: Parser<'integer'> = async (
   handlers,
   noCollect
 ) => {
-  if (typeof value === 'number' && value - Math.floor(value) !== 0) {
-    error(path, ParseError.incorrectFormat)
-  }
   const parsedValue = shared(path, value, fieldSchema)
   if (!noCollect) {
     handlers.collect({

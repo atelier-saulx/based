@@ -40,7 +40,7 @@ export const set: Parser<'set'> = async (
       for (let i = 0; i < value.$add.length; i++) {
         q.push(
           fieldWalker(
-            [...path, '$add', i],
+            path,
             value.$add[i],
             fieldDef,
             typeSchema,
@@ -55,7 +55,7 @@ export const set: Parser<'set'> = async (
       for (let i = 0; i < value.$add.length; i++) {
         q.push(
           fieldWalker(
-            [...path, '$delete', i],
+            path,
             value.$delete[i],
             fieldDef,
             typeSchema,
@@ -110,6 +110,7 @@ export const object: Parser<'object'> = async (
   await Promise.all(q)
 }
 
+// unshift // only allow 1 command
 export const array: Parser<'array'> = async (
   path,
   value,
@@ -120,13 +121,16 @@ export const array: Parser<'array'> = async (
   noCollect
 ) => {
   const isArray = Array.isArray(value)
+  let parsedValue = value
+  let opCount = 0
   if (typeof value === 'object' && !isArray) {
     if (value.$insert) {
+      opCount++
       if (
         typeof value.$insert !== 'object' ||
         value.$insert.$idx === undefined
       ) {
-        error([...path, '$insert'], ParseError.incorrectFormat)
+        error(path, ParseError.incorrectFormat)
       } else {
         const insert = Array.isArray(value.$insert.$value)
           ? value.$insert.$value
@@ -135,7 +139,7 @@ export const array: Parser<'array'> = async (
         for (let i = 0; i < insert.length; i++) {
           q.push(
             fieldWalker(
-              [...path, 'insert', i],
+              path,
               insert[i],
               fieldSchema.values,
               typeSchema,
@@ -148,16 +152,27 @@ export const array: Parser<'array'> = async (
         await Promise.all(q)
       }
     }
-    if (value.$remove && value.$remove.$idx === undefined) {
-      error([...path, '$remove'], ParseError.incorrectFormat)
+    if (value.$remove) {
+      opCount++
+      if (opCount > 1) {
+        error(path, ParseError.multipleOperationsNotAllowed)
+      }
+      if (value.$remove.$idx === undefined) {
+        error(path, ParseError.incorrectFormat)
+      }
     }
     if (value.$push) {
+      opCount++
+      if (opCount > 1) {
+        error(path, ParseError.multipleOperationsNotAllowed)
+      }
+
       const q: Promise<void>[] = []
       const push = Array.isArray(value.$push) ? value.$push : [value.$push]
       for (let i = 0; i < push.length; i++) {
         q.push(
           fieldWalker(
-            [...path, i],
+            path,
             push[i],
             fieldSchema.values,
             typeSchema,
@@ -168,16 +183,48 @@ export const array: Parser<'array'> = async (
         )
       }
       await Promise.all(q)
+      parsedValue = { $push: push }
+    }
+    if (value.$unshift) {
+      opCount++
+      if (opCount > 1) {
+        error(path, ParseError.multipleOperationsNotAllowed)
+      }
+
+      const q: Promise<void>[] = []
+      const unshift = Array.isArray(value.$unshift)
+        ? value.$unshift
+        : [value.$unshift]
+      for (let i = 0; i < unshift.length; i++) {
+        q.push(
+          fieldWalker(
+            path,
+            unshift[i],
+            fieldSchema.values,
+            typeSchema,
+            target,
+            handlers,
+            true
+          )
+        )
+      }
+      await Promise.all(q)
+      parsedValue = { $unshift: unshift }
     }
     if (value.$assign) {
+      opCount++
+      if (opCount > 1) {
+        error(path, ParseError.multipleOperationsNotAllowed)
+      }
+
       if (
         typeof value.$assign !== 'object' ||
         value.$assign.$idx === undefined
       ) {
-        error([...path, '$assign'], ParseError.incorrectFormat)
+        error(path, ParseError.incorrectFormat)
       } else {
         await fieldWalker(
-          [...path, '$assign', '$value'],
+          path,
           value.$assign.$value,
           fieldSchema.values,
           typeSchema,
@@ -187,8 +234,15 @@ export const array: Parser<'array'> = async (
         )
       }
     }
+
     if (!noCollect) {
-      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+      handlers.collect({
+        path,
+        value: parsedValue,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
     }
     return
   }
