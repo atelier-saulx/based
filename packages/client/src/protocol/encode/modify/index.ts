@@ -4,6 +4,7 @@ import { encodeLongLong, encodeDouble } from './primitiveTypes'
 import { EncodeDefinition } from '../protocol'
 import { encodeSetOperation } from './set'
 import { ModifyArgType } from './types'
+import { encodeArrayOp } from './array'
 
 // note: just the non-string values are represented here
 export const VALUE_TYPES = {
@@ -28,6 +29,9 @@ export const VALUE_ENCODERS = {
   [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_DOUBLE]: encodeDouble,
   [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: encodeDouble,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: encodeSetOperation,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: encodeArrayOp,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: encodeArrayOp,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: encodeArrayOp,
 }
 
 export function modify(payload: [nodeId: string, ...fields: any]) {
