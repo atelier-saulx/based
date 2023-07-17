@@ -12,7 +12,7 @@ Directory Structure
 
 - `src/` contains sources for the main executable (event loop and module loader)
 - `modules/` contains sources for loadable modules (selva)
-- `lib/` contains libraries that can be used in modules (util, deflate, jmalloc)
+- `lib/` contains libraries that can be used in modules (e.g. util, deflate, jemalloc)
 
 Some directories may have a subdirectory called `fuzz/`, that's for fuzzers
 (using LLVM LibFuzzer).
@@ -42,20 +42,7 @@ Running the Server
 
 **Environment Variables**
 
-| Name |                                | Description               |
-|---------------------------------------|---------------------------|
-`DEBUG_MODIFY_REPLICATION_DELAY_NS`     |                           |
-`HIERARCHY_INITIAL_VECTOR_LEN`          |                           |
-`HIERARCHY_EXPECTED_RESP_LEN`           |                           |
-`HIERARCHY_COMPRESSION_LEVEL`           |                           |
-`HIERARCHY_AUTO_COMPRESS_PERIOD_MS`     |                           |
-`HIERARCHY_AUTO_COMPRESS_OLD_AGE_LIM`   |                           |
-`FIND_INDICES_MAX`                      |                           |
-`FIND_INDEXING_THRESHOLD`               |                           |
-`FIND_INDEXING_ICB_UPDATE_INTERVAL`     |                           |
-`FIND_INDEXING_INTERVAL`                |                           |
-`FIND_INDEXING_POPULARITY_AVE_PERIOD`   |                           |
-
+Check `config` command with `dbgcli`.
 
 API
 ---
@@ -68,7 +55,7 @@ and the `event_loop` API is by using the import macros from `module.h` (which
 in turn does the right tricks with `dlfcn.h`).
 
 For convenience and to be still compatible with standard C programming workflows
-the libc and jmalloc functions are always made available in the global namespace
+the libc and jemalloc functions are always made available in the global namespace
 by the dynamic linker.
 
 ### Importing module API functions
