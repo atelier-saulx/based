@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include "jemalloc.h"
+#include "endian.h"
 #include "util/cstrings.h"
 #include "util/data-record.h"
 #include "util/finalizer.h"

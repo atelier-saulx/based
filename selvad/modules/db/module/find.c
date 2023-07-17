@@ -13,6 +13,7 @@
 #include <strings.h>
 #include <sys/types.h>
 #include <tgmath.h>
+#include "endian.h"
 #include "jemalloc.h"
 #include "util/auto_free.h"
 #include "util/cstrings.h"

@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
+#include "endian.h"
 #include "util/auto_free.h"
 #include "util/data-record.h"
 #include "util/finalizer.h"

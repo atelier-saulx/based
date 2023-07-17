@@ -12,6 +12,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "endian.h"
 #include "jemalloc.h"
 #include "libdeflate.h"
 #include "selva_error.h"

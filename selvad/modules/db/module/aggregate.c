@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <float.h>
+#include "endian.h"
 #include "util/auto_free.h"
 #include "util/data-record.h"
 #include "util/finalizer.h"
