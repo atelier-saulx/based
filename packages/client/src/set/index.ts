@@ -43,6 +43,8 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
     ]
   } else if (fieldSchema.type === 'array') {
     // we are doing an array level operation like $push etc.
+    // array operations can yield to multiple modify args
+    // so encoding happens here instead of at modify encoding level
     return arrayOpToModify(props)
   }
 
