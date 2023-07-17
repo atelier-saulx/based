@@ -1,6 +1,6 @@
 import { BasedSchemaCollectProps, BasedSchemaFieldArray } from '@based/schema'
 import { toModifyArgs } from '.'
-import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
+import { ModifyArgType } from '../protocol/encode/modify/types'
 
 const DB_TYPE_TO_ARY_TYPE = {
   string: 0,
