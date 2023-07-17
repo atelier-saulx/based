@@ -16,6 +16,7 @@ export type TraverseByTypeExpression =
 export type GetNodeShared = {
   target: { path: string }
   source: {
+    idList?: string[]
     id?: string
     alias?: string
   }
@@ -34,6 +35,7 @@ export type GetNode = {
 export type GetTraverseShared = {
   filter?: Filter | Filter[]
   nestedCommands?: GetCommand[]
+  // TODO: edge filter expr
 } & GetNodeShared
 
 export type GetTraverseField = {
