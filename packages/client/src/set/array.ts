@@ -24,7 +24,6 @@ export function arrayOpToModify(props: BasedSchemaCollectProps) {
   const valType = DB_TYPE_TO_ARY_TYPE[valSchema.type]
   let opArgs = []
 
-  console.log('interesting', path, value)
   if (value.$push) {
     opArgs = [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH, strPath, [valType]]
 
@@ -75,6 +74,5 @@ export function arrayOpToModify(props: BasedSchemaCollectProps) {
     )
   }
 
-  console.log('ARGS', args)
   return args
 }
