@@ -62,8 +62,8 @@ flags. There is no frame order information in the frame headers and the protocol
 trusts the lower level protocol (TCP) to deliver the frame in correct order.
 
 The message request or response can contain any data that is understood by the
-corresponding command but the intended way is to pack the message using the
-provided value header types `SELVA_PROTO_NULL`, `SELVA_PROTO_ERROR`,
+corresponding command. However, the protocol offers a way to encode messages
+using the value header types `SELVA_PROTO_NULL`, `SELVA_PROTO_ERROR`,
 `SELVA_PROTO_DOUBLE`, `SELVA_PROTO_LONGLONG`, `SELVA_PROTO_STRING`, and
 `SELVA_PROTO_ARRAY`. This allows encoding pretty much any information in an
 easily parseable format.
