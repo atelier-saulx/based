@@ -104,6 +104,24 @@ test.serial.only('set primitive fields', async (t) => {
               b: { type: 'string' },
             },
           },
+          arys: {
+            type: 'object',
+            properties: {
+              ints: { type: 'array', values: { type: 'integer' } },
+              floats: { type: 'array', values: { type: 'number' } },
+              strs: { type: 'array', values: { type: 'string' } },
+              objs: {
+                type: 'array',
+                values: {
+                  type: 'object',
+                  properties: {
+                    a: { type: 'number' },
+                    b: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
         },
       },
     },
@@ -121,6 +139,12 @@ test.serial.only('set primitive fields', async (t) => {
       b: 'hello',
     },
     aliases: { $add: ['main'] },
+    arys: {
+      ints: [1, 2, 3, 4, 5],
+      floats: [1.1, 2.2, 3.3, 4.4, 5.5],
+      strs: ['a', 'b', 'c', 'def'],
+      objs: [{ a: 1 }, { b: 'hello' }, { a: 2, b: 'yes' }],
+    },
   })
 
   let getResult = await client.command('object.get', ['', 'po1'])
@@ -195,7 +219,7 @@ test.serial.only('set primitive fields', async (t) => {
     'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '#1',
   ])
-  console.dir(find, { depth: 4 })
+  console.dir(find, { depth: 6 })
 
   console.log('ALIASES', await client.command('lsaliases'))
 
