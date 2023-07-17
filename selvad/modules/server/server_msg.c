@@ -84,13 +84,13 @@ int server_recv_message(struct conn_ctx *ctx)
             char peer[CONN_STR_LEN];
 
             conn_to_str(ctx, peer, sizeof(peer));
-            SELVA_LOG(SELVA_LOGL_WARN, "Discarding an unexpected frame. client: %s seqno: %d",
-                      peer, seqno);
+            SELVA_LOG(SELVA_LOGL_WARN, "Unexpected frame seqno. client: %s seqno: %d expected_seqno: %d",
+                      peer, seqno, ctx->cur_seqno);
             /*
-             * RFE Drop or send an error?
              * This is the point where we might want to do reassembly.
              */
-            return 0;
+
+            return SELVA_PROTO_EBADMSG; /* Drop. */
         }
         if (frame_state & SELVA_PROTO_HDR_FFIRST) {
             char peer[CONN_STR_LEN];
