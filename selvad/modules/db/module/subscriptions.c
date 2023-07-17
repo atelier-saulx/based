@@ -2226,7 +2226,7 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
     const char *sub_id_str;
     size_t sub_id_len;
     Selva_SubscriptionMarkerId marker_id;
-    enum Selva_SubscriptionTriggerType event_type = SELVA_SUBSCRIPTION_TRIGGER_TYPE_INVALID;
+    enum Selva_SubscriptionTriggerType event_type = SELVA_SUBSCRIPTION_TRIGGER_TYPE_NONE;
     struct selva_string *filter_expr = NULL;
     struct selva_string **filter_args = NULL;
     int argc;

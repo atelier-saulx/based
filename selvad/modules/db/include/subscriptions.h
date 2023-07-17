@@ -99,7 +99,7 @@ enum SelvaSubscriptionsMarkerFlags {
  * Trigger event types.
  */
 enum Selva_SubscriptionTriggerType {
-    SELVA_SUBSCRIPTION_TRIGGER_TYPE_INVALID = 0,
+    SELVA_SUBSCRIPTION_TRIGGER_TYPE_NONE = 0,
     /**
      * Node created.
      */
