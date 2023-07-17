@@ -165,6 +165,27 @@ export const text: Parser<'text'> = async (
     ))
   ) {
     return
+  } else if (
+    await parseValueAndDefault(
+      path,
+      value,
+      fieldSchema,
+      typeSchema,
+      target,
+      handlers,
+      true
+    )
+  ) {
+    if (!noCollect) {
+      handlers.collect({
+        path,
+        value,
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    }
+    return
   }
 
   for (const key in value) {
@@ -194,9 +215,19 @@ export const text: Parser<'text'> = async (
       continue
     }
 
-    // if
-
-    // validate(newPath, value[key], fieldSchema)
+    if (
+      !(await parseValueAndDefault(
+        path,
+        { $language: key, [key]: value[key] },
+        fieldSchema,
+        typeSchema,
+        target,
+        handlers,
+        true
+      ))
+    ) {
+      validate(newPath, value[key], fieldSchema)
+    }
 
     if (!noCollect) {
       handlers.collect({
