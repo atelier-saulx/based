@@ -11,6 +11,11 @@ export type TraverseByType = {
   [k: string]: TraverseByTypeExpression
 }
 
+export type Fields = {
+  $any?: (string | string[])[]
+  [type: string]: (string | string[])[]
+}
+
 export type TraverseByTypeExpression =
   | false
   | string
@@ -26,12 +31,8 @@ export type GetNodeShared = {
     id?: string
     alias?: string
   }
+  fields: Fields
   // fields by type
-  fields: {
-    [type: string]: {
-      [field: string]: any
-    }
-  }
 }
 
 export type GetNode = {

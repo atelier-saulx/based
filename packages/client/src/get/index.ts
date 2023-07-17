@@ -1,6 +1,7 @@
-import { ExecContext, GetCommand, GetNode, GetTraverse } from './types'
+import { ExecContext, Fields, GetCommand, GetNode, GetTraverse } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
+import { bfsExpr2rpn, TraverseByType } from '@based/db-query'
 
 export * from './types'
 
@@ -23,6 +24,60 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
   ).flat()
 
   await get(ctx, nested)
+}
+
+function getFields(
+  ctx: ExecContext,
+  opts: Fields
+): {
+  isRpn: boolean
+  fields: string
+} {
+  if (Object.keys(opts).length > 1) {
+    const $any = new Set()
+    for (const f of opts.$any) {
+      if (f === '$all') {
+        $any.add('*')
+      } else {
+        $any.add(f)
+      }
+    }
+
+    const expr: TraverseByType = { $any: { $all: [] } }
+    for (const type in opts) {
+      const e = []
+
+      for (const f of opts[type]) {
+        if (f === '$all') {
+          e.push('*')
+        } else if (Array.isArray(f)) {
+          e.push({ $first: f })
+        } else {
+          e.push(f)
+        }
+      }
+
+      expr[type] = { $all: e }
+    }
+
+    return {
+      isRpn: true,
+      fields: bfsExpr2rpn(ctx.client.schema.types, expr),
+    }
+  }
+
+  let str = ''
+  for (const f of opts.$any) {
+    if (f === '$all') {
+      str += '*\n'
+    } else if (Array.isArray(f)) {
+      str += f.join('|') + '\n'
+    } else {
+      str += f + '\n'
+    }
+  }
+
+  return { isRpn: false, fields: str }
 }
 
 async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
