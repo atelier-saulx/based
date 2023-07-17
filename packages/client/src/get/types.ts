@@ -1,4 +1,10 @@
 import { Filter } from '@based/db-query'
+import { BasedDbClient } from '..'
+
+export type ExecContext = {
+  client: BasedDbClient
+  cb: (args: { target: { path: string }; value: any }) => void
+}
 
 export type TraverseByType = {
   $any: TraverseByTypeExpression
@@ -44,7 +50,7 @@ export type GetTraverseField = {
 } & GetTraverseShared
 
 export type GetTraverseExpr = {
-  type: 'traverse_field'
+  type: 'traverse_expr'
   traverseExpr: TraverseByType
 } & GetTraverseShared
 
