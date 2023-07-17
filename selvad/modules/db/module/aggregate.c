@@ -522,8 +522,22 @@ static size_t AggregateCommand_AggregateOrderArrayResult(
     return len;
 }
 
-/* FIXME letoh conversion */
 static int fixup_query_opts(struct SelvaAggregate_QueryOpts *qo, const char *base, size_t size) {
+    static_assert(sizeof(qo->agg_fn) == sizeof(int32_t));
+    qo->agg_fn = le32toh(qo->agg_fn);
+
+    static_assert(sizeof(qo->dir) == sizeof(int32_t));
+    qo->dir = le32toh(qo->dir);
+
+    static_assert(sizeof(qo->order) == sizeof(int32_t));
+    qo->order = le32toh(qo->order);
+
+    static_assert(sizeof(qo->offset) == sizeof(int64_t));
+    qo->offset = le64toh(qo->offset);
+
+    static_assert(sizeof(qo->limit) == sizeof(int64_t));
+    qo->limit = le64toh(qo->limit);
+
     DATA_RECORD_FIXUP_CSTRING_P(qo, base, size,
             dir_opt, edge_filter, index_hints, order_by_field);
     return 0;

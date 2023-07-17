@@ -1589,8 +1589,25 @@ static void postprocess_inherit(
     }
 }
 
-/* FIXME letoh conversion */
 static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, size_t size) {
+    static_assert(sizeof(qo->dir) == sizeof(int32_t));
+    qo->dir = le32toh(qo->dir);
+
+    static_assert(sizeof(qo->order) == sizeof(int32_t));
+    qo->order = le32toh(qo->order);
+
+    static_assert(sizeof(qo->offset) == sizeof(int64_t));
+    qo->offset = le64toh(qo->offset);
+
+    static_assert(sizeof(qo->limit) == sizeof(int64_t));
+    qo->limit = le64toh(qo->limit);
+
+    static_assert(sizeof(qo->merge_strategy) == sizeof(int32_t));
+    qo->merge_strategy = le32toh(qo->merge_strategy);
+
+    static_assert(sizeof(qo->res_type) == sizeof(int32_t));
+    qo->res_type = le32toh(qo->res_type);
+
     DATA_RECORD_FIXUP_CSTRING_P(qo, base, size,
             dir_opt, edge_filter, index_hints, order_by_field, merge, res_opt);
     return 0;

@@ -939,6 +939,9 @@ static void parse_alias_query(struct selva_string **argv, int argc, SVector *out
 }
 
 static int opset_fixup(struct SelvaModify_OpSet *op, size_t size) {
+    static_assert(sizeof(op->edge_constraint_id) == sizeof(int16_t));
+    op->edge_constraint_id = le16toh(op->edge_constraint_id);
+
     DATA_RECORD_FIXUP_CSTRING_P(op, op, size, $add, $delete, $value);
     return 0;
 }
@@ -1193,6 +1196,7 @@ static enum selva_op_repl_state modify_op(
     TO_STR(field, value);
 
     if (type_code == SELVA_MODIFY_ARG_OP_INCREMENT) {
+        /* FIXME Must copy the data to avoid alignment issues and le/be */
         const struct SelvaModify_OpIncrement *incrementOpts = (const struct SelvaModify_OpIncrement *)value_str;
         int err;
 
@@ -1202,6 +1206,7 @@ static enum selva_op_repl_state modify_op(
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
     } else if (type_code == SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE) {
+        /* FIXME Must copy the data to avoid alignment issues and le/be */
         const struct SelvaModify_OpIncrementDouble *incrementOpts = (const struct SelvaModify_OpIncrementDouble*)value_str;
         int err;
 

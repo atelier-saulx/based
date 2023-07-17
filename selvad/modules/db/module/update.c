@@ -448,8 +448,10 @@ static int update_node_cb(
     return 0;
 }
 
-/* FIXME letoh conversion */
 static int fixup_query_opts(struct SelvaUpdate_QueryOpts *qo, const char *base, size_t size) {
+    static_assert(sizeof(qo->dir) == sizeof(int32_t));
+    qo->dir = le32toh(qo->dir);
+
     DATA_RECORD_FIXUP_CSTRING_P(qo, base, size, dir_opt, edge_filter);
     return 0;
 }

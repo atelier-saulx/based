@@ -1849,8 +1849,10 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
     selva_send_array_end(resp);
 }
 
-/* FIXME letoh conversion */
 static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base, size_t size) {
+    static_assert(sizeof(qo->dir) == sizeof(int32_t));
+    qo->dir = le32toh(qo->dir);
+
     DATA_RECORD_FIXUP_CSTRING_P(qo, base, size, dir_opt);
     return 0;
 }
