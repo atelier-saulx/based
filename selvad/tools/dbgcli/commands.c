@@ -654,7 +654,7 @@ static void generic_res(const struct cmd *cmd __unused, const void *msg, size_t 
                     if (hdr.flags & (SELVA_PROTO_ARRAY_FDOUBLE | SELVA_PROTO_ARRAY_FLONGLONG)) {
                         printf("%*s", tabs * TAB_WIDTH, "");
 
-                        _Static_assert(sizeof(double) == sizeof(uint64_t));
+                        static_assert(sizeof(double) == sizeof(uint64_t));
                         for (size_t ival = i - off + sizeof(hdr); ival < i; ival += sizeof(uint64_t)) {
                             if (hdr.flags & SELVA_PROTO_ARRAY_FDOUBLE) {
                                 double d;

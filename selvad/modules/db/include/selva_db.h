@@ -167,7 +167,7 @@ static inline int Selva_CmpNodeType(const char t1[SELVA_NODE_TYPE_SIZE], const c
 #error Unsupported SELVA_NODE_TYPE_SIZE
 #endif
 
-    _Static_assert(SELVA_NODE_TYPE_SIZE == sizeof(a), "type size matches the cmp variable");
+    static_assert(SELVA_NODE_TYPE_SIZE == sizeof(a), "type size matches the cmp variable");
 
     memcpy(&a, t1, SELVA_NODE_TYPE_SIZE);
     memcpy(&b, t2, SELVA_NODE_TYPE_SIZE);

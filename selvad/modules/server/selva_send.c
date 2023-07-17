@@ -246,8 +246,8 @@ int selva_send_array_embed(struct selva_server_response_out *resp, enum selva_se
     };
     ssize_t res;
 
-    _Static_assert(SELVA_SEND_ARRAY_EMBED_LONGLONG == SELVA_PROTO_ARRAY_FLONGLONG);
-    _Static_assert(SELVA_SEND_ARRAY_EMBED_DOUBLE == SELVA_PROTO_ARRAY_FDOUBLE);
+    static_assert(SELVA_SEND_ARRAY_EMBED_LONGLONG == SELVA_PROTO_ARRAY_FLONGLONG);
+    static_assert(SELVA_SEND_ARRAY_EMBED_DOUBLE == SELVA_PROTO_ARRAY_FDOUBLE);
 
     if (__builtin_popcount(type ^ (SELVA_PROTO_ARRAY_FLONGLONG | SELVA_PROTO_ARRAY_FDOUBLE)) != 1) {
         return SELVA_EINVAL;

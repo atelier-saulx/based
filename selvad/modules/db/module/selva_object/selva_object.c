@@ -84,9 +84,9 @@ struct SelvaObject {
 };
 
 /* Change SELVA_OBJECT_BSIZE in selva_object.h if this fails. */
-_Static_assert(SELVA_OBJECT_BSIZE == sizeof(struct SelvaObject), "Sizes must match");
+static_assert(SELVA_OBJECT_BSIZE == sizeof(struct SelvaObject), "Sizes must match");
 /* Change all the code using SelvaObject_Init() if this fails :) */
-_Static_assert(alignof(struct SelvaObject) == 8, "SelvaObject align should be well known");
+static_assert(alignof(struct SelvaObject) == 8, "SelvaObject align should be well known");
 
 struct so_type_name {
     const char * const name;
@@ -1051,7 +1051,7 @@ int SelvaObject_SetDoubleStr(struct SelvaObject *obj, const char *key_name_str, 
         size_t new_len = ary_err;
         void *ptr;
 
-        _Static_assert(sizeof(ptr) == sizeof(value));
+        static_assert(sizeof(ptr) == sizeof(value));
         memcpy(&ptr, &value, sizeof(value));
         err = SelvaObject_AssignArrayIndexStr(obj, key_name_str, new_len, SELVA_OBJECT_DOUBLE, idx, ptr);
     } else {
@@ -1138,7 +1138,7 @@ int SelvaObject_UpdateDoubleStr(struct SelvaObject *obj, const char *key_name_st
         } else {
             prev = 0.0;
         }
-        _Static_assert(sizeof(prev) == sizeof(ptr));
+        static_assert(sizeof(prev) == sizeof(ptr));
 
         if (prev == value) {
             return SELVA_EEXIST;
@@ -1291,7 +1291,7 @@ int SelvaObject_UpdateLongLongStr(struct SelvaObject *obj, const char *key_name_
         ary_idx = vec_idx_to_abs(key->array, ary_idx);
         ptr = SVector_GetIndex(key->array, ary_idx);
         memcpy(&prev, &ptr, sizeof(prev));
-        _Static_assert(sizeof(prev) == sizeof(ptr));
+        static_assert(sizeof(prev) == sizeof(ptr));
 
         if (prev == value) {
             return SELVA_EEXIST;
@@ -1402,7 +1402,7 @@ int SelvaObject_IncrementDoubleStr(struct SelvaObject *obj, const char *key_name
         ptr = SVector_GetIndex(key->array, ary_idx);
         if (ptr) {
             memcpy(&d, &ptr, sizeof(d));
-            _Static_assert(sizeof(d) == sizeof(ptr));
+            static_assert(sizeof(d) == sizeof(ptr));
         } else {
             d = 0.0;
         }
@@ -1468,7 +1468,7 @@ int SelvaObject_IncrementLongLongStr(struct SelvaObject *obj, const char *key_na
         ary_idx = vec_idx_to_abs(key->array, ary_idx);
         ptr = SVector_GetIndex(key->array, ary_idx);
         memcpy(&ll, &ptr, sizeof(ll));
-        _Static_assert(sizeof(ll) == sizeof(ptr));
+        static_assert(sizeof(ll) == sizeof(ptr));
 
         /* FIXME Default value is handled incorrectly in the array case. */
         ll += incr;

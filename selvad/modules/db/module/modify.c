@@ -947,7 +947,7 @@ struct SelvaModify_OpSet *SelvaModify_OpSet_align(struct finalizer *fin, const s
     TO_STR(data);
     struct SelvaModify_OpSet *op;
 
-    _Static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
+    static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
 
     if (!data || data_len == 0 || data_len < sizeof(struct SelvaModify_OpSet)) {
         return NULL;
@@ -973,7 +973,7 @@ static struct SelvaModify_OpEdgeMeta *SelvaModify_OpEdgeMeta_align(struct finali
     TO_STR(data);
     struct SelvaModify_OpEdgeMeta *op;
 
-    _Static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
+    static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
 
     if (!data || data_len == 0 || data_len < sizeof(struct SelvaModify_OpEdgeMeta)) {
         return NULL;
@@ -1002,7 +1002,7 @@ const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *siz
     typeof_field(struct SelvaModify_OpHll, $add_len) size;
     const char *p;
 
-    _Static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
+    static_assert(__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__, "Only little endian host is supported");
 
     if (!data || data_len == 0 || data_len < sizeof(struct SelvaModify_OpHll)) {
         return NULL;
