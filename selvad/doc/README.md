@@ -50,3 +50,15 @@ The server implementation of `selva_proto` is located in the
 [server](../modules/server) module. The protocol is documented in
 [doc/selva\_proto.md](modules/server/selva_proto.md).
 
+
+## Some Rules
+
+Never allocate memory with `malloc()`, `calloc()`, or `realloc()` nor free
+memory using `free()`. Instead of the libc memory allocator the `selva_`
+prefixed jemalloc should be preferred.
+
+In case of a fatal error, print an error message using `SELVA_LOG(SELVA_LOGL_CRIT, ...)`
+and terminate with either `abort()` or `exit()`. `abort()` should be used if the
+integrity of the database has been compromised and there is nothing to dump. If the
+state of the database is likely valid then `exit()` should be called to allow a
+graceful shutdown and dump.
