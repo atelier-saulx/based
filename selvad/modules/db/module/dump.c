@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "util/ctime.h"
 #include "util/sigstr.h"
 #include "util/finalizer.h"
 #include "util/sdb_name.h"
@@ -193,13 +194,35 @@ static void setup_sigchld(void)
     }
 }
 
+static void print_ready(const char * restrict msg, struct timespec * restrict ts_start, struct timespec * restrict ts_end)
+{
+    struct timespec ts_diff;
+    double t;
+    const char *unit;
+
+    timespec_sub(&ts_diff, ts_end, ts_start);
+    t = timespec2ms(&ts_diff);
+
+    if (t < 1000.0) {
+        unit = "ms";
+    } else {
+        t /= 1000.0;
+        unit = "s";
+    }
+
+    SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s", msg, t, unit);
+}
+
 /**
  * Load a hierarchy dump from io.
  */
 static int dump_load(struct selva_io *io)
 {
     struct SelvaHierarchy *tmp_hierarchy = main_hierarchy;
+    struct timespec ts_start, ts_end;
     int err = 0;
+
+    ts_monotime(&ts_start);
 
     main_hierarchy = Hierarchy_Load(io);
     if (main_hierarchy) {
@@ -213,6 +236,10 @@ static int dump_load(struct selva_io *io)
 
     selva_io_end(io);
     handle_last_good_sync(); /* RFE This is a bit heavy and we could just extract the info from `io`. */
+
+    ts_monotime(&ts_end);
+    print_ready(__func__, &ts_start, &ts_end);
+
     return err;
 }
 
