@@ -738,6 +738,7 @@ static int hllSparseSet(hll_t **ptr, long index, uint8_t count)
     }
 #endif
     hdr = (struct hllhdr *)sdsMakeRoomFor(hdr, 3);
+    *ptr = hdr;
 
     /* Step 1: we need to locate the opcode we need to modify to check
      * if a value update is actually needed. */
