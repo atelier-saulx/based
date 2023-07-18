@@ -226,7 +226,7 @@ void * eztrie_insert(struct eztrie * trie, const char * key, const void * p)
     }
 
     /* Create the value entry. */
-    value = malloc(sizeof(struct eztrie_node_value) + n + 1);
+    value = selva_malloc(sizeof(struct eztrie_node_value) + n + 1);
     value->p = p;
     memcpy((char *)value->key, key, n + 1);
     (*t)->value = value;

@@ -721,7 +721,7 @@ static void marker_set_ref_field(struct Selva_SubscriptionMarker *marker, const 
     assert((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_REF | SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) &&
            !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_TRIGGER));
 
-    marker->ref_field = malloc(ref_field_len + 1);
+    marker->ref_field = selva_malloc(ref_field_len + 1);
     memcpy(marker->ref_field, ref_field_str, ref_field_len);
     marker->ref_field[ref_field_len] = '\0';
 }
