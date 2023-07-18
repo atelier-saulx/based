@@ -20,7 +20,7 @@
 #define STREAM_WRITER_RETRY_SEC 15
 
 #define ALL_STREAMS_FREE ((1 << MAX_STREAMS) - 1)
-#define CLIENTS_SIZE (ALIGNED_SIZE(max_clients * sizeof(struct conn_ctx), DCACHE_LINESIZE))
+#define CLIENTS_SIZE(nr) (ALIGNED_SIZE((nr) * sizeof(struct conn_ctx), DCACHE_LINESIZE))
 
 /**
  * Client conn_ctx allocation map.
@@ -38,8 +38,8 @@ void conn_init(int max_clients)
         bitmap_set(clients_map, i);
     }
 
-    clients = selva_aligned_alloc(DCACHE_LINESIZE, CLIENTS_SIZE);
-    memset(clients, 0, CLIENTS_SIZE);
+    clients = selva_aligned_alloc(DCACHE_LINESIZE, CLIENTS_SIZE(max_clients));
+    memset(clients, 0, CLIENTS_SIZE(max_clients));
 }
 
 struct conn_ctx *alloc_conn_ctx(void)
