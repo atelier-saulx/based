@@ -112,3 +112,9 @@ void timespec_div(struct timespec * quot, const struct timespec * left,
  */
 void timespec_mod(struct timespec * rem, const struct timespec * left,
                   const struct timespec * right);
+
+static inline double timespec2ms(struct timespec *ts)
+{
+    return (double)ts->tv_sec * 1000.0 + (double)ts->tv_nsec / 1.0e6;
+}
+

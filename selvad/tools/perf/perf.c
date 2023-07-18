@@ -39,11 +39,6 @@ static void sigint_handler(int sig __unused)
     flag_stop = 1;
 }
 
-static double ts2ms(struct timespec *ts)
-{
-    return (double)ts->tv_sec * 1000.0 + (double)ts->tv_nsec / 1.0e6;
-}
-
 [[nodiscard]]
 static int connect_to_server(const char *addr, int port)
 {
@@ -563,7 +558,7 @@ int main(int argc, char *argv[])
     }
     ts_monotime(&ts_end);
     timespec_sub(&ts_diff, &ts_end, &ts_start);
-    t = ts2ms(&ts_diff);
+    t = timespec2ms(&ts_diff);
 
     v = ((double)seqno / t) * 1000.0;
     if (t > 1000.0) {
