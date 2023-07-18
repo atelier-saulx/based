@@ -17,6 +17,9 @@ export ZERO_AR_DATE := 1
 CFLAGS := -std=gnu2x -O2 -fno-strict-aliasing -MMD -Wall -Wextra
 CFLAGS += -DDCACHE_LINESIZE=64
 
+# Add these for valgrind
+#CFLAGS += -Dselva_malloc=malloc -Dselva_calloc=calloc -Dselva_realloc=realloc -Dselva_free=free
+
 ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize
 	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
