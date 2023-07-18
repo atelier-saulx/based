@@ -1145,7 +1145,7 @@ static uint64_t hllCount(struct hllhdr *hdr, int *invalid)
           * Unknown HyperLogLog encoding in hllCount().
           * exit() is ok here because it should do a proper dump and cleanup.
           */
-        exit();
+        exit(1);
     }
 
     /* Estimate cardinality from register histogram. See:
