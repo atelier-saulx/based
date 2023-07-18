@@ -32,27 +32,34 @@ struct selva_server_response_out {
  */
 struct conn_ctx {
     int fd; /*<! The socket associated with this connection. */
-    int8_t inuse; /*!< Set if the connection is active. */
-    int8_t corked; /*!< Set if we have corked the socket. (avoids some unnecessary syscalls) */
-    /**
-     * Batch mode activated.
-     * When set the server attempts to pack more responses together before
-     * sending (uncorking the socket). This adds some latency to receiving the
-     * responses but makes processing on the server-side more efficient.
-     */
-    int8_t batch_active;
-    enum {
-        CONN_CTX_RECV_STATE_NEW, /*!< Waiting for the next seq; No recv in progress. */
-        CONN_CTX_RECV_STATE_FRAGMENT, /*!< Waiting for the next frame of a sequence. */
-    } recv_state;
-    typeof_field(struct selva_proto_header, seqno) cur_seqno; /*!< Currently incoming sequence. */
-    /**
-     * Application specific data.
-     */
-    pubsub_ch_mask_t pubsub_ch_mask; /*!< Subscribed to the channels in this mask. */
     struct {
-        int tim_hrt; /*!< Server heartbeat timer. */
-    } app;
+        /**
+         * Set if the connection is active.
+         * The value is an index in clients_map of conn.c.
+         */
+        uint16_t inuse: 16;
+        uint8_t corked: 1; /*!< Set if we have corked the socket. (avoids some unnecessary syscalls) */
+        /**
+         * Batch mode activated.
+         * When set the server attempts to pack more responses together before
+         * sending (uncorking the socket). This adds some latency to receiving the
+         * responses but makes processing on the server-side more efficient.
+         */
+        uint8_t batch_active: 1;
+
+        enum {
+            CONN_CTX_RECV_STATE_NEW, /*!< Waiting for the next seq; No recv in progress. */
+            CONN_CTX_RECV_STATE_FRAGMENT, /*!< Waiting for the next frame of a sequence. */
+        } recv_state: 1;
+    } flags;
+
+    typeof_field(struct selva_proto_header, seqno) cur_seqno; /*!< Currently incoming sequence. */
+
+    alignas(uint64_t) struct selva_proto_header recv_frame_hdr_buf;
+    char *recv_msg_buf; /*!< Buffer for the currently incoming message. */
+    size_t recv_msg_buf_size;
+    size_t recv_msg_buf_i;
+
     /**
      * Open streams.
      */
@@ -60,11 +67,16 @@ struct conn_ctx {
         _Atomic unsigned int free_map; /*!< A bit is unset if the corresponding stream_resp is in use. */
         struct selva_server_response_out stream_resp[MAX_STREAMS];
     } streams;
-    alignas(uint64_t) struct selva_proto_header recv_frame_hdr_buf;
-    char *recv_msg_buf; /*!< Buffer for the currently incoming message. */
-    size_t recv_msg_buf_size;
-    size_t recv_msg_buf_i;
-};
+
+    pubsub_ch_mask_t pubsub_ch_mask; /*!< Subscribed to the channels in this mask. */
+
+    /**
+     * Application specific data.
+     */
+    struct {
+        int tim_hrt; /*!< Server heartbeat timer. */
+    } app;
+} __attribute__((aligned(DCACHE_LINESIZE)));
 
 enum server_send_flags {
     SERVER_SEND_MORE = 0x01,

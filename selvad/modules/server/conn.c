@@ -8,6 +8,7 @@
 #include <string.h>
 #include <unistd.h>
 #include "jemalloc.h"
+#include "util/align.h"
 #include "util/bitmap.h"
 #include "util/net.h"
 #include "event_loop.h"
@@ -16,9 +17,10 @@
 #include "server.h"
 #include "../../tunables.h"
 
-#define ALL_STREAMS_FREE ((1 << MAX_STREAMS) - 1)
-
 #define STREAM_WRITER_RETRY_SEC 15
+
+#define ALL_STREAMS_FREE ((1 << MAX_STREAMS) - 1)
+#define CLIENTS_SIZE (ALIGNED_SIZE(max_clients * sizeof(struct conn_ctx), DCACHE_LINESIZE))
 
 /**
  * Client conn_ctx allocation map.
@@ -36,7 +38,8 @@ void conn_init(int max_clients)
         bitmap_set(clients_map, i);
     }
 
-    clients = selva_calloc(max_clients, sizeof(struct conn_ctx));
+    clients = selva_aligned_alloc(DCACHE_LINESIZE, CLIENTS_SIZE);
+    memset(clients, 0, CLIENTS_SIZE);
 }
 
 struct conn_ctx *alloc_conn_ctx(void)
@@ -50,8 +53,8 @@ struct conn_ctx *alloc_conn_ctx(void)
         ctx = &clients[i];
         memset(ctx, 0, sizeof(*ctx));
         atomic_init(&ctx->streams.free_map, ALL_STREAMS_FREE);
-        ctx->inuse = i;
-        ctx->corked = 0;
+        ctx->flags.inuse = i;
+        ctx->flags.corked = 0;
     }
 
     return ctx;
@@ -74,10 +77,10 @@ void free_conn_ctx(struct conn_ctx *ctx)
     }
 
     if (free_map == ALL_STREAMS_FREE) {
-        int i = ctx->inuse;
+        int i = ctx->flags.inuse;
 
         close(ctx->fd);
-        ctx->inuse = 0;
+        ctx->flags.inuse = 0;
         selva_free(ctx->recv_msg_buf);
         bitmap_set(clients_map, i);
     } else {

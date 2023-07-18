@@ -18,7 +18,7 @@ int server_recv_message(struct conn_ctx *ctx)
      *      at time.
      */
 
-    if (ctx->recv_state == CONN_CTX_RECV_STATE_NEW) {
+    if (ctx->flags.recv_state == CONN_CTX_RECV_STATE_NEW) {
         /*
          * Reset the message buffer state.
          */
@@ -48,7 +48,7 @@ int server_recv_message(struct conn_ctx *ctx)
               (int)frame_bsize);
 #endif
 
-    if (ctx->recv_state == CONN_CTX_RECV_STATE_NEW) {
+    if (ctx->flags.recv_state == CONN_CTX_RECV_STATE_NEW) {
         ctx->cur_seqno = seqno;
         size_t msg_bsize = le32toh(hdr->msg_bsize);
 
@@ -79,7 +79,7 @@ int server_recv_message(struct conn_ctx *ctx)
         } else if (ctx->recv_msg_buf_size < msg_bsize) {
             realloc_ctx_msg_buf(ctx, msg_bsize);
         }
-    } else if (ctx->recv_state == CONN_CTX_RECV_STATE_FRAGMENT) {
+    } else if (ctx->flags.recv_state == CONN_CTX_RECV_STATE_FRAGMENT) {
         if (seqno != ctx->cur_seqno) {
             char peer[CONN_STR_LEN];
 
@@ -98,7 +98,7 @@ int server_recv_message(struct conn_ctx *ctx)
             conn_to_str(ctx, peer, sizeof(peer));
             SELVA_LOG(SELVA_LOGL_WARN, "Received invalid frame. client: %s seqno: %d",
                       peer, seqno);
-            ctx->recv_state = CONN_CTX_RECV_STATE_NEW;
+            ctx->flags.recv_state = CONN_CTX_RECV_STATE_NEW;
             return 0;
         }
     } else {
@@ -114,13 +114,13 @@ int server_recv_message(struct conn_ctx *ctx)
      * and further uncorking attempts will be blocked as long as this flag
      * is set.
      */
-    ctx->batch_active = !!(hdr->flags & SELVA_PROTO_HDR_BATCH);
+    ctx->flags.batch_active = !!(hdr->flags & SELVA_PROTO_HDR_BATCH);
 
     if (!(frame_state & SELVA_PROTO_HDR_FLAST)) {
-        ctx->recv_state = CONN_CTX_RECV_STATE_FRAGMENT;
+        ctx->flags.recv_state = CONN_CTX_RECV_STATE_FRAGMENT;
         return 0;
     } else {
-        ctx->recv_state = CONN_CTX_RECV_STATE_NEW;
+        ctx->flags.recv_state = CONN_CTX_RECV_STATE_NEW;
         return 1;
     }
 }

@@ -519,7 +519,7 @@ static void on_connection(struct event *event, void *arg __unused)
     SELVA_LOG(SELVA_LOGL_DBG, "Received a connection from %s:%d", buf, ntohs(client.sin_port));
 
     conn_ctx->fd = new_sockfd;
-    conn_ctx->recv_state = CONN_CTX_RECV_STATE_NEW;
+    conn_ctx->flags.recv_state = CONN_CTX_RECV_STATE_NEW;
     conn_ctx->app.tim_hrt = SELVA_EINVAL;
 
     evl_wait_fd(new_sockfd, on_data, NULL, on_close, conn_ctx);
