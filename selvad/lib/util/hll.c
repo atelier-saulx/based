@@ -1141,10 +1141,11 @@ static uint64_t hllCount(struct hllhdr *hdr, int *invalid)
     } else if (hdr->encoding == HLL_RAW) {
         hllRawRegHisto(hdr->registers, reghisto);
     } else {
-        /* FIXME no abort
-         * Unknown HyperLogLog encoding in hllCount()
-         */
-        abort();
+         /*
+          * Unknown HyperLogLog encoding in hllCount().
+          * exit() is ok here because it should do a proper dump and cleanup.
+          */
+        exit();
     }
 
     /* Estimate cardinality from register histogram. See:
