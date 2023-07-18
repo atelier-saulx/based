@@ -32,6 +32,11 @@ static struct conn_ctx *clients;
 
 void conn_init(int max_clients)
 {
+    if (max_clients == 0) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "max_clients can't be 0");
+        abort();
+    }
+
     clients_map = selva_malloc(BITMAP_ALLOC_SIZE(max_clients));
     clients_map->nbits = max_clients;
     for (int i = 0; i < max_clients; i++) {
