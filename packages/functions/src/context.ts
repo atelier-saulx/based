@@ -131,15 +131,19 @@ export const isClientContext = (
   return false
 }
 
-export const isHttpSession = (session: Session): session is HttpSession => {
-  if ('res' in session) {
+export const isHttpSession = (
+  session: Session | undefined
+): session is HttpSession => {
+  if (session && 'res' in session) {
     return true
   }
   return false
 }
 
-export const isWsSession = (session: Session): session is WebSocketSession => {
-  if ('send' in session) {
+export const isWsSession = (
+  session: Session | undefined
+): session is WebSocketSession => {
+  if (session && 'send' in session) {
     return true
   }
   return false
