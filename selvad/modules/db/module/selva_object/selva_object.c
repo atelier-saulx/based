@@ -12,6 +12,7 @@
 #include "jemalloc.h"
 #include "linker_set.h"
 #include "tree.h"
+#include "util/align.h"
 #include "util/array_field.h"
 #include "util/cstrings.h"
 #include "util/hll.h"
@@ -25,10 +26,6 @@
 #include "selva_set.h"
 #include "selva_trace.h"
 #include "selva_object.h"
-
-#define MOD_AL(x, y) ((x) & (y - 1)) /* x % bytes */
-#define PAD(size, al) MOD_AL((al - MOD_AL(size, al)), al)
-#define ALIGNED_SIZE(size, al) (size + PAD(size, al))
 
 #define SELVA_OBJECT_KEY_MAX            USHRT_MAX /*!< Maximum length of a key including dots and array notation. */
 #define SELVA_OBJECT_SIZE_MAX           0x7FFFFFFF /*!< Maximum number of keys in a SelvaObject. */
