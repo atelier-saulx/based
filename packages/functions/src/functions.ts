@@ -40,6 +40,22 @@ export type BasedFunction<P = any, K = any> = (
   ctx: Context
 ) => Promise<K>
 
+export type BasedAppFunction = (
+  based: BasedFunctionClient,
+  assets: {
+    css: {
+      text: Promise<string>
+      url: string
+    }
+    js: {
+      text: Promise<string>
+      url: string
+    }
+    favicon: string
+  },
+  ctx: Context
+) => Promise<string>
+
 export type StreamPayload<P = any> = {
   payload?: P
   mimeType: string
@@ -154,7 +170,12 @@ type FunctionConfigSharedComplete = Required<
   'maxPayloadSize' | 'rateLimitTokens' | 'version' | 'name'
 >
 
-export type BasedFunctionTypes = 'channel' | 'query' | 'function' | 'stream'
+export type BasedFunctionTypes =
+  | 'channel'
+  | 'query'
+  | 'function'
+  | 'stream'
+  | 'app'
 
 type BasedChannelFunctionConfig = {
   /** Function type `channel, function, query, stream, authorize` */
@@ -215,6 +236,12 @@ type BasedStreamFunctionConfig = {
   fn: BasedStreamFunction
 }
 
+type BasedAppFunctionConfig = {
+  type: 'app'
+  main: string
+  path?: string
+}
+
 export type BasedFunctionConfig<
   T extends BasedFunctionTypes = BasedFunctionTypes
 > = T extends 'channel'
@@ -225,11 +252,14 @@ export type BasedFunctionConfig<
   ? BasedQueryFunctionConfig & FunctionConfigShared
   : T extends 'stream'
   ? BasedStreamFunctionConfig & FunctionConfigShared
+  : T extends 'app'
+  ? BasedAppFunctionConfig & FunctionConfigShared
   :
       | (BasedChannelFunctionConfig & FunctionConfigShared)
       | (BasedCallFunctionConfig & FunctionConfigShared)
       | (BasedQueryFunctionConfig & FunctionConfigShared)
       | (BasedStreamFunctionConfig & FunctionConfigShared)
+      | (BasedAppFunctionConfig & FunctionConfigShared)
 
 export type BasedFunctionConfigComplete<
   T extends BasedFunctionTypes = BasedFunctionTypes
@@ -241,16 +271,19 @@ export type BasedFunctionConfigComplete<
   ? BasedQueryFunctionConfig & FunctionConfigSharedComplete
   : T extends 'stream'
   ? BasedStreamFunctionConfig & FunctionConfigSharedComplete
+  : T extends 'app'
+  ? BasedAppFunctionConfig & FunctionConfigSharedComplete
   :
       | (BasedChannelFunctionConfig & FunctionConfigSharedComplete)
       | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
       | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
       | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
+      | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
 
 export type BasedAuthorizeFunctionConfig = {
   /** Function type `authorize` */
   type: 'authorize'
-  function: Authorize
+  fn?: Authorize
 }
 
 export type BasedRoute<
