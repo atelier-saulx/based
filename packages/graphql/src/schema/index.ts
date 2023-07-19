@@ -1,9 +1,3 @@
-// import {
-//   FieldSchema,
-//   FieldSchemaArrayLike,
-//   Schema,
-//   FunctionConfig,
-// } from '@based/types'
 import generateMutations from './mutation'
 import generateQuery from './query'
 
@@ -327,7 +321,7 @@ input ${type}SetInput {
   return sharedInputs
 }
 
-export default function compileSchema(schema: any, fns: any = {}): string {
+export default function compileSchema(schema: any): string {
   let output = ''
 
   output += 'scalar JSON\n'
@@ -346,10 +340,10 @@ export default function compileSchema(schema: any, fns: any = {}): string {
   }
 
   output += '\n'
-  output += generateMutations(schema, fns)
+  output += generateMutations(schema)
 
   output += '\n'
-  output += generateQuery(schema, fns)
+  output += generateQuery(schema)
 
   return output
   // return format(output, { parser: 'graphql' })

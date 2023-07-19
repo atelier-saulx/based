@@ -1,6 +1,6 @@
 import generateDelete from './delete'
 
-export default function generateMutations(schema: any, fns: any = {}): string {
+export default function generateMutations(schema: any): string {
   let def = 'type Mutation {\n'
 
   def += `  setRoot(input: RootInput): Root`
@@ -20,13 +20,20 @@ export default function generateMutations(schema: any, fns: any = {}): string {
     def += '\n'
   }
 
-  for (const name in fns) {
-    const fn = fns[name]
+  // Disabling because names might not match gql naming convention and then
+  // it's a mess. Functions just get called with `callFn`
 
-    if (!fn.observable) {
-      def += `  ${name}(payload: JSON): JSON`
-    }
-  }
+  // for (const fn of fns) {
+  //   const {
+  //     name,
+  //     config: { type },
+  //   } = fn
+
+  //   if (type === 'function') {
+  //       def += `  ${name}(payload: JSON): JSON`
+  //     }
+  //   }
+  // }
 
   def += generateDelete()
 
