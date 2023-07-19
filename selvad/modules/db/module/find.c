@@ -1652,11 +1652,11 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
                              &filter_expr,
                              &filter_expr_args
                             );
-    if (argc < 3) {
-        if (argc < 3) {
-            selva_send_error_arity(resp);
-        } else {
+    if (argc < 0) {
+        if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
         }
         return;
     }

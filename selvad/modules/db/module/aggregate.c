@@ -596,10 +596,10 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                              &filter_expr_args
                             );
     if (argc < 4) {
-        if (argc < 4) {
-            selva_send_error_arity(resp);
-        } else {
+        if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
         }
         return;
     }
