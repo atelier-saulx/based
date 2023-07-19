@@ -21,9 +21,11 @@
 #include "util/timestamp.h"
 #include "selva_error.h"
 #include "selva_proto.h"
+#include "../../modules/db/include/find_cmd.h"
 #include "../../commands.h"
 
 #define NODE_ID_SIZE 16
+#define MSG_BUF_SIZE 100 * 1048576
 
 typedef typeof_field(struct selva_proto_header, flags) flags_t;
 
@@ -271,6 +273,57 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[N
     return send_message(fd, &buf, sizeof(buf), 0);
 }
 
+static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[NODE_ID_SIZE])
+{
+    struct SelvaFind_QueryOpts qo = {
+        .dir = SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+        .order = SELVA_RESULT_ORDER_NONE,
+        .offset = 0,
+        .limit = -1,
+        .res_type = SELVA_FIND_QUERY_RES_IDS,
+    };
+
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_string lang_hdr;
+        /* none */
+        struct selva_proto_string qo_hdr;
+        char qo_str[sizeof(qo)];
+        struct selva_proto_string ids_hdr;
+        char ids_str[NODE_ID_SIZE];
+    } buf = {
+        .hdr = {
+            .cmd = CMD_ID_HIERARCHY_FIND,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST | frame_extra_flags,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf)),
+            .msg_bsize = 0,
+            .chk = 0,
+        },
+        .lang_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(0),
+        },
+        .qo_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .flags = SELVA_PROTO_STRING_FBINARY,
+            .bsize = htole32(sizeof(buf.qo_str)),
+        },
+        .ids_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(sizeof(buf.ids_str)),
+        },
+    };
+    memcpy(buf.qo_str, &qo, sizeof(qo));
+    strncpy(buf.ids_str, node_id, NODE_ID_SIZE);
+
+    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+
+    return send_message(fd, &buf, sizeof(buf), 0);
+}
+
 static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size_t msg_size)
 {
     if (resp_hdr->cmd < 0) {
@@ -306,6 +359,11 @@ static void handle_response(struct selva_proto_header *resp_hdr, void *msg, size
                        (int)err_msg_len, err_msg_str);
             }
         }
+
+        /* TODO Option to print */
+#if 0
+        selva_proto_print(stdout, msg, msg_size);
+#endif
         /* else NOP */
     }
 }
@@ -339,7 +397,7 @@ static ssize_t recvn(int fd, void *buf, size_t n)
 
 int recv_message(int fd)
 {
-    static _Alignas(uintptr_t) uint8_t msg_buf[100 * 1048576] __lazy_alloc_glob;
+    static _Alignas(uintptr_t) uint8_t msg_buf[MSG_BUF_SIZE] __lazy_alloc_glob;
     struct selva_proto_header resp_hdr;
     size_t i = 0;
 
@@ -468,11 +526,18 @@ static void test_hll(int fd, int seqno, flags_t frame_extra_flags)
     send_hll(fd, seqno, frame_extra_flags, node_id);
 }
 
+static void test_find(int fd, int seqno, flags_t frame_extra_flags)
+{
+    char node_id[NODE_ID_SIZE] = "root";
+    send_find(fd, seqno, frame_extra_flags, node_id);
+}
+
 static void (*suites[])(int fd, int seqno, flags_t frame_extra_flags) = {
     test_modify,
     test_modify_single,
     test_incrby,
     test_hll,
+    test_find,
 };
 
 int main(int argc, char *argv[])
@@ -556,6 +621,11 @@ int main(int argc, char *argv[])
             flag_stop |= recv_message(sock);
         }
     }
+
+    if (threaded) {
+        pthread_join(thread, NULL);
+    }
+
     ts_monotime(&ts_end);
     timespec_sub(&ts_diff, &ts_end, &ts_start);
     t = timespec2ms(&ts_diff);
@@ -566,9 +636,6 @@ int main(int argc, char *argv[])
         unit = "s";
     }
 
-    if (threaded) {
-        pthread_join(thread, NULL);
-    }
 
     shutdown(sock, SHUT_RDWR);
     close(sock);
