@@ -117,28 +117,6 @@ export function valueOrVariable(
   }
 }
 
-export function listOrVariable(
-  v: ValueNode,
-  variables: Record<string, any> = {}
-): { $var: string } | ListValueNode {
-  if (v.kind === 'ListValue') {
-    return v
-  } else if (v.kind === 'Variable') {
-    const vName = v.name.value
-
-    // @ts-ignore
-    return { $var: vName }
-  } else {
-    throw new Error(
-      `String or variable name requried for references, ${JSON.stringify(
-        v,
-        null,
-        2
-      )} given`
-    )
-  }
-}
-
 export function stringOrVariable(
   v: ValueNode,
   variables: Record<string, any> = {}
@@ -190,14 +168,10 @@ export function numberOrVariable(
 }
 
 export function getSelvaTypeName(ctx: GQLExecCtx, typeName: string): string {
-  // console.log({ typeName })
-  // console.log('types', getSchema(ctx).types)
-
   const selvaTypeName = getSchema(ctx).types[typeName]
     ? typeName
     : typeName[0].toLowerCase() + typeName.slice(1)
 
-  console.log({ selvaTypeName })
   return selvaTypeName
 }
 
