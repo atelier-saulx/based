@@ -390,6 +390,13 @@ int selva_proto_buf2strings(struct finalizer *fin, const char *buf, size_t bsize
  */
 int selva_proto_scanf(struct finalizer * restrict fin, const void *restrict buf, size_t szbuf, const char * restrict fmt, ...); /* __attribute__((format(scanf, 4, 5))); */
 
+#if defined(_STDIO_H) || defined(_STDIO_H_)
+/**
+ * Pretty print a complete selva_proto message to a stream.
+ */
+void selva_proto_print(FILE *stream, const void *msg, size_t msg_size);
+#endif
+
 /**
  * @}
  */
