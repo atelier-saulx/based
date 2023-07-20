@@ -61,7 +61,7 @@ mostlyclean:
 	find ./modules -type f -name "*.so" -exec rm -f {} \;
 	$(MAKE) -C test clean
 
-clean:
+clean: mostlyclean
 	$(RM) selvad
 	find . -type f -name "*.d" -exec rm -f {} \;
 	find . -type f -name "*.o" -exec rm -f {} \;
