@@ -30,6 +30,8 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
 	endif
 
+	LDFLAGS += -z noexecstack
+
 	LIB_SUFFIX := .so
 	MOD_SUFFIX := .so
 endif

@@ -39,7 +39,7 @@ OBJ := \
 	trx.o
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS += -shared -fPIC -Wl,-z,nodelete
+	LDFLAGS += -shared -fPIC -z nodelete
 endif
 ifeq ($(uname_S),Darwin)
 	OBJ += memrchr.o

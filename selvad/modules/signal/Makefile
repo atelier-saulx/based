@@ -9,7 +9,7 @@ DEP := $(OBJ:%.o=%.d)
 TARGET := ../mod_signal$(MOD_SUFFIX)
 
 ifeq ($(uname_S),Linux)
-	LDFLAGS += -Wl,-z,nodelete
+	LDFLAGS += -z nodelete
 endif
 
 $(TARGET): $(OBJ)
