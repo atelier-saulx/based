@@ -30,6 +30,7 @@
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_trace.h"
+#include "subscriptions_cmd.h"
 #include "subscriptions.h"
 
 struct Selva_Subscription {
@@ -59,15 +60,6 @@ static const struct parsers_enum trigger_event_types[] = {
         .name = NULL,
         .id = 0,
     }
-};
-
-struct Subscriptions_QueryOpts {
-    /**
-     * Traversal method/direction.
-     */
-    enum SelvaTraversal dir;
-    const char *dir_opt_str; /*!< Ref field name or expression. Optional. */
-    size_t dir_opt_len;
 };
 
 static void Selva_Subscription_reply(struct selva_server_response_out *resp, void *p);
