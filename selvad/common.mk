@@ -1,4 +1,4 @@
-# Copyright (c) 2022 SAULX
+# Copyright (c) 2022-2023 SAULX
 # SPDX-License-Identifier: MIT
 
 # Anything defined here will generally shared by all build goals except
@@ -29,6 +29,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 
 	ifeq ($(uname_M),x86_64)
 		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
+		CFLAGS += -fcf-protection=full
 	endif
 
 	LDFLAGS += -z noexecstack
@@ -45,10 +46,12 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 		CFLAGS += -march=x86-64
 		ifeq ($(ROSETTA2),0)
 			CFLAGS += -mtune=core-avx2 -mfpmath=sse -mavx -mavx2
+			CFLAGS += -fcf-protection=full
 		endif
 	endif
 	ifeq ($(uname_M),arm64)
 		CFLAGS += -mcpu=apple-m1
+		CFLAGS += -mbranch-protection=standard
 	endif
 
 	LIB_SUFFIX := .dylib
