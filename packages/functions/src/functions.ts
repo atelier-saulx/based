@@ -240,6 +240,7 @@ type BasedAppFunctionConfig = {
   type: 'app'
   main: string
   path?: string
+  favicon?: string
 }
 
 export type BasedFunctionConfig<
