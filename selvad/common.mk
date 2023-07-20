@@ -32,7 +32,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 		CFLAGS += -fcf-protection=full
 	endif
 
-	LDFLAGS += -z noexecstack
+	LDFLAGS += -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so
 	MOD_SUFFIX := .so
