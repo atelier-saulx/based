@@ -22,16 +22,17 @@ CFLAGS += -DDCACHE_LINESIZE=64
 
 ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	CFLAGS += -g -ggdb3 -fno-math-errno -ftree-vectorize
-	CFLAGS += -D_FORTIFY_SOURCE=3 -fstack-clash-protection
 	#CFLAGS += -fanalyzer -Wno-analyzer-null-dereference
 	#CFLAGS += -opt-info-vec-optimized
 	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
 
+	TARGET_CFLAGS += -D_FORTIFY_SOURCE=3 -fstack-clash-protection
 	ifeq ($(uname_M),x86_64)
-		CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
-		CFLAGS += -fcf-protection=full
+		TARGET_CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
+		TARGET_CFLAGS += -fcf-protection=full
 	endif
 
+	CFLAGS += $(TARGET_CFLAGS)
 	LDFLAGS += -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so
@@ -43,16 +44,18 @@ ifeq ($(uname_S),Darwin) # Assume macOS
 	CFLAGS += -g -Wno-c11-extensions -Wno-unknown-attributes
 
 	ifeq ($(uname_M),x86_64)
-		CFLAGS += -march=x86-64
+		TARGET_CFLAGS += -march=x86-64
 		ifeq ($(ROSETTA2),0)
-			CFLAGS += -mtune=core-avx2 -mfpmath=sse -mavx -mavx2
-			CFLAGS += -fcf-protection=full
+			TARGET_CFLAGS += -mtune=core-avx2 -mfpmath=sse -mavx -mavx2
+			TARGET_CFLAGS += -fcf-protection=full
 		endif
 	endif
 	ifeq ($(uname_M),arm64)
-		CFLAGS += -mcpu=apple-m1
-		CFLAGS += -mbranch-protection=standard
+		TARGET_CFLAGS += -mcpu=apple-m1
+		TARGET_CFLAGS += -mbranch-protection=standard
 	endif
+
+	CFLAGS += $(TARGET_CFLAGS)
 
 	LIB_SUFFIX := .dylib
 	MOD_SUFFIX := .so

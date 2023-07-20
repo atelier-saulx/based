@@ -5,6 +5,8 @@ SHELL := /bin/bash
 
 include common.mk
 export uname_S
+export uname_M
+export TARGET_CFLAGS
 
 INSTALL_DIR := binaries/$(uname_S)_$(uname_M)
 
