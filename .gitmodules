@@ -1,3 +1,5 @@
+# Copyright (c) 2023 SAULX
+# SPDX-License-Identifier: MIT
 [submodule "packages/cpp-client/lib/zlib"]
 	path = packages/cpp-client/lib/zlib
 	url = https://github.com/madler/zlib.git
