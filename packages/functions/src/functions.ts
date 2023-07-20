@@ -51,7 +51,11 @@ export type BasedAppFunction = (
       text: Promise<string>
       url: string
     }
-    favicon: string
+    favicon: {
+      url: string
+      content: string
+      path: string
+    }
   },
   ctx: Context
 ) => Promise<string>
