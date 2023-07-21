@@ -1532,7 +1532,9 @@ static enum selva_op_repl_state modify_hll(
     const char *s;
     size_t it = 0;
     while ((s = sztok(values, size, &it))) {
-        size_t slen = size - it;
+        size_t slen = it - size;
+
+        assert(slen < size);
 
         /* TODO Shouldn't ignore errors here. */
         updated |= SelvaObject_AddHllStr(obj, field_str, field_len, s, slen) > 0;
