@@ -248,6 +248,7 @@ static int dump_load(struct selva_io *io)
  */
 static int dump_save_async(const char *filename)
 {
+    struct timespec ts_start, ts_end;
     pid_t pid;
     int err;
 
@@ -255,6 +256,8 @@ static int dump_save_async(const char *filename)
         /* Already saving */
         return SELVA_EINPROGRESS;
     }
+
+    ts_monotime(&ts_start);
 
     save_sdb_eid = selva_replication_incomplete_sdb(filename);
 
@@ -273,6 +276,9 @@ static int dump_save_async(const char *filename)
         Hierarchy_Save(&io, main_hierarchy);
         selva_io_end(&io);
 
+        ts_monotime(&ts_end);
+        print_ready(__func__, &ts_start, &ts_end);
+
         exit(0);
     } else if (pid < 0) {
         save_sdb_eid = 0;
@@ -290,6 +296,7 @@ static int dump_save_async(const char *filename)
  */
 static int dump_save_sync(const char *filename)
 {
+    struct timespec ts_start, ts_end;
     const enum selva_io_flags flags = SELVA_IO_FLAGS_WRITE;
     struct selva_io io;
     int err;
@@ -298,6 +305,8 @@ static int dump_save_sync(const char *filename)
         /* Already saving */
         return SELVA_EINPROGRESS;
     }
+
+    ts_monotime(&ts_start);
 
     err = selva_io_init(&io, filename, flags);
     if (err) {
@@ -309,6 +318,9 @@ static int dump_save_sync(const char *filename)
 
     handle_last_good_sync();
     selva_db_is_dirty = 0;
+
+    ts_monotime(&ts_end);
+    print_ready(__func__, &ts_start, &ts_end);
 
     return 0;
 }
