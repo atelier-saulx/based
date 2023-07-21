@@ -319,10 +319,6 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id);
 
-#if HIERARCHY_SORT_BY_DEPTH
-ssize_t SelvaModify_GetHierarchyDepth(SelvaHierarchy *hierarchy, const Selva_NodeId id);
-#endif
-
 int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node);
 
 /**

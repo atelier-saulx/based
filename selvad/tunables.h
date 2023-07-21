@@ -57,12 +57,6 @@
  */
 #define HIERARCHY_SLAB_SIZE 33554432
 
-
-/**
- * Sort hierarchy find results by depth.
- */
-#define HIERARCHY_SORT_BY_DEPTH         0
-
 /**
  * How many inactive nodes can be tracked simultaneously.
  * Adjusting this shouldn't affect much unless the lest remains full all the

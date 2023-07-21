@@ -71,9 +71,6 @@ typedef struct SelvaHierarchyNode {
     Selva_NodeId id; /* Must be first. */
     enum SelvaNodeFlags flags;
     struct trx_label trx_label;
-#if HIERARCHY_SORT_BY_DEPTH
-    ssize_t depth;
-#endif
     STATIC_SELVA_OBJECT(_obj_data);
     struct SelvaHierarchyMetadata metadata;
     SVector parents;
@@ -167,18 +164,6 @@ static int SVector_HierarchyNode_id_compare(const void ** restrict a_raw, const 
 
     return memcmp(a->id, b->id, SELVA_NODE_ID_SIZE);
 }
-
-#if HIERARCHY_SORT_BY_DEPTH
-static int SVector_HierarchyNode_depth_compare(const void ** restrict a_raw, const void ** restrict b_raw) {
-    const SelvaHierarchyNode *a = *(const SelvaHierarchyNode **)a_raw;
-    const SelvaHierarchyNode *b = *(const SelvaHierarchyNode **)b_raw;
-
-    assert(a);
-    assert(b);
-
-    return b->depth - a->depth;
-}
-#endif
 
 static int SelvaHierarchyNode_Compare(const SelvaHierarchyNode *a, const SelvaHierarchyNode *b) {
     return memcmp(a->id, b->id, SELVA_NODE_ID_SIZE);
@@ -656,66 +641,6 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     }
 }
 
-#if HIERARCHY_SORT_BY_DEPTH
-static void updateDepth(SelvaHierarchy *hierarchy, SelvaHierarchyNode *head) {
-    SVector q;
-
-    if (unlikely(isLoading())) {
-        /*
-         * Skip updates for now as it would require a full BFS pass for every new node.
-         */
-        return;
-    }
-
-    SVector_Init(&q, selva_glob_config.hierarchy_expected_resp_len, NULL);
-
-    Trx_Begin(&hierarchy->current_trx);
-    Trx_Stamp(&hierarchy->current_trx, &head->visit_stamp);
-    (void)SVector_InsertFast(&q, head);
-
-    while (SVector_Size(&q) > 0) {
-        SelvaHierarchyNode *node = SVector_Shift(&q);
-        struct SVectorIterator it;
-
-        /*
-         * Update the depth.
-         */
-        ssize_t new_depth = 0;
-        SelvaHierarchyNode *parent;
-        SVector_ForeachBegin(&it, &node->parents);
-        while ((parent = SVector_Foreach(&it))) {
-            new_depth = max(new_depth, parent->depth + 1);
-        }
-        node->depth = new_depth;
-
-        SelvaHierarchyNode *child;
-        SVector_ForeachBegin(&it, &node->children);
-        while ((child = SVector_Foreach(&it))) {
-            if (!Trx_IsStamped(&hierarchy->current_trx, &child->visit_stamp)) {
-                Trx_Stamp(&hierarchy->current_trx, &child->visit_stamp);
-                SVector_Insert(&q, child);
-            }
-        }
-    }
-
-    SVector_Destroy(&q);
-    Trx_End(&hierarchy->current_trx);
-}
-#endif
-
-#if HIERARCHY_SORT_BY_DEPTH
-ssize_t SelvaModify_GetHierarchyDepth(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
-    const SelvaHierarchyNode *node;
-
-    node = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!node) {
-        return -1;
-    }
-
-    return node->depth;
-}
-#endif
-
 static inline void publishAncestorsUpdate(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node) {
@@ -861,9 +786,6 @@ static int cross_insert_children(
     if (res > 0) {
         publishChildrenUpdate(hierarchy, node);
         publishDescendantsUpdate(hierarchy, node);
-#if HIERARCHY_SORT_BY_DEPTH
-        updateDepth(hierarchy, node);
-#endif
     }
 
     return res;
@@ -961,9 +883,6 @@ static int cross_insert_parents(
     if (res > 0) {
         publishParentsUpdate(hierarchy, node);
         publishAncestorsUpdate(hierarchy, node);
-#if HIERARCHY_SORT_BY_DEPTH
-        updateDepth(hierarchy, node);
-#endif
     }
 
     return res;
@@ -1016,9 +935,6 @@ static int crossRemove(
             SVector_Remove(&parent->children, node);
             SVector_Remove(&node->parents, parent);
 
-#if HIERARCHY_SORT_BY_DEPTH
-            updateDepth(hierarchy, adjacent);
-#endif
             publishChildrenUpdate(hierarchy, parent);
             pubParents = 1;
         }
@@ -1059,9 +975,6 @@ static int crossRemove(
                 mkHead(hierarchy, child);
             }
 
-#if HIERARCHY_SORT_BY_DEPTH
-            updateDepth(hierarchy, adjacent);
-#endif
             publishParentsUpdate(hierarchy, child);
             pubChildren = 1;
         }
@@ -1073,9 +986,6 @@ static int crossRemove(
         return SELVA_HIERARCHY_ENOTSUP;
     }
 
-#if HIERARCHY_SORT_BY_DEPTH
-    updateDepth(hierarchy, node);
-#endif
     SelvaSubscriptions_RefreshByMarker(hierarchy, &sub_markers);
 
     return 0;
@@ -1146,9 +1056,6 @@ static int removeRelationships(
             mkHead(hierarchy, adj);
         }
 
-#if HIERARCHY_SORT_BY_DEPTH
-        updateDepth(hierarchy, it);
-#endif
     }
     SVector_Clear(vec_a);
 
@@ -3107,19 +3014,6 @@ static int load_tree(struct finalizer *fin, struct selva_io *io, int encver, Sel
         }
     }
 
-#if HIERARCHY_SORT_BY_DEPTH
-    /*
-     * Update depths on a single pass to save time.
-     */
-    struct SVectorIterator it;
-    SelvaHierarchyNode *head;
-
-    SVector_ForeachBegin(&it, &hierarchy->heads);
-    while ((head = SVector_Foreach(&it))) {
-        updateDepth(hierarchy, head);
-    }
-#endif
-
     return 0;
 }
 
@@ -3517,20 +3411,7 @@ static void SelvaHierarchy_ParentsCommand(struct selva_server_response_out *resp
 
     struct SVectorIterator it;
     const SelvaHierarchyNode *parent;
-    const SVector *parents;
-
-#if HIERARCHY_SORT_BY_DEPTH
-    SVECTOR_AUTOFREE(parents_d);
-
-    if (unlikely(!SVector_Clone(&parents_d, &node->parents, SVector_HierarchyNode_depth_compare))) {
-        selva_send_error(resp, SELVA_HIERARCHY_ENOMEM, NULL 0);
-        return;
-    }
-
-    parents = &parents_d;
-#else
-    parents = &node->parents;
-#endif
+    const SVector *parents = &node->parents;
 
     selva_send_array(resp, SVector_Size(parents));
 
