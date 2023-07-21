@@ -93,6 +93,7 @@ test.serial.only('set primitive fields', async (t) => {
           int: { type: 'integer' },
           bool: { type: 'boolean' },
           ts: { type: 'timestamp' },
+          uniqs: { type: 'cardinality' },
           obj: {
             type: 'object',
             properties: {
@@ -171,6 +172,10 @@ test.serial.only('set primitive fields', async (t) => {
     tags: {
       $add: ['comedy', 'action', 'horror'],
     },
+    uniqs: {
+      a: 1,
+      b: 1,
+    },
   })
 
   await client.command('object.incrby', ['po2', 'int', 3])
@@ -194,6 +199,10 @@ test.serial.only('set primitive fields', async (t) => {
     type: 'post',
     slug: { $delete: true },
     parents: { $add: ['root'] },
+    uniqs: {
+      a: 1,
+      b: 2,
+    },
     tags: { $remove: ['horror'] }, // TODO
   })
 

@@ -10,6 +10,7 @@ const DB_TYPE_TO_MODIFY_TYPE = {
   timestamp: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   float: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
   number: ModifyArgType.SELVA_MODIFY_ARG_DOUBLE,
+  cardinality: ModifyArgType.SELVA_MODIFY_ARG_OP_HLL,
 }
 
 const DB_TYPE_TO_SET_TYPE = {

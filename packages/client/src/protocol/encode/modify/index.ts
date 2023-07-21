@@ -16,6 +16,7 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: { type: 'string' },
 }
 
 function identity<T>(x: T): T {
