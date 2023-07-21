@@ -15,29 +15,29 @@ export function encodeSetOperation({
   setType,
   $value,
   $add,
-  $delete,
+  $remove,
 }: {
   setType: number
   $value?: any | any[]
   $add?: any | any[]
-  $delete?: any | any[]
+  $remove?: any | any[]
 }): Buffer {
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       contraint_id: 0, // TODO: impl. bidirectional
-      delete_all: $delete,
+      delete_all: $remove,
       $value: refsToStr($value),
       $add: refsToStr($add),
-      $delete: refsToStr($delete),
+      $delete: refsToStr($remove),
     })
   } else if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_CHAR) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: setType,
-      delete_all: $delete,
+      delete_all: $remove,
       $value: strsToStr($value),
       $add: strsToStr($add),
-      $delete: strsToStr($delete),
+      $delete: strsToStr($remove),
     })
   }
 

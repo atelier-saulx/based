@@ -36,10 +36,6 @@ test.serial('set string to num field, should fail', async (t) => {
         fields: {
           slug: { type: 'string' },
           num: { type: 'number' },
-          tags: {
-            type: 'set',
-            items: { type: 'string' },
-          },
         },
       },
     },
@@ -103,6 +99,10 @@ test.serial.only('set primitive fields', async (t) => {
               a: { type: 'number' },
               b: { type: 'string' },
             },
+          },
+          tags: {
+            type: 'set',
+            items: { type: 'string' },
           },
           arys: {
             type: 'object',
@@ -168,6 +168,9 @@ test.serial.only('set primitive fields', async (t) => {
     aliases: {
       $add: ['sec'],
     },
+    tags: {
+      $add: ['comedy', 'action', 'horror'],
+    },
   })
 
   await client.command('object.incrby', ['po2', 'int', 3])
@@ -191,7 +194,7 @@ test.serial.only('set primitive fields', async (t) => {
     type: 'post',
     slug: { $delete: true },
     parents: { $add: ['root'] },
-    // tags: { $delete: true }, // TODO
+    tags: { $remove: ['horror'] }, // TODO
   })
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
