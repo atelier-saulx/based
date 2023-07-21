@@ -3,6 +3,77 @@ import { BasedClient, BasedError } from '@based/client'
 import { Ctx } from './Ctx'
 import { hooksLoading, useLoadingListeners } from './useLoading'
 
+export const useQueries = <T = any>(
+  name?: string,
+  payloads?: any[],
+  opts?: {
+    persistent: boolean
+  }
+): {
+  loading: boolean
+  data?: T
+  error?: BasedError
+  checksum?: string
+}[] => {
+  // TODO add error handling
+  const client: BasedClient = useContext(Ctx)
+  let key = ''
+  let sum = ''
+
+  if (client && name) {
+    const queries = Array(payloads.length)
+    const result = payloads.map((payload, i) => {
+      const q = client.query(name, payload, opts)
+      const { id, cache } = q
+      queries[i] = q
+      key += id
+
+      if (cache) {
+        sum += cache.checksum
+        return { loading: false, data: cache.value, checksum: cache.checksum }
+      }
+
+      return { loading: true }
+    })
+
+    const [, update] = useState(sum)
+
+    useEffect(() => {
+      let raf
+      const listener = () => {
+        if (!raf) {
+          raf = requestAnimationFrame(() => {
+            raf = null
+            update(
+              queries.reduce((sum, { cache }) => {
+                return cache ? sum + cache.checksum : sum
+              }, '')
+            )
+          })
+        }
+      }
+
+      const unsubs = queries.map((q) => {
+        return q.subscribe(listener)
+      })
+
+      return () => {
+        unsubs.forEach((unsubscribe) => unsubscribe())
+        if (raf) {
+          cancelAnimationFrame(raf)
+        }
+      }
+    }, [key])
+
+    return result
+  }
+
+  useState(sum)
+  useEffect(() => {}, [key])
+
+  return Array(payloads.length).fill({ loading: true })
+}
+
 export const useQuery = <T = any>(
   name?: string,
   payload?: any,

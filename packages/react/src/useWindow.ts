@@ -34,6 +34,7 @@ export const useWindow = (
     // complete reset
     const resetHash = hash(dependencies)
     if (currResetHash.current !== resetHash) {
+      currResetHash.current = resetHash
       currModifyHash.current = null
       cache.current = null
     }
@@ -110,21 +111,22 @@ export const useWindow = (
     }
 
     let l = queries.current.length
+    cache.current.items = []
     cache.current.loading = false
     cache.current.checksum = checksum
 
     while (l--) {
-      const q = queries.current[l]
-      const m = size * l + size
       let i = size * l
+      const q = queries.current[l]
+      const m = i + size
 
       if (q) {
         if (q.cache) {
           let data = q.cache.value
+          for (const i of path) {
+            data = data?.[i]
+          }
           if (data) {
-            for (const i of path) {
-              data = data[i]
-            }
             for (let j = 0; i < m; i++) {
               const item = data[j++]
               if (!item) break
@@ -136,12 +138,12 @@ export const useWindow = (
         }
       }
 
-      // fill up empty items with null
-      for (; i < m; i++) {
-        if (!(i in cache.current.items)) {
-          cache.current.items[i] = null
-        }
-      }
+      // // fill up empty items with null
+      // for (; i < m; i++) {
+      //   if (!(i in cache.current.items)) {
+      //     cache.current.items[i] = null
+      //   }
+      // }
     }
   }
 
