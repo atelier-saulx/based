@@ -1,19 +1,18 @@
 {
-  "name": "@based/schema",
-  "version": "0.0.10",
+  "name": "@based/graphql",
+  "version": "3.0.0",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
+    "buildBundle": "node ./build/index.js",
     "build": "npx tsc",
-    "watch": "npx tsc --watch",
+    "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
   },
   "sideEffects": false,
   "dependencies": {
-    "validator": "^13.9.0",
-    "@saulx/hash": "^2.0.0",
-    "@saulx/utils": "^3.2.2"
+    "graphql": "^16.3.0"
   },
   "ava": {
     "files": [
@@ -28,10 +27,12 @@
     ]
   },
   "devDependencies": {
-    "type-fest": "^3.12.0",
+    "@saulx/selva-server": "21.1.0",
+    "@saulx/selva": "21.1.0",
+    "esbuild": "^0.14.29",
+    "ava": "3.15.0",
     "ts-node": "10.9.1",
     "typescript": "^4.3.5",
-    "rimraf": "^3.0.2",
-    "ava": "3.15.0"
+    "rimraf": "^3.0.2"
   }
 }

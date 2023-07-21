@@ -27,7 +27,7 @@ import { sendError } from '../../sendError'
 import { promisify } from 'node:util'
 import { authorize, IsAuthorizedHandler } from '../../authorize'
 
-const inflate = promisify(zlib.inflate)
+const inflate = promisify(zlib.inflateRaw)
 
 const sendCacheSwapEncoding = async (
   server: BasedServer,

@@ -81,6 +81,7 @@ export const setWalker = async (
   const target: BasedSetTarget = {
     type,
     schema,
+    required: [],
   }
 
   if (value.$id) {
@@ -92,7 +93,7 @@ export const setWalker = async (
   const q: Promise<void>[] = []
 
   for (const key in value) {
-    if (key[0] !== '$') {
+    if (key[0] !== '$' && key !== 'type') {
       const fieldSchema = schemaType.fields[key]
       if (!fieldSchema) {
         error([key], ParseError.fieldDoesNotExist)
@@ -113,10 +114,27 @@ export const setWalker = async (
 
   await Promise.all(q)
 
-  // required fields (collect them!)
-  //   if (!(await handlers.requiredFields(value, [], target))) {
-  //     throw new Error('Missing required fields')
-  //   }
+  if (schemaType.required) {
+    for (const req of schemaType.required) {
+      if (!(req in value)) {
+        target.required.push([req])
+      }
+    }
+  }
+
+  if (target.required?.length) {
+    const requireDefined = await Promise.all(
+      target.required.map(async (req) => {
+        return handlers.checkRequiredFields(req)
+      })
+    )
+    for (let i = 0; i < requireDefined.length; i++) {
+      if (!requireDefined[i]) {
+        const r = target.required[i]
+        error(r, ParseError.requiredFieldNotDefined)
+      }
+    }
+  }
 
   return target
 }

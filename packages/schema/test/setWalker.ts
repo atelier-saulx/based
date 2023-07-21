@@ -12,6 +12,9 @@ const schema: BasedSchema = {
         blub: {
           type: 'number',
         },
+        flap: {
+          type: 'number',
+        },
         snurp: {
           type: 'array',
           values: {
@@ -118,28 +121,6 @@ const schema: BasedSchema = {
   },
 }
 
-// $value
-// $default
-
-// $noRoot
-
-// $delete -> change for set / references
-
-// $merge: false,
-
-// $increment
-// $decrement
-
-// $assign
-// $insert
-// $remove
-// $push: 7,
-// $unshift (    $unshift: {$value: 123,$maxLen: 10,},)
-//     $alias: 'maTestWithAlias',
-// aliases (set
-
-// parse formats for string e.g. uri / email etc
-
 test.serial('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
   const now = Date.now()
@@ -156,7 +137,7 @@ test.serial('collect correctly', async (t) => {
         $increment: 1,
       },
       bla: false,
-      time: now, // do more later
+      time: now,
       setje: [1, 2, 3],
       form: {
         lastName: 'de beer',
@@ -201,6 +182,9 @@ test.serial('collect correctly', async (t) => {
           value,
         })
       },
+      checkRequiredFields: async (path) => {
+        return true
+      },
       referenceFilterCondition: async (id, filter) => {
         return true
       },
@@ -210,29 +194,327 @@ test.serial('collect correctly', async (t) => {
   const result = [
     { path: ['visits'], value: '3a9009740ee' },
     { path: ['blub'], value: { $increment: 1 } },
-    { path: ['bla'], value: false },
     { path: ['time'], value: now },
+    { path: ['form', 'snurp'], value: 'blx12' },
+    {
+      path: ['snurpArray', 0],
+      value: 100,
+    },
+    { path: ['bla'], value: false },
     { path: ['form', 'lastName'], value: 'de beer' },
     { path: ['form', 'json'], value: '{"bla":1,"x":2,"y":3}' },
-    { path: ['form', 'snurp'], value: 'blx12' },
     { path: ['form', 'things'], value: 2 },
     { path: ['form', 'password'], value: 'mypassword!' },
-    { path: ['snurp', 0, 'x', 0], value: 1 },
-    { path: ['snurp', 0, 'x', 1], value: 2 },
-    { path: ['snurp', 0, 'x', 2], value: 3 },
     { path: ['form', 'bla'], value: { $value: ['bl123', 'bl234'] } },
     { path: ['form', 'blab'], value: { $add: ['bl456'] } },
-    {
-      path: ['snurpArray'],
-      value: { $assign: { $idx: 0, $value: 100 } },
-    },
     { path: ['setje'], value: { $value: [1, 2, 3] } },
     { path: ['form', 'blub'], value: { $value: ['x'] } },
     {
       path: ['specialArray'],
       value: { $insert: { $value: ['a', 'b', 'c'], $idx: 0 } },
     },
+    { path: ['snurp'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x'], value: { $delete: true } },
+    { path: ['snurp', 0, 'x', 0], value: 1 },
+    { path: ['snurp', 0, 'x', 1], value: 2 },
+    { path: ['snurp', 0, 'x', 2], value: 3 },
   ]
 
   t.deepEqual(results, result)
+
+  const results2: any[] = []
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      blub: {
+        $value: 4,
+      },
+      flap: {
+        $default: 1,
+      },
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+        results2.push({
+          path,
+          value,
+        })
+      },
+      checkRequiredFields: async (path) => {
+        return false
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(results2, [
+    { path: ['blub'], value: { $value: 4 } },
+    { path: ['flap'], value: { $default: 1 } },
+  ])
+
+  const results3: any[] = []
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      snurpArray: {
+        $push: 1,
+      },
+      specialArray: {
+        $push: { $value: 'flap' },
+      },
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+        results3.push({
+          path,
+          value,
+        })
+      },
+      checkRequiredFields: async (path) => {
+        return false
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(results3, [
+    { path: ['snurpArray'], value: { $push: [1] } },
+    { path: ['specialArray'], value: { $push: [{ $value: 'flap' }] } },
+  ])
 })
+
+test('required', async (t) => {
+  const schema: BasedSchema = {
+    types: {
+      bla: {
+        prefix: 'bl',
+        required: ['blub', 'flap', 'snurp'],
+        fields: {
+          blub: {
+            type: 'number',
+          },
+          flap: {
+            type: 'number',
+          },
+          snurp: {
+            type: 'object',
+            required: ['x'],
+            properties: {
+              x: {
+                type: 'object',
+                required: ['a', 'b', 'c'],
+                properties: {
+                  a: { type: 'string' },
+                  b: { type: 'string' },
+                  c: { type: 'string' },
+                },
+              },
+            },
+          },
+          array: {
+            type: 'array',
+            values: {
+              type: 'object',
+              required: ['a', 'b', 'c'],
+              properties: {
+                a: { type: 'string' },
+                b: { type: 'string' },
+                c: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+    $defs: {},
+    languages: ['en'],
+    root: {
+      fields: {},
+    },
+    prefixToTypeMapping: {
+      bl: 'bla',
+    },
+  }
+
+  const t1 = await setWalker(
+    schema,
+    {
+      type: 'bla',
+      blub: 1,
+      flap: 1,
+      snurp: {
+        x: { a: 'b' },
+      },
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
+      checkRequiredFields: async (paths) => {
+        return true
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(t1.required, [
+    ['snurp', 'x', 'b'],
+    ['snurp', 'x', 'c'],
+  ])
+
+  const t2 = await setWalker(
+    schema,
+    {
+      type: 'bla',
+      array: [
+        {
+          a: 'hello', // say cant set non existing field
+        },
+      ],
+    },
+    {
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
+      checkRequiredFields: async (paths) => {
+        // should be [snurp.x.b, snurp.x.c]
+        return true
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
+
+  t.deepEqual(t2.required, [
+    ['array', 0, 'b'],
+    ['array', 0, 'c'],
+    ['blub'],
+    ['flap'],
+    ['snurp'],
+  ])
+
+  t.true(true)
+})
+
+// next deep parse of push / unshift
+
+// maybe collect all the errors (and parse everything)
+// handler.error()
+// then nicer errors and nice error logs
+
+// test('number errors', async (t) => {
+//   const schema: BasedSchema = {
+//     types: {
+//       bla: {
+//         prefix: 'bl',
+//         required: ['blub', 'flap', 'snurp'],
+//         fields: {
+//           blub: {
+//             type: 'number',
+//           },
+//           flap: {
+//             type: 'number',
+//           },
+//           snurp: {
+//             type: 'object',
+//             required: ['x'],
+//             properties: {
+//               x: {
+//                 type: 'object',
+//                 required: ['a', 'b', 'c'],
+//                 properties: {
+//                   a: { type: 'string' },
+//                   b: { type: 'string' },
+//                   c: { type: 'string' },
+//                 },
+//               },
+//             },
+//           },
+//           array: {
+//             type: 'array',
+//             values: {
+//               type: 'object',
+//               required: ['a', 'b', 'c'],
+//               properties: {
+//                 a: { type: 'string' },
+//                 b: { type: 'string' },
+//                 c: { type: 'string' },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//     $defs: {},
+//     languages: ['en'],
+//     root: {
+//       fields: {},
+//     },
+//     prefixToTypeMapping: {
+//       bl: 'bla',
+//     },
+//   }
+
+//   const t1 = await setWalker(
+//     schema,
+//     {
+//       type: 'bla',
+//       blub: 1,
+//       flap: 1,
+//       snurp: {
+//         x: { a: 'b' },
+//       },
+//     },
+//     {
+//       collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
+//       checkRequiredFields: async (paths) => {
+//         return true
+//       },
+//       referenceFilterCondition: async (id, filter) => {
+//         return true
+//       },
+//     }
+//   )
+
+//   t.deepEqual(t1.required, [
+//     ['snurp', 'x', 'b'],
+//     ['snurp', 'x', 'c'],
+//   ])
+
+//   const t2 = await setWalker(
+//     schema,
+//     {
+//       type: 'bla',
+//       array: [
+//         {
+//           a: 'hello', // say cant set non existing field
+//         },
+//       ],
+//     },
+//     {
+//       collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
+//       checkRequiredFields: async (paths) => {
+//         // should be [snurp.x.b, snurp.x.c]
+//         return true
+//       },
+//       referenceFilterCondition: async (id, filter) => {
+//         return true
+//       },
+//     }
+//   )
+
+//   t.deepEqual(t2.required, [
+//     ['array', 0, 'b'],
+//     ['array', 0, 'c'],
+//     ['blub'],
+//     ['flap'],
+//     ['snurp'],
+//   ])
+
+//   t.true(true)
+// })

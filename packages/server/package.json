@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "6.7.2",
+  "version": "6.7.3",
   "license": "MIT",
   "main": "./dist/index.js",
   "files": [

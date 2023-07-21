@@ -5,6 +5,8 @@ import {
   BasedSchemaField,
 } from './types'
 
+// gaurd in the schema for refs in arrays
+
 export const validateType = (
   fromSchema: BasedSchemaPartial,
   typeName: string,
@@ -24,7 +26,9 @@ export const validateField = (
   fromSchema: BasedSchemaPartial,
   path: string[],
   field: BasedSchemaFieldPartial
-) => {}
+) => {
+  //
+}
 
 export const validateSchema = (
   schema: BasedSchemaPartial
@@ -44,6 +48,7 @@ export const validateSchema = (
   }
 
   if (schema.root) {
+    validateType(schema, 'root', schema.root)
   }
 
   if (schema.types) {
