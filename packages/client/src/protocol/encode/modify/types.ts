@@ -88,6 +88,11 @@ export const opSetDefInt64 = compile([
   { name: '$value', type: 'int64_le_p' },
 ])
 
+export const opSetHll = compile([
+  { name: '_spare', type: 'uint64_le' },
+  { name: '$add', type: 'cstring_p' },
+])
+
 export const edgeMetaDef = compile([
   { name: 'op_code', type: 'int8' },
   { name: 'delete_all', type: 'int8' },

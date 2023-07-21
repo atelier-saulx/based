@@ -5,6 +5,7 @@ import { EncodeDefinition } from '../protocol'
 import { encodeSetOperation } from './set'
 import { ModifyArgType } from './types'
 import { encodeArrayOp } from './array'
+import { encodeHll } from './hll'
 
 // note: just the non-string values are represented here
 export const VALUE_TYPES = {
@@ -16,7 +17,7 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: { type: 'bin' },
-  [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: { type: 'string' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: { type: 'bin' },
 }
 
 function identity<T>(x: T): T {
@@ -30,6 +31,7 @@ export const VALUE_ENCODERS = {
   [ModifyArgType.SELVA_MODIFY_ARG_DEFAULT_DOUBLE]: encodeDouble,
   [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]: encodeDouble,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_SET]: encodeSetOperation,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: encodeHll,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_PUSH]: encodeArrayOp,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: encodeArrayOp,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: encodeArrayOp,
