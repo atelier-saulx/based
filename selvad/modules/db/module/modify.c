@@ -1017,8 +1017,8 @@ const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *siz
     p = data_str + (uintptr_t)p;
 
     if (size == 0 ||
-        !in_mem_range(p,  data_str, data_len) ||
-        !in_mem_range(p + size - 1,  data_str, data_len)) {
+        !in_mem_range(p,            data_str,   data_len) ||
+        !in_mem_range(p + size - 1, data_str,   data_len)) {
         return NULL;
     }
 
@@ -1469,7 +1469,7 @@ static enum selva_op_repl_state modify_edge_meta_op(
             selva_send_str(resp, "OK", 2);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         } else if (err) {
-            selva_send_errorf(resp, err, NULL, 0);
+            selva_send_error(resp, err, NULL, 0);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
     } else if (op_code == SELVA_MODIFY_OP_EDGE_META_DEFAULT_DOUBLE ||
@@ -1525,7 +1525,7 @@ static enum selva_op_repl_state modify_hll(
     int updated = 0;
 
     if (!values) {
-        selva_send_errorf(resp, SELVA_EINVAL, NULL, 0);
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid SelvaModify_OpHll");
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 

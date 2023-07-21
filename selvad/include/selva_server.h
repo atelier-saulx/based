@@ -125,7 +125,7 @@ SELVA_SERVER_EXPORT(int, selva_send_error, struct selva_server_response_out *res
 /**
  * Send a printf formatted error.
  */
-SELVA_SERVER_EXPORT(int, selva_send_errorf, struct selva_server_response_out *resp, int err, const char *fmt, ...);
+SELVA_SERVER_EXPORT(int, selva_send_errorf, struct selva_server_response_out *resp, int err, const char *fmt, ...) __attribute__((nonnull(1, 3)));
 /**
  * Send an arity error.
  */
