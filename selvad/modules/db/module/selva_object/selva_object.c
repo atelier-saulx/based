@@ -35,6 +35,7 @@
  * a linear search into the embedded keys.
  */
 #define NR_EMBEDDED_KEYS                4
+#define EMBEDDED_KEYS_FREE_MASK         ((1 << NR_EMBEDDED_KEYS) - 1)
 /**
  * Maximum length of the name of an embedded key.
  * Must align nicely with the SelvaObject structure. This is ensured by the macros.
@@ -136,7 +137,7 @@ static const struct so_type_name type_names[] = {
 
 static void init_obj(struct SelvaObject *obj) {
     obj->obj_size = 0;
-    obj->emb_res = (1 << NR_EMBEDDED_KEYS) - 1;
+    obj->emb_res = EMBEDDED_KEYS_FREE_MASK;
     RB_INIT(&obj->keys_head);
 }
 
@@ -725,6 +726,9 @@ static struct SelvaObjectKey *find_key_emb(struct SelvaObject *obj, const char *
     if (key_name_len < EMBEDDED_NAME_MAX) {
         const unsigned k = obj->emb_res;
 
+        /*
+         * This is tested to be about 2x faster than using __builtin_ffs()
+         */
         for (int i = 0; i < NR_EMBEDDED_KEYS; i++) {
             if ((k & (1 << i)) == 0) {
                 struct SelvaObjectKey *key = get_emb_key(obj, i);
