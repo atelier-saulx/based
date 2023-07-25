@@ -15,6 +15,7 @@ export const genVersion = (spec: BasedFunctionConfig): number => {
     if (spec.relay) {
       return hash(spec.relay)
     } else {
+      // @ts-ignore
       const { fn } = spec
       return hash(fn.toString())
     }

@@ -34,9 +34,10 @@ const init = async () => {
     const url =
       based.connection.ws.url
         .replace('wss://', 'https://')
+        .replace('ws://', 'http://')
         .split('/')
         .slice(0, -1)
-        .join('/') + '/db:file-upload'
+        .join('/') + '/files-s3'
 
     // 'http://localhost:8081/files'
 
