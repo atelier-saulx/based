@@ -1,9 +1,10 @@
 import urlLoader from './urlLoader'
 import { Connection } from './types'
 import { BasedClient } from '..'
-import WebSocket from 'isomorphic-ws'
 import { encodeAuthState } from '../authState/parseAuthState'
 import { isStreaming } from '../stream/uploadFileBrowser'
+
+import WebSocket from 'isomorphic-ws'
 
 type ActiveFn = (isActive: boolean) => void
 
@@ -84,19 +85,19 @@ const connect = (
       let isError = false
 
       ws.binaryType = 'blob'
-      ws.onerror = (err) => {
+      ws.addEventListener('error', (err) => {
         // TODO: add a websocket close number
         // also for rateLimit
         if (err.message && err.message.includes('401')) {
           isError = true
         }
-      }
+      })
 
-      ws.onmessage = (d) => {
+      ws.addEventListener('message', (d) => {
         client.onData(d)
-      }
+      })
 
-      ws.onopen = () => {
+      ws.addEventListener('open', () => {
         if (isActive) {
           if (connection.disconnected) {
             return
@@ -107,9 +108,9 @@ const connect = (
           }
           client.onOpen()
         }
-      }
+      })
 
-      ws.onclose = () => {
+      ws.addEventListener('close', () => {
         if (isActive) {
           if (connection.disconnected) {
             return
@@ -126,7 +127,7 @@ const connect = (
             true
           )
         }
-      }
+      })
     }, time)
   })
   return connection

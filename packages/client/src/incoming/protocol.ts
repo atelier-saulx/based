@@ -41,6 +41,11 @@ export const readUint8 = (
 }
 
 export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
+  // needed for CF workers which return array buffers
+  if (d instanceof ArrayBuffer) {
+    return new Uint8Array(d)
+  }
+
   if (typeof window === 'undefined') {
     if (d instanceof Buffer) {
       return new Uint8Array(d)
