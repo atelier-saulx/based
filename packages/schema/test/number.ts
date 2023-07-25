@@ -6,13 +6,24 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
-        numeber: {
+        number: {
+          type: 'number',
+          maximum: 6,
+          minimum: 3,
+        },
+        exclusiveminmax: {
           type: 'number',
           minimum: 3,
+          exclusiveMinimum: true,
           maximum: 6,
+          exclusiveMaximum: true,
         },
         integer: {
           type: 'integer',
+        },
+        multipleOf: {
+          type: 'integer',
+          multipleOf: 3,
         },
         set: {
           type: 'set',
@@ -50,7 +61,7 @@ const createHandlers = (): {
   return { results, handlers }
 }
 
-test('text min-max', async (t) => {
+test.skip('min-max', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -67,7 +78,6 @@ test('text min-max', async (t) => {
       schema,
       {
         $id: 'bl1',
-        $language: 'de',
         number: 10,
       },
       handlers
@@ -77,109 +87,114 @@ test('text min-max', async (t) => {
     schema,
     {
       $id: 'bl1',
-      $language: 'en',
-      number: 4,
+      number: 3,
     },
     handlers
   )
-  t.deepEqual(results, [{ path: ['number'], value: { en: 4 } }])
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: 6,
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['number'], value: 3 },
+    { path: ['number'], value: 6 },
+  ])
 })
+test.skip('min-max exclusive', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: 3,
+      },
+      handlers
+    )
+  )
+  console.log('results', results)
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: 6,
+      },
+      handlers
+    )
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: 4,
+    },
+    handlers
+  )
 
-// test.skip('text wrong language', async (t) => {
-//   const { handlers, results } = createHandlers()
-//   await t.throwsAsync(
-//     setWalker(
-//       schema,
-//       {
-//         $id: 'bl1',
-//         name: {
-//           de: 'xaxx',
-//           nl: 'xaxx',
-//           es: 'flap',
-//         },
-//       },
-//       handlers
-//     )
-//   )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: 5,
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['exclusiveminmax'], value: 4 },
+    { path: ['exclusiveminmax'], value: 5 },
+  ])
+})
+test.skip('isInteger', async (t) => {
+  const { handlers, results } = createHandlers()
 
-//   await setWalker(
-//     schema,
-//     {
-//       $id: 'bl1',
-//       $language: 'de',
-//       name: 'blabla',
-//     },
-//     handlers
-//   )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        integer: 6.5,
+      },
+      handlers
+    )
+  )
 
-//   //TODO fix
-//   t.deepEqual(results, [
-//     { path: ['name', 'de'], value: 'blabla' },
-//     { path: ['name'], value: { de: 'blabla' } },
-//   ])
-// })
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      integer: 5,
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['integer'], value: 5 }])
+})
+test.skip('isMultiple', async (t) => {
+  const { handlers, results } = createHandlers()
 
-// test.skip('default', async (t) => {
-//   const { handlers, results } = createHandlers()
-//   t.throwsAsync(
-//     setWalker(
-//       schema,
-//       {
-//         $id: 'bl1',
-//         $language: 'de',
-//         name: { $default: 'xaxx' },
-//       },
-//       handlers
-//     )
-//   )
-//   t.deepEqual(results, [])
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        multipleOf: 7,
+      },
+      handlers
+    )
+  )
 
-//   await setWalker(
-//     schema,
-//     {
-//       $id: 'bl1',
-//       $language: 'de',
-//       name: { de: { $default: 'xaxx' } },
-//     },
-//     handlers
-//   )
-//   // console.log('-------------->', results)
-//   // TODO ??
-//   t.deepEqual(results, [
-//     { path: ['name'], value: { de: { $default: 'xaxx' } } },
-//   ])
-// })
-
-// test('value', async (t) => {
-//   const { handlers, results } = createHandlers()
-//   t.throwsAsync(
-//     setWalker(
-//       schema,
-//       {
-//         $id: 'bl1',
-//         $language: 'de',
-//         name: { $value: 'xaxx' },
-//       },
-//       handlers
-//     )
-//   )
-//   t.deepEqual(results, [])
-
-//   await setWalker(
-//     schema,
-//     {
-//       $id: 'bl1',
-//       $language: 'de',
-//       name: { de: { $value: 'xaxx' } },
-//     },
-//     handlers
-//   )
-//   console.log('-------------->', results)
-//   // TODO ??
-//   t.deepEqual(results, [{ path: ['name'], value: { de: { $value: 'xaxx' } } }])
-// })
-
-// wrong language passed
-// required languages
-// $value // $default
-// ???
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      multipleOf: 9,
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
+})

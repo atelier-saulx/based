@@ -29,16 +29,20 @@ const validate = (
     error(path, ParseError.incorrectFormat)
   }
   if (fieldSchema.maximum) {
-    if (fieldSchema.exclusiveMaximum && value > value) {
-      error(path, ParseError.exceedsMaximum)
-    } else if (value >= value) {
+    if (fieldSchema.exclusiveMaximum) {
+      if (value >= fieldSchema.maximum) {
+        error(path, ParseError.exceedsMaximum)
+      }
+    } else if (value > fieldSchema.maximum) {
       error(path, ParseError.exceedsMaximum)
     }
   }
   if (fieldSchema.minimum) {
-    if (fieldSchema.exclusiveMinimum && value < value) {
-      error(path, ParseError.subceedsMinimum)
-    } else if (value <= value) {
+    if (fieldSchema.exclusiveMinimum) {
+      if (value <= fieldSchema.minimum) {
+        error(path, ParseError.subceedsMinimum)
+      }
+    } else if (value < fieldSchema.minimum) {
       error(path, ParseError.subceedsMinimum)
     }
   }
