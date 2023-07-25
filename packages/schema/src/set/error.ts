@@ -10,6 +10,7 @@ export enum ParseError {
   'defaultNotSupported',
   'multipleOperationsNotAllowed',
   'requiredFieldNotDefined',
+  'languageNotSupported',
 }
 
 export const error = (

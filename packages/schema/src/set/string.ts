@@ -191,10 +191,15 @@ export const text: Parser<'text'> = async (
   for (const key in value) {
     const newPath = [...path, key]
 
+    // @ts-ignore
+    if (!target.schema.languages.includes(key)) {
+      error(newPath, ParseError.languageNotSupported)
+    }
+
     if (typeof value[key] === 'object') {
       if (value[key].$value) {
-        text(
-          [...path, key, '$value'],
+        await text(
+          [...newPath, '$value'],
           value[key].$value,
           fieldSchema,
           typeSchema,
@@ -203,6 +208,7 @@ export const text: Parser<'text'> = async (
           true
         )
       }
+
       if (!noCollect) {
         handlers.collect({
           path: newPath,
@@ -218,7 +224,7 @@ export const text: Parser<'text'> = async (
     if (
       !(await parseValueAndDefault(
         path,
-        { $language: key, [key]: value[key] },
+        { [key]: value[key] },
         fieldSchema,
         typeSchema,
         target,

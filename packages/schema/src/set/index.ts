@@ -84,6 +84,13 @@ export const setWalker = async (
     required: [],
   }
 
+  if (value.$language) {
+    if (!schema.languages.includes(value.$language)) {
+      error(['$language'], ParseError.languageNotSupported)
+    }
+    target.$language = value.$language
+  }
+
   if (value.$id) {
     target.$id = value.$id
   } else if (value.$alias) {

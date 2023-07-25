@@ -121,7 +121,7 @@ const schema: BasedSchema = {
   },
 }
 
-test.serial('collect correctly', async (t) => {
+test('collect correctly', async (t) => {
   const results: { path: (string | number)[]; value: any }[] = []
   const now = Date.now()
   await setWalker(

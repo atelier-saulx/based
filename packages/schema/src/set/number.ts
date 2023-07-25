@@ -85,6 +85,7 @@ export const timestamp: Parser<'timestamp'> = async (
   noCollect
 ) => {
   if (typeof value === 'string') {
+    // TODO: now + 10 and stuff
     if (value === 'now') {
       value = Date.now()
     } else {

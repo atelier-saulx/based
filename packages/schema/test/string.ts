@@ -51,7 +51,7 @@ const createHandlers = (): {
   return { results, handlers }
 }
 
-test.serial('string max length', async (t) => {
+test('string max length', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -84,7 +84,7 @@ test.serial('string max length', async (t) => {
   t.deepEqual(results, [{ path: ['name'], value: 'xaxx' }])
 })
 
-test.serial('set with strings', async (t) => {
+test('set with strings', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -110,7 +110,7 @@ test.serial('set with strings', async (t) => {
   ])
 })
 
-test.serial('string pattern', async (t) => {
+test('string pattern', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -134,7 +134,7 @@ test.serial('string pattern', async (t) => {
   t.deepEqual(results, [{ path: ['phonkName'], value: 'bla$' }])
 })
 
-test.serial('setting $default', async (t) => {
+test('setting $default', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -158,7 +158,7 @@ test.serial('setting $default', async (t) => {
   t.deepEqual(results, [{ path: ['phonkName'], value: { $default: 'bla$' } }])
 })
 
-test.serial('setting $value', async (t) => {
+test('setting $value', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
