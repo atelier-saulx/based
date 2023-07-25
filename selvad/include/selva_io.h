@@ -25,20 +25,26 @@ struct SelvaDbVersionInfo {
 };
 
 enum selva_io_flags {
-    SELVA_IO_FLAGS_READ = 0x01, /*!< This is a read op. */
-    SELVA_IO_FLAGS_WRITE = 0x02, /*!< This is a write op. */
-    SELVA_IO_FLAGS_COMPRESSED = 0x04, /* TODO */
-    SELVA_IO_FLAGS_FILE_IO = 0x10, /*! Save to/Load from a file. Not set by caller. */
-    SELVA_IO_FLAGS_STRING_IO = 0x20, /*!< Save to/Load from a file. Not set by caller. */
+    SELVA_IO_FLAGS_READ = 0x0001, /*!< This is a read op. */
+    SELVA_IO_FLAGS_WRITE = 0x0002, /*!< This is a write op. */
+    SELVA_IO_FLAGS_COMPRESSED = 0x0100, /* TODO */
+    SELVA_IO_FLAGS_FILE_IO = 0x0010, /*! Save to/Load from a file. Not set by caller. */
+    SELVA_IO_FLAGS_STRING_IO = 0x0020, /*!< Save to/Load from a file. Not set by caller. */
+    /* Runtime control flags */
+    _SELVA_IO_FLAGS_EN_COMPRESS = 0x1000, /*!< Enable deflate block compression. */
 };
 
 #ifdef SELVA_IO_TYPE
+struct libdeflate_compressor;
+struct libdeflate_decompressor;
+
 struct selva_io {
     enum selva_io_flags flags;
     union {
         struct {
             struct selva_string *filename;
             FILE *file;
+            size_t file_remain; /* Remaining payload bytes in the file. */
         } file_io;
         struct {
             int err;
@@ -47,11 +53,21 @@ struct selva_io {
         } string_io;
     };
 
+    /*
+     * Compressed SDB.
+     */
+    char *block_buf; /*!< Buffer for current RW block. */
+    size_t block_buf_i; /*!< Index into block_buf. */
+    void *compressed_buf; /*!< Buffer for compressed block_buf. */
+    size_t compressed_buf_size; /*!< Size of compressed_buf. */
+    struct libdeflate_compressor *compressor;
+    struct libdeflate_decompressor *decompressor;
+
     struct sha3_context hash_c; /*!< Currently computed hash of the data. */
     const uint8_t *computed_hash; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 
-    size_t (*sdb_write)(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io);
+    size_t (*sdb_write)(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io); /* TODO Do we need the ret value */
     size_t (*sdb_read)(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io);
     off_t (*sdb_tell)(struct selva_io *io);
     int (*sdb_seek)(struct selva_io *io, off_t offset, int whence);

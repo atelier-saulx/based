@@ -26,7 +26,7 @@ Selva binary dump serialization format (.sdb).
 48 | 00 00 00 00 00 00 00 00 |
 50 | 00 00 00 00 00 00 00 00 |
    |-------------------------|
-58 | 00 00 00 00 00 00 00 00 | unused spare/pad
+58 | 01 00 00 00 00 00 00 00 | uin32_t version | uint32_t flags
    |=========================|
 60 |                         | Data stored as selva_proto structs:
    |          UDATA          | - selva_proto_double
@@ -36,7 +36,7 @@ Selva binary dump serialization format (.sdb).
    | 00 00 00 41 56 4C 45 53 | Magic string "\0\0\0AVLES"
    |-------------------------|
    | XX XX XX XX XX XX XX XX | SHA-3 of the file
-   | XX XX XX XX XX XX XX XX | from 0 to the last magic string.
+   | XX XX XX XX XX XX XX XX | from 0 to the beginning last magic string but
+   | XX XX XX XX XX XX XX XX | over uncompressed data.
    | XX XX XX XX XX XX XX XX | binary
-   | XX XX XX XX XX XX XX XX | 
 ```

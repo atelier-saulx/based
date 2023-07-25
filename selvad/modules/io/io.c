@@ -195,7 +195,7 @@ int selva_io_init(struct selva_io *io, const char *filename, enum selva_io_flags
         return SELVA_EGENERAL;
     }
 
-    init_io_file(io, file, filename, flags);
+    init_io_file(io, file, filename, flags | SELVA_IO_FLAGS_COMPRESSED);
 
     return 0;
 }
@@ -282,6 +282,8 @@ void selva_io_end(struct selva_io *io)
 
         selva_string_free(io->file_io.filename);
     }
+
+    sdb_deinit(io);
 }
 
 void selva_io_save_unsigned(struct selva_io *io, uint64_t value)
