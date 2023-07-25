@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "4.8.1",
+  "version": "4.8.2",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
