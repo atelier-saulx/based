@@ -748,7 +748,6 @@ static struct SelvaObjectKey *find_key_rb(struct SelvaObject *obj, const char *k
     _Alignas(struct SelvaObjectKey) char buf[key_size];
     struct SelvaObjectKey *filter = (struct SelvaObjectKey *)buf;
 
-    /* This is not necessary as only the name is compared. */
     memcpy(filter->name, key_name_str, key_name_len);
     filter->name[key_name_len] = '\0';
     filter->name_len = key_name_len;
