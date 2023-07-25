@@ -3,6 +3,10 @@ import { BasedClient } from '../src/index'
 import { BasedServer } from '@based/server'
 import { isClientContext } from '@based/functions'
 
+import fetch from '@based/fetch'
+
+console.log(fetch)
+
 test.serial('allow overwrite getIp', async (t) => {
   const coreClient = new BasedClient()
 
