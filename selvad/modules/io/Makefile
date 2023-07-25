@@ -9,7 +9,7 @@ OBJ := \
 	   version.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_IO_MAIN=1 -DSELVA_IO_TYPE
-LDFLAGS += -lutil -lsha3iuf -ljemalloc_selva
+LDFLAGS += -lutil -lsha3iuf -ljemalloc_selva -ldeflate
 TARGET := ../mod_io$(MOD_SUFFIX)
 
 $(TARGET): $(OBJ)

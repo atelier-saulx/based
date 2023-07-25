@@ -11,6 +11,7 @@
 #include "jemalloc.h"
 #include "sha3iuf/sha3.h"
 #include "libdeflate.h"
+#include "endian.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_log.h"
