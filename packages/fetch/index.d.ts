@@ -1,5 +1,4 @@
-import fetch from 'cross-fetch'
+import crossFetch from 'cross-fetch'
 
-declare module 'test' {
-	export default typeof fetch
-}
+const fetch: typeof crossFetch
+export default fetch
