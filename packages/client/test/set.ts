@@ -133,7 +133,7 @@ test.serial.only('set primitive fields', async (t) => {
     slug: '/hello-world',
     num: 25.5,
     int: 112,
-    ts: Date.now(),
+    ts: 1690289344322,
     bool: true,
     obj: {
       a: 11,
@@ -236,14 +236,60 @@ test.serial.only('set primitive fields', async (t) => {
       merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
       limit: BigInt(-1),
       offset: BigInt(0),
-      res_opt_str: '*\naliases\nparents\nchildren',
+      res_opt_str: '*\naliases\nparents\nchildren\n!createdAt\n!updatedAt',
     }),
     'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '#1',
   ])
   console.dir(find, { depth: 6 })
+  const res = find[0]
+  t.deepEqual(res[0][0], 'po1')
+  t.deepEqual(
+    res[0][1].sort(),
+    [
+      'aliases',
+      ['main'],
+      'arys',
+      [
+        'floats',
+        [-1.1, 0, 1.1, 2.2, 3.3, 4.4, 5.5],
+        'ints',
+        [1n, 6n, 3n, 4n, 5n],
+        'objs',
+        [
+          ['a', 1],
+          ['b', 'hello'],
+        ],
+        'strs',
+        ['a', 'b', 'c', 'def', 'gh'],
+      ],
+      'bool',
+      1n,
+      'id',
+      'po1',
+      'int',
+      112n,
+      'num',
+      25.5,
+      'obj',
+      ['a', 11, 'b', 'hello'],
+      'slug',
+      '/hello-world',
+      'ts',
+      1690289344322n,
+      'aliases',
+      ['main'],
+      'parents',
+      ['root'],
+      'children',
+      ['po2'],
+    ].sort()
+  )
 
-  console.log('ALIASES', await client.command('lsaliases'))
+  t.deepEqual(
+    (await client.command('lsaliases'))[0].sort(),
+    ['main', 'po1', 'sec', 'po2'].sort()
+  )
 
   t.true(true)
 })
