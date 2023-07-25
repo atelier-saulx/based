@@ -8,7 +8,16 @@ const schema: BasedSchema = {
       fields: {
         name: {
           minLength: 3,
+          maxLength: 6,
           type: 'string',
+        },
+        phonkName: {
+          type: 'string',
+          pattern: '\\${1,4}',
+        },
+        bla: {
+          type: 'set',
+          items: { type: 'string', minLength: 3, maxLength: 6 },
         },
       },
     },
@@ -54,35 +63,121 @@ test.serial('string max length', async (t) => {
       handlers
     )
   )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        name: 'axaxaxax',
+      },
+      handlers
+    )
+  )
   await setWalker(
     schema,
     {
       $id: 'bl1',
-      name: 'xax',
+      name: 'xaxx',
     },
     handlers
   )
-  t.deepEqual(results, [{ path: ['name'], value: 'xax' }])
+  t.deepEqual(results, [{ path: ['name'], value: 'xaxx' }])
 })
 
-// test.serial('text', async (t) => {
-//   const { handlers } = createHandlers()
-//   await t.throwsAsync(
-//     setWalker(
-//       schema,
-//       {
-//         $id: 'bl1',
-//         name: 'ax',
-//       },
-//       handlers
-//     )
-//   )
-//   await setWalker(
-//     schema,
-//     {
-//       $id: 'bl1',
-//       name: 'xa',
-//     },
-//     handlers
-//   )
-// })
+test.serial('set with strings', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        bla: ['ax', 'axa', 'axxxxa'],
+      },
+      handlers
+    )
+  )
+  t.deepEqual(results, [])
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      bla: ['axx', 'axxxx', 'blaaa'],
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['bla'], value: { $value: ['axx', 'axxxx', 'blaaa'] } },
+  ])
+})
+
+test.serial('string pattern', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        phonkName: 'blabla',
+      },
+      handlers
+    )
+  )
+  t.deepEqual(results, [])
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      phonkName: 'bla$',
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['phonkName'], value: 'bla$' }])
+})
+
+test.serial('setting $default', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        phonkName: { $default: 'blabla' },
+      },
+      handlers
+    )
+  )
+  t.deepEqual(results, [])
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      phonkName: { $default: 'bla$' },
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['phonkName'], value: { $default: 'bla$' } }])
+})
+
+test.serial('setting $value', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        phonkName: { $value: 'blabla' },
+      },
+      handlers
+    )
+  )
+  t.deepEqual(results, [])
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      phonkName: { $value: 'bla$' },
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['phonkName'], value: { $value: 'bla$' } }])
+})

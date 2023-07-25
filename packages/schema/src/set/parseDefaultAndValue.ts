@@ -18,14 +18,22 @@ export const parseValueAndDefault: Parser<keyof BasedSchemaFields> = async (
     const parse = parsers[typeDef]
     if (value.$value !== undefined) {
       // TODO: for errors handle path a bit smarter...
-      parse(path, value.$value, fieldSchema, typeSchema, target, handlers, true)
+      await parse(
+        path,
+        value.$value,
+        fieldSchema,
+        typeSchema,
+        target,
+        handlers,
+        true
+      )
       handled = true
     }
     if (value.$default !== undefined) {
       if (value.$value !== undefined) {
         error(path, ParseError.valueAndDefault)
       }
-      parse(
+      await parse(
         path,
         value.$default,
         fieldSchema,

@@ -89,7 +89,7 @@ export type BasedSchemaStringShared = {
   maxLength?: number
   contentMediaEncoding?: string // base64
   contentMediaType?: BasedSchemaContentMediaType
-  pattern?: BasedSchemaPattern
+  pattern?: BasedSchemaPattern // TODO: does not exist
   format?:
     | 'email'
     | 'URL'
