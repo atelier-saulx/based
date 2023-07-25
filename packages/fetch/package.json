@@ -1,6 +1,6 @@
 {
   "name": "@based/fetch",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "CF worker compatible cross-fetch",
   "author": "Tony Kovanen",
   "license": "ISC",
