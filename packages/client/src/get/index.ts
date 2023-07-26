@@ -72,11 +72,14 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
             struct.dir_opt_str = cmd.sourceField
           }
         } else {
-          struct.dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION
+          struct.dir = cmd.recursive
+            ? SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION
+            : SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EXPRESSION
           struct.dir_opt_str = bfsExpr2rpn(
             ctx.client.schema.types,
             cmd.traverseExpr
           )
+          console.log('DIR OPT', struct.dir_opt_str)
         }
 
         if (cmd.filter) {
@@ -116,7 +119,7 @@ function getFields(
     for (const f of opts.$any) {
       if (f === '$all') {
         $any.add('*')
-      } else {
+      } else if (typeof f === 'string') {
         $any.add(f)
       }
     }

@@ -363,6 +363,30 @@ test.serial.only('set primitive fields', async (t) => {
     ['id', third, 'slug', '/third', 'parents', ['po2'], 'children', []].sort()
   )
 
+  const expr = await client.get([
+    {
+      type: 'traverse',
+      fields: {
+        $any: ['id'],
+        meh: ['title'],
+      },
+      paging: { limit: -1, offset: 0 },
+      traverseExpr: {
+        post: 'children',
+        meh: false,
+        $any: 'children',
+      },
+      source: { id: third },
+      target: { path: 'things' },
+    },
+  ])
+
+  console.dir({ expr }, { depth: 6 })
+
+  const meh = expr[0][0][0]
+  t.deepEqual(meh[0], 'me1')
+  t.deepEqual(meh[1].sort(), ['id', 'me1', 'title', 'Hello'].sort())
+
   t.deepEqual(
     (await client.command('lsaliases'))[0].sort(),
     ['main', 'po1', 'sec', 'po2'].sort()
