@@ -61,7 +61,7 @@ const createHandlers = (): {
   return { results, handlers }
 }
 
-test.skip('min-max', async (t) => {
+test('min-max', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -105,7 +105,8 @@ test.skip('min-max', async (t) => {
     { path: ['number'], value: 6 },
   ])
 })
-test.skip('min-max exclusive', async (t) => {
+
+test('min-max exclusive', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -150,7 +151,8 @@ test.skip('min-max exclusive', async (t) => {
     { path: ['exclusiveminmax'], value: 5 },
   ])
 })
-test.skip('isInteger', async (t) => {
+
+test('isInteger', async (t) => {
   const { handlers, results } = createHandlers()
 
   await t.throwsAsync(
@@ -174,7 +176,8 @@ test.skip('isInteger', async (t) => {
   )
   t.deepEqual(results, [{ path: ['integer'], value: 5 }])
 })
-test.skip('isMultiple', async (t) => {
+
+test('isMultiple', async (t) => {
   const { handlers, results } = createHandlers()
 
   await t.throwsAsync(
