@@ -1,7 +1,6 @@
 import { ParseError } from './set/error'
 import { BasedSchema, BasedSetHandlers, BasedSetTarget } from './types'
 import { BasedSchemaType, BasedSchemaFields } from './types'
-import { SetOptional } from 'type-fest'
 
 type Path = (string | number)[]
 
@@ -33,24 +32,20 @@ export type Args<
   error: ErrorHandler<T>
 }
 
-export type FieldParser<T, K extends keyof BasedSchemaFields> = (
+export type FieldParser<K extends keyof BasedSchemaFields, T = any> = (
   args: Args<T, K>
 ) => Promise<Args<T> | void>
 
-export type KeyParser<T> = (
+export type KeyParser<T = any> = (
   args: Args<T, keyof BasedSchemaFields>
 ) => Promise<Args<T> | void>
 
 export type Opts<T> = {
   schema: BasedSchema
-  init: (
-    value: any,
-    opts: Opts<T>,
-    errors: { code: ParseError; message: string }[]
-  ) => Promise<T>
+  init: (value: any, args: Args<T>) => Promise<Args<T>>
   parsers: {
     fields: Partial<{
-      [Key in keyof BasedSchemaFields]: FieldParser<T, Key>
+      [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
     }>
     keys: { [key: string]: KeyParser<T> } // $list -> true
     any: KeyParser<T> // y.x
@@ -82,8 +77,6 @@ export const walk = async <T>(
     opts.requiresAsyncValidation = async () => true
   }
 
-  const target = await opts.init(value, opts, errors)
-
   const errorsCollector: ErrorHandler<T> = (args, code) => {
     const err = {
       code,
@@ -104,8 +97,8 @@ export const walk = async <T>(
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
       parentValue: value ? prevArgs.value : undefined,
       value: value ?? prevArgs.value,
-      target,
-      parse,
+      target: prevArgs.target,
+      parse: prevArgs.parse,
       collect: (args) => {
         collectedCommands.push(opts.collect(args))
       },
@@ -153,9 +146,7 @@ export const walk = async <T>(
           )
         }
       }
-
       await Promise.all(q)
-
       if (fromBackTrack.length) {
         args.backtrack(args, fromBackTrack)
       } else if (collectedCommands.length) {
@@ -163,23 +154,28 @@ export const walk = async <T>(
       }
     }
   }
-
-  const args: Args<T> = {
+  const args: Args<T> = await opts.init(value, <Args<T>>{
     schema: opts.schema,
     path: [],
     value,
-    target,
     parse,
     collect: opts.collect,
     backtrack: opts.backtrack,
     error: errorsCollector,
     requiresAsyncValidation: opts.requiresAsyncValidation,
+  })
+
+  if (!args) {
+    return {
+      // TODO: temp
+      // @ts-ignore // for now
+      target: {},
+      errors,
+    }
   }
-
   await parse(args)
-
   return {
-    target,
+    target: args.target,
     errors,
   }
 }

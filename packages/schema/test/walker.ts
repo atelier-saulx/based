@@ -36,9 +36,9 @@ test('walker', async (t) => {
   const x = await walk(
     {
       schema,
-      init: async () => {
+      init: async (args) => {
         console.log('init!\n')
-        return { lullz: true }
+        return { ...args, target: { lullz: true } }
       },
       parsers: {
         keys: {
