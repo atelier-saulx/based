@@ -60,9 +60,42 @@ struct SelvaFind_QueryOpts {
      * What is expected to be returned to the client.
      */
     enum {
+        /**
+         * Return ids of the nodes matching the query.
+         */
         SELVA_FIND_QUERY_RES_IDS = 0,
+        /**
+         * Return selected fields from the matching nodes.
+         *
+         * **res_opt format**
+         *
+         * The list is separated with a newline `\n`
+         *
+         * - `field` = Take a field if it exists on the node
+         * - `field1|field2` = Take first field that exists:
+         * - `!field` = Exclude field
+         * - `*` - Wildcard
+         *
+         * Also the field names can contain wildcards as supported by SelvaObject.
+         */
         SELVA_FIND_QUERY_RES_FIELDS,
+        /**
+         * Execute an RPN expression for each node to decide the fields.
+         * The RPN expression must return a set of field names (strings).
+         *
+         * **Supported notation for field names**
+         *
+         * `^` = Inherit the field
+         * `*` = wildcard
+         *
+         * Also the field names can contain wildcards as supported by SelvaObject.
+         */
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
+        /**
+         * Inherit with an expression.
+         * This works similarly to SELVA_FIND_QUERY_RES_FIELDS_RPN but the
+         * response format is different.
+         */
         SELVA_FIND_QUERY_RES_INHERIT_RPN,
     } res_type;
 
