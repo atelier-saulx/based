@@ -43,7 +43,7 @@ export type GetNode = {
 export type GetTraverse = {
   type: 'traverse'
 
-  paging: { limit: number; offset: number }
+  paging?: { limit: number; offset: number }
   filter?: Filter | Filter[]
   nestedCommands?: GetCommand[]
   recursive?: boolean
