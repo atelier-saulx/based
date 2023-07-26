@@ -8,9 +8,11 @@ const schema: BasedSchema = {
       fields: {
         ref: {
           type: 'reference',
+          allowedTypes: ['bla'],
         },
         ref2: {
           type: 'references',
+          allowedTypes: ['bla'],
         },
         arr: {
           type: 'array',

@@ -104,6 +104,8 @@ export const references: Parser<'references'> = async (
         })
       )
     }
+  } else {
+    error(handlers, ParseError.incorrectFormat, path)
   }
   if (!noCollect) {
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
