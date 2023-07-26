@@ -18,6 +18,26 @@ import { SelvaTraversal } from '../protocol'
 
 export * from './types'
 
+const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
+  descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+  ancestors: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+  children: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_CHILDREN,
+  parents: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_PARENTS,
+}
+
+const RECURSIVE_TRAVERSE_MODES: Record<number, protocol.SelvaTraversal> = {
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_CHILDREN]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_PARENTS]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD,
+}
+
 // TODO: here recognize all the commands that can be run in one find and do it
 export async function get(ctx: ExecContext, commands: GetCommand[]) {
   return await Promise.all(
@@ -29,16 +49,44 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         )
       }
 
-      switch (cmd.type) {
-        case 'node':
-          return execSingle(ctx, cmd)
-        case 'traverse_field':
-          return execTraverseField(ctx, cmd)
-        case 'traverse_expr':
-          return execTraverseExpr(ctx, cmd)
-        default:
-          return []
+      const { client } = ctx
+
+      // TODO: handle different types
+      const { fields, isRpn } = getFields(ctx, cmd.fields)
+
+      let dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
+      let rpn = ['#1']
+
+      if (cmd.type === 'traverse_field') {
+        dir =
+          TRAVERSE_MODES[cmd.sourceField] ||
+          SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
+
+        dir = cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir
+
+        if (cmd.filter) {
+          const ast = createAst(cmd.filter)
+          if (ast) {
+            rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
+          }
+        }
       }
+
+      const find = await client.command('hierarchy.find', [
+        ctx.lang || '',
+        createRecord(protocol.hierarchy_find_def, {
+          dir,
+          res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+          merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+          limit: BigInt(-1),
+          offset: BigInt(0),
+          res_opt_str: fields,
+        }),
+        sourceId(cmd),
+        ...rpn,
+      ])
+
+      return find
     })
   )
 }
@@ -126,70 +174,4 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
   ])
 
   return find
-}
-
-const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
-  descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-  ancestors: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
-  children: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_CHILDREN,
-  parents: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_PARENTS,
-}
-
-const RECURSIVE_TRAVERSE_MODES: Record<number, protocol.SelvaTraversal> = {
-  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS]:
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS]:
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
-  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_CHILDREN]:
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_PARENTS]:
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
-  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD]:
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD,
-}
-
-async function execTraverseField(
-  ctx: ExecContext,
-  cmd: GetTraverseField
-): Promise<void> {
-  const { client } = ctx
-
-  // TODO: handle different types
-  const { fields, isRpn } = getFields(ctx, cmd.fields)
-
-  const dir =
-    TRAVERSE_MODES[cmd.sourceField] ||
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
-
-  let rpn = ['#1']
-  if (cmd.filter) {
-    const ast = createAst(cmd.filter)
-    if (ast) {
-      rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
-    }
-  }
-
-  const find = await client.command('hierarchy.find', [
-    ctx.lang || '',
-    createRecord(protocol.hierarchy_find_def, {
-      dir: cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir,
-      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-      limit: BigInt(-1),
-      offset: BigInt(0),
-      res_opt_str: fields,
-    }),
-    sourceId(cmd),
-    ...rpn,
-  ])
-
-  return find
-}
-
-// TODO
-async function execTraverseExpr(
-  ctx: ExecContext,
-  cmd: GetTraverseExpr
-): Promise<void> {
-  return
 }
