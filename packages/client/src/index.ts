@@ -1,9 +1,4 @@
-import {
-  BasedSchema,
-  BasedSchemaCollectProps,
-  BasedSchemaPartial,
-  setWalker,
-} from '@based/schema'
+import { BasedSchema, BasedSchemaPartial, setWalker, walk } from '@based/schema'
 
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
@@ -73,6 +68,9 @@ export class BasedDbClient extends Emitter {
     const args: any[] = []
     const { $alias, $id, $language } = await setWalker(this.schema, opts, {
       // TODO: we will design how non-type generic filters work later
+      checkRequiredFields: async (path) => {
+        return true
+      },
       referenceFilterCondition: async (id) => {
         return true
       },
@@ -100,6 +98,49 @@ export class BasedDbClient extends Emitter {
     }
 
     return resp?.[0]?.[0]
+  }
+
+  async things(opts: any): Promise<void> {
+    console.log('walking')
+    await walk(
+      {
+        async init(val, args) {
+          // TODO: deal with alias etc.
+          return { $id: val.$id }
+        },
+        collect(args) {
+          console.log('PUT', args.path, args.value)
+          if (args.value === true) {
+            return args.path[args.path.length - 1]
+          }
+        },
+        schema: this.schema,
+        parsers: {
+          fields: {},
+          keys: {
+            $id: async (args) => {
+              if (!args.path.length) {
+                return
+              }
+
+              return args
+            },
+          },
+          async any(args) {
+            args.collect(args)
+            return args
+          },
+        },
+        backtrack(cmds) {
+          console.log('BACKTRACK', cmds)
+          return cmds
+        },
+        async requiresAsyncValidation(t) {
+          return false
+        },
+      },
+      opts
+    )
   }
 
   // TODO: real opts

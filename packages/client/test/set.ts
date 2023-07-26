@@ -401,5 +401,14 @@ test.serial.only('set primitive fields', async (t) => {
     ['main', 'po1', 'sec', 'po2'].sort()
   )
 
+  await client.things({
+    $id: 'root',
+    descendants: {
+      id: true,
+      title: true,
+      $list: true,
+    },
+  })
+
   t.true(true)
 })
