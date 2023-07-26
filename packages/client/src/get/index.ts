@@ -112,7 +112,7 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
   const { fields, isRpn } = getFields(ctx, cmd.fields)
 
   const find = await client.command('hierarchy.find', [
-    '',
+    ctx.lang || '',
     createRecord(protocol.hierarchy_find_def, {
       dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
@@ -165,13 +165,12 @@ async function execTraverseField(
   if (cmd.filter) {
     const ast = createAst(cmd.filter)
     if (ast) {
-      // TODO: language
-      rpn = ast2rpn(ctx.client.schema.types, ast, '')
+      rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
     }
   }
 
   const find = await client.command('hierarchy.find', [
-    '',
+    ctx.lang || '',
     createRecord(protocol.hierarchy_find_def, {
       dir: cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
