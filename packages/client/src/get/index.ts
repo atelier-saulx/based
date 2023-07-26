@@ -9,6 +9,13 @@ export * from './types'
 export async function get(ctx: ExecContext, commands: GetCommand[]) {
   return await Promise.all(
     commands.map(async (cmd) => {
+      if (cmd.source.alias && !cmd.source.id) {
+        cmd.source.id = await ctx.client.command(
+          'resolve.nodeid',
+          cmd.source.alias
+        )
+      }
+
       switch (cmd.type) {
         case 'node':
           return execSingle(ctx, cmd)
@@ -76,6 +83,14 @@ function getFields(
   return { isRpn: false, fields: str }
 }
 
+function sourceId(cmd: GetCommand): string {
+  return cmd.source.idList
+    ? cmd.source.idList
+        .map((id) => id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'))
+        .join('')
+    : cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0')
+}
+
 async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
   const { client } = ctx
 
@@ -92,8 +107,7 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
       offset: BigInt(0),
       res_opt_str: fields,
     }),
-    // TODO: handle if no id case
-    cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
+    sourceId(cmd),
     '#1',
   ])
 
@@ -117,8 +131,7 @@ async function execTraverse(ctx: ExecContext, cmd: GetTraverse): Promise<void> {
       offset: BigInt(0),
       res_opt_str: fields,
     }),
-    // TODO: handle if no id case
-    cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
+    sourceId(cmd),
     // TODO: gen filter expr
     '#1',
   ])
