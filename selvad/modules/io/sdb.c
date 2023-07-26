@@ -19,6 +19,7 @@
 #include "sdb.h"
 
 #define SDB_VERSION 1
+#define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
 extern const char * const selva_db_version;
@@ -332,6 +333,8 @@ void sdb_init(struct selva_io *io)
         io->sdb_flush = sdb_flush_string;
         io->sdb_error = sdb_error_string;
         io->sdb_clearerr = sdb_clearerr_string;
+
+        assert(!(io->flags & SELVA_IO_FLAGS_COMPRESSED));
     }
 }
 
@@ -349,6 +352,7 @@ void sdb_deinit(struct selva_io *io)
 int sdb_write_header(struct selva_io *io)
 {
     const char *created_with;
+    const uint32_t save_flags = io->flags & SAVE_FLAGS_MASK;
     int err;
 
     if (selva_db_version_info.created_with[0] != '\0') {
@@ -361,7 +365,7 @@ int sdb_write_header(struct selva_io *io)
     io->sdb_write(created_with, sizeof(char), SELVA_DB_VERSION_SIZE, io);
     io->sdb_write(selva_db_version_info.running, sizeof(char), SELVA_DB_VERSION_SIZE, io); /* updated_with */
     io->sdb_write(&(uint32_t){SDB_VERSION}, sizeof(uint32_t), 1, io);
-    io->sdb_write(&(uint32_t){0}, sizeof(uint32_t), 1, io);
+    io->sdb_write(&save_flags, sizeof(uint32_t), 1, io);
     err = io->sdb_error(io);
 
     if (io->flags & SELVA_IO_FLAGS_COMPRESSED) {

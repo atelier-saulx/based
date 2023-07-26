@@ -195,7 +195,12 @@ int selva_io_init(struct selva_io *io, const char *filename, enum selva_io_flags
         return SELVA_EGENERAL;
     }
 
-    init_io_file(io, file, filename, flags | SELVA_IO_FLAGS_COMPRESSED);
+    if (flags & SELVA_IO_FLAGS_WRITE) {
+        /* We always compress files. */
+        flags |= SELVA_IO_FLAGS_COMPRESSED;
+    }
+
+    init_io_file(io, file, filename, flags);
 
     return 0;
 }
@@ -205,7 +210,7 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
     struct selva_string *s = selva_string_create(NULL, 0, SELVA_STRING_MUTABLE);
 
     flags |= SELVA_IO_FLAGS_WRITE;
-    if (!valid_flags(flags)) {
+    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
         return NULL;
     }
 
@@ -217,7 +222,7 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
 int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags)
 {
     flags |= SELVA_IO_FLAGS_READ;
-    if (!valid_flags(flags)) {
+    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
         return SELVA_EINVAL;
     }
 
