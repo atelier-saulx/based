@@ -202,6 +202,26 @@ test('isMultiple', async (t) => {
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
 
+test('set', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        set: [9, 4, 5, 2],
+      },
+      handlers
+    )
+  )
+  //minx max dont work here
+
+  await setWalker(schema, { $id: 'bl1', set: [3, 3, 3, 3] }, handlers)
+  console.log(results)
+  //weird does it have to be with value object?
+  t.deepEqual(results, [{ path: ['set'], value: { $value: [3, 3, 3, 3] } }])
+})
+
 test('value', async (t) => {
   const { handlers, results } = createHandlers()
 
@@ -235,6 +255,18 @@ test('value', async (t) => {
       handlers
     )
   )
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        set: { $value: [1, 3, 3, 4] },
+      },
+      handlers
+    )
+  )
+
   console.log('------------>', results)
   await t.throwsAsync(
     setWalker(
@@ -279,10 +311,127 @@ test('value', async (t) => {
     },
     handlers
   )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      set: { $value: [3, 3, 3, 4] },
+    },
+    handlers
+  )
   t.deepEqual(results, [
     { path: ['number'], value: { $value: 4 } },
     { path: ['integer'], value: { $value: 4 } },
     { path: ['exclusiveminmax'], value: { $value: 4 } },
     { path: ['multipleOf'], value: { $value: 6 } },
+    { path: ['set'], value: { $value: [3, 3, 3, 4] } },
+  ])
+})
+test.only('default', async (t) => {
+  const { handlers, results } = createHandlers()
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $default: 7 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $default: 3 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        integer: { $default: 3.5 },
+      },
+      handlers
+    )
+  )
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        set: { $default: [1, 3, 3, 4] },
+      },
+      handlers
+    )
+  )
+
+  // validate default stuff
+  console.log('------------>', results)
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        multipleOf: { $default: 2 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: { $default: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      integer: { $default: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: { $default: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      multipleOf: { $default: 6 },
+    },
+    handlers
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      set: { $default: [3, 3, 3, 4] },
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['number'], value: { $default: 4 } },
+    { path: ['integer'], value: { $default: 4 } },
+    { path: ['exclusiveminmax'], value: { $default: 4 } },
+    { path: ['multipleOf'], value: { $default: 6 } },
+    { path: ['set'], value: { $default: [3, 3, 3, 4] } },
   ])
 })
