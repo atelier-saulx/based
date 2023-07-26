@@ -75,12 +75,19 @@ test.serial.only('set primitive fields', async (t) => {
     $defs: {},
     prefixToTypeMapping: {
       po: 'post',
+      me: 'meh',
     },
     root: {
       prefix: 'ro',
       fields: {},
     },
     types: {
+      meh: {
+        prefix: 'me',
+        fields: {
+          str: { type: 'string' },
+        },
+      },
       post: {
         prefix: 'po',
         fields: {
@@ -126,6 +133,11 @@ test.serial.only('set primitive fields', async (t) => {
         },
       },
     },
+  })
+
+  await client.set({
+    $id: 'me1',
+    str: 'hello',
   })
 
   await client.set({
@@ -244,8 +256,15 @@ test.serial.only('set primitive fields', async (t) => {
       },
       source: { id: 'root' },
       target: { path: 'things' },
+      filter: {
+        $field: 'type',
+        $operator: '=',
+        $value: 'post',
+      },
     },
   ])
+
+  t.deepEqual(find[0][0].length, 3)
 
   console.dir(find, { depth: 6 })
   const po1 = find[0][0][0]

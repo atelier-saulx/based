@@ -3,13 +3,17 @@ import {
   Fields,
   GetCommand,
   GetNode,
-  GetTraverse,
   GetTraverseExpr,
   GetTraverseField,
 } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
-import { bfsExpr2rpn, TraverseByType } from '@based/db-query'
+import {
+  ast2rpn,
+  createAst,
+  TraverseByType,
+  bfsExpr2rpn,
+} from '@based/db-query'
 import { SelvaTraversal } from '../protocol'
 
 export * from './types'
@@ -157,10 +161,18 @@ async function execTraverseField(
     TRAVERSE_MODES[cmd.sourceField] ||
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
 
+  let rpn = ['#1']
+  if (cmd.filter) {
+    const ast = createAst(cmd.filter)
+    if (ast) {
+      // TODO: language
+      rpn = ast2rpn(ctx.client.schema.types, ast, '')
+    }
+  }
+
   const find = await client.command('hierarchy.find', [
     '',
     createRecord(protocol.hierarchy_find_def, {
-      // TODO: pluggable direction
       dir: cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
       merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
@@ -169,8 +181,7 @@ async function execTraverseField(
       res_opt_str: fields,
     }),
     sourceId(cmd),
-    // TODO: gen filter expr
-    '#1',
+    ...rpn,
   ])
 
   return find
@@ -181,26 +192,5 @@ async function execTraverseExpr(
   ctx: ExecContext,
   cmd: GetTraverseExpr
 ): Promise<void> {
-  const { client } = ctx
-
-  // TODO: handle different types
-  const { fields, isRpn } = getFields(ctx, cmd.fields)
-
-  const find = await client.command('hierarchy.find', [
-    '',
-    createRecord(protocol.hierarchy_find_def, {
-      // TODO: pluggable direction
-      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-      limit: BigInt(-1),
-      offset: BigInt(0),
-      res_opt_str: fields,
-    }),
-    sourceId(cmd),
-    // TODO: gen filter expr
-    '#1',
-  ])
-
-  return find
+  return
 }
