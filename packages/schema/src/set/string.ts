@@ -138,8 +138,6 @@ export const text: Parser<'text'> = async (
   handlers,
   noCollect
 ) => {
-  console.info('go ---> do text', path, noCollect)
-
   const valueType = typeof value
   if (target.$language && valueType === 'string') {
     validate(path, value, fieldSchema)
