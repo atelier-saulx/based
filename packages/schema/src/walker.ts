@@ -27,7 +27,7 @@ export type Args<
   parse: Parse<T>
   collect: (args: Args<T>) => any
   backtrack: (collectedCommands: any[]) => any
-  requiresAsyncValidaton: (validationType: any) => Promise<any>
+  requiresAsyncValidation: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
 }
 
@@ -55,7 +55,7 @@ export type Opts<T> = {
   }
   collect: (args: Args<T>) => any
   backtrack: (collectedCommands: any[]) => any // from back TRACKS OR COLLECT
-  requiresAsyncValidaton: (validationType: any) => Promise<boolean>
+  requiresAsyncValidation: (validationType: any) => Promise<boolean>
 }
 
 export const walk = async <T>(
@@ -71,7 +71,7 @@ export const walk = async <T>(
   const errorsCollector: ErrorHandler<T> = (args, code) => {
     errors.push({
       code,
-      message: 'flap flap',
+      message: `Error in ${args.path.join('.')}`,
     })
   }
 
@@ -92,7 +92,7 @@ export const walk = async <T>(
         fromBackTrack.push(opts.backtrack(args))
       },
       error: errorsCollector,
-      requiresAsyncValidaton: opts.requiresAsyncValidaton,
+      requiresAsyncValidation: opts.requiresAsyncValidation,
     }
     if (typeof args.value === 'object' && args.value !== null) {
       const q: Promise<Args<T> | void>[] = []
@@ -140,7 +140,7 @@ export const walk = async <T>(
     collect: opts.collect,
     backtrack: opts.backtrack,
     error: errorsCollector,
-    requiresAsyncValidaton: opts.requiresAsyncValidaton,
+    requiresAsyncValidation: opts.requiresAsyncValidation,
   }
 
   parse(args)

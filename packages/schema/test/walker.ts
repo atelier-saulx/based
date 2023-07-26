@@ -65,7 +65,7 @@ test('walker', async (t) => {
         // if return next btrack will not receive  backtrack from commands
         return collectedCommands
       },
-      requiresAsyncValidaton: async (validateType) => {
+      requiresAsyncValidation: async (validateType) => {
         // console.info('lullz async validaion at the end!')
         return true
       },
