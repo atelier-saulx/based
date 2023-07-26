@@ -12,9 +12,12 @@ export type TraverseByType = {
   [k: string]: TraverseByTypeExpression
 }
 
+// * = all
+// <identifier>@<field(s)> = $field (alias field)
+// <field1>|<field2>|<field3> = $field with array option
 export type Fields = {
-  $any?: (string | string[])[]
-  [type: string]: (string | string[])[]
+  $any?: string[]
+  [type: string]: string[]
 }
 
 export type TraverseByTypeExpression =

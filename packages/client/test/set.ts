@@ -249,7 +249,7 @@ test.serial.only('set primitive fields', async (t) => {
         $any: [
           '*',
           'aliases',
-          ['nonExistingField', 'parents'],
+          'nonExistingField|parents',
           'children',
           '!createdAt',
           '!updatedAt',
@@ -343,7 +343,7 @@ test.serial.only('set primitive fields', async (t) => {
         $any: [
           '*',
           'aliases',
-          ['nonExistingField', 'parents'],
+          'nonExistingField|parents',
           'children',
           '!createdAt',
           '!updatedAt',
