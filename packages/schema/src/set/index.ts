@@ -185,7 +185,6 @@ export const setWalker = async (
           return str + `\n - ${info.message}`
         }, '')
     )
-    console.error(err)
     throw err
   }
 

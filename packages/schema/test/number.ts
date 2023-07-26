@@ -1,10 +1,5 @@
 import test from 'ava'
-import {
-  BasedSchema,
-  setWalker,
-  BasedSetHandlers,
-  BasedSetOptionalHandlers,
-} from '../src/index'
+import { BasedSchema, setWalker, BasedSetOptionalHandlers } from '../src/index'
 
 const schema: BasedSchema = {
   types: {

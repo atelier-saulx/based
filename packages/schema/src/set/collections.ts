@@ -102,7 +102,7 @@ export const object: Parser<'object'> = async (
     const propDef = fieldSchema.properties[key]
     if (!propDef) {
       error(handlers, ParseError.fieldDoesNotExist, [...path, key])
-      return
+      continue
     }
     q.push(
       fieldWalker(

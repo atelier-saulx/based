@@ -464,40 +464,30 @@ test('required', async (t) => {
 })
 
 test.only('collect all errors', async (t) => {
-  await setWalker(
-    schema,
-    {
-      type: 'bla',
-      blub: 1,
-      flap: 1,
-      snurp: {
-        x: { a: 'b' },
+  try {
+    await setWalker(
+      schema,
+      {
+        type: 'bla',
+        blub: 'snux',
+        flap: 'gurt',
+        snurp: {
+          // checking non formattred objects
+          x: { a: 20220 },
+        },
       },
-    },
-    {
-      collectErrors: (info) => {
-        // {
-        //   path,
-        //   value,
-        //   typeSchema,
-        //   fieldSchema,
-        //   target,
-        //   code,
-        //   message,
-        // }
-
-        console.error(info.message)
-        // fix fields (too heavy)
-      },
-      collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
-      checkRequiredFields: async (paths) => {
-        return true
-      },
-      referenceFilterCondition: async (id, filter) => {
-        return true
-      },
-    }
-  )
+      {
+        checkRequiredFields: async (paths) => {
+          return true
+        },
+        referenceFilterCondition: async (id, filter) => {
+          return true
+        },
+      }
+    )
+  } catch (err) {
+    console.info(err)
+  }
 
   t.true(true)
 })
