@@ -1,6 +1,7 @@
 import { ParseError } from './set/error'
 import { BasedSchema, BasedSetHandlers, BasedSetTarget } from './types'
 import { BasedSchemaType, BasedSchemaFields } from './types'
+import { SetOptional } from 'type-fest'
 
 type Path = (string | number)[]
 
@@ -22,11 +23,12 @@ export type Args<
   fieldSchema?: BasedSchemaFields[K]
   typeSchema?: BasedSchemaType
   path: Path
+  key?: number | string
   value: any
   target: T
   parse: Parse<T>
   collect: (args: Args<T>) => any
-  backtrack: (collectedCommands: any[]) => any
+  backtrack: (args: Args<T>, collectedCommands: any[]) => any
   requiresAsyncValidation: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
 }
@@ -53,9 +55,10 @@ export type Opts<T> = {
     keys: { [key: string]: KeyParser<T> } // $list -> true
     any: KeyParser<T> // y.x
   }
-  collect: (args: Args<T>) => any
-  backtrack: (collectedCommands: any[]) => any // from back TRACKS OR COLLECT
-  requiresAsyncValidation: (validationType: any) => Promise<boolean>
+  collect?: (args: Args<T>) => any
+  backtrack?: (args: Args<T>, collectedCommands: any[]) => any // from back TRACKS OR COLLECT
+  requiresAsyncValidation?: (validationType: any) => Promise<boolean>
+  errorsCollector?: ErrorHandler<T>
 }
 
 export const walk = async <T>(
@@ -66,6 +69,19 @@ export const walk = async <T>(
   errors: { code: ParseError; message: string }[]
 }> => {
   const errors: { code: ParseError; message: string }[] = []
+
+  if (!('collect' in opts)) {
+    opts.collect = () => {}
+  }
+
+  if (!('backtrack' in opts)) {
+    opts.backtrack = (c) => c
+  }
+
+  if (!('requiresAsyncValidation' in opts)) {
+    opts.requiresAsyncValidation = async () => true
+  }
+
   const target = await opts.init(value, opts, errors)
 
   const errorsCollector: ErrorHandler<T> = (args, code) => {
@@ -75,21 +91,26 @@ export const walk = async <T>(
     })
   }
 
+  if (!('errorsCollector' in opts)) {
+    opts.errorsCollector = errorsCollector
+  }
+
   const parse: Parse<T> = async (prevArgs, key, value) => {
     const collectedCommands: any[] = []
     const fromBackTrack: any[] = []
     const args: Args<T> = {
       schema: opts.schema,
       path: key ? [...prevArgs.path, key] : prevArgs.path,
+      key: key ?? prevArgs.path[prevArgs.path.length - 1],
       parentValue: value ? prevArgs.value : undefined,
       value: value ?? prevArgs.value,
       target,
-      parse: prevArgs.parse,
+      parse,
       collect: (args) => {
         collectedCommands.push(opts.collect(args))
       },
-      backtrack: (args) => {
-        fromBackTrack.push(opts.backtrack(args))
+      backtrack: (args, commands) => {
+        fromBackTrack.push(opts.backtrack(args, commands))
       },
       error: errorsCollector,
       requiresAsyncValidation: opts.requiresAsyncValidation,
@@ -98,10 +119,18 @@ export const walk = async <T>(
       const q: Promise<Args<T> | void>[] = []
       if (Array.isArray(args.value)) {
         for (let i = 0; i < args.value.length; i++) {
-          //
           const parser = opts.parsers.keys[i] || opts.parsers.any
           q.push(
-            parser({ ...args, value: args.value[i], path: [...args.path, i] })
+            (async () => {
+              const newArgs = await parser({
+                ...args,
+                value: args.value[i],
+                path: [...args.path, i],
+              })
+              if (newArgs) {
+                return parse(newArgs)
+              }
+            })()
           )
         }
       } else {
@@ -114,7 +143,6 @@ export const walk = async <T>(
                 value: args.value[key],
                 path: [...args.path, key],
               })
-
               if (newArgs) {
                 return parse(newArgs)
               }
@@ -122,11 +150,11 @@ export const walk = async <T>(
           )
         }
       }
-      await Promise.all(q)
+
       if (fromBackTrack.length) {
-        opts.backtrack(fromBackTrack)
+        args.backtrack(args, fromBackTrack)
       } else if (collectedCommands.length) {
-        opts.backtrack(collectedCommands)
+        args.backtrack(args, collectedCommands)
       }
     }
   }

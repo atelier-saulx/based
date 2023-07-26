@@ -45,6 +45,7 @@ test('walker', async (t) => {
           $list: async (args) => {
             return {
               ...args,
+
               value: { flapdrol: true },
             }
           },
@@ -53,21 +54,17 @@ test('walker', async (t) => {
           // string: () => {}
         },
         any: async (args) => {
+          args.collect(args)
           return args
         },
       },
       collect: (args) => {
-        // console.log('    lulz collect dat command', args.path)
         return args.path.join('.')
       },
-      backtrack: (collectedCommands) => {
+      backtrack: (args, collectedCommands) => {
         console.log('    \n-----------BACK TRACK GOOD GO', collectedCommands)
         // if return next btrack will not receive  backtrack from commands
         return collectedCommands
-      },
-      requiresAsyncValidation: async (validateType) => {
-        // console.info('lullz async validaion at the end!')
-        return true
       },
     },
     {
@@ -93,7 +90,7 @@ test('walker', async (t) => {
   )
 
   console.info('------------')
-  //   console.info(x)
+  console.info(x)
 
   t.true(true)
 })
