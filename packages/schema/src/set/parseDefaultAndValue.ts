@@ -33,6 +33,7 @@ export const parseValueAndDefault: Parser<keyof BasedSchemaFields> = async (
       if (value.$value !== undefined) {
         error(path, ParseError.valueAndDefault)
       }
+      console.info('->', path, 'go')
       await parse(
         path,
         value.$default,
@@ -46,6 +47,7 @@ export const parseValueAndDefault: Parser<keyof BasedSchemaFields> = async (
     }
   }
   if (handled && !noCollect) {
+    console.log('collect?')
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   }
   return handled

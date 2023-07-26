@@ -31,6 +31,7 @@ const createHandlers = (): {
   const results: { path: (number | string)[]; value: any }[] = []
   const handlers = {
     collect: ({ path, value, typeSchema, fieldSchema, target }) => {
+      console.log('collect', path)
       results.push({ path, value })
     },
     checkRequiredFields: async (paths) => {
@@ -43,7 +44,7 @@ const createHandlers = (): {
   return { results, handlers }
 }
 
-test.skip('text max length', async (t) => {
+test('text max length', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -81,7 +82,7 @@ test.skip('text max length', async (t) => {
   t.deepEqual(results, [{ path: ['name'], value: { en: 'xaxx' } }])
 })
 
-test.skip('text wrong language', async (t) => {
+test('text wrong language', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -115,21 +116,17 @@ test.skip('text wrong language', async (t) => {
   ])
 })
 
-test.skip('default', async (t) => {
+test('default', async (t) => {
   const { handlers, results } = createHandlers()
-  t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        $language: 'de',
-        name: { $default: 'xaxx' },
-      },
-      handlers
-    )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      $language: 'de',
+      name: { $default: 'xaxx' },
+    },
+    handlers
   )
-  t.deepEqual(results, [])
-
   await setWalker(
     schema,
     {
@@ -139,16 +136,15 @@ test.skip('default', async (t) => {
     },
     handlers
   )
-  // console.log('-------------->', results)
-  // TODO ??
   t.deepEqual(results, [
+    { path: ['name'], value: { de: { $default: 'xaxx' } } },
     { path: ['name'], value: { de: { $default: 'xaxx' } } },
   ])
 })
 
 test('value', async (t) => {
   const { handlers, results } = createHandlers()
-  t.throwsAsync(
+  await t.throwsAsync(
     setWalker(
       schema,
       {
@@ -171,11 +167,5 @@ test('value', async (t) => {
     handlers
   )
   console.log('-------------->', results)
-  // TODO ??
-  t.deepEqual(results, [{ path: ['name'], value: { de: { $value: 'xaxx' } } }])
+  t.deepEqual(results, [{ path: ['name', 'de'], value: { $value: 'xaxx' } }])
 })
-
-// wrong language passed
-// required languages
-// $value // $default
-// ???

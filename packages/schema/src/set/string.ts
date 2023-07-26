@@ -94,6 +94,7 @@ const validate = (
   if (fieldSchema.format && !formatPatterns[fieldSchema.format](value)) {
     error(path, ParseError.incorrectFormat)
   }
+  // return true / false and add collectError
 }
 
 export const string: Parser<'string'> = async (
@@ -133,6 +134,8 @@ export const text: Parser<'text'> = async (
   handlers,
   noCollect
 ) => {
+  console.info('go ---> do text', path, noCollect)
+
   const valueType = typeof value
   if (target.$language && valueType === 'string') {
     validate(path, value, fieldSchema)
@@ -161,9 +164,20 @@ export const text: Parser<'text'> = async (
       typeSchema,
       target,
       handlers,
-      noCollect
+      true
     ))
   ) {
+    if (!noCollect) {
+      handlers.collect({
+        path,
+        value: {
+          [target.$language]: value,
+        },
+        typeSchema,
+        fieldSchema,
+        target,
+      })
+    }
     return
   } else if (
     await parseValueAndDefault(
@@ -189,36 +203,27 @@ export const text: Parser<'text'> = async (
   }
 
   for (const key in value) {
-    const newPath = [...path, key]
+    console.log('loop times', key)
 
     // @ts-ignore
     if (!target.schema.languages.includes(key)) {
-      error(newPath, ParseError.languageNotSupported)
+      error(path, ParseError.languageNotSupported)
     }
 
     if (typeof value[key] === 'object') {
-      if (value[key].$value) {
-        await text(
-          [...newPath, '$value'],
-          value[key].$value,
+      if (
+        await parseValueAndDefault(
+          path,
+          value[key],
           fieldSchema,
           typeSchema,
           target,
           handlers,
           true
         )
+      ) {
+        continue
       }
-
-      if (!noCollect) {
-        handlers.collect({
-          path: newPath,
-          value: null,
-          typeSchema,
-          fieldSchema,
-          target,
-        })
-      }
-      continue
     }
 
     if (
@@ -232,17 +237,17 @@ export const text: Parser<'text'> = async (
         true
       ))
     ) {
-      validate(newPath, value[key], fieldSchema)
+      validate(path, value[key], fieldSchema)
     }
+  }
 
-    if (!noCollect) {
-      handlers.collect({
-        path: newPath,
-        value: value[key],
-        typeSchema,
-        fieldSchema,
-        target,
-      })
-    }
+  if (!noCollect) {
+    handlers.collect({
+      path,
+      value,
+      typeSchema,
+      fieldSchema,
+      target,
+    })
   }
 }
