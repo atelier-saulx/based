@@ -108,5 +108,35 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
 }
 
 async function execTraverse(ctx: ExecContext, cmd: GetTraverse): Promise<void> {
-  // TODO
+  const { client } = ctx
+
+  // TODO: handle different types
+  const fields = cmd.fields.$any
+    .map((f) => {
+      if (Array.isArray(f)) {
+        return f.join('|')
+      }
+
+      return f
+    })
+    .join('\n')
+
+  const find = await client.command('hierarchy.find', [
+    '',
+    createRecord(protocol.hierarchy_find_def, {
+      // TODO: pluggable direction
+      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+      limit: BigInt(-1),
+      offset: BigInt(0),
+      res_opt_str: fields,
+    }),
+    // TODO: handle if no id case
+    cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
+    // TODO: gen filter expr
+    '#1',
+  ])
+
+  return find
 }

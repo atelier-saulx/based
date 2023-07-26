@@ -221,7 +221,7 @@ test.serial.only('set primitive fields', async (t) => {
     await client.command('hierarchy.children', ['root'])
   )
 
-  await client.set({
+  const third = await client.set({
     $alias: '3rd',
     type: 'post',
     slug: '/third',
@@ -230,7 +230,8 @@ test.serial.only('set primitive fields', async (t) => {
 
   const find = await client.get([
     {
-      type: 'node',
+      type: 'traverse_field',
+      sourceField: ['descendants'],
       fields: {
         $any: [
           '*',
@@ -247,10 +248,10 @@ test.serial.only('set primitive fields', async (t) => {
   ])
 
   console.dir(find, { depth: 6 })
-  const res = find[0][0]
-  t.deepEqual(res[0][0], 'po1')
+  const po1 = find[0][0][0]
+  t.deepEqual(po1[0], 'po1')
   t.deepEqual(
-    res[0][1].sort(),
+    po1[1].sort(),
     [
       'aliases',
       ['main'],
@@ -288,6 +289,30 @@ test.serial.only('set primitive fields', async (t) => {
       ['root'],
       'children',
       ['po2'],
+    ].sort()
+  )
+
+  const po2 = find[0][0][1]
+  t.deepEqual(po2[0], 'po2')
+  t.deepEqual(
+    po2[1].sort(),
+    [
+      'aliases',
+      ['sec'],
+      'id',
+      'po2',
+      'int',
+      5n,
+      'tags',
+      ['action', 'comedy'],
+      'uniqs',
+      2n,
+      'aliases',
+      ['sec'],
+      'parents',
+      ['po1', 'root'],
+      'children',
+      [third],
     ].sort()
   )
 
