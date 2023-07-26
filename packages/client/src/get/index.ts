@@ -52,7 +52,7 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
       const { client } = ctx
 
       // TODO: handle different types
-      const { fields, isRpn } = getFields(ctx, cmd.fields)
+      const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
 
       let dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
       let rpn = ['#1']
@@ -76,7 +76,9 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         ctx.lang || '',
         createRecord(protocol.hierarchy_find_def, {
           dir,
-          res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+          res_type: fieldsRpn
+            ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
+            : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
           merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
           limit: BigInt(-1),
           offset: BigInt(0),
