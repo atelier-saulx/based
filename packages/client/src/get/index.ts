@@ -115,34 +115,11 @@ function getFields(
   fields: string
 } {
   if (byType) {
-    const any = []
-    for (const f of $any) {
-      if (f === '$all') {
-        any.push('*')
-      } else if (Array.isArray(f)) {
-        any.push({ $first: f })
-      } else {
-        any.push(f)
-      }
-    }
-
     let hasTypes = false
-    const expr: TraverseByType = { $any: { $all: any } }
+    const expr: TraverseByType = { $any: { $all: $any } }
     for (const type in byType) {
       hasTypes = true
-      const e = []
-
-      for (const f of byType[type]) {
-        if (f === '$all') {
-          e.push('*')
-        } else if (Array.isArray(f)) {
-          e.push({ $first: f })
-        } else {
-          e.push(f)
-        }
-      }
-
-      expr[type] = { $all: type === '$any' ? e : [...any, ...e] }
+      expr[type] = { $all: [...$any, ...byType[type]] }
     }
 
     if (!hasTypes) {
