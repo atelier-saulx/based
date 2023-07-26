@@ -40,25 +40,19 @@ export type GetNode = {
   type: 'node'
 } & GetNodeShared
 
-export type GetTraverseShared = {
+export type GetTraverse = {
+  type: 'traverse'
+
   paging: { limit: number; offset: number }
   filter?: Filter | Filter[]
   nestedCommands?: GetCommand[]
   recursive?: boolean
+
+  // one of these
+  traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })
+  sourceField?: string
   // TODO: edge filter expr
 } & GetNodeShared
-
-export type GetTraverseField = {
-  type: 'traverse_field'
-  sourceField: string
-} & GetTraverseShared
-
-export type GetTraverseExpr = {
-  type: 'traverse_expr'
-  traverseExpr: TraverseByType // also includes just array of fields ({ $first: [...field] })
-} & GetTraverseShared
-
-export type GetTraverse = GetTraverseField | GetTraverseExpr
 
 export type GetCommand = GetNode | GetTraverse
 

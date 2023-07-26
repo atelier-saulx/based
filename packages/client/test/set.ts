@@ -242,7 +242,7 @@ test.serial.only('set primitive fields', async (t) => {
 
   const find = await client.get([
     {
-      type: 'traverse_field',
+      type: 'traverse',
       paging: { limit: -1, offset: 0 },
       sourceField: 'descendants',
       fields: {

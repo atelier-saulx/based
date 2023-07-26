@@ -1,11 +1,4 @@
-import {
-  ExecContext,
-  Fields,
-  GetCommand,
-  GetNode,
-  GetTraverseExpr,
-  GetTraverseField,
-} from './types'
+import { ExecContext, Fields, GetCommand } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
 import {
@@ -52,17 +45,39 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
       const { client } = ctx
 
       const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
-      const paging = { limit: BigInt(-1), offset: BigInt(0) }
 
-      let dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
+      const struct: any = {
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
+        res_type: fieldsRpn
+          ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
+          : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+        merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+        res_opt_str: fields,
+        limit: BigInt(-1),
+        offset: BigInt(0),
+      }
+
       let rpn = ['#1']
 
-      if (cmd.type === 'traverse_field') {
-        dir =
-          TRAVERSE_MODES[cmd.sourceField] ||
-          SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
+      if (cmd.type === 'traverse') {
+        if (cmd.sourceField) {
+          const mode = TRAVERSE_MODES[cmd.sourceField]
+          const dir =
+            mode || SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
 
-        dir = cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir
+          struct.dir = cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir
+
+          if (!mode) {
+            // if edge field, supply field name
+            struct.dir_opt_str = cmd.sourceField
+          }
+        } else {
+          struct.dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION
+          struct.dir_opt_str = bfsExpr2rpn(
+            ctx.client.schema.types,
+            cmd.traverseExpr
+          )
+        }
 
         if (cmd.filter) {
           const ast = createAst(cmd.filter)
@@ -72,22 +87,14 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         }
 
         if (cmd.paging) {
-          paging.limit = BigInt(cmd.paging.limit)
-          paging.offset = BigInt(cmd.paging.offset)
+          struct.limit = BigInt(cmd.paging.limit)
+          struct.offset = BigInt(cmd.paging.offset)
         }
       }
 
       const find = await client.command('hierarchy.find', [
         ctx.lang || '',
-        createRecord(protocol.hierarchy_find_def, {
-          dir,
-          res_type: fieldsRpn
-            ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
-            : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-          res_opt_str: fields,
-          ...paging,
-        }),
+        createRecord(protocol.hierarchy_find_def, struct),
         sourceId(cmd),
         ...rpn,
       ])
