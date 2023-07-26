@@ -42,17 +42,18 @@ export type GetNode = {
 export type GetTraverseShared = {
   filter?: Filter | Filter[]
   nestedCommands?: GetCommand[]
+  recursive?: boolean
   // TODO: edge filter expr
 } & GetNodeShared
 
 export type GetTraverseField = {
   type: 'traverse_field'
-  sourceField: string[]
+  sourceField: string
 } & GetTraverseShared
 
 export type GetTraverseExpr = {
   type: 'traverse_expr'
-  traverseExpr: TraverseByType
+  traverseExpr: TraverseByType // also includes just array of fields ({ $first: [...field] })
 } & GetTraverseShared
 
 export type GetTraverse = GetTraverseField | GetTraverseExpr
