@@ -41,6 +41,7 @@ export type GetNode = {
 } & GetNodeShared
 
 export type GetTraverseShared = {
+  paging: { limit: number; offset: number }
   filter?: Filter | Filter[]
   nestedCommands?: GetCommand[]
   recursive?: boolean

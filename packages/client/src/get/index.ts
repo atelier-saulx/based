@@ -51,8 +51,8 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
 
       const { client } = ctx
 
-      // TODO: handle different types
       const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
+      const paging = { limit: BigInt(-1), offset: BigInt(0) }
 
       let dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
       let rpn = ['#1']
@@ -70,6 +70,11 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
             rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
           }
         }
+
+        if (cmd.paging) {
+          paging.limit = BigInt(cmd.paging.limit)
+          paging.offset = BigInt(cmd.paging.offset)
+        }
       }
 
       const find = await client.command('hierarchy.find', [
@@ -80,9 +85,8 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
             ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
             : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
           merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-          limit: BigInt(-1),
-          offset: BigInt(0),
           res_opt_str: fields,
+          ...paging,
         }),
         sourceId(cmd),
         ...rpn,
