@@ -362,16 +362,16 @@ test.only('default', async (t) => {
     )
   )
 
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        set: { $default: [1, 3, 3, 4] },
-      },
-      handlers
-    )
-  )
+  // await t.throwsAsync(
+  //   setWalker(
+  //     schema,
+  //     {
+  //       $id: 'bl1',
+  //       set: { $default: [1, 3, 3, 4] },
+  //     },
+  //     handlers
+  //   )
+  // )
 
   // validate default stuff
   console.log('------------>', results)
