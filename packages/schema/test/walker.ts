@@ -43,15 +43,17 @@ test('walker', async (t) => {
       parsers: {
         keys: {
           $list: async (args) => {
-            // console.info('list time!', args.path)
-            return true
+            return {
+              ...args,
+              value: { flapdrol: true },
+            }
           },
         },
-        fields: {},
+        fields: {
+          // string: () => {}
+        },
         any: async (args) => {
-          //   console.log('  parse any', args.path)
-          args.collect(args)
-          return true
+          return args
         },
       },
       collect: (args) => {
@@ -78,7 +80,9 @@ test('walker', async (t) => {
             gur: {
               x: true,
               y: true,
-              $list: true,
+              $list: {
+                $sort: true,
+              },
             },
             c: 40,
             $list: true,

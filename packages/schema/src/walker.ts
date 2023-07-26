@@ -10,12 +10,13 @@ type Parse<T> = (
   args: Args<T>,
   key?: string | number,
   value?: any
-) => Promise<boolean> // If true will not continue
+) => Promise<Args<T> | void> // If true will not continue
 
 export type Args<
   T,
   K extends keyof BasedSchemaFields = keyof BasedSchemaFields
 > = {
+  schema: BasedSchema
   parentValue?: any
   skipCollection?: boolean
   fieldSchema?: BasedSchemaFields[K]
@@ -26,17 +27,17 @@ export type Args<
   parse: Parse<T>
   collect: (args: Args<T>) => any
   backtrack: (collectedCommands: any[]) => any
-  requiresAsyncValidaton: (validationType: any) => Promise<boolean>
+  requiresAsyncValidaton: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
 }
 
 export type FieldParser<T, K extends keyof BasedSchemaFields> = (
   args: Args<T, K>
-) => Promise<boolean>
+) => Promise<Args<T> | void>
 
 export type KeyParser<T> = (
   args: Args<T, keyof BasedSchemaFields>
-) => Promise<boolean>
+) => Promise<Args<T> | void>
 
 export type Opts<T> = {
   schema: BasedSchema
@@ -78,6 +79,7 @@ export const walk = async <T>(
     const collectedCommands: any[] = []
     const fromBackTrack: any[] = []
     const args: Args<T> = {
+      schema: opts.schema,
       path: key ? [...prevArgs.path, key] : prevArgs.path,
       parentValue: value ? prevArgs.value : undefined,
       value: value ?? prevArgs.value,
@@ -92,9 +94,8 @@ export const walk = async <T>(
       error: errorsCollector,
       requiresAsyncValidaton: opts.requiresAsyncValidaton,
     }
-
     if (typeof args.value === 'object' && args.value !== null) {
-      const q: Promise<boolean>[] = []
+      const q: Promise<Args<T> | void>[] = []
       if (Array.isArray(args.value)) {
         for (let i = 0; i < args.value.length; i++) {
           //
@@ -108,38 +109,30 @@ export const walk = async <T>(
           const parser = opts.parsers.keys[key] || opts.parsers.any
           q.push(
             (async () => {
-              const x = await parser({
+              const newArgs = await parser({
                 ...args,
                 value: args.value[key],
                 path: [...args.path, key],
               })
 
-              if (x === true) {
-                return parse(args, key, args.value[key])
+              if (newArgs) {
+                return parse(newArgs)
               }
-
-              return false
             })()
           )
         }
       }
       await Promise.all(q)
-      //   console.info(fromBackTrack, collectedCommands)
       if (fromBackTrack.length) {
         opts.backtrack(fromBackTrack)
       } else if (collectedCommands.length) {
         opts.backtrack(collectedCommands)
       }
-    } else {
-      // maybe just make this collect
-      //   const parser = opts.parsers.keys[key] || opts.parsers.any
-      //   console.log('nice endpoint,...', args.path, args.value)
-      //   return parser(args)
     }
-    return false
   }
 
   const args: Args<T> = {
+    schema: opts.schema,
     path: [],
     value,
     target,
