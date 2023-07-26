@@ -37,13 +37,13 @@ export const fieldWalker = async (
   const typeDef = fieldSchema.type ?? ('enum' in fieldSchema ? 'enum' : '')
 
   if (!typeDef) {
-    error(path, ParseError.fieldDoesNotExist)
+    error(handlers, ParseError.fieldDoesNotExist, path)
   }
 
   if ('customValidator' in fieldSchema) {
     const customValidator = fieldSchema.customValidator
     if (!(await customValidator(value, path, target))) {
-      error(path, ParseError.incorrectFormat)
+      error(handlers, ParseError.incorrectFormat, path)
     }
   }
 
@@ -59,15 +59,23 @@ export const setWalker = async (
   value: { [key: string]: any },
   inHandlers: BasedSetOptionalHandlers
 ): Promise<BasedSetTarget> => {
-  let errors: (BasedSchemaCollectProps & {
+  let errors: {
     message: string
     code: ParseError
-  })[]
+  }[]
+
+  const collect: BasedSchemaCollectProps[] = []
 
   if (!('collectErrors' in inHandlers)) {
     errors = []
     inHandlers.collectErrors = (info) => {
       errors.push(info)
+    }
+  }
+
+  if (!('collect' in inHandlers)) {
+    inHandlers.collect = (info) => {
+      collect.push(info)
     }
   }
 
@@ -78,13 +86,13 @@ export const setWalker = async (
   if (value.$id) {
     type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
     if (!type) {
-      error([value.$id], ParseError.incorrectNodeType)
+      error(handlers, ParseError.incorrectNodeType, [value.$id])
     }
   }
 
   if (value.type) {
     if (type && value.type !== type) {
-      error([value.$id, value.type], ParseError.incorrectNodeType)
+      error(handlers, ParseError.incorrectNodeType, [value.$id, value.type])
     }
     type = value.type
   }
@@ -92,18 +100,19 @@ export const setWalker = async (
   const schemaType = schema.types[type]
 
   if (!schemaType) {
-    error([type], ParseError.incorrectNodeType)
+    error(handlers, ParseError.incorrectNodeType, [type])
   }
 
   const target: BasedSetTarget = {
     type,
     schema,
     required: [],
+    collect,
   }
 
   if (value.$language) {
     if (!schema.languages.includes(value.$language)) {
-      error(['$language'], ParseError.languageNotSupported)
+      error(handlers, ParseError.languageNotSupported, ['$language'])
     }
     target.$language = value.$language
   }
@@ -120,7 +129,7 @@ export const setWalker = async (
     if (key[0] !== '$' && key !== 'type') {
       const fieldSchema = schemaType.fields[key]
       if (!fieldSchema) {
-        error([key], ParseError.fieldDoesNotExist)
+        error(handlers, ParseError.fieldDoesNotExist, [key])
       } else {
         q.push(
           fieldWalker(
@@ -155,17 +164,16 @@ export const setWalker = async (
     for (let i = 0; i < requireDefined.length; i++) {
       if (!requireDefined[i]) {
         const r = target.required[i]
-        error(r, ParseError.requiredFieldNotDefined)
+        error(handlers, ParseError.requiredFieldNotDefined, r)
       }
     }
   }
 
   if (errors?.length) {
-    // hold collect or nah?
     throw new Error(
       'Got some errors ' +
         errors.reduce((str, info) => {
-          return str + `\n - ${info.path.join('')} ${info.message}`
+          return str + `\n - ${info.message}`
         }, '')
     )
   }

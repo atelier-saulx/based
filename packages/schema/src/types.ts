@@ -343,6 +343,7 @@ export type BasedSetTarget = {
   $alias?: string
   $id?: string
   schema: BasedSchema
+  collect: BasedSchemaCollectProps[]
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
 }
@@ -356,12 +357,7 @@ export type BasedSchemaCollectProps = {
 }
 
 export type BasedSetHandlers = {
-  collectErrors: (
-    props: BasedSchemaCollectProps & {
-      message: string
-      code: ParseError
-    }
-  ) => void
+  collectErrors: (props: { message: string; code: ParseError }) => void
 
   collect: (props: BasedSchemaCollectProps) => void
 
@@ -375,5 +371,5 @@ export type BasedSetHandlers = {
 
 export type BasedSetOptionalHandlers = SetOptional<
   BasedSetHandlers,
-  'collectErrors'
+  'collectErrors' | 'collect'
 >

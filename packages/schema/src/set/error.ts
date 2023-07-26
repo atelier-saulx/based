@@ -1,3 +1,5 @@
+import { BasedSetHandlers } from '../types'
+
 export enum ParseError {
   'incorrectFieldType',
   'incorrectNodeType',
@@ -14,9 +16,16 @@ export enum ParseError {
 }
 
 export const error = (
-  path: (number | string)[],
+  handlers: BasedSetHandlers,
   error: ParseError,
-  type?: string // nice to give as option
+  path?: (number | string)[]
 ) => {
-  throw new Error(`Field: "${path.join('.')}" ${ParseError[error]}`)
+  const message = path
+    ? `${ParseError[error]} ${path.join('.')}`
+    : `${ParseError[error]}`
+
+  handlers.collectErrors({
+    message,
+    code: error,
+  })
 }

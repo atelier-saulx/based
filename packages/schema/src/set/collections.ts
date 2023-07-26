@@ -2,6 +2,8 @@ import { Parser } from './types'
 import { error, ParseError } from './error'
 import { fieldWalker } from '.'
 
+// what about making errors return signature
+
 export const set: Parser<'set'> = async (
   path,
   value,
@@ -86,17 +88,20 @@ export const object: Parser<'object'> = async (
   noCollect
 ) => {
   if (typeof value !== 'object') {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
+    return
   }
   const isArray = Array.isArray(value)
   if (isArray) {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
+    return
   }
   const q: Promise<void>[] = []
   for (const key in value) {
     const propDef = fieldSchema.properties[key]
     if (!propDef) {
-      error([...path, key], ParseError.fieldDoesNotExist)
+      error(handlers, ParseError.fieldDoesNotExist, [...path, key])
+      return
     }
     q.push(
       fieldWalker(
@@ -144,13 +149,15 @@ export const array: Parser<'array'> = async (
     if (value.$insert) {
       opCount++
       if (opCount > 1) {
-        error(path, ParseError.multipleOperationsNotAllowed)
+        error(handlers, ParseError.multipleOperationsNotAllowed, path)
+        return
       }
       if (
         typeof value.$insert !== 'object' ||
         value.$insert.$idx === undefined
       ) {
-        error(path, ParseError.incorrectFormat)
+        error(handlers, ParseError.incorrectFormat, path)
+        return
       } else {
         const insert = Array.isArray(value.$insert.$value)
           ? value.$insert.$value
@@ -175,16 +182,19 @@ export const array: Parser<'array'> = async (
     if (value.$remove) {
       opCount++
       if (opCount > 1) {
-        error(path, ParseError.multipleOperationsNotAllowed)
+        error(handlers, ParseError.multipleOperationsNotAllowed, path)
+        return
       }
       if (value.$remove.$idx === undefined) {
-        error(path, ParseError.incorrectFormat)
+        error(handlers, ParseError.incorrectFormat, path)
+        return
       }
     }
     if (value.$push) {
       opCount++
       if (opCount > 1) {
-        error(path, ParseError.multipleOperationsNotAllowed)
+        error(handlers, ParseError.multipleOperationsNotAllowed, path)
+        return
       }
 
       // TODO: FIX PUSH PARSING
@@ -210,7 +220,8 @@ export const array: Parser<'array'> = async (
     if (value.$unshift) {
       opCount++
       if (opCount > 1) {
-        error(path, ParseError.multipleOperationsNotAllowed)
+        error(handlers, ParseError.multipleOperationsNotAllowed, path)
+        return
       }
       const q: Promise<void>[] = []
       const unshift = Array.isArray(value.$unshift)
@@ -238,13 +249,15 @@ export const array: Parser<'array'> = async (
     if (value.$assign) {
       opCount++
       if (opCount > 1) {
-        error(path, ParseError.multipleOperationsNotAllowed)
+        error(handlers, ParseError.multipleOperationsNotAllowed, path)
+        return
       }
       if (
         typeof value.$assign !== 'object' ||
         typeof value.$assign.$idx !== 'number'
       ) {
-        error(path, ParseError.incorrectFormat)
+        error(handlers, ParseError.incorrectFormat, path)
+        return
       }
       await fieldWalker(
         [...path, value.$assign.$idx],
@@ -271,7 +284,8 @@ export const array: Parser<'array'> = async (
     }
   }
   if (!isArray) {
-    error(path, ParseError.incorrectFieldType)
+    error(handlers, ParseError.incorrectFieldType, path)
+    return
   }
   const q: Promise<void>[] = []
   const collector: any[] = []
@@ -296,6 +310,7 @@ export const array: Parser<'array'> = async (
       )
     )
   }
+
   await Promise.all(q)
 
   if (!noCollect) {

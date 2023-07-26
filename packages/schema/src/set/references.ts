@@ -16,14 +16,15 @@ export const reference: Parser<'reference'> = async (
   // $value
 
   if (typeof value !== 'string') {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
 
   if ('allowedTypes' in fieldSchema) {
     const prefix = value.slice(0, 2)
     const targetType = target.schema.prefixToTypeMapping[prefix]
     if (!targetType) {
-      error(path, ParseError.referenceIsIncorrectType)
+      error(handlers, ParseError.referenceIsIncorrectType, path)
+      return
     }
     let typeMatches = false
     for (const t of fieldSchema.allowedTypes) {
@@ -37,18 +38,21 @@ export const reference: Parser<'reference'> = async (
           typeMatches = true
           if (t.$filter) {
             if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
-              error(path, ParseError.referenceIsIncorrectType)
+              error(handlers, ParseError.referenceIsIncorrectType, path)
+              return
             }
           }
         } else if (!t.type && t.$filter) {
           if (!(await handlers.referenceFilterCondition(value, t.$filter))) {
-            error(path, ParseError.referenceIsIncorrectType)
+            error(handlers, ParseError.referenceIsIncorrectType, path)
+            return
           }
         }
       }
     }
     if (typeMatches === false) {
-      error(path, ParseError.referenceIsIncorrectType)
+      error(handlers, ParseError.referenceIsIncorrectType, path)
+      return
     }
   }
   if (!noCollect) {

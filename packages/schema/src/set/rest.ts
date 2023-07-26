@@ -15,7 +15,7 @@ export const cardinality: Parser<'cardinality'> = async (
 ) => {
   if (value && typeof value === 'object') {
     if (value.$default !== undefined) {
-      error(path, ParseError.defaultNotSupported)
+      error(handlers, ParseError.defaultNotSupported, path)
     }
     if (value.$value !== undefined) {
       value = hashObjectIgnoreKeyOrder(value.$value).toString(16)
@@ -54,7 +54,7 @@ export const boolean: Parser<'boolean'> = async (
   }
 
   if (typeof value !== 'boolean') {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
 
   if (!noCollect) {
@@ -91,7 +91,7 @@ export const enumParser: Parser<'enum'> = async (
         return
       }
     }
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
 }
 
@@ -130,6 +130,6 @@ export const json: Parser<'json'> = async (
       })
     }
   } catch (err) {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
 }

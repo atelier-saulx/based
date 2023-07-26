@@ -4,6 +4,7 @@ import {
   BasedSchemaFieldString,
   BasedSchemaFieldText,
   BasedSchemaLanguage,
+  BasedSetHandlers,
 } from '../types'
 import validators from 'validator'
 import { parseValueAndDefault } from './parseDefaultAndValue'
@@ -76,27 +77,28 @@ const formatPatterns: Record<
 }
 
 const validate = (
+  handlers: BasedSetHandlers,
   path: (string | number)[],
   value: string,
   fieldSchema: BasedSchemaFieldText | BasedSchemaFieldString
 ) => {
   if (typeof value !== 'string') {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
   if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-    error(path, ParseError.subceedsMinimum)
+    error(handlers, ParseError.subceedsMinimum, path)
   }
   if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-    error(path, ParseError.exceedsMaximum)
+    error(handlers, ParseError.exceedsMaximum, path)
   }
   if (fieldSchema.pattern) {
     const re = new RegExp(fieldSchema.pattern)
     if (!re.test(value)) {
-      error(path, ParseError.incorrectFormat)
+      error(handlers, ParseError.incorrectFormat, path)
     }
   }
   if (fieldSchema.format && !formatPatterns[fieldSchema.format](value)) {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
   // return true / false and add collectError
 }
@@ -123,7 +125,7 @@ export const string: Parser<'string'> = async (
   ) {
     return
   }
-  validate(path, value, fieldSchema)
+  validate(handlers, path, value, fieldSchema)
   if (!noCollect) {
     handlers.collect({ path, value, typeSchema, fieldSchema, target })
   }
@@ -140,7 +142,7 @@ export const text: Parser<'text'> = async (
 ) => {
   const valueType = typeof value
   if (target.$language && valueType === 'string') {
-    validate(path, value, fieldSchema)
+    validate(handlers, path, value, fieldSchema)
     if (!noCollect) {
       handlers.collect({
         path,
@@ -154,7 +156,7 @@ export const text: Parser<'text'> = async (
   }
 
   if (valueType !== 'object') {
-    error(path, ParseError.incorrectFormat)
+    error(handlers, ParseError.incorrectFormat, path)
   }
 
   if (
@@ -206,7 +208,7 @@ export const text: Parser<'text'> = async (
 
   for (const key in value) {
     if (!target.schema.languages.includes(<BasedSchemaLanguage>key)) {
-      error(path, ParseError.languageNotSupported)
+      error(handlers, ParseError.languageNotSupported, path)
     }
 
     if (typeof value[key] === 'object') {
@@ -236,7 +238,7 @@ export const text: Parser<'text'> = async (
         true
       ))
     ) {
-      validate(path, value[key], fieldSchema)
+      validate(handlers, path, value[key], fieldSchema)
     }
   }
 
