@@ -80,15 +80,7 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
   const { client } = ctx
 
   // TODO: handle different types
-  const fields = cmd.fields.$any
-    .map((f) => {
-      if (Array.isArray(f)) {
-        return f.join('|')
-      }
-
-      return f
-    })
-    .join('\n')
+  const { fields, isRpn } = getFields(ctx, cmd.fields)
 
   const find = await client.command('hierarchy.find', [
     '',
@@ -112,15 +104,7 @@ async function execTraverse(ctx: ExecContext, cmd: GetTraverse): Promise<void> {
   const { client } = ctx
 
   // TODO: handle different types
-  const fields = cmd.fields.$any
-    .map((f) => {
-      if (Array.isArray(f)) {
-        return f.join('|')
-      }
-
-      return f
-    })
-    .join('\n')
+  const { fields, isRpn } = getFields(ctx, cmd.fields)
 
   const find = await client.command('hierarchy.find', [
     '',
