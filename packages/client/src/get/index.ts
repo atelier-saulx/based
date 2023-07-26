@@ -79,7 +79,6 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
             ctx.client.schema.types,
             cmd.traverseExpr
           )
-          console.log('DIR OPT', struct.dir_opt_str)
         }
 
         if (cmd.filter) {
