@@ -109,26 +109,30 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
 
 function getFields(
   ctx: ExecContext,
-  opts: Fields
+  { $any, byType }: Fields
 ): {
   isRpn: boolean
   fields: string
 } {
-  if (Object.keys(opts).length > 1) {
-    const $any = new Set()
-    for (const f of opts.$any) {
+  if (byType) {
+    const any = []
+    for (const f of $any) {
       if (f === '$all') {
-        $any.add('*')
-      } else if (typeof f === 'string') {
-        $any.add(f)
+        any.push('*')
+      } else if (Array.isArray(f)) {
+        any.push({ $first: f })
+      } else {
+        any.push(f)
       }
     }
 
-    const expr: TraverseByType = { $any: { $all: [] } }
-    for (const type in opts) {
+    let hasTypes = false
+    const expr: TraverseByType = { $any: { $all: any } }
+    for (const type in byType) {
+      hasTypes = true
       const e = []
 
-      for (const f of opts[type]) {
+      for (const f of byType[type]) {
         if (f === '$all') {
           e.push('*')
         } else if (Array.isArray(f)) {
@@ -138,7 +142,11 @@ function getFields(
         }
       }
 
-      expr[type] = { $all: type === '$any' ? e : [...$any, ...e] }
+      expr[type] = { $all: type === '$any' ? e : [...any, ...e] }
+    }
+
+    if (!hasTypes) {
+      return { isRpn: false, fields: $any.join('\n') }
     }
 
     return {
@@ -147,18 +155,7 @@ function getFields(
     }
   }
 
-  let str = ''
-  for (const f of opts.$any) {
-    if (f === '$all') {
-      str += '*\n'
-    } else if (Array.isArray(f)) {
-      str += f.join('|') + '\n'
-    } else {
-      str += f + '\n'
-    }
-  }
-
-  return { isRpn: false, fields: str }
+  return { isRpn: false, fields: $any.join('\n') }
 }
 
 function sourceId(cmd: GetCommand): string {

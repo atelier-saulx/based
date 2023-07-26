@@ -368,7 +368,9 @@ test.serial.only('set primitive fields', async (t) => {
       type: 'traverse',
       fields: {
         $any: ['id'],
-        meh: ['title'],
+        byType: {
+          meh: ['title'],
+        },
       },
       paging: { limit: -1, offset: 0 },
       traverseExpr: {

@@ -17,7 +17,9 @@ export type TraverseByType = {
 // <field1>|<field2>|<field3> = $field with array option
 export type Fields = {
   $any?: string[]
-  [type: string]: string[]
+  byType?: {
+    [type: string]: string[]
+  }
 }
 
 export type TraverseByTypeExpression =
@@ -35,8 +37,8 @@ export type GetNodeShared = {
     id?: string
     alias?: string
   }
-  fields: Fields
   // fields by type
+  fields: Fields
 }
 
 export type GetNode = {
