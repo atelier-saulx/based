@@ -40,6 +40,23 @@ const handleRequest = (
   }
 }
 
+const getQuery = (req: uws.HttpRequest): { [key: string]: string } => {
+  const obj = {},
+    string = req.getQuery()
+  let index = 0
+  let index2: number
+  let index3: number
+  do {
+    index2 = string.indexOf('=', index)
+    if (index2 == -1) index2 = string.length
+    index3 = string.indexOf('&', index2 + 1)
+    if (index3 == -1) index3 = string.length
+    obj[string.slice(index, index2)] = string.slice(index2 + 1, index3)
+    index = index3 + 1
+  } while (index3 != string.length)
+  return obj
+}
+
 export const httpHandler = (
   server: BasedServer,
   req: uws.HttpRequest,
@@ -89,7 +106,15 @@ export const httpHandler = (
   let authState: AuthState = {}
 
   if (route.public !== true) {
-    const authorization: string = req.getHeader('authorization')
+    let authorization: string = req.getHeader('authorization')
+
+    if (!authorization && req.getQuery()) {
+      const query = getQuery(req)
+      if (query.authorization) {
+        authorization = query.authorization
+      }
+    }
+
     if (authorization.length > 5e3) {
       sendError(
         server,
@@ -116,6 +141,7 @@ export const httpHandler = (
     } else {
       // TODO: remove this when c++ client can encode
       const authorization: string = req.getHeader('json-authorization')
+
       if (authorization) {
         authState = parseJSONAuthState(authorization)
       }
