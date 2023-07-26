@@ -1641,7 +1641,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         return;
     } else if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
                                  SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        dir_expr = selva_string_create(query_opts_str, query_opts_len, 0);
+        dir_expr = selva_string_create(query_opts.dir_opt_str, query_opts.dir_opt_len, 0);
         selva_string_auto_finalize(&fin, dir_expr);
         const char *input = selva_string_to_str(dir_expr, NULL);
 
