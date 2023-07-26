@@ -85,14 +85,14 @@ export const walk = async <T>(
   const target = await opts.init(value, opts, errors)
 
   const errorsCollector: ErrorHandler<T> = (args, code) => {
-    errors.push({
+    const err = {
       code,
       message: `Error in ${args.path.join('.')}`,
-    })
-  }
-
-  if (!('errorsCollector' in opts)) {
-    opts.errorsCollector = errorsCollector
+    }
+    if (opts.errorsCollector) {
+      opts.errorsCollector(args, code)
+    }
+    errors.push(err)
   }
 
   const parse: Parse<T> = async (prevArgs, key, value) => {
