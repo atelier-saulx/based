@@ -344,6 +344,7 @@ test.serial.only('set primitive fields', async (t) => {
           '*',
           'aliases',
           'nonExistingField|parents',
+          // 'above@nonExistingField|parents', // TODO
           'children',
           '!createdAt',
           '!updatedAt',
@@ -370,6 +371,7 @@ test.serial.only('set primitive fields', async (t) => {
         $any: ['id'],
         byType: {
           meh: ['str'],
+          // meh: ['title@title|str'], // TODO
         },
       },
       paging: { limit: -1, offset: 0 },
