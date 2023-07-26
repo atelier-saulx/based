@@ -119,7 +119,15 @@ export class BasedDbClient extends Emitter {
           fields: {},
           keys: {
             $id: async (args) => {
-              if (!args.path.length) {
+              if (args.path.length >= 2) {
+                // ignore top-level
+                args.collect(args)
+              }
+            },
+            $list: async (args) => {
+              const { value } = args
+              if (value === true) {
+                args.collect(args)
                 return
               }
 
