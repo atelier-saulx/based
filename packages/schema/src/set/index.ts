@@ -66,20 +66,30 @@ export const setWalker = async (
 
   const collect: BasedSchemaCollectProps[] = []
 
-  if (!('collectErrors' in inHandlers)) {
+  const x = { ...inHandlers }
+
+  if (!('collectErrors' in x)) {
     errors = []
-    inHandlers.collectErrors = (info) => {
+    x.collectErrors = (info) => {
+      console.error('Collect this error', info)
       errors.push(info)
     }
   }
 
-  if (!('collect' in inHandlers)) {
-    inHandlers.collect = (info) => {
+  let prevCollect: any
+
+  if (!('collect' in x)) {
+    x.collect = (info) => {
+      collect.push(info)
+    }
+  } else {
+    prevCollect = x.collect
+    x.collect = (info) => {
       collect.push(info)
     }
   }
 
-  const handlers: BasedSetHandlers = <BasedSetHandlers>inHandlers
+  const handlers: BasedSetHandlers = <BasedSetHandlers>x
 
   let type: string
 
@@ -176,6 +186,12 @@ export const setWalker = async (
           return str + `\n - ${info.message}`
         }, '')
     )
+  }
+
+  if (prevCollect) {
+    for (const x of collect) {
+      prevCollect(x)
+    }
   }
 
   return target

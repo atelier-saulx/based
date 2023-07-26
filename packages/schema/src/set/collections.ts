@@ -18,6 +18,7 @@ export const set: Parser<'set'> = async (
   }
   const q: Promise<void>[] = []
   const fieldDef = fieldSchema.items
+
   if (Array.isArray(value)) {
     const parsedArray = []
     for (let i = 0; i < value.length; i++) {
