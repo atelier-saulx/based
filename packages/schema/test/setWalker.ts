@@ -472,7 +472,7 @@ test.only('collect all errors', async (t) => {
         blub: 'snux',
         flap: 'gurt',
         snurp: {
-          // checking non formattred objects
+          // checking non formatted objects
           x: { a: 20220 },
         },
       },
