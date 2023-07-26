@@ -120,12 +120,14 @@ export const walk = async <T>(
       if (Array.isArray(args.value)) {
         for (let i = 0; i < args.value.length; i++) {
           const parser = opts.parsers.keys[i] || opts.parsers.any
+          const j = i
           q.push(
             (async () => {
               const newArgs = await parser({
                 ...args,
-                value: args.value[i],
-                path: [...args.path, i],
+                value: args.value[j],
+                path: [...args.path, j],
+                key: j,
               })
               if (newArgs) {
                 return parse(newArgs)
@@ -142,6 +144,7 @@ export const walk = async <T>(
                 ...args,
                 value: args.value[key],
                 path: [...args.path, key],
+                key,
               })
               if (newArgs) {
                 return parse(newArgs)
@@ -150,6 +153,8 @@ export const walk = async <T>(
           )
         }
       }
+
+      await Promise.all(q)
 
       if (fromBackTrack.length) {
         args.backtrack(args, fromBackTrack)
@@ -171,7 +176,7 @@ export const walk = async <T>(
     requiresAsyncValidation: opts.requiresAsyncValidation,
   }
 
-  parse(args)
+  await parse(args)
 
   return {
     target,
