@@ -116,7 +116,6 @@ export const setWalker = async (
     type,
     schema,
     required: [],
-    collect,
   }
 
   if (value.$language) {

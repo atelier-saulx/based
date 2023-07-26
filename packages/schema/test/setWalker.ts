@@ -15,6 +15,14 @@ const schema: BasedSchema = {
         flap: {
           type: 'number',
         },
+        snurpobject: {
+          type: 'object',
+          properties: {
+            x: {
+              type: 'string',
+            },
+          },
+        },
         snurp: {
           type: 'array',
           values: {
@@ -169,17 +177,6 @@ test('collect correctly', async (t) => {
     },
     {
       collectErrors: (info) => {
-        // {
-        //   path,
-        //   value,
-        //   typeSchema,
-        //   fieldSchema,
-        //   target,
-        //   code,
-        //   message,
-        // }
-
-        console.error(info.message)
         // fix fields (too heavy)
       },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {
@@ -471,6 +468,10 @@ test.only('collect all errors', async (t) => {
         type: 'bla',
         blub: 'snux',
         flap: 'gurt',
+        snurpobject: {
+          x: 1,
+        },
+        // wrong validate total objects
         snurp: {
           // checking non formatted objects
           x: { a: 20220 },

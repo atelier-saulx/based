@@ -343,7 +343,6 @@ export type BasedSetTarget = {
   $alias?: string
   $id?: string
   schema: BasedSchema
-  collect: BasedSchemaCollectProps[]
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
 }
