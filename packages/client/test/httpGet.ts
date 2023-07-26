@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { wait } from '@saulx/utils'
+import { encodeAuthState } from '@based/client'
 
 test.serial('http get falsy check', async (t) => {
   const server = new BasedServer({
@@ -73,11 +74,9 @@ test.serial('http get authorize', async (t) => {
   t.is(r1.status, 403)
   t.is(rj1.code, 40301)
 
-  const authorization = encodeURIComponent(
-    JSON.stringify({
-      token: 'bla',
-    })
-  )
+  const authorization = encodeAuthState({
+    token: 'bla',
+  })
   const r2 = await fetch(
     `http://localhost:9910/yeye?authorization=${authorization}`
   )
@@ -85,11 +84,9 @@ test.serial('http get authorize', async (t) => {
   t.is(r2.status, 200)
   t.true(rj2.ok)
 
-  const wrongAuthorization = encodeURIComponent(
-    JSON.stringify({
-      token: 'wrong',
-    })
-  )
+  const wrongAuthorization = encodeAuthState({
+    token: 'wrong',
+  })
   const r3 = await fetch(
     `http://localhost:9910/yeye?authorization=${wrongAuthorization}`
   )

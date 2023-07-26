@@ -15,7 +15,7 @@ export default (authorization: string): AuthState => {
         return { error: 'Illegal key in authState ' + key }
       } else if (key === 'persistent' && typeof authState[key] !== 'boolean') {
         return { error: 'Persistent is not a boolean' }
-      } else if (typeof authState[key] !== 'string') {
+      } else if (key !== 'persistent' && typeof authState[key] !== 'string') {
         return { error: `${key} is not of string` }
       }
     }

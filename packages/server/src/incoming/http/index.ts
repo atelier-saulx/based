@@ -106,7 +106,14 @@ export const httpHandler = (
   let authState: AuthState = {}
 
   if (route.public !== true) {
-    const authorization: string = req.getHeader('authorization')
+    let authorization: string = req.getHeader('authorization')
+
+    if (!authorization && req.getQuery()) {
+      const query = getQuery(req)
+      if (query.authorization) {
+        authorization = query.authorization
+      }
+    }
 
     if (authorization.length > 5e3) {
       sendError(
@@ -133,14 +140,7 @@ export const httpHandler = (
       authState = parseAuthState(authorization)
     } else {
       // TODO: remove this when c++ client can encode
-      let authorization: string = req.getHeader('json-authorization')
-
-      if (!authorization && req.getQuery()) {
-        const query = getQuery(req)
-        if (query.authorization) {
-          authorization = query.authorization
-        }
-      }
+      const authorization: string = req.getHeader('json-authorization')
 
       if (authorization) {
         authState = parseJSONAuthState(authorization)
