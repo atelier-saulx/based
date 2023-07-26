@@ -198,3 +198,28 @@ test.skip('isMultiple', async (t) => {
   )
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
+
+test('value', async (t) => {
+  const { handlers, results } = createHandlers()
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $value: 7 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: { $value: 4 },
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['number'], value: { $value: 4 } }])
+})
