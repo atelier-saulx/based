@@ -207,7 +207,7 @@ test('isMultiple', async (t) => {
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
 
-test.only('set', async (t) => {
+test.only('numbers in a set', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(

@@ -71,7 +71,6 @@ export const setWalker = async (
   if (!('collectErrors' in x)) {
     errors = []
     x.collectErrors = (info) => {
-      console.error('Collect this error', info)
       errors.push(info)
     }
   }
@@ -180,12 +179,14 @@ export const setWalker = async (
   }
 
   if (errors?.length) {
-    throw new Error(
-      'Got some errors ' +
+    const err = new Error(
+      'Errors in in set' +
         errors.reduce((str, info) => {
           return str + `\n - ${info.message}`
         }, '')
     )
+    console.error(err)
+    throw err
   }
 
   if (prevCollect) {
