@@ -316,6 +316,33 @@ test.serial.only('set primitive fields', async (t) => {
     ].sort()
   )
 
+  const single = await client.get([
+    {
+      type: 'node',
+      fields: {
+        $any: [
+          '*',
+          'aliases',
+          ['nonExistingField', 'parents'],
+          'children',
+          '!createdAt',
+          '!updatedAt',
+        ],
+      },
+      source: { id: third },
+      target: { path: 'things' },
+    },
+  ])
+
+  console.dir({ single }, { depth: 6 })
+
+  const po3 = single[0][0][0]
+  t.deepEqual(po3[0], third)
+  t.deepEqual(
+    po3[1].sort(),
+    ['id', third, 'slug', '/third', 'parents', ['po2'], 'children', []].sort()
+  )
+
   t.deepEqual(
     (await client.command('lsaliases'))[0].sort(),
     ['main', 'po1', 'sec', 'po2'].sort()

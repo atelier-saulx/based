@@ -93,14 +93,15 @@ async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
   const find = await client.command('hierarchy.find', [
     '',
     createRecord(protocol.hierarchy_find_def, {
-      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
       merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
       limit: BigInt(-1),
       offset: BigInt(0),
       res_opt_str: fields,
     }),
-    'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
+    // TODO: handle if no id case
+    cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     '#1',
   ])
 
