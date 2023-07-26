@@ -1,5 +1,6 @@
 import type { Language } from './languages'
-import type { PartialDeep } from 'type-fest'
+import type { PartialDeep, SetOptional } from 'type-fest'
+import { ParseError } from './set/error'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -54,6 +55,10 @@ export type BasedSchemaContentMediaType =
   | 'image/png'
   | 'image/jpeg'
   | 'video/mp4'
+  | 'image/*'
+  | 'video/*'
+  | 'audio/*'
+  | '*/*'
   | string
 
 export type BasedSchemaFieldShared = {
@@ -88,7 +93,7 @@ export type BasedSchemaStringShared = {
   minLength?: number
   maxLength?: number
   contentMediaEncoding?: string // base64
-  contentMediaType?: BasedSchemaContentMediaType
+  contentMediaType?: BasedSchemaContentMediaType // 'image/*'
   pattern?: BasedSchemaPattern // TODO: does not exist
   format?:
     | 'email'
@@ -352,9 +357,14 @@ export type BasedSchemaCollectProps = {
 }
 
 export type BasedSetHandlers = {
-  collect: (props: BasedSchemaCollectProps) => void
+  collectErrors: (
+    props: BasedSchemaCollectProps & {
+      message: string
+      code: ParseError
+    }
+  ) => void
 
-  // add collectNeedRequired
+  collect: (props: BasedSchemaCollectProps) => void
 
   checkRequiredFields: (path: (string | number)[]) => Promise<boolean>
 
@@ -363,3 +373,8 @@ export type BasedSetHandlers = {
     $filter: any
   ) => Promise<boolean>
 }
+
+export type BasedSetOptionalHandlers = SetOptional<
+  BasedSetHandlers,
+  'collectErrors'
+>

@@ -34,7 +34,6 @@ test.serial('throw on invalid schema', async (t) => {
       },
     })
   })
-
   t.is(
     prefixError.message,
     'Incorrect prefix "fix" for type "bla" has to be a string of 2 alphanumerical characters e.g. "Az", "ab", "cc", "10"'

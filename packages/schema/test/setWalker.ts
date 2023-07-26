@@ -168,6 +168,20 @@ test('collect correctly', async (t) => {
       ],
     },
     {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {
         results.push({
           path,
@@ -227,6 +241,20 @@ test('collect correctly', async (t) => {
       },
     },
     {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {
         results2.push({
           path,
@@ -260,6 +288,20 @@ test('collect correctly', async (t) => {
       },
     },
     {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {
         results3.push({
           path,
@@ -345,6 +387,20 @@ test('required', async (t) => {
       },
     },
     {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
       checkRequiredFields: async (paths) => {
         return true
@@ -371,6 +427,20 @@ test('required', async (t) => {
       ],
     },
     {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
       collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
       checkRequiredFields: async (paths) => {
         // should be [snurp.x.b, snurp.x.c]
@@ -389,6 +459,45 @@ test('required', async (t) => {
     ['flap'],
     ['snurp'],
   ])
+
+  t.true(true)
+})
+
+test.only('collect all errors', async (t) => {
+  await setWalker(
+    schema,
+    {
+      type: 'bla',
+      blub: 1,
+      flap: 1,
+      snurp: {
+        x: { a: 'b' },
+      },
+    },
+    {
+      collectErrors: (info) => {
+        // {
+        //   path,
+        //   value,
+        //   typeSchema,
+        //   fieldSchema,
+        //   target,
+        //   code,
+        //   message,
+        // }
+
+        console.error(info.message)
+        // fix fields (too heavy)
+      },
+      collect: ({ path, value, typeSchema, fieldSchema, target }) => {},
+      checkRequiredFields: async (paths) => {
+        return true
+      },
+      referenceFilterCondition: async (id, filter) => {
+        return true
+      },
+    }
+  )
 
   t.true(true)
 })

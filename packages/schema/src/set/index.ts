@@ -4,9 +4,12 @@ import {
   BasedSetHandlers,
   BasedSchema,
   BasedSetTarget,
+  BasedSchemaCollectProps,
+  BasedSetOptionalHandlers,
 } from '../types'
 import { error, ParseError } from './error'
 import parsers from './parsers'
+import { SetOptional } from 'type-fest'
 
 export const fieldWalker = async (
   path: (string | number)[],
@@ -54,8 +57,22 @@ export const fieldWalker = async (
 export const setWalker = async (
   schema: BasedSchema,
   value: { [key: string]: any },
-  handlers: BasedSetHandlers
+  inHandlers: BasedSetOptionalHandlers
 ): Promise<BasedSetTarget> => {
+  let errors: (BasedSchemaCollectProps & {
+    message: string
+    code: ParseError
+  })[]
+
+  if (!('collectErrors' in inHandlers)) {
+    errors = []
+    inHandlers.collectErrors = (info) => {
+      errors.push(info)
+    }
+  }
+
+  const handlers: BasedSetHandlers = <BasedSetHandlers>inHandlers
+
   let type: string
 
   if (value.$id) {
@@ -141,6 +158,16 @@ export const setWalker = async (
         error(r, ParseError.requiredFieldNotDefined)
       }
     }
+  }
+
+  if (errors?.length) {
+    // hold collect or nah?
+    throw new Error(
+      'Got some errors ' +
+        errors.reduce((str, info) => {
+          return str + `\n - ${info.path.join('')} ${info.message}`
+        }, '')
+    )
   }
 
   return target
