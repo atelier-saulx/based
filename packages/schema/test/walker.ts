@@ -43,29 +43,28 @@ test('walker', async (t) => {
       parsers: {
         keys: {
           $list: async (args) => {
-            // console.info('list time!', args.path)
-            return true
+            return {
+              ...args,
+
+              value: { flapdrol: true },
+            }
           },
         },
-        fields: {},
+        fields: {
+          // string: () => {}
+        },
         any: async (args) => {
-          //   console.log('  parse any', args.path)
           args.collect(args)
-          return true
+          return args
         },
       },
       collect: (args) => {
-        // console.log('    lulz collect dat command', args.path)
         return args.path.join('.')
       },
-      backtrack: (collectedCommands) => {
+      backtrack: (args, collectedCommands) => {
         console.log('    \n-----------BACK TRACK GOOD GO', collectedCommands)
         // if return next btrack will not receive  backtrack from commands
         return collectedCommands
-      },
-      requiresAsyncValidaton: async (validateType) => {
-        // console.info('lullz async validaion at the end!')
-        return true
       },
     },
     {
@@ -78,7 +77,9 @@ test('walker', async (t) => {
             gur: {
               x: true,
               y: true,
-              $list: true,
+              $list: {
+                $sort: true,
+              },
             },
             c: 40,
             $list: true,
@@ -89,7 +90,7 @@ test('walker', async (t) => {
   )
 
   console.info('------------')
-  //   console.info(x)
+  console.info(x)
 
   t.true(true)
 })
