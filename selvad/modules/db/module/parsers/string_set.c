@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,29 +15,52 @@
 #include "selva_object.h"
 #include "parsers.h"
 
-/* These could be constexpr if clang would have full C23 support. */
-#define EXCL_PREFIX     '!'
-#define SET_SEPARATOR   '\n'
-#define LIST_SEPARATOR  '|'
-#define EOS             '\0'
+static size_t pick_side_list(const char *side_list_prefixes, const char *s)
+{
+    const char *pch = strchr(side_list_prefixes, s[0]);
+
+    return pch ? pch - side_list_prefixes + 1 : 0;
+}
+
+static void side_list_add(struct selva_string *sl, const char *el_str, size_t el_len)
+{
+    const char sep[] = { STRING_SET_SEPARATOR_SET };
+    const char *name_str = el_str + 1;
+    const size_t name_len = el_len - 1;
+
+    /* Ignore id field silently. */
+    if (!(name_len == (sizeof(SELVA_ID_FIELD) - 1) && !memcmp(SELVA_ID_FIELD, name_str, name_len))) {
+        (void)selva_string_append(sl, name_str, name_len);
+        (void)selva_string_append(sl, sep, 1);
+    }
+}
 
 int parse_string_set(
         struct finalizer *finalizer,
         const struct selva_string *raw_in,
         struct SelvaObject **list_out,
-        struct selva_string **excluded_out)
+        const char *side_list_prefixes,
+        struct selva_string **side_list_out[])
 {
     struct SelvaObject *obj = SelvaObject_New();
-    struct selva_string *excl = NULL;
+    const size_t nr_side_lists = strlen(side_list_prefixes);
+    struct selva_string *side_list[nr_side_lists ?: 1];
+    size_t side_list_inuse = 0;
     const char *cur = selva_string_to_str(raw_in, NULL);
     size_t n = 0;
-    size_t nr_excl = 0;
 
-    if (excluded_out) {
-        excl = selva_string_create("", 0, SELVA_STRING_MUTABLE);
+#if 0
+    struct selva_string *excl = NULL;
+    size_t nr_excl = 0;
+#endif
+
+    assert(nr_side_lists == 0 || (nr_side_lists > 0 && side_list_out));
+
+    for (size_t i  = 0; i < nr_side_lists; i++) {
+        side_list[i] = selva_string_create("", 0, SELVA_STRING_MUTABLE);
     }
 
-    if (cur[0] != EOS) {
+    if (cur[0] != STRING_SET_EOS) {
         do {
             const size_t key_len = (size_t)(log10(n + 1)) + 1;
             char key_str[key_len + 1];
@@ -51,7 +75,7 @@ int parse_string_set(
              * Find the separator between the current and the next field name list.
              */
             next = cur;
-            while (*next != EOS && *next != SET_SEPARATOR) {
+            while (*next != STRING_SET_EOS && *next != STRING_SET_SEPARATOR_SET) {
                 next++;
             }
             /*
@@ -76,26 +100,20 @@ int parse_string_set(
                  * Find the separator between the current and the next field name.
                  */
                 next_el = cur_el;
-                while (*next_el != EOS && *next_el != LIST_SEPARATOR && *next_el != SET_SEPARATOR) {
+                while (*next_el != STRING_SET_EOS && *next_el != STRING_SET_SEPARATOR_LIST && *next_el != STRING_SET_SEPARATOR_SET) {
                     next_el++;
                 }
                 el_len = (size_t)((ptrdiff_t)next_el - (ptrdiff_t)cur_el);
 
                 if (el_len > 0) { /* Skip empty elements. */
-                    if (excl && cur_el[0] == EXCL_PREFIX) {
-                        if (el_len > 1) {
-                            const char sep[] = { SET_SEPARATOR };
-                            const char *name_str = cur_el + 1;
-                            const size_t name_len = el_len - 1;
+                    const size_t side_list_i = pick_side_list(side_list_prefixes, cur_el);
 
-                            /* Ignore id field silently. */
-                            if (!(name_len == (sizeof(SELVA_ID_FIELD) - 1) && !memcmp(SELVA_ID_FIELD, name_str, name_len))) {
-                                if (selva_string_append(excl, name_str, name_len) ||
-                                    selva_string_append(excl, sep, 1)) {
-                                    goto fail;
-                                }
-                                nr_excl++;
-                            }
+                    if (side_list_i) {
+                        if (el_len > 1) {
+                            struct selva_string *sl = side_list[side_list_i - 1];
+
+                            side_list_add(sl, cur_el, el_len);
+                            side_list_inuse |= side_list_i;
                         }
                         /* Otherwise we ignore the empty element. */
                     } else {
@@ -111,11 +129,11 @@ int parse_string_set(
                     }
                 }
 
-                if (*next_el == EOS || *next_el == SET_SEPARATOR) {
+                if (*next_el == STRING_SET_EOS || *next_el == STRING_SET_SEPARATOR_SET) {
                     break;
                 }
                 cur_el = next_el + 1;
-            } while (*cur_el != EOS);
+            } while (*cur_el != STRING_SET_EOS);
 
             /*
              * Increment the set index only if elements were inserted at the
@@ -125,28 +143,26 @@ int parse_string_set(
                 n++;
             }
 
-            if (*next == EOS) {
+            if (*next == STRING_SET_EOS) {
                 break;
             }
             cur = next + 1;
-        } while (*cur != EOS);
+        } while (*cur != STRING_SET_EOS);
     }
 
     *list_out = obj;
-    if (excluded_out && nr_excl > 0) {
-        *excluded_out = excl;
-        selva_string_auto_finalize(finalizer, excl);
-    } else if (excluded_out) {
-        *excluded_out = NULL;
-        selva_string_free(excl);
+
+    for (size_t i = 0; i < nr_side_lists; i++) {
+        struct selva_string *sl = side_list[i];
+
+        if (side_list_inuse & (1 << i)) {
+            *side_list_out[i] = sl;
+            selva_string_auto_finalize(finalizer, sl);
+        } else {
+            *side_list_out[i] = NULL;
+            selva_string_free(sl);
+        }
     }
+
     return 0;
-fail:
-    if (obj) {
-        SelvaObject_Destroy(obj);
-    }
-    if (excl) {
-        selva_string_free(excl);
-    }
-    return SELVA_ENOMEM;
 }

@@ -1758,7 +1758,9 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
         selva_string_auto_finalize(&fin, raw);
 
-        err = parse_string_set(&fin, raw, &fields, &excluded_fields);
+        err = parse_string_set(&fin, raw, &fields,
+                               (char []){ STRING_SET_EXCL_PREFIX, '\0' },
+                               (struct selva_string **[]){ &excluded_fields });
         if (err) {
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;

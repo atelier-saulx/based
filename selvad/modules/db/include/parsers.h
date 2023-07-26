@@ -4,6 +4,11 @@
  */
 #pragma once
 
+#define STRING_SET_EXCL_PREFIX      '!'
+#define STRING_SET_SEPARATOR_SET    '\n'
+#define STRING_SET_SEPARATOR_LIST   '|'
+#define STRING_SET_EOS              '\0'
+
 struct SelvaObject;
 struct finalizer;
 struct selva_string;
@@ -37,7 +42,8 @@ int parse_string_set(
         struct finalizer *finalizer,
         const struct selva_string *raw_in,
         struct SelvaObject **list_out,
-        struct selva_string **excluded_out);
+        const char *side_list_prefixes,
+        struct selva_string **side_list_out[]);
 
 int parse_enum(
         const struct parsers_enum types[],

@@ -674,7 +674,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
      * Parse fields.
      */
     selvaobject_autofree struct SelvaObject *fields = NULL;
-    err = parse_string_set(&fin, fields_raw, &fields, NULL);
+    err = parse_string_set(&fin, fields_raw, &fields, "", NULL);
     if (err) {
         selva_send_errorf(resp, err, "Parsing fields list failed");
         return;
