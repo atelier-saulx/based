@@ -1,6 +1,10 @@
 import { Parser } from './types'
 import { error, ParseError } from './error'
-import { BasedSchemaFieldString, BasedSchemaFieldText } from '../types'
+import {
+  BasedSchemaFieldString,
+  BasedSchemaFieldText,
+  BasedSchemaLanguage,
+} from '../types'
 import validators from 'validator'
 import { parseValueAndDefault } from './parseDefaultAndValue'
 
@@ -203,10 +207,7 @@ export const text: Parser<'text'> = async (
   }
 
   for (const key in value) {
-    console.log('loop times', key)
-
-    // @ts-ignore
-    if (!target.schema.languages.includes(key)) {
+    if (!target.schema.languages.includes(<BasedSchemaLanguage>key)) {
       error(path, ParseError.languageNotSupported)
     }
 
