@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, setWalker, BasedSetHandlers } from '../src/index'
+import { BasedSchema, setWalker, BasedSetOptionalHandlers } from '../src/index'
 
 const schema: BasedSchema = {
   types: {
@@ -26,7 +26,7 @@ const schema: BasedSchema = {
 
 const createHandlers = (): {
   results: { path: (number | string)[]; value: any }[]
-  handlers: BasedSetHandlers
+  handlers: BasedSetOptionalHandlers
 } => {
   const results: { path: (number | string)[]; value: any }[] = []
   const handlers = {

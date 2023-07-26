@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, setWalker, BasedSetHandlers } from '../src/index'
+import { BasedSchema, setWalker, BasedSetOptionalHandlers } from '../src/index'
 
 const schema: BasedSchema = {
   types: {
@@ -44,7 +44,7 @@ const schema: BasedSchema = {
 
 const createHandlers = (): {
   results: { path: (number | string)[]; value: any }[]
-  handlers: BasedSetHandlers
+  handlers: BasedSetOptionalHandlers
 } => {
   const results: { path: (number | string)[]; value: any }[] = []
   const handlers = {
@@ -202,7 +202,7 @@ test('isMultiple', async (t) => {
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
 
-test('set', async (t) => {
+test.only('numbers in a set', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -214,11 +214,7 @@ test('set', async (t) => {
       handlers
     )
   )
-  //minx max dont work here
-
   await setWalker(schema, { $id: 'bl1', set: [3, 3, 3, 3] }, handlers)
-  console.log(results)
-  //weird does it have to be with value object?
   t.deepEqual(results, [{ path: ['set'], value: { $value: [3, 3, 3, 3] } }])
 })
 
@@ -267,7 +263,6 @@ test('value', async (t) => {
     )
   )
 
-  console.log('------------>', results)
   await t.throwsAsync(
     setWalker(
       schema,
@@ -328,7 +323,8 @@ test('value', async (t) => {
     { path: ['set'], value: { $value: [3, 3, 3, 4] } },
   ])
 })
-test.only('default', async (t) => {
+
+test('default', async (t) => {
   const { handlers, results } = createHandlers()
 
   await t.throwsAsync(
@@ -374,7 +370,6 @@ test.only('default', async (t) => {
   // )
 
   // validate default stuff
-  console.log('------------>', results)
   await t.throwsAsync(
     setWalker(
       schema,

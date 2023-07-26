@@ -31,7 +31,7 @@ export const parseValueAndDefault: Parser<keyof BasedSchemaFields> = async (
     }
     if (value.$default !== undefined) {
       if (value.$value !== undefined) {
-        error(path, ParseError.valueAndDefault)
+        error(handlers, ParseError.valueAndDefault, path)
       }
       console.info('->', path, 'go')
       await parse(
