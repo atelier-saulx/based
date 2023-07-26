@@ -59,7 +59,7 @@ export type BasedSchemaContentMediaType =
   | 'video/*'
   | 'audio/*'
   | '*/*'
-  | string
+  | `${string}/${string}`
 
 export type BasedSchemaFieldShared = {
   hooks?:
@@ -88,7 +88,6 @@ export type BasedSchemaFieldShared = {
 }
 
 // -------------- Primitive ---------------
-
 export type BasedSchemaStringShared = {
   minLength?: number
   maxLength?: number
