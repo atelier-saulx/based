@@ -201,3 +201,88 @@ test('isMultiple', async (t) => {
   )
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
+
+test('value', async (t) => {
+  const { handlers, results } = createHandlers()
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $value: 7 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $value: 3 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        integer: { value: 3.5 },
+      },
+      handlers
+    )
+  )
+  console.log('------------>', results)
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        multipleOf: { $value: 2 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: { $value: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      integer: { $value: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: { $value: 4 },
+    },
+    handlers
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      multipleOf: { $value: 6 },
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['number'], value: { $value: 4 } },
+    { path: ['integer'], value: { $value: 4 } },
+    { path: ['exclusiveminmax'], value: { $value: 4 } },
+    { path: ['multipleOf'], value: { $value: 6 } },
+  ])
+})
