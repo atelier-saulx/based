@@ -152,26 +152,3 @@ function sourceId(cmd: GetCommand): string {
         .join('')
     : cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0')
 }
-
-async function execSingle(ctx: ExecContext, cmd: GetNode): Promise<void> {
-  const { client } = ctx
-
-  // TODO: handle different types
-  const { fields, isRpn } = getFields(ctx, cmd.fields)
-
-  const find = await client.command('hierarchy.find', [
-    ctx.lang || '',
-    createRecord(protocol.hierarchy_find_def, {
-      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
-      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-      limit: BigInt(-1),
-      offset: BigInt(0),
-      res_opt_str: fields,
-    }),
-    sourceId(cmd),
-    '#1',
-  ])
-
-  return find
-}
