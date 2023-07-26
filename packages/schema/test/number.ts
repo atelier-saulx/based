@@ -375,7 +375,6 @@ test('default', async (t) => {
   )
 
   // validate default stuff
-  console.log('------------>', results)
   await t.throwsAsync(
     setWalker(
       schema,
