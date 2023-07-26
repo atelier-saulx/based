@@ -358,18 +358,17 @@ test('default', async (t) => {
     )
   )
 
-  // await t.throwsAsync(
-  //   setWalker(
-  //     schema,
-  //     {
-  //       $id: 'bl1',
-  //       set: { $default: [1, 3, 3, 4] },
-  //     },
-  //     handlers
-  //   )
-  // )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        set: { $default: [1, 3, 3, 4] },
+      },
+      handlers
+    )
+  )
 
-  // validate default stuff
   await t.throwsAsync(
     setWalker(
       schema,
@@ -414,20 +413,11 @@ test('default', async (t) => {
     handlers
   )
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bl1',
-      set: { $default: [3, 3, 3, 4] },
-    },
-    handlers
-  )
   t.deepEqual(results, [
     { path: ['number'], value: { $default: 4 } },
     { path: ['integer'], value: { $default: 4 } },
     { path: ['exclusiveminmax'], value: { $default: 4 } },
     { path: ['multipleOf'], value: { $default: 6 } },
-    { path: ['set'], value: { $default: [3, 3, 3, 4] } },
   ])
 })
 
@@ -542,7 +532,8 @@ test('decrement', async (t) => {
     { path: ['multipleOf'], value: { $decrement: 9 } },
   ])
 })
-test.only('increment', async (t) => {
+
+test('increment', async (t) => {
   const { handlers, results } = createHandlers()
   //maxmin
   await t.throwsAsync(

@@ -13,9 +13,16 @@ export const set: Parser<'set'> = async (
   handlers,
   noCollect
 ) => {
-  if (value && typeof value === 'object' && value.$value) {
-    value = value.$value
+  if (value && typeof value === 'object') {
+    if (value.$default) {
+      error(handlers, ParseError.defaultNotSupported, path)
+    }
+
+    if (value.$value) {
+      value = value.$value
+    }
   }
+
   const q: Promise<void>[] = []
   const fieldDef = fieldSchema.items
 
