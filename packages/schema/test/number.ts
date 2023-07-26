@@ -202,7 +202,7 @@ test('isMultiple', async (t) => {
   t.deepEqual(results, [{ path: ['multipleOf'], value: 9 }])
 })
 
-test.only('numbers in a set', async (t) => {
+test('numbers in a set', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -428,5 +428,228 @@ test('default', async (t) => {
     { path: ['exclusiveminmax'], value: { $default: 4 } },
     { path: ['multipleOf'], value: { $default: 6 } },
     { path: ['set'], value: { $default: [3, 3, 3, 4] } },
+  ])
+})
+
+test('decrement', async (t) => {
+  const { handlers, results } = createHandlers()
+  //maxmin
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $decrement: 2 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $decrement: 7 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: { $decrement: 3 },
+    },
+    handlers
+  )
+  //exclusiveminmax
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $decrement: 3 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $decrement: 6 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: { $decrement: 4 },
+    },
+    handlers
+  )
+
+  //integer
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        integer: { $decrement: 3.5 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      integer: { $decrement: 3 },
+    },
+    handlers
+  )
+  //multiple of
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        multipleOf: { $decrement: 7 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      multipleOf: { $decrement: 9 },
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['number'], value: { $decrement: 3 } },
+    { path: ['exclusiveminmax'], value: { $decrement: 4 } },
+    { path: ['integer'], value: { $decrement: 3 } },
+    { path: ['multipleOf'], value: { $decrement: 9 } },
+  ])
+})
+test.only('increment', async (t) => {
+  const { handlers, results } = createHandlers()
+  //maxmin
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $increment: 2 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        number: { $increment: 7 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      number: { $increment: 3 },
+    },
+    handlers
+  )
+  //exclusiveminmax
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $increment: 3 },
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        exclusiveminmax: { $increment: 6 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      exclusiveminmax: { $increment: 4 },
+    },
+    handlers
+  )
+
+  //integer
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        integer: { $increment: 3.5 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      integer: { $increment: 3 },
+    },
+    handlers
+  )
+  //multiple of
+
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        multipleOf: { $increment: 7 },
+      },
+      handlers
+    )
+  )
+
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      multipleOf: { $increment: 9 },
+    },
+    handlers
+  )
+  t.deepEqual(results, [
+    { path: ['number'], value: { $increment: 3 } },
+    { path: ['exclusiveminmax'], value: { $increment: 4 } },
+    { path: ['integer'], value: { $increment: 3 } },
+    { path: ['multipleOf'], value: { $increment: 9 } },
   ])
 })
