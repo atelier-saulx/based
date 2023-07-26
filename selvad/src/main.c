@@ -5,6 +5,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include "jemalloc.h"
+#include "libdeflate.h"
 #include "selva_log.h"
 #include "event_loop.h"
 #include "module.h"
@@ -40,4 +42,9 @@ int main(void)
     evl_deinit();
 
     return 0;
+}
+
+__constructor static void init_main(void)
+{
+    libdeflate_set_memory_allocator(selva_malloc, selva_free);
 }
