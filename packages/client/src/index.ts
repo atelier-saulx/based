@@ -139,7 +139,7 @@ export class BasedDbClient extends Emitter {
             return args
           },
         },
-        backtrack(cmds) {
+        backtrack(args, cmds) {
           console.log('BACKTRACK', cmds)
           return cmds
         },
