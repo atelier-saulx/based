@@ -228,21 +228,26 @@ test.serial.only('set primitive fields', async (t) => {
     parents: ['po2'],
   })
 
-  const find = await client.command('hierarchy.find', [
-    '',
-    createRecord(protocol.hierarchy_find_def, {
-      dir: protocol.SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-      limit: BigInt(-1),
-      offset: BigInt(0),
-      res_opt_str: '*\naliases\nparents\nchildren\n!createdAt\n!updatedAt',
-    }),
-    'root'.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
-    '#1',
+  const find = await client.get([
+    {
+      type: 'node',
+      fields: {
+        $any: [
+          '*',
+          'aliases',
+          ['nonExistingField', 'parents'],
+          'children',
+          '!createdAt',
+          '!updatedAt',
+        ],
+      },
+      source: { id: 'root' },
+      target: { path: 'things' },
+    },
   ])
+
   console.dir(find, { depth: 6 })
-  const res = find[0]
+  const res = find[0][0]
   t.deepEqual(res[0][0], 'po1')
   t.deepEqual(
     res[0][1].sort(),

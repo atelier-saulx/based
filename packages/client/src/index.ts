@@ -17,6 +17,7 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
+import { get, GetCommand } from './get'
 import genId from './id'
 
 export * as protocol from './protocol'
@@ -99,6 +100,20 @@ export class BasedDbClient extends Emitter {
     }
 
     return resp?.[0]?.[0]
+  }
+
+  // TODO: real opts
+  async get(opts: GetCommand[]): Promise<any> {
+    const res: any[] = []
+    return get(
+      {
+        client: this,
+        cb: (x) => {
+          res.push(x)
+        },
+      },
+      opts
+    )
   }
 
   onData(data: Buffer) {
