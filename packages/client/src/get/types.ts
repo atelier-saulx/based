@@ -4,7 +4,6 @@ import { BasedDbClient } from '..'
 export type ExecContext = {
   client: BasedDbClient
   lang?: string
-  cb: (args: { target: { path: string }; value: any }) => void
 }
 
 export type TraverseByType = {

@@ -10,6 +10,7 @@ import {
 import { SelvaTraversal } from '../protocol'
 
 export * from './types'
+export * from './parse'
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
   descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,

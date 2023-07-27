@@ -1,4 +1,4 @@
-import { BasedSchema, BasedSchemaPartial, setWalker, walk } from '@based/schema'
+import { BasedSchema, BasedSchemaPartial, setWalker } from '@based/schema'
 
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
@@ -12,7 +12,7 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { get, GetCommand } from './get'
+import { get, GetCommand, parseGetOpts } from './get'
 import genId from './id'
 
 export * as protocol from './protocol'
@@ -102,64 +102,15 @@ export class BasedDbClient extends Emitter {
 
   async things(opts: any): Promise<void> {
     console.log('walking')
-    await walk(
-      {
-        async init(val, args) {
-          // TODO: deal with alias etc.
-          return { $id: val.$id }
-        },
-        collect(args) {
-          console.log('PUT', args.path, args.value)
-          if (args.value === true) {
-            return args.path[args.path.length - 1]
-          }
-        },
-        schema: this.schema,
-        parsers: {
-          fields: {},
-          keys: {
-            $id: async (args) => {
-              if (args.path.length >= 2) {
-                // ignore top-level
-                args.collect(args)
-              }
-            },
-            $list: async (args) => {
-              const { value } = args
-              if (value === true) {
-                args.collect(args)
-                return
-              }
-
-              return args
-            },
-          },
-          async any(args) {
-            args.collect(args)
-            return args
-          },
-        },
-        backtrack(args, cmds) {
-          console.log('BACKTRACK', cmds)
-          return cmds
-        },
-        async requiresAsyncValidation(t) {
-          return false
-        },
-      },
-      opts
-    )
+    const cmds = await parseGetOpts({ client: this }, opts)
+    console.log('CMDS', cmds)
   }
 
   // TODO: real opts
   async get(opts: GetCommand[]): Promise<any> {
-    const res: any[] = []
     return get(
       {
         client: this,
-        cb: (x) => {
-          res.push(x)
-        },
       },
       opts
     )
