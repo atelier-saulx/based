@@ -113,7 +113,7 @@ int parse_string_set(
                     (void)string_set_list_add(sl, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, cur, cur_len);
                 }
                 /* Otherwise we ignore the empty element. */
-            } else { /* Add to `fields` */
+            } else { /* Add to the regular list */
                 size_t nr_el = 0;
                 const char *cur_el = cur;
 
