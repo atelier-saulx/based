@@ -94,8 +94,8 @@ static char *test_parse3(void)
     pu_assert_equal("", err, 0);
     pu_assert_null("", excl);
 
-    assert_list(list, "@best[0]", "name");
-    assert_list(list, "@best[1]", "id");
+    assert_list(list, "best@[0]", "name");
+    assert_list(list, "best@[1]", "id");
     assert_list(list, "1[0]", "desc");
 }
 

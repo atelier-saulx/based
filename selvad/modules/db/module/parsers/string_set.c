@@ -63,19 +63,15 @@ static void so_add_n(struct SelvaObject *obj, size_t n, const char *str, size_t 
 
 /**
  * Add to the list with an alias index.
- * `alias` is prefixed with STRING_SET_ALIAS.
+ * `alias` should be suffixed with a STRING_SET_ALIAS.
  */
 static void so_add_alias(struct SelvaObject *obj, const char *alias_str, size_t alias_len, const char *str, size_t len)
 {
-    const size_t key_len = alias_len + 1;
-    char key_str[key_len];
     struct selva_string *s;
 
-    key_str[0] = STRING_SET_ALIAS;
-    memcpy(key_str + 1, alias_str, alias_len);
     s = selva_string_create(str, len, 0);
 
-    SelvaObject_InsertArrayStr(obj, key_str, key_len, SELVA_OBJECT_STRING, s);
+    SelvaObject_InsertArrayStr(obj, alias_str, alias_len, SELVA_OBJECT_STRING, s);
 }
 
 int parse_string_set(
@@ -138,7 +134,7 @@ int parse_string_set(
 
                 if (alias_end) {
                     alias_str = cur;
-                    alias_len = alias_end - alias_str;
+                    alias_len = alias_end + 1 - alias_str;
                     cur = alias_end + 1;
                 }
 
