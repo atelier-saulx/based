@@ -22,6 +22,15 @@ static size_t pick_side_list(const char *side_list_prefixes, const char *s)
     return pch ? pch - side_list_prefixes + 1 : 0;
 }
 
+static struct selva_string *ensure_side_list(struct selva_string *list[], size_t i)
+{
+    if (!list[i]) {
+        list[i] = selva_string_create("", 0, SELVA_STRING_MUTABLE);
+    }
+
+    return list[i];
+}
+
 static void side_list_add(struct selva_string *sl, const char *el_str, size_t el_len)
 {
     const char sep[] = { STRING_SET_SEPARATOR_SET };
@@ -45,7 +54,6 @@ int parse_string_set(
     struct SelvaObject *obj = SelvaObject_New();
     const size_t nr_side_lists = strlen(side_list_prefixes);
     struct selva_string *side_list[nr_side_lists ?: 1];
-    size_t side_list_inuse = 0;
     const char *cur = selva_string_to_str(raw_in, NULL);
     size_t n = 0;
 
@@ -57,7 +65,7 @@ int parse_string_set(
     assert(nr_side_lists == 0 || (nr_side_lists > 0 && side_list_out));
 
     for (size_t i  = 0; i < nr_side_lists; i++) {
-        side_list[i] = selva_string_create("", 0, SELVA_STRING_MUTABLE);
+        side_list[i] = NULL;
     }
 
     if (cur[0] != STRING_SET_EOS) {
@@ -109,11 +117,13 @@ int parse_string_set(
                     const size_t side_list_i = pick_side_list(side_list_prefixes, cur_el);
 
                     if (side_list_i) {
-                        if (el_len > 1) {
-                            struct selva_string *sl = side_list[side_list_i - 1];
+                        assert(side_list_i <= nr_side_lists);
 
+                        if (el_len > 1) {
+                            struct selva_string *sl;
+
+                            sl = ensure_side_list(side_list, side_list_i - 1);
                             side_list_add(sl, cur_el, el_len);
-                            side_list_inuse |= side_list_i;
                         }
                         /* Otherwise we ignore the empty element. */
                     } else {
@@ -155,7 +165,7 @@ int parse_string_set(
     for (size_t i = 0; i < nr_side_lists; i++) {
         struct selva_string *sl = side_list[i];
 
-        if (side_list_inuse & (1 << i)) {
+        if (sl) {
             *side_list_out[i] = sl;
             selva_string_auto_finalize(finalizer, sl);
         } else {
