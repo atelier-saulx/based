@@ -45,6 +45,21 @@ int string_set_list_add(struct selva_string *sl, const char *opt_ignore_str, siz
     return selva_string_append(sl, sep, 1);
 }
 
+static void so_add(struct SelvaObject *obj, size_t n, const char *str, size_t len)
+{
+    const size_t key_len = (size_t)(log10(n + 1)) + 1;
+    char key_str[key_len + 1];
+    struct selva_string *s;
+
+    snprintf(key_str, key_len + 1, "%zu", n);
+    s = selva_string_create(str, len, 0);
+
+    /*
+     * Add to the list.
+     */
+    SelvaObject_InsertArrayStr(obj, key_str, key_len, SELVA_OBJECT_STRING, s);
+}
+
 int parse_string_set(
         struct finalizer *finalizer,
         const struct selva_string *raw_in,
@@ -81,70 +96,56 @@ int parse_string_set(
                 next++;
             }
 
-            /*
-             * Create the set elements.
-             */
-            size_t nr_el = 0;
-            const char *cur_el = cur;
-            do {
-                const char *next_el;
-                size_t el_len;
+            const size_t cur_len = (size_t)((ptrdiff_t)next - (ptrdiff_t)cur);
+            size_t side_list_i;
+            if ((side_list_i = pick_side_list(side_list_prefixes, cur))) { /* Add to a side list */
+                assert(side_list_i <= nr_side_lists);
 
-                /*
-                 * Find the separator between the current and the next field name.
-                 */
-                next_el = cur_el;
-                while (*next_el != STRING_SET_EOS && *next_el != STRING_SET_SEPARATOR_LIST && *next_el != STRING_SET_SEPARATOR_SET) {
-                    next_el++;
+                if (cur_len > 1) {
+                    struct selva_string *sl;
+
+                    sl = ensure_side_list(side_list, side_list_i - 1);
+                    /*
+                     * `id` field is never added here. That's stupid but
+                     * we assume this is a some sort of excluded_fields
+                     * list.
+                     */
+                    (void)string_set_list_add(sl, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, cur, cur_len);
                 }
-                el_len = (size_t)((ptrdiff_t)next_el - (ptrdiff_t)cur_el);
+                /* Otherwise we ignore the empty element. */
+            } else { /* Add to `fields` */
+                size_t nr_el = 0;
+                const char *cur_el = cur;
 
-                if (el_len > 0) { /* Skip empty elements. */
-                    const size_t side_list_i = pick_side_list(side_list_prefixes, cur_el);
+                do {
+                    const char *next_el = cur_el;
 
-                    if (side_list_i) {
-                        assert(side_list_i <= nr_side_lists);
+                    /*
+                     * Find the separator between the current and the next field name.
+                     */
+                    while (*next_el != STRING_SET_EOS && *next_el != STRING_SET_SEPARATOR_LIST && *next_el != STRING_SET_SEPARATOR_SET) {
+                        next_el++;
+                    }
 
-                        if (el_len > 1) {
-                            struct selva_string *sl;
-
-                            sl = ensure_side_list(side_list, side_list_i - 1);
-                            /*
-                             * `id` field is never added here. That's stupid but
-                             * we assume this is a some sort of excluded_fields
-                             * list.
-                             */
-                            (void)string_set_list_add(sl, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, cur_el, el_len);
-                        }
-                        /* Otherwise we ignore the empty element. */
-                    } else {
-                        const size_t key_len = (size_t)(log10(n + 1)) + 1;
-                        char key_str[key_len + 1];
-                        struct selva_string *el;
-
-                        snprintf(key_str, key_len + 1, "%zu", n);
-                        el = selva_string_create(cur_el, el_len, 0);
-
-                        /*
-                         * Add to the list.
-                         */
-                        SelvaObject_InsertArrayStr(obj, key_str, key_len, SELVA_OBJECT_STRING, el);
+                    const size_t el_len = (size_t)((ptrdiff_t)next_el - (ptrdiff_t)cur_el);
+                    if (el_len > 0) { /* Skip empty elements. */
+                        so_add(obj, n, cur_el, el_len);
                         nr_el++;
                     }
-                }
 
-                if (*next_el == STRING_SET_EOS || *next_el == STRING_SET_SEPARATOR_SET) {
-                    break;
-                }
-                cur_el = next_el + 1;
-            } while (*cur_el != STRING_SET_EOS);
+                    if (*next_el == STRING_SET_EOS || *next_el == STRING_SET_SEPARATOR_SET) {
+                        break;
+                    }
+                    cur_el = next_el + 1;
+                } while (*cur_el != STRING_SET_EOS);
 
-            /*
-             * Increment the set index only if elements were inserted at the
-             * index.
-             */
-            if (nr_el > 0) {
-                n++;
+                /*
+                 * Increment the set index only if elements were inserted at the
+                 * index.
+                 */
+                if (nr_el > 0) {
+                    n++;
+                }
             }
 
             if (*next == STRING_SET_EOS) {
