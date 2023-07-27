@@ -2,6 +2,7 @@ import {
   BasedSchemaField,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
 } from '@based/schema'
 import { joinPath } from '../../util'
@@ -79,6 +80,18 @@ function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
   return obj
 }
 
+function parseRecFields(schema: BasedSchemaField, fields: any[]): any {
+  const obj: any = {}
+  for (let i = 0; i < fields.length; i += 2) {
+    const f = fields[i]
+    const v = fields[i + 1]
+
+    obj[f] = parseFieldResult(schema, v)
+  }
+
+  return obj
+}
+
 const FIELD_PARSERS: Record<
   string,
   (x: any, fieldSchema?: BasedSchemaField) => any
@@ -99,6 +112,9 @@ const FIELD_PARSERS: Record<
   },
   object: (ary: any[], fieldSchema: BasedSchemaFieldObject) => {
     return parseObjFields(fieldSchema, ary)
+  },
+  record: (ary: any[], fieldSchema: BasedSchemaFieldRecord) => {
+    return parseRecFields(fieldSchema.values, ary)
   },
 }
 

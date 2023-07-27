@@ -68,13 +68,14 @@ export async function parseGetOpts(
         const { path, key } = args
         const { id, $id, type } = args.target
 
-        const shouldPrefixNestedFields: boolean = type === 'node' && !!key
+        const shouldPrefixFields: boolean =
+          type === 'node' && !!key && id === $id
 
         const fields: string[] = []
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
           if (typeof entry === 'string') {
-            fields.push(shouldPrefixNestedFields ? `${key}.${entry}` : entry)
+            fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
           } else {
             const nestedCmd: GetCommand = entry
 
@@ -84,7 +85,7 @@ export async function parseGetOpts(
             if (canMerge) {
               // TODO: handle $field and false (exclude)
               for (const f of nestedCmd.fields.$any) {
-                fields.push(shouldPrefixNestedFields ? `${key}.${f}` : f)
+                fields.push(shouldPrefixFields ? `${key}.${f}` : f)
               }
             } else {
               nestedCommands.push(nestedCmd)
