@@ -12,7 +12,7 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "dependencies": {
-    "cross-fetch": "^3.1.8"
+    "cross-fetch": "3.1.8"
   },
   "devDependencies": {
     "rimraf": "^3.0.2"
