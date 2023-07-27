@@ -6,7 +6,12 @@ export async function parseGetOpts(
   opts: any
 ): Promise<GetCommand[]> {
   let topLevel: GetCommand
-  await walk<{ id: string; $id: string; type: 'node' | 'traverse' }>(
+  await walk<{
+    id: string
+    $id: string
+    type: 'node' | 'traverse'
+    $list?: any
+  }>(
     {
       async init(args) {
         return {
@@ -33,6 +38,7 @@ export async function parseGetOpts(
                 target: {
                   ...args.target,
                   type: 'traverse',
+                  $list: value.$list,
                 },
               }
             } else if (value.$id) {
@@ -66,7 +72,7 @@ export async function parseGetOpts(
         const entries = [...backtracked, ...collected]
 
         const { path, key } = args
-        const { id, $id, type } = args.target
+        const { id, $id, type, $list } = args.target
 
         const shouldPrefixFields: boolean =
           type === 'node' && !!key && id === $id
@@ -103,12 +109,13 @@ export async function parseGetOpts(
             nestedCommands,
           }
         } else {
+          const sourceField = $list?.$find?.$traverse || String(key)
           cmd = {
             type: 'traverse',
             fields: { $any: fields },
             source: { id: id },
             target: { path },
-            sourceField: String(key), // TODO: handle othoer cases like $find
+            sourceField,
             nestedCommands,
           }
         }

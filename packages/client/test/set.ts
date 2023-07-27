@@ -391,6 +391,8 @@ test.serial.only('set primitive fields', async (t) => {
       id: true,
       title: true,
       slug: true,
+      aliases: true,
+      children: true,
       $list: {
         $find: {
           $traverse: 'parents',

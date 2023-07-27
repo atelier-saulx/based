@@ -109,6 +109,11 @@ const FIELD_PARSERS: Record<
       return parseFieldResult(fieldSchema.items, x)
     })
   },
+  references: (ary: any[], fieldSchema: BasedSchemaFieldSet) => {
+    return ary.map((x) => {
+      return parseFieldResult({ type: 'string' }, x)
+    })
+  },
   object: (ary: any[], fieldSchema: BasedSchemaFieldObject) => {
     return parseObjFields(fieldSchema, ary)
   },
