@@ -33,7 +33,6 @@ export function parseGetResult(
 }
 
 function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
-  console.log('RAW RESULT', result)
   return result.map((row) => {
     const [id, fields]: [string, any[]] = row
 
