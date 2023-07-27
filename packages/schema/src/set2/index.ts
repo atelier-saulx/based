@@ -1,6 +1,9 @@
 import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
 import { walk } from '../walker'
+import { array } from './array'
+import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
+import { deepEqual } from '@saulx/utils'
 
 // add required
 // add method to handle $value and $default easy
@@ -21,14 +24,20 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
             }
           },
           $value: async (args) => {
-            // what do we want from this
-            return args
+            args.stop()
+            if (args.parentValue.$default) {
+              args.error(args, ParseError.valueAndDefault)
+              return
+            }
+            return { ...args, path: args.path.slice(0, -1) }
           },
-          $default: async () => {
-            //
+          $default: async (args) => {
+            args.stop()
+            return args
           },
         },
         fields: {
+          array,
           object: async (args) => {
             if (typeof value !== 'object') {
               args.error(args, ParseError.incorrectFormat)
@@ -39,120 +48,35 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
               args.error(args, ParseError.incorrectFormat)
               return
             }
+            // add the async thing as well..
+            // if (args.fieldSchema.required) {
+            //   for (const req of args.fieldSchema.required) {
+            //     if (!(req in value)) {
+            //       args.target.required.push([...args.path, req])
+            //     }
+            //   }
+            // }
             return args
           },
-          array: async (args) => {
-            const { value, error, parse, fieldSchema } = args
-            let isArray = Array.isArray(value)
-            let parsedValue = value
-            let opCount = 0
-            let has$Value = false
-            if (typeof parsedValue === 'object' && !isArray) {
-              if (value.$value) {
-                opCount++
-                has$Value = true
-                parsedValue = value.$value
-                isArray = Array.isArray(parsedValue)
-              }
-              if (value.$insert) {
-                opCount++
-                if (opCount > 1) {
-                  error(args, ParseError.multipleOperationsNotAllowed)
-                  return
-                }
-                if (
-                  typeof value.$insert !== 'object' ||
-                  value.$insert.$idx === undefined
-                ) {
-                  error(args, ParseError.incorrectFormat)
-                  return
-                } else {
-                  const insert = Array.isArray(value.$insert.$value)
-                    ? value.$insert.$value
-                    : [value.$insert.$value]
-                  const q: Promise<any>[] = []
-                  for (let i = 0; i < insert.length; i++) {
-                    q.push(parse(args, i, insert[i], fieldSchema.values, true))
-                  }
-                  await Promise.all(q)
-                }
-              }
-              if (value.$remove) {
-                opCount++
-                if (opCount > 1) {
-                  error(args, ParseError.multipleOperationsNotAllowed)
-                  return
-                }
-                if (value.$remove.$idx === undefined) {
-                  error(args, ParseError.incorrectFormat)
-                  return
-                }
-              }
-              if (value.$push) {
-                opCount++
-                if (opCount > 1) {
-                  error(args, ParseError.multipleOperationsNotAllowed)
-                  return
-                }
-                const q: Promise<any>[] = []
-                const push = Array.isArray(value.$push)
-                  ? value.$push
-                  : [value.$push]
-                for (let i = 0; i < push.length; i++) {
-                  q.push(parse(args, i, push[i], fieldSchema.values, true))
-                }
-                await Promise.all(q)
-                parsedValue = { $push: push }
-              }
-              if (value.$unshift) {
-                opCount++
-                if (opCount > 1) {
-                  error(args, ParseError.multipleOperationsNotAllowed)
-                  return
-                }
-                const q: Promise<any>[] = []
-                const unshift = Array.isArray(value.$unshift)
-                  ? value.$unshift
-                  : [value.$unshift]
-                for (let i = 0; i < unshift.length; i++) {
-                  q.push(parse(args, i, unshift[i], fieldSchema.values, true))
-                }
-                await Promise.all(q)
-                parsedValue = { $unshift: unshift }
-              }
-              if (value.$assign) {
-                opCount++
-                if (opCount > 1) {
-                  error(args, ParseError.multipleOperationsNotAllowed)
-                  return
-                }
-                if (
-                  typeof value.$assign !== 'object' ||
-                  typeof value.$assign.$idx !== 'number'
-                ) {
-                  error(args, ParseError.incorrectFormat)
-                  return
-                }
-                await parse(args, value.$assign.$idx, fieldSchema.values)
+          cardinality: async (args) => {
+            const { value, error } = args
+            let hashedValue: string
+            if (value && typeof value === 'object') {
+              if (value.$default !== undefined) {
+                error(args, ParseError.defaultNotSupported)
                 return
               }
-              if (!has$Value) {
-                args.collect(args, parsedValue)
+              if (value.$value !== undefined) {
+                hashedValue = hashObjectIgnoreKeyOrder(value.$value).toString(
+                  16
+                )
+              } else {
+                hashedValue = hashObjectIgnoreKeyOrder(value).toString(16)
               }
-              if (!has$Value) {
-                return
-              }
+            } else {
+              hashedValue = hash(value).toString(16)
             }
-            if (!isArray) {
-              error(args, ParseError.incorrectFieldType)
-              return
-            }
-            const q: Promise<any>[] = []
-            args.collect(args, { $delete: true })
-            for (let i = 0; i < parsedValue.length; i++) {
-              q.push(parse(args, i, parsedValue[i], fieldSchema.values))
-            }
-            await Promise.all(q)
+            args.collect(args, hashedValue)
           },
           boolean: async (args) => {
             if (typeof args.value !== 'boolean') {
@@ -160,6 +84,17 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
               return
             }
             args.collect(args)
+          },
+          enum: async (args) => {
+            const { fieldSchema, error, collect, value } = args
+            const enumValues = fieldSchema.enum
+            for (let i = 0; i < enumValues.length; i++) {
+              if (deepEqual(enumValues[i], value)) {
+                collect(args, i)
+                return
+              }
+            }
+            error(args, ParseError.incorrectFormat)
           },
         },
         catch: async (args) => {
@@ -196,7 +131,13 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
         return { ...args, target, typeSchema }
       },
       collect: (args, value) => {
-        console.info('COLLECT!', args.path.join('.'), value)
+        if (args.key === '$default') {
+          console.info('COLLECT!', args.path.slice(0, -1).join('.'), {
+            $default: value,
+          })
+        } else {
+          console.info('COLLECT!', args.path.join('.'), value)
+        }
       },
     },
     value

@@ -43,7 +43,7 @@ export type Args<
   key?: number | string
   value: any
   target: T
-  stop: () => void
+  stop: (stopFieldParser?: boolean) => void
   fromBackTrack: any[]
   parse: Parse<T>
   actualCollect: Collect<T>
@@ -123,17 +123,22 @@ export const walk = async <T>(
     const collectedCommands: any[] = []
     const fromBackTrack: any[] = []
     let stop = false
+    let stopSelf = false
     const args: Args<T> = {
       schema: opts.schema,
-      stop: () => {
-        stop = true
+      stop: (stopFieldParser) => {
+        if (stopFieldParser) {
+          stopSelf = true
+        } else {
+          stop = true
+        }
       },
       // @ts-ignore
       fieldSchema: fieldSchema,
       typeSchema: prevArgs.typeSchema,
       path: key !== undefined ? [...prevArgs.path, key] : prevArgs.path,
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
-      parentValue: value ? prevArgs.value : undefined,
+      parentValue: value !== undefined ? prevArgs.value : undefined,
       value: value ?? prevArgs.value,
       target: prevArgs.target,
       parse: prevArgs.parse,
@@ -163,6 +168,7 @@ export const walk = async <T>(
             (async () => {
               const newArgs = await opts.parsers.keys[key]({
                 ...args,
+                parentValue: args.value,
                 value: args.value[key],
                 path: [...args.path, key],
                 key,
@@ -183,91 +189,39 @@ export const walk = async <T>(
         if (args.typeSchema && !args.fieldSchema) {
           for (const key in args.typeSchema.fields) {
             const fieldSchema = args.typeSchema.fields[key]
-            const fieldParser = opts.parsers.fields[fieldSchema.type]
-
-            if (fieldParser) {
+            if (key in args.value) {
               keysHandled.add(key)
-              if (key in args.value) {
-                fieldQ.push(
-                  (async () => {
-                    const newArgs = await fieldParser({
-                      ...args,
-                      value: args.value[key],
-                      path: [...args.path, key],
-                      // @ts-ignore
-                      fieldSchema,
-                      key,
-                    })
-                    if (newArgs) {
-                      return parse(
-                        newArgs,
-                        undefined,
-                        undefined,
-                        newArgs.fieldSchema
-                      )
-                    }
-                  })()
-                )
-              }
+              fieldQ.push(parse(args, key, args.value[key], fieldSchema))
             }
           }
-        } else if (args.fieldSchema) {
-          // and more as well ofc..
-
+        } else if (args.fieldSchema && !stopSelf) {
           if (args.fieldSchema.type === 'object') {
             // @ts-ignore should detect from line above
             const objFieldSchema: BasedSchemaFieldObject = args.fieldSchema
             for (const key in objFieldSchema.properties) {
               const fieldSchema = objFieldSchema.properties[key]
-              const fieldParser = opts.parsers.fields[fieldSchema.type]
+              const fieldParser =
+                'enum' in fieldSchema
+                  ? opts.parsers.fields.enum
+                  : opts.parsers.fields[fieldSchema.type]
               if (fieldParser) {
-                keysHandled.add(key)
                 if (key in args.value) {
-                  fieldQ.push(
-                    (async () => {
-                      const newArgs = await fieldParser({
-                        ...args,
-                        value: args.value[key],
-                        path: [...args.path, key],
-                        // @ts-ignore
-                        fieldSchema,
-                        key,
-                      })
-                      if (newArgs) {
-                        return parse(
-                          newArgs,
-                          undefined,
-                          undefined,
-                          newArgs.fieldSchema
-                        )
-                      }
-                    })()
-                  )
+                  keysHandled.add(key)
+                  fieldQ.push(parse(args, key, args.value[key], fieldSchema))
                 }
               }
             }
-          } else {
-            if (args.fieldSchema) {
-              console.log(
-                'got a fieldSchema',
-                args.fieldSchema,
-                'and is object',
-                args.value,
-                value,
-                '???'
-              )
-              const fieldParser = opts.parsers.fields[fieldSchema.type]
-              if (fieldParser) {
-                // @ts-ignore
-                const newArgs = await fieldParser(args)
-                if (newArgs) {
-                  return parse(
-                    newArgs,
-                    undefined,
-                    undefined,
-                    newArgs.fieldSchema
-                  )
-                }
+          } else if (args.fieldSchema) {
+            // dont know if this is correct actually...
+            const fieldParser =
+              'enum' in fieldSchema
+                ? opts.parsers.fields.enum
+                : opts.parsers.fields[fieldSchema.type]
+            if (fieldParser) {
+              // @ts-ignore
+              const newArgs = await fieldParser(args)
+              if (newArgs) {
+                return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
               }
             }
           }
@@ -282,12 +236,13 @@ export const walk = async <T>(
               if (!opts.parsers.any && (keysHandled.has(i) || allKeysHandled)) {
                 continue
               }
-              const parser = opts.parsers.any
+              const parser = opts.parsers.any || opts.parsers.catch
               const j = i
               q.push(
                 (async () => {
                   const newArgs = await parser({
                     ...args,
+                    parentValue: args.value,
                     value: args.value[j],
                     path: [...args.path, j],
                     key: j,
@@ -316,6 +271,7 @@ export const walk = async <T>(
                 (async () => {
                   const newArgs = await anyParser({
                     ...args,
+                    parentValue: args.value,
                     value: args.value[key],
                     path: [...args.path, key],
                     key,
@@ -347,19 +303,19 @@ export const walk = async <T>(
       }
     } else {
       if (args.fieldSchema) {
-        console.log(
-          'got a fieldSchema',
-          args.fieldSchema,
-          'and field',
-          args.value
-        )
-        const fieldParser = opts.parsers.fields[fieldSchema.type]
+        const fieldParser =
+          'enum' in fieldSchema
+            ? opts.parsers.fields.enum
+            : opts.parsers.fields[fieldSchema.type]
         if (fieldParser) {
           // @ts-ignore
           const newArgs = await fieldParser(args)
           if (newArgs) {
             return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
           }
+        } else {
+          const anyParser = opts.parsers.any || opts.parsers.catch
+          anyParser(args)
         }
       }
     }

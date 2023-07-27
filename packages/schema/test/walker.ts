@@ -109,11 +109,17 @@ test.only('set walker', async (t) => {
       bla: {
         prefix: 'bl',
         fields: {
+          uniq: { type: 'cardinality' },
           snup: { type: 'boolean' },
           flap: {
             type: 'object',
+            required: ['durp'],
             properties: {
+              durp: { type: 'boolean' },
               gurt: { type: 'boolean' },
+              durpi: {
+                enum: ['yuzi', 'jux', 'mr tony', 9000],
+              },
               x: {
                 type: 'array',
                 values: {
@@ -138,9 +144,22 @@ test.only('set walker', async (t) => {
   const x = await setWalker2(schema, {
     $id: 'bl1',
     snup: false,
+    uniq: {
+      $value: 'wpeojwepojfewpio',
+    },
     flap: {
       gurt: true,
-      x: [true, false, false, true],
+      durpi: {
+        $value: 'jux',
+      },
+      x: [
+        true,
+        false,
+        false,
+        true,
+        { $value: false },
+        { $default: true, $value: false },
+      ],
     },
   })
 
