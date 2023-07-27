@@ -100,10 +100,16 @@ export class BasedDbClient extends Emitter {
     return resp?.[0]?.[0]
   }
 
-  async things(opts: any): Promise<void> {
+  async things(opts: any): Promise<any> {
     console.log('walking')
     const cmds = await parseGetOpts({ client: this }, opts)
     console.dir({ cmds }, { depth: 6 })
+    return get(
+      {
+        client: this,
+      },
+      cmds
+    )
   }
 
   // TODO: real opts

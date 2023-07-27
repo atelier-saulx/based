@@ -401,7 +401,7 @@ test.serial.only('set primitive fields', async (t) => {
     ['main', 'po1', 'sec', 'po2'].sort()
   )
 
-  await client.things({
+  const things = await client.things({
     $id: third,
     id: true,
     title: true,
@@ -428,6 +428,8 @@ test.serial.only('set primitive fields', async (t) => {
       },
     },
   })
+
+  console.dir({ things }, { depth: 6 })
 
   t.true(true)
 })
