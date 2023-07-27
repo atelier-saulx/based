@@ -35,14 +35,14 @@ export async function parseGetOpts(
               }
             }
 
-            // TODO: only supports $list: true now
+            return args
+          }
+
+          if (String(key).startsWith('$')) {
             return
           }
 
-          if (!String(key).startsWith('$')) {
-            args.collect(args)
-          }
-
+          args.collect(args)
           return args
         },
       },
@@ -56,7 +56,16 @@ export async function parseGetOpts(
           if (typeof entry === 'string') {
             fields.push(entry)
           } else {
-            nestedCommands.push(entry)
+            const nestedCmd: GetCommand = entry
+            if (nestedCmd.type === 'node') {
+              // TODO: handle if $id is different
+              // TODO: handle $field and false (exclude)
+              for (const f of nestedCmd.fields.$any) {
+                fields.push(`${key}.${f}`)
+              }
+            } else {
+              nestedCommands.push(nestedCmd)
+            }
           }
         }
 

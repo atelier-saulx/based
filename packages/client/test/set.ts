@@ -405,6 +405,9 @@ test.serial.only('set primitive fields', async (t) => {
     $id: third,
     id: true,
     title: true,
+    arys: {
+      ints: true,
+    },
     slug: true,
 
     ancestors: {
@@ -412,6 +415,17 @@ test.serial.only('set primitive fields', async (t) => {
       title: true,
       slug: true,
       $list: true,
+    },
+
+    above: {
+      id: true,
+      title: true,
+      slug: true,
+      $list: {
+        $find: {
+          $traverse: 'parents',
+        },
+      },
     },
   })
 
