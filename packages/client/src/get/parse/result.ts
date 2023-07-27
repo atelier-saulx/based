@@ -99,6 +99,7 @@ const FIELD_PARSERS: Record<
   reference: (x) => x,
   boolean: (x) => !!x,
   number: (x) => Number(x),
+  cardinality: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),
   array: (ary: any[], fieldSchema: BasedSchemaFieldArray) => {
