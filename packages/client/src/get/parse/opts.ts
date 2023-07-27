@@ -6,10 +6,13 @@ export async function parseGetOpts(
   opts: any
 ): Promise<GetCommand[]> {
   let topLevel: GetCommand
-  await walk<{ $id: string; type: 'node' | 'traverse' }>(
+  await walk<{ id: string; $id: string; type: 'node' | 'traverse' }>(
     {
       async init(args) {
-        return { ...args, target: { $id: args.value.$id, type: 'node' } }
+        return {
+          ...args,
+          target: { id: args.value.$id, $id: args.value.$id, type: 'node' },
+        }
       },
       collect(args) {
         if (args.value === true) {
@@ -37,7 +40,7 @@ export async function parseGetOpts(
                 ...args,
                 target: {
                   ...args.target,
-                  $id: value.$id,
+                  id: value.$id,
                 },
               }
             }
@@ -63,22 +66,25 @@ export async function parseGetOpts(
         const entries = [...backtracked, ...collected]
 
         const { path, key } = args
-        const { $id, type } = args.target
+        const { id, $id, type } = args.target
+
+        const shouldPrefixNestedFields: boolean = type === 'node' && !!key
 
         const fields: string[] = []
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
           if (typeof entry === 'string') {
-            fields.push(type === 'node' && key ? `${key}.${entry}` : entry)
+            fields.push(shouldPrefixNestedFields ? `${key}.${entry}` : entry)
           } else {
             const nestedCmd: GetCommand = entry
-            if (
-              nestedCmd.type === 'node' &&
-              (nestedCmd.source?.id ?? $id) === $id
-            ) {
+
+            const canMerge: boolean =
+              nestedCmd.type === 'node' && (nestedCmd.source?.id ?? $id) === $id
+
+            if (canMerge) {
               // TODO: handle $field and false (exclude)
               for (const f of nestedCmd.fields.$any) {
-                fields.push(type === 'node' && key ? `${key}.${f}` : f)
+                fields.push(shouldPrefixNestedFields ? `${key}.${f}` : f)
               }
             } else {
               nestedCommands.push(nestedCmd)
@@ -86,13 +92,12 @@ export async function parseGetOpts(
           }
         }
 
-        console.log('NESTED', nestedCommands)
         let cmd: GetCommand
         if (type === 'node') {
           cmd = {
             type: 'node',
             fields: { $any: fields },
-            source: { id: $id },
+            source: { id: id },
             target: { path },
             nestedCommands,
           }
@@ -100,7 +105,7 @@ export async function parseGetOpts(
           cmd = {
             type: 'traverse',
             fields: { $any: fields },
-            source: { id: $id },
+            source: { id: id },
             target: { path },
             sourceField: String(key), // TODO: handle othoer cases like $find
             nestedCommands,
