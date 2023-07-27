@@ -13,7 +13,7 @@ type Path = (string | number)[]
 
 type ErrorHandler<T> = (args: Args<T>, code: ParseError) => void
 
-type Collect<T> = (args: Args<T>) => any
+type Collect<T> = (args: Args<T>, value: any) => any
 
 type Parse<T> = (
   args: Args<T>,
@@ -21,7 +21,7 @@ type Parse<T> = (
   value?: any,
   fieldSchema?: BasedSchemaField,
   skipCollection?: boolean,
-  collect?: Collect<T>
+  collect?: (args: Args<T>, value?: any) => any
 ) => Promise<Args<T> | void> // If true will not continue
 
 type BackTrack<T> = (
@@ -46,7 +46,8 @@ export type Args<
   stop: () => void
   fromBackTrack: any[]
   parse: Parse<T>
-  collect: Collect<T>
+  actualCollect: Collect<T>
+  collect: (args: Args<T>, value?: any) => any
   backtrack: BackTrack<T>
   requiresAsyncValidation: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
@@ -136,11 +137,14 @@ export const walk = async <T>(
       value: value ?? prevArgs.value,
       target: prevArgs.target,
       parse: prevArgs.parse,
-      collect: (args) => {
-        collectedCommands.push(opts.collect(args))
+      actualCollect: collect ?? prevArgs.actualCollect,
+      collect: (args, value) => {
+        if (!args.skipCollection) {
+          collectedCommands.push(args.actualCollect(args, value ?? args.value))
+        }
       },
       fromBackTrack,
-      backtrack: opts.backtrack,
+      backtrack: prevArgs.backtrack,
       error: errorsCollector,
       requiresAsyncValidation: prevArgs.requiresAsyncValidation,
       skipCollection: skipCollection ?? prevArgs.skipCollection,
@@ -174,13 +178,13 @@ export const walk = async <T>(
 
       if (!stop) {
         if (args.typeSchema && !args.fieldSchema) {
-          // top level
           for (const key in args.typeSchema.fields) {
             const fieldSchema = args.typeSchema.fields[key]
             const fieldParser = opts.parsers.fields[fieldSchema.type]
+
             if (fieldParser) {
               keysHandled.add(key)
-              if (args.value[key]) {
+              if (key in args.value) {
                 fieldQ.push(
                   (async () => {
                     const newArgs = await fieldParser({
@@ -200,6 +204,8 @@ export const walk = async <T>(
             }
           }
         } else if (args.fieldSchema) {
+          // and more as well ofc..
+
           if (args.fieldSchema.type === 'object') {
             // @ts-ignore should detect from line above
             const objFieldSchema: BasedSchemaFieldObject = args.fieldSchema
@@ -208,7 +214,7 @@ export const walk = async <T>(
               const fieldParser = opts.parsers.fields[fieldSchema.type]
               if (fieldParser) {
                 keysHandled.add(key)
-                if (args.value[key]) {
+                if (key in args.value) {
                   fieldQ.push(
                     (async () => {
                       const newArgs = await fieldParser({
@@ -228,7 +234,10 @@ export const walk = async <T>(
               }
             }
           }
+          // need more
         }
+
+        await Promise.all(fieldQ)
 
         if (!stop) {
           const q: Promise<Args<T> | void>[] = []
@@ -290,13 +299,14 @@ export const walk = async <T>(
     }
   }
 
+  // @ts-ignore
   const args: Args<T> = await opts.init(<Args<T>>{
     schema: opts.schema,
     path: [],
     value,
+    actualCollect: opts.collect,
     parse,
     stop: () => {},
-    collect: opts.collect,
     backtrack: opts.backtrack,
     error: errorsCollector,
     requiresAsyncValidation: opts.requiresAsyncValidation,

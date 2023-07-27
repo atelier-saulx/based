@@ -136,14 +136,9 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
                 await parse(args, value.$assign.$idx, fieldSchema.values)
                 return
               }
-              if (!has$Value && !args.skipCollection) {
-                handlers.collect({
-                  path,
-                  value: parsedValue,
-                  typeSchema,
-                  fieldSchema,
-                  target,
-                })
+
+              if (!has$Value) {
+                args.collect(args, parsedValue)
               }
               if (!has$Value) {
                 return
@@ -153,44 +148,12 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
               error(args, ParseError.incorrectFieldType)
               return
             }
-            const q: Promise<void>[] = []
-            const collector: any[] = []
-            const nHandler = noCollect
-              ? handlers
-              : {
-                  ...handlers,
-                  collect: (collect) => {
-                    collector.push(collect)
-                  },
-                }
+            const q: Promise<any>[] = []
+            args.collect(args, { $delete: true })
             for (let i = 0; i < parsedValue.length; i++) {
-              q.push(
-                fieldWalker(
-                  [...path, i],
-                  parsedValue[i],
-                  fieldSchema.values,
-                  typeSchema,
-                  target,
-                  nHandler,
-                  noCollect
-                )
-              )
+              q.push(parse(args, i, parsedValue[i], fieldSchema.values))
             }
-
             await Promise.all(q)
-
-            if (!noCollect) {
-              handlers.collect({
-                path,
-                typeSchema,
-                fieldSchema,
-                target,
-                value: { $delete: true },
-              })
-              for (const c of collector) {
-                handlers.collect(c)
-              }
-            }
           },
           boolean: async (args) => {
             if (typeof args.value !== 'boolean') {
