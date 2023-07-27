@@ -31,6 +31,7 @@ export type Args<
   key?: number | string
   value: any
   target: T
+  stop: () => void
   fromBackTrack: any[]
   parse: Parse<T>
   collect: (args: Args<T>) => any
@@ -98,8 +99,12 @@ export const walk = async <T>(
   const parse: Parse<T> = async (prevArgs, key, value) => {
     const collectedCommands: any[] = []
     const fromBackTrack: any[] = []
+    let stop = false
     const args: Args<T> = {
       schema: opts.schema,
+      stop: () => {
+        stop = true
+      },
       path: key ? [...prevArgs.path, key] : prevArgs.path,
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
       parentValue: value ? prevArgs.value : undefined,
@@ -115,42 +120,15 @@ export const walk = async <T>(
       requiresAsyncValidation: prevArgs.requiresAsyncValidation,
     }
     if (typeof args.value === 'object' && args.value !== null) {
-      const q: Promise<Args<T> | void>[] = []
+      const keyQ: Promise<Args<T> | void>[] = []
+      const keysHandled: Set<string | number> = new Set()
 
-      if (args.typeSchema && !args.fieldSchema) {
-        // top level
-      }
-
-      if (args.fieldSchema) {
-        //
-      }
-
-      // first do key parsers
-
-      if (Array.isArray(args.value)) {
-        for (let i = 0; i < args.value.length; i++) {
-          const parser = opts.parsers.keys[i] || opts.parsers.any
-          const j = i
-          q.push(
+      for (const key in opts.parsers) {
+        if ('key' in args.value) {
+          keysHandled.add(key)
+          keyQ.push(
             (async () => {
-              const newArgs = await parser({
-                ...args,
-                value: args.value[j],
-                path: [...args.path, j],
-                key: j,
-              })
-              if (newArgs) {
-                return parse(newArgs)
-              }
-            })()
-          )
-        }
-      } else {
-        for (const key in args.value) {
-          const parser = opts.parsers.keys[key] || opts.parsers.any
-          q.push(
-            (async () => {
-              const newArgs = await parser({
+              const newArgs = await opts.parsers[key]({
                 ...args,
                 value: args.value[key],
                 path: [...args.path, key],
@@ -164,7 +142,64 @@ export const walk = async <T>(
         }
       }
 
-      await Promise.all(q)
+      await Promise.all(keyQ)
+
+      if (!stop) {
+        if (args.typeSchema && !args.fieldSchema) {
+          // top level
+        }
+        if (args.fieldSchema) {
+          //
+        }
+
+        // then again stop
+        // needs to check which keys are handled from type / field schema
+
+        const q: Promise<Args<T> | void>[] = []
+        if (Array.isArray(args.value)) {
+          for (let i = 0; i < args.value.length; i++) {
+            if (keysHandled.has(i)) {
+              continue
+            }
+            const parser = opts.parsers.any
+            const j = i
+            q.push(
+              (async () => {
+                const newArgs = await parser({
+                  ...args,
+                  value: args.value[j],
+                  path: [...args.path, j],
+                  key: j,
+                })
+                if (newArgs) {
+                  return parse(newArgs)
+                }
+              })()
+            )
+          }
+        } else {
+          for (const key in args.value) {
+            if (keysHandled.has(key)) {
+              continue
+            }
+            const parser = opts.parsers.any
+            q.push(
+              (async () => {
+                const newArgs = await parser({
+                  ...args,
+                  value: args.value[key],
+                  path: [...args.path, key],
+                  key,
+                })
+                if (newArgs) {
+                  return parse(newArgs)
+                }
+              })()
+            )
+          }
+        }
+        await Promise.all(q)
+      }
 
       if (fromBackTrack.length || collectedCommands.length) {
         const x = args.backtrack(args, fromBackTrack, collectedCommands)
@@ -179,6 +214,7 @@ export const walk = async <T>(
     path: [],
     value,
     parse,
+    stop: () => {},
     collect: opts.collect,
     backtrack: opts.backtrack,
     error: errorsCollector,

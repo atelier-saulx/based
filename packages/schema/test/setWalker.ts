@@ -295,7 +295,6 @@ test('collect correctly', async (t) => {
         //   code,
         //   message,
         // }
-
         console.error(info.message)
         // fix fields (too heavy)
       },
