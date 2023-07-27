@@ -256,7 +256,7 @@ test.serial.only('set primitive fields', async (t) => {
         ],
       },
       source: { id: 'root' },
-      target: { path: 'things' },
+      target: { path: ['things'] },
       filter: {
         $field: 'type',
         $operator: '=',
@@ -351,7 +351,7 @@ test.serial.only('set primitive fields', async (t) => {
         ],
       },
       source: { id: third },
-      target: { path: 'things' },
+      target: { path: ['things'] },
     },
   ])
 
@@ -382,7 +382,7 @@ test.serial.only('set primitive fields', async (t) => {
       },
       recursive: true,
       source: { id: 'root' },
-      target: { path: 'things' },
+      target: { path: ['things'] },
     },
   ])
 
@@ -402,10 +402,15 @@ test.serial.only('set primitive fields', async (t) => {
   )
 
   await client.things({
-    $id: 'root',
-    descendants: {
+    $id: third,
+    id: true,
+    title: true,
+    slug: true,
+
+    ancestors: {
       id: true,
       title: true,
+      slug: true,
       $list: true,
     },
   })

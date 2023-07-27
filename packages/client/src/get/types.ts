@@ -30,7 +30,7 @@ export type TraverseByTypeExpression =
     }
 
 export type GetNodeShared = {
-  target: { path: string }
+  target: { path: (string | number)[] }
   source: {
     idList?: string[]
     id?: string
@@ -38,6 +38,8 @@ export type GetNodeShared = {
   }
   // fields by type
   fields: Fields
+
+  nestedCommands?: GetCommand[]
 }
 
 export type GetNode = {
@@ -49,7 +51,6 @@ export type GetTraverse = {
 
   paging?: { limit: number; offset: number }
   filter?: Filter | Filter[]
-  nestedCommands?: GetCommand[]
   recursive?: boolean
 
   // one of these

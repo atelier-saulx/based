@@ -1,12 +1,12 @@
 import { walk } from '@based/schema'
-import { ExecContext, GetCommand } from './types'
+import { ExecContext, GetCommand, GetNode } from './types'
 
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
 ): Promise<GetCommand[]> {
   const cmds: GetCommand[] = []
-  await walk(
+  await walk<{ $id: string }>(
     {
       async init(val, args) {
         // TODO: deal with alias etc.
@@ -15,7 +15,7 @@ export async function parseGetOpts(
       collect(args) {
         console.log('PUT', args.path, args.value)
         if (args.value === true) {
-          return args.path[args.path.length - 1]
+          return args.key
         }
       },
       schema: ctx.client.schema,
@@ -29,13 +29,7 @@ export async function parseGetOpts(
             }
           },
           $list: async (args) => {
-            const { value } = args
-            if (value === true) {
-              args.collect(args)
-              return
-            }
-
-            return args
+            return
           },
         },
         async any(args) {
@@ -43,9 +37,30 @@ export async function parseGetOpts(
           return args
         },
       },
-      backtrack(args, cmds) {
-        console.log('BACKTRACK', cmds)
-        return cmds
+      backtrack(args, entries) {
+        const { path } = args
+        const { $id } = args.target
+
+        const fields: string[] = []
+        const nestedCommands: GetCommand[] = []
+        for (const entry of entries) {
+          if (typeof entry === 'string') {
+            fields.push(entry)
+          } else {
+            nestedCommands.push(entry)
+          }
+        }
+
+        const cmd: GetNode = {
+          fields: { $any: fields },
+          type: 'node',
+          source: { id: $id },
+          target: { path },
+          nestedCommands,
+        }
+        console.log('BACKTRACK', cmd)
+
+        return cmd
       },
       async requiresAsyncValidation(t) {
         return false
