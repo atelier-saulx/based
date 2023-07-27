@@ -73,7 +73,6 @@ test('walker', async (t) => {
           collected,
           '--------------------'
         )
-        // if return next btrack will not receive  backtrack from commands
         return fromBt.length ? fromBt : collected
       },
     },
