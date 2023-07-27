@@ -1,7 +1,15 @@
-# Copyright (c) 2022 SAULX
+# Copyright (c) 2022-2023 SAULX
 # SPDX-License-Identifier: MIT
-all:
-	$(MAKE) -C units
+targets := util db
+
+all: $(targets)
+
+$(targets):
+	$(MAKE) -C $@
 
 clean:
-	$(MAKE) -C units clean
+	for i in $(targets); do \
+		$(MAKE) -C $$i \
+	done
+
+.PHONY: $(targets)
