@@ -32,6 +32,14 @@ export async function parseGetOpts(
                   type: 'traverse',
                 },
               }
+            } else if (value.$id) {
+              return {
+                ...args,
+                target: {
+                  ...args.target,
+                  $id: value.$id,
+                },
+              }
             }
 
             return {
@@ -64,8 +72,10 @@ export async function parseGetOpts(
             fields.push(type === 'node' && key ? `${key}.${entry}` : entry)
           } else {
             const nestedCmd: GetCommand = entry
-            if (nestedCmd.type === 'node') {
-              // TODO: handle if $id is different
+            if (
+              nestedCmd.type === 'node' &&
+              (nestedCmd.source?.id ?? $id) === $id
+            ) {
               // TODO: handle $field and false (exclude)
               for (const f of nestedCmd.fields.$any) {
                 fields.push(type === 'node' && key ? `${key}.${f}` : f)
@@ -76,6 +86,7 @@ export async function parseGetOpts(
           }
         }
 
+        console.log('NESTED', nestedCommands)
         let cmd: GetCommand
         if (type === 'node') {
           cmd = {
