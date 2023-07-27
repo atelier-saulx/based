@@ -136,7 +136,6 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
                 await parse(args, value.$assign.$idx, fieldSchema.values)
                 return
               }
-
               if (!has$Value) {
                 args.collect(args, parsedValue)
               }
