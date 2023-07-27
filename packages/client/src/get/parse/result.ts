@@ -96,6 +96,7 @@ const FIELD_PARSERS: Record<
   (x: any, fieldSchema?: BasedSchemaField) => any
 > = {
   string: (x) => x,
+  reference: (x) => x,
   boolean: (x) => !!x,
   number: (x) => Number(x),
   float: (x) => Number(x),
