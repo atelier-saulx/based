@@ -48,14 +48,6 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
               args.error(args, ParseError.incorrectFormat)
               return
             }
-            // add the async thing as well..
-            // if (args.fieldSchema.required) {
-            //   for (const req of args.fieldSchema.required) {
-            //     if (!(req in value)) {
-            //       args.target.required.push([...args.path, req])
-            //     }
-            //   }
-            // }
             return args
           },
           cardinality: async (args) => {
