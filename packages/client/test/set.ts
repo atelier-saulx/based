@@ -5,56 +5,6 @@ import { wait } from '@saulx/utils'
 import { createRecord } from 'data-record'
 import { SelvaMergeStrategy } from '../src/protocol'
 
-test.serial('set string to num field, should fail', async (t) => {
-  const TIME = 2500
-
-  const server = await startOrigin({
-    port: 8081,
-    name: 'default',
-  })
-
-  const client = new BasedDbClient()
-
-  client.connect({
-    port: 8081,
-    host: '127.0.0.1',
-  })
-
-  await client.updateSchema({
-    languages: ['en', 'nl', 'de', 'fi'],
-    $defs: {},
-    prefixToTypeMapping: {
-      po: 'post',
-    },
-    root: {
-      prefix: 'ro',
-      fields: {},
-    },
-    types: {
-      post: {
-        prefix: 'po',
-        fields: {
-          slug: { type: 'string' },
-          num: { type: 'number' },
-        },
-      },
-    },
-  })
-
-  await t.throwsAsync(
-    client.set({
-      $id: 'po1',
-      slug: '/hello-world',
-      num: 'flappie',
-    })
-  )
-
-  const getResult = await client.command('object.get', ['', 'po1'])
-  console.log('getResult', getResult)
-
-  t.true(true)
-})
-
 test.serial.only('set primitive fields', async (t) => {
   const TIME = 2500
 
@@ -89,6 +39,13 @@ test.serial.only('set primitive fields', async (t) => {
         fields: {
           id: { type: 'string' },
           str: { type: 'string' },
+          rec: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: { a: { type: 'string' }, b: { type: 'number' } },
+            },
+          },
         },
       },
       post: {
@@ -142,6 +99,10 @@ test.serial.only('set primitive fields', async (t) => {
   await client.set({
     $id: 'me1',
     str: 'hello',
+    rec: {
+      a: { a: 'hello', b: 1 },
+      b: { a: 'olleh', b: -1 },
+    },
   })
 
   await client.set({
@@ -435,6 +396,12 @@ test.serial.only('set primitive fields', async (t) => {
           $traverse: 'parents',
         },
       },
+    },
+
+    meh: {
+      $id: 'me1',
+      str: true,
+      rec: true,
     },
   })
 
