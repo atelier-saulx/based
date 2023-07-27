@@ -370,15 +370,14 @@ static int send_node_field(
     }
 
     if (excluded_fields) {
-        /*
-         * Excluding the `id` field is not allowed but we can drop it from the
-         * list in the arg_parser. It's not allowed because the client must be
-         * able to find the schema for whatever was returned by the server.
-         */
-#if 0
-        && !(full_field_name_len == (sizeof(SELVA_ID_FIELD) - 1) && !memcmp(SELVA_ID_FIELD, full_field_name_str, full_field_name_len))
-#endif
         TO_STR(excluded_fields);
+
+        /*
+         * Excluding the `id` field is not allowed but we drop it already from
+         * the list in string_set_list_add(). It's not allowed because the
+         * client must be able to find the schema for whatever was returned by
+         * the server.
+         */
 
         if (stringlist_searchn(excluded_fields_str, full_field_name_str, full_field_name_len)) {
             /*
@@ -515,9 +514,10 @@ static void send_node_fields_named(
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     void *iterator;
     const SVector *vec;
+    const char *fields_idx_str;
 
     iterator = SelvaObject_ForeachBegin(fields);
-    while ((vec = SelvaObject_ForeachValue(fields, &iterator, NULL, SELVA_OBJECT_ARRAY))) {
+    while ((vec = SelvaObject_ForeachValue(fields, &iterator, &fields_idx_str, SELVA_OBJECT_ARRAY))) {
         struct SVectorIterator it;
         struct selva_string *field;
 
@@ -528,10 +528,29 @@ static void send_node_fields_named(
 
             /* Only send one of the fields on the list. */
             if (iswildcard(field_str, field_len)) {
+                /*
+                 * Note that we ignore the possible alias (STRING_SET_ALIAS)
+                 * here because an alias in front of a wildcard doesn't make
+                 * any sense.
+                 */
                 send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
                 break;
             } else {
-                res = send_node_field(fin, resp, lang, hierarchy, node, obj, NULL, 0, field_str, field_len, excluded_fields);
+                const size_t fields_idx_len = strlen(fields_idx_str);
+                const char *field_prefix_str = NULL;
+                size_t field_prefix_len = 0;
+
+                /*
+                 * Add alias prefix using the field_prefix system,
+                 * if requested.
+                 */
+                if (fields_idx_len > 0 &&
+                    fields_idx_str[fields_idx_len - 1] == STRING_SET_ALIAS) {
+                    field_prefix_str = fields_idx_str;
+                    field_prefix_len = fields_idx_len;
+                }
+
+                res = send_node_field(fin, resp, lang, hierarchy, node, obj, field_prefix_str, field_prefix_len, field_str, field_len, excluded_fields);
                 if (res > 0) {
                     break;
                 }

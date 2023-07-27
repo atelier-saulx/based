@@ -74,6 +74,8 @@ struct SelvaFind_QueryOpts {
          * - `field` = Take a field if it exists on the node
          * - `field1|field2` = Take first field that exists:
          * - `!field` = Exclude field
+         * - `cool@field` = field alias
+         * - `cool@fieldA|fieldB` = field alias
          * - `*` - Wildcard
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
