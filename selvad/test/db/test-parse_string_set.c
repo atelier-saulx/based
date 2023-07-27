@@ -23,6 +23,15 @@ static void teardown(void)
     finalizer_run(&fin);
 }
 
+#define assert_list(list, idx, expected) do { \
+    struct selva_string *s = NULL; \
+    int err; \
+    err = SelvaObject_GetStringStr((list), (idx), strlen(idx), &s); \
+    pu_assert_equal("no error", err, 0); \
+    pu_assert_not_null("string returned", s); \
+    pu_assert_str_equal("string found", selva_string_to_str(s, NULL), (expected)); \
+} while (0)
+
 static char * test_parse1(void)
 {
     struct selva_string *input = selva_string_createf("a|b\n!c\nd|!e\n\n!f|g\n!id");
@@ -37,7 +46,10 @@ static char * test_parse1(void)
     pu_assert_equal("", err, 0);
     pu_assert_str_equal("excl parsed", selva_string_to_str(excl, NULL), "c\nf|g\n");
 
-    /* TODO Check list */
+    assert_list(list, "0[0]", "a");
+    assert_list(list, "0[1]", "b");
+    assert_list(list, "1[0]", "d");
+    assert_list(list, "1[1]", "!e");
 
     return NULL;
 }
@@ -65,13 +77,31 @@ static char * test_parse2(void)
     pu_assert_not_null("", list_e);
     pu_assert_str_equal("e parsed", selva_string_to_str(list_e, NULL), "e\n");
 
-    /* TODO Check list */
+    assert_list(list_a, "0[0]", "a");
 
     return NULL;
+}
+
+static char *test_parse3(void)
+{
+    struct selva_string *input = selva_string_createf("best@name|id\ndesc\n");
+    struct SelvaObject *list = NULL;
+    struct selva_string *excl = NULL;
+    int err;
+
+    err = parse_string_set(&fin, input, &list, "&",
+                           (struct selva_string **[]){ &excl });
+    pu_assert_equal("", err, 0);
+    pu_assert_null("", excl);
+
+    assert_list(list, "@best[0]", "name");
+    assert_list(list, "@best[1]", "id");
+    assert_list(list, "1[0]", "desc");
 }
 
 void all_tests(void)
 {
     pu_def_test(test_parse1, PU_RUN);
     pu_def_test(test_parse2, PU_RUN);
+    pu_def_test(test_parse3, PU_RUN);
 }

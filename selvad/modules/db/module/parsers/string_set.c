@@ -142,7 +142,6 @@ int parse_string_set(
                     cur = alias_end + 1;
                 }
 
-                size_t nr_el = 0;
                 const char *cur_el = cur;
                 do {
                     const char *next_el = cur_el;
@@ -161,7 +160,6 @@ int parse_string_set(
                         } else {
                             so_add_n(obj, n, cur_el, el_len);
                         }
-                        nr_el++;
                     }
 
                     if (*next_el == STRING_SET_EOS || *next_el == STRING_SET_SEPARATOR_SET) {
