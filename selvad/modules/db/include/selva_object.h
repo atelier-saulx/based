@@ -425,6 +425,10 @@ int SelvaObject_GetAny(struct SelvaObject *obj, const struct selva_string *key_n
  * @{
  */
 
+/**
+ * Get type of a key.
+ * Doesn't handle array indexing at the end of the key.
+ */
 enum SelvaObjectType SelvaObject_GetTypeStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 enum SelvaObjectType SelvaObject_GetType(struct SelvaObject *obj, const struct selva_string *key_name);
 
