@@ -12,7 +12,7 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { get, GetCommand, parseGetOpts } from './get'
+import { get, GetCommand, parseGetOpts, parseGetResult } from './get'
 import genId from './id'
 
 export * as protocol from './protocol'
@@ -101,15 +101,16 @@ export class BasedDbClient extends Emitter {
   }
 
   async things(opts: any): Promise<any> {
+    const ctx = {
+      client: this,
+    }
     console.log('walking')
     const cmds = await parseGetOpts({ client: this }, opts)
     console.dir({ cmds }, { depth: 6 })
-    return get(
-      {
-        client: this,
-      },
-      cmds
-    )
+    const results = await get(ctx, cmds)
+
+    const obj = parseGetResult(ctx, cmds, results)
+    return obj
   }
 
   // TODO: real opts

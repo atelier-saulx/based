@@ -1,4 +1,5 @@
 import { walk } from '@based/schema'
+import { joinPath } from '../util'
 import { ExecContext, GetCommand, GetNode, GetTraverse } from './types'
 
 export async function parseGetOpts(
@@ -12,7 +13,6 @@ export async function parseGetOpts(
         return { ...args, target: { $id: args.value.$id, type: 'node' } }
       },
       collect(args) {
-        console.log('PUT', args.path, args.value)
         if (args.value === true) {
           return args.key
         }
@@ -52,7 +52,6 @@ export async function parseGetOpts(
         const { path, key } = args
         const { $id, type } = args.target
 
-        console.log('BACKTRACK', key, path, entries)
         const fields: string[] = []
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
@@ -92,8 +91,6 @@ export async function parseGetOpts(
           }
         }
 
-        console.log('CMD', cmd)
-
         if (!path.length) {
           topLevel = cmd
         }
@@ -110,4 +107,48 @@ export async function parseGetOpts(
   const nested = topLevel.nestedCommands
   delete topLevel.nestedCommands
   return [topLevel, ...nested]
+}
+
+export function parseGetResult(
+  ctx: ExecContext,
+  cmds: GetCommand[],
+  results: any[]
+): any {
+  let obj = {}
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i][0]
+    const {
+      target: { path },
+    } = cmds[i]
+
+    const k = joinPath(path)
+    const parsed = parseResultRows(ctx, result)
+    if (k === '') {
+      obj = { ...obj, ...parsed[0] }
+    } else {
+      obj[k] = parsed
+    }
+  }
+
+  return obj
+}
+
+function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
+  return result.map((row) => {
+    const [id, fields]: [string, any[]] = row
+
+    const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+    const typeSchema = ctx.client.schema.types[typeName]
+
+    const obj: any = {}
+    for (let i = 0; i < fields.length; i += 2) {
+      const f = fields[i]
+      const v = fields[i + 1]
+
+      // TODO: parse using schema, maybe use walker?
+      obj[f] = v
+    }
+
+    return obj
+  })
 }
