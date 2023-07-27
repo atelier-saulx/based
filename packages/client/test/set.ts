@@ -79,18 +79,22 @@ test.serial.only('set primitive fields', async (t) => {
     },
     root: {
       prefix: 'ro',
-      fields: {},
+      fields: {
+        id: { type: 'string' },
+      },
     },
     types: {
       meh: {
         prefix: 'me',
         fields: {
+          id: { type: 'string' },
           str: { type: 'string' },
         },
       },
       post: {
         prefix: 'po',
         fields: {
+          id: { type: 'string' },
           type: { type: 'string' },
           aliases: { type: 'set', items: { type: 'string' } },
           parents: { type: 'references' },

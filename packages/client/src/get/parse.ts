@@ -146,15 +146,27 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
     const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
     const typeSchema = ctx.client.schema.types[typeName]
 
+    if (!typeSchema) {
+      return {}
+    }
+
     const obj: any = {}
     for (let i = 0; i < fields.length; i += 2) {
       const f = fields[i]
       const v = fields[i + 1]
+      const fieldSchema = typeSchema.fields[f]
 
-      // TODO: parse using schema, maybe use walker?
-      obj[f] = v
+      const parser = FIELD_PARSERS[fieldSchema?.type]
+      obj[f] = parser?.(v)
     }
 
     return obj
   })
+}
+
+const FIELD_PARSERS: Record<string, (x: any) => any> = {
+  string: (x) => x,
+  number: (x) => Number(x),
+  float: (x) => Number(x),
+  integer: (x) => Number(x),
 }
