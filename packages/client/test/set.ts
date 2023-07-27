@@ -414,6 +414,10 @@ test.serial.only('set primitive fields', async (t) => {
       id: true,
       title: true,
       slug: true,
+      arys: {
+        ints: true,
+      },
+
       $list: true,
     },
 

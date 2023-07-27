@@ -35,7 +35,13 @@ export async function parseGetOpts(
               }
             }
 
-            return args
+            return {
+              ...args,
+              target: {
+                ...args.target,
+                type: 'node',
+              },
+            }
           }
 
           if (String(key).startsWith('$')) {
@@ -63,7 +69,7 @@ export async function parseGetOpts(
               // TODO: handle if $id is different
               // TODO: handle $field and false (exclude)
               for (const f of nestedCmd.fields.$any) {
-                fields.push(key ? `${key}.${f}` : f)
+                fields.push(type === 'node' && key ? `${key}.${f}` : f)
               }
             } else {
               nestedCommands.push(nestedCmd)
@@ -86,7 +92,7 @@ export async function parseGetOpts(
             fields: { $any: fields },
             source: { id: $id },
             target: { path },
-            sourceField: String(key),
+            sourceField: String(key), // TODO: handle othoer cases like $find
             nestedCommands,
           }
         }
