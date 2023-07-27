@@ -2,6 +2,7 @@ import {
   BasedSchemaField,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
+  BasedSchemaFieldSet,
   walk,
 } from '@based/schema'
 import { joinPath } from '../util'
@@ -155,36 +156,40 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
       return {}
     }
 
-    const obj: any = {}
-    for (let i = 0; i < fields.length; i += 2) {
-      const f = fields[i]
-      const v = fields[i + 1]
-      let fieldSchema: BasedSchemaField = {
-        type: 'object',
-        properties: typeSchema.fields,
+    return parseObjFields(
+      { type: 'object', properties: typeSchema.fields },
+      fields
+    )
+  })
+}
+
+function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
+  const obj: any = {}
+  for (let i = 0; i < fields.length; i += 2) {
+    const f = fields[i]
+    const v = fields[i + 1]
+    let fieldSchema = schema
+
+    let n: any = obj
+    const parts = f.split('.')
+    for (let i = 0; i < parts.length - 1; i++) {
+      const s = parts[i]
+
+      if (!n[s]) {
+        n[s] = {}
       }
 
-      let n: any = obj
-      const parts = f.split('.')
-      for (let i = 0; i < parts.length - 1; i++) {
-        const s = parts[i]
-
-        if (!n[s]) {
-          n[s] = {}
-        }
-
-        n = n[s]
-        fieldSchema = (<BasedSchemaFieldObject>fieldSchema)?.properties[s]
-      }
-
-      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
-        parts[parts.length - 1]
-      ]
-      n[parts[parts.length - 1]] = parseFieldResult(fieldSchema, v)
+      n = n[s]
+      fieldSchema = (<BasedSchemaFieldObject>fieldSchema)?.properties[s]
     }
 
-    return obj
-  })
+    fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
+      parts[parts.length - 1]
+    ]
+    n[parts[parts.length - 1]] = parseFieldResult(fieldSchema, v)
+  }
+
+  return obj
 }
 
 const FIELD_PARSERS: Record<
@@ -200,10 +205,17 @@ const FIELD_PARSERS: Record<
       return parseFieldResult(fieldSchema.values, x)
     })
   },
+  set: (ary: any[], fieldSchema: BasedSchemaFieldSet) => {
+    return ary.map((x) => {
+      return parseFieldResult(fieldSchema.items, x)
+    })
+  },
+  object: (ary: any[], fieldSchema: BasedSchemaFieldObject) => {
+    return parseObjFields(fieldSchema, ary)
+  },
 }
 
 function parseFieldResult(fieldSchema: BasedSchemaField, v: any) {
-  console.log('parsing', fieldSchema, v)
   const parser = FIELD_PARSERS[fieldSchema?.type]
   return parser?.(v, fieldSchema)
 }
