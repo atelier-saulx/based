@@ -4,7 +4,7 @@ import { ExecContext, GetCommand, GetNode, GetTraverse } from './types'
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
-): Promise<GetCommand> {
+): Promise<GetCommand[]> {
   let topLevel: GetCommand
   await walk<{ $id: string; type: 'node' | 'traverse' }>(
     {
@@ -107,5 +107,7 @@ export async function parseGetOpts(
     opts
   )
 
-  return topLevel
+  const nested = topLevel.nestedCommands
+  delete topLevel.nestedCommands
+  return [topLevel, ...nested]
 }

@@ -102,8 +102,8 @@ export class BasedDbClient extends Emitter {
 
   async things(opts: any): Promise<void> {
     console.log('walking')
-    const cmd = await parseGetOpts({ client: this }, opts)
-    console.dir({ cmd }, { depth: 6 })
+    const cmds = await parseGetOpts({ client: this }, opts)
+    console.dir({ cmds }, { depth: 6 })
   }
 
   // TODO: real opts
