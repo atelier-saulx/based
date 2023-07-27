@@ -1,4 +1,9 @@
-import { walk } from '@based/schema'
+import {
+  BasedSchemaField,
+  BasedSchemaFieldArray,
+  BasedSchemaFieldObject,
+  walk,
+} from '@based/schema'
 import { joinPath } from '../util'
 import { ExecContext, GetCommand, GetNode, GetTraverse } from './types'
 
@@ -154,19 +159,51 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
     for (let i = 0; i < fields.length; i += 2) {
       const f = fields[i]
       const v = fields[i + 1]
-      const fieldSchema = typeSchema.fields[f]
+      let fieldSchema: BasedSchemaField = {
+        type: 'object',
+        properties: typeSchema.fields,
+      }
 
-      const parser = FIELD_PARSERS[fieldSchema?.type]
-      obj[f] = parser?.(v)
+      let n: any = obj
+      const parts = f.split('.')
+      for (let i = 0; i < parts.length - 1; i++) {
+        const s = parts[i]
+
+        if (!n[s]) {
+          n[s] = {}
+        }
+
+        n = n[s]
+        fieldSchema = (<BasedSchemaFieldObject>fieldSchema)?.properties[s]
+      }
+
+      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
+        parts[parts.length - 1]
+      ]
+      n[parts[parts.length - 1]] = parseFieldResult(fieldSchema, v)
     }
 
     return obj
   })
 }
 
-const FIELD_PARSERS: Record<string, (x: any) => any> = {
+const FIELD_PARSERS: Record<
+  string,
+  (x: any, fieldSchema?: BasedSchemaField) => any
+> = {
   string: (x) => x,
   number: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),
+  array: (ary: any[], fieldSchema: BasedSchemaFieldArray) => {
+    return ary.map((x) => {
+      return parseFieldResult(fieldSchema.values, x)
+    })
+  },
+}
+
+function parseFieldResult(fieldSchema: BasedSchemaField, v: any) {
+  console.log('parsing', fieldSchema, v)
+  const parser = FIELD_PARSERS[fieldSchema?.type]
+  return parser?.(v, fieldSchema)
 }
