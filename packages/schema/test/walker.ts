@@ -37,7 +37,7 @@ test('walker', async (t) => {
     {
       schema,
       init: async (args) => {
-        console.log('init!\n')
+        console.log('init!\n', args)
         return { ...args, target: { lullz: true } }
       },
       parsers: {

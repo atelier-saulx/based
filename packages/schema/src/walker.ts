@@ -42,7 +42,7 @@ export type KeyParser<T = any> = (
 
 export type Opts<T> = {
   schema: BasedSchema
-  init: (value: any, args: Args<T>) => Promise<Args<T>>
+  init: (args: Args<T>) => Promise<Args<T>>
   parsers: {
     fields: Partial<{
       [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
@@ -155,7 +155,7 @@ export const walk = async <T>(
       }
     }
   }
-  const args: Args<T> = await opts.init(value, <Args<T>>{
+  const args: Args<T> = await opts.init(<Args<T>>{
     schema: opts.schema,
     path: [],
     value,
