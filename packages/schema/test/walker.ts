@@ -129,31 +129,13 @@ test.only('set walker', async (t) => {
     },
   }
 
-  const x = await setWalker2(
-    schema,
-
-    {
-      $id: 'bl1',
-      gurk: [1, 2, 3, 4],
-      x: {
-        y: {
-          z: {
-            a: 10,
-            b: 20,
-            gur: {
-              x: true,
-              y: true,
-              $list: {
-                $sort: true,
-              },
-            },
-            c: 40,
-            $list: true,
-          },
-        },
-      },
-    }
-  )
+  const x = await setWalker2(schema, {
+    $id: 'bl1',
+    snup: false,
+    flap: {
+      gurt: true,
+    },
+  })
 
   console.info('------------', x)
 

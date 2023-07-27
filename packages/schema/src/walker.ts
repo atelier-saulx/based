@@ -1,6 +1,8 @@
 import { ParseError } from './set/error'
 import {
   BasedSchema,
+  BasedSchemaField,
+  BasedSchemaFieldArray,
   BasedSchemaFieldObject,
   BasedSetHandlers,
   BasedSetTarget,
@@ -11,10 +13,15 @@ type Path = (string | number)[]
 
 type ErrorHandler<T> = (args: Args<T>, code: ParseError) => void
 
+type Collect<T> = (args: Args<T>) => any
+
 type Parse<T> = (
   args: Args<T>,
   key?: string | number,
-  value?: any
+  value?: any,
+  fieldSchema?: BasedSchemaField,
+  skipCollection?: boolean,
+  collect?: Collect<T>
 ) => Promise<Args<T> | void> // If true will not continue
 
 type BackTrack<T> = (
@@ -39,7 +46,7 @@ export type Args<
   stop: () => void
   fromBackTrack: any[]
   parse: Parse<T>
-  collect: (args: Args<T>) => any
+  collect: Collect<T>
   backtrack: BackTrack<T>
   requiresAsyncValidation: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
@@ -94,7 +101,7 @@ export const walk = async <T>(
   const errorsCollector: ErrorHandler<T> = (args, code) => {
     const err = {
       code,
-      message: `Error: ${ParseError[code]} - from "${
+      message: `Error: ${ParseError[code]} - "${
         args.path.length === 0 ? 'top' : args.path.join('.')
       }"`,
     }
@@ -104,7 +111,14 @@ export const walk = async <T>(
     errors.push(err)
   }
 
-  const parse: Parse<T> = async (prevArgs, key, value) => {
+  const parse: Parse<T> = async (
+    prevArgs,
+    key,
+    value,
+    fieldSchema,
+    skipCollection,
+    collect
+  ) => {
     const collectedCommands: any[] = []
     const fromBackTrack: any[] = []
     let stop = false
@@ -113,6 +127,9 @@ export const walk = async <T>(
       stop: () => {
         stop = true
       },
+      // @ts-ignore
+      fieldSchema: fieldSchema ?? prevArgs.fieldSchema,
+      typeSchema: prevArgs.typeSchema,
       path: key ? [...prevArgs.path, key] : prevArgs.path,
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
       parentValue: value ? prevArgs.value : undefined,
@@ -126,6 +143,7 @@ export const walk = async <T>(
       backtrack: opts.backtrack,
       error: errorsCollector,
       requiresAsyncValidation: prevArgs.requiresAsyncValidation,
+      skipCollection: skipCollection ?? prevArgs.skipCollection,
     }
     if (typeof args.value === 'object' && args.value !== null) {
       const keyQ: Promise<Args<T> | void>[] = []
@@ -209,7 +227,6 @@ export const walk = async <T>(
                 }
               }
             }
-            // from here to array and continue!
           }
         }
 
@@ -272,6 +289,7 @@ export const walk = async <T>(
       }
     }
   }
+
   const args: Args<T> = await opts.init(<Args<T>>{
     schema: opts.schema,
     path: [],
