@@ -14,6 +14,11 @@
  */
 #define STRING_SET_EXCL_PREFIX      '!'
 
+/**
+ * Alias.
+ */
+#define STRING_SET_ALIAS            '@'
+
 #define STRING_SET_SEPARATOR_SET    '\n'
 #define STRING_SET_SEPARATOR_LIST   '|'
 #define STRING_SET_EOS              '\0'

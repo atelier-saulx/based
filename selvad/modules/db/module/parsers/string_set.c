@@ -45,7 +45,11 @@ int string_set_list_add(struct selva_string *sl, const char *opt_ignore_str, siz
     return selva_string_append(sl, sep, 1);
 }
 
-static void so_add(struct SelvaObject *obj, size_t n, const char *str, size_t len)
+/**
+ * Add to the list with a numeric index.
+ * `n` is converted into a base 10 string.
+ */
+static void so_add_n(struct SelvaObject *obj, size_t n, const char *str, size_t len)
 {
     const size_t key_len = (size_t)(log10(n + 1)) + 1;
     char key_str[key_len + 1];
@@ -54,9 +58,23 @@ static void so_add(struct SelvaObject *obj, size_t n, const char *str, size_t le
     snprintf(key_str, key_len + 1, "%zu", n);
     s = selva_string_create(str, len, 0);
 
-    /*
-     * Add to the list.
-     */
+    SelvaObject_InsertArrayStr(obj, key_str, key_len, SELVA_OBJECT_STRING, s);
+}
+
+/**
+ * Add to the list with an alias index.
+ * `alias` is prefixed with STRING_SET_ALIAS.
+ */
+static void so_add_alias(struct SelvaObject *obj, const char *alias_str, size_t alias_len, const char *str, size_t len)
+{
+    const size_t key_len = alias_len + 1;
+    char key_str[key_len];
+    struct selva_string *s;
+
+    key_str[0] = STRING_SET_ALIAS;
+    memcpy(key_str + 1, alias_str, alias_len);
+    s = selva_string_create(str, len, 0);
+
     SelvaObject_InsertArrayStr(obj, key_str, key_len, SELVA_OBJECT_STRING, s);
 }
 
@@ -114,9 +132,18 @@ int parse_string_set(
                 }
                 /* Otherwise we ignore the empty element. */
             } else { /* Add to the regular list */
+                const char *alias_end = memchr(cur, STRING_SET_ALIAS, cur_len);
+                const char *alias_str = NULL;
+                size_t alias_len = 0;
+
+                if (alias_end) {
+                    alias_str = cur;
+                    alias_len = alias_end - alias_str;
+                    cur = alias_end + 1;
+                }
+
                 size_t nr_el = 0;
                 const char *cur_el = cur;
-
                 do {
                     const char *next_el = cur_el;
 
@@ -129,7 +156,11 @@ int parse_string_set(
 
                     const size_t el_len = (size_t)((ptrdiff_t)next_el - (ptrdiff_t)cur_el);
                     if (el_len > 0) { /* Skip empty elements. */
-                        so_add(obj, n, cur_el, el_len);
+                        if (alias_str && alias_len) {
+                            so_add_alias(obj, alias_str, alias_len, cur_el, el_len);
+                        } else {
+                            so_add_n(obj, n, cur_el, el_len);
+                        }
                         nr_el++;
                     }
 
