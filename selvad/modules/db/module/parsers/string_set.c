@@ -170,13 +170,7 @@ int parse_string_set(
                     cur_el = next_el + 1;
                 } while (*cur_el != STRING_SET_EOS);
 
-                /*
-                 * Increment the set index only if elements were inserted at the
-                 * index.
-                 */
-                if (nr_el > 0) {
-                    n++;
-                }
+                n++;
             }
 
             if (*next == STRING_SET_EOS) {
