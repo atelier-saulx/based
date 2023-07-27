@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, validateType, walk } from '../src/index'
+import { BasedSchema, setWalker2, walk } from '../src/index'
 
 const schema: BasedSchema = {
   types: {
@@ -99,6 +99,63 @@ test('walker', async (t) => {
   )
 
   console.info('------------')
+
+  t.true(true)
+})
+
+test.only('set walker', async (t) => {
+  const schema: BasedSchema = {
+    types: {
+      bla: {
+        prefix: 'bl',
+        fields: {
+          snup: { type: 'boolean' },
+          flap: {
+            type: 'object',
+            properties: {
+              gurt: { type: 'boolean' },
+            },
+          },
+        },
+      },
+    },
+    $defs: {},
+    languages: ['en'],
+    root: {
+      fields: {},
+    },
+    prefixToTypeMapping: {
+      bl: 'bla',
+    },
+  }
+
+  const x = await setWalker2(
+    schema,
+
+    {
+      $id: 'bl1',
+      gurk: [1, 2, 3, 4],
+      x: {
+        y: {
+          z: {
+            a: 10,
+            b: 20,
+            gur: {
+              x: true,
+              y: true,
+              $list: {
+                $sort: true,
+              },
+            },
+            c: 40,
+            $list: true,
+          },
+        },
+      },
+    }
+  )
+
+  console.info('------------', x)
 
   t.true(true)
 })

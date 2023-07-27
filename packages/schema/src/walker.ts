@@ -1,5 +1,10 @@
 import { ParseError } from './set/error'
-import { BasedSchema, BasedSetHandlers, BasedSetTarget } from './types'
+import {
+  BasedSchema,
+  BasedSchemaFieldObject,
+  BasedSetHandlers,
+  BasedSetTarget,
+} from './types'
 import { BasedSchemaType, BasedSchemaFields } from './types'
 
 type Path = (string | number)[]
@@ -56,7 +61,8 @@ export type Opts<T> = {
       [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
     }>
     keys: { [key: string]: KeyParser<T> } // $list -> true
-    any: KeyParser<T> // y.x
+    any?: KeyParser<T> // y.x
+    catch?: KeyParser<T> //
   }
   collect?: (args: Args<T>) => any
   backtrack?: BackTrack<T>
@@ -88,7 +94,9 @@ export const walk = async <T>(
   const errorsCollector: ErrorHandler<T> = (args, code) => {
     const err = {
       code,
-      message: `Error in ${args.path.join('.')}`,
+      message: `Error: ${ParseError[code]} - from "${
+        args.path.length === 0 ? 'top' : args.path.join('.')
+      }"`,
     }
     if (opts.errorsCollector) {
       opts.errorsCollector(args, code)
@@ -123,12 +131,12 @@ export const walk = async <T>(
       const keyQ: Promise<Args<T> | void>[] = []
       const keysHandled: Set<string | number> = new Set()
 
-      for (const key in opts.parsers) {
-        if ('key' in args.value) {
+      for (const key in opts.parsers.keys) {
+        if (key in args.value) {
           keysHandled.add(key)
           keyQ.push(
             (async () => {
-              const newArgs = await opts.parsers[key]({
+              const newArgs = await opts.parsers.keys[key]({
                 ...args,
                 value: args.value[key],
                 path: [...args.path, key],
@@ -144,64 +152,119 @@ export const walk = async <T>(
 
       await Promise.all(keyQ)
 
+      const fieldQ: Promise<Args<T> | void>[] = []
+
       if (!stop) {
         if (args.typeSchema && !args.fieldSchema) {
           // top level
-        }
-        if (args.fieldSchema) {
-          //
+          for (const key in args.typeSchema.fields) {
+            const fieldSchema = args.typeSchema.fields[key]
+            const fieldParser = opts.parsers.fields[fieldSchema.type]
+            if (fieldParser) {
+              keysHandled.add(key)
+              if (args.value[key]) {
+                fieldQ.push(
+                  (async () => {
+                    const newArgs = await fieldParser({
+                      ...args,
+                      value: args.value[key],
+                      path: [...args.path, key],
+                      // @ts-ignore
+                      fieldSchema,
+                      key,
+                    })
+                    if (newArgs) {
+                      return parse(newArgs)
+                    }
+                  })()
+                )
+              }
+            }
+          }
+        } else if (args.fieldSchema) {
+          if (args.fieldSchema.type === 'object') {
+            // @ts-ignore should detect from line above
+            const objFieldSchema: BasedSchemaFieldObject = args.fieldSchema
+            for (const key in objFieldSchema.properties) {
+              const fieldSchema = objFieldSchema.properties[key]
+              const fieldParser = opts.parsers.fields[fieldSchema.type]
+              if (fieldParser) {
+                keysHandled.add(key)
+                if (args.value[key]) {
+                  fieldQ.push(
+                    (async () => {
+                      const newArgs = await fieldParser({
+                        ...args,
+                        value: args.value[key],
+                        path: [...args.path, key],
+                        // @ts-ignore
+                        fieldSchema,
+                        key,
+                      })
+                      if (newArgs) {
+                        return parse(newArgs)
+                      }
+                    })()
+                  )
+                }
+              }
+            }
+            // from here to array and continue!
+          }
         }
 
-        // then again stop
-        // needs to check which keys are handled from type / field schema
-
-        const q: Promise<Args<T> | void>[] = []
-        if (Array.isArray(args.value)) {
-          for (let i = 0; i < args.value.length; i++) {
-            if (keysHandled.has(i)) {
-              continue
+        if (!stop) {
+          const q: Promise<Args<T> | void>[] = []
+          if (Array.isArray(args.value)) {
+            for (let i = 0; i < args.value.length; i++) {
+              if (keysHandled.has(i)) {
+                continue
+              }
+              const parser = opts.parsers.any
+              const j = i
+              q.push(
+                (async () => {
+                  const newArgs = await parser({
+                    ...args,
+                    value: args.value[j],
+                    path: [...args.path, j],
+                    key: j,
+                  })
+                  if (newArgs) {
+                    return parse(newArgs)
+                  }
+                })()
+              )
             }
-            const parser = opts.parsers.any
-            const j = i
-            q.push(
-              (async () => {
-                const newArgs = await parser({
-                  ...args,
-                  value: args.value[j],
-                  path: [...args.path, j],
-                  key: j,
-                })
-                if (newArgs) {
-                  return parse(newArgs)
-                }
-              })()
-            )
-          }
-        } else {
-          for (const key in args.value) {
-            if (keysHandled.has(key)) {
-              continue
+          } else {
+            const anyParser = opts.parsers.any || opts.parsers.catch
+            for (const key in args.value) {
+              if (!opts.parsers.any && keysHandled.has(key)) {
+                continue
+              }
+              q.push(
+                (async () => {
+                  const newArgs = await anyParser({
+                    ...args,
+                    value: args.value[key],
+                    path: [...args.path, key],
+                    key,
+                  })
+                  if (newArgs) {
+                    return parse(newArgs)
+                  }
+                })()
+              )
             }
-            const parser = opts.parsers.any
-            q.push(
-              (async () => {
-                const newArgs = await parser({
-                  ...args,
-                  value: args.value[key],
-                  path: [...args.path, key],
-                  key,
-                })
-                if (newArgs) {
-                  return parse(newArgs)
-                }
-              })()
-            )
           }
+          await Promise.all(q)
         }
-        await Promise.all(q)
       }
 
-      if (fromBackTrack.length || collectedCommands.length) {
+      if (
+        !args.skipCollection &&
+        (fromBackTrack.length || collectedCommands.length)
+      ) {
         const x = args.backtrack(args, fromBackTrack, collectedCommands)
         if (x) {
           prevArgs.fromBackTrack?.push(x)
@@ -221,6 +284,8 @@ export const walk = async <T>(
     requiresAsyncValidation: opts.requiresAsyncValidation,
   })
 
+  // if errors throw them!
+
   if (!args) {
     return {
       // TODO: temp
@@ -229,6 +294,7 @@ export const walk = async <T>(
       errors,
     }
   }
+
   await parse(args)
   return {
     target: args.target,
