@@ -31,17 +31,18 @@ static struct selva_string *ensure_side_list(struct selva_string *list[], size_t
     return list[i];
 }
 
-static void side_list_add(struct selva_string *sl, const char *el_str, size_t el_len)
+int string_set_list_add(struct selva_string *sl, const char *opt_ignore_str, size_t opt_ignore_len, const char *el_str, size_t el_len)
 {
     const char sep[] = { STRING_SET_SEPARATOR_SET };
     const char *name_str = el_str + 1;
     const size_t name_len = el_len - 1;
 
-    /* Ignore id field silently. */
-    if (!(name_len == (sizeof(SELVA_ID_FIELD) - 1) && !memcmp(SELVA_ID_FIELD, name_str, name_len))) {
-        (void)selva_string_append(sl, name_str, name_len);
-        (void)selva_string_append(sl, sep, 1);
+    if (opt_ignore_str && name_len == opt_ignore_len && !memcmp(opt_ignore_str, name_str, name_len)) {
+        return 0;
     }
+
+    (void)selva_string_append(sl, name_str, name_len);
+    return selva_string_append(sl, sep, 1);
 }
 
 int parse_string_set(
@@ -123,7 +124,12 @@ int parse_string_set(
                             struct selva_string *sl;
 
                             sl = ensure_side_list(side_list, side_list_i - 1);
-                            side_list_add(sl, cur_el, el_len);
+                            /*
+                             * `id` field is never added here. That's stupid but
+                             * we assume this is a some sort of excluded_fields
+                             * list.
+                             */
+                            (void)string_set_list_add(sl, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, cur_el, el_len);
                         }
                         /* Otherwise we ignore the empty element. */
                     } else {

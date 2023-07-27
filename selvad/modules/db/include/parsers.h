@@ -4,7 +4,16 @@
  */
 #pragma once
 
+/**
+ * Inherit.
+ */
+#define STRING_SET_INH_PREFIX       '^'
+
+/**
+ * Exclude.
+ */
 #define STRING_SET_EXCL_PREFIX      '!'
+
 #define STRING_SET_SEPARATOR_SET    '\n'
 #define STRING_SET_SEPARATOR_LIST   '|'
 #define STRING_SET_EOS              '\0'
@@ -25,6 +34,16 @@ struct selva_string **parse_string_list(
         struct finalizer *fin,
         const char *in_str,
         size_t in_len);
+
+/**
+ * Add to a string list.
+ * @param sl must be a mutable selva_string.
+ * @param opt_ignore a single str to be ignored. Can be NULL.
+ * @param el_str the new element.
+ */
+int string_set_list_add(struct selva_string *sl,
+                        const char *opt_ignore_str, size_t opt_ignore_len,
+                        const char *el_str, size_t el_len);
 
 /**
  * Parse a set of lists containing strings.

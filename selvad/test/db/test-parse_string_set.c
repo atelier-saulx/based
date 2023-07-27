@@ -25,7 +25,7 @@ static void teardown(void)
 
 static char * test_parse1(void)
 {
-    struct selva_string *input = selva_string_createf("a|b\n!c\nd|!e\n!f|g");
+    struct selva_string *input = selva_string_createf("a|b\n!c\nd|!e\n!f|g\n!id");
     struct SelvaObject *list = NULL;
     struct selva_string *excl = NULL;
     int err;
