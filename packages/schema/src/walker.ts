@@ -12,6 +12,12 @@ type Parse<T> = (
   value?: any
 ) => Promise<Args<T> | void> // If true will not continue
 
+type BackTrack<T> = (
+  args: Args<T>,
+  fromBackTrack: any[],
+  collectedCommands: any[]
+) => any
+
 export type Args<
   T,
   K extends keyof BasedSchemaFields = keyof BasedSchemaFields
@@ -25,9 +31,10 @@ export type Args<
   key?: number | string
   value: any
   target: T
+  fromBackTrack: any[]
   parse: Parse<T>
   collect: (args: Args<T>) => any
-  backtrack: (args: Args<T>, collectedCommands: any[]) => any
+  backtrack: BackTrack<T>
   requiresAsyncValidation: (validationType: any) => Promise<any>
   error: ErrorHandler<T>
 }
@@ -51,7 +58,7 @@ export type Opts<T> = {
     any: KeyParser<T> // y.x
   }
   collect?: (args: Args<T>) => any
-  backtrack?: (args: Args<T>, collectedCommands: any[]) => any // from back TRACKS OR COLLECT
+  backtrack?: BackTrack<T>
   requiresAsyncValidation?: (validationType: any) => Promise<boolean>
   errorsCollector?: ErrorHandler<T>
 }
@@ -70,7 +77,7 @@ export const walk = async <T>(
   }
 
   if (!('backtrack' in opts)) {
-    opts.backtrack = (c) => c
+    opts.backtrack = (args, btC, c) => btC
   }
 
   if (!('requiresAsyncValidation' in opts)) {
@@ -102,11 +109,10 @@ export const walk = async <T>(
       collect: (args) => {
         collectedCommands.push(opts.collect(args))
       },
-      backtrack: (args, commands) => {
-        fromBackTrack.push(opts.backtrack(args, commands))
-      },
+      fromBackTrack,
+      backtrack: opts.backtrack,
       error: errorsCollector,
-      requiresAsyncValidation: opts.requiresAsyncValidation,
+      requiresAsyncValidation: prevArgs.requiresAsyncValidation,
     }
     if (typeof args.value === 'object' && args.value !== null) {
       const q: Promise<Args<T> | void>[] = []
@@ -118,6 +124,8 @@ export const walk = async <T>(
       if (args.fieldSchema) {
         //
       }
+
+      // first do key parsers
 
       if (Array.isArray(args.value)) {
         for (let i = 0; i < args.value.length; i++) {
@@ -157,10 +165,12 @@ export const walk = async <T>(
       }
 
       await Promise.all(q)
-      if (fromBackTrack.length) {
-        args.backtrack(args, fromBackTrack)
-      } else if (collectedCommands.length) {
-        args.backtrack(args, collectedCommands)
+
+      if (fromBackTrack.length || collectedCommands.length) {
+        const x = args.backtrack(args, fromBackTrack, collectedCommands)
+        if (x) {
+          prevArgs.fromBackTrack?.push(x)
+        }
       }
     }
   }

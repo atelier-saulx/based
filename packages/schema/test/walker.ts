@@ -37,18 +37,16 @@ test('walker', async (t) => {
     {
       schema,
       init: async (args) => {
-        console.log('init!\n', args)
         return { ...args, target: { lullz: true } }
       },
       parsers: {
         keys: {
-          $list: async (args) => {
-            return {
-              ...args,
-
-              value: { flapdrol: true },
-            }
-          },
+          // $list: async (args) => {
+          //   return {
+          //     ...args,
+          //     value: { flapdrol: true },
+          //   }
+          // },
         },
         fields: {
           // string: () => {}
@@ -61,10 +59,22 @@ test('walker', async (t) => {
       collect: (args) => {
         return args.path.join('.')
       },
-      backtrack: (args, collectedCommands) => {
-        console.log('    \n-----------BACK TRACK GOOD GO', collectedCommands)
+      backtrack: (args, fromBt, collected) => {
+        console.log(
+          '    \n-----------BACK TRACK GOOD GO',
+          '\n',
+          'path:',
+          args.path.join('.'),
+          '\n',
+          'backtracked:',
+          JSON.stringify(fromBt),
+          '\n',
+          'collected:',
+          collected,
+          '--------------------'
+        )
         // if return next btrack will not receive  backtrack from commands
-        return collectedCommands
+        return fromBt.length ? fromBt : collected
       },
     },
     {
@@ -90,7 +100,6 @@ test('walker', async (t) => {
   )
 
   console.info('------------')
-  console.info(x)
 
   t.true(true)
 })
