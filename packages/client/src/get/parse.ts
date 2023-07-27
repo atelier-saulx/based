@@ -46,22 +46,25 @@ export async function parseGetOpts(
           return args
         },
       },
-      backtrack(args, entries) {
+      backtrack(args, backtracked, collected) {
+        const entries = [...backtracked, ...collected]
+
         const { path, key } = args
         const { $id, type } = args.target
 
+        console.log('BACKTRACK', key, path, entries)
         const fields: string[] = []
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
           if (typeof entry === 'string') {
-            fields.push(entry)
+            fields.push(type === 'node' && key ? `${key}.${entry}` : entry)
           } else {
             const nestedCmd: GetCommand = entry
             if (nestedCmd.type === 'node') {
               // TODO: handle if $id is different
               // TODO: handle $field and false (exclude)
               for (const f of nestedCmd.fields.$any) {
-                fields.push(`${key}.${f}`)
+                fields.push(key ? `${key}.${f}` : f)
               }
             } else {
               nestedCommands.push(nestedCmd)
