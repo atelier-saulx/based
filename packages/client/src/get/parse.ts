@@ -8,9 +8,8 @@ export async function parseGetOpts(
   let topLevel: GetCommand
   await walk<{ $id: string; type: 'node' | 'traverse' }>(
     {
-      async init(val, args) {
-        // TODO: deal with alias etc.
-        return { $id: val.$id, type: 'node' }
+      async init(args) {
+        return { ...args, target: { $id: args.value.$id, type: 'node' } }
       },
       collect(args) {
         console.log('PUT', args.path, args.value)
@@ -23,7 +22,7 @@ export async function parseGetOpts(
         fields: {},
         keys: {},
         async any(args) {
-          const { value, target } = args
+          const { key, value, target } = args
 
           if (typeof value === 'object') {
             if (value.$list) {
@@ -36,10 +35,14 @@ export async function parseGetOpts(
               }
             }
 
-            return args
+            // TODO: only supports $list: true now
+            return
           }
 
-          args.collect(args)
+          if (!String(key).startsWith('$')) {
+            args.collect(args)
+          }
+
           return args
         },
       },
