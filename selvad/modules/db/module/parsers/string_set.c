@@ -71,14 +71,7 @@ int parse_string_set(
 
     if (cur[0] != STRING_SET_EOS) {
         do {
-            const size_t key_len = (size_t)(log10(n + 1)) + 1;
-            char key_str[key_len + 1];
             const char *next;
-#if 0
-            size_t len;
-#endif
-
-            snprintf(key_str, key_len + 1, "%zu", n);
 
             /*
              * Find the separator between the current and the next field name list.
@@ -87,14 +80,6 @@ int parse_string_set(
             while (*next != STRING_SET_EOS && *next != STRING_SET_SEPARATOR_SET) {
                 next++;
             }
-            /*
-             * len could be used for splitting in the do..while loop
-             * but we are currently looking for the separator chars
-             * there.
-             */
-#if 0
-            len = (size_t)((ptrdiff_t)next - (ptrdiff_t)cur);
-#endif
 
             /*
              * Create the set elements.
@@ -133,8 +118,11 @@ int parse_string_set(
                         }
                         /* Otherwise we ignore the empty element. */
                     } else {
+                        const size_t key_len = (size_t)(log10(n + 1)) + 1;
+                        char key_str[key_len + 1];
                         struct selva_string *el;
 
+                        snprintf(key_str, key_len + 1, "%zu", n);
                         el = selva_string_create(cur_el, el_len, 0);
 
                         /*
