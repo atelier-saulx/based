@@ -77,18 +77,22 @@ struct SelvaFind_QueryOpts {
          * - `*` - Wildcard
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
+         * The `id` field can't be excluded.
          */
         SELVA_FIND_QUERY_RES_FIELDS,
         /**
          * Execute an RPN expression for each node to decide the fields.
          * The RPN expression must return a set of field names (strings).
          *
-         * **Supported notation for field names**
-         *
+         * **Supported prefixes for field names**
          * `^` = Inherit the field
+         * `!` = Exclude the field
+         *
+         * **Special field names**
          * `*` = wildcard
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
+         * The `id` field can't be excluded.
          */
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
         /**

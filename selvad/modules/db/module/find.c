@@ -1040,13 +1040,15 @@ static int send_node_object_merge(
 }
 
 static int exec_fields_expression(
+        struct finalizer *fin,
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         struct rpn_ctx *rpn_ctx,
         const struct rpn_expression *expr,
         struct SelvaObject *fields,
         struct selva_string ***inherit,
-        size_t *nr_inherit) {
+        size_t *nr_inherit,
+        struct selva_string **excluded) {
     Selva_NodeId nodeId;
     struct SelvaSet set;
     enum rpn_error rpn_err;
@@ -1054,6 +1056,7 @@ static int exec_fields_expression(
     size_t i_fields;
     size_t i_inherit;
     struct selva_string **tmp_inherit_fields = NULL;
+    struct selva_string *tmp_excluded = NULL;
 
     SelvaHierarchy_GetNodeId(nodeId, node);
     rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
@@ -1074,16 +1077,26 @@ static int exec_fields_expression(
     i_inherit = 0;
     SELVA_SET_STRING_FOREACH(el, &set) {
         struct selva_string *field_name = selva_string_dup(el->value_string, 0);
-        const char *field_name_str = selva_string_to_str(field_name, NULL);
+        TO_STR(field_name);
 
-        if (field_name_str[0] == '^') { /* inherit */
+        if (field_name_str[0] == STRING_SET_INH_PREFIX) { /* inherit */
             tmp_inherit_fields = selva_realloc(tmp_inherit_fields, (i_inherit + 1) * sizeof(struct selva_string *));
+            selva_string_auto_finalize(fin, field_name);
             tmp_inherit_fields[i_inherit++] = field_name;
-        } else { /* no inherit */
+        } else if (field_name_str[0] == STRING_SET_EXCL_PREFIX) { /* exclude */
+            if (!tmp_excluded) {
+                tmp_excluded = selva_string_create("", 0, SELVA_STRING_MUTABLE);
+            }
+
+            selva_string_auto_finalize(fin, field_name);
+            (void)string_set_list_add(tmp_excluded, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, field_name_str, field_name_len);
+        } else { /* select */
             const size_t key_len = (size_t)(log10(i_fields + 1)) + 1;
             char key_str[key_len + 1];
 
             snprintf(key_str, key_len + 1, "%zu", i_fields);
+
+            /* so will free field_name. */
             SelvaObject_InsertArrayStr(fields, key_str, key_len, SELVA_OBJECT_STRING, field_name);
             i_fields++;
         }
@@ -1091,8 +1104,13 @@ static int exec_fields_expression(
 
     SelvaSet_Destroy(&set);
 
+    if (tmp_inherit_fields) {
+        finalizer_add(fin, tmp_inherit_fields, selva_free);
+    }
+
     *inherit = tmp_inherit_fields;
     *nr_inherit = i_inherit;
+    *excluded = tmp_excluded;
     return 0;
 }
 
@@ -1115,25 +1133,36 @@ static void send_node(
     if (args->merge_strategy != MERGE_STRATEGY_NONE) {
         err = send_node_object_merge(fin, resp, lang, node, args->merge_strategy, args->merge_path, args->fields);
     } else if (args->fields) { /* Predefined list of fields. */
-        err = send_node_fields(fin, resp, lang, hierarchy, node, args->fields, NULL, 0, args->excluded_fields);
+        err = send_node_fields(fin, resp, lang, hierarchy, node,
+                               args->fields,
+                               NULL, 0,
+                               args->excluded_fields);
     } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
+        struct finalizer fin2;
         struct rpn_expression *expr = args->fields_expression ?: args->inherit_expression;
         selvaobject_autofree struct SelvaObject *fields = SelvaObject_New();
         struct selva_string **inherit_fields = NULL; /* allocated by exec_fields_expression() */
-        size_t nr_inherit_fields;
+        size_t nr_inherit_fields = 0;
+        struct selva_string *excluded_fields = NULL;
 
-        assert(!(args->fields_expression && args->inherit_expression));
+        assert(!(args->fields_expression && args->inherit_expression) &&
+               !args->excluded_fields);
 
-        err = exec_fields_expression(hierarchy, node, args->fields_rpn_ctx, expr, fields, &inherit_fields, &nr_inherit_fields);
+        finalizer_init(&fin2);
+
+        err = exec_fields_expression(&fin2, hierarchy, node,
+                                     args->fields_rpn_ctx, expr,
+                                     fields,
+                                     &inherit_fields, &nr_inherit_fields,
+                                     &excluded_fields);
         if (!err) {
-            err = send_node_fields(fin, resp, lang, hierarchy, node, fields, inherit_fields, nr_inherit_fields, args->excluded_fields);
+            err = send_node_fields(fin, resp, lang, hierarchy, node,
+                                   fields,
+                                   inherit_fields, nr_inherit_fields,
+                                   excluded_fields);
         }
-        if (inherit_fields) {
-            for (size_t i = 0; i < nr_inherit_fields; i++) {
-                selva_string_free(inherit_fields[i]);
-            }
-            selva_free(inherit_fields);
-        }
+
+        finalizer_run(&fin2);
     } else { /* Otherwise the nodeId is sent. */
         Selva_NodeId nodeId;
 
