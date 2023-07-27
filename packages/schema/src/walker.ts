@@ -110,6 +110,15 @@ export const walk = async <T>(
     }
     if (typeof args.value === 'object' && args.value !== null) {
       const q: Promise<Args<T> | void>[] = []
+
+      if (args.typeSchema && !args.fieldSchema) {
+        // top level
+      }
+
+      if (args.fieldSchema) {
+        //
+      }
+
       if (Array.isArray(args.value)) {
         for (let i = 0; i < args.value.length; i++) {
           const parser = opts.parsers.keys[i] || opts.parsers.any
