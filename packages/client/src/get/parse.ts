@@ -1,16 +1,16 @@
 import { walk } from '@based/schema'
-import { ExecContext, GetCommand, GetNode } from './types'
+import { ExecContext, GetCommand, GetNode, GetTraverse } from './types'
 
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
-): Promise<GetCommand[]> {
-  const cmds: GetCommand[] = []
-  await walk<{ $id: string }>(
+): Promise<GetCommand> {
+  let topLevel: GetCommand
+  await walk<{ $id: string; type: 'node' | 'traverse' }>(
     {
       async init(val, args) {
         // TODO: deal with alias etc.
-        return { $id: val.$id }
+        return { $id: val.$id, type: 'node' }
       },
       collect(args) {
         console.log('PUT', args.path, args.value)
@@ -21,25 +21,31 @@ export async function parseGetOpts(
       schema: ctx.client.schema,
       parsers: {
         fields: {},
-        keys: {
-          $id: async (args) => {
-            if (args.path.length >= 2) {
-              // ignore top-level
-              args.collect(args)
-            }
-          },
-          $list: async (args) => {
-            return
-          },
-        },
+        keys: {},
         async any(args) {
+          const { value, target } = args
+
+          if (typeof value === 'object') {
+            if (value.$list) {
+              return {
+                ...args,
+                target: {
+                  ...args.target,
+                  type: 'traverse',
+                },
+              }
+            }
+
+            return args
+          }
+
           args.collect(args)
           return args
         },
       },
       backtrack(args, entries) {
-        const { path } = args
-        const { $id } = args.target
+        const { path, key } = args
+        const { $id, type } = args.target
 
         const fields: string[] = []
         const nestedCommands: GetCommand[] = []
@@ -51,14 +57,31 @@ export async function parseGetOpts(
           }
         }
 
-        const cmd: GetNode = {
-          fields: { $any: fields },
-          type: 'node',
-          source: { id: $id },
-          target: { path },
-          nestedCommands,
+        let cmd: GetCommand
+        if (type === 'node') {
+          cmd = {
+            type: 'node',
+            fields: { $any: fields },
+            source: { id: $id },
+            target: { path },
+            nestedCommands,
+          }
+        } else {
+          cmd = {
+            type: 'traverse',
+            fields: { $any: fields },
+            source: { id: $id },
+            target: { path },
+            sourceField: String(key),
+            nestedCommands,
+          }
         }
-        console.log('BACKTRACK', cmd)
+
+        console.log('CMD', cmd)
+
+        if (!path.length) {
+          topLevel = cmd
+        }
 
         return cmd
       },
@@ -69,5 +92,5 @@ export async function parseGetOpts(
     opts
   )
 
-  return cmds
+  return topLevel
 }
