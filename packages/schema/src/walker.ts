@@ -146,6 +146,7 @@ export const walk = async <T>(
           )
         }
       }
+
       await Promise.all(q)
       if (fromBackTrack.length) {
         args.backtrack(args, fromBackTrack)
