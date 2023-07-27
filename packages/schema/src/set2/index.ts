@@ -196,8 +196,8 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
         }
         return { ...args, target, typeSchema }
       },
-      collect: (args) => {
-        console.info('COLLECT!', args.path.join('.'), args.value)
+      collect: (args, value) => {
+        console.info('COLLECT!', args.path.join('.'), value)
       },
     },
     value

@@ -72,7 +72,7 @@ export type Opts<T> = {
     any?: KeyParser<T> // y.x
     catch?: KeyParser<T> //
   }
-  collect?: (args: Args<T>) => any
+  collect?: (args: Args<T>, value: any) => any
   backtrack?: BackTrack<T>
   requiresAsyncValidation?: (validationType: any) => Promise<boolean>
   errorsCollector?: ErrorHandler<T>
@@ -129,9 +129,9 @@ export const walk = async <T>(
         stop = true
       },
       // @ts-ignore
-      fieldSchema: fieldSchema ?? prevArgs.fieldSchema,
+      fieldSchema: fieldSchema,
       typeSchema: prevArgs.typeSchema,
-      path: key ? [...prevArgs.path, key] : prevArgs.path,
+      path: key !== undefined ? [...prevArgs.path, key] : prevArgs.path,
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
       parentValue: value ? prevArgs.value : undefined,
       value: value ?? prevArgs.value,
@@ -149,9 +149,12 @@ export const walk = async <T>(
       requiresAsyncValidation: prevArgs.requiresAsyncValidation,
       skipCollection: skipCollection ?? prevArgs.skipCollection,
     }
+
     if (typeof args.value === 'object' && args.value !== null) {
+      // fix fix
       const keyQ: Promise<Args<T> | void>[] = []
       const keysHandled: Set<string | number> = new Set()
+      let allKeysHandled = false
 
       for (const key in opts.parsers.keys) {
         if (key in args.value) {
@@ -165,7 +168,7 @@ export const walk = async <T>(
                 key,
               })
               if (newArgs) {
-                return parse(newArgs)
+                return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
               }
             })()
           )
@@ -196,7 +199,12 @@ export const walk = async <T>(
                       key,
                     })
                     if (newArgs) {
-                      return parse(newArgs)
+                      return parse(
+                        newArgs,
+                        undefined,
+                        undefined,
+                        newArgs.fieldSchema
+                      )
                     }
                   })()
                 )
@@ -226,15 +234,43 @@ export const walk = async <T>(
                         key,
                       })
                       if (newArgs) {
-                        return parse(newArgs)
+                        return parse(
+                          newArgs,
+                          undefined,
+                          undefined,
+                          newArgs.fieldSchema
+                        )
                       }
                     })()
                   )
                 }
               }
             }
+          } else {
+            if (args.fieldSchema) {
+              console.log(
+                'got a fieldSchema',
+                args.fieldSchema,
+                'and is object',
+                args.value,
+                value,
+                '???'
+              )
+              const fieldParser = opts.parsers.fields[fieldSchema.type]
+              if (fieldParser) {
+                // @ts-ignore
+                const newArgs = await fieldParser(args)
+                if (newArgs) {
+                  return parse(
+                    newArgs,
+                    undefined,
+                    undefined,
+                    newArgs.fieldSchema
+                  )
+                }
+              }
+            }
           }
-          // need more
         }
 
         await Promise.all(fieldQ)
@@ -243,7 +279,7 @@ export const walk = async <T>(
           const q: Promise<Args<T> | void>[] = []
           if (Array.isArray(args.value)) {
             for (let i = 0; i < args.value.length; i++) {
-              if (keysHandled.has(i)) {
+              if (!opts.parsers.any && (keysHandled.has(i) || allKeysHandled)) {
                 continue
               }
               const parser = opts.parsers.any
@@ -257,7 +293,12 @@ export const walk = async <T>(
                     key: j,
                   })
                   if (newArgs) {
-                    return parse(newArgs)
+                    return parse(
+                      newArgs,
+                      undefined,
+                      undefined,
+                      newArgs.fieldSchema
+                    )
                   }
                 })()
               )
@@ -265,7 +306,10 @@ export const walk = async <T>(
           } else {
             const anyParser = opts.parsers.any || opts.parsers.catch
             for (const key in args.value) {
-              if (!opts.parsers.any && keysHandled.has(key)) {
+              if (
+                (!opts.parsers.any && keysHandled.has(key)) ||
+                allKeysHandled
+              ) {
                 continue
               }
               q.push(
@@ -277,7 +321,12 @@ export const walk = async <T>(
                     key,
                   })
                   if (newArgs) {
-                    return parse(newArgs)
+                    return parse(
+                      newArgs,
+                      undefined,
+                      undefined,
+                      newArgs.fieldSchema
+                    )
                   }
                 })()
               )
@@ -294,6 +343,23 @@ export const walk = async <T>(
         const x = args.backtrack(args, fromBackTrack, collectedCommands)
         if (x) {
           prevArgs.fromBackTrack?.push(x)
+        }
+      }
+    } else {
+      if (args.fieldSchema) {
+        console.log(
+          'got a fieldSchema',
+          args.fieldSchema,
+          'and field',
+          args.value
+        )
+        const fieldParser = opts.parsers.fields[fieldSchema.type]
+        if (fieldParser) {
+          // @ts-ignore
+          const newArgs = await fieldParser(args)
+          if (newArgs) {
+            return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
+          }
         }
       }
     }

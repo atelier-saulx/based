@@ -114,6 +114,12 @@ test.only('set walker', async (t) => {
             type: 'object',
             properties: {
               gurt: { type: 'boolean' },
+              x: {
+                type: 'array',
+                values: {
+                  type: 'boolean',
+                },
+              },
             },
           },
         },
@@ -134,6 +140,7 @@ test.only('set walker', async (t) => {
     snup: false,
     flap: {
       gurt: true,
+      x: [true, false, false, true],
     },
   })
 
