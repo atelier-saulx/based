@@ -8,8 +8,6 @@ $(targets):
 	$(MAKE) -C $@
 
 clean:
-	for i in $(targets); do \
-		$(MAKE) -C $$i \
-	done
+	for i in $(targets); do $(MAKE) -C $$i clean; done
 
 .PHONY: $(targets)
