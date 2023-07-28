@@ -106,13 +106,7 @@ export async function parseGetOpts(
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
           if (typeof entry === 'string') {
-            if (entry.startsWith('$fieldsByType')) {
-              const [_$fieldsByType, type, ...field] = entry.split('.')
-              byType[type] = byType[type] ?? []
-              byType[type].push(field.join('.'))
-            } else {
-              fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
-            }
+            fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
           } else {
             const nestedCmd: GetCommand = entry
 
@@ -122,7 +116,17 @@ export async function parseGetOpts(
             if (canMerge) {
               // TODO: handle $field and false (exclude) -- needs to be prefixed right
               for (const f of nestedCmd.fields.$any) {
-                fields.push(shouldPrefixFields ? `${key}.${f}` : f)
+                if (f.startsWith('$fieldsByType')) {
+                  const [_$fieldsByType, type, ...field] = f.split('.')
+                  if (type === '$any') {
+                    fields.push(field.join('.'))
+                  } else {
+                    byType[type] = byType[type] ?? []
+                    byType[type].push(field.join('.'))
+                  }
+                } else {
+                  fields.push(shouldPrefixFields ? `${key}.${f}` : f)
+                }
               }
 
               for (const t in nestedCmd.fields?.byType) {

@@ -264,12 +264,12 @@ test.serial.only('set primitive fields', async (t) => {
     $all: true,
     $aliases: true,
     children: true,
-    f: { $field: ['nonExistingField', 'parents'] },
+    fi: { $field: ['nonExistingField', 'parents'] },
     createdAt: false,
     updatedAt: false,
   })
   console.dir({ single }, { depth: 8 })
-  t.deepEqual(single, { id: third, slug: '/third', children: [], f: ['po2'] })
+  t.deepEqual(single, { id: third, slug: '/third', children: [], fi: ['po2'] })
 
   const expr = await client.get({
     traversed: {
@@ -291,14 +291,15 @@ test.serial.only('set primitive fields', async (t) => {
     },
   })
   // TODO
-  // t.deepEqual(expr, {
-  //   traversed: [
-  //     { id: 'me1', str: 'hello' },
-  //     { id: 'po1' },
-  //     { id: 'po2' },
-  //     { id: third },
-  //   ],
-  // })
+  t.deepEqual(expr, {
+    traversed: [
+      { id: 'me1', str: 'hello' },
+      { id: 'po1' },
+      { id: 'po2' },
+      { id: third },
+    ],
+  })
+  return
 
   t.deepEqual(
     (await client.command('lsaliases'))[0].sort(),

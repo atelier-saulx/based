@@ -61,7 +61,7 @@ function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
 
     let n: any = obj
     const parts = f.split('.')
-    let alias
+    let alias: string | undefined
     if (parts[0].includes('@')) {
       ;[alias, parts[0]] = parts[0].split('@')
     }
@@ -82,7 +82,7 @@ function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
     ]
 
     if (alias) {
-      setByPath(obj, alias, parseFieldResult(fieldSchema, v))
+      setByPath(obj, [alias], parseFieldResult(fieldSchema, v))
     } else {
       n[parts[parts.length - 1]] = parseFieldResult(fieldSchema, v)
     }
