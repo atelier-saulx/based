@@ -109,6 +109,27 @@ test.only('set walker', async (t) => {
       bla: {
         prefix: 'bl',
         fields: {
+          record: {
+            type: 'record',
+            values: {
+              type: 'cardinality',
+            },
+          },
+          array: {
+            type: 'array',
+            values: {
+              type: 'object',
+              properties: {
+                uniqMap: {
+                  type: 'record',
+                  values: {
+                    type: 'cardinality',
+                  },
+                },
+                bla: { type: 'string' },
+              },
+            },
+          },
           uniq: { type: 'cardinality' },
           snup: { type: 'boolean' },
           flap: {
@@ -147,6 +168,12 @@ test.only('set walker', async (t) => {
     uniq: {
       $value: 'wpeojwepojfewpio',
     },
+    record: {
+      a: 1000,
+      b: 'bla',
+      c: { x: 'snap', y: 'flap' },
+      bla: { $value: { a: true, b: false } },
+    },
     flap: {
       gurt: true,
       durpi: {
@@ -160,6 +187,18 @@ test.only('set walker', async (t) => {
         { $value: false },
         { $default: true, $value: false },
       ],
+    },
+    array: {
+      $insert: {
+        $idx: 2,
+        $value: {
+          bla: 'hello!',
+          uniqMap: {
+            a: 1,
+            b: { $value: { a: true, b: true }, c: { x: true } },
+          },
+        },
+      },
     },
   })
 

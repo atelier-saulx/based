@@ -2,10 +2,8 @@ import { ParseError } from './set/error'
 import {
   BasedSchema,
   BasedSchemaField,
-  BasedSchemaFieldArray,
   BasedSchemaFieldObject,
-  BasedSetHandlers,
-  BasedSetTarget,
+  BasedSchemaFieldRecord,
 } from './types'
 import { BasedSchemaType, BasedSchemaFields } from './types'
 
@@ -60,6 +58,10 @@ export type FieldParser<K extends keyof BasedSchemaFields, T = any> = (
 export type KeyParser<T = any> = (
   args: Args<T, keyof BasedSchemaFields>
 ) => Promise<Args<T> | void>
+
+export type FieldParsers<T = any> = {
+  [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
+}
 
 export type Opts<T> = {
   schema: BasedSchema
@@ -156,7 +158,6 @@ export const walk = async <T>(
     }
 
     if (typeof args.value === 'object' && args.value !== null) {
-      // fix fix
       const keyQ: Promise<Args<T> | void>[] = []
       const keysHandled: Set<string | number> = new Set()
       let allKeysHandled = false
@@ -180,9 +181,7 @@ export const walk = async <T>(
           )
         }
       }
-
       await Promise.all(keyQ)
-
       const fieldQ: Promise<Args<T> | void>[] = []
 
       if (!stop) {
@@ -200,29 +199,28 @@ export const walk = async <T>(
             const objFieldSchema: BasedSchemaFieldObject = args.fieldSchema
             for (const key in objFieldSchema.properties) {
               const fieldSchema = objFieldSchema.properties[key]
-              const fieldParser =
-                'enum' in fieldSchema
-                  ? opts.parsers.fields.enum
-                  : opts.parsers.fields[fieldSchema.type]
-              if (fieldParser) {
-                if (key in args.value) {
-                  keysHandled.add(key)
-                  fieldQ.push(parse(args, key, args.value[key], fieldSchema))
-                }
+              if (key in args.value) {
+                keysHandled.add(key)
+                fieldQ.push(parse(args, key, args.value[key], fieldSchema))
               }
             }
+          } else if (args.fieldSchema.type === 'record') {
+            // @ts-ignore should detect from line above
+            const objFieldSchema: BasedSchemaFieldRecord = args.fieldSchema
+            for (const key in args.value) {
+              const fieldSchema = objFieldSchema.values
+              keysHandled.add(key)
+              fieldQ.push(parse(args, key, args.value[key], fieldSchema))
+            }
           } else if (args.fieldSchema) {
-            // dont know if this is correct actually...
             const fieldParser =
               'enum' in fieldSchema
                 ? opts.parsers.fields.enum
                 : opts.parsers.fields[fieldSchema.type]
-            if (fieldParser) {
-              // @ts-ignore
-              const newArgs = await fieldParser(args)
-              if (newArgs) {
-                return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
-              }
+            // @ts-ignore
+            const newArgs = await fieldParser(args)
+            if (newArgs) {
+              return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
             }
           }
         }
@@ -307,6 +305,7 @@ export const walk = async <T>(
           'enum' in fieldSchema
             ? opts.parsers.fields.enum
             : opts.parsers.fields[fieldSchema.type]
+
         if (fieldParser) {
           // @ts-ignore
           const newArgs = await fieldParser(args)
@@ -314,6 +313,10 @@ export const walk = async <T>(
             return parse(newArgs, undefined, undefined, newArgs.fieldSchema)
           }
         } else {
+          console.warn(
+            'fieldSchema type not implemented yet!',
+            args.fieldSchema
+          )
           const anyParser = opts.parsers.any || opts.parsers.catch
           anyParser(args)
         }

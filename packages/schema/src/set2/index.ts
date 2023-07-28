@@ -1,13 +1,9 @@
 import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
 import { walk } from '../walker'
-import { array } from './array'
-import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
-import { deepEqual } from '@saulx/utils'
+import { fields } from './fields'
 
-// add required
-// add method to handle $value and $default easy
-
+// TODO: make the opts outside of this
 export const setWalker2 = (schema: BasedSchema, value: any) => {
   return walk<BasedSetTarget>(
     {
@@ -36,59 +32,7 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
             return args
           },
         },
-        fields: {
-          array,
-          object: async (args) => {
-            if (typeof value !== 'object') {
-              args.error(args, ParseError.incorrectFormat)
-              return
-            }
-            const isArray = Array.isArray(value)
-            if (isArray) {
-              args.error(args, ParseError.incorrectFormat)
-              return
-            }
-            return args
-          },
-          cardinality: async (args) => {
-            const { value, error } = args
-            let hashedValue: string
-            if (value && typeof value === 'object') {
-              if (value.$default !== undefined) {
-                error(args, ParseError.defaultNotSupported)
-                return
-              }
-              if (value.$value !== undefined) {
-                hashedValue = hashObjectIgnoreKeyOrder(value.$value).toString(
-                  16
-                )
-              } else {
-                hashedValue = hashObjectIgnoreKeyOrder(value).toString(16)
-              }
-            } else {
-              hashedValue = hash(value).toString(16)
-            }
-            args.collect(args, hashedValue)
-          },
-          boolean: async (args) => {
-            if (typeof args.value !== 'boolean') {
-              args.error(args, ParseError.incorrectFormat)
-              return
-            }
-            args.collect(args)
-          },
-          enum: async (args) => {
-            const { fieldSchema, error, collect, value } = args
-            const enumValues = fieldSchema.enum
-            for (let i = 0; i < enumValues.length; i++) {
-              if (deepEqual(enumValues[i], value)) {
-                collect(args, i)
-                return
-              }
-            }
-            error(args, ParseError.incorrectFormat)
-          },
-        },
+        fields,
         catch: async (args) => {
           args.error(args, ParseError.fieldDoesNotExist)
         },
@@ -128,7 +72,7 @@ export const setWalker2 = (schema: BasedSchema, value: any) => {
             $default: value,
           })
         } else {
-          console.info('COLLECT!', args.path.join('.'), value)
+          console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
         }
       },
     },

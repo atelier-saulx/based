@@ -1,5 +1,5 @@
-import { ParseError } from '../set/error'
-import { FieldParser } from '../walker'
+import { ParseError } from '../../set/error'
+import { FieldParser } from '../../walker'
 
 export const array: FieldParser<'array'> = async (args) => {
   args.stop()
@@ -32,8 +32,14 @@ export const array: FieldParser<'array'> = async (args) => {
           ? value.$insert.$value
           : [value.$insert.$value]
         const q: Promise<any>[] = []
+        // colllect result (set path)
+
         for (let i = 0; i < insert.length; i++) {
-          q.push(parse(args, i, insert[i], fieldSchema.values, true))
+          q.push(
+            parse(args, i, insert[i], fieldSchema.values, false, (val) => {
+              console.log('   ->', val.path)
+            })
+          )
         }
         await Promise.all(q)
       }
