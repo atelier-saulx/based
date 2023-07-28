@@ -1,7 +1,10 @@
 import { ParseError } from '../../set/error'
-import { FieldParser } from '../../walker'
+import { FieldParser, Args } from '../../walker'
+import { BasedSetTarget } from '../../types'
 
-const fieldSchemaUtil = (args) => {
+type NumberTypes = 'number' | 'timestamp' | 'integer'
+
+const validator = (args: Args<BasedSetTarget, NumberTypes>): boolean => {
   const { fieldSchema, value } = args
   if (
     fieldSchema.multipleOf &&
@@ -37,29 +40,42 @@ const fieldSchemaUtil = (args) => {
   return true
 }
 
-const objUtil = (args) => {
+const shared = (args: Args<BasedSetTarget, NumberTypes>): boolean => {
   if (typeof args.value === 'object') {
-    args.stop()
+    if ('$value' in args.value) {
+      args.value = args.value.$value
+      if (typeof args.value !== 'object') {
+        return true
+      }
+    }
     for (let key in args.value) {
-      if (key !== '$value' || '$default' || '$increment' || '$decrement') {
-        args.error(args, ParseError)
+      if (key === '$increment') {
+      } else if (key === '$decrement') {
+      } else if (key === 'default') {
+      } else {
+        args.error(args, ParseError.fieldDoesNotExist)
         return false
       }
     }
+  } else if (typeof args.value !== 'number') {
+    args.error(args, ParseError.incorrectFormat)
+    return false
   }
   return true
 }
 
 export const number: FieldParser<'number'> = async (args) => {
+  args.stop()
   if (typeof args.value !== 'number') {
     args.error(args, ParseError.incorrectFieldType)
     return
   }
-  if (!fieldSchemaUtil(args) || !objUtil(args)) {
+  if (!fieldSchemaUtil(args) || !checkForFields(args)) {
     return
   }
   return args
 }
+
 export const integer: FieldParser<'integer'> = async (args) => {
   if (typeof args.value !== 'number') {
     args.error(args, ParseError.incorrectFieldType)
@@ -69,7 +85,7 @@ export const integer: FieldParser<'integer'> = async (args) => {
     args.error(args, ParseError.incorrectFieldType)
     return
   }
-  if (!fieldSchemaUtil(args) || !objUtil(args)) {
+  if (!fieldSchemaUtil(args) || !checkForFields(args)) {
     return
   }
   return args
