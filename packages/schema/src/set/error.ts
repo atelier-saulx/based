@@ -13,6 +13,7 @@ export enum ParseError {
   'multipleOperationsNotAllowed',
   'requiredFieldNotDefined',
   'languageNotSupported',
+  'invalidJSON',
 }
 
 export const error = (

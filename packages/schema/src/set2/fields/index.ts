@@ -36,6 +36,14 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
     }
     args.collect(args)
   },
+  json: async (args) => {
+    try {
+      const parsedValue = JSON.stringify(args.value)
+      args.collect(args, parsedValue)
+    } catch (err) {
+      args.error(args, ParseError.invalidJSON)
+    }
+  },
   enum: async (args) => {
     const { fieldSchema, error, collect, value } = args
     const enumValues = fieldSchema.enum
