@@ -325,7 +325,9 @@ test.serial.only('set primitive fields', async (t) => {
         objs: true,
       },
       aliases: true,
-      $list: true,
+      $list: {
+        $limit: 2,
+      },
     },
 
     above: {
@@ -390,7 +392,6 @@ test.serial.only('set primitive fields', async (t) => {
         slug: '/hello-world',
         aliases: ['main'],
       },
-      {},
     ],
     above: [
       {

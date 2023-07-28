@@ -161,6 +161,13 @@ export async function parseGetOpts(
             nestedCommands,
           }
 
+          if ($list?.$limit !== undefined || $list?.$offset !== undefined) {
+            cmd.paging = {
+              limit: $list?.$limit ?? -1,
+              offset: $list?.$offset ?? 0,
+            }
+          }
+
           if ($list?.$find?.$filter) {
             cmd.filter = $list?.$find?.$filter
           }
