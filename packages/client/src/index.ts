@@ -112,7 +112,6 @@ export class BasedDbClient extends Emitter {
     const nestedObjs: any[] = []
     let i = 0
     while (cmds.length) {
-      console.dir({ nested: cmds }, { depth: 6 })
       const results = await get(ctx, cmds)
       const obj = parseGetResult(ctx, cmds, results)
       nestedResults.push(results)
@@ -128,7 +127,7 @@ export class BasedDbClient extends Emitter {
             const path = c.target.path
 
             n.source = { id: id }
-            const newPath = path.slice(0, -1)
+            const newPath = cmd.target.path
             newPath.push(k, path[path.length - 1])
             n.target.path = newPath
             return n
@@ -143,7 +142,7 @@ export class BasedDbClient extends Emitter {
       i++
     }
 
-    console.dir({ nestedResults, nestedObjs }, { depth: 6 })
+    console.dir({ nestedResults, nestedObjs }, { depth: 8 })
 
     return deepMergeArrays({}, ...nestedObjs)
   }
