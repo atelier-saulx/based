@@ -290,7 +290,7 @@ test.serial.only('set primitive fields', async (t) => {
       },
     },
   })
-  // TODO
+
   t.deepEqual(expr, {
     traversed: [
       { id: 'me1', str: 'hello' },
@@ -299,7 +299,6 @@ test.serial.only('set primitive fields', async (t) => {
       { id: third },
     ],
   })
-  return
 
   t.deepEqual(
     (await client.command('lsaliases'))[0].sort(),

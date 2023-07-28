@@ -164,6 +164,10 @@ export async function parseGetOpts(
           if ($list?.$find?.$filter) {
             cmd.filter = $list?.$find?.$filter
           }
+
+          if ($list?.$find?.$recursive) {
+            cmd.recursive = true
+          }
         }
 
         if (Object.keys(byType).length) {
