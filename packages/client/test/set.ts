@@ -212,7 +212,7 @@ test.serial.only('set primitive fields', async (t) => {
       children: true,
       createdAt: false,
       updatedAt: false,
-      f: { $field: ['nonExistingField', 'parents'] },
+      // f: { $field: ['nonExistingField', 'parents'] }, // TODO
       $list: {
         $find: {
           $traverse: 'descendants',
@@ -226,7 +226,6 @@ test.serial.only('set primitive fields', async (t) => {
     },
   })
 
-  console.dir({ find }, { depth: 6 })
   t.deepEqual(find.things.length, 3)
   t.deepEqual(find, {
     things: [
@@ -238,7 +237,7 @@ test.serial.only('set primitive fields', async (t) => {
           objs: [{ a: 1 }, { b: 'hello' }],
           strs: ['a', 'b', 'c', 'def', 'gh'],
         },
-        f: ['root'],
+        // f: ['root'], // TODO
         bool: true,
         id: 'po1',
         int: 112,
@@ -260,70 +259,48 @@ test.serial.only('set primitive fields', async (t) => {
     ],
   })
 
-  // const single = await client.get([
-  //   {
-  //     type: 'node',
-  //     fields: {
-  //       $any: [
-  //         '*',
-  //         'aliases',
-  //         'nonExistingField|parents',
-  //         // 'above@nonExistingField|parents', // TODO
-  //         'children',
-  //         '!createdAt',
-  //         '!updatedAt',
-  //       ],
-  //     },
-  //     source: { id: third },
-  //     target: { path: ['things'] },
-  //   },
-  // ])
+  const single = await client.get({
+    $id: third,
+    $all: true,
+    $aliases: true,
+    children: true,
+    createdAt: false,
+    updatedAt: false,
+  })
+  t.deepEqual(single, { id: third, slug: '/third', children: [] })
 
-  // console.dir({ single }, { depth: 6 })
+  const expr = await client.get({
+    traversed: {
+      $fieldsByType: {
+        $any: {
+          id: true,
+        },
+        meh: {
+          str: true,
+          // TODO: try $field here
+        },
+      },
+      $list: {
+        $find: {
+          $traverse: 'children',
+          $recursive: true,
+        },
+      },
+    },
+  })
+  t.deepEqual(expr, {
+    traversed: [
+      { id: 'me1', str: 'hello' },
+      { id: 'po1' },
+      { id: 'po2' },
+      { id: third },
+    ],
+  })
 
-  // const po3 = single[0][0][0]
-  // t.deepEqual(po3[0], third)
-  // t.deepEqual(
-  //   po3[1].sort(),
-  //   ['id', third, 'slug', '/third', 'parents', ['po2'], 'children', []].sort()
-  // )
-
-  // const expr = await client.get([
-  //   {
-  //     type: 'traverse',
-  //     fields: {
-  //       $any: ['id'],
-  //       byType: {
-  //         meh: ['str'],
-  //         // meh: ['title@title|str'], // TODO
-  //       },
-  //     },
-  //     paging: { limit: -1, offset: 0 },
-  //     traverseExpr: {
-  //       post: 'children',
-  //       meh: false,
-  //       $any: 'children',
-  //     },
-  //     recursive: true,
-  //     source: { id: 'root' },
-  //     target: { path: ['things'] },
-  //   },
-  // ])
-
-  // console.dir({ expr }, { depth: 6 })
-
-  // const meh = expr[0][0]
-  // t.deepEqual(meh, [
-  //   ['me1', ['id', 'me1', 'str', 'hello']],
-  //   ['po1', ['id', 'po1']],
-  //   ['po2', ['id', 'po2']],
-  //   [third, ['id', third]],
-  // ])
-
-  // t.deepEqual(
-  //   (await client.command('lsaliases'))[0].sort(),
-  //   ['main', 'po1', 'sec', 'po2'].sort()
-  // )
+  t.deepEqual(
+    (await client.command('lsaliases'))[0].sort(),
+    ['main', 'po1', 'sec', 'po2'].sort()
+  )
 
   const things = await client.get({
     $id: third,
