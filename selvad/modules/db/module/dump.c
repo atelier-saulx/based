@@ -453,6 +453,16 @@ static void save_db_cmd(struct selva_server_response_out *resp, const void *buf,
         return;
     }
 
+    if (!selva_string_endswith(filename, ".sdb")) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Invalid filename extension");
+        return;
+    }
+
+    if (!strcmp(selva_string_to_str(filename, NULL), "dump.sdb")) {
+        selva_send_errorf(resp, SELVA_EINVAL, "dump.sdb is a reserved filename");
+        return;
+    }
+
     err = selva_start_stream(resp, &save_stream_resp);
     if (err && err != SELVA_PROTO_ENOTCONN) {
         selva_send_errorf(resp, err, "Failed to create a stream");
