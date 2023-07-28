@@ -174,7 +174,6 @@ test.only('set walker', async (t) => {
       c: { x: 'snap', y: 'flap' },
       bla: { $value: { a: true, b: false } },
     },
-
     flap: {
       gurt: true,
       durpi: {
