@@ -268,7 +268,7 @@ test.serial.only('set primitive fields', async (t) => {
     createdAt: false,
     updatedAt: false,
   })
-  console.log('FAILING ASSERT')
+  console.dir({ single }, { depth: 8 })
   t.deepEqual(single, { id: third, slug: '/third', children: [], f: ['po2'] })
 
   const expr = await client.get({
