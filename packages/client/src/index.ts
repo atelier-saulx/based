@@ -14,6 +14,7 @@ import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
 import { get, GetCommand, parseGetOpts, parseGetResult } from './get'
 import genId from './id'
+import { deepCopy, deepMerge, deepMergeArrays } from '@saulx/utils'
 
 export * as protocol from './protocol'
 
@@ -104,13 +105,47 @@ export class BasedDbClient extends Emitter {
     const ctx = {
       client: this,
     }
-    console.log('walking')
-    const cmds = await parseGetOpts({ client: this }, opts)
-    console.dir({ cmds }, { depth: 6 })
-    const results = await get(ctx, cmds)
 
-    const obj = parseGetResult(ctx, cmds, results)
-    return obj
+    let nested = await parseGetOpts({ client: this }, opts)
+
+    const nestedResults: any[] = []
+    const nestedObjs: any[] = []
+    let i = 0
+    while (nested.length) {
+      console.dir({ nested }, { depth: 6 })
+      const results = await get(ctx, nested)
+      const obj = parseGetResult(ctx, nested, results)
+      nestedResults.push(results)
+      nestedObjs.push(obj)
+
+      nested = nested.reduce((all, cmd, j) => {
+        const res = nestedResults?.[i]?.[j]
+        const ids = res?.[0].map((ary) => ary[0])
+
+        cmd.nestedCommands?.forEach((c) => {
+          const ns = ids.map((id, k) => {
+            const n: GetCommand = deepCopy(c)
+            const path = c.target.path
+
+            n.source = { id: id }
+            const newPath = path.slice(0, -1)
+            newPath.push(k, path[path.length - 1])
+            n.target.path = newPath
+            return n
+          })
+
+          all.push(...ns)
+        })
+
+        return all
+      }, [])
+
+      i++
+    }
+
+    console.dir({ nestedResults, nestedObjs }, { depth: 6 })
+
+    return deepMergeArrays(nestedObjs[0], ...nestedObjs.slice(1))
   }
 
   // TODO: real opts

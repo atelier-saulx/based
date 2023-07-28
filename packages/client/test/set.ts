@@ -393,6 +393,15 @@ test.serial.only('set primitive fields', async (t) => {
       slug: true,
       aliases: true,
       children: true,
+      below: {
+        id: true,
+        slug: true,
+        $list: {
+          $find: {
+            $traverse: 'children',
+          },
+        },
+      },
       $list: {
         $find: {
           $traverse: 'parents',
@@ -407,7 +416,7 @@ test.serial.only('set primitive fields', async (t) => {
     },
   })
 
-  console.dir({ things }, { depth: 6 })
+  console.log(JSON.stringify({ things }, null, 2))
 
   t.true(true)
 })

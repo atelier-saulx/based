@@ -24,7 +24,7 @@
   },
   "dependencies": {
     "@saulx/diff": "^1.1.4",
-    "@saulx/utils": "^3.2.2",
+    "@saulx/utils": "^3.5.0",
     "@based/client": "^4.7.6",
     "@based/schema": "0.0.16",
     "data-record": "^1.0.2",

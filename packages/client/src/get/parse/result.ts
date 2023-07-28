@@ -5,6 +5,7 @@ import {
   BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
 } from '@based/schema'
+import { setByPath } from '@saulx/utils'
 import { joinPath } from '../../util'
 import { ExecContext, GetCommand } from '../types'
 
@@ -18,6 +19,7 @@ export function parseGetResult(
     const result = results[i][0]
     const {
       target: { path },
+      source,
     } = cmds[i]
 
     const k = joinPath(path)
@@ -25,7 +27,7 @@ export function parseGetResult(
     if (k === '') {
       obj = { ...obj, ...parsed[0] }
     } else {
-      obj[k] = parsed
+      setByPath(obj, path, parsed)
     }
   }
 
