@@ -226,7 +226,7 @@ test.serial.only('set primitive fields', async (t) => {
     },
   })
 
-  console.dir(find, { depth: 6 })
+  console.dir({ find }, { depth: 6 })
   t.deepEqual(find.things.length, 3)
 
   // const single = await client.get([

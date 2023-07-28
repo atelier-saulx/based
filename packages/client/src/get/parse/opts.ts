@@ -28,7 +28,14 @@ export async function parseGetOpts(
         } else if (value === false) {
           return `!${args.key}`
         } else if (value?.$field) {
-          return `${key}@${value.$field}`
+          let $field = value.$field
+          if (Array.isArray(value.$field)) {
+            $field.join('|')
+          }
+
+          return `${key}@${$field}`
+        } else if (value?.$all) {
+          return '*'
         }
 
         console.error('UNABLE TO PARSE', JSON.stringify(args.value))
@@ -50,6 +57,8 @@ export async function parseGetOpts(
                   $list: value.$list,
                 },
               }
+            } else if (key === '$list') {
+              return
             } else if (value.$id) {
               return {
                 ...args,
@@ -59,6 +68,9 @@ export async function parseGetOpts(
                 },
               }
             } else if (value.$field) {
+              args.collect(args)
+              return
+            } else if (value.$all) {
               args.collect(args)
               return
             }
