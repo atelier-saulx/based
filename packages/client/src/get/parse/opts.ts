@@ -130,6 +130,10 @@ export async function parseGetOpts(
             sourceField,
             nestedCommands,
           }
+
+          if ($list?.$find?.$filter) {
+            cmd.filter = $list?.$find?.$filter
+          }
         }
 
         if (!path.length) {
