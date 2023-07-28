@@ -38,6 +38,19 @@ const fieldSchemaUtil = (args) => {
 }
 
 export const number: FieldParser<'number'> = async (args) => {
+  // $increment
+  // $decrement
+
+  if (typeof args.value === 'object') {
+    args.stop()
+    // $default..
+
+    // for (let key in args.value) {
+    // key !== $value | $default |  $incrmeent
+    // error(wrong field)
+    // }
+  }
+
   if (typeof args.value !== 'number') {
     args.error(args, ParseError.incorrectFieldType)
     return
@@ -45,7 +58,6 @@ export const number: FieldParser<'number'> = async (args) => {
   if (!fieldSchemaUtil(args)) {
     return
   }
-
   return args
 }
 export const integer: FieldParser<'integer'> = async (args) => {
