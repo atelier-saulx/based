@@ -259,17 +259,17 @@ test.serial.only('set primitive fields', async (t) => {
     ],
   })
 
-  // const single = await client.get({
-  //   $id: third,
-  //   $all: true,
-  //   $aliases: true,
-  //   children: true,
-  //   f: { $field: ['nonExistingField', 'parents'] }, // TODO
-  //   createdAt: false,
-  //   updatedAt: false,
-  // })
-  // console.log('FAILING ASSERT')
-  // t.deepEqual(single, { id: third, slug: '/third', children: [], f: ['po2'] })
+  const single = await client.get({
+    $id: third,
+    $all: true,
+    $aliases: true,
+    children: true,
+    f: { $field: ['nonExistingField', 'parents'] },
+    createdAt: false,
+    updatedAt: false,
+  })
+  console.log('FAILING ASSERT')
+  t.deepEqual(single, { id: third, slug: '/third', children: [], f: ['po2'] })
 
   const expr = await client.get({
     traversed: {
