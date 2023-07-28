@@ -279,7 +279,7 @@ test.serial.only('set primitive fields', async (t) => {
         },
         meh: {
           str: true,
-          // TODO: try $field here
+          txt: { $field: 'str' },
         },
       },
       $list: {
@@ -293,7 +293,7 @@ test.serial.only('set primitive fields', async (t) => {
 
   t.deepEqual(expr, {
     traversed: [
-      { id: 'me1', str: 'hello' },
+      { id: 'me1', str: 'hello', txt: 'hello' },
       { id: 'po1' },
       { id: 'po2' },
       { id: third },
