@@ -101,7 +101,7 @@ export class BasedDbClient extends Emitter {
     return resp?.[0]?.[0]
   }
 
-  async things(opts: any): Promise<any> {
+  async get(opts: any): Promise<any> {
     const ctx = {
       client: this,
     }
@@ -153,16 +153,6 @@ export class BasedDbClient extends Emitter {
     console.dir({ nestedIds, nestedObjs }, { depth: 8 })
 
     return deepMergeArrays({}, ...nestedObjs)
-  }
-
-  // TODO: real opts
-  async get(opts: GetCommand[]): Promise<any> {
-    return get(
-      {
-        client: this,
-      },
-      opts
-    )
   }
 
   onData(data: Buffer) {

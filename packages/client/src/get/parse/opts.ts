@@ -14,15 +14,24 @@ export async function parseGetOpts(
   }>(
     {
       async init(args) {
+        const $id = args.value.$id || 'root'
         return {
           ...args,
-          target: { id: args.value.$id, $id: args.value.$id, type: 'node' },
+          target: { $id, id: $id, type: 'node' },
         }
       },
       collect(args) {
-        if (args.value === true) {
+        const { key, value } = args
+
+        if (value === true) {
           return args.key
+        } else if (value === false) {
+          return `!${args.key}`
+        } else if (value?.$field) {
+          return `${key}@${value.$field}`
         }
+
+        console.error('UNABLE TO PARSE', JSON.stringify(args.value))
       },
       schema: ctx.client.schema,
       parsers: {
@@ -49,6 +58,9 @@ export async function parseGetOpts(
                   id: value.$id,
                 },
               }
+            } else if (value.$field) {
+              args.collect(args)
+              return
             }
 
             return {
