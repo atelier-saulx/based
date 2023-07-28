@@ -111,7 +111,7 @@ export async function parseGetOpts(
               nestedCmd.type === 'node' && (nestedCmd.source?.id ?? $id) === $id
 
             if (canMerge) {
-              // TODO: handle $field and false (exclude)
+              // TODO: handle $field and false (exclude) -- needs to be prefixed right
               for (const f of nestedCmd.fields.$any) {
                 fields.push(shouldPrefixFields ? `${key}.${f}` : f)
               }

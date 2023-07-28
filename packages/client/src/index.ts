@@ -107,7 +107,6 @@ export class BasedDbClient extends Emitter {
     }
 
     let cmds = await parseGetOpts({ client: this }, opts)
-    console.dir({ cmds }, { depth: 8 })
 
     const nestedIds: any[] = []
     const nestedObjs: any[] = []
@@ -150,8 +149,6 @@ export class BasedDbClient extends Emitter {
 
       i++
     }
-
-    console.dir({ nestedIds, nestedObjs }, { depth: 8 })
 
     return deepMergeArrays({}, ...nestedObjs)
   }
