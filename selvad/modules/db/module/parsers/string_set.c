@@ -87,11 +87,6 @@ int parse_string_set(
     const char *cur = selva_string_to_str(raw_in, NULL);
     size_t n = 0;
 
-#if 0
-    struct selva_string *excl = NULL;
-    size_t nr_excl = 0;
-#endif
-
     assert(nr_side_lists == 0 || (nr_side_lists > 0 && side_list_out));
 
     for (size_t i  = 0; i < nr_side_lists; i++) {

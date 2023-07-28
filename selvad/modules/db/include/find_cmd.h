@@ -84,7 +84,8 @@ struct SelvaFind_QueryOpts {
         SELVA_FIND_QUERY_RES_FIELDS,
         /**
          * Execute an RPN expression for each node to decide the fields.
-         * The RPN expression must return a set of field names (strings).
+         * As a result the RPN expression must return a string similar to
+         * the format used in SELVA_FIND_QUERY_RES_FIELDS.
          *
          * **Supported prefixes for field names**
          * `^` = Inherit the field
@@ -98,7 +99,7 @@ struct SelvaFind_QueryOpts {
          */
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
         /**
-         * Inherit with an expression.
+         * Inherit fields using ancestors traversal and expression.
          * This works similarly to SELVA_FIND_QUERY_RES_FIELDS_RPN but the
          * response format is different.
          */

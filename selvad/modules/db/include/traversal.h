@@ -156,6 +156,16 @@ struct SelvaNodeSendParam {
     struct SelvaObject *fields;
 
     /**
+     * Fields that should be excluded when `fields` contains a wildcard.
+     * The list should delimit the excluded fields in the following way:
+     * ```
+     * field1\nfield2\n
+     * ```
+     * NULL if not used.
+     */
+    struct selva_string *excluded_fields;
+
+    /**
      * Field names expression context for `fields_expression`.
      */
     struct rpn_ctx *fields_rpn_ctx;
@@ -164,6 +174,7 @@ struct SelvaNodeSendParam {
      * Field names expression.
      * Another way to select which fields should be returned to the client is
      * using an RPN expression that returns a set on field names.
+     * If this is set then fields, inherit_fields, and excluded_fields should be NULL.
      */
     struct rpn_expression *fields_expression;
 
@@ -173,15 +184,6 @@ struct SelvaNodeSendParam {
      * Only fields_expression or inherit_expression should be set but not both.
      */
     struct rpn_expression *inherit_expression;
-
-    /**
-     * Fields that should be excluded when `fields` contains a wildcard.
-     * The list should delimit the excluded fields in the following way:
-     * ```
-     * \0field1\0field2\0
-     * ```
-     */
-    struct selva_string *excluded_fields;
 };
 
 typedef int (*SelvaFind_ProcessNode)(
