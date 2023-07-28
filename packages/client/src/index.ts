@@ -145,7 +145,7 @@ export class BasedDbClient extends Emitter {
 
     console.dir({ nestedResults, nestedObjs }, { depth: 6 })
 
-    return deepMergeArrays(nestedObjs[0], ...nestedObjs.slice(1))
+    return deepMergeArrays({}, ...nestedObjs)
   }
 
   // TODO: real opts
