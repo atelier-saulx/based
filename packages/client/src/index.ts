@@ -106,19 +106,19 @@ export class BasedDbClient extends Emitter {
       client: this,
     }
 
-    let nested = await parseGetOpts({ client: this }, opts)
+    let cmds = await parseGetOpts({ client: this }, opts)
 
     const nestedResults: any[] = []
     const nestedObjs: any[] = []
     let i = 0
-    while (nested.length) {
-      console.dir({ nested }, { depth: 6 })
-      const results = await get(ctx, nested)
-      const obj = parseGetResult(ctx, nested, results)
+    while (cmds.length) {
+      console.dir({ nested: cmds }, { depth: 6 })
+      const results = await get(ctx, cmds)
+      const obj = parseGetResult(ctx, cmds, results)
       nestedResults.push(results)
       nestedObjs.push(obj)
 
-      nested = nested.reduce((all, cmd, j) => {
+      cmds = cmds.reduce((all, cmd, j) => {
         const res = nestedResults?.[i]?.[j]
         const ids = res?.[0].map((ary) => ary[0])
 
