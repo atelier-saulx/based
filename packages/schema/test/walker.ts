@@ -126,7 +126,7 @@ test.only('set walker', async (t) => {
                     type: 'cardinality',
                   },
                 },
-                bla: { type: 'string' },
+                bla: { type: 'boolean' },
               },
             },
           },
@@ -192,9 +192,9 @@ test.only('set walker', async (t) => {
       $insert: {
         $idx: 2,
         $value: {
-          bla: 'hello!',
+          bla: false,
           uniqMap: {
-            a: 1,
+            a: false,
             b: { $value: { a: true, b: true }, c: { x: true } },
           },
         },

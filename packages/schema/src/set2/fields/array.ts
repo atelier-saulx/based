@@ -1,3 +1,4 @@
+import { setByPath } from '@saulx/utils'
 import { ParseError } from '../../set/error'
 import { FieldParser } from '../../walker'
 
@@ -32,13 +33,19 @@ export const array: FieldParser<'array'> = async (args) => {
           ? value.$insert.$value
           : [value.$insert.$value]
         const q: Promise<any>[] = []
-        // colllect result (set path)
-
+        parsedValue.$insert.$value = new Array(insert.length)
         for (let i = 0; i < insert.length; i++) {
           q.push(
-            parse(args, i, insert[i], fieldSchema.values, false, (val) => {
-              console.log('   ->', val.path)
-            })
+            parse(
+              { ...args, path: [] },
+              i,
+              insert[i],
+              fieldSchema.values,
+              false,
+              (args, v) => {
+                setByPath(parsedValue.$insert.$value, args.path, v)
+              }
+            )
           )
         }
         await Promise.all(q)
