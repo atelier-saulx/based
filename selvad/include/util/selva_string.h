@@ -259,6 +259,8 @@ void selva_string_set_compress(struct selva_string *s);
  */
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b);
 
+int selva_string_endswith(struct selva_string *s, const char *suffix);
+
 /**
  * Find a substring sub_str in s.
  * This function works correctly with compressed strings.

@@ -631,6 +631,17 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     return res;
 }
 
+int selva_string_endswith(struct selva_string *s, const char *suffix)
+{
+    const size_t lensuffix = strlen(suffix);
+    size_t len;
+    const char *str = selva_string_to_str(s, &len);
+
+    return (lensuffix > len)
+        ? 0
+        : !strcmp(str + len - lensuffix, suffix);
+}
+
 ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t sub_len)
 {
     int must_free;
