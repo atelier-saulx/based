@@ -119,22 +119,22 @@ test.only('value arr', async (t) => {
     },
     handlers
   )
-  // await setWalker(
-  //   schema,
-  //   {
-  //     $id: 'bla',
-  //     arrNum: { $value: [1, 2] },
-  //   },
-  //   handlers
-  // )
+  await setWalker(
+    schema,
+    {
+      $id: 'bla',
+      arrNum: { $value: [1, 2] },
+    },
+    handlers
+  )
   console.log(results)
   t.deepEqual(results, [
-    // { path: ['arrNum'], value: { $delete: true } },
-    // { path: ['arrNum', 0], value: 1 },
-    // { path: ['arrNum', 1], value: 2 },
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: { $value: 1 } },
     { path: ['arrNum', 1], value: { $value: 2 } },
+    { path: ['arrNum'], value: { $delete: true } },
+    { path: ['arrNum', 0], value: 1 },
+    { path: ['arrNum', 1], value: 2 },
   ])
 })
 
