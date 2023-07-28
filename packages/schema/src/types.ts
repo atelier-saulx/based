@@ -65,7 +65,6 @@ export type BasedSchemaFieldShared = {
   hooks?:
     | { interval?: number; hook: string }
     | { interval?: number; hook: string }[]
-
   type?: BasedSchemaFieldType
   $id?: string
   $schema?: string

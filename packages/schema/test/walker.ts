@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, validateType, walk } from '../src/index'
+import { BasedSchema, setWalker2, walk } from '../src/index'
 
 const schema: BasedSchema = {
   types: {
@@ -36,19 +36,17 @@ test('walker', async (t) => {
   const x = await walk(
     {
       schema,
-      init: async () => {
-        console.log('init!\n')
-        return { lullz: true }
+      init: async (args) => {
+        return { ...args, target: { lullz: true } }
       },
       parsers: {
         keys: {
-          $list: async (args) => {
-            return {
-              ...args,
-
-              value: { flapdrol: true },
-            }
-          },
+          // $list: async (args) => {
+          //   return {
+          //     ...args,
+          //     value: { flapdrol: true },
+          //   }
+          // },
         },
         fields: {
           // string: () => {}
@@ -61,10 +59,21 @@ test('walker', async (t) => {
       collect: (args) => {
         return args.path.join('.')
       },
-      backtrack: (args, collectedCommands) => {
-        console.log('    \n-----------BACK TRACK GOOD GO', collectedCommands)
-        // if return next btrack will not receive  backtrack from commands
-        return collectedCommands
+      backtrack: (args, fromBt, collected) => {
+        console.log(
+          '    \n-----------BACK TRACK GOOD GO',
+          '\n',
+          'path:',
+          args.path.join('.'),
+          '\n',
+          'backtracked:',
+          JSON.stringify(fromBt),
+          '\n',
+          'collected:',
+          collected,
+          '--------------------'
+        )
+        return fromBt.length ? fromBt : collected
       },
     },
     {
@@ -90,7 +99,110 @@ test('walker', async (t) => {
   )
 
   console.info('------------')
-  console.info(x)
+
+  t.true(true)
+})
+
+test.only('set walker', async (t) => {
+  const schema: BasedSchema = {
+    types: {
+      bla: {
+        prefix: 'bl',
+        fields: {
+          record: {
+            type: 'record',
+            values: {
+              type: 'cardinality',
+            },
+          },
+          array: {
+            type: 'array',
+            values: {
+              type: 'object',
+              properties: {
+                uniqMap: {
+                  type: 'record',
+                  values: {
+                    type: 'cardinality',
+                  },
+                },
+                bla: { type: 'string' },
+              },
+            },
+          },
+          uniq: { type: 'cardinality' },
+          snup: { type: 'boolean' },
+          flap: {
+            type: 'object',
+            required: ['durp'],
+            properties: {
+              durp: { type: 'boolean' },
+              gurt: { type: 'boolean' },
+              durpi: {
+                enum: ['yuzi', 'jux', 'mr tony', 9000],
+              },
+              x: {
+                type: 'array',
+                values: {
+                  type: 'boolean',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+    $defs: {},
+    languages: ['en'],
+    root: {
+      fields: {},
+    },
+    prefixToTypeMapping: {
+      bl: 'bla',
+    },
+  }
+
+  const x = await setWalker2(schema, {
+    $id: 'bl1',
+    snup: false,
+    uniq: {
+      $value: 'wpeojwepojfewpio',
+    },
+    record: {
+      a: 1000,
+      b: 'bla',
+      c: { x: 'snap', y: 'flap' },
+      bla: { $value: { a: true, b: false } },
+    },
+    flap: {
+      gurt: true,
+      durpi: {
+        $value: 'jux',
+      },
+      x: [
+        true,
+        false,
+        false,
+        true,
+        { $value: false },
+        { $default: true, $value: false },
+      ],
+    },
+    array: {
+      $insert: {
+        $idx: 2,
+        $value: {
+          bla: 'hello!',
+          uniqMap: {
+            a: 1,
+            b: { $value: { a: true, b: true }, c: { x: true } },
+          },
+        },
+      },
+    },
+  })
+
+  console.info('------------', x)
 
   t.true(true)
 })
