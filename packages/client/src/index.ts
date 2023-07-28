@@ -108,18 +108,26 @@ export class BasedDbClient extends Emitter {
 
     let cmds = await parseGetOpts({ client: this }, opts)
 
-    const nestedResults: any[] = []
+    const nestedIds: any[] = []
     const nestedObjs: any[] = []
     let i = 0
     while (cmds.length) {
       const results = await get(ctx, cmds)
+
+      const ids = results.map((cmdResult) => {
+        // unwrap array structure
+        return cmdResult[0].map((row) => {
+          // take id
+          return row[0]
+        })
+      })
+      nestedIds.push(ids)
+
       const obj = parseGetResult(ctx, cmds, results)
-      nestedResults.push(results)
       nestedObjs.push(obj)
 
       cmds = cmds.reduce((all, cmd, j) => {
-        const res = nestedResults?.[i]?.[j]
-        const ids = res?.[0].map((ary) => ary[0])
+        const ids = nestedIds?.[i]?.[j]
 
         cmd.nestedCommands?.forEach((c) => {
           const ns = ids.map((id, k) => {
@@ -142,7 +150,7 @@ export class BasedDbClient extends Emitter {
       i++
     }
 
-    console.dir({ nestedResults, nestedObjs }, { depth: 8 })
+    console.dir({ nestedIds, nestedObjs }, { depth: 8 })
 
     return deepMergeArrays({}, ...nestedObjs)
   }
