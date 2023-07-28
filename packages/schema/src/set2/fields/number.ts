@@ -50,6 +50,7 @@ const shared = (args: Args<BasedSetTarget, NumberTypes>): boolean => {
     }
     for (let key in args.value) {
       if (key === '$increment') {
+        //  await  args.parse(args, '$increment', args.value[key])
       } else if (key === '$decrement') {
       } else if (key === 'default') {
       } else {
@@ -70,9 +71,9 @@ export const number: FieldParser<'number'> = async (args) => {
     args.error(args, ParseError.incorrectFieldType)
     return
   }
-  if (!fieldSchemaUtil(args) || !checkForFields(args)) {
-    return
-  }
+  // if (!fieldSchemaUtil(args) || !checkForFields(args)) {
+  //   return
+  // }
   return args
 }
 
@@ -85,8 +86,8 @@ export const integer: FieldParser<'integer'> = async (args) => {
     args.error(args, ParseError.incorrectFieldType)
     return
   }
-  if (!fieldSchemaUtil(args) || !checkForFields(args)) {
-    return
-  }
+  // if (!fieldSchemaUtil(args) || !checkForFields(args)) {
+  //   return
+  // }
   return args
 }

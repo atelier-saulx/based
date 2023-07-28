@@ -7,15 +7,15 @@ const parseArray = async (
   args: Args<BasedSetTarget, 'array'>,
   value: any
 ): Promise<any[]> => {
-  const insert = Array.isArray(value) ? value : [value]
+  const fromValue = Array.isArray(value) ? value : [value]
   const q: Promise<any>[] = []
-  const arr = new Array(insert.length)
-  for (let i = 0; i < insert.length; i++) {
+  const arr = new Array(fromValue.length)
+  for (let i = 0; i < fromValue.length; i++) {
     q.push(
       args.parse(
         { ...args, path: [] },
         i,
-        insert[i],
+        fromValue[i],
         args.fieldSchema.values,
         false,
         (args, v) => {
@@ -37,20 +37,20 @@ const operations: {
   $insert: async (args, value) => {
     if (
       typeof value.$insert !== 'object' ||
-      typeof value.$remove.$idx !== 'number'
+      typeof value.$insert.$idx !== 'number'
     ) {
       args.error(args, ParseError.incorrectFormat)
       return
     }
-    value.$insert.$value = parseArray(args, value.$insert.$value)
+    value.$insert.$value = await parseArray(args, value.$insert.$value)
     args.collect(args, value)
   },
   $push: async (args, value) => {
-    value.$push = parseArray(args, value.$push)
+    value.$push = await parseArray(args, value.$push)
     args.collect(args, value)
   },
   $unshift: async (args, value) => {
-    value.$unshift = parseArray(args, value.$push)
+    value.$unshift = await parseArray(args, value.$push)
     args.collect(args, value)
   },
   $remove: async (args, value) => {
