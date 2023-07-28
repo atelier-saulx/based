@@ -132,7 +132,7 @@ int parse_string_set(
                 const char *alias_str = NULL;
                 size_t alias_len = 0;
 
-                if (alias_end) {
+                if (alias_end && alias_end != cur) {
                     alias_str = cur;
                     alias_len = alias_end + 1 - alias_str;
                     cur = alias_end + 1;

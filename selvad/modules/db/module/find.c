@@ -1110,13 +1110,27 @@ static int exec_fields_expression(
             selva_string_auto_finalize(fin, field_name);
             (void)string_set_list_add(tmp_excluded, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, field_name_str, field_name_len);
         } else { /* select */
-            const size_t key_len = (size_t)(log10(i_fields + 1)) + 1;
-            char key_str[key_len + 1];
+            const char *alias_end = strchr(field_name_str, STRING_SET_ALIAS);
 
-            snprintf(key_str, key_len + 1, "%zu", i_fields);
+            if (alias_end && alias_end != field_name_str) { /* alias set */
+                const char *alias_str = field_name_str;
+                const size_t alias_len = alias_end + 1 - field_name_str;
+                struct selva_string *new_field_name = selva_string_createf("%s", alias_end + 1);
 
-            /* so will free field_name. */
-            SelvaObject_InsertArrayStr(fields, key_str, key_len, SELVA_OBJECT_STRING, field_name);
+                SelvaObject_InsertArrayStr(fields, alias_str, alias_len, SELVA_OBJECT_STRING, new_field_name);
+                selva_string_free(field_name);
+            } else {
+                const size_t key_len = (size_t)(log10(i_fields + 1)) + 1;
+                char key_str[key_len + 1];
+
+                snprintf(key_str, key_len + 1, "%zu", i_fields);
+
+                /*
+                 * SO will free field_name and thus no call to selva_string_auto_finalize()
+                 * is made here.
+                 */
+                SelvaObject_InsertArrayStr(fields, key_str, key_len, SELVA_OBJECT_STRING, field_name);
+            }
             i_fields++;
         }
     }

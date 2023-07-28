@@ -84,7 +84,7 @@ static char * test_parse2(void)
 
 static char *test_parse3(void)
 {
-    struct selva_string *input = selva_string_createf("best@name|id\ndesc\n");
+    struct selva_string *input = selva_string_createf("best@name|id\ndesc\ninvalid@\n@otherinvalid\n");
     struct SelvaObject *list = NULL;
     struct selva_string *excl = NULL;
     int err;
