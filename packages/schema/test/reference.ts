@@ -8,11 +8,11 @@ const schema: BasedSchema = {
       fields: {
         ref: {
           type: 'reference',
-          allowedTypes: ['bla'],
+          allowedTypes: ['bl', 'bl1'],
         },
         ref2: {
           type: 'references',
-          allowedTypes: ['bla'],
+          allowedTypes: ['bl'],
         },
         arr: {
           type: 'array',
@@ -168,7 +168,7 @@ test('value of references', async (t) => {
     { path: ['ref'], value: { $value: 'asdasdasdasdasd' } },
   ])
 })
-test.only('default of references', async (t) => {
+test('default of references', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(
@@ -204,4 +204,38 @@ test.only('default of references', async (t) => {
   // t.deepEqual(results, [
   //   { path: ['ref'], value: { $default: 'asdasdasdasdasd' } },
   // ])
+})
+
+test.only('allowedTypes', async (t) => {
+  const { handlers, results } = createHandlers()
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bl1',
+        ref: ['1', '2'],
+      },
+      handlers
+    )
+  )
+  await t.throwsAsync(
+    setWalker(
+      schema,
+      {
+        $id: 'bs1',
+        ref: 1,
+      },
+      handlers
+    )
+  )
+  await setWalker(
+    schema,
+    {
+      $id: 'bl1',
+      ref: 'blastuff',
+    },
+    handlers
+  )
+  t.deepEqual(results, [{ path: ['ref'], value: 'bl1stuff' }])
+  // is this wrong or am i wrong
 })
