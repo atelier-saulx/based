@@ -80,6 +80,8 @@ export async function parseGetOpts(
           } else if (key === '$all') {
             args.collect(args)
             return args
+          } else if (key === '$fieldsByType') {
+            return args
           }
 
           if (String(key).startsWith('$')) {
@@ -100,10 +102,17 @@ export async function parseGetOpts(
           type === 'node' && !!key && id === $id
 
         const fields: string[] = []
+        const byType: Record<string, string[]> = {}
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
           if (typeof entry === 'string') {
-            fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
+            if (entry.startsWith('$fieldsByType')) {
+              const [_$fieldsByType, type, ...field] = entry.split('.')
+              byType[type] = byType[type] ?? []
+              byType[type].push(field.join('.'))
+            } else {
+              fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
+            }
           } else {
             const nestedCmd: GetCommand = entry
 
@@ -114,6 +123,13 @@ export async function parseGetOpts(
               // TODO: handle $field and false (exclude) -- needs to be prefixed right
               for (const f of nestedCmd.fields.$any) {
                 fields.push(shouldPrefixFields ? `${key}.${f}` : f)
+              }
+
+              for (const t in nestedCmd.fields?.byType) {
+                byType[t] = byType[t] ?? []
+                for (const f of nestedCmd.fields.byType[t]) {
+                  byType[t].push(shouldPrefixFields ? `${key}.${f}` : f)
+                }
               }
             } else {
               nestedCommands.push(nestedCmd)
@@ -144,6 +160,10 @@ export async function parseGetOpts(
           if ($list?.$find?.$filter) {
             cmd.filter = $list?.$find?.$filter
           }
+        }
+
+        if (Object.keys(byType).length) {
+          cmd.fields.byType = byType
         }
 
         if (!path.length) {
