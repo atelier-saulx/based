@@ -14,6 +14,7 @@ export function parseGetResult(
   cmds: GetCommand[],
   results: any[]
 ): any {
+  console.dir({ results, cmds }, { depth: 8 })
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
@@ -101,6 +102,7 @@ const FIELD_PARSERS: Record<
   reference: (x) => x,
   boolean: (x) => !!x,
   number: (x) => Number(x),
+  timestamp: (x) => Number(x),
   cardinality: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),

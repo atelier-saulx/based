@@ -228,6 +228,37 @@ test.serial.only('set primitive fields', async (t) => {
 
   console.dir({ find }, { depth: 6 })
   t.deepEqual(find.things.length, 3)
+  t.deepEqual(find, {
+    things: [
+      {
+        aliases: ['main'],
+        arys: {
+          floats: [-1.1, 0, 1.1, 2.2, 3.3, 4.4, 5.5],
+          ints: [1, 6, 3, 4, 5],
+          objs: [{ a: 1 }, { b: 'hello' }],
+          strs: ['a', 'b', 'c', 'def', 'gh'],
+        },
+        f: ['root'],
+        bool: true,
+        id: 'po1',
+        int: 112,
+        num: 25.5,
+        obj: { a: 11, b: 'hello' },
+        slug: '/hello-world',
+        ts: 1690289344322,
+        children: ['po2'],
+      },
+      {
+        aliases: ['sec'],
+        id: 'po2',
+        int: 5,
+        tags: ['action', 'comedy'],
+        uniqs: 2,
+        children: [third],
+      },
+      { id: third, slug: '/third', children: [] },
+    ],
+  })
 
   // const single = await client.get([
   //   {
