@@ -212,7 +212,7 @@ test.serial.only('set primitive fields', async (t) => {
       children: true,
       createdAt: false,
       updatedAt: false,
-      // f: { $field: ['nonExistingField', 'parents'] }, // TODO
+      hmm: { $field: ['nonExistingField', 'children'] },
       $list: {
         $find: {
           $traverse: 'descendants',
@@ -246,6 +246,7 @@ test.serial.only('set primitive fields', async (t) => {
         slug: '/hello-world',
         ts: 1690289344322,
         children: ['po2'],
+        hmm: ['po2'],
       },
       {
         aliases: ['sec'],
@@ -254,8 +255,9 @@ test.serial.only('set primitive fields', async (t) => {
         tags: ['action', 'comedy'],
         uniqs: 2,
         children: [third],
+        hmm: [third],
       },
-      { id: third, slug: '/third', children: [] },
+      { id: third, slug: '/third', children: [], hmm: [] },
     ],
   })
 
