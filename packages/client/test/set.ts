@@ -264,10 +264,11 @@ test.serial.only('set primitive fields', async (t) => {
     $all: true,
     $aliases: true,
     children: true,
+    f: { $field: ['nonExistingField', 'parents'] }, // TODO
     createdAt: false,
     updatedAt: false,
   })
-  t.deepEqual(single, { id: third, slug: '/third', children: [] })
+  t.deepEqual(single, { id: third, slug: '/third', children: [], f: ['po2'] })
 
   const expr = await client.get({
     traversed: {
