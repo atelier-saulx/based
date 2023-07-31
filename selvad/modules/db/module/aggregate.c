@@ -632,7 +632,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     if (query_opts.index_hints_len) {
         const struct selva_string *s;
 
-        index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len);
+        index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len, '\0');
 
         s = index_hints[0];
         while (s) {

@@ -12,7 +12,8 @@
 struct selva_string **parse_string_list(
         struct finalizer *fin,
         const char *in_str,
-        size_t in_len)
+        size_t in_len,
+        int separator)
 {
     const char *cur = in_str;
     size_t left = in_len;
@@ -32,7 +33,7 @@ struct selva_string **parse_string_list(
             /*
              * Find the separator between the current and the next string.
              */
-            next = memchr(cur, '\0', left) ?: cur + left;
+            next = memchr(cur, separator, left) ?: cur + left;
             len = (size_t)((ptrdiff_t)next - (ptrdiff_t)cur);
 
             /*

@@ -33,12 +33,13 @@ struct parsers_enum {
 };
 
 /**
- * Parse a nul-byte separated list.
+ * Parse a separated list.
  */
 struct selva_string **parse_string_list(
         struct finalizer *fin,
         const char *in_str,
-        size_t in_len);
+        size_t in_len,
+        int separator);
 
 /**
  * Add to a string list.
