@@ -73,6 +73,8 @@ struct SelvaFind_QueryOpts {
          *
          * - `field` = Take a field if it exists on the node
          * - `field1|field2` = Take first field that exists:
+         * - `^types:field` = Inherit the field from an ancestor of specific type
+         * - `^:field` = Inherit the field from any ancestor
          * - `!field` = Exclude field
          * - `cool@field` = field alias
          * - `cool@fieldA|fieldB` = field alias
@@ -88,11 +90,12 @@ struct SelvaFind_QueryOpts {
          * the format used in SELVA_FIND_QUERY_RES_FIELDS.
          *
          * **Supported prefixes for field names**
-         * `^` = Inherit the field
-         * `!` = Exclude the field
+         * - `^types:field` = Inherit the field from an ancestor of specific type
+         * - `^:field` = Inherit the field from any ancestor
+         * - `!` = Exclude the field
          *
          * **Special field names**
-         * `*` = wildcard
+         * - `*` = wildcard
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
          * The `id` field can't be excluded.

@@ -1168,7 +1168,7 @@ static void send_node(
     } else if (args->fields) { /* Predefined list of fields. */
         err = send_node_fields(fin, resp, lang, hierarchy, node,
                                args->fields,
-                               NULL, 0,
+                               args->inherit_fields, args->nr_inherit_fields,
                                args->excluded_fields);
     } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
         struct finalizer fin2;
@@ -1178,8 +1178,11 @@ static void send_node(
         size_t nr_inherit_fields = 0;
         struct selva_string *excluded_fields = NULL;
 
+        /*
+         * The expressions are mutually exclusive alternative to field name lists.
+         */
         assert(!(args->fields_expression && args->inherit_expression) &&
-               !args->excluded_fields);
+               !args->inherit_fields && !args->excluded_fields);
 
         finalizer_init(&fin2);
 
@@ -1803,6 +1806,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
      * Parse fields.
      */
     selvaobject_autofree struct SelvaObject *fields = NULL;
+    struct selva_string **inherit_fields = NULL;
+    size_t nr_inherit_fields = 0;
     struct selva_string *excluded_fields = NULL;
     __auto_free_rpn_ctx struct rpn_ctx *fields_rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *fields_expression = NULL;
@@ -1820,12 +1825,23 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
         selva_string_auto_finalize(&fin, raw);
 
+        struct selva_string *inherit_fields_tmp = NULL;
         err = parse_string_set(&fin, raw, &fields,
-                               (char []){ STRING_SET_EXCL_PREFIX, '\0' },
-                               (struct selva_string **[]){ &excluded_fields });
+                               (char []){ STRING_SET_INH_PREFIX, STRING_SET_EXCL_PREFIX, '\0' },
+                               (struct selva_string **[]){ &inherit_fields_tmp, &excluded_fields });
         if (err) {
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
+        }
+
+        if (inherit_fields_tmp) {
+            TO_STR(inherit_fields_tmp);
+            inherit_fields = parse_string_list(&fin, inherit_fields_tmp_str, inherit_fields_tmp_len, '\n');
+
+            struct selva_string *s = inherit_fields[0];
+            while (s) {
+                s = inherit_fields[++nr_inherit_fields];
+            }
         }
     } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN) {
         /*
@@ -1984,10 +2000,12 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .send_param.merge_strategy = query_opts.merge_strategy,
             .send_param.merge_path = merge_path,
             .send_param.fields = fields,
+            .send_param.inherit_fields = inherit_fields,
+            .send_param.nr_inherit_fields = nr_inherit_fields,
+            .send_param.excluded_fields = excluded_fields,
             .send_param.fields_rpn_ctx = fields_rpn_ctx,
             .send_param.fields_expression = fields_expression,
-             .send_param.inherit_expression = inherit_expression,
-            .send_param.excluded_fields = excluded_fields,
+            .send_param.inherit_expression = inherit_expression,
             .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &traverse_result,
@@ -2115,10 +2133,12 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .merge_strategy = query_opts.merge_strategy,
             .merge_path = merge_path,
             .fields = fields,
+            .inherit_fields = inherit_fields,
+            .nr_inherit_fields = nr_inherit_fields,
+            .excluded_fields = excluded_fields,
             .fields_rpn_ctx = fields_rpn_ctx,
             .fields_expression = fields_expression,
             .inherit_expression = inherit_expression,
-            .excluded_fields = excluded_fields,
         };
 
         SELVA_TRACE_BEGIN(cmd_find_sort_result);

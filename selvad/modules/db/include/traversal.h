@@ -156,6 +156,12 @@ struct SelvaNodeSendParam {
     struct SelvaObject *fields;
 
     /**
+     * Inherit specific fields.
+     */
+    struct selva_string **inherit_fields;
+    size_t nr_inherit_fields; /*!< Number of fields in inherit_fields. */
+
+    /**
      * Fields that should be excluded when `fields` contains a wildcard.
      * The list should delimit the excluded fields in the following way:
      * ```
