@@ -39,7 +39,7 @@ test.only('klyle set walker', async (t) => {
       $decrement: 5,
       $default: 5,
     },
-    // date: 'now',
+    date: { $default: '01/02/2022', $increment: 5e3 },
   })
 
   console.info('------------', x)
@@ -49,8 +49,7 @@ test.only('klyle set walker', async (t) => {
     aNumber: {
       $default: 5,
     },
-
-    // date: 'now',
+    date: 'now',
   })
 
   console.info('------------', x2)

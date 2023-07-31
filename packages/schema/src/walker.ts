@@ -140,7 +140,7 @@ export const walk = async <T>(
       typeSchema: prevArgs.typeSchema,
       path: key !== undefined ? [...prevArgs.path, key] : prevArgs.path,
       key: key ?? prevArgs.path[prevArgs.path.length - 1],
-      parentValue: value !== undefined ? prevArgs.value : undefined,
+      parentValue: value !== undefined ? prevArgs.value : prevArgs.parentValue,
       value: value ?? prevArgs.value,
       target: prevArgs.target,
       parse: prevArgs.parse,

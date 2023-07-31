@@ -24,10 +24,7 @@ const parsers = {
         return { ...args, path: args.path.slice(0, -1) }
       },
       $default: async (args) => {
-        return {
-          ...args,
-          skipCollection: Object.keys(args.parentValue).length > 1,
-        }
+        return args
       },
     },
     fields,
@@ -66,9 +63,10 @@ const parsers = {
   },
   collect: (args, value) => {
     if (args.key === '$default') {
-      console.info('COLLECT!', args.path.slice(0, -1).join('.'), {
-        $default: value,
-      })
+      args.parentValue.$default = value
+      // console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
+      //   $default: value,
+      // })
     } else {
       console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
     }
