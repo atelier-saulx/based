@@ -18,6 +18,14 @@ const schema: BasedSchema = {
         flap: {
           type: 'boolean',
         },
+        x: {
+          type: 'object',
+          properties: {
+            flap: {
+              type: 'boolean',
+            },
+          },
+        },
         bla: {
           type: 'set',
           items: { type: 'string', minLength: 3, maxLength: 6 },
@@ -210,12 +218,10 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-// optimize walker
-
 test.only('perf', async (t) => {
   let d = Date.now()
   for (let i = 0; i < 1e6; i++) {
-    await setWalker2(schema, { $id: 'bl120', flap: true })
+    await setWalker2(schema, { $id: 'bl120', flap: true, x: { flap: true } })
   }
   console.info(Date.now() - d, 'ms')
   t.true(true)
