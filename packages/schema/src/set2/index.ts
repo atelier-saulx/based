@@ -62,17 +62,17 @@ const parsers = {
     return { ...args, target, typeSchema }
   },
   collect: (args, value) => {
-    if (args.key === '$default') {
-      if (Object.keys(args.parentValue).length > 1) {
-        args.parentValue.$default = value
-      } else {
-        console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
-          $default: value,
-        })
-      }
-    } else {
-      console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
-    }
+    // if (args.key === '$default') {
+    //   if (Object.keys(args.parentValue).length > 1) {
+    //     args.parentValue.$default = value
+    //   } else {
+    //     console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
+    //       $default: value,
+    //     })
+    //   }
+    // } else {
+    //   console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
+    // }
   },
 }
 
