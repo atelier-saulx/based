@@ -128,6 +128,42 @@ static int containswildcard(const char *field_str, size_t field_len) {
     return !!memmem(field_str, field_len, pattern, sizeof(pattern));
 }
 
+static int parse_fields(
+        struct finalizer *fin,
+        const struct selva_string *raw_in,
+        struct SelvaObject **fields_out,
+        struct selva_string ***inherit_fields_out,
+        size_t *nr_inherit_fields_out,
+        struct selva_string **excluded_fields_out
+) {
+    struct selva_string *inherit_fields_tmp = NULL;
+    int err;
+
+    err = parse_string_set(fin, raw_in, fields_out,
+            (char []){ STRING_SET_INH_PREFIX, STRING_SET_EXCL_PREFIX, '\0' },
+            (struct selva_string **[]){ &inherit_fields_tmp, excluded_fields_out });
+    if (err) {
+        return err;
+    }
+
+    if (inherit_fields_tmp) {
+        TO_STR(inherit_fields_tmp);
+        struct selva_string **inherit_fields;
+        size_t n = 0;
+
+        inherit_fields = parse_string_list(fin, inherit_fields_tmp_str, inherit_fields_tmp_len, '\n');
+
+        struct selva_string *s = inherit_fields[0];
+        while (s) {
+            s = inherit_fields[++n];
+        }
+        *inherit_fields_out = inherit_fields;
+        *nr_inherit_fields_out = n;
+    }
+
+    return 0;
+}
+
 static int send_edge_field(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -1064,26 +1100,21 @@ static int exec_fields_expression(
         struct SelvaHierarchyNode *node,
         struct rpn_ctx *rpn_ctx,
         const struct rpn_expression *expr,
-        struct SelvaObject *fields,
+        struct SelvaObject **fields,
         struct selva_string ***inherit,
         size_t *nr_inherit,
         struct selva_string **excluded) {
     Selva_NodeId nodeId;
-    struct SelvaSet set;
+    struct selva_string *out;
     enum rpn_error rpn_err;
-    struct SelvaSetElement *el;
-    size_t i_fields;
-    size_t i_inherit;
-    struct selva_string **tmp_inherit_fields = NULL;
-    struct selva_string *tmp_excluded = NULL;
+    int err;
 
     SelvaHierarchy_GetNodeId(nodeId, node);
     rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
     rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
     rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
 
-    SelvaSet_Init(&set, SELVA_SET_TYPE_STRING);
-    rpn_err = rpn_selvaset(rpn_ctx, expr, &set);
+    rpn_err = rpn_string(rpn_ctx, expr, &out);
     if (rpn_err) {
         /*
          * The exact error code is not important here because it's not passed
@@ -1092,59 +1123,10 @@ static int exec_fields_expression(
         return SELVA_EGENERAL;
     }
 
-    i_fields = 0;
-    i_inherit = 0;
-    SELVA_SET_STRING_FOREACH(el, &set) {
-        struct selva_string *field_name = selva_string_dup(el->value_string, 0);
-        TO_STR(field_name);
+    err = parse_fields(fin, out, fields, inherit, nr_inherit, excluded);
+    selva_string_free(out);
 
-        if (field_name_str[0] == STRING_SET_INH_PREFIX) { /* inherit */
-            tmp_inherit_fields = selva_realloc(tmp_inherit_fields, (i_inherit + 1) * sizeof(struct selva_string *));
-            selva_string_auto_finalize(fin, field_name);
-            tmp_inherit_fields[i_inherit++] = field_name;
-        } else if (field_name_str[0] == STRING_SET_EXCL_PREFIX) { /* exclude */
-            if (!tmp_excluded) {
-                tmp_excluded = selva_string_create("", 0, SELVA_STRING_MUTABLE);
-            }
-
-            selva_string_auto_finalize(fin, field_name);
-            (void)string_set_list_add(tmp_excluded, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1, field_name_str, field_name_len);
-        } else { /* select */
-            const char *alias_end = strchr(field_name_str, STRING_SET_ALIAS);
-
-            if (alias_end && alias_end != field_name_str) { /* alias set */
-                const char *alias_str = field_name_str;
-                const size_t alias_len = alias_end + 1 - field_name_str;
-                struct selva_string *new_field_name = selva_string_createf("%s", alias_end + 1);
-
-                SelvaObject_InsertArrayStr(fields, alias_str, alias_len, SELVA_OBJECT_STRING, new_field_name);
-                selva_string_free(field_name);
-            } else {
-                const size_t key_len = (size_t)(log10(i_fields + 1)) + 1;
-                char key_str[key_len + 1];
-
-                snprintf(key_str, key_len + 1, "%zu", i_fields);
-
-                /*
-                 * SO will free field_name and thus no call to selva_string_auto_finalize()
-                 * is made here.
-                 */
-                SelvaObject_InsertArrayStr(fields, key_str, key_len, SELVA_OBJECT_STRING, field_name);
-            }
-            i_fields++;
-        }
-    }
-
-    SelvaSet_Destroy(&set);
-
-    if (tmp_inherit_fields) {
-        finalizer_add(fin, tmp_inherit_fields, selva_free);
-    }
-
-    *inherit = tmp_inherit_fields;
-    *nr_inherit = i_inherit;
-    *excluded = tmp_excluded;
-    return 0;
+    return err;
 }
 
 /**
@@ -1173,8 +1155,12 @@ static void send_node(
     } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
         struct finalizer fin2;
         struct rpn_expression *expr = args->fields_expression ?: args->inherit_expression;
-        selvaobject_autofree struct SelvaObject *fields = SelvaObject_New();
-        struct selva_string **inherit_fields = NULL; /* allocated by exec_fields_expression() */
+
+        /*
+         * The following variables are set by exec_fields_expression().
+         */
+        selvaobject_autofree struct SelvaObject *fields = NULL;
+        struct selva_string **inherit_fields = NULL;
         size_t nr_inherit_fields = 0;
         struct selva_string *excluded_fields = NULL;
 
@@ -1188,7 +1174,7 @@ static void send_node(
 
         err = exec_fields_expression(&fin2, hierarchy, node,
                                      args->fields_rpn_ctx, expr,
-                                     fields,
+                                     &fields,
                                      &inherit_fields, &nr_inherit_fields,
                                      &excluded_fields);
         if (!err) {
@@ -1825,23 +1811,10 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
         selva_string_auto_finalize(&fin, raw);
 
-        struct selva_string *inherit_fields_tmp = NULL;
-        err = parse_string_set(&fin, raw, &fields,
-                               (char []){ STRING_SET_INH_PREFIX, STRING_SET_EXCL_PREFIX, '\0' },
-                               (struct selva_string **[]){ &inherit_fields_tmp, &excluded_fields });
+        err = parse_fields(&fin, raw, &fields, &inherit_fields, &nr_inherit_fields, &excluded_fields);
         if (err) {
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
-        }
-
-        if (inherit_fields_tmp) {
-            TO_STR(inherit_fields_tmp);
-            inherit_fields = parse_string_list(&fin, inherit_fields_tmp_str, inherit_fields_tmp_len, '\n');
-
-            struct selva_string *s = inherit_fields[0];
-            while (s) {
-                s = inherit_fields[++nr_inherit_fields];
-            }
         }
     } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN) {
         /*
