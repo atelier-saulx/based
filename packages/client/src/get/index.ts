@@ -6,6 +6,7 @@ import {
   createAst,
   TraverseByType,
   bfsExpr2rpn,
+  fieldsExpr2rpn,
 } from '@based/db-query'
 import { SelvaTraversal } from '../protocol'
 
@@ -116,10 +117,10 @@ function getFields(
 } {
   if (byType) {
     let hasTypes = false
-    const expr: TraverseByType = { $any: { $all: $any } }
+    const expr: Record<string, string> = { $any: $any.join('\n') }
     for (const type in byType) {
       hasTypes = true
-      expr[type] = { $all: [...$any, ...byType[type]] }
+      expr[type] = [...$any, ...byType[type]].join('\n')
     }
 
     if (!hasTypes) {
@@ -128,7 +129,7 @@ function getFields(
 
     return {
       isRpn: true,
-      fields: bfsExpr2rpn(ctx.client.schema.types, expr),
+      fields: fieldsExpr2rpn(ctx.client.schema.types, expr),
     }
   }
 

@@ -117,10 +117,12 @@ export class BasedDbClient extends Emitter {
 
       const ids = results.map((cmdResult) => {
         // unwrap array structure
-        return cmdResult[0].map((row) => {
-          // take id
-          return row[0]
-        })
+        return (
+          cmdResult?.[0].map((row) => {
+            // take id
+            return row?.[0]
+          }) ?? []
+        )
       })
       nestedIds.push(ids)
 

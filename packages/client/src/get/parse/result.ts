@@ -34,8 +34,12 @@ export function parseGetResult(
   return obj
 }
 
-function parseResultRows(ctx: ExecContext, result: [string, any[]][]) {
+function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
   return result.map((row) => {
+    if (!row) {
+      return {}
+    }
+
     const [id, fields]: [string, any[]] = row
 
     const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
