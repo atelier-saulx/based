@@ -2,6 +2,7 @@ import printAst from './printAst'
 import isFork from './isFork'
 import ast2rpn from './ast2rpn'
 import bfsExpr2rpn from './bfsExpr2rpn'
+import fieldsExpr2rpn from './fieldsExpr2rpn'
 
 import createAst from './parseFilters'
 
@@ -34,6 +35,7 @@ export {
   createAst,
   ast2rpn,
   bfsExpr2rpn,
+  fieldsExpr2rpn,
   createRpn,
   convertNow,
   optimizeTypeFilters,
