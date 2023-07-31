@@ -88,6 +88,7 @@ export const number: FieldParser<'number'> = async (args) => {
 
   args.collect(args)
 }
+
 export const integer: FieldParser<'integer'> = async (args) => {
   if (!validate(args, args.value)) {
     return

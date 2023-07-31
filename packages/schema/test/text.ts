@@ -44,7 +44,7 @@ const createHandlers = (): {
   return { results, handlers }
 }
 
-test('text max length', async (t) => {
+test.only('text max length', async (t) => {
   const { handlers, results } = createHandlers()
   await t.throwsAsync(
     setWalker(

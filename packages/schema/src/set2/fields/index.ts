@@ -4,6 +4,8 @@ import { BasedSetTarget } from '../../types'
 import { array } from './array'
 import { object, record } from './object'
 import { number, integer, timestamp } from './number'
+import { string, text } from './string'
+import { reference, references } from './references'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 
@@ -14,6 +16,10 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
   number,
   integer,
   timestamp,
+  string,
+  text,
+  reference,
+  references,
   cardinality: async (args) => {
     const { value, error } = args
     let hashedValue: string

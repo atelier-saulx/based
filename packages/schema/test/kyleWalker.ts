@@ -19,11 +19,23 @@ test.only('klyle set walker', async (t) => {
           date: {
             type: 'timestamp',
           },
+          aString: {
+            type: 'string',
+            // maxLength: 10,
+            // minLength: 2,
+            // format: 'email',
+          },
+          aText: {
+            type: 'text',
+          },
+          aRef: {
+            type: 'reference',
+          },
         },
       },
     },
     $defs: {},
-    languages: ['en'],
+    languages: ['en', 'de'],
     root: {
       fields: {},
     },
@@ -32,27 +44,46 @@ test.only('klyle set walker', async (t) => {
     },
   }
 
-  const x = await setWalker2(schema, {
+  // const x = await setWalker2(schema, {
+  //   $id: 'bl1',
+  //   aInteger: { $increment: 9 },
+  //   aNumber: {
+  //     $decrement: 5,
+  //     $default: 5,
+  //   },
+  //   date: { $default: '01/02/2022', $increment: 5e3 },
+  // })
+
+  // console.info('------------', x)
+
+  // const x2 = await setWalker2(schema, {
+  //   $id: 'bl1',
+  //   aNumber: {
+  //     $default: 5,
+  //   },
+  //   date: 'now',
+  // })
+
+  // console.info('------------', x2)
+
+  // const x2 = await setWalker2(schema, {
+  //   $id: 'bl1',
+  //   // aString: { $value: '12345' },
+  //   aString: { $default: 'blablablabla' },
+  //   // $language: 'de',
+  //   // aText: 'blabla',
+
+  //   // aText: {
+  //   //   en: 'ax',
+  //   //   de: 'axa',
+  //   // },
+  // })
+  const ref = await setWalker2(schema, {
     $id: 'bl1',
-    aInteger: { $increment: 9 },
-    aNumber: {
-      $decrement: 5,
-      $default: 5,
-    },
-    date: { $default: '01/02/2022', $increment: 5e3 },
+    aRef: { $value: '123123' },
   })
 
-  console.info('------------', x)
-
-  const x2 = await setWalker2(schema, {
-    $id: 'bl1',
-    aNumber: {
-      $default: 5,
-    },
-    date: 'now',
-  })
-
-  console.info('------------', x2)
+  console.info('------------', ref)
 
   t.true(true)
 })

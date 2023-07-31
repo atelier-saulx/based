@@ -141,6 +141,7 @@ export const text: Parser<'text'> = async (
   noCollect
 ) => {
   const valueType = typeof value
+  console.log('target.', target.$language)
   if (target.$language && valueType === 'string') {
     validate(handlers, path, value, fieldSchema)
     if (!noCollect) {
