@@ -56,6 +56,16 @@ export class BasedDbClient extends Emitter {
   async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
     // TODO: make it
     this.schema = <BasedSchema>opts
+    if (!this.schema.prefixToTypeMapping) {
+      this.schema.prefixToTypeMapping = {}
+    }
+
+    for (const typeName in this.schema.types) {
+      const type = this.schema.types[typeName]
+      this.schema.prefixToTypeMapping[type.prefix] = typeName
+    }
+
+    console.log('SCHEMA', this.schema)
     return this.schema
   }
 
