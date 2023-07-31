@@ -180,7 +180,7 @@ test.serial.only('set primitive fields', async (t) => {
       a: 1,
       b: 2,
     },
-    tags: { $remove: ['horror'] }, // TODO
+    tags: { $remove: ['horror'] },
   })
 
   getResult = await client.command('object.get', ['', 'po2', 'slug'])
@@ -237,7 +237,6 @@ test.serial.only('set primitive fields', async (t) => {
           objs: [{ a: 1 }, { b: 'hello' }],
           strs: ['a', 'b', 'c', 'def', 'gh'],
         },
-        // f: ['root'], // TODO
         bool: true,
         id: 'po1',
         int: 112,
@@ -281,7 +280,7 @@ test.serial.only('set primitive fields', async (t) => {
         },
         meh: {
           str: true,
-          txt: { $field: 'str' },
+          txt: { $field: ['notHere', 'str'] },
         },
       },
       $list: {
