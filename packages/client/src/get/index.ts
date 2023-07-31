@@ -1,4 +1,4 @@
-import { ExecContext, Fields, GetCommand } from './types'
+import { ExecContext, Field, Fields, GetCommand } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
 import {
@@ -9,6 +9,7 @@ import {
   fieldsExpr2rpn,
 } from '@based/db-query'
 import { SelvaTraversal } from '../protocol'
+import { joinPath } from '../util'
 
 export * from './types'
 export * from './parse'
@@ -107,6 +108,18 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
   )
 }
 
+function getField(field: Field): string {
+  const str = joinPath(field.field)
+
+  if (field.aliased) {
+    return `${str}@${field.aliased.join('|')}`
+  } else if (field.exclude) {
+    return `!${str}`
+  } else {
+    return str
+  }
+}
+
 function getFields(
   ctx: ExecContext,
   { $any, byType }: Fields
@@ -116,14 +129,14 @@ function getFields(
 } {
   if (byType) {
     let hasTypes = false
-    const expr: Record<string, string> = { $any: $any.join('\n') }
+    const expr: Record<string, string> = { $any: $any.map(getField).join('\n') }
     for (const type in byType) {
       hasTypes = true
-      expr[type] = [...$any, ...byType[type]].join('\n')
+      expr[type] = [...$any, ...byType[type]].map(getField).join('\n')
     }
 
     if (!hasTypes) {
-      return { isRpn: false, fields: $any.join('\n') }
+      return { isRpn: false, fields: expr.$any }
     }
 
     return {
@@ -132,7 +145,7 @@ function getFields(
     }
   }
 
-  return { isRpn: false, fields: $any.join('\n') }
+  return { isRpn: false, fields: $any.map(getField).join('\n') }
 }
 
 function sourceId(cmd: GetCommand): string {

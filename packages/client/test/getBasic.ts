@@ -267,19 +267,18 @@ test.serial.only('get nested queries', async (t) => {
         title: true,
         nestedThing: { $id: 'maTest', value: true },
       },
-      // TODO: support array queries
-      // values: [
-      //   {
-      //     $id: 'maTest',
-      //     id: true,
-      //     value: true,
-      //   },
-      //   {
-      //     $id: 'maTest2',
-      //     id: true,
-      //     value: true,
-      //   },
-      // ],
+      values: [
+        {
+          $id: 'maTest',
+          id: true,
+          value: true,
+        },
+        {
+          $id: 'maTest2',
+          id: true,
+          value: true,
+        },
+      ],
       title: true,
     }),
     {
@@ -293,16 +292,16 @@ test.serial.only('get nested queries', async (t) => {
           value: 11,
         },
       },
-      // values: [
-      //   {
-      //     id: 'maTest',
-      //     value: 11,
-      //   },
-      //   {
-      //     id: 'maTest2',
-      //     value: 12,
-      //   },
-      // ],
+      values: [
+        {
+          id: 'maTest',
+          value: 11,
+        },
+        {
+          id: 'maTest2',
+          value: 12,
+        },
+      ],
     }
   )
 })

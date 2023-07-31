@@ -1,5 +1,5 @@
 import { walk } from '@based/schema'
-import { ExecContext, GetCommand } from '../types'
+import { ExecContext, Field, GetCommand } from '../types'
 
 export async function parseGetOpts(
   ctx: ExecContext,
@@ -25,16 +25,19 @@ export async function parseGetOpts(
         const { key, value } = args
 
         if (value === true) {
-          return args.key === '$all' ? '*' : args.key
+          return {
+            type: 'field',
+            field: args.key === '$all' ? ['*'] : [args.key],
+          }
         } else if (value === false) {
-          return `!${args.key}`
+          return { type: 'field', exclude: true, field: [`${args.key}`] }
         } else if (value?.$field) {
           let $field = value.$field
-          if (Array.isArray(value.$field)) {
-            $field = $field.join('|')
+          if (!Array.isArray(value.$field)) {
+            $field = [$field]
           }
 
-          return `${key}@${$field}`
+          return { type: 'field', field: [key], aliased: $field }
         }
 
         console.error('UNABLE TO PARSE', JSON.stringify(args.value))
@@ -101,14 +104,17 @@ export async function parseGetOpts(
         const { id, $id, type, $list } = args.target
 
         const shouldPrefixFields: boolean =
-          type === 'node' && !!key && id === $id
+          type === 'node' && key !== undefined && id === $id
 
-        const fields: string[] = []
-        const byType: Record<string, string[]> = {}
+        const fields: Field[] = []
+        const byType: Record<string, Field[]> = {}
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
-          if (typeof entry === 'string') {
-            fields.push(shouldPrefixFields ? `${key}.${entry}` : entry)
+          if (entry?.type === 'field') {
+            fields.push({
+              ...entry,
+              field: shouldPrefixFields ? [key, ...entry.field] : entry.field,
+            })
           } else {
             const nestedCmd: GetCommand = entry
 
@@ -117,24 +123,32 @@ export async function parseGetOpts(
 
             if (canMerge) {
               // TODO: handle $field and false (exclude) -- needs to be prefixed right
-              for (const f of nestedCmd.fields.$any) {
-                if (f.startsWith('$fieldsByType')) {
-                  const [_$fieldsByType, type, ...field] = f.split('.')
+              for (const fieldObj of nestedCmd.fields.$any) {
+                const { field: f } = fieldObj
+                if (String(f[0]).startsWith('$fieldsByType')) {
+                  const [_$fieldsByType, type, ...field] = f
                   if (type === '$any') {
-                    fields.push(field.join('.'))
+                    fields.push({ ...fieldObj, field })
                   } else {
                     byType[type] = byType[type] ?? []
-                    byType[type].push(field.join('.'))
+                    byType[type].push({ ...fieldObj, field })
                   }
                 } else {
-                  fields.push(shouldPrefixFields ? `${key}.${f}` : f)
+                  fields.push({
+                    ...fieldObj,
+                    field: shouldPrefixFields ? [key, ...f] : f,
+                  })
                 }
               }
 
               for (const t in nestedCmd.fields?.byType) {
                 byType[t] = byType[t] ?? []
-                for (const f of nestedCmd.fields.byType[t]) {
-                  byType[t].push(shouldPrefixFields ? `${key}.${f}` : f)
+                for (const fieldObj of nestedCmd.fields.byType[t]) {
+                  const { field: f } = fieldObj
+                  byType[t].push({
+                    ...fieldObj,
+                    field: shouldPrefixFields ? [key, ...f] : f,
+                  })
                 }
               }
             } else if (nestedCmd.type === 'node') {

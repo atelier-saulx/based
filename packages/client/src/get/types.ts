@@ -11,13 +11,22 @@ export type TraverseByType = {
   [k: string]: TraverseByTypeExpression
 }
 
+export type Path = (string | number)[]
+
+export type Field = {
+  type: 'field'
+  field: Path
+  aliased: Path[]
+  exclude?: true
+}
+
 // * = all
 // <identifier>@<field(s)> = $field (alias field)
 // <field1>|<field2>|<field3> = $field with array option
 export type Fields = {
-  $any?: string[]
+  $any?: Field[]
   byType?: {
-    [type: string]: string[]
+    [type: string]: Field[]
   }
 }
 
