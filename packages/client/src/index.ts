@@ -63,9 +63,17 @@ export class BasedDbClient extends Emitter {
     for (const typeName in this.schema.types) {
       const type = this.schema.types[typeName]
       this.schema.prefixToTypeMapping[type.prefix] = typeName
+
+      this.schema.types[typeName].fields.id = { type: 'string' }
+      this.schema.types[typeName].fields.type = { type: 'string' }
+      this.schema.types[typeName].fields.parents = { type: 'references' }
+      this.schema.types[typeName].fields.children = { type: 'references' }
+      this.schema.types[typeName].fields.aliases = {
+        type: 'set',
+        items: { type: 'string' },
+      }
     }
 
-    console.log('SCHEMA', this.schema)
     return this.schema
   }
 
@@ -85,7 +93,23 @@ export class BasedDbClient extends Emitter {
       referenceFilterCondition: async (id) => {
         return true
       },
-      collect: (props) => args.push(...toModifyArgs(props)),
+      collect: (props) => {
+        if (props?.fieldSchema?.type === 'text') {
+          for (const lang in props.value) {
+            args.push(
+              ...toModifyArgs({
+                target: props.target,
+                typeSchema: props.typeSchema,
+                fieldSchema: { type: 'string' },
+                value: props.value[lang],
+                path: [...props.path, lang],
+              })
+            )
+          }
+        } else {
+          args.push(...toModifyArgs(props))
+        }
+      },
     })
 
     let id = $id

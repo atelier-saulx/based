@@ -209,12 +209,13 @@ test.skip('get null', async (t) => {
   await t.throwsAsync(client.get(null))
 })
 
-// TODO: language is not working
-test.skip('get $value', async (t) => {
+test.only('get $value', async (t) => {
   await client.set({
     $id: 'maTest',
     title: { en: 'hello' },
   })
+
+  console.log(await client.get({ $id: 'maTest', $all: true }))
 
   t.deepEqual(
     await client.get({
