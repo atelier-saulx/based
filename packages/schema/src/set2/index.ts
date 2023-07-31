@@ -63,10 +63,13 @@ const parsers = {
   },
   collect: (args, value) => {
     if (args.key === '$default') {
-      args.parentValue.$default = value
-      // console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
-      //   $default: value,
-      // })
+      if (Object.keys(args.parentValue).length > 1) {
+        args.parentValue.$default = value
+      } else {
+        console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
+          $default: value,
+        })
+      }
     } else {
       console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
     }
