@@ -4,8 +4,20 @@ import { BasedSetTarget } from '../../types'
 
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
-const validator = (args: Args<BasedSetTarget, NumberTypes>): boolean => {
-  const { fieldSchema, value } = args
+const validate = (
+  args: Args<BasedSetTarget, NumberTypes>,
+  value
+): number | false => {
+  const { fieldSchema } = args
+
+  if (typeof value !== 'number') {
+    args.error(args, ParseError.incorrectFormat)
+    return false
+  }
+  if (fieldSchema.type === 'integer' && value - Math.floor(value) !== 0) {
+    args.error(args, ParseError.incorrectFormat)
+    return false
+  }
   if (
     fieldSchema.multipleOf &&
     value / fieldSchema.multipleOf -
@@ -37,69 +49,48 @@ const validator = (args: Args<BasedSetTarget, NumberTypes>): boolean => {
       return false
     }
   }
-  return true
+  return value
 }
 
-const shared = async (
-  args: Args<BasedSetTarget, NumberTypes>
-): Promise<boolean> => {
-  if (typeof args.value === 'object') {
-    if ('$value' in args.value) {
-      args.value = args.value.$value
-      if (typeof args.value !== 'object') {
-        return true
-      }
+const shared = (args: Args<BasedSetTarget, NumberTypes>, value: any): any => {
+  console.log(1)
+  if (typeof value === 'object') {
+    console.log(2)
+    if (value.$increment) {
+      console.log(3)
+      validate(args, value.$increment)
+      return value.$increment
     }
-    for (let key in args.value) {
-      if (key === '$increment') {
-        await args.parse(args, '$increment', args.value[key])
-      } else if (key === '$decrement') {
-        await args.parse(args, '$decrement', args.value[key])
-      } else if (key === 'default') {
-        await args.parse(args, '$default', args.value[key])
-      } else {
-        args.error(args, ParseError.fieldDoesNotExist)
-        return false
-      }
+    if (value.$decrement) {
+      validate(args, value.$decrement)
     }
-  } else if (typeof args.value !== 'number') {
-    args.error(args, ParseError.incorrectFormat)
-    return false
+    if (value.$value !== undefined) {
+      validate(args, value.$value)
+    }
+    if (value.$default !== undefined) {
+      if (value.$value !== undefined) {
+        args.error(args, ParseError.valueAndDefault)
+        return
+      }
+      validate(args, value.$default)
+    }
+  } else {
+    validate(args, value)
   }
-  return true
+  return value
 }
 
 export const number: FieldParser<'number'> = async (args) => {
-  args.stop()
-  if (!shared(args) || !validator(args)) {
-    return
-  }
-  if (typeof args.value !== 'number') {
-    args.error(args, ParseError.incorrectFieldType)
-    return
-  }
-  return args
+  await shared(args, args.value)
+  args.collect(args)
+}
+export const integer: FieldParser<'integer'> = async (args) => {
+  await shared(args, args.value)
+
+  args.collect(args)
 }
 
-export const integer: FieldParser<'integer'> = async (args) => {
-  args.stop()
-  if (!shared(args) || !validator(args)) {
-    return
-  }
-  if (typeof args.value !== 'number') {
-    args.error(args, ParseError.incorrectFieldType)
-    return
-  }
-  if (args.value - Math.floor(args.value) !== 0) {
-    args.error(args, ParseError.incorrectFieldType)
-    return
-  }
-  return args
-}
 export const timestamp: FieldParser<'timestamp'> = async (args) => {
-  if (!shared(args)) {
-    return
-  }
   if (typeof args.value === 'string') {
     if (args.value === 'now') {
       args.value = Date.now()
@@ -111,14 +102,9 @@ export const timestamp: FieldParser<'timestamp'> = async (args) => {
         return
       }
     }
-  }
+    console.log(args)
+    await shared(args, args.value)
 
-  if (typeof args.value !== 'number') {
-    return
+    args.collect(args)
   }
-  if (!validator(args)) {
-    return
-  }
-
-  return args
 }
