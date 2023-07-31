@@ -44,7 +44,7 @@ struct InheritSendFields_Args {
     struct selva_server_response_out *resp;
     size_t nr_fields;
     struct selva_string *lang;
-    struct selva_string **field_names;
+    const struct selva_string **field_names;
     struct bitmap *found;
     ssize_t nr_results; /*!< Number of results sent. */
 };
@@ -189,7 +189,7 @@ static int Inherit_SendFields_NodeCb(
             continue;
         }
 
-        struct selva_string *types_and_field = args->field_names[i];
+        const struct selva_string *types_and_field = args->field_names[i];
         const char *types_str;
         size_t types_len;
         const char *field_name_str;
@@ -252,7 +252,7 @@ int Inherit_SendFields(
         struct SelvaHierarchy *hierarchy,
         struct selva_string *lang,
         const Selva_NodeId node_id,
-        struct selva_string **types_field_names,
+        const struct selva_string **types_field_names,
         size_t nr_field_names) {
     struct InheritSendFields_Args args = {
         .resp = resp,
