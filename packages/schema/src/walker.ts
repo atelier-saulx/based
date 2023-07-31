@@ -64,7 +64,6 @@ export type FieldParsers<T = any> = {
 }
 
 export type Opts<T> = {
-  schema: BasedSchema
   init: (args: Args<T>) => Promise<Args<T>>
   parsers: {
     fields: Partial<{
@@ -81,6 +80,7 @@ export type Opts<T> = {
 }
 
 export const walk = async <T>(
+  schema: BasedSchema,
   opts: Opts<T>,
   value: any
 ): Promise<{
@@ -127,7 +127,7 @@ export const walk = async <T>(
     let stop = false
     let stopSelf = false
     const args: Args<T> = {
-      schema: opts.schema,
+      schema,
       stop: (stopFieldParser) => {
         if (stopFieldParser) {
           stopSelf = true
@@ -326,7 +326,7 @@ export const walk = async <T>(
 
   // @ts-ignore
   const args: Args<T> = await opts.init(<Args<T>>{
-    schema: opts.schema,
+    schema,
     path: [],
     value,
     actualCollect: opts.collect,

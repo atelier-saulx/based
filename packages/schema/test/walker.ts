@@ -45,8 +45,8 @@ const schema: BasedSchema = {
 
 test('walker', async (t) => {
   const x = await walk(
+    schema,
     {
-      schema,
       init: async (args) => {
         return { ...args, target: { lullz: true } }
       },
