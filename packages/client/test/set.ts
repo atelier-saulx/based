@@ -365,11 +365,9 @@ test.serial.only('set primitive fields', async (t) => {
   t.deepEqual(things, {
     id: third,
     slug: '/third',
-    meh: [
-      {
-        str: 'hello',
-      },
-    ],
+    meh: {
+      str: 'hello',
+    },
     ancestors: [
       {
         id: 'po2',

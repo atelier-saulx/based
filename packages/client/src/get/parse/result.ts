@@ -5,7 +5,7 @@ import {
   BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
 } from '@based/schema'
-import { setByPath } from '@saulx/utils'
+import { deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { joinPath } from '../../util'
 import { ExecContext, GetCommand } from '../types'
 
@@ -18,16 +18,25 @@ export function parseGetResult(
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
     const {
+      type,
       target: { path },
       source,
     } = cmds[i]
 
     const k = joinPath(path)
     const parsed = parseResultRows(ctx, result)
+
     if (k === '') {
       obj = { ...obj, ...parsed[0] }
     } else {
-      setByPath(obj, path, parsed)
+      if (type === 'node') {
+        const v = parsed[0]
+        const cur = getByPath(obj, path)
+        const o = deepMerge({}, cur, v)
+        setByPath(obj, path, o)
+      } else {
+        setByPath(obj, path, parsed)
+      }
     }
   }
 
@@ -119,6 +128,10 @@ const FIELD_PARSERS: Record<
   cardinality: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),
+  text: (x) => {
+    // TODO: handle if $language is set
+    return parseRecFields({ type: 'string' }, x)
+  },
   array: (ary: any[], fieldSchema: BasedSchemaFieldArray) => {
     return ary.map((x) => {
       return parseFieldResult(fieldSchema.values, x)

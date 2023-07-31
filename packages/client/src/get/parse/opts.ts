@@ -5,7 +5,8 @@ export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
 ): Promise<GetCommand[]> {
-  let topLevel: GetCommand
+  let topLevel: GetCommand[] = []
+  let visited: GetCommand
   await walk<{
     id: string
     $id: string
@@ -62,6 +63,7 @@ export async function parseGetOpts(
                 ...args,
                 target: {
                   ...args.target,
+                  $id: args.target.id,
                   id: value.$id,
                 },
               }
@@ -111,7 +113,7 @@ export async function parseGetOpts(
             const nestedCmd: GetCommand = entry
 
             const canMerge: boolean =
-              nestedCmd.type === 'node' && (nestedCmd.source?.id ?? $id) === $id
+              nestedCmd.type === 'node' && (nestedCmd.source?.id ?? id) === id
 
             if (canMerge) {
               // TODO: handle $field and false (exclude) -- needs to be prefixed right
@@ -135,7 +137,11 @@ export async function parseGetOpts(
                   byType[t].push(shouldPrefixFields ? `${key}.${f}` : f)
                 }
               }
+            } else if (nestedCmd.type === 'node') {
+              // completely separate id queried
+              topLevel.push(nestedCmd)
             } else {
+              // actual nested query dependent on this result
               nestedCommands.push(nestedCmd)
             }
           }
@@ -181,9 +187,8 @@ export async function parseGetOpts(
           cmd.fields.byType = byType
         }
 
-        if (!path.length) {
-          topLevel = cmd
-        }
+        // use to detect the very top level
+        visited = cmd
 
         return cmd
       },
@@ -194,7 +199,7 @@ export async function parseGetOpts(
     opts
   )
 
-  const nested = topLevel.nestedCommands
-  delete topLevel.nestedCommands
-  return [topLevel, ...nested]
+  const nested = visited.nestedCommands
+  delete visited.nestedCommands
+  return [visited, ...nested, ...topLevel]
 }

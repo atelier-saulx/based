@@ -209,7 +209,8 @@ test.skip('get null', async (t) => {
   await t.throwsAsync(client.get(null))
 })
 
-test.only('get $value', async (t) => {
+// TODO: do we actually want to support $value at Selva level? don't think so tbh
+test.skip('get $value', async (t) => {
   await client.set({
     $id: 'maTest',
     title: { en: 'hello' },
@@ -240,6 +241,68 @@ test.only('get $value', async (t) => {
           complex: true,
         },
       },
+    }
+  )
+})
+
+test.serial.only('get nested queries', async (t) => {
+  await client.set({
+    $id: 'maTest',
+    value: 11,
+    title: { en: 'hello' },
+  })
+
+  await client.set({
+    $id: 'maTest2',
+    value: 12,
+    title: { en: 'halloumi' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'maTest',
+      id: true,
+      someItem: {
+        $id: 'maTest2',
+        title: true,
+        nestedThing: { $id: 'maTest', value: true },
+      },
+      // TODO: support array queries
+      // values: [
+      //   {
+      //     $id: 'maTest',
+      //     id: true,
+      //     value: true,
+      //   },
+      //   {
+      //     $id: 'maTest2',
+      //     id: true,
+      //     value: true,
+      //   },
+      // ],
+      title: true,
+    }),
+    {
+      id: 'maTest',
+      title: { en: 'hello' },
+      someItem: {
+        title: {
+          en: 'halloumi',
+        },
+        nestedThing: {
+          value: 11,
+        },
+      },
+      // values: [
+      //   {
+      //     id: 'maTest',
+      //     value: 11,
+      //   },
+      //   {
+      //     id: 'maTest2',
+      //     value: 12,
+      //   },
+      // ],
     }
   )
 })

@@ -33,7 +33,6 @@ const RECURSIVE_TRAVERSE_MODES: Record<number, protocol.SelvaTraversal> = {
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD,
 }
 
-// TODO: here recognize all the commands that can be run in one find and do it
 export async function get(ctx: ExecContext, commands: GetCommand[]) {
   return await Promise.all(
     commands.map(async (cmd) => {
