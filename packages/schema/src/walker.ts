@@ -79,6 +79,41 @@ export type Opts<T> = {
   errorsCollector?: ErrorHandler<T>
 }
 
+/*
+ skipCollection?: boolean
+  fieldSchema?: BasedSchemaFields[K]
+  typeSchema?: BasedSchemaType
+  path: Path
+  key?: number | string
+  value: any
+  target: T
+  stop: (stopFieldParser?: boolean) => void
+  fromBackTrack: any[]
+  parse: Parse<T>
+  actualCollect: Collect<T>
+  collect: (args: Args<T>, value?: any) => any
+  backtrack: BackTrack<T>
+  requiresAsyncValidation: (validationType: any) => Promise<any>
+  error: ErrorHandler<T>
+*/
+
+class ArgsClass {
+  prev: ArgsClass
+
+  root: ArgsClass
+
+  _schema: BasedSchema
+
+  skipCollection: boolean
+
+  get schema(): BasedSchema {
+    if (this._schema) {
+      return this.schema
+    }
+    return this.root._schema
+  }
+}
+
 export const walk = async <T>(
   schema: BasedSchema,
   opts: Opts<T>,
