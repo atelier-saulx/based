@@ -24,7 +24,7 @@ const parsers = {
         return { ...args, path: args.path.slice(0, -1) }
       },
       $default: async (args) => {
-        return args
+        return
       },
     },
     fields,
