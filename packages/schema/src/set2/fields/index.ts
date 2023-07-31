@@ -3,6 +3,7 @@ import { ParseError } from '../../set/error'
 import { BasedSetTarget } from '../../types'
 import { array } from './array'
 import { object, record } from './object'
+import { number, integer, timestamp } from './number'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 
@@ -10,6 +11,9 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
   array,
   object,
   record,
+  number,
+  integer,
+  timestamp,
   cardinality: async (args) => {
     const { value, error } = args
     let hashedValue: string
@@ -36,6 +40,7 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
     }
     args.collect(args)
   },
+
   json: async (args) => {
     try {
       const parsedValue = JSON.stringify(args.value)
