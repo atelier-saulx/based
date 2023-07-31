@@ -34,11 +34,26 @@ test.only('klyle set walker', async (t) => {
 
   const x = await setWalker2(schema, {
     $id: 'bl1',
-    aInteger: { $increment: 7 },
+    aInteger: { $increment: 9 },
+    aNumber: {
+      $decrement: 5,
+      $default: 5,
+    },
     // date: 'now',
   })
 
   console.info('------------', x)
+
+  const x2 = await setWalker2(schema, {
+    $id: 'bl1',
+    aNumber: {
+      $default: 5,
+    },
+
+    // date: 'now',
+  })
+
+  console.info('------------', x2)
 
   t.true(true)
 })

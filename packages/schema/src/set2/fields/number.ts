@@ -4,12 +4,11 @@ import { BasedSetTarget } from '../../types'
 
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
-const validate = (
+const validateNumber = (
   args: Args<BasedSetTarget, NumberTypes>,
-  value
-): number | false => {
+  value: number
+): boolean => {
   const { fieldSchema } = args
-
   if (typeof value !== 'number') {
     args.error(args, ParseError.incorrectFormat)
     return false
@@ -49,62 +48,55 @@ const validate = (
       return false
     }
   }
-  return value
+  return true
 }
 
-const shared = (args: Args<BasedSetTarget, NumberTypes>, value: any): any => {
-  console.log(1)
-  if (typeof value === 'object') {
-    console.log(2)
-    if (value.$increment) {
-      console.log(3)
-      validate(args, value.$increment)
-      return value.$increment
-    }
-    if (value.$decrement) {
-      validate(args, value.$decrement)
-    }
-    if (value.$value !== undefined) {
-      validate(args, value.$value)
-    }
-    if (value.$default !== undefined) {
-      if (value.$value !== undefined) {
-        args.error(args, ParseError.valueAndDefault)
-        return
-      }
-      validate(args, value.$default)
-    }
-  } else {
-    validate(args, value)
+const validate = (
+  args: Args<BasedSetTarget, NumberTypes>,
+  value: any
+): boolean => {
+  if (typeof value !== 'object') {
+    return validateNumber(args, value)
   }
-  return value
+
+  if ('$increment' in value) {
+    args.stop()
+    return validateNumber(args, value.$increment)
+  }
+
+  if ('$decrement' in value) {
+    args.stop()
+    return validateNumber(args, value.$decrement)
+  }
 }
 
 export const number: FieldParser<'number'> = async (args) => {
-  await shared(args, args.value)
+  if (!validate(args, args.value)) {
+    return
+  }
+
   args.collect(args)
 }
 export const integer: FieldParser<'integer'> = async (args) => {
-  await shared(args, args.value)
-
-  args.collect(args)
+  if (validate(args, args.value)) {
+    args.collect(args)
+  }
 }
 
 export const timestamp: FieldParser<'timestamp'> = async (args) => {
-  if (typeof args.value === 'string') {
-    if (args.value === 'now') {
-      args.value = Date.now()
-    } else {
-      const d = new Date(args.value)
-      args.value = d.valueOf()
-      if (isNaN(args.value)) {
-        args.error(args, ParseError.incorrectFormat)
-        return
-      }
-    }
-    console.log(args)
-    await shared(args, args.value)
-
-    args.collect(args)
-  }
+  // if (typeof args.value === 'string') {
+  //   if (args.value === 'now') {
+  //     args.value = Date.now()
+  //   } else {
+  //     const d = new Date(args.value)
+  //     args.value = d.valueOf()
+  //     if (isNaN(args.value)) {
+  //       args.error(args, ParseError.incorrectFormat)
+  //       return
+  //     }
+  //   }
+  //   console.log(args)
+  //   await shared(args, args.value)
+  //   args.collect(args)
+  // }
 }
