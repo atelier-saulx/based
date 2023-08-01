@@ -1172,6 +1172,7 @@ test.serial.skip(
   }
 )
 
+// TODO: $alias in get
 // TODO: options parse error
 // › Object.backtrack (src/get/parse/opts.ts:149:25)
 test.serial.skip('get - basic with many ids', async (t) => {
@@ -1192,7 +1193,7 @@ test.serial.skip('get - basic with many ids', async (t) => {
 
   t.deepEqual(
     await client.get({
-      $id: ['viZ', 'viA'],
+      $alias: ['viZ', 'viA'],
       id: true,
       title: true,
       value: true,
@@ -1206,7 +1207,7 @@ test.serial.skip('get - basic with many ids', async (t) => {
 
   t.deepEqual(
     await client.get({
-      $id: ['viA', 'viZ'],
+      $alias: ['viA', 'viZ'],
       value: true,
     }),
     {
@@ -1241,7 +1242,7 @@ test.serial.skip('get - basic with many ids', async (t) => {
 
   t.deepEqual(
     await client.get({
-      $id: ['viZ', 'viY'],
+      $alias: ['viZ', 'viY'],
       $language: 'en',
       id: true,
       title: true,
@@ -1273,7 +1274,7 @@ test.serial.skip('get - basic with non-priority language', async (t) => {
   t.deepEqual(
     await client.get({
       $language: 'en',
-      $id: ['viZ', 'viA'],
+      $alias: ['viZ', 'viA'],
       id: true,
       title: true,
       value: true,
@@ -1288,7 +1289,7 @@ test.serial.skip('get - basic with non-priority language', async (t) => {
   t.deepEqual(
     await client.get({
       $language: 'nl',
-      $id: ['viZ', 'viA'],
+      $alias: ['viZ', 'viA'],
       id: true,
       title: true,
       value: true,
@@ -1310,7 +1311,7 @@ test.serial.skip('get - basic with non-priority language', async (t) => {
   t.deepEqual(
     await client.get({
       $language: 'en',
-      $id: ['viZ', 'viA'],
+      $alias: ['viZ', 'viA'],
       id: true,
       title: true,
       value: true,
@@ -1325,7 +1326,7 @@ test.serial.skip('get - basic with non-priority language', async (t) => {
   t.deepEqual(
     await client.get({
       $language: 'nl',
-      $id: ['viZ', 'viA'],
+      $alias: ['viZ', 'viA'],
       id: true,
       title: true,
       value: true,
