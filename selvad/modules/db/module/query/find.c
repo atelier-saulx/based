@@ -461,7 +461,7 @@ static int send_node_field(
          * Finally check if the field name is a key on the node object.
          */
 
-        if (field_len >= 2 && field_str[field_len - 2] == '.' && field_str[field_len - 1] == '*') {
+        if (endswithwildcard(field_str, field_len)) {
             field_len -= 2;
         }
 

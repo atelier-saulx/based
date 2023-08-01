@@ -17,3 +17,8 @@ static inline int containswildcard(const char *field_str, size_t field_len)
 
     return !!memmem(field_str, field_len, pattern, sizeof(pattern));
 }
+
+static inline int endswithwildcard(const char *field_str, size_t field_len)
+{
+    return field_len >= 2 && field_str[field_len - 2] == '.' && field_str[field_len - 1] == WILDCARD_CHAR;
+}
