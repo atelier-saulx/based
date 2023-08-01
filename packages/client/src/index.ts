@@ -59,6 +59,10 @@ export class BasedDbClient extends Emitter {
     console.info('make a new db client...')
   }
 
+  id({ type }: { type: string }): string {
+    return genId(this.schema, type)
+  }
+
   async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
     // TODO: make it for real
     this.schema = <BasedSchema>opts
