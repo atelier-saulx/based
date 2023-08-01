@@ -2,8 +2,6 @@ import test from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
-import { createRecord } from 'data-record'
-import { SelvaMergeStrategy } from '../src/protocol'
 
 test.serial.only('set primitive fields', async (t) => {
   const TIME = 2500
