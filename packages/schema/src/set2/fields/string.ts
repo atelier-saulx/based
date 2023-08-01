@@ -80,6 +80,8 @@ const validateString = (
   args: ArgsClass<BasedSetTarget, StringTypes>,
   value: string
 ): boolean => {
+  console.log('1')
+  console.log('1')
   if (typeof value !== 'string') {
     args.error(ParseError.incorrectFormat)
     return false
@@ -89,6 +91,7 @@ const validateString = (
     return false
   }
   if (args.fieldSchema.maxLength && value.length > args.fieldSchema.maxLength) {
+    console.log('uhoh')
     args.error(ParseError.exceedsMaximum)
     return false
   }
@@ -113,13 +116,18 @@ const validate = (
   args: ArgsClass<BasedSetTarget, StringTypes>,
   value: any
 ): boolean => {
+  console.log('uh')
   if (typeof value !== 'object') {
     return validateString(args, value)
+  }
+  if (typeof value === 'object') {
+    console.log('its object')
   }
 }
 
 export const string: FieldParser<'string'> = async (args) => {
   if (!validate(args, args.value)) {
+    console.log('uhoh')
     return
   }
 
