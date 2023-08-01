@@ -42,6 +42,7 @@
 #include "inherit.h"
 #include "find_index.h"
 #include "find_cmd.h"
+#include "field_names.h"
 
 struct FindCommand_ArrayObjectCb {
     struct selva_server_response_out *resp;
@@ -116,16 +117,6 @@ static int send_hierarchy_field(
     return SELVA_ENOENT;
 #undef SEND_FIELD_NAME
 #undef IS_FIELD
-}
-
-static int iswildcard(const char *field_str, size_t field_len) {
-    return field_len == 1 && field_str[0] == WILDCARD_CHAR;
-}
-
-static int containswildcard(const char *field_str, size_t field_len) {
-    const char pattern[3] = {'.', WILDCARD_CHAR, '.'};
-
-    return !!memmem(field_str, field_len, pattern, sizeof(pattern));
 }
 
 static int parse_fields(

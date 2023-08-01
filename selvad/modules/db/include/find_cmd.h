@@ -116,5 +116,3 @@ struct SelvaFind_QueryOpts {
     const char *res_opt_str;
     size_t res_opt_len;
 };
-
-#define WILDCARD_CHAR '*'

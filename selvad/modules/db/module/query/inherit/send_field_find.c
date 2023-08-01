@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
+#define _GNU_SOURCE
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
@@ -13,6 +14,7 @@
 #include "selva_object.h"
 #include "edge.h"
 #include "hierarchy.h"
+#include "../field_names.h"
 #include "inherit_fields.h"
 
 /*
@@ -81,7 +83,7 @@ static int send_edge_field_deref_value(
         return err;
     }
 
-    if (field_len == 1 && field_str[0] == '*') {
+    if (iswildcard(field_str, field_len)) {
         /*
          * It's a wildcard and we should send the whole node object excluding
          * reference fields.
