@@ -726,3 +726,527 @@ test.serial.skip('get - hierarchy', async (t) => {
     }
   )
 })
+
+// TODO: $inherit missing
+test.serial.skip('get - $inherit', async (t) => {
+  /*
+    root
+      |_ cuX
+          |_cuC
+      |_cuA
+          |_cuC
+          |_cuB
+              |_cuD <---
+                |_cuC
+
+      |_cuFlap
+        |_cuFlurp
+          |_cuD <---
+
+
+      |_clClub
+        |_cuB
+      |_cuDfp
+        |_cuD
+      |_cuMrsnurfels
+        |_cuD
+
+
+      root
+      |_ leA
+          |_seasonA
+             |_matchA
+             |_teamA //ignoe ancestor from cut of point outside of my hierarchy
+                |_matchA
+
+      |_ leB
+          |_seasonB
+             |_teamA
+                |_matchA
+
+  */
+
+  // close ancestors [ cuMrsnurfels, cuDfp, cuB, clClub, root ]
+
+  // close ancestors of cuD
+  // dfp, cub, cuD
+
+  await Promise.all([
+    client.set({
+      $id: 'cuA',
+      image: {
+        thumb: 'flurp.jpg',
+      },
+      title: { en: 'snurf' },
+      children: ['cuB', 'cuC'],
+    }),
+    client.set({
+      $id: 'cuB',
+      children: ['cuC', 'cuD'],
+    }),
+    client.set({
+      $id: 'cuX',
+      children: ['cuC'],
+    }),
+    client.set({
+      $id: 'clClub',
+      image: {
+        thumb: 'bla.jpg',
+      },
+      children: ['cuB'],
+    }),
+    client.set({
+      $id: 'cuDfp',
+      name: 'dfp',
+      image: {
+        thumb: 'dfp.jpg',
+      },
+      children: ['cuD'],
+    }),
+    client.set({
+      $id: 'cuMrsnur',
+      name: 'MrSnurfels',
+      image: {
+        thumb: 'snurfels.jpg',
+      },
+      children: ['cuD'],
+    }),
+  ])
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuD',
+      title: { $inherit: { $type: ['custom', 'club'] } },
+    }),
+    {
+      title: {
+        en: 'snurf',
+      },
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      $language: 'nl',
+      title: { $inherit: { $type: ['custom', 'club'] } },
+    }),
+    {
+      title: 'snurf',
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      club: {
+        $inherit: { $item: 'club' },
+        image: true,
+        id: true,
+      },
+    }),
+    {
+      club: {
+        image: { thumb: 'bla.jpg' },
+        id: 'clClub',
+      },
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      flapdrol: {
+        $inherit: { $item: ['custom', 'club'] },
+        image: true,
+        id: true,
+      },
+    }),
+    {
+      flapdrol: {
+        image: { thumb: 'flurp.jpg' },
+        id: 'cuA',
+      },
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      flapdrol: {
+        $inherit: { $item: ['custom', 'club'], $required: ['image'] },
+        image: true,
+        id: true,
+      },
+    }),
+    {
+      flapdrol: {
+        image: { thumb: 'flurp.jpg' },
+        id: 'cuA',
+      },
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      flapdrol: {
+        $inherit: { $item: ['region', 'federation'] },
+        image: true,
+        id: true,
+      },
+    }),
+    {
+      // flapdrol: {}
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      image: {
+        $inherit: { $type: ['custom', 'club'] },
+      },
+    }),
+    {
+      image: { thumb: 'flurp.jpg' },
+    }
+  )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'cuC',
+      id: true,
+      flapdrol: {
+        $inherit: { $item: ['custom', 'club'], $required: ['image.icon'] },
+        image: true,
+        id: true,
+      },
+    }),
+    {
+      id: 'cuC',
+      // flapdrol: {}
+    }
+  )
+
+  // FIXME: is the order really specific here?
+  // t.deepEqualIgnoreOrder(
+  //   await client.get({
+  //     $id: 'cuD',
+  //     image: {
+  //       $inherit: { $name: ['dfp', 'MrSnurfels'] }
+  //     }
+  //   }),
+  //   {
+  //     image: { thumb: 'dfp.jpg' }
+  //   }
+  // )
+})
+
+// TODO: $inherit missing
+test.serial.skip(
+  'get - $inherit with object types does shallow merge',
+  async (t) => {
+    const parentOfParent = await client.set({
+      $id: 'vipofp',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      ding: {
+        dang: {
+          dung: 9000,
+          dunk: 'helloooo should not be there',
+        },
+        dong: ['hello', 'yesh'],
+        dung: 123,
+      },
+    })
+
+    const parentEntry = await client.set({
+      $id: 'vip',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      parents: {
+        $add: [parentOfParent],
+      },
+      ding: {
+        dang: {
+          dung: 115,
+        },
+      },
+    })
+
+    const entry = await client.set({
+      $id: 'vie',
+      type: 'lekkerType',
+      parents: {
+        $add: [parentEntry],
+      },
+      title: {
+        en: 'nice!',
+      },
+    })
+
+    t.deepEqualIgnoreOrder(
+      await client.get({
+        $id: entry,
+        id: true,
+        title: { $inherit: { $merge: true } },
+        ding: { $inherit: { $merge: true } },
+      }),
+      {
+        id: entry,
+        title: {
+          en: 'nice!',
+        },
+        ding: {
+          dong: ['hello', 'yesh'],
+          dang: {
+            dung: 115,
+          },
+          dung: 123,
+        },
+      }
+    )
+  }
+)
+
+// TODO: $inherit missing
+test.serial.skip(
+  'get - $inherit with object types shallow merge is by default disabled',
+  async (t) => {
+    const parentOfParent = await client.set({
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      ding: {
+        dang: {
+          dung: 9000,
+          dunk: 'helloooo should not be there',
+        },
+        dong: ['hello', 'yesh'],
+        dung: 123,
+      },
+    })
+
+    const parentEntry = await client.set({
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      parents: {
+        $add: [parentOfParent],
+      },
+      ding: {
+        dang: {
+          dung: 115,
+        },
+      },
+    })
+
+    const entry = await client.set({
+      type: 'lekkerType',
+      parents: {
+        $add: [parentEntry],
+      },
+      title: {
+        en: 'nice!',
+      },
+    })
+
+    t.deepEqualIgnoreOrder(
+      await client.get({
+        $id: entry,
+        id: true,
+        title: { $inherit: { $type: 'lekkerType' } },
+        ding: { $inherit: { $type: ['lekkerType'] } },
+      }),
+      {
+        id: entry,
+        title: {
+          en: 'nice!',
+        },
+        ding: {
+          dang: {
+            dung: 115,
+          },
+        },
+      }
+    )
+  }
+)
+
+// TODO: $inherit missing
+test.serial.skip(
+  'get - $inherit with object types of nested objects, does shallow merge',
+  async (t) => {
+    const parentOfParent = await client.set({
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      ding: {
+        dang: {
+          dung: 9000,
+          dunk: 'yesh',
+        },
+        dunk: {
+          ding: 9000,
+          dong: 9000,
+        },
+        dung: 123,
+      },
+    })
+
+    const parentEntry = await client.set({
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      parents: {
+        $add: [parentOfParent],
+      },
+      ding: {
+        dang: {
+          dung: 115,
+        },
+        dunk: {
+          ding: 123,
+        },
+      },
+    })
+
+    const entry = await client.set({
+      type: 'lekkerType',
+      parents: {
+        $add: [parentEntry],
+      },
+      title: {
+        en: 'nice!',
+      },
+      ding: {
+        dung: 1,
+      },
+    })
+
+    t.deepEqualIgnoreOrder(
+      await client.get({
+        $id: entry,
+        id: true,
+        title: { $inherit: { $type: 'lekkerType' } },
+        ding: {
+          dang: { $inherit: { $type: 'lekkerType', $merge: true } },
+          dunk: { $inherit: { $type: 'lekkerType', $merge: true } },
+          dung: { $inherit: { $type: 'lekkerType' } },
+        },
+      }),
+      {
+        id: entry,
+        title: {
+          en: 'nice!',
+        },
+        ding: {
+          dang: {
+            dung: 115,
+            dunk: 'yesh',
+          },
+          dunk: {
+            ding: 123,
+            dong: 9000,
+          },
+          dung: 1,
+        },
+      }
+    )
+  }
+)
+
+// TODO: options parse error
+// › Object.backtrack (src/get/parse/opts.ts:149:25)
+test.serial.skip('get - basic with many ids', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    value: 25,
+    auth: {
+      // role needs to be different , different roles per scope should be possible
+      role: {
+        id: ['root'],
+        type: 'admin',
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: ['viZ', 'viA'],
+      id: true,
+      title: true,
+      value: true,
+    }),
+    {
+      id: 'viA',
+      title: { en: 'nice!' },
+      value: 25,
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: ['viA', 'viZ'],
+      value: true,
+    }),
+    {
+      value: 25,
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $alias: ['abba', 'viA'],
+      value: true,
+    }),
+    {
+      value: 25,
+    }
+  )
+
+  await client.set({
+    $id: 'viA',
+    aliases: { $add: 'abba' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $alias: ['abba', 'viZ'],
+      value: true,
+    }),
+    {
+      value: 25,
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: ['viZ', 'viY'],
+      $language: 'en',
+      id: true,
+      title: true,
+    }),
+    {
+      $isNull: true,
+    }
+  )
+})
