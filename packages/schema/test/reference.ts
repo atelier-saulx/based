@@ -1,5 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker, BasedSetOptionalHandlers } from '../src/index'
+import { BasedSchema, setWalker2 } from '../src/index'
+import { resultCollect, errorCollect } from './utils'
 
 const schema: BasedSchema = {
   types: {
@@ -31,211 +32,128 @@ const schema: BasedSchema = {
   },
 }
 
-const createHandlers = (): {
-  results: { path: (number | string)[]; value: any }[]
-  handlers: BasedSetOptionalHandlers
-} => {
-  const results: { path: (number | string)[]; value: any }[] = []
-  const handlers = {
-    collect: ({ path, value, typeSchema, fieldSchema, target }) => {
-      results.push({ path, value })
-    },
-    checkRequiredFields: async (paths) => {
-      return true
-    },
-    referenceFilterCondition: async (id, filter) => {
-      return true
-    },
-  }
-  return { results, handlers }
-}
-
 test('reference', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: ['1', '2'],
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: 1,
-      },
-      handlers
-    )
-  )
+  const e1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: ['1', '2'],
+  })
+  const e2 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: 1,
+  })
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bl1',
-      ref: 'asdasdasdasdasd',
-    },
-    handlers
-  )
-  t.deepEqual(results, [{ path: ['ref'], value: 'asdasdasdasdasd' }])
+  const res = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: 'asdasdasdasdasd',
+  })
+
+  t.assert(errorCollect([e1, e2]).length > 0)
+  t.deepEqual(resultCollect([res]), [
+    { path: ['ref'], value: 'asdasdasdasdasd' },
+  ])
 })
 
 test('multiple references', async (t) => {
-  const { handlers, results } = createHandlers()
-
-  // await t.throwsAsync(
-  //   setWalker(
+  // const e = await (
+  //   setWalker2(
   //     schema,
   //     {
   //       $id: 'bl1',
   //       ref2: 0.5,
   //     },
-  //     handlers
+  //
   //   )
   // )
-  // await t.throwsAsync(
-  //   setWalker(
+  // const e = await (
+  //   setWalker2(
   //     schema,
   //     {
   //       $id: 'bl1',
   //       ref2: 1,
   //     },
-  //     handlers
+  //
   //   )
   // )
   // these should throw, array of refs doesnt
   //??? todo?
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref2: [1, 1, 1, 1, 1, 1, 1],
-      },
-      handlers
-    )
-  )
-  console.log(results)
-  await setWalker(
-    schema,
-    {
-      $id: 'bl1',
-      ref2: ['1', '2', '3'],
-    },
-    handlers
-  )
-  t.deepEqual(results, [{ path: ['ref2'], value: { $value: ['1', '2', '3'] } }])
+  const e = await setWalker2(schema, {
+    $id: 'bl1',
+    ref2: [1, 1, 1, 1, 1, 1, 1],
+  })
+  const res1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref2: ['1', '2', '3'],
+  })
+
+  t.assert(errorCollect([e]).length === 1)
+  t.deepEqual(resultCollect([res1]), [
+    { path: ['ref2'], value: { $value: ['1', '2', '3'] } },
+  ])
 })
 
 test('value of references', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: { $value: ['1', '2'] },
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: { $value: 1 },
-      },
-      handlers
-    )
-  )
+  const e = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: { $value: ['1', '2'] },
+  })
+  const e1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: { $value: 1 },
+  })
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bl1',
-      ref: { $value: 'asdasdasdasdasd' },
-    },
-    handlers
-  )
-  console.log('------------>', results)
+  const res1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: { $value: 'asdasdasdasdasd' },
+  })
+
   //error here?
-  t.deepEqual(results, [
+  t.assert(errorCollect([e, e1]).length === 2)
+  t.deepEqual(resultCollect([res1]), [
     { path: ['ref'], value: { $value: 'asdasdasdasdasd' } },
   ])
 })
-test('default of references', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: { $default: ['1', '2'] },
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: { $default: 1 },
-      },
-      handlers
-    )
-  )
 
-  // await setWalker(
+test('default of references', async (t) => {
+  const e2 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: { $default: ['1', '2'] },
+  })
+  const e1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: { $default: 1 },
+  })
+
+  // await setWalker2(
   //   schema,
   //   {
   //     $id: 'bl1',
   //     ref: { $default: 'asdasdasdasdasd' },
   //   },
-  //   handlers
+  //
   // )
-  // console.log('------------>', results)
+  // console.log('----:XX', resultCollect)
   // //error here?
-  // t.deepEqual(results, [
+  // t.deepEqual(resultCollect, [
   //   { path: ['ref'], value: { $default: 'asdasdasdasdasd' } },
   // ])
+  t.assert(errorCollect([e2, e1]).length === 2)
 })
 
 test.only('allowedTypes', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        ref: ['1', '2'],
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bs1',
-        ref: 1,
-      },
-      handlers
-    )
-  )
-  await setWalker(
-    schema,
-    {
-      $id: 'bl1',
-      ref: 'blastuff',
-    },
-    handlers
-  )
-  t.deepEqual(results, [{ path: ['ref'], value: 'bl1stuff' }])
+  const e1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: ['1', '2'],
+  })
+  const e2 = await setWalker2(schema, {
+    $id: 'bs1',
+    ref: 1,
+  })
+  const res1 = await setWalker2(schema, {
+    $id: 'bl1',
+    ref: 'blastuff',
+  })
+
+  t.assert(errorCollect([e2, e1]).length === 2)
+  t.deepEqual(resultCollect([res1]), [{ path: ['ref'], value: 'bl1stuff' }])
   // is this wrong or am i wrong
 })

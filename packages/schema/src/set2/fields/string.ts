@@ -125,7 +125,6 @@ export const string: FieldParser<'string'> = async (args) => {
   console.info('???', args.path, args.value)
 
   if (!validate(args, args.value)) {
-    console.log('uhoh')
     return
   }
 

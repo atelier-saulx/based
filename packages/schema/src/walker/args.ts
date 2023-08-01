@@ -132,7 +132,7 @@ export class ArgsClass<
   }
 
   error(code: ParseError): void {
-    console.info(':XX')
+    // console.info(':XX')
     this.root._opts.errorsCollector(this, code)
   }
 }

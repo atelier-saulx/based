@@ -2,10 +2,12 @@ import test from 'ava'
 import {
   ArgsClass,
   BasedSchema,
+  BasedSchemaCollectProps,
   BasedSetTarget,
   setWalker2,
 } from '../src/index'
 import { ParseError } from '../src/set/error'
+import { resultCollect, errorCollect } from './utils'
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
 const schema: BasedSchema = {
@@ -49,28 +51,9 @@ const schema: BasedSchema = {
   },
 }
 
-const resultCollect = (
-  arr: Array<any>,
-  // result: ArgsClass<BasedSetTarget, NumberTypes>
-  result: any
-) => {
-  arr.push({
-    path: result.target.collected[0].path,
-    value: result.target.collected[0].value.value,
-  })
-}
-const errorCollect = (
-  arr: Array<any>,
-  // result: ArgsClass<BasedSetTarget, NumberTypes>
-  result: any
-) => {
-  arr.push(result.errors)
-}
+//todo need help typing this maybe
 
-test('min-max', async (t) => {
-  const err = []
-  const res = []
-
+test('asdasd-max', async (t) => {
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     number: 1,
@@ -93,13 +76,40 @@ test('min-max', async (t) => {
     number: 6,
   })
 
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
-  t.assert(err.length > 0)
+  t.assert(errorCollect([e1, e2]).length > 0)
 
-  t.deepEqual(res, [
+  t.deepEqual(resultCollect([res1, res2]), [
+    { path: ['number'], value: 3 },
+    { path: ['number'], value: 6 },
+  ])
+})
+
+test('min-max', async (t) => {
+  const e1 = await setWalker2(schema, {
+    $id: 'bl1',
+    number: 1,
+  })
+
+  const e2 = await setWalker2(schema, {
+    $id: 'bl1',
+    number: 10,
+  })
+
+  //throw above
+
+  const res1 = await setWalker2(schema, {
+    $id: 'bl1',
+    number: 3,
+  })
+
+  const res2 = await setWalker2(schema, {
+    $id: 'bl1',
+    number: 6,
+  })
+
+  t.assert(errorCollect([e1, e2]).length > 0)
+
+  t.deepEqual(resultCollect([res1, res2]), [
     { path: ['number'], value: 3 },
     { path: ['number'], value: 6 },
   ])
@@ -108,8 +118,6 @@ test('min-max', async (t) => {
 })
 
 test('min-max exclusive', async (t) => {
-  const err = []
-  const res = []
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     exclusiveminmax: 3,
@@ -129,22 +137,16 @@ test('min-max exclusive', async (t) => {
     $id: 'bl1',
     exclusiveminmax: 5,
   })
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
 
-  t.assert(err.length > 0)
-  t.deepEqual(res, [
+  t.assert(errorCollect([e1, e2]).length > 0)
+
+  t.deepEqual(resultCollect([res1, res2]), [
     { path: ['exclusiveminmax'], value: 4 },
     { path: ['exclusiveminmax'], value: 5 },
   ])
 })
 
 test('isInteger', async (t) => {
-  const err = []
-  const res = []
-
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     integer: 6.5,
@@ -155,17 +157,11 @@ test('isInteger', async (t) => {
     integer: 5,
   })
 
-  errorCollect(err, e1)
-  resultCollect(res, res1)
-
-  t.assert(err.length > 0)
-  t.deepEqual(res, [{ path: ['integer'], value: 5 }])
+  t.assert(errorCollect([e1]).length > 0)
+  t.deepEqual(resultCollect([res1]), [{ path: ['integer'], value: 5 }])
 })
 
 test('isMultiple', async (t) => {
-  const err = []
-  const res = []
-
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     multipleOf: 7,
@@ -176,35 +172,25 @@ test('isMultiple', async (t) => {
     multipleOf: 9,
   })
 
-  errorCollect(err, e1)
-  resultCollect(res, res1)
-
-  t.assert(err.length > 0)
-  t.deepEqual(res, [{ path: ['multipleOf'], value: 9 }])
+  t.assert(errorCollect([e1]).length > 0)
+  t.deepEqual(resultCollect([res1]), [{ path: ['multipleOf'], value: 9 }])
 })
 
 //TODO fix
 test('numbers in a set', async (t) => {
-  const err = []
-  const res = []
-
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     set: [9, 4, 5, 2],
   })
   const res1 = await setWalker2(schema, { $id: 'bl1', set: [3, 3, 3, 3] })
 
-  errorCollect(err, e1)
-  resultCollect(res, res1)
-
-  t.assert(err.length > 0)
-  t.deepEqual(res, [{ path: ['set'], value: { $value: [3, 3, 3, 3] } }])
+  t.assert(errorCollect([e1]).length > 0)
+  t.deepEqual(resultCollect([res1]), [
+    { path: ['set'], value: { $value: [3, 3, 3, 3] } },
+  ])
 })
 //TODO fix
 test('value', async (t) => {
-  const err = []
-  const res = []
-
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     number: { $value: 7 },
@@ -249,19 +235,9 @@ test('value', async (t) => {
     $id: 'bl1',
     set: { $value: [3, 3, 3, 4] },
   })
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  errorCollect(err, e3)
-  errorCollect(err, e4)
-  errorCollect(err, e5)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
-  resultCollect(res, res3)
-  resultCollect(res, res4)
-  resultCollect(res, res5)
 
-  t.assert(err.length > 0)
-  t.deepEqual(res, [
+  t.assert(errorCollect([e1, e2, e3, e4, e5]).length > 0)
+  t.deepEqual(resultCollect([res1, res2, res3, res4, res5]), [
     { path: ['number'], value: { $value: 4 } },
     { path: ['integer'], value: { $value: 4 } },
     { path: ['exclusiveminmax'], value: { $value: 4 } },
@@ -272,9 +248,6 @@ test('value', async (t) => {
 
 //TODO fix
 test('default', async (t) => {
-  const err = []
-  const res = []
-
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
     number: { $default: 7 },
@@ -319,19 +292,9 @@ test('default', async (t) => {
     $id: 'bl1',
     set: { $default: [3, 3, 3, 4] },
   })
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  errorCollect(err, e3)
-  errorCollect(err, e4)
-  errorCollect(err, e5)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
-  resultCollect(res, res3)
-  resultCollect(res, res4)
-  resultCollect(res, res5)
 
-  t.assert(err.length > 0)
-  t.deepEqual(res, [
+  t.assert(errorCollect([e1, e2, e3, e4, e5]).length > 0)
+  t.deepEqual(resultCollect([res1, res2, res3, res4, res5]), [
     { path: ['number'], value: { $default: 4 } },
     { path: ['integer'], value: { $default: 4 } },
     { path: ['exclusiveminmax'], value: { $default: 4 } },
@@ -341,9 +304,6 @@ test('default', async (t) => {
 })
 
 test('decrement', async (t) => {
-  const err = []
-  const res = []
-
   //maxmin
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
@@ -395,19 +355,8 @@ test('decrement', async (t) => {
     multipleOf: { $decrement: 9 },
   })
 
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  errorCollect(err, e3)
-  errorCollect(err, e4)
-  errorCollect(err, e5)
-  errorCollect(err, e6)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
-  resultCollect(res, res3)
-  resultCollect(res, res4)
-
-  t.assert(err.length > 0)
-  t.deepEqual(res, [
+  t.assert(errorCollect([e1, e2, e3, e4, e5, e6]).length > 0)
+  t.deepEqual(resultCollect([res1, res2, res3, res4]), [
     { path: ['number'], value: { $decrement: 3 } },
     { path: ['exclusiveminmax'], value: { $decrement: 4 } },
     { path: ['integer'], value: { $decrement: 3 } },
@@ -416,9 +365,6 @@ test('decrement', async (t) => {
 })
 
 test('increment', async (t) => {
-  const err = []
-  const res = []
-
   //maxmin
   const e1 = await setWalker2(schema, {
     $id: 'bl1',
@@ -470,19 +416,8 @@ test('increment', async (t) => {
     multipleOf: { $increment: 9 },
   })
 
-  errorCollect(err, e1)
-  errorCollect(err, e2)
-  errorCollect(err, e3)
-  errorCollect(err, e4)
-  errorCollect(err, e5)
-  errorCollect(err, e6)
-  resultCollect(res, res1)
-  resultCollect(res, res2)
-  resultCollect(res, res3)
-  resultCollect(res, res4)
-
-  t.assert(err.length > 0)
-  t.deepEqual(res, [
+  t.assert(errorCollect([e1, e2, e3, e4, e5, e6]).length > 0)
+  t.deepEqual(resultCollect([res1, res2, res3, res4]), [
     { path: ['number'], value: { $increment: 3 } },
     { path: ['exclusiveminmax'], value: { $increment: 4 } },
     { path: ['integer'], value: { $increment: 3 } },
