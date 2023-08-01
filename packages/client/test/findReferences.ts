@@ -52,7 +52,7 @@ test.after(async (_t) => {
   client.destroy()
 })
 
-// TODO: $find.$find not working
+// TODO: $field within a nested path not working (Olli)
 test.serial.skip('find - references', async (t) => {
   // simple nested - single query
   const globMatches: any = []
