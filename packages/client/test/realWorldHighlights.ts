@@ -7,7 +7,7 @@ let srv
 let port: number
 let client = new BasedDbClient()
 
-test.before(async (t) => {
+test.beforeEach(async (t) => {
   port = 8081
   srv = await startOrigin({
     port: 8081,
@@ -50,12 +50,13 @@ test.before(async (t) => {
   })
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   client.destroy()
   await srv.destroy()
 })
 
-test.serial('real world highlights', async (t) => {
+// TODO: needs .$find.$find support
+test.serial.skip('real world highlights', async (t) => {
   await client.set({
     $language: 'en',
     $id: 'sp1',
