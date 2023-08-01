@@ -230,6 +230,7 @@ test.serial.only('set primitive fields', async (t) => {
   t.deepEqual(find, {
     things: [
       {
+        type: 'post',
         aliases: ['main'],
         arys: {
           floats: [-1.1, 0, 1.1, 2.2, 3.3, 4.4, 5.5],
@@ -248,6 +249,7 @@ test.serial.only('set primitive fields', async (t) => {
         hmm: ['po2'],
       },
       {
+        type: 'post',
         aliases: ['sec'],
         id: 'po2',
         int: 5,
@@ -256,7 +258,7 @@ test.serial.only('set primitive fields', async (t) => {
         children: [third],
         hmm: [third],
       },
-      { id: third, slug: '/third', children: [], hmm: [] },
+      { id: third, type: 'post', slug: '/third', children: [], hmm: [] },
     ],
   })
 
@@ -270,7 +272,13 @@ test.serial.only('set primitive fields', async (t) => {
     updatedAt: false,
   })
   console.dir({ single }, { depth: 8 })
-  t.deepEqual(single, { id: third, slug: '/third', children: [], fi: ['po2'] })
+  t.deepEqual(single, {
+    id: third,
+    type: 'post',
+    slug: '/third',
+    children: [],
+    fi: ['po2'],
+  })
 
   const expr = await client.get({
     traversed: {

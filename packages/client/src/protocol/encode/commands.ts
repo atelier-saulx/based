@@ -85,6 +85,12 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   // modify related commands
   modify,
   // hierarchy
+  'hierarchy.types.add': defaultEncoder([
+    { type: 'string' }, // prefix
+    { type: 'string' }, // type name
+  ]),
+  'hierarchy.types.clear': null,
+  'hierarchy.types.list': null,
   'hierarchy.del': defaultEncoder([
     { type: 'string' }, // flags
     { type: 'string', vararg: true }, // ... nodeID

@@ -40,6 +40,9 @@ export const COMMAND_TYPES = {
   // TODO:
   // #define CMD_ID_UPDATE 69
   // hierarchy
+  'hierarchy.types.add': 35,
+  'hierarchy.types.clear': 36,
+  'hierarchy.types.list': 37,
   'hierarchy.find': 19,
   'hierarchy.edgeList': 29,
   'hierarchy.parents': 27,

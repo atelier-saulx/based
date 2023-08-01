@@ -60,9 +60,11 @@ export class BasedDbClient extends Emitter {
       this.schema.prefixToTypeMapping = {}
     }
 
+    const types: [string, string][] = []
     for (const typeName in this.schema.types) {
       const type = this.schema.types[typeName]
       this.schema.prefixToTypeMapping[type.prefix] = typeName
+      types.push([type.prefix, typeName])
 
       this.schema.types[typeName].fields.id = { type: 'string' }
       this.schema.types[typeName].fields.type = { type: 'string' }
@@ -76,6 +78,7 @@ export class BasedDbClient extends Emitter {
 
     // root
     this.schema.prefixToTypeMapping['ro'] = 'root'
+    types.push(['ro', 'root'])
 
     this.schema.root.fields.id = { type: 'string' }
     this.schema.root.fields.type = { type: 'string' }
@@ -85,6 +88,14 @@ export class BasedDbClient extends Emitter {
       type: 'set',
       items: { type: 'string' },
     }
+
+    // set type map in db
+    await this.command('hierarchy.types.clear')
+    await Promise.all(
+      types.map((args) => {
+        return this.command('hierarchy.types.add', args)
+      })
+    )
 
     return this.schema
   }

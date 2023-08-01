@@ -196,7 +196,6 @@ test.beforeEach(async (t) => {
       },
     },
   })
-  console.log('hmm')
 })
 
 test.after(async (t) => {
@@ -349,8 +348,7 @@ test.serial.skip('get - root', async (t) => {
   )
 })
 
-// TODO: type field madness
-test.serial.skip('get - $all simple', async (t) => {
+test.serial('get - $all simple', async (t) => {
   await client.set({
     $id: 'maA',
     title: {
@@ -380,7 +378,6 @@ test.serial.skip('get - $all simple', async (t) => {
   })
 })
 
-// TODO: type field madness
 // TODO: * does not take into account specified level of image.thumb, returns image.poster also
 test.serial.skip('get - $all root level whitelist + $all', async (t) => {
   await client.set({

@@ -44,7 +44,6 @@ export function parseGetResult(
 }
 
 function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
-  console.dir({ rawResults: result }, { depth: 8 })
   return result.map((row) => {
     if (!row) {
       return {}
