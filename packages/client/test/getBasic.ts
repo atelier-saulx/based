@@ -421,3 +421,98 @@ test.serial.skip('get - $all root level whitelist + $all', async (t) => {
     },
   })
 })
+
+test.serial('get - $all nested', async (t) => {
+  await client.set({
+    $id: 'maA',
+    title: {
+      en: 'nice!',
+    },
+    description: {
+      en: 'yesh',
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: {
+        $all: true,
+      },
+      description: {
+        $all: true,
+      },
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'nice!',
+      },
+      description: {
+        en: 'yesh',
+      },
+    }
+  )
+})
+
+test.serial('get - $all deeply nested', async (t) => {
+  const entry = await client.set({
+    type: 'lekkerType',
+    title: {
+      en: 'nice!',
+    },
+    ding: {
+      dang: {
+        dung: 115,
+        dunk: '',
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: entry,
+      id: true,
+      title: {
+        en: true,
+      },
+      ding: { $all: true },
+    }),
+    {
+      id: entry,
+      title: {
+        en: 'nice!',
+      },
+      ding: {
+        dang: {
+          dung: 115,
+          dunk: '',
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: entry,
+      id: true,
+      title: {
+        en: true,
+      },
+      ding: { dang: { $all: true } },
+    }),
+    {
+      id: entry,
+      title: {
+        en: 'nice!',
+      },
+      ding: {
+        dang: {
+          dung: 115,
+          dunk: '',
+        },
+      },
+    }
+  )
+})

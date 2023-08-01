@@ -44,6 +44,7 @@ export function parseGetResult(
 }
 
 function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
+  console.dir({ rawResults: result }, { depth: 8 })
   return result.map((row) => {
     if (!row) {
       return {}
@@ -93,9 +94,13 @@ function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
       fieldSchema = (<BasedSchemaFieldObject>fieldSchema)?.properties[s]
     }
 
-    fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
-      parts[parts.length - 1]
-    ]
+    if ((<BasedSchemaFieldObject>fieldSchema).properties) {
+      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
+        parts[parts.length - 1]
+      ]
+    } else if (fieldSchema.type === 'text') {
+      fieldSchema = { type: 'string' }
+    }
 
     if (alias) {
       setByPath(obj, [alias], parseFieldResult(fieldSchema, v))
