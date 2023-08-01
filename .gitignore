@@ -138,3 +138,6 @@ local-cloud/
 .vercel
 
 .ccls-cache
+
+# selvad dump
+*.sdb
