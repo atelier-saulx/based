@@ -216,7 +216,7 @@ export class BasedDbClient extends Emitter {
             const path = c.target.path
 
             n.source = { id: id }
-            const newPath = cmd.target.path
+            const newPath = n.target.path
             newPath.push(k, path[path.length - 1])
             n.target.path = newPath
             return n
