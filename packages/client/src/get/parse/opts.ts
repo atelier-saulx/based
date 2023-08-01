@@ -151,7 +151,6 @@ export async function parseGetOpts(
               !nestedCmd.noMerge
 
             if (canMerge) {
-              // TODO: handle $field and false (exclude) -- needs to be prefixed right
               for (const fieldObj of nestedCmd.fields.$any) {
                 const { field: f } = fieldObj
                 if (String(f[0]).startsWith('$fieldsByType')) {
