@@ -13,11 +13,13 @@ function strsToStr(ary: string[] = []): string {
 
 export function encodeSetOperation({
   setType,
+  isSingle,
   $value,
   $add,
   $remove,
 }: {
   setType: number
+  isSingle?: boolean
   $value?: any | any[]
   $add?: any | any[]
   $remove?: any | any[]
@@ -25,7 +27,7 @@ export function encodeSetOperation({
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-      contraint_id: 0, // TODO: impl. bidirectional
+      contraint_id: isSingle ? 2 : 0, // TODO: impl. bidirectional
       delete_all: $remove,
       $value: refsToStr($value),
       $add: refsToStr($add),

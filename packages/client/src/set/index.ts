@@ -5,7 +5,6 @@ import { joinPath } from '../util'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
-  reference: ModifyArgType.SELVA_MODIFY_ARG_STRING,
   integer: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   boolean: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   timestamp: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
@@ -32,6 +31,7 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
   const strPath = joinPath(path)
 
   switch (fieldSchema.type) {
+    case 'reference':
     case 'references':
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
@@ -39,6 +39,7 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
         {
           ...value,
           setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+          isSingle: fieldSchema.type === 'reference' ? true : false,
         },
       ]
     case 'set':
