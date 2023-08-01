@@ -1,22 +1,22 @@
 import { ParseError } from '../../set/error'
-import { FieldParser, Args } from '../../walker'
+import { FieldParser, ArgsClass } from '../../walker'
 import { BasedSetTarget } from '../../types'
 
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
 const validateNumber = (
-  args: Args<BasedSetTarget, NumberTypes>,
+  args: ArgsClass<BasedSetTarget, NumberTypes>,
   value: number,
   ignoreMinMax?: boolean
 ): boolean => {
   const { fieldSchema } = args
   if (typeof value !== 'number') {
-    args.error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
     return false
   }
 
   if (fieldSchema.type === 'integer' && value - Math.floor(value) !== 0) {
-    args.error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
     return false
   }
 
@@ -26,7 +26,7 @@ const validateNumber = (
       Math.floor(value / fieldSchema.multipleOf) !==
       0
   ) {
-    args.error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
     return false
   }
 
@@ -38,11 +38,11 @@ const validateNumber = (
   if (fieldSchema.maximum) {
     if (fieldSchema.exclusiveMaximum) {
       if (value >= fieldSchema.maximum) {
-        args.error(args, ParseError.exceedsMaximum)
+        args.error(ParseError.exceedsMaximum)
         return false
       }
     } else if (value > fieldSchema.maximum) {
-      args.error(args, ParseError.exceedsMaximum)
+      args.error(ParseError.exceedsMaximum)
       return false
     }
   }
@@ -50,11 +50,11 @@ const validateNumber = (
   if (fieldSchema.minimum) {
     if (fieldSchema.exclusiveMinimum) {
       if (value <= fieldSchema.minimum) {
-        args.error(args, ParseError.subceedsMinimum)
+        args.error(ParseError.subceedsMinimum)
         return false
       }
     } else if (value < fieldSchema.minimum) {
-      args.error(args, ParseError.subceedsMinimum)
+      args.error(ParseError.subceedsMinimum)
       return false
     }
   }
@@ -63,7 +63,7 @@ const validateNumber = (
 }
 
 const validate = (
-  args: Args<BasedSetTarget, NumberTypes>,
+  args: ArgsClass<BasedSetTarget, NumberTypes>,
   value: any
 ): boolean => {
   if (typeof value !== 'object') {
@@ -113,7 +113,7 @@ export const timestamp: FieldParser<'timestamp'> = async (args) => {
       const d = new Date(args.value)
       args.value = d.valueOf()
       if (isNaN(args.value)) {
-        args.error(args, ParseError.incorrectFormat)
+        args.error(ParseError.incorrectFormat)
         return
       }
     }

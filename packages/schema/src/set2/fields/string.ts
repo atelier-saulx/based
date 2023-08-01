@@ -1,14 +1,11 @@
 import {
   BasedSchemaFieldString,
-  BasedSchemaFieldText,
   BasedSchemaLanguage,
-  BasedSetHandlers,
   BasedSetTarget,
 } from '../../types'
 import { ParseError } from '../../set/error'
-import { FieldParser, Args } from '../../walker'
+import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
-import { object } from './object'
 
 type StringTypes = 'string' | 'text'
 
@@ -80,41 +77,40 @@ const formatPatterns: Record<
 }
 
 const validateString = (
-  args: Args<BasedSetTarget, StringTypes>,
-  value: string,
-  ignoreMinMax?: boolean
+  args: ArgsClass<BasedSetTarget, StringTypes>,
+  value: string
 ): boolean => {
-  const { fieldSchema } = args
-
   if (typeof value !== 'string') {
-    // console.log('--------------------------------------__>')
-    args.error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
     return false
   }
-  if (fieldSchema.minLength && value.length < fieldSchema.minLength) {
-    args.error(args, ParseError.subceedsMinimum)
+  if (args.fieldSchema.minLength && value.length < args.fieldSchema.minLength) {
+    args.error(ParseError.subceedsMinimum)
     return false
   }
-  if (fieldSchema.maxLength && value.length > fieldSchema.maxLength) {
-    args.error(args, ParseError.exceedsMaximum)
+  if (args.fieldSchema.maxLength && value.length > args.fieldSchema.maxLength) {
+    args.error(ParseError.exceedsMaximum)
     return false
   }
-  if (fieldSchema.pattern) {
-    const re = new RegExp(fieldSchema.pattern)
+  if (args.fieldSchema.pattern) {
+    const re = new RegExp(args.fieldSchema.pattern)
     if (!re.test(value)) {
-      args.error(args, ParseError.incorrectFormat)
+      args.error(ParseError.incorrectFormat)
       return false
     }
   }
-  if (fieldSchema.format && !formatPatterns[fieldSchema.format](value)) {
-    args.error(args, ParseError.incorrectFormat)
+  if (
+    args.fieldSchema.format &&
+    !formatPatterns[args.fieldSchema.format](value)
+  ) {
+    args.error(ParseError.incorrectFormat)
     return false
   }
   return true
 }
 
 const validate = (
-  args: Args<BasedSetTarget, StringTypes>,
+  args: ArgsClass<BasedSetTarget, StringTypes>,
   value: any
 ): boolean => {
   if (typeof value !== 'object') {
@@ -133,7 +129,7 @@ export const string: FieldParser<'string'> = async (args) => {
 export const text: FieldParser<'text'> = async (args) => {
   //   console.log('XXXXXXXXXXXXXXXXXXXXXx', args)
   const value = args.value
-  if (args.parentValue.$language && typeof value === 'string') {
+  if (args.prev.value.$language && typeof value === 'string') {
     args.stop()
     if (!validate(args, value)) {
       return
@@ -142,14 +138,14 @@ export const text: FieldParser<'text'> = async (args) => {
   }
 
   if (typeof value !== 'object') {
-    args.error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
   }
 
   for (const key in value) {
     console.log([key], value[key], 'miauw')
     if (!args.target.schema.languages.includes(<BasedSchemaLanguage>key)) {
       console.log('error  miauw')
-      args.error(args, ParseError.languageNotSupported)
+      args.error(ParseError.languageNotSupported)
     }
   }
 
