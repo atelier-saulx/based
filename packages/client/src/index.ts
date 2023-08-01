@@ -86,13 +86,15 @@ export class BasedDbClient extends Emitter {
     this.schema.prefixToTypeMapping['ro'] = 'root'
     types.push(['ro', 'root'])
 
-    this.schema.root.fields.id = { type: 'string' }
-    this.schema.root.fields.type = { type: 'string' }
-    this.schema.root.fields.parents = { type: 'references' }
-    this.schema.root.fields.children = { type: 'references' }
-    this.schema.root.fields.aliases = {
-      type: 'set',
-      items: { type: 'string' },
+    if (this.schema.root) {
+      this.schema.root.fields.id = { type: 'string' }
+      this.schema.root.fields.type = { type: 'string' }
+      this.schema.root.fields.parents = { type: 'references' }
+      this.schema.root.fields.children = { type: 'references' }
+      this.schema.root.fields.aliases = {
+        type: 'set',
+        items: { type: 'string' },
+      }
     }
 
     // set type map in db
