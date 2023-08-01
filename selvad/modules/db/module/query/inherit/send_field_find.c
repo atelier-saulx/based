@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
+#include <assert.h>
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
@@ -88,6 +89,8 @@ static int send_edge_field_deref_value(
          * It's a wildcard and we should send the whole node object excluding
          * reference fields.
          */
+        assert(full_field_len >= 2);
+
         selva_send_str(resp, full_field_str, full_field_len - 2); /* -2 to remove the `.*` suffix */
         selva_send_array(resp, 2);
         selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId)); /* The actual node_id. */
