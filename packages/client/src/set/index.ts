@@ -52,6 +52,8 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
       // array operations can yield to multiple modify args
       // so encoding happens here instead of at modify encoding level
       return arrayOpToModify(props)
+    case 'text':
+      return [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META, strPath, [2]]
     default:
       const opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
 

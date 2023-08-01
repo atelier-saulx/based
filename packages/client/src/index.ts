@@ -136,9 +136,9 @@ export class BasedDbClient extends Emitter {
                 path: [...props.path, lang],
               })
             )
-
-            // args.push(...toModifyArgs(props))
           }
+
+          args.push(...toModifyArgs(props))
         } else {
           args.push(...toModifyArgs(props))
         }
