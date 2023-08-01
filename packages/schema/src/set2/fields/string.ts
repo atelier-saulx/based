@@ -123,7 +123,7 @@ export const string: FieldParser<'string'> = async (args) => {
     return
   }
 
-  args.collect(args)
+  args.collect()
 }
 
 export const text: FieldParser<'text'> = async (args) => {
@@ -134,7 +134,7 @@ export const text: FieldParser<'text'> = async (args) => {
     if (!validate(args, value)) {
       return
     }
-    args.collect(args)
+    args.collect()
   }
 
   if (typeof value !== 'object') {
