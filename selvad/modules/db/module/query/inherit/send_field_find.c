@@ -8,7 +8,6 @@
 #include <string.h>
 #include <sys/types.h>
 #include "util/cstrings.h"
-#include "util/finalizer.h"
 #include "util/selva_string.h"
 #include "selva_server.h"
 #include "selva_error.h"

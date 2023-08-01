@@ -119,6 +119,9 @@ static int send_edge_field(
     const int off = SelvaObject_GetPointerPartialMatchStr(edges, field_str, field_len, &p);
     edge_field = p;
     if (off == SELVA_EINTYPE) {
+        /*
+         * Try if it's an object containing multiple edge fields.
+         */
         struct SelvaObject *next_obj;
         SelvaObject_Iterator *it;
         const char *key;
@@ -154,6 +157,9 @@ static int send_edge_field(
 
         return res;
     } else if (off < 0) {
+        /*
+         * An error occurred.
+         */
         return off;
     } else if (!edge_field) {
         return SELVA_ENOENT;
@@ -166,7 +172,9 @@ static int send_edge_field(
         return 1;
     } else {
         /*
-         * Note: The dst_node might be the same as node but this shouldn't case
+         * Send fields from the dst_node.
+         *
+         * Note: The dst_node might be the same as node but this shouldn't cause
          * an infinite loop or any other issues as we'll be always cutting the
          * field name shorter and thus the recursion should eventually stop.
          */
@@ -184,7 +192,6 @@ static int send_edge_field(
 
         const char *next_field_str = field_str + off;
         const size_t next_field_len = field_len - off;
-        const int is_wildcard = iswildcard(next_field_str, next_field_len);
 
         const char *next_prefix_str;
         size_t next_prefix_len;
@@ -206,8 +213,20 @@ static int send_edge_field(
             next_prefix_len = 0;
         }
 
+        /*
+         * Prepare a new excluded fields list.
+         */
+        struct selva_string *new_excluded_fields = NULL;
+        if (excluded_fields) {
+            new_excluded_fields = deprefix_excluded_fields(
+                    fin, excluded_fields,
+                    field_str, field_len,
+                    next_field_str, next_field_len);
+        }
+
         struct SVectorIterator it;
         struct SelvaHierarchyNode *dst_node;
+        const int is_wildcard = iswildcard(next_field_str, next_field_len);
 
         Edge_ForeachBegin(&it, edge_field);
         while ((dst_node = Edge_Foreach(&it))) {
@@ -222,35 +241,6 @@ static int send_edge_field(
              */
             selva_send_str(resp, SELVA_ID_FIELD, sizeof(SELVA_ID_FIELD) - 1);
             selva_send_str(resp, dst_node_id, Selva_NodeIdLen(dst_node_id));
-
-            struct selva_string *new_excluded_fields = NULL;
-            if (excluded_fields) {
-                TO_STR(excluded_fields);
-                size_t field_stop;
-                char new_excluded_fields_str[excluded_fields_len + 1];
-                size_t new_excluded_fields_len;
-
-                if (is_wildcard) {
-                    field_stop = field_len - 1;
-                } else {
-                    const char *s = memchr(field_str, '.', field_len);
-
-                    if (s) {
-                        field_stop = (size_t)(s - field_str + 1);
-                    } else {
-                        /* RFE is this a case? */
-                        field_stop = field_len;
-                    }
-                }
-
-                stringlist_remove_prefix(new_excluded_fields_str, excluded_fields_str, (int)excluded_fields_len, field_str, field_stop);
-                new_excluded_fields_len = strlen(new_excluded_fields_str);
-
-                if (new_excluded_fields_len > 0) {
-                    new_excluded_fields = selva_string_createf(new_excluded_fields_str, new_excluded_fields_len);
-                    finalizer_add(fin, new_excluded_fields, selva_string_free);
-                }
-            }
 
             if (is_wildcard) {
                 if (next_prefix_str) {

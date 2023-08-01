@@ -6,6 +6,9 @@
 
 #define WILDCARD_CHAR '*'
 
+struct finalizer;
+struct selva_string;
+
 static inline int iswildcard(const char *field_str, size_t field_len)
 {
     return field_len == 1 && field_str[0] == WILDCARD_CHAR;
@@ -23,33 +26,12 @@ static inline int endswithwildcard(const char *field_str, size_t field_len)
     return field_len >= 2 && field_str[field_len - 2] == '.' && field_str[field_len - 1] == WILDCARD_CHAR;
 }
 
-static inline struct selva_string *make_full_field_name(struct finalizer *fin, const char *field_prefix_str, size_t field_prefix_len, struct selva_string *field)
-{
-    struct selva_string *full_field_name;
+struct selva_string *make_full_field_name(struct finalizer *fin, const char *field_prefix_str, size_t field_prefix_len, struct selva_string *field);
 
-    if (field_prefix_str && field_prefix_len > 0) {
-        TO_STR(field);
+const char *make_full_field_name_str(struct finalizer *fin, const char *field_prefix_str, size_t field_prefix_len, const char *field_str, size_t field_len, size_t *len_out);
 
-        full_field_name = selva_string_createf("%.*s%s", (int)field_prefix_len, field_prefix_str, field_str);
-        finalizer_add(fin, full_field_name, selva_string_free);
-    } else {
-        full_field_name = field;
-    }
-
-    return full_field_name;
-}
-
-static inline const char *make_full_field_name_str(struct finalizer *fin, const char *field_prefix_str, size_t field_prefix_len, const char *field_str, size_t field_len, size_t *len_out)
-{
-    if (field_prefix_str && field_prefix_len > 0) {
-        struct selva_string *full_field_name;
-
-        full_field_name = selva_string_createf("%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
-        finalizer_add(fin, full_field_name, selva_string_free);
-
-        return selva_string_to_str(full_field_name, len_out);
-    } else {
-        *len_out = field_len;
-        return field_str;
-    }
-}
+struct selva_string *deprefix_excluded_fields(
+        struct finalizer *fin,
+        struct selva_string *excluded_fields,
+        const char *field_str, size_t field_len,
+        const char *next_field_str, size_t next_field_len);
