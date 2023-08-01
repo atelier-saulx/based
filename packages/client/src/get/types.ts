@@ -16,7 +16,7 @@ export type Path = (string | number)[]
 export type Field = {
   type: 'field'
   field: Path
-  aliased: Path[]
+  aliased?: Path[]
   exclude?: true
 }
 
@@ -53,6 +53,7 @@ export type GetNodeShared = {
 
 export type GetNode = {
   type: 'node'
+  noMerge?: true
 } & GetNodeShared
 
 export type GetTraverse = {

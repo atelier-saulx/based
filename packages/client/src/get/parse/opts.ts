@@ -1,5 +1,6 @@
 import { walk } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../types'
+import { joinPath } from '../../util'
+import { ExecContext, Field, GetCommand, GetNode, Path } from '../types'
 
 export async function parseGetOpts(
   ctx: ExecContext,
@@ -10,6 +11,7 @@ export async function parseGetOpts(
   await walk<{
     id: string
     $id: string
+    nestedPath?: Path
     type: 'node' | 'traverse'
     $list?: any
   }>(
@@ -22,7 +24,31 @@ export async function parseGetOpts(
         }
       },
       collect(args) {
-        const { key, value } = args
+        const {
+          key,
+          value,
+          path,
+          target: { $id, id, nestedPath },
+        } = args
+
+        if (nestedPath && $id === id) {
+          // nested query with same $id should become a nested operation
+          const nestedCmd: GetNode = {
+            type: 'node',
+            noMerge: true,
+            fields: {
+              $any: [{ type: 'field', field: path.slice(nestedPath.length) }],
+            },
+            source: {
+              id,
+            },
+            target: {
+              path: nestedPath,
+            },
+          }
+
+          return nestedCmd
+        }
 
         if (value === true) {
           return {
@@ -68,6 +94,7 @@ export async function parseGetOpts(
                   ...args.target,
                   $id: args.target.id,
                   id: value.$id,
+                  nestedPath: args.path,
                 },
               }
             } else if (value.$field) {
@@ -119,7 +146,9 @@ export async function parseGetOpts(
             const nestedCmd: GetCommand = entry
 
             const canMerge: boolean =
-              nestedCmd.type === 'node' && (nestedCmd.source?.id ?? id) === id
+              nestedCmd.type === 'node' &&
+              (nestedCmd.source?.id ?? id) === id &&
+              !nestedCmd.noMerge
 
             if (canMerge) {
               // TODO: handle $field and false (exclude) -- needs to be prefixed right
