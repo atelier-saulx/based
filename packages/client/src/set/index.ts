@@ -30,32 +30,36 @@ export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
   const { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
-  if (fieldSchema.type === 'references') {
-    return [
-      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
-      strPath,
-      { ...value, setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE },
-    ]
-  } else if (fieldSchema.type === 'set') {
-    const setFieldSchema = <BasedSchemaFieldSet>fieldSchema
-    return [
-      ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
-      strPath,
-      { ...value, setType: DB_TYPE_TO_SET_TYPE[setFieldSchema.items.type] },
-    ]
-  } else if (fieldSchema.type === 'array') {
-    // we are doing an array level operation like $push etc.
-    // array operations can yield to multiple modify args
-    // so encoding happens here instead of at modify encoding level
-    return arrayOpToModify(props)
+  switch (fieldSchema.type) {
+    case 'references':
+      return [
+        ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+        strPath,
+        {
+          ...value,
+          setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
+        },
+      ]
+    case 'set':
+      const setFieldSchema = <BasedSchemaFieldSet>fieldSchema
+      return [
+        ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
+        strPath,
+        { ...value, setType: DB_TYPE_TO_SET_TYPE[setFieldSchema.items.type] },
+      ]
+    case 'array':
+      // we are doing an array level operation like $push etc.
+      // array operations can yield to multiple modify args
+      // so encoding happens here instead of at modify encoding level
+      return arrayOpToModify(props)
+    default:
+      const opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
+
+      if (!opType) {
+        console.error('Unsupported field type', path, fieldSchema, value)
+        return []
+      }
+
+      return [opType, strPath, value]
   }
-
-  const opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
-
-  if (!opType) {
-    console.error('Unsupported field type', path, fieldSchema, value)
-    return []
-  }
-
-  return [opType, strPath, value]
 }

@@ -2,6 +2,7 @@ import {
   BasedSchemaField,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
+  BasedSchemaFieldSet,
 } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { joinPath } from '../../util'
@@ -155,9 +156,9 @@ const FIELD_PARSERS: Record<
       return parseFieldResult(ctx, fieldSchema.values, x)
     })
   },
-  set: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldArray) => {
+  set: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldSet) => {
     return ary.map((x) => {
-      return parseFieldResult(ctx, fieldSchema.values, x)
+      return parseFieldResult(ctx, fieldSchema.items, x)
     })
   },
   references: (ary: any[], ctx: ExecContext) => {
@@ -168,7 +169,7 @@ const FIELD_PARSERS: Record<
   object: (
     ary: any[],
     ctx: ExecContext,
-    fieldSchema: BasedSchemaFieldArray
+    fieldSchema: BasedSchemaFieldObject
   ) => {
     return parseObjFields(ctx, fieldSchema, ary)
   },
