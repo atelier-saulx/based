@@ -3,6 +3,7 @@ import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import { SelvaServer } from '../../server/dist/server'
+import './assertions'
 
 let srv: SelvaServer
 let client: BasedDbClient
@@ -576,5 +577,152 @@ test.serial.skip('get - $language', async (t) => {
       description: { $default: 'flurpy' },
     }),
     { description: 'flurpy' }
+  )
+})
+
+// TODO: we should return empty arrays by default?
+test.serial.skip('get - field with empty array', async (t) => {
+  const id = await client.set({
+    type: 'lekkerType',
+    thing: [],
+    dong: { dingdong: [] },
+    ding: { dong: [] },
+    dingdongs: [],
+    refs: [],
+  })
+
+  const result = await client.get({
+    $id: id,
+    thing: true,
+    dong: true,
+    ding: { dong: true },
+    dingdongs: true,
+    children: true,
+    descendants: true,
+    refs: true,
+  })
+
+  t.deepEqual(result, {
+    children: [],
+    descendants: [],
+    dong: { dingdong: [] },
+    refs: [],
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: id,
+      $all: true,
+    }),
+    {
+      id,
+      dong: { dingdong: [] },
+      type: 'lekkerType',
+    }
+  )
+})
+
+// TODO: we should return empty arrays by default?
+test.serial.skip('get - references', async (t) => {
+  const id1 = await client.set({
+    type: 'lekkerType',
+    value: 1,
+  })
+  const id11 = await client.set({
+    type: 'lekkerType',
+    value: 11,
+  })
+  const id2 = await client.set({
+    type: 'lekkerType',
+    refs: [id1, id11],
+    value: 2,
+  })
+
+  const result = await client.get({
+    $id: id2,
+    children: true,
+    descendants: true,
+    refs: true,
+  })
+
+  t.deepEqual(result, {
+    children: [],
+    descendants: [],
+    refs: [id1, id11],
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: id2,
+      $all: true,
+    }),
+    {
+      id: id2,
+      type: 'lekkerType',
+      // this should no longer work (we don't return ref/refs types with $all by default
+      // refs: [id1, id11],
+    }
+  )
+})
+
+test.serial('get - set with some items', async (t) => {
+  const id = await client.set({
+    type: 'lekkerType',
+    thing: ['a', 'b'],
+  })
+
+  const result = await client.get({
+    $id: id,
+    thing: true,
+  })
+
+  t.deepEqual(result, {
+    thing: ['a', 'b'],
+  })
+})
+
+// TODO: `descendants: true` returns undefined, not the actual array
+test.serial.skip('get - hierarchy', async (t) => {
+  await Promise.all([
+    await client.set({
+      $id: 'viflo',
+      value: 1,
+    }),
+    await client.set({
+      $id: 'maflux',
+      value: 2,
+    }),
+  ])
+  await client.set({
+    $id: 'vifla',
+    children: ['viflo', 'maflux'],
+  })
+  await client.set({
+    $id: 'viflapx',
+    children: ['vifla', 'viflo'],
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'viflapx',
+      descendants: true,
+      children: true,
+      parents: true,
+    }),
+    {
+      descendants: ['viflo', 'vifla', 'maflux'],
+      children: ['viflo', 'vifla'],
+      parents: ['root'],
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'maflux',
+      ancestors: true,
+    }),
+    {
+      ancestors: ['root', 'vifla', 'viflapx'],
+    }
   )
 })
