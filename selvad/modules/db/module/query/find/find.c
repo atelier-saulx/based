@@ -881,7 +881,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     if (argc >= ARGV_FILTER_EXPR + 1) {
         const int nr_reg = argc - ARGV_FILTER_ARGS;
 
-        rpn_ctx = rpn_init(nr_reg);
+        rpn_ctx = rpn_init(nr_reg + 1);
         filter_expression = rpn_compile(selva_string_to_str(filter_expr, NULL));
         if (!filter_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the filter expression");
