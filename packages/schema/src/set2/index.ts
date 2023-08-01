@@ -62,17 +62,17 @@ const opts: Opts<BasedSetTarget> = {
     return { target, typeSchema }
   },
   collect: (args, value) => {
-    if (args.key === '$default') {
-      if (Object.keys(args.prev.value).length > 1) {
-        args.prev.value.$default = value
-      } else {
-        console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
-          $default: value,
-        })
-      }
-    } else {
-      console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
-    }
+    // if (args.key === '$default') {
+    //   if (Object.keys(args.prev.value).length > 1) {
+    //     args.prev.value.$default = value
+    //   } else {
+    //     console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
+    //       $default: value,
+    //     })
+    //   }
+    // } else {
+    //   console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
+    // }
   },
 }
 
