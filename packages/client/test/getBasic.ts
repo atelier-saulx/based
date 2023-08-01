@@ -545,7 +545,8 @@ test.serial.skip('get - $default', async (t) => {
 })
 
 // TODO: $language
-test.serial.only('get - $language', async (t) => {
+// needs object meta to be set (setWalker update needed)
+test.serial.skip('get - $language', async (t) => {
   await client.set({
     $id: 'viflap',
     title: { en: 'flap', nl: 'flurp' },
