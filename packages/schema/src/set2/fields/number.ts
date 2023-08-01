@@ -82,7 +82,6 @@ const validate = (
 }
 
 export const number: FieldParser<'number'> = async (args) => {
-  console.log('-------->', args.value)
   if (!validate(args, args.value)) {
     return
   }
