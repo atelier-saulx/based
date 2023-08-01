@@ -1,4 +1,4 @@
-import { ExecContext, Field, Fields, GetCommand } from './types'
+import { ExecContext, Field, Fields, GetCommand, Path } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
 import {
@@ -120,6 +120,26 @@ function getField(field: Field): string {
   }
 }
 
+function getFieldsStr(fields: Field[]): string {
+  const hasWildcard = fields.some(({ field }) => {
+    return field[0] === '*'
+  })
+
+  const strs: string[] = []
+  if (hasWildcard) {
+    for (const f of fields) {
+      const [first] = f.field
+      strs.push(getField({ type: 'field', field: [first], exclude: true }))
+    }
+  }
+
+  for (const f of fields) {
+    strs.push(getField(f))
+  }
+
+  return strs.join('\n')
+}
+
 function getFields(
   ctx: ExecContext,
   { $any, byType }: Fields
@@ -129,10 +149,10 @@ function getFields(
 } {
   if (byType) {
     let hasTypes = false
-    const expr: Record<string, string> = { $any: $any.map(getField).join('\n') }
+    const expr: Record<string, string> = { $any: getFieldsStr($any) }
     for (const type in byType) {
       hasTypes = true
-      expr[type] = [...$any, ...byType[type]].map(getField).join('\n')
+      expr[type] = getFieldsStr([...$any, ...byType[type]])
     }
 
     if (!hasTypes) {
@@ -145,7 +165,7 @@ function getFields(
     }
   }
 
-  return { isRpn: false, fields: $any.map(getField).join('\n') }
+  return { isRpn: false, fields: getFieldsStr($any) }
 }
 
 function sourceId(cmd: GetCommand): string {
