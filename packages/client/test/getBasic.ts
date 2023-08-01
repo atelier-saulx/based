@@ -1250,3 +1250,731 @@ test.serial.skip('get - basic with many ids', async (t) => {
     }
   )
 })
+
+// TODO: options parse error
+// › Object.backtrack (src/get/parse/opts.ts:149:25)
+test.serial.skip('get - basic with non-priority language', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      de: 'nice de!',
+    },
+    value: 25,
+    auth: {
+      // role needs to be different , different roles per scope should be possible
+      role: {
+        id: ['root'],
+        type: 'admin',
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $language: 'en',
+      $id: ['viZ', 'viA'],
+      id: true,
+      title: true,
+      value: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice de!',
+      value: 25,
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $language: 'nl',
+      $id: ['viZ', 'viA'],
+      id: true,
+      title: true,
+      value: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice de!',
+      value: 25,
+    }
+  )
+
+  await client.set({
+    $id: 'viA',
+    title: {
+      nl: 'nice nl!',
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $language: 'en',
+      $id: ['viZ', 'viA'],
+      id: true,
+      title: true,
+      value: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice de!',
+      value: 25,
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $language: 'nl',
+      $id: ['viZ', 'viA'],
+      id: true,
+      title: true,
+      value: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice nl!',
+      value: 25,
+    }
+  )
+})
+
+// TODO: querying record field returns undefined
+// TODO: $language
+test.serial.skip('get - record', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    strRec: {
+      hello: 'hallo',
+      world: 'hmm',
+    },
+    objRec: {
+      myObj1: {
+        hello: 'pff',
+        value: 12,
+      },
+      obj2: {
+        hello: 'ffp',
+        value: 12,
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      strRec: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      strRec: {
+        hello: 'hallo',
+        world: 'hmm',
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      strRec: {
+        world: true,
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      strRec: {
+        world: 'hmm',
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          hello: 'pff',
+          value: 12,
+        },
+        obj2: {
+          hello: 'ffp',
+          value: 12,
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: {
+        myObj1: {
+          value: true,
+        },
+        obj2: {
+          hello: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          value: 12,
+        },
+        obj2: {
+          hello: 'ffp',
+        },
+      },
+    }
+  )
+})
+
+// TODO: querying record field returns undefined
+// TODO: $language
+test.serial.skip('get - text record', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    textRec: {
+      hello: { en: 'hallo' },
+      world: { en: 'hmm' },
+    },
+  })
+
+  await client.set({
+    $id: 'viB',
+    title: {
+      en: 'nice!',
+    },
+    textRec: {
+      yes: { en: 'yes have it' },
+    },
+  })
+
+  await client.set({
+    $id: 'viC',
+    title: {
+      en: 'nice!',
+    },
+    parents: ['viB'],
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      textRec: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      textRec: {
+        hello: 'hallo',
+        world: 'hmm',
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      textRec: {
+        world: true,
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      textRec: {
+        world: 'hmm',
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viC',
+      $language: 'en',
+      id: true,
+      title: true,
+      textRec: {
+        $inherit: true,
+      },
+    }),
+    {
+      id: 'viC',
+      title: 'nice!',
+      textRec: {
+        yes: 'yes have it',
+      },
+    }
+  )
+})
+
+// TODO: $inherit missing
+test.serial.skip(
+  'get - $inherit with object types does deep merge',
+  async (t) => {
+    const parentOfParent = await client.set({
+      $id: 'vipofp',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      ding: {
+        dang: {
+          dung: 9000,
+          dunk: 'hello this time it should be here',
+        },
+        dong: ['hello', 'yesh'],
+        dung: 123,
+      },
+    })
+
+    const parentEntry = await client.set({
+      $id: 'vip',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      parents: {
+        $add: [parentOfParent],
+      },
+      ding: {
+        texty: { de: 'hallo' },
+        dang: {
+          dung: 115,
+        },
+        dunk: {
+          dong: 1212,
+        },
+      },
+    })
+
+    const entry = await client.set({
+      $id: 'vie',
+      type: 'lekkerType',
+      parents: {
+        $add: [parentEntry],
+      },
+      title: {
+        en: 'nice!',
+      },
+      ding: {
+        texty: { en: 'hello' },
+        dunk: {
+          ding: 99,
+        },
+      },
+    })
+
+    t.deepEqualIgnoreOrder(
+      await client.get({
+        $id: entry,
+        id: true,
+        title: { $inherit: { $deepMerge: true } },
+        ding: { $inherit: { $deepMerge: true } },
+        // title: { $inherit: { $type: 'lekkerType', $merge: true } }, // TODO: throw, not allowed probably
+        // ding: { $inherit: { $type: 'lekkerType', $merge: true } },
+      }),
+      {
+        id: entry,
+        title: {
+          en: 'nice!',
+        },
+        ding: {
+          texty: { en: 'hello' },
+          dong: ['hello', 'yesh'],
+          dang: {
+            dung: 115,
+            dunk: 'hello this time it should be here',
+          },
+          dung: 123,
+          dunk: {
+            ding: 99,
+            dong: 1212,
+          },
+        },
+      }
+    )
+  }
+)
+
+// TODO: $inherit missing
+test.serial.skip(
+  'get - $inherit with record types does deep merge',
+  async (t) => {
+    const parentOfParent = await client.set({
+      $id: 'vipofp',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      objRec: {
+        a: {
+          hello: 'not this one either',
+          stringValue: 'yes string value',
+        },
+        b: {
+          stringValue: 'inherit please',
+        },
+        c: {
+          hello: 'yes hello from parentOfParent',
+        },
+        0: {
+          hello: 'no',
+          stringValue: 'also no',
+          value: 99,
+        },
+      },
+    })
+
+    const parentEntry = await client.set({
+      $id: 'vip',
+      type: 'lekkerType',
+      title: {
+        en: 'nice!',
+        de: 'dont want to inherit this',
+      },
+      parents: {
+        $add: [parentOfParent],
+      },
+      objRec: {
+        a: {
+          hello: 'not this one',
+          stringValue: 'this should be there',
+        },
+        b: {
+          hello: 'yes hello from parent',
+          value: 10,
+        },
+      },
+    })
+
+    const entry = await client.set({
+      $id: 'vie',
+      type: 'lekkerType',
+      parents: {
+        $add: [parentEntry],
+      },
+      title: {
+        en: 'nice!',
+      },
+      objRec: {
+        0: {
+          hello: 'this is where it starts',
+          stringValue: 'in the entry itself',
+        },
+      },
+    })
+
+    t.deepEqualIgnoreOrder(
+      await client.get({
+        $id: entry,
+        id: true,
+        title: { $inherit: { $type: 'lekkerType', $deepMerge: true } }, // TODO: throw, not allowed probably
+        objRec: { $inherit: { $type: 'lekkerType', $deepMerge: true } },
+        // title: { $inherit: { $type: 'lekkerType', $merge: true } }, // TODO: throw, not allowed probably
+        // objRec: { $inherit: { $type: 'lekkerType', $merge: true } },
+      }),
+      {
+        id: entry,
+        title: {
+          en: 'nice!',
+        },
+        objRec: {
+          0: {
+            hello: 'this is where it starts',
+            stringValue: 'in the entry itself',
+            value: 99,
+          },
+          a: {
+            hello: 'not this one',
+            stringValue: 'this should be there',
+          },
+          b: {
+            hello: 'yes hello from parent',
+            value: 10,
+            stringValue: 'inherit please',
+          },
+          c: {
+            hello: 'yes hello from parentOfParent',
+          },
+        },
+      }
+    )
+  }
+)
+
+// TODO: querying record field returns undefined
+// TODO: $language
+test.serial.skip('get - record with wildcard query', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    objRec: {
+      myObj1: {
+        hello: 'pff',
+        value: 12,
+      },
+      obj2: {
+        hello: 'ffp',
+        value: 13,
+      },
+    },
+  })
+
+  await client.set({
+    $id: 'viB',
+    title: {
+      en: 'nice!!!',
+    },
+    objRec: {
+      myObj1: {
+        hello: 'hmm',
+        value: 22,
+      },
+      obj2: {
+        hello: 'mmh',
+        value: 23,
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: {
+        '*': {
+          hello: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          hello: 'pff',
+        },
+        obj2: {
+          hello: 'ffp',
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: {
+        '*': {
+          value: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          value: 12,
+        },
+        obj2: {
+          value: 13,
+        },
+      },
+    }
+  )
+
+  // TODO: add a find case with both and wildcard for fields thing
+})
+
+// TODO: querying record field returns undefined
+// TODO: $language
+test.serial.skip('get - record with nested wildcard query', async (t) => {
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    objRec: {
+      myObj1: {
+        hello: 'pff',
+        value: 12,
+        nestedRec: {
+          thing1: {
+            hello: 'pff',
+            value: 12,
+          },
+          thing2: {
+            hello: 'ffp',
+            value: 13,
+          },
+        },
+      },
+      obj2: {
+        hello: 'ffp',
+        value: 13,
+        nestedRec: {
+          thing3: {
+            hello: 'pff',
+            value: 12,
+          },
+          thing4: {
+            hello: 'ffp',
+            value: 13,
+          },
+        },
+      },
+    },
+  })
+
+  await client.set({
+    $id: 'viB',
+    title: {
+      en: 'nice!!!',
+    },
+    objRec: {
+      myObj1: {
+        hello: 'hmm',
+        value: 22,
+      },
+      obj2: {
+        hello: 'mmh',
+        value: 23,
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: {
+        '*': {
+          nestedRec: {
+            '*': {
+              hello: true,
+            },
+          },
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          nestedRec: {
+            thing1: {
+              hello: 'pff',
+            },
+            thing2: {
+              hello: 'ffp',
+            },
+          },
+        },
+        obj2: {
+          nestedRec: {
+            thing3: {
+              hello: 'pff',
+            },
+            thing4: {
+              hello: 'ffp',
+            },
+          },
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      objRec: {
+        '*': {
+          nestedRec: {
+            '*': {
+              value: true,
+            },
+          },
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      objRec: {
+        myObj1: {
+          nestedRec: {
+            thing1: {
+              value: 12,
+            },
+            thing2: {
+              value: 13,
+            },
+          },
+        },
+        obj2: {
+          nestedRec: {
+            thing3: {
+              value: 12,
+            },
+            thing4: {
+              value: 13,
+            },
+          },
+        },
+      },
+    }
+  )
+
+  // TODO: add a find case with both and wildcard for fields thing
+})
