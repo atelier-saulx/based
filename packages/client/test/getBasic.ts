@@ -209,43 +209,7 @@ test.skip('get null', async (t) => {
   await t.throwsAsync(client.get(null))
 })
 
-// TODO: do we actually want to support $value at Selva level? don't think so tbh
-test.skip('get $value', async (t) => {
-  await client.set({
-    $id: 'maTest',
-    title: { en: 'hello' },
-  })
-
-  console.log(await client.get({ $id: 'maTest', $all: true }))
-
-  t.deepEqual(
-    await client.get({
-      $id: 'maTest',
-      id: true,
-      someField: { $value: 'some value' },
-      title: { $value: 'overwrite title as string' },
-      objectField: {
-        $value: {
-          something: {
-            complex: true,
-          },
-        },
-      },
-    }),
-    {
-      id: 'maTest',
-      someField: 'some value',
-      title: 'overwrite title as string',
-      objectField: {
-        something: {
-          complex: true,
-        },
-      },
-    }
-  )
-})
-
-test.serial.only('get nested queries', async (t) => {
+test.serial('get nested queries', async (t) => {
   await client.set({
     $id: 'maTest',
     value: 11,
@@ -302,6 +266,83 @@ test.serial.only('get nested queries', async (t) => {
           value: 12,
         },
       ],
+    }
+  )
+})
+
+test.serial('get boolean value', async (t) => {
+  await client.set({
+    $id: 'ynTest',
+    bolYes: true,
+    bolNo: false,
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'ynTest',
+      id: true,
+      bolYes: true,
+      bolNo: true,
+    }),
+    {
+      id: 'ynTest',
+      bolYes: true,
+      bolNo: false,
+    }
+  )
+})
+
+test.serial.only('get - root', async (t) => {
+  const match = await client.set({
+    $id: 'maTest',
+  })
+
+  await client.set({
+    $id: 'root',
+    value: 2555,
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'root',
+      id: true,
+      value: true,
+      children: true,
+    }),
+    {
+      id: 'root',
+      value: 2555,
+      children: [match],
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      id: true,
+      value: true,
+      children: true,
+    }),
+    {
+      id: 'root',
+      value: 2555,
+      children: [match],
+    }
+  )
+
+  await client.set({
+    $id: 'root',
+    nested: { fun: 'yes fun' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'root',
+      id: true,
+      nested: { $all: true },
+    }),
+    {
+      id: 'root',
+      nested: { fun: 'yes fun' },
     }
   )
 })
