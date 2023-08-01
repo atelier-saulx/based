@@ -71,7 +71,7 @@ const opts: Opts<BasedSetTarget> = {
         })
       }
     } else {
-      console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
+      console.info('COLLECT!', args.path.join('.'), value)
     }
   },
 }
