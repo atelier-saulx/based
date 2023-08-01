@@ -72,7 +72,7 @@ test.only('klyle set walker', async (t) => {
   const x2 = await setWalker2(schema, {
     $id: 'bl1',
     // aString: '123',
-    aString: { $value: '12345' },
+    aString: { $value: '1234' },
     // aString: { $default: 'blablablabla' },
     // $language: 'de',
     // aText: 'blabla',
@@ -82,13 +82,14 @@ test.only('klyle set walker', async (t) => {
     //   de: 'axa',
     // },
   })
+
   // const ref = await setWalker2(schema, {
   //   $id: 'bl1',
   //   // aRef: { $value: '123123' },
   //   references: ['11111111111', '2222222222', '3333333'],
   // })
 
-  console.info('------------', x2)
+  console.info('------------', x2.target.collected, x2.errors)
 
   t.true(true)
 })

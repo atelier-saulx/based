@@ -1,3 +1,4 @@
+import { Path } from '@saulx/utils'
 import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
 import { walk, Opts } from '../walker'
@@ -57,6 +58,7 @@ const opts: Opts<BasedSetTarget> = {
       type,
       schema,
       required: [],
+      collected: [],
     }
 
     return { target, typeSchema }
@@ -66,17 +68,29 @@ const opts: Opts<BasedSetTarget> = {
       if (Object.keys(args.prev.value).length > 1) {
         args.prev.value.$default = value
       } else {
-        console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
-          $default: value,
+        args.root.target.collected.push({
+          path: args.path.slice(0, -1),
+          value: {
+            $default: value,
+          },
         })
       }
     } else {
-      console.info('COLLECT!', args.path.join('.'), value)
+      args.root.target.collected.push({
+        path: args.path,
+        value,
+      })
     }
   },
 }
 
 // TODO: make the opts outside of this
-export const setWalker2 = (schema: BasedSchema, value: any) => {
+export const setWalker2 = (
+  schema: BasedSchema,
+  value: any
+): Promise<{
+  target: BasedSetTarget
+  errors: { code: ParseError; message: string }[]
+}> => {
   return walk<BasedSetTarget>(schema, opts, value)
 }

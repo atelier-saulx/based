@@ -344,6 +344,10 @@ export type BasedSetTarget = {
   schema: BasedSchema
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
+  collected: {
+    path: (string | number)[]
+    value: any
+  }[]
 }
 
 export type BasedSchemaCollectProps = {

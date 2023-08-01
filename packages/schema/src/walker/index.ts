@@ -38,7 +38,7 @@ export const walk = async <T>(
       message: `Error: ${ParseError[code]} - "top"`,
     }
     if (optsError) {
-      optsError(new ArgsClass({ path: [] }), code)
+      optsError(new ArgsClass({ path: [], value }), code)
     }
     errors.push(err)
   })
@@ -53,6 +53,7 @@ export const walk = async <T>(
   if (!argsOpts.value) {
     argsOpts.value = value
   }
+
   const args = new ArgsClass(argsOpts)
   args.root = args
   args._opts = opts

@@ -2,6 +2,7 @@ import { BasedSchema } from '../types'
 import { BasedSchemaType, BasedSchemaFields } from '../types'
 import { ArgsOpts, Path, Opts, Stopped, ErrorHandler, Collect } from './types'
 import { parse } from './parse'
+import { ParseError } from '../set/error'
 
 export class ArgsClass<
   T,
@@ -130,7 +131,8 @@ export class ArgsClass<
     }
   }
 
-  error(ParseError): void {
-    this.root._opts.errorsCollector(this, ParseError)
+  error(code: ParseError): void {
+    console.info(':XX')
+    this.root._opts.errorsCollector(this, code)
   }
 }

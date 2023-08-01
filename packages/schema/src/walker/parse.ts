@@ -8,6 +8,7 @@ import { ArgsOpts, KeyParser, Stopped } from './types'
 
 type ParseResult<T> = ArgsClass<T> | void
 
+// TODO needs cleaning
 function createOrUseArgs<T>(
   from: ArgsClass<T>,
   newArgs: ArgsClass<T> | ArgsOpts<T> | void
@@ -16,6 +17,13 @@ function createOrUseArgs<T>(
     if (newArgs instanceof ArgsClass) {
       return newArgs
     } else {
+      if (!('value' in newArgs)) {
+        console.info('???--->', from.value)
+        newArgs.value = from.value
+      }
+      if (!newArgs.fieldSchema) {
+        newArgs.fieldSchema = from.fieldSchema
+      }
       return new ArgsClass(newArgs, from)
     }
   }
@@ -26,18 +34,15 @@ async function parseKey<T>(
   key: string | number,
   parser: KeyParser<T>
 ): Promise<ParseResult<T>> {
-  const newArgs = createOrUseArgs(
-    from,
-    await parser(
-      new ArgsClass(
-        {
-          key,
-          value: from.value[key],
-        },
-        from
-      )
-    )
+  const keyArgs = new ArgsClass(
+    {
+      key,
+      value: from.value[key],
+      fieldSchema: from.fieldSchema,
+    },
+    from
   )
+  const newArgs = createOrUseArgs(keyArgs, await parser(keyArgs))
   if (newArgs) {
     return newArgs.parse()
   }
