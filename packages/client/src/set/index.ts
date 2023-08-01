@@ -5,6 +5,7 @@ import { joinPath } from '../util'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
+  reference: ModifyArgType.SELVA_MODIFY_ARG_STRING,
   integer: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   boolean: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,
   timestamp: ModifyArgType.SELVA_MODIFY_ARG_LONGLONG,

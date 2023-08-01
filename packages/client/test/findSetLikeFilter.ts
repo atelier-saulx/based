@@ -105,7 +105,7 @@ test.afterEach(async (_t) => {
 })
 
 // TODO: Waiting for setting single reference
-test.serial.skip('filter by descendants', async (t) => {
+test.serial.only('filter by descendants', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
@@ -183,7 +183,7 @@ test.serial.skip('filter by ancestors', async (t) => {
 })
 
 // TODO: Waiting for setting single reference
-test.serial.only('filter by parents', async (t) => {
+test.serial.skip('filter by parents', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'te1',
