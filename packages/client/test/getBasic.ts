@@ -380,7 +380,7 @@ test.serial('get - $all simple', async (t) => {
 })
 
 // TODO: * does not take into account specified level of image.thumb, returns image.poster also
-test.serial.skip('get - $all root level whitelist + $all', async (t) => {
+test.serial.only('get - $all root level whitelist + $all', async (t) => {
   await client.set({
     $id: 'clA',
     title: {

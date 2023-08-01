@@ -13,7 +13,6 @@ export function parseGetResult(
   cmds: GetCommand[],
   results: any[]
 ): any {
-  console.dir({ results, lang: ctx.lang, cmds }, { depth: 8 })
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
