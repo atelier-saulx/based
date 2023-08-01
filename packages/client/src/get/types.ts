@@ -60,6 +60,7 @@ export type GetTraverse = {
   type: 'traverse'
 
   paging?: { limit: number; offset: number }
+  sort?: { field: string; order: 'asc' | 'desc' }
   filter?: Filter | Filter[]
   recursive?: boolean
 

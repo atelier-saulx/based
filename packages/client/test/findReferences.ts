@@ -52,7 +52,7 @@ test.after(async (_t) => {
   client.destroy()
 })
 
-// TODO: $sort not working
+// TODO: $find.$find not working
 test.serial.skip('find - references', async (t) => {
   // simple nested - single query
   const globMatches: any = []

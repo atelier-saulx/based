@@ -212,6 +212,22 @@ export enum SelvaFindResultType {
   SELVA_FIND_QUERY_RES_INHERIT_RPN,
 }
 
+export enum SelvaResultOrder {
+  /**
+   * Result is not ordered by any field but can be usually expected to have a
+   * deterministic order.
+   */
+  SELVA_RESULT_ORDER_NONE,
+  /**
+   * Ascending order.
+   */
+  SELVA_RESULT_ORDER_ASC,
+  /**
+   * Descending order.
+   */
+  SELVA_RESULT_ORDER_DESC,
+}
+
 const enum_type = 'int32_le'
 export const hierarchy_find_def = compile(
   [

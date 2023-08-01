@@ -222,6 +222,14 @@ export async function parseGetOpts(
             }
           }
 
+          if ($list?.$sort !== undefined) {
+            const { $order, $field } = $list.$sort
+            cmd.sort = {
+              order: $order,
+              field: $field,
+            }
+          }
+
           if ($list?.$find?.$filter) {
             cmd.filter = $list?.$find?.$filter
           }

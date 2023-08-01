@@ -8,7 +8,7 @@ import {
   bfsExpr2rpn,
   fieldsExpr2rpn,
 } from '@based/db-query'
-import { SelvaTraversal } from '../protocol'
+import { SelvaTraversal, SelvaResultOrder } from '../protocol'
 import { joinPath } from '../util'
 
 export * from './types'
@@ -32,6 +32,11 @@ const RECURSIVE_TRAVERSE_MODES: Record<number, protocol.SelvaTraversal> = {
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
   [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD]:
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD,
+}
+
+const SORT_ORDERS: Record<string, SelvaResultOrder> = {
+  asc: SelvaResultOrder.SELVA_RESULT_ORDER_ASC,
+  desc: SelvaResultOrder.SELVA_RESULT_ORDER_DESC,
 }
 
 export async function get(ctx: ExecContext, commands: GetCommand[]) {
@@ -98,6 +103,14 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         if (cmd.paging) {
           struct.limit = BigInt(cmd.paging.limit)
           struct.offset = BigInt(cmd.paging.offset)
+        }
+
+        if (cmd.sort) {
+          struct.order =
+            SORT_ORDERS[cmd.sort.order] ??
+            SelvaResultOrder.SELVA_RESULT_ORDER_NONE
+
+          struct.order_by_field_str = cmd.sort.field
         }
       }
 
