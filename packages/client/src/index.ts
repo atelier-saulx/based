@@ -59,7 +59,8 @@ export class BasedDbClient extends Emitter {
     console.info('make a new db client...')
   }
 
-  id({ type }: { type: string }): string {
+  // TODO: in the future this has to ensure schema
+  async id({ type }: { type: string }): Promise<string> {
     return genId(this.schema, type)
   }
 
