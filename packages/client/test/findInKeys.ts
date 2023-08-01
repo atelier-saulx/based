@@ -42,11 +42,10 @@ test.after(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $traverse with list of ids broken
 test.serial.skip('get in keys result', async (t) => {
-  await client.set({
-    $id: 'root',
-    children: [
+  await Promise.all(
+    [
       {
         type: 'glurp',
         $id: 'gl0',
@@ -67,8 +66,8 @@ test.serial.skip('get in keys result', async (t) => {
         $id: 'gl3',
         title: 'cookie',
       },
-    ],
-  })
+    ].map((s) => client.set(s))
+  )
 
   const gimme = await client.get({
     flap: {

@@ -50,15 +50,12 @@ test.after(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: worng language dependant order
 // only runs on darwin?
 // test[process.platform === 'darwin' ? 'skip' : 'serial'](
 test.serial.skip('$lang should change the order when relevant', async (t) => {
-  await client.set({
-    $id: 'match1',
-    awayTeam: 'team1',
-    homeTeam: 'team2',
-    children: [
+  const children = await Promise.all(
+    [
       {
         $id: 'team1',
         title: {
@@ -66,7 +63,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'Öäpelin pallo',
           en: 'Öäpelin pallo',
           fi: 'Öäpelin pallo',
-          gsw: 'Öäpelin pallo',
+          pt: 'Öäpelin pallo',
         },
       },
       {
@@ -76,7 +73,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'Aopelin pallo',
           en: 'Aopelin pallo',
           fi: 'Aopelin pallo',
-          gsw: 'Aopelin pallo',
+          pt: 'Aopelin pallo',
         },
       },
       {
@@ -86,7 +83,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'OOpelin pallo',
           en: 'Oopelin pallo',
           fi: 'OOpelin pallo',
-          gsw: 'OOpelin pallo',
+          pt: 'OOpelin pallo',
         },
       },
       {
@@ -96,7 +93,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'Ääpelin pallo',
           en: 'Ääpelin pallo',
           fi: 'Ääpelin pallo',
-          gsw: 'Ääpelin pallo',
+          pt: 'Ääpelin pallo',
         },
       },
       {
@@ -106,7 +103,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'öäpelin pallo',
           en: 'öäpelin pallo',
           fi: 'öäpelin pallo',
-          gsw: 'öäpelin pallo',
+          pt: 'öäpelin pallo',
         },
       },
       {
@@ -116,7 +113,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'aopelin pallo',
           en: 'aopelin pallo',
           fi: 'aopelin pallo',
-          gsw: 'aopelin pallo',
+          pt: 'aopelin pallo',
         },
       },
       {
@@ -126,7 +123,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'oOpelin pallo',
           en: 'oopelin pallo',
           fi: 'oOpelin pallo',
-          gsw: 'oOpelin pallo',
+          pt: 'oOpelin pallo',
         },
       },
       {
@@ -136,7 +133,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'ääpelin pallo',
           en: 'ääpelin pallo',
           fi: 'ääpelin pallo',
-          gsw: 'ääpelin pallo',
+          pt: 'ääpelin pallo',
         },
       },
       {
@@ -146,7 +143,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'hrnec pallo',
           en: 'hrnec pallo',
           fi: 'hrnec pallo',
-          gsw: 'hrnec pallo',
+          pt: 'hrnec pallo',
         },
       },
       {
@@ -156,10 +153,16 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
           de: 'chrt pallo',
           en: 'chrt pallo',
           fi: 'chrt pallo',
-          gsw: 'chrt pallo',
+          pt: 'chrt pallo',
         },
       },
-    ],
+    ].map((s) => client.set(s))
+  )
+  await client.set({
+    $id: 'match1',
+    awayTeam: 'team1',
+    homeTeam: 'team2',
+    children,
   })
 
   t.deepEqual(
