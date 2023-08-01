@@ -105,10 +105,15 @@ function parseObjFields(
       fieldSchema = { type: 'string' }
     }
 
+    const res = parseFieldResult(ctx, fieldSchema, v)
+    if (res === undefined) {
+      continue
+    }
+
     if (alias) {
-      setByPath(obj, [alias], parseFieldResult(ctx, fieldSchema, v))
+      setByPath(obj, [alias], res)
     } else {
-      n[parts[parts.length - 1]] = parseFieldResult(ctx, fieldSchema, v)
+      n[parts[parts.length - 1]] = res
     }
   }
 
@@ -151,19 +156,37 @@ const FIELD_PARSERS: Record<
     return parseRecFields(ctx, { type: 'string' }, x)
   },
   array: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldArray) => {
-    return ary.map((x) => {
+    const res = ary.map((x) => {
       return parseFieldResult(ctx, fieldSchema.values, x)
     })
+
+    if (!res.length) {
+      return
+    }
+
+    return res
   },
   set: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldSet) => {
-    return ary.map((x) => {
+    const res = ary.map((x) => {
       return parseFieldResult(ctx, fieldSchema.items, x)
     })
+
+    if (!res.length) {
+      return
+    }
+
+    return res
   },
   references: (ary: any[], ctx: ExecContext) => {
-    return ary.map((x) => {
+    const res = ary.map((x) => {
       return parseFieldResult(ctx, { type: 'string' }, x)
     })
+
+    if (!res.length) {
+      return
+    }
+
+    return res
   },
   object: (
     ary: any[],

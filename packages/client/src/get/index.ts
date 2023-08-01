@@ -128,8 +128,10 @@ function getFieldsStr(fields: Field[]): string {
   const strs: string[] = []
   if (hasWildcard) {
     for (const f of fields) {
-      const [first] = f.field
-      strs.push(getField({ type: 'field', field: [first], exclude: true }))
+      const [first, ...rest] = f.field
+      if (rest.length) {
+        strs.push(getField({ type: 'field', field: [first], exclude: true }))
+      }
     }
   }
 

@@ -81,6 +81,8 @@ export class BasedDbClient extends Emitter {
       this.schema.types[typeName].fields.type = { type: 'string' }
       this.schema.types[typeName].fields.parents = { type: 'references' }
       this.schema.types[typeName].fields.children = { type: 'references' }
+      this.schema.types[typeName].fields.ancestors = { type: 'references' }
+      this.schema.types[typeName].fields.descendants = { type: 'references' }
       this.schema.types[typeName].fields.aliases = {
         type: 'set',
         items: { type: 'string' },
@@ -94,8 +96,8 @@ export class BasedDbClient extends Emitter {
     if (this.schema.root) {
       this.schema.root.fields.id = { type: 'string' }
       this.schema.root.fields.type = { type: 'string' }
-      this.schema.root.fields.parents = { type: 'references' }
       this.schema.root.fields.children = { type: 'references' }
+      this.schema.root.fields.descendants = { type: 'references' }
       this.schema.root.fields.aliases = {
         type: 'set',
         items: { type: 'string' },

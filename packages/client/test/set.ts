@@ -258,7 +258,7 @@ test.serial.only('set primitive fields', async (t) => {
         children: [third],
         hmm: [third],
       },
-      { id: third, type: 'post', slug: '/third', children: [], hmm: [] },
+      { id: third, type: 'post', slug: '/third' },
     ],
   })
 
@@ -276,7 +276,6 @@ test.serial.only('set primitive fields', async (t) => {
     id: third,
     type: 'post',
     slug: '/third',
-    children: [],
     fi: ['po2'],
   })
 

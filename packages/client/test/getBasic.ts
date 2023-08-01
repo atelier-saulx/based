@@ -579,8 +579,7 @@ test.serial('get - $language', async (t) => {
   // )
 })
 
-// TODO: we should return empty arrays by default?
-test.serial.skip('get - field with empty array', async (t) => {
+test.serial('get - field with empty array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
     thing: [],
@@ -601,12 +600,7 @@ test.serial.skip('get - field with empty array', async (t) => {
     refs: true,
   })
 
-  t.deepEqual(result, {
-    children: [],
-    descendants: [],
-    dong: { dingdong: [] },
-    refs: [],
-  })
+  t.deepEqual(result, {})
 
   t.deepEqual(
     await client.get({
@@ -615,7 +609,6 @@ test.serial.skip('get - field with empty array', async (t) => {
     }),
     {
       id,
-      dong: { dingdong: [] },
       type: 'lekkerType',
     }
   )
