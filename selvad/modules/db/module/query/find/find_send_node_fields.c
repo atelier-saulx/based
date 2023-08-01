@@ -146,9 +146,9 @@ static int send_edge_field(
                 res += err;
             }
             /*
-             * Ignore any errors. If an error has occurred it's already  logged
+             * Ignore any errors. If an error has occurred it's already logged,
              * at this point and we don't need to do anything.
-             * Unfortunately the client won't get informed directly.
+             * Unfortunately the client won't be informed directly.
              */
         }
 
@@ -158,16 +158,10 @@ static int send_edge_field(
     } else if (!edge_field) {
         return SELVA_ENOENT;
     } else if (off == 0) {
-        if (field_prefix_str) {
-            struct selva_string *act_field_name;
+        size_t act_field_len;
+        const char *act_field_str = make_full_field_name_str(fin, field_prefix_str, field_prefix_len, field_str, field_len, &act_field_len);
 
-            act_field_name = selva_string_createf("%.*s%s", (int)field_prefix_len, field_prefix_str, field_str);
-            selva_string_auto_finalize(fin, act_field_name);
-            selva_send_string(resp, act_field_name);
-        } else {
-            selva_send_str(resp, field_str, field_len);
-        }
-
+        selva_send_str(resp, act_field_str, act_field_len);
         replyWithEdgeField(resp, edge_field);
         return 1;
     } else {
@@ -309,17 +303,7 @@ static int send_node_field(
     int err;
 
     SelvaHierarchy_GetNodeId(nodeId, node);
-
-    if (field_prefix_str) {
-        struct selva_string *full_field_name;
-
-        full_field_name = selva_string_createf("%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
-        finalizer_add(fin, full_field_name, selva_string_free);
-        full_field_name_str = selva_string_to_str(full_field_name, &full_field_name_len);
-    } else {
-        full_field_name_str = field_str;
-        full_field_name_len = field_len;
-    }
+    full_field_name_str = make_full_field_name_str(fin, field_prefix_str, field_prefix_len, field_str, field_len, &full_field_name_len);
 
     if (excluded_fields) {
         TO_STR(excluded_fields);

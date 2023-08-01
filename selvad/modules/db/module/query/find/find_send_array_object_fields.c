@@ -27,16 +27,9 @@ static int send_array_object_field(
         const char *field_prefix_str,
         size_t field_prefix_len,
         struct selva_string *field) {
+    struct selva_string *full_field_name = make_full_field_name(fin, field_prefix_str, field_prefix_len, field);
     TO_STR(field);
     int err;
-
-    struct selva_string *full_field_name;
-    if (field_prefix_str) {
-        full_field_name = selva_string_createf("%.*s%s", (int)field_prefix_len, field_prefix_str, field_str);
-        finalizer_add(fin, full_field_name, selva_string_free);
-    } else {
-        full_field_name = field;
-    }
 
     /*
      * Check if we have a wildcard in the middle of the field name
