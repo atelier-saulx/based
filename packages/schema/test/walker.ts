@@ -219,7 +219,7 @@ test('set walker', async (t) => {
 
 test.only('perf', async (t) => {
   let d = Date.now()
-  for (let i = 0; i < 1e5; i++) {
+  for (let i = 0; i < 3; i++) {
     await setWalker2(schema, { $id: 'bl120', flap: true, x: { flap: true } })
   }
   console.info(Date.now() - d, 'ms')

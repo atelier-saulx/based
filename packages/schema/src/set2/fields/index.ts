@@ -21,49 +21,47 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
   reference,
   references,
   cardinality: async (args) => {
-    const { value, error } = args
     let hashedValue: string
-    if (value && typeof value === 'object') {
+    if (args.value && typeof args.value === 'object') {
       args.stop()
-      if (value.$default !== undefined) {
-        error(args, ParseError.defaultNotSupported)
+      if (args.value.$default !== undefined) {
+        args.error(ParseError.defaultNotSupported)
         return
       }
-      if (value.$value !== undefined) {
-        hashedValue = hashObjectIgnoreKeyOrder(value.$value).toString(16)
+      if (args.value.$value !== undefined) {
+        hashedValue = hashObjectIgnoreKeyOrder(args.value.$value).toString(16)
       } else {
-        hashedValue = hashObjectIgnoreKeyOrder(value).toString(16)
+        hashedValue = hashObjectIgnoreKeyOrder(args.value).toString(16)
       }
     } else {
-      hashedValue = hash(value).toString(16)
+      hashedValue = hash(args.value).toString(16)
     }
-    args.collect(args, hashedValue)
+    args.collect(hashedValue)
   },
   boolean: async (args) => {
     if (typeof args.value !== 'boolean') {
-      args.error(args, ParseError.incorrectFormat)
+      args.error(ParseError.incorrectFormat)
       return
     }
-    args.collect(args)
+    args.collect()
   },
 
   json: async (args) => {
     try {
       const parsedValue = JSON.stringify(args.value)
-      args.collect(args, parsedValue)
+      args.collect(parsedValue)
     } catch (err) {
-      args.error(args, ParseError.invalidJSON)
+      args.error(ParseError.invalidJSON)
     }
   },
   enum: async (args) => {
-    const { fieldSchema, error, collect, value } = args
-    const enumValues = fieldSchema.enum
+    const enumValues = args.fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
-      if (deepEqual(enumValues[i], value)) {
-        collect(args, i)
+      if (deepEqual(enumValues[i], args.value)) {
+        args.collect(i)
         return
       }
     }
-    error(args, ParseError.incorrectFormat)
+    args.error(ParseError.incorrectFormat)
   },
 }

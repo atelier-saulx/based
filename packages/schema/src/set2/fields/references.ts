@@ -2,22 +2,20 @@ import { ParseError } from '../../set/error'
 import { FieldParser } from '../../walker'
 
 export const reference: FieldParser<'reference'> = async (args) => {
-  const { value, error, fieldSchema, target } = args
-
-  if (typeof value !== 'string') {
-    error(args, ParseError.incorrectFormat)
+  if (typeof args.value !== 'string') {
+    args.error(ParseError.incorrectFormat)
     return
   }
 
-  if ('allowedTypes' in fieldSchema) {
-    const prefix = value.slice(0, 2)
-    const targetType = target.schema.prefixToTypeMapping[prefix]
+  if ('allowedTypes' in args.fieldSchema) {
+    const prefix = args.value.slice(0, 2)
+    const targetType = args.schema.prefixToTypeMapping[prefix]
     if (!targetType) {
-      error(args, ParseError.referenceIsIncorrectType)
+      args.error(ParseError.referenceIsIncorrectType)
       return
     }
     let typeMatches = false
-    for (const t of fieldSchema.allowedTypes) {
+    for (const t of args.fieldSchema.allowedTypes) {
       if (typeof t === 'string') {
         if (t === targetType) {
           typeMatches = true
@@ -40,7 +38,7 @@ export const reference: FieldParser<'reference'> = async (args) => {
       }
     }
     if (typeMatches === false) {
-      error(args, ParseError.referenceIsIncorrectType)
+      args.error(ParseError.referenceIsIncorrectType)
     }
   }
   args.collect(args)

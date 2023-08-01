@@ -1,27 +1,27 @@
 import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
-import { walk } from '../walker'
+import { walk, Opts } from '../walker'
 import { fields } from './fields'
 
-const parsers = {
+const opts: Opts<BasedSetTarget> = {
   parsers: {
     keys: {
       $id: async (args) => {
         if (typeof args.value !== 'string') {
-          args.error(args, ParseError.incorrectFormat)
+          args.error(ParseError.incorrectFormat)
           return
         }
         if (args.value.length > 10) {
-          args.error(args, ParseError.incorrectFormat)
+          args.error(ParseError.incorrectFormat)
         }
       },
       $value: async (args) => {
         args.stop()
-        if (args.parentValue.$default) {
-          args.error(args, ParseError.valueAndDefault)
+        if (args.prev.value.$default) {
+          args.error(ParseError.valueAndDefault)
           return
         }
-        return { ...args, path: args.path.slice(0, -1) }
+        return { path: args.path.slice(0, -1) }
       },
       $default: async (args) => {
         return
@@ -29,54 +29,54 @@ const parsers = {
     },
     fields,
     catch: async (args) => {
-      args.error(args, ParseError.fieldDoesNotExist)
+      args.error(ParseError.fieldDoesNotExist)
     },
   },
-  init: async (args) => {
-    const { value } = args
+  init: async (value, schema, error) => {
     let type: string
     if (value.$id) {
-      type = args.schema.prefixToTypeMapping[value.$id.slice(0, 2)]
+      type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
       if (!type) {
-        args.error(args, ParseError.incorrectFieldType)
+        error(ParseError.incorrectFieldType)
         return
       }
     }
     if (value.type) {
       if (type && value.type !== type) {
-        args.error(args, ParseError.incorrectNodeType)
+        error(ParseError.incorrectNodeType)
         return
       }
       type = value.type
     }
-    const typeSchema = args.schema.types[type]
+    const typeSchema = schema.types[type]
     if (!typeSchema) {
-      args.error(args, ParseError.incorrectNodeType)
+      error(ParseError.incorrectNodeType)
       return
     }
     const target: BasedSetTarget = {
       type,
-      schema: args.schema,
+      schema,
       required: [],
     }
-    return { ...args, target, typeSchema }
+
+    return { target, typeSchema }
   },
   collect: (args, value) => {
-    // if (args.key === '$default') {
-    //   if (Object.keys(args.parentValue).length > 1) {
-    //     args.parentValue.$default = value
-    //   } else {
-    //     console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
-    //       $default: value,
-    //     })
-    //   }
-    // } else {
-    //   console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
-    // }
+    if (args.key === '$default') {
+      if (Object.keys(args.prev.value).length > 1) {
+        args.prev.value.$default = value
+      } else {
+        console.info('COLLECT! DEFAULT', args.path.slice(0, -1).join('.'), {
+          $default: value,
+        })
+      }
+    } else {
+      console.info('COLLECT!', args.path.join('.'), JSON.stringify(value))
+    }
   },
 }
 
 // TODO: make the opts outside of this
 export const setWalker2 = (schema: BasedSchema, value: any) => {
-  return walk<BasedSetTarget>(schema, parsers, value)
+  return walk<BasedSetTarget>(schema, opts, value)
 }
