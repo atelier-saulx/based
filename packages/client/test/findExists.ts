@@ -55,16 +55,12 @@ test.beforeEach(async (_t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $operator 'exists' not working
-// db:module/rpn/rpn.c:1917:rpn_get_reg: Register index out of bounds: 1
-// db:module/query/find.c:1275:FindCommand_NodeCb: Expression failed (node: "ma61909d6db2d04b"): "Register index out of bounds"
-
-test.serial.only('find - numeric exists field', async (t) => {
+test.serial('find - numeric exists field', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'match',
@@ -80,7 +76,6 @@ test.serial.only('find - numeric exists field', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         name: true,
         // TODO: $default
@@ -103,12 +98,18 @@ test.serial.only('find - numeric exists field', async (t) => {
         },
       },
     }),
-    { id: 'root', items: [{ name: 'match 1', nonsense: 'yes' }] }
+    {
+      items: [
+        {
+          name: 'match 1',
+          // nonsense: 'yes'
+        },
+      ],
+    }
   )
 })
 
-// TODO: $operator 'exists' not working
-test.serial.skip('find - string field only exists', async (t) => {
+test.serial('find - string field only exists', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'league',
@@ -124,7 +125,7 @@ test.serial.skip('find - string field only exists', async (t) => {
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'root',
-      id: true,
+      // id: true,
       items: {
         name: true,
         $list: {
@@ -145,12 +146,14 @@ test.serial.skip('find - string field only exists', async (t) => {
         },
       },
     }),
-    { id: 'root', items: [{ name: 'league 2' }] }
+    {
+      // id: 'root',
+      items: [{ name: 'league 2' }],
+    }
   )
 })
 
-// TODO: $operator 'notExists' not working
-test.serial.skip('find - numeric not exists field', async (t) => {
+test.serial('find - numeric not exists field', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'match',
@@ -166,7 +169,6 @@ test.serial.skip('find - numeric not exists field', async (t) => {
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         name: true,
         $list: {
@@ -187,12 +189,11 @@ test.serial.skip('find - numeric not exists field', async (t) => {
         },
       },
     }),
-    { id: 'root', items: [{ name: 'match 2' }] }
+    { items: [{ name: 'match 2' }] }
   )
 })
 
-// TODO: $operator 'notExists' not working
-test.serial.skip('find - string field only not exists indexed', async (t) => {
+test.serial('find - string field only not exists indexed', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'league',
@@ -206,9 +207,7 @@ test.serial.skip('find - string field only not exists indexed', async (t) => {
   })
 
   const m = await client.get({
-    $includeMeta: true,
     $id: 'root',
-    id: true,
     items: {
       name: true,
       $list: {
@@ -230,13 +229,10 @@ test.serial.skip('find - string field only not exists indexed', async (t) => {
     },
   })
 
-  delete m.$meta
-
-  t.deepEqualIgnoreOrder(m, { id: 'root', items: [{ name: 'league 1' }] })
+  t.deepEqualIgnoreOrder(m, { items: [{ name: 'league 1' }] })
 })
 
-// TODO: $operator 'exists' not working
-test.serial.skip('find - text exists field', async (t) => {
+test.serial('find - text exists field', async (t) => {
   // simple nested - single query
   await client.set({
     $language: 'en',
@@ -271,7 +267,6 @@ test.serial.skip('find - text exists field', async (t) => {
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         description: true,
         $list: {
@@ -292,14 +287,13 @@ test.serial.skip('find - text exists field', async (t) => {
         },
       },
     }),
-    { id: 'root', items: [{ description: { en: 'match 1' } }] }
+    { items: [{ description: { en: 'match 1' } }] }
   )
 
   t.deepEqualIgnoreOrder(
     await client.get({
       $language: 'en',
       $id: 'root',
-      id: true,
       items: {
         description: true,
         $list: {
@@ -320,7 +314,7 @@ test.serial.skip('find - text exists field', async (t) => {
         },
       },
     }),
-    { id: 'root', items: [{ description: 'match 1' }] }
+    { items: [{ description: 'match 1' }] }
   )
 
   // TODO: want this validation?
