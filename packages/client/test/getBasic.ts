@@ -516,3 +516,68 @@ test.serial('get - $all deeply nested', async (t) => {
     }
   )
 })
+
+// TODO: $default
+test.serial.skip('get - $default', async (t) => {
+  await client.set({
+    $id: 'viflap',
+    title: { en: 'flap' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viflap',
+      age: { $default: 100 },
+    }),
+    { age: 100 }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viflap',
+      title: {
+        en: { $default: 'untitled' },
+        nl: { $default: 'naamloos' },
+      },
+    }),
+    {
+      title: { en: 'flap', nl: 'naamloos' },
+    }
+  )
+})
+
+// TODO: $language
+test.serial.skip('get - $language', async (t) => {
+  await client.set({
+    $id: 'viflap',
+    title: { en: 'flap', nl: 'flurp' },
+    description: { en: 'yes', nl: 'ja' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viflap',
+      title: true,
+      description: true,
+      $language: 'nl',
+    }),
+    {
+      title: 'flurp',
+      description: 'ja',
+    }
+  )
+
+  await client.set({
+    $id: 'viflurx',
+    title: { en: 'flap', nl: 'flurp' },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viflurx',
+      $language: 'nl',
+      description: { $default: 'flurpy' },
+    }),
+    { description: 'flurpy' }
+  )
+})
