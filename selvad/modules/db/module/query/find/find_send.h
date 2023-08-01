@@ -26,3 +26,11 @@ int find_send_array_object_fields(
         struct selva_string *lang,
         struct SelvaObject *obj,
         struct SelvaObject *fields);
+int send_node_merge(
+        struct finalizer *fin,
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        const struct SelvaHierarchyNode *node,
+        enum SelvaMergeStrategy merge_strategy,
+        struct selva_string *obj_path,
+        struct SelvaObject *fields);
