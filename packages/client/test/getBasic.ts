@@ -1331,7 +1331,6 @@ test.serial.skip('get - basic with non-priority language', async (t) => {
 })
 
 // TODO: querying record field returns undefined
-// TODO: $language
 test.serial.skip('get - record', async (t) => {
   await client.set({
     $id: 'viA',
@@ -1446,7 +1445,6 @@ test.serial.skip('get - record', async (t) => {
 })
 
 // TODO: querying record field returns undefined
-// TODO: $language
 test.serial.skip('get - text record', async (t) => {
   await client.set({
     $id: 'viA',
@@ -1733,7 +1731,6 @@ test.serial.skip(
 )
 
 // TODO: querying record field returns undefined
-// TODO: $language
 test.serial.skip('get - record with wildcard query', async (t) => {
   await client.set({
     $id: 'viA',
@@ -1825,7 +1822,6 @@ test.serial.skip('get - record with wildcard query', async (t) => {
 })
 
 // TODO: querying record field returns undefined
-// TODO: $language
 test.serial.skip('get - record with nested wildcard query', async (t) => {
   await client.set({
     $id: 'viA',
