@@ -31,6 +31,9 @@ test.only('klyle set walker', async (t) => {
           aRef: {
             type: 'reference',
           },
+          references: {
+            type: 'references',
+          },
         },
       },
     },
@@ -80,7 +83,8 @@ test.only('klyle set walker', async (t) => {
   // })
   const ref = await setWalker2(schema, {
     $id: 'bl1',
-    aRef: { $value: '123123' },
+    // aRef: { $value: '123123' },
+    references: ['11111111111', '2222222222', '3333333'],
   })
 
   console.info('------------', ref)
