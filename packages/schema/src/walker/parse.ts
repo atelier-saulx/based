@@ -151,10 +151,11 @@ export async function parse<T>(
       }
     }
     if (
+      opts.backtrack &&
       !args.skipCollection &&
       (args.fromBackTrack.length || args.collectedCommands.length)
     ) {
-      const backtracked = opts?.backtrack(
+      const backtracked = opts.backtrack(
         this,
         args.fromBackTrack ?? [],
         args.collectedCommands ?? []
