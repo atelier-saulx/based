@@ -86,7 +86,7 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         if (cmd.filter) {
           const ast = createAst(cmd.filter)
           if (ast) {
-            rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
+            rpn = ast2rpn(ctx.client.schema.types, ast, makeLangArg(ctx))
           }
         }
 
@@ -97,7 +97,7 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
       }
 
       const find = await client.command('hierarchy.find', [
-        ctx.lang || '',
+        makeLangArg(ctx),
         createRecord(protocol.hierarchy_find_def, struct),
         sourceId(cmd),
         ...rpn,
@@ -154,4 +154,25 @@ function sourceId(cmd: GetCommand): string {
         .map((id) => id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'))
         .join('')
     : cmd.source.id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0')
+}
+
+function makeLangArg(ctx: ExecContext) {
+  const { lang } = ctx
+
+  if (!lang) {
+    return ''
+  }
+
+  let languages = ctx?.client?.schema?.languages ?? []
+
+  let str = lang
+  for (let i = 0; i < languages.length; i++) {
+    if (languages[i] === lang) {
+      continue
+    }
+
+    str += `\n${languages[i]}`
+  }
+
+  return str
 }

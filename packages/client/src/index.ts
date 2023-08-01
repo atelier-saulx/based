@@ -12,7 +12,13 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { get, GetCommand, parseGetOpts, parseGetResult } from './get'
+import {
+  ExecContext,
+  get,
+  GetCommand,
+  parseGetOpts,
+  parseGetResult,
+} from './get'
 import genId from './id'
 import { deepCopy, deepMerge, deepMergeArrays } from '@saulx/utils'
 
@@ -159,8 +165,12 @@ export class BasedDbClient extends Emitter {
   }
 
   async get(opts: any): Promise<any> {
-    const ctx = {
+    const ctx: ExecContext = {
       client: this,
+    }
+
+    if (opts.$language) {
+      ctx.lang = opts.$language
     }
 
     let cmds = await parseGetOpts({ client: this }, opts)

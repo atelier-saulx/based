@@ -2,8 +2,6 @@ import {
   BasedSchemaField,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
-  BasedSchemaFieldRecord,
-  BasedSchemaFieldSet,
 } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { joinPath } from '../../util'
@@ -14,6 +12,7 @@ export function parseGetResult(
   cmds: GetCommand[],
   results: any[]
 ): any {
+  console.dir({ results, lang: ctx.lang, cmds }, { depth: 8 })
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
@@ -62,13 +61,18 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
     }
 
     return parseObjFields(
+      ctx,
       { type: 'object', properties: typeSchema.fields },
       fields
     )
   })
 }
 
-function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
+function parseObjFields(
+  ctx: ExecContext,
+  schema: BasedSchemaField,
+  fields: any[]
+): any {
   const obj: any = {}
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
@@ -102,22 +106,26 @@ function parseObjFields(schema: BasedSchemaField, fields: any[]): any {
     }
 
     if (alias) {
-      setByPath(obj, [alias], parseFieldResult(fieldSchema, v))
+      setByPath(obj, [alias], parseFieldResult(ctx, fieldSchema, v))
     } else {
-      n[parts[parts.length - 1]] = parseFieldResult(fieldSchema, v)
+      n[parts[parts.length - 1]] = parseFieldResult(ctx, fieldSchema, v)
     }
   }
 
   return obj
 }
 
-function parseRecFields(schema: BasedSchemaField, fields: any[]): any {
+function parseRecFields(
+  ctx: ExecContext,
+  fieldSchema: BasedSchemaField,
+  fields: any[]
+): any {
   const obj: any = {}
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
     const v = fields[i + 1]
 
-    obj[f] = parseFieldResult(schema, v)
+    obj[f] = parseFieldResult(ctx, fieldSchema, v)
   }
 
   return obj
@@ -125,7 +133,7 @@ function parseRecFields(schema: BasedSchemaField, fields: any[]): any {
 
 const FIELD_PARSERS: Record<
   string,
-  (x: any, fieldSchema?: BasedSchemaField) => any
+  (x: any, ctx?: ExecContext, fieldSchema?: BasedSchemaField) => any
 > = {
   string: (x) => x,
   reference: (x) => x,
@@ -135,34 +143,49 @@ const FIELD_PARSERS: Record<
   cardinality: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),
-  text: (x) => {
-    // TODO: handle if $language is set
-    return parseRecFields({ type: 'string' }, x)
+  text: (x, ctx: ExecContext) => {
+    if (ctx.lang) {
+      return x
+    }
+
+    return parseRecFields(ctx, { type: 'string' }, x)
   },
-  array: (ary: any[], fieldSchema: BasedSchemaFieldArray) => {
+  array: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldArray) => {
     return ary.map((x) => {
-      return parseFieldResult(fieldSchema.values, x)
+      return parseFieldResult(ctx, fieldSchema.values, x)
     })
   },
-  set: (ary: any[], fieldSchema: BasedSchemaFieldSet) => {
+  set: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldArray) => {
     return ary.map((x) => {
-      return parseFieldResult(fieldSchema.items, x)
+      return parseFieldResult(ctx, fieldSchema.values, x)
     })
   },
-  references: (ary: any[], fieldSchema: BasedSchemaFieldSet) => {
+  references: (ary: any[], ctx: ExecContext) => {
     return ary.map((x) => {
-      return parseFieldResult({ type: 'string' }, x)
+      return parseFieldResult(ctx, { type: 'string' }, x)
     })
   },
-  object: (ary: any[], fieldSchema: BasedSchemaFieldObject) => {
-    return parseObjFields(fieldSchema, ary)
+  object: (
+    ary: any[],
+    ctx: ExecContext,
+    fieldSchema: BasedSchemaFieldArray
+  ) => {
+    return parseObjFields(ctx, fieldSchema, ary)
   },
-  record: (ary: any[], fieldSchema: BasedSchemaFieldRecord) => {
-    return parseRecFields(fieldSchema.values, ary)
+  record: (
+    ary: any[],
+    ctx: ExecContext,
+    fieldSchema: BasedSchemaFieldArray
+  ) => {
+    return parseRecFields(ctx, fieldSchema.values, ary)
   },
 }
 
-function parseFieldResult(fieldSchema: BasedSchemaField, v: any) {
+function parseFieldResult(
+  ctx: ExecContext,
+  fieldSchema: BasedSchemaField,
+  v: any
+) {
   const parser = FIELD_PARSERS[fieldSchema?.type]
-  return parser?.(v, fieldSchema)
+  return parser?.(v, ctx, fieldSchema)
 }
