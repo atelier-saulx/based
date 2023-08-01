@@ -217,11 +217,18 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-test.only('perf', async (t) => {
-  let d = Date.now()
-  for (let i = 0; i < 1e6; i++) {
-    await setWalker2(schema, { $id: 'bl120', flap: true, x: { flap: true } })
+// test.only('perf', async (t) => {
+//   let d = Date.now()
+//   for (let i = 0; i < 1e6; i++) {
+//     await setWalker2(schema, { $id: 'bl120', flap: true, x: { flap: true } })
+//   }
+//   console.info(Date.now() - d, 'ms')
+//   t.true(true)
+// })
+
+test.only('string', async (t) => {
+  for (let i = 0; i < 10; i++) {
+    await setWalker2(schema, { $id: 'bl120', name: 'blax' })
   }
-  console.info(Date.now() - d, 'ms')
   t.true(true)
 })
