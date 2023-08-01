@@ -54,7 +54,7 @@ export class BasedDbClient extends Emitter {
   }
 
   async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
-    // TODO: make it
+    // TODO: make it for real
     this.schema = <BasedSchema>opts
     if (!this.schema.prefixToTypeMapping) {
       this.schema.prefixToTypeMapping = {}
@@ -72,6 +72,18 @@ export class BasedDbClient extends Emitter {
         type: 'set',
         items: { type: 'string' },
       }
+    }
+
+    // root
+    this.schema.prefixToTypeMapping['ro'] = 'root'
+
+    this.schema.root.fields.id = { type: 'string' }
+    this.schema.root.fields.type = { type: 'string' }
+    this.schema.root.fields.parents = { type: 'references' }
+    this.schema.root.fields.children = { type: 'references' }
+    this.schema.root.fields.aliases = {
+      type: 'set',
+      items: { type: 'string' },
     }
 
     return this.schema

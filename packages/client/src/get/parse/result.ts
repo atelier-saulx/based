@@ -52,7 +52,10 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
     const [id, fields]: [string, any[]] = row
 
     const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
-    const typeSchema = ctx.client.schema.types[typeName]
+    const typeSchema =
+      typeName === 'root'
+        ? ctx.client.schema.root
+        : ctx.client.schema.types[typeName]
 
     if (!typeSchema) {
       return {}

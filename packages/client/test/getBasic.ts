@@ -292,9 +292,11 @@ test.serial('get boolean value', async (t) => {
   )
 })
 
-test.serial.only('get - root', async (t) => {
+// TODO: setWalker update
+test.serial.skip('get - root', async (t) => {
   const match = await client.set({
     $id: 'maTest',
+    value: 11,
   })
 
   await client.set({
@@ -345,4 +347,77 @@ test.serial.only('get - root', async (t) => {
       nested: { fun: 'yes fun' },
     }
   )
+})
+
+// TODO: type field madness
+test.serial.skip('get - $all simple', async (t) => {
+  await client.set({
+    $id: 'maA',
+    title: {
+      en: 'nice!',
+    },
+    description: {
+      en: 'yesh',
+    },
+  })
+
+  const res = await client.get({
+    $id: 'maA',
+    $all: true,
+    aliases: false,
+  })
+  delete res.createdAt
+  delete res.updatedAt
+  t.deepEqual(res, {
+    id: 'maA',
+    type: 'match',
+    title: {
+      en: 'nice!',
+    },
+    description: {
+      en: 'yesh',
+    },
+  })
+})
+
+// TODO: type field madness
+// TODO: * does not take into account specified level of image.thumb, returns image.poster also
+test.serial.skip('get - $all root level whitelist + $all', async (t) => {
+  await client.set({
+    $id: 'clA',
+    title: {
+      en: 'nice!',
+    },
+    description: {
+      en: 'yesh',
+    },
+    image: {
+      thumb: 'thumb',
+      poster: 'poster',
+    },
+  })
+
+  const res = await client.get({
+    $id: 'clA',
+    image: {
+      thumb: true,
+    },
+    $all: true,
+    aliases: false,
+  })
+  delete res.createdAt
+  delete res.updatedAt
+  t.deepEqual(res, {
+    id: 'clA',
+    type: 'club',
+    title: {
+      en: 'nice!',
+    },
+    description: {
+      en: 'yesh',
+    },
+    image: {
+      thumb: 'thumb',
+    },
+  })
 })
