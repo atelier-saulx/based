@@ -3,13 +3,11 @@
 
 OBJ := \
 	   db.o \
-	   module/aggregate.o \
 	   module/alias.o \
 	   module/comparator.o \
 	   module/dump.o \
 	   module/edge/edge.o \
 	   module/edge/edge_constraint.o \
-	   module/find.o \
 	   module/find_index/find_index.o \
 	   module/find_index/icb.o \
 	   module/find_index/pick_icb.o \
@@ -21,14 +19,17 @@ OBJ := \
 	   module/hierarchy/traversal.o \
 	   module/hierarchy/traversal_order.o \
 	   module/hierarchy/types.o \
-	   module/inherit/get_field.o \
-	   module/inherit/inherit.o \
-	   module/inherit/send_field.o \
-	   module/inherit/send_field_find.o \
 	   module/modify.o \
 	   module/parsers/enum.o \
 	   module/parsers/string_list.o \
 	   module/parsers/string_set.o \
+	   module/query/aggregate.o \
+	   module/query/find.o \
+	   module/query/inherit/get_field.o \
+	   module/query/inherit/inherit.o \
+	   module/query/inherit/send_field.o \
+	   module/query/inherit/send_field_find.o \
+	   module/query/update.o \
 	   module/resolve.o \
 	   module/rpn/rpn.o \
 	   module/rpn/rpn_eval.o \
@@ -45,8 +46,7 @@ OBJ := \
 	   module/selva_set/seta_in_setb.o \
 	   module/selva_type.o \
 	   module/shared_strings.o \
-	   module/subscriptions.o \
-	   module/update.o
+	   module/subscriptions.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -I./include -include ../../tunables.h
 LDFLAGS += -ldeflate -lutil -ljemalloc_selva
