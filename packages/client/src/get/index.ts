@@ -62,6 +62,7 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
       let rpn = ['#1']
 
       if (cmd.type === 'traverse') {
+        // traverse by field
         if (cmd.sourceField) {
           const mode = TRAVERSE_MODES[cmd.sourceField]
           const dir =
@@ -73,7 +74,11 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
             // if edge field, supply field name
             struct.dir_opt_str = cmd.sourceField
           }
+        } else if (cmd.source.idList) {
+          // traverse id list
+          struct.dir = SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
         } else {
+          // bfs expression traversal
           struct.dir = cmd.recursive
             ? SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION
             : SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EXPRESSION

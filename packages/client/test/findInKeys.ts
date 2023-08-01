@@ -43,7 +43,7 @@ test.after(async (_t) => {
 })
 
 // TODO: $traverse with list of ids broken
-test.serial.skip('get in keys result', async (t) => {
+test.serial.only('get in keys result', async (t) => {
   await Promise.all(
     [
       {

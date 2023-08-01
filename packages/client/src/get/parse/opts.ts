@@ -199,14 +199,20 @@ export async function parseGetOpts(
             nestedCommands,
           }
         } else {
-          const sourceField = $list?.$find?.$traverse || String(key)
           cmd = {
             type: 'traverse',
             fields: { $any: fields },
             source: { id: id },
             target: { path },
-            sourceField,
             nestedCommands,
+          }
+
+          const sourceField = $list?.$find?.$traverse || String(key)
+          if (Array.isArray(sourceField)) {
+            // find in id list
+            cmd.source = { idList: sourceField }
+          } else {
+            cmd.sourceField = sourceField
           }
 
           if ($list?.$limit !== undefined || $list?.$offset !== undefined) {
