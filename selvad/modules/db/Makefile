@@ -24,7 +24,9 @@ OBJ := \
 	   module/parsers/string_list.o \
 	   module/parsers/string_set.o \
 	   module/query/aggregate.o \
-	   module/query/find.o \
+	   module/query/find/find.o \
+	   module/query/find/find_send_array_object_fields.o \
+	   module/query/find/find_send_node_fields.o \
 	   module/query/inherit/get_field.o \
 	   module/query/inherit/inherit.o \
 	   module/query/inherit/send_field.o \
