@@ -59,6 +59,10 @@
 #define SELVA_CREATED_AT_FIELD  "createdAt"
 #define SELVA_UPDATED_AT_FIELD  "updatedAt"
 /**
+ * Pseudo field name for retrieving edge metadata.
+ */
+#define SELVA_EDGE_META_FIELD   "$edgeMeta"
+/**
  * @}
  */
 

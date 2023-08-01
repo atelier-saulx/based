@@ -8,6 +8,7 @@
 #include "util/cstrings.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
+#include "selva_db.h"
 #include "field_names.h"
 
 struct selva_string *make_full_field_name(struct finalizer *fin, const char *field_prefix_str, size_t field_prefix_len, struct selva_string *field)

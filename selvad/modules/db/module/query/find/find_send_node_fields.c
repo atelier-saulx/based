@@ -197,7 +197,7 @@ static int send_edge_field(
         size_t next_prefix_len;
 
         if (field_prefix_str) {
-            const char *s = memmem(field_str, field_len, ".", 1);
+            const char *s = memchr(field_str, '.', field_len);
             const int n = s ? (int)(s - field_str) + 1 : (int)field_len;
             struct selva_string *next_prefix;
 
@@ -252,6 +252,36 @@ static int send_edge_field(
                 send_all_node_data_fields(fin, resp, lang, hierarchy, dst_node, NULL, 0, new_excluded_fields);
                 if (next_prefix_str) {
                     selva_send_array_end(resp);
+                }
+            } else if (is_edgemeta(next_field_str, next_field_len)) {
+                /*
+                 * $edgeMeta pseudo field handling
+                 * TODO This doesn't currently work over multiple edge fields.
+                 */
+                if (edge_field->metadata) {
+                    struct SelvaObject *edge_metadata;
+                    int err;
+
+                    err = SelvaObject_GetObjectStr(edge_field->metadata, dst_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
+                    if (!err) {
+                        const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
+                        size_t meta_key_len = 0;
+
+                        if (meta_key_str) {
+                            meta_key_str++;
+                            meta_key_len = (next_field_str + next_field_len) - meta_key_str;
+                            if (meta_key_len == 0) {
+                                meta_key_str = NULL;
+                            }
+                        }
+
+                        selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
+                        err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_field->metadata,
+                                                             meta_key_str, meta_key_len, 0);
+                        if (err) {
+                            selva_send_null(resp);
+                        }
+                    }
                 }
             } else {
                 struct SelvaObject *dst_obj = SelvaHierarchy_GetNodeObject(dst_node);
