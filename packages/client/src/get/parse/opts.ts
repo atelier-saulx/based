@@ -5,22 +5,23 @@ import { ExecContext, Field, GetCommand, GetNode, Path } from '../types'
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
-): Promise<GetCommand[]> {
+): Promise<{ cmds: GetCommand[]; defaults: { path: Path; value: any }[] }> {
   let topLevel: GetCommand[] = []
   let visited: GetCommand
-  await walk<{
+  const walked = await walk<{
     id: string
     $id: string
     nestedPath?: Path
     type: 'node' | 'traverse'
     $list?: any
+    defaultValues: { path: Path; value: any }[]
   }>(
     {
       async init(args) {
         const $id = args.value.$id || 'root'
         return {
           ...args,
-          target: { $id, id: $id, type: 'node' },
+          target: { $id, id: $id, type: 'node', defaultValues: [] },
         }
       },
       collect(args) {
@@ -73,7 +74,7 @@ export async function parseGetOpts(
         fields: {},
         keys: {},
         async any(args) {
-          const { key, value, target } = args
+          const { key, value, target, path } = args
 
           if (typeof value === 'object') {
             if (value.$list) {
@@ -130,6 +131,12 @@ export async function parseGetOpts(
             return args
           } else if (key === '$fieldsByType') {
             return args
+          } else if (key === '$default') {
+            args.target.defaultValues.push({
+              path: path.slice(0, -1),
+              value,
+            })
+            return
           }
 
           if (String(key).startsWith('$')) {
@@ -153,7 +160,6 @@ export async function parseGetOpts(
         const byType: Record<string, Field[]> = {}
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
-          console.dir({ entry }, { depth: 8 })
           if (entry?.type === 'field') {
             fields.push({
               ...entry,
@@ -284,5 +290,8 @@ export async function parseGetOpts(
 
   const nested = visited.nestedCommands
   delete visited.nestedCommands
-  return [visited, ...nested, ...topLevel]
+  return {
+    cmds: [visited, ...nested, ...topLevel],
+    defaults: walked.target.defaultValues,
+  }
 }

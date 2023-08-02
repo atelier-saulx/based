@@ -102,7 +102,7 @@ test.serial('find - by type', async (t) => {
       $id: 'root',
       items: {
         name: true,
-        // nonsense: { $default: 'yes' }, // TODO: needs $default
+        nonsense: { $default: 'yes' },
         $list: {
           $find: {
             $recursive: true,
@@ -130,10 +130,11 @@ test.serial('find - by type', async (t) => {
       items: [
         {
           name: 'match 1',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
         {
-          name: 'match 4', //nonsense: 'yes'
+          name: 'match 4',
+          nonsense: 'yes',
         },
         // { name: 'match 2', nonsense: 'yes' },
       ],
@@ -145,7 +146,7 @@ test.serial('find - by type', async (t) => {
       $id: 'root',
       items: {
         name: true,
-        // nonsense: { $default: 'yes' }, // TODO: needs $default
+        nonsense: { $default: 'yes' },
         $list: {
           $find: {
             $recursive: true,
@@ -173,11 +174,11 @@ test.serial('find - by type', async (t) => {
       items: [
         {
           name: 'match 1',
-          //nonsense: 'yes'
+          nonsense: 'yes',
         },
         {
           name: 'match 2',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
       ],
     }
@@ -188,7 +189,7 @@ test.serial('find - by type', async (t) => {
       $id: 'root',
       items: {
         name: true,
-        // nonsense: { $default: 'yes' }, // TODO: needs $default
+        nonsense: { $default: 'yes' },
         $list: {
           $find: {
             $recursive: true,
@@ -216,15 +217,15 @@ test.serial('find - by type', async (t) => {
       items: [
         {
           name: 'match 1',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
         {
           name: 'match 2',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
         {
           name: 'match 4',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
       ],
     }

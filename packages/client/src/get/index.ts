@@ -10,6 +10,7 @@ import {
 } from '@based/db-query'
 import { SelvaTraversal, SelvaResultOrder } from '../protocol'
 import { joinPath } from '../util'
+import { setByPath } from '@saulx/utils'
 
 export * from './types'
 export * from './parse'
@@ -124,6 +125,33 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
       return find
     })
   )
+}
+
+export function applyDefault(
+  obj: any,
+  { path, value }: { path: Path; value: any }
+): void {
+  for (let i = 0; i < path.length - 1; i++) {
+    const part = path[i]
+    if (!obj[part]) {
+      const o = {}
+      setByPath(o, path.slice(i), value)
+      obj[part] = o
+      return
+    }
+
+    obj = obj[part]
+
+    if (Array.isArray(obj)) {
+      obj.forEach((x) => applyDefault(x, { path: path.slice(i + 1), value }))
+      return
+    }
+  }
+
+  const last = path[path.length - 1]
+  if (!obj[last]) {
+    obj[last] = value
+  }
 }
 
 function getField(field: Field): string {

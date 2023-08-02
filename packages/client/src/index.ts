@@ -13,6 +13,7 @@ import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
 import {
+  applyDefault,
   ExecContext,
   get,
   GetCommand,
@@ -20,7 +21,7 @@ import {
   parseGetResult,
 } from './get'
 import genId from './id'
-import { deepCopy, deepMerge, deepMergeArrays } from '@saulx/utils'
+import { deepCopy, deepMerge, deepMergeArrays, getByPath } from '@saulx/utils'
 
 export * as protocol from './protocol'
 
@@ -184,8 +185,8 @@ export class BasedDbClient extends Emitter {
       ctx.lang = opts.$language
     }
 
-    let cmds = await parseGetOpts({ client: this }, opts)
-    console.dir({ cmds }, { depth: 8 })
+    let { cmds, defaults } = await parseGetOpts({ client: this }, opts)
+    console.dir({ cmds, defaults }, { depth: 8 })
 
     const nestedIds: any[] = []
     const nestedObjs: any[] = []
@@ -231,9 +232,14 @@ export class BasedDbClient extends Emitter {
       i++
     }
 
-    console.dir({ nestedObjs }, { depth: 8 })
+    const merged = deepMergeArrays({}, ...nestedObjs)
+    for (const d of defaults) {
+      applyDefault(merged, d)
+    }
 
-    return deepMergeArrays({}, ...nestedObjs)
+    console.dir({ nestedObjs, merged }, { depth: 8 })
+
+    return merged
   }
 
   onData(data: Buffer) {

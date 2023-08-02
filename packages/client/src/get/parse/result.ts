@@ -17,7 +17,6 @@ export function parseGetResult(
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
     const cmd: GetCommand = cmds[i]
-    console.dir({ result, cmd: cmds[i] }, { depth: 8 })
     const {
       target: { path },
       source,
