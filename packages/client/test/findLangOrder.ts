@@ -50,7 +50,6 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: worng language dependant order
 // only runs on darwin?
 // test[process.platform === 'darwin' ? 'skip' : 'serial'](
 test.serial.skip('$lang should change the order when relevant', async (t) => {
