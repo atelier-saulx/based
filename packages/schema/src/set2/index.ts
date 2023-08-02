@@ -1,4 +1,3 @@
-import { Path } from '@saulx/utils'
 import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
 import { walk, Opts } from '../walker'
@@ -46,12 +45,6 @@ const opts: Opts<BasedSetTarget> = {
       args.error(ParseError.fieldDoesNotExist)
     },
   },
-  error: (code, args) => {
-    args.target.errors.push({
-      code,
-      path: args.path ?? [],
-    })
-  },
   init: async (value, schema, error) => {
     let type: string
     const target: BasedSetTarget = {
@@ -87,15 +80,18 @@ const opts: Opts<BasedSetTarget> = {
 
     return { target, typeSchema }
   },
+  error: (code, args) => {
+    args.target.errors.push({
+      code,
+      path: args.path ?? [],
+    })
+  },
   collect: (args) => {
     args.root.target.collected.push(args)
   },
 }
 
-// TODO: make the opts outside of this
 export const setWalker2 = (
   schema: BasedSchema,
   value: any
-): Promise<BasedSetTarget> => {
-  return walk<BasedSetTarget>(schema, opts, value)
-}
+): Promise<BasedSetTarget> => walk<BasedSetTarget>(schema, opts, value)
