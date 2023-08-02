@@ -18,7 +18,6 @@ function createOrUseArgs<T>(
       return newArgs
     } else {
       if (!('value' in newArgs)) {
-        console.info('???--->', from.value)
         newArgs.value = from.value
       }
       if (!newArgs.fieldSchema) {
@@ -57,7 +56,7 @@ function createFieldArgs<T>(
     {
       key,
       value: from.value[key],
-      //  @ts-ignore needs key
+      // @ts-ignore needs key
       fieldSchema,
     },
     from
