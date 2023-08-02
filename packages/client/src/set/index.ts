@@ -17,7 +17,7 @@ const DB_TYPE_TO_SET_TYPE = {
   references: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
   string: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_CHAR,
   integer: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_LONG_LONG,
-  double: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_DOUBLE,
+  number: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_DOUBLE,
 }
 
 const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {

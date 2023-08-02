@@ -39,14 +39,11 @@ export enum ModifyOpSetType {
   SELVA_MODIFY_OP_SET_TYPE_LONG_LONG = 3,
 }
 
-export const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<
-  number,
-  (t: any) => Buffer | null
-> = {
+export const SET_TYPE_TO_MODIFY_VALUE_TYPE: Record<number, (t: any) => any> = {
   0: null,
   1: null,
-  2: encodeDouble,
-  3: encodeLongLong,
+  2: (x) => x,
+  3: (x) => BigInt(x),
 }
 
 export const OP_SET_TYPE = {

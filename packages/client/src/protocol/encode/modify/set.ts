@@ -30,7 +30,6 @@ export function encodeSetOperation({
   $remove?: any | any[]
 }): Buffer {
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
-    console.log('HELLO', { setType, isSingle, $value })
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       contraint_id: getContraint({ isSingle }),

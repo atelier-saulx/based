@@ -58,13 +58,12 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $operator 'has' not working
-test.serial.skip('search user roles', async (t) => {
+test.serial('search user roles', async (t) => {
   await client.set({
     type: 'user',
     roles: ['club', 'club:id1'],
@@ -157,7 +156,7 @@ test.serial.skip('search user roles', async (t) => {
 })
 
 // TODO: type set not working
-test.serial.skip('search user numbers', async (t) => {
+test.serial.only('search user numbers', async (t) => {
   await client.set({
     type: 'user',
     numbers: [1, 2.4, 3, 4],
