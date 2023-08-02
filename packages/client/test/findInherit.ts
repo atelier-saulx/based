@@ -80,8 +80,6 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: Redis not exposed for low level test
-
 // TODO: waiting for creating node directly when setting children
 test.serial.skip('find - inherit', async (t) => {
   await client.updateSchema({
