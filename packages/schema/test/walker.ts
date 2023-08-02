@@ -13,6 +13,10 @@ const schema: BasedSchema = {
           maximum: 6,
           exclusiveMaximum: true,
         },
+        timestamp: {
+          type: 'timestamp',
+          // multipleOF // min // max multipleOf(week) //
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -308,6 +312,28 @@ test.only('string', async (t) => {
   console.log(
     c.errors,
     c.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink 3 ------')
+  const g = await setWalker2(schema, {
+    $id: 'bl120',
+    timestamp: { $default: 4 },
+  })
+
+  console.log(
+    g.errors,
+    g.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink 4 ------')
+  const d = await setWalker2(schema, {
+    $id: 'bl120',
+    exclusiveminmax: { $value: 4 },
+  })
+
+  console.log(
+    d.errors,
+    d.collected.map((v) => ({ path: v.path, value: v.value }))
   )
 
   t.true(true)

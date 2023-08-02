@@ -117,23 +117,32 @@ export const string: FieldParser<'string'> = async (args) => {
 }
 
 export const text: FieldParser<'text'> = async (args) => {
-  // const value = args.value
-  // if (args.prev.value.$language && typeof value === 'string') {
-  //   args.stop()
-  //   if (!validate(args, value)) {
-  //     return
-  //   }
-  //   args.collect()
-  // }
-  // if (typeof value !== 'object') {
-  //   args.error(ParseError.incorrectFormat)
-  // }
-  // for (const key in value) {
-  //   console.log([key], value[key], 'miauw')
-  //   if (!args.target.schema.languages.includes(<BasedSchemaLanguage>key)) {
-  //     console.log('error  miauw')
-  //     args.error(ParseError.languageNotSupported)
-  //   }
-  // }
-  // args.collect()
+  const value = args.value
+
+  if (value !== null && typeof value === 'object') {
+    if ('$value' in value) {
+      return
+    }
+    args.stop()
+    return
+  }
+
+  if (typeof value !== 'string') {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+
+  if (!args.target.$language) {
+    args.error(ParseError.noLanguageFound)
+    return
+  }
+
+  if (!validateString(args, args.value)) {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+
+  args.collect({
+    [args.target.$language]: value,
+  })
 }

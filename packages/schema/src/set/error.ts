@@ -14,6 +14,7 @@ export enum ParseError {
   'requiredFieldNotDefined',
   'languageNotSupported',
   'invalidJSON',
+  'noLanguageFound',
 }
 
 export const error = (

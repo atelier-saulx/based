@@ -66,9 +66,17 @@ const validate = (
   args: ArgsClass<BasedSetTarget, NumberTypes>,
   value: any
 ): boolean => {
+  if (value === null) {
+    return false
+  }
+
   if (typeof value !== 'object') {
     return validateNumber(args, value)
   }
+  if ('$value' in value) {
+    return
+  }
+
   args.stop()
   for (const key in value) {
     if (key === '$default') {
