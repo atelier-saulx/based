@@ -390,9 +390,6 @@ static int FindCommand_ArrayObjectCb(
     return 0;
 }
 
-/**
- * @param nr_fields_out Only set when merge_strategy != MERGE_STRATEGY_NONE.
- */
 static size_t FindCommand_SendOrderedResult(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
