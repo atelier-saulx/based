@@ -1,147 +1,112 @@
-import {
-  BasedSchemaField,
-  BasedSchemaType,
-  BasedSetHandlers,
-  BasedSchema,
-  BasedSetTarget,
-} from '../types'
-import { error, ParseError } from './error'
-import parsers from './parsers'
+import { ParseError } from '../error'
+import { BasedSchema, BasedSetTarget } from '../types'
+import { walk, Opts } from '../walker'
+import { fields } from './fields'
+import { isValidId } from './isValidId'
 
-export const fieldWalker = async (
-  path: (string | number)[],
-  value: any,
-  fieldSchema: BasedSchemaField,
-  typeSchema: BasedSchemaType,
-  target: BasedSetTarget,
-  handlers: BasedSetHandlers,
-  noCollect?: boolean
-): Promise<void> => {
-  if ('$ref' in fieldSchema) {
-    // TODO: when we have this it has to get it from the schema and redo the parsing with the correct fieldSchema
-    return
-  }
-  const valueType = typeof value
-
-  const valueIsObject = value && valueType === 'object'
-  if (valueIsObject && value.$delete === true) {
-    if (!noCollect) {
-      handlers.collect({ path, value, typeSchema, fieldSchema, target })
+const opts: Opts<BasedSetTarget> = {
+  parsers: {
+    keys: {
+      $id: async (args) => {
+        if (!isValidId(args.schema, args.value)) {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+      },
+      $language: async (args) => {
+        if (!args.schema.languages.includes(args.value)) {
+          args.error(ParseError.languageNotSupported)
+          return
+        }
+      },
+      $value: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'text') {
+          return
+        }
+        args.stop()
+        if (args.prev.value.$default) {
+          args.error(ParseError.valueAndDefault)
+          return
+        }
+        return { path: args.path.slice(0, -1) }
+      },
+      $default: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'number' || type === 'integer' || type === 'text') {
+          // default can exist with $incr and $decr
+          return
+        }
+        args.prev.stop()
+        const newArgs = args.create({
+          path: args.path.slice(0, -1),
+          skipCollection: true,
+        })
+        await newArgs.parse()
+        for (const key in args.prev.value) {
+          if (key !== '$default') {
+            args.prev.create({ key }).error(ParseError.fieldDoesNotExist)
+          }
+        }
+        newArgs.skipCollection = false
+        newArgs.value = { $default: newArgs.value }
+        newArgs.collect()
+      },
+    },
+    fields,
+    catch: async (args) => {
+      args.error(ParseError.fieldDoesNotExist)
+    },
+  },
+  init: async (value, schema, error) => {
+    let type: string
+    const target: BasedSetTarget = {
+      type,
+      schema,
+      required: [],
+      collected: [],
+      errors: [],
     }
-    return
-  }
-
-  const typeDef = fieldSchema.type ?? ('enum' in fieldSchema ? 'enum' : '')
-
-  if (!typeDef) {
-    error(path, ParseError.fieldDoesNotExist)
-  }
-
-  if ('customValidator' in fieldSchema) {
-    const customValidator = fieldSchema.customValidator
-    if (!(await customValidator(value, path, target))) {
-      error(path, ParseError.incorrectFormat)
-    }
-  }
-
-  const parse = parsers[typeDef]
-
-  await parse(path, value, fieldSchema, typeSchema, target, handlers, noCollect)
-
-  return
-}
-
-export const setWalker = async (
-  schema: BasedSchema,
-  value: { [key: string]: any },
-  handlers: BasedSetHandlers
-): Promise<BasedSetTarget> => {
-  let type: string
-
-  if (value.$id) {
-    type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
-    if (!type) {
-      error([value.$id], ParseError.incorrectNodeType)
-    }
-  }
-
-  if (value.type) {
-    if (type && value.type !== type) {
-      error([value.$id, value.type], ParseError.incorrectNodeType)
-    }
-    type = value.type
-  }
-
-  const schemaType = schema.types[type]
-
-  if (!schemaType) {
-    error([type], ParseError.incorrectNodeType)
-  }
-
-  const target: BasedSetTarget = {
-    type,
-    schema,
-    required: [],
-  }
-
-  if (value.$language) {
-    if (!schema.languages.includes(value.$language)) {
-      error(['$language'], ParseError.languageNotSupported)
-    }
-    target.$language = value.$language
-  }
-
-  if (value.$id) {
-    target.$id = value.$id
-  } else if (value.$alias) {
-    target.$alias = value.$alias
-  }
-
-  const q: Promise<void>[] = []
-
-  for (const key in value) {
-    if (key[0] !== '$' && key !== 'type') {
-      const fieldSchema = schemaType.fields[key]
-      if (!fieldSchema) {
-        error([key], ParseError.fieldDoesNotExist)
+    if (value.$id) {
+      if (value.$id === 'root') {
+        type = 'root'
       } else {
-        q.push(
-          fieldWalker(
-            [key],
-            value[key],
-            fieldSchema,
-            schemaType,
-            target,
-            handlers
-          )
-        )
+        type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
+      }
+      if (!type) {
+        error(ParseError.incorrectFieldType, { target })
+        return
       }
     }
-  }
-
-  await Promise.all(q)
-
-  if (schemaType.required) {
-    for (const req of schemaType.required) {
-      if (!(req in value)) {
-        target.required.push([req])
+    if (value.type) {
+      if (type && value.type !== type) {
+        error(ParseError.incorrectNodeType, { target })
+        return
       }
+      type = value.type
     }
-  }
-
-  if (target.required?.length) {
-    const requireDefined = await Promise.all(
-      target.required.map(async (req) => {
-        return handlers.checkRequiredFields(req)
-      })
-    )
-    for (let i = 0; i < requireDefined.length; i++) {
-      if (!requireDefined[i]) {
-        const r = target.required[i]
-        error(r, ParseError.requiredFieldNotDefined)
-      }
+    const typeSchema = type === 'root' ? schema.root : schema.types[type]
+    if (!typeSchema) {
+      error(ParseError.incorrectNodeType, { target })
+      return
     }
-  }
-
-  return target
+    target.type = type
+    target.$language = value.$language
+    target.$id = value.$id
+    return { target, typeSchema }
+  },
+  error: (code, args) => {
+    args.target.errors.push({
+      code,
+      path: args.path ?? [],
+    })
+  },
+  collect: (args) => {
+    args.root.target.collected.push(args)
+  },
 }
+
+export const setWalker = (
+  schema: BasedSchema,
+  value: any
+): Promise<BasedSetTarget> => walk<BasedSetTarget>(schema, opts, value)

@@ -1,5 +1,7 @@
 import type { Language } from './languages'
-import type { PartialDeep } from 'type-fest'
+import type { PartialDeep, SetOptional } from 'type-fest'
+import { ParseError } from './error'
+import { ArgsClass, Path } from './walker'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -54,13 +56,16 @@ export type BasedSchemaContentMediaType =
   | 'image/png'
   | 'image/jpeg'
   | 'video/mp4'
-  | string
+  | 'image/*'
+  | 'video/*'
+  | 'audio/*'
+  | '*/*'
+  | `${string}/${string}`
 
 export type BasedSchemaFieldShared = {
   hooks?:
     | { interval?: number; hook: string }
     | { interval?: number; hook: string }[]
-
   type?: BasedSchemaFieldType
   $id?: string
   $schema?: string
@@ -83,12 +88,11 @@ export type BasedSchemaFieldShared = {
 }
 
 // -------------- Primitive ---------------
-
 export type BasedSchemaStringShared = {
   minLength?: number
   maxLength?: number
   contentMediaEncoding?: string // base64
-  contentMediaType?: BasedSchemaContentMediaType
+  contentMediaType?: BasedSchemaContentMediaType // 'image/*'
   pattern?: BasedSchemaPattern // TODO: does not exist
   format?:
     | 'email'
@@ -341,6 +345,8 @@ export type BasedSetTarget = {
   schema: BasedSchema
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
+  collected: ArgsClass<BasedSetTarget>[]
+  errors: { code: ParseError; path: Path }[]
 }
 
 export type BasedSchemaCollectProps = {
@@ -352,9 +358,9 @@ export type BasedSchemaCollectProps = {
 }
 
 export type BasedSetHandlers = {
-  collect: (props: BasedSchemaCollectProps) => void
+  collectErrors: (props: { message: string; code: ParseError }) => void
 
-  // add collectNeedRequired
+  collect: (props: BasedSchemaCollectProps) => void
 
   checkRequiredFields: (path: (string | number)[]) => Promise<boolean>
 
@@ -363,3 +369,8 @@ export type BasedSetHandlers = {
     $filter: any
   ) => Promise<boolean>
 }
+
+export type BasedSetOptionalHandlers = SetOptional<
+  BasedSetHandlers,
+  'collectErrors' | 'collect'
+>
