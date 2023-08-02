@@ -16,8 +16,8 @@ const parseArray = async (
         path: [i],
         value: fromValue[i],
         fieldSchema: args.fieldSchema.values,
-        collect: (args, v) => {
-          setByPath(arr, args.path, v)
+        collect: (args) => {
+          setByPath(arr, args.path, args.value)
         },
       })
     )
@@ -48,7 +48,7 @@ const operations: {
     args.collect(value)
   },
   $unshift: async (args, value) => {
-    value.$unshift = await parseArray(args, value.$push)
+    value.$unshift = await parseArray(args, value.$unshift)
     args.collect(value)
   },
   $remove: async (args, value) => {
@@ -68,7 +68,8 @@ const operations: {
     }
     await args.parse({
       key: value.$assign.$idx,
-      value: args.fieldSchema.values,
+      value: value.$assign.$value,
+      fieldSchema: args.fieldSchema.values,
     })
   },
 }

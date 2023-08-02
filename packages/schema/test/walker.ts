@@ -41,6 +41,12 @@ const schema: BasedSchema = {
             type: 'number',
           },
         },
+        intarray: {
+          type: 'array',
+          values: {
+            type: 'integer',
+          },
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -79,32 +85,25 @@ const schema: BasedSchema = {
   },
 }
 
-test('walker', async (t) => {
-  const x = await walk(
+test.only('walker', async (t) => {
+  const x = await walk<{ lullz: true }>(
     schema,
     {
-      init: async (args) => {
-        return { ...args, target: { lullz: true } }
+      init: async () => {
+        return { target: { lullz: true } }
       },
       parsers: {
-        keys: {
-          // $list: async (args) => {
-          //   return {
-          //     ...args,
-          //     value: { flapdrol: true },
-          //   }
-          // },
-        },
-        fields: {
-          // string: () => {}
-        },
+        keys: {},
+        fields: {},
         any: async (args) => {
           args.collect(args)
+          // return { target: { lullz: true } }
           return args
         },
       },
       collect: (args) => {
-        return args.path.join('.')
+        console.info('..', args.path)
+        return { bla: args.path.join('.') }
       },
       backtrack: (args, fromBt, collected) => {
         console.log(
@@ -269,7 +268,7 @@ test('perf setWalker', async (t) => {
   t.true(d < 1e3)
 })
 
-test.only('string', async (t) => {
+test('string', async (t) => {
   // for (let i = 0; i < 10; i++) {
   //   console.log(
   //     (await setWalker(schema, { $id: 'bl120', name: 'blax' })).target
@@ -647,6 +646,59 @@ test.only('string', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: 'ti123' },
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 26 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $assign: {
+        $idx: 0,
+        $value: 6,
+      },
+    },
+  })
+
+  r.collected.forEach((v) => {
+    console.info(v.root.typeSchema)
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 27 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $push: [1, 2, 3, 4, 5],
+    },
+  })
+
+  r.collected.forEach((v) => {
+    console.info(v.root.typeSchema)
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 28 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $unshift: [1, 2, 3, 4, 5],
+    },
   })
 
   r.collected.forEach((v) => {
