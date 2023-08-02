@@ -7,7 +7,7 @@ import {
 import { ArgsClass } from './args'
 import { ArgsOpts, FieldParser, KeyParser, Stopped } from './types'
 
-type ParseResult<T> = ArgsClass<T> | void
+export type ParseResult<T> = ArgsClass<T> | void
 
 // TODO needs cleaning
 function createOrUseArgs<T>(
@@ -164,15 +164,15 @@ export async function parse<T>(
       (args.fromBackTrack.length || args.collectedCommands.length)
     ) {
       const backtracked = opts.backtrack(
-        this,
+        args,
         args.fromBackTrack ?? [],
         args.collectedCommands ?? []
       )
-      if (backtracked && this.prev) {
-        if (!this.prev.fromBackTrack) {
-          this.prev.fromBackTrack = []
+      if (backtracked && args.prev) {
+        if (!args.prev.fromBackTrack) {
+          args.prev.fromBackTrack = []
         }
-        this.prev.fromBackTrack.push(backtracked)
+        args.prev.fromBackTrack.push(backtracked)
       }
     }
   } else {
