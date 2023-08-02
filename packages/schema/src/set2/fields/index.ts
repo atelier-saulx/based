@@ -6,6 +6,7 @@ import { object, record } from './object'
 import { number, integer, timestamp } from './number'
 import { string, text } from './string'
 import { reference, references } from './references'
+import { set } from './set'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 
@@ -17,6 +18,7 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
   integer,
   timestamp,
   string,
+  set,
   text,
   reference,
   references,

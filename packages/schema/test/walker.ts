@@ -19,7 +19,12 @@ const schema: BasedSchema = {
         },
         timestamp: {
           type: 'timestamp',
-          // multipleOF // min // max multipleOf(week) //
+        },
+        setOfNumbers: {
+          type: 'set',
+          items: {
+            type: 'number',
+          },
         },
         name: {
           minLength: 3,
@@ -473,6 +478,75 @@ test.only('string', async (t) => {
       ro: { $value: 'durp' },
       en: { $default: 'xzxz' },
     },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 14 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: {
+      $value: 'xz',
+      nl: 'flapperonus',
+      $default: {
+        ae: 'habibi',
+      },
+      ro: { $value: 'durp' },
+      en: { $default: 'xzxz' },
+    },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 15 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    setOfNumbers: [1, 2, 3, 4, 5],
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 16 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    setOfNumbers: { $add: 20 },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 17 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 18 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
   })
 
   console.error(r.errors)

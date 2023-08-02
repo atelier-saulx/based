@@ -64,8 +64,6 @@ test('min-max', async (t) => {
     number: 10,
   })
 
-  //throw above
-
   const res1 = await setWalker2(schema, {
     $id: 'bl1',
     number: 3,
@@ -76,9 +74,9 @@ test('min-max', async (t) => {
     number: 6,
   })
 
-  t.assert(errorCollect([e1, e2]).length > 0)
+  t.true(errorCollect(e1, e2).length > 0)
 
-  t.deepEqual(resultCollect([res1, res2]), [
+  t.deepEqual(resultCollect(res1, res2), [
     { path: ['number'], value: 3 },
     { path: ['number'], value: 6 },
   ])
@@ -105,9 +103,9 @@ test('min-max exclusive', async (t) => {
     exclusiveminmax: 5,
   })
 
-  t.assert(errorCollect([e1, e2]).length > 0)
+  t.assert(errorCollect(e1, e2).length > 0)
 
-  t.deepEqual(resultCollect([res1, res2]), [
+  t.deepEqual(resultCollect(res1, res2), [
     { path: ['exclusiveminmax'], value: 4 },
     { path: ['exclusiveminmax'], value: 5 },
   ])
