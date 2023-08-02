@@ -5,6 +5,7 @@ import {
   BasedSchemaFieldSet,
 } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
+import { parseAlias } from '../../util'
 import { ExecContext, GetCommand } from '../types'
 
 export function parseGetResult(
@@ -109,7 +110,7 @@ function parseObjFields(
     }
 
     if (alias) {
-      setByPath(obj, alias.split('.'), res)
+      setByPath(obj, parseAlias(alias), res)
     } else {
       n[parts[parts.length - 1]] = res
     }
