@@ -6,7 +6,7 @@ import {
 import { ParseError } from '../../set/error'
 import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
-import { setByPath } from '@saulx/utils'
+import { deepMerge, setByPath } from '@saulx/utils'
 
 type StringTypes = 'string' | 'text'
 
@@ -121,15 +121,21 @@ export const text: FieldParser<'text'> = async (args) => {
   const value = args.value
 
   if (value !== null && typeof value === 'object') {
-    if ('$value' in value) {
-      return
-    }
     args.stop()
-
     const result: any = {}
 
     for (const key in value) {
-      if (key === '$default') {
+      if (key === '$value') {
+        const valueArgs = args.create({
+          key,
+          value: value.$value,
+          skipCollection: true,
+        })
+        await valueArgs.parse()
+        if (typeof valueArgs.value === 'object') {
+          deepMerge(result, valueArgs.value)
+        }
+      } else if (key === '$default') {
         const defaultArgs = args.create({
           key,
           value: value.$default,
@@ -140,7 +146,7 @@ export const text: FieldParser<'text'> = async (args) => {
       } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
         if (value[key] && typeof value[key] === 'object') {
           for (const k in value[key]) {
-            if (key === '$value') {
+            if (k === '$value') {
               if (!validateString(args, value[key].$value)) {
                 args.create({ key }).error(ParseError.incorrectFormat)
               } else {
@@ -169,9 +175,7 @@ export const text: FieldParser<'text'> = async (args) => {
         args.create({ key }).error(ParseError.languageNotSupported)
       }
     }
-
     args.collect(result)
-
     return
   }
 

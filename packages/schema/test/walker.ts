@@ -49,7 +49,7 @@ const schema: BasedSchema = {
     },
   },
   $defs: {},
-  languages: ['en', 'de', 'nl', 'ro', 'za'],
+  languages: ['en', 'de', 'nl', 'ro', 'za', 'ae'],
   root: {
     fields: {},
   },
@@ -389,5 +389,81 @@ test.only('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 9 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  t.true(true)
+
+  console.info('---- doink 10 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: {
+      $default: { de: 'dsnfds' },
+      nl: 'flapperonus',
+      en: { $default: 'flapflap' },
+    },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 11 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: {
+      $default: { de: 'dsnfds' },
+      nl: 'flapperonus',
+      ro: { $value: 'durp' },
+      en: { $default: 'flapflap' },
+    },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 12 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: {
+      $value: 'durp',
+      nl: 'flapperonus',
+      $default: {
+        ae: 'habibi',
+      },
+      ro: { $value: 'durp' },
+      en: { $default: 'flapflap' },
+    },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })
+
+// (t, value, {
+// errors: [],
+// values: []
+// })

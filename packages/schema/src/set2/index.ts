@@ -22,6 +22,10 @@ const opts: Opts<BasedSetTarget> = {
         }
       },
       $value: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'text') {
+          return
+        }
         args.stop()
         if (args.prev.value.$default) {
           args.error(ParseError.valueAndDefault)
