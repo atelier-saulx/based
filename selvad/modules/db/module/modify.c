@@ -545,7 +545,7 @@ string_err:
                 part_len = sizeof(double);
                 memcpy(&v, ptr, part_len);
                 err = SelvaObject_AddDoubleSet(obj, field, v);
-            } else {
+            } else { /* SELVA_MODIFY_OP_SET_TYPE_LONG_LONG */
                 long long v;
 
                 part_len = sizeof(long long);
@@ -633,6 +633,8 @@ string_err:
                     }
                 }
             } else {
+                SELVA_LOG(SELVA_LOGL_CRIT, "Type mismatch! type: %d objSet->type: %d",
+                          (int)type, (int)objSet->type);
                 abort(); /* Never reached. */
             }
         }
