@@ -211,6 +211,8 @@ export async function parseGetOpts(
           if (Array.isArray(sourceField)) {
             // find in id list
             cmd.source = { idList: sourceField }
+          } else if (typeof sourceField === 'object') {
+            cmd.traverseExpr = sourceField
           } else {
             cmd.sourceField = sourceField
           }

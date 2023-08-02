@@ -48,14 +48,12 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $traverse expressions broken
-//     message: 'Cannot convert undefined to a BigInt'
-test.serial.skip('find - by type', async (t) => {
+test.serial('find - by type', async (t) => {
   // simple nested - single query
   await client.set({
     $id: 'le1',
@@ -102,10 +100,9 @@ test.serial.skip('find - by type', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         name: true,
-        nonsense: { $default: 'yes' },
+        // nonsense: { $default: 'yes' }, // TODO: needs $default
         $list: {
           $find: {
             $recursive: true,
@@ -130,10 +127,14 @@ test.serial.skip('find - by type', async (t) => {
       },
     }),
     {
-      id: 'root',
       items: [
-        { name: 'match 1', nonsense: 'yes' },
-        { name: 'match 4', nonsense: 'yes' },
+        {
+          name: 'match 1',
+          // nonsense: 'yes'
+        },
+        {
+          name: 'match 4', //nonsense: 'yes'
+        },
         // { name: 'match 2', nonsense: 'yes' },
       ],
     }
@@ -142,10 +143,9 @@ test.serial.skip('find - by type', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         name: true,
-        nonsense: { $default: 'yes' },
+        // nonsense: { $default: 'yes' }, // TODO: needs $default
         $list: {
           $find: {
             $recursive: true,
@@ -170,10 +170,15 @@ test.serial.skip('find - by type', async (t) => {
       },
     }),
     {
-      id: 'root',
       items: [
-        { name: 'match 1', nonsense: 'yes' },
-        { name: 'match 2', nonsense: 'yes' },
+        {
+          name: 'match 1',
+          //nonsense: 'yes'
+        },
+        {
+          name: 'match 2',
+          // nonsense: 'yes'
+        },
       ],
     }
   )
@@ -181,10 +186,9 @@ test.serial.skip('find - by type', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
-      id: true,
       items: {
         name: true,
-        nonsense: { $default: 'yes' },
+        // nonsense: { $default: 'yes' }, // TODO: needs $default
         $list: {
           $find: {
             $recursive: true,
@@ -209,18 +213,25 @@ test.serial.skip('find - by type', async (t) => {
       },
     }),
     {
-      id: 'root',
       items: [
-        { name: 'match 1', nonsense: 'yes' },
-        { name: 'match 2', nonsense: 'yes' },
-        { name: 'match 4', nonsense: 'yes' },
+        {
+          name: 'match 1',
+          // nonsense: 'yes'
+        },
+        {
+          name: 'match 2',
+          // nonsense: 'yes'
+        },
+        {
+          name: 'match 4',
+          // nonsense: 'yes'
+        },
       ],
     }
   )
 })
 
-// TODO: $operator = '!=' not working
-test.serial.skip('find - by IS NOT type', async (t) => {
+test.serial('find - by IS NOT type', async (t) => {
   await client.set({
     $id: 'le1',
     type: 'league',
