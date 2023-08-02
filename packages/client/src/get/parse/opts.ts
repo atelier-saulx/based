@@ -165,8 +165,7 @@ export async function parseGetOpts(
             const canMerge: boolean =
               nestedCmd.type === 'node' &&
               (nestedCmd.source?.id ?? id) === id &&
-              !nestedCmd.noMerge &&
-              !nestedCmd?.nestedCommands?.length
+              !nestedCmd.noMerge
 
             if (canMerge) {
               for (const fieldObj of nestedCmd.fields.$any) {
@@ -197,6 +196,8 @@ export async function parseGetOpts(
                   })
                 }
               }
+
+              nestedCmd?.nestedCommands.forEach((c) => nestedCommands.push(c))
             } else if (nestedCmd.type === 'node') {
               // completely separate id queried
               topLevel.push(nestedCmd)
