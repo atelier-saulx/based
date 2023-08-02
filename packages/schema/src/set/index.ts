@@ -77,7 +77,10 @@ const opts: Opts<BasedSetTarget> = {
         error(ParseError.incorrectFieldType, { target })
         return
       }
+    } else if (value.$alias) {
+      target.$alias = value.$alias
     }
+
     if (value.type) {
       if (type && value.type !== type) {
         error(ParseError.incorrectNodeType, { target })
