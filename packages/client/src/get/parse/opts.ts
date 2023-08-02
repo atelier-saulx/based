@@ -18,10 +18,9 @@ export async function parseGetOpts(
   }>(
     ctx.client.schema,
     {
-      async init(args) {
-        const $id = args.value.$id || 'root'
+      async init(value, schema) {
+        const $id = value.$id || 'root'
         return {
-          ...args,
           target: { $id, id: $id, type: 'node', defaultValues: [] },
         }
       },
@@ -68,7 +67,7 @@ export async function parseGetOpts(
           return { type: 'field', field: [key], aliased: $field }
         }
 
-        console.error('UNABLE TO PARSE', JSON.stringify(args.value))
+        console.error('UNABLE TO PARSE', args.value)
       },
       parsers: {
         fields: {},
@@ -112,14 +111,14 @@ export async function parseGetOpts(
                 },
               }
             } else if (value.$field) {
-              args.collect(args)
+              args.collect()
               return
             } else if (value.$default) {
               args.target.defaultValues.push({
                 path: path,
                 value: value.$default,
               })
-              args.collect({ ...args, ...{ value: true } })
+              args.collect(true)
               return
             }
 
@@ -130,7 +129,7 @@ export async function parseGetOpts(
               },
             }
           } else if (key === '$all') {
-            args.collect(args)
+            args.collect()
             return args
           } else if (key === '$fieldsByType') {
             return args
@@ -140,7 +139,7 @@ export async function parseGetOpts(
             return
           }
 
-          args.collect(args)
+          args.collect()
           return args
         },
       },
