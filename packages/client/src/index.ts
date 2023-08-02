@@ -1,4 +1,9 @@
-import { BasedSchema, BasedSchemaPartial, setWalker } from '@based/schema'
+import {
+  BasedSchema,
+  BasedSchemaCollectProps,
+  BasedSchemaPartial,
+  setWalker,
+} from '@based/schema'
 
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
@@ -123,34 +128,33 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
-    const args: any[] = []
-    const { $alias, $id, $language } = await setWalker(this.schema, opts, {
-      // TODO: we will design how non-type generic filters work later
-      checkRequiredFields: async (path) => {
-        return true
-      },
-      referenceFilterCondition: async (id) => {
-        return true
-      },
-      collect: (props) => {
-        if (props?.fieldSchema?.type === 'text') {
-          for (const lang in props.value) {
-            args.push(
-              ...toModifyArgs({
-                target: props.target,
-                typeSchema: props.typeSchema,
-                fieldSchema: { type: 'string' },
-                value: props.value[lang],
-                path: [...props.path, lang],
-              })
-            )
-          }
+    const { errors, collected, $id, $alias } = await setWalker(
+      this.schema,
+      opts
+    )
 
-          args.push(...toModifyArgs(props))
-        } else {
-          args.push(...toModifyArgs(props))
+    if (errors?.length) {
+      // TODO
+      throw new Error(JSON.stringify(errors))
+    }
+
+    const args: any[] = []
+    collected.forEach((props: Required<BasedSchemaCollectProps>) => {
+      if (props?.fieldSchema?.type === 'text') {
+        for (const lang in props.value) {
+          args.push(
+            ...toModifyArgs({
+              path: props.path,
+              fieldSchema: { type: 'string' },
+              value: props.value[lang],
+            })
+          )
         }
-      },
+
+        args.push(...toModifyArgs(props))
+      } else {
+        args.push(...toModifyArgs(props))
+      }
     })
 
     let id = $id

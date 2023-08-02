@@ -16,6 +16,7 @@ export async function parseGetOpts(
     $list?: any
     defaultValues: { path: Path; value: any }[]
   }>(
+    ctx.client.schema,
     {
       async init(args) {
         const $id = args.value.$id || 'root'
@@ -69,17 +70,15 @@ export async function parseGetOpts(
 
         console.error('UNABLE TO PARSE', JSON.stringify(args.value))
       },
-      schema: ctx.client.schema,
       parsers: {
         fields: {},
         keys: {},
         async any(args) {
-          const { key, value, target, path } = args
+          const { key, value, path } = args
 
           if (typeof value === 'object') {
             if (value.$list) {
               return {
-                ...args,
                 target: {
                   ...args.target,
                   type: 'traverse',
@@ -90,7 +89,6 @@ export async function parseGetOpts(
               return
             } else if (value.$find) {
               return {
-                ...args,
                 target: {
                   ...args.target,
                   type: 'traverse',
@@ -106,7 +104,6 @@ export async function parseGetOpts(
               return
             } else if (value.$id) {
               return {
-                ...args,
                 target: {
                   ...args.target,
                   $id: args.target.id,
@@ -127,7 +124,6 @@ export async function parseGetOpts(
             }
 
             return {
-              ...args,
               target: {
                 ...args.target,
                 type: 'node',
@@ -293,6 +289,6 @@ export async function parseGetOpts(
   delete visited.nestedCommands
   return {
     cmds: [visited, ...nested, ...topLevel],
-    defaults: walked.target.defaultValues,
+    defaults: walked.defaultValues,
   }
 }

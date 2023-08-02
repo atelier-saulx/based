@@ -1,4 +1,9 @@
-import { BasedSchemaCollectProps, BasedSchemaFieldSet } from '@based/schema'
+import {
+  BasedSchemaCollectProps,
+  BasedSchemaField,
+  BasedSchemaFieldSet,
+  Path,
+} from '@based/schema'
 import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
 import { arrayOpToModify } from './array'
 import { joinPath } from '../util'
@@ -26,7 +31,11 @@ const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
   0: '2',
 }
 
-export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
+export function toModifyArgs(props: {
+  fieldSchema: BasedSchemaField
+  path: Path
+  value: any
+}): any[] {
   let { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
