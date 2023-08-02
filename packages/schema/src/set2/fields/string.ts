@@ -117,32 +117,29 @@ export const string: FieldParser<'string'> = async (args) => {
   args.collect()
 }
 
+async function next<T>(args: ArgsClass<T>, key: string): Promise<any> {
+  const valueArgs = args.create({
+    key,
+    value: args.value[key],
+    skipCollection: true,
+  })
+  await valueArgs.parse()
+  return valueArgs.value
+}
+
 export const text: FieldParser<'text'> = async (args) => {
   const value = args.value
-
   if (value !== null && typeof value === 'object') {
     args.stop()
     const result: any = {}
-
     for (const key in value) {
       if (key === '$value') {
-        const valueArgs = args.create({
-          key,
-          value: value.$value,
-          skipCollection: true,
-        })
-        await valueArgs.parse()
-        if (typeof valueArgs.value === 'object') {
-          deepMerge(result, valueArgs.value)
+        const nValue = await next(args, key)
+        if (typeof nValue.value === 'object') {
+          deepMerge(result, nValue.value)
         }
       } else if (key === '$default') {
-        const defaultArgs = args.create({
-          key,
-          value: value.$default,
-          skipCollection: true,
-        })
-        await defaultArgs.parse()
-        result.$default = defaultArgs.value
+        result.$default = await next(args, key)
       } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
         if (value[key] && typeof value[key] === 'object') {
           for (const k in value[key]) {

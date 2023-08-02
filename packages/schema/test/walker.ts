@@ -460,10 +460,26 @@ test.only('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 13 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: {
+      $value: 'xz',
+      nl: 'flapperonus',
+      $default: {
+        ae: 'habibi',
+      },
+      ro: { $value: 'durp' },
+      en: { $default: 'xzxz' },
+    },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })
-
-// (t, value, {
-// errors: [],
-// values: []
-// })
