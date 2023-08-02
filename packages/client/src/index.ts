@@ -164,6 +164,10 @@ export class BasedDbClient extends Emitter {
       id = genId(this.schema, opts.type)
     }
 
+    if (!args.length) {
+      return id
+    }
+
     const resp = await this.command('modify', [id, args])
     const err = resp?.[0]?.find((x: any) => {
       return x instanceof Error
