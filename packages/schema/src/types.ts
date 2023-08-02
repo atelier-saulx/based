@@ -349,28 +349,4 @@ export type BasedSetTarget = {
   errors: { code: ParseError; path: Path }[]
 }
 
-export type BasedSchemaCollectProps = {
-  path: (string | number)[]
-  value: any
-  typeSchema: BasedSchemaType
-  fieldSchema: BasedSchemaField
-  target: BasedSetTarget
-}
-
-export type BasedSetHandlers = {
-  collectErrors: (props: { message: string; code: ParseError }) => void
-
-  collect: (props: BasedSchemaCollectProps) => void
-
-  checkRequiredFields: (path: (string | number)[]) => Promise<boolean>
-
-  referenceFilterCondition: (
-    referenceId: string,
-    $filter: any
-  ) => Promise<boolean>
-}
-
-export type BasedSetOptionalHandlers = SetOptional<
-  BasedSetHandlers,
-  'collectErrors' | 'collect'
->
+export type BasedSchemaCollectProps = ArgsClass<BasedSetTarget>
