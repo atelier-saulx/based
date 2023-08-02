@@ -37,13 +37,12 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $traverse with list of ids broken
-test.serial.only('get in keys result', async (t) => {
+test.serial('get in keys result', async (t) => {
   await Promise.all(
     [
       {
