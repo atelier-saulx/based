@@ -143,8 +143,7 @@ test.serial.skip('find - single with no wrapping', async (t) => {
   })
 })
 
-// TODO: single $find (without $list) not working
-test.serial.only('find - single in array', async (t) => {
+test.serial('find - single in array', async (t) => {
   // simple nested - single query
   const team = await client.set({
     $id: 'te0',
@@ -197,8 +196,7 @@ test.serial.only('find - single in array', async (t) => {
   })
 })
 
-// TODO: single $find (without $list) not working
-test.serial.skip('find - single no wrapping in array', async (t) => {
+test.serial('find - single no wrapping in array', async (t) => {
   // simple nested - single query
   const team = await client.set({
     $id: 'te0',
