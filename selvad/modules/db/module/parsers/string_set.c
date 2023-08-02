@@ -68,10 +68,13 @@ static void so_add_n(struct SelvaObject *obj, size_t n, const char *str, size_t 
 static void so_add_alias(struct SelvaObject *obj, const char *alias_str, size_t alias_len, const char *str, size_t len)
 {
     struct selva_string *s;
+    const char key_str[alias_len];
 
+    memcpy(key_str, alias_str, alias_len);
+    ch_replace(key_str, alias_len, '.', ':');
     s = selva_string_create(str, len, 0);
 
-    SelvaObject_InsertArrayStr(obj, alias_str, alias_len, SELVA_OBJECT_STRING, s);
+    SelvaObject_InsertArrayStr(obj, key_str, alias_len, SELVA_OBJECT_STRING, s);
 }
 
 int parse_string_set(

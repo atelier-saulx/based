@@ -492,7 +492,8 @@ static void send_node_fields_named(
                 send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
                 break;
             } else {
-                const size_t fields_idx_len = strlen(fields_idx_str);
+                const size_t alias_len = strlen(fields_idx_str);
+                char alias_str[alias_len + 1];
                 const char *field_prefix_str = NULL;
                 size_t field_prefix_len = 0;
 
@@ -500,10 +501,13 @@ static void send_node_fields_named(
                  * Add alias prefix using the field_prefix system,
                  * if requested.
                  */
-                if (fields_idx_len > 0 &&
-                    fields_idx_str[fields_idx_len - 1] == STRING_SET_ALIAS) {
-                    field_prefix_str = fields_idx_str;
-                    field_prefix_len = fields_idx_len;
+                if (alias_len > 0 &&
+                    fields_idx_str[alias_len - 1] == STRING_SET_ALIAS) {
+                    memcpy(alias_str, fields_idx_str, alias_len);
+                    alias_str[alias_len] = '\0';
+
+                    field_prefix_str = ch_replace(alias_str, alias_len, ':', '.');
+                    field_prefix_len = alias_len;
                 }
 
                 res = send_node_field(fin, resp, lang, hierarchy, node, obj, field_prefix_str, field_prefix_len, field_str, field_len, excluded_fields);
