@@ -41,6 +41,12 @@ const schema: BasedSchema = {
             type: 'number',
           },
         },
+        intarray: {
+          type: 'array',
+          values: {
+            type: 'integer',
+          },
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -647,6 +653,23 @@ test.only('string', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: 'ti123' },
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 26 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $assign: {
+        $idx: 0,
+        $value: 6,
+      },
+    },
   })
 
   r.collected.forEach((v) => {

@@ -68,7 +68,8 @@ const operations: {
     }
     await args.parse({
       key: value.$assign.$idx,
-      value: args.fieldSchema.values,
+      value: value.$assign.$value,
+      fieldSchema: args.fieldSchema.values,
     })
   },
 }
