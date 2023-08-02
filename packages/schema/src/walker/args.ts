@@ -3,6 +3,7 @@ import { BasedSchemaType, BasedSchemaFields } from '../types'
 import { ArgsOpts, Path, Opts, Stopped, ErrorHandler, Collect } from './types'
 import { parse } from './parse'
 import { ParseError } from '../error'
+import { deepEqual } from '@saulx/utils'
 
 export class ArgsClass<
   T,
@@ -60,6 +61,9 @@ export class ArgsClass<
     } else if (prev && opts.key !== undefined) {
       this.path = [...prev.path, opts.key]
     } else if (opts && prev) {
+      // this.collectedCommands = prev.collectedCommands
+      // this.fromBackTrack = prev.fromBackTrack
+
       this.path = prev.path
     } else {
       this.path = []
@@ -142,6 +146,17 @@ export class ArgsClass<
     }
   }
 
+  getTopPaths(): Path[] {
+    let argPath = []
+    let p = this
+    while (p) {
+      argPath.push(p.path)
+      // @ts-ignore
+      p = p.prev
+    }
+    return argPath
+  }
+
   collect(value?: any) {
     if (this.skipCollection) {
       return
@@ -149,10 +164,26 @@ export class ArgsClass<
     const collectArgs =
       value !== undefined ? new ArgsClass({ value }, this) : this
 
+    let collectTarget = this.prev.prev
+
+    // while (
+    //   collectTarget &&
+    //   deepEqual(collectTarget.path, collectTarget.prev.path)
+    // ) {
+    //   console.log('SAME')
+    //   // @ts-ignore
+    //   collectTarget = collectTarget.prev
+    // }
+
+    // if (!collectTarget) {
+    //   this.root._opts.collect(collectArgs)
+    //   return
+    // }
+
     if (this._collectOverride) {
-      this.collectedCommands.push(this._collectOverride(collectArgs))
+      collectTarget.collectedCommands.push(this._collectOverride(collectArgs))
     } else {
-      this.collectedCommands.push(this.root._opts.collect(collectArgs))
+      collectTarget.collectedCommands.push(this.root._opts.collect(collectArgs))
     }
   }
 

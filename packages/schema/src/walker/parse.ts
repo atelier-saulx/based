@@ -21,13 +21,13 @@ function createOrUseArgs<T>(
   if (newArgs instanceof ArgsClass) {
     return newArgs
   }
-  console.info('MAKE NEW BLA')
 
-  if (!newArgs.collect) {
-    newArgs
-  }
+  const x = from.create(newArgs)
 
-  return from.create(newArgs)
+  // x.collectedCommands = from.collectedCommands
+  // x.fromBackTrack = from.fromBackTrack
+
+  return x
 }
 
 async function parseKey<T>(
@@ -44,26 +44,10 @@ async function parseKey<T>(
     from
   )
 
-  // // @ts-ignore
-  // keyArgs._putup = from
-  // // -----------
-  // keyArgs._collectOverride = (args) => {
-  //   // if (this.skipCollection) {
-  //   //   return
-  //   // }
-  //   // console.info('make', args.path)
-  //   from.collectedCommands.push(keyArgs.root._opts.collect(args))
+  // if same
 
-  //   // const collectArgs =
-  //   //   value !== undefined ? new ArgsClass({ value }, this) : this
-
-  //   // if (this._collectOverride) {
-  //   //   this.collectedCommands.push(this._collectOverride(collectArgs))
-  //   // } else {
-  //   //   this.collectedCommands.push(this.root._opts.collect(collectArgs))
-  //   // }
-  // }
   const newArgs = createOrUseArgs(keyArgs, await parser(keyArgs))
+
   if (newArgs) {
     return newArgs.parse()
   }
@@ -120,6 +104,7 @@ export async function parse<T>(
     }
     await Promise.all(keyQ)
 
+    // schema
     if (args.stopped === undefined) {
       const fieldQ: Promise<ParseResult<T>>[] = []
       if (args.typeSchema && !args.fieldSchema) {
@@ -162,6 +147,7 @@ export async function parse<T>(
       await Promise.all(fieldQ)
     }
 
+    // any
     if (args.stopped !== Stopped.stopAll) {
       const parser = opts.parsers.any || opts.parsers.catch
       if (parser) {
@@ -175,6 +161,7 @@ export async function parse<T>(
           }
         } else {
           for (const key in args.value) {
+            console.info(args.path, '->', key)
             if ((!opts.parsers.any && keysHandled.has(key)) || allKeysHandled) {
               continue
             }
@@ -184,6 +171,8 @@ export async function parse<T>(
         await Promise.all(q)
       }
     }
+
+    console.log('TO OBJ -->', args.path, args.collectedCommands)
 
     if (
       opts.backtrack &&
@@ -200,40 +189,14 @@ export async function parse<T>(
           args.prev.fromBackTrack = []
         }
 
-        let argPath = []
+        // console.log(args.getTopPaths())
 
-        let p = args
-
-        let cnt = 0
-
-        while (p) {
-          let x = p.prev
-
-          if (x) {
-            if (deepEqual(x.path, args.path)) {
-              cnt++
-            }
-
-            p = p.prev
-          }
-
-          p = x
-        }
-
-        console.info('STORE BT', cnt)
-
-        if (cnt) {
-          let t = args.prev
-          for (let i = 0; i < cnt; i++) {
-            t = t.prev
-          }
-          t.fromBackTrack.push(backtracked)
-        } else {
-          args.prev.fromBackTrack.push(backtracked)
-        }
+        // step 1 fire collect and bt correct
+        // args.prev.fromBackTrack.push(backtracked)
       }
     }
   } else {
+    // more
     if (args.fieldSchema) {
       const fieldParser = getFieldParser(args)
       if (fieldParser) {
