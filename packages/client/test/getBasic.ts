@@ -514,8 +514,7 @@ test.serial('get - $all deeply nested', async (t) => {
   )
 })
 
-// TODO: $default
-test.serial.skip('get - $default', async (t) => {
+test.serial('get - $default', async (t) => {
   await client.set({
     $id: 'viflap',
     title: { en: 'flap' },
@@ -568,15 +567,14 @@ test.serial('get - $language', async (t) => {
     title: { en: 'flap', nl: 'flurp' },
   })
 
-  // TODO: $default missing
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viflurx',
-  //     $language: 'nl',
-  //     description: { $default: 'flurpy' },
-  //   }),
-  //   { description: 'flurpy' }
-  // )
+  t.deepEqual(
+    await client.get({
+      $id: 'viflurx',
+      $language: 'nl',
+      description: { $default: 'flurpy' },
+    }),
+    { description: 'flurpy' }
+  )
 })
 
 test.serial('get - field with empty array', async (t) => {

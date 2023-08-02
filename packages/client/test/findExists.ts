@@ -78,8 +78,7 @@ test.serial('find - numeric exists field', async (t) => {
       $id: 'root',
       items: {
         name: true,
-        // TODO: $default
-        // nonsense: { $default: 'yes' },
+        nonsense: { $default: 'yes' },
         $list: {
           $find: {
             $traverse: 'children',
@@ -102,7 +101,7 @@ test.serial('find - numeric exists field', async (t) => {
       items: [
         {
           name: 'match 1',
-          // nonsense: 'yes'
+          nonsense: 'yes',
         },
       ],
     }

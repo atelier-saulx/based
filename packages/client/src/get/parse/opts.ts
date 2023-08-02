@@ -117,6 +117,13 @@ export async function parseGetOpts(
             } else if (value.$field) {
               args.collect(args)
               return
+            } else if (value.$default) {
+              args.target.defaultValues.push({
+                path: path,
+                value: value.$default,
+              })
+              args.collect({ ...args, ...{ value: true } })
+              return
             }
 
             return {
@@ -131,12 +138,6 @@ export async function parseGetOpts(
             return args
           } else if (key === '$fieldsByType') {
             return args
-          } else if (key === '$default') {
-            args.target.defaultValues.push({
-              path: path.slice(0, -1),
-              value,
-            })
-            return
           }
 
           if (String(key).startsWith('$')) {
