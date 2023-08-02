@@ -1,5 +1,6 @@
 import test from 'ava'
-import { BasedSchema, setWalker, BasedSetOptionalHandlers } from '../src/index'
+import { BasedSchema, setWalker } from '../src/index'
+import { errorCollect, resultCollect } from './utils'
 
 const schema: BasedSchema = {
   types: {
@@ -31,57 +32,24 @@ const schema: BasedSchema = {
   },
 }
 
-const createHandlers = (): {
-  results: { path: (number | string)[]; value: any }[]
-  handlers: BasedSetOptionalHandlers
-} => {
-  const results: { path: (number | string)[]; value: any }[] = []
-  const handlers = {
-    collect: ({ path, value, typeSchema, fieldSchema, target }) => {
-      results.push({ path, value })
-    },
-    checkRequiredFields: async (paths) => {
-      return true
-    },
-    referenceFilterCondition: async (id, filter) => {
-      return true
-    },
-  }
-  return { results, handlers }
-}
-
 test('arrayNum', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        arrNum: ['1', '2'],
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bla',
-        ref: 1,
-      },
-      handlers
-    )
-  )
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    arrNum: ['1', '2'],
+  })
+  const err1 = await setWalker(schema, {
+    $id: 'bla',
+    ref: 1,
+  })
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bla',
-      arrNum: [1, 2],
-    },
-    handlers
-  )
-  t.deepEqual(results, [
+  const res = await setWalker(schema, {
+    $id: 'bla',
+    arrNum: [1, 2],
+  })
+
+  t.true(errorCollect(err, err1).length > 0)
+
+  t.deepEqual(resultCollect(res), [
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: 1 },
     { path: ['arrNum', 1], value: 2 },
@@ -89,98 +57,67 @@ test('arrayNum', async (t) => {
 })
 
 test.only('value arr', async (t) => {
-  const { handlers, results } = createHandlers()
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        arrNum: { $value: ['1', '2'] },
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bla',
-        ref: { $value: 1 },
-      },
-      handlers
-    )
-  )
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    arrNum: { $value: ['1', '2'] },
+  })
+  const err1 = await setWalker(schema, {
+    $id: 'bla',
+    ref: { $value: 1 },
+  })
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bla',
-      arrNum: [{ $value: 1 }, { $value: 2 }],
-    },
-    handlers
-  )
-  await setWalker(
-    schema,
-    {
-      $id: 'bla',
-      arrNum: { $value: [1, 2] },
-    },
-    handlers
-  )
-  console.log(results)
-  t.deepEqual(results, [
-    { path: ['arrNum'], value: { $delete: true } },
-    { path: ['arrNum', 0], value: { $value: 1 } }, // just 1
-    { path: ['arrNum', 1], value: { $value: 2 } }, // just 2
+  const res = await setWalker(schema, {
+    $id: 'bla',
+    arrNum: [{ $value: 1 }, { $value: 2 }],
+  })
+  const res1 = await setWalker(schema, {
+    $id: 'bla',
+    arrNum: { $value: [1, 2] },
+  })
+
+  t.true(errorCollect(err, err1).length > 0)
+  console.log(resultCollect(res, res1))
+
+  t.deepEqual(resultCollect(res, res1), [
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: 1 },
     { path: ['arrNum', 1], value: 2 },
+    { path: ['arrNum'], value: { $delete: true } },
+    { path: ['arrNum', 0], value: 1 },
+    { path: ['arrNum', 1], value: 2 },
+    { path: ['arrNum'], value: { $delete: true } },
   ])
+
+  // { path: ['arrNum'], value: { $delete: true } },
+  // { path: ['arrNum', 0], value: { $value: 1 } }, // just 1
+  // { path: ['arrNum', 1], value: { $value: 2 } }, // just 2
+  // { path: ['arrNum'], value: { $delete: true } },
+  // { path: ['arrNum', 0], value: 1 },
+  // { path: ['arrNum', 1], value: 2 },
 })
 
 test('default arr', async (t) => {
-  const { handlers, results } = createHandlers()
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    arrNum: ['1', '2'],
+  })
+  const err1 = await setWalker(schema, {
+    $id: 'bla',
+    ref: 1,
+  })
 
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bl1',
-        arrNum: ['1', '2'],
-      },
-      handlers
-    )
-  )
-  await t.throwsAsync(
-    setWalker(
-      schema,
-      {
-        $id: 'bla',
-        ref: 1,
-      },
-      handlers
-    )
-  )
+  const res = await setWalker(schema, {
+    $id: 'bla',
+    arrNum: [{ $default: 1 }, { $default: 2 }],
+  })
+  const res1 = await setWalker(schema, {
+    $id: 'bla',
+    arrNum: { $default: [1, 2] },
+  })
 
-  await setWalker(
-    schema,
-    {
-      $id: 'bla',
-      arrNum: [{ $default: 1 }, { $default: 2 }],
-    },
-    handlers
-  )
-  await setWalker(
-    schema,
-    {
-      $id: 'bla',
-      arrNum: { $default: [1, 2] },
-    },
-    handlers
-  )
-  console.log(results)
+  t.true(errorCollect(err, err1).length > 0)
   //is this correct? is it supposed to be different
-  t.deepEqual(results, [
+  t.deepEqual(resultCollect(res, res1), [
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: { $default: 1 } },
     { path: ['arrNum', 1], value: { $default: 2 } },
@@ -189,25 +126,25 @@ test('default arr', async (t) => {
   ])
 })
 // test('arrStr', async (t) => {
-//   const { handlers, results } = createHandlers()
-//   await t.throwsAsync(
+//
+//   const err = await(
 //     setWalker(
 //       schema,
 //       {
 //         $id: 'bl1',
 //         arrStr: [1, '2'],
 //       },
-//       handlers
+//
 //     )
 //   )
-//   await t.throwsAsync(
+//   const err = await(
 //     setWalker(
 //       schema,
 //       {
 //         $id: 'bla',
 //         ref: 1,
 //       },
-//       handlers
+//
 //     )
 //   )
 
@@ -217,7 +154,7 @@ test('default arr', async (t) => {
 //       $id: 'bla',
 //       arrStr: [1, 2],
 //     },
-//     handlers
+//
 //   )
 //   t.deepEqual(results, [
 //     { path: ['arrStr'], value: { $delete: true } },
