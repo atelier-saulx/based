@@ -336,5 +336,16 @@ test.only('string', async (t) => {
     d.collected.map((v) => ({ path: v.path, value: v.value }))
   )
 
+  console.info('---- doink 5 ------')
+  const r = await setWalker2(schema, {
+    $id: 'bl120',
+    exclusiveminmax: { $value: 4 },
+  })
+
+  console.log(
+    r.errors,
+    r.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
   t.true(true)
 })
