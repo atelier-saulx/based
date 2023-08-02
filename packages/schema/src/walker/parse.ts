@@ -74,7 +74,6 @@ export async function parse<T>(
   const opts = args.root._opts
 
   if (args.parseTopLevel) {
-    //
     const parser = opts.parsers.any
     if (parser) {
       await parser(args)

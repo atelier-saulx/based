@@ -6,6 +6,7 @@ import {
 import { ParseError } from '../../set/error'
 import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
+import { setByPath } from '@saulx/utils'
 
 type StringTypes = 'string' | 'text'
 
@@ -123,8 +124,54 @@ export const text: FieldParser<'text'> = async (args) => {
     if ('$value' in value) {
       return
     }
-
     args.stop()
+
+    const result: any = {}
+
+    for (const key in value) {
+      if (key === '$default') {
+        const defaultArgs = args.create({
+          key,
+          value: value.$default,
+          skipCollection: true,
+        })
+        await defaultArgs.parse()
+        result.$default = defaultArgs.value
+      } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
+        if (value[key] && typeof value[key] === 'object') {
+          for (const k in value[key]) {
+            if (key === '$value') {
+              if (!validateString(args, value[key].$value)) {
+                args.create({ key }).error(ParseError.incorrectFormat)
+              } else {
+                result[key] = value[key].$value
+              }
+            } else if (k === '$default') {
+              if (!validateString(args, value[key].$default)) {
+                args.create({ key }).error(ParseError.incorrectFormat)
+              } else {
+                setByPath(result, ['$default', key], value[key].$default)
+              }
+            } else {
+              args
+                .create({ path: [...args.path, key, k] })
+                .error(ParseError.fieldDoesNotExist)
+            }
+          }
+        } else {
+          if (!validateString(args, args.value[key])) {
+            args.error(ParseError.incorrectFormat)
+            return
+          }
+          result[key] = args.value[key]
+        }
+      } else {
+        args.create({ key }).error(ParseError.languageNotSupported)
+      }
+    }
+
+    args.collect(result)
+
     return
   }
 
@@ -143,9 +190,9 @@ export const text: FieldParser<'text'> = async (args) => {
     return
   }
 
-  console.info(value)
-
-  args.collect({
+  args.value = {
     [args.target.$language]: value,
-  })
+  }
+
+  args.collect()
 }

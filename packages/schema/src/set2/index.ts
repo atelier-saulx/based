@@ -15,6 +15,12 @@ const opts: Opts<BasedSetTarget> = {
           args.error(ParseError.incorrectFormat)
         }
       },
+      $language: async (args) => {
+        if (!args.schema.languages.includes(args.value)) {
+          args.error(ParseError.languageNotSupported)
+          return
+        }
+      },
       $value: async (args) => {
         args.stop()
         if (args.prev.value.$default) {
@@ -82,6 +88,9 @@ const opts: Opts<BasedSetTarget> = {
       error(ParseError.incorrectNodeType, { target })
       return
     }
+    target.type = type
+    target.$language = value.$language
+    target.$id = value.$id
     return { target, typeSchema }
   },
   error: (code, args) => {

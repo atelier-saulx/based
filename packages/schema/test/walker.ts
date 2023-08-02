@@ -354,13 +354,39 @@ test.only('string', async (t) => {
   console.info('---- doink 6 ------')
   r = await setWalker2(schema, {
     $id: 'bl120',
-    $language: 'zh',
+    $language: 'za',
     text: { $value: 'sdsdds' },
   })
 
   console.log(
     r.errors,
     r.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink 7 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: { $default: 'sdsdds' },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 8 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'za',
+    text: { $default: 'sdsdds', en: { $default: 'flapflap' } },
+  })
+
+  console.error(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
   )
 
   t.true(true)
