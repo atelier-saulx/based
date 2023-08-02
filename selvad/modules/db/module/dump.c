@@ -31,6 +31,7 @@
 #include "selva_server.h"
 #include "selva_replication.h"
 #include "hierarchy.h"
+#include "db_config.h"
 #include "dump.h"
 
 int selva_db_is_dirty;
@@ -531,14 +532,16 @@ static int dump_onload(void) {
 
     setup_sigchld();
 
+    if (selva_glob_config.save_at_exit) {
 #ifdef __GLIBC__
-    if (on_exit(dump_on_exit, NULL)) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Can't register an exit function");
-        return SELVA_ENOBUFS;
-    }
+        if (on_exit(dump_on_exit, NULL)) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "Can't register an exit function");
+            return SELVA_ENOBUFS;
+        }
 #else
-    SELVA_LOG(SELVA_LOGL_WARN, "Not registering an exit function (GLIBC-only feat)");
+        SELVA_LOG(SELVA_LOGL_WARN, "Not registering an exit function (GLIBC-only feat)");
 #endif
+    }
 
     return 0;
 }

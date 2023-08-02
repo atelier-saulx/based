@@ -67,6 +67,11 @@ struct selva_glob_config {
     int redis_port;
 
     /**
+     * Save db at exit.
+     */
+    int save_at_exit;
+
+    /**
      * [sec] Load the default SDB on startup and save a dump on interval.
      * 0 = disabled.
      */
