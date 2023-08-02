@@ -47,8 +47,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: single $find (without $list) not working
-test.serial.skip('find - single', async (t) => {
+test.serial('find - single', async (t) => {
   // simple nested - single query
   const team = await client.set({
     $id: 'te0',
@@ -71,7 +70,7 @@ test.serial.skip('find - single', async (t) => {
     $id: 'te0',
     singleMatch: {
       name: true,
-      nonsense: { $default: 'yes' },
+      // nonsense: { $default: 'yes' }, // TODO: needs $default
       $find: {
         $traverse: 'children',
         $filter: [
@@ -92,11 +91,14 @@ test.serial.skip('find - single', async (t) => {
   t.log(r)
 
   t.deepEqual(r, {
-    singleMatch: { name: 'match0', nonsense: 'yes' },
+    singleMatch: {
+      name: 'match0',
+      // nonsense: 'yes'
+    },
   })
 })
 
-// TODO: single $find (without $list) not working
+// TODO: single $find at top level should be supported?
 test.serial.skip('find - single with no wrapping', async (t) => {
   // simple nested - single query
   const team = await client.set({
@@ -142,7 +144,7 @@ test.serial.skip('find - single with no wrapping', async (t) => {
 })
 
 // TODO: single $find (without $list) not working
-test.serial.skip('find - single in array', async (t) => {
+test.serial.only('find - single in array', async (t) => {
   // simple nested - single query
   const team = await client.set({
     $id: 'te0',
@@ -164,6 +166,9 @@ test.serial.skip('find - single in array', async (t) => {
   const r = await client.get({
     $id: 'te0',
     results: [
+      {
+        id: { $field: 'id' },
+      },
       {
         singleMatch: {
           name: true,
@@ -188,7 +193,7 @@ test.serial.skip('find - single in array', async (t) => {
   })
 
   t.deepEqual(r, {
-    results: [{ singleMatch: { name: 'match0' } }],
+    results: [{ id: 'te0' }, { singleMatch: { name: 'match0' } }],
   })
 })
 

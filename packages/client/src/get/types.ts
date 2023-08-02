@@ -63,6 +63,7 @@ export type GetTraverse = {
   sort?: { field: string; order: 'asc' | 'desc' }
   filter?: Filter | Filter[]
   recursive?: boolean
+  isSingle?: boolean
 
   // one of these
   traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })

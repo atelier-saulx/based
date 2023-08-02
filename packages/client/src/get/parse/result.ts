@@ -16,12 +16,12 @@ export function parseGetResult(
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
+    const cmd: GetCommand = cmds[i]
     console.dir({ result, cmd: cmds[i] }, { depth: 8 })
     const {
-      type,
       target: { path },
       source,
-    } = cmds[i]
+    } = cmd
 
     const k = joinPath(path)
     const parsed = parseResultRows(ctx, result)
@@ -29,11 +29,13 @@ export function parseGetResult(
     if (k === '') {
       obj = { ...obj, ...parsed[0] }
     } else {
-      if (type === 'node') {
+      if (cmd.type === 'node') {
         const v = parsed[0]
         const cur = getByPath(obj, path)
         const o = deepMerge({}, cur, v)
         setByPath(obj, path, o)
+      } else if (cmd.isSingle) {
+        setByPath(obj, path, parsed[0])
       } else {
         setByPath(obj, path, parsed)
       }

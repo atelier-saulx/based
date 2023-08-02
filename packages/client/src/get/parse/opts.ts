@@ -87,6 +87,22 @@ export async function parseGetOpts(
               }
             } else if (key === '$list') {
               return
+            } else if (value.$find) {
+              return {
+                ...args,
+                target: {
+                  ...args.target,
+                  type: 'traverse',
+                  $list: {
+                    $find: value.$find,
+                    limit: 1,
+                    offset: 0,
+                    isSingle: true,
+                  },
+                },
+              }
+            } else if (key === '$find') {
+              return
             } else if (value.$id) {
               return {
                 ...args,
@@ -137,6 +153,7 @@ export async function parseGetOpts(
         const byType: Record<string, Field[]> = {}
         const nestedCommands: GetCommand[] = []
         for (const entry of entries) {
+          console.dir({ entry }, { depth: 8 })
           if (entry?.type === 'field') {
             fields.push({
               ...entry,
@@ -148,7 +165,8 @@ export async function parseGetOpts(
             const canMerge: boolean =
               nestedCmd.type === 'node' &&
               (nestedCmd.source?.id ?? id) === id &&
-              !nestedCmd.noMerge
+              !nestedCmd.noMerge &&
+              !nestedCmd?.nestedCommands?.length
 
             if (canMerge) {
               for (const fieldObj of nestedCmd.fields.$any) {
@@ -230,6 +248,10 @@ export async function parseGetOpts(
               order: $order,
               field: $field,
             }
+          }
+
+          if ($list?.isSingle !== undefined) {
+            cmd.isSingle = $list.isSingle
           }
 
           if ($list?.$find?.$filter) {
