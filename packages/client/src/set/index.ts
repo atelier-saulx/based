@@ -27,11 +27,12 @@ const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
 }
 
 export function toModifyArgs(props: BasedSchemaCollectProps): any[] {
-  const { fieldSchema, path, value } = props
+  let { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
   switch (fieldSchema.type) {
     case 'reference':
+      value = { $value: [value] }
     case 'references':
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_SET,

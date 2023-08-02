@@ -3,6 +3,11 @@ import { SELVA_NODE_ID_LEN } from '../../types'
 import { ModifyOpSetType, SET_OP_BY_TYPE } from './types'
 import { SET_TYPE_TO_MODIFY_VALUE_TYPE } from './types'
 
+// TODO: impl. bidirectional
+function getContraint({ isSingle }: { isSingle: boolean }) {
+  return isSingle ? 1 : 0
+}
+
 function refsToStr(ary: string[] = []): string {
   return ary.map((s: string) => s.padEnd(SELVA_NODE_ID_LEN, '\0')).join('')
 }
@@ -25,9 +30,10 @@ export function encodeSetOperation({
   $remove?: any | any[]
 }): Buffer {
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
+    console.log('HELLO', { setType, isSingle, $value })
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-      contraint_id: isSingle ? 2 : 0, // TODO: impl. bidirectional
+      contraint_id: getContraint({ isSingle }),
       delete_all: $remove,
       $value: refsToStr($value),
       $add: refsToStr($add),

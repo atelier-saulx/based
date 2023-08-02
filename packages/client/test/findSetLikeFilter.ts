@@ -66,12 +66,14 @@ test.beforeEach(async (t) => {
         {
           type: 'team',
           $id: `te${i % 50}`,
+          parents: [`ma${i}`],
           name: `Hehe ${i}A`,
           value: i % 10,
         },
         {
           type: 'team',
           $id: `te${(i % 50) + 1}`,
+          parents: [`ma${i}`],
           name: `Hehe ${i}B`,
           value: i % 3,
         },
@@ -104,8 +106,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: Waiting for setting single reference
-test.serial.only('filter by descendants', async (t) => {
+test.serial('filter by descendants', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
@@ -136,8 +137,7 @@ test.serial.only('filter by descendants', async (t) => {
   )
 })
 
-// TODO: Waiting for setting single reference
-test.serial.skip('filter by ancestors', async (t) => {
+test.serial('filter by ancestors', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'root',
@@ -182,8 +182,7 @@ test.serial.skip('filter by ancestors', async (t) => {
   )
 })
 
-// TODO: Waiting for setting single reference
-test.serial.skip('filter by parents', async (t) => {
+test.serial('filter by parents', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'te1',
@@ -214,8 +213,7 @@ test.serial.skip('filter by parents', async (t) => {
   )
 })
 
-// TODO: Waiting for setting single reference
-test.serial.skip('set like match to reference', async (t) => {
+test.serial('set like match to reference', async (t) => {
   t.deepEqual(
     await client.get({
       mascots: {
