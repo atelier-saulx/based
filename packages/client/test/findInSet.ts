@@ -155,8 +155,7 @@ test.serial('search user roles', async (t) => {
   )
 })
 
-// TODO: type set not working
-test.serial.only('search user numbers', async (t) => {
+test.serial('search user numbers', async (t) => {
   await client.set({
     type: 'user',
     numbers: [1, 2.4, 3, 4],
