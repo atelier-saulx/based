@@ -62,6 +62,7 @@ export type ArgsOpts<
   T,
   K extends keyof BasedSchemaFields = keyof BasedSchemaFields
 > = {
+  parseTopLevel?: boolean
   target?: T
   key?: string | number
   path?: Path

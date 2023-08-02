@@ -21,6 +21,8 @@ export class ArgsClass<
 
   _schema: BasedSchema
 
+  parseTopLevel?: boolean
+
   _collectOverride: Collect<T>
 
   fieldSchema?: BasedSchemaFields[K]
@@ -44,6 +46,9 @@ export class ArgsClass<
     this.collectedCommands = []
     if (opts.prev) {
       prev = opts.prev
+    }
+    if (opts.parseTopLevel) {
+      this.parseTopLevel = opts.parseTopLevel
     }
     if (prev) {
       this.prev = prev

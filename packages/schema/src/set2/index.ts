@@ -25,7 +25,7 @@ const opts: Opts<BasedSetTarget> = {
       },
       $default: async (args) => {
         const type = args.fieldSchema?.type
-        if (type === 'number' || type === 'integer') {
+        if (type === 'number' || type === 'integer' || type === 'text') {
           // default can exist with $incr and $decr
           return
         }

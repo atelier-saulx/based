@@ -72,6 +72,15 @@ export async function parse<T>(
   args: ArgsClass<T>
 ): Promise<ArgsClass<T> | void> {
   const opts = args.root._opts
+
+  if (args.parseTopLevel) {
+    //
+    const parser = opts.parsers.any
+    if (parser) {
+      await parser(args)
+    }
+  }
+
   if (typeof args.value === 'object' && args.value !== null) {
     const keyQ: Promise<ParseResult<T>>[] = []
     const keysHandled: Set<string | number> = new Set()

@@ -13,6 +13,10 @@ const schema: BasedSchema = {
           maximum: 6,
           exclusiveMaximum: true,
         },
+        text: {
+          type: 'text',
+          pattern: '[^xz]{1,10}',
+        },
         timestamp: {
           type: 'timestamp',
           // multipleOF // min // max multipleOf(week) //
@@ -45,7 +49,7 @@ const schema: BasedSchema = {
     },
   },
   $defs: {},
-  languages: ['en'],
+  languages: ['en', 'de', 'nl', 'ro', 'za'],
   root: {
     fields: {},
   },
@@ -337,9 +341,21 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 5 ------')
-  const r = await setWalker2(schema, {
+  let r = await setWalker2(schema, {
     $id: 'bl120',
-    exclusiveminmax: { $value: 4 },
+    text: { $value: 'x' },
+  })
+
+  console.log(
+    r.errors,
+    r.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink 6 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    $language: 'zh',
+    text: { $value: 'sdsdds' },
   })
 
   console.log(

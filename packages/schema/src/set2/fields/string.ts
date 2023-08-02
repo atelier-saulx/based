@@ -123,6 +123,7 @@ export const text: FieldParser<'text'> = async (args) => {
     if ('$value' in value) {
       return
     }
+
     args.stop()
     return
   }
@@ -141,6 +142,8 @@ export const text: FieldParser<'text'> = async (args) => {
     args.error(ParseError.incorrectFormat)
     return
   }
+
+  console.info(value)
 
   args.collect({
     [args.target.$language]: value,
