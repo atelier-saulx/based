@@ -73,140 +73,14 @@ test.beforeEach(async (t) => {
       },
     ],
   })
-
-  // const filter = '"bk" e'
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'descendants',
-  //     'inherit_rpn',
-  //     '{"name","^:fullname"}',
-  //     'root',
-  //     filter
-  //   ),
-  //   [
-  //     ['bk1', ['name', 'The Best Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk2', ['name', 'The Worst Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk3', ['name', 'Unfunny Book', 'fullname', ['au2', 'Jane Doe']]],
-  //   ]
-  // )
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'descendants',
-  //     'order',
-  //     'fullname',
-  //     'asc',
-  //     'inherit_rpn',
-  //     '{"name","^:fullname"}',
-  //     'root',
-  //     filter
-  //   ),
-  //   [
-  //     ['bk3', ['name', 'Unfunny Book', 'fullname', ['au2', 'Jane Doe']]],
-  //     ['bk1', ['name', 'The Best Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk2', ['name', 'The Worst Book', 'fullname', ['au1', 'John Doe']]],
-  //   ]
-  // )
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
 
 // TODO: Redis not exposed for low level test
-test.serial.skip('find - inherit - low level', async (t) => {
-  await client.updateSchema({
-    languages: ['en'],
-    types: {
-      book: {
-        prefix: 'bk',
-        fields: {
-          name: { type: 'string' },
-        },
-      },
-      author: {
-        prefix: 'au',
-        fields: {
-          fullname: { type: 'string' },
-        },
-      },
-    },
-  })
-
-  // A small delay is needed after setting the schema
-  await wait(100)
-
-  await client.set({
-    type: 'author',
-    $id: 'au1',
-    fullname: 'John Doe',
-    children: [
-      {
-        type: 'book',
-        $id: 'bk1',
-        name: 'The Best Book',
-      },
-      {
-        type: 'book',
-        $id: 'bk2',
-        name: 'The Worst Book',
-      },
-    ],
-  })
-  await client.set({
-    type: 'author',
-    $id: 'au2',
-    fullname: 'Jane Doe',
-    children: [
-      {
-        type: 'book',
-        $id: 'bk3',
-        name: 'Unfunny Book',
-      },
-    ],
-  })
-
-  // const filter = '"bk" e'
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'descendants',
-  //     'inherit_rpn',
-  //     '{"name","^:fullname"}',
-  //     'root',
-  //     filter
-  //   ),
-  //   [
-  //     ['bk1', ['name', 'The Best Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk2', ['name', 'The Worst Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk3', ['name', 'Unfunny Book', 'fullname', ['au2', 'Jane Doe']]],
-  //   ]
-  // )
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'descendants',
-  //     'order',
-  //     'fullname',
-  //     'asc',
-  //     'inherit_rpn',
-  //     '{"name","^:fullname"}',
-  //     'root',
-  //     filter
-  //   ),
-  //   [
-  //     ['bk3', ['name', 'Unfunny Book', 'fullname', ['au2', 'Jane Doe']]],
-  //     ['bk1', ['name', 'The Best Book', 'fullname', ['au1', 'John Doe']]],
-  //     ['bk2', ['name', 'The Worst Book', 'fullname', ['au1', 'John Doe']]],
-  //   ]
-  // )
-})
 
 // TODO: waiting for creating node directly when setting children
 test.serial.skip('find - inherit', async (t) => {
