@@ -101,7 +101,7 @@ export class ArgsClass<
   }
 
   stop(onllyStopFieldSchemaParser?: boolean) {
-    const target = this.prev ?? this
+    const target = this
     if (onllyStopFieldSchemaParser) {
       target.stopped = Stopped.onlyStopFieldParser
     } else {

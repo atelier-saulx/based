@@ -69,40 +69,41 @@ const validate = (
   if (typeof value !== 'object') {
     return validateNumber(args, value)
   }
-
-  if ('$increment' in value) {
-    args.stop()
-    return validateNumber(args, value.$increment, true)
+  args.stop()
+  for (const key in value) {
+    if (key === '$default') {
+      if (!validateNumber(args, value.$default)) {
+        return false
+      }
+    } else if (key === '$increment') {
+      if (!validateNumber(args, value.$increment, true)) {
+        return false
+      }
+    } else if (key === '$decrement') {
+      if (!validateNumber(args, value.$decrement, true)) {
+        return false
+      }
+    } else {
+      args.create({ key }).error(ParseError.fieldDoesNotExist)
+      return false
+    }
   }
-
-  if ('$decrement' in value) {
-    args.stop()
-    return validateNumber(args, value.$decrement, true)
-  }
+  return true
 }
 
 export const number: FieldParser<'number'> = async (args) => {
   if (!validate(args, args.value)) {
     return
   }
-
-  args.collect(args)
+  args.collect()
 }
 
 export const integer: FieldParser<'integer'> = async (args) => {
   if (!validate(args, args.value)) {
     return
   }
-
-  args.collect(args)
+  args.collect()
 }
-
-/*
-  TODO: make nice
-  'now + 1s'
-  $incr 'week'
-  $desc 'day' // hour / second 3s //
-*/
 
 export const timestamp: FieldParser<'timestamp'> = async (args) => {
   if (typeof args.value === 'string') {
@@ -118,10 +119,8 @@ export const timestamp: FieldParser<'timestamp'> = async (args) => {
       }
     }
   }
-
-  if (!validate(args, args.value)) {
+  if (!validateNumber(args, args.value)) {
     return
   }
-
-  args.collect(args)
+  args.collect()
 }

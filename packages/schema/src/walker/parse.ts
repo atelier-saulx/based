@@ -85,7 +85,7 @@ export async function parse<T>(
     }
     await Promise.all(keyQ)
 
-    if (!args.stopped) {
+    if (args.stopped === undefined) {
       const fieldQ: Promise<ParseResult<T>>[] = []
       if (args.typeSchema && !args.fieldSchema) {
         for (const key in args.typeSchema.fields) {

@@ -25,16 +25,21 @@ const opts: Opts<BasedSetTarget> = {
       },
       $default: async (args) => {
         const type = args.fieldSchema?.type
-        if (type === 'number' || type === 'integer' || type === 'timestamp') {
+        if (type === 'number' || type === 'integer') {
           // default can exist with $incr and $decr
           return
         }
-        args.stop()
+        args.prev.stop()
         const newArgs = args.create({
           path: args.path.slice(0, -1),
           skipCollection: true,
         })
         await newArgs.parse()
+        for (const key in args.prev.value) {
+          if (key !== '$default') {
+            args.prev.create({ key }).error(ParseError.fieldDoesNotExist)
+          }
+        }
         newArgs.skipCollection = false
         newArgs.value = { $default: newArgs.value }
         newArgs.collect()
@@ -77,7 +82,6 @@ const opts: Opts<BasedSetTarget> = {
       error(ParseError.incorrectNodeType, { target })
       return
     }
-
     return { target, typeSchema }
   },
   error: (code, args) => {

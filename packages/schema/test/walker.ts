@@ -6,6 +6,13 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        exclusiveminmax: {
+          type: 'number',
+          minimum: 3,
+          exclusiveMinimum: true,
+          maximum: 6,
+          exclusiveMaximum: true,
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -217,46 +224,91 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-test.only('perf', async (t) => {
+test('perf setWalker', async (t) => {
   let d = Date.now()
   let collected = 0
   let errs = 0
   for (let i = 0; i < 1e5; i++) {
     const x = await setWalker2(schema, {
       $id: 'bl120',
-      name: 'blasdsdsd ' + i,
+      name: 'blasdsdsd',
       x: { flap: true },
     })
     errs += x.errors.length
     collected += x.collected.length
   }
-  console.info(errs, collected, Date.now() - d, 'ms')
-  t.true(true)
+  t.true(d < 1e3)
 })
 
-// test.only('string', async (t) => {
-//   // for (let i = 0; i < 10; i++) {
-//   //   console.log(
-//   //     (await setWalker2(schema, { $id: 'bl120', name: 'blax' })).target
-//   //       .collected
-//   //   )
-//   // }
+test.only('string', async (t) => {
+  // for (let i = 0; i < 10; i++) {
+  //   console.log(
+  //     (await setWalker2(schema, { $id: 'bl120', name: 'blax' })).target
+  //       .collected
+  //   )
+  // }
 
-//   // console.info('----------')
-//   // console.log(
-//   //   (await setWalker2(schema, { $id: 'bl120', name: { $value: 'blax' } }))
-//   //     .target.collected
-//   // )
-//   console.info('---- default ------')
-//   const x = await setWalker2(schema, {
-//     $id: 'bl120',
-//     name: { $default: 'blax' },
-//   })
+  // console.info('----------')
+  // console.log(
+  //   (await setWalker2(schema, { $id: 'bl120', name: { $value: 'blax' } }))
+  //     .target.collected
+  // )
+  console.info('---- default ------')
+  const x = await setWalker2(schema, {
+    $id: 'bl120',
+    name: { $default: 'blax' },
+  })
 
-//   // TODO: Error also has to include path
-//   console.log(
-//     x.errors,
-//     x.target.collected.map((v) => ({ path: v.path, value: v.value }))
-//   )
-//   t.true(true)
-// })
+  // TODO: Error also has to include path
+  console.log(
+    x.errors,
+    x.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- default too many fields ------')
+  const y = await setWalker2(schema, {
+    $id: 'bl120',
+    name: { $default: 'blax', meanboys: true },
+  })
+
+  // TODO: Error also has to include path
+  console.log(
+    y.errors,
+    y.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('----  ------')
+  const z = await setWalker2(schema, {
+    $id: 'bl120',
+    exclusiveminmax: { $default: 10, $decrement: 10 },
+  })
+
+  console.log(
+    z.errors,
+    z.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink ------')
+  const j = await setWalker2(schema, {
+    $id: 'bl120',
+    exclusiveminmax: { $default: 4, $decrement: 10 },
+  })
+
+  console.log(
+    j.errors,
+    j.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  console.info('---- doink 2 ------')
+  const c = await setWalker2(schema, {
+    $id: 'bl120',
+    exclusiveminmax: { $default: 4, $decrement: 10, flapperdeflip: true },
+  })
+
+  console.log(
+    c.errors,
+    c.collected.map((v) => ({ path: v.path, value: v.value }))
+  )
+
+  t.true(true)
+})
