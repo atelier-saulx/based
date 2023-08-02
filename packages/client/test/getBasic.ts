@@ -614,8 +614,7 @@ test.serial('get - field with empty array', async (t) => {
   )
 })
 
-// TODO: we should return empty arrays by default?
-test.serial.skip('get - references', async (t) => {
+test.serial('get - references', async (t) => {
   const id1 = await client.set({
     type: 'lekkerType',
     value: 1,
@@ -638,8 +637,6 @@ test.serial.skip('get - references', async (t) => {
   })
 
   t.deepEqual(result, {
-    children: [],
-    descendants: [],
     refs: [id1, id11],
   })
 
@@ -651,8 +648,7 @@ test.serial.skip('get - references', async (t) => {
     {
       id: id2,
       type: 'lekkerType',
-      // this should no longer work (we don't return ref/refs types with $all by default
-      // refs: [id1, id11],
+      value: 2,
     }
   )
 })
