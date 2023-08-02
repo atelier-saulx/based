@@ -345,8 +345,12 @@ export type BasedSetTarget = {
   schema: BasedSchema
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
-  collected: ArgsClass<BasedSetTarget>[]
+  collected: BasedSchemaCollectProps[]
   errors: { code: ParseError; path: Path }[]
 }
 
-export type BasedSchemaCollectProps = ArgsClass<BasedSetTarget>
+export type BasedSchemaCollectProps = ArgsClass<BasedSetTarget> & {
+  root: ArgsClass<BasedSetTarget> & {
+    typeSchema: BasedSchemaType
+  }
+}

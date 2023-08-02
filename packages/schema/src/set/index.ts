@@ -1,5 +1,5 @@
 import { ParseError } from '../error'
-import { BasedSchema, BasedSetTarget } from '../types'
+import { BasedSchema, BasedSchemaCollectProps, BasedSetTarget } from '../types'
 import { walk, Opts } from '../walker'
 import { fields } from './fields'
 import { isValidId } from './isValidId'
@@ -105,7 +105,7 @@ const opts: Opts<BasedSetTarget> = {
     })
   },
   collect: (args) => {
-    args.root.target.collected.push(args)
+    args.root.target.collected.push(<BasedSchemaCollectProps>args)
   },
 }
 
