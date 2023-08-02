@@ -780,7 +780,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &order_result,
-            .process.node = NULL, /* Not used. */
+            .process_node = NULL, /* Not used. */
         };
 
         if (query_opts.limit == 0) {

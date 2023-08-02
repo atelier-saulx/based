@@ -292,7 +292,7 @@ static __hot int FindCommand_NodeCb(
     if (take) {
         args->acc_take++;
 
-        return args->process.node(hierarchy, args, node);
+        return args->process_node(hierarchy, args, node);
     }
 
     return 0;
@@ -384,7 +384,7 @@ static int FindCommand_ArrayObjectCb(
     }
 
     if (take) {
-        return find_args->process.obj(find_args, obj);
+        return find_args->process_obj(find_args, obj);
     }
 
     return 0;
@@ -573,44 +573,33 @@ static void postprocess_inherit(
     }
 }
 
-struct processing {
-    union FindCommand_Process process;
+/* TODO It wouldn't be necessary to call this in the loop. */
+static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order) {
     SelvaFind_Postprocess postprocess;
-};
 
-static struct processing init_processing(const struct SelvaFind_QueryOpts *query_opts, SVector *traverse_result) {
-    const int inherit_expr_en = (query_opts->res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN);
-    struct processing p;
-
-    if (inherit_expr_en) {
-        SVector_Init(traverse_result, selva_glob_config.hierarchy_expected_resp_len, NULL);
-    } else if (query_opts->order != SELVA_RESULT_ORDER_NONE) {
-        SelvaTraversalOrder_InitOrderResult(traverse_result, query_opts->order, query_opts->limit);
-    } /* Otherwise traverse_result isn't used. */
-
-    if (query_opts->dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-        if (query_opts->order != SELVA_RESULT_ORDER_NONE) {
-            p.process.obj = &process_array_obj_sort;
-            p.postprocess = &postprocess_array;
+    if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
+        if (order != SELVA_RESULT_ORDER_NONE) {
+            args->process_obj = &process_array_obj_sort;
+            postprocess = &postprocess_array;
         } else {
-            p.process.obj = &process_array_obj_send;
-            p.postprocess = NULL;
+            args->process_obj = &process_array_obj_send;
+            postprocess = NULL;
         }
     } else {
-        if (inherit_expr_en) {
+        if (args->send_param.inherit_expression) {
             /* This will also handle sorting if it was requested. */
-            p.process.node = &process_node_inherit;
-            p.postprocess = &postprocess_inherit;
-        } else if (query_opts->order != SELVA_RESULT_ORDER_NONE) {
-            p.process.node = &process_node_sort;
-            p.postprocess = &postprocess_sort;
+            args->process_node = &process_node_inherit;
+            postprocess = &postprocess_inherit;
+        } else if (order != SELVA_RESULT_ORDER_NONE) {
+            args->process_node = &process_node_sort;
+            postprocess = &postprocess_sort;
         } else {
-            p.process.node = &process_node_send;
-            p.postprocess = NULL;
+            args->process_node = &process_node_send;
+            postprocess = NULL;
         }
     }
 
-    return p;
+    return postprocess;
 }
 
 static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, size_t size) {
@@ -938,6 +927,12 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
     }
 
+    if (inherit_expression) {
+        SVector_Init(&traverse_result, selva_glob_config.hierarchy_expected_resp_len, NULL);
+    } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
+        SelvaTraversalOrder_InitOrderResult(&traverse_result, query_opts.order, query_opts.limit);
+    }
+
     selva_send_array(resp, -1);
 
     /*
@@ -950,12 +945,11 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         nr_index_hints = 0;
     }
 
-
     /*
      * Run for each NODE_ID.
      */
-    struct processing processing = init_processing(&query_opts, &traverse_result);
     ssize_t nr_nodes = 0;
+    SelvaFind_Postprocess postprocess = NULL;
     for (size_t i = 0; i < ids_len; i += SELVA_NODE_ID_SIZE) {
         Selva_NodeId nodeId;
 
@@ -1025,7 +1019,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .acc_take = 0,
         };
 
-        memcpy(&args.process, &processing.process, sizeof(union FindCommand_Process));
+        postprocess = select_processing(&args, query_opts.dir, query_opts.order);
 
         if (ind_select >= 0) {
             /*
@@ -1114,7 +1108,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         SelvaFindIndex_AccMulti(ind_icb, nr_index_hints, ind_select, args.acc_take, args.acc_tot);
     }
 
-    if (processing.postprocess) {
+    if (postprocess) {
         struct SelvaNodeSendParam send_args = {
             .order = query_opts.order,
             .order_field = order_by_field,
@@ -1130,7 +1124,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         };
 
         SELVA_TRACE_BEGIN(cmd_find_sort_result);
-        processing.postprocess(&fin, resp, hierarchy, lang, query_opts.offset, query_opts.limit, &send_args, &traverse_result);
+        postprocess(&fin, resp, hierarchy, lang, query_opts.offset, query_opts.limit, &send_args, &traverse_result);
         SELVA_TRACE_END(cmd_find_sort_result);
     } else {
         selva_send_array_end(resp);
