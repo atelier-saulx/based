@@ -5,7 +5,6 @@ import {
   BasedSchemaFieldSet,
 } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
-import { joinPath } from '../../util'
 import { ExecContext, GetCommand } from '../types'
 
 export function parseGetResult(
@@ -23,10 +22,9 @@ export function parseGetResult(
       source,
     } = cmd
 
-    const k = joinPath(path)
     const parsed = parseResultRows(ctx, result)
 
-    if (k === '') {
+    if (!path.length) {
       obj = { ...obj, ...parsed[0] }
     } else {
       if (cmd.type === 'node') {
