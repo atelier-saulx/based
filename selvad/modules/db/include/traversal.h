@@ -234,10 +234,10 @@ struct FindCommand_Args {
     size_t acc_take; /*!< Numer of nodes selected during the traversal. */
     size_t acc_tot; /*!< Total number of nodes visited during the traversal. */
 
-    union {
-        SelvaFind_ProcessNode process_node;
-        SelvaFind_ProcessObject process_obj;
-    };
+    union FindCommand_Process {
+        SelvaFind_ProcessNode node;
+        SelvaFind_ProcessObject obj;
+    } process;
 };
 
 /**
