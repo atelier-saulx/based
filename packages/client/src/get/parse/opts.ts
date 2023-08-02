@@ -197,7 +197,9 @@ export async function parseGetOpts(
                 }
               }
 
-              nestedCmd?.nestedCommands.forEach((c) => nestedCommands.push(c))
+              nestedCmd?.nestedCommands.forEach((c) => {
+                nestedCommands.push(c)
+              })
             } else if (nestedCmd.type === 'node') {
               // completely separate id queried
               topLevel.push(nestedCmd)
