@@ -649,6 +649,10 @@ test.only('string', async (t) => {
     referencesToThings: { $add: 'ti123' },
   })
 
+  r.collected.forEach((v) => {
+    console.info(v.root.typeSchema)
+  })
+
   console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
