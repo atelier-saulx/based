@@ -1,3 +1,4 @@
+import { deepEqual } from '@saulx/utils'
 import {
   BasedSchemaField,
   BasedSchemaFieldObject,
@@ -20,6 +21,12 @@ function createOrUseArgs<T>(
   if (newArgs instanceof ArgsClass) {
     return newArgs
   }
+  console.info('MAKE NEW BLA')
+
+  if (!newArgs.collect) {
+    newArgs
+  }
+
   return from.create(newArgs)
 }
 
@@ -36,6 +43,26 @@ async function parseKey<T>(
     },
     from
   )
+
+  // // @ts-ignore
+  // keyArgs._putup = from
+  // // -----------
+  // keyArgs._collectOverride = (args) => {
+  //   // if (this.skipCollection) {
+  //   //   return
+  //   // }
+  //   // console.info('make', args.path)
+  //   from.collectedCommands.push(keyArgs.root._opts.collect(args))
+
+  //   // const collectArgs =
+  //   //   value !== undefined ? new ArgsClass({ value }, this) : this
+
+  //   // if (this._collectOverride) {
+  //   //   this.collectedCommands.push(this._collectOverride(collectArgs))
+  //   // } else {
+  //   //   this.collectedCommands.push(this.root._opts.collect(collectArgs))
+  //   // }
+  // }
   const newArgs = createOrUseArgs(keyArgs, await parser(keyArgs))
   if (newArgs) {
     return newArgs.parse()
@@ -172,7 +199,38 @@ export async function parse<T>(
         if (!args.prev.fromBackTrack) {
           args.prev.fromBackTrack = []
         }
-        args.prev.fromBackTrack.push(backtracked)
+
+        let argPath = []
+
+        let p = args
+
+        let cnt = 0
+
+        while (p) {
+          let x = p.prev
+
+          if (x) {
+            if (deepEqual(x.path, args.path)) {
+              cnt++
+            }
+
+            p = p.prev
+          }
+
+          p = x
+        }
+
+        console.info('STORE BT', cnt)
+
+        if (cnt) {
+          let t = args.prev
+          for (let i = 0; i < cnt; i++) {
+            t = t.prev
+          }
+          t.fromBackTrack.push(backtracked)
+        } else {
+          args.prev.fromBackTrack.push(backtracked)
+        }
       }
     }
   } else {
