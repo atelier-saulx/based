@@ -862,12 +862,12 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     }
     if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
         (!fields || SelvaTraversal_FieldsContains(fields, "*", 1))) {
-        if (fields) {
-            SelvaObject_Destroy(fields);
-        }
-
         /* Merge needs a fields object but it must be empty. */
-        fields = SelvaObject_New();
+        if (fields) {
+            SelvaObject_Clear(fields, NULL);
+        } else {
+            fields = SelvaObject_New();
+        }
     }
 
     /*
