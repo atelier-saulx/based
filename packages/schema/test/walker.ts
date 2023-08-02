@@ -224,7 +224,7 @@ test.only('perf', async (t) => {
   for (let i = 0; i < 1e5; i++) {
     const x = await setWalker2(schema, {
       $id: 'bl120',
-      name: 'bla',
+      name: 'blasdsdsd ' + i,
       x: { flap: true },
     })
     errs += x.errors.length

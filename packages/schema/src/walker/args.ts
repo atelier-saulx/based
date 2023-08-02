@@ -59,7 +59,7 @@ export class ArgsClass<
     }
     this.value = opts.value
     if (opts.fieldSchema) {
-      // @ts-ignore
+      // @ts-ignore K is too loose
       this.fieldSchema = opts.fieldSchema
     }
     if (opts.typeSchema) {
