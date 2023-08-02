@@ -46,10 +46,8 @@ export const reference: FieldParser<'reference'> = async (args) => {
 
 export const references: FieldParser<'references'> = async (args) => {
   const { value, error, fieldSchema, target } = args
-  console.log(args.typeSchema)
 
   if (Array.isArray(value)) {
-    console.log('trueeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
     await Promise.all(
       value.map((v, i) => {
         console.log(v, i)

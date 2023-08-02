@@ -217,18 +217,46 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-// test.only('perf', async (t) => {
-//   let d = Date.now()
-//   for (let i = 0; i < 1e6; i++) {
-//     await setWalker2(schema, { $id: 'bl120', flap: true, x: { flap: true } })
-//   }
-//   console.info(Date.now() - d, 'ms')
-//   t.true(true)
-// })
-
-test.only('string', async (t) => {
-  for (let i = 0; i < 10; i++) {
-    await setWalker2(schema, { $id: 'bl120', name: 'blax' })
+test.only('perf', async (t) => {
+  let d = Date.now()
+  let collected = 0
+  let errs = 0
+  for (let i = 0; i < 1e5; i++) {
+    const x = await setWalker2(schema, {
+      $id: 'bl120',
+      name: 'bla',
+      x: { flap: true },
+    })
+    errs += x.errors.length
+    collected += x.collected.length
   }
+  console.info(errs, collected, Date.now() - d, 'ms')
   t.true(true)
 })
+
+// test.only('string', async (t) => {
+//   // for (let i = 0; i < 10; i++) {
+//   //   console.log(
+//   //     (await setWalker2(schema, { $id: 'bl120', name: 'blax' })).target
+//   //       .collected
+//   //   )
+//   // }
+
+//   // console.info('----------')
+//   // console.log(
+//   //   (await setWalker2(schema, { $id: 'bl120', name: { $value: 'blax' } }))
+//   //     .target.collected
+//   // )
+//   console.info('---- default ------')
+//   const x = await setWalker2(schema, {
+//     $id: 'bl120',
+//     name: { $default: 'blax' },
+//   })
+
+//   // TODO: Error also has to include path
+//   console.log(
+//     x.errors,
+//     x.target.collected.map((v) => ({ path: v.path, value: v.value }))
+//   )
+//   t.true(true)
+// })

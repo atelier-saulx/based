@@ -2,9 +2,10 @@ import {
   BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldRecord,
+  BasedSchemaFields,
 } from '../types'
 import { ArgsClass } from './args'
-import { ArgsOpts, KeyParser, Stopped } from './types'
+import { ArgsOpts, FieldParser, KeyParser, Stopped } from './types'
 
 type ParseResult<T> = ArgsClass<T> | void
 
@@ -13,19 +14,13 @@ function createOrUseArgs<T>(
   from: ArgsClass<T>,
   newArgs: ArgsClass<T> | ArgsOpts<T> | void
 ): ParseResult<T> {
-  if (newArgs) {
-    if (newArgs instanceof ArgsClass) {
-      return newArgs
-    } else {
-      if (!('value' in newArgs)) {
-        newArgs.value = from.value
-      }
-      if (!newArgs.fieldSchema) {
-        newArgs.fieldSchema = from.fieldSchema
-      }
-      return new ArgsClass(newArgs, from)
-    }
+  if (!newArgs) {
+    return
   }
+  if (newArgs instanceof ArgsClass) {
+    return newArgs
+  }
+  return from.create(newArgs)
 }
 
 async function parseKey<T>(
@@ -63,6 +58,16 @@ function createFieldArgs<T>(
   )
 }
 
+function getFieldParser<T>(
+  args: ArgsClass<T>
+): void | FieldParser<keyof BasedSchemaFields> {
+  const fieldParser =
+    'enum' in args.fieldSchema
+      ? args.root._opts.parsers.fields.enum
+      : args.root._opts.parsers.fields[args.fieldSchema.type]
+  return fieldParser
+}
+
 export async function parse<T>(
   args: ArgsClass<T>
 ): Promise<ArgsClass<T> | void> {
@@ -71,6 +76,7 @@ export async function parse<T>(
     const keyQ: Promise<ParseResult<T>>[] = []
     const keysHandled: Set<string | number> = new Set()
     let allKeysHandled = false
+
     for (const key in opts.parsers.keys) {
       if (key in args.value) {
         keysHandled.add(key)
@@ -78,9 +84,9 @@ export async function parse<T>(
       }
     }
     await Promise.all(keyQ)
-    const fieldQ: Promise<ParseResult<T>>[] = []
 
     if (!args.stopped) {
+      const fieldQ: Promise<ParseResult<T>>[] = []
       if (args.typeSchema && !args.fieldSchema) {
         for (const key in args.typeSchema.fields) {
           const fieldSchema = args.typeSchema.fields[key]
@@ -109,46 +115,41 @@ export async function parse<T>(
             fieldQ.push(createFieldArgs(args, key, fieldSchema).parse())
           }
         } else if (args.fieldSchema) {
-          const fieldParser =
-            'enum' in args.fieldSchema
-              ? opts.parsers.fields.enum
-              : opts.parsers.fields[args.fieldSchema.type]
-          // @ts-ignore
-          const newArgs = createOrUseArgs(args, await fieldParser(args))
-          if (newArgs) {
-            return newArgs.parse()
+          const fieldParser = getFieldParser(args)
+          if (fieldParser) {
+            const newArgs = createOrUseArgs(args, await fieldParser(args))
+            if (newArgs) {
+              return newArgs.parse()
+            }
           }
         }
       }
-
       await Promise.all(fieldQ)
+    }
 
-      if (args.stopped !== Stopped.stopAll) {
-        const parser = opts.parsers.any || opts.parsers.catch
-        if (parser) {
-          const q: Promise<ParseResult<T>>[] = []
-          if (Array.isArray(args.value)) {
-            for (let i = 0; i < args.value.length; i++) {
-              if ((!opts.parsers.any && keysHandled.has(i)) || allKeysHandled) {
-                continue
-              }
-              q.push(parseKey(args, i, parser))
+    if (args.stopped !== Stopped.stopAll) {
+      const parser = opts.parsers.any || opts.parsers.catch
+      if (parser) {
+        const q: Promise<ParseResult<T>>[] = []
+        if (Array.isArray(args.value)) {
+          for (let i = 0; i < args.value.length; i++) {
+            if ((!opts.parsers.any && keysHandled.has(i)) || allKeysHandled) {
+              continue
             }
-          } else {
-            for (const key in args.value) {
-              if (
-                (!opts.parsers.any && keysHandled.has(key)) ||
-                allKeysHandled
-              ) {
-                continue
-              }
-              q.push(parseKey(args, key, parser))
-            }
+            q.push(parseKey(args, i, parser))
           }
-          await Promise.all(q)
+        } else {
+          for (const key in args.value) {
+            if ((!opts.parsers.any && keysHandled.has(key)) || allKeysHandled) {
+              continue
+            }
+            q.push(parseKey(args, key, parser))
+          }
         }
+        await Promise.all(q)
       }
     }
+
     if (
       opts.backtrack &&
       !args.skipCollection &&
@@ -168,13 +169,8 @@ export async function parse<T>(
     }
   } else {
     if (args.fieldSchema) {
-      const fieldParser =
-        'enum' in args.fieldSchema
-          ? opts.parsers.fields.enum
-          : opts.parsers.fields[args.fieldSchema.type]
-
+      const fieldParser = getFieldParser(args)
       if (fieldParser) {
-        // @ts-ignore
         const newArgs = createOrUseArgs(args, await fieldParser(args))
         if (newArgs) {
           return newArgs.parse()

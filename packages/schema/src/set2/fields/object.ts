@@ -11,6 +11,7 @@ export const object: FieldParser<'object'> = async (args) => {
     args.error(ParseError.incorrectFormat)
     return
   }
+  args.collect()
   return args
 }
 
@@ -24,5 +25,6 @@ export const record: FieldParser<'record'> = async (args) => {
     args.error(ParseError.incorrectFormat)
     return
   }
+  args.collect()
   return args
 }

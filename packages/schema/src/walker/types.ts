@@ -9,9 +9,12 @@ import { ArgsClass } from './args'
 
 export type Path = (string | number)[]
 
-export type ErrorHandler<T> = (args: ArgsClass<T>, code: ParseError) => void
+export type ErrorHandler<T> = (
+  code: ParseError,
+  args: ArgsClass<T> | ArgsOpts<T>
+) => void
 
-export type Collect<T> = (args: ArgsClass<T>, value: any) => any
+export type Collect<T> = (args: ArgsClass<T>) => any
 
 export type FieldParser<K extends keyof BasedSchemaFields, T = any> = (
   args: ArgsClass<T, K>
@@ -29,24 +32,25 @@ export type Opts<T> = {
   init: (
     value: any,
     schema: BasedSchema,
-    error: (err: ParseError) => void
+    error: ErrorHandler<T>
   ) => Promise<ArgsOpts<T>>
   parsers: {
     fields: Partial<{
       [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
     }>
-    keys: { [key: string]: KeyParser<T> } // $list -> true
-    any?: KeyParser<T> // y.x
-    catch?: KeyParser<T> //
+    keys: { [key: string]: KeyParser<T> }
+    any?: KeyParser<T>
+    catch?: KeyParser<T>
   }
-  collect?: (args: ArgsClass<T>, value: any) => any
+  collect?: (args: ArgsClass<T>) => any
+  error?: ErrorHandler<T>
   backtrack?: (
     args: ArgsClass<T>,
     fromBackTrack: any[],
     collectedCommands: any[]
   ) => any
+  // fix this
   requiresAsyncValidation?: (validationType: any) => Promise<boolean>
-  errorsCollector?: ErrorHandler<T>
 }
 
 export enum Stopped {

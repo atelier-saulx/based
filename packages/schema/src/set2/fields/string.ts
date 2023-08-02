@@ -109,89 +109,31 @@ const validateString = (
   return true
 }
 
-const validate = (
-  args: ArgsClass<BasedSetTarget, StringTypes>,
-  value: any
-): boolean => {
-  if (typeof value !== 'object') {
-    return validateString(args, value)
-  }
-  if (typeof value === 'object') {
-    // not rly a thing
-  }
-}
-
 export const string: FieldParser<'string'> = async (args) => {
-  console.info('???', args.path, args.value)
-
-  if (!validate(args, args.value)) {
+  if (!validateString(args, args.value)) {
     return
   }
-
   args.collect()
 }
 
 export const text: FieldParser<'text'> = async (args) => {
-  //   console.log('XXXXXXXXXXXXXXXXXXXXXx', args)
-  const value = args.value
-  if (args.prev.value.$language && typeof value === 'string') {
-    args.stop()
-    if (!validate(args, value)) {
-      return
-    }
-    args.collect()
-  }
-
-  if (typeof value !== 'object') {
-    args.error(ParseError.incorrectFormat)
-  }
-
-  for (const key in value) {
-    console.log([key], value[key], 'miauw')
-    if (!args.target.schema.languages.includes(<BasedSchemaLanguage>key)) {
-      console.log('error  miauw')
-      args.error(ParseError.languageNotSupported)
-    }
-  }
-
-  // if (typeof value[key] === 'object') {
-  //   if (
-  //     await parseValueAndDefault(
-  //       path,
-  //       value[key],
-  //       fieldSchema,
-  //       typeSchema,
-  //       args.target,
-  //       handlers,
-  //       true
-  //     )
-  //   ) {
-  //     continue
+  // const value = args.value
+  // if (args.prev.value.$language && typeof value === 'string') {
+  //   args.stop()
+  //   if (!validate(args, value)) {
+  //     return
+  //   }
+  //   args.collect()
+  // }
+  // if (typeof value !== 'object') {
+  //   args.error(ParseError.incorrectFormat)
+  // }
+  // for (const key in value) {
+  //   console.log([key], value[key], 'miauw')
+  //   if (!args.target.schema.languages.includes(<BasedSchemaLanguage>key)) {
+  //     console.log('error  miauw')
+  //     args.error(ParseError.languageNotSupported)
   //   }
   // }
-
-  //   if (
-  //     !(await parseValueAndDefault(
-  //       path,
-  //       { [key]: value[key] },
-  //       fieldSchema,
-  //       typeSchema,
-  //       args.target,
-  //       handlers,
-  //       true
-  //     ))
-  //   ) {
-  //     validate(handlers, path, value[key], fieldSchema)
-  //   }
-  // }
-
-  // if (!noCollect) {
-  //   handlers.collect({
-  //     path,
-  //     value,
-  //     typeSchema,
-  //     fieldSchema,
-  //     args.target,
-  //   })
-  // }
+  // args.collect()
 }

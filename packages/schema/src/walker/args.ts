@@ -8,6 +8,8 @@ export class ArgsClass<
   T,
   K extends keyof BasedSchemaFields = keyof BasedSchemaFields
 > {
+  errors: any[]
+
   prev: ArgsClass<T, K>
 
   root: ArgsClass<T, K> // getter
@@ -46,6 +48,7 @@ export class ArgsClass<
     if (prev) {
       this.prev = prev
       this.root = prev.root
+      this.fieldSchema = prev.fieldSchema
     }
     if (opts.path) {
       this.path = opts.path
@@ -98,11 +101,23 @@ export class ArgsClass<
   }
 
   stop(onllyStopFieldSchemaParser?: boolean) {
+    const target = this.prev ?? this
     if (onllyStopFieldSchemaParser) {
-      this.stopped = Stopped.onlyStopFieldParser
+      target.stopped = Stopped.onlyStopFieldParser
     } else {
-      this.stopped = Stopped.stopAll
+      target.stopped = Stopped.stopAll
     }
+  }
+
+  create(opts?: ArgsOpts<T>): ArgsClass<T> {
+    const newArgs = new ArgsClass(opts, this)
+    if (this._collectOverride) {
+      newArgs._collectOverride = this._collectOverride
+    }
+    if (!('value' in opts)) {
+      newArgs.value = this.value
+    }
+    return newArgs
   }
 
   async parse(opts?: ArgsOpts<T>): Promise<ArgsClass<T> | void> {
@@ -110,8 +125,9 @@ export class ArgsClass<
       return parse(this)
     } else {
       const newArgs = new ArgsClass(opts, this)
-      if (this._collectOverride)
-        [(newArgs._collectOverride = this._collectOverride)]
+      if (this._collectOverride) {
+        newArgs._collectOverride = this._collectOverride
+      }
       return newArgs.parse()
     }
   }
@@ -120,19 +136,17 @@ export class ArgsClass<
     if (this.skipCollection) {
       return
     }
+    const collectArgs =
+      value !== undefined ? new ArgsClass({ value }, this) : this
+
     if (this._collectOverride) {
-      this.collectedCommands.push(
-        this._collectOverride(this, value ?? this.value)
-      )
-    } else if (this.root._opts.collect) {
-      this.collectedCommands.push(
-        this.root._opts.collect(this, value ?? this.value)
-      )
+      this.collectedCommands.push(this._collectOverride(collectArgs))
+    } else {
+      this.collectedCommands.push(this.root._opts.collect(collectArgs))
     }
   }
 
   error(code: ParseError): void {
-    // console.info(':XX')
-    this.root._opts.errorsCollector(this, code)
+    this.root._opts.error(code, this)
   }
 }

@@ -25,7 +25,20 @@ const opts: Opts<BasedSetTarget> = {
         return { path: args.path.slice(0, -1) }
       },
       $default: async (args) => {
-        return
+        const type = args.fieldSchema?.type
+        if (type === 'number' || type === 'integer' || type === 'timestamp') {
+          // default can exist with $incr and $decr
+          return
+        }
+        args.stop()
+        const newArgs = args.create({
+          path: args.path.slice(0, -1),
+          skipCollection: true,
+        })
+        await newArgs.parse()
+        newArgs.skipCollection = false
+        newArgs.value = { $default: newArgs.value }
+        newArgs.collect()
       },
     },
     fields,
@@ -33,54 +46,49 @@ const opts: Opts<BasedSetTarget> = {
       args.error(ParseError.fieldDoesNotExist)
     },
   },
+  error: (code, args) => {
+    args.target.errors.push({
+      code,
+      path: args.path ?? [],
+    })
+  },
   init: async (value, schema, error) => {
     let type: string
-    if (value.$id) {
-      type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
-      if (!type) {
-        error(ParseError.incorrectFieldType)
-        return
-      }
-    }
-    if (value.type) {
-      if (type && value.type !== type) {
-        error(ParseError.incorrectNodeType)
-        return
-      }
-      type = value.type
-    }
-    const typeSchema = schema.types[type]
-    if (!typeSchema) {
-      error(ParseError.incorrectNodeType)
-      return
-    }
     const target: BasedSetTarget = {
       type,
       schema,
       required: [],
       collected: [],
+      errors: [],
+    }
+    if (value.$id) {
+      if (value.$id === 'root') {
+        type = 'root'
+      } else {
+        type = schema.prefixToTypeMapping[value.$id.slice(0, 2)]
+      }
+      if (!type) {
+        error(ParseError.incorrectFieldType, { target })
+        return
+      }
+    }
+    if (value.type) {
+      if (type && value.type !== type) {
+        error(ParseError.incorrectNodeType, { target })
+        return
+      }
+      type = value.type
+    }
+    const typeSchema = type === 'root' ? schema.root : schema.types[type]
+    if (!typeSchema) {
+      error(ParseError.incorrectNodeType, { target })
+      return
     }
 
     return { target, typeSchema }
   },
-  collect: (args, value) => {
-    if (args.key === '$default') {
-      if (Object.keys(args.prev.value).length > 1) {
-        args.prev.value.$default = value
-      } else {
-        args.root.target.collected.push({
-          path: args.path.slice(0, -1),
-          value: {
-            $default: value,
-          },
-        })
-      }
-    } else {
-      args.root.target.collected.push({
-        path: args.path,
-        value,
-      })
-    }
+  collect: (args) => {
+    args.root.target.collected.push(args)
   },
 }
 
@@ -88,9 +96,6 @@ const opts: Opts<BasedSetTarget> = {
 export const setWalker2 = (
   schema: BasedSchema,
   value: any
-): Promise<{
-  target: BasedSetTarget
-  errors: { code: ParseError; message: string }[]
-}> => {
+): Promise<BasedSetTarget> => {
   return walk<BasedSetTarget>(schema, opts, value)
 }

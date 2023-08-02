@@ -1,6 +1,7 @@
 import type { Language } from './languages'
 import type { PartialDeep, SetOptional } from 'type-fest'
 import { ParseError } from './set/error'
+import { ArgsClass, Path } from './walker'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -344,10 +345,8 @@ export type BasedSetTarget = {
   schema: BasedSchema
   $language?: BasedSchemaLanguage
   required: (number | string)[][]
-  collected: {
-    path: (string | number)[]
-    value: any
-  }[]
+  collected: ArgsClass<BasedSetTarget>[]
+  errors: { code: ParseError; path: Path }[]
 }
 
 export type BasedSchemaCollectProps = {
