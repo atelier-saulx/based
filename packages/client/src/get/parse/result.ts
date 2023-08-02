@@ -80,13 +80,10 @@ function parseObjFields(
     const v = fields[i + 1]
     let fieldSchema = schema
 
-    let n: any = obj
-    const parts = f.split('.')
-    let alias: string | undefined
-    if (parts[0].includes('@')) {
-      ;[alias, parts[0]] = parts[0].split('@')
-    }
+    const [alias, rest] = f.split('@')
 
+    let n: any = obj
+    const parts = (rest ?? alias).split('.')
     for (let i = 0; i < parts.length - 1; i++) {
       const s = parts[i]
 
@@ -112,7 +109,7 @@ function parseObjFields(
     }
 
     if (alias) {
-      setByPath(obj, [alias], res)
+      setByPath(obj, alias.split('.'), res)
     } else {
       n[parts[parts.length - 1]] = res
     }
