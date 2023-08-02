@@ -1813,8 +1813,6 @@ test.serial.skip('get - record with wildcard query', async (t) => {
       },
     }
   )
-
-  // TODO: add a find case with both and wildcard for fields thing
 })
 
 // TODO: querying record field returns undefined
