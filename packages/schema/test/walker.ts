@@ -13,6 +13,10 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        referencesToThings: {
+          type: 'references',
+          allowedTypes: ['thing'],
+        },
         referenceToThing: {
           type: 'reference',
           allowedTypes: ['thing'],
@@ -595,6 +599,54 @@ test.only('string', async (t) => {
   r = await setWalker2(schema, {
     $id: 'bl120',
     referenceToThing: 'blbla',
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 22 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 23 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referencesToThings: { $remove: ['ti123'] },
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 24 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referencesToThings: { $add: ['blbla', 'ti123', 'ewiohfdoweihfw'] },
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 25 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referencesToThings: { $add: 'ti123' },
   })
 
   console.log(r.errors)

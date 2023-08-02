@@ -1,5 +1,4 @@
 import { ParseError } from '../../set/error'
-import { BasedSetTarget } from '../../types'
 import { ArgsClass, FieldParser } from '../../walker'
 
 async function parseOperator<T>(

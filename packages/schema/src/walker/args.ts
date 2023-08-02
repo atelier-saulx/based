@@ -57,8 +57,10 @@ export class ArgsClass<
     }
     if (opts.path) {
       this.path = opts.path
-    } else if (prev && opts.key) {
+    } else if (prev && opts.key !== undefined) {
       this.path = [...prev.path, opts.key]
+    } else if (opts && prev) {
+      this.path = prev.path
     } else {
       this.path = []
     }
