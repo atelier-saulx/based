@@ -573,6 +573,35 @@ static void postprocess_inherit(
     }
 }
 
+/* TODO It wouldn't be necessary to call this in the loop. */
+static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order) {
+    SelvaFind_Postprocess postprocess;
+
+    if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
+        if (order != SELVA_RESULT_ORDER_NONE) {
+            args->process_obj = &process_array_obj_sort;
+            postprocess = &postprocess_array;
+        } else {
+            args->process_obj = &process_array_obj_send;
+            postprocess = NULL;
+        }
+    } else {
+        if (args->send_param.inherit_expression) {
+            /* This will also handle sorting if it was requested. */
+            args->process_node = &process_node_inherit;
+            postprocess = &postprocess_inherit;
+        } else if (order != SELVA_RESULT_ORDER_NONE) {
+            args->process_node = &process_node_sort;
+            postprocess = &postprocess_sort;
+        } else {
+            args->process_node = &process_node_send;
+            postprocess = NULL;
+        }
+    }
+
+    return postprocess;
+}
+
 static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, size_t size) {
     static_assert(sizeof(qo->dir) == sizeof(int32_t));
     qo->dir = le32toh(qo->dir);
@@ -930,6 +959,10 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             continue;
         }
 
+        if (query_opts.limit == 0) {
+            break;
+        }
+
         struct SelvaFindIndexControlBlock *ind_icb[max(nr_index_hints, 1)];
         int ind_select = -1; /* Selected index. The smallest of all found. */
 
@@ -986,31 +1019,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .acc_take = 0,
         };
 
-        if (query_opts.limit == 0) {
-            break;
-        }
-
-        if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-            if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
-                args.process_obj = &process_array_obj_sort;
-                postprocess = &postprocess_array;
-            } else {
-                args.process_obj = &process_array_obj_send;
-                postprocess = NULL;
-            }
-        } else {
-            if (inherit_expression) {
-                /* This will also handle sorting if it was requested. */
-                args.process_node = &process_node_inherit;
-                postprocess = &postprocess_inherit;
-            } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
-                args.process_node = &process_node_sort;
-                postprocess = &postprocess_sort;
-            } else {
-                args.process_node = &process_node_send;
-                postprocess = NULL;
-            }
-        }
+        postprocess = select_processing(&args, query_opts.dir, query_opts.order);
 
         if (ind_select >= 0) {
             /*
