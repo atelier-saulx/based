@@ -90,8 +90,8 @@ export class ArgsClass<
     return this.root._schema
   }
 
-  get key(): (number | string) | void {
-    return this.path[this.path.length - 1]
+  get key(): number | string {
+    return this.path[this.path.length - 1] ?? ''
   }
 
   get target(): T {
