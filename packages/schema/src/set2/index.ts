@@ -2,17 +2,15 @@ import { ParseError } from '../set/error'
 import { BasedSchema, BasedSetTarget } from '../types'
 import { walk, Opts } from '../walker'
 import { fields } from './fields'
+import { isValidId } from './isValidId'
 
 const opts: Opts<BasedSetTarget> = {
   parsers: {
     keys: {
       $id: async (args) => {
-        if (typeof args.value !== 'string') {
+        if (!isValidId(args.schema, args.value)) {
           args.error(ParseError.incorrectFormat)
           return
-        }
-        if (args.value.length > 10) {
-          args.error(ParseError.incorrectFormat)
         }
       },
       $language: async (args) => {

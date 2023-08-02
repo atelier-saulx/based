@@ -1,11 +1,22 @@
 import test from 'ava'
 import { BasedSchema, setWalker2, walk } from '../src/index'
+import { wait } from '@saulx/utils'
 
 const schema: BasedSchema = {
   types: {
+    thing: {
+      prefix: 'ti',
+      fields: {
+        something: { type: 'string', format: 'strongPassword' },
+      },
+    },
     bla: {
       prefix: 'bl',
       fields: {
+        referenceToThing: {
+          type: 'reference',
+          allowedTypes: ['thing'],
+        },
         exclusiveminmax: {
           type: 'number',
           minimum: 3,
@@ -375,7 +386,7 @@ test.only('string', async (t) => {
     text: { $default: 'sdsdds' },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -388,7 +399,7 @@ test.only('string', async (t) => {
     text: { $default: 'sdsdds', en: { $default: 'flapflap' } },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -401,7 +412,7 @@ test.only('string', async (t) => {
     text: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -420,7 +431,7 @@ test.only('string', async (t) => {
     },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -438,7 +449,7 @@ test.only('string', async (t) => {
     },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -459,7 +470,7 @@ test.only('string', async (t) => {
     },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -480,7 +491,7 @@ test.only('string', async (t) => {
     },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -501,7 +512,7 @@ test.only('string', async (t) => {
     },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -513,7 +524,7 @@ test.only('string', async (t) => {
     setOfNumbers: [1, 2, 3, 4, 5],
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -525,7 +536,7 @@ test.only('string', async (t) => {
     setOfNumbers: { $add: 20 },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -537,7 +548,7 @@ test.only('string', async (t) => {
     setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
@@ -549,7 +560,31 @@ test.only('string', async (t) => {
     setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
   })
 
-  console.error(r.errors)
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 19 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referenceToThing: 'sdfefewfewfewewffwe',
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 20 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referenceToThing: 'tibla',
+  })
+
+  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }

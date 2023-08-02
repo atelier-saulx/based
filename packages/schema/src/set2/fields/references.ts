@@ -1,8 +1,11 @@
 import { ParseError } from '../../set/error'
 import { FieldParser } from '../../walker'
+import { isValidId } from '../isValidId'
 
 export const reference: FieldParser<'reference'> = async (args) => {
-  if (typeof args.value !== 'string') {
+  // TODO: setting an object here , handling $alias (both async hooks)
+
+  if (!isValidId(args.schema, args.value)) {
     args.error(ParseError.incorrectFormat)
     return
   }
@@ -25,6 +28,7 @@ export const reference: FieldParser<'reference'> = async (args) => {
         if (t.type && t.type === targetType) {
           typeMatches = true
           if (t.$filter) {
+            // ASYNC HOOK
             // if(!(await args.target.referenceFilterCondition(value, t.$filter))){
             //     error(args, ParseError.referenceIsIncorrectType)
             //     return
@@ -39,9 +43,11 @@ export const reference: FieldParser<'reference'> = async (args) => {
     }
     if (typeMatches === false) {
       args.error(ParseError.referenceIsIncorrectType)
+      return
     }
   }
-  args.collect(args)
+
+  args.collect()
 }
 
 export const references: FieldParser<'references'> = async (args) => {
