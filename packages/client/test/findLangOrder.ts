@@ -45,7 +45,7 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
@@ -53,11 +53,12 @@ test.after(async (_t) => {
 // TODO: worng language dependant order
 // only runs on darwin?
 // test[process.platform === 'darwin' ? 'skip' : 'serial'](
-test.serial.skip('$lang should change the order when relevant', async (t) => {
+test.serial('$lang should change the order when relevant', async (t) => {
   const children = await Promise.all(
     [
       {
         $id: 'team1',
+        parents: ['match1'],
         title: {
           cs: 'Öäpelin pallo',
           de: 'Öäpelin pallo',
@@ -68,6 +69,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team2',
+        parents: ['match1'],
         title: {
           cs: 'Aopelin pallo',
           de: 'Aopelin pallo',
@@ -78,6 +80,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team3',
+        parents: ['match1'],
         title: {
           cs: 'OOpelin pallo',
           de: 'OOpelin pallo',
@@ -88,6 +91,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team4',
+        parents: ['match1'],
         title: {
           cs: 'Ääpelin pallo',
           de: 'Ääpelin pallo',
@@ -98,6 +102,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team5',
+        parents: ['match1'],
         title: {
           cs: 'öäpelin pallo',
           de: 'öäpelin pallo',
@@ -108,6 +113,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team6',
+        parents: ['match1'],
         title: {
           cs: 'aopelin pallo',
           de: 'aopelin pallo',
@@ -118,6 +124,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team7',
+        parents: ['match1'],
         title: {
           cs: 'oOpelin pallo',
           de: 'oOpelin pallo',
@@ -128,6 +135,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team8',
+        parents: ['match1'],
         title: {
           cs: 'ääpelin pallo',
           de: 'ääpelin pallo',
@@ -138,6 +146,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team9',
+        parents: ['match1'],
         title: {
           cs: 'hrnec pallo',
           de: 'hrnec pallo',
@@ -148,6 +157,7 @@ test.serial.skip('$lang should change the order when relevant', async (t) => {
       },
       {
         $id: 'team10',
+        parents: ['match1'],
         title: {
           cs: 'chrt pallo',
           de: 'chrt pallo',
