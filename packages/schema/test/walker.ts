@@ -102,7 +102,7 @@ test.only('walker', async (t) => {
       },
       collect: (args) => {
         console.info('..', args.path)
-        return args.path.join('.')
+        return { bla: args.path.join('.') }
       },
       backtrack: (args, fromBt, collected) => {
         console.log(

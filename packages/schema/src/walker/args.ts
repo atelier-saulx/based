@@ -132,6 +132,9 @@ export class ArgsClass<
       return parse(this)
     } else {
       const newArgs = new ArgsClass(opts, this)
+      if (newArgs.value === undefined) {
+        newArgs.value = this.value
+      }
       if (this._collectOverride) {
         newArgs._collectOverride = this._collectOverride
       }
