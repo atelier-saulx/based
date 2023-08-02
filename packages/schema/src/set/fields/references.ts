@@ -1,4 +1,4 @@
-import { ParseError } from '../../set/error'
+import { ParseError } from '../../error'
 import { BasedSetTarget } from '../../types'
 import { ArgsClass, FieldParser } from '../../walker'
 import { isValidId } from '../isValidId'

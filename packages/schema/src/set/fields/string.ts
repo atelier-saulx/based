@@ -3,7 +3,7 @@ import {
   BasedSchemaLanguage,
   BasedSetTarget,
 } from '../../types'
-import { ParseError } from '../../set/error'
+import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
 import { deepMerge, setByPath } from '@saulx/utils'

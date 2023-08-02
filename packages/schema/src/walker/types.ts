@@ -1,4 +1,4 @@
-import { ParseError } from '../set/error'
+import { ParseError } from '../error'
 import {
   BasedSchemaType,
   BasedSchemaFields,

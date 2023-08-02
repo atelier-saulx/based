@@ -1,5 +1,5 @@
 import { setByPath } from '@saulx/utils'
-import { ParseError } from '../../set/error'
+import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import { BasedSetTarget } from '../../types'
 

@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, setWalker2, walk } from '../src/index'
+import { BasedSchema, setWalker, walk } from '../src/index'
 import { wait } from '@saulx/utils'
 
 const schema: BasedSchema = {
@@ -209,7 +209,7 @@ test('set walker', async (t) => {
     },
   }
 
-  const x = await setWalker2(schema, {
+  const x = await setWalker(schema, {
     $id: 'bl1',
     snup: false,
     uniq: {
@@ -258,7 +258,7 @@ test('perf setWalker', async (t) => {
   let collected = 0
   let errs = 0
   for (let i = 0; i < 1e5; i++) {
-    const x = await setWalker2(schema, {
+    const x = await setWalker(schema, {
       $id: 'bl120',
       name: 'blasdsdsd',
       x: { flap: true },
@@ -272,18 +272,18 @@ test('perf setWalker', async (t) => {
 test.only('string', async (t) => {
   // for (let i = 0; i < 10; i++) {
   //   console.log(
-  //     (await setWalker2(schema, { $id: 'bl120', name: 'blax' })).target
+  //     (await setWalker(schema, { $id: 'bl120', name: 'blax' })).target
   //       .collected
   //   )
   // }
 
   // console.info('----------')
   // console.log(
-  //   (await setWalker2(schema, { $id: 'bl120', name: { $value: 'blax' } }))
+  //   (await setWalker(schema, { $id: 'bl120', name: { $value: 'blax' } }))
   //     .target.collected
   // )
   console.info('---- default ------')
-  const x = await setWalker2(schema, {
+  const x = await setWalker(schema, {
     $id: 'bl120',
     name: { $default: 'blax' },
   })
@@ -295,7 +295,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- default too many fields ------')
-  const y = await setWalker2(schema, {
+  const y = await setWalker(schema, {
     $id: 'bl120',
     name: { $default: 'blax', meanboys: true },
   })
@@ -307,7 +307,7 @@ test.only('string', async (t) => {
   )
 
   console.info('----  ------')
-  const z = await setWalker2(schema, {
+  const z = await setWalker(schema, {
     $id: 'bl120',
     exclusiveminmax: { $default: 10, $decrement: 10 },
   })
@@ -318,7 +318,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink ------')
-  const j = await setWalker2(schema, {
+  const j = await setWalker(schema, {
     $id: 'bl120',
     exclusiveminmax: { $default: 4, $decrement: 10 },
   })
@@ -329,7 +329,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 2 ------')
-  const c = await setWalker2(schema, {
+  const c = await setWalker(schema, {
     $id: 'bl120',
     exclusiveminmax: { $default: 4, $decrement: 10, flapperdeflip: true },
   })
@@ -340,7 +340,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 3 ------')
-  const g = await setWalker2(schema, {
+  const g = await setWalker(schema, {
     $id: 'bl120',
     timestamp: { $default: 4 },
   })
@@ -351,7 +351,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 4 ------')
-  const d = await setWalker2(schema, {
+  const d = await setWalker(schema, {
     $id: 'bl120',
     exclusiveminmax: { $value: 4 },
   })
@@ -362,7 +362,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 5 ------')
-  let r = await setWalker2(schema, {
+  let r = await setWalker(schema, {
     $id: 'bl120',
     text: { $value: 'x' },
   })
@@ -373,7 +373,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 6 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $value: 'sdsdds' },
@@ -385,7 +385,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 7 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $default: 'sdsdds' },
@@ -398,7 +398,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 8 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $default: 'sdsdds', en: { $default: 'flapflap' } },
@@ -411,7 +411,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 9 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
@@ -426,7 +426,7 @@ test.only('string', async (t) => {
   t.true(true)
 
   console.info('---- doink 10 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: {
@@ -443,7 +443,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 11 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: {
@@ -461,7 +461,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 12 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: {
@@ -482,7 +482,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 13 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: {
@@ -503,7 +503,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 14 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: {
@@ -524,7 +524,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 15 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: [1, 2, 3, 4, 5],
   })
@@ -536,7 +536,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 16 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: { $add: 20 },
   })
@@ -548,7 +548,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 17 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
   })
@@ -560,7 +560,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 18 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
   })
@@ -572,7 +572,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 19 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'sdfefewfewfewewffwe',
   })
@@ -584,7 +584,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 20 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'tibla',
   })
@@ -596,7 +596,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 21 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'blbla',
   })
@@ -608,7 +608,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 22 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
   })
@@ -620,7 +620,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 23 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $remove: ['ti123'] },
   })
@@ -632,7 +632,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 24 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: ['blbla', 'ti123', 'ewiohfdoweihfw'] },
   })
@@ -644,7 +644,7 @@ test.only('string', async (t) => {
   )
 
   console.info('---- doink 25 ------')
-  r = await setWalker2(schema, {
+  r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: 'ti123' },
   })

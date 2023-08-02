@@ -1,6 +1,6 @@
 import type { Language } from './languages'
 import type { PartialDeep, SetOptional } from 'type-fest'
-import { ParseError } from './set/error'
+import { ParseError } from './error'
 import { ArgsClass, Path } from './walker'
 
 // Schema type

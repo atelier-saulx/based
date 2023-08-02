@@ -1,4 +1,4 @@
-import { BasedSetHandlers } from '../types'
+import { BasedSetHandlers } from './types'
 
 export enum ParseError {
   'incorrectFieldType',

@@ -2,7 +2,7 @@ import { BasedSchema } from '../types'
 import { BasedSchemaType, BasedSchemaFields } from '../types'
 import { ArgsOpts, Path, Opts, Stopped, ErrorHandler, Collect } from './types'
 import { parse } from './parse'
-import { ParseError } from '../set/error'
+import { ParseError } from '../error'
 
 export class ArgsClass<
   T,

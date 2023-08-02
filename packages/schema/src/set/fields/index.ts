@@ -1,5 +1,5 @@
 import { FieldParsers } from '../../walker'
-import { ParseError } from '../../set/error'
+import { ParseError } from '../../error'
 import { BasedSetTarget } from '../../types'
 import { array } from './array'
 import { object, record } from './object'

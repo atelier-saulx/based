@@ -1,6 +1,6 @@
 import { Path } from '@saulx/utils'
 import { BasedSetTarget } from '../../src'
-import { ParseError } from '../../src/set/error'
+import { ParseError } from '../../src/error'
 
 export const resultCollect = (...results: BasedSetTarget[]) => {
   const assertableResults: { path: Path; value: any }[] = []

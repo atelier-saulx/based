@@ -1,4 +1,4 @@
-import { ParseError } from '../../set/error'
+import { ParseError } from '../../error'
 import { FieldParser } from '../../walker'
 
 export const object: FieldParser<'object'> = async (args) => {

@@ -6,7 +6,7 @@ import {
   BasedSetTarget,
   setWalker2,
 } from '../src/index'
-import { ParseError } from '../src/set/error'
+import { ParseError } from '../src/error'
 import { resultCollect, errorCollect } from './utils'
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
