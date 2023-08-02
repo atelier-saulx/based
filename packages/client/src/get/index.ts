@@ -96,7 +96,7 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         if (cmd.filter) {
           const ast = createAst(cmd.filter)
           if (ast) {
-            rpn = ast2rpn(ctx.client.schema.types, ast, makeLangArg(ctx))
+            rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
           }
         }
 
