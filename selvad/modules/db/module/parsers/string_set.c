@@ -9,6 +9,7 @@
 #include <string.h>
 #include <tgmath.h>
 #include "jemalloc.h"
+#include "util/cstrings.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
@@ -68,7 +69,7 @@ static void so_add_n(struct SelvaObject *obj, size_t n, const char *str, size_t 
 static void so_add_alias(struct SelvaObject *obj, const char *alias_str, size_t alias_len, const char *str, size_t len)
 {
     struct selva_string *s;
-    const char key_str[alias_len];
+    char key_str[alias_len];
 
     memcpy(key_str, alias_str, alias_len);
     ch_replace(key_str, alias_len, '.', ':');
