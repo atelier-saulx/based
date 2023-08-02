@@ -71,6 +71,7 @@ const schema: BasedSchema = {
   },
   prefixToTypeMapping: {
     bl: 'bla',
+    ti: 'thing',
   },
 }
 
@@ -582,6 +583,18 @@ test.only('string', async (t) => {
   r = await setWalker2(schema, {
     $id: 'bl120',
     referenceToThing: 'tibla',
+  })
+
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 21 ------')
+  r = await setWalker2(schema, {
+    $id: 'bl120',
+    referenceToThing: 'blbla',
   })
 
   console.log(r.errors)
