@@ -1,10 +1,9 @@
 export const resultCollect = (arr: Array<any>) => {
   const returnArr: any = []
   for (let i = 0; i < arr.length; i++) {
-    returnArr.push({
-      path: arr[i].target.collected[0].path,
-      value: arr[i].target.collected[0].value.value,
-    })
+    returnArr.push(
+      arr[i].collected.map((v) => ({ path: v.path, value: v.value }))[0]
+    )
   }
   return returnArr
 }
