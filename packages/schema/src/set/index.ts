@@ -8,6 +8,11 @@ const opts: Opts<BasedSetTarget> = {
   parsers: {
     keys: {
       $delete: async (args) => {
+        if (args.prev === args.root) {
+          args.error(ParseError.cannotDeleteNodeFromModify)
+          return
+        }
+
         if (args.value === true) {
           args.stop()
           args.prev.collect()

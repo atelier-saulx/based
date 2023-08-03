@@ -13,4 +13,5 @@ export enum ParseError {
   'languageNotSupported',
   'invalidJSON',
   'noLanguageFound',
+  'cannotDeleteNodeFromModify',
 }
