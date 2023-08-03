@@ -237,12 +237,12 @@ export class BasedDbClient extends Emitter {
     }
 
     const merged = deepMergeArrays({}, ...nestedObjs)
+    console.dir({ nestedObjs, merged, defaults }, { depth: 8 })
     for (const d of defaults) {
       applyDefault(merged, d)
     }
 
-    console.dir({ nestedObjs, merged }, { depth: 8 })
-
+    console.dir({ complete: merged })
     return merged
   }
 

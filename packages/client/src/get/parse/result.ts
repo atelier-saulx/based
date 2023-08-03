@@ -108,10 +108,16 @@ function parseObjFields(
       continue
     }
 
-    if (alias) {
-      setByPath(obj, parseAlias(alias), res)
+    const parsedPath = parseAlias(alias)
+    if (['object', 'record', 'text', 'reference'].includes(fieldSchema.type)) {
+      const currentValue = getByPath(obj, parsedPath)
+      if (typeof currentValue === 'object') {
+        deepMerge(currentValue, res)
+      } else {
+        setByPath(obj, parsedPath, res)
+      }
     } else {
-      n[parts[parts.length - 1]] = res
+      setByPath(obj, parsedPath, res)
     }
   }
 
@@ -176,6 +182,22 @@ const FIELD_PARSERS: Record<
   },
   reference: (ary: any | any[], ctx: ExecContext) => {
     if (Array.isArray(ary)) {
+      if (Array.isArray(ary[0])) {
+        ary = ary[0]
+      }
+
+      if (ary.length > 1) {
+        const [, id, ...fields] = ary
+        const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+        const typeSchema = ctx.client.schema.types[typeName]
+        const obj = parseObjFields(
+          ctx,
+          { type: 'object', properties: typeSchema.fields },
+          fields
+        )
+        return obj
+      }
+
       return FIELD_PARSERS.references(ary, ctx)[0]
     }
 

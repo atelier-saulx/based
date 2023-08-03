@@ -117,7 +117,7 @@ test.afterEach(async (_t) => {
 // TypeError {
 //   message: 'b.sort is not a function',
 // }
-test.serial.skip('simple singular reference', async (t) => {
+test.serial.only('simple singular reference', async (t) => {
   // const match1 = await client.set({
   //   $id: 'maA',
   //   title: {
