@@ -197,13 +197,21 @@ static int send_edge_field(
         size_t next_prefix_len;
 
         if (field_prefix_str) {
-            const char *s = memchr(field_str, '.', field_len);
-            const int n = s ? (int)(s - field_str) + 1 : (int)field_len;
-            struct selva_string *next_prefix;
+            if (field_prefix_len > 0 && field_prefix_str[field_prefix_len - 1] == '@') {
+                /*
+                 * Don't change the prefix if there is an alias.
+                 */
+                next_prefix_str = field_prefix_str;
+                next_prefix_len = field_prefix_len;
+            } else {
+                const char *s = memchr(field_str, '.', field_len);
+                const int n = s ? (int)(s - field_str) + 1 : (int)field_len;
+                struct selva_string *next_prefix;
 
-            next_prefix = selva_string_createf("%.*s%.*s", (int)field_prefix_len, field_prefix_str, n, field_str);
-            finalizer_add(fin, next_prefix, selva_string_free);
-            next_prefix_str = selva_string_to_str(next_prefix, &next_prefix_len);
+                next_prefix = selva_string_createf("%.*s%.*s", (int)field_prefix_len, field_prefix_str, n, field_str);
+                finalizer_add(fin, next_prefix, selva_string_free);
+                next_prefix_str = selva_string_to_str(next_prefix, &next_prefix_len);
+            }
         } else {
             /*
              * Don't add prefix because we are sending multiple nested objects
