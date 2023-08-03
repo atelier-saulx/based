@@ -74,11 +74,24 @@ const schema: BasedSchema = {
         record: {
           type: 'record',
           values: {
-            type: 'array',
-            values: {
-              type: 'object',
-              properties: {
-                flap: { type: 'number' },
+            type: 'object',
+            properties: {
+              bla: {
+                type: 'array',
+                values: {
+                  type: 'object',
+                  properties: {
+                    snux: {
+                      type: 'object',
+                      properties: {
+                        x: {
+                          type: 'number',
+                        },
+                      },
+                    },
+                    flap: { type: 'number' },
+                  },
+                },
               },
             },
           },
@@ -967,9 +980,11 @@ test('string', async (t) => {
       $id: 'bl120',
       record: {
         blabla: {
-          $insert: {
-            $value: { flap: 100 },
-            $idx: 0,
+          bla: {
+            $insert: {
+              $value: { flap: 100 },
+              $idx: 0,
+            },
           },
         },
       },

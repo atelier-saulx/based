@@ -1,3 +1,4 @@
+import { setByPath } from '@saulx/utils'
 import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import { BasedSetTarget } from '../../types'
@@ -12,11 +13,11 @@ const parseArray = async (
   for (let i = 0; i < fromValue.length; i++) {
     q.push(
       args.parse({
-        key: i,
+        path: [i],
         value: fromValue[i],
         fieldSchema: args.fieldSchema.values,
         collect: (args) => {
-          arr[i] = args.value
+          setByPath(arr, args.path, args.value)
         },
       })
     )
