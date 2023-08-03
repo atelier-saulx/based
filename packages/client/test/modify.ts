@@ -1930,9 +1930,7 @@ test.serial.skip('set - push into array', async (t) => {
   )
 })
 
-// TODO: objects not being returned
-// TODO: $assign not working
-test.serial.skip('set - assign into array', async (t) => {
+test.serial('set - assign into array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2106,8 +2104,7 @@ test.serial.skip('set - assign into array', async (t) => {
   )
 })
 
-// TODO: objects not being returned
-test.serial.skip('set - remove from array', async (t) => {
+test.serial('set - remove from array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2208,7 +2205,7 @@ test.serial.skip('set - remove from array', async (t) => {
   )
 })
 
-// TODO: objects not being returned
+// TODO: Weird issue with parsing $insert (Jim)
 test.serial.skip('set - insert into array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
