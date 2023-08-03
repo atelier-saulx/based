@@ -31,8 +31,18 @@ async function parseOperator<T>(
 
 export const reference: FieldParser<'reference'> = async (args) => {
   // TODO: setting an object here , handling $alias (both async hooks)
-
-  // block if path contains $remove
+  // Block if path contains $remove (maybe not for $alias)
+  if (typeof args.value === 'object') {
+    if (args.root._opts.asyncOperationHandler) {
+      args.value = await args.root._opts.asyncOperationHandler(
+        args,
+        'modifyObject'
+      )
+    } else {
+      args.error(ParseError.nestedModifyObjectNotAllowed)
+      return
+    }
+  }
 
   if (!isValidId(args.schema, args.value)) {
     args.error(ParseError.incorrectFormat)

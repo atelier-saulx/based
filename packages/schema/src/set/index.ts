@@ -1,6 +1,6 @@
 import { ParseError } from '../error'
 import { BasedSchema, BasedSchemaCollectProps, BasedSetTarget } from '../types'
-import { walk, Opts } from '../walker'
+import { walk, Opts, AsyncOperation } from '../walker'
 import { fields } from './fields'
 import { isValidId } from './isValidId'
 
@@ -138,5 +138,8 @@ const opts: Opts<BasedSetTarget> = {
 
 export const setWalker = (
   schema: BasedSchema,
-  value: any
-): Promise<BasedSetTarget> => walk<BasedSetTarget>(schema, opts, value)
+  value: any,
+  asyncOperationHandler?: AsyncOperation<BasedSetTarget>
+): Promise<BasedSetTarget> => {
+  return walk<BasedSetTarget>(schema, opts, value, asyncOperationHandler)
+}

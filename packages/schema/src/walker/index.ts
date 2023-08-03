@@ -1,11 +1,12 @@
 import { BasedSchema } from '../types'
 import { ArgsClass } from './args'
-import { Opts } from './types'
+import { AsyncOperation, Opts } from './types'
 
 export const walk = async <T>(
   schema: BasedSchema,
   opts: Opts<T>,
-  value: any
+  value: any,
+  asyncOperationHandler?: AsyncOperation<T>
 ): Promise<T> => {
   if (!('collect' in opts)) {
     opts.collect = () => {}
@@ -13,6 +14,10 @@ export const walk = async <T>(
 
   if (!('error' in opts)) {
     opts.error = () => {}
+  }
+
+  if (asyncOperationHandler) {
+    opts.asyncOperationHandler = asyncOperationHandler
   }
 
   const argsOpts = await opts.init(value, schema, opts.error)
@@ -25,6 +30,7 @@ export const walk = async <T>(
   args.root = args
   args._opts = opts
   args._schema = schema
+
   await args.parse()
 
   return args.target

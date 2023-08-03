@@ -28,6 +28,11 @@ export type FieldParsers<T = any> = {
   [Key in keyof BasedSchemaFields]: FieldParser<Key, T>
 }
 
+export type AsyncOperation<T> = (
+  args: ArgsClass<T>,
+  type?: string
+) => Promise<any>
+
 export type Opts<T> = {
   init: (
     value: any,
@@ -49,8 +54,7 @@ export type Opts<T> = {
     fromBackTrack: any[],
     collectedCommands: any[]
   ) => any
-  // fix this
-  requiresAsyncValidation?: (validationType: any) => Promise<boolean>
+  asyncOperationHandler?: AsyncOperation<T>
 }
 
 export enum Stopped {
@@ -73,3 +77,5 @@ export type ArgsOpts<
   skipCollection?: boolean
   collect?: (args: ArgsClass<T, K>, value?: any) => any
 }
+
+// Add asyncOperations // requiresAsyncValidation -> asyncOperation: () => {}

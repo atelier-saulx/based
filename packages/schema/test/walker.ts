@@ -7,6 +7,7 @@ const schema: BasedSchema = {
     thing: {
       prefix: 'ti',
       fields: {
+        priority: { type: 'number' },
         something: { type: 'string', format: 'strongPassword' },
       },
     },
@@ -876,6 +877,29 @@ test('string', async (t) => {
     $id: 'bl120',
     integer: -Infinity,
   })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 39 ------')
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl120',
+      referencesToThings: [
+        {
+          type: 'thing',
+          priority: 9000,
+        },
+      ],
+    },
+    async (args, type) => {
+      console.info(args.path, type)
+    }
+  )
 
   console.dir(r.errors)
   console.dir(
