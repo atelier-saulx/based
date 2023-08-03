@@ -920,5 +920,33 @@ test('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 40 array ------')
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl120',
+      intarray: {
+        $insert: {
+          $idx: 10,
+          $value: 1212,
+        },
+      },
+    },
+    async (args, type) => {
+      console.info('GO ASYNC', args.path, args.value, type)
+      if (args.value.type === 'thing') {
+        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      } else {
+        return 'bl1221'
+      }
+    }
+  )
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })

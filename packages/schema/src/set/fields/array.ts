@@ -33,10 +33,7 @@ const operations: {
   ) => Promise<void>
 } = {
   $insert: async (args, value) => {
-    if (
-      typeof value.$insert !== 'object' ||
-      typeof value.$insert.$idx !== 'number'
-    ) {
+    if (typeof value.$insert.$idx !== 'number') {
       args.error(ParseError.incorrectFormat)
       return
     }
