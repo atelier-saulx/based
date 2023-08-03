@@ -26,7 +26,7 @@
     "@saulx/diff": "^1.1.4",
     "@saulx/utils": "^3.5.3",
     "@based/client": "^4.7.6",
-    "@based/schema": "1.0.9",
+    "@based/schema": "1.0.10",
     "data-record": "^1.0.2",
     "uuid": "^9.0.0"
   },
