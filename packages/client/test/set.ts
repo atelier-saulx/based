@@ -372,6 +372,7 @@ test.serial.only('set primitive fields', async (t) => {
     slug: '/third',
     meh: {
       str: 'hello',
+      rec: { a: { a: 'hello', b: 1 }, b: { a: 'olleh', b: -1 } },
     },
     ancestors: [
       {
