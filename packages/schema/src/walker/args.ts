@@ -177,15 +177,14 @@ export class ArgsClass<
       }
     }
 
-    // p = this.prev || this
+    // console.log(
+    //   'SELECTED TARGET',
+    //   p && p.id,
+    //   p && p.path,
+    //   p && p.getTopPaths(),
+    //   'END'
+    // )
 
-    console.log(
-      'SELECTED TARGET',
-      p && p.id,
-      p && p.path,
-      p && p.getTopPaths(),
-      'END'
-    )
     return p
   }
 

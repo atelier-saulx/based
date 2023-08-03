@@ -85,7 +85,7 @@ const schema: BasedSchema = {
   },
 }
 
-test.only('walker', async (t) => {
+test('walker', async (t) => {
   const results: any[] = []
 
   const setObj = {
@@ -141,9 +141,8 @@ test.only('walker', async (t) => {
     },
   ])
 
-  const results2: any[] = []
-
   console.log('--------------------------------------')
+  const results2: any[] = []
 
   await walk<{ lullz: true }>(
     schema,
@@ -171,6 +170,38 @@ test.only('walker', async (t) => {
   )
 
   t.deepEqual(results, results2)
+
+  console.log('--------------------------------------')
+  const results3: any[] = []
+
+  let cnt = 0
+  await walk<{ lullz: true }>(
+    schema,
+    {
+      init: async () => {
+        return { target: { lullz: true } }
+      },
+      parsers: {
+        keys: {},
+        fields: {},
+        any: async (args) => {
+          cnt++
+          args.collect()
+          return cnt % 2 ? args : { target: { lullz: true } }
+        },
+      },
+      collect: (args) => {
+        return args.path.join('.')
+      },
+      backtrack: (args, fromBt, collected) => {
+        results3.push({ path: args.path, bt: [...fromBt] })
+        return fromBt.length ? fromBt : collected
+      },
+    },
+    setObj
+  )
+
+  t.deepEqual(results, results3)
 })
 
 test('set walker', async (t) => {
@@ -276,7 +307,7 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-test('perf setWalker', async (t) => {
+test.serial('perf setWalker', async (t) => {
   let d = Date.now()
   let collected = 0
   let errs = 0
@@ -289,6 +320,8 @@ test('perf setWalker', async (t) => {
     errs += x.errors.length
     collected += x.collected.length
   }
+  d = Date.now() - d
+  console.info('setting 200k', d, 'ms')
   t.true(d < 1e3)
 })
 
@@ -689,10 +722,6 @@ test('string', async (t) => {
     },
   })
 
-  r.collected.forEach((v) => {
-    console.info(v.root.typeSchema)
-  })
-
   console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
@@ -705,10 +734,6 @@ test('string', async (t) => {
     intarray: {
       $push: [1, 2, 3, 4, 5],
     },
-  })
-
-  r.collected.forEach((v) => {
-    console.info(v.root.typeSchema)
   })
 
   console.log(r.errors)
@@ -725,11 +750,20 @@ test('string', async (t) => {
     },
   })
 
-  r.collected.forEach((v) => {
-    console.info(v.root.typeSchema)
+  console.log(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 29 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    text: {
+      en: 'bla',
+    },
   })
 
-  console.log(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
