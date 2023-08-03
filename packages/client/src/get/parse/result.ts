@@ -108,13 +108,22 @@ function parseObjFields(
       }
 
       n = n[s]
-      fieldSchema = (<BasedSchemaFieldObject>fieldSchema)?.properties[s]
+
+      if ((<BasedSchemaFieldObject>fieldSchema).properties) {
+        fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[s]
+      } else if (fieldSchema.type === 'record') {
+        // @ts-ignore
+        fieldSchema = fieldSchema.values
+      }
     }
 
     if ((<BasedSchemaFieldObject>fieldSchema).properties) {
       fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
         parts[parts.length - 1]
       ]
+    } else if (fieldSchema.type === 'record') {
+      // @ts-ignore
+      fieldSchema = fieldSchema.values
     } else if (fieldSchema.type === 'text') {
       fieldSchema = { type: 'string' }
     }
