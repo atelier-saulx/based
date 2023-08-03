@@ -894,10 +894,15 @@ test('string', async (t) => {
           type: 'thing',
           priority: 9000,
         },
+        {
+          type: 'thing',
+          priority: 10000,
+        },
       ],
     },
     async (args, type) => {
-      console.info(args.path, type)
+      console.info('GO ASYNC', args.path, args.value, type)
+      return 'ti' + Math.floor(Math.random() * 10000).toString(16)
     }
   )
 
