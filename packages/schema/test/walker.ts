@@ -21,6 +21,9 @@ const schema: BasedSchema = {
           type: 'reference',
           allowedTypes: ['thing'],
         },
+        enum: {
+          enum: ['tony', 'jim'],
+        },
         exclusiveminmax: {
           type: 'number',
           minimum: 3,
@@ -307,7 +310,7 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-test.serial.only('perf setWalker', async (t) => {
+test.serial('perf setWalker', async (t) => {
   let d = Date.now()
   let collected = 0
   let errs = 0
@@ -812,6 +815,30 @@ test('string', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $alias: ['bla'],
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 34 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    enum: 'tony',
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 35 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    integer: NaN,
   })
 
   console.dir(r.errors)
