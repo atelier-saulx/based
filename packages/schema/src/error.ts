@@ -14,4 +14,5 @@ export enum ParseError {
   'invalidJSON',
   'noLanguageFound',
   'cannotDeleteNodeFromModify',
+  'numberOutOfBounds',
 }
