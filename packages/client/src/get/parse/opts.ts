@@ -31,6 +31,7 @@ export async function parseGetOpts(
           path,
           target: { $id, id, nestedPath },
         } = args
+        console.log('COLLECTING', path)
 
         if (nestedPath && $id === id) {
           // nested query with same $id should become a nested operation
