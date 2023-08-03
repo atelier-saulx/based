@@ -2,10 +2,13 @@ import { ParseError } from '../../error'
 import { FieldParser } from '../../walker'
 
 export const object: FieldParser<'object'> = async (args) => {
-  if (typeof args.value !== 'object') {
+  if (typeof args.value !== 'object' || args.value === null) {
     args.error(ParseError.incorrectFormat)
     return
   }
+
+  console.log('hello wtf....', args.value)
+
   const isArray = Array.isArray(args.value)
   if (isArray) {
     args.error(ParseError.incorrectFormat)
@@ -16,7 +19,7 @@ export const object: FieldParser<'object'> = async (args) => {
 }
 
 export const record: FieldParser<'record'> = async (args) => {
-  if (typeof args.value !== 'object') {
+  if (typeof args.value !== 'object' || args.value === null) {
     args.error(ParseError.incorrectFormat)
     return
   }

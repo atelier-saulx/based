@@ -71,6 +71,18 @@ const schema: BasedSchema = {
             },
           },
         },
+        record: {
+          type: 'record',
+          values: {
+            type: 'array',
+            values: {
+              type: 'object',
+              properties: {
+                flap: { type: 'number' },
+              },
+            },
+          },
+        },
         bla: {
           type: 'set',
           items: { type: 'string', minLength: 3, maxLength: 6 },
@@ -929,6 +941,36 @@ test('string', async (t) => {
         $insert: {
           $idx: 10,
           $value: 1212,
+        },
+      },
+    },
+    async (args, type) => {
+      console.info('GO ASYNC', args.path, args.value, type)
+      if (args.value.type === 'thing') {
+        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      } else {
+        return 'bl1221'
+      }
+    }
+  )
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 41 record + array ------')
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl120',
+      record: {
+        blabla: {
+          $insert: {
+            $value: { flap: 100 },
+            $idx: 0,
+          },
         },
       },
     },

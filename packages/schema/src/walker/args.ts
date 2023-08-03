@@ -86,7 +86,10 @@ export class ArgsClass<
     }
     if (opts.collect) {
       this._collectOverride = opts.collect
+    } else if (prev?._collectOverride) {
+      this._collectOverride = prev._collectOverride
     }
+
     if (opts.skipCollection) {
       this.skipCollection = opts.skipCollection
     }
@@ -141,12 +144,11 @@ export class ArgsClass<
       return parse(this)
     } else {
       const newArgs = new ArgsClass(opts, this)
+
       if (newArgs.value === undefined) {
         newArgs.value = this.value
       }
-      if (this._collectOverride) {
-        newArgs._collectOverride = this._collectOverride
-      }
+
       return newArgs.parse()
     }
   }
@@ -197,7 +199,6 @@ export class ArgsClass<
     const collectArgs =
       value !== undefined ? new ArgsClass({ value }, this) : this
 
-    // this is prob still wrong
     let collectTarget = this.prev
 
     if (this._collectOverride) {
