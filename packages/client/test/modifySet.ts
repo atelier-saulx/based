@@ -31,13 +31,6 @@ test.beforeEach(async (_t) => {
     types: {
       thing: {
         fields: {
-          // TODO: what to do with digest
-          // numbers: {
-          //   type: 'set',
-          //   items: {
-          //     type: 'digest',
-          //   },
-          // },
           floats: {
             type: 'set',
             items: {
@@ -66,24 +59,6 @@ test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
   await wait(300)
-})
-
-// TODO: what to do with digest
-test.serial.skip('basic set', async (t) => {
-  const id = await client.set({
-    type: 'thing',
-    numbers: {
-      $add: ['1', '2', '100'],
-    },
-  })
-
-  const { numbers } = await client.get({ $id: id, numbers: true })
-
-  t.deepEqualIgnoreOrder(numbers, [
-    'b3e4d7a1889fdb2222b848c6a3d6ab029cc18b87f40d5c086c7456c87bbd3c89',
-    '814f4c8863d6621f81ab494460f6c4fa66a86208839aba687a2da37db21e99d5',
-    '9211490f0570d4b8288817d66fa39bebabee80ae64567baeb00ee6afe392f200',
-  ])
 })
 
 // TODO: $add not implemented
