@@ -3,27 +3,53 @@ import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import { BasedSetTarget } from '../../types'
 
+const collectOperation = (
+  args: ArgsClass<BasedSetTarget, 'array'>,
+  collected: any[],
+  value: any
+) => {
+  args.collect(value)
+  if (collected.length) {
+    const collect = args.root._opts.collect
+    for (const args of collected) {
+      collect(args)
+    }
+  }
+}
+
 const parseArray = async (
   args: ArgsClass<BasedSetTarget, 'array'>,
-  value: any
-): Promise<any[]> => {
+  value: any,
+  idx: number = 0
+): Promise<{ collected: ArgsClass<BasedSetTarget>[]; arr: any[] }> => {
   const fromValue = Array.isArray(value) ? value : [value]
   const q: Promise<any>[] = []
   const arr = new Array(fromValue.length)
+  const collectNested = ['object', 'record', 'text'].includes(
+    args.fieldSchema.values.type
+  )
+  const collected: ArgsClass<BasedSetTarget>[] = []
+  // optmize this code path
   for (let i = 0; i < fromValue.length; i++) {
     q.push(
       args.parse({
-        path: [i],
+        key: i + idx,
         value: fromValue[i],
         fieldSchema: args.fieldSchema.values,
-        collect: (args) => {
-          setByPath(arr, args.path, args.value)
+        collect: (nArgs) => {
+          const p = nArgs.path.slice(args.path.length)
+          // @ts-ignore
+          p[0] = p[0] - idx
+          setByPath(arr, p, nArgs.value)
+          if (collectNested) {
+            collected.push(nArgs)
+          }
         },
       })
     )
   }
   await Promise.all(q)
-  return arr
+  return { arr, collected }
 }
 
 const operations: {
@@ -37,16 +63,23 @@ const operations: {
       args.error(ParseError.incorrectFormat)
       return
     }
-    value.$insert.$value = await parseArray(args, value.$insert.$value)
-    args.collect(value)
+    const { collected, arr } = await parseArray(
+      args,
+      value.$insert.$value,
+      value.$insert.$idx
+    )
+    value.$insert.$value = arr
+    collectOperation(args, collected, value)
   },
   $push: async (args, value) => {
-    value.$push = await parseArray(args, value.$push)
-    args.collect(value)
+    const { collected, arr } = await parseArray(args, value.$push)
+    value.$push = arr
+    collectOperation(args, collected, value)
   },
   $unshift: async (args, value) => {
-    value.$unshift = await parseArray(args, value.$unshift)
-    args.collect(value)
+    const { collected, arr } = await parseArray(args, value.$unshift)
+    value.$unshift = arr
+    collectOperation(args, collected, value)
   },
   $remove: async (args, value) => {
     if (typeof value.$remove.$idx !== 'number') {

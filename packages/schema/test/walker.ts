@@ -983,7 +983,7 @@ test('string', async (t) => {
           bla: {
             $insert: {
               $value: { flap: 100 },
-              $idx: 0,
+              $idx: 5,
             },
           },
         },
