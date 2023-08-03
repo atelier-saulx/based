@@ -151,7 +151,7 @@ export async function parseGetOpts(
         const { id, $id, type, $list } = args.target
 
         const shouldPrefixFields: boolean =
-          type === 'node' && key !== undefined && id === $id
+          type === 'node' && key !== '' && id === $id
 
         const fields: Field[] = []
         const byType: Record<string, Field[]> = {}

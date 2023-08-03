@@ -144,7 +144,7 @@ export class BasedDbClient extends Emitter {
         for (const lang in props.value) {
           args.push(
             ...toModifyArgs({
-              path: props.path,
+              path: [...props.path, lang],
               fieldSchema: { type: 'string' },
               value: props.value[lang],
             })
