@@ -49,6 +49,7 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
   },
 
   json: async (args) => {
+    args.stop()
     try {
       const parsedValue = JSON.stringify(args.value)
       args.collect(parsedValue)
