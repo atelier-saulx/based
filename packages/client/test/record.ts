@@ -24,13 +24,16 @@ test.beforeEach(async (_t) => {
   console.log('updating schema')
 
   await client.updateSchema({
+    languages: ['en'],
     types: {
       thing: {
+        prefix: 'th',
         fields: {
           name: { type: 'string' },
         },
       },
       hello: {
+        prefix: 'he',
         fields: {
           name: { type: 'string' },
           members: {
@@ -55,7 +58,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for records
+// TODO: record wildcards
 test.serial.skip('remove object from record', async (t) => {
   const thingId = await client.set({
     type: 'thing',
