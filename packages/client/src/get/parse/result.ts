@@ -139,7 +139,6 @@ const FIELD_PARSERS: Record<
   (x: any, ctx?: ExecContext, fieldSchema?: BasedSchemaField) => any
 > = {
   string: (x) => x,
-  reference: (x) => x,
   boolean: (x) => !!x,
   number: (x) => Number(x),
   timestamp: (x) => Number(x),
@@ -174,6 +173,13 @@ const FIELD_PARSERS: Record<
     }
 
     return res
+  },
+  reference: (ary: any | any[], ctx: ExecContext) => {
+    if (Array.isArray(ary)) {
+      return FIELD_PARSERS.references(ary, ctx)[0]
+    }
+
+    return ary
   },
   references: (ary: any[], ctx: ExecContext) => {
     const res = ary.map((x) => {
