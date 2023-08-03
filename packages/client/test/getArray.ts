@@ -204,8 +204,7 @@ test.after(async (t) => {
   client.destroy()
 })
 
-// TODO: we should return empty arrays by default?
-// TODO: querying record field returns undefined
+// TODO: traversing object arrays
 test.serial.skip('get - field with array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
@@ -239,7 +238,6 @@ test.serial.skip('get - field with array', async (t) => {
         ],
       },
     },
-    // refs: [],
   })
 
   // const x = await client.get({
@@ -286,12 +284,9 @@ test.serial.skip('get - field with array', async (t) => {
   })
 
   t.deepEqual(result, {
-    children: [],
-    descendants: [],
     dingdongs: ['a', 'b', 'test'],
     intArray: [1, 2, 3, 4, 5],
     floatArray: [1.1, 2.2, 3.3, 4.4],
-    refs: [],
     tsArray: [1634032349768, 1634032355278],
     objRec: {
       abba: {
