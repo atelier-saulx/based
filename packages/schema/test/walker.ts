@@ -51,6 +51,12 @@ const schema: BasedSchema = {
             type: 'integer',
           },
         },
+        object: {
+          type: 'object',
+          properties: {
+            flap: { type: 'boolean' },
+          },
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -1002,6 +1008,20 @@ test('string', async (t) => {
     $id: 'bl120',
     intarray: {
       $unshift: { $value: [-10, -20, -30] },
+    },
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 42 object ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    object: {
+      flap: true,
     },
   })
 

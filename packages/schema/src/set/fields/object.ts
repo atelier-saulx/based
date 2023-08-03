@@ -7,7 +7,7 @@ export const object: FieldParser<'object'> = async (args) => {
     return
   }
 
-  console.log('hello wtf....', args.value)
+  // console.log('hello wtf....', args.value)
 
   const isArray = Array.isArray(args.value)
   if (isArray) {
