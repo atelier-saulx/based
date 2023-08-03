@@ -1,6 +1,6 @@
 export function encodeLongLong(ll: number): Buffer {
   const iBuf = Buffer.allocUnsafe(8)
-  iBuf.writeBigUInt64LE(BigInt(ll))
+  iBuf.writeBigInt64LE(BigInt(ll))
   return iBuf
 }
 
