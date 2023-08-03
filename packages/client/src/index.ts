@@ -140,6 +140,12 @@ export class BasedDbClient extends Emitter {
 
     const args: any[] = []
     collected.forEach((props: Required<BasedSchemaCollectProps>) => {
+      const { path } = props
+
+      if (path.length === 1 && path[0] === 'type') {
+        return
+      }
+
       if (props?.fieldSchema?.type === 'text') {
         for (const lang in props.value) {
           args.push(
