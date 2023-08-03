@@ -296,9 +296,6 @@ export async function parseGetOpts(
 
         return cmd
       },
-      async requiresAsyncValidation(t) {
-        return false
-      },
     },
     opts
   )
