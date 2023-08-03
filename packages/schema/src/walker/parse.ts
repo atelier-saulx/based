@@ -161,7 +161,7 @@ export async function parse<T>(
           }
         } else {
           for (const key in args.value) {
-            console.info('  -> parse field: ', args.path, '->', key)
+            // console.info('  -> parse field: ', args.path, '->', key)
             if ((!opts.parsers.any && keysHandled.has(key)) || allKeysHandled) {
               continue
             }
@@ -172,12 +172,15 @@ export async function parse<T>(
       }
     }
 
-    console.log(
-      '  OBJECT COMPLETE ------------->',
-      args.path,
-      args.collectedCommands,
-      args.fromBackTrack
-    )
+    // console.log(
+    //   '  OBJECT COMPLETE ------------->',
+    //   args.id,
+    //   args.path,
+    //   'collected: ',
+    //   args.collectedCommands,
+    //   'backtracked: ',
+    //   args.fromBackTrack
+    // )
 
     if (
       opts.backtrack &&
@@ -189,15 +192,12 @@ export async function parse<T>(
         args.fromBackTrack ?? [],
         args.collectedCommands ?? []
       )
-      if (backtracked && args.prev) {
-        if (!args.prev.fromBackTrack) {
-          args.prev.fromBackTrack = []
+      if (backtracked) {
+        const target = args.getBackTrackTarget()
+        if (!target.fromBackTrack) {
+          target.fromBackTrack = []
         }
-
-        // console.log(args.getTopPaths())
-
-        // step 1 fire collect and bt correct
-        // args.prev.fromBackTrack.push(backtracked)
+        target.fromBackTrack.push(backtracked)
       }
     }
   } else {
@@ -215,11 +215,11 @@ export async function parse<T>(
         anyParser(args)
       }
     } else {
-      console.info(
-        '---->',
-        'parse non object (no field parser skip)',
-        args.path
-      )
+      // console.info(
+      //   '        ---->',
+      //   'parse non object (no field parser skip)',
+      //   args.path
+      // )
     }
   }
 }

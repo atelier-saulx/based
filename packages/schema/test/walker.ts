@@ -86,7 +86,19 @@ const schema: BasedSchema = {
 }
 
 test.only('walker', async (t) => {
-  const x = await walk<{ lullz: true }>(
+  const results: any[] = []
+
+  const setObj = {
+    x: {
+      y: {
+        a: 10,
+        bla: [1, 2, 3, 4, 5],
+      },
+      c: 40,
+    },
+  }
+
+  await walk<{ lullz: true }>(
     schema,
     {
       init: async () => {
@@ -96,55 +108,69 @@ test.only('walker', async (t) => {
         keys: {},
         fields: {},
         any: async (args) => {
+          args.collect()
+          return args
+        },
+      },
+      collect: (args) => {
+        return args.path.join('.')
+      },
+      backtrack: (args, fromBt, collected) => {
+        results.push({ path: args.path, bt: [...fromBt] })
+        return fromBt.length ? fromBt : collected
+      },
+    },
+    setObj
+  )
+
+  t.deepEqual(results, [
+    { path: ['x', 'y', 'bla'], bt: [] },
+    {
+      path: ['x', 'y'],
+      bt: [['x.y.bla.0', 'x.y.bla.1', 'x.y.bla.2', 'x.y.bla.3', 'x.y.bla.4']],
+    },
+    {
+      path: ['x'],
+      bt: [[['x.y.bla.0', 'x.y.bla.1', 'x.y.bla.2', 'x.y.bla.3', 'x.y.bla.4']]],
+    },
+    {
+      path: [],
+      bt: [
+        [[['x.y.bla.0', 'x.y.bla.1', 'x.y.bla.2', 'x.y.bla.3', 'x.y.bla.4']]],
+      ],
+    },
+  ])
+
+  const results2: any[] = []
+
+  console.log('--------------------------------------')
+
+  await walk<{ lullz: true }>(
+    schema,
+    {
+      init: async () => {
+        return { target: { lullz: true } }
+      },
+      parsers: {
+        keys: {},
+        fields: {},
+        any: async (args) => {
+          args.collect()
           return { target: { lullz: true } }
         },
       },
       collect: (args) => {
-        // console.info('..', args.path)
         return args.path.join('.')
       },
       backtrack: (args, fromBt, collected) => {
-        console.log(
-          '    \n-----------BACK TRACK GOOD GO',
-          '\n',
-          'path:',
-          args.path.join('.'),
-          '\n',
-          'backtracked:',
-          JSON.stringify(fromBt),
-          '\n',
-          'collected:',
-          collected,
-          '--------------------'
-        )
+        results2.push({ path: args.path, bt: [...fromBt] })
         return fromBt.length ? fromBt : collected
       },
     },
-    {
-      gurk: [1, 2, 3, 4],
-      x: {
-        y: {
-          z: {
-            a: 10,
-            b: 20,
-            gur: {
-              x: true,
-              y: true,
-              $list: {
-                $sort: true,
-              },
-            },
-            c: 40,
-            $list: true,
-          },
-        },
-      },
-    }
+    setObj
   )
 
-  console.info('------------')
-
-  t.true(true)
+  t.deepEqual(results, results2)
 })
 
 test('set walker', async (t) => {

@@ -5,11 +5,15 @@ import { parse } from './parse'
 import { ParseError } from '../error'
 import { deepEqual } from '@saulx/utils'
 
+let id = 0
+
 export class ArgsClass<
   T,
   K extends keyof BasedSchemaFields = keyof BasedSchemaFields
 > {
   errors: any[]
+
+  id: number
 
   prev: ArgsClass<T, K>
 
@@ -43,6 +47,7 @@ export class ArgsClass<
   collectedCommands: any[]
 
   constructor(opts: ArgsOpts<T, K>, prev?: ArgsClass<T, K>) {
+    this.id = ++id
     this.fromBackTrack = []
     this.collectedCommands = []
     if (opts.prev) {
@@ -150,12 +155,41 @@ export class ArgsClass<
     let argPath = []
     let p = this
     while (p) {
-      argPath.push(p.path)
+      argPath.unshift({ path: p.path, id: p.id })
       // @ts-ignore
       p = p.prev
     }
     return argPath
   }
+
+  getBackTrackTarget(): ArgsClass<T> {
+    let p: ArgsClass<T> = this
+    while (p) {
+      if (p.prev) {
+        if (deepEqual(p.prev.path, p.path)) {
+          p = p.prev
+        } else {
+          p = p.prev
+          break
+        }
+      } else {
+        break
+      }
+    }
+
+    // p = this.prev || this
+
+    console.log(
+      'SELECTED TARGET',
+      p && p.id,
+      p && p.path,
+      p && p.getTopPaths(),
+      'END'
+    )
+    return p
+  }
+
+  getCollectTarget() {}
 
   collect(value?: any) {
     if (this.skipCollection) {
@@ -164,23 +198,8 @@ export class ArgsClass<
     const collectArgs =
       value !== undefined ? new ArgsClass({ value }, this) : this
 
+    // this is prob still wrong
     let collectTarget = this.prev
-
-    console.log('COLLECT', this.path, this.getTopPaths)
-
-    // while (
-    //   collectTarget &&
-    //   deepEqual(collectTarget.path, collectTarget.prev.path)
-    // ) {
-    //   console.log('SAME')
-    //   // @ts-ignore
-    //   collectTarget = collectTarget.prev
-    // }
-
-    // if (!collectTarget) {
-    //   this.root._opts.collect(collectArgs)
-    //   return
-    // }
 
     if (this._collectOverride) {
       collectTarget.collectedCommands.push(this._collectOverride(collectArgs))
