@@ -16,8 +16,8 @@ export type Path = (string | number)[]
 export type Field = {
   type: 'field'
   field: Path
-  aliased?: Path[]
-  exclude?: true
+  aliased?: string[]
+  exclude?: boolean
 }
 
 // * = all

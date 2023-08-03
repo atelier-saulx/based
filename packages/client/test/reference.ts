@@ -112,12 +112,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: references not working
-// TODO: sort not working?
-// TypeError {
-//   message: 'b.sort is not a function',
-// }
-test.serial.only('simple singular reference', async (t) => {
+test.serial('simple singular reference', async (t) => {
   // const match1 = await client.set({
   //   $id: 'maA',
   //   title: {
@@ -187,105 +182,7 @@ test.serial.only('simple singular reference', async (t) => {
   )
 })
 
-// TODO: references not working
-// TODO: sort not working?
-// TypeError {
-//   message: 'b.sort is not a function',
-// }
-test.serial.skip('simple singular reference with $flatten', async (t) => {
-  const specialMatch = await client.set({
-    $id: 'maA',
-    title: {
-      en: 'yesh match',
-    },
-    parents: ['clA'],
-  })
-  const club1 = await client.set({
-    $id: 'clA',
-    title: {
-      en: 'yesh club',
-    },
-    // specialMatch: {
-    //   $id: 'maA',
-    //   title: {
-    //     en: 'yesh match',
-    //   },
-    // },
-    specialMatch,
-  })
-
-  t.deepEqualIgnoreOrder(
-    await client.get({
-      $id: 'clA',
-      $language: 'en',
-      id: true,
-      // title: true,
-      specialMatch: {
-        $flatten: true,
-        title: true,
-        description: { $default: 'no description' },
-      },
-    }),
-    {
-      id: 'clA',
-      title: 'yesh match',
-      description: 'no description',
-    }
-  )
-})
-
-// TODO: references not working
-// TODO: sort not working?
-test.serial.skip('nested singular reference with $flatten', async (t) => {
-  const specialMatch = await client.set({
-    $id: 'maA',
-    title: {
-      en: 'yesh match',
-    },
-    parents: ['clA'],
-  })
-  const club1 = await client.set({
-    $id: 'clA',
-    title: {
-      en: 'yesh club',
-    },
-    nested: {
-      // specialMatch: {
-      //   $id: 'maA',
-      //   title: {
-      //     en: 'yesh match',
-      //   },
-      // },
-      specialMatch,
-    },
-  })
-
-  t.deepEqualIgnoreOrder(
-    await client.get({
-      $id: 'clA',
-      $language: 'en',
-      id: true,
-      title: true,
-      nested: {
-        specialMatch: {
-          $flatten: true,
-          title: true,
-          description: { $default: 'no description' },
-        },
-      },
-    }),
-    {
-      id: 'clA',
-      title: 'yesh club',
-      nested: {
-        title: 'yesh match',
-        description: 'no description',
-      },
-    }
-  )
-})
-
-// TODO: parents: { $add } not working
+// TODO: needs $inherit
 test.serial.skip('singular reference inherit', async (t) => {
   await client.set({
     $id: 'maB',
@@ -344,8 +241,7 @@ test.serial.skip('singular reference inherit', async (t) => {
   )
 })
 
-// TODO: references not working
-// TODO: sort not working?
+// TODO: waiting for alias fix from Olli
 test.serial.skip('singular reference $field', async (t) => {
   const match1 = await client.set({
     $id: 'maA',

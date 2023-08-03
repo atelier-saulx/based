@@ -15,6 +15,7 @@ export async function parseGetOpts(
     type: 'node' | 'traverse'
     $list?: any
     defaultValues: { path: Path; value: any }[]
+    $field?: { aliasPath: Path; currentPath: Path }
   }>(
     ctx.client.schema,
     {
@@ -29,8 +30,9 @@ export async function parseGetOpts(
           key,
           value,
           path,
-          target: { $id, id, nestedPath },
+          target: { $id, id, nestedPath, $field },
         } = args
+        // special cases
         if (nestedPath && $id === id) {
           // nested query with same $id should become a nested operation
           const nestedCmd: GetNode = {
@@ -48,16 +50,8 @@ export async function parseGetOpts(
           }
 
           return nestedCmd
-        }
-
-        if (value === true) {
-          return {
-            type: 'field',
-            field: args.key === '$all' ? ['*'] : [args.key],
-          }
-        } else if (value === false) {
-          return { type: 'field', exclude: true, field: [`${args.key}`] }
         } else if (value?.$field) {
+          // plain $field
           let $field = value.$field
           if (!Array.isArray(value.$field)) {
             $field = [$field]
@@ -66,7 +60,21 @@ export async function parseGetOpts(
           return { type: 'field', field: [key], aliased: $field }
         }
 
-        console.error('UNABLE TO PARSE', args.value)
+        // main logic
+        let f = args.key === '$all' ? ['*'] : [args.key]
+
+        const field: Field = {
+          type: 'field',
+          field: f,
+          exclude: value === false,
+        }
+
+        if ($field) {
+          field.field = f
+          field.aliased = [[...$field.aliasPath, ...f].join('.')]
+        }
+
+        return field
       },
       parsers: {
         fields: {},
@@ -110,8 +118,20 @@ export async function parseGetOpts(
                 },
               }
             } else if (value.$field) {
-              args.collect()
-              return
+              if (Object.keys(value).length > 1) {
+                return {
+                  target: {
+                    ...args.target,
+                    $field: {
+                      aliasPath: value.$field.split('.'),
+                      currentPath: path,
+                    },
+                  },
+                }
+              } else {
+                args.collect()
+                return
+              }
             } else if (value.$default) {
               args.target.defaultValues.push({
                 path: path,
