@@ -71,14 +71,17 @@ export function arrayOpToModify(props: {
 
   const args = []
   for (const v of vals) {
-    args.push(
-      ...opArgs,
-      ...toModifyArgs(<any>{
-        fieldSchema: valSchema,
-        path: iPath,
-        value: v,
-      })
-    )
+    args.push(...opArgs)
+
+    if (typeof v !== 'object') {
+      args.push(
+        ...toModifyArgs(<any>{
+          fieldSchema: valSchema,
+          path: iPath,
+          value: v,
+        })
+      )
+    }
   }
 
   return args
