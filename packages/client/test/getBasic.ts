@@ -209,7 +209,7 @@ test.skip('get null', async (t) => {
   await t.throwsAsync(client.get(null))
 })
 
-test.serial.only('get nested queries', async (t) => {
+test.serial('get nested queries', async (t) => {
   await client.set({
     $id: 'maTest',
     value: 11,
