@@ -626,6 +626,16 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
     return 0;
 }
 
+static struct rpn_expression *rpn_compile_len(const char *str, size_t len)
+{
+    char input[len + 1];
+
+    memcpy(input, str, len);
+    input[len] = '\0';
+
+    return rpn_compile(input);
+}
+
 /**
  * Find node(s) matching the query.
  *
@@ -855,14 +865,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
 
-        size_t len = query_opts.res_opt_len;
-        char input[len + 1];
-
-        memcpy(input, query_opts.res_opt_str, len);
-        input[len] = '\0';
-
         fields_rpn_ctx = rpn_init(1);
-        fields_expression = rpn_compile(input);
+        fields_expression = rpn_compile_len(query_opts.res_opt_str, query_opts.res_opt_len);
         if (!fields_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "fields_rpn");
             return;
@@ -873,14 +877,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
 
-        size_t len = query_opts.res_opt_len;
-        char input[len + 1];
-
-        memcpy(input, query_opts.res_opt_str, len);
-        input[len] = '\0';
-
         fields_rpn_ctx = rpn_init(1);
-        inherit_expression = rpn_compile(input);
+        inherit_expression = rpn_compile_len(query_opts.res_opt_str, query_opts.res_opt_len);
         if (!inherit_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "inherit_rpn");
             return;
