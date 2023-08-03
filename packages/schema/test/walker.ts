@@ -307,7 +307,7 @@ test('set walker', async (t) => {
   t.true(true)
 })
 
-test.serial('perf setWalker', async (t) => {
+test.serial.only('perf setWalker', async (t) => {
   let d = Date.now()
   let collected = 0
   let errs = 0
