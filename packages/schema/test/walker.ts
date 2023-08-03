@@ -946,26 +946,15 @@ test('string', async (t) => {
   )
 
   console.info('---- doink 40 array ------')
-  r = await setWalker(
-    schema,
-    {
-      $id: 'bl120',
-      intarray: {
-        $insert: {
-          $idx: 10,
-          $value: 1212,
-        },
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $insert: {
+        $idx: 10,
+        $value: 1212,
       },
     },
-    async (args, type) => {
-      console.info('GO ASYNC', args.path, args.value, type)
-      if (args.value.type === 'thing') {
-        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
-      } else {
-        return 'bl1221'
-      }
-    }
-  )
+  })
 
   console.dir(r.errors)
   console.dir(
@@ -974,30 +963,47 @@ test('string', async (t) => {
   )
 
   console.info('---- doink 41 record + array ------')
-  r = await setWalker(
-    schema,
-    {
-      $id: 'bl120',
-      record: {
-        blabla: {
-          bla: {
-            $insert: {
-              $value: { flap: 100 },
-              $idx: 5,
-            },
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    record: {
+      blabla: {
+        bla: {
+          $insert: {
+            $value: { flap: 100 },
+            $idx: 5,
           },
         },
       },
     },
-    async (args, type) => {
-      console.info('GO ASYNC', args.path, args.value, type)
-      if (args.value.type === 'thing') {
-        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
-      } else {
-        return 'bl1221'
-      }
-    }
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
   )
+
+  console.info('---- doink 41 int unshift + array ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $unshift: [-10, -20, -30],
+    },
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 42 int unshift + array ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    intarray: {
+      $unshift: { $value: [-10, -20, -30] },
+    },
+  })
 
   console.dir(r.errors)
   console.dir(

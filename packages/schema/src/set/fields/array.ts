@@ -72,12 +72,18 @@ const operations: {
     collectOperation(args, collected, value)
   },
   $push: async (args, value) => {
-    const { collected, arr } = await parseArray(args, value.$push)
+    const { collected, arr } = await parseArray(
+      args,
+      value.$push.$value ?? value.$push
+    )
     value.$push = arr
     collectOperation(args, collected, value)
   },
   $unshift: async (args, value) => {
-    const { collected, arr } = await parseArray(args, value.$unshift)
+    const { collected, arr } = await parseArray(
+      args,
+      value.$unshift.$value ?? value.$unshift
+    )
     value.$unshift = arr
     collectOperation(args, collected, value)
   },
