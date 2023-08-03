@@ -43,6 +43,10 @@ static void send_all_node_data_fields(
         size_t field_prefix_len,
         struct selva_string *excluded_fields);
 
+static inline int is_alias_name(const char *name, size_t len) {
+    return (len > 0 && name[len - 1] == STRING_SET_ALIAS);
+}
+
 static int send_hierarchy_field(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
@@ -197,7 +201,7 @@ static int send_edge_field(
         size_t next_prefix_len;
 
         if (field_prefix_str) {
-            if (field_prefix_len > 0 && field_prefix_str[field_prefix_len - 1] == '@') {
+            if (is_alias_name(field_prefix_str, field_prefix_len)) {
                 /*
                  * Don't change the prefix if there is an alias.
                  */
@@ -509,8 +513,7 @@ static void send_node_fields_named(
                  * Add alias prefix using the field_prefix system,
                  * if requested.
                  */
-                if (alias_len > 0 &&
-                    fields_idx_str[alias_len - 1] == STRING_SET_ALIAS) {
+                if (is_alias_name(fields_idx_str, alias_len)) {
                     memcpy(alias_str, fields_idx_str, alias_len);
                     alias_str[alias_len] = '\0';
 
