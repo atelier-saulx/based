@@ -1,5 +1,5 @@
 import { ParseError } from '../../error'
-import { BasedSetTarget } from '../../types'
+import { AllowedTypes, BasedSetTarget } from '../../types'
 import { ArgsClass, FieldParser } from '../../walker'
 import { isValidId } from '../isValidId'
 
@@ -29,11 +29,51 @@ async function parseOperator<T>(
   return [n.value]
 }
 
+const typeIsAllowed = (
+  args: ArgsClass<BasedSetTarget, 'reference'>,
+  type: string
+): boolean => {
+  if ('allowedTypes' in args.fieldSchema) {
+    let typeMatches = false
+    for (const t of args.fieldSchema.allowedTypes) {
+      if (typeof t === 'string') {
+        if (t === type) {
+          return true
+        }
+      } else {
+        if (t.type && t.type === type) {
+          typeMatches = true
+          if (t.$filter) {
+            // stage on requires validation in target
+            // TODO: ASYNC HOOK
+            // if(!(await args.target.referenceFilterCondition(value, t.$filter))){
+            //     error(args, ParseError.referenceIsIncorrectType)
+            //     return
+            // }
+          }
+        } else if (!t.type && t.$filter) {
+          // if(!(await args.target.referenceFilterCondition))
+          // error(args, ParseError.referenceIsIncorrectType, )
+          // return
+        }
+      }
+    }
+    if (typeMatches === false) {
+      return false
+    }
+  }
+  return true
+}
+
 export const reference: FieldParser<'reference'> = async (args) => {
   // TODO: setting an object here , handling $alias (both async hooks)
   // Block if path contains $remove (maybe not for $alias)
   if (typeof args.value === 'object') {
     if (args.root._opts.asyncOperationHandler) {
+      if (args.value.type && !typeIsAllowed(args, args.value.type)) {
+        args.error(ParseError.referenceIsIncorrectType)
+        return
+      }
       args.value = await args.root._opts.asyncOperationHandler(
         args,
         'modifyObject'
@@ -49,40 +89,14 @@ export const reference: FieldParser<'reference'> = async (args) => {
     return
   }
 
-  if ('allowedTypes' in args.fieldSchema) {
-    const prefix = args.value.slice(0, 2)
-    const targetType = args.schema.prefixToTypeMapping[prefix]
-    let typeMatches = false
-    for (const t of args.fieldSchema.allowedTypes) {
-      if (typeof t === 'string') {
-        if (t === targetType) {
-          typeMatches = true
-          break
-        }
-      } else {
-        if (t.type && t.type === targetType) {
-          typeMatches = true
-          if (t.$filter) {
-            // TODO: ASYNC HOOK
-            // if(!(await args.target.referenceFilterCondition(value, t.$filter))){
-            //     error(args, ParseError.referenceIsIncorrectType)
-            //     return
-            // }
-          }
-        } else if (!t.type && t.$filter) {
-          // if(!(await args.target.referenceFilterCondition))
-          // error(args, ParseError.referenceIsIncorrectType, )
-          // return
-        }
-      }
-    }
-    if (typeMatches === false) {
-      args.error(ParseError.referenceIsIncorrectType)
-      return
-    }
-  }
+  const prefix = args.value.slice(0, 2)
+  const targetType = args.schema.prefixToTypeMapping[prefix]
 
-  args.collect()
+  if (typeIsAllowed(args, targetType)) {
+    args.collect()
+  } else {
+    args.error(ParseError.referenceIsIncorrectType)
+  }
 }
 
 export const references: FieldParser<'references'> = async (args) => {

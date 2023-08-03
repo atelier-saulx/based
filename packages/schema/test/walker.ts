@@ -898,11 +898,19 @@ test('string', async (t) => {
           type: 'thing',
           priority: 10000,
         },
+        {
+          type: 'flurp',
+          priority: 10000,
+        },
       ],
     },
     async (args, type) => {
       console.info('GO ASYNC', args.path, args.value, type)
-      return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      if (args.value.type === 'thing') {
+        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      } else {
+        return 'bl1221'
+      }
     }
   )
 
