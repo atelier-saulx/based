@@ -796,5 +796,29 @@ test('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 32 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    $alias: 'bla',
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  console.info('---- doink 33 ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    $alias: ['bla'],
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })

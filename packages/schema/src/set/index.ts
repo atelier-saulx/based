@@ -21,17 +21,18 @@ const opts: Opts<BasedSetTarget> = {
         }
       },
       $alias: async (args) => {
-        // if (Array.isArray(args.value)) {
-
-        //   for (const field of args.value) {]
-
-        //   }
-
-        // }
-
-        // if (typeof args.value !== 'string')
-
-        return
+        if (Array.isArray(args.value)) {
+          for (const field of args.value) {
+            if (typeof field !== 'string') {
+              args.error(ParseError.incorrectFormat)
+              return
+            }
+          }
+          return
+        }
+        if (typeof args.value !== 'string') {
+          args.error(ParseError.incorrectFormat)
+        }
       },
       $id: async (args) => {
         if (!isValidId(args.schema, args.value)) {
