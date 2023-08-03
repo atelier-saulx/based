@@ -183,13 +183,6 @@ struct SelvaNodeSendParam {
      * If this is set then fields, inherit_fields, and excluded_fields should be NULL.
      */
     struct rpn_expression *fields_expression;
-
-    /**
-     * Inherit fields using ancestors traversal.
-     * Optional, can be set to NULL.
-     * Only fields_expression or inherit_expression should be set but not both.
-     */
-    struct rpn_expression *inherit_expression;
 };
 
 typedef int (*SelvaFind_ProcessNode)(

@@ -152,12 +152,12 @@ static void send_node(
         err = send_node_merge(fin, resp, lang, node, args->merge_strategy, args->merge_path, args->fields);
     } else if (args->fields) { /* Predefined list of fields. */
         err = find_send_node_fields(fin, resp, lang, hierarchy, node,
-                               args->fields,
-                               args->inherit_fields, args->nr_inherit_fields,
-                               args->excluded_fields);
-    } else if (args->fields_expression || args->inherit_expression) { /* Select fields using an RPN expression. */
+                                    args->fields,
+                                    args->inherit_fields, args->nr_inherit_fields,
+                                    args->excluded_fields);
+    } else if (args->fields_expression) { /* Select fields using an RPN expression. */
         struct finalizer fin2;
-        struct rpn_expression *expr = args->fields_expression ?: args->inherit_expression;
+        struct rpn_expression *expr = args->fields_expression;
 
         /*
          * The following variables are set by exec_fields_expression().
@@ -170,8 +170,7 @@ static void send_node(
         /*
          * The expressions are mutually exclusive alternative to field name lists.
          */
-        assert(!(args->fields_expression && args->inherit_expression) &&
-               !args->inherit_fields && !args->excluded_fields);
+        assert(!args->inherit_fields && !args->excluded_fields);
 
         finalizer_init(&fin2);
 
@@ -182,9 +181,9 @@ static void send_node(
                                      &excluded_fields);
         if (!err) {
             err = find_send_node_fields(fin, resp, lang, hierarchy, node,
-                                   fields,
-                                   inherit_fields, nr_inherit_fields,
-                                   excluded_fields);
+                                        fields,
+                                        inherit_fields, nr_inherit_fields,
+                                        excluded_fields);
         }
 
         finalizer_run(&fin2);
@@ -574,7 +573,7 @@ static void postprocess_inherit(
 }
 
 /* TODO It wouldn't be necessary to call this in the loop. */
-static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order) {
+static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order, enum SelvaFind_ResType res_type) {
     SelvaFind_Postprocess postprocess;
 
     if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
@@ -586,7 +585,7 @@ static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, en
             postprocess = NULL;
         }
     } else {
-        if (args->send_param.inherit_expression) {
+        if (res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
             /* This will also handle sorting if it was requested. */
             args->process_node = &process_node_inherit;
             postprocess = &postprocess_inherit;
@@ -836,7 +835,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     struct selva_string *excluded_fields = NULL;
     __auto_free_rpn_ctx struct rpn_ctx *fields_rpn_ctx = NULL;
     __auto_free_rpn_expression struct rpn_expression *fields_expression = NULL;
-    __auto_free_rpn_expression struct rpn_expression *inherit_expression = NULL;
 
     if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS) {
         if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
@@ -855,7 +853,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
         }
-    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN) {
+    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_FIELDS_RPN ||
+               query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
         /*
          * Note that fields_rpn and merge can't work together because the
          * field names can't vary in a merge.
@@ -869,18 +868,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         fields_expression = rpn_compile_len(query_opts.res_opt_str, query_opts.res_opt_len);
         if (!fields_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "fields_rpn");
-            return;
-        }
-    } else if (query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
-        if (query_opts.merge_strategy != MERGE_STRATEGY_NONE) {
-            selva_send_errorf(resp, SELVA_EINVAL, "inherit with merge not supported");
-            return;
-        }
-
-        fields_rpn_ctx = rpn_init(1);
-        inherit_expression = rpn_compile_len(query_opts.res_opt_str, query_opts.res_opt_len);
-        if (!inherit_expression) {
-            selva_send_errorf(resp, SELVA_RPN_ECOMP, "inherit_rpn");
             return;
         }
     } else if (query_opts.res_type != SELVA_FIND_QUERY_RES_IDS) {
@@ -925,7 +912,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
     }
 
-    if (inherit_expression) {
+    if (query_opts.res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
         SVector_Init(&traverse_result, selva_glob_config.hierarchy_expected_resp_len, NULL);
     } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
         SelvaTraversalOrder_InitOrderResult(&traverse_result, query_opts.order, query_opts.limit);
@@ -1007,7 +994,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .send_param.excluded_fields = excluded_fields,
             .send_param.fields_rpn_ctx = fields_rpn_ctx,
             .send_param.fields_expression = fields_expression,
-            .send_param.inherit_expression = inherit_expression,
             .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &traverse_result,
@@ -1015,7 +1001,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .acc_take = 0,
         };
 
-        postprocess = select_processing(&args, query_opts.dir, query_opts.order);
+        postprocess = select_processing(&args, query_opts.dir, query_opts.order, query_opts.res_type);
 
         if (ind_select >= 0) {
             /*
@@ -1116,7 +1102,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .excluded_fields = excluded_fields,
             .fields_rpn_ctx = fields_rpn_ctx,
             .fields_expression = fields_expression,
-            .inherit_expression = inherit_expression,
         };
 
         SELVA_TRACE_BEGIN(cmd_find_sort_result);

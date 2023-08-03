@@ -59,7 +59,7 @@ struct SelvaFind_QueryOpts {
      * Result type.
      * What is expected to be returned to the client.
      */
-    enum {
+    enum SelvaFind_ResType {
         /**
          * Return ids of the nodes matching the query.
          */
