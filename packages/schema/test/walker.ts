@@ -96,9 +96,7 @@ test.only('walker', async (t) => {
         keys: {},
         fields: {},
         any: async (args) => {
-          // args.collect(args)
           return { target: { lullz: true } }
-          return args
         },
       },
       collect: (args) => {

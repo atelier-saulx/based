@@ -161,7 +161,7 @@ export async function parse<T>(
           }
         } else {
           for (const key in args.value) {
-            console.info(args.path, '->', key)
+            console.info('  -> parse field: ', args.path, '->', key)
             if ((!opts.parsers.any && keysHandled.has(key)) || allKeysHandled) {
               continue
             }
@@ -172,7 +172,12 @@ export async function parse<T>(
       }
     }
 
-    console.log('TO OBJ -->', args.path, args.collectedCommands)
+    console.log(
+      '  OBJECT COMPLETE ------------->',
+      args.path,
+      args.collectedCommands,
+      args.fromBackTrack
+    )
 
     if (
       opts.backtrack &&
@@ -209,6 +214,12 @@ export async function parse<T>(
         const anyParser = opts.parsers.any || opts.parsers.catch
         anyParser(args)
       }
+    } else {
+      console.info(
+        '---->',
+        'parse non object (no field parser skip)',
+        args.path
+      )
     }
   }
 }

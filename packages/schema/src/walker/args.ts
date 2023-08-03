@@ -164,7 +164,9 @@ export class ArgsClass<
     const collectArgs =
       value !== undefined ? new ArgsClass({ value }, this) : this
 
-    let collectTarget = this.prev.prev
+    let collectTarget = this.prev
+
+    console.log('COLLECT', this.path, this.getTopPaths)
 
     // while (
     //   collectTarget &&
