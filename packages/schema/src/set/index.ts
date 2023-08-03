@@ -7,6 +7,26 @@ import { isValidId } from './isValidId'
 const opts: Opts<BasedSetTarget> = {
   parsers: {
     keys: {
+      $delete: async (args) => {
+        if (args.value === true) {
+          args.stop()
+          args.collect()
+          return
+        }
+      },
+      $alias: async (args) => {
+        // if (Array.isArray(args.value)) {
+
+        //   for (const field of args.value) {]
+
+        //   }
+
+        // }
+
+        // if (typeof args.value !== 'string')
+
+        return
+      },
       $id: async (args) => {
         if (!isValidId(args.schema, args.value)) {
           args.error(ParseError.incorrectFormat)
