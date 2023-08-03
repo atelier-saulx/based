@@ -20,11 +20,6 @@ const validateNumber = (
     return false
   }
 
-  if (value === Infinity || value === -Infinity) {
-    args.error(ParseError.numberOutOfBounds)
-    return false
-  }
-
   if (fieldSchema.type === 'integer' && value - Math.floor(value) !== 0) {
     args.error(ParseError.incorrectFormat)
     return false
@@ -41,7 +36,7 @@ const validateNumber = (
   }
 
   if (ignoreMinMax) {
-    // TODO: maybe add async validator getting the actual value from the db OR checking the result of the $incr/$decr operation
+    // TODO: will be handled in the actual modify command
     return true
   }
 
