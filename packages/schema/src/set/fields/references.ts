@@ -74,10 +74,12 @@ export const reference: FieldParser<'reference'> = async (args) => {
         args.error(ParseError.referenceIsIncorrectType)
         return
       }
-      args.value = await args.root._opts.asyncOperationHandler(
-        args,
-        'modifyObject'
-      )
+      if (!args.target.errors.length) {
+        args.value = await args.root._opts.asyncOperationHandler(
+          args,
+          'modifyObject'
+        )
+      }
     } else {
       args.error(ParseError.nestedModifyObjectNotAllowed)
       return
