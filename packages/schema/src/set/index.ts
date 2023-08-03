@@ -10,7 +10,8 @@ const opts: Opts<BasedSetTarget> = {
       $delete: async (args) => {
         if (args.value === true) {
           args.stop()
-          args.collect()
+          args.prev.collect()
+          args.prev.stop()
           return
         }
       },
