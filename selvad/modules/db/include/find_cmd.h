@@ -104,7 +104,8 @@ struct SelvaFind_QueryOpts {
         /**
          * Inherit fields using ancestors traversal and expression.
          * This works similarly to SELVA_FIND_QUERY_RES_FIELDS_RPN but the
-         * response format is different.
+         * response is sent in postprocess_inherit which requires more buffering
+         * but avoids the reentrancy limits of the trx system.
          */
         SELVA_FIND_QUERY_RES_INHERIT_RPN,
     } res_type;
