@@ -2373,8 +2373,7 @@ test.serial.skip('set - insert into array', async (t) => {
   )
 })
 
-// TODO: objects not being returned
-test.serial.skip('set - insert and set further into array', async (t) => {
+test.serial('set - insert and set further into array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2597,7 +2596,7 @@ test.serial.skip('set - insert and set further into array', async (t) => {
   )
 })
 
-// TODO: objects not being returned
+// TODO: parsing issue (Jim)
 test.serial.skip('set - insert and set into start of array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',

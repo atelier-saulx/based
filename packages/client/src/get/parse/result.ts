@@ -16,6 +16,7 @@ export function parseGetResult(
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
+    console.dir({ result }, { depth: 8 })
     const cmd: GetCommand = cmds[i]
     const {
       target: { path },
@@ -74,6 +75,11 @@ function parseObjFields(
   schema: BasedSchemaField,
   fields: any[]
 ): any {
+  // arrays with objects can have empty objects that are returned as null
+  if (!fields && schema.type === 'object') {
+    return {}
+  }
+
   const obj: any = {}
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
