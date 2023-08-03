@@ -9,7 +9,7 @@ export const isValidId = (schema: BasedSchema, id: any): boolean => {
     return true
   }
 
-  if (id.length > 10) {
+  if (id.length > 16) {
     return false
   }
 
