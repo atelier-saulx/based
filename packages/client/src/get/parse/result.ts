@@ -23,7 +23,7 @@ export function parseGetResult(
       source,
     } = cmd
 
-    const parsed = parseResultRows(ctx, result)
+    const parsed = parseResultRows({ ...ctx, commandPath: path }, result)
 
     if (!path.length) {
       obj = { ...obj, ...parsed[0] }
@@ -46,27 +46,36 @@ export function parseGetResult(
 
 function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
   return result.map((row) => {
+    const rowCtx = { ...ctx, fieldAliases: {} }
+
     if (!row) {
       return {}
     }
 
     const [id, fields]: [string, any[]] = row
 
-    const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+    const typeName = rowCtx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
     const typeSchema =
       typeName === 'root'
-        ? ctx.client.schema.root
-        : ctx.client.schema.types[typeName]
+        ? rowCtx.client.schema.root
+        : rowCtx.client.schema.types[typeName]
 
     if (!typeSchema) {
       return {}
     }
 
-    return parseObjFields(
-      ctx,
-      { type: 'object', properties: typeSchema.fields },
-      fields
-    )
+    let obj =
+      parseObjFields(
+        rowCtx,
+        { type: 'object', properties: typeSchema.fields },
+        fields
+      ) || {}
+
+    for (const path in rowCtx.fieldAliases) {
+      setResultValue({ obj, path, ...rowCtx.fieldAliases[path] })
+    }
+
+    return obj
   })
 }
 
@@ -80,6 +89,7 @@ function parseObjFields(
     return {}
   }
 
+  let keys: number = 0
   const obj: any = {}
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
@@ -114,17 +124,17 @@ function parseObjFields(
       continue
     }
 
-    const parsedPath = parseAlias(alias)
-    if (['object', 'record', 'text', 'reference'].includes(fieldSchema.type)) {
-      const currentValue = getByPath(obj, parsedPath)
-      if (typeof currentValue === 'object') {
-        deepMerge(currentValue, res)
-      } else {
-        setByPath(obj, parsedPath, res)
-      }
-    } else {
-      setByPath(obj, parsedPath, res)
+    if (rest) {
+      ctx.fieldAliases[alias] = { value: res, fieldSchema }
+      continue
     }
+
+    setResultValue({ path: alias, obj, value: res, fieldSchema })
+    keys++
+  }
+
+  if (!keys) {
+    return
   }
 
   return obj
@@ -243,4 +253,28 @@ function parseFieldResult(
 ) {
   const parser = FIELD_PARSERS[fieldSchema?.type]
   return parser?.(v, ctx, fieldSchema)
+}
+
+function setResultValue({
+  path,
+  fieldSchema,
+  obj,
+  value,
+}: {
+  path: string
+  fieldSchema: BasedSchemaField
+  obj: any
+  value: any
+}) {
+  const parsedPath = parseAlias(path)
+  if (['object', 'record', 'text', 'reference'].includes(fieldSchema.type)) {
+    const currentValue = getByPath(obj, parsedPath)
+    if (typeof currentValue === 'object') {
+      deepMerge(currentValue, value)
+    } else {
+      setByPath(obj, parsedPath, value)
+    }
+  } else {
+    setByPath(obj, parsedPath, value)
+  }
 }

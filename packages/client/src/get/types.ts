@@ -1,9 +1,12 @@
 import { Filter } from '@based/db-query'
+import { BasedSchemaField } from '@based/schema'
 import { BasedDbClient } from '..'
 
 export type ExecContext = {
   client: BasedDbClient
   lang?: string
+  fieldAliases?: Record<string, { fieldSchema: BasedSchemaField; value: any }>
+  commandPath?: Path
 }
 
 export type TraverseByType = {

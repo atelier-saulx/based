@@ -199,14 +199,14 @@ export class BasedDbClient extends Emitter {
       ctx.lang = opts.$language
     }
 
-    let { cmds, defaults } = await parseGetOpts({ client: this }, opts)
+    let { cmds, defaults } = await parseGetOpts(ctx, opts)
     console.dir({ cmds, defaults }, { depth: 8 })
 
     const nestedIds: any[] = []
     const nestedObjs: any[] = []
     let i = 0
     while (cmds.length) {
-      const results = await get(ctx, cmds)
+      const results = await get({ ...ctx }, cmds)
 
       const ids = results.map((cmdResult) => {
         // unwrap array structure
@@ -219,7 +219,7 @@ export class BasedDbClient extends Emitter {
       })
       nestedIds.push(ids)
 
-      const obj = parseGetResult(ctx, cmds, results)
+      const obj = parseGetResult({ ...ctx }, cmds, results)
       nestedObjs.push(obj)
 
       cmds = cmds.reduce((all, cmd, j) => {

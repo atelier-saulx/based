@@ -241,8 +241,7 @@ test.serial.skip('singular reference inherit', async (t) => {
   )
 })
 
-// TODO: waiting for alias fix from Olli
-test.serial.skip('singular reference $field', async (t) => {
+test.serial('singular reference $field', async (t) => {
   const match1 = await client.set({
     $id: 'maA',
     title: {
