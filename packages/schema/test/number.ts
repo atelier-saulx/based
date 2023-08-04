@@ -20,6 +20,12 @@ const schema: BasedSchema = {
           maximum: 6,
           minimum: 3,
         },
+        infiniteNum: {
+          type: 'number',
+        },
+        infiniteInt: {
+          type: 'integer',
+        },
         exclusiveminmax: {
           type: 'number',
           minimum: 3,
@@ -394,4 +400,58 @@ test('increment', async (t) => {
     { path: ['integer'], value: { $increment: 3 } },
     { path: ['multipleOf'], value: { $increment: 9 } },
   ])
+})
+
+let r
+
+test('NaN', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    integer: NaN,
+  })
+
+  t.true(r.errors.length === 1)
+})
+
+test('INTfinity', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    integer: Infinity,
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  t.true(true)
+})
+
+//infinity does exceed maximum but doesnt error when no max
+test('number infinity', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    infiniteNum: Infinity,
+  })
+
+  t.true(r.errors.length === 1)
+})
+
+test('number -infinity', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    infiniteNum: -Infinity,
+  })
+
+  t.true(r.errors.length === 1)
+})
+
+test('number with max infinity', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    number: Infinity,
+  })
+
+  t.true(r.errors.length === 1)
 })

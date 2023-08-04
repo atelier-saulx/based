@@ -51,12 +51,14 @@ test('simple case', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { en: 'flap' } }])
 })
 
-test.only('simple case with value', async (t) => {
+test('simple case with value', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $value: 'sdsdds' },
   })
+
+  //ERROR HERE
 
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { za: 'sdsdds' } }])
   t.true(true)
@@ -190,4 +192,24 @@ test('value:wrongpatter, lang, default:lang, lang:value, lang:default', async (t
   })
 
   t.assert(r.errors.length === 4)
+})
+
+test('text delete', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    text: {
+      $delete: true,
+    },
+  })
+
+  t.deepEqual(resultCollect(r), [{ path: ['text'], value: { $delete: true } }])
+})
+
+test.only('just delete', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    $delete: true,
+  })
+
+  t.true(r.errors === 1)
 })

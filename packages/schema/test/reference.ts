@@ -1,159 +1,147 @@
-// import test from 'ava'
-// import { BasedSchema, setWalker2 } from '../src/index'
-// import { resultCollect, errorCollect } from './utils'
+import test from 'ava'
+import { BasedSchema, setWalker } from '../src/index'
+import { resultCollect, errorCollect } from './utils'
+import { ParseError } from '../src/error'
 
-// const schema: BasedSchema = {
-//   types: {
-//     bla: {
-//       prefix: 'bl',
-//       fields: {
-//         ref: {
-//           type: 'reference',
-//           allowedTypes: ['bl', 'bl1'],
-//         },
-//         ref2: {
-//           type: 'references',
-//           allowedTypes: ['bl'],
-//         },
-//         arr: {
-//           type: 'array',
-//           title: '',
-//         },
-//       },
-//     },
-//   },
-//   $defs: {},
-//   languages: ['en'],
-//   root: {
-//     fields: {},
-//   },
-//   prefixToTypeMapping: {
-//     bl: 'bla',
-//   },
-// }
+const schema: BasedSchema = {
+  types: {
+    thing: {
+      prefix: 'ti',
+      fields: {
+        priority: { type: 'number' },
+        something: { type: 'string', format: 'strongPassword' },
+      },
+    },
+    bla: {
+      prefix: 'bl',
+      fields: {
+        referencesToThings: {
+          type: 'references',
+          allowedTypes: ['thing'],
+        },
+        referenceToThing: {
+          type: 'reference',
+          allowedTypes: ['thing'],
+        },
+      },
+    },
+  },
+  $defs: {},
+  languages: ['en', 'de', 'nl', 'ro', 'za', 'ae'],
+  root: {
+    fields: {},
+  },
+  prefixToTypeMapping: {
+    bl: 'bla',
+    ti: 'thing',
+  },
+}
 
-// test('reference', async (t) => {
-//   const e1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: ['1', '2'],
-//   })
-//   const e2 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: 1,
-//   })
+let r
 
-//   const res = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: 'asdasdasdasdasd',
-//   })
+test('simple error', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referenceToThing: 'sdfefewfewfewewffwe',
+  })
 
-//   t.assert(errorCollect([e1, e2]).length > 0)
-//   t.deepEqual(resultCollect([res]), [
-//     { path: ['ref'], value: 'asdasdasdasdasd' },
-//   ])
-// })
+  t.true(r.errors.lengt === 1)
+})
 
-// test('multiple references', async (t) => {
-//   // const e = await (
-//   //   setWalker2(
-//   //     schema,
-//   //     {
-//   //       $id: 'bl1',
-//   //       ref2: 0.5,
-//   //     },
-//   //
-//   //   )
-//   // )
-//   // const e = await (
-//   //   setWalker2(
-//   //     schema,
-//   //     {
-//   //       $id: 'bl1',
-//   //       ref2: 1,
-//   //     },
-//   //
-//   //   )
-//   // )
-//   // these should throw, array of refs doesnt
-//   //??? todo?
-//   const e = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref2: [1, 1, 1, 1, 1, 1, 1],
-//   })
-//   const res1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref2: ['1', '2', '3'],
-//   })
+test('simple case ', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referenceToThing: 'tibla',
+  })
 
-//   t.assert(errorCollect([e]).length === 1)
-//   t.deepEqual(resultCollect([res1]), [
-//     { path: ['ref2'], value: { $value: ['1', '2', '3'] } },
-//   ])
-// })
+  t.deepEqual(resultCollect(r), [
+    { path: ['referenceToThing'], value: 'tibla' },
+  ])
+})
 
-// test('value of references', async (t) => {
-//   const e = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: { $value: ['1', '2'] },
-//   })
-//   const e1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: { $value: 1 },
-//   })
+test('refernce to wrong thing', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referenceToThing: 'blbla',
+  })
+  t.true(r.errors.length === 1)
+})
 
-//   const res1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: { $value: 'asdasdasdasdasd' },
-//   })
+test('refernces 0,2 wrong', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
+  })
 
-//   //error here?
-//   t.assert(errorCollect([e, e1]).length === 2)
-//   t.deepEqual(resultCollect([res1]), [
-//     { path: ['ref'], value: { $value: 'asdasdasdasdasd' } },
-//   ])
-// })
+  t.true(r.errors.length === 2)
+})
 
-// test('default of references', async (t) => {
-//   const e2 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: { $default: ['1', '2'] },
-//   })
-//   const e1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: { $default: 1 },
-//   })
+test('$remove references', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: { $remove: ['ti123'] },
+  })
 
-//   // await setWalker2(
-//   //   schema,
-//   //   {
-//   //     $id: 'bl1',
-//   //     ref: { $default: 'asdasdasdasdasd' },
-//   //   },
-//   //
-//   // )
-//   // console.log('----:XX', resultCollect)
-//   // //error here?
-//   // t.deepEqual(resultCollect, [
-//   //   { path: ['ref'], value: { $default: 'asdasdasdasdasd' } },
-//   // ])
-//   t.assert(errorCollect([e2, e1]).length === 2)
-// })
+  t.deepEqual(resultCollect(r), [
+    { path: ['referencesToThings'], value: { $remove: ['ti123'] } },
+  ])
+})
 
-// test.only('allowedTypes', async (t) => {
-//   const e1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: ['1', '2'],
-//   })
-//   const e2 = await setWalker2(schema, {
-//     $id: 'bs1',
-//     ref: 1,
-//   })
-//   const res1 = await setWalker2(schema, {
-//     $id: 'bl1',
-//     ref: 'blastuff',
-//   })
+test('$add 0 2 wrong', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: { $add: ['blbla', 'ti123', 'ewiohfdoweihfw'] },
+  })
 
-//   t.assert(errorCollect([e2, e1]).length === 2)
-//   t.deepEqual(resultCollect([res1]), [{ path: ['ref'], value: 'bl1stuff' }])
-//   // is this wrong or am i wrong
-// })
+  t.true(r.errors.length === 2)
+})
+
+test('$add correct ', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: { $add: 'ti123' },
+  })
+
+  t.deepEqual(resultCollect(r), [
+    { path: ['referencesToThings'], value: { $add: ['ti123'] } },
+  ])
+})
+
+test('$remove $value not allowed', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: { $remove: { $value: 'ti123' } },
+  })
+
+  t.true(r.errors.length > 0)
+})
+
+// reference object
+
+test.only('referennce to an object', async (t) => {
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl120',
+      referenceToThing: {
+        type: 'thing',
+        priority: 9000,
+      },
+    }
+    // async (args, type) => {
+    //   if (args.value.type === 'thing') {
+    //     return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+    //   } else {
+    //     return 'bl1221'
+    //   }
+    // }
+  )
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
+  t.true(true)
+})
