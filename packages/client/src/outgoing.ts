@@ -20,7 +20,6 @@ export const drainQueue = (client: BasedDbClient) => {
 
         // ------- Command
         for (const c of commands) {
-          console.log('PREP THIS COMMAND', c)
           const bufs = encode(c.command, c.seqno, c.payload)
           for (const buf of bufs) {
             client.connection.socket.write(buf, (err) => {

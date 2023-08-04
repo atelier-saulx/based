@@ -81,8 +81,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for records wildcard
-test.serial.skip('find - with wildcard', async (t) => {
+test.serial('find - with wildcard', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'match',
@@ -202,8 +201,7 @@ test.serial.skip('find - with wildcard', async (t) => {
   })
 })
 
-// TODO: waiting for records wildcard
-test.serial.skip('find - nothing found with a wildcard', async (t) => {
+test.serial('find - nothing found with a wildcard', async (t) => {
   // simple nested - single query
   await client.set({
     type: 'match',
@@ -246,7 +244,6 @@ test.serial.skip('find - nothing found with a wildcard', async (t) => {
       },
     }),
     {
-      id: 'root',
       items: [
         {
           name: 'match 1',

@@ -184,7 +184,7 @@ export class BasedDbClient extends Emitter {
     })
 
     if (err) {
-      throw err
+      console.error(err)
     }
 
     return resp?.[0]?.[0]
