@@ -79,6 +79,7 @@ test.beforeEach(async (t) => {
 test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
+  await wait(500)
 })
 
 test.serial('find - with wildcard', async (t) => {
@@ -180,7 +181,7 @@ test.serial('find - with wildcard', async (t) => {
       },
     },
   })
-  t.log(JSON.stringify({ r }, null, 2))
+  console.info(JSON.stringify({ r }, null, 2))
   t.deepEqualIgnoreOrder(r, {
     items: [
       {
@@ -216,6 +217,37 @@ test.serial('find - nothing found with a wildcard', async (t) => {
     value: 2,
     record: {},
   })
+
+  console.dir(
+    {
+      hmm: await client.get({
+        $id: 'root',
+        id: true,
+        items: {
+          name: true,
+          record: {
+            '*': {
+              a: true,
+              b: true,
+            },
+          },
+          $list: {
+            $find: {
+              $traverse: 'children',
+              $filter: [
+                {
+                  $field: 'type',
+                  $operator: '=',
+                  $value: 'match',
+                },
+              ],
+            },
+          },
+        },
+      }),
+    },
+    { depth: 8 }
+  )
 
   t.deepEqualIgnoreOrder(
     await client.get({

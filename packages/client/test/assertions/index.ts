@@ -47,7 +47,7 @@ const deepSort = (a: any, b: any): void => {
       deepSort(a[i], b[i])
     }
   } else if (typeof a === 'object') {
-    for (let k in a) {
+    for (const k in a) {
       deepSort(a[k], b[k])
     }
   }
@@ -58,12 +58,12 @@ Object.assign(Assertions.prototype, {
     const actCopy = deepCopy(actual)
     const expCopy = deepCopy(expected)
 
-    if (!expCopy['createdAt']) {
-      delete actCopy['createdAt']
+    if (!expCopy.createdAt) {
+      delete actCopy.createdAt
     }
 
-    if (!expCopy['updatedAt']) {
-      delete actCopy['updatedAt']
+    if (!expCopy.updatedAt) {
+      delete actCopy.updatedAt
     }
 
     deepSort(actCopy, expCopy)
