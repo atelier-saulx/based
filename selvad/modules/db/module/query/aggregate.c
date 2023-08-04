@@ -646,7 +646,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
 
     struct selva_string **index_hints = NULL;
     int nr_index_hints = 0;
-    if (query_opts.index_hints_len) {
+    if (query_opts.index_hints_len && selva_glob_config.find_indices_max > 0) {
         const struct selva_string *s;
 
         index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len, '\0');
@@ -745,30 +745,30 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             continue;
         }
 
-        struct SelvaFindIndexControlBlock *ind_icb[max(nr_index_hints, 1)];
+        const size_t nr_ind_icb = max(nr_index_hints, 1);
+        struct SelvaFindIndexControlBlock *ind_icb[nr_ind_icb];
         int ind_select = -1; /* Selected index. The smallest of all found. */
 
-        memset(ind_icb, 0, max(nr_index_hints, 1) * sizeof(struct SelvaFindIndexControlBlock *));
+        memset(ind_icb, 0, nr_ind_icb * sizeof(struct SelvaFindIndexControlBlock *));
 
-        /* find_indices_max == 0 => indexing disabled */
-        if (nr_index_hints > 0 && selva_glob_config.find_indices_max > 0) {
+        if (nr_index_hints > 0) {
             /*
              * Select the best index res set.
              */
             ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, index_hints, nr_index_hints, ind_icb);
-        }
 
-        /*
-         * If the index is already ordered then we don't need to sort the
-         * response. This won't work if we have multiple nodeIds because
-         * obviously the order might differ and we may not have an ordered
-         * index for each id.
-         */
-        if (ind_select >= 0 &&
-            ids_len == SELVA_NODE_ID_SIZE &&
-            SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
-            query_opts.order = SELVA_RESULT_ORDER_NONE;
-            order_by_field = NULL; /* This controls sorting in the callback. */
+            /*
+             * If the index is already ordered then we don't need to sort the
+             * response. This won't work if we have multiple nodeIds because
+             * obviously the order might differ and we may not have an ordered
+             * index for each id.
+             */
+            if (ind_select >= 0 &&
+                ids_len == SELVA_NODE_ID_SIZE &&
+                SelvaFindIndex_IsOrdered(ind_icb[ind_select], query_opts.order, order_by_field)) {
+                query_opts.order = SELVA_RESULT_ORDER_NONE;
+                order_by_field = NULL; /* This controls sorting in the callback. */
+            }
         }
 
         /*
