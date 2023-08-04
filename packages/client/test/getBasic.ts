@@ -292,9 +292,8 @@ test.serial('get boolean value', async (t) => {
   )
 })
 
-// TODO: setWalker update
-test.serial.skip('get - root', async (t) => {
-  const match = await client.set({
+test.serial('get - root', async (t) => {
+  await client.set({
     $id: 'maTest',
     value: 11,
   })
@@ -314,7 +313,7 @@ test.serial.skip('get - root', async (t) => {
     {
       id: 'root',
       value: 2555,
-      children: [match],
+      children: ['maTest'],
     }
   )
 
@@ -327,7 +326,7 @@ test.serial.skip('get - root', async (t) => {
     {
       id: 'root',
       value: 2555,
-      children: [match],
+      children: ['maTest'],
     }
   )
 
