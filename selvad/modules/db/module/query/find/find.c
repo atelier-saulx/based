@@ -49,13 +49,8 @@
 /*
  * Trace handles.
  */
-SELVA_TRACE_HANDLE(cmd_find_array);
-SELVA_TRACE_HANDLE(cmd_find_bfs_expression);
 SELVA_TRACE_HANDLE(cmd_find_index);
-SELVA_TRACE_HANDLE(cmd_find_refs);
-SELVA_TRACE_HANDLE(cmd_find_rest);
 SELVA_TRACE_HANDLE(cmd_find_sort_result);
-SELVA_TRACE_HANDLE(cmd_find_traversal_expression);
 
 static int parse_fields(
         struct finalizer *fin,
