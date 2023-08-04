@@ -1883,6 +1883,16 @@ fail:
     return NULL;
 }
 
+struct rpn_expression *rpn_compile_len(const char *str, size_t len)
+{
+    char input[len + 1];
+
+    memcpy(input, str, len);
+    input[len] = '\0';
+
+    return rpn_compile(input);
+}
+
 void rpn_destroy_expression(struct rpn_expression *expr) {
     if (expr) {
         struct rpn_operand **op = expr->literal_reg;

@@ -124,6 +124,7 @@ enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet
  * @returns A compiled expression.
  */
 struct rpn_expression *rpn_compile(const char *input);
+struct rpn_expression *rpn_compile_len(const char *str, size_t len);
 
 /**
  * Destroy a compiled RPN expression.

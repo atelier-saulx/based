@@ -625,16 +625,6 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
     return 0;
 }
 
-static struct rpn_expression *rpn_compile_len(const char *str, size_t len)
-{
-    char input[len + 1];
-
-    memcpy(input, str, len);
-    input[len] = '\0';
-
-    return rpn_compile(input);
-}
-
 /**
  * Find node(s) matching the query.
  *
