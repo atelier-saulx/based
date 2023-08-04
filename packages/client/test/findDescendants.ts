@@ -113,7 +113,6 @@ test.beforeEach(async (t) => {
       type: 'club',
       name: 'club 1',
       children: [
-        // TODO: create node directly when setting children
         {
           $id: team1,
           name: 'team 1',
