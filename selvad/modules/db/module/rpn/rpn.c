@@ -516,6 +516,24 @@ enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t 
     return RPN_ERR_OK;
 }
 
+enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, struct selva_string *a[], size_t n) {
+    enum rpn_error err = RPN_ERR_OK;
+
+    for (size_t i = 0; i < n; i++) {
+        /* reg[0] is usually reserved for the current nodeId or obj */
+        const size_t reg_i = i + 1;
+        size_t str_len;
+        const char *str = selva_string_to_str(a[i], &str_len);
+
+        err = rpn_set_reg(ctx, reg_i, str, str_len + 1, 0);
+        if (err) {
+            break;
+        }
+    }
+
+    return err;
+}
+
 enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, struct selva_string *s) {
     TO_STR(s);
     const size_t size = s_len + 1;

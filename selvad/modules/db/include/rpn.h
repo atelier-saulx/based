@@ -102,6 +102,8 @@ static inline void rpn_set_obj(struct rpn_ctx *ctx, struct SelvaObject *obj) {
 
 enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags);
 
+enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, struct selva_string *a[], size_t n);
+
 /**
  * Set a register value from a selva_string.
  * The value is copied and no pointer to s is held.

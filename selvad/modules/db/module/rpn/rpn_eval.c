@@ -89,16 +89,9 @@ static void SelvaRpn_Eval(enum SelvaRpnEvalType type, struct selva_server_respon
         }
     }
 
-    /*
-     * Get the filter expression arguments and set them to the registers.
-     */
-    for (int i = ARGV_FILTER_ARGS; i < argc; i++) {
-        /* reg[0] is reserved for the current nodeId */
-        const size_t reg_i = i - ARGV_FILTER_ARGS + 1;
-        size_t str_len;
-        const char *str = selva_string_to_str(argv[i], &str_len);
-
-        rpn_set_reg(rpn_ctx, reg_i, str, str_len + 1, 0);
+    if (rpn_set_string_regs(rpn_ctx, argv + ARGV_FILTER_ARGS, argc - ARGV_FILTER_ARGS)) {
+        selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
+        return;
     }
 
     if (type == EVAL_TYPE_BOOL) {
