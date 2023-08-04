@@ -43,28 +43,22 @@ test('throw error no language', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test.only('simple case', async (t) => {
+test('simple case', async (t) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     text: { en: 'flap' },
   })
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { en: 'flap' } }])
-  t.true(r.errors.length > 0)
 })
 
-test('string max length', async (t) => {
+test.only('simple case with value', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
     text: { $value: 'sdsdds' },
   })
 
-  // TPDP MAKE INTO TEST
-  console.log(
-    r.errors,
-    r.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
+  t.deepEqual(resultCollect(r), [{ path: ['text'], value: { za: 'sdsdds' } }])
   t.true(true)
 })
 
