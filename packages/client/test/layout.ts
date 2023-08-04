@@ -74,7 +74,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $inherit
 test.serial.skip('layout query', async (t) => {
   // add theme and ads
 
@@ -177,6 +177,8 @@ test.serial.skip('layout query', async (t) => {
       },
     ],
   })
+
+  console.dir(result, { depth: 8 })
 
   t.deepEqualIgnoreOrder(result, {
     id: 'league1',
