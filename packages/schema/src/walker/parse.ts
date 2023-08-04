@@ -117,11 +117,6 @@ export async function parse<T>(
         }
       } else if (args.fieldSchema && !args.stopped) {
         if (args.fieldSchema.type === 'object') {
-          const fieldParser = getFieldParser(args)
-          if (fieldParser) {
-            fieldParser(args)
-          }
-
           // @ts-ignore should detect from line above
           const objFieldSchema: BasedSchemaFieldObject = args.fieldSchema
           for (const key in objFieldSchema.properties) {
@@ -132,11 +127,6 @@ export async function parse<T>(
             }
           }
         } else if (args.fieldSchema.type === 'record') {
-          const fieldParser = getFieldParser(args)
-
-          if (fieldParser) {
-            fieldParser(args)
-          }
           // @ts-ignore should detect from line above
           const objFieldSchema: BasedSchemaFieldRecord = args.fieldSchema
           for (const key in args.value) {
@@ -155,6 +145,17 @@ export async function parse<T>(
         }
       }
       await Promise.all(fieldQ)
+      if (
+        args.fieldSchema &&
+        fieldQ.length > 0 &&
+        (args.fieldSchema.type === 'object' ||
+          args.fieldSchema.type === 'record')
+      ) {
+        const fieldParser = getFieldParser(args)
+        if (fieldParser) {
+          fieldParser(args)
+        }
+      }
     }
 
     // any
