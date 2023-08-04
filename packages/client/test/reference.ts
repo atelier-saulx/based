@@ -599,7 +599,7 @@ test.serial.skip('list of simple singular reference', async (t) => {
   )
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: set parsing issue (Jim)
 test.serial.skip('simple singular bidirectional reference', async (t) => {
   const club1 = await client.set({
     $id: 'clA',
@@ -857,7 +857,7 @@ test.serial.skip('simple singular bidirectional reference', async (t) => {
   )
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: set parsing issue (Jim)
 test.serial.skip(
   'list of simple singular reference with $field usage',
   async (t) => {
