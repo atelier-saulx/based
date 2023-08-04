@@ -30,6 +30,7 @@ test.beforeEach(async (_t) => {
     },
     types: {
       thing: {
+        prefix: 'th',
         fields: {
           floats: {
             type: 'set',
@@ -61,8 +62,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: $add not implemented
-test.serial.skip('float sets', async (t) => {
+test.serial('float sets', async (t) => {
   const id1 = await client.set({
     type: 'thing',
     floats: [9001],
@@ -101,8 +101,7 @@ test.serial.skip('float sets', async (t) => {
   t.deepEqualIgnoreOrder(floats3, [1.5, 2, 3.5, 1.1, 7.7])
 })
 
-// TODO: $add not implemented
-test.serial.skip('integer sets', async (t) => {
+test.serial('integer sets', async (t) => {
   const id1 = await client.set({
     type: 'thing',
     integers: [1],
@@ -135,8 +134,7 @@ test.serial.skip('integer sets', async (t) => {
   t.deepEqualIgnoreOrder(integers3, [1, 2, 3, 4])
 })
 
-// TODO: $add not implemented
-test.serial.skip('string sets', async (t) => {
+test.serial('string sets', async (t) => {
   const id1 = await client.set({
     type: 'thing',
     strings: ['abc'],

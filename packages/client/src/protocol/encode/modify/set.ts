@@ -51,6 +51,8 @@ export function encodeSetOperation({
   const encoder = SET_TYPE_TO_MODIFY_VALUE_TYPE[setType]
   return createRecord(SET_OP_BY_TYPE[setType], {
     op_set_type: setType,
-    $value: $value.map(encoder),
+    $value: ($value || []).map(encoder),
+    $add: ($add || []).map(encoder),
+    $delete: ($remove || []).map(encoder),
   })
 }
