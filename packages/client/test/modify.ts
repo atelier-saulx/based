@@ -285,8 +285,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for setting on root support
-test.serial.skip('root', async (t) => {
+test.serial('root', async (t) => {
   // const match = await client.set({
   //   type: 'match',
   // })
@@ -297,7 +296,7 @@ test.serial.skip('root', async (t) => {
     hello: 'http://example.com/hello--yo-yes',
   })
 
-  t.deepEqual(root, 'root')
+  t.deepEqual(root, 'root'.padEnd(16, '\0'))
   // t.deepEqual(
   //   readDouble(await client.redis.selva_object_get('', 'root', 'value')),
   //   9001
@@ -1449,8 +1448,7 @@ test.serial.skip('can disable autoadding of root', async (t) => {
   // )
 })
 
-// TODO: waiting for setting on root support
-test.serial.skip('$delete: true', async (t) => {
+test.serial('$delete: true', async (t) => {
   const match = await client.set({
     type: 'match',
     value: 1,
@@ -1461,7 +1459,7 @@ test.serial.skip('$delete: true', async (t) => {
     value: 9001,
   })
 
-  t.deepEqual(root, 'root')
+  t.deepEqual(root, 'root'.padEnd(16, '\0'))
   t.deepEqual(
     // readDouble(await client.redis.selva_object_get('', 'root', 'value')),
     (await client.command('object.get', ['', 'root', 'value']))[0],
