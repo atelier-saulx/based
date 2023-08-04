@@ -1,0 +1,96 @@
+/*
+ * Copyright (c) 2022-2023 SAULX
+ * SPDX-License-Identifier: MIT
+ */
+#include <stddef.h>
+#include <sys/types.h>
+#include "selva_error.h"
+#include "selva_log.h"
+#include "selva_trace.h"
+#include "selva_db.h"
+#include "traversal.h"
+#include "hierarchy.h"
+#include "query_traverse.h"
+
+/*
+ * Trace handles.
+ */
+SELVA_TRACE_HANDLE(cmd_find_array);
+SELVA_TRACE_HANDLE(cmd_find_bfs_expression);
+SELVA_TRACE_HANDLE(cmd_find_index);
+SELVA_TRACE_HANDLE(cmd_find_refs);
+SELVA_TRACE_HANDLE(cmd_find_rest);
+SELVA_TRACE_HANDLE(cmd_find_sort_result);
+SELVA_TRACE_HANDLE(cmd_find_traversal_expression);
+
+int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struct query_traverse *qt, void *args)
+{
+    int err;
+
+    if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && qt->dir_opt_str) {
+        const struct SelvaObjectArrayForeachCallback ary_cb = {
+            .cb = qt->ary_cb,
+            .cb_arg = args,
+        };
+        const char *ref_field_str = qt->dir_opt_str;
+        size_t ref_field_len = qt->dir_opt_len;
+
+        SELVA_TRACE_BEGIN(query_traverse_array);
+        err = SelvaHierarchy_TraverseArray(hierarchy, node_id, ref_field_str, ref_field_len, &ary_cb);
+        SELVA_TRACE_END(query_traverse_array);
+    } else if ((qt->dir &
+                (SELVA_HIERARCHY_TRAVERSAL_REF |
+                 SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                 SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
+               && qt->dir_opt_str) {
+        const struct SelvaHierarchyCallback cb = {
+            .node_cb = qt->node_cb,
+            .node_arg = args,
+        };
+        const char *ref_field_str = qt->dir_opt_str;
+        size_t ref_field_len = qt->dir_opt_len;
+
+        SELVA_TRACE_BEGIN(query_traverse_refs);
+        err = SelvaHierarchy_TraverseField(hierarchy, node_id, qt->dir, ref_field_str, ref_field_len, &cb);
+        SELVA_TRACE_END(query_traverse_refs);
+    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+        const struct SelvaHierarchyCallback cb = {
+            .node_cb = qt->node_cb,
+            .node_arg = args,
+        };
+
+        SELVA_TRACE_BEGIN(query_traverse_bfs_expression);
+        err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
+        SELVA_TRACE_END(query_traverse_bfs_expression);
+    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
+        const struct SelvaHierarchyCallback cb = {
+            .node_cb = qt->node_cb,
+            .node_arg = args,
+        };
+
+        SELVA_TRACE_BEGIN(query_traverse_traversal_expression);
+        err = SelvaHierarchy_TraverseExpression(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
+        SELVA_TRACE_END(query_traverse_traversal_expression);
+    } else {
+        const struct SelvaHierarchyCallback cb = {
+            .node_cb = qt->node_cb,
+            .node_arg = args,
+        };
+
+        SELVA_TRACE_BEGIN(query_traverse_rest);
+        err = SelvaHierarchy_Traverse(hierarchy, node_id, qt->dir, &cb);
+        SELVA_TRACE_END(query_traverse_rest);
+    }
+    if (err != 0) {
+        /*
+         * We can't send an error to the client at this point so we'll just log
+         * it and ignore the error.
+         */
+        SELVA_LOG(SELVA_LOGL_ERR, "Traversal failed. dir: %s node_id: \"%.*s\" err: \"%s\"",
+                  SelvaTraversal_Dir2str(qt->dir),
+                  (int)SELVA_NODE_ID_SIZE, node_id,
+                  selva_strerror(err));
+    }
+
+    return err;
+}
