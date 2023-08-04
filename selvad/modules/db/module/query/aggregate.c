@@ -644,20 +644,18 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
     }
 
     struct selva_string *order_by_field = NULL;
-    if (!(query_opts.order == SELVA_RESULT_ORDER_NONE ||
-          query_opts.order == SELVA_RESULT_ORDER_ASC ||
-          query_opts.order == SELVA_RESULT_ORDER_DESC)) {
-        selva_send_errorf(resp, SELVA_EINVAL, "order");
-        return;
-    } else if (query_opts.order == SELVA_RESULT_ORDER_ASC ||
-               query_opts.order == SELVA_RESULT_ORDER_DESC) {
+    if (query_opts.order == SELVA_RESULT_ORDER_ASC ||
+        query_opts.order == SELVA_RESULT_ORDER_DESC) {
         if (query_opts.order_by_field_len == 0) {
-            selva_send_errorf(resp, SELVA_EINVAL, "order_by_field");
+            selva_send_errorf(resp, SELVA_EINVAL, "order_by_field must be set");
             return;
         }
 
         order_by_field = selva_string_create(query_opts.order_by_field_str, query_opts.order_by_field_len, 0);
         selva_string_auto_finalize(&fin, order_by_field);
+    } else if (query_opts.order != SELVA_RESULT_ORDER_NONE) {
+        selva_send_errorf(resp, SELVA_EINVAL, "order invalid or unsupported");
+        return;
     }
 
     if (query_opts.offset < -1) {
