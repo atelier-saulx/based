@@ -610,10 +610,9 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                                  SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
         dir_expr = selva_string_create(query_opts_str, query_opts_len, 0);
         selva_string_auto_finalize(&fin, dir_expr);
-        const char *input = selva_string_to_str(dir_expr, NULL);
 
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input);
+        traversal_expression = rpn_compile(selva_string_to_str(dir_expr, NULL));
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
             return;
