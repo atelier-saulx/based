@@ -722,10 +722,9 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
                                  SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
         dir_expr = selva_string_create(query_opts.dir_opt_str, query_opts.dir_opt_len, 0);
         selva_string_auto_finalize(&fin, dir_expr);
-        const char *input = selva_string_to_str(dir_expr, NULL);
 
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input);
+        traversal_expression = rpn_compile(selva_string_to_str(dir_expr, NULL));
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
             return;
@@ -741,14 +740,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
 
-        size_t len = query_opts.edge_filter_len;
-        char input[len + 1];
-
-        memcpy(input, query_opts.edge_filter_str, len);
-        input[len] = '\0';
-
         edge_filter_ctx = rpn_init(1);
-        edge_filter = rpn_compile(input);
+        edge_filter = rpn_compile_len(query_opts.edge_filter_str, query_opts.edge_filter_len);
         if (!edge_filter) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
             return;

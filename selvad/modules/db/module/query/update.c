@@ -514,13 +514,8 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             return;
         }
 
-        char input[query_opts.dir_opt_len + 1];
-
-        memcpy(input, query_opts.dir_opt_str, query_opts.dir_opt_len);
-        input[query_opts.dir_opt_len] = '\0';
-
         traversal_rpn_ctx = rpn_init(1);
-        traversal_expression = rpn_compile(input);
+        traversal_expression = rpn_compile_len(query_opts.dir_opt_str, query_opts.dir_opt_len);
         if (!traversal_expression) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "Failed to compile the traversal expression");
             return;
@@ -534,13 +529,8 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             return;
         }
 
-        char input[query_opts.edge_filter_len + 1];
-
-        memcpy(input, query_opts.edge_filter_str, query_opts.edge_filter_len);
-        input[query_opts.edge_filter_len] = '\0';
-
         edge_filter_ctx = rpn_init(1);
-        edge_filter = rpn_compile(input);
+        edge_filter = rpn_compile_len(query_opts.edge_filter_str, query_opts.edge_filter_len);
         if (!edge_filter) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
             return;
