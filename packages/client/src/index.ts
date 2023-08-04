@@ -130,7 +130,19 @@ export class BasedDbClient extends Emitter {
 
     const { errors, collected, $id, $alias } = await setWalker(
       this.schema,
-      opts
+      opts,
+      async (args, type) => {
+        if (type !== 'modifyObject') {
+          throw new Error(`Unsupported nested operation: ${type}`)
+        }
+
+        const nestedOpts = { ...args.value }
+        if (opts.$language) {
+          nestedOpts.$language = opts.$language
+        }
+
+        return this.set(nestedOpts)
+      }
     )
 
     if (errors?.length) {

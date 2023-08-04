@@ -45,8 +45,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for creating node directly when setting children
-// old comment: FIXME We are often seeing: 'Maximum call stack size exceeded'
+// TODO: needs $find.$find
 test.serial.skip('get very deep results', async (t) => {
   const q: any = {}
   let s: any = q

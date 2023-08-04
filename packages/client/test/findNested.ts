@@ -70,7 +70,7 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
@@ -445,8 +445,7 @@ test.serial.skip('get nested results without find', async (t) => {
   t.is(child.children.length, 10, 'has teams')
 })
 
-// TODO: waiting for creating node directly when setting references
-test.serial.skip('nested refs', async (t) => {
+test.serial('nested refs', async (t) => {
   for (let i = 0; i < 3; i++) {
     const docs = await client.set({
       type: 'thing',

@@ -147,13 +147,14 @@ test.beforeEach(async (t) => {
   t.true(ids[0].slice(0, 2) === 'cl' && ids[1].slice(0, 2) === 'le')
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 // TODO: waiting for creating node directly when setting children
-test.serial.skip('find - descendants', async (t) => {
+test.serial.only('find - descendants', async (t) => {
   // simple nested - single query
 
   try {
