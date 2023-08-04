@@ -1199,7 +1199,12 @@ test.serial.skip('$merge = false', async (t) => {
   // t.is(await client.redis.selva_object_get('', 'arPower', 'image.thumb'), null)
 })
 
-// TODO: children: { $add } not working
+// TODO: setWalker error (Jim)
+//   TypeError {
+//     message: 'Cannot read properties of undefined (reading \'value\')',
+//   }
+//
+//   › walk (/Users/tonykovanen/saulx/based-db/node_modules/@based/schema/src/walker/index.ts:25:17)
 test.serial.skip('automatic child creation', async (t) => {
   const childrenIds = await Promise.all(
     [
@@ -1361,7 +1366,7 @@ test.serial.skip('simple $noRoot', async (t) => {
   })
 })
 
-// TODO: children: { $add } not working
+// TODO: $alias in get
 test.serial.skip('no root in parents when adding nested', async (t) => {
   await client.set({
     $id: 'ma1',
