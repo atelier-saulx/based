@@ -1,11 +1,9 @@
 import test from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
-import { wait } from '@saulx/utils'
+// import { wait } from '@saulx/utils'
 
 test.serial.only('set primitive fields', async (t) => {
-  const TIME = 2500
-
   const server = await startOrigin({
     port: 8081,
     name: 'default',
@@ -417,4 +415,7 @@ test.serial.only('set primitive fields', async (t) => {
   })
 
   t.true(true)
+
+  client.destroy()
+  await server.destroy()
 })
