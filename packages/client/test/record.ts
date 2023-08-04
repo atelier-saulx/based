@@ -58,8 +58,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: record wildcards
-test.serial.skip('remove object from record', async (t) => {
+test.serial('remove object from record', async (t) => {
   const thingId = await client.set({
     type: 'thing',
     name: 'blurp',
@@ -114,6 +113,5 @@ test.serial.skip('remove object from record', async (t) => {
     },
   })
 
-  t.is(res2.members[1], undefined)
-  t.is(res2.members[0], undefined)
+  t.deepEqualIgnoreOrder(res2, { name: 'derp' })
 })

@@ -1,9 +1,4 @@
-import {
-  BasedSchemaCollectProps,
-  BasedSchemaField,
-  BasedSchemaFieldSet,
-  Path,
-} from '@based/schema'
+import { BasedSchemaField, BasedSchemaFieldSet, Path } from '@based/schema'
 import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
 import { arrayOpToModify } from './array'
 import { joinPath } from '../util'
@@ -25,12 +20,13 @@ const DB_TYPE_TO_SET_TYPE = {
   number: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_DOUBLE,
 }
 
-const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
-  3: '8',
-  A: '9',
-  0: '2',
-}
+// const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
+//   3: '8',
+//   A: '9',
+//   0: '2',
+// }
 
+/* eslint-disable */
 export function toModifyArgs(props: {
   fieldSchema: BasedSchemaField
   path: Path
@@ -49,7 +45,7 @@ export function toModifyArgs(props: {
         {
           ...value,
           setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-          isSingle: fieldSchema.type === 'reference' ? true : false,
+          isSingle: fieldSchema.type === 'reference',
         },
       ]
     case 'set':
@@ -65,11 +61,23 @@ export function toModifyArgs(props: {
       // so encoding happens here instead of at modify encoding level
       return arrayOpToModify(props)
     case 'object':
-      return [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META, strPath, [0]]
+      return [
+        ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META,
+        strPath,
+        value.$delete === true ? { $delete: true } : [0],
+      ]
     case 'record':
-      return [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META, strPath, [1]]
+      return [
+        ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META,
+        strPath,
+        value.$delete === true ? { $delete: true } : [1],
+      ]
     case 'text':
-      return [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META, strPath, [2]]
+      return [
+        ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META,
+        strPath,
+        value.$delete === true ? { $delete: true } : [2],
+      ]
     default:
       const opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
 
