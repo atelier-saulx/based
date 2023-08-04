@@ -1031,5 +1031,17 @@ test('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 43 object ------')
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    object: {},
+  })
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })
