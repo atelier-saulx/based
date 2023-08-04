@@ -23,6 +23,7 @@ OBJ := \
 	   module/parsers/enum.o \
 	   module/parsers/string_list.o \
 	   module/parsers/string_set.o \
+	   module/parsers/index_hints.o \
 	   module/query/aggregate.o \
 	   module/query/field_names.o \
 	   module/query/find/find.o \

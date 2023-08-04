@@ -741,17 +741,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     struct selva_string **index_hints = NULL;
     int nr_index_hints = 0;
     if (query_opts.index_hints_len && selva_glob_config.find_indices_max > 0) {
-        const struct selva_string *s;
-
-        index_hints = parse_string_list(&fin, query_opts.index_hints_str, query_opts.index_hints_len, '\0');
-
-        s = index_hints[0];
-        while (s) {
-            s = index_hints[++nr_index_hints];
-            if (nr_index_hints >= FIND_INDICES_MAX_HINTS_FIND) {
-                break;
-            }
-        }
+        index_hints = parse_index_hints(&fin, query_opts.index_hints_str, query_opts.index_hints_len, &nr_index_hints);
     }
 
     struct selva_string *order_by_field = NULL;

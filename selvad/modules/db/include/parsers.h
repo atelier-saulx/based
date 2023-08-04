@@ -73,3 +73,5 @@ int parse_string_set(
 int parse_enum(
         const struct parsers_enum types[],
         const struct selva_string *arg);
+
+struct selva_string **parse_index_hints(struct finalizer *fin, const char *index_hints_str, size_t index_hints_len, int *nr_index_hints_out);
