@@ -80,7 +80,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $inherit
 test.serial.skip('find - inherit', async (t) => {
   await client.updateSchema({
     languages: ['en'],
@@ -169,7 +169,7 @@ test.serial.skip('find - inherit', async (t) => {
   )
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $inherit
 test.serial.skip('find - inherit by type', async (t) => {
   await client.updateSchema({
     languages: ['en'],
