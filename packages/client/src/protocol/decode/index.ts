@@ -6,10 +6,8 @@ import {
   SELVA_PROTO_ARRAY_FLONGLONG,
   SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH,
   SELVA_PROTO_CHECK_OFFSET,
-  SELVA_PROTO_HDR_FFIRST,
-  SELVA_PROTO_HDR_FREQ_RES,
   SelvaProtocolHeader,
-  selva_proto_header_def,
+  selva_proto_header_def as selvaProtoHeaderDef,
 } from '../types'
 import { crc32 } from '../crc32c'
 import { VALUE_PARSERS } from './valueParsers'
@@ -19,16 +17,16 @@ export function findFrame(buf: Buffer): {
   frame: Buffer | null
   rest: Buffer
 } {
-  const header: SelvaProtocolHeader = deserialize(selva_proto_header_def, buf)
+  const header: SelvaProtocolHeader = deserialize(selvaProtoHeaderDef, buf)
 
   const frame = buf.subarray(0, header.frame_bsize)
-  const orig_chk = frame.readInt32LE(SELVA_PROTO_CHECK_OFFSET)
+  const origChk = frame.readInt32LE(SELVA_PROTO_CHECK_OFFSET)
 
   frame.writeUInt32LE(0, SELVA_PROTO_CHECK_OFFSET)
-  const comp_chk = crc32(frame, 0) | 0
+  const compChk = crc32(frame, 0) | 0
 
-  if (orig_chk != comp_chk) {
-    frame.writeInt32LE(orig_chk, SELVA_PROTO_CHECK_OFFSET)
+  if (origChk !== compChk) {
+    frame.writeInt32LE(origChk, SELVA_PROTO_CHECK_OFFSET)
     return {
       header,
       frame: null,
@@ -48,22 +46,22 @@ export function findFrame(buf: Buffer): {
 }
 
 export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
-  if (!buf || buf.length == 0) {
+  if (!buf || buf.length === 0) {
     return [[], null]
   }
 
   const result = []
   let rest: Buffer | null = buf
   do {
-    let v
+    let v: any
     ;[v, rest] = parseValue(rest)
 
-    if (v?.type == SELVA_PROTO_ARRAY) {
+    if (v?.type === SELVA_PROTO_ARRAY) {
       if (v.flags & SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH) {
-        const [r, new_rest] = decodeMessage(rest, -2)
+        const [r, newRest] = decodeMessage(rest, -2)
 
         result.push(r)
-        rest = new_rest
+        rest = newRest
       } else if (v.flags & SELVA_PROTO_ARRAY_FLONGLONG) {
         const a = []
         for (let i = 0; i < v.length; i++) {
@@ -80,16 +78,16 @@ export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
         rest = rest.slice(v.length * 8)
       } else {
         /* Read v.length values */
-        const [r, new_rest] = decodeMessage(rest, v.length)
-        if (r.length != v.length) {
+        const [r, newRest] = decodeMessage(rest, v.length)
+        if (r.length !== v.length) {
           throw new Error(`Invalid array size: ${r.length} != ${v.length}`)
         }
 
         result.push(r)
-        rest = new_rest
+        rest = newRest
       }
-    } else if (v?.type == SELVA_PROTO_ARRAY_END) {
-      if (n != -2) {
+    } else if (v?.type === SELVA_PROTO_ARRAY_END) {
+      if (n !== -2) {
         throw new Error('Unexpected SELVA_PROTO_ARRAY_END')
       }
       break
