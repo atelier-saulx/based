@@ -50,19 +50,17 @@ test('simple setNum', async (t) => {
   ])
 })
 
-// test.only('default arr', async (t) => {
-//   r = await setWalker(schema, {
-//     $id: 'bl120',
-//     setOfNumbers: { $add: 20 },
-//   })
+test('default arr', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfNumbers: { $add: 20 },
+  })
 
-//   console.log(r.errors)
-//   console.dir(
-//     r.collected.map((v) => ({ path: v.path, value: v.value })),
-//     { depth: 10 }
-//   )
-//   t.true(r.errors.length === 0)
-// })
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['setOfNumbers'], value: { $add: [20] } },
+  ])
+})
 
 // test.only('default arr', async (t) => {
 //   r = await setWalker(schema, {
