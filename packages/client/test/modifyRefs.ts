@@ -48,8 +48,8 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for creating node directly when setting children
-test.serial.skip('implicitly created nodes', async (t) => {
+// TODO: set parse issue (Jim)
+test.serial.only('implicitly created nodes', async (t) => {
   await client.set({
     $id: 'root',
     children: ['ma1', 'ma2'],
