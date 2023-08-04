@@ -620,6 +620,23 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         }
     }
 
+    __auto_free_rpn_ctx struct rpn_ctx *edge_filter_ctx = NULL;
+    __auto_free_rpn_expression struct rpn_expression *edge_filter = NULL;
+    if (query_opts.edge_filter_len) {
+        if (!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+                                SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION))) {
+            selva_send_errorf(resp, SELVA_EINVAL, "edge_filter can be only used with expression traversals");
+            return;
+        }
+
+        edge_filter_ctx = rpn_init(1);
+        edge_filter = rpn_compile_len(query_opts.edge_filter_str, query_opts.edge_filter_len);
+        if (!edge_filter) {
+            selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
+            return;
+        }
+    }
+
     double initial_double_val = 0;
     if (query_opts.agg_fn == SELVA_AGGREGATE_TYPE_MAX_FIELD) {
         initial_double_val = DBL_MIN;
@@ -798,8 +815,8 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
                 .traversal_rpn_ctx = traversal_rpn_ctx,
                 .traversal_expression = traversal_expression,
 
-                .edge_filter_ctx = NULL,
-                .edge_filter = NULL,
+                .edge_filter_ctx = edge_filter_ctx,
+                .edge_filter = edge_filter,
 
                 .node_cb = AggregateCommand_NodeCb,
                 .ary_cb = AggregateCommand_ArrayObjectCb,
