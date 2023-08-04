@@ -29,14 +29,16 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: parents: { $add } not working
-test.serial.skip(
+test.serial(
   'when using parents.$add empty, root should still be added in ancestors (low prio)',
   async (t) => {
     await client.updateSchema({
       types: {
         sport: {
           prefix: 'sp',
+          fields: {
+            num: { type: 'number' },
+          },
         },
       },
     })
@@ -44,6 +46,7 @@ test.serial.skip(
     await client.set({
       type: 'sport',
       $id: 'sp11',
+      num: 1,
       parents: {
         $add: [],
       },
@@ -54,85 +57,3 @@ test.serial.skip(
     })
   }
 )
-
-// @rase~ This test was commented. Is it relevant?
-//
-//
-// test.serial(
-//   'ancestors of descendants are updated correct after parent is removed (high prio)',
-//   async t => {
-//     const client = connect({ port }, { loglevel: 'info' })
-//
-//     await client.updateSchema({
-//       types: {
-//         sport: {
-//           prefix: 'sp'
-//         }
-//       }
-//     })
-//
-//     await client.set({
-//       type: 'sport',
-//       $id: 'sp1'
-//     })
-//
-//     await client.set({
-//       type: 'sport',
-//       $id: 'sp2',
-//       parents: {
-//         $add: ['sp1']
-//       }
-//     })
-//
-//     t.deepEqualIgnoreOrder(await client.get({ $id: 'sp2', ancestors: true }), {
-//       ancestors: ['root', 'sp1']
-//     })
-//
-//     await client.delete({
-//       $id: 'sp1'
-//     })
-//
-//     t.deepEqualIgnoreOrder(await client.get({ $id: 'sp2', ancestors: true }), {
-//       ancestors: ['root']
-//     })
-//   }
-// )
-// test.serial(
-//   'ancestors of descendants are updated correct after parent is removed (high prio)',
-//   async t => {
-//     const client = connect({ port }, { loglevel: 'info' })
-//
-//     await client.updateSchema({
-//       types: {
-//         sport: {
-//           prefix: 'sp'
-//         }
-//       }
-//     })
-//
-//     await client.set({
-//       type: 'sport',
-//       $id: 'sp1'
-//     })
-//
-//     await client.set({
-//       type: 'sport',
-//       $id: 'sp2',
-//       parents: {
-//         $add: ['sp1']
-//       }
-//     })
-//
-//     t.deepEqualIgnoreOrder(await client.get({ $id: 'sp2', ancestors: true }), {
-//       ancestors: ['root', 'sp1']
-//     })
-//
-//     await client.delete({
-//       $id: 'sp1'
-//     })
-//
-//     t.deepEqualIgnoreOrder(await client.get({ $id: 'sp2', ancestors: true }), {
-//       ancestors: ['root']
-//     })
-//   }
-// )
