@@ -158,7 +158,7 @@ test.serial.skip('get nested results', async (t) => {
   t.is(result.items[0].teams.length, 2, 'has teams')
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $find.$find
 test.serial.skip('get descendants of each child', async (t) => {
   const teams: any = []
 
@@ -225,7 +225,7 @@ test.serial.skip('get descendants of each child', async (t) => {
   ])
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $find.$find
 test.serial.skip('get nested results with $all', async (t) => {
   const matches: any = []
   const teams: any = []
@@ -329,7 +329,7 @@ test.serial.skip('get nested results with $all', async (t) => {
   )
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $find.$find
 test.serial.skip('get nested results as ids', async (t) => {
   const matches: any = []
   const teams: any = []
@@ -388,7 +388,7 @@ test.serial.skip('get nested results as ids', async (t) => {
   t.is(result.items[0].parents.length, 2, 'has teams')
 })
 
-// TODO: waiting for creating node directly when setting children
+// TODO: $find.$find
 test.serial.skip('get nested results without find', async (t) => {
   const matches: any = []
   const teams: any = []
