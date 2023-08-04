@@ -32,6 +32,7 @@
 #include "selva_set.h"
 #include "subscriptions.h"
 #include "traversal.h"
+#include "query_traverse.h"
 #include "aggregate_cmd.h"
 
 struct AggregateCommand_Args;
@@ -788,48 +789,23 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             }
 
             err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], AggregateCommand_NodeCb, &args);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && query_opts.dir_opt_str) {
-            const struct SelvaObjectArrayForeachCallback ary_cb = {
-                .cb = AggregateCommand_ArrayObjectCb,
-                .cb_arg = &args,
-            };
-            const char *ref_field_str = query_opts.dir_opt_str;
-            size_t ref_field_len = query_opts.dir_opt_len;
-
-            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, ref_field_str, ref_field_len, &ary_cb);
-        } else if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                                      SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                                      SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) &&
-                   query_opts.dir_opt_str) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = AggregateCommand_NodeCb,
-                .node_arg = &args,
-            };
-            const char *ref_field_str = query_opts.dir_opt_str;
-            size_t ref_field_len = query_opts.dir_opt_len;
-
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = AggregateCommand_NodeCb,
-                .node_arg = &args,
-            };
-
-            err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, NULL, NULL, &cb);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = AggregateCommand_NodeCb,
-                .node_arg = &args,
-            };
-
-            err = SelvaHierarchy_TraverseExpression(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, NULL, NULL, &cb);
         } else {
-            const struct SelvaHierarchyCallback cb = {
+            struct query_traverse qt = {
+                .dir = query_opts.dir,
+                .dir_opt_str = query_opts.dir_opt_str,
+                .dir_opt_len = query_opts.dir_opt_len,
+
+                .traversal_rpn_ctx = traversal_rpn_ctx,
+                .traversal_expression = traversal_expression,
+
+                .edge_filter_ctx = NULL,
+                .edge_filter = NULL,
+
                 .node_cb = AggregateCommand_NodeCb,
-                .node_arg = &args,
+                .ary_cb = AggregateCommand_ArrayObjectCb,
             };
 
-            err = SelvaHierarchy_Traverse(hierarchy, nodeId, query_opts.dir, &cb);
+            err = query_traverse(hierarchy, nodeId, &qt, &args);
         }
         if (err != 0) {
             /*

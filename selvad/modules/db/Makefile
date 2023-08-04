@@ -33,6 +33,7 @@ OBJ := \
 	   module/query/inherit/inherit.o \
 	   module/query/inherit/send_field.o \
 	   module/query/inherit/send_field_find.o \
+	   module/query/query_traverse.o \
 	   module/query/update.o \
 	   module/resolve.o \
 	   module/rpn/rpn.o \

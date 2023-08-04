@@ -42,13 +42,9 @@
 #include "inherit.h"
 #include "find_index.h"
 #include "../field_names.h"
+#include "../query_traverse.h"
 #include "find_send.h"
 #include "find_cmd.h"
-
-struct FindCommand_ArrayObjectCb {
-    struct selva_server_response_out *resp;
-    struct FindCommand_Args *find_args;
-};
 
 /*
  * Trace handles.
@@ -348,8 +344,7 @@ static int FindCommand_ArrayObjectCb(
         enum SelvaObjectType subtype,
         void *arg) {
     struct SelvaObject *obj = value.obj;
-    struct FindCommand_ArrayObjectCb *args = (struct FindCommand_ArrayObjectCb *)arg;
-    struct FindCommand_Args *find_args = args->find_args;
+    struct FindCommand_Args *find_args = (struct FindCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = find_args->rpn_ctx;
     int take = (find_args->offset > 0) ? !find_args->offset-- : 1;
 
@@ -990,62 +985,23 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             SELVA_TRACE_BEGIN(cmd_find_index);
             err = SelvaFindIndex_Traverse(hierarchy, ind_icb[ind_select], FindCommand_NodeCb, &args);
             SELVA_TRACE_END(cmd_find_index);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY && query_opts.dir_opt_str) {
-            struct FindCommand_ArrayObjectCb array_args = {
-                .find_args = &args,
-            };
-            const struct SelvaObjectArrayForeachCallback ary_cb = {
-                .cb = FindCommand_ArrayObjectCb,
-                .cb_arg = &array_args,
-            };
-            const char *ref_field_str = query_opts.dir_opt_str;
-            size_t ref_field_len = query_opts.dir_opt_len;
-
-            SELVA_TRACE_BEGIN(cmd_find_array);
-            err = SelvaHierarchy_TraverseArray(hierarchy, nodeId, ref_field_str, ref_field_len, &ary_cb);
-            SELVA_TRACE_END(cmd_find_array);
-        } else if ((query_opts.dir &
-                    (SELVA_HIERARCHY_TRAVERSAL_REF |
-                     SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                     SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
-                   && query_opts.dir_opt_str) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = FindCommand_NodeCb,
-                .node_arg = &args,
-            };
-            const char *ref_field_str = query_opts.dir_opt_str;
-            size_t ref_field_len = query_opts.dir_opt_len;
-
-            SELVA_TRACE_BEGIN(cmd_find_refs);
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
-            SELVA_TRACE_END(cmd_find_refs);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = FindCommand_NodeCb,
-                .node_arg = &args,
-            };
-
-            SELVA_TRACE_BEGIN(cmd_find_bfs_expression);
-            err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, edge_filter_ctx, edge_filter, &cb);
-            SELVA_TRACE_END(cmd_find_bfs_expression);
-        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
-            const struct SelvaHierarchyCallback cb = {
-                .node_cb = FindCommand_NodeCb,
-                .node_arg = &args,
-            };
-
-            SELVA_TRACE_BEGIN(cmd_find_traversal_expression);
-            err = SelvaHierarchy_TraverseExpression(hierarchy, nodeId, traversal_rpn_ctx, traversal_expression, edge_filter_ctx, edge_filter, &cb);
-            SELVA_TRACE_END(cmd_find_traversal_expression);
         } else {
-            const struct SelvaHierarchyCallback cb = {
+            struct query_traverse qt = {
+                .dir = query_opts.dir,
+                .dir_opt_str = query_opts.dir_opt_str,
+                .dir_opt_len = query_opts.dir_opt_len,
+
+                .traversal_rpn_ctx = traversal_rpn_ctx,
+                .traversal_expression = traversal_expression,
+
+                .edge_filter_ctx = edge_filter_ctx,
+                .edge_filter = edge_filter,
+
                 .node_cb = FindCommand_NodeCb,
-                .node_arg = &args,
+                .ary_cb = FindCommand_ArrayObjectCb,
             };
 
-            SELVA_TRACE_BEGIN(cmd_find_rest);
-            err = SelvaHierarchy_Traverse(hierarchy, nodeId, query_opts.dir, &cb);
-            SELVA_TRACE_END(cmd_find_rest);
+            err = query_traverse(hierarchy, nodeId, &qt, &args);
         }
         if (err != 0) {
             /*
