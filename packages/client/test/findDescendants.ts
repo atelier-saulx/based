@@ -153,8 +153,7 @@ test.afterEach(async (t) => {
   await wait(300)
 })
 
-// TODO: waiting for creating node directly when setting children
-test.serial.only('find - descendants', async (t) => {
+test.serial('find - descendants', async (t) => {
   // simple nested - single query
 
   try {

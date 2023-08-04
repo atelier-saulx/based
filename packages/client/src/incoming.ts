@@ -23,7 +23,16 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
   let nextBuf: Buffer | null = data
   const now = Date.now()
   do {
-    const { header, frame, rest } = findFrame(nextBuf)
+    let res
+    try {
+      res = findFrame(nextBuf)
+    } catch (e) {
+      console.error('Error finding frame', e)
+      client.backpressureBlock = nextBuf
+      return
+    }
+
+    const { header, frame, rest } = res
     if (!frame && processedBytes + nextBuf.byteLength === data.byteLength) {
       // we have an incomplete frame (wait for more data from node event loop)
       client.backpressureBlock = nextBuf
