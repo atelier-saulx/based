@@ -231,10 +231,10 @@ export class BasedDbClient extends Emitter {
       ])
 
       $id = resolved?.[0]
-    }
 
-    if (!$id) {
-      return {}
+      if (!$id) {
+        return {}
+      }
     }
 
     if ($language) {
