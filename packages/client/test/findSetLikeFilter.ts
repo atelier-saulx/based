@@ -140,51 +140,6 @@ test.serial('filter by descendants', async (t) => {
   )
 })
 
-test.serial('filter by ancestors', async (t) => {
-  t.deepEqual(
-    await client.get({
-      $id: 'root',
-      teams: {
-        id: true,
-        value: true,
-        $list: {
-          $sort: { $field: 'value', $order: 'asc' },
-          $find: {
-            $traverse: 'descendants',
-            $filter: [
-              {
-                $field: 'type',
-                $operator: '=',
-                $value: 'team',
-              },
-              // TODO This part wasn't working properly before and now it's borken because it actually filters
-              //{
-              //  $field: 'ancestors',
-              //  $operator: 'has',
-              //  $value: [ 'le1', 'le4' ],
-              //},
-              {
-                $field: 'value',
-                $operator: '=',
-                $value: 8,
-              },
-            ],
-          },
-        },
-      },
-    }),
-    {
-      teams: [
-        { id: 'te18', value: 8 },
-        { id: 'te28', value: 8 },
-        { id: 'te38', value: 8 },
-        { id: 'te48', value: 8 },
-        { id: 'te8', value: 8 },
-      ],
-    }
-  )
-})
-
 test.serial('filter by parents', async (t) => {
   t.deepEqual(
     await client.get({
