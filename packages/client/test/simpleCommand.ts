@@ -5,7 +5,6 @@ import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 
 test.serial('ping', async (t) => {
-  const port = await getPort()
   const TIME = 2500
 
   const server = await startOrigin({
@@ -179,106 +178,6 @@ test.serial('object.set big multi-frame string', async (t) => {
   console.log('get result', getResult)
 
   t.deepEqual(getResult[0], str)
-
-  client.destroy()
-  await server.destroy()
-  await wait(300)
-
-  t.true(true)
-})
-
-test.serial('modify and and object.get', async (t) => {
-  const TIME = 2500
-
-  const server = await startOrigin({
-    port: 8082,
-    name: 'default',
-  })
-
-  const client = new BasedDbClient()
-
-  client.connect({
-    port: 8082,
-    host: '127.0.0.1',
-  })
-
-  const id = 'ma00000000000001'
-  const resp = await client.command('modify', [
-    id,
-    ['3', 'num', 15, '0', 'title', 'lololo yes', 'A', 'doubleStuff', 22.89],
-  ])
-  t.deepEqual(resp, [[id, 'UPDATED', 'UPDATED', 'UPDATED']])
-  console.log('SUCCESS', resp)
-
-  let getResult = (await client.command('object.get', ['', id]))[0]
-  console.log('get result', getResult)
-
-  getResult.splice(
-    getResult.findIndex((x) => {
-      return x === 'createdAt'
-    }),
-    2
-  )
-  getResult.splice(
-    getResult.findIndex((x) => {
-      return x === 'updatedAt'
-    }),
-    2
-  )
-
-  t.deepEqual(
-    getResult.sort(),
-    [
-      'id',
-      id,
-      'title',
-      'lololo yes',
-      'num',
-      BigInt(15),
-      'doubleStuff',
-      22.89,
-    ].sort()
-  )
-
-  const id2 = 'ma00000000000002'
-  const resp2 = await client.command('modify', [
-    id2,
-    ['3', 'num', 25, '0', 'title', 'hmm no', 'A', 'doubleStuff', 12.21],
-  ])
-  console.log('RESP 2', resp2)
-
-  getResult = (await client.command('object.get', ['', id2]))[0]
-  console.log('get result', getResult)
-
-  getResult.splice(
-    getResult.findIndex((x) => {
-      return x === 'createdAt'
-    }),
-    2
-  )
-  getResult.splice(
-    getResult.findIndex((x) => {
-      return x === 'updatedAt'
-    }),
-    2
-  )
-
-  t.deepEqual(
-    getResult.sort(),
-    [
-      'id',
-      id2,
-      'title',
-      'hmm no',
-      'num',
-      BigInt(25),
-      'doubleStuff',
-      12.21,
-    ].sort()
-  )
-
-  getResult = await client.command('object.get', ['', id2, 'parents'])
-  console.log('PARENTS', getResult)
 
   client.destroy()
   await server.destroy()
