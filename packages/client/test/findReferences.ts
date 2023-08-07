@@ -53,7 +53,6 @@ test.beforeEach(async (t) => {
 test.after(async (_t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 test.serial('find - references', async (t) => {

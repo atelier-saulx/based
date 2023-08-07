@@ -48,7 +48,6 @@ test.beforeEach(async (t) => {
 test.after(async (t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 test.serial('get - correct order', async (t) => {

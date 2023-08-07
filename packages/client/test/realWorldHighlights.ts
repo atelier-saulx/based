@@ -55,7 +55,6 @@ test.beforeEach(async (t) => {
 test.afterEach(async (t) => {
   client.destroy()
   await srv.destroy()
-  await wait(300)
 })
 
 // TODO: needs .$find.$find support

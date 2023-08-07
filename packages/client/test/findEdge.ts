@@ -76,7 +76,6 @@ test.beforeEach(async (_t) => {
 test.after(async (_t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 // TODO: $add not implemented

@@ -55,7 +55,6 @@ test.beforeEach(async (t) => {
 test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 test.serial('find - by type', async (t) => {

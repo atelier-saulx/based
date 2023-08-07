@@ -422,6 +422,4 @@ test.serial.only('set primitive fields', async (t) => {
 
   client.destroy()
   await server.destroy()
-
-  await wait(300)
 })

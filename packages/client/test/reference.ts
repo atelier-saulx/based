@@ -112,7 +112,6 @@ test.beforeEach(async (_t) => {
 test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 test.serial('simple singular reference', async (t) => {
