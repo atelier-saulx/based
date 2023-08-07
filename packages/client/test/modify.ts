@@ -1699,8 +1699,7 @@ test.serial('$delete: true', async (t) => {
   // )
 })
 
-// TODO: waiting for delete
-test.serial.skip('deleting an object', async (t) => {
+test.serial('deleting an object', async (t) => {
   const match = await client.set({
     type: 'match',
     obj: {
