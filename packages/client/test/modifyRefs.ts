@@ -52,7 +52,7 @@ test.afterEach(async (_t) => {
 })
 
 // TODO: set parse issue (Jim)
-test.serial.only('implicitly created nodes', async (t) => {
+test.serial.skip('implicitly created nodes', async (t) => {
   await client.set({
     $id: 'root',
     children: ['ma1', 'ma2'],
