@@ -344,7 +344,7 @@ test.serial('root.children $delete: []', async (t) => {
   // )
 })
 
-// TODO: broken
+// TODO: waiting for setting children: [] to remove children
 test.serial.skip('basic', async (t) => {
   const match = await client.set({
     type: 'match',
@@ -454,7 +454,7 @@ test.serial.skip('basic', async (t) => {
   )
 
   t.deepEqual(
-    (await client.command('hierarchy.parents', [match]))[0],
+    (await client.command('hierarchy.parents', [person]))[0],
     [league, match].sort(),
     'person has correct parents after $add'
   )
@@ -475,20 +475,20 @@ test.serial.skip('basic', async (t) => {
     $id: person,
     parents: {
       $add: ['root'],
-      $delete: league,
+      $remove: league,
     },
   })
 
   t.deepEqual(
     (await client.command('hierarchy.children', [league]))[0],
     [],
-    'league has no children after $delete'
+    'league has no children after $remove'
   )
 
   t.deepEqual(
     (await client.command('hierarchy.parents', [person]))[0],
     [match, 'root'],
-    'person has correct parents after $delete'
+    'person has correct parents after $remove'
   )
 
   t.deepEqualIgnoreOrder(
@@ -515,7 +515,7 @@ test.serial.skip('basic', async (t) => {
     $id: person,
     parents: {
       $add: league,
-      $delete: 'root',
+      $remove: 'root',
     },
   })
 
@@ -548,12 +548,13 @@ test.serial.skip('basic', async (t) => {
     children: [],
   })
 
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
-  //   [],
-  //   'match has no children after reset'
-  // )
-  //
+  t.deepEqual(
+    // await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
+    (await client.command('hierarchy.children', [match]))[0],
+    [],
+    'match has no children after reset'
+  )
+
   // // add no children
   // await client.set({
   //   $id: match,
