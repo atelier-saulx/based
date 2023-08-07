@@ -1,7 +1,10 @@
 import { createRecord } from 'data-record'
 import { SELVA_NODE_ID_LEN } from '../../types'
-import { ModifyOpSetType, SET_OP_BY_TYPE } from './types'
-import { SET_TYPE_TO_MODIFY_VALUE_TYPE } from './types'
+import {
+  SET_TYPE_TO_MODIFY_VALUE_TYPE,
+  ModifyOpSetType,
+  SET_OP_BY_TYPE,
+} from './types'
 
 // TODO: impl. bidirectional
 function getContraint({ isSingle }: { isSingle: boolean }) {
