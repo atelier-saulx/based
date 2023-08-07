@@ -696,7 +696,7 @@ test.serial.skip(
 )
 
 // TODO: Tony check why it's repearint image
-test.serial.skip('get - simple $list with $field option', async (t) => {
+test.serial.only('get - simple $list with $field option', async (t) => {
   await client.updateSchema({
     languages: ['en', 'de', 'nl'],
     types: {

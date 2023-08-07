@@ -135,7 +135,7 @@ export function applyDefault(
     const part = path[i]
     if (!obj[part]) {
       const o = {}
-      setByPath(o, path.slice(i), value)
+      setByPath(o, path.slice(i + 1), value)
       obj[part] = o
       return
     }
@@ -149,7 +149,7 @@ export function applyDefault(
   }
 
   const last = path[path.length - 1]
-  if (!obj[last]) {
+  if (obj[last] === undefined) {
     obj[last] = value
   }
 }
