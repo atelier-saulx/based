@@ -85,6 +85,15 @@ export async function parseGetOpts(
 
           if (typeof value === 'object') {
             if (value.$list) {
+              if (value.$field) {
+                if (!value.$list.$find) {
+                  value.$list.$find = {}
+                }
+
+                value.$list.$find.$traverse =
+                  value.$list?.$find?.$traverse ?? value.$field
+              }
+
               return {
                 target: {
                   ...args.target,

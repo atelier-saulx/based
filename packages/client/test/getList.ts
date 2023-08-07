@@ -31,8 +31,7 @@ test.after(async (t) => {
   await wait(300)
 })
 
-// TODO: sort not working?
-test.serial.skip('get - simple $list', async (t) => {
+test.serial('get - simple $list', async (t) => {
   await client.updateSchema({
     languages: ['en', 'de', 'nl'],
     types: {
@@ -140,8 +139,7 @@ test.serial.skip('get - simple $list', async (t) => {
   */
 })
 
-// TODO: sort not working?
-test.serial.skip('get - simple $list with $field of one field', async (t) => {
+test.serial('get - simple $list with $field of one field', async (t) => {
   await client.updateSchema({
     languages: ['en', 'de', 'nl'],
     types: {
@@ -222,7 +220,7 @@ test.serial.skip('get - simple $list with $field of one field', async (t) => {
   )
 })
 
-// TODO: sort not working?
+// TODO: $list with $field array
 test.serial.skip(
   'get - simple $list with $field of two field entries',
   async (t) => {
@@ -308,7 +306,7 @@ test.serial.skip(
   }
 )
 
-// TODO: sort not working?
+// TODO: traverse based on query result
 test.serial.skip(
   'get - simple $list with query $field of one field',
   async (t) => {
@@ -563,7 +561,7 @@ test.serial('get - simple $list nested query structure', async (t) => {
   */
 })
 
-// TODO: sort not working?
+// TODO: $traverse with $field list
 test.serial.skip(
   'get - default sorting in $list with references',
   async (t) => {
@@ -695,8 +693,7 @@ test.serial.skip(
   }
 )
 
-// TODO: Tony check why it's repearint image
-test.serial.only('get - simple $list with $field option', async (t) => {
+test.serial('get - simple $list with $field option', async (t) => {
   await client.updateSchema({
     languages: ['en', 'de', 'nl'],
     types: {
