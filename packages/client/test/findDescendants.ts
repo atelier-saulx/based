@@ -68,7 +68,8 @@ test.beforeEach(async (t) => {
     },
   })
 
-  const team1 = await client.id({ type: 'team' })
+  const team1 = await client.set({ type: 'team', name: 'team1' })
+
   const amount = 50000
   const vids = 100
   const genMatches = (s = 0) => {

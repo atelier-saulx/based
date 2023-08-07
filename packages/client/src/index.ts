@@ -161,7 +161,7 @@ export class BasedDbClient extends Emitter {
         const nestedOpts = { ...value }
         if (path[path.length - 2] === 'children') {
           // TODO:
-          // nestedOpts.$noRoot = true
+          nestedOpts.$noRoot = true
           if (!nestedOpts.parents) {
             nestedOpts.parents = [$id]
           } else if (typeof nestedOpts.parents === 'string') {
