@@ -1163,10 +1163,7 @@ test.serial.skip(
   }
 )
 
-// TODO: $alias in get
-// TODO: options parse error
-// › Object.backtrack (src/get/parse/opts.ts:149:25)
-test.serial.skip('get - basic with many ids', async (t) => {
+test.serial('get - basic with many ids', async (t) => {
   await client.set({
     $id: 'viA',
     title: {
@@ -1238,15 +1235,11 @@ test.serial.skip('get - basic with many ids', async (t) => {
       id: true,
       title: true,
     }),
-    {
-      $isNull: true,
-    }
+    {}
   )
 })
 
-// TODO: options parse error
-// › Object.backtrack (src/get/parse/opts.ts:149:25)
-test.serial.skip('get - basic with non-priority language', async (t) => {
+test.serial('get - basic with non-priority language', async (t) => {
   await client.set({
     $id: 'viA',
     title: {
@@ -1729,8 +1722,7 @@ test.serial.skip(
   }
 )
 
-// TODO: record wildcard
-test.serial.skip('get - record with wildcard query', async (t) => {
+test.serial('get - record with wildcard query', async (t) => {
   await client.set({
     $id: 'viA',
     title: {
@@ -1818,8 +1810,7 @@ test.serial.skip('get - record with wildcard query', async (t) => {
   )
 })
 
-// TODO: record wildcard
-test.serial.skip('get - record with nested wildcard query', async (t) => {
+test.serial('get - record with nested wildcard query', async (t) => {
   await client.set({
     $id: 'viA',
     title: {
@@ -1961,6 +1952,4 @@ test.serial.skip('get - record with nested wildcard query', async (t) => {
       },
     }
   )
-
-  // TODO: add a find case with both and wildcard for fields thing
 })

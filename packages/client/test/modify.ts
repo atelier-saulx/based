@@ -1364,8 +1364,7 @@ test.serial.skip('simple $noRoot', async (t) => {
   })
 })
 
-// TODO: $alias in get
-test.serial.skip('no root in parents when adding nested', async (t) => {
+test.serial('no root in parents when adding nested', async (t) => {
   await client.set({
     $id: 'ma1',
     $language: 'en',
