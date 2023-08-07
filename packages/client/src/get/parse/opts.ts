@@ -19,8 +19,20 @@ export async function parseGetOpts(
   }>(
     ctx.client.schema,
     {
-      async init(value, schema) {
-        const $id = value.$id || 'root'
+      async init(value) {
+        const { $alias } = value
+
+        let $id = value.$id || 'root'
+        if ($alias) {
+          const aliases = Array.isArray($alias) ? $alias : [$alias]
+          const resolved = await ctx.client.command('resolve.nodeid', [
+            '',
+            ...aliases,
+          ])
+
+          $id = resolved?.[0]
+        }
+
         return {
           target: { $id, id: $id, type: 'node', defaultValues: [] },
         }
@@ -61,7 +73,7 @@ export async function parseGetOpts(
         }
 
         // main logic
-        let f = args.key === '$all' ? ['*'] : [args.key]
+        const f = args.key === '$all' ? ['*'] : [args.key]
 
         const field: Field = {
           type: 'field',
@@ -114,6 +126,23 @@ export async function parseGetOpts(
                   ...args.target,
                   $id: args.target.id,
                   id: value.$id,
+                  nestedPath: args.path,
+                },
+              }
+            } else if (value.$alias) {
+              const { $alias } = value
+              const aliases = Array.isArray($alias) ? $alias : [$alias]
+              const resolved = await this.command('resolve.nodeid', [
+                '',
+                ...aliases,
+              ])
+              const id = resolved?.[0]
+
+              return {
+                target: {
+                  ...args.target,
+                  $id: args.target.id,
+                  id,
                   nestedPath: args.path,
                 },
               }
