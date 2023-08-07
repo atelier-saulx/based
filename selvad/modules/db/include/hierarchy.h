@@ -339,6 +339,10 @@ int SelvaHierarchy_DelParents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);
 
+enum SelvaModify_SetFlags {
+    SELVA_MODIFY_SET_FLAG_NO_ROOT = 0x01,
+};
+
 /**
  * Set node relationships relative to other existing nodes.
  * Previously existing connections to and from other nodes are be removed.
@@ -353,6 +357,7 @@ int SelvaModify_SetHierarchy(
         const Selva_NodeId *parents,
         size_t nr_children,
         const Selva_NodeId *children,
+        enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out);
 
 /**
@@ -363,7 +368,8 @@ int SelvaModify_SetHierarchyParents(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents);
+        const Selva_NodeId *parents,
+        enum SelvaModify_SetFlags flags);
 
 /**
  * Set children of an existing node.
@@ -373,7 +379,8 @@ int SelvaModify_SetHierarchyChildren(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_children,
-        const Selva_NodeId *children);
+        const Selva_NodeId *children,
+        enum SelvaModify_SetFlags flags);
 
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,

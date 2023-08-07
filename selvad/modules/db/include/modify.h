@@ -129,7 +129,8 @@ int SelvaModify_ModifySet(
     struct SelvaHierarchyNode *node,
     struct SelvaObject *obj,
     const struct selva_string *field,
-    struct SelvaModify_OpSet *setOpts
+    struct SelvaModify_OpSet *setOpts,
+    unsigned modify_flags
 );
 
 int SelvaModify_ModifyDel(

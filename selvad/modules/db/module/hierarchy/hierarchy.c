@@ -183,7 +183,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
     SelvaSubscriptions_InitHierarchy(hierarchy);
     SelvaFindIndex_Init(hierarchy);
 
-    if (SelvaModify_SetHierarchy(hierarchy, ROOT_NODE_ID, 0, NULL, 0, NULL, NULL) < 0) {
+    if (SelvaModify_SetHierarchy(hierarchy, ROOT_NODE_ID, 0, NULL, 0, NULL, 0, NULL) < 0) {
         SelvaModify_DestroyHierarchy(hierarchy);
         hierarchy = NULL;
         goto fail;
@@ -715,6 +715,7 @@ static int cross_insert_children(
             err = SelvaModify_SetHierarchy(hierarchy, nodes[i],
                     0, NULL,
                     0, NULL,
+                    0,
                     &child);
             if (err < 0) {
                 SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a child \"%.*s\" for \"%.*s\". err: \"%s\"",
@@ -795,7 +796,8 @@ static int cross_insert_parents(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
         size_t n,
-        const Selva_NodeId *nodes) {
+        const Selva_NodeId *nodes,
+        enum SelvaModify_SetFlags flags) {
     const int send_events = isLoading();
     int res = 0;
 
@@ -815,10 +817,10 @@ static int cross_insert_parents(
         if (!parent) {
             int err;
 
-            /* RFE no_root is not propagated */
             err = SelvaModify_SetHierarchy(hierarchy, nodes[i],
-                    1, ((Selva_NodeId []){ ROOT_NODE_ID }),
+                    !(flags & SELVA_MODIFY_SET_FLAG_NO_ROOT), ((Selva_NodeId []){ ROOT_NODE_ID }),
                     0, NULL,
+                    0,
                     &parent);
             if (err < 0) {
                 SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a parent \"%.*s\" for \"%.*s\". err: \"%s\"",
@@ -1091,6 +1093,7 @@ int SelvaModify_SetHierarchy(
         const Selva_NodeId *parents,
         size_t nr_children,
         const Selva_NodeId *children,
+        enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out) {
     SelvaHierarchyNode *node;
     int isNewNode = 0;
@@ -1125,7 +1128,7 @@ int SelvaModify_SetHierarchy(
     } else {
         /*
          * Clear the existing node relationships.
-         * Note that we can't really tell the called how many relationships were
+         * Note that we can't really tell the caller how many relationships were
          * removed because there is only one count we return.
          */
         (void)removeRelationships(hierarchy, node, RELATIONSHIP_PARENT);
@@ -1137,7 +1140,7 @@ int SelvaModify_SetHierarchy(
      * RFE if isNewNode == 0 then errors are not handled properly as
      * we don't know how to rollback.
      */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents);
+    err = cross_insert_parents(hierarchy, node, nr_parents, parents, flags);
     if (err < 0) {
         if (isNewNode) {
             del_node(hierarchy, node);
@@ -1216,7 +1219,8 @@ int SelvaModify_SetHierarchyParents(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents) {
+        const Selva_NodeId *parents,
+        enum SelvaModify_SetFlags flags) {
     SelvaHierarchyNode *node;
     int err, res = 0;
 
@@ -1233,7 +1237,7 @@ int SelvaModify_SetHierarchyParents(
     /*
      * Set relationship relative to other nodes.
      */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents);
+    err = cross_insert_parents(hierarchy, node, nr_parents, parents, flags);
     if (err < 0) {
         return err;
     }
@@ -1255,7 +1259,8 @@ int SelvaModify_SetHierarchyChildren(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_children,
-        const Selva_NodeId *children) {
+        const Selva_NodeId *children,
+        enum SelvaModify_SetFlags) {
     SelvaHierarchyNode *node;
     int err, res = 0;
 
@@ -1360,7 +1365,7 @@ int SelvaModify_AddHierarchyP(
      * RFE if isNewNode == 0 then errors are not handled properly as
      * we don't know how to rollback.
      */
-    err = cross_insert_parents(hierarchy, node, nr_parents, parents);
+    err = cross_insert_parents(hierarchy, node, nr_parents, parents, 0);
     if (err < 0) {
         return err;
     }

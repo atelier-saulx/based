@@ -55,7 +55,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-test.serial.only('complex hierarchy on one set', async (t) => {
+test.serial('complex hierarchy on one set', async (t) => {
   await client.set({
     $id: 'maTest0001',
     title: { en: 'ma1' },
