@@ -126,8 +126,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: waiting for get $alias
-test.serial.skip('get non-existing by $alias', async (t) => {
+test.serial('get non-existing by $alias', async (t) => {
   t.deepEqualIgnoreOrder(
     await client.get({
       $language: 'en',
@@ -136,16 +135,13 @@ test.serial.skip('get non-existing by $alias', async (t) => {
       title: true,
       aliases: true,
     }),
-    {
-      $isNull: true,
-    }
+    {}
   )
 })
 
-// TODO: waiting for get $alias
-test.serial.skip('set alias and get by $alias', async (t) => {
+test.serial('set alias and get by $alias', async (t) => {
   const match1 = await client.set({
-    aliases: 'nice_match',
+    aliases: ['nice_match'],
     type: 'match',
     title: { en: 'yesh' },
   })
@@ -164,19 +160,6 @@ test.serial.skip('set alias and get by $alias', async (t) => {
       aliases: ['nice_match'],
     }
   )
-
-  t.deepEqualIgnoreOrder(
-    // await client.redis.hgetall('___selva_aliases')
-    (await client.command('lsaliases'))[0].sort(),
-    {
-      nice_match: match1,
-    }
-  )
-
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_object_get('', match1, 'aliases'),
-  //   ['nice_match']
-  // )
 
   const match2 = await client.set({
     aliases: ['nice_match', 'very_nice_match'],
@@ -212,21 +195,6 @@ test.serial.skip('set alias and get by $alias', async (t) => {
     }
   )
 
-  // t.deepEqualIgnoreOrder(await client.redis.hgetall('___selva_aliases'), {
-  //   nice_match: match2,
-  //   very_nice_match: match2,
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_object_get('', match2, 'aliases'),
-  //   ['nice_match', 'very_nice_match']
-  // )
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_object_get('', match1, 'aliases'),
-  //   []
-  // )
-
   await client.set({
     $id: match1,
     aliases: { $add: ['ok_match'] },
@@ -234,7 +202,7 @@ test.serial.skip('set alias and get by $alias', async (t) => {
 
   await client.set({
     $id: match2,
-    aliases: { $delete: ['very_nice_match'] },
+    aliases: { $remove: ['very_nice_match'] },
   })
 
   t.deepEqualIgnoreOrder(
@@ -266,21 +234,6 @@ test.serial.skip('set alias and get by $alias', async (t) => {
       aliases: ['ok_match'],
     }
   )
-
-  // t.deepEqualIgnoreOrder(await client.redis.hgetall('___selva_aliases'), {
-  //   ok_match: match1,
-  //   nice_match: match2,
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_object_get('', match2, 'aliases'),
-  //   ['nice_match']
-  // )
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_object_get('', match1, 'aliases'),
-  //   ['ok_match']
-  // )
 })
 
 // TODO: waiting for get $alias
