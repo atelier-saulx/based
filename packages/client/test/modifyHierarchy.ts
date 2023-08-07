@@ -59,8 +59,7 @@ test.afterEach(async (_t) => {
   await wait(300)
 })
 
-// TODO: parents: { $add } not working
-test.serial.skip('complex hierarchy on one set', async (t) => {
+test.serial.only('complex hierarchy on one set', async (t) => {
   await client.set({
     $id: 'maTest0001',
     title: { en: 'ma1' },
@@ -106,84 +105,50 @@ test.serial.skip('complex hierarchy on one set', async (t) => {
     ],
   })
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(
-  //     '___selva_hierarchy',
-  //     'maTest0001'
-  //   ),
-  //   ['root']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(
-  //     '___selva_hierarchy',
-  //     'maTest0011'
-  //   ),
-  //   ['maTest0001', 'maTest0002']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(
-  //     '___selva_hierarchy',
-  //     'maTest0012'
-  //   ),
-  //   ['maTest0001']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(
-  //     '___selva_hierarchy',
-  //     'maTest0013'
-  //   ),
-  //   ['maTest0001']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(
-  //     '___selva_hierarchy',
-  //     'maTest0021'
-  //   ),
-  //   ['maTest0011', 'maTest0013']
-  // )
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0001'
-  //   ),
-  //   ['maTest0011', 'maTest0012', 'maTest0013']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0002'
-  //   ),
-  //   ['maTest0011']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0011'
-  //   ),
-  //   ['maTest0021']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0012'
-  //   ),
-  //   []
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0013'
-  //   ),
-  //   ['maTest0021']
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_children(
-  //     '___selva_hierarchy',
-  //     'maTest0021'
-  //   ),
-  //   ['maTest0031']
-  // )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.parents', ['maTest0001']))[0],
+    ['root']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.parents', ['maTest0011']))[0],
+    ['maTest0001', 'maTest0002']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.parents', ['maTest0012']))[0],
+    ['maTest0001']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.parents', ['maTest0013']))[0],
+    ['maTest0001']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.parents', ['maTest0021']))[0],
+    ['maTest0011', 'maTest0013']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0001']))[0],
+    ['maTest0011', 'maTest0012', 'maTest0013']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0002']))[0],
+    ['maTest0011']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0011']))[0],
+    ['maTest0021']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0012']))[0],
+    []
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0013']))[0],
+    ['maTest0021']
+  )
+  t.deepEqualIgnoreOrder(
+    (await client.command('hierarchy.children', ['maTest0021']))[0],
+    ['maTest0031']
+  )
 })
 
 test.serial('complex hierarchy on two sets', async (t) => {

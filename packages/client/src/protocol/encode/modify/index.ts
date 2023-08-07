@@ -41,17 +41,11 @@ export const VALUE_ENCODERS = {
 }
 
 export function modify(payload: [nodeId: string, ...fields: any]) {
-  const [nodeId, fields] = payload
+  const [nodeId, flags, fields] = payload
 
-  const defs: EncodeDefinition = [
-    { type: 'id' },
-    { type: 'raw', rawType: SELVA_PROTO_STRING, bsize: 0 },
-  ]
+  const defs: EncodeDefinition = [{ type: 'id' }, { type: 'string' }]
 
-  const setFields: any[] = [
-    nodeId,
-    { type: 'raw', rawType: SELVA_PROTO_STRING, bsize: 0 },
-  ]
+  const setFields: any[] = [nodeId, flags]
 
   for (let i = 0; i < fields.length; i += 3) {
     const opType = fields[i]

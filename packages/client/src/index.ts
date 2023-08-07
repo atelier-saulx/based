@@ -128,6 +128,13 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
+    let flags: string = ''
+    // TODO: get this from target of setWalker
+    if (opts.$noRoot) {
+      flags = 'N'
+      delete opts.$noRoot // TODO: setWalker does not support $noRoot
+    }
+
     const { errors, collected, $id, $alias } = await setWalker(
       this.schema,
       opts,
@@ -139,8 +146,13 @@ export class BasedDbClient extends Emitter {
         const { path, target, value } = args
 
         const nestedOpts = { ...value }
-        if (path[path.length-2] === 'children' && !nestedOpts.parents) {
-          nestedOpts.parents = [target.$id]
+        if (path[path.length - 2] === 'children') {
+          nestedOpts.$noRoot = true
+          if (!nestedOpts.parents) {
+            nestedOpts.parents = { $add: [target.$id] }
+          } else if (nestedOpts.parents.$add) {
+            nestedOpts.parents.$add.push(target.$id)
+          }
         }
 
         if (opts.$language) {
@@ -196,7 +208,7 @@ export class BasedDbClient extends Emitter {
       return id
     }
 
-    const resp = await this.command('modify', [id, args])
+    const resp = await this.command('modify', [id, flags, args])
     const err = resp?.[0]?.find((x: any) => {
       return x instanceof Error
     })
