@@ -26,7 +26,7 @@ import {
   parseGetResult,
 } from './get'
 import genId from './id'
-import { deepCopy, deepMerge, deepMergeArrays, getByPath } from '@saulx/utils'
+import { deepCopy, deepMergeArrays } from '@saulx/utils'
 
 export * as protocol from './protocol'
 
