@@ -1,6 +1,7 @@
 import test from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
+import { wait } from '@saulx/utils'
 // import { wait } from '@saulx/utils'
 
 test.serial.only('set primitive fields', async (t) => {
@@ -418,4 +419,6 @@ test.serial.only('set primitive fields', async (t) => {
 
   client.destroy()
   await server.destroy()
+
+  await wait(300)
 })
