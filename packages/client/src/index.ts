@@ -128,10 +128,6 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
-    if (!opts.parents) {
-      opts.parents = ['root']
-    }
-
     let flags: string = ''
     // TODO: get this from target of setWalker
     if (opts.$noRoot) {
