@@ -143,7 +143,8 @@ static int update_hierarchy(
     SelvaHierarchy *hierarchy,
     const Selva_NodeId node_id,
     const char *field_str,
-    const struct SelvaModify_OpSet *setOpts
+    const struct SelvaModify_OpSet *setOpts,
+    unsigned modify_flags
 ) {
     /*
      * If the field starts with 'p' we assume "parents"; Otherwise "children".
@@ -153,6 +154,7 @@ static int update_hierarchy(
 
     if (setOpts->$value_len > 0) {
         const size_t nr_nodes = setOpts->$value_len / SELVA_NODE_ID_SIZE;
+        enum SelvaModify_SetFlags set_flags = FISSET_NO_ROOT(modify_flags) ? SELVA_MODIFY_SET_FLAG_NO_ROOT : 0;
         int err = 0;
 
         if (setOpts->$value_len % SELVA_NODE_ID_SIZE) {
@@ -171,7 +173,8 @@ static int update_hierarchy(
 #endif
 
             err = SelvaModify_SetHierarchyParents(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str);
+                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str,
+                    set_flags);
         } else { /* children */
 #if 0
             SELVA_LOG(SELVA_LOGL_DBG, "Set children of %.*s nr_nodes: %zu",
@@ -184,7 +187,8 @@ static int update_hierarchy(
 #endif
 
             err = SelvaModify_SetHierarchyChildren(hierarchy, node_id,
-                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str);
+                    nr_nodes, (const Selva_NodeId *)setOpts->$value_str,
+                    set_flags);
         }
 
         return err;
@@ -801,7 +805,8 @@ int SelvaModify_ModifySet(
     struct SelvaHierarchyNode *node,
     struct SelvaObject *obj,
     const struct selva_string *field,
-    struct SelvaModify_OpSet *setOpts
+    struct SelvaModify_OpSet *setOpts,
+    unsigned modify_flags
 ) {
     TO_STR(field);
 
@@ -829,7 +834,7 @@ int SelvaModify_ModifySet(
                 return err;
             }
         } else if (isChildren || isParents) {
-            return update_hierarchy(hierarchy, node_id, field_str, setOpts);
+            return update_hierarchy(hierarchy, node_id, field_str, setOpts, modify_flags);
         } else {
             /*
              * Other graph fields are dynamic and implemented separately
@@ -903,9 +908,9 @@ int SelvaModify_ModifyDel(
     return err > 0 ? 0 : err;
 }
 
-static int parse_flags(const struct selva_string *arg) {
+static unsigned parse_flags(const struct selva_string *arg) {
     TO_STR(arg);
-    int flags = 0;
+    unsigned flags = 0;
 
     for (size_t i = 0; i < arg_len; i++) {
         flags |= arg_str[i] == 'N' ? FLAG_NO_ROOT : 0;
@@ -1194,7 +1199,8 @@ static enum selva_op_repl_state modify_op(
         struct SelvaHierarchyNode *node,
         char type_code,
         struct selva_string *field,
-        struct selva_string *value) {
+        struct selva_string *value,
+        unsigned modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field, value);
 
@@ -1244,7 +1250,7 @@ static enum selva_op_repl_state modify_op(
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
 
-        err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, field, setOpts);
+        err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, field, setOpts, modify_flags);
         if (err == 0) {
             selva_send_str(resp, "OK", 2);
             return SELVA_OP_REPL_STATE_UNCHANGED;
@@ -1748,7 +1754,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
 
         const size_t nr_parents = !FISSET_NO_ROOT(flags);
 
-        err = SelvaModify_SetHierarchy(hierarchy, nodeId, nr_parents, ((Selva_NodeId []){ ROOT_NODE_ID }), 0, NULL, &node);
+        err = SelvaModify_SetHierarchy(hierarchy, nodeId, nr_parents, ((Selva_NodeId []){ ROOT_NODE_ID }), 0, NULL, 0, &node);
         if (err < 0) {
             selva_send_errorf(resp, err,"ERR Failed to initialize the node hierarchy for id: \"%.*s\"", (int)SELVA_NODE_ID_SIZE, nodeId);
             return;
@@ -1912,7 +1918,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         } else if (type_code == SELVA_MODIFY_ARG_OP_HLL) {
             repl_state = modify_hll(resp, node, field, value);
         } else {
-            repl_state = modify_op(&fin, resp, hierarchy, nodeId, node, type_code, field, value);
+            repl_state = modify_op(&fin, resp, hierarchy, nodeId, node, type_code, field, value, flags);
         }
 
         if (repl_state == SELVA_OP_REPL_STATE_REPLICATE) {
@@ -1960,7 +1966,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
                 .$value_len = 0,
             };
 
-            err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, aliases_field, &opSet);
+            err = SelvaModify_ModifySet(hierarchy, nodeId, node, obj, aliases_field, &opSet, flags);
             if (err < 0) {
                 /*
                  * Since we are already at the end of the command, it's next to
