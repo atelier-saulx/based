@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
+import { wait } from '@saulx/utils'
 import './assertions'
 
 let srv: SelvaServer
@@ -51,6 +52,7 @@ test.beforeEach(async (t) => {
 test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 test.serial('find - by type', async (t) => {

@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import './assertions'
+import { wait } from '@saulx/utils'
 
 let srv
 let port: number
@@ -53,6 +54,7 @@ test.beforeEach(async (t) => {
 test.afterEach(async (t) => {
   client.destroy()
   await srv.destroy()
+  await wait(300)
 })
 
 // TODO: needs .$find.$find support

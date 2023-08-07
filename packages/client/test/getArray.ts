@@ -202,6 +202,7 @@ test.beforeEach(async (t) => {
 test.after(async (t) => {
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 // TODO: traversing object arrays

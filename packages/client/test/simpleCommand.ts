@@ -28,6 +28,7 @@ test.serial('ping', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
@@ -52,6 +53,7 @@ test.serial('echo', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
@@ -87,6 +89,7 @@ test.serial('object.set and get', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
@@ -135,6 +138,7 @@ test.serial('object.set wrong node', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
@@ -177,6 +181,7 @@ test.serial('object.set big multi-frame string', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
@@ -276,6 +281,7 @@ test.serial('modify and and object.get', async (t) => {
 
   client.destroy()
   await server.destroy()
+  await wait(300)
 
   t.true(true)
 })
