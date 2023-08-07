@@ -8,7 +8,7 @@ import getPort from 'get-port'
 
 let srv: SelvaServer
 let client: BasedDbClient
-let port
+let port: number
 test.beforeEach(async (t) => {
   port = await getPort()
   console.log('origin')
