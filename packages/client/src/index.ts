@@ -149,9 +149,23 @@ export class BasedDbClient extends Emitter {
         if (path[path.length - 2] === 'children') {
           nestedOpts.$noRoot = true
           if (!nestedOpts.parents) {
-            nestedOpts.parents = { $add: [target.$id] }
+            nestedOpts.parents = [target.$id]
+          } else if (typeof nestedOpts.parents === 'string') {
+            nestedOpts.parents = [nestedOpts.parents, target.$id]
           } else if (nestedOpts.parents.$add) {
+            if (!Array.isArray(nestedOpts.parents.$add)) {
+              nestedOpts.parents.$add = [nestedOpts.parents.$add]
+            }
+
             nestedOpts.parents.$add.push(target.$id)
+          } else if (nestedOpts.parents.$delete) {
+            nestedOpts.parents.$add.push(id)
+          } else if (nestedOpts.parents.$value) {
+            if (typeof nestedOpts.parents.$value === 'string') {
+              nestedOpts.parents.$value = [nestedOpts.parents.$value, id]
+            } else {
+              nestedOpts.parents.$value.push(id)
+            }
           }
         }
 
