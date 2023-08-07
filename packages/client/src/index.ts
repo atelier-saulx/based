@@ -84,6 +84,8 @@ export class BasedDbClient extends Emitter {
       types.push([type.prefix, typeName])
 
       this.schema.types[typeName].fields.id = { type: 'string' }
+      this.schema.types[typeName].fields.createdAt = { type: 'timestamp' }
+      this.schema.types[typeName].fields.updatedAt = { type: 'timestamp' }
       this.schema.types[typeName].fields.type = { type: 'string' }
       this.schema.types[typeName].fields.parents = { type: 'references' }
       this.schema.types[typeName].fields.children = { type: 'references' }

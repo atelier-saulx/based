@@ -202,10 +202,11 @@ test.beforeEach(async (t) => {
 test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 // TODO
-test.skip('get null', async (t) => {
+test.serial.skip('get null', async (t) => {
   await t.throwsAsync(client.get(null))
 })
 
@@ -603,6 +604,8 @@ test.serial('get - field with empty array', async (t) => {
     await client.get({
       $id: id,
       $all: true,
+      updatedAt: false,
+      createdAt: false,
     }),
     {
       id,
@@ -641,6 +644,8 @@ test.serial('get - references', async (t) => {
     await client.get({
       $id: id2,
       $all: true,
+      updatedAt: false,
+      createdAt: false,
     }),
     {
       id: id2,
