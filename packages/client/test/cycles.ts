@@ -44,8 +44,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for delete
-test.serial.skip('children cycle: delete root', async (t) => {
+test.serial('children cycle: delete root', async (t) => {
   await client.set({
     $id: 'cy1',
     value: 1,
@@ -69,20 +68,20 @@ test.serial.skip('children cycle: delete root', async (t) => {
 
   // Note that $recursive is required to delete cycles that are descendants of the
   // deleted node.
-  // TODO: waiting for delete
-  // t.deepEqualIgnoreOrder(await client.delete({ $id: 'root', $returnIds: true, $recursive: true }), [
-  //   'root', 'cy1', 'cy2', 'cy3',
-  // ])
-  t.deepEqual(await client.get({ $id: 'root', descendants: true }), {
-    descendants: [],
-  })
-  t.deepEqual(await client.get({ $id: 'cy1', id: true }), { $isNull: true })
-  t.deepEqual(await client.get({ $id: 'cy2', id: true }), { $isNull: true })
-  t.deepEqual(await client.get({ $id: 'cy3', id: true }), { $isNull: true })
+  t.deepEqualIgnoreOrder(
+    await client.delete({ $id: 'root', $returnIds: true, $recursive: true }),
+    ['root', 'cy1', 'cy2', 'cy3']
+  )
+  t.deepEqual(
+    await client.get({ $id: 'root', descendants: { id: true, $list: true } }),
+    { descendants: [] }
+  )
+  t.deepEqual(await client.get({ $id: 'cy1', id: true }), {})
+  t.deepEqual(await client.get({ $id: 'cy2', id: true }), {})
+  t.deepEqual(await client.get({ $id: 'cy3', id: true }), {})
 })
 
-// TODO: waiting for delete
-test.serial.skip('children cycle: delete first node', async (t) => {
+test.serial('children cycle: delete first node', async (t) => {
   await client.set({
     $id: 'cy1',
     value: 1,
@@ -104,19 +103,20 @@ test.serial.skip('children cycle: delete first node', async (t) => {
     children: ['cy1'],
   })
 
-  // TODO: waiting for delete
-  // t.deepEqualIgnoreOrder(await client.delete({ $id: 'cy1', $returnIds: true }), [
-  //   'cy1', 'cy2', 'cy3',
-  // ])
-  t.deepEqual(await client.get({ $id: 'root', descendants: true }), {
-    descendants: [],
-  })
-  t.deepEqual(await client.get({ $id: 'cy1', id: true }), { $isNull: true })
-  t.deepEqual(await client.get({ $id: 'cy2', id: true }), { $isNull: true })
-  t.deepEqual(await client.get({ $id: 'cy3', id: true }), { $isNull: true })
+  t.deepEqualIgnoreOrder(
+    await client.delete({ $id: 'cy1', $returnIds: true }),
+    ['cy1', 'cy2', 'cy3']
+  )
+  t.deepEqual(
+    await client.get({ $id: 'root', descendants: { id: true, $list: true } }),
+    { descendants: [] }
+  )
+  t.deepEqual(await client.get({ $id: 'cy1', id: true }), {})
+  t.deepEqual(await client.get({ $id: 'cy2', id: true }), {})
+  t.deepEqual(await client.get({ $id: 'cy3', id: true }), {})
 })
 
-// TODO: waiting for delete
+// TODO: single ref parse error (Jim)
 test.serial.skip('delete ref', async (t) => {
   await client.set({
     $id: 'cy1',
@@ -126,6 +126,7 @@ test.serial.skip('delete ref', async (t) => {
       value: 2,
       next: {
         $id: 'cy3',
+        value: 3,
       },
     },
   })
@@ -157,11 +158,11 @@ test.serial.skip('delete ref', async (t) => {
     { next: 'cy1' }
   )
 
-  // TODO: waiting for delete
-  // t.deepEqualIgnoreOrder(await client.delete({ $id: 'cy1', $returnIds: true }), [
-  //   'cy1'
-  // ])
-  t.deepEqual(await client.get({ $id: 'cy1', id: true }), { $isNull: true })
+  t.deepEqualIgnoreOrder(
+    await client.delete({ $id: 'cy1', $returnIds: true }),
+    ['cy1']
+  )
+  t.deepEqual(await client.get({ $id: 'cy1', id: true }), {})
   t.deepEqual(await client.get({ $id: 'cy2', id: true }), { id: 'cy2' })
   t.deepEqual(await client.get({ $id: 'cy3', id: true }), { id: 'cy3' })
 })

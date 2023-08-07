@@ -217,6 +217,24 @@ export class BasedDbClient extends Emitter {
     return resp?.[0]?.[0]
   }
 
+  async delete({
+    $id,
+    $recursive = false,
+    $returnIds = false,
+  }: {
+    $id: string
+    $returnIds?: boolean
+    $recursive?: boolean
+  }): Promise<any> {
+    if (!$id || typeof $id !== 'string') {
+      throw new Error(`Invalid id ${$id}`)
+    }
+
+    const flags = `${($recursive && 'F') || ''}${($returnIds && 'I') || ''}`
+    const resp = await this.command('hierarchy.del', [flags, $id])
+    return resp?.[0]
+  }
+
   async get(opts: any): Promise<any> {
     const ctx: ExecContext = {
       client: this,
