@@ -146,28 +146,29 @@ export class BasedDbClient extends Emitter {
         const { path, target, value } = args
 
         const nestedOpts = { ...value }
-        if (path[path.length - 2] === 'children') {
-          nestedOpts.$noRoot = true
-          if (!nestedOpts.parents) {
-            nestedOpts.parents = [target.$id]
-          } else if (typeof nestedOpts.parents === 'string') {
-            nestedOpts.parents = [nestedOpts.parents, target.$id]
-          } else if (nestedOpts.parents.$add) {
-            if (!Array.isArray(nestedOpts.parents.$add)) {
-              nestedOpts.parents.$add = [nestedOpts.parents.$add]
-            }
+        // TODO: fix this crap
+        // if (path[path.length - 2] === 'children') {
+        //   nestedOpts.$noRoot = true
+        //   if (!nestedOpts.parents) {
+        //     nestedOpts.parents = [target.$id]
+        //   } else if (typeof nestedOpts.parents === 'string') {
+        //     nestedOpts.parents = [nestedOpts.parents, target.$id]
+        //   } else if (nestedOpts.parents.$add) {
+        //     if (!Array.isArray(nestedOpts.parents.$add)) {
+        //       nestedOpts.parents.$add = [nestedOpts.parents.$add]
+        //     }
 
-            nestedOpts.parents.$add.push(target.$id)
-          } else if (nestedOpts.parents.$delete) {
-            nestedOpts.parents.$add.push(id)
-          } else if (nestedOpts.parents.$value) {
-            if (typeof nestedOpts.parents.$value === 'string') {
-              nestedOpts.parents.$value = [nestedOpts.parents.$value, id]
-            } else {
-              nestedOpts.parents.$value.push(id)
-            }
-          }
-        }
+        //     nestedOpts.parents.$add.push(target.$id)
+        //   } else if (nestedOpts.parents.$delete) {
+        //     nestedOpts.parents.$add.push(id)
+        //   } else if (nestedOpts.parents.$value) {
+        //     if (typeof nestedOpts.parents.$value === 'string') {
+        //       nestedOpts.parents.$value = [nestedOpts.parents.$value, id]
+        //     } else {
+        //       nestedOpts.parents.$value.push(id)
+        //     }
+        //   }
+        // }
 
         if (opts.$language) {
           nestedOpts.$language = opts.$language
