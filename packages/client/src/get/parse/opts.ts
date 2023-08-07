@@ -20,18 +20,7 @@ export async function parseGetOpts(
     ctx.client.schema,
     {
       async init(value) {
-        const { $alias } = value
-
-        let $id = value.$id || 'root'
-        if ($alias) {
-          const aliases = Array.isArray($alias) ? $alias : [$alias]
-          const resolved = await ctx.client.command('resolve.nodeid', [
-            '',
-            ...aliases,
-          ])
-
-          $id = resolved?.[0]
-        }
+        const $id = value.$id || 'root'
 
         return {
           target: { $id, id: $id, type: 'node', defaultValues: [] },

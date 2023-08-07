@@ -135,6 +135,9 @@ export class BasedDbClient extends Emitter {
       const args = Array.isArray($alias) ? $alias : [$alias]
       const resolved = await this.command('resolve.nodeid', ['', ...args])
       $id = resolved?.[0]
+      if (!$id && !opts.aliases) {
+        opts.aliases = { $add: args }
+      }
     }
 
     if (!$id) {
@@ -219,11 +222,26 @@ export class BasedDbClient extends Emitter {
       client: this,
     }
 
-    if (opts.$language) {
-      ctx.lang = opts.$language
+    let { $id, $language, $alias } = opts
+    if ($alias) {
+      const aliases = Array.isArray($alias) ? $alias : [$alias]
+      const resolved = await ctx.client.command('resolve.nodeid', [
+        '',
+        ...aliases,
+      ])
+
+      $id = resolved?.[0]
     }
 
-    let { cmds, defaults } = await parseGetOpts(ctx, opts)
+    if (!$id) {
+      return {}
+    }
+
+    if ($language) {
+      ctx.lang = $language
+    }
+
+    let { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
     console.dir({ cmds, defaults }, { depth: 8 })
 
     const nestedIds: any[] = []
