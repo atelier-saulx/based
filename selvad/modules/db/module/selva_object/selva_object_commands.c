@@ -135,18 +135,19 @@ void SelvaObject_GetCommand(struct selva_server_response_out *resp, const void *
     __auto_finalizer struct finalizer fin;
     struct selva_string *lang;
     Selva_NodeId node_id;
-    struct selva_string **okeys;
+    const char *okey_str = NULL;
+    size_t okey_len = 0;
     int argc;
     struct SelvaHierarchyNode *node;
     struct SelvaObject *obj;
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%p, %" SELVA_SCA_NODE_ID ", ...",
+    argc = selva_proto_scanf(&fin, buf, len, "%p, %" SELVA_SCA_NODE_ID ", %.*s",
                              &lang,
                              &node_id,
-                             &okeys);
-    if (argc < 2) {
+                             &okey_len, &okey_str);
+    if (argc < 2 || argc > 3) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
         } else {
@@ -163,51 +164,33 @@ void SelvaObject_GetCommand(struct selva_server_response_out *resp, const void *
 
     obj = SelvaHierarchy_GetNodeObject(node);
 
-    if (argc == 2) {
-        (void)SelvaObject_ReplyWithObjectStr(resp, lang, obj, NULL, 0, 0);
-        return;
-    }
+    if (okey_len && strstr(okey_str, ".*.")) {
+        int err;
+        long resp_count = 0;
 
-    for (int i = 0; i < argc - 2; i++) {
-        size_t okey_len;
-        const char *okey_str = selva_string_to_str(okeys[i], &okey_len);
-
-        if (strstr(okey_str, ".*.")) {
-            int err;
-            long resp_count = 0;
-
-            selva_send_array(resp, -1);
-            err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, okey_str, okey_len,
-                                                   &resp_count, -1,
-                                                   SELVA_OBJECT_REPLY_SPLICE_FLAG);
-            if (err == SELVA_ENOENT) {
-                /* Keep looking. */
-                selva_send_array_end(resp);
-                continue;
-            } else if (err) {
-                selva_send_errorf(resp, err, "Wildcard failed");
-                selva_send_array_end(resp);
-                return;
-            }
-
+        selva_send_array(resp, -1);
+        err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, okey_str, okey_len,
+                                               &resp_count, -1,
+                                               SELVA_OBJECT_REPLY_SPLICE_FLAG);
+        if (err == SELVA_ENOENT) {
             selva_send_array_end(resp);
-        } else {
-            int err;
-
-            err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, okey_str, okey_len, 0);
-            if (err == SELVA_ENOENT) {
-                /* Keep looking. */
-                continue;
-            } else if (err) {
-                selva_send_error(resp, err, NULL, 0);
-                return;
-            }
+        } else if (err) {
+            selva_send_errorf(resp, err, "Wildcard failed");
+            selva_send_array_end(resp);
+        } else { /* found */
+            selva_send_array_end(resp);
         }
 
-        return;
-    }
+    } else {
+        int err;
 
-    selva_send_null(resp);
+        err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, okey_str, okey_len, 0);
+        if (err == SELVA_ENOENT) {
+            selva_send_null(resp);
+        } else if (err) {
+            selva_send_error(resp, err, NULL, 0);
+        }
+    }
 }
 
 void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
