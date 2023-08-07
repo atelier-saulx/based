@@ -130,6 +130,17 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
+    let { $id, $alias } = opts
+    if (!$id && $alias) {
+      const args = Array.isArray($alias) ? $alias : [$alias]
+      const resolved = await this.command('resolve.nodeid', ['', ...args])
+      $id = resolved?.[0]
+    }
+
+    if (!$id) {
+      $id = genId(this.schema, opts.type)
+    }
+
     let flags: string = ''
     // TODO: get this from target of setWalker
     if (opts.$noRoot) {
@@ -137,7 +148,7 @@ export class BasedDbClient extends Emitter {
       delete opts.$noRoot // TODO: setWalker does not support $noRoot
     }
 
-    const { errors, collected, $id, $alias } = await setWalker(
+    const { errors, collected } = await setWalker(
       this.schema,
       opts,
       async (args, type) => {
@@ -145,32 +156,32 @@ export class BasedDbClient extends Emitter {
           throw new Error(`Unsupported nested operation: ${type}`)
         }
 
-        const { path, target, value } = args
+        const { path, value } = args
 
         const nestedOpts = { ...value }
-        // TODO: fix this crap
-        // if (path[path.length - 2] === 'children') {
-        //   nestedOpts.$noRoot = true
-        //   if (!nestedOpts.parents) {
-        //     nestedOpts.parents = [target.$id]
-        //   } else if (typeof nestedOpts.parents === 'string') {
-        //     nestedOpts.parents = [nestedOpts.parents, target.$id]
-        //   } else if (nestedOpts.parents.$add) {
-        //     if (!Array.isArray(nestedOpts.parents.$add)) {
-        //       nestedOpts.parents.$add = [nestedOpts.parents.$add]
-        //     }
+        if (path[path.length - 2] === 'children') {
+          // TODO:
+          // nestedOpts.$noRoot = true
+          if (!nestedOpts.parents) {
+            nestedOpts.parents = [$id]
+          } else if (typeof nestedOpts.parents === 'string') {
+            nestedOpts.parents = [nestedOpts.parents, $id]
+          } else if (nestedOpts.parents.$add) {
+            if (!Array.isArray(nestedOpts.parents.$add)) {
+              nestedOpts.parents.$add = [nestedOpts.parents.$add]
+            }
 
-        //     nestedOpts.parents.$add.push(target.$id)
-        //   } else if (nestedOpts.parents.$delete) {
-        //     nestedOpts.parents.$add.push(id)
-        //   } else if (nestedOpts.parents.$value) {
-        //     if (typeof nestedOpts.parents.$value === 'string') {
-        //       nestedOpts.parents.$value = [nestedOpts.parents.$value, id]
-        //     } else {
-        //       nestedOpts.parents.$value.push(id)
-        //     }
-        //   }
-        // }
+            nestedOpts.parents.$add.push($id)
+          } else if (nestedOpts.parents.$delete) {
+            nestedOpts.parents.$add.push($id)
+          } else if (nestedOpts.parents.$value) {
+            if (typeof nestedOpts.parents.$value === 'string') {
+              nestedOpts.parents.$value = [nestedOpts.parents.$value, $id]
+            } else {
+              nestedOpts.parents.$value.push($id)
+            }
+          }
+        }
 
         if (opts.$language) {
           nestedOpts.$language = opts.$language
@@ -210,22 +221,11 @@ export class BasedDbClient extends Emitter {
       }
     })
 
-    let id = $id
-    if (!id && $alias) {
-      const args = Array.isArray($alias) ? $alias : [$alias]
-      const resolved = await this.command('resolve.nodeid', ['', ...args])
-      id = resolved?.[0]
-    }
-
-    if (!id) {
-      id = genId(this.schema, opts.type)
-    }
-
     if (!args.length) {
-      return id
+      return $id
     }
 
-    const resp = await this.command('modify', [id, flags, args])
+    const resp = await this.command('modify', [$id, flags, args])
     const err = resp?.[0]?.find((x: any) => {
       return x instanceof Error
     })
