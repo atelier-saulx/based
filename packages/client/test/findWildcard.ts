@@ -171,6 +171,10 @@ test.serial('find - with wildcard', async (t) => {
         },
       },
       $list: {
+        $sort: {
+          $field: 'name',
+          $order: 'asc',
+        },
         $find: {
           $traverse: 'children',
           $filter: [
@@ -184,24 +188,21 @@ test.serial('find - with wildcard', async (t) => {
       },
     },
   })
-  console.info(JSON.stringify({ r }, null, 2))
-  t.deepEqualIgnoreOrder(r, {
-    items: [
-      {
-        name: 'match 1',
-        record: {
-          obj: { a: 'abba', b: 'babba' },
-          obj2: { a: 'abba2', b: 'babba2' },
-        },
-      },
-      {
-        name: 'match 2',
-        record: {
-          obj: { a: '2_abba', b: '2_babba' },
-          obj2: { a: '2_abba2', b: '2_babba2' },
-        },
-      },
-    ],
+  console.info(JSON.stringify({ hmmwut: r }, null, 2))
+  t.deepEqualIgnoreOrder(r.items[0], {
+    name: 'match 1',
+    record: {
+      obj: { a: 'abba', b: 'babba' },
+      obj2: { a: 'abba2', b: 'babba2' },
+    },
+  })
+
+  t.deepEqualIgnoreOrder(r.items[1], {
+    name: 'match 2',
+    record: {
+      obj: { a: '2_abba', b: '2_babba' },
+      obj2: { a: '2_abba2', b: '2_babba2' },
+    },
   })
 })
 
