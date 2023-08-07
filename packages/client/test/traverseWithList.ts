@@ -58,8 +58,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: traverse list not working
-test.serial.skip('get - simple $list with id $traverse', async (t) => {
+test.serial('get - simple $list with id $traverse', async (t) => {
   const children: any = []
 
   for (let i = 0; i < 100; i++) {
