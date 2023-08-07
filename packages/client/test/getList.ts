@@ -25,10 +25,9 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
 test.serial('get - simple $list', async (t) => {
