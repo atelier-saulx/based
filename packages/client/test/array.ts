@@ -52,7 +52,9 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: waiting for delete
+// TODO: $delete in array $assign is parsing too far (Jim)
+//        'formFields[0].title.$delete',
+//         true,
 test.serial.skip('can use $delete inside array', async (t) => {
   const id = await client.set({
     $language: 'en',
