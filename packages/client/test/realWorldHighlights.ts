@@ -3,15 +3,16 @@ import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import './assertions'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
 let srv
 let port: number
 let client = new BasedDbClient()
 
 test.beforeEach(async (t) => {
-  port = 8081
+  port = await getPort()
   srv = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
   client.connect({ port, host: '127.0.0.1' })

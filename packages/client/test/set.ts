@@ -2,18 +2,20 @@ import test from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 // import { wait } from '@saulx/utils'
 
 test.serial.only('set primitive fields', async (t) => {
+  const port = await getPort()
   const server = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8081,
+    port,
     host: '127.0.0.1',
   })
 

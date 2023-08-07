@@ -8,6 +8,7 @@ import './assertions'
 import { createRecord } from 'data-record'
 import { SelvaMergeStrategy, SelvaTraversal } from '../src/protocol'
 import { doubleDef } from '../src/protocol/encode/modify/types'
+import getPort from 'get-port'
 
 const find = async ({ client, dir, id }) => {
   return client.command('hierarchy.find', [
@@ -30,17 +31,19 @@ export function readDouble(x) {
 
 let srv: SelvaServer
 let client: BasedDbClient
+let port
 test.beforeEach(async (_t) => {
+  port = await getPort()
   console.log('origin')
   srv = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
 
   console.log('connecting')
   client = new BasedDbClient()
   client.connect({
-    port: 8081,
+    port,
     host: '127.0.0.1',
   })
 

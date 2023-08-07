@@ -5,11 +5,13 @@ import { SelvaServer } from '../../server/dist/server'
 import { deepCopy, wait } from '@saulx/utils'
 import { worker } from './assertions/utils'
 import './assertions'
+import getPort from 'get-port'
 
 let srv: SelvaServer
 let client: BasedDbClient
-const port = 8081
+let port
 test.beforeEach(async (t) => {
+  port = await getPort()
   console.log('origin')
   srv = await startOrigin({
     port,

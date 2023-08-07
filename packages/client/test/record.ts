@@ -4,20 +4,23 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
+import getPort from 'get-port'
 
 let srv: SelvaServer
 let client: BasedDbClient
+let port
 test.beforeEach(async (_t) => {
+  port = await getPort()
   console.log('origin')
   srv = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
 
   console.log('connecting')
   client = new BasedDbClient()
   client.connect({
-    port: 8081,
+    port,
     host: '127.0.0.1',
   })
 

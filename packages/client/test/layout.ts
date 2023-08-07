@@ -4,11 +4,13 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
+import getPort from 'get-port'
 
 let srv: SelvaServer
 let client: BasedDbClient
-const port = 8081
+let port = 8081
 test.beforeEach(async (t) => {
+  port = await getPort()
   console.log('origin')
   srv = await startOrigin({
     port,
