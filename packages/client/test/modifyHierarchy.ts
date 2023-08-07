@@ -1,13 +1,9 @@
 import test from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
-import { readValue } from 'data-record'
 import './assertions'
-import { createRecord } from 'data-record'
-import { SelvaMergeStrategy, SelvaTraversal } from '../src/protocol'
-import { doubleDef } from '../src/protocol/encode/modify/types'
 
 let srv: SelvaServer
 let client: BasedDbClient
