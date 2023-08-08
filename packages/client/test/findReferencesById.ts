@@ -185,7 +185,7 @@ test.serial('find - references', async (t) => {
     { value: 2, name: 'match0' },
   ])
 
-  // TODO: $find.$find
+  // TODO: deduplication in nested finds of old selva? not in new?
   // const { items: relatedMatchesLeagues } = await client.get({
   //   $id: matches[0].id,
   //   items: {
