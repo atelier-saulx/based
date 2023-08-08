@@ -101,16 +101,9 @@ function parseObjFields(
 
     const [alias, rest] = f.split('@')
 
-    let n: any = obj
     const parts = (rest ?? alias).split('.')
     for (let i = 0; i < parts.length - 1; i++) {
       const s = parts[i]
-
-      if (!n[s]) {
-        n[s] = {}
-      }
-
-      n = n[s]
 
       if ((<BasedSchemaFieldObject>fieldSchema).properties) {
         fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[s]

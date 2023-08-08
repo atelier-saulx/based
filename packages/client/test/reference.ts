@@ -291,7 +291,7 @@ test.serial('singular reference $field', async (t) => {
   )
 })
 
-// TODO: parents: { $add } not working
+// TODO: $inherit
 test.serial.skip('singular reference inherit reference', async (t) => {
   await client.set({
     $id: 'clB',
@@ -359,9 +359,7 @@ test.serial.skip('singular reference inherit reference', async (t) => {
   )
 })
 
-// TODO: references not working
-// TODO: sort not working?
-test.serial.skip('list of simple singular reference', async (t) => {
+test.serial('list of simple singular reference', async (t) => {
   const match1 = await client.set({
     $id: 'maA',
     title: {

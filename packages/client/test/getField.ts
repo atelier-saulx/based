@@ -123,13 +123,12 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: when using $field original field stays in get query
-test.serial.skip('get - simple alias', async (t) => {
+test.serial('get - simple alias', async (t) => {
   await client.set({
     $id: 'viA',
     title: {

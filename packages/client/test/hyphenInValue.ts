@@ -41,7 +41,7 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (_t) => {
+test.afterEeach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
