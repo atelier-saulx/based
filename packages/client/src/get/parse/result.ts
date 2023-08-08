@@ -3,10 +3,18 @@ import {
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
   BasedSchemaFieldSet,
+  BasedSchemaType,
 } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { parseAlias } from '../../util'
 import { ExecContext, GetCommand } from '../types'
+
+function getTypeSchema(ctx: ExecContext, id: string): BasedSchemaType {
+  const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+  return typeName === 'root'
+    ? ctx.client.schema.root
+    : ctx.client.schema.types[typeName]
+}
 
 export function parseGetResult(
   ctx: ExecContext,
@@ -54,12 +62,7 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
 
     const [id, fields]: [string, any[]] = row
 
-    const typeName = rowCtx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
-    const typeSchema =
-      typeName === 'root'
-        ? rowCtx.client.schema.root
-        : rowCtx.client.schema.types[typeName]
-
+    const typeSchema = getTypeSchema(rowCtx, id)
     if (!typeSchema) {
       return {}
     }
@@ -213,8 +216,7 @@ const FIELD_PARSERS: Record<
 
       if (ary.length > 1) {
         const [, id, ...fields] = ary
-        const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
-        const typeSchema = ctx.client.schema.types[typeName]
+        const typeSchema = getTypeSchema(ctx, id)
         const obj = parseObjFields(
           ctx,
           { type: 'object', properties: typeSchema.fields },

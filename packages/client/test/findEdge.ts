@@ -28,6 +28,10 @@ test.beforeEach(async (_t) => {
 
   await client.updateSchema({
     languages: ['en'],
+    root: {
+      prefix: 'ro',
+      fields: {},
+    },
     types: {
       myclass: {
         prefix: 'cl',
@@ -73,14 +77,12 @@ test.beforeEach(async (_t) => {
   }
 })
 
-test.after(async (_t) => {
+test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $add not implemented
-// message: 'value.$add.map is not a function'
-test.serial.skip('find', async (t) => {
+test.serial('find', async (t) => {
   // simple nested - single query
 
   try {

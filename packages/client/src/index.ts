@@ -159,7 +159,7 @@ export class BasedDbClient extends Emitter {
           throw new Error(`Unsupported nested operation: ${type}`)
         }
 
-        const { path, value } = args
+        const { value } = args
 
         const nestedOpts = { ...value, $noRoot: true }
 

@@ -78,8 +78,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: parents: { $add } not working
-test.serial.skip('get nested results', async (t) => {
+test.serial('get nested results', async (t) => {
   const matches: any = []
   const teams: any = []
 
@@ -93,12 +92,6 @@ test.serial.skip('get nested results', async (t) => {
 
   await Promise.all(teams.map((t) => client.set(t)))
 
-  const league1Id = await client.set({
-    type: 'league',
-    name: 'league 1',
-    // children: matches,
-  })
-
   for (let i = 0; i < 10; i++) {
     matches.push({
       name: 'match ' + i,
@@ -108,15 +101,19 @@ test.serial.skip('get nested results', async (t) => {
         $add: [
           teams[~~(Math.random() * teams.length)].$id,
           teams[~~(Math.random() * teams.length)].$id,
-          league1Id,
         ],
       },
       status: i < 5 ? 100 : 300,
     })
   }
 
+  await client.set({
+    type: 'league',
+    name: 'league 1',
+    children: matches,
+  })
+
   const result = await client.get({
-    $includeMeta: true,
     items: {
       name: true,
       id: true,
