@@ -1,4 +1,4 @@
-import { walk } from '@based/schema'
+import { ArgsClass, walk } from '@based/schema'
 import { joinPath } from '../../util'
 import { ExecContext, Field, GetCommand, GetNode, Path } from '../types'
 
@@ -24,6 +24,7 @@ export async function parseGetOpts(
 
         return {
           target: { $id, id: $id, type: 'node', defaultValues: [] },
+          parseTopLevel: true,
         }
       },
       collect(args) {
@@ -81,7 +82,7 @@ export async function parseGetOpts(
         fields: {},
         keys: {},
         async any(args) {
-          const { key, value, path } = args
+          const { key, value, path, target } = args
 
           if (typeof value === 'object') {
             if (value.$list) {
@@ -96,7 +97,7 @@ export async function parseGetOpts(
 
               return {
                 target: {
-                  ...args.target,
+                  ...target,
                   type: 'traverse',
                   $list: value.$list,
                 },
@@ -106,7 +107,7 @@ export async function parseGetOpts(
             } else if (value.$find) {
               return {
                 target: {
-                  ...args.target,
+                  ...target,
                   type: 'traverse',
                   $list: {
                     $find: value.$find,
@@ -121,8 +122,8 @@ export async function parseGetOpts(
             } else if (value.$id) {
               return {
                 target: {
-                  ...args.target,
-                  $id: args.target.id,
+                  ...target,
+                  $id: target.id,
                   id: value.$id,
                   nestedPath: args.path,
                 },
@@ -138,8 +139,8 @@ export async function parseGetOpts(
 
               return {
                 target: {
-                  ...args.target,
-                  $id: args.target.id,
+                  ...target,
+                  $id: target.id,
                   id,
                   nestedPath: args.path,
                 },
@@ -148,7 +149,7 @@ export async function parseGetOpts(
               if (Object.keys(value).length > 1) {
                 return {
                   target: {
-                    ...args.target,
+                    ...target,
                     $field: {
                       aliasPath: value.$field.split('.'),
                       currentPath: path,
@@ -160,7 +161,7 @@ export async function parseGetOpts(
                 return
               }
             } else if (value.$default) {
-              args.target.defaultValues.push({
+              target.defaultValues.push({
                 path: path,
                 value: value.$default,
               })
@@ -170,15 +171,15 @@ export async function parseGetOpts(
 
             return {
               target: {
-                ...args.target,
+                ...target,
                 type: 'node',
               },
             }
           } else if (key === '$all') {
             args.collect()
-            return args
+            return {}
           } else if (key === '$fieldsByType') {
-            return args
+            return {}
           }
 
           if (String(key).startsWith('$')) {
@@ -186,7 +187,7 @@ export async function parseGetOpts(
           }
 
           args.collect()
-          return args
+          return {}
         },
       },
       backtrack(args, backtracked, collected) {

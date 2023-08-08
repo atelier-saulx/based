@@ -64,14 +64,12 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.after(async (t) => {
+test.afterEach(async (t) => {
   await srv.destroy()
   client.destroy()
 })
 
-// TODO: $add not implemented
-// message: 'value.$add.map is not a function'
-test.serial.skip('find - ancestors - regions', async (t) => {
+test.serial('find - ancestors - regions', async (t) => {
   const regions = await Promise.all([
     client.set({
       type: 'region',
@@ -102,7 +100,7 @@ test.serial.skip('find - ancestors - regions', async (t) => {
           $filter: [
             {
               $field: 'ancestors',
-              $operator: '=',
+              $operator: 'has',
               $value: regions[0],
             },
             {
@@ -116,7 +114,7 @@ test.serial.skip('find - ancestors - regions', async (t) => {
     },
   })
 
-  t.deepEqual(
+  t.deepEqualIgnoreOrder(
     dutchteams,
     {
       teams: [
@@ -132,8 +130,7 @@ test.serial.skip('find - ancestors - regions', async (t) => {
   )
 })
 
-// TODO: $add not implemented
-// message: 'value.$add.map is not a function'
+// TODO: target changes from parseTopLevel: true don't stick (Jim)
 test.serial.skip('find - ancestors - regions - no wrapping', async (t) => {
   const regions = await Promise.all([
     client.set({
@@ -164,7 +161,7 @@ test.serial.skip('find - ancestors - regions - no wrapping', async (t) => {
         $filter: [
           {
             $field: 'ancestors',
-            $operator: '=',
+            $operator: 'has',
             $value: regions[0],
           },
           {
