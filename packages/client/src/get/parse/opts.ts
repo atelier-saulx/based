@@ -150,8 +150,7 @@ export async function parseGetOpts(
                   value.$list.$find = {}
                 }
 
-                value.$list.$find.$traverse =
-                  value.$list?.$find?.$traverse ?? value.$field
+                value.$list.$field = value.$field
               }
 
               return {
@@ -339,10 +338,13 @@ export async function parseGetOpts(
             nestedCommands,
           }
 
-          const sourceField = $list?.$find?.$traverse || String(key)
-          if (Array.isArray(sourceField)) {
+          const sourceField =
+            $list?.$find?.$traverse ?? $list?.$field ?? String(key)
+          if (Array.isArray($list?.$find?.$traverse)) {
             // find in id list
             cmd.source = { idList: sourceField }
+          } else if (Array.isArray(sourceField)) {
+            cmd.traverseExpr = { $any: { $first: sourceField } }
           } else if (typeof sourceField === 'object') {
             cmd.traverseExpr = sourceField
           } else {
