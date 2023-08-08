@@ -59,21 +59,31 @@ export type GetNode = {
   noMerge?: true
 } & GetNodeShared
 
-export type GetTraverse = {
-  type: 'traverse'
-
+export type GetTraversalShared = {
   paging?: { limit: number; offset: number }
   sort?: { field: string; order: 'asc' | 'desc' }
   filter?: Filter | Filter[]
   recursive?: boolean
-  isSingle?: boolean
 
   // one of these
   traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })
   sourceField?: string
+
   // TODO: edge filter expr
 } & GetNodeShared
 
-export type GetCommand = GetNode | GetTraverse
+export type GetTraverse = {
+  type: 'traverse'
+
+  isSingle?: boolean
+} & GetTraversalShared
+
+export type GetAggregate = {
+  type: 'aggregate'
+
+  function: any
+} & GetTraversalShared
+
+export type GetCommand = GetNode | GetTraverse | GetAggregate
 
 // TODO: add inherit

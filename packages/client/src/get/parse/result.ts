@@ -24,14 +24,17 @@ export function parseGetResult(
   let obj = {}
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
-    console.dir({ result }, { depth: 8 })
+    // console.dir({ result }, { depth: 8 })
     const cmd: GetCommand = cmds[i]
     const {
+      type,
       target: { path },
-      source,
     } = cmd
 
-    const parsed = parseResultRows({ ...ctx, commandPath: path }, result)
+    const parsed =
+      type === 'aggregate'
+        ? Number(result)
+        : parseResultRows({ ...ctx, commandPath: path }, result)
 
     if (!path.length) {
       obj = { ...obj, ...parsed[0] }
@@ -41,7 +44,7 @@ export function parseGetResult(
         const cur = getByPath(obj, path)
         const o = deepMerge({}, cur, v)
         setByPath(obj, path, o)
-      } else if (cmd.isSingle) {
+      } else if (cmd.type === 'traverse' && cmd.isSingle) {
         setByPath(obj, path, parsed[0])
       } else {
         setByPath(obj, path, parsed)
@@ -67,7 +70,7 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
       return {}
     }
 
-    let obj =
+    const obj =
       parseObjFields(
         rowCtx,
         { type: 'object', properties: typeSchema.fields },

@@ -103,6 +103,14 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // filter expr (RPN string)
     { type: 'string', vararg: true }, // filter args
   ]),
+  'hierarchy.aggregate': defaultEncoder([
+    { type: 'string' }, // lang
+    { type: 'bin' }, // agg query opts
+    { type: 'string' }, // ids (concatenated)
+    { type: 'string' }, // fields_raw (function args)
+    { type: 'string' }, // filter expr (RPN string)
+    { type: 'string', vararg: true }, // filter args
+  ]),
   'hierarchy.edgeList': defaultEncoder([
     { type: 'id' },
     // field name

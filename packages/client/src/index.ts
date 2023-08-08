@@ -268,15 +268,18 @@ export class BasedDbClient extends Emitter {
     while (cmds.length) {
       const results = await get({ ...ctx }, cmds)
 
-      const ids = results.map((cmdResult) => {
-        // unwrap array structure
-        return (
-          cmdResult?.[0].map((row) => {
+      const ids =
+        results?.map(([cmdResult]) => {
+          if (!Array.isArray(cmdResult)) {
+            return []
+          }
+
+          // unwrap array structure
+          return cmdResult.map((row) => {
             // take id
             return row?.[0]
-          }) ?? []
-        )
-      })
+          })
+        }) ?? []
       nestedIds.push(ids)
 
       const obj = parseGetResult({ ...ctx }, cmds, results)

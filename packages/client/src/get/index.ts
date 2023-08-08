@@ -1,4 +1,11 @@
-import { ExecContext, Field, Fields, GetCommand, Path } from './types'
+import {
+  ExecContext,
+  Field,
+  Fields,
+  GetAggregate,
+  GetCommand,
+  Path,
+} from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
 import {
@@ -8,7 +15,11 @@ import {
   bfsExpr2rpn,
   fieldsExpr2rpn,
 } from '@based/db-query'
-import { SelvaTraversal, SelvaResultOrder } from '../protocol'
+import {
+  SelvaTraversal,
+  SelvaResultOrder,
+  SelvaHierarchy_AggregateType,
+} from '../protocol'
 import { joinPath } from '../util'
 import { setByPath } from '@saulx/utils'
 
@@ -40,6 +51,16 @@ const SORT_ORDERS: Record<string, SelvaResultOrder> = {
   desc: SelvaResultOrder.SELVA_RESULT_ORDER_DESC,
 }
 
+const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
+  count: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_COUNT_NODE,
+  countUnique:
+    SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_COUNT_UNIQUE_FIELD,
+  sum: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_SUM_FIELD,
+  avg: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_AVG_FIELD,
+  min: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_MIN_FIELD,
+  max: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_MAX_FIELD,
+}
+
 export async function get(ctx: ExecContext, commands: GetCommand[]) {
   return await Promise.all(
     commands.map(async (cmd) => {
@@ -52,22 +73,15 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
 
       const { client } = ctx
 
-      const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
-
       const struct: any = {
         dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
-        res_type: fieldsRpn
-          ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
-          : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-        merge_strategy: protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-        res_opt_str: fields,
         limit: BigInt(-1),
         offset: BigInt(0),
       }
 
       let rpn = ['#1']
 
-      if (cmd.type === 'traverse') {
+      if (cmd.type !== 'node') {
         // traverse by field
         if (cmd.sourceField) {
           const mode = TRAVERSE_MODES[cmd.sourceField]
@@ -113,6 +127,27 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
 
           struct.order_by_field_str = cmd.sort.field
         }
+      }
+
+      if (cmd.type === 'aggregate') {
+        struct.agg_fn = AGGREGATE_FNS[cmd.function.$name]
+
+        const agg = await client.command('hierarchy.aggregate', [
+          makeLangArg(ctx),
+          createRecord(protocol.hierarchy_agg_def, struct),
+          sourceId(cmd),
+          (cmd.function.$args || []).join('|'),
+          ...rpn,
+        ])
+
+        return agg
+      } else {
+        const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
+        struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
+        struct.res_opt_str = fields
+        struct.res_type = fieldsRpn
+          ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
+          : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
       }
 
       const find = await client.command('hierarchy.find', [

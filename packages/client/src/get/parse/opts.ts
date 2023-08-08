@@ -1,18 +1,24 @@
-import { ArgsClass, walk } from '@based/schema'
-import { joinPath } from '../../util'
-import { ExecContext, Field, GetCommand, GetNode, Path } from '../types'
+import { walk } from '@based/schema'
+import {
+  ExecContext,
+  Field,
+  GetAggregate,
+  GetCommand,
+  GetNode,
+  Path,
+} from '../types'
 
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
 ): Promise<{ cmds: GetCommand[]; defaults: { path: Path; value: any }[] }> {
-  let topLevel: GetCommand[] = []
+  const topLevel: GetCommand[] = []
   let visited: GetCommand
   const walked = await walk<{
     id: string
     $id: string
     nestedPath?: Path
-    type: 'node' | 'traverse'
+    type: 'node' | 'traverse' | 'aggregate'
     $list?: any
     defaultValues: { path: Path; value: any }[]
     $field?: { aliasPath: Path; currentPath: Path }
@@ -34,6 +40,59 @@ export async function parseGetOpts(
           path,
           target: { $id, id, nestedPath, $field },
         } = args
+        if (value?.$aggregate) {
+          const { $aggregate } = value
+
+          const cmd: GetAggregate = {
+            type: 'aggregate',
+            fields: { $any: [] },
+            source: { id: id },
+            target: { path },
+            function:
+              typeof $aggregate.$function === 'string'
+                ? { $name: $aggregate.$function }
+                : $aggregate.$function,
+          }
+
+          if ($aggregate?.$sort !== undefined) {
+            const { $order, $field } = $aggregate.$sort
+            cmd.sort = {
+              order: $order,
+              field: $field,
+            }
+          }
+
+          if (
+            $aggregate?.$limit !== undefined ||
+            $aggregate?.$offset !== undefined
+          ) {
+            cmd.paging = {
+              limit: $aggregate?.$limit ?? -1,
+              offset: $aggregate?.$offset ?? 0,
+            }
+          }
+
+          if ($aggregate?.$filter) {
+            cmd.filter = $aggregate?.$filter
+          }
+
+          if ($aggregate?.$recursive) {
+            cmd.recursive = true
+          }
+
+          const sourceField = $aggregate?.$traverse || String(key)
+          if (Array.isArray(sourceField)) {
+            // find in id list
+            cmd.source = { idList: sourceField }
+          } else if (typeof sourceField === 'object') {
+            cmd.traverseExpr = sourceField
+          } else {
+            cmd.sourceField = sourceField
+          }
+
+          return cmd
+        }
+
         // special cases
         if (nestedPath && $id === id) {
           // nested query with same $id should become a nested operation
@@ -102,6 +161,9 @@ export async function parseGetOpts(
                   $list: value.$list,
                 },
               }
+            } else if (value.$aggregate) {
+              args.collect()
+              return
             } else if (key === '$list') {
               return
             } else if (value.$find) {
@@ -216,11 +278,11 @@ export async function parseGetOpts(
               (nestedCmd.source?.id ?? id) === id &&
               !nestedCmd.noMerge
 
-            if (canMerge) {
+            if (nestedCmd.type === 'node' && canMerge) {
               for (const fieldObj of nestedCmd.fields.$any) {
                 const { field: f } = fieldObj
                 if (String(f[0]).startsWith('$fieldsByType')) {
-                  const [_$fieldsByType, type, ...field] = f
+                  const [, type, ...field] = f
                   if (type === '$any') {
                     fields.push({ ...fieldObj, field })
                   } else {
@@ -330,6 +392,7 @@ export async function parseGetOpts(
 
   const nested = visited.nestedCommands
   delete visited.nestedCommands
+
   return {
     cmds: [visited, ...nested, ...topLevel],
     defaults: walked.defaultValues,

@@ -44,6 +44,7 @@ export const COMMAND_TYPES = {
   'hierarchy.types.clear': 36,
   'hierarchy.types.list': 37,
   'hierarchy.find': 19,
+  'hierarchy.aggregate': 21,
   'hierarchy.edgeList': 29,
   'hierarchy.parents': 27,
   'hierarchy.children': 28,
@@ -229,6 +230,7 @@ export enum SelvaResultOrder {
 }
 
 const enum_type = 'int32_le'
+
 export const hierarchy_find_def = compile(
   [
     { name: 'dir', type: enum_type },
@@ -243,6 +245,32 @@ export const hierarchy_find_def = compile(
     { name: 'merge_str', type: 'cstring_p' },
     { name: 'res_type', type: enum_type },
     { name: 'res_opt_str', type: 'cstring_p' },
+  ],
+  {
+    align: true,
+  }
+)
+
+export enum SelvaHierarchy_AggregateType {
+  SELVA_AGGREGATE_TYPE_COUNT_NODE = 0,
+  SELVA_AGGREGATE_TYPE_COUNT_UNIQUE_FIELD,
+  SELVA_AGGREGATE_TYPE_SUM_FIELD,
+  SELVA_AGGREGATE_TYPE_AVG_FIELD,
+  SELVA_AGGREGATE_TYPE_MIN_FIELD,
+  SELVA_AGGREGATE_TYPE_MAX_FIELD,
+}
+
+export const hierarchy_agg_def = compile(
+  [
+    { name: 'agg_fn', type: enum_type },
+    { name: 'dir', type: enum_type },
+    { name: 'dir_opt_str', type: 'cstring_p' },
+    { name: 'edge_filter_str', type: 'cstring_p' },
+    { name: 'index_hints_str', type: 'cstring_p' },
+    { name: 'order', type: enum_type },
+    { name: 'order_by_field_str', type: 'cstring_p' },
+    { name: 'offset', type: 'int64_le' },
+    { name: 'limit', type: 'int64_le' },
   ],
   {
     align: true,
