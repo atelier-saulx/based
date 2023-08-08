@@ -1761,7 +1761,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         }
     } else if (FISSET_CREATE(flags)) {
         /* if the specified id exists but $operation: 'insert' specified. */
-        selva_send_null(resp);
+        selva_send_errorf(resp, SELVA_HIERARCHY_EEXIST, "Node already exists");
         return;
     }
 
