@@ -285,6 +285,7 @@ test.beforeEach(async (_t) => {
 test.afterEach(async (_t) => {
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 test.serial('root', async (t) => {
@@ -370,11 +371,11 @@ test.serial.skip('basic', async (t) => {
     'match has correct children'
   )
 
-  t.deepEqual(
-    (await client.command('hierarchy.children', ['root']))[0].sort(),
-    [league, match].sort(),
-    'root has correct children'
-  )
+  // TODO: Tony check here
+  const r = (await client.command('hierarchy.children', ['root']))[0].sort()
+  t.log(r)
+  t.log([league, match].sort())
+  t.deepEqual(r, [league, match].sort(), 'root has correct children')
 
   t.deepEqual(
     (await client.command('hierarchy.children', [league]))[0],
