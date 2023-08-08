@@ -739,8 +739,7 @@ test.serial.skip('basic', async (t) => {
   // )
 })
 
-// TODO: $add not implemented
-test.serial.skip('deep hierarchy manipulation', async (t) => {
+test.serial('deep hierarchy manipulation', async (t) => {
   await client.set({
     $id: 'cuX',
     children: ['cuA'],
@@ -1636,7 +1635,6 @@ test.serial('deleting an object', async (t) => {
   t.deepEqual(await client.get({ $id: match, obj: true }), {})
 })
 
-// TODO: Error should be better
 test.serial('setting NaN should fail', async (t) => {
   await t.throwsAsync(
     client.set({
@@ -1646,7 +1644,9 @@ test.serial('setting NaN should fail', async (t) => {
   )
 })
 
-// TODO: arrays validation
+// TODO: array $push into object array has wrong index, should be -1, not 0 (Jim)
+//        'objRec.abba.objArray[0].hello',
+//       'yes 7',
 test.serial.skip('set - push into array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
@@ -1702,20 +1702,21 @@ test.serial.skip('set - push into array', async (t) => {
     },
   })
 
-  let e = await t.throwsAsync(
-    client.set({
-      $id: id,
-      objRec: {
-        abba: {
-          intArray: {
-            $add: [2, 2],
-          },
-        },
-      },
-    })
-  )
+  // TODO: needs validation
+  // let e = await t.throwsAsync(
+  //   client.set({
+  //     $id: id,
+  //     objRec: {
+  //       abba: {
+  //         intArray: {
+  //           $add: [2, 2],
+  //         },
+  //       },
+  //     },
+  //   })
+  // )
 
-  t.true(e.stack?.includes('Unknown operator for arrays'))
+  // t.true(e.stack?.includes('Unknown operator for arrays'))
 
   await client.set({
     $id: id,
