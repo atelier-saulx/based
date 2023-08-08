@@ -20,6 +20,13 @@ const DB_TYPE_TO_SET_TYPE = {
   number: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_DOUBLE,
 }
 
+const VALUE_TYPE_TO_INCREMENT_TYPE = {
+  [ModifyArgType.SELVA_MODIFY_ARG_LONGLONG]:
+    ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT,
+  [ModifyArgType.SELVA_MODIFY_ARG_DOUBLE]:
+    ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE,
+}
+
 const VALUE_TYPE_TO_DEFAULT_VALUE_TYPE = {
   3: '8',
   A: '9',
@@ -81,14 +88,16 @@ export function toModifyArgs(props: {
     default:
       let opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
 
+      if (value?.$increment) {
+        opType = VALUE_TYPE_TO_INCREMENT_TYPE[opType]
+      } else if (value?.$default) {
+        value = value.$default
+        opType = VALUE_TYPE_TO_DEFAULT_VALUE_TYPE[opType]
+      }
+
       if (!opType) {
         console.error('Unsupported field type', path, fieldSchema, value)
         return []
-      }
-
-      if (value?.$default) {
-        value = value.$default
-        opType = VALUE_TYPE_TO_DEFAULT_VALUE_TYPE[opType]
       }
 
       return [opType, strPath, value]

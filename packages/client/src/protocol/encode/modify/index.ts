@@ -7,6 +7,7 @@ import { ModifyArgType } from './types'
 import { encodeArrayOp } from './array'
 import { encodeHll } from './hll'
 import { encodeObjMeta } from './objMeta'
+import { encodeIncrement } from './increment'
 
 // note: just the non-string values are represented here
 export const VALUE_TYPES = {
@@ -20,6 +21,8 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_HLL]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE]: { type: 'bin' },
 }
 
 function identity<T>(x: T): T {
@@ -38,6 +41,8 @@ export const VALUE_ENCODERS = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_INSERT]: encodeArrayOp,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_ARRAY_REMOVE]: encodeArrayOp,
   [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META]: encodeObjMeta,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: encodeIncrement,
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE]: encodeIncrement,
 }
 
 export function modify(payload: [nodeId: string, ...fields: any]) {
@@ -73,7 +78,7 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
     )
 
     const encoder = VALUE_ENCODERS[opType] || identity
-    setFields.push(opType, name, encoder(value))
+    setFields.push(opType, name, encoder(value, opType))
   }
 
   const schema: EncodeDefinition = [{ type: 'array', values: defs }]

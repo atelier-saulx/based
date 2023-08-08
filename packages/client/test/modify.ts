@@ -957,8 +957,7 @@ test.serial('set empty object', async (t) => {
   )
 })
 
-// TODO: $increment does not work
-test.serial.skip('$increment, $default', async (t) => {
+test.serial('$increment, $default', async (t) => {
   await client.set({
     $id: 'viDingDong',
     value: {
@@ -973,14 +972,18 @@ test.serial.skip('$increment, $default', async (t) => {
     'uses default if value does not exist'
   )
 
-  // await client.set({
-  //   $id: 'viDingDong',
-  //   value: {
-  //     $default: 100,
-  //     $increment: 10,
-  //   },
-  // })
-  //
+  await client.set({
+    $id: 'viDingDong',
+    value: {
+      $default: 100,
+      $increment: 10,
+    },
+  })
+
+  t.deepEqualIgnoreOrder(await client.get({ $id: 'viDingDong', value: true }), {
+    value: 110,
+  })
+
   // t.is(
   //   readDouble(await client.redis.selva_object_get('', 'viDingDong', 'value')),
   //   110,
