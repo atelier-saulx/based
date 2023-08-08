@@ -1360,39 +1360,6 @@ test.serial('no root in parents when adding nested', async (t) => {
   )
 })
 
-// TODO: parents: { $noRoot } not working
-test.serial.skip('can disable autoadding of root', async (t) => {
-  const m1 = await client.set({
-    type: 'match',
-    value: 1,
-  })
-
-  t.deepEqualIgnoreOrder((await client.command('hierarchy.parents', [m1]))[0], [
-    'root',
-  ])
-
-  const m2 = await client.set({
-    type: 'match',
-    parents: { $noRoot: true },
-  })
-
-  t.deepEqualIgnoreOrder(
-    // await client.redis.selva_hierarchy_parents(DEFAULT_HIERARCHY, m2),
-    (await client.command('hierarchy.parents', [m2]))[0],
-    []
-  )
-
-  // const m3 = await client.set({
-  //   type: 'match',
-  //   children: { $value: 'maMatch3', $noRoot: true },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_parents(DEFAULT_aIERARCHY, 'maMatch3'),
-  //   [m3]
-  // )
-})
-
 test.serial('$delete: true', async (t) => {
   const match = await client.set({
     type: 'match',
