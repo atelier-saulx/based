@@ -140,4 +140,6 @@ int SelvaModify_ModifyDel(
     const struct selva_string *field
 );
 
+int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char type_code);
+
 #endif /* SELVA_MODIFY_H */

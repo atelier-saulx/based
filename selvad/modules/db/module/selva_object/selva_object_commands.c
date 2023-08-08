@@ -68,7 +68,7 @@ void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *
         return;
     }
 
-    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_FIELD_PROT_DEL)) {
+    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_OBJECT_NULL, SELVA_FIELD_PROT_DEL)) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
         return;
     }
@@ -193,6 +193,24 @@ void SelvaObject_GetCommand(struct selva_server_response_out *resp, const void *
     }
 }
 
+static enum SelvaObjectType set2so_type(char ch)
+{
+    switch (ch) {
+    case 'f':
+        return SELVA_OBJECT_DOUBLE;
+    case 'i':
+        return SELVA_OBJECT_LONGLONG;
+    case 's':
+        return SELVA_OBJECT_STRING;
+    case 'S':
+        return SELVA_OBJECT_SET;
+    case 'H':
+        return SELVA_OBJECT_HLL;
+    default:
+        return SELVA_OBJECT_NULL;
+    }
+}
+
 void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     __auto_finalizer struct finalizer fin;
@@ -200,7 +218,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
     Selva_NodeId node_id;
     size_t okey_len;
     const char *okey_str;
-    char type;
+    char type_ch;
     struct selva_string **oval;
     struct SelvaHierarchyNode *node;
     struct SelvaObject *obj;
@@ -212,7 +230,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
     argc = selva_proto_scanf(&fin, buf, len, "%" SELVA_SCA_NODE_ID ", %.*s, %c, ...",
                              &node_id,
                              &okey_len, &okey_str,
-                             &type,
+                             &type_ch,
                              &oval);
     if (argc < 4) {
         if (argc < 0) {
@@ -223,13 +241,14 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
         return;
     }
 
-    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_FIELD_PROT_WRITE)) {
+    enum SelvaObjectType type = set2so_type(type_ch);
+    if (!selva_field_prot_check_str(okey_str, okey_len, type, SELVA_FIELD_PROT_WRITE)) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
         return;
     }
 
     assert(oval);
-    if (type != 'S' && type != 'H' && oval[1]) {
+    if (type != SELVA_OBJECT_SET && type != SELVA_OBJECT_HLL && oval[1]) {
         selva_send_error_arity(resp);
         return;
     }
@@ -244,26 +263,26 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
     SelvaSubscriptions_FieldChangePrecheck(main_hierarchy, node);
 
     switch (type) {
-    case 'f': /* SELVA_OBJECT_DOUBLE */
+    case SELVA_OBJECT_DOUBLE:
         err = SelvaObject_SetDoubleStr(
             obj, okey_str, okey_len,
             strtod(selva_string_to_str(oval[0], NULL), NULL));
         values_set++;
         break;
-    case 'i': /* SELVA_OBJECT_LONGLONG */
+    case SELVA_OBJECT_LONGLONG:
         err = SelvaObject_SetLongLongStr(
             obj, okey_str, okey_len,
             strtoll(selva_string_to_str(oval[0], NULL), NULL, 10));
         values_set++;
         break;
-    case 's': /* SELVA_OBJECT_STRING */
+    case SELVA_OBJECT_STRING:
         err = SelvaObject_SetStringStr(obj, okey_str, okey_len, oval[0]);
         if (err == 0) {
             finalizer_del(&fin, oval[0]);
         }
         values_set++;
         break;
-    case 'S': /* SELVA_OBJECT_SET */
+    case SELVA_OBJECT_SET:
         for (int i = 0; i < argc - 3; i++) {
             struct selva_string *el = oval[i];
 
@@ -277,7 +296,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
             err = 0;
         }
         break;
-    case 'H': /* HyperLogLog */
+    case SELVA_OBJECT_HLL:
         for (int i = 0; i < argc - 3; i++) {
             size_t el_len;
             const char *el_str = selva_string_to_str(oval[i], &el_len);
@@ -316,7 +335,7 @@ void SelvaObject_IncrbyCommand(struct selva_server_response_out *resp, const voi
         return;
     }
 
-    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_FIELD_PROT_WRITE)) {
+    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE)) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
         return;
     }
@@ -357,7 +376,7 @@ void SelvaObject_IncrbyDoubleCommand(struct selva_server_response_out *resp, con
         return;
     }
 
-    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_FIELD_PROT_WRITE)) {
+    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_OBJECT_DOUBLE, SELVA_FIELD_PROT_WRITE)) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
         return;
     }
@@ -632,7 +651,7 @@ void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, const vo
         return;
     }
 
-    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_FIELD_PROT_WRITE)) {
+    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_OBJECT_OBJECT, SELVA_FIELD_PROT_WRITE)) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
         return;
     }

@@ -404,8 +404,10 @@ static int update_node_cb(
         const struct update_op *op = &update_ops[i];
         const char type_code = op->type_code;
         enum selva_op_repl_state repl_state;
+        size_t field_len;
+        const char *field_str = selva_string_to_str(op->field, &field_len);
 
-        if (!selva_field_prot_check(op->field, (type_code == SELVA_MODIFY_ARG_OP_DEL) ? SELVA_FIELD_PROT_DEL : SELVA_FIELD_PROT_WRITE)) {
+        if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
             repl_state = SELVA_OP_REPL_STATE_UNCHANGED;
             continue;
         }

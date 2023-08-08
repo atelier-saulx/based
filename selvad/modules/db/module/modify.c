@@ -1655,6 +1655,52 @@ static void replicate_modify(struct selva_server_response_out *resp, const struc
     }
 }
 
+int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char type_code) {
+    enum selva_field_prot_mode mode = (type_code == SELVA_MODIFY_ARG_OP_DEL) ? SELVA_FIELD_PROT_DEL : SELVA_FIELD_PROT_WRITE;
+    enum SelvaObjectType type;
+
+    switch (type_code) {
+    case SELVA_MODIFY_ARG_DEFAULT_STRING:
+    case SELVA_MODIFY_ARG_STRING:
+        type = SELVA_OBJECT_STRING;
+        break;
+    case SELVA_MODIFY_ARG_DEFAULT_LONGLONG:
+    case SELVA_MODIFY_ARG_LONGLONG:
+    case SELVA_MODIFY_ARG_OP_INCREMENT:
+        type = SELVA_OBJECT_LONGLONG;
+        break;
+    case SELVA_MODIFY_ARG_DEFAULT_DOUBLE:
+    case SELVA_MODIFY_ARG_DOUBLE:
+    case SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE:
+        type = SELVA_OBJECT_DOUBLE;
+        break;
+    case SELVA_MODIFY_ARG_OP_SET:
+        type = SELVA_OBJECT_SET;
+        break;
+    case SELVA_MODIFY_ARG_OP_ARRAY_PUSH:
+    case SELVA_MODIFY_ARG_OP_ARRAY_INSERT:
+    case SELVA_MODIFY_ARG_OP_ARRAY_REMOVE:
+    case SELVA_MODIFY_ARG_OP_ARRAY_QUEUE_TRIM:
+    case SELVA_MODIFY_ARG_STRING_ARRAY:
+        type = SELVA_OBJECT_ARRAY;
+        break;
+    case SELVA_MODIFY_ARG_OP_HLL:
+        type = SELVA_OBJECT_HLL;
+        break;
+    case SELVA_MODIFY_ARG_OP_OBJ_META:
+    case SELVA_MODIFY_ARG_OP_EDGE_META: /* not so sure about this. */
+        type = SELVA_OBJECT_OBJECT;
+        break;
+    case SELVA_MODIFY_ARG_INVALID:
+    case SELVA_MODIFY_ARG_OP_DEL:
+    default:
+        type = SELVA_OBJECT_NULL;
+        break;
+    }
+
+    return selva_field_prot_check_str(field_str, field_len, type, mode);
+}
+
 /*
  * Request:
  * {node_id, FLAGS, type, field, value [, ... type, field, value]]}
@@ -1803,10 +1849,10 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         struct selva_string *field = argv[i + 1];
         struct selva_string *value = argv[i + 2];
         TO_STR(type, field);
-        const char type_code = type_str[0]; /* [0] always points to a valid char in RM_String. */
+        const char type_code = type_str[0]; /* [0] always points to a valid char. */
         enum selva_op_repl_state repl_state = SELVA_OP_REPL_STATE_UNCHANGED;
 
-        if (!selva_field_prot_check_str(field_str, field_len, (type_code == SELVA_MODIFY_ARG_OP_DEL) ? SELVA_FIELD_PROT_DEL : SELVA_FIELD_PROT_WRITE)) {
+        if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
             selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
             continue;
         }

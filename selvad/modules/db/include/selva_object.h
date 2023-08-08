@@ -11,22 +11,7 @@
 #include <sys/types.h>
 #include "selva_set.h"
 #include "selva_lang.h"
-
-/*
- * Object key types.
- * DO NOT REORDER the numbers as they are used for in the serialization format.
- */
-enum SelvaObjectType {
-    SELVA_OBJECT_NULL = 0,
-    SELVA_OBJECT_DOUBLE = 1,
-    SELVA_OBJECT_LONGLONG = 2,
-    SELVA_OBJECT_STRING = 3,
-    SELVA_OBJECT_OBJECT = 4,
-    SELVA_OBJECT_SET = 5,
-    SELVA_OBJECT_ARRAY = 6,
-    SELVA_OBJECT_POINTER = 7,
-    SELVA_OBJECT_HLL = 8,
-} __packed;
+#include "selva_object_type.h"
 
 enum SelvaObjectReplyFlags {
     SELVA_OBJECT_REPLY_SPLICE_FLAG = 0x01, /*!< Set if the path should be spliced to start from the first wildcard. */

@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "cdefs.h"
+#include "selva_object_type.h"
 
 /**
  * Export a function.
@@ -41,8 +42,6 @@
  * An empty nodeId.
  */
 #define EMPTY_NODE_ID           "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"
-
-#define SELVA_ALIASES_KEY       "___selva_aliases"
 
 /**
  * Reserved field names.
@@ -124,8 +123,8 @@ enum selva_field_prot_mode {
  * E.g. if mode = SELVA_FIELD_PROT_WRITE and the function returns 1,
  * it means that the field can be written to.
  */
-int selva_field_prot_check(const struct selva_string *s, enum selva_field_prot_mode mode);
-int selva_field_prot_check_str(const char *field_str, size_t field_len, enum selva_field_prot_mode mode);
+int selva_field_prot_check(const struct selva_string *s, enum SelvaObjectType type, enum selva_field_prot_mode mode);
+int selva_field_prot_check_str(const char *field_str, size_t field_len, enum SelvaObjectType type, enum selva_field_prot_mode mode);
 
 /**
  * Get the length of nodeId ignoring nul bytes at the end of the string.
