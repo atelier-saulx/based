@@ -3009,6 +3009,12 @@ static int load_tree(struct finalizer *fin, struct selva_io *io, int encver, Sel
     return 0;
 }
 
+static int load_aliases(struct selva_io *io,int encver, SelvaHierarchy *hierarchy) {
+    struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
+
+    return SelvaObjectTypeLoadTo(io, encver, aliases, NULL) ? 0 : SELVA_HIERARCHY_EINVAL;
+}
+
 SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = NULL;
@@ -3049,6 +3055,11 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
     }
 
     err = load_tree(&fin, io, encver, hierarchy);
+    if (err) {
+        goto error;
+    }
+
+    err = load_aliases(io, encver, hierarchy);
     if (err) {
         goto error;
     }
@@ -3176,6 +3187,12 @@ static void save_hierarchy(struct selva_io *io, SelvaHierarchy *hierarchy) {
     selva_io_save_str(io, HIERARCHY_SERIALIZATION_EOF, sizeof(HIERARCHY_SERIALIZATION_EOF));
 }
 
+static void save_aliases(struct selva_io *io, SelvaHierarchy *hierarchy) {
+    struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
+
+    SelvaObjectTypeSave(io, aliases, NULL);
+}
+
 void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
     /*
      * Serialization format:
@@ -3185,12 +3202,14 @@ void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy) {
      * NODE_ID1 | FLAGS | METADATA | NR_CHILDREN | CHILD_ID_0,..
      * NODE_ID2 | FLAGS | METADATA | NR_CHILDREN | ...
      * HIERARCHY_SERIALIZATION_EOF
+     * ALIASES
      */
     hierarchy->flag_isSaving = 1;
     selva_io_save_signed(io, HIERARCHY_ENCODING_VERSION);
     SelvaObjectTypeSave(io, SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy), NULL);
     EdgeConstraint_Save(io, &hierarchy->edge_field_constraints);
     save_hierarchy(io, hierarchy);
+    save_aliases(io, hierarchy);
     hierarchy->flag_isSaving = 0;
 }
 
