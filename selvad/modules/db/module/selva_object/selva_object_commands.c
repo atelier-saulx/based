@@ -23,6 +23,12 @@
 #include "selva_set.h"
 #include "selva_object.h"
 
+static int test_aliases(const char *field_str, size_t field_len)
+{
+    return field_len == (sizeof(SELVA_ALIASES_FIELD) - 1) &&
+           !memcmp(field_str, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1);
+}
+
 static void publish_field_change_str(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len)
 {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
@@ -82,14 +88,19 @@ void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *
     obj = SelvaHierarchy_GetNodeObject(node);
     SelvaSubscriptions_FieldChangePrecheck(main_hierarchy, node);
 
-    err = SelvaObject_DelKeyStr(obj, okey_str, okey_len);
-    if (err == SELVA_ENOENT) {
-        selva_send_ll(resp, 0);
-    } else if (err) {
-        selva_send_error(resp, err, NULL, 0);
-        return;
-    } else {
+    if (test_aliases(okey_str, okey_len)) {
+        delete_all_node_aliases(main_hierarchy, obj);
         MODIFIED(resp, 1);
+    } else {
+        err = SelvaObject_DelKeyStr(obj, okey_str, okey_len);
+        if (err == SELVA_ENOENT) {
+            selva_send_ll(resp, 0);
+        } else if (err) {
+            selva_send_error(resp, err, NULL, 0);
+            return;
+        } else {
+            MODIFIED(resp, 1);
+        }
     }
 }
 
@@ -262,6 +273,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
     obj = SelvaHierarchy_GetNodeObject(node);
     SelvaSubscriptions_FieldChangePrecheck(main_hierarchy, node);
 
+    int is_aliases;
     switch (type) {
     case SELVA_OBJECT_DOUBLE:
         err = SelvaObject_SetDoubleStr(
@@ -283,6 +295,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
         values_set++;
         break;
     case SELVA_OBJECT_SET:
+        is_aliases = test_aliases(okey_str, okey_len);
         for (int i = 0; i < argc - 3; i++) {
             struct selva_string *el = oval[i];
 
@@ -294,6 +307,10 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
                 break;
             }
             err = 0;
+
+            if (is_aliases) {
+                update_alias(main_hierarchy, node_id, el);
+            }
         }
         break;
     case SELVA_OBJECT_HLL:

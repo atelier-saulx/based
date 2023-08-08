@@ -486,6 +486,11 @@ int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref);
 int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set);
 
 /**
+ * Delete all aliases of the node.
+ */
+void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node_obj);
+
+/**
  * Update alias into the aliases key and remove the previous alias.
  * Caller must set the alias to the new node.
  */

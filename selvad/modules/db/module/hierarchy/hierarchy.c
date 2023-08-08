@@ -563,19 +563,6 @@ static inline void rmHead(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     }
 }
 
-/**
- * Delete all aliases from the aliases key.
- * Note that this function doesn't delete the aliases from the node object.
- */
-static void delete_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *obj) {
-    struct SelvaSet *node_aliases_set;
-
-    node_aliases_set = SelvaObject_GetSetStr(obj, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1);
-    if (node_aliases_set) {
-        delete_aliases(hierarchy, node_aliases_set);
-    }
-}
-
 static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     const int send_events = !isLoading();
     struct SelvaObject *obj = GET_NODE_OBJ(node);
@@ -602,7 +589,7 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
         SelvaSubscriptions_DeferHierarchyDeletionEvents(hierarchy, node);
     }
 
-    delete_node_aliases(hierarchy, obj);
+    delete_all_node_aliases(hierarchy, obj);
 
     /*
      * Never delete the root node.

@@ -41,6 +41,8 @@ int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
 
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
+
     return SelvaObject_DelKey(aliases, ref);
 }
 
@@ -63,10 +65,39 @@ int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set)
     return 0;
 }
 
+static void defer_alias_set_change_events(
+        SelvaHierarchy *hierarchy,
+        struct SelvaSet *aliases) {
+    struct SelvaSetElement *el;
+
+    SELVA_SET_STRING_FOREACH(el, aliases) {
+        struct selva_string *alias_name = el->value_string;
+
+        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, alias_name);
+    }
+}
+
+void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node_obj)
+{
+    const char *field_str = SELVA_ALIASES_FIELD;
+    const size_t field_len = sizeof(SELVA_ALIASES_FIELD) - 1;
+    struct SelvaSet *node_aliases;
+
+    node_aliases = SelvaObject_GetSetStr(node_obj, field_str, field_len);
+    if (node_aliases) {
+        defer_alias_set_change_events(hierarchy, node_aliases);
+        (void)delete_aliases(hierarchy, node_aliases);
+        (void)SelvaObject_DelKeyStr(node_obj, field_str, field_len);
+    }
+}
+
 void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
     struct selva_string *old = NULL;
+    TO_STR(ref);
+
+    SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, ref_str, ref_len);
 
     /*
      * Remove the alias from the previous node.
@@ -87,13 +118,12 @@ void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct 
         }
     }
 
-    SelvaObject_SetString(aliases, ref, selva_string_create(node_id, Selva_NodeIdLen(node_id), 0));
+    SelvaObject_SetStringStr(aliases, ref_str, ref_len, selva_string_create(node_id, Selva_NodeIdLen(node_id), 0));
 
     /*
      * This alias might have been a missing accessor.
      */
-    TO_STR(ref);
-    SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, ref_str, ref_len);
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
 }
 
 static void lsaliases(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {

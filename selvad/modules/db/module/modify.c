@@ -113,32 +113,6 @@ static int find_first_alias(SelvaHierarchy *hierarchy, const SVector *alias_quer
     return 0;
 }
 
-static void defer_alias_change_events(
-        SelvaHierarchy *hierarchy,
-        struct SelvaSet *aliases) {
-    struct SelvaSetElement *el;
-
-    SELVA_SET_STRING_FOREACH(el, aliases) {
-        struct selva_string *alias_name = el->value_string;
-
-        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, alias_name);
-    }
-}
-
-static void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node_obj)
-{
-    const char *field_str = SELVA_ALIASES_FIELD;
-    const size_t field_len = sizeof(SELVA_ALIASES_FIELD) - 1;
-    struct SelvaSet *node_aliases;
-
-    node_aliases = SelvaObject_GetSetStr(node_obj, field_str, field_len);
-    if (node_aliases) {
-        defer_alias_change_events(hierarchy, node_aliases);
-        (void)delete_aliases(hierarchy, node_aliases);
-        (void)SelvaObject_DelKeyStr(node_obj, field_str, field_len);
-    }
-}
-
 static int update_hierarchy(
     SelvaHierarchy *hierarchy,
     const Selva_NodeId node_id,
@@ -473,7 +447,6 @@ static int add_set_values(
 
                 /* Add to the global aliases hash. */
                 if (is_aliases) {
-                    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
                     update_alias(hierarchy, node_id, ref);
                 }
 
@@ -517,7 +490,6 @@ static int add_set_values(
                         SelvaSet_DestroyElement(SelvaSet_Remove(objSet, el));
 
                         if (is_aliases) {
-                            SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, el);
                             delete_alias(hierarchy, el);
                         }
 
@@ -686,7 +658,6 @@ static int del_set_values(
                  * Remove from the global aliases hash.
                  */
                 if (is_aliases) {
-                    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
                     delete_alias(hierarchy, ref);
                 }
 
