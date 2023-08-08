@@ -4,6 +4,7 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
+import getPort from 'get-port'
 
 let srv: SelvaServer
 let client: BasedDbClient
