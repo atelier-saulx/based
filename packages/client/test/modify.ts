@@ -1088,8 +1088,7 @@ test.serial.skip('$increment, $default', async (t) => {
   // )
 })
 
-// TODO: waiting for $default
-test.serial.skip('$default with string and number', async (t) => {
+test.serial('$default with string and number', async (t) => {
   await client.set({
     $id: 'ma1',
     value: {
