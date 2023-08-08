@@ -5,6 +5,8 @@ import {
   GetAggregate,
   GetCommand,
   GetNode,
+  GetTraverse,
+  GetTraverseIds,
   Path,
 } from '../types'
 
@@ -330,53 +332,17 @@ export async function parseGetOpts(
             nestedCommands,
           }
         } else {
-          cmd = {
-            type: 'traverse',
-            fields: { $any: fields },
-            source: { id: id },
-            target: { path },
-            nestedCommands,
-          }
-
-          const sourceField =
-            $list?.$find?.$traverse ?? $list?.$field ?? String(key)
-          if (Array.isArray($list?.$find?.$traverse)) {
-            // find in id list
-            cmd.source = { idList: sourceField }
-          } else if (Array.isArray(sourceField)) {
-            cmd.traverseExpr = { $any: { $first: sourceField } }
-          } else if (typeof sourceField === 'object') {
-            cmd.traverseExpr = sourceField
-          } else {
-            cmd.sourceField = sourceField
-          }
-
-          if ($list?.$limit !== undefined || $list?.$offset !== undefined) {
-            cmd.paging = {
-              limit: $list?.$limit ?? -1,
-              offset: $list?.$offset ?? 0,
-            }
-          }
-
-          if ($list?.$sort !== undefined) {
-            const { $order, $field } = $list.$sort
-            cmd.sort = {
-              order: $order,
-              field: $field,
-            }
-          }
-
-          if ($list?.isSingle !== undefined) {
-            cmd.isSingle = $list.isSingle
-          }
-
-          if ($list?.$find?.$filter) {
-            cmd.filter = $list?.$find?.$filter
-          }
-
-          if ($list?.$find?.$recursive) {
-            cmd.recursive = true
-          }
+          cmd = parseList(
+            {
+              type: 'traverse',
+              fields: { $any: fields },
+              source: { id: id },
+              target: { path },
+              nestedCommands: nestedCommands,
+            },
+            key,
+            $list
+          )
         }
 
         if (Object.keys(byType).length) {
@@ -399,4 +365,68 @@ export async function parseGetOpts(
     cmds: [visited, ...nested, ...topLevel],
     defaults: walked.defaultValues,
   }
+}
+
+function parseList(
+  initial: GetTraverse | GetTraverseIds,
+  key: string | number,
+  $list: any
+): GetTraverse | GetTraverseIds {
+  const cmd: GetTraverse | GetTraverseIds = { ...initial }
+
+  if ($list?.$find?.$find) {
+    cmd.type = 'ids'
+
+    const nestedCmd: GetTraverse | GetTraverseIds = parseList(
+      {
+        ...initial,
+        type: 'traverse',
+      },
+      key,
+      { $find: $list.$find.$find }
+    )
+
+    cmd.nestedFind = nestedCmd
+  }
+
+  const sourceField = $list?.$find?.$traverse ?? $list?.$field ?? String(key)
+  if (Array.isArray($list?.$find?.$traverse)) {
+    // find in id list
+    cmd.source = { idList: sourceField }
+  } else if (Array.isArray(sourceField)) {
+    cmd.traverseExpr = { $any: { $first: sourceField } }
+  } else if (typeof sourceField === 'object') {
+    cmd.traverseExpr = sourceField
+  } else {
+    cmd.sourceField = sourceField
+  }
+
+  if ($list?.$limit !== undefined || $list?.$offset !== undefined) {
+    cmd.paging = {
+      limit: $list?.$limit ?? -1,
+      offset: $list?.$offset ?? 0,
+    }
+  }
+
+  if ($list?.$sort !== undefined) {
+    const { $order, $field } = $list.$sort
+    cmd.sort = {
+      order: $order,
+      field: $field,
+    }
+  }
+
+  if ($list?.isSingle !== undefined) {
+    cmd.isSingle = $list.isSingle
+  }
+
+  if ($list?.$find?.$filter) {
+    cmd.filter = $list?.$find?.$filter
+  }
+
+  if ($list?.$find?.$recursive) {
+    cmd.recursive = true
+  }
+
+  return cmd
 }

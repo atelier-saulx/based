@@ -260,7 +260,7 @@ export class BasedDbClient extends Emitter {
     }
 
     let { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
-    // console.dir({ cmds, defaults }, { depth: 8 })
+    console.dir({ cmds, defaults }, { depth: 8 })
 
     const nestedIds: any[] = []
     const nestedObjs: any[] = []

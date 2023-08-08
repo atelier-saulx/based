@@ -158,8 +158,7 @@ test.serial('get nested results', async (t) => {
   t.is(result.items[0].teams.length, 2, 'has teams')
 })
 
-// TODO: $find.$find
-test.serial.skip('get descendants of each child', async (t) => {
+test.serial('get descendants of each child', async (t) => {
   const teams: any = []
 
   for (let i = 0; i < 3; i++) {
@@ -211,6 +210,7 @@ test.serial.skip('get descendants of each child', async (t) => {
       },
     },
   })
+  console.dir({ res }, { depth: 6 })
   t.deepEqualIgnoreOrder(res?.matches, [
     { name: 'match 0' },
     { name: 'match 2' },
@@ -225,8 +225,7 @@ test.serial.skip('get descendants of each child', async (t) => {
   ])
 })
 
-// TODO: $find.$find
-test.serial.skip('get nested results with $all', async (t) => {
+test.serial('get nested results with $all', async (t) => {
   const matches: any = []
   const teams: any = []
 
@@ -329,8 +328,7 @@ test.serial.skip('get nested results with $all', async (t) => {
   )
 })
 
-// TODO: $find.$find
-test.serial.skip('get nested results as ids', async (t) => {
+test.serial('get nested results as ids', async (t) => {
   const matches: any = []
   const teams: any = []
 
@@ -385,11 +383,10 @@ test.serial.skip('get nested results as ids', async (t) => {
   })
 
   t.is(result.items.length, 10, 'items length')
-  t.is(result.items[0].parents.length, 2, 'has teams')
+  t.is(result.items[0].parents.length, 3, 'has teams and league')
 })
 
-// TODO: $find.$find
-test.serial.skip('get nested results without find', async (t) => {
+test.serial('get nested results without find', async (t) => {
   const matches: any = []
   const teams: any = []
 

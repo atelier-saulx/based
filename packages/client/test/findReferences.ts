@@ -185,7 +185,7 @@ test.serial('find - references', async (t) => {
     { special: { num: 2 }, name: 'match0' },
   ])
 
-  // TODO: .$find.$find
+  // TODO: fix something with more results
   // const { items: relatedMatchesLeagues } = await client.get({
   //   $id: matches[0].id,
   //   items: {
@@ -220,7 +220,8 @@ test.serial('find - references', async (t) => {
   //   },
   // })
 
-  // t.deepEqualIgnoreOrder(
+  // console.dir({ relatedMatchesLeagues }, { depth: 6 })
+  // t.deepEqual(
   //   relatedMatchesLeagues,
   //   [
   //     { value: 0, name: 'league0' },
@@ -239,7 +240,7 @@ test.serial('find - references', async (t) => {
 
   await wait(1000)
 
-  // TODO: .$find.$find
+  // TODO: fix something with more results
   // const { related: relatedMatchesLeaguesNoTraverse } = await client.get({
   //   $id: matches[0].id,
   //   related: {
