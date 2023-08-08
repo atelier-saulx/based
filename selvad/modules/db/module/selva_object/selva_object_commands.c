@@ -23,12 +23,6 @@
 #include "selva_set.h"
 #include "selva_object.h"
 
-static int test_aliases(const char *field_str, size_t field_len)
-{
-    return field_len == (sizeof(SELVA_ALIASES_FIELD) - 1) &&
-           !memcmp(field_str, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1);
-}
-
 static void publish_field_change_str(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len)
 {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
@@ -88,7 +82,7 @@ void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *
     obj = SelvaHierarchy_GetNodeObject(node);
     SelvaSubscriptions_FieldChangePrecheck(main_hierarchy, node);
 
-    if (test_aliases(okey_str, okey_len)) {
+    if (SELVA_IS_ALIASES_FIELD(okey_str, okey_len)) {
         delete_all_node_aliases(main_hierarchy, obj);
         MODIFIED(resp, 1);
     } else {
@@ -295,7 +289,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
         values_set++;
         break;
     case SELVA_OBJECT_SET:
-        is_aliases = test_aliases(okey_str, okey_len);
+        is_aliases = SELVA_IS_ALIASES_FIELD(okey_str, okey_len);
         for (int i = 0; i < argc - 3; i++) {
             struct selva_string *el = oval[i];
 

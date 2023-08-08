@@ -398,7 +398,7 @@ static int add_set_values(
     int remove_diff
 ) {
     TO_STR(field);
-    const int is_aliases = !strcmp(field_str, SELVA_ALIASES_FIELD);
+    const int is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
     const char *ptr = value_ptr;
     int res = 0;
 
@@ -630,7 +630,7 @@ static int del_set_values(
         int8_t type
 ) {
     TO_STR(field);
-    const int is_aliases = !strcmp(field_str, SELVA_ALIASES_FIELD);
+    const int is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
     const char *ptr = value_ptr;
     int res = 0;
 
@@ -821,7 +821,7 @@ int SelvaModify_ModifySet(
              * First we need to delete the aliases of this node from the
              * global mapping.
              */
-            if (!strcmp(field_str, SELVA_ALIASES_FIELD)) {
+            if (SELVA_IS_ALIASES_FIELD(field_str, field_len)) {
                 delete_all_node_aliases(hierarchy, obj);
                 err = 1;
             } else {
