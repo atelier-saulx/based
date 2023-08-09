@@ -53,6 +53,8 @@ export function toModifyArgs(props: {
           ...value,
           setType: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
           isSingle: fieldSchema.type === 'reference',
+          // @ts-ignore
+          isBidirectional: !!fieldSchema.bidirectional,
         },
       ]
     case 'set':
@@ -60,7 +62,10 @@ export function toModifyArgs(props: {
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_SET,
         strPath,
-        { ...value, setType: DB_TYPE_TO_SET_TYPE[setFieldSchema.items.type] },
+        {
+          ...value,
+          setType: DB_TYPE_TO_SET_TYPE[setFieldSchema.items.type],
+        },
       ]
     case 'array':
       // we are doing an array level operation like $push etc.

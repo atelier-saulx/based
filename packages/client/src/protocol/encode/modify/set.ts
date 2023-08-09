@@ -7,7 +7,17 @@ import {
 } from './types'
 
 // TODO: impl. bidirectional
-function getContraint({ isSingle }: { isSingle: boolean }) {
+function getConstraint({
+  isSingle,
+  isBidirectional,
+}: {
+  isSingle: boolean
+  isBidirectional: boolean
+}) {
+  if (isBidirectional) {
+    return 2
+  }
+
   return isSingle ? 1 : 0
 }
 
@@ -22,6 +32,7 @@ function strsToStr(ary: string[] = []): string {
 export function encodeSetOperation({
   setType,
   isSingle,
+  isBidirectional,
   $value,
   $add,
   $remove,
@@ -29,6 +40,7 @@ export function encodeSetOperation({
 }: {
   setType: number
   isSingle?: boolean
+  isBidirectional?: boolean
   $value?: any | any[]
   $add?: any | any[]
   $remove?: any | any[]
@@ -37,7 +49,7 @@ export function encodeSetOperation({
   if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
-      contraint_id: getContraint({ isSingle }),
+      contraint_id: getConstraint({ isSingle, isBidirectional }),
       delete_all: $delete || $value?.length === 0,
       $value: refsToStr($value),
       $add: refsToStr($add),
