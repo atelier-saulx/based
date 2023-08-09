@@ -1199,7 +1199,7 @@ test.serial.skip('$merge = false', async (t) => {
 //   }
 //
 //   › walk (/Users/tonykovanen/saulx/based-db/node_modules/@based/schema/src/walker/index.ts:25:17)
-test.serial.skip('automatic child creation', async (t) => {
+test.serial('automatic child creation', async (t) => {
   const childrenIds = await Promise.all(
     [
       {
@@ -1264,7 +1264,6 @@ test.serial.skip('automatic child creation', async (t) => {
 
   await client.set({
     $id: parent,
-    type: 'match',
     children: {
       $add: [
         {
@@ -1278,10 +1277,6 @@ test.serial.skip('automatic child creation', async (t) => {
     },
   })
 
-  // const newChildren = await client.redis.selva_hierarchy_children(
-  //   DEFAULT_HIERARCHY,
-  //   parent
-  // )
   const newChildren = (await client.command('hierarchy.children', [parent]))[0]
   t.is(newChildren.length, 5, 'Should have 5 children created')
 })
