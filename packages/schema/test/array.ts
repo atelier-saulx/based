@@ -159,6 +159,29 @@ test('push ints', async (t) => {
   ])
 })
 
+// FIXME
+test.skip('push objs', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    objArray: {
+      $push: [{ snurp: 'a' }, { snurp: 'b' }],
+    },
+  })
+
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['objArray'],
+      value: {
+        $push: [{ snurp: 'a' }, { snurp: 'b' }],
+      },
+    },
+    { path: ['objArray', -2, 'snurp'], value: 'a' },
+    { path: ['objArray', -1, 'snurp'], value: 'b' },
+    { path: ['objArray', -2], value: { snurp: 'a' } },
+    { path: ['objArray', -1], value: { snurp: 'b' } },
+  ])
+})
+
 test('unshift ints', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
