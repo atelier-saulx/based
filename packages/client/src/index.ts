@@ -284,14 +284,15 @@ export class BasedDbClient extends Emitter {
       ctx.lang = $language
     }
 
-    let { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
+    const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
     console.dir({ cmds, defaults }, { depth: 8 })
 
+    let q = cmds
     const nestedIds: any[] = []
     const nestedObjs: any[] = []
     let i = 0
-    while (cmds.length) {
-      const results = await get({ ...ctx }, cmds)
+    while (q.length) {
+      const results = await get({ ...ctx }, q)
 
       const ids =
         results?.map(([cmdResult]) => {
@@ -307,10 +308,10 @@ export class BasedDbClient extends Emitter {
         }) ?? []
       nestedIds.push(ids)
 
-      const obj = parseGetResult({ ...ctx }, cmds, results)
+      const obj = parseGetResult({ ...ctx }, q, results)
       nestedObjs.push(obj)
 
-      cmds = cmds.reduce((all, cmd, j) => {
+      q = q.reduce((all, cmd, j) => {
         const ids = nestedIds?.[i]?.[j]
 
         cmd.nestedCommands?.forEach((c) => {
@@ -334,7 +335,13 @@ export class BasedDbClient extends Emitter {
       i++
     }
 
-    const merged = deepMergeArrays({}, ...nestedObjs)
+    const merged =
+      nestedObjs.length === 1 &&
+      cmds[0].type === 'traverse' &&
+      !cmds[0].isSingle
+        ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
+        : deepMergeArrays({}, ...nestedObjs) // else merge all the results
+
     for (const d of defaults) {
       applyDefault(merged, d)
     }

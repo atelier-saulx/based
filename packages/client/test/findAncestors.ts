@@ -130,8 +130,7 @@ test.serial('find - ancestors - regions', async (t) => {
   )
 })
 
-// TODO: target changes from parseTopLevel: true don't stick (Jim)
-test.serial.skip('find - ancestors - regions - no wrapping', async (t) => {
+test.serial('find - ancestors - regions - no wrapping', async (t) => {
   const regions = await Promise.all([
     client.set({
       type: 'region',

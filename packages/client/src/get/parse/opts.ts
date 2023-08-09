@@ -110,10 +110,6 @@ export async function parseGetOpts(
         keys: {},
         async any(args) {
           const { key, value, path, target } = args
-          if (key === '') {
-            return {}
-          }
-
           if (typeof value === 'object') {
             if (value.$list) {
               if (value.$field) {
@@ -151,7 +147,7 @@ export async function parseGetOpts(
               }
             } else if (key === '$find') {
               return
-            } else if (value.$id) {
+            } else if (key !== '' && value.$id) {
               return {
                 target: {
                   ...target,
@@ -160,7 +156,7 @@ export async function parseGetOpts(
                   nestedPath: args.path,
                 },
               }
-            } else if (value.$alias) {
+            } else if (key !== '' && value.$alias) {
               const { $alias } = value
               const aliases = Array.isArray($alias) ? $alias : [$alias]
               const resolved = await this.command('resolve.nodeid', [

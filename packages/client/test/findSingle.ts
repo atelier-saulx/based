@@ -101,8 +101,7 @@ test.serial('find - single', async (t) => {
   })
 })
 
-// TODO: single $find at top level should be supported?
-test.serial.skip('find - single with no wrapping', async (t) => {
+test.serial('find - single with no wrapping', async (t) => {
   // simple nested - single query
   const team = await client.set({
     $id: 'te0',

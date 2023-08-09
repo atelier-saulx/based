@@ -36,6 +36,16 @@ export function parseGetResult(
         ? Number(result)
         : parseResultRows({ ...ctx, commandPath: path }, result)
 
+    // if it's a top level $list expression, just return in straight up
+    if (
+      !path.length &&
+      (type === 'traverse' ||
+        (cmd.type === 'ids' && cmd.mainType === 'traverse')) &&
+      !cmd.isSingle
+    ) {
+      return parsed
+    }
+
     if (!path.length) {
       obj = { ...obj, ...parsed[0] }
     } else {
