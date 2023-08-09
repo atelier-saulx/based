@@ -141,3 +141,6 @@ local-cloud/
 
 # selvad dump
 *.sdb
+
+# heap dumps
+jeprof.out.*
