@@ -116,8 +116,7 @@ test.serial('children cycle: delete first node', async (t) => {
   t.deepEqual(await client.get({ $id: 'cy3', id: true }), {})
 })
 
-// TODO: single ref parse error (Jim)
-test.serial.skip('delete ref', async (t) => {
+test.serial('delete ref', async (t) => {
   await client.set({
     $id: 'cy1',
     value: 1,
