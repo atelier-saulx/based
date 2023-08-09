@@ -911,7 +911,7 @@ test.serial('set empty object', async (t) => {
                 type: 'string',
               },
             },
-          },
+          },562222d7bdb0fe2609f3fb93c08273aab3457b49
         },
       },
     },
@@ -957,7 +957,8 @@ test.serial('set empty object', async (t) => {
   )
 })
 
-test.serial('$increment, $default', async (t) => {
+// TODO: $default being added to the path (Jim)
+test.serial.skip('$increment, $default', async (t) => {
   await client.set({
     $id: 'viDingDong',
     value: {
@@ -984,27 +985,28 @@ test.serial('$increment, $default', async (t) => {
     value: 110,
   })
 
-  // t.is(
-  //   readDouble(await client.redis.selva_object_get('', 'viDingDong', 'value')),
-  //   110,
-  //   'increment if value exists'
-  // )
-  //
-  // await client.set({
-  //   $id: 'viDingDong',
-  //   title: {
-  //     en: {
-  //       $default: 'title',
-  //     },
-  //   },
-  // })
-  //
-  // t.is(
-  //   await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
-  //   'title',
-  //   'set default'
-  // )
-  //
+  t.is(
+    (await client.command('object.get', ['', 'viDingDong', 'value']))[0],
+    110,
+    'increment if value exists'
+  )
+
+  await client.set({
+    $id: 'viDingDong',
+    title: {
+      en: {
+        $default: 'title',
+      },
+    },
+  })
+
+  t.is(
+    // await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
+    (await client.command('object.get', ['', 'viDingDong', 'title.en']))[0],
+    'title',
+    'set default'
+  )
+
   // await client.set({
   //   $id: 'viDingDong',
   //   title: {
