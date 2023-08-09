@@ -303,7 +303,6 @@ test.serial('simple aggregate', async (t) => {
       valueAvg: sum / 4,
     }
   )
-  return
 
   t.deepEqualIgnoreOrder(
     await client.get({
@@ -611,7 +610,6 @@ test.serial('sorted aggregate', async (t) => {
       valueAvg: 46 / 4,
     }
   )
-  return
 
   t.deepEqualIgnoreOrder(
     await client.get({
