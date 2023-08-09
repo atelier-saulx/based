@@ -1043,5 +1043,39 @@ test('string', async (t) => {
     { depth: 10 }
   )
 
+  console.info('---- doink 44 reference ------')
+  r = await setWalker(
+    schema,
+    {
+      $id: parent,
+      type: 'match',
+      children: {
+        $add: [
+          {
+            type: 'match',
+            $alias: 'maTestWithAlias',
+            title: {
+              nl: 'yes with alias',
+            },
+          },
+        ],
+      },
+    },
+    async (args, type) => {
+      console.info('GO ASYNC', args.path, args.value, type)
+      if (args.value.type === 'thing') {
+        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      } else {
+        return 'bl1221'
+      }
+    }
+  )
+
+  console.dir(r.errors)
+  console.dir(
+    r.collected.map((v) => ({ path: v.path, value: v.value })),
+    { depth: 10 }
+  )
+
   t.true(true)
 })
