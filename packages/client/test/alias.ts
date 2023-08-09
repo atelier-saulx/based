@@ -494,7 +494,7 @@ test.serial('delete all aliases of a node', async (t) => {
   )
 })
 
-// TODO: waiting for $merge: false
+// TODO: waiting for $merge (Jim)
 test.serial.skip('alias and merge = false', async (t) => {
   const match1 = await client.set({
     type: 'match',
