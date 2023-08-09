@@ -413,7 +413,7 @@ test('NaN', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('INTfinity', async (t) => {
+test('Infinity', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     integer: Infinity,

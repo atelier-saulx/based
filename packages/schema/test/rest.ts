@@ -121,6 +121,7 @@ test('value enum ', async (t) => {
     enum: { $value: 'tony' },
   })
 
+  console.dir(resultCollect(r), { depth: 10 })
   console.log(r.errors)
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: 0 }])
@@ -183,9 +184,11 @@ test('object: boolean', async (t) => {
     },
   })
 
+  console.info(resultCollect(r))
+
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
-    { path: ['object'], value: { flap: true } },
     { path: ['object', 'flap'], value: true },
+    { path: ['object'], value: { flap: true } },
   ])
 })

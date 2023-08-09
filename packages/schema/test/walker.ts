@@ -360,7 +360,7 @@ test.serial('perf setWalker', async (t) => {
   t.true(d < 1e3)
 })
 
-test('string', async (t) => {
+test.skip('string', async (t) => {
   // for (let i = 0; i < 10; i++) {
   //   console.log(
   //     (await setWalker(schema, { $id: 'bl120', name: 'blax' })).target

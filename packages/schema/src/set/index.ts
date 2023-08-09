@@ -50,12 +50,16 @@ const opts: Opts<BasedSetTarget> = {
         if (type === 'text') {
           return
         }
+        // if (typeof args.value === 'object' && args.value !== null) {
         args.stop()
+        // } else {
+        //   args.prev.stop()
+        // }
         if (args.prev.value.$default) {
           args.error(ParseError.valueAndDefault)
           return
         }
-        return { path: args.path.slice(0, -1) }
+        return { path: args.path.slice(0, -1), value: args.value }
       },
       $default: async (args) => {
         const type = args.fieldSchema?.type
