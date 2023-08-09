@@ -949,8 +949,7 @@ test.serial('set empty object', async (t) => {
   )
 })
 
-// TODO: $default being added to the path (Jim)
-test.serial.skip('$increment, $default', async (t) => {
+test.serial('$increment, $default', async (t) => {
   await client.set({
     $id: 'viDingDong',
     value: {

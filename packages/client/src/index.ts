@@ -179,7 +179,7 @@ export class BasedDbClient extends Emitter {
 
     const args: any[] = []
     collected.forEach((props: Required<BasedSchemaCollectProps>) => {
-      const { path, value } = props
+      let { path, value } = props
 
       if (path.length === 1 && path[0] === 'type') {
         return
@@ -198,12 +198,15 @@ export class BasedDbClient extends Emitter {
           return
         }
 
+        if (value.$default) {
+          value = value.$default
+        }
         for (const lang in value) {
           args.push(
             ...toModifyArgs({
               path: [...props.path, lang],
               fieldSchema: { type: 'string' },
-              value: value[lang],
+              value: value.$default ? { $default: value[lang] } : value[lang],
             })
           )
         }
