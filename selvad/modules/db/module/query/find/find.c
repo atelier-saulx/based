@@ -220,7 +220,7 @@ static int process_node_sort(
 
     item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->lang, node, args->send_param.order_field);
     if (item) {
-        SVector_InsertFast(args->result, item);
+        (void)SVector_InsertFast(args->result, item);
     } else {
         Selva_NodeId nodeId;
 
