@@ -911,7 +911,7 @@ test.serial('set empty object', async (t) => {
                 type: 'string',
               },
             },
-          },562222d7bdb0fe2609f3fb93c08273aab3457b49
+          },
         },
       },
     },
