@@ -12,7 +12,6 @@ const opts: Opts<BasedSetTarget> = {
           args.error(ParseError.cannotDeleteNodeFromModify)
           return
         }
-
         if (args.value === true) {
           args.stop()
           args.prev.collect()

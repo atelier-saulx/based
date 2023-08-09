@@ -208,7 +208,7 @@ test('just delete', async (t) => {
     $id: 'bl120',
     $delete: true,
   })
-  t.true(r.errors === 1)
+  t.true(r.errors.length === 1)
 })
 
 test('$default in collected path', async (t) => {
