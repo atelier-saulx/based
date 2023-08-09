@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <math.h>
+#include <string.h>
 #include "jemalloc.h"
 #include "util/finalizer.h"
 #include "util/funmap.h"

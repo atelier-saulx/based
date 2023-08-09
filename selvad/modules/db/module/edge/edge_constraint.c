@@ -6,6 +6,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "jemalloc.h"
 #include "util/auto_free.h"
 #include "util/cstrings.h"

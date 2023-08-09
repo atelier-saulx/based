@@ -5,6 +5,7 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_db.h"

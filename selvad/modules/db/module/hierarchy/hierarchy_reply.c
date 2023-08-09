@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include "selva_server.h"
 #include "selva_db.h"

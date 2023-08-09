@@ -4,6 +4,7 @@
  */
 #define _GNU_SOURCE
 #include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/finalizer.h"
 #include "util/selva_string.h"

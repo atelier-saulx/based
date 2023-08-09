@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <math.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <string.h>
 #include "jemalloc.h"
 #include "selva_error.h"
 #include "util/selva_string.h"

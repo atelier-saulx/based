@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/selva_string.h"
 #include "selva_onload.h"

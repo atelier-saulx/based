@@ -277,7 +277,7 @@ static inline char *SelvaHierarchy_GetNodeId(Selva_NodeId id, const struct Selva
     const char *buf = (const char *)node;
 
     /* We know the id is the first thing in the struct. */
-    memcpy(id, buf, SELVA_NODE_ID_SIZE);
+    __builtin_memcpy(id, buf, SELVA_NODE_ID_SIZE);
 
     return id;
 }
@@ -291,7 +291,7 @@ static inline char *SelvaHierarchy_GetNodeId(Selva_NodeId id, const struct Selva
 static inline char *SelvaHierarchy_GetNodeType(char type[SELVA_NODE_TYPE_SIZE], const struct SelvaHierarchyNode *node) {
     const char *buf = (const char *)node;
 
-    memcpy(type, buf, SELVA_NODE_TYPE_SIZE);
+    __builtin_memcpy(type, buf, SELVA_NODE_TYPE_SIZE);
 
     return type;
 }

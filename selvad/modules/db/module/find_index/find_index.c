@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <limits.h>
 #include <stddef.h>
+#include <string.h>
 #include <tgmath.h>
 #include <time.h>
 #include "jemalloc.h"

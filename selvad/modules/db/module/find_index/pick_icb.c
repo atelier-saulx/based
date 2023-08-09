@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/base64.h"
 #include "util/selva_string.h"

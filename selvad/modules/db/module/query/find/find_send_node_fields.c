@@ -4,8 +4,9 @@
  */
 #define _GNU_SOURCE
 #include <stddef.h>
-#include <sys/types.h>
 #include <stdio.h>
+#include <string.h>
+#include <sys/types.h>
 #include "util/cstrings.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"

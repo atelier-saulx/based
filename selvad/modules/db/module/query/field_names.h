@@ -29,7 +29,7 @@ static inline int endswithwildcard(const char *field_str, size_t field_len)
 static inline int is_edgemeta(const char *field_str, size_t field_len)
 {
     return field_len >= sizeof(SELVA_EDGE_META_FIELD) - 1 &&
-           !memcmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1) &&
+           !__builtin_memcmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1) &&
            (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1 ||
             (field_len >= sizeof(SELVA_EDGE_META_FIELD) && field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.'));
 }

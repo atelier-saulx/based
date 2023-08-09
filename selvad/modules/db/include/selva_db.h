@@ -9,7 +9,6 @@
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include "cdefs.h"
 #include "selva_object_type.h"
 
@@ -164,7 +163,7 @@ static inline void Selva_NodeIdCpy(Selva_NodeId dest, const char *src) {
 #pragma GCC diagnostic ignored "-Wstringop-truncation"
 #endif
     /* Note that strncpy() will handle nul padding. */
-    strncpy(dest, src, SELVA_NODE_ID_SIZE);
+    __builtin_strncpy(dest, src, SELVA_NODE_ID_SIZE);
 #if (defined(__GNUC__) || defined(__GNUG__)) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
@@ -196,8 +195,8 @@ static inline int Selva_CmpNodeType(const char t1[SELVA_NODE_TYPE_SIZE], const c
 
     static_assert(SELVA_NODE_TYPE_SIZE == sizeof(a), "type size matches the cmp variable");
 
-    memcpy(&a, t1, SELVA_NODE_TYPE_SIZE);
-    memcpy(&b, t2, SELVA_NODE_TYPE_SIZE);
+    __builtin_memcpy(&a, t1, SELVA_NODE_TYPE_SIZE);
+    __builtin_memcpy(&b, t2, SELVA_NODE_TYPE_SIZE);
 
     return a - b;
 }

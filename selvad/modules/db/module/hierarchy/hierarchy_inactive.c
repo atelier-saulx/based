@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 #include "selva_error.h"

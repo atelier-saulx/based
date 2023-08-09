@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/finalizer.h"
 #include "util/selva_string.h"
