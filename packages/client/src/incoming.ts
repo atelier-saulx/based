@@ -27,7 +27,6 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
     try {
       res = findFrame(nextBuf)
     } catch (e) {
-      console.error('Error finding frame', e)
       client.backpressureBlock = nextBuf
       return
     }

@@ -377,14 +377,26 @@ function parseList(
   if ($list?.$find?.$find) {
     cmd.type = 'ids'
 
+    const $sort = $list?.$sort
+
     const nestedCmd: GetTraverse | GetTraverseIds = parseList(
       {
         ...initial,
         type: 'traverse',
       },
       key,
-      { $find: $list.$find.$find }
+      { $find: $list.$find.$find, $sort }
     )
+
+    if ($sort !== undefined) {
+      const { $order, $field } = $list.$sort
+      nestedCmd.sort = {
+        order: $order,
+        field: $field,
+      }
+
+      delete $list.$sort
+    }
 
     cmd.nestedFind = nestedCmd
   }

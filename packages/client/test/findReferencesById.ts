@@ -185,102 +185,101 @@ test.serial('find - references', async (t) => {
     { value: 2, name: 'match0' },
   ])
 
-  // TODO: deduplication in nested finds of old selva? not in new?
-  // const { items: relatedMatchesLeagues } = await client.get({
-  //   $id: matches[0].id,
-  //   items: {
-  //     name: true,
-  //     value: true,
-  //     $list: {
-  //       $sort: { $field: 'value', $order: 'asc' },
-  //       $find: {
-  //         $traverse: 'related',
-  //         $filter: {
-  //           $field: 'type',
-  //           $operator: '=',
-  //           $value: 'match',
-  //         },
-  //         $find: {
-  //           $traverse: 'ancestors',
-  //           $filter: [
-  //             {
-  //               $field: 'type',
-  //               $operator: '=',
-  //               $value: 'league',
-  //             },
-  //             {
-  //               $field: 'value',
-  //               $operator: '<',
-  //               $value: 10,
-  //             },
-  //           ],
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
+  const { items: relatedMatchesLeagues } = await client.get({
+    $id: matches[0].id,
+    items: {
+      name: true,
+      value: true,
+      $list: {
+        $sort: { $field: 'value', $order: 'asc' },
+        $find: {
+          $traverse: 'related',
+          $filter: {
+            $field: 'type',
+            $operator: '=',
+            $value: 'match',
+          },
+          $find: {
+            $traverse: 'ancestors',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'league',
+              },
+              {
+                $field: 'value',
+                $operator: '<',
+                $value: 10,
+              },
+            ],
+          },
+        },
+      },
+    },
+  })
 
-  // t.deepEqualIgnoreOrder(
-  //   relatedMatchesLeagues,
-  //   [
-  //     { value: 0, name: 'league0' },
-  //     { value: 1, name: 'league1' },
-  //     { value: 2, name: 'league2' },
-  //     { value: 3, name: 'league3' },
-  //     { value: 4, name: 'league4' },
-  //     { value: 5, name: 'league5' },
-  //     { value: 6, name: 'league6' },
-  //     { value: 7, name: 'league7' },
-  //     { value: 8, name: 'league8' },
-  //     { value: 9, name: 'league9' },
-  //   ],
-  //   'Nested query'
-  // )
+  t.deepEqualIgnoreOrder(
+    relatedMatchesLeagues,
+    [
+      { value: 0, name: 'league0' },
+      { value: 1, name: 'league1' },
+      { value: 2, name: 'league2' },
+      { value: 3, name: 'league3' },
+      { value: 4, name: 'league4' },
+      { value: 5, name: 'league5' },
+      { value: 6, name: 'league6' },
+      { value: 7, name: 'league7' },
+      { value: 8, name: 'league8' },
+      { value: 9, name: 'league9' },
+    ],
+    'Nested query'
+  )
 
-  // await wait(1000)
+  await wait(1000)
 
-  // const { related: relatedMatchesLeaguesNoTraverse } = await client.get({
-  //   $id: matches[0].id,
-  //   related: {
-  //     name: true,
-  //     value: true,
-  //     $list: {
-  //       $sort: { $field: 'value', $order: 'asc' },
-  //       $find: {
-  //         $find: {
-  //           $traverse: 'ancestors',
-  //           $filter: [
-  //             {
-  //               $field: 'type',
-  //               $operator: '=',
-  //               $value: 'league',
-  //             },
-  //             {
-  //               $field: 'value',
-  //               $operator: '<',
-  //               $value: 10,
-  //             },
-  //           ],
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
+  const { related: relatedMatchesLeaguesNoTraverse } = await client.get({
+    $id: matches[0].id,
+    related: {
+      name: true,
+      value: true,
+      $list: {
+        $sort: { $field: 'value', $order: 'asc' },
+        $find: {
+          $find: {
+            $traverse: 'ancestors',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'league',
+              },
+              {
+                $field: 'value',
+                $operator: '<',
+                $value: 10,
+              },
+            ],
+          },
+        },
+      },
+    },
+  })
 
-  // t.deepEqualIgnoreOrder(
-  //   relatedMatchesLeaguesNoTraverse,
-  //   [
-  //     { value: 0, name: 'league0' },
-  //     { value: 1, name: 'league1' },
-  //     { value: 2, name: 'league2' },
-  //     { value: 3, name: 'league3' },
-  //     { value: 4, name: 'league4' },
-  //     { value: 5, name: 'league5' },
-  //     { value: 6, name: 'league6' },
-  //     { value: 7, name: 'league7' },
-  //     { value: 8, name: 'league8' },
-  //     { value: 9, name: 'league9' },
-  //   ],
-  //   'Nested query'
-  // )
+  t.deepEqualIgnoreOrder(
+    relatedMatchesLeaguesNoTraverse,
+    [
+      { value: 0, name: 'league0' },
+      { value: 1, name: 'league1' },
+      { value: 2, name: 'league2' },
+      { value: 3, name: 'league3' },
+      { value: 4, name: 'league4' },
+      { value: 5, name: 'league5' },
+      { value: 6, name: 'league6' },
+      { value: 7, name: 'league7' },
+      { value: 8, name: 'league8' },
+      { value: 9, name: 'league9' },
+    ],
+    'Nested query'
+  )
 })
