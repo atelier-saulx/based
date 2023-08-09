@@ -117,8 +117,7 @@ test('$remove $value not allowed', async (t) => {
 })
 
 // reference object
-
-test.only('referennce to an object', async (t) => {
+test.only('reference to an object', async (t) => {
   r = await setWalker(
     schema,
     {
@@ -127,21 +126,19 @@ test.only('referennce to an object', async (t) => {
         type: 'thing',
         priority: 9000,
       },
+    },
+    async (args, type) => {
+      if (args.value.type === 'thing') {
+        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+      } else {
+        return 'bl1221'
+      }
     }
-    // async (args, type) => {
-    //   if (args.value.type === 'thing') {
-    //     return 'ti' + Math.floor(Math.random() * 10000).toString(16)
-    //   } else {
-    //     return 'bl1221'
-    //   }
-    // }
   )
-
   console.dir(r.errors)
   console.dir(
     r.collected.map((v) => ({ path: v.path, value: v.value })),
     { depth: 10 }
   )
-
   t.true(true)
 })

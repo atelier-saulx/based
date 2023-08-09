@@ -135,8 +135,11 @@ export const text: FieldParser<'text'> = async (args) => {
     for (const key in value) {
       if (key === '$value') {
         const nValue = await next(args, key)
-        if (typeof nValue.value === 'object') {
-          deepMerge(result, nValue.value)
+        if (typeof nValue === 'object') {
+          deepMerge(result, nValue)
+        } else {
+          args.error(ParseError.incorrectFormat)
+          return
         }
       } else if (key === '$default') {
         result.$default = await next(args, key)

@@ -57,9 +57,6 @@ test('simple case with value', async (t) => {
     $language: 'za',
     text: { $value: 'sdsdds' },
   })
-
-  //ERROR HERE
-
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { za: 'sdsdds' } }])
   t.true(true)
 })
@@ -169,6 +166,7 @@ test('value:lang, lang, default:lang, lang:value, lang:default', async (t) => {
       path: ['text'],
       value: {
         nl: 'flapperonus',
+        za: 'durp',
         $default: { ae: 'habibi', en: 'flapflap' },
         ro: 'durp',
       },
@@ -205,11 +203,25 @@ test('text delete', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { $delete: true } }])
 })
 
-test.only('just delete', async (t) => {
+test('just delete', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $delete: true,
   })
-
   t.true(r.errors === 1)
+})
+
+test('$default in collected path', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    text: {
+      en: {
+        $default: 'title',
+      },
+    },
+  })
+  t.is(r.errors.length, 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['text'], value: { $default: { en: 'title' } } },
+  ])
 })
