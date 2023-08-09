@@ -148,6 +148,13 @@ static struct TraversalOrderItem *alloc_item(struct finalizer *fin, size_t data_
     return item;
 }
 
+static void free_item(struct finalizer *fin, struct TraversalOrderItem *item) {
+    if (fin) {
+        finalizer_del(fin, item);
+    }
+    SelvaTraversalOrder_DestroyOrderItem(item);
+}
+
 static struct TraversalOrderItem *create_item(struct finalizer *fin, const struct order_data * restrict tmp, enum TraversalOrderItemPtype order_ptype, void *p) {
     locale_t locale = 0;
     size_t data_size = 0;
@@ -179,10 +186,7 @@ static struct TraversalOrderItem *create_item(struct finalizer *fin, const struc
         memcpy(item->node_id, EMPTY_NODE_ID, SELVA_NODE_ID_SIZE);
         break;
     default:
-        if (fin) {
-            finalizer_del(fin, item);
-        }
-        SelvaTraversalOrder_DestroyOrderItem(item);
+        free_item(fin, item);
         return NULL;
     }
 
