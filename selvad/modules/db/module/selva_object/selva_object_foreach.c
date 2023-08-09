@@ -29,7 +29,7 @@ int SelvaObject_ArrayForeach(
         struct SVectorIterator it;
 
         SVector_ForeachBegin(&it, vec);
-        do {
+        while (!SVector_Done(&it)) {
             const void *p;
             union SelvaObjectArrayForeachValue v;
 
@@ -40,12 +40,12 @@ int SelvaObject_ArrayForeach(
                 break;
             }
 
-        } while (!SVector_Done(&it));
+        }
     } else if (subtype == SELVA_OBJECT_LONGLONG) {
         struct SVectorIterator it;
 
         SVector_ForeachBegin(&it, vec);
-        do {
+        while (!SVector_Done(&it)) {
             const void *p;
             union SelvaObjectArrayForeachValue v;
 
@@ -56,12 +56,12 @@ int SelvaObject_ArrayForeach(
                 break;
             }
 
-        } while (!SVector_Done(&it));
+        }
     } else if (subtype == SELVA_OBJECT_STRING) {
         struct SVectorIterator it;
 
         SVector_ForeachBegin(&it, vec);
-        do {
+        while (!SVector_Done(&it)) {
             union SelvaObjectArrayForeachValue v;
 
             v.s = SVector_Foreach(&it);
@@ -70,12 +70,12 @@ int SelvaObject_ArrayForeach(
                 break;
             }
 
-        } while (!SVector_Done(&it));
+        }
     } else if (subtype == SELVA_OBJECT_OBJECT) {
         struct SVectorIterator it;
 
         SVector_ForeachBegin(&it, vec);
-        do {
+        while (!SVector_Done(&it)) {
             union SelvaObjectArrayForeachValue v;
 
             v.obj = SVector_Foreach(&it);
@@ -84,7 +84,7 @@ int SelvaObject_ArrayForeach(
                 break;
             }
 
-        } while (!SVector_Done(&it));
+        }
     } else {
         /* subtype not supported. */
         return SELVA_ENOTSUP;

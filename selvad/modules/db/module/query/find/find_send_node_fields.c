@@ -415,9 +415,7 @@ static int send_node_field(
         /*
          * Send the reply.
          */
-        struct selva_string *tmp = selva_string_createf( "%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
-        finalizer_add(fin, tmp, selva_string_free);
-        selva_send_string(resp, tmp);
+        selva_send_strf(resp, "%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
         err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, field_str, field_len, 0);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the field (%.*s) for node_id: \"%.*s\" err: \"%s\"",
