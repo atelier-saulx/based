@@ -406,8 +406,10 @@ static struct SelvaObjectKey *alloc_key(struct SelvaObject *obj, const char *nam
 static void remove_key(struct SelvaObject *obj, struct SelvaObjectKey *key) {
     const intptr_t i = ((intptr_t)key - (intptr_t)obj->emb_keys) / EMBEDDED_KEY_SIZE;
 
-    /* Clear and free the key. */
-    RB_REMOVE(SelvaObjectKeys, &obj->keys_head, key);
+    /*
+     * Clear and free the key.
+     */
+    (void)RB_REMOVE(SelvaObjectKeys, &obj->keys_head, key);
     obj->obj_size--;
     clear_key_value(key);
 
@@ -552,6 +554,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
     const size_t nr_parts = substring_count(key_name_str, sep, key_name_len) + 1;
     char buf[key_name_len + 1]; /* We assume that the length has been sanity checked at this point. */
     struct SelvaObjectKey *key = NULL;
+    struct SelvaObject *key_container = obj;
 
     memcpy(buf, key_name_str, key_name_len);
     buf[key_name_len] = '\0';
@@ -601,6 +604,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
                 return err;
             }
 
+            key_container = obj;
             obj = key->value;
             assert(obj);
             is_timeseries = 0;
@@ -630,6 +634,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
             }
 
             init_array_key(key, SELVA_OBJECT_OBJECT, ary_idx + 1);
+            key_container = NULL;
             obj = insert_new_obj_into_array_key(key, ary_idx);
         } else if ((err == SELVA_ENOENT || (err == 0 && key->type != SELVA_OBJECT_OBJECT && key->type != SELVA_OBJECT_ARRAY && nr_parts > nr_parts_found)) &&
                    (flags & SELVA_OBJECT_GETKEY_CREATE)) {
@@ -654,6 +659,7 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
             key->type = SELVA_OBJECT_OBJECT;
             key->value = SelvaObject_New();
 
+            key_container = obj;
             obj = key->value;
         } else if (err) {
             /*
@@ -669,12 +675,14 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
                 is_timeseries = 1;
             }
 
+            key_container = obj;
             obj = key->value;
             assert(obj);
         } else if (key->type == SELVA_OBJECT_ARRAY && key->subtype == SELVA_OBJECT_OBJECT && nr_parts > nr_parts_found && ary_idx >= 0) {
             /*
              * Keep nesting or return an object from the array if this was the last token.
              */
+            key_container = NULL;
             obj = SVector_GetIndex(key->array, ary_idx);
             if (!obj) {
                 if (flags & SELVA_OBJECT_GETKEY_CREATE) {
@@ -714,7 +722,10 @@ static int get_key_obj(struct SelvaObject *obj, const char *key_name_str, size_t
     }
 
     if (flags & SELVA_OBJECT_GETKEY_DELETE) {
-        remove_key(obj, key);
+        if (!key_container) {
+            return SELVA_ENOENT; /* weird */
+        }
+        remove_key(key_container, key);
         key = NULL;
     }
 
