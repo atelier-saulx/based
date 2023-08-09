@@ -13,6 +13,17 @@ const schema: BasedSchema = {
             type: 'number',
           },
         },
+        objArray: {
+          type: 'array',
+          values: {
+            type: 'object',
+            properties: {
+              snurp: {
+                type: 'string',
+              },
+            },
+          },
+        },
         arrStr: {
           type: 'array',
           values: {
@@ -167,7 +178,7 @@ test('unshift ints', async (t) => {
   t.true(true)
 })
 
-test('nested default unshift error ints', async (t) => {
+test('nested default unshift', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -175,10 +186,17 @@ test('nested default unshift error ints', async (t) => {
     },
   })
 
-  t.true(r.errors.length > 0)
+  t.is(r.errors.length, 0)
+
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['intarray'],
+      value: { $unshift: [1, { $default: 2 }, 3, 4, 5] },
+    },
+  ])
 })
 
-test('nested default push error ints', async (t) => {
+test('nested default in push', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -186,7 +204,14 @@ test('nested default push error ints', async (t) => {
     },
   })
 
-  t.true(r.errors.length > 0)
+  t.is(r.errors.length, 0)
+
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['intarray'],
+      value: { $push: [1, { $default: 2 }, 3, 4, 5] },
+    },
+  ])
 })
 
 test('assign idx default value error', async (t) => {
@@ -317,5 +342,28 @@ test('unshift array', async (t) => {
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
     { path: ['intarray'], value: { $unshift: [-10, -20, -30] } },
+  ])
+})
+
+test('assign + $delete', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    objArray: {
+      $assign: {
+        $idx: 3,
+        $value: {
+          snurp: {
+            $delete: true,
+          },
+        },
+      },
+    },
+  })
+
+  t.is(r.errors.length, 0)
+
+  t.deepEqual(resultCollect(r), [
+    { path: ['objArray', 3, 'snurp'], value: { $delete: true } },
+    { path: ['objArray', 3], value: { snurp: { $delete: true } } },
   ])
 })
