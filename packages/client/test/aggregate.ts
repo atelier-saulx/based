@@ -63,6 +63,10 @@ test.beforeEach(async (t) => {
       },
     },
   })
+
+  // FIXME: make updateSchema
+  client.command('hierarchy.addConstraint', ['le', 'B', 'matches', 'league'])
+  client.command('hierarchy.addConstraint', ['ma', 'SB', 'league', 'matches'])
 })
 
 test.afterEach(async (_t) => {
@@ -126,7 +130,6 @@ test.serial('simple aggregate', async (t) => {
     }),
     { id: 'root', matchCount: 4 }
   )
-  return
 
   t.deepEqualIgnoreOrder(
     await client.get({
