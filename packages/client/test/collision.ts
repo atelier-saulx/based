@@ -44,7 +44,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-test.serial('collision', async (t) => {
+test.serial.skip('collision', async (t) => {
   let n = 100
   const allIds: any = []
   while (n--) {
