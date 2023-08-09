@@ -52,8 +52,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: get crash (Olli)
-test.serial.skip('can use $delete inside array', async (t) => {
+test.serial('can use $delete inside array', async (t) => {
   const id = await client.set({
     $language: 'en',
     type: 'thing',
@@ -87,6 +86,6 @@ test.serial.skip('can use $delete inside array', async (t) => {
   t.deepEqual(result, {
     id: id,
     type: 'thing',
-    formFields: [{}],
+    formFields: [undefined],
   })
 })
