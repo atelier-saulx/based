@@ -1,7 +1,6 @@
 import test from 'ava'
 import { BasedSchema, setWalker } from '../src/index'
-import { resultCollect, errorCollect } from './utils'
-import { ParseError } from '../src/error'
+import { resultCollect } from './utils'
 
 const schema: BasedSchema = {
   types: {
@@ -15,6 +14,12 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        ref: {
+          type: 'reference',
+        },
+        children: {
+          type: 'references',
+        },
         referencesToThings: {
           type: 'references',
           allowedTypes: ['thing'],
@@ -76,7 +81,7 @@ test('references with wrongly formatted ids and incorrect types ', async (t) => 
   t.true(r.errors.length === 2)
 })
 
-test.only('references to empty array (clear)', async (t) => {
+test('references to empty array (clear)', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: [],
@@ -153,4 +158,61 @@ test('reference to an object', async (t) => {
   ])
 
   t.true(true)
+})
+
+test('nested references + $add (deep)', async (t) => {
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl1221',
+      children: {
+        $add: [
+          {
+            type: 'bla',
+          },
+        ],
+      },
+    },
+    async (args) => {
+      if (args.value.type === 'thing') {
+        return 'tilil'
+      } else {
+        return 'bl1221'
+      }
+    }
+  )
+  t.is(r.errors.length, 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['children'], value: { $add: ['bl1221'] } },
+  ])
+})
+
+test('nested ref + references', async (t) => {
+  r = await setWalker(
+    schema,
+    {
+      $id: 'bl1221',
+      ref: {
+        $id: 'bl1221',
+      },
+      children: [
+        {
+          $id: 'bl1221',
+        },
+      ],
+    },
+    async (args) => {
+      if (args.value.type === 'thing') {
+        return 'tilil'
+      } else {
+        return 'bl1221'
+      }
+    }
+  )
+  t.is(r.errors.length, 0)
+
+  t.deepEqual(resultCollect(r), [
+    { path: ['ref'], value: 'bl1221' },
+    { path: ['children'], value: { $value: ['bl1221'] } },
+  ])
 })
