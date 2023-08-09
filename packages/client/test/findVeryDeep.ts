@@ -46,7 +46,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: needs $find.$find
+// TODO: setWalker parse error (Jim)
 test.serial.skip('get very deep results', async (t) => {
   const q: any = {}
   let s: any = q
