@@ -3,6 +3,9 @@ import { Worker } from 'worker_threads'
 import { join } from 'path'
 import beforeExit from 'before-exit'
 import { hash } from '@saulx/hash'
+import { createRecord } from 'data-record'
+import { protocol } from '../../src'
+import { SelvaMergeStrategy } from '../../src/protocol'
 
 const tmp = join(__dirname, '../../tmp')
 
@@ -88,3 +91,35 @@ export const worker = (
       reject(err)
     })
   })
+
+export const find = async ({
+  client,
+  dir,
+  id,
+  dir_opt_str,
+  res_opt_str,
+  res_type,
+}: {
+  client: any
+  dir: any
+  id: string
+  dir_opt_str?: string
+  res_opt_str?: string
+  res_type?: any
+}) => {
+  return client.command('hierarchy.find', [
+    '',
+    createRecord(protocol.hierarchy_find_def, {
+      dir,
+      res_type:
+        res_type || protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
+      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+      dir_opt_str,
+      res_opt_str,
+      limit: BigInt(-1),
+      offset: BigInt(0),
+    }),
+    id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
+    '#1',
+  ])
+}

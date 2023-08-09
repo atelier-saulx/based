@@ -9,21 +9,7 @@ import { createRecord } from 'data-record'
 import { SelvaMergeStrategy, SelvaTraversal } from '../src/protocol'
 import { doubleDef } from '../src/protocol/encode/modify/types'
 import getPort from 'get-port'
-
-const find = async ({ client, dir, id }) => {
-  return client.command('hierarchy.find', [
-    '',
-    createRecord(protocol.hierarchy_find_def, {
-      dir,
-      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
-      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
-      limit: BigInt(-1),
-      offset: BigInt(0),
-    }),
-    id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
-    '#1',
-  ])
-}
+import { find } from './assertions/utils'
 
 export function readDouble(x) {
   return readValue(doubleDef, x, '.d')
