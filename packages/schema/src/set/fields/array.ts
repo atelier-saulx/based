@@ -4,15 +4,23 @@ import { FieldParser, ArgsClass } from '../../walker'
 import { BasedSetTarget } from '../../types'
 
 const collectOperation = (
-  args: ArgsClass<BasedSetTarget, 'array'>,
+  fromArgs: ArgsClass<BasedSetTarget, 'array'>,
   collected: any[],
-  value: any
+  value: any,
+  makeNegative?: number
 ) => {
-  args.collect(value)
+  fromArgs.collect(value)
   if (collected.length) {
-    const collect = args.root._opts.collect
+    const collect = fromArgs.root._opts.collect
     for (const args of collected) {
-      collect(args)
+      if (makeNegative) {
+        args.path[fromArgs.path.length] =
+          args.path[fromArgs.path.length] - makeNegative
+
+        collect(args)
+      } else {
+        collect(args)
+      }
     }
   }
 }
@@ -29,7 +37,6 @@ const parseArray = async (
     args.fieldSchema.values.type
   )
   const collected: ArgsClass<BasedSetTarget>[] = []
-  // optmize this code path
   for (let i = 0; i < fromValue.length; i++) {
     q.push(
       args.parse({
@@ -77,7 +84,7 @@ const operations: {
       value.$push.$value ?? value.$push
     )
     value.$push = arr
-    collectOperation(args, collected, value)
+    collectOperation(args, collected, value, arr.length)
   },
   $unshift: async (args, value) => {
     const { collected, arr } = await parseArray(

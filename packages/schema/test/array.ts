@@ -159,12 +159,11 @@ test('push ints', async (t) => {
   ])
 })
 
-// FIXME
-test.skip('push objs', async (t) => {
+test('push objs', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     objArray: {
-      $push: [{ snurp: 'a' }, { snurp: 'b' }],
+      $push: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
     },
   })
 
@@ -172,13 +171,15 @@ test.skip('push objs', async (t) => {
     {
       path: ['objArray'],
       value: {
-        $push: [{ snurp: 'a' }, { snurp: 'b' }],
+        $push: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
       },
     },
-    { path: ['objArray', -2, 'snurp'], value: 'a' },
-    { path: ['objArray', -1, 'snurp'], value: 'b' },
-    { path: ['objArray', -2], value: { snurp: 'a' } },
-    { path: ['objArray', -1], value: { snurp: 'b' } },
+    { path: ['objArray', -3, 'snurp'], value: 'a' },
+    { path: ['objArray', -2, 'snurp'], value: 'b' },
+    { path: ['objArray', -1, 'snurp'], value: 'c' },
+    { path: ['objArray', -3], value: { snurp: 'a' } },
+    { path: ['objArray', -2], value: { snurp: 'b' } },
+    { path: ['objArray', -1], value: { snurp: 'c' } },
   ])
 })
 

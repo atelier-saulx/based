@@ -180,7 +180,6 @@ export async function parse<T>(
           }
         } else {
           for (const key in args.value) {
-            // console.info('  -> parse field: ', args.path, '->', key)
             if ((!opts.parsers.any && keysHandled.has(key)) || allKeysHandled) {
               continue
             }

@@ -178,15 +178,6 @@ export class ArgsClass<
         break
       }
     }
-
-    // console.log(
-    //   'SELECTED TARGET',
-    //   p && p.id,
-    //   p && p.path,
-    //   p && p.getTopPaths(),
-    //   'END'
-    // )
-
     return p
   }
 

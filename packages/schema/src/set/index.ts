@@ -50,7 +50,6 @@ const opts: Opts<BasedSetTarget> = {
         if (type === 'text' || type === 'set' || type == 'references') {
           return
         }
-        console.info(args.prev.path)
         args.prev.stop()
         args.stop()
         if (args.prev.value.$default) {
