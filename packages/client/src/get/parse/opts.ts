@@ -179,6 +179,7 @@ export async function parseGetOpts(
                 return {
                   target: {
                     ...target,
+                    type: 'node',
                     $field: {
                       aliasPath: value.$field.split('.'),
                       currentPath: path,
