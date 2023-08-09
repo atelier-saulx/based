@@ -541,8 +541,7 @@ test.serial.skip('alias and merge = false', async (t) => {
   // ])
 })
 
-// TODO: lsaliases returns old aliases? (Olli)
-test.serial.skip('ways to clear aliases', async (t) => {
+test.serial('ways to clear aliases', async (t) => {
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
