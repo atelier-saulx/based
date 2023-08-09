@@ -1155,7 +1155,7 @@ static enum selva_op_repl_state modify_array_op(
     } else if (type_code == SELVA_MODIFY_ARG_OP_OBJ_META) {
         return SelvaModify_ModifyMetadata(resp, obj, field, value);
     } else {
-        selva_send_errorf(resp, SELVA_EINTYPE, "ERR Invalid operation type with array syntax: \"%c\"", type_code);
+        selva_send_errorf(resp, SELVA_EINTYPE, "Invalid operation type with array syntax: \"%c\"", type_code);
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
@@ -1357,7 +1357,7 @@ static enum selva_op_repl_state modify_op(
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
     } else {
-        selva_send_errorf(resp, SELVA_EINTYPE, "ERR Invalid type: \"%c\"", type_code);
+        selva_send_errorf(resp, SELVA_EINTYPE, "Invalid type: \"%c\"", type_code);
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
@@ -1773,7 +1773,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
 
         err = SelvaModify_SetHierarchy(hierarchy, nodeId, nr_parents, ((Selva_NodeId []){ ROOT_NODE_ID }), 0, NULL, 0, &node);
         if (err < 0) {
-            selva_send_errorf(resp, err,"ERR Failed to initialize the node hierarchy for id: \"%.*s\"", (int)SELVA_NODE_ID_SIZE, nodeId);
+            selva_send_errorf(resp, err, "Failed to initialize the node hierarchy for id: \"%.*s\"", (int)SELVA_NODE_ID_SIZE, nodeId);
             return;
         }
     } else if (FISSET_CREATE(flags)) {
