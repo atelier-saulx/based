@@ -40,9 +40,6 @@ export const drainQueue = (client: BasedDbClient) => {
         }
 
         client.commandQueue = []
-
-        console.log('GO SEND FOR REAL')
-        // GO SEND SOME STUFF
       }
     }
 

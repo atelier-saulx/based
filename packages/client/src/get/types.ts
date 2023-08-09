@@ -69,7 +69,7 @@ export type GetTraversalShared = {
   traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })
   sourceField?: string
 
-  nestedFind?: GetTraverse | GetTraverseIds
+  nestedFind?: GetTraverse | GetTraverseIds | GetAggregate
 
   // TODO: edge filter expr
 } & GetNodeShared
@@ -78,18 +78,20 @@ export type GetTraverse = {
   type: 'traverse'
 
   isSingle?: boolean
+  function?: any
 } & GetTraversalShared
 
 export type GetTraverseIds = {
   type: 'ids'
 
   isSingle?: boolean
+  mainType?: 'traverse' | 'aggregate' // if nested
 } & GetTraversalShared
 
 export type GetAggregate = {
   type: 'aggregate'
 
-  function: any
+  function?: any
 } & GetTraversalShared
 
 export type GetCommand = GetNode | GetTraverse | GetAggregate | GetTraverseIds

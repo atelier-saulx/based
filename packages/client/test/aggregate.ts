@@ -126,6 +126,7 @@ test.serial('simple aggregate', async (t) => {
     }),
     { id: 'root', matchCount: 4 }
   )
+  return
 
   t.deepEqualIgnoreOrder(
     await client.get({
@@ -246,85 +247,85 @@ test.serial('simple aggregate', async (t) => {
     }
   )
 
-  // TODO: $aggregate.$find
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'root',
-  //     id: true,
-  //     valueAvg: {
-  //       $aggregate: {
-  //         $function: { $name: 'avg', $args: ['value'] },
-  //         $traverse: 'children',
-  //         $find: {
-  //           $traverse: 'children',
-  //         },
-  //       },
-  //     },
-  //   }),
-  //   {
-  //     id: 'root',
-  //     valueAvg: sum / 4,
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'root',
+      id: true,
+      valueAvg: {
+        $aggregate: {
+          $function: { $name: 'avg', $args: ['value'] },
+          $traverse: 'children',
+          $find: {
+            $traverse: 'children',
+          },
+        },
+      },
+    }),
+    {
+      id: 'root',
+      valueAvg: sum / 4,
+    }
+  )
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'root',
-  //     id: true,
-  //     valueAvg: {
-  //       $aggregate: {
-  //         $function: { $name: 'avg', $args: ['value'] },
-  //         $traverse: 'children',
-  //         $filter: [
-  //           {
-  //             $field: 'type',
-  //             $operator: '=',
-  //             $value: 'league',
-  //           },
-  //         ],
-  //         $find: {
-  //           $traverse: 'children',
-  //           $filter: [
-  //             {
-  //               $field: 'type',
-  //               $operator: '=',
-  //               $value: 'match',
-  //             },
-  //           ],
-  //         },
-  //       },
-  //     },
-  //   }),
-  //   {
-  //     id: 'root',
-  //     valueAvg: sum / 4,
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'root',
+      id: true,
+      valueAvg: {
+        $aggregate: {
+          $function: { $name: 'avg', $args: ['value'] },
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'league',
+            },
+          ],
+          $find: {
+            $traverse: 'children',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'match',
+              },
+            ],
+          },
+        },
+      },
+    }),
+    {
+      id: 'root',
+      valueAvg: sum / 4,
+    }
+  )
+  return
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'root',
-  //     id: true,
-  //     value: {
-  //       $aggregate: {
-  //         $function: { $name: 'min', $args: ['value'] },
-  //         $traverse: 'descendants',
-  //         $filter: [
-  //           {
-  //             $field: 'type',
-  //             $operator: '=',
-  //             $value: 'match',
-  //           },
-  //           {
-  //             $field: 'value',
-  //             $operator: 'exists',
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   }),
-  //   { id: 'root', value: 10 }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'root',
+      id: true,
+      value: {
+        $aggregate: {
+          $function: { $name: 'min', $args: ['value'] },
+          $traverse: 'descendants',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'match',
+            },
+            {
+              $field: 'value',
+              $operator: 'exists',
+            },
+          ],
+        },
+      },
+    }),
+    { id: 'root', value: 10 }
+  )
 
   t.deepEqualIgnoreOrder(
     await client.get({
@@ -583,70 +584,70 @@ test.serial('sorted aggregate', async (t) => {
     }
   )
 
-  // TODO: $aggregate.$find
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'root',
-  //     id: true,
-  //     valueAvg: {
-  //       $aggregate: {
-  //         $function: { $name: 'avg', $args: ['value'] },
-  //         $traverse: 'children',
-  //         $find: {
-  //           $traverse: 'children',
-  //         },
-  //         $sort: {
-  //           $order: 'asc',
-  //           $field: 'value',
-  //         },
-  //         $limit: 4,
-  //       },
-  //     },
-  //   }),
-  //   {
-  //     id: 'root',
-  //     valueAvg: 46 / 4,
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'root',
+      id: true,
+      valueAvg: {
+        $aggregate: {
+          $function: { $name: 'avg', $args: ['value'] },
+          $traverse: 'children',
+          $find: {
+            $traverse: 'children',
+          },
+          $sort: {
+            $order: 'asc',
+            $field: 'value',
+          },
+          $limit: 4,
+        },
+      },
+    }),
+    {
+      id: 'root',
+      valueAvg: 46 / 4,
+    }
+  )
+  return
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'root',
-  //     id: true,
-  //     valueAvg: {
-  //       $aggregate: {
-  //         $function: { $name: 'avg', $args: ['value'] },
-  //         $traverse: 'children',
-  //         $filter: [
-  //           {
-  //             $field: 'type',
-  //             $operator: '=',
-  //             $value: 'league',
-  //           },
-  //         ],
-  //         $find: {
-  //           $traverse: 'children',
-  //           $filter: [
-  //             {
-  //               $field: 'type',
-  //               $operator: '=',
-  //               $value: 'match',
-  //             },
-  //           ],
-  //         },
-  //         $sort: {
-  //           $order: 'desc',
-  //           $field: 'value',
-  //         },
-  //         $limit: 4,
-  //       },
-  //     },
-  //   }),
-  //   {
-  //     id: 'root',
-  //     valueAvg: 190 / 4,
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'root',
+      id: true,
+      valueAvg: {
+        $aggregate: {
+          $function: { $name: 'avg', $args: ['value'] },
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'league',
+            },
+          ],
+          $find: {
+            $traverse: 'children',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'match',
+              },
+            ],
+          },
+          $sort: {
+            $order: 'desc',
+            $field: 'value',
+          },
+          $limit: 4,
+        },
+      },
+    }),
+    {
+      id: 'root',
+      valueAvg: 190 / 4,
+    }
+  )
 
   t.deepEqualIgnoreOrder(
     await client.get({

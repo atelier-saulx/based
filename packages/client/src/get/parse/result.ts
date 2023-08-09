@@ -31,7 +31,8 @@ export function parseGetResult(
     } = cmd
 
     const parsed =
-      type === 'aggregate'
+      type === 'aggregate' ||
+      (cmd.type === 'ids' && cmd.mainType === 'aggregate')
         ? Number(result)
         : parseResultRows({ ...ctx, commandPath: path }, result)
 

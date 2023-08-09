@@ -56,43 +56,9 @@ export async function parseGetOpts(
                 : $aggregate.$function,
           }
 
-          if ($aggregate?.$sort !== undefined) {
-            const { $order, $field } = $aggregate.$sort
-            cmd.sort = {
-              order: $order,
-              field: $field,
-            }
-          }
-
-          if (
-            $aggregate?.$limit !== undefined ||
-            $aggregate?.$offset !== undefined
-          ) {
-            cmd.paging = {
-              limit: $aggregate?.$limit ?? -1,
-              offset: $aggregate?.$offset ?? 0,
-            }
-          }
-
-          if ($aggregate?.$filter) {
-            cmd.filter = $aggregate?.$filter
-          }
-
-          if ($aggregate?.$recursive) {
-            cmd.recursive = true
-          }
-
-          const sourceField = $aggregate?.$traverse || String(key)
-          if (Array.isArray(sourceField)) {
-            // find in id list
-            cmd.source = { idList: sourceField }
-          } else if (typeof sourceField === 'object') {
-            cmd.traverseExpr = sourceField
-          } else {
-            cmd.sourceField = sourceField
-          }
-
-          return cmd
+          const { $sort, $limit, $offset } = $aggregate
+          const $list = { $find: $aggregate, $sort, $limit, $offset }
+          return parseList('aggregate', cmd, key, $list)
         }
 
         // special cases
@@ -333,6 +299,7 @@ export async function parseGetOpts(
           }
         } else {
           cmd = parseList(
+            'traverse',
             {
               type: 'traverse',
               fields: { $any: fields },
@@ -368,34 +335,32 @@ export async function parseGetOpts(
 }
 
 function parseList(
-  initial: GetTraverse | GetTraverseIds,
+  type: 'aggregate' | 'traverse',
+  initial: GetTraverse | GetAggregate | GetTraverseIds,
   key: string | number,
   $list: any
-): GetTraverse | GetTraverseIds {
-  const cmd: GetTraverse | GetTraverseIds = { ...initial }
+): GetTraverse | GetTraverseIds | GetAggregate {
+  const cmd: GetTraverse | GetAggregate | GetTraverseIds = { ...initial }
 
   if ($list?.$find?.$find) {
     cmd.type = 'ids'
+    ;(<GetTraverseIds>cmd).mainType = type
 
-    const $sort = $list?.$sort
+    const { $sort, $limit, $offset } = $list
+    const opts = { $sort, $limit, $offset }
 
-    const nestedCmd: GetTraverse | GetTraverseIds = parseList(
+    const nestedCmd: GetTraverse | GetAggregate | GetTraverseIds = parseList(
+      type,
       {
         ...initial,
-        type: 'traverse',
+        type,
       },
       key,
-      { $find: $list.$find.$find, $sort }
+      { $find: $list.$find.$find, ...opts }
     )
 
-    if ($sort !== undefined) {
-      const { $order, $field } = $list.$sort
-      nestedCmd.sort = {
-        order: $order,
-        field: $field,
-      }
-
-      delete $list.$sort
+    for (const opt in opts) {
+      delete $list[opt]
     }
 
     cmd.nestedFind = nestedCmd
@@ -429,6 +394,7 @@ function parseList(
   }
 
   if ($list?.isSingle !== undefined) {
+    // @ts-ignore
     cmd.isSingle = $list.isSingle
   }
 
