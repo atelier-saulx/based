@@ -116,6 +116,11 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     // field name
     { type: 'string' },
   ]),
+  'hierarchy.edgeGet': defaultEncoder([
+    { type: 'id' },
+    // field name
+    { type: 'string' },
+  ]),
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
 }

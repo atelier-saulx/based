@@ -46,6 +46,7 @@ export const COMMAND_TYPES = {
   'hierarchy.find': 19,
   'hierarchy.aggregate': 21,
   'hierarchy.edgeList': 29,
+  'hierarchy.edgeGet': 30,
   'hierarchy.parents': 27,
   'hierarchy.children': 28,
   'hierarchy.addConstraint': 23,
