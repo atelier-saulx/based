@@ -160,9 +160,18 @@ export class BasedDbClient extends Emitter {
           throw new Error(`Unsupported nested operation: ${type}`)
         }
 
-        const { value } = args
+        const { path, value } = args
 
         const nestedOpts = { ...value, $noRoot: true }
+
+        const refField = String(path[0])
+        if (
+          !['parents', 'children'].includes(refField) &&
+          !nestedOpts.parents &&
+          !nestedOpts.children
+        ) {
+          nestedOpts.parents = ['root']
+        }
 
         if (opts.$language) {
           nestedOpts.$language = opts.$language
