@@ -107,6 +107,40 @@ test.beforeEach(async (_t) => {
       },
     },
   })
+
+  // FIXME: make updateSchema
+  await client.command('hierarchy.addConstraint', [
+    'ma',
+    'SB',
+    'bidirClub',
+    'bidirMatches',
+  ])
+  await client.command('hierarchy.addConstraint', [
+    'cl',
+    'B',
+    'bidirMatches',
+    'bidirClub',
+  ])
+
+  await client.command('hierarchy.addConstraint', [
+    'cl',
+    'B',
+    'relatedClubs',
+    'relatedClubs',
+  ])
+
+  await client.command('hierarchy.addConstraint', [
+    'lo',
+    'SB',
+    'bidirClub',
+    'bidirLogo',
+  ])
+  await client.command('hierarchy.addConstraint', [
+    'cl',
+    'SB',
+    'bidirLogo',
+    'bidirClub',
+  ])
 })
 
 test.afterEach(async (_t) => {
