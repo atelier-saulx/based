@@ -38,7 +38,7 @@ export function encodeSetOperation({
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_REFERENCE,
       contraint_id: getContraint({ isSingle }),
-      delete_all: $delete,
+      delete_all: $delete || $value?.length === 0,
       $value: refsToStr($value),
       $add: refsToStr($add),
       $delete: refsToStr($remove),
@@ -46,7 +46,7 @@ export function encodeSetOperation({
   } else if (setType === ModifyOpSetType.SELVA_MODIFY_OP_SET_TYPE_CHAR) {
     return createRecord(SET_OP_BY_TYPE[setType], {
       op_set_type: setType,
-      delete_all: $delete,
+      delete_all: $delete || $value?.length === 0,
       $value: strsToStr($value),
       $add: strsToStr($add),
       $delete: strsToStr($remove),
@@ -56,7 +56,7 @@ export function encodeSetOperation({
   const encoder = SET_TYPE_TO_MODIFY_VALUE_TYPE[setType]
   return createRecord(SET_OP_BY_TYPE[setType], {
     op_set_type: setType,
-    $delete_lal: $delete,
+    delete_all: $delete || $value?.length === 0,
     $value: ($value || []).map(encoder),
     $add: ($add || []).map(encoder),
     $delete: ($remove || []).map(encoder),

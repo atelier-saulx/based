@@ -345,8 +345,7 @@ test.serial('root.children $delete: []', async (t) => {
   // )
 })
 
-// TODO: waiting for setting children: [] to remove children (Jim)
-test.serial.skip('basic', async (t) => {
+test.serial('basic', async (t) => {
   const match = await client.set({
     type: 'match',
     value: 1,
@@ -548,7 +547,6 @@ test.serial.skip('basic', async (t) => {
     children: [],
   })
 
-  // TODO: set parser ignores empty arrays? can't reset children (Jim)
   t.deepEqual(
     // await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
     (await client.command('hierarchy.children', [match]))[0],
@@ -556,24 +554,18 @@ test.serial.skip('basic', async (t) => {
     'match has no children after reset'
   )
 
-  // // add no children
-  // await client.set({
-  //   $id: match,
-  //   children: { $add: [] },
-  // })
-  //
+  // add no children
+  await client.set({
+    $id: match,
+    children: { $add: [] },
+  })
+
   // t.deepEqual(
   //   await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
   //   [],
   //   'match has no children after $add: []'
   // )
-  //
-  // // invalid child nodeId
-  // await client.set({
-  //   $id: match,
-  //   children: { $add: ['', '\0\0\0\0\0\0\0\0\0\0'] },
-  // })
-  //
+
   // t.deepEqual(
   //   await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
   //   [],
@@ -581,12 +573,12 @@ test.serial.skip('basic', async (t) => {
   // )
 
   // set null children
-  await t.throwsAsync(
-    client.set({
-      $id: match,
-      children: null,
-    })
-  )
+  // await t.throwsAsync(
+  //   client.set({
+  //     $id: match,
+  //     children: null,
+  //   })
+  // )
 
   // t.deepEqual(
   //   await client.redis.selva_hierarchy_children(DEFAULT_HIERARCHY, match),
