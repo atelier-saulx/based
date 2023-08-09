@@ -218,7 +218,7 @@ export enum SelvaResultOrder {
    * Result is not ordered by any field but can be usually expected to have a
    * deterministic order.
    */
-  SELVA_RESULT_ORDER_NONE,
+  SELVA_RESULT_ORDER_NONE = 0,
   /**
    * Ascending order.
    */
