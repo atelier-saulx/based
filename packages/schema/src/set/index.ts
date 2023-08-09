@@ -47,14 +47,12 @@ const opts: Opts<BasedSetTarget> = {
       },
       $value: async (args) => {
         const type = args.fieldSchema?.type
-        if (type === 'text') {
+        if (type === 'text' || type === 'set' || type == 'references') {
           return
         }
-        // if (typeof args.value === 'object' && args.value !== null) {
+        console.info(args.prev.path)
+        args.prev.stop()
         args.stop()
-        // } else {
-        //   args.prev.stop()
-        // }
         if (args.prev.value.$default) {
           args.error(ParseError.valueAndDefault)
           return

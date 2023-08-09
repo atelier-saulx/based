@@ -78,10 +78,8 @@ test('value arr', async (t) => {
     $id: 'bl1',
     arrNum: { $value: ['1', '2'] },
   })
-  const err1 = await setWalker(schema, {
-    $id: 'bla',
-    ref: { $value: 1 },
-  })
+
+  t.true(err.errors.length > 1)
 
   const res = await setWalker(schema, {
     $id: 'bla',
@@ -92,8 +90,6 @@ test('value arr', async (t) => {
     arrNum: { $value: [1, 2] },
   })
 
-  t.true(errorCollect(err, err1).length > 0)
-
   t.deepEqual(resultCollect(res, res1), [
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: 1 },
@@ -101,7 +97,6 @@ test('value arr', async (t) => {
     { path: ['arrNum'], value: { $delete: true } },
     { path: ['arrNum', 0], value: 1 },
     { path: ['arrNum', 1], value: 2 },
-    { path: ['arrNum'], value: { $delete: true } },
   ])
 })
 

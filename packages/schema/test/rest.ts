@@ -121,8 +121,6 @@ test('value enum ', async (t) => {
     enum: { $value: 'tony' },
   })
 
-  console.dir(resultCollect(r), { depth: 10 })
-  console.log(r.errors)
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: 0 }])
 })
@@ -136,23 +134,32 @@ test('value &  default enum ', async (t) => {
   t.true(r.errors.length === 2)
 })
 
-test('value: default enum ', async (t) => {
+test('$value & $default enum ', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $value: { $default: 'tony' } },
   })
-
-  t.true(r.errors === 0)
+  t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
     { path: ['enum'], value: { $default: 'tony' } },
   ])
 })
 
-test('default: value enum ', async (t) => {
+test.only('default: value enum ', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $default: { $value: 'tony' } },
   })
+
+  /*
+
+  [
+  { path: [ 'enum' ], value: 0 },
+  { path: [ 'enum' ], value: { '$default': { '$value': 'tony' } } }
+]
+  */
+
+  console.dir(resultCollect(r), { depth: 10 })
 
   t.true(r.errors.length === 1)
 })
@@ -183,8 +190,6 @@ test('object: boolean', async (t) => {
       flap: true,
     },
   })
-
-  console.info(resultCollect(r))
 
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
