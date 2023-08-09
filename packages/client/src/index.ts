@@ -27,6 +27,7 @@ import {
 } from './get'
 import genId from './id'
 import { deepCopy, deepMergeArrays } from '@saulx/utils'
+import { ModifyArgType } from './protocol/encode/modify/types'
 
 export * as protocol from './protocol'
 
@@ -178,19 +179,31 @@ export class BasedDbClient extends Emitter {
 
     const args: any[] = []
     collected.forEach((props: Required<BasedSchemaCollectProps>) => {
-      const { path } = props
+      const { path, value } = props
 
       if (path.length === 1 && path[0] === 'type') {
         return
       }
 
       if (props?.fieldSchema?.type === 'text') {
-        for (const lang in props.value) {
+        if (value.$delete === true) {
+          args.push(
+            ...toModifyArgs({
+              path: [...props.path],
+              fieldSchema: { type: 'string' },
+              value: value,
+            })
+          )
+
+          return
+        }
+
+        for (const lang in value) {
           args.push(
             ...toModifyArgs({
               path: [...props.path, lang],
               fieldSchema: { type: 'string' },
-              value: props.value[lang],
+              value: value[lang],
             })
           )
         }

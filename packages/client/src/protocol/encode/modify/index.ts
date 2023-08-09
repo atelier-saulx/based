@@ -82,6 +82,7 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
   }
 
   const schema: EncodeDefinition = [{ type: 'array', values: defs }]
+  console.dir({ modify: setFields })
   const buf = defaultEncoder(schema)([setFields])
   return buf
 }
