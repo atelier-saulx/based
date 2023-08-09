@@ -1765,7 +1765,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     if (!node) {
         if (FISSET_UPDATE(flags)) {
             /* if the specified id doesn't exist but $operation: 'update' specified */
-            selva_send_null(resp);
+            selva_send_errorf(resp, SELVA_HIERARCHY_ENOENT, "Node not found");
             return;
         }
 
