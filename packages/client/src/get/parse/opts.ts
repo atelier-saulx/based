@@ -110,6 +110,9 @@ export async function parseGetOpts(
         keys: {},
         async any(args) {
           const { key, value, path, target } = args
+          if (key === '') {
+            return {}
+          }
 
           if (typeof value === 'object') {
             if (value.$list) {
