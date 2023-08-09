@@ -87,7 +87,12 @@ export async function parse<T>(
   if (args.parseTopLevel) {
     const parser = opts.parsers.any
     if (parser) {
-      await parser(args)
+      const nArgs = await parser(args)
+
+      if (nArgs) {
+        // @ts-ignore
+        return parse(createOrUseArgs(args, nArgs))
+      }
     }
   }
 

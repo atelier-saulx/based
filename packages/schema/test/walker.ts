@@ -120,7 +120,7 @@ const schema: BasedSchema = {
   },
 }
 
-test('walker', async (t) => {
+test('backtracking', async (t) => {
   const results: any[] = []
 
   const setObj = {
@@ -176,7 +176,6 @@ test('walker', async (t) => {
     },
   ])
 
-  console.log('--------------------------------------')
   const results2: any[] = []
 
   await walk<{ lullz: true }>(
@@ -206,7 +205,6 @@ test('walker', async (t) => {
 
   t.deepEqual(results, results2)
 
-  console.log('--------------------------------------')
   const results3: any[] = []
 
   let cnt = 0
@@ -239,107 +237,66 @@ test('walker', async (t) => {
   t.deepEqual(results, results3)
 })
 
-test('set walker', async (t) => {
-  const schema: BasedSchema = {
-    types: {
-      bla: {
-        prefix: 'bl',
-        fields: {
-          record: {
-            type: 'record',
-            values: {
-              type: 'cardinality',
-            },
-          },
-          array: {
-            type: 'array',
-            values: {
-              type: 'object',
-              properties: {
-                uniqMap: {
-                  type: 'record',
-                  values: {
-                    type: 'cardinality',
-                  },
-                },
-                bla: { type: 'boolean' },
+test.only('parseTop update target', async (t) => {
+  const parsed: { path: (number | string)[]; target: any }[] = []
+  await walk<any>(
+    schema,
+    {
+      init: async () => {
+        return { target: { path: [] } }
+      },
+      parsers: {
+        keys: {},
+        fields: {},
+        any: async (args) => {
+          args.collect()
+          if (args.prev.key !== args.key) {
+            return {
+              parseTopLevel: true,
+              target: {
+                path: args.path.join('.'),
+                prevTarget: args.target.id,
+                id: args.id,
               },
-            },
-          },
-          uniq: { type: 'cardinality' },
-          snup: { type: 'boolean' },
-          flap: {
-            type: 'object',
-            required: ['durp'],
-            properties: {
-              durp: { type: 'boolean' },
-              gurt: { type: 'boolean' },
-              durpi: {
-                enum: ['yuzi', 'jux', 'mr tony', 9000],
-              },
-              x: {
-                type: 'array',
-                values: {
-                  type: 'boolean',
-                },
-              },
-            },
-          },
+              value: args.value,
+            }
+          }
         },
       },
-    },
-    $defs: {},
-    languages: ['en'],
-    root: {
-      fields: {},
-    },
-    prefixToTypeMapping: {
-      bl: 'bla',
-    },
-  }
-
-  const x = await setWalker(schema, {
-    $id: 'bl1',
-    snup: false,
-    uniq: {
-      $value: 'wpeojwepojfewpio',
-    },
-    record: {
-      a: 1000,
-      b: 'bla',
-      c: { x: 'snap', y: 'flap' },
-      bla: { $value: { a: true, b: false } },
-    },
-    flap: {
-      gurt: true,
-      durpi: {
-        $value: 'jux',
+      collect: (args) => {
+        parsed.push({ path: args.path, target: args.target })
+        return args.path.join('.')
       },
-      x: [
-        true,
-        false,
-        false,
-        true,
-        { $value: false },
-        { $default: true, $value: false },
-      ],
     },
-    array: {
-      $insert: {
-        $idx: 2,
-        $value: {
-          bla: false,
-          uniqMap: {
-            a: false,
-            b: { $value: { a: true, b: true }, c: { x: true } },
-          },
+    {
+      x: {
+        y: {
+          z: 'bla!',
         },
       },
-    },
-  })
+    }
+  )
 
-  console.info('------------', x)
-  t.true(true)
+  t.deepEqual(parsed, [
+    { path: ['x'], target: { path: [] } },
+    {
+      path: ['x'],
+      target: { path: 'x', prevTarget: undefined, id: 2 },
+    },
+    {
+      path: ['x', 'y'],
+      target: { path: 'x', prevTarget: undefined, id: 2 },
+    },
+    { path: ['x', 'y'], target: { path: 'x.y', prevTarget: 2, id: 4 } },
+    {
+      path: ['x', 'y', 'z'],
+      target: { path: 'x.y', prevTarget: 2, id: 4 },
+    },
+    {
+      path: ['x', 'y', 'z'],
+      target: { path: 'x.y.z', prevTarget: 4, id: 6 },
+    },
+  ])
 })
 
 test.serial('perf setWalker', async (t) => {
@@ -358,724 +315,4 @@ test.serial('perf setWalker', async (t) => {
   d = Date.now() - d
   console.info('setting 200k', d, 'ms')
   t.true(d < 1e3)
-})
-
-test.skip('string', async (t) => {
-  // for (let i = 0; i < 10; i++) {
-  //   console.log(
-  //     (await setWalker(schema, { $id: 'bl120', name: 'blax' })).target
-  //       .collected
-  //   )
-  // }
-
-  // console.info('----------')
-  // console.log(
-  //   (await setWalker(schema, { $id: 'bl120', name: { $value: 'blax' } }))
-  //     .target.collected
-  // )
-  console.info('---- default ------')
-  const x = await setWalker(schema, {
-    $id: 'bl120',
-    name: { $default: 'blax' },
-  })
-
-  // TODO: Error also has to include path
-  console.log(
-    x.errors,
-    x.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- default too many fields ------')
-  const y = await setWalker(schema, {
-    $id: 'bl120',
-    name: { $default: 'blax', meanboys: true },
-  })
-
-  // TODO: Error also has to include path
-  console.log(
-    y.errors,
-    y.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('----  ------')
-  const z = await setWalker(schema, {
-    $id: 'bl120',
-    exclusiveminmax: { $default: 10, $decrement: 10 },
-  })
-
-  console.log(
-    z.errors,
-    z.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink ------')
-  const j = await setWalker(schema, {
-    $id: 'bl120',
-    exclusiveminmax: { $default: 4, $decrement: 10 },
-  })
-
-  console.log(
-    j.errors,
-    j.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 2 ------')
-  const c = await setWalker(schema, {
-    $id: 'bl120',
-    exclusiveminmax: { $default: 4, $decrement: 10, flapperdeflip: true },
-  })
-
-  console.log(
-    c.errors,
-    c.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 3 ------')
-  const g = await setWalker(schema, {
-    $id: 'bl120',
-    timestamp: { $default: 4 },
-  })
-
-  console.log(
-    g.errors,
-    g.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 4 ------')
-  const d = await setWalker(schema, {
-    $id: 'bl120',
-    exclusiveminmax: { $value: 4 },
-  })
-
-  console.log(
-    d.errors,
-    d.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 5 ------')
-  let r = await setWalker(schema, {
-    $id: 'bl120',
-    text: { $value: 'x' },
-  })
-
-  console.log(
-    r.errors,
-    r.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 6 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: { $value: 'sdsdds' },
-  })
-
-  console.log(
-    r.errors,
-    r.collected.map((v) => ({ path: v.path, value: v.value }))
-  )
-
-  console.info('---- doink 7 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: { $default: 'sdsdds' },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 8 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: { $default: 'sdsdds', en: { $default: 'flapflap' } },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 9 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  t.true(true)
-
-  console.info('---- doink 10 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: {
-      $default: { de: 'dsnfds' },
-      nl: 'flapperonus',
-      en: { $default: 'flapflap' },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 11 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: {
-      $default: { de: 'dsnfds' },
-      nl: 'flapperonus',
-      ro: { $value: 'durp' },
-      en: { $default: 'flapflap' },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 12 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: {
-      $value: 'durp',
-      nl: 'flapperonus',
-      $default: {
-        ae: 'habibi',
-      },
-      ro: { $value: 'durp' },
-      en: { $default: 'flapflap' },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 13 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: {
-      $value: 'xz',
-      nl: 'flapperonus',
-      $default: {
-        ae: 'habibi',
-      },
-      ro: { $value: 'durp' },
-      en: { $default: 'xzxz' },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 14 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $language: 'za',
-    text: {
-      $value: 'xz',
-      nl: 'flapperonus',
-      $default: {
-        ae: 'habibi',
-      },
-      ro: { $value: 'durp' },
-      en: { $default: 'xzxz' },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 15 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    setOfNumbers: [1, 2, 3, 4, 5],
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 16 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    setOfNumbers: { $add: 20 },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 17 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 18 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 19 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referenceToThing: 'sdfefewfewfewewffwe',
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 20 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referenceToThing: 'tibla',
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 21 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referenceToThing: 'blbla',
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 22 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 23 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referencesToThings: { $remove: ['ti123'] },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 24 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referencesToThings: { $add: ['blbla', 'ti123', 'ewiohfdoweihfw'] },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 25 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    referencesToThings: { $add: 'ti123' },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 26 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $assign: {
-        $idx: 0,
-        $value: 6,
-      },
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 27 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $push: [1, 2, 3, 4, 5],
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 28 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $unshift: [1, 2, 3, 4, 5],
-    },
-  })
-
-  console.log(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 29 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    text: {
-      en: 'bla',
-    },
-  })
-
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  t.true(true)
-
-  console.info('---- doink 30 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    text: {
-      $delete: true,
-    },
-  })
-
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 31 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $delete: true,
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 32 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $alias: 'bla',
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 33 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    $alias: ['bla'],
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 34 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    enum: 'tony',
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 35 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    integer: NaN,
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 36 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    integer: Infinity,
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 37 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    integer: Infinity,
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 38 ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    integer: -Infinity,
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 39 ------')
-  r = await setWalker(
-    schema,
-    {
-      $id: 'bl120',
-      referencesToThings: [
-        {
-          type: 'thing',
-          priority: 9000,
-        },
-        {
-          type: 'thing',
-          priority: 10000,
-        },
-        {
-          type: 'flurp',
-          priority: 10000,
-        },
-      ],
-    },
-    async (args, type) => {
-      console.info('GO ASYNC', args.path, args.value, type)
-      if (args.value.type === 'thing') {
-        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
-      } else {
-        return 'bl1221'
-      }
-    }
-  )
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 40 array ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $insert: {
-        $idx: 10,
-        $value: 1212,
-      },
-    },
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 41 record + array ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    record: {
-      blabla: {
-        bla: {
-          $insert: {
-            $value: { flap: 100 },
-            $idx: 5,
-          },
-        },
-      },
-    },
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 41 int unshift + array ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $unshift: [-10, -20, -30],
-    },
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 42 int unshift + array ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    intarray: {
-      $unshift: { $value: [-10, -20, -30] },
-    },
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 42 object ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    object: {
-      flap: true,
-    },
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 43 object ------')
-  r = await setWalker(schema, {
-    $id: 'bl120',
-    object: {},
-  })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  console.info('---- doink 44 reference ------')
-  r = await setWalker(
-    schema,
-    {
-      $id: parent,
-      type: 'match',
-      children: {
-        $add: [
-          {
-            type: 'match',
-            $alias: 'maTestWithAlias',
-            title: {
-              nl: 'yes with alias',
-            },
-          },
-        ],
-      },
-    },
-    async (args, type) => {
-      console.info('GO ASYNC', args.path, args.value, type)
-      if (args.value.type === 'thing') {
-        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
-      } else {
-        return 'bl1221'
-      }
-    }
-  )
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  t.true(true)
 })
