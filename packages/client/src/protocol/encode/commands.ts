@@ -96,6 +96,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string', vararg: true }, // ... nodeID
   ]),
   'hierarchy.addConstraint': strEncoder(4), // <src node type>,<contraint flags>,<fwd field name>,<bck field name>
+  'hierarchy.listConstraints': null,
   'hierarchy.find': defaultEncoder([
     { type: 'string' }, // lang
     { type: 'bin' }, // find query opts (

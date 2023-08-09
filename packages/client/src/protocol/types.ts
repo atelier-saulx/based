@@ -50,6 +50,7 @@ export const COMMAND_TYPES = {
   'hierarchy.parents': 27,
   'hierarchy.children': 28,
   'hierarchy.addConstraint': 23,
+  'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   // TODO:
   // #define CMD_ID_HIERARCHY_INHERIT 20

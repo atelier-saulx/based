@@ -84,18 +84,20 @@ export class BasedDbClient extends Emitter {
       this.schema.prefixToTypeMapping[type.prefix] = typeName
       types.push([type.prefix, typeName])
 
-      this.schema.types[typeName].fields.id = { type: 'string' }
-      this.schema.types[typeName].fields.createdAt = { type: 'timestamp' }
-      this.schema.types[typeName].fields.updatedAt = { type: 'timestamp' }
-      this.schema.types[typeName].fields.type = { type: 'string' }
-      this.schema.types[typeName].fields.parents = { type: 'references' }
-      this.schema.types[typeName].fields.children = { type: 'references' }
-      this.schema.types[typeName].fields.ancestors = { type: 'references' }
-      this.schema.types[typeName].fields.descendants = { type: 'references' }
-      this.schema.types[typeName].fields.aliases = {
+      type.fields.id = { type: 'string' }
+      type.fields.createdAt = { type: 'timestamp' }
+      type.fields.updatedAt = { type: 'timestamp' }
+      type.fields.type = { type: 'string' }
+      type.fields.parents = { type: 'references' }
+      type.fields.children = { type: 'references' }
+      type.fields.ancestors = { type: 'references' }
+      type.fields.descendants = { type: 'references' }
+      type.fields.aliases = {
         type: 'set',
         items: { type: 'string' },
       }
+
+      await this.command('hierarchy.types.add', [type.prefix, typeName])
     }
 
     // root

@@ -141,6 +141,9 @@ test.beforeEach(async (_t) => {
     'bidirLogo',
     'bidirClub',
   ])
+
+  console.dir(await client.command('hierarchy.listConstraints'), { depth: 8 })
+  console.dir(await client.command('hierarchy.types.list'), { depth: 8 })
 })
 
 test.afterEach(async (_t) => {
