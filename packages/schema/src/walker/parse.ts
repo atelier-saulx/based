@@ -104,6 +104,10 @@ export async function parse<T>(
     }
     await Promise.all(keyQ)
 
+    if (typeof args.value !== 'object' || args.value === null) {
+      return
+    }
+
     // schema
     if (args.stopped === undefined) {
       const fieldQ: Promise<ParseResult<T>>[] = []
@@ -158,6 +162,10 @@ export async function parse<T>(
       }
     }
 
+    if (typeof args.value !== 'object' || args.value === null) {
+      return
+    }
+
     // any
     if (args.stopped !== Stopped.stopAll) {
       const parser = opts.parsers.any || opts.parsers.catch
@@ -182,16 +190,6 @@ export async function parse<T>(
         await Promise.all(q)
       }
     }
-
-    // console.log(
-    //   '  OBJECT COMPLETE ------------->',
-    //   args.id,
-    //   args.path,
-    //   'collected: ',
-    //   args.collectedCommands,
-    //   'backtracked: ',
-    //   args.fromBackTrack
-    // )
 
     if (
       opts.backtrack &&
@@ -226,11 +224,6 @@ export async function parse<T>(
         anyParser(args)
       }
     } else {
-      // console.info(
-      //   '        ---->',
-      //   'parse non object (no field parser skip)',
-      //   args.path
-      // )
     }
   }
 }

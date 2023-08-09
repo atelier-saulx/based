@@ -45,7 +45,7 @@ const typeIsAllowed = (
           typeMatches = true
           if (t.$filter) {
             // stage on requires validation in target
-            // TODO: ASYNC HOOK
+            // TODO: ASYNC REQUIRED HOOK
             // if(!(await args.target.referenceFilterCondition(value, t.$filter))){
             //     error(args, ParseError.referenceIsIncorrectType)
             //     return

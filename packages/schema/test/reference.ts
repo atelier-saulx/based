@@ -45,7 +45,7 @@ test('simple error', async (t) => {
     referenceToThing: 'sdfefewfewfewewffwe',
   })
 
-  t.true(r.errors.lengt === 1)
+  t.true(r.errors.length === 1)
 })
 
 test('simple case ', async (t) => {
@@ -59,7 +59,7 @@ test('simple case ', async (t) => {
   ])
 })
 
-test('refernce to wrong thing', async (t) => {
+test('reference to wrong type', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'blbla',
@@ -67,13 +67,24 @@ test('refernce to wrong thing', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('refernces 0,2 wrong', async (t) => {
+test('references with wrongly formatted ids and incorrect types ', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
   })
 
   t.true(r.errors.length === 2)
+})
+
+test.only('references to empty array (clear)', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    referencesToThings: [],
+  })
+  t.deepEqual(resultCollect(r), [
+    { path: ['referencesToThings'], value: { $value: [] } },
+  ])
+  t.is(r.errors.length, 0)
 })
 
 test('$remove references', async (t) => {
@@ -116,8 +127,7 @@ test('$remove $value not allowed', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-// reference object
-test.only('reference to an object', async (t) => {
+test('reference to an object', async (t) => {
   r = await setWalker(
     schema,
     {
@@ -127,18 +137,20 @@ test.only('reference to an object', async (t) => {
         priority: 9000,
       },
     },
-    async (args, type) => {
+    async (args) => {
       if (args.value.type === 'thing') {
-        return 'ti' + Math.floor(Math.random() * 10000).toString(16)
+        return 'tilil'
       } else {
         return 'bl1221'
       }
     }
   )
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
+
+  t.is(r.errors.length, 0)
+
+  t.deepEqual(resultCollect(r), [
+    { path: ['referenceToThing'], value: 'tilil' },
+  ])
+
   t.true(true)
 })
