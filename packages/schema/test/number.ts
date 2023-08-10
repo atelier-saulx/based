@@ -218,8 +218,7 @@ test('value', async (t) => {
   ])
 })
 
-//TODO fix
-test('default', async (t) => {
+test.only('default', async (t) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     number: { $default: 7 },
@@ -265,18 +264,13 @@ test('default', async (t) => {
     set: { $default: [3, 3, 3, 4] },
   })
 
-  //is this issue?
-  console.dir(
-    res5.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
   t.assert(errorCollect(e1, e2, e3, e4, e5).length > 0)
   t.deepEqual(resultCollect(res1, res2, res3, res4, res5), [
     { path: ['number'], value: { $default: 4 } },
     { path: ['integer'], value: { $default: 4 } },
     { path: ['exclusiveminmax'], value: { $default: 4 } },
     { path: ['multipleOf'], value: { $default: 6 } },
-    { path: ['set'], value: { $default: [3, 3, 3, 4] } },
+    { path: ['set'], value: { $default: { $value: [3, 3, 3, 4] } } },
   ])
 })
 

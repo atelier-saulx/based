@@ -1,6 +1,6 @@
 import { BasedSchema } from '../types'
 import { BasedSchemaType, BasedSchemaFields } from '../types'
-import { ArgsOpts, Path, Opts, Stopped, ErrorHandler, Collect } from './types'
+import { ArgsOpts, Path, Opts, Stopped, Collect } from './types'
 import { parse } from './parse'
 import { ParseError } from '../error'
 import { deepEqual } from '@saulx/utils'
@@ -68,7 +68,6 @@ export class ArgsClass<
     } else if (opts && prev) {
       // this.collectedCommands = prev.collectedCommands
       // this.fromBackTrack = prev.fromBackTrack
-
       this.path = prev.path
     } else {
       this.path = []
