@@ -88,8 +88,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: bidirectional refs not working
-test.serial.skip('simple aggregate', async (t) => {
+test.serial('simple aggregate', async (t) => {
   // simple nested - single query
   let sum = 0
 
@@ -408,8 +407,7 @@ test.serial.skip('simple aggregate', async (t) => {
   )
 })
 
-// TODO: bidirectional references
-test.serial.skip('simple aggregate with reference fields', async (t) => {
+test.serial('simple aggregate with reference fields', async (t) => {
   let sum = 0
 
   await Promise.all([
