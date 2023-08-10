@@ -262,7 +262,9 @@ export async function parseGetOpts(
                     field: shouldPrefixFields ? [key, ...f] : f,
                     aliased: fieldObj.aliased?.length
                       ? fieldObj.aliased.map((alias: string) => {
-                          return shouldPrefixFields ? key + '.' + alias : alias
+                          return shouldPrefixFields && key !== '$fieldsByType'
+                            ? key + '.' + alias
+                            : alias
                         })
                       : undefined,
                   })
@@ -278,7 +280,9 @@ export async function parseGetOpts(
                     field: shouldPrefixFields ? [key, ...f] : f,
                     aliased: fieldObj.aliased?.length
                       ? fieldObj.aliased.map((alias: string) => {
-                          return shouldPrefixFields ? key + '.' + alias : alias
+                          return shouldPrefixFields && key !== '$fieldsByType'
+                            ? key + '.' + alias
+                            : alias
                         })
                       : undefined,
                   })
