@@ -1,4 +1,4 @@
-# Copyright (c) 2022 SAULX
+# Copyright (c) 2022-2023 SAULX
 #
 # SPDX-License-Identifier: MIT
 
@@ -20,6 +20,7 @@ PU_REPORT_ORIENTED := 1
 
 CFLAGS := $(CFLAGS) \
 		   -Wextra -Wno-unused-value -Wno-unused-parameter -Wno-implicit-function-declaration \
+		   $(EN_VALGRIND_CFLAGS) \
 		   -g3 \
 		   -include ../../tunables.h \
 

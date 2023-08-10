@@ -34,7 +34,10 @@ static void setup(void)
 static void teardown(void)
 {
     if (vec.vec_mode == SVECTOR_MODE_ARRAY) {
+#if 0
         selva_free(vec.vec_arr);
+#endif
+        free(vec.vec_arr);
     }
 }
 
