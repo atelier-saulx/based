@@ -636,8 +636,7 @@ test.serial('list of simple singular reference', async (t) => {
   )
 })
 
-// TODO: bidirectional references
-test.serial.skip('simple singular bidirectional reference', async (t) => {
+test.serial('simple singular bidirectional reference', async (t) => {
   const club1 = await client.set({
     $id: 'clA',
     title: {
@@ -704,7 +703,7 @@ test.serial.skip('simple singular bidirectional reference', async (t) => {
   await client.set({
     $id: 'clA',
     bidirMatches: {
-      $delete: 'maA',
+      $remove: 'maA',
     },
   })
 
@@ -851,7 +850,7 @@ test.serial.skip('simple singular bidirectional reference', async (t) => {
   await client.set({
     $id: 'clB',
     relatedClubs: {
-      $delete: 'clA',
+      $remove: 'clA',
     },
   })
 

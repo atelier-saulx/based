@@ -44,7 +44,9 @@ export function toModifyArgs(props: {
 
   switch (fieldSchema.type) {
     case 'reference':
-      value = { $value: [value] }
+      if (!value.$value && !value.$delete) {
+        value = { $value: [value] }
+      }
     case 'references':
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_SET,

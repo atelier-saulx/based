@@ -22,6 +22,10 @@ function getConstraint({
 }
 
 function refsToStr(ary: string[] = []): string {
+  if (!ary) {
+    return ''
+  }
+
   return ary.map((s: string) => s.padEnd(SELVA_NODE_ID_LEN, '\0')).join('')
 }
 
