@@ -150,8 +150,12 @@ export class BasedDbClient extends Emitter {
     let flags: string = ''
     // TODO: get this from target of setWalker
     if (opts.$noRoot) {
-      flags = 'N'
+      flags += 'N'
       delete opts.$noRoot // TODO: setWalker does not support $noRoot
+    }
+
+    if (opts.$merge === false) {
+      flags += 'M'
     }
 
     const { errors, collected } = await setWalker(

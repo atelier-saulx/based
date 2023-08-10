@@ -1114,8 +1114,7 @@ test.serial('$default with string and number', async (t) => {
   })
 })
 
-// TODO: waiting for $merge: false
-test.serial.skip('$merge = false', async (t) => {
+test.serial('$merge = false', async (t) => {
   await client.set({
     $id: 'arPower',
     title: {

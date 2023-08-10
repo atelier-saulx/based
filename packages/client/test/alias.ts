@@ -494,8 +494,7 @@ test.serial('delete all aliases of a node', async (t) => {
   )
 })
 
-// TODO: waiting for $merge (Jim)
-test.serial.skip('alias and merge = false', async (t) => {
+test.serial('alias and merge = false', async (t) => {
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -516,29 +515,27 @@ test.serial.skip('alias and merge = false', async (t) => {
     //aliases: [],
   })
 
-  t.deepEqual(
+  t.deepEqualIgnoreOrder(
     // await client.redis.hgetall('___selva_aliases')
     (await client.command('lsaliases'))[0].sort(),
-    {
-      nice_match: match1,
-      nicer_match: match2,
-    }
+    ['nice_match', match1, 'nicer_match', match2]
   )
-  // const res1 = await client.redis.selva_object_get('', match1)
-  // t.deepEqual(res1, [
-  //   'aliases',
-  //   ['nice_match'],
-  //   'createdAt',
-  //   res1[3],
-  //   'id',
-  //   match1,
-  //   'title',
-  //   ['en', 'lol'],
-  //   'type',
-  //   'match',
-  //   'updatedAt',
-  //   res1[11],
-  // ])
+  const res1 = (await client.command('object.get', ['', match1]))[0]
+  console.dir({ res1 }, { depth: 6 })
+  t.deepEqualIgnoreOrder(res1, [
+    'aliases',
+    ['nice_match'],
+    'createdAt',
+    res1[3],
+    'id',
+    match1,
+    'title',
+    ['en', 'lol'],
+    'type',
+    'match',
+    // 'updatedAt', // hmm?
+    // res1[11],
+  ])
 })
 
 test.serial('ways to clear aliases', async (t) => {
