@@ -99,6 +99,7 @@ export const find = async ({
   dir_opt_str,
   res_opt_str,
   res_type,
+  rpn = ['#1'],
 }: {
   client: any
   dir: any
@@ -106,6 +107,7 @@ export const find = async ({
   dir_opt_str?: string
   res_opt_str?: string
   res_type?: any
+  rpn?: string[]
 }) => {
   return client.command('hierarchy.find', [
     '',
@@ -120,6 +122,6 @@ export const find = async ({
       offset: BigInt(0),
     }),
     id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
-    '#1',
+    ...rpn,
   ])
 }

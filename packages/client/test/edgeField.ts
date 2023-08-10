@@ -82,6 +82,9 @@ test.beforeEach(async (_t) => {
           refs: {
             type: 'references',
           },
+          ref: {
+            type: 'reference',
+          },
           ding: { type: 'string' },
           dong: { type: 'string' },
           thing: {
@@ -1419,177 +1422,103 @@ test.serial('wildcard find with edge fields', async (t) => {
   )
 })
 
-test.serial.skip(
-  'wildcard find with edge fields and data fields',
-  async (t) => {
-    // Create nodes
-    // t.deepEqual(
-    //   await client.redis.selva_modify('root', '', '0', 'name', 'hello'),
-    //   ['root', 'UPDATED']
-    // )
-    await client.set({
-      $id: 'root',
-      name: 'hello',
-    })
-    // t.deepEqual(
-    //   await client.redis.selva_modify('ma1', '', '0', 'thing.ding', 'dong'),
-    //   ['ma1', 'UPDATED']
-    // )
-    await client.set({
-      $id: 'ma1',
-      thing: {
-        ding: 'dong',
-      },
-    })
-    // t.deepEqual(
-    //   await client.redis.selva_modify('da3', '', '0', 'name', 'dong'),
-    //   ['da3', 'UPDATED']
-    // )
-    await client.set({
-      $id: 'da3',
-      name: 'dong',
-    })
-
-    // const rec1 = createRecord(setRecordDefCstring, {
-    //   op_set_type: 1,
-    //   delete_all: 0,
-    //   constraint_id: 1,
-    //   $add: joinIds(['da3']),
-    //   $delete: null,
-    //   $value: null,
-    // })
-    //
-    // t.deepEqual(
-    //   await client.redis.selva_modify('ma2', '', '5', 'thing', rec1, '0', 'ding', 'dong'),
-    //   ['ma2', 'UPDATED', 'UPDATED']
-    // )
-    await client.set({
-      $id: 'ma2',
-      thing: 'da3',
-    })
-
-    // TODO: Tony need help migrating these
-    t.deepEqual(
-      // await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'node', 'fields', 'thing', 'ma1'),
-      (
-        await find({
-          client,
-          res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          res_opt_str: 'thing',
-          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
-          id: 'ma1',
-        })
-      )[0],
-      // await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'node', 'fields', 'thing.*', 'ma1'))
-      (
-        await find({
-          client,
-          res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-          res_opt_str: 'thing.*',
-          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
-          id: 'ma1',
-        })
-      )[0]
-    )
-    // t.deepEqual(
-    //   await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'descendants', 'fields', 'thing.*\n!thing.createdAt\n!thing.updatedAt', 'root', '"ma" e'),
-    //   [
-    //     [
-    //       "ma1",
-    //       [
-    //         "thing",
-    //         [
-    //           "ding",
-    //           "dong"
-    //         ]
-    //       ]
-    //     ],
-    //     [
-    //       "ma2",
-    //       [
-    //         "thing",
-    //         [
-    //           [
-    //             "id",
-    //             "da3",
-    //             "id",
-    //             "da3",
-    //             "name",
-    //             "dong"
-    //           ]
-    //         ]
-    //       ]
-    //     ]
-    //   ]
-    // )
-  }
-)
-
-test.serial.skip('wildcard find with exclusions', async (t) => {
+test.serial('wildcard find with edge fields and data fields', async (t) => {
   // Create nodes
-  // t.deepEqual(
-  //   await client.redis.selva_modify('root', '', '0', 'name', 'hello'),
-  //   ['root', 'UPDATED']
-  // )
   await client.set({
     $id: 'root',
     name: 'hello',
   })
-  // t.deepEqual(
-  //   await client.redis.selva_modify('ma1', '', '0', 'thing.ding', 'dong'),
-  //   ['ma1', 'UPDATED']
-  // )
   await client.set({
     $id: 'ma1',
     thing: {
       ding: 'dong',
     },
   })
-  // t.deepEqual(
-  //   await client.redis.selva_modify('da3', '', '0', 'name', 'dong'),
-  //   ['da3', 'UPDATED']
-  // )
   await client.set({
     $id: 'da3',
     name: 'dong',
   })
 
-  // const rec1 = createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 1,
-  //   $add: joinIds(['da3']),
-  //   $delete: null,
-  //   $value: null,
-  // })
-  //
-  // t.deepEqual(
-  //   await client.redis.selva_modify('ma2', '', '5', 'thing', rec1, '0', 'ding', 'dong'),
-  //   ['ma2', 'UPDATED', 'UPDATED']
-  // )
   await client.set({
     $id: 'ma2',
-    refs: 'da3',
-    ding: 'dong',
+    ref: 'da3',
   })
 
-  // TODO: TONY, also need help with this one
   t.deepEqual(
-    // await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'descendants', 'fields', 'thing.*\n!id\n!thing.createdAt\n!thing.updatedAt', 'root', '"ma" e'),
     (
       await find({
         client,
         res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-        res_opt_str: 'thing.*\n!id\n!thing.createdAt\n!thing.updatedAt',
-        // dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
-        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION,
-        dir_opt_str: '"ma" e',
+        res_opt_str: 'thing',
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
         id: 'ma1',
+      })
+    )[0],
+    (
+      await find({
+        client,
+        res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+        res_opt_str: 'thing.*',
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
+        id: 'ma1',
+      })
+    )[0]
+  )
+  t.deepEqual(
+    (
+      await find({
+        client,
+        res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+        res_opt_str:
+          'thing.*\nref.*\n!id\n!ref\n!ref.createdAt\n!ref.updatedAt\n!ref.type',
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+        id: 'root',
+        rpn: ['"ma" e'],
       })
     )[0],
     [
       ['ma1', ['thing', ['ding', 'dong']]],
-      ['ma2', ['refs', [['id', 'da3', 'id', 'da3', 'name', 'dong']]]],
+      ['ma2', ['ref', [['id', 'da3', 'id', 'da3', 'name', 'dong']]]],
     ]
   )
+})
+
+test.serial('wildcard find with exclusions', async (t) => {
+  // Create nodes
+  await client.set({
+    $id: 'root',
+    name: 'hello',
+  })
+  await client.set({
+    $id: 'ma1',
+    thing: {
+      ding: 'dong',
+    },
+  })
+  await client.set({
+    $id: 'da3',
+    name: 'dong',
+  })
+
+  await client.set({
+    $id: 'ma2',
+    ref: 'da3',
+    ding: 'dong',
+  })
+
+  const r = (
+    await find({
+      client,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      res_opt_str:
+        'thing.*\nref.*\n!id\n!ref\n!ref.createdAt\n!ref.updatedAt\n!ref.type',
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      id: 'root',
+      rpn: ['"ma" e'],
+    })
+  )[0]
+  t.deepEqual(r, [
+    ['ma1', ['thing', ['ding', 'dong']]],
+    ['ma2', ['ref', [['id', 'da3', 'id', 'da3', 'name', 'dong']]]],
+  ])
 })
