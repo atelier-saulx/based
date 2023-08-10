@@ -66,8 +66,6 @@ export class ArgsClass<
     } else if (prev && opts.key !== undefined) {
       this.path = [...prev.path, opts.key]
     } else if (opts && prev) {
-      // this.collectedCommands = prev.collectedCommands
-      // this.fromBackTrack = prev.fromBackTrack
       this.path = prev.path
     } else {
       this.path = []
@@ -91,6 +89,8 @@ export class ArgsClass<
 
     if (opts.skipCollection) {
       this.skipCollection = opts.skipCollection
+    } else if (prev?.skipCollection) {
+      this.skipCollection = true
     }
   }
 
@@ -129,8 +129,11 @@ export class ArgsClass<
 
   create(opts?: ArgsOpts<T>): ArgsClass<T> {
     const newArgs = new ArgsClass(opts, this)
-    if (this._collectOverride) {
+    if (this._collectOverride && !opts.collect) {
       newArgs._collectOverride = this._collectOverride
+    }
+    if (this.skipCollection && opts.skipCollection !== false) {
+      newArgs.skipCollection = this.skipCollection
     }
     if (!('value' in opts)) {
       newArgs.value = this.value

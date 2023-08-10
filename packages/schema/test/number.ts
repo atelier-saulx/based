@@ -209,16 +209,14 @@ test('value', async (t) => {
 
   t.assert(errorCollect(e1, e2, e3, e4, e5).length > 0)
   t.deepEqual(resultCollect(res1, res2, res3, res4), [
-    // t.deepEqual(resultCollect([res1, res2, res3, res4, res5]), [
     { path: ['number'], value: 4 },
     { path: ['integer'], value: 4 },
     { path: ['exclusiveminmax'], value: 4 },
     { path: ['multipleOf'], value: 6 },
-    // { path: ['set'], value: [3, 3, 3, 4] },
   ])
 })
 
-test.only('default', async (t) => {
+test('default', async (t) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     number: { $default: 7 },
@@ -396,56 +394,42 @@ test('increment', async (t) => {
   ])
 })
 
-let r
-
 test('NaN', async (t) => {
-  r = await setWalker(schema, {
+  const r = await setWalker(schema, {
     $id: 'bl120',
     integer: NaN,
   })
-
-  t.true(r.errors.length === 1)
+  t.is(r.errors.length, 1)
 })
 
-test('Infinity', async (t) => {
-  r = await setWalker(schema, {
+test('Infinity (integer)', async (t) => {
+  const r = await setWalker(schema, {
     $id: 'bl120',
     integer: Infinity,
   })
-
-  console.dir(r.errors)
-  console.dir(
-    r.collected.map((v) => ({ path: v.path, value: v.value })),
-    { depth: 10 }
-  )
-
-  t.true(true)
+  t.is(r.errors.length, 1)
 })
 
-//infinity does exceed maximum but doesnt error when no max
-test('number infinity', async (t) => {
-  r = await setWalker(schema, {
+test('Infinity (number)', async (t) => {
+  const r = await setWalker(schema, {
     $id: 'bl120',
     infiniteNum: Infinity,
   })
-
-  t.true(r.errors.length === 1)
+  t.is(r.errors.length, 1)
 })
 
 test('number -infinity', async (t) => {
-  r = await setWalker(schema, {
+  const r = await setWalker(schema, {
     $id: 'bl120',
     infiniteNum: -Infinity,
   })
-
-  t.true(r.errors.length === 1)
+  t.is(r.errors.length, 1)
 })
 
 test('number with max infinity', async (t) => {
-  r = await setWalker(schema, {
+  const r = await setWalker(schema, {
     $id: 'bl120',
     number: Infinity,
   })
-
-  t.true(r.errors.length === 1)
+  t.is(r.errors.length, 1)
 })

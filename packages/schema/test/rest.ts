@@ -108,11 +108,8 @@ test('default enum', async (t) => {
     $id: 'bl120',
     enum: { $default: 'tony' },
   })
-
   t.true(r.errors.length === 0)
-  t.deepEqual(resultCollect(r), [
-    { path: ['enum'], value: { $default: 'tony' } },
-  ])
+  t.deepEqual(resultCollect(r), [{ path: ['enum'], value: { $default: 0 } }])
 })
 
 test('value enum ', async (t) => {
@@ -140,28 +137,16 @@ test('$value & $default enum ', async (t) => {
     enum: { $value: { $default: 'tony' } },
   })
   t.true(r.errors.length === 0)
-  t.deepEqual(resultCollect(r), [
-    { path: ['enum'], value: { $default: 'tony' } },
-  ])
+  t.deepEqual(resultCollect(r), [{ path: ['enum'], value: { $default: 0 } }])
 })
 
-test.only('default: value enum ', async (t) => {
+test('default: value enum ', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $default: { $value: 'tony' } },
   })
-
-  /*
-
-  [
-  { path: [ 'enum' ], value: 0 },
-  { path: [ 'enum' ], value: { '$default': { '$value': 'tony' } } }
-]
-  */
-
-  console.dir(resultCollect(r), { depth: 10 })
-
-  t.true(r.errors.length === 1)
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [{ path: ['enum'], value: { $default: 0 } }])
 })
 
 // ask about alias

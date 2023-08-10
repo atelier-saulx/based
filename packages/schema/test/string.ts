@@ -109,13 +109,10 @@ test('setting $value', async (t) => {
     $id: 'bl1',
     phonkName: { $value: 'blabla' },
   })
-
-  t.assert(err.errors.length > 1)
-
+  t.is(err.errors.length, 1)
   const res1 = await setWalker(schema, {
     $id: 'bl1',
     phonkName: { $value: 'bla$' },
   })
-
   t.deepEqual(resultCollect(res1), [{ path: ['phonkName'], value: 'bla$' }])
 })

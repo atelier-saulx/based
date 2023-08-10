@@ -15,4 +15,5 @@ export enum ParseError {
   'noLanguageFound',
   'cannotDeleteNodeFromModify',
   'nestedModifyObjectNotAllowed',
+  'infinityNotSupported',
 }

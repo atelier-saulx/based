@@ -56,7 +56,10 @@ const opts: Opts<BasedSetTarget> = {
           args.error(ParseError.valueAndDefault)
           return
         }
-        return { path: args.path.slice(0, -1), value: args.value }
+        return {
+          path: args.path.slice(0, -1),
+          value: args.value,
+        }
       },
       $default: async (args) => {
         const type = args.fieldSchema?.type
@@ -65,19 +68,36 @@ const opts: Opts<BasedSetTarget> = {
           return
         }
         args.prev.stop()
-        const newArgs = args.create({
-          path: args.path.slice(0, -1),
-          skipCollection: true,
-        })
-        await newArgs.parse()
+        args.stop()
+
+        if (type === 'references' || type === 'set' || type === 'array') {
+          const newArgs = args.create({
+            path: args.path.slice(0, -1),
+            skipCollection: true,
+          })
+          await newArgs.parse()
+          newArgs.skipCollection = false
+          newArgs.value = { $default: newArgs.value }
+          newArgs.collect()
+        } else {
+          const collect = args._collectOverride ?? args.root._opts.collect
+          const newArgs = args.create({
+            path: args.path.slice(0, -1),
+            collect: (a) => {
+              if (a.path.length === args.path.length - 1) {
+                collect(a.create({ value: { $default: a.value } }))
+              } else {
+                console.info('hello', a.path)
+              }
+            },
+          })
+          await newArgs.parse()
+        }
         for (const key in args.prev.value) {
           if (key !== '$default') {
             args.prev.create({ key }).error(ParseError.fieldDoesNotExist)
           }
         }
-        newArgs.skipCollection = false
-        newArgs.value = { $default: newArgs.value }
-        newArgs.collect()
       },
     },
     fields,

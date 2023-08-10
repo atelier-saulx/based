@@ -20,6 +20,11 @@ const validateNumber = (
     return false
   }
 
+  if (value === Infinity || value === -Infinity) {
+    args.error(ParseError.infinityNotSupported)
+    return false
+  }
+
   if (fieldSchema.type === 'integer' && value - Math.floor(value) !== 0) {
     args.error(ParseError.incorrectFormat)
     return false
