@@ -10,6 +10,15 @@ import {
   Path,
 } from '../types'
 
+function parseAlias(field: Path, value: any): Field {
+  let $field = value.$field
+  if (!Array.isArray(value.$field)) {
+    $field = [$field]
+  }
+
+  return { type: 'field', field, aliased: $field }
+}
+
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
@@ -40,7 +49,7 @@ export async function parseGetOpts(
           key,
           value,
           path,
-          target: { $id, id, nestedPath, $field },
+          target: { $id, id, nestedPath, $field, $list },
         } = args
         if (value?.$aggregate) {
           const { $aggregate } = value
@@ -62,13 +71,21 @@ export async function parseGetOpts(
         }
 
         // special cases
-        if (nestedPath && $id === id) {
+        if (!$list && nestedPath && $id === id) {
+          const newPath = path.slice(nestedPath.length)
           // nested query with same $id should become a nested operation
           const nestedCmd: GetNode = {
             type: 'node',
             noMerge: true,
             fields: {
-              $any: [{ type: 'field', field: path.slice(nestedPath.length) }],
+              $any: [
+                value.$field
+                  ? parseAlias(newPath, value)
+                  : {
+                      type: 'field',
+                      field: newPath,
+                    },
+              ],
             },
             source: {
               id,
@@ -80,13 +97,7 @@ export async function parseGetOpts(
 
           return nestedCmd
         } else if (value?.$field) {
-          // plain $field
-          let $field = value.$field
-          if (!Array.isArray(value.$field)) {
-            $field = [$field]
-          }
-
-          return { type: 'field', field: [key], aliased: $field }
+          return parseAlias([key], value)
         }
 
         // main logic
@@ -110,7 +121,12 @@ export async function parseGetOpts(
         keys: {},
         async any(args) {
           const { key, value, path, target } = args
+
           if (typeof value === 'object') {
+            if (Array.isArray(args?.prev?.value)) {
+              target.nestedPath = args.path
+            }
+
             if (value.$list) {
               if (value.$field) {
                 if (!value.$list.$find) {
