@@ -21,6 +21,7 @@ OBJ := \
 	finalizer.o \
 	hll.o \
 	ida.o \
+	mempbrk.o \
 	mempool.o \
 	poptop.o \
 	queue_r.o \
@@ -29,8 +30,8 @@ OBJ := \
 	selva_proto.o \
 	selva_proto_buf.o \
 	selva_proto_builder.o \
-	selva_proto_scanf.o \
 	selva_proto_print.o \
+	selva_proto_scanf.o \
 	selva_string.o \
 	sigstr.o \
 	svector.o \

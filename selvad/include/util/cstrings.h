@@ -51,4 +51,6 @@ char *ch_replace(char *s, size_t n, char orig_ch, char new_ch) __attribute__((ac
 void *memrchr(const void *s, int c, size_t n) __attribute__((pure, access(read_only, 1, 3)));
 #endif
 
+char *mempbrk(register const char * restrict s, const char * restrict accept, size_t limit);
+
 #endif /* _UTIL_CSTRINGS_H_ */
