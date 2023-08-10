@@ -25,8 +25,8 @@ export const worker = (
       const fn = ${body};
       global.isWorker = true
 
-      const selvaServer = require('@saulx/selva-server')
-      const selva = require('@saulx/selva')
+      const selvaServer = require('@based/db-server')
+      const selva = require('@based/db-client')
       const wait = (t = 100) => (new Promise(r => setTimeout(r, t)))
 
       const p = { wait }

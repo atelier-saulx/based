@@ -29,6 +29,10 @@ test.beforeEach(async (t) => {
 
   await client.updateSchema({
     languages: ['en'],
+    root: {
+      prefix: 'ro',
+      fields: {},
+    },
     types: {
       glurp: {
         prefix: 'gl',
@@ -46,8 +50,7 @@ test.afterEach(async (_t) => {
   client.destroy()
 })
 
-// TODO: setWalker parse error (Jim)
-test.serial.skip('get very deep results', async (t) => {
+test.serial('get very deep results', async (t) => {
   const q: any = {}
   let s: any = q
 
@@ -167,8 +170,30 @@ test.serial.skip('get very deep results', async (t) => {
   for (let i = 0; i < workerAmount; i++) {
     workers.push(
       worker(
-        async ({ connect, wait }, { port }) => {
-          const client = connect({ port })
+        async ({ BasedDbClient, wait }, { port }) => {
+          const client = new BasedDbClient()
+          client.connect({
+            port,
+            host: '127.0.0.1',
+          })
+
+          await client.updateSchema({
+            languages: ['en'],
+            root: {
+              prefix: 'ro',
+              fields: {},
+            },
+            types: {
+              glurp: {
+                prefix: 'gl',
+                fields: {
+                  levelCnt: { type: 'number' },
+                  title: { type: 'string' },
+                },
+              },
+            },
+          })
+
           var d = Date.now()
           const x = await client.get({
             x: {

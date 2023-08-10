@@ -193,7 +193,7 @@ export class BasedDbClient extends Emitter {
     }
 
     const args: any[] = []
-    collected.forEach((props: Required<BasedSchemaCollectProps>) => {
+    collected?.forEach((props: Required<BasedSchemaCollectProps>) => {
       let { path, value } = props
 
       if (path.length === 1 && path[0] === 'type') {
