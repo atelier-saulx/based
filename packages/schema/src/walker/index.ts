@@ -22,6 +22,10 @@ export const walk = async <T>(
 
   const argsOpts = await opts.init(value, schema, opts.error)
 
+  if (!argsOpts) {
+    return <T>{}
+  }
+
   if (!argsOpts.value) {
     argsOpts.value = value
   }
