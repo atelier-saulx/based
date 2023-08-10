@@ -177,13 +177,15 @@ const struct EdgeFieldConstraint *Edge_GetConstraint(
 
 static void EdgeConstraint_Reply(struct selva_server_response_out *resp, void *p) {
     const struct EdgeFieldConstraint *constraint = (struct EdgeFieldConstraint *)p;
-    char buf[8];
+    enum EdgeFieldConstraintFlag cflags = constraint->flags;
 
     selva_send_array(resp, 6);
 
     selva_send_str(resp, "flags", 5);
-    snprintf(buf, sizeof(buf), "0x%x", constraint->flags);
-    selva_send_str(resp, buf, sizeof(buf) - 1);
+    selva_send_strf(resp, "%c%c%c",
+                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF)    ? 'C' : '-',
+                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) ? 'B' : '-',
+                    (cflags & EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC)       ? 'D' : '-');
 
     selva_send_str(resp, "field_name", 10);
     selva_send_str(resp, constraint->field_name_str, constraint->field_name_len);
