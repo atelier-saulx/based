@@ -129,7 +129,7 @@ const opts: Opts<BasedSetTarget> = {
       }
       if (!type) {
         error(ParseError.incorrectFieldType, { target })
-        return
+        return { target }
       }
     } else if (value.$alias) {
       target.$alias = value.$alias
@@ -137,16 +137,15 @@ const opts: Opts<BasedSetTarget> = {
     if (value.type) {
       if (type && value.type !== type) {
         error(ParseError.incorrectNodeType, { target })
-        return
+        return { target }
       }
       type = value.type
     }
     const typeSchema = type === 'root' ? schema.root : schema.types[type]
     if (!typeSchema) {
       error(ParseError.incorrectNodeType, { target })
-      return
+      return { target }
     }
-
     target.type = type
     target.$language = value.$language
     target.$id = value.$id
