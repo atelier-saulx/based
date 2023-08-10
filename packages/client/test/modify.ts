@@ -1615,10 +1615,7 @@ test.serial('setting NaN should fail', async (t) => {
   )
 })
 
-// TODO: array $push into object array has wrong index, should be -1, not 0 (Jim)
-//        'objRec.abba.objArray[0].hello',
-//       'yes 7',
-test.serial.skip('set - push into array', async (t) => {
+test.serial('set - push into array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
