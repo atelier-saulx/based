@@ -79,6 +79,27 @@
  * This is an example of how to use the pu_assert_equal.
  */
 
+#define PUNIT_PRINT_ERR(_err_) \
+    if ((_err_) < 0) printf("%s", selva_strerror(_err_)); \
+    else             printf("%lli", (long long)(_err_));
+
+/**
+ * Assert equal.
+ * Checks if left == right is true.
+ * @param message shown if assert fails.
+ * @param left value.
+ * @param right value.
+ */
+#define pu_assert_err_equal(message, left, right) do { if (!(left == right)) { \
+        printf("FAILED: %s:%d: %s == %s\n\tleft:\t", \
+               __FILE__, __LINE__, #left, #right); \
+        PUNIT_PRINT_ERR(left) \
+        printf("\n\tright:\t"); \
+        PUNIT_PRINT_ERR(right) \
+        printf("\n"); \
+        return message; } \
+} while(0)
+
 /**
  * Assert pointer equal.
  * Checks if left == right is true.
