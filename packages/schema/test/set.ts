@@ -14,6 +14,12 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        x: {
+          type: 'object',
+          properties: {
+            bla: { type: 'string' },
+          },
+        },
         setOfNumbers: {
           type: 'set',
           items: {
@@ -62,29 +68,33 @@ test('default arr', async (t) => {
   ])
 })
 
-// test.only('default arr', async (t) => {
-//   r = await setWalker(schema, {
-//     $id: 'bl120',
-//     setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
-//   })
+test('$merge on object', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    x: {
+      $merge: false,
+      bla: 'x',
+    },
+  })
 
-//   console.log(r.errors)
-//   console.dir(
-//     r.collected.map((v) => ({ path: v.path, value: v.value })),
-//     { depth: 10 }
-//   )
-//   t.true(r.errors.length === 0)
-// })
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['x', 'bla'], value: 'x' },
+    { path: ['x'], value: { $merge: false, bla: 'x' } },
+  ])
+})
 
-// test.only('default arr', async (t) => {
-//   r = await setWalker(schema, {
-//     $id: 'bl120',
-//     setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
-//   })
-
-//   console.log(r.errors)
-//   console.dir(
-//     r.collected.map((v) => ({ path: v.path, value: v.value })),
-//     { depth: 10 }
-//   )
-// })
+test('$merge on set', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    $merge: false,
+    x: {
+      bla: 'x',
+    },
+  })
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['x', 'bla'], value: 'x' },
+    { path: ['x'], value: { bla: 'x' } },
+  ])
+})

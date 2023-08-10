@@ -33,6 +33,13 @@ const opts: Opts<BasedSetTarget> = {
           args.error(ParseError.incorrectFormat)
         }
       },
+      $merge: async (args) => {
+        if (typeof args.value !== 'boolean') {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+        return
+      },
       $id: async (args) => {
         if (!isValidId(args.schema, args.value)) {
           args.error(ParseError.incorrectFormat)
@@ -87,7 +94,7 @@ const opts: Opts<BasedSetTarget> = {
               if (a.path.length === args.path.length - 1) {
                 collect(a.create({ value: { $default: a.value } }))
               } else {
-                console.info('hello', a.path)
+                // console.info('hello', a.path) can handle this later
               }
             },
           })
@@ -127,7 +134,6 @@ const opts: Opts<BasedSetTarget> = {
     } else if (value.$alias) {
       target.$alias = value.$alias
     }
-
     if (value.type) {
       if (type && value.type !== type) {
         error(ParseError.incorrectNodeType, { target })
@@ -140,9 +146,16 @@ const opts: Opts<BasedSetTarget> = {
       error(ParseError.incorrectNodeType, { target })
       return
     }
+
     target.type = type
     target.$language = value.$language
     target.$id = value.$id
+    if ('$merge' in value) {
+      if (typeof value.$merge !== 'boolean') {
+        error(ParseError.incorrectFormat, { target })
+      }
+      target.$merge = value.$merge
+    }
     return { target, typeSchema }
   },
   error: (code, args) => {
