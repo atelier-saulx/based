@@ -51,7 +51,6 @@ OBJ := \
 	   selva_set/seta_in_fieldb.o \
 	   selva_set/seta_in_setb.o \
 	   selva_type.o \
-	   shared_strings.o \
 	   subscriptions.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -I./include -include ../../tunables.h
