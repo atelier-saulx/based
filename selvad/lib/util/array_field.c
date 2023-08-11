@@ -40,9 +40,6 @@ ssize_t get_array_field_index(const char *field_str, size_t field_len, ssize_t *
     ssize_t i;
 
     if (field_len < 3 || field_str[field_len - 1] != ']') {
-        if (mempbrk(field_str, "[]", field_len)) {
-            return -1;
-        }
         return 0;
     }
 
