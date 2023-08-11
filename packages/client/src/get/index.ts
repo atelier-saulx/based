@@ -307,7 +307,6 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
           ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
           : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
 
-        console.dir({ struct }, { depth: 8 })
         const find = await client.command('hierarchy.find', [
           makeLangArg(ctx),
           createRecord(protocol.hierarchy_find_def, struct),
