@@ -10,13 +10,13 @@ import {
   Path,
 } from '../types'
 
-function parseAlias(field: Path, value: any): Field {
+function parseAlias(value: any): string[] | undefined {
   let $field = value.$field
   if (!Array.isArray(value.$field)) {
     $field = [$field]
   }
 
-  return { type: 'field', field, aliased: $field }
+  return $field
 }
 
 export async function parseGetOpts(
@@ -79,12 +79,11 @@ export async function parseGetOpts(
             noMerge: true,
             fields: {
               $any: [
-                value.$field
-                  ? parseAlias(newPath, value)
-                  : {
-                      type: 'field',
-                      field: newPath,
-                    },
+                {
+                  type: 'field',
+                  field: newPath,
+                  aliased: parseAlias(value),
+                },
               ],
             },
             source: {
@@ -96,17 +95,23 @@ export async function parseGetOpts(
           }
 
           return nestedCmd
-        } else if (value?.$field) {
-          return parseAlias([key], value)
         }
 
         // main logic
         const f = args.key === '$all' ? ['*'] : [args.key]
 
-        const field: Field = {
+        let field: Field = {
           type: 'field',
           field: f,
           exclude: value === false,
+        }
+
+        if (value?.$field) {
+          field.aliased = parseAlias(value)
+        }
+
+        if (value.$inherit) {
+          field.inherit = {}
         }
 
         if ($field) {
@@ -205,6 +210,9 @@ export async function parseGetOpts(
                 args.collect()
                 return
               }
+            } else if (value.$inherit) {
+              args.collect()
+              return
             } else if (value.$default) {
               target.defaultValues.push({
                 path: path,

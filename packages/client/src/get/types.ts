@@ -16,11 +16,17 @@ export type TraverseByType = {
 
 export type Path = (string | number)[]
 
+export enum FieldInheritMergeType {
+  SHALLOW = 0,
+  DEEP,
+}
+
 export type Field = {
   type: 'field'
   field: Path
   aliased?: string[]
   exclude?: boolean
+  inherit?: { types?: string[]; merge?: FieldInheritMergeType }
 }
 
 // * = all

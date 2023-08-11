@@ -1,17 +1,9 @@
-import {
-  ExecContext,
-  Field,
-  Fields,
-  GetAggregate,
-  GetCommand,
-  Path,
-} from './types'
+import { ExecContext, Field, Fields, GetCommand, Path } from './types'
 import { protocol } from '..'
 import { createRecord } from 'data-record'
 import {
   ast2rpn,
   createAst,
-  TraverseByType,
   bfsExpr2rpn,
   fieldsExpr2rpn,
 } from '@based/db-query'
@@ -88,19 +80,25 @@ export function applyDefault(
   }
 }
 
-function getField(field: Field): string {
-  const str = joinPath(field.field)
+function getField(field: Field): { str: string; isInherit: boolean } {
+  let str = joinPath(field.field)
+
+  if (field.inherit) {
+    str = '^:' + str
+  }
 
   if (field.aliased) {
-    return `${str}@${field.aliased.join('|')}`
-  } else if (field.exclude) {
-    return `!${str}`
-  } else {
-    return str
+    str = str + '@' + field.aliased.join('|')
   }
+
+  if (field.exclude) {
+    str = '!' + str
+  }
+
+  return { str, isInherit: !!field.inherit }
 }
 
-function getFieldsStr(fields: Field[]): string {
+function getFieldsStr(fields: Field[]): { fields: string; isInherit: boolean } {
   const hasWildcard = fields.some(({ field }) => {
     return field[0] === '*'
   })
@@ -110,16 +108,25 @@ function getFieldsStr(fields: Field[]): string {
     for (const f of fields) {
       const [first, ...rest] = f.field
       if (rest.length) {
-        strs.push(getField({ type: 'field', field: [first], exclude: true }))
+        const { str } = getField({
+          type: 'field',
+          field: [first],
+          exclude: true,
+        })
+        strs.push(str)
       }
     }
   }
 
+  let hasInherit = false
   for (const f of fields) {
-    strs.push(getField(f))
+    const { str, isInherit } = getField(f)
+
+    strs.push(str)
+    hasInherit = hasInherit || isInherit
   }
 
-  return strs.join('\n')
+  return { fields: strs.join('\n'), isInherit: hasInherit }
 }
 
 function getFields(
@@ -127,27 +134,40 @@ function getFields(
   { $any, byType }: Fields
 ): {
   isRpn: boolean
+  isInherit: boolean
   fields: string
 } {
+  let hasInherit = false
   if (byType) {
     let hasTypes = false
-    const expr: Record<string, string> = { $any: getFieldsStr($any) }
+    const { fields: anyFields, isInherit } = getFieldsStr($any)
+    const expr: Record<string, string> = { $any: anyFields }
     for (const type in byType) {
       hasTypes = true
-      expr[type] = getFieldsStr([...$any, ...byType[type]])
+      const { fields, isInherit } = getFieldsStr([...$any, ...byType[type]])
+      expr[type] = fields
+      hasInherit = hasInherit || isInherit
     }
 
-    if (!hasTypes) {
-      return { isRpn: false, fields: expr.$any }
+    if (!hasTypes && !hasInherit) {
+      return { isRpn: false, fields: expr.$any, isInherit: false }
     }
 
     return {
       isRpn: true,
+      isInherit: hasInherit,
       fields: fieldsExpr2rpn(ctx.client.schema.types, expr),
     }
   }
 
-  return { isRpn: false, fields: getFieldsStr($any) }
+  const { fields, isInherit } = getFieldsStr($any)
+  return {
+    isRpn: false,
+    fields: isInherit
+      ? fieldsExpr2rpn(ctx.client.schema.types, { $any: fields })
+      : fields,
+    isInherit,
+  }
 }
 
 function sourceId(cmd: GetCommand): string {
@@ -276,13 +296,20 @@ export async function get(ctx: ExecContext, commands: GetCommand[]) {
         const nestedResult = await get(ctx, [nestedFind])
         return nestedResult[0]
       } else {
-        const { fields, isRpn: fieldsRpn } = getFields(ctx, cmd.fields)
+        const {
+          fields,
+          isRpn: fieldsRpn,
+          isInherit,
+        } = getFields(ctx, cmd.fields)
         struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
         struct.res_opt_str = fields
-        struct.res_type = fieldsRpn
+        struct.res_type = isInherit
+          ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_INHERIT_RPN
+          : fieldsRpn
           ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
           : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
 
+        console.dir({ struct }, { depth: 8 })
         const find = await client.command('hierarchy.find', [
           makeLangArg(ctx),
           createRecord(protocol.hierarchy_find_def, struct),
