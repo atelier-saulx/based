@@ -239,7 +239,7 @@ int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *nod
  * @param str is a nul-terminated input string that will be hashed.
  * @returns The function returns a new subscription marker id.
  */
-Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId prev, const char *s);
+void Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId out, Selva_SubscriptionMarkerId prev, const char *s);
 
 /**
  * Init subscriptions data structures in the hierarchy.
@@ -259,7 +259,7 @@ void SelvaSubscriptions_DestroyAll(struct SelvaHierarchy *hierarchy);
 int SelvaSubscriptions_RefreshByMarkerId(
         struct SelvaHierarchy *hierarchy,
         const Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id);
+        const Selva_SubscriptionMarkerId marker_id);
 
 /**
  * Refresh all subscription markers of a given subscription id.
@@ -288,7 +288,7 @@ void SelvaSubscriptions_Delete(
 int SelvaSubscriptions_DeleteMarker(
         struct SelvaHierarchy *hierarchy,
         const Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id);
+        const Selva_SubscriptionMarkerId marker_id);
 
 /**
  * Delete a single marker from a subscription by a pointer to the marker.
@@ -305,7 +305,7 @@ int SelvaSubscriptions_DeleteMarkerByPtr(
 int Selva_AddSubscriptionAliasMarker(
         struct SelvaHierarchy *hierarchy,
         const Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id,
+        const Selva_SubscriptionMarkerId marker_id,
         struct selva_string *alias_name,
         Selva_NodeId node_id);
 
@@ -317,7 +317,7 @@ int Selva_AddSubscriptionAliasMarker(
 int SelvaSubscriptions_AddCallbackMarker(
         struct SelvaHierarchy *hierarchy,
         const Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id,
+        const Selva_SubscriptionMarkerId marker_id,
         unsigned short marker_flags,
         const Selva_NodeId node_id,
         enum SelvaTraversal dir,
@@ -334,7 +334,7 @@ int SelvaSubscriptions_AddCallbackMarker(
 struct Selva_SubscriptionMarker *SelvaSubscriptions_GetMarker(
         struct SelvaHierarchy *hierarchy,
         const Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id);
+        const Selva_SubscriptionMarkerId marker_id);
 
 /**
  * Clear all markers from a node and any nodes along the dir path.
