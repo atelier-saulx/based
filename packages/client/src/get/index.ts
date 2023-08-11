@@ -166,8 +166,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const ids = find[0]
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
-    const nestedResult = await getCmd(ctx, nestedFind)
-    return nestedResult[0]
+    return getCmd(ctx, nestedFind)
   } else {
     const { fields, isRpn: fieldsRpn, isInherit } = getFields(ctx, cmd.fields)
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
@@ -224,7 +223,7 @@ export async function get(client: BasedDbClient, opts: any): Promise<any> {
     const newCtx = { ...ctx }
     const results = await Promise.all(
       q.map((cmd) => {
-        return getCmd({ ...newCtx }, cmd)
+        return getCmd(newCtx, cmd)
       })
     )
 
