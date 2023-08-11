@@ -3,7 +3,7 @@ Upstream-Name: based-db
 Upstream-Contact:
 Source: https://github.com/atelier-saulx/based-db
 
-Files: README.md .github/* package.json package-lock.json selvad/test/* selvad/valgrind.sup selvad/selva_cppcheck.cfg
+Files: README.md .github/* .npmrc package.json package-lock.json tsconfig.json turbo.json selvad/test/* selvad/valgrind.sup selvad/selva_cppcheck.cfg packages/*
 Copyright:
     Copyright (c) 2022-2023 SAULX
 License: MIT
