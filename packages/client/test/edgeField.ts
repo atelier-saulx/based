@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -8,27 +8,30 @@ import getPort from 'get-port'
 import { find } from './assertions/utils'
 import { SelvaTraversal } from '../src/protocol'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port: number
-test.beforeEach(async (_t) => {
-  port = await getPort()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
+test.beforeEach(async (t) => {
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en', 'de', 'nl'],
     root: {
       fields: {
@@ -162,12 +165,14 @@ test.beforeEach(async (_t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('basic edge ops', async (t) => {
+test('basic edge ops', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -257,7 +262,8 @@ test.serial('basic edge ops', async (t) => {
 })
 
 // TODO: waiting for set metadata command
-test.serial.skip('edge metadata', async (t) => {
+test.skip('edge metadata', async (t) => {
+  const { client } = t.context
   // Create nodes
   // await client.redis.selva_modify('root', '', '0', 'o.a', 'hello')
   // await client.redis.selva_modify('ma1', '', '0', 'o.a', 'hello')
@@ -338,7 +344,8 @@ test.serial.skip('edge metadata', async (t) => {
   //   ])
 })
 
-test.serial('traverse a custom field', async (t) => {
+test('traverse a custom field', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -404,7 +411,8 @@ test.serial('traverse a custom field', async (t) => {
   )
 })
 
-test.serial('find can return edge fields', async (t) => {
+test('find can return edge fields', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -478,7 +486,8 @@ test.serial('find can return edge fields', async (t) => {
   )
 })
 
-test.serial('find can do nested traversals', async (t) => {
+test('find can do nested traversals', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -577,7 +586,8 @@ test.serial('find can do nested traversals', async (t) => {
 })
 
 // TODO: waiting for set metadata command
-test.serial.skip('find can select with edge metadata', async (t) => {
+test.skip('find can select with edge metadata', async (t) => {
+  const { client } = t.context
   // Create nodes
   // await client.redis.selva_modify('root', '', '0', 'o.a', 'hello')
   // await client.redis.selva_modify('ma1', '', '0', 'o.a', 'hello')
@@ -653,7 +663,8 @@ test.serial.skip('find can select with edge metadata', async (t) => {
   // )
 })
 
-test.serial('missing edges are added automatically', async (t) => {
+test('missing edges are added automatically', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'root',
     o: {
@@ -681,7 +692,8 @@ test.serial('missing edges are added automatically', async (t) => {
   )
 })
 
-test.serial('edge modify `add` values diff', async (t) => {
+test('edge modify `add` values diff', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -714,7 +726,8 @@ test.serial('edge modify `add` values diff', async (t) => {
   ])
 })
 
-test.serial('edge modify `delete` values diff', async (t) => {
+test('edge modify `delete` values diff', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -767,7 +780,8 @@ test.serial('edge modify `delete` values diff', async (t) => {
   ])
 })
 
-test.serial('edge modify `value` values diff', async (t) => {
+test('edge modify `value` values diff', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -800,7 +814,8 @@ test.serial('edge modify `value` values diff', async (t) => {
   ])
 })
 
-test.serial('edge modify `add` and `delete` values diff', async (t) => {
+test('edge modify `add` and `delete` values diff', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -845,7 +860,8 @@ test.serial('edge modify `add` and `delete` values diff', async (t) => {
   t.deepEqual((await client.command('hierarchy.del', ['', 'ma1']))[0], 1n)
 })
 
-test.serial('edge modify `delete_all`', async (t) => {
+test('edge modify `delete_all`', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'root',
     o: {
@@ -875,7 +891,8 @@ test.serial('edge modify `delete_all`', async (t) => {
   ])
 })
 
-test.serial('traverse by expression', async (t) => {
+test('traverse by expression', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -906,7 +923,8 @@ test.serial('traverse by expression', async (t) => {
   )
 })
 
-test.serial('deref node references on find', async (t) => {
+test('deref node references on find', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'game1',
@@ -973,7 +991,8 @@ test.serial('deref node references on find', async (t) => {
   )
 })
 
-test.serial('bidirectional edge fields', async (t) => {
+test('bidirectional edge fields', async (t) => {
+  const { client } = t.context
   // Create dynamic constraints
   await client.command('hierarchy.addConstraint', [
     'te',
@@ -1073,7 +1092,8 @@ test.serial('bidirectional edge fields', async (t) => {
 })
 
 // TODO: Tony, what should this be testing?
-test.serial.skip('biedge missing symmetric constraint', async (t) => {
+test.skip('biedge missing symmetric constraint', async (t) => {
+  const { client } = t.context
   // Create dynamic constraints
   // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
   //     'te',
@@ -1127,7 +1147,8 @@ test.serial.skip('biedge missing symmetric constraint', async (t) => {
   // t.true(res[1] instanceof Error)
 })
 
-test.serial('edge type constraints', async (t) => {
+test('edge type constraints', async (t) => {
+  const { client } = t.context
   // Create dynamic constraints
   // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
   //     'ro', // source node type
@@ -1303,7 +1324,8 @@ test.serial('edge type constraints', async (t) => {
   )
 })
 
-test.serial('wildcard find with edge fields', async (t) => {
+test('wildcard find with edge fields', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -1422,7 +1444,8 @@ test.serial('wildcard find with edge fields', async (t) => {
   )
 })
 
-test.serial('wildcard find with edge fields and data fields', async (t) => {
+test('wildcard find with edge fields and data fields', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
@@ -1483,7 +1506,8 @@ test.serial('wildcard find with edge fields and data fields', async (t) => {
   )
 })
 
-test.serial('wildcard find with exclusions', async (t) => {
+test('wildcard find with exclusions', async (t) => {
+  const { client } = t.context
   // Create nodes
   await client.set({
     $id: 'root',
