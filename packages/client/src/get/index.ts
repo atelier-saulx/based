@@ -137,11 +137,11 @@ function getFields(
   isInherit: boolean
   fields: string
 } {
-  let hasInherit = false
   if (byType) {
     let hasTypes = false
     const { fields: anyFields, isInherit } = getFieldsStr($any)
     const expr: Record<string, string> = { $any: anyFields }
+    let hasInherit = isInherit
     for (const type in byType) {
       hasTypes = true
       const { fields, isInherit } = getFieldsStr([...$any, ...byType[type]])
@@ -163,9 +163,7 @@ function getFields(
   const { fields, isInherit } = getFieldsStr($any)
   return {
     isRpn: false,
-    fields: isInherit
-      ? fieldsExpr2rpn(ctx.client.schema.types, { $any: fields })
-      : fields,
+    fields: isInherit ? `"${fields}"` : fields,
     isInherit,
   }
 }
