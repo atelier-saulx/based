@@ -207,7 +207,7 @@ test.afterEach(async (t) => {
   client.destroy()
 })
 
-// TODO: traversing object arrays
+// TODO: traversing object arrays (THIS NEEDS TO BE RE-THOUGHT)
 test.serial.skip('get - field with array', async (t) => {
   const id = await client.set({
     type: 'lekkerType',
