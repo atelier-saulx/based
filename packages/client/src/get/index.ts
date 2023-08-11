@@ -1,5 +1,5 @@
 import { ExecContext, Field, Fields, GetCommand, Path } from './types'
-import { protocol } from '..'
+import { BasedDbClient, protocol } from '..'
 import { createRecord } from 'data-record'
 import { ast2rpn, createAst, bfsExpr2rpn } from '@based/db-query'
 import {
@@ -7,7 +7,7 @@ import {
   SelvaResultOrder,
   SelvaHierarchy_AggregateType,
 } from '../protocol'
-import { setByPath } from '@saulx/utils'
+import { deepCopy, deepMergeArrays, setByPath } from '@saulx/utils'
 
 export * from './types'
 export * from './parse'
@@ -15,6 +15,7 @@ export * from './parse'
 import { getFields } from './fields'
 import { makeLangArg } from './lang'
 import { sourceId } from './id'
+import { parseGetOpts, parseGetResult } from './parse'
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
   descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
@@ -78,7 +79,7 @@ export function applyDefault(
   }
 }
 
-export async function get(ctx: ExecContext, cmd: GetCommand): Promise<any> {
+export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   if (cmd.source.alias && !cmd.source.id) {
     cmd.source.id = await ctx.client.command('resolve.nodeid', cmd.source.alias)
   }
@@ -165,7 +166,7 @@ export async function get(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const ids = find[0]
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
-    const nestedResult = await get(ctx, nestedFind)
+    const nestedResult = await getCmd(ctx, nestedFind)
     return nestedResult[0]
   } else {
     const { fields, isRpn: fieldsRpn, isInherit } = getFields(ctx, cmd.fields)
@@ -186,4 +187,96 @@ export async function get(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
     return find
   }
+}
+
+export async function get(client: BasedDbClient, opts: any): Promise<any> {
+  const ctx: ExecContext = {
+    client,
+  }
+
+  let { $id, $language, $alias } = opts
+  if ($alias) {
+    const aliases = Array.isArray($alias) ? $alias : [$alias]
+    const resolved = await ctx.client.command('resolve.nodeid', [
+      '',
+      ...aliases,
+    ])
+
+    $id = resolved?.[0]
+
+    if (!$id) {
+      return {}
+    }
+  }
+
+  if ($language) {
+    ctx.lang = $language
+  }
+
+  const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
+  console.dir({ cmds, defaults }, { depth: 8 })
+
+  let q = cmds
+  const nestedIds: any[] = []
+  const nestedObjs: any[] = []
+  let i = 0
+  while (q.length) {
+    const newCtx = { ...ctx }
+    const results = await Promise.all(
+      q.map((cmd) => {
+        return getCmd({ ...newCtx }, cmd)
+      })
+    )
+
+    const ids =
+      results?.map(([cmdResult]) => {
+        if (!Array.isArray(cmdResult)) {
+          return []
+        }
+
+        // unwrap array structure
+        return cmdResult.map((row) => {
+          // take id
+          return row?.[0]
+        })
+      }) ?? []
+    nestedIds.push(ids)
+
+    const obj = parseGetResult({ ...ctx }, q, results)
+    nestedObjs.push(obj)
+
+    q = q.reduce((all, cmd, j) => {
+      const ids = nestedIds?.[i]?.[j]
+
+      cmd.nestedCommands?.forEach((c) => {
+        const ns = ids.map((id, k) => {
+          const n: GetCommand = deepCopy(c)
+          const path = c.target.path
+
+          n.source = { id: id }
+          const newPath = [...cmd.target.path]
+          newPath.push(k, path[path.length - 1])
+          n.target.path = newPath
+          return n
+        })
+
+        all.push(...ns)
+      })
+
+      return all
+    }, [])
+
+    i++
+  }
+
+  const merged =
+    nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
+      ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
+      : deepMergeArrays({}, ...nestedObjs) // else merge all the results
+
+  for (const d of defaults) {
+    applyDefault(merged, d)
+  }
+
+  return merged
 }

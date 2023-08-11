@@ -17,17 +17,9 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import {
-  applyDefault,
-  ExecContext,
-  get,
-  GetCommand,
-  parseGetOpts,
-  parseGetResult,
-} from './get'
+import { get } from './get'
 import genId from './id'
 import { deepCopy, deepMergeArrays } from '@saulx/utils'
-import { ModifyArgType } from './protocol/encode/modify/types'
 
 export * as protocol from './protocol'
 
@@ -269,97 +261,7 @@ export class BasedDbClient extends Emitter {
   }
 
   async get(opts: any): Promise<any> {
-    const ctx: ExecContext = {
-      client: this,
-    }
-
-    let { $id, $language, $alias } = opts
-    if ($alias) {
-      const aliases = Array.isArray($alias) ? $alias : [$alias]
-      const resolved = await ctx.client.command('resolve.nodeid', [
-        '',
-        ...aliases,
-      ])
-
-      $id = resolved?.[0]
-
-      if (!$id) {
-        return {}
-      }
-    }
-
-    if ($language) {
-      ctx.lang = $language
-    }
-
-    const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
-    console.dir({ cmds, defaults }, { depth: 8 })
-
-    let q = cmds
-    const nestedIds: any[] = []
-    const nestedObjs: any[] = []
-    let i = 0
-    while (q.length) {
-      const newCtx = { ...ctx }
-      const results = await Promise.all(
-        q.map((cmd) => {
-          return get({ ...newCtx }, cmd)
-        })
-      )
-
-      const ids =
-        results?.map(([cmdResult]) => {
-          if (!Array.isArray(cmdResult)) {
-            return []
-          }
-
-          // unwrap array structure
-          return cmdResult.map((row) => {
-            // take id
-            return row?.[0]
-          })
-        }) ?? []
-      nestedIds.push(ids)
-
-      const obj = parseGetResult({ ...ctx }, q, results)
-      nestedObjs.push(obj)
-
-      q = q.reduce((all, cmd, j) => {
-        const ids = nestedIds?.[i]?.[j]
-
-        cmd.nestedCommands?.forEach((c) => {
-          const ns = ids.map((id, k) => {
-            const n: GetCommand = deepCopy(c)
-            const path = c.target.path
-
-            n.source = { id: id }
-            const newPath = [...cmd.target.path]
-            newPath.push(k, path[path.length - 1])
-            n.target.path = newPath
-            return n
-          })
-
-          all.push(...ns)
-        })
-
-        return all
-      }, [])
-
-      i++
-    }
-
-    const merged =
-      nestedObjs.length === 1 &&
-      cmds[0].type === 'traverse' &&
-      !cmds[0].isSingle
-        ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
-        : deepMergeArrays({}, ...nestedObjs) // else merge all the results
-
-    for (const d of defaults) {
-      applyDefault(merged, d)
-    }
-
-    return merged
+    return get(this, opts)
   }
 
   onData(data: Buffer) {
