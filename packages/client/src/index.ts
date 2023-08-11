@@ -31,6 +31,8 @@ import { ModifyArgType } from './protocol/encode/modify/types'
 
 export * as protocol from './protocol'
 
+export * as get from './get'
+
 export type BasedDbClientOpts = { port: number; host: string }
 
 /* TODO: very important
