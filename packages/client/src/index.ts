@@ -20,7 +20,7 @@ import { toModifyArgs } from './set'
 import {
   applyDefault,
   ExecContext,
-  getAll,
+  get,
   GetCommand,
   parseGetOpts,
   parseGetResult,
@@ -300,7 +300,12 @@ export class BasedDbClient extends Emitter {
     const nestedObjs: any[] = []
     let i = 0
     while (q.length) {
-      const results = await getAll({ ...ctx }, q)
+      const newCtx = { ...ctx }
+      const results = await Promise.all(
+        q.map((cmd) => {
+          return get({ ...newCtx }, cmd)
+        })
+      )
 
       const ids =
         results?.map(([cmdResult]) => {

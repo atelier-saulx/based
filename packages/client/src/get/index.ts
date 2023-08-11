@@ -165,7 +165,7 @@ export async function get(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const ids = find[0]
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
-    const nestedResult = await getAll(ctx, [nestedFind])
+    const nestedResult = await get(ctx, nestedFind)
     return nestedResult[0]
   } else {
     const { fields, isRpn: fieldsRpn, isInherit } = getFields(ctx, cmd.fields)
@@ -186,12 +186,4 @@ export async function get(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
     return find
   }
-}
-
-export async function getAll(ctx: ExecContext, commands: GetCommand[]) {
-  return await Promise.all(
-    commands.map((cmd) => {
-      return get(ctx, cmd)
-    })
-  )
 }
