@@ -87,7 +87,7 @@ function getField(field: Field): { str: string; isInherit: boolean } {
     str = '^:' + str
   }
 
-  if (field.aliased) {
+  if (field?.aliased?.length) {
     str = str + '@' + field.aliased.join('|')
   }
 
