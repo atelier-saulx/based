@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -15,27 +15,30 @@ export function readDouble(x) {
   return readValue(doubleDef, x, '.d')
 }
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
-test.beforeEach(async (_t) => {
-  port = await getPort()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
+test.beforeEach(async (t) => {
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en', 'nl', 'de'],
     root: {
       fields: { value: { type: 'number' }, hello: { type: 'string' } },
@@ -268,13 +271,14 @@ test.beforeEach(async (_t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
-  await wait(300)
 })
 
-test.serial('root', async (t) => {
+test('root', async (t) => {
+  const { client } = t.context
   // const match = await client.set({
   //   type: 'match',
   // })
@@ -304,7 +308,8 @@ test.serial('root', async (t) => {
   })
 })
 
-test.serial('root.children $delete: []', async (t) => {
+test('root.children $delete: []', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     type: 'match',
   })
@@ -331,7 +336,8 @@ test.serial('root.children $delete: []', async (t) => {
   // )
 })
 
-test.serial('basic', async (t) => {
+test('basic', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     type: 'match',
     value: 1,
@@ -718,7 +724,8 @@ test.serial('basic', async (t) => {
   // )
 })
 
-test.serial('deep hierarchy manipulation', async (t) => {
+test('deep hierarchy manipulation', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'cuX',
     children: ['cuA'],
@@ -830,7 +837,8 @@ test.serial('deep hierarchy manipulation', async (t) => {
   // )
 })
 
-test.serial('array, json and set', async (t) => {
+test('array, json and set', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     types: {
       flurp: {
@@ -876,7 +884,8 @@ test.serial('array, json and set', async (t) => {
   t.deepEqual(r, [['gurk', 'hello']])
 })
 
-test.serial('set empty object', async (t) => {
+test('set empty object', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     types: {
       hmmhmm: {
@@ -935,7 +944,8 @@ test.serial('set empty object', async (t) => {
   )
 })
 
-test.serial('$increment, $default', async (t) => {
+test('$increment, $default', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'viDingDong',
     value: {
@@ -1070,7 +1080,8 @@ test.serial('$increment, $default', async (t) => {
   // )
 })
 
-test.serial('$default with string and number', async (t) => {
+test('$default with string and number', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'ma1',
     value: {
@@ -1114,7 +1125,8 @@ test.serial('$default with string and number', async (t) => {
   })
 })
 
-test.serial('$merge = false', async (t) => {
+test('$merge = false', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'arPower',
     title: {
@@ -1178,7 +1190,8 @@ test.serial('$merge = false', async (t) => {
   // t.is(await client.redis.selva_object_get('', 'arPower', 'image.thumb'), null)
 })
 
-test.serial('automatic child creation', async (t) => {
+test('automatic child creation', async (t) => {
+  const { client } = t.context
   const childrenIds = await Promise.all(
     [
       {
@@ -1260,7 +1273,8 @@ test.serial('automatic child creation', async (t) => {
   t.is(newChildren.length, 5, 'Should have 5 children created')
 })
 
-test.serial('Set empty object', async (t) => {
+test('Set empty object', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     $id: 'maEmpty',
     nestedObj: {
@@ -1280,7 +1294,8 @@ test.serial('Set empty object', async (t) => {
   }
 })
 
-test.serial('no root in parents when adding nested', async (t) => {
+test('no root in parents when adding nested', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'ma1',
     $language: 'en',
@@ -1329,7 +1344,8 @@ test.serial('no root in parents when adding nested', async (t) => {
   )
 })
 
-test.serial('$delete: true', async (t) => {
+test('$delete: true', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     type: 'match',
     value: 1,
@@ -1582,7 +1598,8 @@ test.serial('$delete: true', async (t) => {
   // )
 })
 
-test.serial('deleting an object', async (t) => {
+test('deleting an object', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     type: 'match',
     obj: {
@@ -1606,7 +1623,8 @@ test.serial('deleting an object', async (t) => {
   t.deepEqual(await client.get({ $id: match, obj: true }), {})
 })
 
-test.serial('setting NaN should fail', async (t) => {
+test('setting NaN should fail', async (t) => {
+  const { client } = t.context
   await t.throwsAsync(
     client.set({
       $id: 'root',
@@ -1615,7 +1633,8 @@ test.serial('setting NaN should fail', async (t) => {
   )
 })
 
-test.serial('set - push into array', async (t) => {
+test('set - push into array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -1812,7 +1831,8 @@ test.serial('set - push into array', async (t) => {
   )
 })
 
-test.serial('set - assign into array', async (t) => {
+test('set - assign into array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -1986,7 +2006,8 @@ test.serial('set - assign into array', async (t) => {
   )
 })
 
-test.serial('set - remove from array', async (t) => {
+test('set - remove from array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2087,7 +2108,8 @@ test.serial('set - remove from array', async (t) => {
   )
 })
 
-test.serial('set - insert into array', async (t) => {
+test('set - insert into array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2254,7 +2276,8 @@ test.serial('set - insert into array', async (t) => {
   )
 })
 
-test.serial('set - insert and set further into array', async (t) => {
+test('set - insert and set further into array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],
@@ -2477,7 +2500,8 @@ test.serial('set - insert and set further into array', async (t) => {
   )
 })
 
-test.serial('set - insert and set into start of array', async (t) => {
+test('set - insert and set into start of array', async (t) => {
+  const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
     dingdongs: ['a', 'b', 'test'],

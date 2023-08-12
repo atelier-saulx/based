@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
@@ -80,9 +83,9 @@ test.beforeEach(async (t) => {
           name: `Hehe ${i}B`,
           value: i % 3,
         },
-      ].map((c) => client.set(c))
+      ].map((c) => t.context.client.set(c))
     )
-    await client.set({
+    await t.context.client.set({
       type: 'match',
       $id: `ma${i}`,
       value: i,
@@ -92,24 +95,26 @@ test.beforeEach(async (t) => {
   }
 
   for (let i = 1; i <= 50; i++) {
-    const mascotId = await client.set({
+    const mascotId = await t.context.client.set({
       type: 'mascot',
       $id: `rq${i}`,
       name: ['Matt', 'Jim', 'Kord'][(i - 1) % 3],
     })
-    await client.set({
+    await t.context.client.set({
       $id: `te${i}`,
       mascot: mascotId,
     })
   }
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('filter by descendants', async (t) => {
+test('filter by descendants', async (t) => {
+  const { client } = t.context
   t.deepEqual(
     await client.get({
       $id: 'root',
@@ -140,7 +145,8 @@ test.serial('filter by descendants', async (t) => {
   )
 })
 
-test.serial('filter by parents', async (t) => {
+test('filter by parents', async (t) => {
+  const { client } = t.context
   t.deepEqual(
     await client.get({
       $id: 'te1',
@@ -171,7 +177,8 @@ test.serial('filter by parents', async (t) => {
   )
 })
 
-test.serial('set like match to reference', async (t) => {
+test('set like match to reference', async (t) => {
+  const { client } = t.context
   t.deepEqual(
     await client.get({
       mascots: {

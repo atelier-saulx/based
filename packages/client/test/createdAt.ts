@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
-test.beforeEach(async (_t) => {
-  port = await getPort()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
+test.beforeEach(async (t) => {
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en', 'nl', 'de'],
     root: {
       fields: { value: { type: 'number' }, hello: { type: 'string' } },
@@ -124,12 +127,14 @@ test.beforeEach(async (_t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('createdAt is set', async (t) => {
+test('createdAt is set', async (t) => {
+  const { client } = t.context
   const before = Date.now()
   const match = await client.set({
     $language: 'en',
@@ -166,7 +171,8 @@ test.serial('createdAt is set', async (t) => {
   )
 })
 
-test.serial('createdAt+updatedAt are set', async (t) => {
+test('createdAt+updatedAt are set', async (t) => {
+  const { client } = t.context
   const before = Date.now()
   await wait(10)
   const person = await client.set({
@@ -203,7 +209,8 @@ test.serial('createdAt+updatedAt are set', async (t) => {
   t.deepEqual(createdAt, updatedAt)
 })
 
-test.serial('createdAt not set if provided in modify props', async (t) => {
+test('createdAt not set if provided in modify props', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     $language: 'en',
     type: 'match',
@@ -226,7 +233,8 @@ test.serial('createdAt not set if provided in modify props', async (t) => {
   })
 })
 
-test.serial('createdAt not set if nothing changed', async (t) => {
+test('createdAt not set if nothing changed', async (t) => {
+  const { client } = t.context
   const before = Date.now()
   const person = await client.set({
     $language: 'en',
@@ -289,7 +297,8 @@ test.serial('createdAt not set if nothing changed', async (t) => {
   t.deepEqual(createdAt, updatedAt)
 })
 
-test.serial('automatic child creation and timestamps', async (t) => {
+test('automatic child creation and timestamps', async (t) => {
+  const { client } = t.context
   const now = Date.now()
   const parent = await client.set({
     $id: 'viParent',
@@ -335,7 +344,8 @@ test.serial('automatic child creation and timestamps', async (t) => {
   }
 })
 
-test.serial('createdAt can be modified', async (t) => {
+test('createdAt can be modified', async (t) => {
+  const { client } = t.context
   const before = Date.now()
   const person = await client.set({
     $language: 'en',

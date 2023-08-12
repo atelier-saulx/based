@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
@@ -53,11 +56,13 @@ test.beforeEach(async (t) => {
 })
 
 test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('find - by type', async (t) => {
+test('find - by type', async (t) => {
+  const { client } = t.context
   // simple nested - single query
   await client.set({
     $id: 'le1',
@@ -236,7 +241,8 @@ test.serial('find - by type', async (t) => {
   )
 })
 
-test.serial('find - by IS NOT type', async (t) => {
+test('find - by IS NOT type', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'le1',
     type: 'league',

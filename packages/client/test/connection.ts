@@ -2,12 +2,14 @@ import test from 'ava'
 import { BasedDbClient } from '../dist'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('Connection', async (t) => {
+test('Connection', async (t) => {
   const TIME = 500
 
+  const port = await getPort()
   const server = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
 
@@ -31,7 +33,7 @@ test.serial('Connection', async (t) => {
     reConnectCnt++
   })
 
-  client.connect({ port: 8081, host: '127.0.0.1' })
+  client.connect({ port, host: '127.0.0.1' })
 
   await wait(TIME)
 
@@ -39,7 +41,7 @@ test.serial('Connection', async (t) => {
 
   await wait(TIME)
 
-  client.connect({ port: 8081, host: '127.0.0.1' })
+  client.connect({ port, host: '127.0.0.1' })
 
   await wait(TIME)
 
@@ -48,7 +50,7 @@ test.serial('Connection', async (t) => {
   await wait(TIME)
 
   const server2 = await startOrigin({
-    port: 8081,
+    port,
     name: 'default',
   })
 
