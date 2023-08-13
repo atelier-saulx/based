@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -7,27 +7,30 @@ import { worker } from './assertions/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     root: {
       fields: {
@@ -68,12 +71,14 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('references in a record', async (t) => {
+test('references in a record', async (t) => {
+  const { client } = t.context
   const fr1 = await client.set({
     type: 'friend',
     name: 'Cohen Gilliam',
@@ -111,7 +116,8 @@ test.serial('references in a record', async (t) => {
   )
 })
 
-test.serial('object record with references', async (t) => {
+test('object record with references', async (t) => {
+  const { client } = t.context
   const fr1 = await client.set({
     type: 'friend',
     name: 'Cohen Gilliam',
@@ -207,7 +213,8 @@ test.serial('object record with references', async (t) => {
 })
 
 // TODO: references not working
-test.serial.skip('single references in an object record', async (t) => {
+test.skip('single references in an object record', async (t) => {
+  const { client } = t.context
   const fr1 = await client.set({
     type: 'friend',
     name: 'Cohen Gilliam',

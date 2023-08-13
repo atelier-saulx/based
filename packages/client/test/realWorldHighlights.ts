@@ -1,23 +1,27 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import './assertions'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'
+import { SelvaServer } from '../../server/dist/server'
 
-let srv
-let port: number
-let client = new BasedDbClient()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
 
 test.beforeEach(async (t) => {
-  port = await getPort()
-  srv = await startOrigin({
-    port,
+  t.context.port = await getPort()
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
-  client.connect({ port, host: '127.0.0.1' })
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({ port: t.context.port, host: '127.0.0.1' })
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en', 'de'],
     types: {
       sport: {
@@ -53,11 +57,13 @@ test.beforeEach(async (t) => {
 })
 
 test.afterEach(async (t) => {
+  const { srv, client } = t.context
   client.destroy()
   await srv.destroy()
 })
 
-test.serial('real world highlights', async (t) => {
+test('real world highlights', async (t) => {
+  const { client } = t.context
   await client.set({
     $language: 'en',
     $id: 'sp1',

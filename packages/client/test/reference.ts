@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
-test.beforeEach(async (_t) => {
-  port = await getPort()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
+test.beforeEach(async (t) => {
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     // TODO: add 'en_us' and 'en_uk'?
     languages: ['en', /* 'en_us', 'en_uk',*/ 'de', 'nl'],
     root: {
@@ -109,49 +112,55 @@ test.beforeEach(async (_t) => {
   })
 
   // FIXME: make updateSchema
-  await client.command('hierarchy.addConstraint', [
+  await t.context.client.command('hierarchy.addConstraint', [
     'ma',
     'SB',
     'bidirClub',
     'bidirMatches',
   ])
-  await client.command('hierarchy.addConstraint', [
+  await t.context.client.command('hierarchy.addConstraint', [
     'cl',
     'B',
     'bidirMatches',
     'bidirClub',
   ])
 
-  await client.command('hierarchy.addConstraint', [
+  await t.context.client.command('hierarchy.addConstraint', [
     'cl',
     'B',
     'relatedClubs',
     'relatedClubs',
   ])
 
-  await client.command('hierarchy.addConstraint', [
+  await t.context.client.command('hierarchy.addConstraint', [
     'lo',
     'SB',
     'bidirClub',
     'bidirLogo',
   ])
-  await client.command('hierarchy.addConstraint', [
+  await t.context.client.command('hierarchy.addConstraint', [
     'cl',
     'SB',
     'bidirLogo',
     'bidirClub',
   ])
 
-  console.dir(await client.command('hierarchy.listConstraints'), { depth: 8 })
-  console.dir(await client.command('hierarchy.types.list'), { depth: 8 })
+  console.dir(await t.context.client.command('hierarchy.listConstraints'), {
+    depth: 8,
+  })
+  console.dir(await t.context.client.command('hierarchy.types.list'), {
+    depth: 8,
+  })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('simple singular reference', async (t) => {
+test('simple singular reference', async (t) => {
+  const { client } = t.context
   // const match1 = await client.set({
   //   $id: 'maA',
   //   title: {
@@ -222,7 +231,8 @@ test.serial('simple singular reference', async (t) => {
 })
 
 // TODO: needs $inherit
-test.serial.skip('singular reference inherit', async (t) => {
+test.skip('singular reference inherit', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'maB',
     value: 112,
@@ -280,7 +290,8 @@ test.serial.skip('singular reference inherit', async (t) => {
   )
 })
 
-test.serial('singular reference $field', async (t) => {
+test('singular reference $field', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     $id: 'maA',
     title: {
@@ -329,7 +340,8 @@ test.serial('singular reference $field', async (t) => {
 })
 
 // TODO: $inherit
-test.serial.skip('singular reference inherit reference', async (t) => {
+test.skip('singular reference inherit reference', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'clB',
     specialMatch: 'maA',
@@ -396,7 +408,8 @@ test.serial.skip('singular reference inherit reference', async (t) => {
   )
 })
 
-test.serial('list of simple singular reference', async (t) => {
+test('list of simple singular reference', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     $id: 'maA',
     title: {
@@ -636,7 +649,8 @@ test.serial('list of simple singular reference', async (t) => {
   )
 })
 
-test.serial('simple singular bidirectional reference', async (t) => {
+test('simple singular bidirectional reference', async (t) => {
+  const { client } = t.context
   const club1 = await client.set({
     $id: 'clA',
     title: {
@@ -893,110 +907,108 @@ test.serial('simple singular bidirectional reference', async (t) => {
   )
 })
 
-test.serial(
-  'list of simple singular reference with $field usage',
-  async (t) => {
-    // const match1 = await client.set({
-    //   $id: 'maA',
-    //   title: {
-    //     en: 'yesh match'
-    //   }
-    // })
+test('list of simple singular reference with $field usage', async (t) => {
+  const { client } = t.context
+  // const match1 = await client.set({
+  //   $id: 'maA',
+  //   title: {
+  //     en: 'yesh match'
+  //   }
+  // })
 
-    // const club1 = await client.set({
-    //   $id: 'clA',
-    //   title: {
-    //     en: 'yesh club'
-    //   },
-    //   specialMatch: match1
-    // })
+  // const club1 = await client.set({
+  //   $id: 'clA',
+  //   title: {
+  //     en: 'yesh club'
+  //   },
+  //   specialMatch: match1
+  // })
 
-    const club1 = await client.set({
-      $id: 'clA',
+  const club1 = await client.set({
+    $id: 'clA',
+    title: {
+      en: 'yesh club',
+    },
+    specialMatch: {
+      $id: 'maA',
       title: {
-        en: 'yesh club',
+        en: 'yesh match',
       },
-      specialMatch: {
-        $id: 'maA',
-        title: {
-          en: 'yesh match',
+    },
+  })
+
+  let result = await client.get({
+    $id: 'root',
+    $language: 'en',
+    children: {
+      id: true,
+      title: true,
+      parents: true,
+      match: {
+        id: { $field: 'specialMatch.id' },
+        title: { $field: 'specialMatch.title' },
+      },
+      $list: {
+        $find: {
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'club',
+            },
+          ],
         },
       },
-    })
+    },
+  })
 
-    let result = await client.get({
-      $id: 'root',
-      $language: 'en',
-      children: {
+  console.log(JSON.stringify(result, null, 2))
+  t.deepEqual(result, {
+    children: [
+      {
+        id: 'clA',
+        title: 'yesh club',
+        parents: ['root'],
+        match: { id: 'maA', title: 'yesh match' },
+      },
+    ],
+  })
+
+  result = await client.get({
+    $id: 'root',
+    $language: 'en',
+    children: {
+      id: true,
+      title: true,
+      parents: true,
+      match: {
+        $field: 'specialMatch',
         id: true,
         title: true,
-        parents: true,
-        match: {
-          id: { $field: 'specialMatch.id' },
-          title: { $field: 'specialMatch.title' },
-        },
-        $list: {
-          $find: {
-            $filter: [
-              {
-                $field: 'type',
-                $operator: '=',
-                $value: 'club',
-              },
-            ],
-          },
+      },
+      $list: {
+        $find: {
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'club',
+            },
+          ],
         },
       },
-    })
+    },
+  })
 
-    console.log(JSON.stringify(result, null, 2))
-    t.deepEqual(result, {
-      children: [
-        {
-          id: 'clA',
-          title: 'yesh club',
-          parents: ['root'],
-          match: { id: 'maA', title: 'yesh match' },
-        },
-      ],
-    })
-
-    result = await client.get({
-      $id: 'root',
-      $language: 'en',
-      children: {
-        id: true,
-        title: true,
-        parents: true,
-        match: {
-          $field: 'specialMatch',
-          id: true,
-          title: true,
-        },
-        $list: {
-          $find: {
-            $filter: [
-              {
-                $field: 'type',
-                $operator: '=',
-                $value: 'club',
-              },
-            ],
-          },
-        },
+  console.log(JSON.stringify(result, null, 2))
+  t.deepEqual(result, {
+    children: [
+      {
+        id: 'clA',
+        title: 'yesh club',
+        parents: ['root'],
+        match: { id: 'maA', title: 'yesh match' },
       },
-    })
-
-    console.log(JSON.stringify(result, null, 2))
-    t.deepEqual(result, {
-      children: [
-        {
-          id: 'clA',
-          title: 'yesh club',
-          parents: ['root'],
-          match: { id: 'maA', title: 'yesh match' },
-        },
-      ],
-    })
-  }
-)
+    ],
+  })
+})

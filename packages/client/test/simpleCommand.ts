@@ -3,19 +3,21 @@ import { BasedDbClient } from '../src'
 import { ModifyOpSetType } from '../src/protocol/encode/modify/types'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('ping', async (t) => {
+test('ping', async (t) => {
   const TIME = 2500
 
+  const port = await getPort()
   const server = await startOrigin({
-    port: 8082,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8082,
+    port,
     host: '127.0.0.1',
   })
 
@@ -35,16 +37,17 @@ test.serial('ping', async (t) => {
 
 test.serial('echo', async (t) => {
   const TIME = 2500
+  const port = await getPort()
 
   const server = await startOrigin({
-    port: 8082,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8082,
+    port,
     host: '127.0.0.1',
   })
 
@@ -58,18 +61,19 @@ test.serial('echo', async (t) => {
   t.true(true)
 })
 
-test.serial('object.set and get', async (t) => {
+test('object.set and get', async (t) => {
   const TIME = 2500
+  const port = await getPort()
 
   const server = await startOrigin({
-    port: 8082,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8082,
+    port,
     host: '127.0.0.1',
   })
 
@@ -117,18 +121,19 @@ test.serial('object.set and get', async (t) => {
 // t.true(true)
 // })
 
-test.serial('object.set wrong node', async (t) => {
+test('object.set wrong node', async (t) => {
   const TIME = 2500
+  const port = await getPort()
 
   const server = await startOrigin({
-    port: 8082,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8082,
+    port,
     host: '127.0.0.1',
   })
 
@@ -143,18 +148,19 @@ test.serial('object.set wrong node', async (t) => {
   t.true(true)
 })
 
-test.serial('object.set big multi-frame string', async (t) => {
+test('object.set big multi-frame string', async (t) => {
   const TIME = 2500
+  const port = await getPort()
 
   const server = await startOrigin({
-    port: 8082,
+    port,
     name: 'default',
   })
 
   const client = new BasedDbClient()
 
   client.connect({
-    port: 8082,
+    port,
     host: '127.0.0.1',
   })
 

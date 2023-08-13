@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
@@ -71,7 +74,7 @@ test.beforeEach(async (t) => {
     },
   })
 
-  const team1 = await client.set({ type: 'team', name: 'team1' })
+  const team1 = await t.context.client.set({ type: 'team', name: 'team1' })
 
   const amount = 50000
   const vids = 100
@@ -113,7 +116,7 @@ test.beforeEach(async (t) => {
 
   const d = Date.now()
   const ids = await Promise.all([
-    client.set({
+    t.context.client.set({
       type: 'club',
       name: 'club 1',
       children: [
@@ -126,13 +129,13 @@ test.beforeEach(async (t) => {
         },
       ],
     }),
-    client.set({
+    t.context.client.set({
       type: 'league',
       name: 'league 1',
       // @ts-ignore
       children: genMatches(),
     }),
-    client.set({
+    t.context.client.set({
       type: 'league',
       name: 'league 2',
       // @ts-ignore
@@ -151,11 +154,13 @@ test.beforeEach(async (t) => {
 })
 
 test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('find - descendants', async (t) => {
+test('find - descendants', async (t) => {
+  const { client } = t.context
   // simple nested - single query
 
   try {

@@ -14,7 +14,7 @@
     "files": [
       "test/*.ts"
     ],
-    "concurrency": 1,
+    "concurrency": 10,
     "extensions": [
       "ts"
     ],

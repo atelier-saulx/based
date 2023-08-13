@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       library: {
@@ -91,19 +94,19 @@ test.beforeEach(async (t) => {
   // A small delay is needed after setting the schema
   await new Promise((r) => setTimeout(r, 100))
 
-  const alexandria = await client.set({
+  const alexandria = await t.context.client.set({
     $language: 'en',
     type: 'publisher',
     $id: 'pb08523c44',
     name: 'The Great Library of Alexandria in Alexandria',
   })
-  const agrippina = await client.set({
+  const agrippina = await t.context.client.set({
     $language: 'en',
     type: 'author',
     $id: 'aud11d986e',
     name: 'Agrippina the Younger',
   })
-  const democritus = await client.set({
+  const democritus = await t.context.client.set({
     $language: 'en',
     type: 'author',
     $id: 'au3c163ed6',
@@ -149,9 +152,9 @@ test.beforeEach(async (t) => {
         publisher: alexandria,
         publishedAt: date.setFullYear(2010),
       },
-    ].map((b) => client.set(b))
+    ].map((b) => t.context.client.set(b))
   )
-  await client.set({
+  await t.context.client.set({
     type: 'library',
     name: 'The Great Library of Alexandria in Alexandria',
     books: booksIds,
@@ -220,13 +223,15 @@ test.beforeEach(async (t) => {
   // )
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
 // TODO: waiting for records
-test.serial.skip('find - traverse expression with records', async (t) => {
+test.skip('find - traverse expression with records', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
     types: {
@@ -444,7 +449,8 @@ test.serial.skip('find - traverse expression with records', async (t) => {
 })
 
 // TODO: waiting for records
-test.serial.skip('find - versioned hierarchies', async (t) => {
+test.skip('find - versioned hierarchies', async (t) => {
+  const { client } = t.context
   const versionedHierarchyFields: any = {
     versionedChildren: {
       type: 'record',

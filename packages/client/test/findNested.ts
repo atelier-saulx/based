@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
@@ -73,12 +76,14 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('get nested results', async (t) => {
+test('get nested results', async (t) => {
+  const { client } = t.context
   const matches: any = []
   const teams: any = []
 
@@ -158,7 +163,8 @@ test.serial('get nested results', async (t) => {
   t.is(result.items[0].teams.length, 2, 'has teams')
 })
 
-test.serial('get descendants of each child', async (t) => {
+test('get descendants of each child', async (t) => {
+  const { client } = t.context
   const teams: any = []
 
   for (let i = 0; i < 3; i++) {
@@ -225,7 +231,8 @@ test.serial('get descendants of each child', async (t) => {
   ])
 })
 
-test.serial('get nested results with $all', async (t) => {
+test('get nested results with $all', async (t) => {
+  const { client } = t.context
   const matches: any = []
   const teams: any = []
 
@@ -328,7 +335,8 @@ test.serial('get nested results with $all', async (t) => {
   )
 })
 
-test.serial('get nested results as ids', async (t) => {
+test('get nested results as ids', async (t) => {
+  const { client } = t.context
   const matches: any = []
   const teams: any = []
 
@@ -386,7 +394,8 @@ test.serial('get nested results as ids', async (t) => {
   t.is(result.items[0].parents.length, 3, 'has teams and league')
 })
 
-test.serial('get nested results without find', async (t) => {
+test('get nested results without find', async (t) => {
+  const { client } = t.context
   const matches: any = []
   const teams: any = []
 
@@ -442,7 +451,8 @@ test.serial('get nested results without find', async (t) => {
   t.is(child.children.length, 10, 'has teams')
 })
 
-test.serial('nested refs', async (t) => {
+test('nested refs', async (t) => {
+  const { client } = t.context
   for (let i = 0; i < 3; i++) {
     const docs = await client.set({
       type: 'thing',

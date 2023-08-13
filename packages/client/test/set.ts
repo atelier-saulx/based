@@ -5,7 +5,7 @@ import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 // import { wait } from '@saulx/utils'
 
-test.serial.only('set primitive fields', async (t) => {
+test.only('set primitive fields', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,

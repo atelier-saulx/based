@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
@@ -6,27 +6,30 @@ import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       region: {
@@ -65,11 +68,13 @@ test.beforeEach(async (t) => {
 })
 
 test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('find - ancestors - regions', async (t) => {
+test('find - ancestors - regions', async (t) => {
+  const { client } = t.context
   const regions = await Promise.all([
     client.set({
       type: 'region',
@@ -130,7 +135,8 @@ test.serial('find - ancestors - regions', async (t) => {
   )
 })
 
-test.serial('find - ancestors - regions - no wrapping', async (t) => {
+test('find - ancestors - regions - no wrapping', async (t) => {
+  const { client } = t.context
   const regions = await Promise.all([
     client.set({
       type: 'region',

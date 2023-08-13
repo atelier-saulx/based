@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     root: {
       prefix: 'ro',
@@ -66,7 +69,7 @@ test.beforeEach(async (t) => {
 
   // FIXME: make updateSchema
   console.log(
-    await client.command('hierarchy.addConstraint', [
+    await t.context.client.command('hierarchy.addConstraint', [
       'le',
       'B',
       'matches',
@@ -74,7 +77,7 @@ test.beforeEach(async (t) => {
     ])
   )
   console.log(
-    await client.command('hierarchy.addConstraint', [
+    await t.context.client.command('hierarchy.addConstraint', [
       'ma',
       'SB',
       'league',
@@ -83,12 +86,14 @@ test.beforeEach(async (t) => {
   )
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('simple aggregate', async (t) => {
+test('simple aggregate', async (t) => {
+  const { client } = t.context
   // simple nested - single query
   let sum = 0
 
@@ -407,7 +412,8 @@ test.serial('simple aggregate', async (t) => {
   )
 })
 
-test.serial('simple aggregate with reference fields', async (t) => {
+test('simple aggregate with reference fields', async (t) => {
+  const { client } = t.context
   let sum = 0
 
   await Promise.all([
@@ -485,7 +491,8 @@ test.serial('simple aggregate with reference fields', async (t) => {
   )
 })
 
-test.serial('sorted aggregate', async (t) => {
+test('sorted aggregate', async (t) => {
+  const { client } = t.context
   // simple nested - single query
   await Promise.all([
     await client.set({

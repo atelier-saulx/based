@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -7,31 +7,36 @@ import { worker } from './assertions/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('$fieldsByType simple', async (t) => {
+test('$fieldsByType simple', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
     types: {
@@ -146,7 +151,8 @@ test.serial('$fieldsByType simple', async (t) => {
   )
 })
 
-test.serial('$fieldsByType huge', async (t) => {
+test('$fieldsByType huge', async (t) => {
+  const { client } = t.context
   const types = [...Array(26).keys()]
     .map((v) => String.fromCharCode(v + 97))
     .map((v) => ({

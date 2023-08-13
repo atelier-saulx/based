@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       lekkerType: {
@@ -122,13 +125,15 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
   await wait(500)
 })
 
-test.serial('get non-existing by $alias', async (t) => {
+test('get non-existing by $alias', async (t) => {
+  const { client } = t.context
   t.deepEqualIgnoreOrder(
     await client.get({
       $language: 'en',
@@ -141,7 +146,8 @@ test.serial('get non-existing by $alias', async (t) => {
   )
 })
 
-test.serial('set alias and get by $alias', async (t) => {
+test('set alias and get by $alias', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     aliases: ['nice_match'],
     type: 'match',
@@ -238,7 +244,8 @@ test.serial('set alias and get by $alias', async (t) => {
   )
 })
 
-test.serial('set new entry with alias', async (t) => {
+test('set new entry with alias', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     $alias: 'nice_match',
     type: 'match',
@@ -261,7 +268,8 @@ test.serial('set new entry with alias', async (t) => {
   )
 })
 
-test.serial('set existing entry with alias', async (t) => {
+test('set existing entry with alias', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     $alias: 'nice_match',
     type: 'match',
@@ -320,7 +328,8 @@ test.serial('set existing entry with alias', async (t) => {
   )
 })
 
-test.serial('set and get by $alias as id', async (t) => {
+test('set and get by $alias as id', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -340,7 +349,8 @@ test.serial('set and get by $alias as id', async (t) => {
   )
 })
 
-test.serial('set parent by alias', async (t) => {
+test('set parent by alias', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -396,7 +406,8 @@ test.serial('set parent by alias', async (t) => {
   )
 })
 
-test.serial('set parent by alias 2', async (t) => {
+test('set parent by alias 2', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -447,7 +458,8 @@ test.serial('set parent by alias 2', async (t) => {
   t.deepEqualIgnoreOrder(result2.items, [{ id: match1 }])
 })
 
-test.serial('delete all aliases of a node', async (t) => {
+test('delete all aliases of a node', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -494,7 +506,8 @@ test.serial('delete all aliases of a node', async (t) => {
   )
 })
 
-test.serial('alias and merge = false', async (t) => {
+test('alias and merge = false', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -538,7 +551,8 @@ test.serial('alias and merge = false', async (t) => {
   ])
 })
 
-test.serial('ways to clear aliases', async (t) => {
+test('ways to clear aliases', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     type: 'match',
     title: { en: 'yesh' },
@@ -564,7 +578,8 @@ test.serial('ways to clear aliases', async (t) => {
 })
 
 // TODO: waiting for observe()
-test.serial.skip('set alias, get it, remove it, get it again', async (t) => {
+test.skip('set alias, get it, remove it, get it again', async (t) => {
+  const { client } = t.context
   const al = 'mybeautifulaliasmyesh'
 
   const custom1 = await client.set({

@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,27 +6,30 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       book: {
@@ -47,7 +50,7 @@ test.beforeEach(async (t) => {
   // A small delay is needed after setting the schema
   await wait(100)
 
-  await client.set({
+  await t.context.client.set({
     type: 'author',
     $id: 'au1',
     fullname: 'John Doe',
@@ -64,7 +67,7 @@ test.beforeEach(async (t) => {
       },
     ],
   })
-  await client.set({
+  await t.context.client.set({
     type: 'author',
     $id: 'au2',
     fullname: 'Jane Doe',
@@ -78,13 +81,15 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
 // TODO: $inherit
-test.serial.skip('find - inherit', async (t) => {
+test.skip('find - inherit', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
     types: {
@@ -173,7 +178,8 @@ test.serial.skip('find - inherit', async (t) => {
 })
 
 // TODO: $inherit
-test.serial.skip('find - inherit by type', async (t) => {
+test.skip('find - inherit by type', async (t) => {
+  const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
     types: {

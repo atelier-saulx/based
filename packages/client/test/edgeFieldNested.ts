@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -8,27 +8,30 @@ import getPort from 'get-port'
 import { SelvaTraversal } from '../src/protocol'
 import { find } from './assertions/utils'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port
-test.beforeEach(async (_t) => {
-  port = await getPort()
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
+test.beforeEach(async (t) => {
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
@@ -84,13 +87,15 @@ test.beforeEach(async (_t) => {
   })
 })
 
-test.afterEach(async (_t) => {
+test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
 // TODO: Mismatch $list formats from previous version
-test.serial.skip('retrieving nested refs with fields arg', async (t) => {
+test.skip('retrieving nested refs with fields arg', async (t) => {
+  const { client } = t.context
   for (let i = 0; i < 2; i++) {
     await client.set({
       type: 'thing',
@@ -268,7 +273,8 @@ test.serial.skip('retrieving nested refs with fields arg', async (t) => {
   ])
 })
 
-test.serial('retrieving nested ref from an object', async (t) => {
+test('retrieving nested ref from an object', async (t) => {
+  const { client } = t.context
   const match = await client.set({
     type: 'match',
     value: 10.0,
@@ -323,7 +329,8 @@ test.serial('retrieving nested ref from an object', async (t) => {
 })
 
 // TODO: Mismatch $list formats from previous version
-test.serial.skip('retrieving nested refs from an object', async (t) => {
+test.skip('retrieving nested refs from an object', async (t) => {
+  const { client } = t.context
   const match1 = await client.set({
     $id: 'ma1',
     type: 'match',

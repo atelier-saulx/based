@@ -1,4 +1,4 @@
-import test from 'ava'
+import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
@@ -6,27 +6,30 @@ import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
 
-let srv: SelvaServer
-let client: BasedDbClient
-let port: number
+const test = anyTest as TestInterface<{
+  srv: SelvaServer
+  client: BasedDbClient
+  port: number
+}>
+
 test.beforeEach(async (t) => {
-  port = await getPort()
+  t.context.port = await getPort()
   console.log('origin')
-  srv = await startOrigin({
-    port,
+  t.context.srv = await startOrigin({
+    port: t.context.port,
     name: 'default',
   })
 
   console.log('connecting')
-  client = new BasedDbClient()
-  client.connect({
-    port,
+  t.context.client = new BasedDbClient()
+  t.context.client.connect({
+    port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en', 'de', 'nl'],
     types: {
       lekkerType: {
@@ -124,11 +127,13 @@ test.beforeEach(async (t) => {
 })
 
 test.afterEach(async (t) => {
+  const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
 })
 
-test.serial('get - simple alias', async (t) => {
+test('get - simple alias', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'viA',
     title: {
@@ -161,72 +166,69 @@ test.serial('get - simple alias', async (t) => {
   )
 })
 
-test.serial(
-  'get - $field with multiple options, taking the first',
-  async (t) => {
-    await client.set({
+test('get - $field with multiple options, taking the first', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'viE',
+    title: {
+      en: 'nice',
+    },
+    value: 25,
+    auth: {
+      // role needs to be different , different roles per scope should be possible
+      role: {
+        id: ['root'],
+        type: 'admin',
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
       $id: 'viE',
-      title: {
-        en: 'nice',
-      },
-      value: 25,
-      auth: {
-        // role needs to be different , different roles per scope should be possible
-        role: {
-          id: ['root'],
-          type: 'admin',
-        },
-      },
-    })
+      id: true,
+      valueOrAge: { $field: ['value', 'age'] },
+    }),
+    {
+      id: 'viE',
+      valueOrAge: 25,
+    }
+  )
+})
 
-    t.deepEqual(
-      await client.get({
-        $id: 'viE',
-        id: true,
-        valueOrAge: { $field: ['value', 'age'] },
-      }),
-      {
-        id: 'viE',
-        valueOrAge: 25,
-      }
-    )
-  }
-)
+test('get - $field with multiple options, taking the second', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'viF',
+    title: {
+      en: 'nice',
+    },
+    age: 62,
+    auth: {
+      // role needs to be different , different roles per scope should be possible
+      role: {
+        id: ['root'],
+        type: 'admin',
+      },
+    },
+  })
 
-test.serial(
-  'get - $field with multiple options, taking the second',
-  async (t) => {
-    await client.set({
+  t.deepEqual(
+    await client.get({
       $id: 'viF',
-      title: {
-        en: 'nice',
-      },
-      age: 62,
-      auth: {
-        // role needs to be different , different roles per scope should be possible
-        role: {
-          id: ['root'],
-          type: 'admin',
-        },
-      },
-    })
-
-    t.deepEqual(
-      await client.get({
-        $id: 'viF',
-        id: true,
-        valueOrAge: { $field: ['value', 'age'] },
-      }),
-      {
-        id: 'viF',
-        valueOrAge: 62,
-      }
-    )
-  }
-)
+      id: true,
+      valueOrAge: { $field: ['value', 'age'] },
+    }),
+    {
+      id: 'viF',
+      valueOrAge: 62,
+    }
+  )
+})
 
 // TODO: $inherit missing
-test.serial.skip('get - simple $field with $inherit: true', async (t) => {
+test.skip('get - simple $field with $inherit: true', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'viH',
     title: {
@@ -280,7 +282,8 @@ test.serial.skip('get - simple $field with $inherit: true', async (t) => {
 })
 
 // TODO: $inherit missing
-test.serial.skip('get - simple $field with $inherit: $type', async (t) => {
+test.skip('get - simple $field with $inherit: $type', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'cuA',
     name: 'customA',
@@ -332,7 +335,8 @@ test.serial.skip('get - simple $field with $inherit: $type', async (t) => {
   )
 })
 
-test.serial('get - $field with object structure', async (t) => {
+test('get - $field with object structure', async (t) => {
+  const { client } = t.context
   await client.set({
     $id: 'viA',
     title: {
