@@ -18,6 +18,7 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     name: 'default',
   })
+  t.context.client = new BasedDbClient()
   t.context.client.connect({ port: t.context.port, host: '127.0.0.1' })
 
   await t.context.client.updateSchema({

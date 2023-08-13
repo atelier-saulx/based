@@ -13,7 +13,6 @@ const test = anyTest as TestInterface<{
 }>
 
 test.beforeEach(async (t) => {
-  const { client } = t.context
   t.context.port = await getPort()
   console.log('origin')
   t.context.srv = await startOrigin({
@@ -23,14 +22,14 @@ test.beforeEach(async (t) => {
 
   console.log('connecting')
   t.context.client = new BasedDbClient()
-  client.connect({
+  t.context.client.connect({
     port: t.context.port,
     host: '127.0.0.1',
   })
 
   console.log('updating schema')
 
-  await client.updateSchema({
+  await t.context.client.updateSchema({
     languages: ['en'],
     types: {
       league: {
