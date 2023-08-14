@@ -16,6 +16,14 @@ const schema: BasedSchema = {
           type: 'string',
           pattern: '\\${1,4}',
         },
+        email: {
+          type: 'string',
+          format: 'email',
+        },
+        uppercase: {
+          type: 'string',
+          format: 'uppercase',
+        },
         bla: {
           type: 'set',
           items: { type: 'string', minLength: 3, maxLength: 6 },
@@ -115,4 +123,46 @@ test('setting $value', async (t) => {
     phonkName: { $value: 'bla$' },
   })
   t.deepEqual(resultCollect(res1), [{ path: ['phonkName'], value: 'bla$' }])
+})
+
+test('email', async (t) => {
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    email: 'gmail.com',
+  })
+
+  t.true(err.errors.length === 1)
+
+  const r = await setWalker(schema, {
+    $id: 'bl1',
+    email: 'gmail@gmail.com',
+  })
+
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['email'],
+      value: 'gmail@gmail.com',
+    },
+  ])
+})
+
+test('uppercase', async (t) => {
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    uppercase: 'aASaasDASD',
+  })
+
+  t.true(err.errors.length === 1)
+
+  const r = await setWalker(schema, {
+    $id: 'bl1',
+    uppercase: 'ASDASD',
+  })
+
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['uppercase'],
+      value: 'ASDASD',
+    },
+  ])
 })

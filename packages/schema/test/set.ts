@@ -14,19 +14,19 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
-        x: {
-          type: 'object',
-          properties: {
-            bla: { type: 'string' },
-          },
-        },
         setOfNumbers: {
           type: 'set',
           items: {
             type: 'number',
           },
         },
-        bla: {
+        setOfInt: {
+          type: 'set',
+          items: {
+            type: 'integer',
+          },
+        },
+        setOfStr: {
           type: 'set',
           items: { type: 'string', minLength: 3, maxLength: 6 },
         },
@@ -44,19 +44,43 @@ const schema: BasedSchema = {
   },
 }
 
-test('simple setNum', async (t) => {
+test.only('simple setNum', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
-    setOfNumbers: [1, 2, 3, 4, 5],
+    setOfNumbers: [1, 2, 3, 3, 3, 4, 5],
   })
 
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
-    { path: ['setOfNumbers'], value: { $value: [1, 2, 3, 4, 5] } },
+    { path: ['setOfNumbers'], value: { $value: [1, 2, 3, 3, 3, 4, 5] } },
   ])
 })
 
-test('default arr', async (t) => {
+test('simple setNum wrongType', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfNumbers: [1, '2', 3, 4, 5],
+  })
+
+  t.true(r.errors.length === 1)
+  t.deepEqual(resultCollect(r), [
+    { path: ['setOfNumbers'], value: { $value: [1, '2', 3, 4, 5] } },
+  ])
+})
+
+test('simple set int wrongType', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfInt: [1, 2.5, 3, 4, 5],
+  })
+
+  t.true(r.errors.length === 1)
+  t.deepEqual(resultCollect(r), [
+    { path: ['setOfInt'], value: { $value: [1, 2.5, 3, 4, 5] } },
+  ])
+})
+
+test('add single value', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: { $add: 20 },
@@ -68,33 +92,113 @@ test('default arr', async (t) => {
   ])
 })
 
-test('$merge on object', async (t) => {
+test('add arr', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
-    x: {
-      $merge: false,
-      bla: 'x',
-    },
+    setOfNumbers: { $add: [1, 2, 3, 4, 5, 6] },
   })
 
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
-    { path: ['x', 'bla'], value: 'x' },
-    { path: ['x'], value: { $merge: false, bla: 'x' } },
+    { path: ['setOfNumbers'], value: { $add: [1, 2, 3, 4, 5, 6] } },
   ])
 })
 
-test('$merge on set', async (t) => {
+test('remove', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
-    $merge: false,
-    x: {
-      bla: 'x',
-    },
+    setOfNumbers: { $remove: [1, 2, 3, 4, 5, 6] },
   })
+
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
-    { path: ['x', 'bla'], value: 'x' },
-    { path: ['x'], value: { bla: 'x' } },
+    { path: ['setOfNumbers'], value: { $remove: [1, 2, 3, 4, 5, 6] } },
+  ])
+})
+
+test('simple setStr', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: ['bla', 'bla', 'asasd', 'asd', 'asd'],
+  })
+
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['setOfStr'],
+      value: { $value: ['bla', 'bla', 'asasd', 'asd', 'asd'] },
+    },
+  ])
+})
+
+test('simple setStr wrongType', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: ['bla', 'bla', 'asasd', 'asd', 2],
+  })
+
+  t.true(r.errors.length === 1)
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['setOfStr'],
+      value: { $value: ['bla', 'bla', 'asasd', 'asd', 2] },
+    },
+  ])
+})
+
+test('simple setStr min max', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: ['bla', 'bla', 'asasdasdasd', 'asd', '2'],
+  })
+
+  t.true(r.errors.length === 2)
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['setOfStr'],
+      value: { $value: ['bla', 'bla', 'asasdasdasd', 'asd', '2'] },
+    },
+  ])
+})
+
+test('add single value str', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: { $add: 'one' },
+  })
+
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['setOfStr'], value: { $add: ['one'] } },
+  ])
+})
+
+test('add arr str', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: { $add: ['bla', 'bla', 'asasd', 'asd', 'asd'] },
+  })
+
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['setOfStr'],
+      value: { $add: ['bla', 'bla', 'asasd', 'asd', 'asd'] },
+    },
+  ])
+})
+
+test('remove str', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    setOfStr: { $remove: ['bla', 'bla', 'asasd', 'asd', 'asd'] },
+  })
+
+  t.true(r.errors.length === 0)
+  t.deepEqual(resultCollect(r), [
+    {
+      path: ['setOfStr'],
+      value: { $remove: ['bla', 'bla', 'asasd', 'asd', 'asd'] },
+    },
   ])
 })
