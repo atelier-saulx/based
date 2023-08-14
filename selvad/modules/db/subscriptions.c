@@ -1854,16 +1854,6 @@ static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base
     return 0;
 }
 
-static int parse_id(unsigned char id_bin[SELVA_SUBSCRIPTION_ID_SIZE], const char *id_str, size_t id_len)
-{
-    if (id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
-        memcpy(id_bin, id_str, SELVA_SUBSCRIPTION_ID_SIZE);
-        return 0;
-    } else {
-        return Selva_SubscriptionStr2id(id_bin, id_str, id_len);
-    }
-}
-
 /*
  * Add a new marker to the subscription.
  * SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
@@ -1906,20 +1896,28 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
     /*
      * Get the marker id.
      */
     Selva_SubscriptionMarkerId marker_id;
-    err = parse_id(marker_id, marker_id_str, marker_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Marker ID");
-        return;
+    if (marker_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(marker_id, marker_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(marker_id, marker_id_str, marker_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Marker ID");
+            return;
+        }
     }
 
     if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
@@ -2112,20 +2110,28 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
     /*
      * Get the marker id.
      */
     Selva_SubscriptionMarkerId marker_id;
-    err = parse_id(marker_id, marker_id_str, marker_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Marker ID");
-        return;
+    if (marker_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(marker_id, marker_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(marker_id, marker_id_str, marker_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Marker ID");
+            return;
+        }
     }
 
     /*
@@ -2179,10 +2185,14 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
     /*
@@ -2269,20 +2279,28 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
      * Get the subscription id.
      */
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Subscription ID");
+            return;
+        }
     }
 
     /*
      * Get the marker id.
      */
     Selva_SubscriptionMarkerId marker_id;
-    err = parse_id(marker_id, marker_id_str, marker_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Marker ID");
-        return;
+    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
+        memcpy(marker_id, marker_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
+    } else {
+        err = Selva_SubscriptionStr2id(marker_id, marker_id_str, marker_id_len);
+        if (err) {
+            selva_send_errorf(resp, err, "Marker ID");
+            return;
+        }
     }
 
     if (event_type != SELVA_SUBSCRIPTION_TRIGGER_TYPE_CREATED &&
@@ -2395,7 +2413,7 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
     }
 
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
+    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
     if (err) {
         selva_send_errorf(resp, err, "Subscription ID");
         return;
@@ -2558,7 +2576,7 @@ void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const
         return;
     }
 
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
+    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
     if (err) {
         selva_send_errorf(resp, err, "Subscription ID");
         return;
@@ -2603,9 +2621,10 @@ void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp,
 
     /*
      * Get the subscription id.
+     * TODO Support both formats?
      */
     Selva_SubscriptionId sub_id;
-    err = parse_id(sub_id, sub_id_str, sub_id_len);
+    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
     if (err) {
         selva_send_errorf(resp, err, "Subscription ID");
         return;
@@ -2613,9 +2632,10 @@ void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp,
 
     /*
      * Get the marker id.
+     * TODO Support both formats?
      */
     Selva_SubscriptionMarkerId marker_id;
-    err = parse_id(marker_id, marker_id_str, marker_id_len);
+    err = Selva_SubscriptionStr2id(marker_id, marker_id_str, marker_id_len);
     if (err) {
         selva_send_errorf(resp, err, "Marker ID");
         return;
