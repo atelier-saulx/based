@@ -24,6 +24,10 @@ const schema: BasedSchema = {
           type: 'string',
           format: 'uppercase',
         },
+        readOnly: {
+          type: 'string',
+          readOnly: true,
+        },
         bla: {
           type: 'set',
           items: { type: 'string', minLength: 3, maxLength: 6 },
@@ -56,7 +60,7 @@ test('string max length', async (t) => {
     name: 'xaxx',
   })
 
-  t.assert(errorCollect(err1, err2).length > 0)
+  t.true(errorCollect(err1, err2).length === 2)
   t.deepEqual(resultCollect(res1), [{ path: ['name'], value: 'xaxx' }])
 })
 
@@ -72,13 +76,12 @@ test('set with strings', async (t) => {
     bla: ['axx', 'axxxx', 'blaaa'],
   })
 
-  t.assert(errorCollect(err1).length > 0)
+  t.true(err1.errors.length === 1)
   t.deepEqual(resultCollect(res1), [
     { path: ['bla'], value: { $value: ['axx', 'axxxx', 'blaaa'] } },
   ])
 })
 
-// this one causes weird array lenght issue in string max length test
 test('string pattern', async (t) => {
   const err1 = await setWalker(schema, {
     $id: 'bl1',
@@ -90,7 +93,7 @@ test('string pattern', async (t) => {
     phonkName: 'bla$',
   })
 
-  t.assert(errorCollect(err1).length > 0)
+  t.true(err1.errors.length === 1)
   t.deepEqual(resultCollect(res1), [{ path: ['phonkName'], value: 'bla$' }])
 })
 
@@ -165,4 +168,14 @@ test('uppercase', async (t) => {
       value: 'ASDASD',
     },
   ])
+})
+
+//TODO?? not sure but readonly should throw an error or not?
+test('readOnly', async (t) => {
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    readOnly: 'aASaasDASD',
+  })
+  console.log(resultCollect(err))
+  t.true(err.errors.length === 1)
 })

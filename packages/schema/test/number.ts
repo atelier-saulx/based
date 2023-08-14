@@ -1,12 +1,5 @@
 import test from 'ava'
-import {
-  ArgsClass,
-  BasedSchema,
-  BasedSchemaCollectProps,
-  BasedSetTarget,
-  setWalker,
-} from '../src/index'
-import { ParseError } from '../src/error'
+import { BasedSchema, setWalker } from '../src/index'
 import { resultCollect, errorCollect } from './utils'
 type NumberTypes = 'number' | 'timestamp' | 'integer'
 
@@ -160,7 +153,7 @@ test('numbers in a set', async (t) => {
     { path: ['set'], value: { $value: [3, 3, 3, 3] } },
   ])
 })
-//TODO fix
+
 test('value', async (t) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
@@ -207,7 +200,7 @@ test('value', async (t) => {
     set: { $value: [3, 3, 3, 4] },
   })
 
-  t.assert(errorCollect(e1, e2, e3, e4, e5).length > 0)
+  t.assert(errorCollect(e1, e2, e3, e4, e5).length === 5)
   t.deepEqual(resultCollect(res1, res2, res3, res4), [
     { path: ['number'], value: 4 },
     { path: ['integer'], value: 4 },

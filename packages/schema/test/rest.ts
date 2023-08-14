@@ -29,6 +29,30 @@ const schema: BasedSchema = {
             flap: { type: 'boolean' },
           },
         },
+        complexObj: {
+          type: 'object',
+          properties: {
+            bool: { type: 'boolean' },
+            string: { type: 'string', maxLength: 6 },
+            objArray: {
+              type: 'array',
+              values: {
+                type: 'object',
+                properties: {
+                  snurp: {
+                    type: 'string',
+                  },
+                },
+              },
+            },
+            intArray: {
+              type: 'array',
+              values: {
+                type: 'integer',
+              },
+            },
+          },
+        },
         flap: {
           type: 'boolean',
         },
@@ -181,4 +205,70 @@ test('object: boolean', async (t) => {
     { path: ['object', 'flap'], value: true },
     { path: ['object'], value: { flap: true } },
   ])
+})
+
+test('object: turtles all the way…', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl1',
+    complexObj: {
+      bool: true,
+      string: '12345',
+      objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  })
+
+  t.true(r.errors.length === 0)
+})
+
+test('object: big', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl1',
+    complexObj: {
+      bool: { $default: true },
+      string: { $default: '12345' },
+      objArray: {
+        $assign: {
+          $idx: 3,
+          $value: {
+            snurp: {
+              $delete: true,
+            },
+          },
+        },
+      },
+      intArray: { $push: [1, 2, 3, 4, 5] },
+    },
+  })
+
+  t.true(r.errors.length === 0)
+})
+
+//TODO is this wrong?
+test('object: more big', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl1',
+    complexObj: {
+      bool: { $default: true },
+      string: { $default: '12345' },
+      objArray: {
+        $assign: {
+          $idx: 3,
+          $value: {
+            snurp: {
+              $delete: true,
+            },
+          },
+        },
+      },
+      intarray: {
+        $insert: {
+          $idx: 10,
+          $value: 1212,
+        },
+      },
+    },
+  })
+  console.log(r.errors)
+  t.true(r.errors.length === 0)
 })
