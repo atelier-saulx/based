@@ -111,13 +111,13 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
             return;
         }
 
-        Selva_GenSubscriptionMarkerId(marker_id, 0, selva_string_to_str(alias_name, NULL));
+        marker_id = Selva_GenSubscriptionMarkerId(0, selva_string_to_str(alias_name, NULL));
 
         err = Selva_AddSubscriptionAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
         if (err && err != SELVA_SUBSCRIPTIONS_EEXIST) {
-            selva_send_errorf(resp, err, "Failed to subscribe sub_id: \"%.*s%%\" alias_name: %s node_id: %.*s\n",
+            selva_send_errorf(resp, err, "Failed to subscribe sub_id: \"%.*s.%d\" alias_name: %s node_id: %.*s\n",
                               (int)sub_id_len, sub_id_str,
-                              //(int)marker_id, FIXME format marker_id properly
+                              (int)marker_id,
                               selva_string_to_str(alias_name, NULL),
                               (int)SELVA_NODE_ID_SIZE, node_id);
             return;
