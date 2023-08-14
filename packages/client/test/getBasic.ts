@@ -211,8 +211,7 @@ test.afterEach(async (t) => {
   client.destroy()
 })
 
-// TODO
-test.skip('get null', async (t) => {
+test('get null', async (t) => {
   const { client } = t.context
   await t.throwsAsync(client.get(null))
 })
@@ -690,8 +689,7 @@ test('get - set with some items', async (t) => {
   })
 })
 
-// TODO: `descendants: true` returns undefined, not the actual array
-test.skip('get - hierarchy', async (t) => {
+test('get - hierarchy', async (t) => {
   const { client } = t.context
   await Promise.all([
     await client.set({
@@ -824,17 +822,16 @@ test.skip('get - $inherit', async (t) => {
     }),
   ])
 
-  t.deepEqualIgnoreOrder(
-    await client.get({
-      $id: 'cuD',
-      title: { $inherit: { $type: ['custom', 'club'] } },
-    }),
-    {
-      title: {
-        en: 'snurf',
-      },
-    }
-  )
+  const r = await client.get({
+    $id: 'cuD',
+    title: { $inherit: { $type: ['custom', 'club'] } },
+  })
+  t.log({ r })
+  t.deepEqualIgnoreOrder(r, {
+    title: {
+      en: 'snurf',
+    },
+  })
 
   t.deepEqualIgnoreOrder(
     await client.get({
