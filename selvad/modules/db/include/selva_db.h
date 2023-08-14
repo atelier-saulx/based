@@ -123,9 +123,9 @@ typedef unsigned char Selva_SubscriptionId[SELVA_SUBSCRIPTION_ID_SIZE];
 /**
  * Type for Selva subscription marker id.
  */
-typedef unsigned char Selva_SubscriptionMarkerId[SELVA_SUBSCRIPTION_ID_SIZE];
+typedef int64_t Selva_SubscriptionMarkerId;
 
-static_assert(sizeof(Selva_SubscriptionId) == sizeof(Selva_SubscriptionMarkerId));
+#define PRImrkId PRId64
 
 /**
  * Field protection modes.

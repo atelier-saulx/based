@@ -68,8 +68,7 @@ static int set_marker_id(struct SelvaHierarchy *hierarchy, struct SelvaFindIndex
         return next;
     }
 
-    /* FIXME find_index marker id */
-    //icb->marker_id = next;
+    icb->marker_id = next;
     icb->flags.valid_marked_id = 1;
 
     return 0;
@@ -382,7 +381,6 @@ __attribute__((nonnull (1, 2))) static int destroy_icb(
     }
 
     if (icb->flags.valid_marked_id) {
-        /* FIXME marker_id */
         ida_free(hierarchy->dyn_index.ida, (ida_t)icb->marker_id);
     }
 
