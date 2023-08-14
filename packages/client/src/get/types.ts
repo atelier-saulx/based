@@ -47,6 +47,15 @@ export type TraverseByTypeExpression =
       $all?: TraverseByTypeExpression[]
     }
 
+export type SubMarker = {
+  subId: string
+  markerId: string
+  findOpts: any // struct used for createRecord
+  nodeId: string
+  fields: string
+  rpn?: string[]
+}
+
 export type GetNodeShared = {
   target: { path: (string | number)[] }
   source: {
@@ -58,6 +67,7 @@ export type GetNodeShared = {
   fields: Fields
 
   nestedCommands?: GetCommand[]
+  marker?: SubMarker
 }
 
 export type GetNode = {
