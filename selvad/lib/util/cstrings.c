@@ -3,9 +3,57 @@
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
+#include <stdint.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/cstrings.h"
+
+static inline uint64_t b2digits(uint64_t x)
+{
+    return x ? 64 - __builtin_clzll(x) : 0;
+}
+
+uint64_t b10digits(uint64_t x)
+{
+    static const unsigned char guess[65] = {
+        0 , 0 , 0 , 0 , 1,  1 , 1 , 2 , 2 , 2 ,
+        3 , 3 , 3 , 3 , 4,  4 , 4 , 5 , 5 , 5 ,
+        6 , 6 , 6 , 6 , 7,  7 , 7 , 8 , 8 , 8 ,
+        9 , 9 , 9 , 9 , 10, 10, 10, 11, 11, 11,
+        12, 12, 12, 12, 13, 13, 13, 14, 14, 14,
+        15, 15, 15, 15, 16, 16, 16, 17, 17, 17,
+        18, 18, 18, 18, 19
+    };
+    static const uint64_t ten[] = {
+        1u,
+        10u,
+        100u,
+        1000u,
+        10000u,
+        100000u,
+        1000000u,
+        10000000u,
+        100000000u,
+        1000000000u,
+        10000000000u,
+        100000000000u,
+        1000000000000u,
+        10000000000000u,
+        100000000000000u,
+        1000000000000000u,
+        10000000000000000u,
+        100000000000000000u,
+        1000000000000000000u,
+        10000000000000000000u,
+    };
+
+    if (x == 0) {
+        return 1;
+    };
+
+    uint64_t digits = guess[b2digits(x)];
+    return digits + (x >= ten[digits]);
+}
 
 char *selva_strndup(const char *s, size_t n) {
   const size_t len = strnlen(s, n);
