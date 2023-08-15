@@ -49,7 +49,7 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 
 // DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
 // TODO: make real cache with functions etc. nice
-const FAKE_CACHE: Map<number, any> = new Map()
+const CMD_RESULT_CACHE: Map<number, any> = new Map()
 
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client, subId } = ctx
@@ -60,18 +60,19 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
   const cmdID = cmd.markerId ?? cmd.cmdId
 
-  const cached = FAKE_CACHE.get(cmdID)
+  const cached = CMD_RESULT_CACHE.get(cmdID)
   if (ctx.cleanup) {
     await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
 
-    FAKE_CACHE.delete(cmdID)
+    // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
+    CMD_RESULT_CACHE.delete(cmdID)
     return cached
   } else if (cached) {
     return cached
   }
 
   const result = await execCmd(ctx, cmd)
-  FAKE_CACHE.set(cmdID, result)
+  CMD_RESULT_CACHE.set(cmdID, result)
   return result
 }
 
