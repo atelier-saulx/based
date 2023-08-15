@@ -145,7 +145,7 @@ export async function get(
   }
 
   console.dir({ cmds, defaults }, { depth: 8 })
-  if (ctx.markers) {
+  if (ctx.markers?.length) {
     await Promise.allSettled(ctx.markers)
   }
 
