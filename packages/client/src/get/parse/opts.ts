@@ -9,7 +9,6 @@ import {
   GetTraverseIds,
   Path,
 } from '../types'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { hashCmd } from '../util'
 
 function parseAlias(value: any): string[] | undefined {
@@ -73,7 +72,9 @@ export async function parseGetOpts(
 
           const { $sort, $limit, $offset } = $aggregate
           const $list = { $find: $aggregate, $sort, $limit, $offset }
-          return parseList('aggregate', cmd, key, $list)
+          const parsed = parseList('aggregate', cmd, key, $list)
+          parsed.cmdId = hashCmd(parsed)
+          return parsed
         }
 
         // special cases
@@ -100,6 +101,7 @@ export async function parseGetOpts(
             },
           }
 
+          nestedCmd.cmdId = hashCmd(nestedCmd)
           return nestedCmd
         }
 
