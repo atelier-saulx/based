@@ -40,14 +40,25 @@ export function applyDefault(
 export async function get(
   client: BasedDbClient,
   opts: any,
-  isSubscription: boolean = false
+  {
+    isSubscription,
+    subId,
+    markerId,
+  }: { isSubscription: boolean; subId?: number; markerId?: number } = {
+    isSubscription: false,
+  }
 ): Promise<any> {
   const ctx: ExecContext = {
     client,
   }
 
   if (isSubscription) {
-    ctx.subId = hashObjectIgnoreKeyOrder(opts)
+    ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
+  }
+
+  // is an event, use cache
+  if (markerId) {
+    ctx.useCache = true
   }
 
   let { $id, $language, $alias } = opts
@@ -78,7 +89,14 @@ export async function get(
   while (q.length) {
     const newCtx = { ...ctx }
     const results = await Promise.all(
-      q.map((cmd) => {
+      q.map(async (cmd) => {
+        if ((cmd.markerId ?? cmd.cmdId) === markerId) {
+          // queue delete marker opts into newCtx.markers
+          getCmd({ ...newCtx, cacheClean: true }, cmd)
+
+          return getCmd({ ...newCtx, useCache: false }, cmd)
+        }
+
         return getCmd(newCtx, cmd)
       })
     )
@@ -113,6 +131,7 @@ export async function get(
           newPath.push(k, path[path.length - 1])
           n.target.path = newPath
           n.markerId = hashCmd(n)
+
           return n
         })
 
