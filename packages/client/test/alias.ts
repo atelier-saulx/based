@@ -633,3 +633,43 @@ test.skip('set alias, get it, remove it, get it again', async (t) => {
 
   t.is(cnt, 3) // initial + change value + remove alias
 })
+
+// TODO: issue with $alias
+test.skip('set with $alias', async (t) => {
+  const { client } = t.context
+  await client.updateSchema({
+    languages: ['en'],
+    types: {
+      match: {
+        prefix: 'ma',
+        fields: {
+          title: { type: 'text' },
+        },
+      },
+    },
+  })
+
+  await client.set({
+    $id: 'ma1',
+    aliases: { $add: 'thingy' },
+  })
+
+  const x = await client.set({
+    $alias: 'thingy',
+    title: 'yesh',
+    $language: 'en',
+  })
+
+  t.deepEqualIgnoreOrder(x, 'ma1')
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $language: 'en',
+      $alias: 'thingy',
+      title: true,
+    }),
+    {
+      title: 'yesh',
+    }
+  )
+})
