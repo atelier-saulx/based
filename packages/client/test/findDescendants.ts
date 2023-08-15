@@ -153,7 +153,7 @@ test.beforeEach(async (t) => {
   t.true(ids[0].slice(0, 2) === 'cl' && ids[1].slice(0, 2) === 'le')
 })
 
-test.afterEach(async (t) => {
+test.afterEach.always(async (t) => {
   const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
