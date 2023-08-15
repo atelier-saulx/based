@@ -47,19 +47,36 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
   max: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_MAX_FIELD,
 }
 
+// TODO: make real cache with functions etc. nice
+const FAKE_CACHE: Map<number, any> = new Map()
+
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
-  // TODO: check cache by `cmd.markerId ?? cmd.cmdId`
-  const { client } = ctx
+  const { client, subId } = ctx
 
-  if (ctx.cleanup) {
-    client.command('subscriptions.delmarker', [
-      ctx.subId,
-      cmd.markerId ?? cmd.cmdId,
-    ])
-
-    // TODO: return cached value
-    return
+  if (!subId) {
+    return execCmd(ctx, cmd)
   }
+
+  const cmdID = cmd.markerId ?? cmd.cmdId
+
+  const cached = FAKE_CACHE.get(cmdID)
+  if (ctx.cleanup) {
+    client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+
+    FAKE_CACHE.delete(cmdID)
+    return cached
+  } else if (cached) {
+    return cached
+  }
+
+  const result = await execCmd(ctx, cmd)
+  FAKE_CACHE.set(cmdID, result)
+  return result
+}
+
+async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
+  const { client } = ctx
+  const cmdID = cmd.markerId ?? cmd.cmdId
 
   if (cmd.source.alias && !cmd.source.id) {
     cmd.source.id = await ctx.client.command('resolve.nodeid', cmd.source.alias)
@@ -128,7 +145,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       ctx.markers.push(
         client.command('subscriptions.add', [
           ctx.subId,
-          cmd.markerId || cmd.cmdId,
+          cmdID,
           buf,
           nodeId,
           cmd.function.$args.join('\n'),
@@ -158,7 +175,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       ctx.markers.push(
         client.command('subscriptions.add', [
           ctx.subId,
-          cmd.markerId || cmd.cmdId,
+          cmdID,
           buf,
           nodeId,
           '',
@@ -200,7 +217,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       ctx.markers.push(
         client.command('subscriptions.add', [
           ctx.subId,
-          cmd.markerId || cmd.cmdId,
+          cmdID,
           buf,
           nodeId,
           strFields,
