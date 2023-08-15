@@ -126,6 +126,9 @@ export async function get(
   }
 
   console.dir({ cmds, defaults }, { depth: 8 })
+  if (ctx.markers) {
+    await Promise.allSettled(ctx.markers)
+  }
 
   const merged =
     nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
