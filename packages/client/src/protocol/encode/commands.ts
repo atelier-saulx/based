@@ -124,4 +124,24 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
+  'subscriptions.add': defaultEncoder([
+    { type: 'longlong' }, // subId
+    { type: 'longlong' }, // markerId
+    { type: 'bin' }, // find query opts
+    { type: 'id' },
+    { type: 'string' }, // fields str
+    { type: 'string' }, // filter expr (RPN string)
+    { type: 'string', vararg: true }, // filter args
+  ]),
+  'subscriptions.list': null,
+  'subscriptions.refresh': defaultEncoder([
+    { type: 'longlong' }, // subId
+  ]),
+  'subscriptions.del': defaultEncoder([
+    { type: 'longlong' }, // subId
+  ]),
+  'subscriptions.delmarker': defaultEncoder([
+    { type: 'longlong' }, // subId
+    { type: 'longlong' }, // markerId
+  ]),
 }

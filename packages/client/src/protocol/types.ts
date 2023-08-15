@@ -52,6 +52,12 @@ export const COMMAND_TYPES = {
   'hierarchy.addConstraint': 23,
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
+  // subscriptions
+  'subscriptions.add': 58,
+  'subscriptions.list': 63,
+  'subscriptions.refresh': 62,
+  'subscriptions.del': 66,
+  'subscriptions.delmarker': 67,
   // TODO:
   // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21
@@ -61,16 +67,10 @@ export const COMMAND_TYPES = {
   // #define CMD_ID_HIERARCHY_TYPES_LIST 37
   // subscriptions
   // TODO:
-  // #define CMD_ID_SUBSCRIPTIONS_ADD 58
   // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 59
   // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
-  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
-  // #define CMD_ID_SUBSCRIPTIONS_REFRESH 62
-  // #define CMD_ID_SUBSCRIPTIONS_LIST 63
   // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 64
   // #define CMD_ID_SUBSCRIPTIONS_DEBUG 65
-  // #define CMD_ID_SUBSCRIPTIONS_DEL 66
-  // #define CMD_ID_SUBSCRIPTIONS_DELMARKER 67
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {
