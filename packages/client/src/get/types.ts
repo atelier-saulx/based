@@ -8,7 +8,6 @@ export type ExecContext = {
   fieldAliases?: Record<string, { fieldSchema: BasedSchemaField; value: any }>
   commandPath?: Path
   useCache?: boolean
-  cacheClean?: boolean
   subId?: number
   markers?: Promise<any>[]
 }

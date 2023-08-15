@@ -52,16 +52,6 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
   const { client } = ctx
 
-  if (ctx.cacheClean) {
-    await client.command('subscriptions.delmarker', [
-      ctx.subId,
-      cmd.markerId || cmd.cmdId,
-    ])
-
-    // TODO: return result from cache
-    return
-  }
-
   if (cmd.source.alias && !cmd.source.id) {
     cmd.source.id = await ctx.client.command('resolve.nodeid', cmd.source.alias)
   }
