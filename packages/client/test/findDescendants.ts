@@ -50,6 +50,12 @@ test.beforeEach(async (t) => {
           name: { type: 'string' },
         },
       },
+      sport: {
+        prefix: 'sp',
+        fields: {
+          rando: { type: 'string' },
+        },
+      },
       match: {
         prefix: 'ma',
         fields: {
@@ -73,6 +79,16 @@ test.beforeEach(async (t) => {
       },
     },
   })
+})
+
+test.afterEach.always(async (t) => {
+  const { srv, client } = t.context
+  await srv.destroy()
+  client.destroy()
+})
+
+test('find - descendants', async (t) => {
+  const { client } = t.context
 
   const team1 = await t.context.client.set({ type: 'team', name: 'team1' })
 
@@ -151,16 +167,6 @@ test.beforeEach(async (t) => {
 
   await wait(600)
   t.true(ids[0].slice(0, 2) === 'cl' && ids[1].slice(0, 2) === 'le')
-})
-
-test.afterEach.always(async (t) => {
-  const { srv, client } = t.context
-  await srv.destroy()
-  client.destroy()
-})
-
-test('find - descendants', async (t) => {
-  const { client } = t.context
   // simple nested - single query
 
   try {
@@ -405,4 +411,65 @@ test('find - descendants', async (t) => {
   } catch (err) {
     console.error(err)
   }
+})
+
+// TODO: $inherit
+
+// from w_youri.ts
+test.skip('subscription list', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'sport',
+    rando: 'rando!',
+    children: [
+      {
+        type: 'match',
+      },
+    ],
+  })
+
+  const a = await client.get({
+    $id: 'root',
+    children: {
+      rando: {
+        $inherit: { $type: 'sport' },
+      },
+      $list: {
+        $limit: 100,
+        $find: {
+          $traverse: 'descendants',
+          $filter: {
+            $field: 'type',
+            $operator: '=',
+            $value: 'match',
+          },
+        },
+      },
+    },
+  })
+
+  // const b = await client.get({
+  //   $id: 'root',
+  //   children: {
+  //     rando: {
+  //       $inherit: { $type: 'sport' }
+  //     },
+  //     $list: {
+  //       $limit: 100,
+  //       $find: {
+  //         $traverse: 'descendants',
+  //         $filter: {
+  //           $field: 'type',
+  //           $operator: '=',
+  //           $value: 'match'
+  //         }
+  //       }
+  //     }
+  //   }
+  // })
+
+  t.log(a)
+  t.deepEqual(a, { children: [{ rando: 'rando!' }] })
+  // t.deepEqual(a, b)
 })
