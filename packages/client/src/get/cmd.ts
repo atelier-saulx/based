@@ -61,7 +61,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
   const cached = FAKE_CACHE.get(cmdID)
   if (ctx.cleanup) {
-    client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+    await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
 
     FAKE_CACHE.delete(cmdID)
     return cached
