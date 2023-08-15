@@ -54,12 +54,13 @@ export async function get(
 
   if (isSubscription) {
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
+
+    if (markerId) {
+      ctx.useCache = true
+    }
   }
 
   // is an event, use cache
-  if (markerId) {
-    ctx.useCache = true
-  }
 
   let { $id, $language, $alias } = opts
   if ($alias) {
@@ -90,7 +91,7 @@ export async function get(
     const newCtx = { ...ctx }
     const results = await Promise.all(
       q.map(async (cmd) => {
-        if ((cmd.markerId ?? cmd.cmdId) === markerId) {
+        if (isSubscription && (cmd.markerId ?? cmd.cmdId) === markerId) {
           // queue delete marker opts into newCtx.markers
           getCmd({ ...newCtx, cacheClean: true }, cmd)
 

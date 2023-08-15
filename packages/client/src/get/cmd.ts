@@ -53,12 +53,12 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client } = ctx
 
   if (ctx.cacheClean) {
-    // ctx.markers.push(
-    //   client.command('subscriptions.delmarker', [
-    //     ctx.subId,
-    //     cmd.markerId || cmd.cmdId,
-    //   ])
-    // )
+    ctx.markers.push(
+      client.command('subscriptions.delmarker', [
+        ctx.subId,
+        cmd.markerId || cmd.cmdId,
+      ])
+    )
 
     // TODO: return result from cache
     return
@@ -128,16 +128,16 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     if (ctx.subId) {
       const buf = createRecord(protocol.hierarchy_find_def, struct)
 
-      // ctx.markers.push(
-      //   client.command('subscriptions.add', [
-      //     ctx.subId,
-      //     cmd.markerId || cmd.cmdId,
-      //     buf,
-      //     nodeId,
-      //     cmd.function.$args.join('\n'),
-      //     ...rpn,
-      //   ])
-      // )
+      ctx.markers.push(
+        client.command('subscriptions.add', [
+          ctx.subId,
+          cmd.markerId || cmd.cmdId,
+          buf,
+          nodeId,
+          cmd.function.$args.join('\n'),
+          ...rpn,
+        ])
+      )
     }
 
     struct.agg_fn = AGGREGATE_FNS[cmd.function.$name]
@@ -158,16 +158,16 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const buf = createRecord(protocol.hierarchy_find_def, struct)
 
     if (ctx.subId) {
-      // ctx.markers.push(
-      //   client.command('subscriptions.add', [
-      //     ctx.subId,
-      //     cmd.markerId || cmd.cmdId,
-      //     buf,
-      //     nodeId,
-      //     '',
-      //     ...rpn,
-      //   ])
-      // )
+      ctx.markers.push(
+        client.command('subscriptions.add', [
+          ctx.subId,
+          cmd.markerId || cmd.cmdId,
+          buf,
+          nodeId,
+          '',
+          ...rpn,
+        ])
+      )
     }
 
     const find = await client.command('hierarchy.find', [
