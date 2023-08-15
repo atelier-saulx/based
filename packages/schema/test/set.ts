@@ -2,6 +2,7 @@ import test from 'ava'
 import { BasedSchema, setWalker, walk } from '../src/index'
 import { wait } from '@saulx/utils'
 import { resultCollect } from './utils'
+
 let r
 const schema: BasedSchema = {
   types: {
@@ -44,7 +45,7 @@ const schema: BasedSchema = {
   },
 }
 
-test.only('simple setNum', async (t) => {
+test('simple setNum', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: [1, 2, 3, 3, 3, 4, 5],

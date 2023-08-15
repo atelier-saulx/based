@@ -176,6 +176,6 @@ test('readOnly', async (t) => {
     $id: 'bl1',
     readOnly: 'aASaasDASD',
   })
-  console.log(resultCollect(err))
+  // console.log(resultCollect(err))
   t.true(err.errors.length === 1)
 })

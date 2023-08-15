@@ -310,7 +310,7 @@ test('object: more big', async (t) => {
       },
     },
   })
-  console.log(r.errors)
+
   t.true(r.errors.length === 0)
 })
 

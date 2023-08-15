@@ -100,7 +100,7 @@ test('value arr', async (t) => {
   ])
 })
 
-test.only('default arr', async (t) => {
+test('default arr', async (t) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     arrNum: ['1', '2'],
