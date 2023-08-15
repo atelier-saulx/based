@@ -111,15 +111,14 @@ async function execParallel(ctx: ExecContext, cmds: GetCommand[]) {
   const nestedObjs: any[] = []
   let i = 0
   while (q.length) {
-    const newCtx = { ...ctx }
     const results = await Promise.all(
       q.map(async (cmd) => {
         if (subId && (cmd.markerId ?? cmd.cmdId) === markerId) {
           // clean up markers and cache
-          await execParallel({ ...newCtx, cleanup: true }, [cmd])
+          await execParallel({ ...ctx, cleanup: true }, [cmd])
         }
 
-        return getCmd(newCtx, cmd)
+        return getCmd(ctx, cmd)
       })
     )
 
