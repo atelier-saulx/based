@@ -47,6 +47,7 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
   max: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_MAX_FIELD,
 }
 
+// DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
 // TODO: make real cache with functions etc. nice
 const FAKE_CACHE: Map<number, any> = new Map()
 
