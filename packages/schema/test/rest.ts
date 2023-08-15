@@ -1,6 +1,7 @@
 import test from 'ava'
 import { BasedSchema, setWalker } from '../src/index'
 import { errorCollect, resultCollect } from './utils'
+import { deepEqual } from '@saulx/utils'
 
 const schema: BasedSchema = {
   types: {
@@ -41,6 +42,46 @@ const schema: BasedSchema = {
                 properties: {
                   snurp: {
                     type: 'string',
+                  },
+                },
+              },
+            },
+            intArray: {
+              type: 'array',
+              values: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+        moreComplexObj: {
+          type: 'object',
+          properties: {
+            bool: { type: 'boolean' },
+            string: { type: 'string', maxLength: 6 },
+            objArray: {
+              type: 'array',
+              values: {
+                type: 'object',
+                properties: {
+                  bool: { type: 'boolean' },
+                  string: { type: 'string', maxLength: 6 },
+                  objArray: {
+                    type: 'array',
+                    values: {
+                      type: 'object',
+                      properties: {
+                        snurp: {
+                          type: 'string',
+                        },
+                      },
+                    },
+                  },
+                  intArray: {
+                    type: 'array',
+                    values: {
+                      type: 'integer',
+                    },
                   },
                 },
               },
@@ -207,7 +248,7 @@ test('object: boolean', async (t) => {
   ])
 })
 
-test('object: turtles all the way…', async (t) => {
+test('object: some nested stuff', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl1',
     complexObj: {
@@ -272,3 +313,338 @@ test('object: more big', async (t) => {
   console.log(r.errors)
   t.true(r.errors.length === 0)
 })
+
+test('moreComplexObj', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl1',
+    moreComplexObj: {
+      bool: true,
+      string: '12345',
+      objArray: [
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+      ],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  })
+
+  t.true(r.errors.length === 0)
+  t.deepEqual(moreComplexObj1, resultCollect(r))
+})
+
+test('moreComplexObj thibngytt', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl1',
+    moreComplexObj: {
+      bool: true,
+      string: '12345',
+      objArray: {
+        $assign: {
+          $idx: 3,
+          $value: {
+            bool: {
+              $delete: true,
+            },
+          },
+        },
+      },
+      intArray: [1, 2, 3, 4, 5],
+    },
+  })
+
+  t.deepEqual(moreComplexObj2, resultCollect(r))
+  t.true(r.errors.length === 0)
+})
+
+const moreComplexObj1 = [
+  { path: ['moreComplexObj', 'bool'], value: true },
+  { path: ['moreComplexObj', 'string'], value: '12345' },
+  {
+    path: ['moreComplexObj', 'objArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'intArray'],
+    value: { $delete: true },
+  },
+  { path: ['moreComplexObj', 'intArray', 0], value: 1 },
+  { path: ['moreComplexObj', 'intArray', 1], value: 2 },
+  { path: ['moreComplexObj', 'intArray', 2], value: 3 },
+  { path: ['moreComplexObj', 'intArray', 3], value: 4 },
+  { path: ['moreComplexObj', 'intArray', 4], value: 5 },
+  { path: ['moreComplexObj', 'objArray', 0, 'bool'], value: true },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'string'],
+    value: '12345',
+  },
+  { path: ['moreComplexObj', 'objArray', 1, 'bool'], value: true },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'string'],
+    value: '12345',
+  },
+  { path: ['moreComplexObj', 'objArray', 2, 'bool'], value: true },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'string'],
+    value: '12345',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray', 0],
+    value: 1,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray', 1],
+    value: 2,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray', 2],
+    value: 3,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray', 3],
+    value: 4,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'intArray', 4],
+    value: 5,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray', 0],
+    value: 1,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray', 1],
+    value: 2,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray', 2],
+    value: 3,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray', 3],
+    value: 4,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'intArray', 4],
+    value: 5,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray', 0],
+    value: 1,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray', 1],
+    value: 2,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray', 2],
+    value: 3,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray', 3],
+    value: 4,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'intArray', 4],
+    value: 5,
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 0, 'snurp'],
+    value: 'a',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 1, 'snurp'],
+    value: 'b',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 2, 'snurp'],
+    value: 'c',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 0, 'snurp'],
+    value: 'a',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 1, 'snurp'],
+    value: 'b',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 2, 'snurp'],
+    value: 'c',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 0, 'snurp'],
+    value: 'a',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 1, 'snurp'],
+    value: 'b',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 2, 'snurp'],
+    value: 'c',
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 0],
+    value: { snurp: 'a' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 1],
+    value: { snurp: 'b' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0, 'objArray', 2],
+    value: { snurp: 'c' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 0],
+    value: { snurp: 'a' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 1],
+    value: { snurp: 'b' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1, 'objArray', 2],
+    value: { snurp: 'c' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 0],
+    value: { snurp: 'a' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 1],
+    value: { snurp: 'b' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2, 'objArray', 2],
+    value: { snurp: 'c' },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 0],
+    value: {
+      bool: true,
+      string: '12345',
+      objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 1],
+    value: {
+      bool: true,
+      string: '12345',
+      objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 2],
+    value: {
+      bool: true,
+      string: '12345',
+      objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  },
+  {
+    path: ['moreComplexObj'],
+    value: {
+      bool: true,
+      string: '12345',
+      objArray: [
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+        {
+          bool: true,
+          string: '12345',
+          objArray: [{ snurp: 'a' }, { snurp: 'b' }, { snurp: 'c' }],
+          intArray: [1, 2, 3, 4, 5],
+        },
+      ],
+      intArray: [1, 2, 3, 4, 5],
+    },
+  },
+]
+
+const moreComplexObj2 = [
+  { path: ['moreComplexObj', 'bool'], value: true },
+  { path: ['moreComplexObj', 'string'], value: '12345' },
+  {
+    path: ['moreComplexObj', 'intArray'],
+    value: { $delete: true },
+  },
+  { path: ['moreComplexObj', 'intArray', 0], value: 1 },
+  { path: ['moreComplexObj', 'intArray', 1], value: 2 },
+  { path: ['moreComplexObj', 'intArray', 2], value: 3 },
+  { path: ['moreComplexObj', 'intArray', 3], value: 4 },
+  { path: ['moreComplexObj', 'intArray', 4], value: 5 },
+  {
+    path: ['moreComplexObj', 'objArray', 3, 'bool'],
+    value: { $delete: true },
+  },
+  {
+    path: ['moreComplexObj', 'objArray', 3],
+    value: { bool: { $delete: true } },
+  },
+  {
+    path: ['moreComplexObj'],
+    value: {
+      bool: true,
+      string: '12345',
+      objArray: {
+        $assign: { $idx: 3, $value: { bool: { $delete: true } } },
+      },
+      intArray: [1, 2, 3, 4, 5],
+    },
+  },
+]
