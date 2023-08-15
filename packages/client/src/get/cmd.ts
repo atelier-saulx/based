@@ -53,12 +53,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client } = ctx
 
   if (ctx.cacheClean) {
-    ctx.markers.push(
-      client.command('subscriptions.delmarker', [
-        ctx.subId,
-        cmd.markerId || cmd.cmdId,
-      ])
-    )
+    await client.command('subscriptions.delmarker', [
+      ctx.subId,
+      cmd.markerId || cmd.cmdId,
+    ])
 
     // TODO: return result from cache
     return

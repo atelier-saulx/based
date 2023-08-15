@@ -93,7 +93,7 @@ export async function get(
       q.map(async (cmd) => {
         if (isSubscription && (cmd.markerId ?? cmd.cmdId) === markerId) {
           // queue delete marker opts into newCtx.markers
-          getCmd({ ...newCtx, cacheClean: true }, cmd)
+          await getCmd({ ...newCtx, cacheClean: true }, cmd)
 
           return getCmd({ ...newCtx, useCache: false }, cmd)
         }
