@@ -47,7 +47,7 @@ test.beforeEach(async (t) => {
   })
 })
 
-test.afterEach(async (t) => {
+test.afterEach.always(async (t) => {
   const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
