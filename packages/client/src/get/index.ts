@@ -8,6 +8,7 @@ export * from './parse'
 import { parseGetOpts, parseGetResult } from './parse'
 import { getCmd } from './cmd'
 import { hashCmd } from './util'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 export function applyDefault(
   obj: any,
@@ -36,9 +37,17 @@ export function applyDefault(
   }
 }
 
-export async function get(client: BasedDbClient, opts: any): Promise<any> {
+export async function get(
+  client: BasedDbClient,
+  opts: any,
+  isSubscription: boolean = false
+): Promise<any> {
   const ctx: ExecContext = {
     client,
+  }
+
+  if (isSubscription) {
+    ctx.subId = hashObjectIgnoreKeyOrder(opts)
   }
 
   let { $id, $language, $alias } = opts

@@ -113,6 +113,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   if (cmd.type === 'aggregate') {
     struct.agg_fn = AGGREGATE_FNS[cmd.function.$name]
 
+    if (ctx.subId) {
+      // TODO: add marker command
+    }
+
     const agg = await client.command('hierarchy.aggregate', [
       makeLangArg(ctx),
       createRecord(protocol.hierarchy_agg_def, struct),
@@ -127,6 +131,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
     struct.res_type = protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS
 
+    if (ctx.subId) {
+      // TODO: add marker command
+    }
+
     const find = await client.command('hierarchy.find', [
       makeLangArg(ctx),
       createRecord(protocol.hierarchy_find_def, struct),
@@ -140,7 +148,6 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
     nestedFind.markerId = hashCmd(nestedFind)
     return getCmd(ctx, nestedFind)
-    // TODO: make marker
   } else {
     const { fields, isRpn: fieldsRpn, isInherit } = getFields(ctx, cmd.fields)
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
@@ -150,6 +157,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       : fieldsRpn
       ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
       : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
+
+    if (ctx.subId) {
+      // TODO: add marker command
+    }
 
     const find = await client.command('hierarchy.find', [
       makeLangArg(ctx),

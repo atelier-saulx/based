@@ -7,6 +7,8 @@ export type ExecContext = {
   lang?: string
   fieldAliases?: Record<string, { fieldSchema: BasedSchemaField; value: any }>
   commandPath?: Path
+  subId?: number
+  markers?: Promise<any>[]
 }
 
 export type TraverseByType = {
