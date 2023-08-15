@@ -416,7 +416,7 @@ test('find - descendants', async (t) => {
 // TODO: $inherit
 
 // from w_youri.ts
-test.skip('subscription list', async (t) => {
+test.skip('$inherit in a list', async (t) => {
   const { client } = t.context
 
   await client.set({
