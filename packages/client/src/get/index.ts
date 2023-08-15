@@ -120,7 +120,7 @@ export async function get(
       const ids = nestedIds?.[i]?.[j]
 
       cmd.nestedCommands?.forEach((c) => {
-        const ns = ids.map((id, k) => {
+        const ns = ids.map((id: string, k: number) => {
           const n: GetCommand = deepCopy(c)
           const path = c.target.path
 
