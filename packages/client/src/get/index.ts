@@ -88,7 +88,7 @@ export async function get(
 
   console.dir({ cmds, defaults }, { depth: 8 })
   if (ctx.markers?.length) {
-    await Promise.allSettled(ctx.markers)
+    await Promise.all(ctx.markers)
   }
 
   const merged =
