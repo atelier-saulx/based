@@ -6,18 +6,9 @@ import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 import { join } from 'path'
-import fs from 'fs'
-import rimraf from 'rimraf'
+import { removeDump } from './assertions/utils'
 
 const dir = join(process.cwd(), 'tmp', 'rdb-test')
-
-const removeDump = (dir: string) => {
-  return () => {
-    if (fs.existsSync(dir)) {
-      rimraf.sync(dir)
-    }
-  }
-}
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer

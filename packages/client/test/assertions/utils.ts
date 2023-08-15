@@ -6,6 +6,7 @@ import { hash } from '@saulx/hash'
 import { createRecord } from 'data-record'
 import { protocol } from '../../src'
 import { SelvaMergeStrategy } from '../../src/protocol'
+import rimraf from 'rimraf'
 
 const tmp = join(__dirname, '../../tmp')
 
@@ -124,4 +125,12 @@ export const find = async ({
     id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     ...rpn,
   ])
+}
+
+export const removeDump = (dir: string) => {
+  return () => {
+    if (fs.existsSync(dir)) {
+      rimraf.sync(dir)
+    }
+  }
 }
