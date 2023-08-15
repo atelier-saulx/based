@@ -7,9 +7,13 @@ export type ExecContext = {
   lang?: string
   fieldAliases?: Record<string, { fieldSchema: BasedSchemaField; value: any }>
   commandPath?: Path
-  useCache?: boolean
+
   subId?: number
+  markerId?: number
   markers?: Promise<any>[]
+
+  // cleanup mode, busts cache and deletes markers for the nested command tree
+  cleanup?: boolean
 }
 
 export type TraverseByType = {

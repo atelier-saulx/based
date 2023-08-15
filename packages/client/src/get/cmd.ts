@@ -49,8 +49,17 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   // TODO: check cache by `cmd.markerId ?? cmd.cmdId`
-
   const { client } = ctx
+
+  if (ctx.cleanup) {
+    client.command('subscriptions.delmarker', [
+      ctx.subId,
+      cmd.markerId ?? cmd.cmdId,
+    ])
+
+    // TODO: return cached value
+    return
+  }
 
   if (cmd.source.alias && !cmd.source.id) {
     cmd.source.id = await ctx.client.command('resolve.nodeid', cmd.source.alias)

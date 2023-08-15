@@ -37,14 +37,18 @@ export function applyDefault(
   }
 }
 
+type SubscriptionOptions = {
+  isSubscription: boolean
+  subId?: number
+  markerId?: number
+  useCache?: boolean
+  cleanup?: boolean
+}
+
 export async function get(
   client: BasedDbClient,
   opts: any,
-  {
-    isSubscription,
-    subId,
-    markerId,
-  }: { isSubscription: boolean; subId?: number; markerId?: number } = {
+  { isSubscription, subId, markerId }: SubscriptionOptions = {
     isSubscription: false,
   }
 ): Promise<any> {
@@ -54,10 +58,7 @@ export async function get(
 
   if (isSubscription) {
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
-
-    if (markerId) {
-      ctx.useCache = true
-    }
+    ctx.markerId = markerId
   }
 
   // is an event, use cache
@@ -83,6 +84,28 @@ export async function get(
 
   const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
 
+  const nestedObjs = await execParallel(ctx, cmds)
+
+  console.dir({ cmds, defaults }, { depth: 8 })
+  if (ctx.markers?.length) {
+    await Promise.allSettled(ctx.markers)
+  }
+
+  const merged =
+    nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
+      ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
+      : deepMergeArrays({}, ...nestedObjs) // else merge all the results
+
+  for (const d of defaults) {
+    applyDefault(merged, d)
+  }
+
+  return merged
+}
+
+async function execParallel(ctx: ExecContext, cmds: GetCommand[]) {
+  const { markerId, subId } = ctx
+
   let q = cmds
   const nestedIds: any[] = []
   const nestedObjs: any[] = []
@@ -91,8 +114,9 @@ export async function get(
     const newCtx = { ...ctx }
     const results = await Promise.all(
       q.map(async (cmd) => {
-        if (isSubscription && (cmd.markerId ?? cmd.cmdId) === markerId) {
-          // TODO: cleanup
+        if (subId && (cmd.markerId ?? cmd.cmdId) === markerId) {
+          // clean up markers and cache
+          await execParallel({ ...newCtx, cleanup: true }, [cmd])
         }
 
         return getCmd(newCtx, cmd)
@@ -142,19 +166,5 @@ export async function get(
     i++
   }
 
-  console.dir({ cmds, defaults }, { depth: 8 })
-  if (ctx.markers?.length) {
-    await Promise.allSettled(ctx.markers)
-  }
-
-  const merged =
-    nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
-      ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
-      : deepMergeArrays({}, ...nestedObjs) // else merge all the results
-
-  for (const d of defaults) {
-    applyDefault(merged, d)
-  }
-
-  return merged
+  return nestedObjs
 }
