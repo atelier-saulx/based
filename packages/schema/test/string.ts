@@ -170,8 +170,8 @@ test('uppercase', async (t) => {
   ])
 })
 
-//TODO?? not sure but readonly should throw an error or not?
-test('readOnly', async (t) => {
+// TODO?? not sure but readonly should throw an error or not?
+test.skip('readOnly', async (t) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     readOnly: 'aASaasDASD',

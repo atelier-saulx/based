@@ -285,7 +285,7 @@ test('object: big', async (t) => {
   t.true(r.errors.length === 0)
 })
 
-//TODO is this wrong?
+// TODO is this wrong?
 test('object: more big', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl1',
@@ -302,7 +302,7 @@ test('object: more big', async (t) => {
           },
         },
       },
-      intarray: {
+      intArray: {
         $insert: {
           $idx: 10,
           $value: 1212,
