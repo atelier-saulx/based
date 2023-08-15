@@ -7,6 +7,7 @@ export * from './parse'
 
 import { parseGetOpts, parseGetResult } from './parse'
 import { getCmd } from './cmd'
+import { hashCmd } from './util'
 
 export function applyDefault(
   obj: any,
@@ -102,6 +103,7 @@ export async function get(client: BasedDbClient, opts: any): Promise<any> {
           const newPath = [...cmd.target.path]
           newPath.push(k, path[path.length - 1])
           n.target.path = newPath
+          n.markerId = hashCmd(n)
           return n
         })
 

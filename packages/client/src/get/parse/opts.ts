@@ -9,6 +9,8 @@ import {
   GetTraverseIds,
   Path,
 } from '../types'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { hashCmd } from '../util'
 
 function parseAlias(value: any): string[] | undefined {
   let $field = value.$field
@@ -361,6 +363,8 @@ export async function parseGetOpts(
         // use to detect the very top level
         visited = cmd
 
+        // calculate 'abstract markerId' - this will change when there is a concrete id
+        cmd.cmdId = hashCmd(cmd)
         return cmd
       },
     },
@@ -405,6 +409,8 @@ function parseList(
       delete $list[opt]
     }
 
+    // calculate 'abstract markerId' - this will change when there is a concrete id
+    nestedCmd.cmdId = hashCmd(nestedCmd)
     cmd.nestedFind = nestedCmd
   }
 

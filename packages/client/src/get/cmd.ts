@@ -10,6 +10,7 @@ import { ExecContext, GetCommand } from './types'
 import { sourceId } from './id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
+import { hashCmd } from './util'
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
   descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
@@ -136,6 +137,8 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const ids = find[0]
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
+
+    nestedFind.markerId = hashCmd(nestedFind)
     return getCmd(ctx, nestedFind)
     // TODO: make marker
   } else {

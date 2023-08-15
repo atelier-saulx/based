@@ -67,7 +67,8 @@ export type GetNodeShared = {
   fields: Fields
 
   nestedCommands?: GetCommand[]
-  marker?: SubMarker
+  cmdId?: number
+  markerId?: number
 }
 
 export type GetNode = {
