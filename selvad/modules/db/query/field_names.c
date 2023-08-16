@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
+#include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
 #include "util/cstrings.h"
