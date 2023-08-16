@@ -2413,7 +2413,7 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
             if (e == ERANGE) {
                 err = SELVA_ERANGE;
             } else {
-                e = SELVA_EINVAL;
+                err = SELVA_EINVAL;
             }
 
             selva_send_errorf(resp, err, "Subscription ID");
