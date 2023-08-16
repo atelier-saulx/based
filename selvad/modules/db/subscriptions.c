@@ -656,7 +656,7 @@ static int new_marker(
      * field updates. Otherwise hierarchy events are only sent when the
      * subscription needs a refresh.
      */
-    if (*fields_str) {
+    if (fields_len) {
         flags |= SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
         if (contains_hierarchy_fields(fields_str)) {
             flags |= SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
