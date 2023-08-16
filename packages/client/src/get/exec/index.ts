@@ -41,10 +41,7 @@ export async function get(
   let { $id, $language, $alias } = opts
   if ($alias) {
     const aliases = Array.isArray($alias) ? $alias : [$alias]
-    const resolved = await ctx.client.command('resolve.nodeid', [
-      '',
-      ...aliases,
-    ])
+    const resolved = await ctx.client.command('resolve.nodeid', [0, ...aliases])
 
     $id = resolved?.[0]
 

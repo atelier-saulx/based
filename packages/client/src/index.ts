@@ -129,7 +129,7 @@ export class BasedDbClient extends Emitter {
     let { $id, $alias } = opts
     if (!$id && $alias) {
       const args = Array.isArray($alias) ? $alias : [$alias]
-      const resolved = await this.command('resolve.nodeid', ['', ...args])
+      const resolved = await this.command('resolve.nodeid', [0, ...args])
       $id = resolved?.[0]
       if (!$id && !opts.aliases) {
         opts.aliases = { $add: args }

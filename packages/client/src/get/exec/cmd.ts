@@ -81,7 +81,10 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const cmdID = cmd.markerId ?? cmd.cmdId
 
   if (cmd.source.alias && !cmd.source.id) {
-    cmd.source.id = await ctx.client.command('resolve.nodeid', cmd.source.alias)
+    cmd.source.id = await ctx.client.command('resolve.nodeid', [
+      0,
+      cmd.source.alias,
+    ])
   }
 
   const struct: any = {
