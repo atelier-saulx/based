@@ -70,15 +70,14 @@ int SelvaResolve_NodeId(
 void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     struct selva_string **ids;
     int argc;
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, ...",
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", ...",
+                             &sub_id,
                              &ids);
     if (argc < 2) {
         if (argc < 0) {
@@ -99,25 +98,17 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
         return;
     }
 
-    if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id_len > 0) {
+    if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id) {
         struct selva_string *alias_name = ids[(resolved & ~SELVA_RESOLVE_FLAGS)];
-        Selva_SubscriptionId sub_id;
         Selva_SubscriptionMarkerId marker_id;
         int err;
-
-        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-        if (err) {
-            selva_send_errorf(resp, err, "sub_id");
-            return;
-        }
 
         marker_id = Selva_GenSubscriptionMarkerId(0, selva_string_to_str(alias_name, NULL));
 
         err = Selva_AddSubscriptionAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
         if (err && err != SELVA_SUBSCRIPTIONS_EEXIST) {
-            selva_send_errorf(resp, err, "Failed to subscribe sub_id: \"%.*s.%d\" alias_name: %s node_id: %.*s\n",
-                              (int)sub_id_len, sub_id_str,
-                              (int)marker_id,
+            selva_send_errorf(resp, err, "Failed to subscribe sub_id: \"%" PRIsubId ".%" PRImrkId "\" alias_name: %s node_id: %.*s\n",
+                              sub_id, marker_id,
                               selva_string_to_str(alias_name, NULL),
                               (int)SELVA_NODE_ID_SIZE, node_id);
             return;

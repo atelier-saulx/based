@@ -5,6 +5,8 @@
 #define _POSIX_C_SOURCE 200809L
 #define _GNU_SOURCE
 #include <assert.h>
+#include <ctype.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -93,14 +95,14 @@ static int marker_svector_compare(const void ** restrict a_raw, const void ** re
     __builtin_clear_padding(&da);
 #endif
     memset(&da, 0, sizeof(struct marker_diff));
-    memcpy(da.sub_id, a->sub->sub_id, sizeof(a->sub->sub_id));
+    da.sub_id = a->sub->sub_id;
     da.marker_id = a->marker_id;
 
 #if 0
     __builtin_clear_padding(&db);
 #endif
     memset(&db, 0, sizeof(struct marker_diff));
-    memcpy(db.sub_id, b->sub->sub_id, sizeof(b->sub->sub_id));
+    db.sub_id = b->sub->sub_id;
     db.marker_id = b->marker_id;
 
     return memcmp(&da, &db, sizeof(struct marker_diff));
@@ -110,11 +112,11 @@ static int SelvaSubscription_svector_compare(const void ** restrict a_raw, const
     const struct Selva_Subscription *a = *(const struct Selva_Subscription **)a_raw;
     const struct Selva_Subscription *b = *(const struct Selva_Subscription **)b_raw;
 
-    return memcmp(a->sub_id, b->sub_id, sizeof(Selva_SubscriptionId));
+    return a->sub_id - b->sub_id;
 }
 
 static int subscription_rb_compare(const struct Selva_Subscription *a, const struct Selva_Subscription *b) {
-    return memcmp(a->sub_id, b->sub_id, sizeof(Selva_SubscriptionId));
+    return a->sub_id - b->sub_id;
 }
 
 RB_PROTOTYPE_STATIC(hierarchy_subscriptions_tree, Selva_Subscription, _sub_index_entry, subscription_rb_compare)
@@ -292,18 +294,19 @@ static void remove_sub_missing_accessor_markers(SelvaHierarchy *hierarchy, const
     SelvaObject_Iterator *it_missing;
     struct SelvaObject *subs;
     const char *nodeIdOrAlias;
-    char sub_id[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
+    char sub_id_str[SELVA_SUB_ID_STR_MAXLEN + 1];
+    size_t sub_id_len;
 
     if (!sub) {
         return;
     }
 
-    Selva_SubscriptionId2str(sub_id, sub->sub_id);
+    sub_id_len = snprintf(sub_id_str, sizeof(sub_id_str), "%" PRIsubId, sub->sub_id);
 
     it_missing = SelvaObject_ForeachBegin(missing);
     while ((subs = SelvaObject_ForeachValue(missing, &it_missing, &nodeIdOrAlias, SELVA_OBJECT_OBJECT))) {
         /* Delete this subscription stored under nodeIdOrAlias. */
-        SelvaObject_DelKeyStr(subs, sub_id, SELVA_SUBSCRIPTION_ID_STR_LEN);
+        SelvaObject_DelKeyStr(subs, sub_id_str, sub_id_len);
 
         /* Delete the id key if the object is now empty. */
         if (SelvaObject_Len(subs, NULL) == 0) {
@@ -392,8 +395,7 @@ static void destroy_sub(SelvaHierarchy *hierarchy, struct Selva_Subscription *su
     remove_sub_markers(hierarchy, sub);
 
 #if 0
-    char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-    SELVA_LOG(SELVA_LOGL_DBG, "Destroying sub_id %s", Selva_SubscriptionId2str(str, sub->sub_id));
+    SELVA_LOG(SELVA_LOGL_DBG, "Destroying sub_id %" PRIsubId, sub->sub_id);
 #endif
 
     /* Remove missing accessor markers. */
@@ -482,9 +484,10 @@ static void deinit_node_metadata_subs(
 SELVA_MODIFY_HIERARCHY_METADATA_DESTRUCTOR(deinit_node_metadata_subs);
 
 static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, const Selva_SubscriptionId sub_id) {
-    struct Selva_Subscription filter;
+    struct Selva_Subscription filter = {
+        .sub_id = sub_id,
+    };
 
-    memcpy(&filter.sub_id, sub_id, sizeof(Selva_SubscriptionId));
     return RB_FIND(hierarchy_subscriptions_tree, &hierarchy->subs.head, &filter);
 }
 
@@ -549,12 +552,11 @@ static int set_node_marker_cb(
     }
 
 #if 0
-    char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
     Selva_NodeId node_id;
 
     SelvaHierarchy_GetNodeId(node_id, node);
-    SELVA_LOG(SELVA_LOGL_DBG, "Set sub marker %s:%" PRImrkId " to %.*s",
-              Selva_SubscriptionId2str(str, marker->sub->sub_id),
+    SELVA_LOG(SELVA_LOGL_DBG, "Set sub marker %" PRIsubId ":%" PRImrkId " to %.*s",
+              marker->sub->sub_id,
               marker->marker_id,
               (int)SELVA_NODE_ID_SIZE, node_id);
 #endif
@@ -579,12 +581,11 @@ static int clear_node_marker_cb(
 
     metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 #if 0
-    char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
     Selva_NodeId id;
 
     SelvaHierarchy_GetNodeId(id, node);
-    SELVA_LOG(SELVA_LOGL_DBG, "Clear sub marker %s:%" PRImrkId " (%p start_node_id: %.*s) from node %.*s (nr_subs: %zd)",
-              Selva_SubscriptionId2str(str, marker->sub->sub_id),
+    SELVA_LOG(SELVA_LOGL_DBG, "Clear sub marker %" PRIsubId ":%" PRImrkId " (%p start_node_id: %.*s) from node %.*s (nr_subs: %zd)",
+              marker->sub->sub_id,
               marker->marker_id,
               marker,
               (int)SELVA_NODE_ID_SIZE, marker->node_id,
@@ -606,7 +607,7 @@ static struct Selva_Subscription *create_subscription(
     struct Selva_Subscription *sub;
 
     sub = selva_calloc(1, sizeof(struct Selva_Subscription));
-    memcpy(sub->sub_id, sub_id, sizeof(sub->sub_id));
+    sub->sub_id = sub_id;
     SVector_Init(&sub->markers, 1, marker_svector_compare);
 
     /*
@@ -773,11 +774,10 @@ int Selva_AddSubscriptionAliasMarker(
     enum rpn_error rpn_err;
     if ((rpn_err = rpn_set_reg_string(filter_ctx, 1, alias_name)) ||
         (rpn_err = rpn_set_reg(filter_ctx, 2, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD), 0))) {
-        char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
 
         SELVA_LOG(SELVA_LOGL_ERR,
-                  "Fatal RPN error while adding an alias maker. sub_id: %s alias: %s rpn_error: %d",
-                  Selva_SubscriptionId2str(str, sub_id),
+                  "Fatal RPN error while adding an alias maker. sub_id: %" PRIsubId " alias: %s rpn_error: %d",
+                  sub_id,
                   selva_string_to_str(alias_name, NULL),
                   rpn_err);
         if (rpn_err == RPN_ERR_ENOMEM) {
@@ -959,10 +959,8 @@ static int SelvaSubscriptions_TraverseMarker(
         err = SelvaHierarchy_Traverse(hierarchy, marker->node_id, dir, &cb);
     }
     if (err) {
-        char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-
-        SELVA_LOG(SELVA_LOGL_DBG, "Could not fully apply a subscription marker: %s:%" PRImrkId " err: \"%s\"",
-                  Selva_SubscriptionId2str(str, marker->sub->sub_id), marker->marker_id,
+        SELVA_LOG(SELVA_LOGL_DBG, "Could not fully apply a subscription marker: %" PRIsubId ":%" PRImrkId " err: \"%s\"",
+                  marker->sub->sub_id, marker->marker_id,
                   selva_strerror(err));
 
         /*
@@ -1086,10 +1084,8 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
         struct rpn_ctx *rpn_ctx;
         int err;
 #if 0
-        char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-
-        SELVA_LOG(SELVA_LOGL_DBG, "Clear sub marker %s:%" PRImrkId " from node %.*s",
-                  Selva_SubscriptionId2str(str, marker->sub->sub_id),
+        SELVA_LOG(SELVA_LOGL_DBG, "Clear sub marker %" PRIsubId ":%" PRImrkId " from node %.*s",
+                  marker->sub->sub_id,
                   marker->marker_id,
                   (int)SELVA_NODE_ID_SIZE, node_id);
 #endif
@@ -1103,11 +1099,9 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
         rpn_destroy(rpn_ctx);
         /* RFE SELVA_HIERARCHY_ENOENT is not good in case something was left but it's too late then */
         if (err && err != SELVA_HIERARCHY_ENOENT) {
-            char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-
             SELVA_LOG(SELVA_LOGL_ERR,
-                      "Failed to clear a subscription %s:%" PRImrkId ": %s",
-                      Selva_SubscriptionId2str(str, marker->sub->sub_id),
+                      "Failed to clear a subscription %" PRIsubId ":%" PRImrkId ": %s",
+                      marker->sub->sub_id,
                       marker->marker_id,
                       selva_strerror(err));
             abort(); /* It would be dangerous to not abort here. */
@@ -1773,12 +1767,9 @@ static void send_update_events(struct SelvaHierarchy *hierarchy) {
             .event_type = SELVA_SUB_UPDATE,
         };
 
-        memcpy(msg.sub_id, sub->sub_id, SELVA_SUBSCRIPTION_ID_SIZE);
+        msg.sub_id = sub->sub_id;
 #if 0
-        char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-
-        SELVA_LOG(SELVA_LOGL_DBG, "Publish update event %s",
-                  Selva_SubscriptionId2str(str, sub->sub_id));
+        SELVA_LOG(SELVA_LOGL_DBG, "Publish update event %" PRIsubId, sub->sub_id);
 #endif
 
         selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, sizeof(msg));
@@ -1797,13 +1788,11 @@ static void send_trigger_events(struct SelvaHierarchy *hierarchy) {
             .event_type = SELVA_SUB_TRIGGER,
         };
 
-        memcpy(msg.sub_id, marker->sub->sub_id, SELVA_SUBSCRIPTION_ID_SIZE);
+        msg.sub_id = marker->sub->sub_id;
         memcpy(msg.node_id, marker->filter_history.node_id, SELVA_NODE_ID_SIZE);
 #if 0
-        char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
-
-        SELVA_LOG(SELVA_LOGL_DBG, "Publish trigger event %s",
-                  Selva_SubscriptionId2str(str, marker->sub->sub_id));
+        SELVA_LOG(SELVA_LOGL_DBG, "Publish trigger event %" PRIsubId,
+                  marker->sub->sub_id);
 #endif
 
         selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, sizeof(msg));
@@ -1817,11 +1806,10 @@ void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy) {
 }
 
 void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, struct Selva_SubscriptionMarker *marker) {
-    char sub_buf[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
     const int is_trigger = isTriggerMarker(marker->marker_flags);
 
     selva_send_array(resp, -1);
-    selva_send_strf(resp, "sub_id: %s", Selva_SubscriptionId2str(sub_buf, marker->sub->sub_id));
+    selva_send_strf(resp, "sub_id: %" PRIsubId, marker->sub->sub_id);
     selva_send_strf(resp, "marker_id: %" PRImrkId, marker->marker_id);
     selva_send_strf(resp, "flags: 0x%04x", marker->marker_flags);
     if (is_trigger) {
@@ -1857,8 +1845,7 @@ static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base
 void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;
     const char *query_opts_str;
     size_t query_opts_len;
@@ -1872,8 +1859,8 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId ", %p, %" SELVA_SCA_NODE_ID ", %.*s, %p, ...",
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %p, %" SELVA_SCA_NODE_ID ", %.*s, %p, ...",
+                             &sub_id,
                              &marker_id,
                              &query_opts_len, &query_opts_str,
                              node_id,
@@ -1886,20 +1873,6 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     } else if (argc < 4) {
         selva_send_error_arity(resp);
         return;
-    }
-
-    /*
-     * Get the subscription id.
-     */
-    Selva_SubscriptionId sub_id;
-    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
-        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
-    } else {
-        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-        if (err) {
-            selva_send_errorf(resp, err, "Subscription ID");
-            return;
-        }
     }
 
     if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
@@ -2067,8 +2040,7 @@ out:
 void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;
     struct selva_string *alias_name;
     int argc;
@@ -2076,8 +2048,8 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId ", %p",
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %p",
+                             &sub_id,
                              &marker_id,
                              &alias_name);
     if (argc < 0) {
@@ -2086,20 +2058,6 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
     } else if (argc != 3) {
         selva_send_error_arity(resp);
         return;
-    }
-
-    /*
-     * Get the subscription id.
-     */
-    Selva_SubscriptionId sub_id;
-    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
-        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
-    } else {
-        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-        if (err) {
-            selva_send_errorf(resp, err, "Subscription ID");
-            return;
-        }
     }
 
     /*
@@ -2129,16 +2087,15 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
 void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     struct selva_string **ids;
     int argc;
     int err;
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, ...",
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", ...",
+                             &sub_id,
                              &ids);
     if (argc < 2) {
         if (argc < 0) {
@@ -2147,20 +2104,6 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
             selva_send_error_arity(resp);
         }
         return;
-    }
-
-    /*
-     * Get the subscription id.
-     */
-    Selva_SubscriptionId sub_id;
-    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
-        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
-    } else {
-        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-        if (err) {
-            selva_send_errorf(resp, err, "Subscription ID");
-            return;
-        }
     }
 
     /*
@@ -2191,15 +2134,13 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
 
         size_t arg_len;
         const char *arg_str = selva_string_to_str(ids[i], &arg_len);
-        size_t key_len = arg_len + 1 + SELVA_SUBSCRIPTION_ID_STR_LEN;
+        size_t key_len = arg_len + SELVA_SUB_ID_STR_MAXLEN;
         char key_str[key_len + 1];
 
-        snprintf(key_str, arg_len + 2, "%s.", arg_str);
-        Selva_SubscriptionId2str(key_str + arg_len + 1, sub_id);
-        key_str[key_len] = '\0';
+        snprintf(key_str, key_len + 1, "%s.%" PRIsubId, arg_str, sub_id);
 
         /* We don't need to care if it was already set. */
-        err = SelvaObject_SetPointerStr(missing, key_str, key_len, sub, &subs_missing_obj_opts);
+        err = SelvaObject_SetPointerStr(missing, key_str, strlen(key_str), sub, &subs_missing_obj_opts);
         if (err) {
             selva_send_error(resp, err, NULL, 0);
             return;
@@ -2218,8 +2159,7 @@ void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp
 void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;
     enum Selva_SubscriptionTriggerType event_type = SELVA_SUBSCRIPTION_TRIGGER_TYPE_NONE;
     struct selva_string *filter_expr = NULL;
@@ -2229,8 +2169,8 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId ", %d, %p, ...",
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %d, %p, ...",
+                             &sub_id,
                              &marker_id,
                              &event_type,
                              &filter_expr,
@@ -2241,20 +2181,6 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
     } else if (argc < 3) {
         selva_send_error_arity(resp);
         return;
-    }
-
-    /*
-     * Get the subscription id.
-     */
-    Selva_SubscriptionId sub_id;
-    if (sub_id_len == SELVA_SUBSCRIPTION_ID_SIZE) {
-        memcpy(sub_id, sub_id_str, SELVA_SUBSCRIPTION_ID_SIZE);
-    } else {
-        err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-        if (err) {
-            selva_send_errorf(resp, err, "Subscription ID");
-            return;
-        }
     }
 
     if (event_type != SELVA_SUBSCRIPTION_TRIGGER_TYPE_CREATED &&
@@ -2352,24 +2278,16 @@ out:
 void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh);
     SelvaHierarchy *hierarchy = main_hierarchy;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     int argc, err;
 
-    argc = selva_proto_scanf(NULL, buf, len, "%.*s", &sub_id_len, &sub_id_str);
+    argc = selva_proto_scanf(NULL, buf, len, "%" PRIsubId, &sub_id);
     if (argc != 1) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
         } else {
             selva_send_error_arity(resp);
         }
-        return;
-    }
-
-    Selva_SubscriptionId sub_id;
-    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
         return;
     }
 
@@ -2391,10 +2309,9 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
 static void Selva_Subscription_reply(struct selva_server_response_out *resp, void *p)
 {
     struct Selva_Subscription *sub = p;
-    char str[SELVA_SUBSCRIPTION_ID_STR_LEN + 1];
 
     selva_send_array(resp, 2);
-    selva_send_str(resp, Selva_SubscriptionId2str(str, sub->sub_id), SELVA_SUBSCRIPTION_ID_STR_LEN);
+    selva_send_ll(resp, sub->sub_id);
     selva_send_ll(resp, SVector_Size(&sub->markers));
 }
 
@@ -2435,6 +2352,30 @@ void SelvaSubscriptions_ListMissingCommand(struct selva_server_response_out *res
     }
 }
 
+static int is_valid_sub_id(const char *str, size_t len)
+{
+    size_t i = 0;
+
+    if (len == 0 || len > SELVA_SUB_ID_STR_MAXLEN) {
+        return 0;
+    }
+
+    if (str[0] == '-') {
+        if (len == 1) {
+            return 0;
+        }
+        i = 1;
+    }
+
+    for (; i < len; i++) {
+        if (!isdigit(str[i])) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
+
 /*
  * KEY SUB_ID
  */
@@ -2454,17 +2395,27 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
         return;
     }
 
-    const int is_sub_id = id_len == SELVA_SUBSCRIPTION_ID_STR_LEN;
+    const int is_sub_id = is_valid_sub_id(id_str, id_len);
     const int is_node_id = id_len <= SELVA_NODE_ID_SIZE;
     SVector *markers = NULL;
 
     if (is_sub_id) {
+        char buf[SELVA_SUB_ID_STR_MAXLEN + 1];
         Selva_SubscriptionId sub_id;
         struct Selva_Subscription *sub;
-        int err;
+        int e, err;
 
-        err = Selva_SubscriptionStr2id(sub_id, id_str, id_len);
-        if (err) {
+        snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
+        errno = 0;
+        sub_id = strtoull(buf, NULL, 10);
+        e = errno;
+        if (e) {
+            if (e == ERANGE) {
+                err = SELVA_ERANGE;
+            } else {
+                e = SELVA_EINVAL;
+            }
+
             selva_send_errorf(resp, err, "Subscription ID");
             return;
         }
@@ -2514,25 +2465,17 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
  */
 void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
-    const char *sub_id_str;
-    size_t sub_id_len;
     Selva_SubscriptionId sub_id;
     struct Selva_Subscription *sub;
-    int argc, err;
+    int argc;
 
-    argc = selva_proto_scanf(NULL, buf, len, "%.*s", &sub_id_len, &sub_id_str);
+    argc = selva_proto_scanf(NULL, buf, len, "%" PRIsubId, &sub_id);
     if (argc != 1) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
         } else {
             selva_send_error_arity(resp);
         }
-        return;
-    }
-
-    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
         return;
     }
 
@@ -2552,17 +2495,13 @@ void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const
  */
 void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
-    __auto_finalizer struct finalizer fin;
-    const char *sub_id_str;
-    size_t sub_id_len;
+    Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;
     int argc;
     int err;
 
-    finalizer_init(&fin);
-
-    argc = selva_proto_scanf(&fin, buf, len, "%.*s, %" PRImrkId,
-                             &sub_id_len, &sub_id_str,
+    argc = selva_proto_scanf(NULL, buf, len, "%" PRIsubId ", %" PRImrkId,
+                             &sub_id,
                              &marker_id);
     if (argc != 2) {
         if (argc < 0) {
@@ -2570,16 +2509,6 @@ void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp,
         } else {
             selva_send_error_arity(resp);
         }
-        return;
-    }
-
-    /*
-     * Get the subscription id.
-     */
-    Selva_SubscriptionId sub_id;
-    err = Selva_SubscriptionStr2id(sub_id, sub_id_str, sub_id_len);
-    if (err) {
-        selva_send_errorf(resp, err, "Subscription ID");
         return;
     }
 

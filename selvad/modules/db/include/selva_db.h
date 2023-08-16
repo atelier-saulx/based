@@ -111,21 +111,20 @@ typedef char Selva_NodeId[SELVA_NODE_ID_SIZE];
  */
 typedef char Selva_NodeType[SELVA_NODE_TYPE_SIZE];
 
-#define SELVA_SUBSCRIPTION_ID_SIZE 32
-#define SELVA_SUBSCRIPTION_ID_STR_LEN (2 * SELVA_SUBSCRIPTION_ID_SIZE)
-
 /**
  * Type for Selva subscription IDs.
- * SHA256 in binary.
  */
-typedef unsigned char Selva_SubscriptionId[SELVA_SUBSCRIPTION_ID_SIZE];
+typedef int64_t Selva_SubscriptionId;
 
 /**
  * Type for Selva subscription marker id.
  */
 typedef int64_t Selva_SubscriptionMarkerId;
 
+#define PRIsubId PRId64
 #define PRImrkId PRId64
+
+#define SELVA_SUB_ID_STR_MAXLEN 20
 
 /**
  * Field protection modes.
@@ -207,15 +206,6 @@ static inline int Selva_CmpNodeType(const char t1[SELVA_NODE_TYPE_SIZE], const c
 static inline int Selva_CmpNodeIdType(const Selva_NodeId nodeId, const char type[SELVA_NODE_TYPE_SIZE]) {
     return Selva_CmpNodeType(nodeId, type);
 }
-
-/**
- * Selva subscription ID to hex string.
- */
-char *Selva_SubscriptionId2str(char dest[SELVA_SUBSCRIPTION_ID_STR_LEN + 1], const Selva_SubscriptionId sub_id);
-
-int Selva_SubscriptionStr2id(Selva_SubscriptionId dest, const char *src, size_t len);
-
-int Selva_SubscriptionString2id(Selva_SubscriptionId id, const struct selva_string *s);
 
 /**
  * Set if the database has been modified since last save.
