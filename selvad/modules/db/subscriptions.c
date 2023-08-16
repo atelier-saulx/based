@@ -1859,7 +1859,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     finalizer_init(&fin);
 
-    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %p, %" SELVA_SCA_NODE_ID ", %.*s, %p, ...",
+    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %.*s, %" SELVA_SCA_NODE_ID ", %.*s, %p, ...",
                              &sub_id,
                              &marker_id,
                              &query_opts_len, &query_opts_str,
