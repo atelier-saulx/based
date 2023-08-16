@@ -259,7 +259,7 @@ void SelvaSubscriptions_DestroyAll(struct SelvaHierarchy *hierarchy);
  */
 int SelvaSubscriptions_RefreshByMarkerId(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id);
 
 /**
@@ -267,7 +267,7 @@ int SelvaSubscriptions_RefreshByMarkerId(
  */
 int SelvaSubscriptions_Refresh(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id);
+        Selva_SubscriptionId sub_id);
 
 /**
  * Refresh all subscriptions found in markers SVector.
@@ -281,14 +281,14 @@ void SelvaSubscriptions_RefreshByMarker(
  */
 void SelvaSubscriptions_Delete(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id);
+        Selva_SubscriptionId sub_id);
 
 /**
  * Delete a single marker from a subscription.
  */
 int SelvaSubscriptions_DeleteMarker(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id);
 
 /**
@@ -305,7 +305,7 @@ int SelvaSubscriptions_DeleteMarkerByPtr(
  */
 int Selva_AddSubscriptionAliasMarker(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         struct selva_string *alias_name,
         Selva_NodeId node_id);
@@ -317,7 +317,7 @@ int Selva_AddSubscriptionAliasMarker(
  */
 int SelvaSubscriptions_AddCallbackMarker(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         unsigned short marker_flags,
         const Selva_NodeId node_id,
@@ -334,7 +334,7 @@ int SelvaSubscriptions_AddCallbackMarker(
  */
 struct Selva_SubscriptionMarker *SelvaSubscriptions_GetMarker(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id);
 
 /**

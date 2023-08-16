@@ -72,7 +72,7 @@ static const struct SelvaObjectPointerOpts subs_missing_obj_opts = {
 
 SELVA_TRACE_HANDLE(cmd_subscriptions_refresh);
 
-static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, const Selva_SubscriptionId sub_id);
+static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id);
 static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker, const Selva_NodeId node_id);
 
 static int marker_svector_compare(const void ** restrict a_raw, const void ** restrict b_raw) {
@@ -335,7 +335,7 @@ static int delete_marker(SelvaHierarchy *hierarchy, struct Selva_Subscription *s
 
 int SelvaSubscriptions_DeleteMarker(
         SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id) {
     struct Selva_Subscription *sub;
 
@@ -462,7 +462,7 @@ static void deinit_node_metadata_subs(
 }
 SELVA_MODIFY_HIERARCHY_METADATA_DESTRUCTOR(deinit_node_metadata_subs);
 
-static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, const Selva_SubscriptionId sub_id) {
+static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id) {
     struct Selva_Subscription filter = {
         .sub_id = sub_id,
     };
@@ -592,7 +592,7 @@ static int clear_node_marker_cb(
  */
 static struct Selva_Subscription *new_subscription(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id) {
+        Selva_SubscriptionId sub_id) {
     struct Selva_Subscription *sub;
 
     sub = selva_calloc(1, sizeof(struct Selva_Subscription));
@@ -611,7 +611,7 @@ static struct Selva_Subscription *new_subscription(
     return sub;
 }
 
-static int upsert_sub_marker(struct SelvaHierarchy *hierarchy, const Selva_SubscriptionId sub_id, struct Selva_SubscriptionMarker *marker) {
+static int upsert_sub_marker(struct SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id, struct Selva_SubscriptionMarker *marker) {
     struct Selva_Subscription *sub;
 
     sub = find_sub(hierarchy, sub_id);
@@ -734,7 +734,7 @@ static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *mar
 
 int Selva_AddSubscriptionAliasMarker(
         SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         struct selva_string *alias_name,
         Selva_NodeId node_id
@@ -816,7 +816,7 @@ fail:
 
 int SelvaSubscriptions_AddCallbackMarker(
         SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         unsigned short marker_flags,
         const Selva_NodeId node_id,
@@ -894,7 +894,7 @@ out:
 
 struct Selva_SubscriptionMarker *SelvaSubscriptions_GetMarker(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id) {
     struct Selva_Subscription *sub;
 
@@ -1009,7 +1009,7 @@ static int refresh_marker(
 
 int SelvaSubscriptions_RefreshByMarkerId(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id,
+        Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id) {
     struct Selva_SubscriptionMarker *marker;
 
@@ -1042,7 +1042,7 @@ static int refreshSubscription(struct SelvaHierarchy *hierarchy, struct Selva_Su
     return res;
 }
 
-int SelvaSubscriptions_Refresh(struct SelvaHierarchy *hierarchy, const Selva_SubscriptionId sub_id) {
+int SelvaSubscriptions_Refresh(struct SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id) {
     struct Selva_Subscription *sub;
 
     sub = find_sub(hierarchy, sub_id);
@@ -1127,7 +1127,7 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
 
 void SelvaSubscriptions_Delete(
         struct SelvaHierarchy *hierarchy,
-        const Selva_SubscriptionId sub_id) {
+        Selva_SubscriptionId sub_id) {
     struct Selva_Subscription *sub;
 
     sub = find_sub(hierarchy, sub_id);
