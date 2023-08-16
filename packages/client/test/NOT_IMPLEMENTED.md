@@ -21,6 +21,7 @@ Waiting for subscribe:
 - z19_youri_ref.ts
 - z20_youri_file.ts
 - z21_youri_query.ts
+- z_youri.ts
 
 Waiting for $inherit:
 
