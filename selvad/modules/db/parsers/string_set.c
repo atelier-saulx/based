@@ -52,7 +52,7 @@ int string_set_list_add(struct selva_string *sl, const char *opt_ignore_str, siz
  */
 static void so_add_n(struct SelvaObject *obj, size_t n, const char *str, size_t len)
 {
-    const size_t key_len = (size_t)(log10(n + 1)) + 1;
+    const size_t key_len = b10digits(n);
     char key_str[key_len + 1];
     struct selva_string *s;
 
