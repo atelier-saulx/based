@@ -1,4 +1,4 @@
-import { createRecord } from 'data-record'
+import { CompiledRecordDef, createRecord } from 'data-record'
 import { protocol } from '../..'
 import {
   SelvaHierarchy_AggregateType,
@@ -11,6 +11,17 @@ import { sourceId } from '../id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util'
+
+type CmdExecOpts = {
+  struct: any
+  extraArgs?: any[]
+  rpn: string[]
+  cmdID: number
+  nodeId: string
+  fields: string
+  strFields: string
+  recordDef: CompiledRecordDef
+}
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
   descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
@@ -54,30 +65,72 @@ const CMD_RESULT_CACHE: Map<number, any> = new Map()
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client, subId } = ctx
 
+  const opts = await makeOpts(ctx, cmd)
+  const { cmdID } = opts
+
   if (!subId) {
-    return execCmd(ctx, cmd)
+    return execCmd(ctx, opts)
   }
 
-  const cmdID = cmd.markerId ?? cmd.cmdId
-
-  const cached = CMD_RESULT_CACHE.get(cmdID)
+  let result = CMD_RESULT_CACHE.get(cmdID)
   if (ctx.cleanup) {
     await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
     CMD_RESULT_CACHE.delete(cmdID)
-    return cached
-  } else if (cached) {
-    return cached
   }
 
-  const result = await execCmd(ctx, cmd)
-  CMD_RESULT_CACHE.set(cmdID, result)
+  ctx.markers.push(opts)
+
+  if (!result) {
+    result = await execCmd(ctx, opts)
+    CMD_RESULT_CACHE.set(cmdID, result)
+  }
+
+  if (cmd.type === 'ids' && cmd.nestedFind) {
+    // TODO
+    // OLD:
+    // if (cmd.type === 'ids' && cmd.nestedFind) {
+    //   struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
+    //   struct.res_type = protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS
+    //   const find = await client.command('hierarchy.find', [
+    //     makeLangArg(ctx),
+    //     createRecord(protocol.hierarchy_find_def, struct),
+    //     nodeId,
+    //     ...rpn,
+    //   ])
+    //   const ids = find[0]
+    //   const { nestedFind } = cmd
+    //   nestedFind.source = { idList: ids }
+    //   nestedFind.markerId = hashCmd(nestedFind)
+    //   return getCmd(ctx, nestedFind)
+    // }
+  }
+
   return result
 }
 
-async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
+async function execCmd(
+  ctx: ExecContext,
+  { nodeId, struct, rpn, recordDef, extraArgs }: CmdExecOpts
+): Promise<any> {
   const { client } = ctx
+
+  const op = await client.command('hierarchy.find', [
+    makeLangArg(ctx),
+    createRecord(recordDef, struct),
+    nodeId,
+    ...(extraArgs || []),
+    ...rpn,
+  ])
+
+  return op
+}
+
+async function makeOpts(
+  ctx: ExecContext,
+  cmd: GetCommand
+): Promise<CmdExecOpts> {
   const cmdID = cmd.markerId ?? cmd.cmdId
 
   if (cmd.source.alias && !cmd.source.id) {
@@ -144,54 +197,32 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const nodeId = sourceId(cmd)
 
   if (cmd.type === 'aggregate') {
-    if (ctx.subId) {
-      ctx.markers.push({
-        cmdID,
-        opts: createRecord(protocol.subscription_opts_def, struct),
-        nodeId,
-        fields: cmd.function.$args.join('\n'),
-        rpn,
-      })
-    }
-
     struct.agg_fn = AGGREGATE_FNS[cmd.function.$name]
 
-    const agg = await client.command('hierarchy.aggregate', [
-      makeLangArg(ctx),
-      createRecord(protocol.hierarchy_agg_def, struct),
+    const fields = (cmd.function.$args || []).join('\n')
+    return {
+      struct,
       nodeId,
-      (cmd.function.$args || []).join('|'),
-      ...rpn,
-    ])
-
-    return agg
+      rpn,
+      cmdID,
+      fields,
+      strFields: fields,
+      recordDef: protocol.hierarchy_agg_def,
+      extraArgs: [(cmd.function.$args || []).join('|')],
+    }
   } else if (cmd.type === 'ids' && cmd.nestedFind) {
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
     struct.res_type = protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS
 
-    if (ctx.subId) {
-      ctx.markers.push({
-        cmdID,
-        opts: createRecord(protocol.subscription_opts_def, struct),
-        nodeId,
-        fields: '',
-        rpn,
-      })
-    }
-
-    const find = await client.command('hierarchy.find', [
-      makeLangArg(ctx),
-      createRecord(protocol.hierarchy_find_def, struct),
+    return {
+      struct,
       nodeId,
-      ...rpn,
-    ])
-
-    const ids = find[0]
-    const { nestedFind } = cmd
-    nestedFind.source = { idList: ids }
-
-    nestedFind.markerId = hashCmd(nestedFind)
-    return getCmd(ctx, nestedFind)
+      rpn,
+      cmdID,
+      fields: '',
+      strFields: '',
+      recordDef: protocol.hierarchy_find_def,
+    }
   } else {
     const {
       fields,
@@ -207,23 +238,14 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       ? protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS_RPN
       : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
 
-    if (ctx.subId) {
-      ctx.markers.push({
-        cmdID,
-        opts: createRecord(protocol.subscription_opts_def, struct),
-        nodeId,
-        fields: strFields,
-        rpn,
-      })
-    }
-
-    const find = await client.command('hierarchy.find', [
-      makeLangArg(ctx),
-      createRecord(protocol.hierarchy_find_def, struct),
+    return {
+      struct,
       nodeId,
-      ...rpn,
-    ])
-
-    return find
+      rpn,
+      cmdID,
+      fields,
+      strFields,
+      recordDef: protocol.hierarchy_find_def,
+    }
   }
 }

@@ -10,6 +10,8 @@ import { getCmd } from './cmd'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { applyDefault } from '..'
+import { createRecord } from 'data-record'
+import { subscription_opts_def } from '../../protocol'
 
 export async function get(
   client: BasedDbClient,
@@ -63,9 +65,9 @@ export async function get(
         return client.command('subscriptions.add', [
           ctx.subId,
           marker.cmdID,
-          marker.opts,
+          createRecord(subscription_opts_def, marker.struct),
           marker.nodeId,
-          marker.fields,
+          marker.strFields,
           ...marker.rpn,
         ])
       })
