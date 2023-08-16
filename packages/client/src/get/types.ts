@@ -10,7 +10,7 @@ export type ExecContext = {
 
   subId?: number
   markerId?: number
-  markers?: Promise<any>[]
+  markers?: any[]
 
   // cleanup mode, busts cache and deletes markers for the nested command tree
   cleanup?: boolean

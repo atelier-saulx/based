@@ -60,7 +60,18 @@ export async function get(
 
   console.dir({ cmds, defaults }, { depth: 8 })
   if (ctx.markers?.length) {
-    await Promise.all(ctx.markers)
+    await Promise.all(
+      ctx.markers.map((marker) => {
+        return client.command('subscriptions.add', [
+          ctx.subId,
+          marker.cmdID,
+          marker.opts,
+          marker.nodeId,
+          marker.fields,
+          ...marker.rpn,
+        ])
+      })
+    )
   }
 
   const merged =

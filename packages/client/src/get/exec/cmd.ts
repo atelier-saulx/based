@@ -145,16 +145,13 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
   if (cmd.type === 'aggregate') {
     if (ctx.subId) {
-      ctx.markers.push(
-        client.command('subscriptions.add', [
-          ctx.subId,
-          cmdID,
-          createRecord(protocol.subscription_opts_def, struct),
-          nodeId,
-          cmd.function.$args.join('\n'),
-          ...rpn,
-        ])
-      )
+      ctx.markers.push({
+        cmdID,
+        opts: createRecord(protocol.subscription_opts_def, struct),
+        nodeId,
+        fields: cmd.function.$args.join('\n'),
+        rpn,
+      })
     }
 
     struct.agg_fn = AGGREGATE_FNS[cmd.function.$name]
@@ -173,16 +170,13 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     struct.res_type = protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS
 
     if (ctx.subId) {
-      ctx.markers.push(
-        client.command('subscriptions.add', [
-          ctx.subId,
-          cmdID,
-          createRecord(protocol.subscription_opts_def, struct),
-          nodeId,
-          '',
-          ...rpn,
-        ])
-      )
+      ctx.markers.push({
+        cmdID,
+        opts: createRecord(protocol.subscription_opts_def, struct),
+        nodeId,
+        fields: '',
+        rpn,
+      })
     }
 
     const find = await client.command('hierarchy.find', [
@@ -214,16 +208,13 @@ async function execCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       : protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS
 
     if (ctx.subId) {
-      ctx.markers.push(
-        client.command('subscriptions.add', [
-          ctx.subId,
-          cmdID,
-          createRecord(protocol.subscription_opts_def, struct),
-          nodeId,
-          strFields,
-          ...rpn,
-        ])
-      )
+      ctx.markers.push({
+        cmdID,
+        opts: createRecord(protocol.subscription_opts_def, struct),
+        nodeId,
+        fields: strFields,
+        rpn,
+      })
     }
 
     const find = await client.command('hierarchy.find', [
