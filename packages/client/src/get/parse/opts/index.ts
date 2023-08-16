@@ -9,19 +9,7 @@ import {
 } from '../../types'
 import { hashCmd } from '../../util'
 import { parseList } from './list'
-
-function parseAlias(value: any): string[] | undefined {
-  let $field = value.$field
-  if (!$field) {
-    return
-  }
-
-  if (!Array.isArray(value.$field)) {
-    $field = [$field]
-  }
-
-  return $field
-}
+import { parseAlias } from './alias'
 
 export async function parseGetOpts(
   ctx: ExecContext,
