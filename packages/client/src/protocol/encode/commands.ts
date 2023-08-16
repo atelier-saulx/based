@@ -134,6 +134,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string', vararg: true }, // filter args
   ]),
   'subscriptions.list': null,
+  'subscriptions.debug': defaultEncoder([
+    { type: 'string' }, // subId as string
+  ]),
   'subscriptions.refresh': defaultEncoder([
     { type: 'longlong' }, // subId
   ]),

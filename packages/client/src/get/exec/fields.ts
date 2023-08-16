@@ -52,14 +52,16 @@ function getFieldsStr(fields: Field[]): { fields: string; isInherit: boolean } {
 }
 
 function getSimpleFieldsStr(fields: Field[]): string {
-  const strs: string[] = []
+  const strs: Set<string> = new Set()
   for (const f of fields) {
-    if (!f.exclude) {
-      strs.push(joinPath(f.field))
+    if (f.aliased) {
+      f.aliased.forEach((f) => strs.add(f))
+    } else if (!f.exclude) {
+      strs.add(joinPath(f.field))
     }
   }
 
-  return strs.join('\n')
+  return [...strs].join('\n')
 }
 
 export function getFields(
@@ -90,8 +92,8 @@ export function getFields(
         isRpn: false,
         fields: expr.$any,
         isInherit: false,
-        strFields: expr.$any,
-        // strFields: getSimpleFieldsStr($any),
+        // strFields: expr.$any,
+        strFields: getSimpleFieldsStr($any),
       }
     }
 
@@ -99,8 +101,8 @@ export function getFields(
       isRpn: true,
       isInherit: hasInherit,
       fields: fieldsExpr2rpn(ctx.client.schema.types, expr),
-      strFields: getFieldsStr(allFields.filter((f) => !f.exclude)).fields,
-      // strFields: getSimpleFieldsStr(allFields.filter((f) => !f.exclude)),
+      // strFields: getFieldsStr(allFields.filter((f) => !f.exclude)).fields,
+      strFields: getSimpleFieldsStr(allFields.filter((f) => !f.exclude)),
     }
   }
 
@@ -108,8 +110,8 @@ export function getFields(
   return {
     isRpn: false,
     fields: isInherit ? `"${fields}"` : fields,
-    strFields: fields,
-    // strFields: getSimpleFieldsStr($any),
+    // strFields: fields,
+    strFields: getSimpleFieldsStr($any),
     isInherit,
   }
 }

@@ -217,7 +217,7 @@ test.only('set primitive fields', async (t) => {
         type: 'post',
         aliases: ['sec'],
         id: 'po2',
-        int: 5,
+        int: 2,
         tags: ['action', 'comedy'],
         uniqs: 2,
         children: [third],
@@ -226,6 +226,15 @@ test.only('set primitive fields', async (t) => {
       { id: third, type: 'post', slug: '/third', aliases: ['3rd'] },
     ],
   })
+
+  const subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
 
   // const single = await client.get({
   //   $id: third,

@@ -55,6 +55,7 @@ export const COMMAND_TYPES = {
   // subscriptions
   'subscriptions.add': 58,
   'subscriptions.list': 63,
+  'subscriptions.debug': 65,
   'subscriptions.refresh': 62,
   'subscriptions.del': 66,
   'subscriptions.delmarker': 67,
