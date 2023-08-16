@@ -10,6 +10,7 @@ import {
 import { hashCmd } from '../../util'
 import { parseList } from './list'
 import { parseAlias } from './alias'
+import { deepEqual } from '@saulx/utils'
 
 export async function parseGetOpts(
   ctx: ExecContext,
@@ -75,8 +76,9 @@ export async function parseGetOpts(
               $any: [
                 {
                   type: 'field',
-                  field: newPath,
+                  field: newPath[0] === '$all' ? ['*'] : newPath,
                   aliased: parseAlias(value),
+                  exclude: value === false,
                 },
               ],
             },
@@ -312,8 +314,20 @@ export async function parseGetOpts(
                 nestedCommands.push(c)
               })
             } else if (nestedCmd.type === 'node') {
-              // completely separate id queried
-              topLevel.push(nestedCmd)
+              // completely separate id queried, merge if id already exists
+              const existing = topLevel.find((cmd) => {
+                return (
+                  cmd.type === 'node' &&
+                  cmd.source.id === nestedCmd.source.id &&
+                  deepEqual(cmd.target.path, nestedCmd.target.path)
+                )
+              })
+
+              if (existing) {
+                existing.fields.$any.push(...nestedCmd.fields.$any)
+              } else {
+                topLevel.push(nestedCmd)
+              }
             } else {
               // actual nested query dependent on this result
               nestedCommands.push(nestedCmd)

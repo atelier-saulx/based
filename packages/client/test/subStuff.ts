@@ -227,7 +227,7 @@ test.only('set primitive fields', async (t) => {
     ],
   })
 
-  const subs = await Promise.all(
+  let subs = await Promise.all(
     (
       await client.command('subscriptions.list')
     )[0].map(([subId]) => {
@@ -236,162 +236,201 @@ test.only('set primitive fields', async (t) => {
   )
   console.dir({ subs }, { depth: 8 })
 
-  // const single = await client.get({
-  //   $id: third,
-  //   $all: true,
-  //   $aliases: true,
-  //   children: true,
-  //   fi: { $field: ['nonExistingField', 'parents'] },
-  //   createdAt: false,
-  //   updatedAt: false,
-  // })
-  // console.dir({ single }, { depth: 8 })
-  // t.deepEqual(single, {
-  //   id: third,
-  //   type: 'post',
-  //   slug: '/third',
-  //   fi: ['po2'],
-  //   aliases: ['3rd'],
-  // })
+  const single = await client.sub({
+    $id: third,
+    $all: true,
+    aliases: true,
+    children: true,
+    fi: { $field: ['nonExistingField', 'parents'] },
+    createdAt: false,
+    updatedAt: false,
+  })
+  console.dir({ single }, { depth: 8 })
+  t.deepEqual(single, {
+    id: third,
+    type: 'post',
+    slug: '/third',
+    fi: ['po2'],
+    aliases: ['3rd'],
+  })
 
-  // const expr = await client.get({
-  //   traversed: {
-  //     $fieldsByType: {
-  //       $any: {
-  //         id: true,
-  //       },
-  //       meh: {
-  //         str: true,
-  //         txt: { $field: ['notHere', 'str'] },
-  //       },
-  //     },
-  //     $list: {
-  //       $find: {
-  //         $traverse: 'children',
-  //         $recursive: true,
-  //       },
-  //     },
-  //   },
-  // })
+  subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
 
-  // t.deepEqual(expr, {
-  //   traversed: [
-  //     { id: 'me1', str: 'hello', txt: 'hello' },
-  //     { id: 'po1' },
-  //     { id: 'po2' },
-  //     { id: third },
-  //   ],
-  // })
+  const expr = await client.sub({
+    traversed: {
+      $fieldsByType: {
+        $any: {
+          id: true,
+        },
+        meh: {
+          str: true,
+          txt: { $field: ['notHere', 'str'] },
+        },
+      },
+      $list: {
+        $find: {
+          $traverse: 'children',
+          $recursive: true,
+        },
+      },
+    },
+  })
 
-  // // t.deepEqual(
-  // //   (await client.command('lsaliases'))[0].sort(),
-  // //   ['main', 'po1', 'sec', 'po2', '3rd'].sort()
-  // // )
+  t.deepEqual(expr, {
+    traversed: [
+      { id: 'me1', str: 'hello', txt: 'hello' },
+      { id: 'po1' },
+      { id: 'po2' },
+      { id: third },
+    ],
+  })
 
-  // const things = await client.get({
-  //   $id: third,
-  //   id: true,
-  //   title: true,
-  //   arys: {
-  //     ints: true,
-  //   },
-  //   slug: true,
+  subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
 
-  //   ancestors: {
-  //     id: true,
-  //     title: true,
-  //     slug: true,
-  //     arys: {
-  //       ints: true,
-  //       objs: true,
-  //     },
-  //     aliases: true,
-  //     $list: {
-  //       $limit: 2,
-  //     },
-  //   },
+  const things = await client.sub({
+    $id: third,
+    id: true,
+    title: true,
+    arys: {
+      ints: true,
+    },
+    slug: true,
 
-  //   above: {
-  //     id: true,
-  //     title: true,
-  //     slug: true,
-  //     aliases: true,
-  //     children: true,
-  //     below: {
-  //       id: true,
-  //       slug: true,
-  //       parents: {
-  //         id: true,
-  //         $list: true,
-  //       },
-  //       $list: {
-  //         $find: {
-  //           $traverse: 'children',
-  //         },
-  //       },
-  //     },
-  //     $list: {
-  //       $find: {
-  //         $traverse: 'parents',
-  //       },
-  //     },
-  //   },
+    single: {
+      $id: third,
+      $all: true,
+      aliases: true,
+      children: true,
+      fi: { $field: ['nonExistingField', 'parents'] },
+      createdAt: false,
+      updatedAt: false,
+    },
 
-  //   meh: {
-  //     $id: 'me1',
-  //     str: true,
-  //     rec: true,
-  //   },
-  // })
+    ancestors: {
+      id: true,
+      title: true,
+      slug: true,
+      arys: {
+        ints: true,
+        objs: true,
+      },
+      aliases: true,
+      $list: {
+        $limit: 2,
+      },
+    },
 
-  // t.deepEqual(things, {
-  //   id: third,
-  //   slug: '/third',
-  //   meh: {
-  //     str: 'hello',
-  //     rec: { a: { a: 'hello', b: 1 }, b: { a: 'olleh', b: -1 } },
-  //   },
-  //   ancestors: [
-  //     {
-  //       id: 'po2',
-  //       aliases: ['sec'],
-  //     },
-  //     {
-  //       arys: {
-  //         ints: [1, 6, 3, 4, 5],
-  //         objs: [
-  //           {
-  //             a: 1,
-  //           },
-  //           {
-  //             b: 'hello',
-  //           },
-  //         ],
-  //       },
-  //       id: 'po1',
-  //       slug: '/hello-world',
-  //       aliases: ['main'],
-  //     },
-  //   ],
-  //   above: [
-  //     {
-  //       id: 'po2',
-  //       aliases: ['sec'],
-  //       children: [third],
-  //       below: [
-  //         {
-  //           id: third,
-  //           slug: '/third',
-  //           parents: [
-  //             {
-  //               id: 'po2',
-  //             },
-  //           ],
-  //         },
-  //       ],
-  //     },
-  //   ],
-  // })
+    above: {
+      id: true,
+      title: true,
+      slug: true,
+      aliases: true,
+      children: true,
+      below: {
+        id: true,
+        slug: true,
+        parents: {
+          id: true,
+          $list: true,
+        },
+        $list: {
+          $find: {
+            $traverse: 'children',
+          },
+        },
+      },
+      $list: {
+        $find: {
+          $traverse: 'parents',
+        },
+      },
+    },
+
+    meh: {
+      $id: 'me1',
+      str: true,
+      rec: true,
+    },
+  })
+
+  t.deepEqual(things, {
+    id: third,
+    slug: '/third',
+    meh: {
+      str: 'hello',
+      rec: { a: { a: 'hello', b: 1 }, b: { a: 'olleh', b: -1 } },
+    },
+    single: {
+      id: third,
+      type: 'post',
+      slug: '/third',
+      fi: ['po2'],
+      aliases: ['3rd'],
+    },
+    ancestors: [
+      {
+        id: 'po2',
+        aliases: ['sec'],
+      },
+      {
+        arys: {
+          ints: [1, 6, 3, 4, 5],
+          objs: [
+            {
+              a: 1,
+            },
+            {
+              b: 'hello',
+            },
+          ],
+        },
+        id: 'po1',
+        slug: '/hello-world',
+        aliases: ['main'],
+      },
+    ],
+    above: [
+      {
+        id: 'po2',
+        aliases: ['sec'],
+        children: [third],
+        below: [
+          {
+            id: third,
+            slug: '/third',
+            parents: [
+              {
+                id: 'po2',
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  })
+
+  subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
 
   t.true(true)
 
