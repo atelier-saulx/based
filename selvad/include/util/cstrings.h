@@ -6,8 +6,6 @@
 #ifndef _UTIL_CSTRINGS_H_
 #define _UTIL_CSTRINGS_H_
 
-#include <stddef.h>
-
 uint64_t b10digits(uint64_t x);
 
 [[nodiscard]]
