@@ -37,3 +37,35 @@ test.serial('Uninstall hook', async (t) => {
   client.disconnect()
   await server.destroy()
 })
+
+test.serial('uninstalled function is no longer callable', async (t) => {
+  const server = new BasedServer({
+    port: 9910,
+    functions: {
+      configs: {
+        bla: {
+          type: 'function',
+          uninstallAfterIdleTime: -1,
+          fn: async () => {
+            return 'x'
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const client = new BasedClient()
+  await client.connect({
+    url: async () => 'ws://localhost:9910',
+  })
+  const x = await client.call('bla')
+  t.is(x, 'x')
+
+  await server.functions.uninstall('bla')
+  await wait(200)
+
+  await t.throwsAsync(client.call('bla'))
+
+  client.disconnect()
+  await server.destroy()
+})
