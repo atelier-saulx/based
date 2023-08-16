@@ -4,6 +4,7 @@
  */
 #include <string.h>
 #include <sys/types.h>
+#include <stdint.h>
 #include "util/cstrings.h"
 #include "selva_error.h"
 #include "selva_db.h"
