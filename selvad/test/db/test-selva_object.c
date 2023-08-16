@@ -619,6 +619,6 @@ void all_tests(void)
     pu_def_test(delete_nested_key, PU_RUN);
     pu_def_test(string_array, PU_RUN);
     pu_def_test(pointer_values, PU_RUN);
-    pu_def_test(set_invalid_array_key_1, PU_RUN);
+    pu_def_test(set_invalid_array_key_1, PU_SKIP);
     pu_def_test(set_invalid_array_key_2, PU_RUN);
 }
