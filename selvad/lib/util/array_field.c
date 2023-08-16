@@ -5,6 +5,7 @@
 #define _GNU_SOURCE
 #include <inttypes.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
