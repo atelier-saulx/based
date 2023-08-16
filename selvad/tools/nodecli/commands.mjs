@@ -1,17 +1,17 @@
 // vim: tabstop=2 shiftwidth=2 expandtab
-import { compile, createRecord, serialize } from 'data-record';
+import { compile, createRecord, serialize } from 'data-record'
 import {
-    SELVA_PROTO_LONGLONG,
-    SELVA_PROTO_STRING,
-    SELVA_PROTO_ARRAY,
-    SELVA_PROTO_STRING_FBINARY,
-    selva_proto_string_def,
-    selva_proto_array_def,
-    selva_proto_longlong_def,
-} from './selva_proto.mjs';
+  SELVA_PROTO_LONGLONG,
+  SELVA_PROTO_STRING,
+  SELVA_PROTO_ARRAY,
+  SELVA_PROTO_STRING_FBINARY,
+  selva_proto_string_def,
+  selva_proto_array_def,
+  selva_proto_longlong_def,
+} from './selva_proto.mjs'
 
-const SELVA_NODE_ID_SIZE = 16;
-const SELVA_SUBSCRIPTION_ID_SIZE = 32;
+const SELVA_NODE_ID_SIZE = 16
+const SELVA_SUBSCRIPTION_ID_SIZE = 32
 
 const OP_SET_TYPE = {
   char: 0,
@@ -32,7 +32,7 @@ const opSetDefCstring = compile([
   { name: '$add', type: 'cstring_p' },
   { name: '$delete', type: 'cstring_p' },
   { name: '$value', type: 'cstring_p' },
-]);
+])
 
 const opSetDefDouble = compile([
   { name: 'op_set_type', type: 'int8' },
@@ -41,7 +41,7 @@ const opSetDefDouble = compile([
   { name: '$add', type: 'double_le_p' },
   { name: '$delete', type: 'double_le_p' },
   { name: '$value', type: 'double_le_p' },
-]);
+])
 
 const opSetDefInt64 = compile([
   { name: 'op_set_type', type: 'int8' },
@@ -50,7 +50,7 @@ const opSetDefInt64 = compile([
   { name: '$add', type: 'int64_le_p' },
   { name: '$delete', type: 'int64_le_p' },
   { name: '$value', type: 'int64_le_p' },
-]);
+])
 
 const edgeMetaDef = compile([
   { name: 'op_code', type: 'int8' },
@@ -58,43 +58,43 @@ const edgeMetaDef = compile([
   { name: 'dst_node_id', type: 'cstring', size: SELVA_NODE_ID_SIZE },
   { name: 'meta_field_name', type: 'cstring_p' },
   { name: 'meta_field_value', type: 'cstring_p' },
-]);
+])
 
 const incrementDef = compile([
   { name: '$default', type: 'int64_le' },
   { name: '$increment', type: 'int64_le' },
-]);
+])
 
 const incrementDoubleDef = compile([
   { name: '$default', type: 'double_le' },
   { name: '$increment', type: 'double_le' },
-]);
+])
 
 function serializeWithOffset(def, buf, off, obj) {
-  serialize(def, buf.slice(off, off + def.size), obj);
-  return def.size;
+  serialize(def, buf.slice(off, off + def.size), obj)
+  return def.size
 }
 
 function serializeLongLong(buf, off, v) {
   return serializeWithOffset(selva_proto_longlong_def, buf, off, {
     type: SELVA_PROTO_LONGLONG,
     v: BigInt(v),
-  });
+  })
 }
 
 function serializeString(buf, off, str) {
-  const bsize = Buffer.byteLength(str, 'utf8');
+  const bsize = Buffer.byteLength(str, 'utf8')
 
   const wr1 = serializeWithOffset(selva_proto_string_def, buf, off, {
     type: SELVA_PROTO_STRING,
     bsize,
-  });
-  const wr2 = buf.write(str, off + wr1, bsize, 'utf8');
+  })
+  const wr2 = buf.write(str, off + wr1, bsize, 'utf8')
   if (wr2 != bsize) {
-    throw new Error("Buffer overflow");
+    throw new Error('Buffer overflow')
   }
 
-  return wr1 + wr2;
+  return wr1 + wr2
 }
 
 function serializeBin(buf, off, v) {
@@ -102,176 +102,205 @@ function serializeBin(buf, off, v) {
     type: SELVA_PROTO_STRING,
     flags: SELVA_PROTO_STRING_FBINARY,
     bsize: v.length,
-  });
-  const wr2 = v.copy(buf, off + wr1);
+  })
+  const wr2 = v.copy(buf, off + wr1)
 
-  return wr1 + wr2;
+  return wr1 + wr2
 }
 
 export function toSelvaProtoStrings(...strings) {
   const buf = Buffer.allocUnsafe(
-    strings.map((s) => selva_proto_string_def.size + Buffer.byteLength(s)).reduce((acc, cur) => acc + cur, 0)
-  );
-  let off = 0;
+    strings
+      .map((s) => selva_proto_string_def.size + Buffer.byteLength(s))
+      .reduce((acc, cur) => acc + cur, 0)
+  )
+  let off = 0
 
   for (const s of strings) {
-    off += serializeString(buf, off, s);
+    off += serializeString(buf, off, s)
   }
 
-  return buf;
+  return buf
 }
 
 export function modify(nodeId, fields) {
   const head = Buffer.alloc(
     selva_proto_array_def.size +
-    selva_proto_string_def.size + SELVA_NODE_ID_SIZE +
-    selva_proto_string_def.size + 0 // flags
-  );
-  let off = 0;
+      selva_proto_string_def.size +
+      SELVA_NODE_ID_SIZE +
+      selva_proto_string_def.size +
+      0 // flags
+  )
+  let off = 0
 
   off += serializeWithOffset(selva_proto_array_def, head, off, {
     type: SELVA_PROTO_ARRAY,
     length: 2 + 3 * fields.length,
-  });
+  })
 
   // nodeId
   off += serializeWithOffset(selva_proto_string_def, head, off, {
     type: SELVA_PROTO_STRING,
     bsize: SELVA_NODE_ID_SIZE,
-  });
-  head.write(nodeId, off, SELVA_NODE_ID_SIZE, 'latin1');
-  off += SELVA_NODE_ID_SIZE;
+  })
+  head.write(nodeId, off, SELVA_NODE_ID_SIZE, 'latin1')
+  off += SELVA_NODE_ID_SIZE
 
   // flags
   off += serializeWithOffset(selva_proto_string_def, head, off, {
     type: SELVA_PROTO_STRING,
     bsize: 0,
-  });
+  })
 
   const fieldsBuf = fields.map(([field, value]) => {
     if (typeof value == 'string') {
       const buf = Buffer.alloc(
-        selva_proto_string_def.size + 1 + // mod type
-        selva_proto_string_def.size + Buffer.byteLength(field, 'utf8') +
-        selva_proto_string_def.size + Buffer.byteLength(value, 'utf8'));
-      let boff = 0;
+        selva_proto_string_def.size +
+          1 + // mod type
+          selva_proto_string_def.size +
+          Buffer.byteLength(field, 'utf8') +
+          selva_proto_string_def.size +
+          Buffer.byteLength(value, 'utf8')
+      )
+      let boff = 0
 
-      boff += serializeString(buf, boff, '0');
-      boff += serializeString(buf, boff, field);
-      boff += serializeString(buf, boff, value);
+      boff += serializeString(buf, boff, '0')
+      boff += serializeString(buf, boff, field)
+      boff += serializeString(buf, boff, value)
 
-      return buf;
+      return buf
     } else if (typeof value == 'number') {
       const buf = Buffer.alloc(
-        selva_proto_string_def.size + 1 + // mod type
-        selva_proto_string_def.size + Buffer.byteLength(field, 'utf8') +
-        selva_proto_string_def.size + 8);
-      let boff = 0;
+        selva_proto_string_def.size +
+          1 + // mod type
+          selva_proto_string_def.size +
+          Buffer.byteLength(field, 'utf8') +
+          selva_proto_string_def.size +
+          8
+      )
+      let boff = 0
 
-      const bv = Buffer.allocUnsafe(8);
-      bv.writeBigUInt64LE(BigInt(value));
+      const bv = Buffer.allocUnsafe(8)
+      bv.writeBigUInt64LE(BigInt(value))
 
-      boff += serializeString(buf, boff, '3');
-      boff += serializeString(buf, boff, field);
-      boff += serializeBin(buf, boff, bv); // We currently send nums as bin buffers
+      boff += serializeString(buf, boff, '3')
+      boff += serializeString(buf, boff, field)
+      boff += serializeBin(buf, boff, bv) // We currently send nums as bin buffers
 
-      return buf;
-    } else if (Array.isArray(value)) { // set
+      return buf
+    } else if (Array.isArray(value)) {
+      // set
       const opSet = createRecord(opSetDefCstring, {
         op_set_type: OP_SET_TYPE.char,
         $value: value.map((s) => `${s}\0`).join(''),
-      });
+      })
       const buf = Buffer.alloc(
-        selva_proto_string_def.size + 1 + // mod type
-        selva_proto_string_def.size + Buffer.byteLength(field, 'utf8') +
-        selva_proto_string_def.size + opSet.length);
-      let boff = 0;
+        selva_proto_string_def.size +
+          1 + // mod type
+          selva_proto_string_def.size +
+          Buffer.byteLength(field, 'utf8') +
+          selva_proto_string_def.size +
+          opSet.length
+      )
+      let boff = 0
 
-      boff += serializeString(buf, boff, '5');
-      boff += serializeString(buf, boff, field);
-      boff += serializeBin(buf, boff, opSet);
+      boff += serializeString(buf, boff, '5')
+      boff += serializeString(buf, boff, field)
+      boff += serializeBin(buf, boff, opSet)
 
-      return buf;
+      return buf
     } else {
-      throw new Error();
+      throw new Error()
     }
-  });
+  })
 
-  return Buffer.concat([head, ...fieldsBuf]);
+  return Buffer.concat([head, ...fieldsBuf])
 }
 
 export function objectGet(lang, nodeId, ...fields) {
   const fields_len = () => {
-    if (!fields) return 0;
-    return fields.reduce((acc, cur) => acc + selva_proto_string_def.size + Buffer.byteLength(cur), 0)
-  };
+    if (!fields) return 0
+    return fields.reduce(
+      (acc, cur) => acc + selva_proto_string_def.size + Buffer.byteLength(cur),
+      0
+    )
+  }
   const msg = Buffer.allocUnsafe(
-    selva_proto_string_def.size + (lang ? Buffer.byteLength(lang) : 0) + // lang
-    selva_proto_string_def.size + SELVA_NODE_ID_SIZE +
-    fields_len(),
-  );
+    selva_proto_string_def.size +
+      (lang ? Buffer.byteLength(lang) : 0) + // lang
+      selva_proto_string_def.size +
+      SELVA_NODE_ID_SIZE +
+      fields_len()
+  )
 
-  let off = 0;
+  let off = 0
 
   // lang
-  off += serializeString(msg, off, lang || '');
+  off += serializeString(msg, off, lang || '')
 
   // nodeId
   off += serializeWithOffset(selva_proto_string_def, msg, off, {
     type: SELVA_PROTO_STRING,
     bsize: SELVA_NODE_ID_SIZE,
-  });
-  msg.write(nodeId, off, SELVA_NODE_ID_SIZE, 'latin1');
-  off += SELVA_NODE_ID_SIZE;
+  })
+  msg.write(nodeId, off, SELVA_NODE_ID_SIZE, 'latin1')
+  off += SELVA_NODE_ID_SIZE
 
   // opt fields
   for (const field of fields) {
-    off += serializeString(msg, off, field);
+    off += serializeString(msg, off, field)
   }
 
-  return msg;
+  return msg
 }
 
 export function subscriptionsAddAlias(subId, markerId, aliasName) {
   const msg = Buffer.allocUnsafe(
-    selva_proto_string_def.size + Buffer.byteLength(subId, 'hex') +
-    selva_proto_longlong_def.size +
-    selva_proto_string_def.size + Buffer.byteLength(aliasName, 'utf8')
-  );
+    selva_proto_string_def.size +
+      Buffer.byteLength(subId, 'hex') +
+      selva_proto_longlong_def.size +
+      selva_proto_string_def.size +
+      Buffer.byteLength(aliasName, 'utf8')
+  )
 
-  let off = 0;
+  let off = 0
 
   // subId
-  off += serializeBin(msg, off, Buffer.from(subId, 'hex'));
+  off += serializeBin(msg, off, Buffer.from(subId, 'hex'))
 
   // markerId
   off += serializeWithOffset(selva_proto_longlong_def, msg, off, {
     type: SELVA_PROTO_LONGLONG,
     v: markerId,
-  });
+  })
 
   // aliasName
-  serializeString(msg, off, aliasName);
+  serializeString(msg, off, aliasName)
 
-  return msg;
+  return msg
 }
 
 export function subscriptionsAddMissing(subId, ...names) {
   const msg = Buffer.allocUnsafe(
-    selva_proto_string_def.size + Buffer.byteLength(subId) + //Buffer.byteLength(subId, 'hex') +
-    names.reduce((acc, cur) => acc + selva_proto_string_def.size + Buffer.byteLength(cur, 'utf8'), 0)
-  );
+    selva_proto_string_def.size +
+      Buffer.byteLength(subId) + //Buffer.byteLength(subId, 'hex') +
+      names.reduce(
+        (acc, cur) =>
+          acc + selva_proto_string_def.size + Buffer.byteLength(cur, 'utf8'),
+        0
+      )
+  )
 
-  let off = 0;
+  let off = 0
 
   // subId
   //off += serializeBin(msg, off, Buffer.from(subId, 'hex'));
-  off += serializeString(msg, off, subId);
+  off += serializeString(msg, off, subId)
 
   // names
   for (const name of names) {
-    off += serializeString(msg, off, name);
+    off += serializeString(msg, off, name)
   }
 
-  return msg;
+  return msg
 }
