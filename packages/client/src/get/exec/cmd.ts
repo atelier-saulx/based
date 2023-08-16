@@ -1,16 +1,16 @@
 import { createRecord } from 'data-record'
-import { protocol } from '..'
+import { protocol } from '../..'
 import {
   SelvaHierarchy_AggregateType,
   SelvaResultOrder,
   SelvaTraversal,
-} from '../protocol'
+} from '../../protocol'
 import { makeLangArg } from './lang'
-import { ExecContext, GetCommand } from './types'
-import { sourceId } from './id'
+import { ExecContext, GetCommand } from '../types'
+import { sourceId } from '../id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
-import { hashCmd } from './util'
+import { hashCmd } from '../util'
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
   descendants: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,

@@ -19,7 +19,6 @@ import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
 import { get } from './get'
 import genId from './id'
-import { deepCopy, deepMergeArrays } from '@saulx/utils'
 
 export * as protocol from './protocol'
 
