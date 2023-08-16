@@ -59,6 +59,7 @@ export async function get(
   if (isSubscription) {
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
     ctx.markerId = markerId
+    ctx.markers = []
   }
 
   // is an event, use cache

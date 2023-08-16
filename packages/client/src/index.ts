@@ -264,6 +264,10 @@ export class BasedDbClient extends Emitter {
     return get(this, opts)
   }
 
+  async sub(opts: any): Promise<any> {
+    return get(this, opts, { isSubscription: true })
+  }
+
   onData(data: Buffer) {
     incoming(this, data)
   }
