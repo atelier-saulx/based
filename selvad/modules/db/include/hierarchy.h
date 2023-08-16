@@ -70,6 +70,7 @@ typedef void SelvaHierarchyMetadataDestructorHook(
 
 RB_HEAD(hierarchy_index_tree, SelvaHierarchyNode);
 RB_HEAD(hierarchy_subscriptions_tree, Selva_Subscription);
+RB_HEAD(hierarchy_subscription_markers_tree, Selva_SubscriptionMarker);
 
 struct SelvaHierarchy {
     /**
@@ -119,7 +120,12 @@ struct SelvaHierarchy {
         /**
          * A tree of all subscriptions applying to this tree.
          */
-        struct hierarchy_subscriptions_tree head;
+        struct hierarchy_subscriptions_tree subs_head;
+
+        /**
+         * A tree of all markers.
+         */
+        struct hierarchy_subscription_markers_tree mrks_head;
 
         /**
          * Subscription markers for missing accessors (nodeIds and aliases).

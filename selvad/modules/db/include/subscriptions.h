@@ -186,6 +186,7 @@ struct Selva_SubscriptionMarker {
         int res;
     } filter_history;
     struct Selva_Subscription *sub; /* Pointer back to the subscription. */
+    RB_ENTRY(Selva_SubscriptionMarker) _mrk_index_entry; /*!< Entry for hierarchy->mrks_head */
     char fields[]; /* \n separated and \0 terminated list of field names considered for change events. */
 };
 
