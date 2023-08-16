@@ -101,10 +101,7 @@ export async function parseGetOpts(
           type: 'field',
           field: f,
           exclude: value === false,
-        }
-
-        if (value?.$field) {
-          field.aliased = parseAlias(value)
+          aliased: parseAlias(value),
         }
 
         if (value.$inherit) {
@@ -325,6 +322,7 @@ export async function parseGetOpts(
 
               if (existing) {
                 existing.fields.$any.push(...nestedCmd.fields.$any)
+                existing.cmdId = hashCmd(existing)
               } else {
                 topLevel.push(nestedCmd)
               }
