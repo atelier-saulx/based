@@ -278,3 +278,13 @@ export const hierarchy_agg_def = compile(
     align: true,
   }
 )
+
+export const subscription_opts_def = compile(
+  [
+    { name: 'dir', type: enum_type },
+    { name: 'dir_opt_str', type: 'cstring_p' },
+  ],
+  {
+    align: true,
+  }
+)
