@@ -51,6 +51,17 @@ function getFieldsStr(fields: Field[]): { fields: string; isInherit: boolean } {
   return { fields: strs.join('\n'), isInherit: hasInherit }
 }
 
+function getSimpleFieldsStr(fields: Field[]): string {
+  const strs: string[] = []
+  for (const f of fields) {
+    if (!f.exclude) {
+      strs.push(joinPath(f.field))
+    }
+  }
+
+  return strs.join('\n')
+}
+
 export function getFields(
   ctx: ExecContext,
   { $any, byType }: Fields
@@ -80,6 +91,7 @@ export function getFields(
         fields: expr.$any,
         isInherit: false,
         strFields: expr.$any,
+        // strFields: getSimpleFieldsStr($any),
       }
     }
 
@@ -88,6 +100,7 @@ export function getFields(
       isInherit: hasInherit,
       fields: fieldsExpr2rpn(ctx.client.schema.types, expr),
       strFields: getFieldsStr(allFields.filter((f) => !f.exclude)).fields,
+      // strFields: getSimpleFieldsStr(allFields.filter((f) => !f.exclude)),
     }
   }
 
@@ -96,6 +109,7 @@ export function getFields(
     isRpn: false,
     fields: isInherit ? `"${fields}"` : fields,
     strFields: fields,
+    // strFields: getSimpleFieldsStr($any),
     isInherit,
   }
 }
