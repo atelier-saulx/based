@@ -37,18 +37,18 @@ export function applyDefault(
   }
 }
 
-type SubscriptionOptions = {
-  isSubscription: boolean
-  subId?: number
-  markerId?: number
-  useCache?: boolean
-  cleanup?: boolean
-}
-
 export async function get(
   client: BasedDbClient,
   opts: any,
-  { isSubscription, subId, markerId }: SubscriptionOptions = {
+  {
+    isSubscription,
+    subId,
+    markerId,
+  }: {
+    isSubscription: boolean
+    subId?: number
+    markerId?: number
+  } = {
     isSubscription: false,
   }
 ): Promise<any> {
