@@ -36,8 +36,6 @@ export async function get(
     ctx.markers = []
   }
 
-  // is an event, use cache
-
   let { $id, $language, $alias } = opts
   if ($alias) {
     const aliases = Array.isArray($alias) ? $alias : [$alias]
