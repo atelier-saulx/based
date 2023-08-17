@@ -140,6 +140,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   'subscriptions.refresh': defaultEncoder([
     { type: 'longlong' }, // subId
   ]),
+  'subscriptions.refreshMarker': defaultEncoder([
+    { type: 'longlong' }, // markerId
+  ]),
   'subscriptions.del': defaultEncoder([
     { type: 'longlong' }, // subId
   ]),
