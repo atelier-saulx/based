@@ -88,7 +88,7 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   }
 
   if (cmd.type === 'ids' && cmd.nestedFind) {
-    const ids = result[0]
+    const ids = result?.[0]
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
     nestedFind.markerId = hashCmd(nestedFind)
