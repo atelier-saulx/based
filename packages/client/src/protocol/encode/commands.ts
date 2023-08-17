@@ -124,7 +124,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
-  'subscriptions.add': defaultEncoder([
+  'subscriptions.addMarker': defaultEncoder([
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
     { type: 'bin' }, // find query opts

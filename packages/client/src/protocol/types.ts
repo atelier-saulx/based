@@ -9,16 +9,16 @@ export const COMMAND_TYPES = {
   save: 15,
   load: 14,
   flush: 16,
-  replicasync: 71,
-  replicaof: 72,
-  replicainfo: 73,
-  replicawait: 75,
+  replicasync: 72,
+  replicaof: 73,
+  replicainfo: 74,
+  replicawait: 76,
   // essential
   'resolve.nodeid': 18,
-  lsaliases: 70,
-  publish: 76,
-  subscribe: 77,
-  unsubscribe: 78,
+  lsaliases: 71,
+  publish: 77,
+  subscribe: 78,
+  unsubscribe: 79,
   // indexes
   'index.list': 38,
   // TODO:
@@ -38,7 +38,7 @@ export const COMMAND_TYPES = {
   // modify related commands
   modify: 68,
   // TODO:
-  // #define CMD_ID_UPDATE 69
+  // #define CMD_ID_UPDATE 70
   // hierarchy
   'hierarchy.types.add': 35,
   'hierarchy.types.clear': 36,
@@ -53,12 +53,13 @@ export const COMMAND_TYPES = {
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   // subscriptions
-  'subscriptions.add': 58,
-  'subscriptions.list': 63,
-  'subscriptions.debug': 65,
+  'subscriptions.addMarker': 58,
+  'subscriptions.list': 64,
+  'subscriptions.debug': 66,
   'subscriptions.refresh': 62,
-  'subscriptions.del': 66,
-  'subscriptions.delmarker': 67,
+  'subscriptions.refreshMarker': 63,
+  'subscriptions.del': 67,
+  'subscriptions.delmarker': 68,
   // TODO:
   // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21
@@ -70,8 +71,8 @@ export const COMMAND_TYPES = {
   // TODO:
   // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 59
   // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
-  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 64
-  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 65
+  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 65
+  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 66
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {

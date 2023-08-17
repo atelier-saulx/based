@@ -89,7 +89,7 @@ export async function addMarkers(
   const { subId, client } = ctx
   await Promise.all(
     markers.map((marker) => {
-      return client.command('subscriptions.add', [
+      return client.command('subscriptions.addMarker', [
         subId,
         marker.cmdID,
         createRecord(subscription_opts_def, marker.struct),
