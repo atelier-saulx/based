@@ -1822,26 +1822,31 @@ void SelvaSubscriptions_DeferTriggerEvents(
 }
 
 static void send_event(const struct Selva_SubscriptionMarker *marker, typeof_field(struct SelvaSubscriptions_PubsubMessage, event_type) event_type) {
-        struct SelvaSubscriptions_PubsubMessage *msg;
-        size_t msg_size;
-        struct SVectorIterator it;
-        const struct Selva_Subscription *sub;
-        size_t i = 0;
+    struct SelvaSubscriptions_PubsubMessage *msg;
+    struct SVectorIterator it;
+    const struct Selva_Subscription *sub;
+    Selva_SubscriptionId *sub_ids;
+    size_t i = 0;
 
-        msg_size = sizeof(*msg) + SVector_Size(&marker->subs) * sizeof(Selva_SubscriptionId);
-        msg = selva_calloc(1, msg_size);
+    const size_t sub_ids_size = SVector_Size(&marker->subs) * sizeof(Selva_SubscriptionId);
+    const size_t msg_size = sizeof(*msg) + sub_ids_size;
+    msg = selva_calloc(1, msg_size);
 
-        msg->event_type = event_type;
-        memcpy(msg->node_id, marker->filter_history.node_id, SELVA_NODE_ID_SIZE);
-        msg->marker_id = marker->marker_id;
+    /* TODO Do we need to handle endianness here? */
+    msg->event_type = event_type;
+    memcpy(msg->node_id, marker->filter_history.node_id, SELVA_NODE_ID_SIZE);
+    msg->marker_id = marker->marker_id;
+    msg->sub_ids = sizeof(*msg);
+    msg->sub_ids_size = sub_ids_size;
+    sub_ids = msg + sizeof(*msg);
 
-        SVector_ForeachBegin(&it, &marker->subs);
-        while ((sub = SVector_Foreach(&it))) {
-            msg->sub_ids[i++] = sub->sub_id;
-        }
+    SVector_ForeachBegin(&it, &marker->subs);
+    while ((sub = SVector_Foreach(&it))) {
+        msg->sub_ids[i++] = sub->sub_id;
+    }
 
-        selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, msg_size);
-        selva_free(msg);
+    selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, msg_size);
+    selva_free(msg);
 }
 
 static void send_events(

@@ -216,6 +216,7 @@ struct SelvaSubscriptions_DeferredEvents {
 
 /**
  * A structure used for sending subscription messages over selva_pubsub.
+ * data-record compatible.
  */
 struct SelvaSubscriptions_PubsubMessage {
     enum {
@@ -224,7 +225,8 @@ struct SelvaSubscriptions_PubsubMessage {
     } __packed event_type;
     Selva_NodeId node_id;
     Selva_SubscriptionMarkerId marker_id;
-    Selva_SubscriptionId sub_ids[];
+    Selva_SubscriptionId *sub_ids; /* Expect uint64_le_p */
+    size_t sub_ids_size;
 };
 
 #define SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID 0
