@@ -110,7 +110,7 @@ void SelvaSubscriptions_DeferTriggerEvents(
     return;
 }
 
-void SelvaSubscriptions_RefreshByMarker(
+void SelvaSubscriptions_RefreshSubsByMarker(
         struct SelvaHierarchy *hierarchy,
         const SVector *markers) {
     return;

@@ -185,7 +185,8 @@ struct Selva_SubscriptionMarker {
          */
         int res;
     } filter_history;
-    struct Selva_Subscription *sub; /* Pointer back to the subscription. */
+
+    struct SVector subs; /*!< Subscriptions using this marker. */
     RB_ENTRY(Selva_SubscriptionMarker) _mrk_index_entry; /*!< Entry for hierarchy->mrks_head */
     char fields[]; /* \n separated and \0 terminated list of field names considered for change events. */
 };
@@ -209,7 +210,7 @@ struct Selva_SubscriptionMarkers {
  * A structure for deferring subscription events.
  */
 struct SelvaSubscriptions_DeferredEvents {
-    SVector updates; /*!< A set of Selva_Subscriptions. */
+    SVector updates; /*!< A set of Selva_SubscriptionMarkers. */
     SVector triggers; /*!< A set of Selva_SubscriptionMarkers */
 };
 
@@ -221,8 +222,9 @@ struct SelvaSubscriptions_PubsubMessage {
         SELVA_SUB_UPDATE = 1,
         SELVA_SUB_TRIGGER = 2,
     } __packed event_type;
-    Selva_SubscriptionId sub_id;
     Selva_NodeId node_id;
+    Selva_SubscriptionMarkerId marker_id;
+    Selva_SubscriptionId sub_ids[];
 };
 
 #define SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID 0
@@ -272,7 +274,7 @@ int SelvaSubscriptions_Refresh(
 /**
  * Refresh all subscriptions found in markers SVector.
  */
-void SelvaSubscriptions_RefreshByMarker(
+void SelvaSubscriptions_RefreshSubsByMarker(
         struct SelvaHierarchy *hierarchy,
         const struct SVector *markers);
 
@@ -294,7 +296,7 @@ int SelvaSubscriptions_DeleteMarker(
 /**
  * Delete a single marker from a subscription by a pointer to the marker.
  */
-int SelvaSubscriptions_DeleteMarkerByPtr(
+void SelvaSubscriptions_DeleteMarkerByPtr(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker);
 

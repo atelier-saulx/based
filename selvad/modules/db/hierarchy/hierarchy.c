@@ -975,7 +975,7 @@ static int crossRemove(
         return SELVA_HIERARCHY_ENOTSUP;
     }
 
-    SelvaSubscriptions_RefreshByMarker(hierarchy, &sub_markers);
+    SelvaSubscriptions_RefreshSubsByMarker(hierarchy, &sub_markers);
 
     return 0;
 }
@@ -1048,7 +1048,7 @@ static int removeRelationships(
     }
     SVector_Clear(vec_a);
 
-    SelvaSubscriptions_RefreshByMarker(hierarchy, &sub_markers);
+    SelvaSubscriptions_RefreshSubsByMarker(hierarchy, &sub_markers);
 
     if (rel == RELATIONSHIP_CHILD) {
         mkHead(hierarchy, node);

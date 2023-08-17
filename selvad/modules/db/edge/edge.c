@@ -505,73 +505,6 @@ static int remove_origin_ref(struct EdgeField *src_edge_field, struct SelvaHiera
     return 0;
 }
 
-/**
- * Delete markers that are related to edge traversing markers reaching from src to dst.
- * This function allows the client to create any markers on the dst node and
- * get them cleaned up automatically when the edge between the two nodes is
- * removed. A related marker is one that has the same subscription id as the
- * marker on the destination node and it starts from the source node.
- */
-static void remove_related_edge_markers(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *src_node,
-        struct SelvaHierarchyNode *dst_node) {
-    SVECTOR_AUTOFREE(sub_markers);
-    struct SVectorIterator dst_it;
-    struct Selva_SubscriptionMarker *dst_marker;
-    const struct SelvaHierarchyMetadata *src_meta;
-    const struct SelvaHierarchyMetadata *dst_meta;
-    Selva_NodeId src_node_id;
-
-    src_meta = SelvaHierarchy_GetNodeMetadataByPtr(src_node);
-    dst_meta = SelvaHierarchy_GetNodeMetadataByPtr(dst_node);
-    SelvaHierarchy_GetNodeId(src_node_id, src_node);
-
-    if (unlikely(!SVector_Clone(&sub_markers, &dst_meta->sub_markers.vec, NULL))) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to remove sub markers from a referenced node");
-        return;
-    }
-
-    SVector_ForeachBegin(&dst_it, &sub_markers);
-    while ((dst_marker = SVector_Foreach(&dst_it))) {
-        struct SVectorIterator src_it;
-        const struct Selva_SubscriptionMarker *src_marker;
-
-        if ((dst_marker->dir &
-             (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-              SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-              SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-              SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) &&
-            !memcmp(dst_marker->node_id, src_node_id, SELVA_NODE_ID_SIZE)) {
-            /*
-             * Skip markers that are fixable with a clear & refresh,
-             * edge traversing markers, that are actually important for
-             * determining which markers are related to the edge subscription.
-             */
-            continue;
-        }
-
-        /*
-         * The contract is that we must delete all markers that belong to the
-         * same subscription as an edge traversing marker on the source node.
-         */
-        SVector_ForeachBegin(&src_it, &src_meta->sub_markers.vec);
-        while ((src_marker = SVector_Foreach(&src_it))) {
-            if ((src_marker->dir &
-                 (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                  SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-                  SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                  SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) &&
-                src_marker->sub == dst_marker->sub &&
-                !memcmp(src_marker->node_id, src_node_id, SELVA_NODE_ID_SIZE)) {
-                unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
-                dst_marker->marker_action(hierarchy, dst_marker, flags, NULL, 0, dst_node);
-                (void)SelvaSubscriptions_DeleteMarkerByPtr(hierarchy, dst_marker);
-            }
-        }
-    }
-}
-
 int Edge_Delete(
         struct SelvaHierarchy *hierarchy,
         struct EdgeField *edge_field,
@@ -588,12 +521,6 @@ int Edge_Delete(
         return SELVA_ENOENT;
     }
 
-    /*
-     * RFE There used to be an if for ctx before these two lines.
-     * ctx is not set if the function is called from RDB functions or some
-     * initialization functions in hierarchy.
-     */
-    remove_related_edge_markers(hierarchy, src_node, dst_node);
     SelvaSubscriptions_ClearAllMarkers(hierarchy, src_node);
 
     /*
