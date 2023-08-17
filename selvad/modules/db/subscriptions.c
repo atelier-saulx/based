@@ -771,7 +771,7 @@ int Selva_AddSubscriptionAliasMarker(
     struct rpn_expression *filter_expression = NULL;
     int err = 0;
 
-    old_marker = SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id);
+    old_marker = find_marker(hierarchy, marker_id);
     if (old_marker) {
         if (memcmp(old_marker->node_id, node_id, SELVA_NODE_ID_SIZE)) {
             TO_STR(alias_name);
@@ -783,8 +783,7 @@ int Selva_AddSubscriptionAliasMarker(
                       (int)SELVA_NODE_ID_SIZE, node_id);
         }
 
-        /* Marker already created. */
-        return SELVA_SUBSCRIPTIONS_EEXIST;
+        return upsert_sub_marker(hierarchy, sub_id, old_marker);
     }
 
     /*
@@ -828,7 +827,7 @@ int Selva_AddSubscriptionAliasMarker(
         goto fail;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker); /* TODO Interim hack */
+    upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_node_id(marker, node_id);
     marker_set_dir(marker, SELVA_HIERARCHY_TRAVERSAL_NODE);
     marker_set_filter(marker, filter_ctx, filter_expression);
@@ -860,9 +859,9 @@ int SelvaSubscriptions_AddCallbackMarker(
     struct Selva_SubscriptionMarker *marker;
     int err = 0;
 
-    if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
-        /* Marker already created. */
-        return SELVA_SUBSCRIPTIONS_EEXIST;
+    marker = find_marker(hierarchy, marker_id);
+    if (marker) {
+        return upsert_sub_marker(hierarchy, sub_id, marker);
     }
 
     if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) && dir_expression_str) {
@@ -1944,8 +1943,8 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     size_t fields_len = 0;
     struct selva_string *filter_expr = NULL;
     struct selva_string **filter_args = NULL;
-    int argc;
-    int err;
+    struct Selva_SubscriptionMarker *marker;
+    int err, argc;
 
     finalizer_init(&fin);
 
@@ -1965,8 +1964,9 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         return;
     }
 
-    if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
-        /* Marker already created. */
+    marker = find_marker(hierarchy, marker_id);
+    if (marker) {
+        upsert_sub_marker(hierarchy, sub_id, marker);
         selva_send_ll(resp, 1);
         return;
     }
@@ -2078,7 +2078,6 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         marker_flags = SELVA_SUBSCRIPTION_FLAG_REF;
     }
 
-    struct Selva_SubscriptionMarker *marker;
     err = new_marker(hierarchy, marker_id, fields_str, fields_len, marker_flags, defer_update_event, &marker);
     if (err) {
         if (err == SELVA_SUBSCRIPTIONS_EEXIST) {
@@ -2099,7 +2098,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker); /* TODO Interim hack */
+    upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_node_id(marker, node_id);
     marker_set_dir(marker, query_opts.dir);
     if (query_opts.dir_opt_str) {
@@ -2255,8 +2254,8 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
     enum Selva_SubscriptionTriggerType event_type = SELVA_SUBSCRIPTION_TRIGGER_TYPE_NONE;
     struct selva_string *filter_expr = NULL;
     struct selva_string **filter_args = NULL;
-    int argc;
-    int err;
+    struct Selva_SubscriptionMarker *marker;
+    int err, argc;
 
     finalizer_init(&fin);
 
@@ -2281,8 +2280,9 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
         return;
     }
 
-    if (SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id)) {
-        /* Marker already created. */
+    marker = find_marker(hierarchy, marker_id);
+    if (marker) {
+        (void)upsert_sub_marker(hierarchy, sub_id, marker);
         selva_send_ll(resp, 1);
         return;
     }
@@ -2329,7 +2329,6 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
     }
 
     const unsigned short marker_flags = SELVA_SUBSCRIPTION_FLAG_DETACH | SELVA_SUBSCRIPTION_FLAG_TRIGGER;
-    struct Selva_SubscriptionMarker *marker;
 
     /*
      * Trigger never checks fields.
@@ -2349,7 +2348,7 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker); /* TODO Interim hack */
+    upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_trigger(marker, event_type);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
