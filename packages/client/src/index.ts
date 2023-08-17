@@ -17,7 +17,14 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { ExecContext, addMarkers, applyDefault, execParallel, get } from './get'
+import {
+  ExecContext,
+  GetCommand,
+  addMarkers,
+  applyDefault,
+  execParallel,
+  get,
+} from './get'
 import genId from './id'
 import { deepMergeArrays } from '@saulx/utils'
 import { getCmd, purgeCache } from './get/exec/cmd'
@@ -274,7 +281,7 @@ export class BasedDbClient extends Emitter {
 
   async refreshMarker(markerId: number): Promise<void> {
     purgeCache(markerId)
-    await this.command('subscriptions.refreshMarker', [markerId])
+    // await this.command('subscriptions.refreshMarker', [markerId]) // TODO: crash (olli)
   }
 
   async sub(
@@ -284,6 +291,7 @@ export class BasedDbClient extends Emitter {
     subId: number
     cleanup: () => Promise<void>
     fetch: () => Promise<any>
+    pending?: GetCommand
   }> {
     const { subId, markerId, merged, defaults, pending, markers } = await get(
       this,
@@ -337,7 +345,7 @@ export class BasedDbClient extends Emitter {
       return merged
     }
 
-    return { cleanup, fetch, subId }
+    return { pending, cleanup, fetch, subId }
   }
 
   onData(data: Buffer) {
