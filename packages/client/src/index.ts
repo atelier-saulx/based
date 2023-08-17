@@ -276,6 +276,7 @@ export class BasedDbClient extends Emitter {
     opts: any,
     eventOpts?: { markerId: number; subId: number }
   ): Promise<{
+    subId: number
     cleanup: () => Promise<void>
     fetch: () => Promise<any>
     refresh: () => Promise<void>
@@ -361,7 +362,7 @@ export class BasedDbClient extends Emitter {
       return merged
     }
 
-    return { cleanup, refresh, fetch }
+    return { cleanup, refresh, fetch, subId }
   }
 
   onData(data: Buffer) {
