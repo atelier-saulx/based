@@ -76,15 +76,15 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
     CMD_RESULT_CACHE.delete(cmdID)
-  }
+  } else {
+    if (!result) {
+      result = await execCmd(ctx, opts)
+    }
 
-  if (!result) {
-    result = await execCmd(ctx, opts)
-  }
-
-  if (subId) {
-    ctx.markers.push(opts)
-    CMD_RESULT_CACHE.set(cmdID, result)
+    if (subId) {
+      ctx.markers.push(opts)
+      CMD_RESULT_CACHE.set(cmdID, result)
+    }
   }
 
   if (cmd.type === 'ids' && cmd.nestedFind) {

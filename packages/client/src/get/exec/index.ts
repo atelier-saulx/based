@@ -96,7 +96,7 @@ async function execParallel(ctx: ExecContext, cmds: GetCommand[]) {
   while (q.length) {
     const results = await Promise.all(
       q.map(async (cmd) => {
-        if (subId && (cmd.markerId ?? cmd.cmdId) === markerId) {
+        if (subId && (cmd.markerId ?? cmd.cmdId) === markerId && !ctx.cleanup) {
           // clean up markers and cache
           await execParallel({ ...ctx, cleanup: true }, [cmd])
         }
