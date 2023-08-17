@@ -133,6 +133,29 @@ static void migrate_arr_to_rbtree(SVector *vec) {
     vec->vec_arr_shift_index = 0;
 }
 
+SVector *SVector_Concat(SVector *dest, const SVector *src) {
+    enum SVectorMode mode = SVector_Mode(src);
+    struct SVectorIterator it;
+    void *el;
+
+    if (mode != SVECTOR_MODE_ARRAY && mode != SVECTOR_MODE_RBTREE) {
+        return NULL;
+    }
+
+    SVector_ForeachBegin(&it, src);
+    if (dest->vec_compar) {
+        while ((el = SVector_Foreach(&it))) {
+            SVector_InsertFast(dest, el);
+        }
+    } else {
+        while ((el = SVector_Foreach(&it))) {
+            SVector_Insert(dest, el);
+        }
+    }
+
+    return dest;
+}
+
 SVector *SVector_Clone(SVector *dest, const SVector *src, int (*compar)(const void **a, const void **b)) {
     enum SVectorMode mode = SVector_Mode(src);
 
