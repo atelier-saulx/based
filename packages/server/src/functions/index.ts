@@ -335,7 +335,7 @@ export class BasedFunctions {
     spec?: BasedFunctionConfig | BasedFunctionConfigComplete | null
   ): Promise<boolean> {
     if (this.beingUninstalled[name]) {
-      console.error('Allready being unregistered...', name)
+      console.error('Function already being uninstalled...', name)
     }
     if (!spec && spec !== null) {
       spec = this.specs[name]

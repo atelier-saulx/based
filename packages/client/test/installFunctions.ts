@@ -45,7 +45,7 @@ test.serial('uninstalled function is no longer callable', async (t) => {
       configs: {
         bla: {
           type: 'function',
-          uninstallAfterIdleTime: -1,
+          uninstallAfterIdleTime: 1,
           fn: async () => {
             return 'x'
           },
@@ -61,8 +61,12 @@ test.serial('uninstalled function is no longer callable', async (t) => {
   const x = await client.call('bla')
   t.is(x, 'x')
 
+  t.assert(Object.keys(server.functions.routes).includes('bla'))
+
   await server.functions.uninstall('bla')
   await wait(200)
+
+  t.assert(!Object.keys(server.functions.routes).includes('bla'))
 
   await t.throwsAsync(client.call('bla'))
 
