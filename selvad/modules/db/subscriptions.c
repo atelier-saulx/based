@@ -2627,7 +2627,7 @@ static int Subscriptions_OnLoad(void) {
      * observed or serialized key values in any way. This is important
      * because we need to be able to create markers on readonly replicas.
      */
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD, SELVA_CMD_MODE_PURE, "subscriptions.add", SelvaSubscriptions_AddMarkerCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.addMarker", SelvaSubscriptions_AddMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDALIAS, SELVA_CMD_MODE_PURE, "subscriptions.addAlias", SelvaSubscriptions_AddAliasCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDMISSING, SELVA_CMD_MODE_PURE, "subscriptions.addMissing", SelvaSubscriptions_AddMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDTRIGGER, SELVA_CMD_MODE_PURE, "subscriptions.addTrigger", SelvaSubscriptions_AddTriggerCommand);
