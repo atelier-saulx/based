@@ -17,8 +17,10 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { get } from './get'
+import { ExecContext, addMarkers, applyDefault, execParallel, get } from './get'
 import genId from './id'
+import { deepMergeArrays } from '@saulx/utils'
+import { getCmd, purgeCache } from './get/exec/cmd'
 
 export * as protocol from './protocol'
 
@@ -260,14 +262,106 @@ export class BasedDbClient extends Emitter {
   }
 
   async get(opts: any): Promise<any> {
-    return get(this, opts)
+    const { merged, defaults } = await get(this, opts)
+    console.dir({ merged, defaults })
+
+    for (const d of defaults) {
+      applyDefault(merged, d)
+    }
+
+    return merged
   }
 
   async sub(
     opts: any,
     eventOpts?: { markerId: number; subId: number }
-  ): Promise<any> {
-    return get(this, opts, { isSubscription: true, ...eventOpts })
+  ): Promise<{
+    cleanup: () => Promise<void>
+    fetch: () => Promise<any>
+    refresh: () => Promise<void>
+  }> {
+    const { subId, markerId, merged, defaults, pending, markers } = await get(
+      this,
+      opts,
+      {
+        isSubscription: true,
+        ...eventOpts,
+      }
+    )
+
+    await addMarkers({ client: this, subId, markerId }, markers)
+
+    console.dir({ merged, defaults, pending }, { depth: 7 })
+
+    const refresh = async () => {
+      if (!pending) {
+        return
+      }
+
+      // FIXME: temporary until we can refresh it, this will re-add the marker
+      await getCmd(
+        {
+          client: this,
+          subId,
+          cleanup: true,
+        },
+        pending
+      )
+
+      await getCmd(
+        {
+          client: this,
+          subId,
+          markerId,
+          markers: [],
+        },
+        pending
+      )
+
+      // TODO: this commands is for sub, replace with marker refresh
+      // this.command('subscriptions.refresh', [cmdID])
+    }
+
+    const cleanup = async () => {
+      if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
+        return
+      }
+
+      const ctx: ExecContext = {
+        client: this,
+        subId,
+        markerId,
+        cleanup: true,
+      }
+
+      await execParallel(ctx, [pending])
+    }
+
+    // new results
+    const fetch = async () => {
+      if (pending) {
+        const ctx: ExecContext = {
+          client: this,
+          subId,
+          markerId,
+          markers: [],
+          refresh: true,
+        }
+
+        const { nestedObjs } = await execParallel(ctx, [pending])
+        await addMarkers(ctx, [...ctx.markers])
+
+        deepMergeArrays(merged, ...nestedObjs)
+      }
+
+      for (const d of defaults) {
+        applyDefault(merged, d)
+      }
+
+      return merged
+    }
+
+    return { cleanup, fetch, refresh }
   }
 
   onData(data: Buffer) {

@@ -61,8 +61,12 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 }
 
 // DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
-// TODO: make real cache with functions etc. nice
+// TODO: move cache to ctx.client? so we can keep old values better until we are done with the whole event
 const CMD_RESULT_CACHE: Map<number, any> = new Map()
+
+export function purgeCache(cmdID: number): void {
+  CMD_RESULT_CACHE.delete(cmdID)
+}
 
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client, subId } = ctx
@@ -71,7 +75,13 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { cmdID } = opts
 
   let result = subId ? CMD_RESULT_CACHE.get(cmdID) : undefined
+
   if (ctx.cleanup) {
+    if (cmdID === ctx.markerId) {
+      // skip cleanup, we need to refresh (just once per batch, so handled separately)
+      return result
+    }
+
     await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)

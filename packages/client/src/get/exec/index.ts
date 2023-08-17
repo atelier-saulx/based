@@ -9,9 +9,9 @@ import { parseGetOpts, parseGetResult } from '../parse'
 import { getCmd } from './cmd'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { applyDefault } from '..'
 import { createRecord } from 'data-record'
 import { subscription_opts_def } from '../../protocol'
+import { Path } from '@based/schema'
 
 export async function get(
   client: BasedDbClient,
@@ -27,15 +27,16 @@ export async function get(
   } = {
     isSubscription: false,
   }
-): Promise<any> {
+): Promise<{
+  merged: any
+  defaults?: { path: Path; value: any }[]
+  pending?: GetCommand
+  subId?: number
+  markerId?: number
+  markers?: any[]
+}> {
   const ctx: ExecContext = {
     client,
-  }
-
-  if (isSubscription) {
-    ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
-    ctx.markerId = markerId
-    ctx.markers = []
   }
 
   let { $id, $language, $alias } = opts
@@ -46,7 +47,7 @@ export async function get(
     $id = resolved?.[0]
 
     if (!$id) {
-      return {}
+      return { merged: {}, defaults: [] }
     }
   }
 
@@ -56,49 +57,80 @@ export async function get(
 
   const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
 
-  const nestedObjs = await execParallel(ctx, cmds)
+  if (isSubscription) {
+    ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
+    ctx.markerId = markerId
+    ctx.markers = []
+  }
+
+  const { nestedObjs, pending } = await execParallel(ctx, cmds)
 
   console.dir({ cmds, defaults }, { depth: 8 })
-  if (ctx.markers?.length) {
-    await Promise.all(
-      ctx.markers.map((marker) => {
-        return client.command('subscriptions.add', [
-          ctx.subId,
-          marker.cmdID,
-          createRecord(subscription_opts_def, marker.struct),
-          marker.nodeId,
-          marker.strFields,
-          ...marker.rpn,
-        ])
-      })
-    )
-  }
 
   const merged =
     nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
       ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
       : deepMergeArrays({}, ...nestedObjs) // else merge all the results
 
-  for (const d of defaults) {
-    applyDefault(merged, d)
+  return {
+    merged,
+    defaults,
+    pending,
+    subId: ctx.subId,
+    markerId,
+    markers: ctx.markers,
   }
-
-  return merged
 }
 
-async function execParallel(ctx: ExecContext, cmds: GetCommand[]) {
-  const { markerId, subId } = ctx
+export async function addMarkers(
+  ctx: ExecContext,
+  markers: any[]
+): Promise<void> {
+  const { subId, client } = ctx
+  await Promise.all(
+    markers.map((marker) => {
+      return client.command('subscriptions.add', [
+        subId,
+        marker.cmdID,
+        createRecord(subscription_opts_def, marker.struct),
+        marker.nodeId,
+        marker.strFields,
+        ...marker.rpn,
+      ])
+    })
+  )
+}
 
+export async function execParallel(
+  ctx: ExecContext,
+  cmds: GetCommand[]
+): Promise<{ nestedObjs: any[]; pending?: GetCommand }> {
+  const { markerId, subId, cleanup, refresh } = ctx
+
+  let pending: GetCommand
   let q = cmds
   const nestedIds: any[] = []
   const nestedObjs: any[] = []
   let i = 0
   while (q.length) {
+    const p = q.find((cmd) => {
+      return subId && (cmd.markerId ?? cmd.cmdId) === markerId && !ctx.cleanup
+    })
+
+    if (p) {
+      pending = p
+    }
+
     const results = await Promise.all(
       q.map(async (cmd) => {
-        if (subId && (cmd.markerId ?? cmd.cmdId) === markerId && !ctx.cleanup) {
-          // clean up markers and cache
-          await execParallel({ ...ctx, cleanup: true }, [cmd])
+        if (
+          !refresh &&
+          subId &&
+          !cleanup &&
+          (cmd.markerId ?? cmd.cmdId) === markerId
+        ) {
+          // return a shallow result for changed subgraph unless cleaning or refreshing result
+          return [[]]
         }
 
         return getCmd(ctx, cmd)
@@ -148,5 +180,5 @@ async function execParallel(ctx: ExecContext, cmds: GetCommand[]) {
     i++
   }
 
-  return nestedObjs
+  return { nestedObjs, pending }
 }
