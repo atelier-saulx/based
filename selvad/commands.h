@@ -389,9 +389,9 @@
 /**
  * Add subscription marker.
  * module: db
- * cmd: subscriptions.add
+ * cmd: subscriptions.addMarker
  */
-#define CMD_ID_SUBSCRIPTIONS_ADD 58
+#define CMD_ID_SUBSCRIPTIONS_ADD_MARKER 58
 
 /**
  * Add subscription marker.
