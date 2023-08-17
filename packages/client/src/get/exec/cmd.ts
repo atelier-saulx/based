@@ -61,7 +61,7 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 }
 
 // DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
-// TODO: move cache to ctx.client? so we can keep old values better until we are done with the whole event
+// TODO: make it an LRU cache so we can do sanity checks on interval to see if we missed updates
 const CMD_RESULT_CACHE: Map<number, any> = new Map()
 
 export function purgeCache(cmdID: number): void {
