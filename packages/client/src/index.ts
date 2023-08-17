@@ -361,7 +361,7 @@ export class BasedDbClient extends Emitter {
       return merged
     }
 
-    return { cleanup, fetch, refresh }
+    return { cleanup, refresh, fetch }
   }
 
   onData(data: Buffer) {
