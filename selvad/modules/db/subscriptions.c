@@ -1823,11 +1823,13 @@ void SelvaSubscriptions_DeferTriggerEvents(
 
 static void send_event(const struct Selva_SubscriptionMarker *marker, typeof_field(struct SelvaSubscriptions_PubsubMessage, event_type) event_type) {
         struct SelvaSubscriptions_PubsubMessage *msg;
+        size_t msg_size;
         struct SVectorIterator it;
         const struct Selva_Subscription *sub;
         size_t i = 0;
 
-        msg = selva_calloc(1, sizeof(*msg) + SVector_Size(&marker->subs) * sizeof(Selva_SubscriptionId));
+        msg_size = sizeof(*msg) + SVector_Size(&marker->subs) * sizeof(Selva_SubscriptionId);
+        msg = selva_calloc(1, msg_size);
 
         msg->event_type = event_type;
         memcpy(msg->node_id, marker->filter_history.node_id, SELVA_NODE_ID_SIZE);
@@ -1838,7 +1840,7 @@ static void send_event(const struct Selva_SubscriptionMarker *marker, typeof_fie
             msg->sub_ids[i++] = sub->sub_id;
         }
 
-        selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, sizeof(msg));
+        selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, msg_size);
         selva_free(msg);
 }
 
