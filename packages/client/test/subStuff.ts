@@ -178,6 +178,11 @@ test.only('set primitive fields', async (t) => {
       createdAt: false,
       updatedAt: false,
       hmm: { $field: ['nonExistingField', 'children'] },
+      parents: {
+        id: true,
+        slug: true,
+        $list: true,
+      },
       $list: {
         $find: {
           $traverse: 'descendants',
@@ -190,6 +195,7 @@ test.only('set primitive fields', async (t) => {
       },
     },
   })
+  console.dir({ find }, { depth: 8 })
 
   t.deepEqual(find.things.length, 3)
   t.deepEqual(find, {
@@ -212,6 +218,7 @@ test.only('set primitive fields', async (t) => {
         ts: 1690289344322,
         children: ['po2'],
         hmm: ['po2'],
+        parents: [{ id: 'root' }],
       },
       {
         type: 'post',
@@ -222,8 +229,15 @@ test.only('set primitive fields', async (t) => {
         uniqs: 2,
         children: [third],
         hmm: [third],
+        parents: [{ id: 'po1', slug: '/hello-world' }, { id: 'root' }],
       },
-      { id: third, type: 'post', slug: '/third', aliases: ['3rd'] },
+      {
+        id: third,
+        type: 'post',
+        slug: '/third',
+        aliases: ['3rd'],
+        parents: [{ id: 'po2' }],
+      },
     ],
   })
 
