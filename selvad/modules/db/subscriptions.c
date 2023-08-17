@@ -1837,13 +1837,13 @@ static void send_event(const struct Selva_SubscriptionMarker *marker, typeof_fie
     msg->event_type = event_type;
     memcpy(msg->node_id, marker->filter_history.node_id, SELVA_NODE_ID_SIZE);
     msg->marker_id = marker->marker_id;
-    msg->sub_ids = sizeof(*msg);
+    msg->sub_ids = (void *)sizeof(*msg);
     msg->sub_ids_size = sub_ids_size;
-    sub_ids = msg + sizeof(*msg);
+    sub_ids = (void *)((char *)msg + sizeof(*msg));
 
     SVector_ForeachBegin(&it, &marker->subs);
     while ((sub = SVector_Foreach(&it))) {
-        msg->sub_ids[i++] = sub->sub_id;
+        sub_ids[i++] = sub->sub_id;
     }
 
     selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, msg_size);
@@ -2424,9 +2424,6 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
         return;
     }
 
-
-
-    struct Selva_Subscription *sub;
     struct Selva_SubscriptionMarker *marker;
     marker = find_marker(hierarchy, marker_id);
     if (!marker) {
