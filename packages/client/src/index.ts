@@ -272,6 +272,11 @@ export class BasedDbClient extends Emitter {
     return merged
   }
 
+  async refreshMarker(markerId: number): Promise<void> {
+    purgeCache(markerId)
+    await this.command('subscriptions.refreshMarker', [markerId])
+  }
+
   async sub(
     opts: any,
     eventOpts?: { markerId: number; subId: number }
@@ -279,7 +284,6 @@ export class BasedDbClient extends Emitter {
     subId: number
     cleanup: () => Promise<void>
     fetch: () => Promise<any>
-    refresh: () => Promise<void>
   }> {
     const { subId, markerId, merged, defaults, pending, markers } = await get(
       this,
@@ -293,35 +297,6 @@ export class BasedDbClient extends Emitter {
     await addMarkers({ client: this, subId, markerId }, markers)
 
     console.dir({ merged, defaults, pending }, { depth: 7 })
-
-    const refresh = async () => {
-      if (!pending) {
-        return
-      }
-
-      // FIXME: temporary until we can refresh it, this will re-add the marker
-      await getCmd(
-        {
-          client: this,
-          subId,
-          cleanup: true,
-        },
-        pending
-      )
-
-      await getCmd(
-        {
-          client: this,
-          subId,
-          markerId,
-          markers: [],
-        },
-        pending
-      )
-
-      // TODO: this commands is for sub, replace with marker refresh
-      // this.command('subscriptions.refresh', [cmdID])
-    }
 
     const cleanup = async () => {
       if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
@@ -362,7 +337,7 @@ export class BasedDbClient extends Emitter {
       return merged
     }
 
-    return { cleanup, refresh, fetch, subId }
+    return { cleanup, fetch, subId }
   }
 
   onData(data: Buffer) {

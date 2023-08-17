@@ -189,7 +189,7 @@ test.only('durr', async (t) => {
     },
   })
   await sub.cleanup()
-  await sub.refresh()
+  await client.refreshMarker(3805838763871)
   let find = await sub.fetch()
 
   console.dir({ find }, { depth: 8 })
@@ -278,7 +278,7 @@ test.only('durr', async (t) => {
   )
 
   await sub.cleanup()
-  await sub.refresh()
+  await client.refreshMarker(3805838763871)
   find = await sub.fetch()
 
   console.dir({ find }, { depth: 8 })
