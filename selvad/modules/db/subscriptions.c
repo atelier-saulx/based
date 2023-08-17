@@ -71,6 +71,7 @@ static const struct SelvaObjectPointerOpts subs_missing_obj_opts = {
 };
 
 SELVA_TRACE_HANDLE(cmd_subscriptions_refresh);
+SELVA_TRACE_HANDLE(cmd_subscriptions_refresh_marker);
 
 static struct Selva_Subscription *find_sub(SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id);
 static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker, const Selva_NodeId node_id);
@@ -2404,6 +2405,43 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
     }
 }
 
+/*
+ * SUBSCRIPTIONS.refreshMarker MRK_ID
+ */
+void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+    SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh_marker);
+    SelvaHierarchy *hierarchy = main_hierarchy;
+    Selva_SubscriptionMarkerId marker_id;
+    int argc, err;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%" PRImrkId, &marker_id);
+    if (argc != 1) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
+        return;
+    }
+
+
+
+    struct Selva_Subscription *sub;
+    struct Selva_SubscriptionMarker *marker;
+    marker = find_marker(hierarchy, marker_id);
+    if (!marker) {
+        selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
+        return;
+    }
+
+    err = refresh_marker(hierarchy, marker);
+    if (err) {
+        selva_send_error(resp, err, NULL, 0);
+    } else {
+        selva_send_ll(resp, 1);
+    }
+}
+
 static void Selva_Subscription_reply(struct selva_server_response_out *resp, void *p)
 {
     struct Selva_Subscription *sub = p;
@@ -2634,10 +2672,11 @@ static int Subscriptions_OnLoad(void) {
      * because we need to be able to create markers on readonly replicas.
      */
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.addMarker", SelvaSubscriptions_AddMarkerCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDALIAS, SELVA_CMD_MODE_PURE, "subscriptions.addAlias", SelvaSubscriptions_AddAliasCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDMISSING, SELVA_CMD_MODE_PURE, "subscriptions.addMissing", SelvaSubscriptions_AddMissingCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADDTRIGGER, SELVA_CMD_MODE_PURE, "subscriptions.addTrigger", SelvaSubscriptions_AddTriggerCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_ALIAS, SELVA_CMD_MODE_PURE, "subscriptions.addAlias", SelvaSubscriptions_AddAliasCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MISSING, SELVA_CMD_MODE_PURE, "subscriptions.addMissing", SelvaSubscriptions_AddMissingCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_TRIGGER, SELVA_CMD_MODE_PURE, "subscriptions.addTrigger", SelvaSubscriptions_AddTriggerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LIST, SELVA_CMD_MODE_PURE, "subscriptions.list", SelvaSubscriptions_ListCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMISSING, SELVA_CMD_MODE_PURE, "subscriptions.listMissing", SelvaSubscriptions_ListMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEBUG, SELVA_CMD_MODE_PURE, "subscriptions.debug", SelvaSubscriptions_DebugCommand);

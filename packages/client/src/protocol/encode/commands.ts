@@ -20,7 +20,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   replicawait: null,
   // essential
   'resolve.nodeid': defaultEncoder([
-    { type: 'string' }, // sub id
+    { type: 'longlong' }, // sub id
     { type: 'string', vararg: true }, // ...(id | alias)
   ]),
   publish: defaultEncoder([
