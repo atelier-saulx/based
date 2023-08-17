@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020-2021 SAULX
+ * Copyright (c) 2020-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -82,6 +82,7 @@ static inline int SVector_IsInitialized(const SVector *vec) {
 
 void SVector_Init(SVector *vec, size_t initial_len, int (*compar)(const void **a, const void **b));
 void SVector_Destroy(SVector *vec);
+SVector *SVector_Concat(SVector *dest, const SVector *src);
 SVector *SVector_Clone(SVector *dest, const SVector *src, int (*compar)(const void **a, const void **b));
 void SVector_Insert(SVector *vec, void *el);
 void SVector_SetIndex(SVector *vec, size_t idx, void *el);
