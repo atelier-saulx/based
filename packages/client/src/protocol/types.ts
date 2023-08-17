@@ -36,7 +36,7 @@ export const COMMAND_TYPES = {
   'object.incrbydouble': 51,
   'object.keys': 54,
   // modify related commands
-  modify: 68,
+  modify: 69,
   // TODO:
   // #define CMD_ID_UPDATE 70
   // hierarchy
