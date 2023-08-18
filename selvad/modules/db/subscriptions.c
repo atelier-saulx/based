@@ -512,7 +512,7 @@ static struct Selva_SubscriptionMarker *find_sub_marker(
 
 static void set_marker(struct Selva_SubscriptionMarkers *sub_markers, struct Selva_SubscriptionMarker *marker) {
     if (!SVector_InsertFast(&sub_markers->vec, marker)) {
-        sub_markers->flags_filter |= marker->marker_flags & SELVA_SUBSCRIPTION_MATCHER_FLAGS_MASK;
+        sub_markers->flags_filter |= marker->marker_flags;
     }
 }
 
@@ -524,7 +524,7 @@ static void reset_marker_filter(struct Selva_SubscriptionMarkers *sub_markers) {
 
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        sub_markers->flags_filter |= marker->marker_flags & SELVA_SUBSCRIPTION_MATCHER_FLAGS_MASK;
+        sub_markers->flags_filter |= marker->marker_flags;
     }
 }
 
