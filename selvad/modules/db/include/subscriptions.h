@@ -175,6 +175,12 @@ struct Selva_SubscriptionMarker {
      */
     struct {
         /**
+         * Flags for deferred events.
+         * defer_event() will OR the flags received to this.
+         */
+        enum SelvaSubscriptionsMarkerFlags flags;
+
+        /**
          * The node that is undergoing a change.
          * This shall be used as an invariant between function calls to
          * subscriptions.
@@ -184,7 +190,7 @@ struct Selva_SubscriptionMarker {
          * Filter result on SelvaSubscriptions_FieldChangePrecheck().
          */
         int res;
-    } filter_history;
+    } history;
 
     struct SVector subs; /*!< Subscriptions using this marker. */
     RB_ENTRY(Selva_SubscriptionMarker) _mrk_index_entry; /*!< Entry for hierarchy->mrks_head */
@@ -210,8 +216,7 @@ struct Selva_SubscriptionMarkers {
  * A structure for deferring subscription events.
  */
 struct SelvaSubscriptions_DeferredEvents {
-    SVector updates; /*!< A set of Selva_SubscriptionMarkers. */
-    SVector triggers; /*!< A set of Selva_SubscriptionMarkers */
+    SVector events; /*!< A set of Selva_SubscriptionMarkers. */
 };
 
 /**
@@ -219,12 +224,9 @@ struct SelvaSubscriptions_DeferredEvents {
  * data-record compatible.
  */
 struct SelvaSubscriptions_PubsubMessage {
-    enum {
-        SELVA_SUB_UPDATE = 1,
-        SELVA_SUB_TRIGGER = 2,
-    } __packed event_type;
-    Selva_NodeId node_id;
     Selva_SubscriptionMarkerId marker_id;
+    enum SelvaSubscriptionsMarkerFlags flags;
+    Selva_NodeId node_id;
     Selva_SubscriptionId *sub_ids; /* Expect uint64_le_p */
     size_t sub_ids_size;
 };
