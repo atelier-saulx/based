@@ -123,7 +123,7 @@ enum Selva_SubscriptionTriggerType {
 typedef void Selva_SubscriptionMarkerAction(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags,
+        enum SelvaSubscriptionsMarkerFlags event_flags,
         const char *field_str,
         size_t field_len,
         struct SelvaHierarchyNode *node);
@@ -133,7 +133,7 @@ typedef void Selva_SubscriptionMarkerAction(
  */
 struct Selva_SubscriptionMarker {
     Selva_SubscriptionMarkerId marker_id;
-    unsigned short marker_flags;
+    enum SelvaSubscriptionsMarkerFlags marker_flags;
 
     enum SelvaTraversal dir;
     union {
@@ -199,7 +199,7 @@ struct Selva_SubscriptionMarkers {
      * Lookup filter.
      * All flags from sub_markers OR'ed for faster lookup.
      */
-    unsigned short flags_filter;
+    enum SelvaSubscriptionsMarkerFlags flags_filter;
     /**
      * A list of pointers to subscriptionMarker structures.
      */
@@ -323,7 +323,7 @@ int SelvaSubscriptions_AddCallbackMarker(
         struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
-        unsigned short marker_flags,
+        enum SelvaSubscriptionsMarkerFlags marker_flags,
         const Selva_NodeId node_id,
         enum SelvaTraversal dir,
         const char *dir_field,

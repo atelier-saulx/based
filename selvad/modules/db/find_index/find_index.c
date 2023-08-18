@@ -155,7 +155,7 @@ size_t SelvaFindIndex_IcbCard(const struct SelvaFindIndexControlBlock *icb) {
 static void update_index(
         struct SelvaHierarchy *hierarchy __unused,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags,
+        enum SelvaSubscriptionsMarkerFlags event_flags,
         const char *field_str,
         size_t field_len,
         struct SelvaHierarchyNode *node) {
