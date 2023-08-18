@@ -2673,7 +2673,7 @@ static int Subscriptions_OnLoad(void) {
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MISSING, SELVA_CMD_MODE_PURE, "subscriptions.addMissing", SelvaSubscriptions_AddMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_TRIGGER, SELVA_CMD_MODE_PURE, "subscriptions.addTrigger", SelvaSubscriptions_AddTriggerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LIST, SELVA_CMD_MODE_PURE, "subscriptions.list", SelvaSubscriptions_ListCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMISSING, SELVA_CMD_MODE_PURE, "subscriptions.listMissing", SelvaSubscriptions_ListMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEBUG, SELVA_CMD_MODE_PURE, "subscriptions.debug", SelvaSubscriptions_DebugCommand);
