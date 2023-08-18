@@ -87,6 +87,13 @@ enum SelvaSubscriptionsMarkerFlags {
     SELVA_SUBSCRIPTION_FLAG_TRIGGER = 0x0010,
 
     /**
+     * Missing accessor marker.
+     * This type of marker will only trigger once unless inserted back to the
+     * `missing` object.
+     */
+    SELVA_SUBSCRIPTION_FLAG_MISSING = 0x0040,
+
+    /**
      * Detached marker.
      * The marker should not be applied to nodes directly regardless
      * whether tarversal direction is set.
@@ -215,7 +222,7 @@ struct Selva_SubscriptionMarkers {
  * A structure for deferring subscription events.
  */
 struct SelvaSubscriptions_DeferredEvents {
-    SVector events; /*!< A set of Selva_SubscriptionMarkers. */
+    SVector marker_events; /*!< Marker based events. <struct Selva_SubscriptionMarker>. */
 };
 
 /**
@@ -431,6 +438,17 @@ void SelvaSubscriptions_DeferTriggerEvents(
  */
 void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy);
 
-void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, struct Selva_SubscriptionMarker *marker);
+typedef union {
+    struct Selva_Subscription *sub;
+    void *p;
+} Selva_SubscriptionReply_t __attribute__((__transparent_union__));
+
+typedef union {
+    struct Selva_SubscriptionMarker *marker;
+    void *p;
+} Selva_SubscriptionMarkerReply_t __attribute__((__transparent_union__));
+
+void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp);
+void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, Selva_SubscriptionMarkerReply_t mp);
 
 #endif /* SELVA_MODIFY_SUBSCRIPTIONS */
