@@ -79,20 +79,19 @@ enum SelvaSubscriptionsMarkerFlags {
     SELVA_SUBSCRIPTION_FLAG_REF = 0x0100,
 
     /**
+     * Trigger marker.
+     * Send a subscription trigger event.
+     * Trigger markers should always be stored as detached and have the
+     * SELVA_SUBSCRIPTION_FLAG_DETACH flags set.
+     */
+    SELVA_SUBSCRIPTION_FLAG_TRIGGER = 0x0010,
+
+    /**
      * Detached marker.
      * The marker should not be applied to nodes directly regardless
      * whether tarversal direction is set.
      */
     SELVA_SUBSCRIPTION_FLAG_DETACH = 0x0200,
-
-    /**
-     * Trigger marker.
-     * Send a subscription trigger event.
-     */
-    SELVA_SUBSCRIPTION_FLAG_TRIGGER = 0x0410,
-
-    SELVA_SUBSCRIPTION_MATCHER_FLAGS_MASK = 0x00ff,
-    SELVA_SUBSCRIPTION_MODIFIER_FLAGS = 0xff00,
 };
 
 /**
