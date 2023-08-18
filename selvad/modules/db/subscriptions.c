@@ -106,14 +106,14 @@ RB_GENERATE_STATIC(hierarchy_subscription_markers_tree, Selva_SubscriptionMarker
 static void defer_update_event(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags,
+        enum SelvaSubscriptionsMarkerFlags event_flags,
         const char *field_name,
         size_t field_len,
         struct SelvaHierarchyNode *node);
 static void defer_trigger_event(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags,
+        enum SelvaSubscriptionsMarkerFlags event_flags,
         const char *field_name,
         size_t field_len,
         struct SelvaHierarchyNode *node);
@@ -124,15 +124,15 @@ static void defer_event_for_traversing_markers(
 /**
  * The given marker flags matches to a hierarchy marker of any kind.
  */
-static int isHierarchyMarker(unsigned short flags) {
+static int isHierarchyMarker(enum SelvaSubscriptionsMarkerFlags flags) {
     return !!(flags & SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY);
 }
 
-static int isAliasMarker(unsigned short flags) {
+static int isAliasMarker(enum SelvaSubscriptionsMarkerFlags flags) {
     return !!(flags & SELVA_SUBSCRIPTION_FLAG_CH_ALIAS);
 }
 
-static int isTriggerMarker(unsigned short flags) {
+static int isTriggerMarker(enum SelvaSubscriptionsMarkerFlags flags) {
     return !!(flags & SELVA_SUBSCRIPTION_FLAG_TRIGGER);
 }
 
@@ -583,7 +583,7 @@ static int set_node_marker_cb(
     set_marker(&metadata->sub_markers, marker);
 
     if (marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_REFRESH) {
-        unsigned short flags = SELVA_SUBSCRIPTION_FLAG_REFRESH;
+        enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_REFRESH;
         marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
     }
 
@@ -668,7 +668,7 @@ static int new_marker(
         Selva_SubscriptionMarkerId marker_id,
         const char *fields_str,
         size_t fields_len,
-        unsigned short flags,
+        enum SelvaSubscriptionsMarkerFlags flags,
         Selva_SubscriptionMarkerAction *marker_action,
         struct Selva_SubscriptionMarker **out)
 {
@@ -845,7 +845,7 @@ int SelvaSubscriptions_AddCallbackMarker(
         SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
-        unsigned short marker_flags,
+        enum SelvaSubscriptionsMarkerFlags marker_flags,
         const Selva_NodeId node_id,
         enum SelvaTraversal dir,
         const char *dir_field,
@@ -1220,7 +1220,7 @@ void SelvaSubscriptions_ClearAllMarkers(
      */
     SVector_ForeachBegin(&it, &markers);
     while ((marker = SVector_Foreach(&it))) {
-        unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CL_HIERARCHY | SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+        enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CL_HIERARCHY | SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
         clear_node_sub(hierarchy, marker, node_id);
         marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
@@ -1367,7 +1367,7 @@ void SelvaSubscriptions_InheritEdge(
                     defer_all_traversing = 1;
                 } else if ((marker->dir & SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) &&
                            Selva_SubscriptionFilterMatch(hierarchy, dst_node, marker)) {
-                    unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+                    enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
                     /*
                      * In the case of a marker over single edge_field we should
@@ -1387,7 +1387,7 @@ void SelvaSubscriptions_InheritEdge(
 static void defer_update_event(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags __unused,
+        enum SelvaSubscriptionsMarkerFlags event_flags __unused,
         const char *field_str __unused,
         size_t field_len __unused,
         struct SelvaHierarchyNode *node __unused) {
@@ -1401,7 +1401,7 @@ static void defer_update_event(
 static void defer_trigger_event(
         struct SelvaHierarchy *hierarchy,
         struct Selva_SubscriptionMarker *marker,
-        unsigned short event_flags __unused,
+        enum SelvaSubscriptionsMarkerFlags event_flags __unused,
         const char *field_str __unused,
         size_t field_len __unused,
         struct SelvaHierarchyNode *node __unused) {
@@ -1472,7 +1472,7 @@ static void defer_traversing(
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
         if (marker->dir != SELVA_HIERARCHY_TRAVERSAL_NONE) {
-            unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+            enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
             marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
         }
@@ -1501,7 +1501,7 @@ static void defer_hierarchy_events(
         while ((marker = SVector_Foreach(&it))) {
             if (isHierarchyMarker(marker->marker_flags) &&
                 Selva_SubscriptionFilterMatch(hierarchy, node, marker)) {
-                unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+                enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
                 marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
             }
@@ -1537,7 +1537,7 @@ static void defer_hierarchy_deletion_events(
              * field subscriptions or inhibits.
              */
             if (isHierarchyMarker(marker->marker_flags)) {
-                unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+                enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
                 marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
             }
@@ -1580,7 +1580,7 @@ static void defer_alias_change_events(
             /* The filter should contain `in` matcher for the alias. */
             Selva_SubscriptionFilterMatch(hierarchy, node, marker)
             ) {
-            unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_ALIAS;
+            enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_ALIAS;
 
             marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
 
@@ -1600,7 +1600,7 @@ static void field_change_precheck(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct Selva_SubscriptionMarkers *sub_markers) {
-    const unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
+    const enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
 
     if ((sub_markers->flags_filter & flags) == flags) {
         struct SVectorIterator it;
@@ -1640,7 +1640,7 @@ static void defer_field_change_events(
         const struct Selva_SubscriptionMarkers *sub_markers,
         const char *field_str,
         size_t field_len) {
-    const unsigned short flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
+    const enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
 
     if ((sub_markers->flags_filter & flags) == flags) {
         struct SVectorIterator it;
@@ -1802,7 +1802,7 @@ void SelvaSubscriptions_DeferTriggerEvents(
             if (isTriggerMarker(marker->marker_flags) &&
                 marker->event_type == event_type &&
                 Selva_SubscriptionFilterMatch(hierarchy, node, marker)) {
-                unsigned short flags = SELVA_SUBSCRIPTION_FLAG_TRIGGER;
+                enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_TRIGGER;
 
                 /*
                  * The node_id might be there already if the marker has a filter
@@ -2074,7 +2074,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         }
     }
 
-    unsigned short marker_flags = 0;
+    enum SelvaSubscriptionsMarkerFlags marker_flags = 0;
 
     if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
                           SELVA_HIERARCHY_TRAVERSAL_PARENTS)) {
@@ -2336,7 +2336,7 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
         }
     }
 
-    const unsigned short marker_flags = SELVA_SUBSCRIPTION_FLAG_DETACH | SELVA_SUBSCRIPTION_FLAG_TRIGGER;
+    const enum SelvaSubscriptionsMarkerFlags marker_flags = SELVA_SUBSCRIPTION_FLAG_DETACH | SELVA_SUBSCRIPTION_FLAG_TRIGGER;
 
     /*
      * Trigger never checks fields.
