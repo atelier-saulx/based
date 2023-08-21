@@ -95,6 +95,20 @@ test.only('durr', async (t) => {
     },
   })
 
+  client.on('pubsub', ([chId, val]) => {
+    if (chId === 0) {
+      console.log('MARKER EVENT', chId, val)
+    } else {
+      console.log('EVENT', chId, val.toString('utf8'))
+    }
+  })
+
+  await client.command('subscribe', [0])
+  await client.command('subscribe', [1])
+  await wait(2e3)
+  await client.command('publish', [1, 'hello'])
+  await wait(1e3)
+
   await client.set({
     $id: 'me1',
     str: 'hello',

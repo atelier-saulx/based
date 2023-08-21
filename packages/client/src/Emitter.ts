@@ -2,6 +2,7 @@ export type EventMap = {
   reconnect: true
   disconnect: true
   connect: true
+  pubsub: [channelId: number, val?: any]
 }
 
 export type Event = keyof EventMap

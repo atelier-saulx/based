@@ -3,6 +3,7 @@ import {
   SELVA_PROTO_HDR_FFIRST,
   SELVA_PROTO_HDR_FLAST,
   SELVA_PROTO_HDR_FREQ_RES,
+  SELVA_PROTO_HDR_STREAM,
   decodeMessage,
   findFrame,
 } from './protocol'
@@ -47,7 +48,19 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       return
     }
 
-    // TODO: handle subscriptions (stream shit)
+    if (header.flags & SELVA_PROTO_HDR_STREAM) {
+      const msg = frame.subarray(IGNORED_FIRST_BYTES)
+      const [parsed] = decodeMessage(msg, -1)
+
+      const chId = client.subscriptionHandlers.get(header.seqno)
+      if (!chId) {
+        console.error('Channel id not found', chId)
+        continue
+      }
+
+      client.emit('pubsub', [chId, parsed])
+      continue
+    }
 
     if (
       header.flags & SELVA_PROTO_HDR_FFIRST &&
@@ -75,7 +88,7 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       continue
     }
 
-    let incoming
+    let incoming: any
     if (!client.incomingMessageBuffers.has(header.seqno)) {
       incoming = {
         ts: now,

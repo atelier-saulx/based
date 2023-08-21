@@ -13,6 +13,7 @@ import {
   CommandQueue,
   CommandResponseListeners,
   IncomingMessageBuffers,
+  SubscriptionHandlers,
 } from './types'
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
@@ -56,6 +57,7 @@ export class BasedDbClient extends Emitter {
   public drainInProgress: boolean = false
   // --------- Command State
   public commandResponseListeners: CommandResponseListeners = new Map()
+  public subscriptionHandlers: SubscriptionHandlers = new Map()
   public seqId: number = 0
   // ---------------
   // TODO: periodic cleanup
