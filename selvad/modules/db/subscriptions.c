@@ -737,6 +737,192 @@ static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *mar
     marker->traversal_expression = traversal_expression;
 }
 
+/**
+ * Do a traversal over the given marker.
+ * Bear in mind that cb is passed directly to the hierarchy traversal, thus any
+ * filter set in the marker is not executed and the callback must execute the
+ * filter if required.
+ */
+static int traverse_marker(
+        struct SelvaHierarchy *hierarchy,
+        struct Selva_SubscriptionMarker *marker,
+        SelvaHierarchyNodeCallback node_cb,
+        void *node_arg) {
+    int err = 0;
+    typeof(marker->dir) dir = marker->dir;
+    struct SelvaHierarchyCallback cb = {
+        .node_cb = node_cb,
+        .node_arg = node_arg,
+    };
+
+    /*
+     * Some traversals don't visit the head node but the marker system must
+     * always visit it.
+     */
+    if (dir &
+        (SELVA_HIERARCHY_TRAVERSAL_REF |
+         SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_PARENTS |
+         SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
+         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        cb.head_cb = node_cb;
+        cb.head_arg = node_arg;
+    }
+
+    if (marker->ref_field &&
+               (dir &
+                (SELVA_HIERARCHY_TRAVERSAL_REF |
+                 SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                 SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))) {
+        err = SelvaHierarchy_TraverseField(hierarchy, marker->node_id, dir, marker->ref_field, strlen(marker->ref_field), &cb);
+    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) &&
+               marker->traversal_expression) {
+        struct rpn_ctx *rpn_ctx;
+
+        rpn_ctx = rpn_init(1);
+        if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+            err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
+        } else {
+            err = SelvaHierarchy_TraverseExpression(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
+        }
+        rpn_destroy(rpn_ctx);
+    } else {
+        /*
+         * The rest of the traversal directions are handled by the following
+         * function.
+         * We might also end up here when dir is one of the previous ones but
+         * some other condition was false, or when dir is invalid. All possible
+         * invalid cases will be handled propely by the following function.
+         */
+        err = SelvaHierarchy_Traverse(hierarchy, marker->node_id, dir, &cb);
+    }
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_DBG, "Couldn't fully apply a subscription marker: %" PRImrkId " err: \"%s\"",
+                  marker->marker_id,
+                  selva_strerror(err));
+
+        /*
+         * Don't report ENOENT errors because subscriptions are valid for
+         * non-existent nodeIds.
+         */
+        if (err != SELVA_HIERARCHY_ENOENT) {
+            return err;
+        }
+    }
+
+    return 0;
+}
+
+static int refresh_marker(
+        struct SelvaHierarchy *hierarchy,
+        struct Selva_SubscriptionMarker *marker) {
+    if (marker->dir == SELVA_HIERARCHY_TRAVERSAL_NONE ||
+        (marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_DETACH)) {
+        /*
+         * This is a non-traversing marker but it needs to exist in the
+         * detached markers.
+         */
+        set_marker(&hierarchy->subs.detached_markers, marker);
+
+        return 0;
+    } else {
+        struct set_node_marker_data cb_data = {
+            .marker = marker,
+        };
+
+        /*
+         * Set subscription markers.
+         */
+        return traverse_marker(hierarchy, marker, set_node_marker_cb, &cb_data);
+    }
+}
+
+static int refresh_subscription(struct SelvaHierarchy *hierarchy, struct Selva_Subscription *sub) {
+    struct SVectorIterator it;
+    struct Selva_SubscriptionMarker *marker;
+    int res = 0;
+
+    assert(sub);
+
+    SVector_ForeachBegin(&it, &sub->markers);
+    while ((marker = SVector_Foreach(&it))) {
+        int err;
+
+        err = refresh_marker(hierarchy, marker);
+        if (err) {
+            /* Report just the last error. */
+            res = err;
+        }
+    }
+
+    return res;
+}
+
+int SelvaSubscriptions_RefreshByMarkerId(
+        struct SelvaHierarchy *hierarchy,
+        Selva_SubscriptionId sub_id,
+        Selva_SubscriptionMarkerId marker_id) {
+    struct Selva_SubscriptionMarker *marker;
+
+    marker = SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id);
+    if (!marker) {
+        return SELVA_SUBSCRIPTIONS_ENOENT;
+    }
+
+    return refresh_marker(hierarchy, marker);
+}
+
+int SelvaSubscriptions_Refresh(struct SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id) {
+    struct Selva_Subscription *sub;
+
+    sub = find_sub(hierarchy, sub_id);
+    if (!sub) {
+        return SELVA_SUBSCRIPTIONS_ENOENT;
+    }
+
+    return refresh_subscription(hierarchy, sub);
+}
+
+void SelvaSubscriptions_RefreshSubsByMarker(struct SelvaHierarchy *hierarchy, const SVector *markers) {
+    SVECTOR_AUTOFREE(all_subs);
+    SVECTOR_AUTOFREE(all_markers);
+    struct SVectorIterator it;
+    struct Selva_SubscriptionMarker *marker;
+    struct Selva_Subscription *sub;
+
+    SVector_Init(&all_subs, 1, subscription_svector_compare);
+    SVector_Init(&all_markers, SVector_Size(markers), marker_svector_compare);
+
+    /*
+     * First build a deduplicated list of all subscriptions referenced by
+     * markers.
+     */
+    SVector_ForeachBegin(&it, markers);
+    while ((marker = SVector_Foreach(&it))) {
+        SVector_Concat(&all_subs, &marker->subs);
+    }
+
+    /*
+     * Then build a deduplicated list of all markers referenced by all_subs.
+     */
+    SVector_ForeachBegin(&it, &all_subs);
+    while ((sub = SVector_Foreach(&it))) {
+        SVector_Concat(&all_markers, &sub->markers);
+    }
+
+    /*
+     * Finally refresh each marker found.
+     * If we were to just refresh each subscription we'd very likely hit the
+     * same markers multiple times.
+     */
+    SVector_ForeachBegin(&it, &all_markers);
+    while ((marker = SVector_Foreach(&it))) {
+        /* Ignore errors for now. */
+        (void)refresh_marker(hierarchy, marker);
+    }
+}
+
 int Selva_AddSubscriptionAliasMarker(
         SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
@@ -810,6 +996,8 @@ int Selva_AddSubscriptionAliasMarker(
     marker_set_dir(marker, SELVA_HIERARCHY_TRAVERSAL_NODE);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
+    /* TODO Should we catch the error? */
+    (void)refresh_marker(hierarchy, marker);
     return err;
 fail:
     rpn_destroy(filter_ctx);
@@ -908,192 +1096,6 @@ struct Selva_SubscriptionMarker *SelvaSubscriptions_GetMarker(
     }
 
     return find_sub_marker(sub, marker_id);
-}
-
-/**
- * Do a traversal over the given marker.
- * Bear in mind that cb is passed directly to the hierarchy traversal, thus any
- * filter set in the marker is not executed and the callback must execute the
- * filter if required.
- */
-static int SelvaSubscriptions_TraverseMarker(
-        struct SelvaHierarchy *hierarchy,
-        struct Selva_SubscriptionMarker *marker,
-        SelvaHierarchyNodeCallback node_cb,
-        void *node_arg) {
-    int err = 0;
-    typeof(marker->dir) dir = marker->dir;
-    struct SelvaHierarchyCallback cb = {
-        .node_cb = node_cb,
-        .node_arg = node_arg,
-    };
-
-    /*
-     * Some traversals don't visit the head node but the marker system must
-     * always visit it.
-     */
-    if (dir &
-        (SELVA_HIERARCHY_TRAVERSAL_REF |
-         SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-         SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-         SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
-         SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
-        cb.head_cb = node_cb;
-        cb.head_arg = node_arg;
-    }
-
-    if (marker->ref_field &&
-               (dir &
-                (SELVA_HIERARCHY_TRAVERSAL_REF |
-                 SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                 SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))) {
-        err = SelvaHierarchy_TraverseField(hierarchy, marker->node_id, dir, marker->ref_field, strlen(marker->ref_field), &cb);
-    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) &&
-               marker->traversal_expression) {
-        struct rpn_ctx *rpn_ctx;
-
-        rpn_ctx = rpn_init(1);
-        if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-            err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
-        } else {
-            err = SelvaHierarchy_TraverseExpression(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
-        }
-        rpn_destroy(rpn_ctx);
-    } else {
-        /*
-         * The rest of the traversal directions are handled by the following
-         * function.
-         * We might also end up here when dir is one of the previous ones but
-         * some other condition was false, or when dir is invalid. All possible
-         * invalid cases will be handled propely by the following function.
-         */
-        err = SelvaHierarchy_Traverse(hierarchy, marker->node_id, dir, &cb);
-    }
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_DBG, "Couldn't fully apply a subscription marker: %" PRImrkId " err: \"%s\"",
-                  marker->marker_id,
-                  selva_strerror(err));
-
-        /*
-         * Don't report ENOENT errors because subscriptions are valid for
-         * non-existent nodeIds.
-         */
-        if (err != SELVA_HIERARCHY_ENOENT) {
-            return err;
-        }
-    }
-
-    return 0;
-}
-
-static int refresh_marker(
-        struct SelvaHierarchy *hierarchy,
-        struct Selva_SubscriptionMarker *marker) {
-    if (marker->dir == SELVA_HIERARCHY_TRAVERSAL_NONE ||
-        (marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_DETACH)) {
-        /*
-         * This is a non-traversing marker but it needs to exist in the
-         * detached markers.
-         */
-        set_marker(&hierarchy->subs.detached_markers, marker);
-
-        return 0;
-    } else {
-        struct set_node_marker_data cb_data = {
-            .marker = marker,
-        };
-
-        /*
-         * Set subscription markers.
-         */
-        return SelvaSubscriptions_TraverseMarker(hierarchy, marker, set_node_marker_cb, &cb_data);
-    }
-}
-
-int SelvaSubscriptions_RefreshByMarkerId(
-        struct SelvaHierarchy *hierarchy,
-        Selva_SubscriptionId sub_id,
-        Selva_SubscriptionMarkerId marker_id) {
-    struct Selva_SubscriptionMarker *marker;
-
-    marker = SelvaSubscriptions_GetMarker(hierarchy, sub_id, marker_id);
-    if (!marker) {
-        return SELVA_SUBSCRIPTIONS_ENOENT;
-    }
-
-    return refresh_marker(hierarchy, marker);
-}
-
-static int refreshSubscription(struct SelvaHierarchy *hierarchy, struct Selva_Subscription *sub) {
-    struct SVectorIterator it;
-    struct Selva_SubscriptionMarker *marker;
-    int res = 0;
-
-    assert(sub);
-
-    SVector_ForeachBegin(&it, &sub->markers);
-    while ((marker = SVector_Foreach(&it))) {
-        int err;
-
-        err = refresh_marker(hierarchy, marker);
-        if (err) {
-            /* Report just the last error. */
-            res = err;
-        }
-    }
-
-    return res;
-}
-
-int SelvaSubscriptions_Refresh(struct SelvaHierarchy *hierarchy, Selva_SubscriptionId sub_id) {
-    struct Selva_Subscription *sub;
-
-    sub = find_sub(hierarchy, sub_id);
-    if (!sub) {
-        return SELVA_SUBSCRIPTIONS_ENOENT;
-    }
-
-    return refreshSubscription(hierarchy, sub);
-}
-
-void SelvaSubscriptions_RefreshSubsByMarker(struct SelvaHierarchy *hierarchy, const SVector *markers) {
-    SVECTOR_AUTOFREE(all_subs);
-    SVECTOR_AUTOFREE(all_markers);
-    struct SVectorIterator it;
-    struct Selva_SubscriptionMarker *marker;
-    struct Selva_Subscription *sub;
-
-    SVector_Init(&all_subs, 1, subscription_svector_compare);
-    SVector_Init(&all_markers, SVector_Size(markers), marker_svector_compare);
-
-    /*
-     * First build a deduplicated list of all subscriptions referenced by
-     * markers.
-     */
-    SVector_ForeachBegin(&it, markers);
-    while ((marker = SVector_Foreach(&it))) {
-        SVector_Concat(&all_subs, &marker->subs);
-    }
-
-    /*
-     * Then build a deduplicated list of all markers referenced by all_subs.
-     */
-    SVector_ForeachBegin(&it, &all_subs);
-    while ((sub = SVector_Foreach(&it))) {
-        SVector_Concat(&all_markers, &sub->markers);
-    }
-
-    /*
-     * Finally refresh each marker found.
-     * If we were to just refresh each subscription we'd very likely hit the
-     * same markers multiple times.
-     */
-    SVector_ForeachBegin(&it, &all_markers);
-    while ((marker = SVector_Foreach(&it))) {
-        /* Ignore errors for now. */
-        (void)refresh_marker(hierarchy, marker);
-    }
 }
 
 /**
@@ -1974,7 +1976,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         if (!traversal_expression) {
             err = SELVA_RPN_ECOMP;
             selva_send_errorf(resp, err, "Failed to compile the traversal expression");
-            goto out;
+            goto fail;
         }
     }
 
@@ -1995,7 +1997,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         if (!filter_expression) {
             err = SELVA_RPN_ECOMP;
             selva_send_errorf(resp, err, "Failed to compile the traversal expression");
-            goto out;
+            goto fail;
         }
 
         /*
@@ -2050,7 +2052,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         }
 
         selva_send_errorf(resp, err, "Failed to create a subscription");
-        goto out;
+        goto fail;
     }
 
     upsert_sub_marker(hierarchy, sub_id, marker);
@@ -2065,17 +2067,16 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     marker_set_filter(marker, filter_ctx, filter_expression);
 
-out:
-    if (err) {
-        if (traversal_expression) {
-            rpn_destroy_expression(traversal_expression);
-        }
-        if (filter_ctx) {
-            rpn_destroy(filter_ctx);
-            rpn_destroy_expression(filter_expression);
-        }
-    } else {
-        selva_send_ll(resp, 1);
+    /* TODO Should we catch the error? */
+    (void)refresh_marker(hierarchy, marker);
+    selva_send_ll(resp, 1);
+fail:
+    if (traversal_expression) {
+        rpn_destroy_expression(traversal_expression);
+    }
+    if (filter_ctx) {
+        rpn_destroy(filter_ctx);
+        rpn_destroy_expression(filter_expression);
     }
 }
 
@@ -2327,7 +2328,7 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
         return;
     }
 
-    err = refreshSubscription(hierarchy, sub);
+    err = refresh_subscription(hierarchy, sub);
     if (err) {
         selva_send_error(resp, err, NULL, 0);
     } else {
