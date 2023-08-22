@@ -2071,6 +2071,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     /* TODO Should we catch the error? */
     (void)refresh_marker(hierarchy, marker);
     selva_send_ll(resp, 1);
+    return;
 fail:
     if (traversal_expression) {
         rpn_destroy_expression(traversal_expression);
