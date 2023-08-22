@@ -296,7 +296,7 @@ export const sub_marker_pubsub_message_def = compile(
     { name: 'marker_id', type: 'int64_le' },
     { name: 'flags', type: enum_type },
     { name: 'node_id', type: 'cstring', size: SELVA_NODE_ID_LEN },
-    { name: 'sub_ids', type: 'uint64_le_p' },
+    // { name: 'sub_ids', type: 'uint64_le_p' },
   ],
   {
     align: true,

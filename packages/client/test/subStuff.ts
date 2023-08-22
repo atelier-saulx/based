@@ -3,9 +3,11 @@ import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'
+import { deserialize } from 'data-record'
+import { protocol } from '../src'
 // import { wait } from '@saulx/utils'
 
-test.only('durr', async (t) => {
+test.only('descendants sub', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -95,9 +97,12 @@ test.only('durr', async (t) => {
     },
   })
 
+  let evCnt: number = 0
   client.on('pubsub', ([chId, val]) => {
     if (chId === 0) {
-      console.log('MARKER EVENT', chId, val)
+      const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
+      console.log('MARKER EVENT', val[0].toString('hex'), chId, rec)
+      evCnt++
     } else {
       console.log('EVENT', chId, val.toString('utf8'))
     }
@@ -203,9 +208,10 @@ test.only('durr', async (t) => {
     },
   })
   await sub.cleanup()
-  if (sub.pending) {
-    await client.refreshMarker(3805838763871)
-  }
+  await client.command('subscriptions.refreshMarker', [3805838763871])
+  // if (sub.pending) { // TODO: implicit marker refresh on create (Olli)
+  // await client.refreshMarker(3805838763871)
+  // }
   let find = await sub.fetch()
 
   console.dir({ find }, { depth: 8 })
@@ -354,7 +360,203 @@ test.only('durr', async (t) => {
   )
   console.dir({ subs }, { depth: 8 })
 
-  t.true(true)
+  await wait(1e3)
+  t.deepEqual(evCnt, 1)
+
+  client.destroy()
+  await server.destroy()
+})
+
+test.skip('node sub', async (t) => {
+  const port = await getPort()
+  const server = await startOrigin({
+    port,
+    name: 'default',
+  })
+
+  const client = new BasedDbClient()
+
+  client.connect({
+    port,
+    host: '127.0.0.1',
+  })
+
+  await client.updateSchema({
+    languages: ['en', 'nl', 'de', 'fi'],
+    $defs: {},
+    prefixToTypeMapping: {
+      po: 'post',
+      me: 'meh',
+    },
+    root: {
+      prefix: 'ro',
+      fields: {
+        id: { type: 'string' },
+      },
+    },
+    types: {
+      meh: {
+        prefix: 'me',
+        fields: {
+          id: { type: 'string' },
+          str: { type: 'string' },
+          rec: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: { a: { type: 'string' }, b: { type: 'number' } },
+            },
+          },
+        },
+      },
+      post: {
+        prefix: 'po',
+        fields: {
+          id: { type: 'string' },
+          type: { type: 'string' },
+          aliases: { type: 'set', items: { type: 'string' } },
+          parents: { type: 'references' },
+          children: { type: 'references' },
+          slug: { type: 'string' },
+          num: { type: 'number' },
+          int: { type: 'integer' },
+          bool: { type: 'boolean' },
+          ts: { type: 'timestamp' },
+          uniqs: { type: 'cardinality' },
+          obj: {
+            type: 'object',
+            properties: {
+              a: { type: 'number' },
+              b: { type: 'string' },
+            },
+          },
+          tags: {
+            type: 'set',
+            items: { type: 'string' },
+          },
+          arys: {
+            type: 'object',
+            properties: {
+              ints: { type: 'array', values: { type: 'integer' } },
+              floats: { type: 'array', values: { type: 'number' } },
+              strs: { type: 'array', values: { type: 'string' } },
+              objs: {
+                type: 'array',
+                values: {
+                  type: 'object',
+                  properties: {
+                    a: { type: 'number' },
+                    b: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  let evCnt: number = 0
+  client.on('pubsub', ([chId, val]) => {
+    if (chId === 0) {
+      console.log('MARKER EVENT', chId, val)
+      evCnt++
+    } else {
+      console.log('EVENT', chId, val.toString('utf8'))
+    }
+  })
+
+  await client.command('subscribe', [0])
+  await client.command('subscribe', [1])
+  await wait(2e3)
+  await client.command('publish', [1, 'hello'])
+  await wait(1e3)
+
+  await client.set({
+    $id: 'me1',
+    str: 'hello',
+    rec: {
+      a: { a: 'hello', b: 1 },
+      b: { a: 'olleh', b: -1 },
+    },
+  })
+
+  let sub = await client.sub({
+    $id: 'me1',
+    str: true,
+    rec: true,
+  })
+  await sub.cleanup()
+  await client.command('subscriptions.refreshMarker', [5334180829803])
+  // if (sub.pending) { // TODO: implicit marker refresh on create (Olli)
+  // await client.refreshMarker(5334180829803)
+  // }
+  let find = await sub.fetch()
+
+  console.dir({ find }, { depth: 8 })
+
+  t.deepEqual(find, {
+    str: 'hello',
+    rec: {
+      a: { a: 'hello', b: 1 },
+      b: { a: 'olleh', b: -1 },
+    },
+  })
+
+  let subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
+
+  await client.set({
+    $id: 'me1',
+    str: 'hello 2',
+  })
+
+  sub = await client.sub(
+    {
+      $id: 'me1',
+      str: true,
+      rec: true,
+    },
+    {
+      subId: 15586939349843,
+      markerId: 5334180829803, // node marker id
+    }
+  )
+
+  await sub.cleanup()
+  if (sub.pending) {
+    await client.refreshMarker(5334180829803)
+  }
+  find = await sub.fetch()
+
+  console.dir({ find }, { depth: 8 })
+
+  t.deepEqual(find, {
+    str: 'hello 2',
+    rec: {
+      a: { a: 'hello', b: 1 },
+      b: { a: 'olleh', b: -1 },
+    },
+  })
+
+  subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
+
+  await wait(1e3)
+  t.deepEqual(evCnt, 1)
 
   client.destroy()
   await server.destroy()

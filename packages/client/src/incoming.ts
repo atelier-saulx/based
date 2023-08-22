@@ -53,7 +53,7 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       const [parsed] = decodeMessage(msg, -1)
 
       const chId = client.subscriptionHandlers.get(header.seqno)
-      if (!chId) {
+      if (chId === undefined) {
         console.error('Channel id not found', chId)
         continue
       }
