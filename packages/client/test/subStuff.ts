@@ -104,7 +104,7 @@ test.only('descendants sub', async (t) => {
       console.log('MARKER EVENT', chId, rec)
       evCnt++
     } else {
-      console.log('EVENT', chId, val.toString('utf8'))
+      console.log('EVENT', chId, val[0].toString('utf8'))
     }
   })
 
@@ -459,10 +459,11 @@ test.skip('node sub', async (t) => {
   let evCnt: number = 0
   client.on('pubsub', ([chId, val]) => {
     if (chId === 0) {
-      console.log('MARKER EVENT', chId, val)
+      const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
+      console.log('MARKER EVENT', chId, rec)
       evCnt++
     } else {
-      console.log('EVENT', chId, val.toString('utf8'))
+      console.log('EVENT', chId, val[0].toString('utf8'))
     }
   })
 
