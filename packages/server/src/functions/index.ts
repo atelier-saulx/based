@@ -90,7 +90,7 @@ export class BasedFunctions {
       this.config.route = ({ name, path }) => {
         if (path) {
           const fromPath = this.getNameFromPath(path)
-          const r = this.routes[fromPath] || this.routes[name]
+          const r = (fromPath && this.routes[fromPath]) || this.routes[name]
           if (r) {
             return r
           }
@@ -130,8 +130,6 @@ export class BasedFunctions {
 
     this.uninstallLoop()
   }
-
-  // removeRoute ()
 
   route(name?: string, path?: string): BasedRouteComplete | null {
     return this.config.route({ server: this.server, name, path })
@@ -211,6 +209,17 @@ export class BasedFunctions {
       nRoute.rateLimitTokens = 1
     }
     return nRoute
+  }
+
+  async removeRoute(name: string) {
+    const route = this.routes[name]
+    if (route) {
+      if (route.path) {
+        delete this.paths[route.path]
+      }
+      delete this.routes[route.name]
+    }
+    return this.uninstall(name)
   }
 
   updateRoute(
