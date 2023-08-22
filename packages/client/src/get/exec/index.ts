@@ -88,8 +88,8 @@ export async function addMarkers(
 ): Promise<void> {
   const { subId, client } = ctx
   await Promise.all(
-    markers.map(async (marker) => {
-      await client.command('subscriptions.addMarker', [
+    markers.map((marker) => {
+      return client.command('subscriptions.addMarker', [
         subId,
         marker.cmdID,
         createRecord(subscription_opts_def, marker.struct),
@@ -97,9 +97,6 @@ export async function addMarkers(
         marker.strFields,
         ...marker.rpn,
       ])
-
-      // TODO: this is not necessary, remove (Olli)
-      await client.command('subscriptions.refreshMarker', [marker.cmdID])
     })
   )
 }

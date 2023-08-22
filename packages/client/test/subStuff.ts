@@ -101,7 +101,7 @@ test.only('descendants sub', async (t) => {
   client.on('pubsub', ([chId, val]) => {
     if (chId === 0) {
       const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
-      console.log('MARKER EVENT', val[0].toString('hex'), chId, rec)
+      console.log('MARKER EVENT', chId, rec)
       evCnt++
     } else {
       console.log('EVENT', chId, val.toString('utf8'))
@@ -208,10 +208,9 @@ test.only('descendants sub', async (t) => {
     },
   })
   await sub.cleanup()
-  await client.command('subscriptions.refreshMarker', [3805838763871])
-  // if (sub.pending) { // TODO: implicit marker refresh on create (Olli)
-  // await client.refreshMarker(3805838763871)
-  // }
+  if (sub.pending) {
+    await client.refreshMarker(3805838763871)
+  }
   let find = await sub.fetch()
 
   console.dir({ find }, { depth: 8 })
@@ -488,10 +487,9 @@ test.skip('node sub', async (t) => {
     rec: true,
   })
   await sub.cleanup()
-  await client.command('subscriptions.refreshMarker', [5334180829803])
-  // if (sub.pending) { // TODO: implicit marker refresh on create (Olli)
-  // await client.refreshMarker(5334180829803)
-  // }
+  if (sub.pending) {
+    await client.refreshMarker(5334180829803)
+  }
   let find = await sub.fetch()
 
   console.dir({ find }, { depth: 8 })
