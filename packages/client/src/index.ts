@@ -13,13 +13,22 @@ import {
   CommandQueue,
   CommandResponseListeners,
   IncomingMessageBuffers,
+  SubscriptionHandlers,
 } from './types'
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { toModifyArgs } from './set'
-import { get } from './get'
+import {
+  ExecContext,
+  GetCommand,
+  addMarkers,
+  applyDefault,
+  execParallel,
+  get,
+} from './get'
 import genId from './id'
-import { deepCopy, deepMergeArrays } from '@saulx/utils'
+import { deepMergeArrays } from '@saulx/utils'
+import { getCmd, purgeCache } from './get/exec/cmd'
 
 export * as protocol from './protocol'
 
@@ -48,6 +57,7 @@ export class BasedDbClient extends Emitter {
   public drainInProgress: boolean = false
   // --------- Command State
   public commandResponseListeners: CommandResponseListeners = new Map()
+  public subscriptionHandlers: SubscriptionHandlers = new Map()
   public seqId: number = 0
   // ---------------
   // TODO: periodic cleanup
@@ -130,7 +140,7 @@ export class BasedDbClient extends Emitter {
     let { $id, $alias } = opts
     if (!$id && $alias) {
       const args = Array.isArray($alias) ? $alias : [$alias]
-      const resolved = await this.command('resolve.nodeid', ['', ...args])
+      const resolved = await this.command('resolve.nodeid', [0, ...args])
       $id = resolved?.[0]
       if (!$id && !opts.aliases) {
         opts.aliases = { $add: args }
@@ -261,7 +271,83 @@ export class BasedDbClient extends Emitter {
   }
 
   async get(opts: any): Promise<any> {
-    return get(this, opts)
+    const { merged, defaults } = await get(this, opts)
+    console.dir({ merged, defaults })
+
+    for (const d of defaults) {
+      applyDefault(merged, d)
+    }
+
+    return merged
+  }
+
+  async refreshMarker(markerId: number): Promise<void> {
+    purgeCache(markerId)
+    await this.command('subscriptions.refreshMarker', [markerId]) // TODO: crash (olli)
+  }
+
+  async sub(
+    opts: any,
+    eventOpts?: { markerId: number; subId: number }
+  ): Promise<{
+    subId: number
+    cleanup: () => Promise<void>
+    fetch: () => Promise<any>
+    pending?: GetCommand
+  }> {
+    const { subId, markerId, merged, defaults, pending, markers } = await get(
+      this,
+      opts,
+      {
+        isSubscription: true,
+        ...eventOpts,
+      }
+    )
+
+    await addMarkers({ client: this, subId, markerId }, markers)
+
+    console.dir({ merged, defaults, pending }, { depth: 7 })
+
+    const cleanup = async () => {
+      if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
+        return
+      }
+
+      const ctx: ExecContext = {
+        client: this,
+        subId,
+        markerId,
+        cleanup: true,
+      }
+
+      await execParallel(ctx, [pending])
+    }
+
+    // new results
+    const fetch = async () => {
+      if (pending) {
+        const ctx: ExecContext = {
+          client: this,
+          subId,
+          markerId,
+          markers: [],
+          refresh: true,
+        }
+
+        const { nestedObjs } = await execParallel(ctx, [pending])
+        await addMarkers(ctx, [...ctx.markers])
+
+        deepMergeArrays(merged, ...nestedObjs)
+      }
+
+      for (const d of defaults) {
+        applyDefault(merged, d)
+      }
+
+      return merged
+    }
+
+    return { pending, cleanup, fetch, subId }
   }
 
   onData(data: Buffer) {

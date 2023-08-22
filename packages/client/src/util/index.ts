@@ -1,4 +1,5 @@
-import { Path } from '../get'
+import { BasedSchemaType } from '@based/schema'
+import { ExecContext, Path } from '../get'
 
 export function joinPath(path: (string | number)[]): string {
   if (!path.length) {
@@ -19,7 +20,7 @@ export function joinPath(path: (string | number)[]): string {
   return str
 }
 
-export function parseAlias(alias: string): Path {
+export function aliasStrToPath(alias: string): Path {
   return alias.split('.').reduce((acc, part) => {
     if (!part.endsWith(']')) {
       acc.push(part)
@@ -47,4 +48,11 @@ export function parseAlias(alias: string): Path {
     acc.push(part)
     return acc
   }, [])
+}
+
+export function getTypeSchema(ctx: ExecContext, id: string): BasedSchemaType {
+  const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+  return typeName === 'root'
+    ? ctx.client.schema.root
+    : ctx.client.schema.types[typeName]
 }

@@ -167,6 +167,16 @@ test('find - descendants', async (t) => {
 
   await wait(600)
   t.true(ids[0].slice(0, 2) === 'cl' && ids[1].slice(0, 2) === 'le')
+})
+
+test.afterEach.always(async (t) => {
+  const { srv, client } = t.context
+  await srv.destroy()
+  client.destroy()
+})
+
+test('find - descendants', async (t) => {
+  const { client } = t.context
   // simple nested - single query
 
   try {

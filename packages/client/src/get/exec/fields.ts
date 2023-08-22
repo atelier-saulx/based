@@ -1,6 +1,6 @@
 import { fieldsExpr2rpn } from '@based/db-query'
-import { joinPath } from '../util'
-import { ExecContext, Field, Fields } from './types'
+import { joinPath } from '../../util'
+import { ExecContext, Field, Fields } from '../types'
 
 function getField(field: Field): { str: string; isInherit: boolean } {
   let str = joinPath(field.field)
@@ -51,6 +51,19 @@ function getFieldsStr(fields: Field[]): { fields: string; isInherit: boolean } {
   return { fields: strs.join('\n'), isInherit: hasInherit }
 }
 
+function getSimpleFieldsStr(fields: Field[]): string {
+  const strs: Set<string> = new Set()
+  for (const f of fields) {
+    if (f.aliased) {
+      f.aliased.forEach((f) => strs.add(f))
+    } else if (!f.exclude) {
+      strs.add(joinPath(f.field))
+    }
+  }
+
+  return [...strs].join('\n')
+}
+
 export function getFields(
   ctx: ExecContext,
   { $any, byType }: Fields
@@ -58,27 +71,38 @@ export function getFields(
   isRpn: boolean
   isInherit: boolean
   fields: string
+  strFields: string
 } {
   if (byType) {
     let hasTypes = false
     const { fields: anyFields, isInherit } = getFieldsStr($any)
     const expr: Record<string, string> = { $any: anyFields }
     let hasInherit = isInherit
+    const allFields: Field[] = $any
     for (const type in byType) {
       hasTypes = true
       const { fields, isInherit } = getFieldsStr([...$any, ...byType[type]])
       expr[type] = fields
       hasInherit = hasInherit || isInherit
+      allFields.push(...byType[type])
     }
 
     if (!hasTypes && !hasInherit) {
-      return { isRpn: false, fields: expr.$any, isInherit: false }
+      return {
+        isRpn: false,
+        fields: expr.$any,
+        isInherit: false,
+        // strFields: expr.$any,
+        strFields: getSimpleFieldsStr($any),
+      }
     }
 
     return {
       isRpn: true,
       isInherit: hasInherit,
       fields: fieldsExpr2rpn(ctx.client.schema.types, expr),
+      // strFields: getFieldsStr(allFields.filter((f) => !f.exclude)).fields,
+      strFields: getSimpleFieldsStr(allFields.filter((f) => !f.exclude)),
     }
   }
 
@@ -86,6 +110,8 @@ export function getFields(
   return {
     isRpn: false,
     fields: isInherit ? `"${fields}"` : fields,
+    // strFields: fields,
+    strFields: getSimpleFieldsStr($any),
     isInherit,
   }
 }

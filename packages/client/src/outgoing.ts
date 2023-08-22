@@ -65,7 +65,12 @@ export const addCommandToQueue = (
 ): number => {
   client.seqId++
   const id = client.seqId
-  client.commandResponseListeners.set(id, [resolve, reject])
+  if (command === 'subscribe') {
+    client.subscriptionHandlers.set(id, payload[0])
+    resolve(true)
+  } else {
+    client.commandResponseListeners.set(id, [resolve, reject])
+  }
   client.commandQueue.push({ seqno: id, command, payload })
   drainQueue(client)
   return id

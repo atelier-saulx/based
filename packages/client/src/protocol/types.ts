@@ -53,13 +53,13 @@ export const COMMAND_TYPES = {
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   // subscriptions
-  //'subscriptions.addMarker': 58,
-  //'subscriptions.list': 64,
-  //'subscriptions.debug': 66,
-  //'subscriptions.refresh': 62,
-  //'subscriptions.refreshMarker': 63,
-  //'subscriptions.del': 67,
-  //'subscriptions.delmarker': 68,
+  'subscriptions.addMarker': 58,
+  'subscriptions.list': 64,
+  'subscriptions.debug': 66,
+  'subscriptions.refresh': 62,
+  'subscriptions.refreshMarker': 63,
+  'subscriptions.del': 67,
+  'subscriptions.delmarker': 68,
   // TODO:
   // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21

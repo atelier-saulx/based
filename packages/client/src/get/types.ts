@@ -7,6 +7,14 @@ export type ExecContext = {
   lang?: string
   fieldAliases?: Record<string, { fieldSchema: BasedSchemaField; value: any }>
   commandPath?: Path
+
+  subId?: number
+  markerId?: number
+  markers?: any[]
+
+  // cleanup mode, busts cache and deletes markers for the nested command tree
+  cleanup?: boolean
+  refresh?: boolean
 }
 
 export type TraverseByType = {
@@ -58,6 +66,8 @@ export type GetNodeShared = {
   fields: Fields
 
   nestedCommands?: GetCommand[]
+  cmdId?: number
+  markerId?: number
 }
 
 export type GetNode = {

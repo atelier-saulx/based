@@ -5,23 +5,12 @@ import {
   GetAggregate,
   GetCommand,
   GetNode,
-  GetTraverse,
-  GetTraverseIds,
   Path,
-} from '../types'
-
-function parseAlias(value: any): string[] | undefined {
-  let $field = value.$field
-  if (!$field) {
-    return
-  }
-
-  if (!Array.isArray(value.$field)) {
-    $field = [$field]
-  }
-
-  return $field
-}
+} from '../../types'
+import { hashCmd } from '../../util'
+import { parseList } from './list'
+import { parseAlias } from './alias'
+import { deepEqual } from '@saulx/utils'
 
 export async function parseGetOpts(
   ctx: ExecContext,
@@ -71,7 +60,9 @@ export async function parseGetOpts(
 
           const { $sort, $limit, $offset } = $aggregate
           const $list = { $find: $aggregate, $sort, $limit, $offset }
-          return parseList('aggregate', cmd, key, $list)
+          const parsed = parseList('aggregate', cmd, key, $list)
+          parsed.cmdId = hashCmd(parsed)
+          return parsed
         }
 
         // special cases
@@ -85,8 +76,9 @@ export async function parseGetOpts(
               $any: [
                 {
                   type: 'field',
-                  field: newPath,
+                  field: newPath[0] === '$all' ? ['*'] : newPath,
                   aliased: parseAlias(value),
+                  exclude: value === false,
                 },
               ],
             },
@@ -98,6 +90,7 @@ export async function parseGetOpts(
             },
           }
 
+          nestedCmd.cmdId = hashCmd(nestedCmd)
           return nestedCmd
         }
 
@@ -108,10 +101,7 @@ export async function parseGetOpts(
           type: 'field',
           field: f,
           exclude: value === false,
-        }
-
-        if (value?.$field) {
-          field.aliased = parseAlias(value)
+          aliased: parseAlias(value),
         }
 
         if (value.$inherit) {
@@ -321,8 +311,21 @@ export async function parseGetOpts(
                 nestedCommands.push(c)
               })
             } else if (nestedCmd.type === 'node') {
-              // completely separate id queried
-              topLevel.push(nestedCmd)
+              // completely separate id queried, merge if id already exists
+              const existing = topLevel.find((cmd) => {
+                return (
+                  cmd.type === 'node' &&
+                  cmd.source.id === nestedCmd.source.id &&
+                  deepEqual(cmd.target.path, nestedCmd.target.path)
+                )
+              })
+
+              if (existing) {
+                existing.fields.$any.push(...nestedCmd.fields.$any)
+                existing.cmdId = hashCmd(existing)
+              } else {
+                topLevel.push(nestedCmd)
+              }
             } else {
               // actual nested query dependent on this result
               nestedCommands.push(nestedCmd)
@@ -361,6 +364,8 @@ export async function parseGetOpts(
         // use to detect the very top level
         visited = cmd
 
+        // calculate 'abstract markerId' - this will change when there is a concrete id
+        cmd.cmdId = hashCmd(cmd)
         return cmd
       },
     },
@@ -374,79 +379,4 @@ export async function parseGetOpts(
     cmds: [visited, ...nested, ...topLevel],
     defaults: walked.defaultValues,
   }
-}
-
-function parseList(
-  type: 'aggregate' | 'traverse',
-  initial: GetTraverse | GetAggregate | GetTraverseIds,
-  key: string | number,
-  $list: any
-): GetTraverse | GetTraverseIds | GetAggregate {
-  const cmd: GetTraverse | GetAggregate | GetTraverseIds = { ...initial }
-
-  if ($list?.$find?.$find) {
-    cmd.type = 'ids'
-    ;(<GetTraverseIds>cmd).mainType = type
-
-    const { $sort, $limit, $offset } = $list
-    const opts = { $sort, $limit, $offset }
-
-    const nestedCmd: GetTraverse | GetAggregate | GetTraverseIds = parseList(
-      type,
-      {
-        ...initial,
-        type,
-      },
-      key,
-      { $find: $list.$find.$find, ...opts }
-    )
-
-    for (const opt in opts) {
-      delete $list[opt]
-    }
-
-    cmd.nestedFind = nestedCmd
-  }
-
-  const sourceField = $list?.$find?.$traverse ?? $list?.$field ?? String(key)
-  if (Array.isArray($list?.$find?.$traverse)) {
-    // find in id list
-    cmd.source = { idList: sourceField }
-  } else if (Array.isArray(sourceField)) {
-    cmd.traverseExpr = { $any: { $first: sourceField } }
-  } else if (typeof sourceField === 'object') {
-    cmd.traverseExpr = sourceField
-  } else {
-    cmd.sourceField = sourceField
-  }
-
-  if ($list?.$limit !== undefined || $list?.$offset !== undefined) {
-    cmd.paging = {
-      limit: $list?.$limit ?? -1,
-      offset: $list?.$offset ?? 0,
-    }
-  }
-
-  if ($list?.$sort !== undefined) {
-    const { $order, $field } = $list.$sort
-    cmd.sort = {
-      order: $order,
-      field: $field,
-    }
-  }
-
-  if ($list?.isSingle !== undefined) {
-    // @ts-ignore
-    cmd.isSingle = $list.isSingle
-  }
-
-  if ($list?.$find?.$filter) {
-    cmd.filter = $list?.$find?.$filter
-  }
-
-  if ($list?.$find?.$recursive) {
-    cmd.recursive = true
-  }
-
-  return cmd
 }
