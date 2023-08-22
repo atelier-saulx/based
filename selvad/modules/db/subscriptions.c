@@ -1689,9 +1689,6 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
     }
 }
 
-/**
- * Defer alias events and wipeout markers of the subscriptions hit.
- */
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct selva_string *alias_name) {
@@ -1819,6 +1816,9 @@ void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy) {
     SVector_Clear(&def->marker_events);
 }
 
+/**
+ * Send svector containing Selva_Subscription pointers to resp.
+ */
 static void send_svector_subs(struct selva_server_response_out *resp, SVector *subs) {
     struct SVectorIterator it;
     struct Selva_Subscription *sub;
@@ -1875,6 +1875,14 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
     }
 
     selva_send_array_end(resp);
+}
+
+void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp) {
+    struct Selva_Subscription *sub = sp.sub;
+
+    selva_send_array(resp, 2);
+    selva_send_ll(resp, sub->sub_id);
+    selva_send_ll(resp, SVector_Size(&sub->markers));
 }
 
 static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base, size_t size) {
@@ -2370,14 +2378,6 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
     } else {
         selva_send_ll(resp, 1);
     }
-}
-
-void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp) {
-    struct Selva_Subscription *sub = sp.sub;
-
-    selva_send_array(resp, 2);
-    selva_send_ll(resp, sub->sub_id);
-    selva_send_ll(resp, SVector_Size(&sub->markers));
 }
 
 /**

@@ -422,6 +422,10 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len);
+
+/**
+ * Defer alias events and wipeout markers of the subscriptions hit.
+ */
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct selva_string *alias_name);
