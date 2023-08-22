@@ -46,6 +46,20 @@ test.beforeEach(async (t) => {
           },
         },
       },
+      lekkerType: {
+        prefix: 'vi',
+        fields: {
+          media: {
+            type: 'array',
+            values: {
+              type: 'object',
+              properties: {
+                src: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
     },
   })
 })
@@ -93,4 +107,82 @@ test('can use $delete inside array', async (t) => {
     type: 'thing',
     formFields: [undefined],
   })
+})
+
+// TODO: Issue replacing array. Previous items not cleared
+test.skip('should replace array', async (t) => {
+  const { client } = t.context
+  const originalMedia = [
+    { src: 'http://wawa.com/111' },
+    { src: 'http://wawa.com/222' },
+    { src: 'http://wawa.com/333' },
+  ]
+
+  const lekker = await client.set({
+    type: 'lekkerType',
+    media: originalMedia,
+  })
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $language: 'en',
+      $id: lekker,
+      id: true,
+      media: true,
+    }),
+    {
+      id: lekker,
+      media: originalMedia,
+    }
+  )
+
+  await client.set({
+    $id: lekker,
+    media: [{ src: 'http://wawa.com/222' }, { src: 'http://wawa.com/333' }],
+  })
+  const r = await client.get({
+    $language: 'en',
+    $id: lekker,
+    id: true,
+    media: true,
+  })
+  t.log(r)
+  t.deepEqualIgnoreOrder(r, {
+    id: lekker,
+    media: [{ src: 'http://wawa.com/222' }, { src: 'http://wawa.com/333' }],
+  })
+
+  await client.set({
+    $id: lekker,
+    media: [{ src: 'http://wawa.com/444' }],
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $language: 'en',
+      $id: lekker,
+      id: true,
+      media: true,
+    }),
+    {
+      id: lekker,
+      media: [{ src: 'http://wawa.com/444' }],
+    }
+  )
+
+  await client.set({
+    $id: lekker,
+    media: [],
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $language: 'en',
+      $id: lekker,
+      id: true,
+      media: true,
+    }),
+    {
+      id: lekker,
+    }
+  )
 })

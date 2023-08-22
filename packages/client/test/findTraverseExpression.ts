@@ -1,10 +1,12 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
+import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { find } from './assertions/utils'
+import { SelvaTraversal } from '../src/protocol'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -90,23 +92,34 @@ test.beforeEach(async (t) => {
       },
     },
   })
+})
+
+test.afterEach.always(async (t) => {
+  const { srv, client } = t.context
+  await srv.destroy()
+  client.destroy()
+})
+
+// TODO: bidirectional reference not working
+test.skip('find - traverse expression - low level', async (t) => {
+  const { client } = t.context
 
   // A small delay is needed after setting the schema
   await new Promise((r) => setTimeout(r, 100))
 
-  const alexandria = await t.context.client.set({
+  const alexandria = await client.set({
     $language: 'en',
     type: 'publisher',
     $id: 'pb08523c44',
     name: 'The Great Library of Alexandria in Alexandria',
   })
-  const agrippina = await t.context.client.set({
+  const agrippina = await client.set({
     $language: 'en',
     type: 'author',
     $id: 'aud11d986e',
     name: 'Agrippina the Younger',
   })
-  const democritus = await t.context.client.set({
+  const democritus = await client.set({
     $language: 'en',
     type: 'author',
     $id: 'au3c163ed6',
@@ -152,81 +165,95 @@ test.beforeEach(async (t) => {
         publisher: alexandria,
         publishedAt: date.setFullYear(2010),
       },
-    ].map((b) => t.context.client.set(b))
+    ].map((b) => client.set(b))
   )
-  await t.context.client.set({
+  await client.set({
     type: 'library',
     name: 'The Great Library of Alexandria in Alexandria',
     books: booksIds,
   })
 
-  // const traversal =
-  //   '{"children"} {"author","publisher"} j "bk" e T {"books"} "li" e T'
-  // const filter = '$0 b {"bk","au","pb"} a'
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'bfs_expression',
-  //     traversal,
-  //     'order',
-  //     'type',
-  //     'asc',
-  //     'fields',
-  //     'type\nname\nauthor|publisher',
-  //     'root',
-  //     filter
-  //   ),
-  //   [
-  //     ['au3c163ed6', ['type', 'author', 'name', 'Democritus']],
-  //     ['aud11d986e', ['type', 'author', 'name', 'Agrippina the Younger']],
-  //     [
-  //       'bk5b0985b0',
-  //       ['type', 'book', 'name', 'Septuagint', 'publisher', ['pb08523c44']],
-  //     ],
-  //     [
-  //       'bkcbbde08f',
-  //       [
-  //         'type',
-  //         'book',
-  //         'name',
-  //         'Geometrical Reality',
-  //         'author',
-  //         ['au3c163ed6'],
-  //       ],
-  //     ],
-  //     [
-  //       'bkcfcc6a0d',
-  //       [
-  //         'type',
-  //         'book',
-  //         'name',
-  //         'Geometrical Reality',
-  //         'author',
-  //         ['au3c163ed6'],
-  //       ],
-  //     ],
-  //     [
-  //       'bkf38955bb',
-  //       ['type', 'book', 'name', 'Casus Suorum', 'author', ['aud11d986e']],
-  //     ],
-  //     [
-  //       'pb08523c44',
-  //       [
-  //         'type',
-  //         'publisher',
-  //         'name',
-  //         'The Great Library of Alexandria in Alexandria',
-  //       ],
-  //     ],
-  //   ]
-  // )
-})
 
-test.afterEach.always(async (t) => {
-  const { srv, client } = t.context
-  await srv.destroy()
-  client.destroy()
+  t.log(
+    '0000',
+    await client.get({
+      $id: 'bk5b0985b0',
+      name: true,
+      publisher: true,
+    })
+  )
+  const traversal =
+    '{"children"} {"author","publisher"} j "bk" e T {"books"} "li" e T'
+  const filter = '$0 b {"bk","au","pb"} a'
+  t.deepEqual(
+    // await client.redis.selva_hierarchy_find(
+    //   '',
+    //   '___selva_hierarchy',
+    //   'bfs_expression',
+    //   traversal,
+    //   'order',
+    //   'type',
+    //   'asc',
+    //   'fields',
+    //   'type\nname\nauthor|publisher',
+    //   'root',
+    //   filter
+    // ),
+    (
+      await find({
+        client,
+        res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+        res_opt_str: 'type\nname\nauthor|publisher',
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION,
+        dir_opt_str: traversal,
+        id: 'root',
+        rpn: [filter],
+      })
+    )[0],
+    [
+      ['au3c163ed6', ['type', 'author', 'name', 'Democritus']],
+      ['aud11d986e', ['type', 'author', 'name', 'Agrippina the Younger']],
+      [
+        'bk5b0985b0',
+        ['type', 'book', 'name', 'Septuagint', 'publisher', ['pb08523c44']],
+      ],
+      [
+        'bkcbbde08f',
+        [
+          'type',
+          'book',
+          'name',
+          'Geometrical Reality',
+          'author',
+          ['au3c163ed6'],
+        ],
+      ],
+      [
+        'bkcfcc6a0d',
+        [
+          'type',
+          'book',
+          'name',
+          'Geometrical Reality',
+          'author',
+          ['au3c163ed6'],
+        ],
+      ],
+      [
+        'bkf38955bb',
+        ['type', 'book', 'name', 'Casus Suorum', 'author', ['aud11d986e']],
+      ],
+      [
+        'pb08523c44',
+        [
+          'type',
+          'publisher',
+          'name',
+          'The Great Library of Alexandria in Alexandria',
+        ],
+      ],
+    ]
+  )
 })
 
 // TODO: waiting for records
