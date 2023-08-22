@@ -131,6 +131,8 @@ export class BasedFunctions {
     this.uninstallLoop()
   }
 
+  // removeRoute ()
+
   route(name?: string, path?: string): BasedRouteComplete | null {
     return this.config.route({ server: this.server, name, path })
   }

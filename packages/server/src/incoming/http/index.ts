@@ -41,19 +41,23 @@ const handleRequest = (
 }
 
 const getQuery = (req: uws.HttpRequest): { [key: string]: string } => {
-  const obj = {},
-    string = req.getQuery()
+  const obj = {}
+  const string = req.getQuery()
   let index = 0
   let index2: number
   let index3: number
   do {
     index2 = string.indexOf('=', index)
-    if (index2 == -1) index2 = string.length
+    if (index2 === -1) {
+      index2 = string.length
+    }
     index3 = string.indexOf('&', index2 + 1)
-    if (index3 == -1) index3 = string.length
+    if (index3 === -1) {
+      index3 = string.length
+    }
     obj[string.slice(index, index2)] = string.slice(index2 + 1, index3)
     index = index3 + 1
-  } while (index3 != string.length)
+  } while (index3 !== string.length)
   return obj
 }
 
@@ -84,6 +88,7 @@ export const httpHandler = (
       server,
       {
         session: {
+          url,
           origin: req.getHeader('origin'),
           ua: req.getHeader('user-agent'),
           ip,
@@ -120,6 +125,7 @@ export const httpHandler = (
         server,
         {
           session: {
+            url,
             ua: req.getHeader('user-agent'),
             ip,
             method,
@@ -150,6 +156,7 @@ export const httpHandler = (
 
   const ctx: Context<HttpSession> = {
     session: {
+      url,
       res,
       req,
       method,

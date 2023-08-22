@@ -5,10 +5,34 @@ import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
 import { encodeAuthState } from '../src/index'
-import { BasedFunctionConfigComplete } from '@based/functions'
+import { BasedFunctionConfigComplete, isHttpContext } from '@based/functions'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
+
+test.serial('functions (session url)', async (t) => {
+  const server = new BasedServer({
+    port: 9910,
+    functions: {
+      configs: {
+        hello: {
+          type: 'function',
+          uninstallAfterIdleTime: 1e3,
+          headers: ['bla'],
+          fn: async (_, __, ctx) => {
+            if (isHttpContext(ctx)) {
+              return ctx.session?.url
+            }
+          },
+        },
+      },
+    },
+  })
+  await server.start()
+  const url = await (await fetch('http://localhost:9910/hello')).text()
+  t.is(url, '/hello')
+  await server.destroy()
+})
 
 test.serial('functions (custom headers)', async (t) => {
   const server = new BasedServer({

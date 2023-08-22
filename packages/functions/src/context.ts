@@ -37,6 +37,7 @@ export type HttpSession = {
   // State can be used for anything - for us the based class instance
   state?: any
   res: HttpResponse
+  url: string
   origin: string
   req: HttpRequest
   query?: string
