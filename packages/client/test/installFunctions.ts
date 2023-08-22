@@ -38,7 +38,7 @@ test.serial('Uninstall hook', async (t) => {
   await server.destroy()
 })
 
-test.only('uninstalled function is no longer callable', async (t) => {
+test.serial('uninstalled function is no longer callable', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
