@@ -1799,7 +1799,7 @@ static void send_event(const struct Selva_SubscriptionMarker *marker) {
         i++;
     }
 
-    selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, &msg, msg_size);
+    selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, msg, msg_size);
     selva_free(msg);
 }
 
