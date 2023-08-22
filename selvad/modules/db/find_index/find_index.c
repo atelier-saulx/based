@@ -34,14 +34,14 @@
 #include "find_index.h"
 
 #define INDEX_ERR_MSG_DISABLED "Indexing disabled"
+#define FIND_INDEX_SUB_ID (Selva_SubscriptionId)0
+#define ALLOWED_DIRS \
+    ((enum SelvaTraversal) \
+    SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS | \
+    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS | \
+    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)
 
 static float lpf_a; /*!< Popularity count average dampening coefficient. */
-Selva_SubscriptionId find_index_sub_id; /* zeroes. */
-
-static const enum SelvaTraversal allowed_dirs =
-    SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION;
 
 /*
  * Trace handles.
@@ -278,7 +278,7 @@ static int start_index(
     }
 
     err = SelvaSubscriptions_AddCallbackMarker(
-            hierarchy, find_index_sub_id, icb->marker_id, marker_flags,
+            hierarchy, FIND_INDEX_SUB_ID, icb->marker_id, marker_flags,
             icb->node_id, icb->traversal.dir, dir_field, dir_expression, selva_string_to_str(icb->traversal.filter, NULL),
             update_index,
             icb);
@@ -315,7 +315,7 @@ static int refresh_index(
     }
 
     SELVA_TRACE_BEGIN(FindIndex_refresh);
-    err = SelvaSubscriptions_RefreshByMarkerId(hierarchy, find_index_sub_id, icb->marker_id);
+    err = SelvaSubscriptions_RefreshByMarkerId(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
     SELVA_TRACE_END(FindIndex_refresh);
 
     return err;
@@ -334,7 +334,7 @@ static int discard_index(
 
     if (hierarchy) {
         if (icb->flags.valid_marked_id) {
-            err = SelvaSubscriptions_DeleteMarker(hierarchy, find_index_sub_id, icb->marker_id);
+            err = SelvaSubscriptions_DeleteMarker(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
             if (err && err != SELVA_ENOENT && err != SELVA_SUBSCRIPTIONS_ENOENT) {
                 return err;
             }
@@ -825,17 +825,15 @@ int SelvaFindIndex_Auto(
         struct SelvaFindIndexControlBlock **icb_out) {
     SELVA_TRACE_BEGIN_AUTO(FindIndex_AutoIndex);
 
-    if (selva_string_get_len(filter) == 0) {
-       return SELVA_EINVAL;
-    }
-    if (selva_glob_config.find_indices_max == 0) {
-        return SELVA_ENOTSUP;
-    }
-    if (!(dir & allowed_dirs) || __builtin_popcount(dir) > 1) {
+    if (!(dir & ALLOWED_DIRS) || __builtin_popcount(dir) > 1 ||
+        selva_glob_config.find_indices_max == 0) {
         /*
          * Only index some traversals.
          */
         return SELVA_ENOTSUP;
+    }
+    if (selva_string_get_len(filter) == 0) {
+       return SELVA_EINVAL;
     }
 
     __auto_finalizer struct finalizer fin;
@@ -1078,7 +1076,7 @@ static int _debug_index(struct selva_server_response_out *resp, struct SelvaHier
             if (n++ == i) {
                 struct Selva_SubscriptionMarker *marker;
 
-                marker = SelvaSubscriptions_GetMarker(hierarchy, find_index_sub_id, icb->marker_id);
+                marker = SelvaSubscriptions_GetMarker(hierarchy, FIND_INDEX_SUB_ID, icb->marker_id);
                 if (marker) {
                     SelvaSubscriptions_ReplyWithMarker(resp, marker);
                 } else {
@@ -1165,7 +1163,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     struct selva_string *dir_expression;
     if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
         dir_expression = ref_field;
-    } else if ((dir & allowed_dirs) != 0) {
+    } else if ((dir & ALLOWED_DIRS) != 0) {
         dir_expression = NULL;
     } else {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Traversal direction");
