@@ -247,9 +247,6 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
     RB_REMOVE(hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head, marker);
 
     rpn_destroy(marker->filter_ctx);
-#if MEM_DEBUG
-    memset(marker, 0, sizeof(*marker));
-#endif
     if (marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
                        SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
         rpn_destroy_expression(marker->traversal_expression);
@@ -257,6 +254,9 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
         selva_free(marker->ref_field);
     }
     rpn_destroy_expression(marker->filter_expression);
+#if MEM_DEBUG
+    memset(marker, 0, sizeof(*marker));
+#endif
     selva_free(marker);
 }
 
@@ -390,12 +390,6 @@ static void destroy_sub(SelvaHierarchy *hierarchy, struct Selva_Subscription *su
     selva_free(sub);
 }
 
-void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
-    struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
-
-    SVector_Destroy(&def->marker_events);
-}
-
 /*
  * Destroy all subscription markers and subscriptions.
  */
@@ -410,13 +404,23 @@ static void destroy_all_sub_markers(SelvaHierarchy *hierarchy) {
     }
 }
 
-static void SelvaSubscriptions_InitMarkersStruct(struct Selva_SubscriptionMarkers *markers) {
+static void init_markers_struct(struct Selva_SubscriptionMarkers *markers) {
     SVector_Init(&markers->vec, 0, marker_svector_compare);
     markers->flags_filter = 0;
 }
 
-static void SelvaSubscriptions_InitDeferredEvents(struct SelvaSubscriptions_DeferredEvents *def) {
+static void destroy_markers_struct(struct Selva_SubscriptionMarkers *markers) {
+    SVector_Destroy(&markers->vec);
+}
+
+static void init_deferred_events(struct SelvaSubscriptions_DeferredEvents *def) {
     SVector_Init(&def->marker_events, 2, marker_svector_compare);
+}
+
+void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
+    struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
+
+    SVector_Destroy(&def->marker_events);
 }
 
 void SelvaSubscriptions_InitHierarchy(SelvaHierarchy *hierarchy) {
@@ -425,8 +429,8 @@ void SelvaSubscriptions_InitHierarchy(SelvaHierarchy *hierarchy) {
 
     SelvaObject_Init(hierarchy->subs.missing._obj_data);
 
-    SelvaSubscriptions_InitMarkersStruct(&hierarchy->subs.detached_markers);
-    SelvaSubscriptions_InitDeferredEvents(&hierarchy->subs.deferred_events);
+    init_markers_struct(&hierarchy->subs.detached_markers);
+    init_deferred_events(&hierarchy->subs.deferred_events);
 }
 
 void SelvaSubscriptions_DestroyAll(SelvaHierarchy *hierarchy) {
@@ -443,13 +447,13 @@ void SelvaSubscriptions_DestroyAll(SelvaHierarchy *hierarchy) {
      * Do this as the last step because destroy_all_sub_markers() will access
      * the vector.
      */
-    SVector_Destroy(&hierarchy->subs.detached_markers.vec);
+    destroy_markers_struct(&hierarchy->subs.detached_markers);
 }
 
 static void init_node_metadata_subs(
         const Selva_NodeId id __unused,
         struct SelvaHierarchyMetadata *metadata) {
-    SelvaSubscriptions_InitMarkersStruct(&metadata->sub_markers);
+    init_markers_struct(&metadata->sub_markers);
 }
 SELVA_MODIFY_HIERARCHY_METADATA_CONSTRUCTOR(init_node_metadata_subs);
 
@@ -457,7 +461,7 @@ static void deinit_node_metadata_subs(
         SelvaHierarchy *hierarchy __unused,
         struct SelvaHierarchyNode *node __unused,
         struct SelvaHierarchyMetadata *metadata) {
-    SVector_Destroy(&metadata->sub_markers.vec);
+    destroy_markers_struct(&metadata->sub_markers);
 }
 SELVA_MODIFY_HIERARCHY_METADATA_DESTRUCTOR(deinit_node_metadata_subs);
 
@@ -651,7 +655,6 @@ static int new_marker(
 {
     struct Selva_SubscriptionMarker *marker;
 
-    /* TODO Do this or the check at insert but not both */
     marker = find_marker(hierarchy, marker_id);
     if (marker) {
         return SELVA_SUBSCRIPTIONS_EEXIST;
@@ -681,11 +684,8 @@ static int new_marker(
         marker->fields[fields_len] = '\0';
     }
 
-    if (unlikely(RB_INSERT(hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head, marker) != NULL)) {
-        /* RFE Does it even make sense as we already used find_marker() */
-        selva_free(marker);
-        return SELVA_SUBSCRIPTIONS_EEXIST;
-    }
+    /* Never fails */
+    (void)RB_INSERT(hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head, marker);
 
     *out = marker;
     return 0;
