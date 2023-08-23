@@ -1781,18 +1781,18 @@ static void send_event(const struct Selva_SubscriptionMarker *marker) {
     const size_t msg_size = sizeof(*msg) + sub_ids_size;
     msg = selva_calloc(1, msg_size);
 
-    /* TODO Do we need to handle endianness here? */
-    msg->marker_id = marker->marker_id;
-    msg->flags = marker->history.flags;
+    msg->marker_id = htole64(marker->marker_id);
+    msg->flags = htole32(marker->history.flags);
     memcpy(msg->node_id, marker->history.node_id, SELVA_NODE_ID_SIZE);
-    msg->sub_ids = (void *)sizeof(*msg);
-    msg->sub_ids_size = sub_ids_size;
+    msg->sub_ids = (void *)(htole64(sizeof(*msg)));
+    msg->sub_ids_size = htole64(sub_ids_size);
 
     SVector_ForeachBegin(&it, &marker->subs);
     while ((sub = SVector_Foreach(&it))) {
-        const size_t k = sizeof(sub->sub_id);
+        const Selva_SubscriptionId sub_id = htole64(sub->sub_id);
+        const size_t k = sizeof(sub_id);
 
-        memcpy((char *)msg + sizeof(*msg) + i * k, &sub->sub_id, k);
+        memcpy((char *)msg + sizeof(*msg) + i * k, &sub_id, k);
         i++;
     }
 
