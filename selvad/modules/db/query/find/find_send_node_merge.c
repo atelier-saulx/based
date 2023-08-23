@@ -17,6 +17,7 @@
 #include "selva_log.h"
 #include "selva_server.h"
 #include "selva_db.h"
+#include "selva_object.h"
 #include "hierarchy.h"
 #include "../field_names.h"
 #include "find_send.h"

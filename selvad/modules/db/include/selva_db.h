@@ -91,14 +91,6 @@
 #define SELVA_IS_UPDATED_AT_FIELD(_s, _len) \
     ((_len) == (sizeof(SELVA_UPDATED_AT_FIELD) - 1) && !__builtin_memcmp((_s), SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1))
 
-/*
- * Defines for SelvaObject user meta
- */
-#define SELVA_OBJECT_META_SUBTYPE_OBJECT 0
-#define SELVA_OBJECT_META_SUBTYPE_RECORD 1
-#define SELVA_OBJECT_META_SUBTYPE_TEXT 2
-#define SELVA_OBJECT_META_SUBTYPE_TIMESERIES 3
-
 struct selva_string;
 
 /**

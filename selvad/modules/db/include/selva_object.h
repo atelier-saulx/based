@@ -13,6 +13,14 @@
 #include "selva_lang.h"
 #include "selva_object_type.h"
 
+/*
+ * Common SelvaObject user meta types.
+ */
+#define SELVA_OBJECT_META_SUBTYPE_OBJECT 0 /*!< Regular object. */
+#define SELVA_OBJECT_META_SUBTYPE_RECORD 1 /*!< The object is a record (field). */
+#define SELVA_OBJECT_META_SUBTYPE_TEXT 2 /*!< The object is a text field. */
+#define SELVA_OBJECT_META_SUBTYPE_TIMESERIES 3 /*!< A timeseries field. */
+
 enum SelvaObjectReplyFlags {
     SELVA_OBJECT_REPLY_SPLICE_FLAG = 0x01, /*!< Set if the path should be spliced to start from the first wildcard. */
     SELVA_OBJECT_REPLY_ANY_OBJ_FLAG = 0x02, /*!< Send any object as a wildcard reply from SelvaObject_GetPointerPartialMatchStr(). */

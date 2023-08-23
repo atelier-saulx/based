@@ -12,8 +12,8 @@
 #include "selva_error.h"
 #include "selva_db.h"
 #include "db_config.h"
-#include "hierarchy.h"
 #include "selva_object.h"
+#include "hierarchy.h"
 #include "traversal.h"
 
 /**
