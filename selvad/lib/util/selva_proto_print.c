@@ -28,8 +28,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
         off = selva_proto_parse_vtype(msg, msg_size, i, &type, &data_len);
         if (off <= 0) {
             if (off < 0) {
-                /* TODO */
-                fprintf(stderr, "Failed to parse a value header: %s\n", selva_strerror(off));
+                fprintf(stream, "<vtype parse failed: %s>\n", selva_strerror(off));
             }
             return;
         }
@@ -45,8 +44,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
 
             err = selva_proto_parse_error(msg, msg_size, i - off, &err1, &err_msg_str, &err_msg_len);
             if (err) {
-                /* TODO */
-                fprintf(stderr, "Failed to parse an error received: %s\n", selva_strerror(err));
+                fprintf(stream, "<error parse failed: %s>\n", selva_strerror(err));
                 return;
             } else {
                 fprintf(stream, "%*s<Error %s: %.*s>,\n",
@@ -163,8 +161,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
 
             err = selva_proto_parse_replication_cmd(msg, msg_size, i - off, &eid, &ts, &repl_cmd_id, &compressed, &cmd_size);
             if (err) {
-                /* TODO */
-                fprintf(stderr, "Failed to parse an error received: %s\n", selva_strerror(err));
+                fprintf(stream, "<replication_cmd parse failed: %s>\n", selva_strerror(err));
                 return;
             }
 
@@ -177,8 +174,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
             fprintf(stream, "%*s<replication cmd=%s size=%zu>,\n", tabs * TAB_WIDTH, "", repl_cmd_str, cmd_size);
             i = i - off + sizeof(struct selva_proto_replication_cmd);
         } else {
-            /* TODO */
-            fprintf(stderr, "Invalid proto value\n");
+            fprintf(stream, "<Invalid proto value>\n");
             return;
         }
 
