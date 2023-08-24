@@ -307,7 +307,7 @@ void sdb_init(struct selva_io *io)
 
         io->compressed_buf_size = libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE);
         io->compressed_buf = selva_malloc(io->compressed_buf_size + ZBLOCK_BUF_SIZE);
-        io->block_buf = (char *)io->compressed_buf + ZBLOCK_BUF_SIZE;
+        io->block_buf = (char *)io->compressed_buf + io->compressed_buf_size;
         io->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
 
         /*
