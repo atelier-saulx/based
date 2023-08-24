@@ -9,6 +9,7 @@
 #include <string.h>
 #include <time.h>
 #include "selva_log.h"
+#include "selva_error.h"
 #include "event_loop.h"
 #include "evl_signal.h"
 #include "promise.h"
@@ -76,12 +77,15 @@ static void setup_async_signals(void)
     sfd = evl_create_sigfd(&mask);
     if (sfd >= 0) {
         evl_wait_fd(sfd, handle_signal, NULL, NULL, NULL);
+    } else {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to create a sigfd: %s", selva_strerror(sfd));
     }
 }
 
 IMPORT() {
     evl_import_event_loop();
     evl_import_signal();
+    evl_import_main(selva_log);
 }
 
 __constructor void init(void)

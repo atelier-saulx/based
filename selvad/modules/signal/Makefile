@@ -6,6 +6,7 @@ OBJ := \
 	   trace.o
 
 DEP := $(OBJ:%.o=%.d)
+LDFLAGS += -lutil
 TARGET := ../mod_signal$(MOD_SUFFIX)
 
 ifeq ($(uname_S),Linux)
