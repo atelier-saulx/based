@@ -294,7 +294,7 @@ void sdb_init(struct selva_io *io)
         };
 #endif
         struct stat st;
-        const size_t hdr_ftr_size = 0x60 + 8 + SELVA_IO_HASH_SIZE; /* FIXME Some macros? */
+        const size_t hdr_ftr_size = 0x60 + sizeof(magic_end) + SELVA_IO_HASH_SIZE; /* FIXME Some macros? */
 
         /* NOTE decomp needs the compressor to determine the worst case buf size. */
         /* TODO Coming in the upcoming version */
@@ -305,10 +305,10 @@ void sdb_init(struct selva_io *io)
         io->compressor = libdeflate_alloc_compressor(6);
         io->decompressor = libdeflate_alloc_decompressor();
 
-        io->compressed_buf = selva_malloc(libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE));
         io->compressed_buf_size = libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE);
-        io->block_buf = selva_malloc(ZBLOCK_BUF_SIZE);
-        io->block_buf_i =(io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
+        io->compressed_buf = selva_malloc(io->compressed_buf_size + ZBLOCK_BUF_SIZE);
+        io->block_buf = (char *)io->compressed_buf + ZBLOCK_BUF_SIZE;
+        io->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
 
         /*
          * Find the size of the compressed segment in the SDB file.
@@ -340,13 +340,11 @@ void sdb_init(struct selva_io *io)
 
 void sdb_deinit(struct selva_io *io)
 {
-    /* TODO Coming in the upcoming version */
-#if 0
     libdeflate_free_compressor(io->compressor);
     libdeflate_free_decompressor(io->decompressor);
-#endif
+
+    /* Note that block_buf follows compressed_buf in the same alloc. */
     selva_free(io->compressed_buf);
-    selva_free(io->block_buf);
 }
 
 int sdb_write_header(struct selva_io *io)
