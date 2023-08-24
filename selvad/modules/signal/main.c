@@ -42,10 +42,12 @@ static void handle_signal(struct event *ev, void *arg __unused)
  * evl_create_sigfd().
  */
 #define TERM_SIGNALS(apply) \
+    apply(SIGKILL) \
     apply(SIGSEGV) \
     apply(SIGBUS) \
     apply(SIGFPE) \
     apply(SIGILL) \
+    apply(SIGSTOP) \
     apply(SIGSYS)
 
 static void setup_async_signals(void)

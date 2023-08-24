@@ -165,7 +165,9 @@ int evl_create_sigfd(sigset_t *mask)
         const int sig = darwin_all[i];
 
         if (sigismember(mask, sig)) {
-            sigaction(sig, &act, NULL);
+            if (sigaction(sig, &act, NULL)) {
+                goto fail;
+            }
             darwin_sig2fd_wr[sig] = pfd[1];
         }
     }
