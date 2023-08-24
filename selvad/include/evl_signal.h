@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -23,10 +23,12 @@ struct evl_siginfo {
 };
 
 EVL_EXPORT(int, evl_create_sigfd, sigset_t *mask);
+EVL_EXPORT(void, evl_close_sigfd, sigset_t *mask);
 EVL_EXPORT(int, evl_read_sigfd, struct evl_siginfo *esig, int sfd);
 
 #define _evl_import_signal(apply) \
     apply(evl_create_sigfd) \
+    apply(evl_close_sigfd) \
     apply(evl_read_sigfd)
 
 /**

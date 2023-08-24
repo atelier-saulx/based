@@ -163,14 +163,36 @@ int evl_create_sigfd(sigset_t *mask)
 
     for (size_t i = 0; i < num_elem(darwin_all); i++) {
         const int sig = darwin_all[i];
+
         if (sigismember(mask, sig)) {
-            /* TODO Handle error? */
-            sigaction(sig, &act, NULL);
+            if (sigaction(sig, &act, NULL)) {
+                goto fail;
+            }
             darwin_sig2fd_wr[sig] = pfd[1];
         }
     }
 
     return pfd[0]; /* sfd */
+fail:
+    close(pfd[0]);
+    evl_close_sigfd(mask);
+    return SELVA_EINVAL;
+}
+
+void evl_close_sigfd(sigset_t *mask)
+{
+    for (size_t i = 0; i < num_elem(darwin_all); i++) {
+        const int sig = darwin_all[i];
+
+        if (sigismember(mask, sig)) {
+            int fd = darwin_sig2fd_wr[sig];
+
+            if (fd != -1) {
+                close(fd);
+                darwin_sig2fd_wr[sig] = -1;
+            }
+        }
+    }
 }
 
 int evl_read_sigfd(struct evl_siginfo *esig, int sfd)

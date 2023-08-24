@@ -34,6 +34,14 @@ int evl_create_sigfd(sigset_t *mask)
     return sfd;
 }
 
+int evl_close_sigfd(sigset_t *mask)
+{
+    /*
+     * NOP
+     * No implementation is needed on Linux as close(sfd) is enough.
+     */
+}
+
 int evl_read_sigfd(struct evl_siginfo *esig, int sfd)
 {
     struct signalfd_siginfo fdsi;
