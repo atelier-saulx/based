@@ -183,7 +183,6 @@ static void sdb_raw_write(struct selva_io *io, const void *p, size_t size)
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
         (void)fwrite(p, sizeof(uint8_t), size, io->file_io.file);
     } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        /* RFE Should it always overwrite? */
         io->string_io.err = selva_string_append(io->string_io.data, p, size);
     }
 }
