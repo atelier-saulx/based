@@ -209,7 +209,7 @@ enum evl_promise_status evl_promise_await(struct evl_promise *p, void **res)
     if (p->flags & (EVL_PROMISE_FLAG_AWAITING | EVL_PROMISE_FLAG_AWAITED)) {
         /* A promise can be only awaited once. */
         SELVA_LOG(SELVA_LOGL_CRIT, "double await");
-        abort(); /* RFE Is abort() the right way? */
+        abort(); /* We could also use exit() but we don't know whether something fatal has happened.*/
     }
 
     p->flags |= EVL_PROMISE_FLAG_AWAITING;
