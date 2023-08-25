@@ -32,9 +32,6 @@ struct selva_string;
  *  make an early short-circuit to skip the matching logic even when the
  *  matcher flags would cause a check. These flags are never included in the
  *  flags_filters.
- *  TODO Think about the naming of the flags.
- *  TODO A dirty flag would be useful to tell whether a refresh is still needed and
- *  if not the refresh could be skipped when attempted.
  */
 enum SelvaSubscriptionsMarkerFlags {
     /**
