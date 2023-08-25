@@ -7,8 +7,7 @@
 #ifndef _UTIL_CDEFS_H_
 #define _UTIL_CDEFS_H_
 
-/* FIXME Not the actual C23 version. */
-#if __STDC_VERSION__ < 202300L
+#if __STDC_VERSION__ < 202311L
 #define static_assert _Static_assert
 #define unreachable __builtin_unreachable
 #endif
