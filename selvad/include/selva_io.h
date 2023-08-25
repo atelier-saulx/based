@@ -37,6 +37,7 @@ enum selva_io_flags {
 #ifdef SELVA_IO_TYPE
 struct libdeflate_compressor;
 struct libdeflate_decompressor;
+struct selva_io_zbuf;
 
 struct selva_io {
     enum selva_io_flags flags;
@@ -56,10 +57,7 @@ struct selva_io {
     /*
      * Compressed SDB.
      */
-    char *block_buf; /*!< Buffer for current RW block. */
-    size_t block_buf_i; /*!< Index into block_buf. */
-    void *compressed_buf; /*!< Buffer for compressed block_buf. */
-    size_t compressed_buf_size; /*!< Size of compressed_buf. */
+    struct selva_io_zbuf *zbuf;
     struct libdeflate_compressor *compressor;
     struct libdeflate_decompressor *decompressor;
 

@@ -22,6 +22,13 @@
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
+struct selva_io_zbuf {
+    size_t block_buf_i; /*!< Index into block_buf. */
+    size_t compressed_buf_size; /*!< Size of compressed_buf. */
+    char block_buf[ZBLOCK_BUF_SIZE]; /*!< Buffer for current RW block. */
+    char compressed_buf[]; /*!< Buffer for compressed block_buf. */
+};
+
 extern const char * const selva_db_version;
 static const char magic_start[] = { 'S', 'E', 'L', 'V', 'A', '\0', '\0', '\0' };
 static const char magic_end[]   = { '\0', '\0', '\0', 'A', 'V', 'L', 'E', 'S' };
@@ -40,30 +47,33 @@ void selva_io_get_ver(struct SelvaDbVersionInfo *nfo)
 
 static int sdb_zwriteout(struct selva_io *io)
 {
+    struct selva_io_zbuf *zbuf = io->zbuf;
     size_t out_nbytes;
 
-    assert(io->block_buf_i == ZBLOCK_BUF_SIZE);
+    assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
-    out_nbytes = libdeflate_deflate_compress(io->compressor, io->block_buf, ZBLOCK_BUF_SIZE, io->compressed_buf, io->compressed_buf_size);
-    if (fwrite(io->compressed_buf, sizeof(uint8_t), out_nbytes, io->file_io.file) != out_nbytes) {
+    out_nbytes = libdeflate_deflate_compress(io->compressor, zbuf->block_buf, ZBLOCK_BUF_SIZE, zbuf->compressed_buf, zbuf->compressed_buf_size);
+    if (fwrite(zbuf->compressed_buf, sizeof(uint8_t), out_nbytes, io->file_io.file) != out_nbytes) {
         return SELVA_EIO;
     }
 
-    io->block_buf_i = 0;
+    zbuf->block_buf_i = 0;
 
     return 0;
 }
 
 static int sdb_flush_block_buf(struct selva_io *io)
 {
+    struct selva_io_zbuf *zbuf = io->zbuf;
+
     assert(io->flags & _SELVA_IO_FLAGS_EN_COMPRESS);
 
-    if (io->block_buf_i > 0) {
-        size_t remain = ZBLOCK_BUF_SIZE - io->block_buf_i;
+    if (zbuf->block_buf_i > 0) {
+        size_t remain = ZBLOCK_BUF_SIZE - zbuf->block_buf_i;
 
         /* pad with zeroes */
-        memset(io->block_buf + io->block_buf_i, 0, remain);
-        io->block_buf_i += remain;
+        memset(zbuf->block_buf + zbuf->block_buf_i, 0, remain);
+        zbuf->block_buf_i += remain;
 
         return sdb_zwriteout(io);
     }
@@ -72,34 +82,37 @@ static int sdb_flush_block_buf(struct selva_io *io)
 
 static int sdb_zreadin(struct selva_io *io)
 {
-    const size_t fread_nbytes = min(io->compressed_buf_size, io->file_io.file_remain);
+    struct selva_io_zbuf *zbuf = io->zbuf;
+    const size_t fread_nbytes = min(zbuf->compressed_buf_size, io->file_io.file_remain);
     size_t in_nbytes, in_nbytes_act;
     enum libdeflate_result res;
 
-    assert(io->block_buf_i == ZBLOCK_BUF_SIZE);
+    assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
-    in_nbytes = fread(io->compressed_buf, sizeof(uint8_t), fread_nbytes, io->file_io.file);
+    in_nbytes = fread(zbuf->compressed_buf, sizeof(uint8_t), fread_nbytes, io->file_io.file);
     if (in_nbytes != fread_nbytes && !feof(io->file_io.file)) {
         return SELVA_EIO;
     }
 
     /* Just to be sure that there is never any garbage left. */
-    memset(io->compressed_buf + in_nbytes, 0, io->compressed_buf_size - in_nbytes);
+    memset(zbuf->compressed_buf + in_nbytes, 0, zbuf->compressed_buf_size - in_nbytes);
 
-    res = libdeflate_deflate_decompress_ex(io->decompressor, io->compressed_buf, in_nbytes, io->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
+    res = libdeflate_deflate_decompress_ex(io->decompressor, zbuf->compressed_buf, in_nbytes, zbuf->block_buf, ZBLOCK_BUF_SIZE, &in_nbytes_act, NULL);
     if (res) {
         return SELVA_EINVAL;
     }
 
     io->file_io.file_remain -= in_nbytes_act;
     fseek(io->file_io.file, -(long)(in_nbytes - in_nbytes_act), SEEK_CUR);
-    io->block_buf_i = 0;
+    zbuf->block_buf_i = 0;
 
     return 0;
 }
 
 static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
+    struct selva_io_zbuf *zbuf = io->zbuf;
+
     sha3_Update(&io->hash_c, ptr, count * size);
 
     if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
@@ -107,16 +120,16 @@ static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t coun
         const char *p = ptr;
 
         while (left > 0) {
-            size_t bytes_to_copy = min(left, ZBLOCK_BUF_SIZE - io->block_buf_i);
+            size_t bytes_to_copy = min(left, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
 
-            assert(io->block_buf_i < ZBLOCK_BUF_SIZE && bytes_to_copy > 0);
+            assert(zbuf->block_buf_i < ZBLOCK_BUF_SIZE && bytes_to_copy > 0);
 
-            memcpy(io->block_buf + io->block_buf_i, p, bytes_to_copy);
+            memcpy(zbuf->block_buf + zbuf->block_buf_i, p, bytes_to_copy);
             p += bytes_to_copy;
             left -= bytes_to_copy;
-            io->block_buf_i += bytes_to_copy;
+            zbuf->block_buf_i += bytes_to_copy;
 
-            if (io->block_buf_i >= ZBLOCK_BUF_SIZE) {
+            if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
                 if (sdb_zwriteout(io)) {
                     return (size * count) - left;
                 }
@@ -131,6 +144,7 @@ static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t coun
 
 static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
+    struct selva_io_zbuf *zbuf = io->zbuf;
     size_t r;
 
     if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
@@ -140,7 +154,7 @@ static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, stru
         while (r < total_size) {
             size_t bytes_to_copy;
 
-            if (io->block_buf_i >= ZBLOCK_BUF_SIZE) {
+            if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
                 int err;
 
                 err = sdb_zreadin(io);
@@ -149,10 +163,10 @@ static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, stru
                 }
             }
 
-            bytes_to_copy = min(total_size - r, ZBLOCK_BUF_SIZE - io->block_buf_i);
-            memcpy((uint8_t *)ptr + r, io->block_buf + io->block_buf_i, bytes_to_copy);
+            bytes_to_copy = min(total_size - r, ZBLOCK_BUF_SIZE - zbuf->block_buf_i);
+            memcpy((uint8_t *)ptr + r, zbuf->block_buf + zbuf->block_buf_i, bytes_to_copy);
             r += bytes_to_copy;
-            io->block_buf_i += bytes_to_copy;
+            zbuf->block_buf_i += bytes_to_copy;
         }
 out:
         r /= size;
@@ -305,10 +319,11 @@ void sdb_init(struct selva_io *io)
         io->compressor = libdeflate_alloc_compressor(6);
         io->decompressor = libdeflate_alloc_decompressor();
 
-        io->compressed_buf_size = libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE);
-        io->compressed_buf = selva_malloc(io->compressed_buf_size + ZBLOCK_BUF_SIZE);
-        io->block_buf = (char *)io->compressed_buf + io->compressed_buf_size;
-        io->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
+        const size_t compressed_buf_size = libdeflate_deflate_compress_bound(io->compressor, ZBLOCK_BUF_SIZE);
+        struct selva_io_zbuf *zbuf = selva_malloc(sizeof(*zbuf) + compressed_buf_size);
+        zbuf->compressed_buf_size = compressed_buf_size;
+        zbuf->block_buf_i = (io->flags & SELVA_IO_FLAGS_WRITE) ? 0 : ZBLOCK_BUF_SIZE;
+        io->zbuf = zbuf;
 
         /*
          * Find the size of the compressed segment in the SDB file.
@@ -342,9 +357,7 @@ void sdb_deinit(struct selva_io *io)
 {
     libdeflate_free_compressor(io->compressor);
     libdeflate_free_decompressor(io->decompressor);
-
-    /* Note that block_buf follows compressed_buf in the same alloc. */
-    selva_free(io->compressed_buf);
+    selva_free(io->zbuf);
 }
 
 int sdb_write_header(struct selva_io *io)
