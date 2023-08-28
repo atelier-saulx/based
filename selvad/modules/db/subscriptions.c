@@ -2417,28 +2417,36 @@ void SelvaSubscriptions_ListMissingCommand(struct selva_server_response_out *res
     }
 }
 
-static int is_valid_sub_id(const char *str, size_t len)
+static SVector *debug_get_sub_markers(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
 {
-    size_t i = 0;
+    char buf[SELVA_SUB_ID_STR_MAXLEN + 1];
+    Selva_SubscriptionId sub_id;
+    struct Selva_Subscription *sub;
 
-    if (len == 0 || len > SELVA_SUB_ID_STR_MAXLEN) {
-        return 0;
+    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
+    errno = 0;
+    sub_id = strtoull(buf, NULL, 10);
+    if (errno) {
+        return NULL;
     }
 
-    if (str[0] == '-') {
-        if (len == 1) {
-            return 0;
-        }
-        i = 1;
+    sub = find_sub(hierarchy, sub_id);
+    return sub ? &sub->markers : NULL;
+}
+
+static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
+{
+    Selva_NodeId node_id;
+    struct SelvaHierarchyMetadata *metadata;
+
+    if (id_len >= SELVA_NODE_ID_SIZE) {
+        return NULL;
     }
 
-    for (; i < len; i++) {
-        if (!isdigit(str[i])) {
-            return 0;
-        }
-    }
+    Selva_NodeIdCpy(node_id, id_str);
 
-    return 1;
+    metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
+    return metadata ? &metadata->sub_markers.vec : NULL;
 }
 
 /*
@@ -2460,57 +2468,19 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
         return;
     }
 
-    const int is_sub_id = is_valid_sub_id(id_str, id_len);
-    const int is_node_id = id_len <= SELVA_NODE_ID_SIZE;
     SVector *markers = NULL;
 
-    if (is_sub_id) {
-        char buf[SELVA_SUB_ID_STR_MAXLEN + 1];
-        Selva_SubscriptionId sub_id;
-        struct Selva_Subscription *sub;
-        int e, err;
-
-        snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
-        errno = 0;
-        sub_id = strtoull(buf, NULL, 10);
-        e = errno;
-        if (e) {
-            if (e == ERANGE) {
-                err = SELVA_ERANGE;
-            } else {
-                err = SELVA_EINVAL;
-            }
-
-            selva_send_errorf(resp, err, "Subscription ID");
-            return;
-        }
-
-        sub = find_sub(hierarchy, sub_id);
-        if (!sub) {
-            selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
-            return;
-        }
-
-        markers = &sub->markers;
-    } else if (is_node_id) {
-        if (id_len == (sizeof("detached") - 1) && !memcmp("detached", id_str, id_len)) {
-            markers = &hierarchy->subs.detached_markers.vec;
-        } else {
-            Selva_NodeId node_id;
-            struct SelvaHierarchyMetadata *metadata;
-
-            Selva_NodeIdCpy(node_id, id_str);
-
-            metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
-            if (!metadata) {
-                selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
-                return;
-            }
-
-            markers = &metadata->sub_markers.vec;
-        }
-    } else {
-        selva_send_error(resp, SELVA_SUBSCRIPTIONS_EINVAL, NULL, 0);
+    if (id_len == (sizeof("detached") - 1) && !memcmp("detached", id_str, id_len)) {
+        markers = &hierarchy->subs.detached_markers.vec;
+    }
+    if (!markers) {
+        markers = debug_get_sub_markers(hierarchy, id_str, id_len);
+    }
+    if (!markers) {
+        markers = debug_get_node_markers(hierarchy, id_str, id_len);
+    }
+    if (!markers) {
+        selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
         return;
     }
 
