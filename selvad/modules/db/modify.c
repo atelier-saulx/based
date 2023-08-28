@@ -895,11 +895,13 @@ static unsigned parse_flags(const struct selva_string *arg) {
 }
 
 /**
+ * Pre-parse op args.
+ * Check if parents.$value is given.
  * Parse $alias query from the command args if one exists.
- * @param out a vector for the query.
- *            The SVector must be initialized before calling this function.
+ * @param alias_query_out a vector for the query.
+ *                        The SVector must be initialized before calling this function.
  */
-static void parse_alias_query(struct selva_string **argv, int argc, SVector *out) {
+static void pre_parse_ops(struct selva_string **argv, int argc, bool *parents_value_is_set, SVector *alias_query_out) {
     for (int i = 0; i < argc; i += 3) {
         const struct selva_string *type = argv[i];
         const struct selva_string *field = argv[i + 1];
@@ -908,11 +910,25 @@ static void parse_alias_query(struct selva_string **argv, int argc, SVector *out
         TO_STR(type, field, value);
         char type_code = type_str[0];
 
-        if (type_code == SELVA_MODIFY_ARG_STRING_ARRAY && !strcmp(field_str, "$alias")) {
+        if (type_code == SELVA_MODIFY_ARG_STRING_ARRAY &&
+            !strcmp(field_str, "$alias")) {
             const char *s;
             size_t j = 0;
             while ((s = sztok(value_str, value_len, &j))) {
-                SVector_Insert(out, (void *)s);
+                SVector_Insert(alias_query_out, (void *)s);
+            }
+        } else if (type_code == SELVA_MODIFY_ARG_OP_SET &&
+                   !strcmp(field_str, SELVA_PARENTS_FIELD) &&
+                   value_len >= sizeof(struct SelvaModify_OpSet)) {
+            typeof_field(struct SelvaModify_OpSet, op_set_type) op_set_type;
+            typeof_field(struct SelvaModify_OpSet, $value_len) op_set_value_len;
+
+            memcpy(&op_set_type, value_str + offsetof(struct SelvaModify_OpSet, op_set_type), sizeof(op_set_type));
+            memcpy(&op_set_value_len, value_str + offsetof(struct SelvaModify_OpSet, $value_len), sizeof(op_set_value_len));
+
+            if (op_set_type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE &&
+                op_set_value_len > 0) {
+                *parents_value_is_set = true;
             }
         }
     }
@@ -1738,7 +1754,8 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     /*
      * Look for $alias that would replace id.
      */
-    parse_alias_query(argv + 2, argc - 2, &alias_query);
+    bool parents_value_is_set = false;
+    pre_parse_ops(argv + 2, argc - 2, &parents_value_is_set, &alias_query);
     if (SVector_Size(&alias_query) > 0) {
         Selva_NodeId tmp_id;
 
@@ -1770,7 +1787,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
             return;
         }
 
-        const size_t nr_parents = !FISSET_NO_ROOT(flags);
+        const size_t nr_parents = !FISSET_NO_ROOT(flags) && !parents_value_is_set;
 
         err = SelvaModify_SetHierarchy(hierarchy, nodeId, nr_parents, ((Selva_NodeId []){ ROOT_NODE_ID }), 0, NULL, 0, &node);
         if (err < 0) {
