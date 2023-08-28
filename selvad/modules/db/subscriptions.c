@@ -2443,7 +2443,8 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
         return NULL;
     }
 
-    Selva_NodeIdCpy(node_id, id_str);
+    memset(node_id, '\0', SELVA_NODE_ID_SIZE);
+    memcpy(node_id, id_str, id_len);
 
     metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
     return metadata ? &metadata->sub_markers.vec : NULL;
