@@ -1844,7 +1844,7 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
     selva_send_ll(resp, marker->marker_id);
 
     selva_send_strf(resp, "flags");
-    selva_send_ll(resp, marker->marker_flags);
+    selva_send_llx(resp, marker->marker_flags);
 
     if (is_trigger) {
         selva_send_strf(resp, "event_type");
