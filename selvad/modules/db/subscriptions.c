@@ -2439,7 +2439,7 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
     Selva_NodeId node_id;
     struct SelvaHierarchyMetadata *metadata;
 
-    if (id_len >= SELVA_NODE_ID_SIZE) {
+    if (id_len > SELVA_NODE_ID_SIZE) {
         return NULL;
     }
 
