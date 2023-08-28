@@ -5,9 +5,10 @@ import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { deserialize } from 'data-record'
 import { protocol } from '../src'
+import { SELVA_NODE_ID_LEN } from '../src/protocol'
 // import { wait } from '@saulx/utils'
 
-test.only('descendants sub', async (t) => {
+test('descendants sub', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -98,11 +99,13 @@ test.only('descendants sub', async (t) => {
   })
 
   let evCnt: number = 0
+  let markerId: number = 0
   client.on('pubsub', ([chId, val]) => {
     if (chId === 0) {
       const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
       console.log('MARKER EVENT', chId, rec)
       evCnt++
+      markerId = Number(rec.marker_id)
     } else {
       console.log('EVENT', chId, val[0].toString('utf8'))
     }
@@ -359,14 +362,20 @@ test.only('descendants sub', async (t) => {
   )
   console.dir({ subs }, { depth: 8 })
 
+  for (const nodeId of ['root', 'po1', 'po2', third]) {
+    const d = await client.command('subscriptions.debug', [nodeId])
+    console.dir({ [nodeId]: d }, { depth: 6 })
+  }
+
   await wait(1e3)
   t.deepEqual(evCnt, 1)
+  t.deepEqual(markerId, 3805838763871)
 
   client.destroy()
   await server.destroy()
 })
 
-test.skip('node sub', async (t) => {
+test('node sub', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -457,11 +466,13 @@ test.skip('node sub', async (t) => {
   })
 
   let evCnt: number = 0
+  let markerId: number = 0
   client.on('pubsub', ([chId, val]) => {
     if (chId === 0) {
       const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
       console.log('MARKER EVENT', chId, rec)
       evCnt++
+      markerId = Number(rec.marker_id)
     } else {
       console.log('EVENT', chId, val[0].toString('utf8'))
     }
@@ -556,6 +567,7 @@ test.skip('node sub', async (t) => {
 
   await wait(1e3)
   t.deepEqual(evCnt, 1)
+  t.deepEqual(markerId, 5334180829803)
 
   client.destroy()
   await server.destroy()
