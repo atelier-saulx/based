@@ -67,7 +67,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
             if (flags & SELVA_PROTO_LONGLONG_FMT_HEX) {
                 fprintf(stream, "%*s%" PRIx64 ",\n", tabs * TAB_WIDTH, "", ll);
             } else {
-                fprintf(stream, "%*s%" PRIu64 ",\n", tabs * TAB_WIDTH, "", ll);
+                fprintf(stream, "%*s%" PRId64 ",\n", tabs * TAB_WIDTH, "", ll);
             }
         } else if (type == SELVA_PROTO_STRING) {
             struct selva_proto_string str_hdr;
