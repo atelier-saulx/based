@@ -2016,8 +2016,23 @@ int SelvaObject_GetPointerPartialMatchStr(struct SelvaObject *obj, const char *k
     return off;
 }
 
+static void lang_key_to_res(struct SelvaObjectKey *key, const char *lang_str, size_t lang_len, struct SelvaObjectAny *res) {
+#if 0
+    assert(key->type == SELVA_OBJECT_STRING);
+#endif
+
+    res->type = key->type;
+    res->subtype = key->subtype;
+    res->user_meta = SELVA_OBJECT_META_SUBTYPE_TEXT;
+    memset(res->str_lang, '\0', sizeof(res->str_lang));
+    memcpy(res->str_lang, lang_str, min(lang_len, LANG_MAX));
+    res->str = key->value;
+}
+
 static void get_any_string(struct SelvaObjectKey *key, struct selva_string *lang, struct SelvaObjectAny *res) {
     TO_STR(lang);
+
+    assert(key->type == SELVA_OBJECT_OBJECT);
 
     if (key->user_meta == SELVA_OBJECT_META_SUBTYPE_TEXT && lang_len > 0) {
         char buf[lang_len + 1];
@@ -2034,13 +2049,7 @@ static void get_any_string(struct SelvaObjectKey *key, struct selva_string *lang
 
             /* Ignore errors on purpose. */
             if (!err && text_key->type == SELVA_OBJECT_STRING) {
-                res->type = text_key->type;
-                res->subtype = text_key->subtype;
-                res->user_meta = SELVA_OBJECT_META_SUBTYPE_TEXT;
-                memset(res->str_lang, '\0', sizeof(res->str_lang));
-                memcpy(res->str_lang, s, min(slen, LANG_MAX));
-                res->str = text_key->value;
-
+                lang_key_to_res(text_key, s, slen, res);
                 break;
             }
         }
