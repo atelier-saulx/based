@@ -2555,29 +2555,16 @@ static void replyWithKeyValue(struct selva_server_response_out *resp, struct sel
         break;
     case SELVA_OBJECT_OBJECT:
         if (key->value) {
-            TO_STR(lang);
+            if (key->user_meta == SELVA_OBJECT_META_SUBTYPE_TEXT &&
+                lang && selva_string_get_len(lang) > 0) {
+                struct SelvaObjectAny any = {};
 
-            if (key->user_meta == SELVA_OBJECT_META_SUBTYPE_TEXT && lang && lang_len > 0) {
-                char buf[lang_len + 1];
-                memcpy(buf, lang_str, lang_len + 1);
-                const char *sep = "\n";
-                char *rest;
-
-                for (const char *s = strtok_r(buf, sep, &rest);
-                     s != NULL;
-                     s = strtok_r(NULL, sep, &rest)) {
-                    const size_t slen = strlen(s);
-                    struct SelvaObjectKey *text_key;
-                    int err = get_key(key->value, s, slen, 0, &text_key);
-
-                    /* Ignore errors on purpose. */
-                    if (!err && text_key->type == SELVA_OBJECT_STRING) {
-                        selva_send_string(resp, text_key->value);
-                        return;
-                    }
+                get_any_string(key, lang, &any);
+                if (any.str) {
+                    selva_send_string(resp, any.str);
+                } else {
+                    selva_send_null(resp);
                 }
-
-                selva_send_null(resp);
             } else {
                 replyWithObject(resp, lang, key->value, NULL);
             }
