@@ -226,7 +226,7 @@ static int AggregateCommand_NodeCb(
     Selva_NodeId nodeId;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = (args->find_args.offset > 0) ? !args->find_args.offset-- : 1;
+    int take = SelvaTraversal_ProcessSkip(&args->find_args);
 
     SelvaHierarchy_GetNodeId(nodeId, node);
 
@@ -251,6 +251,7 @@ static int AggregateCommand_NodeCb(
         }
     }
 
+    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 
@@ -308,7 +309,7 @@ static int AggregateCommand_ArrayObjectCb(
     struct SelvaObject *obj = value.obj;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = (args->find_args.offset > 0) ? !args->find_args.offset-- : 1;
+    int take = SelvaTraversal_ProcessSkip(&args->find_args);
 
     if (subtype != SELVA_OBJECT_OBJECT) {
         SELVA_LOG(SELVA_LOGL_ERR, "Array subtype not supported: %s",
@@ -339,6 +340,7 @@ static int AggregateCommand_ArrayObjectCb(
         }
     }
 
+    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 
@@ -765,11 +767,11 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
          * Run BFS/DFS.
          */
         ssize_t tmp_limit = -1;
-        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir); /* Skip n nodes from the results. */
         args.find_args = (struct FindCommand_Args){
             .lang = lang,
             .nr_nodes = &nr_nodes,
-            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset + skip : skip,
+            .skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir),
+            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset : 0,
             .limit = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? &query_opts.limit : &tmp_limit,
             .rpn_ctx = rpn_ctx,
             .filter = filter_expression,
