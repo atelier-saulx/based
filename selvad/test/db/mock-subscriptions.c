@@ -16,8 +16,7 @@ void SelvaSubscriptions_InitHierarchy(struct SelvaHierarchy *hierarchy) {
     struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
 
     SelvaObject_Init(hierarchy->subs.missing._obj_data);
-    SVector_Init(&def->updates, 2, NULL);
-    SVector_Init(&def->triggers, 3, NULL);
+    SVector_Init(&def->marker_events, 2, NULL);
     SVector_Init(&hierarchy->subs.detached_markers.vec, 0, NULL);
     hierarchy->subs.detached_markers.flags_filter = 0;
 }
@@ -25,8 +24,7 @@ void SelvaSubscriptions_InitHierarchy(struct SelvaHierarchy *hierarchy) {
 void SelvaSubscriptions_DestroyAll(struct SelvaHierarchy *hierarchy) {
     struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
 
-    SVector_Destroy(&def->updates);
-    SVector_Destroy(&def->triggers);
+    SVector_Destroy(&def->marker_events);
     SelvaObject_Clear(GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing), NULL);
 }
 
@@ -73,10 +71,8 @@ int SelvaSubscriptions_DeleteMarker(
         Selva_SubscriptionMarkerId marker_id) {
     return 0;
 }
-int SelvaSubscriptions_DeleteMarkerByPtr(
-        struct SelvaHierarchy *hierarchy,
-        struct Selva_SubscriptionMarker *marker) {
-    return 0;
+void SelvaSubscriptions_DeleteMarkerByPtr(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
+    return;
 }
 
 void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *id_str, size_t id_len) {

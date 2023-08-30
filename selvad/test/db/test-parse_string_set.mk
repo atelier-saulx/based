@@ -17,3 +17,6 @@ SRC-parse_string_set += ../../src/selva_log.c
 SRC-parse_string_set += ../../modules/db/selva_object/selva_object.c
 SRC-parse_string_set += ../../modules/db/selva_set/selva_set.c
 SRC-parse_string_set += ../../modules/db/parsers/string_set.c
+ifeq ($(uname_S),Darwin)
+	SRC-parse_string_set += ../../lib/util/memrchr.o
+endif

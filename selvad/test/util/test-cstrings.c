@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <punit.h>
 #include "util/cstrings.h"
+#include "util/array_field.h"
 
 static void setup(void)
 {
