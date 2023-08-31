@@ -152,16 +152,16 @@ int Inherit_FieldValue(
 }
 
 static void parse_type_and_field(const char *str, size_t len, const char **types_str, size_t *types_len, const char **name_str, size_t *name_len) {
-    if (len < 2 || str[0] != '^') {
-        *name_str = NULL;
-        *name_len = 0;
+    if (len < 2) {
         *types_str = NULL;
         *types_len = 0;
+        *name_str = NULL;
+        *name_len = 0;
         return;
     }
 
-    *types_str = str + 1;
-    *name_str = memchr(str + 1, ':', len);
+    *types_str = str;
+    *name_str = memchr(str, ':', len);
     if (*name_str) {
         (*name_str)++;
     }
@@ -197,16 +197,17 @@ static int Inherit_SendFields_NodeCb(
         TO_STR(types_and_field);
 
 		parse_type_and_field(types_and_field_str, types_and_field_len, &types_str, &types_len, &field_name_str, &field_name_len);
-		if (!types_str || !field_name_str || field_name_len == 0) {
+		if (field_name_len == 0) {
 			/* Invalid inherit string. */
 			continue;
 		}
 
-		if (!first_node && !is_type_match(node, (const char (*)[SELVA_NODE_TYPE_SIZE])types_str, types_len / sizeof(Selva_NodeType))) {
+		if (!first_node &&
+            types_str && !is_type_match(node, (const char (*)[SELVA_NODE_TYPE_SIZE])types_str, types_len / sizeof(Selva_NodeType))) {
 			/*
 			 * This node type is not accepted and we don't need to check whether
 			 * the field set.
-			 * We accept any type for the first node.
+			 * Note that we accept any type for the first node.
 			 */
 			return 0;
 		}
@@ -247,7 +248,7 @@ static int Inherit_SendFields_NodeCb(
     return 0;
 }
 
-int Inherit_SendFields(
+void Inherit_SendFields(
         struct selva_server_response_out *resp,
         struct SelvaHierarchy *hierarchy,
         struct selva_string *lang,
@@ -277,8 +278,6 @@ int Inherit_SendFields(
         /* TODO Better error handling? */
         SELVA_LOG(SELVA_LOGL_ERR, "Inherit failed: %s", selva_strerror(err));
     }
-
-    return args.nr_results;
 }
 
 static int InheritCommand_NodeCb(

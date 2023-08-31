@@ -576,7 +576,7 @@ int find_send_node_fields(
          * otherwise we'll easily hit the reentrancy limit of the trx
          * system.
          */
-        (void)Inherit_SendFields(resp, hierarchy, lang, nodeId, inherit_fields, nr_inherit_fields);
+        Inherit_SendFields(resp, hierarchy, lang, nodeId, inherit_fields, nr_inherit_fields);
     }
 
     selva_send_array_end(resp);
