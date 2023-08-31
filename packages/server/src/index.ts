@@ -5,6 +5,8 @@ import chalk from 'chalk'
 import { Options, ServerOptions } from './types'
 import { SelvaServer, startServer } from './server'
 
+export { SelvaServer }
+
 const resolveOpts = async (opts: Options): Promise<ServerOptions> => {
   let parsedOpts: ServerOptions
   if (typeof opts === 'function') {

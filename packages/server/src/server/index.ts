@@ -25,8 +25,8 @@ export class SelvaServer extends EventEmitter {
     this.setMaxListeners(10000)
     this.type = serverType
 
-    this.on('error', () => {
-      // console.error(err)
+    this.on('error', (err) => {
+      console.error(err)
     })
   }
 
@@ -109,7 +109,7 @@ function addSignalHandlers(server: SelvaServer): void {
   process.on('exit', (code) => {
     console.info('Process exiting with code', code)
     server.destroy()
-    process.exit(0)
+    process.exit(code)
   })
 }
 
