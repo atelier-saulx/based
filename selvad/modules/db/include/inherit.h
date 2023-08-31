@@ -39,7 +39,7 @@ int Inherit_FieldValue(
  * @param types_field_names is an array of pointers to field names. Format: `^ty:field`
  * @param Returns the number of fields sent.
  */
-size_t Inherit_SendFields(
+void Inherit_SendFields(
         struct selva_server_response_out *resp,
         struct SelvaHierarchy *hierarchy,
         struct selva_string *lang,

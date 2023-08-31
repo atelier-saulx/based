@@ -247,7 +247,7 @@ static int Inherit_SendFields_NodeCb(
     return 0;
 }
 
-int Inherit_SendFields(
+void Inherit_SendFields(
         struct selva_server_response_out *resp,
         struct SelvaHierarchy *hierarchy,
         struct selva_string *lang,
@@ -277,8 +277,6 @@ int Inherit_SendFields(
         /* TODO Better error handling? */
         SELVA_LOG(SELVA_LOGL_ERR, "Inherit failed: %s", selva_strerror(err));
     }
-
-    return args.nr_results;
 }
 
 static int InheritCommand_NodeCb(
