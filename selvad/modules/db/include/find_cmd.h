@@ -82,6 +82,8 @@ struct SelvaFind_QueryOpts {
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
          * The `id` field can't be excluded.
+         * Care should be taken to not exceed the re-entrancy limit of the trx
+         * system when ^ (inherit) is used with this mode.
          */
         SELVA_FIND_QUERY_RES_FIELDS,
         /**
@@ -99,6 +101,8 @@ struct SelvaFind_QueryOpts {
          *
          * Also the field names can contain wildcards as supported by SelvaObject.
          * The `id` field can't be excluded.
+         * Care should be taken to not exceed the re-entrancy limit of the trx
+         * system when ^ (inherit) is used with this mode.
          */
         SELVA_FIND_QUERY_RES_FIELDS_RPN,
         /**
