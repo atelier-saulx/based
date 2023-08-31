@@ -1,10 +1,11 @@
 import { BasedSchemaField } from '@based/schema'
-import { ExecContext } from '../../types'
+import { ExecContext, Field, GetCommand } from '../../types'
 import { parseFieldResult } from './field'
 
 export function parseRecFields(
   ctx: ExecContext,
   fieldSchema: BasedSchemaField,
+  cmd: GetCommand,
   fields: any[]
 ): any {
   const obj: any = {}
@@ -12,7 +13,7 @@ export function parseRecFields(
     const f = fields[i]
     const v = fields[i + 1]
 
-    obj[f] = parseFieldResult(ctx, fieldSchema, v)
+    obj[f] = parseFieldResult(ctx, fieldSchema, cmd, v)
   }
 
   return obj

@@ -736,7 +736,7 @@ test('get - hierarchy', async (t) => {
 })
 
 // TODO: $inherit missing
-test.skip('get - $inherit', async (t) => {
+test('get - $inherit', async (t) => {
   const { client } = t.context
   /*
     root
@@ -844,6 +844,8 @@ test.skip('get - $inherit', async (t) => {
     }
   )
 
+  return
+  // TODO: needs $inherit item
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'cuC',

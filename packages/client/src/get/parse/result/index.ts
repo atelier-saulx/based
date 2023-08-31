@@ -22,7 +22,7 @@ export function parseGetResult(
       type === 'aggregate' ||
       (cmd.type === 'ids' && cmd.mainType === 'aggregate')
         ? Number(result)
-        : parseResultRows({ ...ctx, commandPath: path }, result)
+        : parseResultRows({ ...ctx, commandPath: path }, cmd, result)
 
     // if it's a top level $list expression, just return in straight up
     if (
@@ -53,7 +53,11 @@ export function parseGetResult(
   return obj
 }
 
-function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
+function parseResultRows(
+  ctx: ExecContext,
+  cmd: GetCommand,
+  result: [string, any[]][]
+): any {
   return result.map((row) => {
     const rowCtx = { ...ctx, fieldAliases: {} }
 
@@ -72,6 +76,7 @@ function parseResultRows(ctx: ExecContext, result: [string, any[]][]): any {
       parseObjFields(
         rowCtx,
         { type: 'object', properties: typeSchema.fields },
+        cmd,
         fields
       ) || {}
 

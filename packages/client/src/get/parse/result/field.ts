@@ -4,14 +4,19 @@ import {
   BasedSchemaFieldObject,
   BasedSchemaFieldSet,
 } from '@based/schema'
-import { ExecContext } from '../../types'
+import { ExecContext, Field, GetCommand } from '../../types'
 import { parseRecFields } from './rec'
 import { getTypeSchema } from '../../../util'
 import { parseObjFields } from './obj'
 
 const FIELD_PARSERS: Record<
   string,
-  (x: any, ctx?: ExecContext, fieldSchema?: BasedSchemaField) => any
+  (
+    x: any,
+    ctx?: ExecContext,
+    cmd?: GetCommand,
+    fieldSchema?: BasedSchemaField
+  ) => any
 > = {
   string: (x) => x,
   boolean: (x) => !!x,
@@ -20,16 +25,21 @@ const FIELD_PARSERS: Record<
   cardinality: (x) => Number(x),
   float: (x) => Number(x),
   integer: (x) => Number(x),
-  text: (x, ctx: ExecContext) => {
+  text: (x, ctx: ExecContext, cmd) => {
     if (ctx.lang) {
       return x
     }
 
-    return parseRecFields(ctx, { type: 'string' }, x)
+    return parseRecFields(ctx, { type: 'string' }, cmd, x)
   },
-  array: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldArray) => {
+  array: (
+    ary: any[],
+    ctx: ExecContext,
+    cmd,
+    fieldSchema: BasedSchemaFieldArray
+  ) => {
     const res = ary.map((x) => {
-      return parseFieldResult(ctx, fieldSchema.values, x)
+      return parseFieldResult(ctx, fieldSchema.values, cmd, x)
     })
 
     if (!res.length) {
@@ -38,9 +48,14 @@ const FIELD_PARSERS: Record<
 
     return res
   },
-  set: (ary: any[], ctx: ExecContext, fieldSchema: BasedSchemaFieldSet) => {
+  set: (
+    ary: any[],
+    ctx: ExecContext,
+    cmd,
+    fieldSchema: BasedSchemaFieldSet
+  ) => {
     const res = ary.map((x) => {
-      return parseFieldResult(ctx, fieldSchema.items, x)
+      return parseFieldResult(ctx, fieldSchema.items, cmd, x)
     })
 
     if (!res.length) {
@@ -49,7 +64,7 @@ const FIELD_PARSERS: Record<
 
     return res
   },
-  reference: (ary: any | any[], ctx: ExecContext) => {
+  reference: (ary: any | any[], ctx: ExecContext, cmd) => {
     if (Array.isArray(ary)) {
       if (Array.isArray(ary[0])) {
         ary = ary[0]
@@ -61,6 +76,7 @@ const FIELD_PARSERS: Record<
         const obj = parseObjFields(
           ctx,
           { type: 'object', properties: typeSchema.fields },
+          cmd,
           fields
         )
         return obj
@@ -71,9 +87,9 @@ const FIELD_PARSERS: Record<
 
     return ary
   },
-  references: (ary: any[], ctx: ExecContext) => {
+  references: (ary: any[], ctx: ExecContext, cmd) => {
     const res = ary.map((x) => {
-      return parseFieldResult(ctx, { type: 'string' }, x)
+      return parseFieldResult(ctx, { type: 'string' }, cmd, x)
     })
 
     if (!res.length) {
@@ -85,24 +101,27 @@ const FIELD_PARSERS: Record<
   object: (
     ary: any[],
     ctx: ExecContext,
+    cmd,
     fieldSchema: BasedSchemaFieldObject
   ) => {
-    return parseObjFields(ctx, fieldSchema, ary)
+    return parseObjFields(ctx, fieldSchema, cmd, ary)
   },
   record: (
     ary: any[],
     ctx: ExecContext,
+    cmd,
     fieldSchema: BasedSchemaFieldArray
   ) => {
-    return parseRecFields(ctx, fieldSchema.values, ary)
+    return parseRecFields(ctx, fieldSchema.values, cmd, ary)
   },
 }
 
 export function parseFieldResult(
   ctx: ExecContext,
   fieldSchema: BasedSchemaField,
+  cmd: GetCommand,
   v: any
 ) {
   const parser = FIELD_PARSERS[fieldSchema?.type]
-  return parser?.(v, ctx, fieldSchema)
+  return parser?.(v, ctx, cmd, fieldSchema)
 }

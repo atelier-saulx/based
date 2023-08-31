@@ -1,11 +1,13 @@
 import { BasedSchemaField, BasedSchemaFieldObject } from '@based/schema'
-import { ExecContext } from '../../types'
+import { ExecContext, Field, GetCommand } from '../../types'
 import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
+import { joinPath } from '../../../util'
 
 export function parseObjFields(
   ctx: ExecContext,
   schema: BasedSchemaField,
+  cmd: GetCommand,
   fields: any[]
 ): any {
   // arrays with objects can have empty objects that are returned as null
@@ -17,7 +19,7 @@ export function parseObjFields(
   const obj: any = {}
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
-    const v = fields[i + 1]
+    let v = fields[i + 1]
     let fieldSchema = schema
 
     const [alias, rest] = f.split('@')
@@ -45,7 +47,18 @@ export function parseObjFields(
       fieldSchema = { type: 'string' }
     }
 
-    const res = parseFieldResult(ctx, fieldSchema, v)
+    // TODO: handle fields by type
+    // const fs = cmd?.fields?.byType[schema?.type] ?? cmd?.fields?.$any
+    const fs = cmd?.fields?.$any
+    const field = fs.find((f) => {
+      return joinPath(f.field) === alias
+    })
+
+    if (field?.inherit) {
+      v = v[1]
+    }
+
+    const res = parseFieldResult(ctx, fieldSchema, cmd, v)
     if (res === undefined) {
       continue
     }
