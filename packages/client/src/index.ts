@@ -31,6 +31,7 @@ import { deepMergeArrays } from '@saulx/utils'
 import { getCmd, purgeCache } from './get/exec/cmd'
 
 export * as protocol from './protocol'
+export * as dataRecord from 'data-record'
 
 export * as get from './get'
 
