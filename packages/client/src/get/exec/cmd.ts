@@ -114,6 +114,16 @@ async function execCmd(
 ): Promise<any> {
   const { client } = ctx
 
+  console.dir(
+    {
+      op: {
+        cmdName,
+        args: [makeLangArg(ctx), struct, nodeId, ...(extraArgs || []), ...rpn],
+      },
+    },
+    { depth: 9 }
+  )
+
   const op = await client.command(cmdName, [
     makeLangArg(ctx),
     createRecord(recordDef, struct),

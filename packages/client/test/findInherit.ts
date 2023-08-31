@@ -88,7 +88,7 @@ test.afterEach.always(async (t) => {
 })
 
 // TODO: $inherit
-test.skip('find - inherit', async (t) => {
+test.only('find - inherit', async (t) => {
   const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
