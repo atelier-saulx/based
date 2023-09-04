@@ -291,7 +291,15 @@ typedef void (*SelvaHierarchyChildCallback)(
         void *arg);
 
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
-int SelvaTraversal_GetSkip(enum SelvaTraversal dir);
+
+/**
+ * Calculate skip.
+ *  -1 = Always include the starting node.
+ *   0 = No action
+ * > 0 = Skip nodes.
+ */
+int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip);
+
 const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir);
 
 /**

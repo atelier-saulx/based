@@ -32,22 +32,21 @@ int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_
     return 0;
 }
 
-int SelvaTraversal_GetSkip(enum SelvaTraversal dir)
+int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip)
 {
-    switch (dir) {
-     /*
-      * Find needs to skip the head node of the traverse for some types as we
-      * are not interested in the node we already know.
-      */
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
-    case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION:
-        return 1;
-    default:
-        return 0;
-    }
+    ssize_t r;
+
+    /*
+     * Find needs to skip the head node of the traverse for some types as we
+     * are not interested in the node we already know.
+     */
+    r = !!((SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+            SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+            SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+            SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) & dir);
+
+    return (skip <= -1) ? 0 : r + skip;
 }
 
 const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir)

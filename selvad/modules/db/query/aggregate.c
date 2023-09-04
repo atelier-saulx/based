@@ -487,6 +487,9 @@ static int fixup_query_opts(struct SelvaAggregate_QueryOpts *qo, const char *bas
     static_assert(sizeof(qo->order) == sizeof(int32_t));
     qo->order = le32toh(qo->order);
 
+    static_assert(sizeof(qo->skip) == sizeof(int64_t));
+    qo->skip = le64toh(qo->skip);
+
     static_assert(sizeof(qo->offset) == sizeof(int64_t));
     qo->offset = le64toh(qo->offset);
 
@@ -770,7 +773,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         args.find_args = (struct FindCommand_Args){
             .lang = lang,
             .nr_nodes = &nr_nodes,
-            .skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir),
+            .skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir, query_opts.skip),
             .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset : 0,
             .limit = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? &query_opts.limit : &tmp_limit,
             .rpn_ctx = rpn_ctx,

@@ -84,7 +84,7 @@ static int skip_node(const struct SelvaFindIndexControlBlock *icb, const struct 
     Selva_NodeId node_id;
 
     SelvaHierarchy_GetNodeId(node_id, node);
-    return SelvaTraversal_GetSkip(icb->traversal.dir) && !memcmp(node_id, icb->node_id, SELVA_NODE_ID_SIZE);
+    return SelvaTraversal_GetSkip(icb->traversal.dir, 0) && !memcmp(node_id, icb->node_id, SELVA_NODE_ID_SIZE);
 }
 
 static void icb_res_init(struct SelvaFindIndexControlBlock *icb) {

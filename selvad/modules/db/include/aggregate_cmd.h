@@ -42,6 +42,14 @@ struct SelvaAggregate_QueryOpts {
     size_t order_by_field_len;
 
     /**
+     * Skip the first n nodes in the traversal.
+     *  -1 = Always include the starting node.
+     *   0 = No action
+     * > 0 = Skip nodes.
+     */
+    ssize_t skip;
+
+    /**
      * Skip the first n - 1 results.
      * 0 for not offset.
      */

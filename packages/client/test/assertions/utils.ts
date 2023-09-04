@@ -120,6 +120,7 @@ export const find = async ({
       dir_opt_str,
       res_opt_str,
       limit: BigInt(-1),
+      skip: BigInt(0),
       offset: BigInt(0),
     }),
     id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
