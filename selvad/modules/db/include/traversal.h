@@ -208,7 +208,8 @@ struct FindCommand_Args {
     struct selva_string *lang;
 
     ssize_t *nr_nodes; /*!< Number of nodes in the result. */
-    ssize_t offset; /*!< Start from nth node. */
+    ssize_t skip; /*!< Start processing from nth node. */
+    ssize_t offset; /*!< Start processing from nth node. */
     ssize_t *limit; /*!< Limit the number of result. */
 
     struct rpn_ctx *rpn_ctx;
@@ -232,6 +233,20 @@ struct FindCommand_Args {
         SelvaFind_ProcessObject process_obj;
     };
 };
+
+static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
+{
+    const int take = (args->skip > 0) ? !args->skip-- : 1;
+
+    return take;
+}
+
+static inline int SelvaTraversal_ProcessOffset(struct FindCommand_Args *args)
+{
+    const int take = (args->offset > 0) ? !args->offset-- : 1;
+
+    return take;
+}
 
 /**
  * Called for the first node in the traversal.
@@ -276,7 +291,15 @@ typedef void (*SelvaHierarchyChildCallback)(
         void *arg);
 
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
-int SelvaTraversal_GetSkip(enum SelvaTraversal dir);
+
+/**
+ * Calculate skip.
+ *  -1 = Always include the starting node.
+ *   0 = No action
+ * > 0 = Skip nodes.
+ */
+int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip);
+
 const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir);
 
 /**

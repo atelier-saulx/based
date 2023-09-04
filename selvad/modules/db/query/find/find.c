@@ -254,7 +254,7 @@ static __hot int FindCommand_NodeCb(
         void *arg) {
     struct FindCommand_Args *args = (struct FindCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->rpn_ctx;
-    int take = (args->offset > 0) ? !args->offset-- : 1;
+    int take = SelvaTraversal_ProcessSkip(args);
 
     args->acc_tot++;
     if (take && rpn_ctx) {
@@ -280,6 +280,7 @@ static __hot int FindCommand_NodeCb(
         }
     }
 
+    take = take && SelvaTraversal_ProcessOffset(args);
     if (take) {
         args->acc_take++;
 
@@ -598,6 +599,9 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
 
     static_assert(sizeof(qo->order) == sizeof(int32_t));
     qo->order = le32toh(qo->order);
+
+    static_assert(sizeof(qo->skip) == sizeof(int64_t));
+    qo->skip = le64toh(qo->skip);
 
     static_assert(sizeof(qo->offset) == sizeof(int64_t));
     qo->offset = le64toh(qo->offset);
@@ -931,13 +935,13 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         }
 
         ssize_t tmp_limit = -1;
-        const size_t skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir); /* Skip n nodes from the results. */
         struct FindCommand_Args args = {
             .fin = &fin,
             .resp = resp,
             .lang = lang,
             .nr_nodes = &nr_nodes,
-            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset + skip : skip,
+            .skip = ind_select >= 0 ? 0 : SelvaTraversal_GetSkip(query_opts.dir, query_opts.skip),
+            .offset = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? query_opts.offset : 0,
             .limit = (query_opts.order == SELVA_RESULT_ORDER_NONE) ? &query_opts.limit : &tmp_limit,
             .rpn_ctx = rpn_ctx,
             .filter = filter_expression,

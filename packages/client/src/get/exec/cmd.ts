@@ -151,6 +151,7 @@ async function makeOpts(
   const struct: any = {
     dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
     limit: BigInt(-1),
+    skip: BigInt(0),
     offset: BigInt(0),
   }
 
