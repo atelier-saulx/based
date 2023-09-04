@@ -637,8 +637,8 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
     finalizer_init(&fin);
 
-    int ARGV_FILTER_EXPR     = 3;
-    int ARGV_FILTER_ARGS     = 4;
+    const int ARGV_FILTER_EXPR     = 3;
+    const int ARGV_FILTER_ARGS     = 4;
 
     struct selva_string *lang = NULL;
     SVECTOR_AUTOFREE(traverse_result); /*!< for postprocessing the result. */

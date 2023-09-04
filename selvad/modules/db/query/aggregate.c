@@ -526,13 +526,12 @@ static size_t AggregateCommand_SendAggregateResult(const struct AggregateCommand
 void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
-    int argc;
-    int err;
+    int argc, err;
 
     finalizer_init(&fin);
 
-    int ARGV_FILTER_EXPR     = 4;
-    int ARGV_FILTER_ARGS     = 5;
+    const int ARGV_FILTER_EXPR     = 4;
+    const int ARGV_FILTER_ARGS     = 5;
 
     struct selva_string *lang;
     const char *query_opts_str;
