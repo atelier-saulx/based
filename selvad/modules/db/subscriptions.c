@@ -996,7 +996,6 @@ int Selva_AddSubscriptionAliasMarker(
     marker_set_dir(marker, SELVA_HIERARCHY_TRAVERSAL_NODE);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
-    /* TODO Should we catch the error? */
     (void)refresh_marker(hierarchy, marker);
     return err;
 fail:
@@ -2076,7 +2075,6 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     marker_set_filter(marker, filter_ctx, filter_expression);
 
-    /* TODO Should we catch the error? */
     (void)refresh_marker(hierarchy, marker);
     selva_send_ll(resp, 1);
     return;
