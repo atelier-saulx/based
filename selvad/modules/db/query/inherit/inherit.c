@@ -46,7 +46,6 @@ struct InheritSendFields_Args {
     struct selva_string *lang;
     const struct selva_string **field_names;
     struct bitmap *found;
-    ssize_t nr_results; /*!< Number of results sent. */
 };
 
 struct InheritCommand_Args {
@@ -223,12 +222,6 @@ static int Inherit_SendFields_NodeCb(
                                     field_name_str, field_name_len);
         if (err == 0) { /* found */
             bitmap_set(args->found, i); /* No need to look for this field anymore. */
-            args->nr_results++;
-
-            /* Stop traversing if all fields were found. */
-            if (args->nr_results == (ssize_t)args->nr_fields) {
-                return 1;
-            }
         } else if (err != SELVA_ENOENT) {
             Selva_NodeId nodeId;
 
@@ -245,7 +238,8 @@ static int Inherit_SendFields_NodeCb(
         }
     }
 
-    return 0;
+    /* Stop traversing if all fields were found. */
+    return (size_t)bitmap_popcount(args->found) == args->nr_fields;
 }
 
 void Inherit_SendFields(
@@ -261,7 +255,6 @@ void Inherit_SendFields(
         .first_node = 1,
         .field_names = types_field_names,
         .nr_fields = nr_field_names,
-        .nr_results = 0,
     };
     const struct SelvaHierarchyCallback cb = {
         .node_cb = Inherit_SendFields_NodeCb,

@@ -564,7 +564,6 @@ static void postprocess_inherit(
     }
 }
 
-/* TODO It wouldn't be necessary to call this in the loop. */
 static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order, enum SelvaFind_ResType res_type) {
     SelvaFind_Postprocess postprocess;
 
