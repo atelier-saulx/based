@@ -34,6 +34,7 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
+import { deepEqual } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
 
@@ -44,10 +45,7 @@ export { AuthState, BasedQuery }
 export class BasedClient extends Emitter {
   constructor(opts?: BasedOpts, settings?: Settings) {
     super()
-    if (opts && Object.keys(opts).length > 0) {
-      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
-      this.connect(opts)
-    }
+
     if (settings?.persistentStorage) {
       this.storagePath = settings.persistentStorage
     }
@@ -55,7 +53,9 @@ export class BasedClient extends Emitter {
       console.warn('MaxCacheSize setting not implemented yet...')
       this.maxCacheSize = settings.maxCacheSize
     }
-    initStorage(this)
+    if (opts) {
+      this.connect(opts)
+    }
   }
 
   // --------- Persistent Storage
@@ -207,17 +207,24 @@ export class BasedClient extends Emitter {
   ```
    */
   public async connect(opts?: BasedOpts) {
-    if (opts) {
+    if (opts && Object.keys(opts).length > 0) {
       if (this.opts) {
+        if (deepEqual(this.opts, opts)) {
+          return
+        }
         this.disconnect()
       }
       this.opts = opts
       this.url = () => parseOpts(opts)
+      this.storageEnvKey = hashObjectIgnoreKeyOrder(opts)
+      initStorage(this)
     }
+
     if (!this.opts) {
       console.error('Configure opts to connect')
       return
     }
+
     if (this.url && !this.connection) {
       this.connection = connectWebsocket(this, this.url)
     }
@@ -349,13 +356,14 @@ export class BasedClient extends Emitter {
   ): Promise<any> {
     const retryStrategy = opts?.retryStrategy
     if (retryStrategy) {
-      return new Promise((resolve, reject) => {
+      return new Promise((resolve) => {
         let time = 0
         let retries = 0
         const retryReject = (err) => {
           const newTime = retryStrategy(err, time, retries)
           retries++
           if (typeof newTime === 'number' && !isNaN(newTime)) {
+            time = newTime
             if (newTime === 0) {
               addToFunctionQueue(this, payload, name, resolve, retryReject)
             } else {
