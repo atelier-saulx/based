@@ -46,11 +46,13 @@ export const setStorageBrowser = (
   value: any
 ) => {
   try {
-    const prev = localStorage.getItem(key)
     const env = client.storageEnvKey
+    if (!env) {
+      return
+    }
 
+    const prev = localStorage.getItem(key)
     const stringifiedJson = JSON.stringify(value)
-
     const encoded =
       stringifiedJson.length > 70 || key === '@based-authState-' + env
         ? encodeBase64(fflate.deflateSync(stringToUtf8(stringifiedJson)))
@@ -82,7 +84,9 @@ export const setStorageBrowser = (
 
 const getStorageBrowser = (client: BasedClient, key: string): any => {
   const env = client.storageEnvKey
-
+  if (!env) {
+    return
+  }
   try {
     const value = localStorage.getItem(key)
     if (value !== undefined) {
@@ -101,6 +105,9 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
 
 export const initStorageBrowser = async (client: BasedClient) => {
   const env = client.storageEnvKey
+  if (!env) {
+    return
+  }
 
   try {
     // compress as option!

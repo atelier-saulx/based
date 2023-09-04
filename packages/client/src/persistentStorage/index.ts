@@ -10,6 +10,9 @@ const isBrowser = typeof window !== 'undefined'
 
 export const removeStorage = (client: BasedClient, key: string) => {
   const env = client.storageEnvKey
+  if (!env) {
+    return
+  }
   if (isBrowser) {
     key += '-' + env
     removeStorageBrowser(client, key)
@@ -20,6 +23,9 @@ export const removeStorage = (client: BasedClient, key: string) => {
 
 export const setStorage = (client: BasedClient, key: string, value: any) => {
   const env = client.storageEnvKey
+  if (!env) {
+    return
+  }
   if (isBrowser) {
     key += '-' + env
     setStorageBrowser(client, key, value)
