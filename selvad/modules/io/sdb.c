@@ -307,7 +307,9 @@ void sdb_init(struct selva_io *io)
         };
 #endif
         struct stat st;
-        const size_t hdr_ftr_size = 0x60 + sizeof(magic_end) + SELVA_IO_HASH_SIZE; /* FIXME Some macros? */
+        const size_t hdr_ftr_size =
+            sizeof(magic_start) + SELVA_DB_VERSION_SIZE + SELVA_DB_VERSION_SIZE + sizeof(uint32_t) + sizeof(uint32_t) +
+            sizeof(magic_end) + SELVA_IO_HASH_SIZE;
 
         /* NOTE decomp needs the compressor to determine the worst case buf size. */
         /* TODO Coming in the upcoming version */
