@@ -34,6 +34,7 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
+import { deepEqual } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
 
@@ -208,6 +209,9 @@ export class BasedClient extends Emitter {
   public async connect(opts?: BasedOpts) {
     if (opts && Object.keys(opts).length > 0) {
       if (this.opts) {
+        if (deepEqual(this.opts, opts)) {
+          return
+        }
         this.disconnect()
       }
       this.opts = opts
