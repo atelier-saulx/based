@@ -9,13 +9,14 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 
   await mkdir(persistentStorage).catch(() => {})
-
-  const client = new BasedClient(
-    {},
-    {
-      persistentStorage,
-    }
-  )
+  const opts = {
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  }
+  const client = new BasedClient(opts, {
+    persistentStorage,
+  })
   const server = new BasedServer({
     port: 9910,
     functions: {
@@ -50,13 +51,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
     },
   })
   await server.start()
-
-  client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-
   await client.setAuthState({ type: 'boeloe', token: '?', persistent: true })
 
   const r: any[] = []
@@ -87,42 +81,46 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   close()
 
   await client.destroy()
+  await server.destroy()
 
-  const client2 = new BasedClient(
-    {},
-    {
-      persistentStorage,
-    }
-  )
+  const client2 = new BasedClient(opts, {
+    persistentStorage,
+  })
 
   t.is(client2.authState.type, 'boeloe')
 
   let fromStorage: any
-  client2
-    .query(
-      'counter',
-      {
-        myQuery: 123,
-      },
-      { persistent: true }
-    )
-    .subscribe((d) => {
-      fromStorage = d
-    })
+  await new Promise((resolve) =>
+    client2
+      .query(
+        'counter',
+        {
+          myQuery: 123,
+        },
+        { persistent: true }
+      )
+      .subscribe((d) => {
+        fromStorage = d
+        resolve(d)
+      })
+  )
 
   let x: any
 
-  client2
-    .query(
-      'bigData',
-      {
-        myQuery: 123,
-      },
-      { persistent: true }
-    )
-    .subscribe((d) => {
-      x = d
-    })
+  await new Promise((resolve) =>
+    client2
+      .query(
+        'bigData',
+        {
+          myQuery: 123,
+        },
+        { persistent: true }
+      )
+      .subscribe((d) => {
+        resolve(d)
+        x = d
+      })
+  )
 
   t.is(fromStorage, 3)
 
@@ -131,7 +129,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   await wait(500)
   await client2.clearStorage()
   await client2.destroy(true)
-  await server.destroy()
 })
 
 test.serial.only('auth persist', async (t) => {
@@ -182,6 +179,12 @@ test.serial.only('auth persist', async (t) => {
   })
   await server.start()
 
+  const opts = {
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  }
+
   const client = new BasedClient(
     {},
     {
@@ -193,12 +196,7 @@ test.serial.only('auth persist', async (t) => {
     await server.destroy()
   })
 
-  await client.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
-  })
-
+  await client.connect(opts)
   await client.call('login')
 
   await wait(300)
@@ -206,28 +204,18 @@ test.serial.only('auth persist', async (t) => {
   t.is(client.authState.token, token)
 
   await t.notThrowsAsync(client.call('hello'))
-
   await wait(300)
-
   await client.destroy()
 
-  const client2 = new BasedClient(
-    {},
-    {
-      persistentStorage,
-    }
-  )
+  const client2 = new BasedClient(opts, {
+    persistentStorage,
+  })
 
   t.is(client2.authState.token, token)
 
   t.teardown(async () => {
     await client2.clearStorage()
     await client2.destroy()
-  })
-  await client2.connect({
-    url: async () => {
-      return 'ws://localhost:9910'
-    },
   })
 
   // this is where its at
