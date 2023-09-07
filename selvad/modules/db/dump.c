@@ -15,10 +15,11 @@
 #include <sys/wait.h>
 #include <unistd.h>
 #include "util/ctime.h"
-#include "util/sigstr.h"
 #include "util/finalizer.h"
 #include "util/sdb_name.h"
+#include "util/selva_rusage.h"
 #include "util/selva_string.h"
+#include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "sha3iuf/sha3.h"
 #include "evl_signal.h"
@@ -212,7 +213,14 @@ static void print_ready(const char * restrict msg, struct timespec * restrict ts
         unit = "s";
     }
 
-    SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s", msg, t, unit);
+    if (selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD) {
+        struct selva_rusage rusage;
+
+        selva_getrusage(SELVA_RUSAGE_SELF, &rusage);
+        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s, maxrss: %zu bytes", msg, t, unit, (size_t)rusage.ru_maxrss);
+    } else {
+        SELVA_LOG(SELVA_LOGL_INFO, "%s ready in %.2f %s", msg, t, unit);
+    }
 }
 
 /**

@@ -13,6 +13,7 @@ export const COMMAND_TYPES = {
   replicaof: 74,
   replicainfo: 75,
   replicawait: 77,
+  rusage: 11,
   // essential
   'resolve.nodeid': 18,
   lsaliases: 72,
@@ -235,6 +236,23 @@ export enum SelvaResultOrder {
 }
 
 const enum_type = 'int32_le'
+
+const selva_server_timespec = (name: string) => ({
+  name,
+  type: 'record',
+  def: [
+    { name: 'tv_sec', type: 'int64_le' },
+    { name: 'tv_nsec', type: 'int64_le' },
+  ]
+})
+
+export const selva_rusage = compile(
+  [
+    selva_server_timespec('ru_utime'),
+    selva_server_timespec('ru_stime'),
+    { name: 'ru_maxrss', type: 'uint64_le' },
+  ]
+)
 
 export const hierarchy_find_def = compile(
   [

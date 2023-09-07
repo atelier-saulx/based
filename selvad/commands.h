@@ -83,6 +83,13 @@
 #define CMD_ID_MALLOCPROFDUMP 10
 
 /**
+ * Show resource usage info.
+ * module: server
+ * cmd: meminfo
+ */
+#define CMD_ID_RUSAGE 11
+
+/**
  * Load db.
  * module: db
  * cmd: load

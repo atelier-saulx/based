@@ -32,6 +32,7 @@ OBJ := \
 	selva_proto_builder.o \
 	selva_proto_print.o \
 	selva_proto_scanf.o \
+	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \
 	svector.o \

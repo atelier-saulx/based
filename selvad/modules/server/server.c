@@ -12,6 +12,7 @@
 #include "endian.h"
 #include "util/finalizer.h"
 #include "util/net.h"
+#include "util/selva_rusage.h"
 #include "util/selva_string.h"
 #include "util/tcp.h"
 #include "util/timestamp.h"
@@ -389,6 +390,22 @@ static void mallocprofdump(struct selva_server_response_out *resp, const void *b
     selva_send_ll(resp, 1);
 }
 
+static void rusage(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
+{
+    struct selva_rusage net_rusage;
+
+    if (size != 0) {
+        selva_send_error_arity(resp);
+        return;
+    }
+
+    selva_getrusage_net(SELVA_RUSAGE_SELF, &net_rusage);
+    selva_send_bin(resp, &net_rusage, sizeof(net_rusage));
+
+    selva_getrusage_net(SELVA_RUSAGE_CHILDREN, &net_rusage);
+    selva_send_bin(resp, &net_rusage, sizeof(net_rusage));
+}
+
 static int new_server(int port)
 {
     int sockfd;
@@ -588,6 +605,7 @@ __constructor void init(void)
     SELVA_MK_COMMAND(CMD_ID_DBG, SELVA_CMD_MODE_PURE, dbg);
     SELVA_MK_COMMAND(CMD_ID_MALLOCSTATS, SELVA_CMD_MODE_PURE, mallocstats);
     SELVA_MK_COMMAND(CMD_ID_MALLOCPROFDUMP, SELVA_CMD_MODE_PURE, mallocprofdump);
+    SELVA_MK_COMMAND(CMD_ID_RUSAGE, SELVA_CMD_MODE_PURE, rusage);
 
     pubsub_init();
 

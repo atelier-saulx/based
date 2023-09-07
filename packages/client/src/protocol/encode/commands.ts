@@ -18,6 +18,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   replicaof: strEncoder(2), // ip, port
   replicainfo: null,
   replicawait: null,
+  rusage: null,
   // essential
   'resolve.nodeid': defaultEncoder([
     { type: 'longlong' }, // sub id
