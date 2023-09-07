@@ -226,8 +226,7 @@ test('get - $field with multiple options, taking the second', async (t) => {
   )
 })
 
-// TODO: $inherit missing
-test.skip('get - simple $field with $inherit: true', async (t) => {
+test('get - simple $field with $inherit: true', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'viH',
@@ -281,8 +280,7 @@ test.skip('get - simple $field with $inherit: true', async (t) => {
   )
 })
 
-// TODO: $inherit missing
-test.skip('get - simple $field with $inherit: $type', async (t) => {
+test('get - simple $field with $inherit: $type', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'cuA',
