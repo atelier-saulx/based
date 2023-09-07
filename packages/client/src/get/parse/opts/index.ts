@@ -105,7 +105,16 @@ export async function parseGetOpts(
         }
 
         if (value.$inherit) {
-          field.inherit = {}
+          let types = value.$inherit.$type
+          if (types) {
+            types = (Array.isArray(types) ? types : [types])
+              .map((type) => {
+                return ctx.client?.schema?.types[type]?.prefix
+              })
+              .filter((prefix) => !!prefix)
+          }
+
+          field.inherit = { types }
         }
 
         if ($field) {

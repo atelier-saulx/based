@@ -6,7 +6,8 @@ function getField(field: Field): { str: string; isInherit: boolean } {
   let str = joinPath(field.field)
 
   if (field.inherit) {
-    str = '^:' + str
+    const types = field.inherit.types ?? []
+    str = `^${types.join(',')}:` + str
   }
 
   if (field?.aliased?.length) {

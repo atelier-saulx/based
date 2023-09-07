@@ -176,8 +176,7 @@ test('find - inherit', async (t) => {
   )
 })
 
-// TODO: $inherit
-test.skip('find - inherit by type', async (t) => {
+test('find - inherit by type', async (t) => {
   const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
