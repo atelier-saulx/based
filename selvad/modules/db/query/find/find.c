@@ -43,7 +43,7 @@
 #include "inherit.h"
 #include "find_index.h"
 #include "../field_names.h"
-#include "../query_traverse.h"
+#include "query.h"
 #include "find_send.h"
 #include "find_cmd.h"
 

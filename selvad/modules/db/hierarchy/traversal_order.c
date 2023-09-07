@@ -14,6 +14,7 @@
 #include "db_config.h"
 #include "selva_object.h"
 #include "hierarchy.h"
+#include "query.h"
 #include "traversal.h"
 
 /**
@@ -200,15 +201,16 @@ struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
         struct SelvaHierarchyNode *node,
         const struct selva_string *order_field) {
     int err;
+    TO_STR(order_field);
     struct SelvaObjectAny any;
     struct order_data tmp = {
         .type = ORDER_ITEM_TYPE_EMPTY,
     };
 
-    err = SelvaObject_GetAnyLang(SelvaHierarchy_GetNodeObject(node), lang, order_field, &any);
+    err = query_get_data_field(lang, node, order_field_str, order_field_len, &any);
     if (!err) {
         obj_any2order_data(&any, &tmp);
-    } else if (err != SELVA_ENOENT) {
+    } else if (err != SELVA_ENOENT && err != SELVA_EINTYPE) {
         return NULL;
     }
 

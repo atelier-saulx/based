@@ -601,6 +601,9 @@ int SelvaHierarchy_ForeachInField(
         size_t field_len,
         const struct SelvaObjectSetForeachCallback *cb);
 
+/**
+ * Check if the field is a non-empty hierarchy field.
+ */
 int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len);
 
 /*

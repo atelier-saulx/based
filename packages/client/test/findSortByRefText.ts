@@ -56,8 +56,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// TODO Not implemented
-test.skip('sort by ref + name', async (t) => {
+test('sort by ref to name field', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -110,14 +109,12 @@ test.skip('sort by ref + name', async (t) => {
     title: 'value none',
   })
 
-  //t.deepEqual(
-  console.log(
-    'löllö',
-    JSON.stringify(await client.get({
+  t.deepEqual(
+    await client.get({
       children: {
         value: true,
         id: true,
-        homeTeam: true,
+        homeTeam: { id: true, name: true },
         $filter: [
           {
             $field: 'type',
@@ -132,7 +129,55 @@ test.skip('sort by ref + name', async (t) => {
           },
         },
       },
-    }), null, 2),
-    { children: [{ value: 1 }, { value: 2 }, { value: 4 }, {}, {}] }
+    }),
+    {
+      children: [
+        {
+          homeTeam: {
+            id: 'te2',
+            name: 'Awesome',
+          },
+          value: 5,
+          id: 'ma3',
+        },
+        {
+          homeTeam: {
+            id: 'te3',
+            name: 'Best',
+          },
+          value: 4,
+          id: 'ma4'
+        },
+        {
+          homeTeam: {
+            id: 'te1',
+            name: 'Good',
+          },
+          value: 1,
+          id: 'ma1',
+        },
+        {
+          homeTeam: {
+            id: 'te1',
+            name: 'Good',
+          },
+          value: 2,
+          id: 'ma2',
+        },
+        {
+         value: 5,
+         id: 'ma5',
+        },
+        {
+          id: 'te1',
+        },
+        {
+          id: 'te2',
+        },
+        {
+          id: 'te3',
+        }
+      ]
+    }
   )
 })

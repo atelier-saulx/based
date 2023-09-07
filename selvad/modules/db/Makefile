@@ -36,6 +36,7 @@ OBJ := \
 	   query/inherit/send_field_find.o \
 	   query/query_traverse.o \
 	   query/update.o \
+	   query/query_get_data_field.o \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \

@@ -32,7 +32,7 @@
 #include "selva_set.h"
 #include "subscriptions.h"
 #include "traversal.h"
-#include "query_traverse.h"
+#include "query.h"
 #include "aggregate_cmd.h"
 
 struct AggregateCommand_Args;

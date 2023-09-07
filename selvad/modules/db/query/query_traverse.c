@@ -10,7 +10,7 @@
 #include "selva_db.h"
 #include "traversal.h"
 #include "hierarchy.h"
-#include "query_traverse.h"
+#include "query.h"
 
 /*
  * Trace handles.
