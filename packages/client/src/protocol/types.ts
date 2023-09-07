@@ -9,70 +9,71 @@ export const COMMAND_TYPES = {
   save: 15,
   load: 14,
   flush: 16,
-  replicasync: 72,
-  replicaof: 73,
-  replicainfo: 74,
-  replicawait: 76,
+  replicasync: 73,
+  replicaof: 74,
+  replicainfo: 75,
+  replicawait: 77,
   // essential
   'resolve.nodeid': 18,
-  lsaliases: 71,
-  publish: 77,
-  subscribe: 78,
-  unsubscribe: 79,
+  lsaliases: 72,
+  publish: 78,
+  subscribe: 79,
+  unsubscribe: 80,
   // indexes
-  'index.list': 38,
+  'index.list': 39,
   // TODO:
-  // #define CMD_ID_INDEX_NEW 39
-  // #define CMD_ID_INDEX_DEL 40
-  // #define CMD_ID_INDEX_DEBUG 41
+  // #define CMD_ID_INDEX_NEW 40
+  // #define CMD_ID_INDEX_DEL 41
+  // #define CMD_ID_INDEX_DEBUG 42
   // object primitives
-  'object.get': 49,
-  'object.set': 53,
-  'object.del': 47,
-  'object.exists': 48,
-  'object.len': 52,
-  'object.setMeta': 57,
-  'object.incrby': 50,
-  'object.incrbydouble': 51,
-  'object.keys': 54,
+  'object.get': 50,
+  'object.set': 54,
+  'object.del': 48,
+  'object.exists': 49,
+  'object.len': 53,
+  'object.setMeta': 58,
+  'object.incrby': 51,
+  'object.incrbydouble': 52,
+  'object.keys': 55,
   // modify related commands
-  modify: 69,
+  modify: 70,
   // TODO:
-  // #define CMD_ID_UPDATE 70
+  // #define CMD_ID_UPDATE 71
   // hierarchy
-  'hierarchy.types.add': 35,
-  'hierarchy.types.clear': 36,
-  'hierarchy.types.list': 37,
+  'hierarchy.types.add': 36,
+  'hierarchy.types.clear': 37,
+  'hierarchy.types.list': 38,
   'hierarchy.find': 19,
   'hierarchy.aggregate': 21,
-  'hierarchy.edgeList': 29,
-  'hierarchy.edgeGet': 30,
-  'hierarchy.parents': 27,
-  'hierarchy.children': 28,
+  'hierarchy.edgeList': 30,
+  'hierarchy.edgeGet': 31,
+  'hierarchy.parents': 28,
+  'hierarchy.children': 29,
   'hierarchy.addConstraint': 23,
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
+  'hierarchy.expire': 26,
   // subscriptions
-  'subscriptions.addMarker': 58,
-  'subscriptions.list': 64,
-  'subscriptions.debug': 66,
-  'subscriptions.refresh': 62,
-  'subscriptions.refreshMarker': 63,
-  'subscriptions.del': 67,
-  'subscriptions.delmarker': 68,
+  'subscriptions.addMarker': 59,
+  'subscriptions.list': 65,
+  'subscriptions.debug': 67,
+  'subscriptions.refresh': 63,
+  'subscriptions.refreshMarker': 64,
+  'subscriptions.del': 68,
+  'subscriptions.delmarker': 69,
   // TODO:
   // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21
   // #define CMD_ID_HIERARCHY_HEADS 26
-  // #define CMD_ID_HIERARCHY_TYPES_ADD 35
-  // #define CMD_ID_HIERARCHY_TYPES_CLEAR 36
-  // #define CMD_ID_HIERARCHY_TYPES_LIST 37
+  // #define CMD_ID_HIERARCHY_TYPES_ADD 36
+  // #define CMD_ID_HIERARCHY_TYPES_CLEAR 37
+  // #define CMD_ID_HIERARCHY_TYPES_LIST 38
   // subscriptions
   // TODO:
-  // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 59
-  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 61
-  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 65
-  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 66
+  // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 60
+  // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 62
+  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 66
+  // #define CMD_ID_SUBSCRIPTIONS_DEBUG 67
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {

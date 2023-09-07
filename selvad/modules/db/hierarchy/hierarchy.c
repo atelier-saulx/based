@@ -16,6 +16,7 @@
 #include "util/backoff_timeout.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
+#include "util/selva_proto_builder.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
 #include "util/timestamp.h"
@@ -45,6 +46,8 @@
 #include "hierarchy_detached.h"
 #include "hierarchy_inactive.h"
 
+#define IS_EXPIRED(_ts_, _now_) ((time_t)(_ts_) <= (time_t)(_now_))
+
 /**
  * Node flags changing the node behavior.
  */
@@ -70,6 +73,15 @@ enum SelvaNodeFlags {
 typedef struct SelvaHierarchyNode {
     Selva_NodeId id; /* Must be first. */
     enum SelvaNodeFlags flags;
+    /**
+     * Expiration timestamp for this node.
+     * epoch = UNIX 2023-01-01T00:00:00Z = 1672531200000 (UNIX)
+     * 0 = never expires
+     * As this is a 32-bit unsigned integer, it means that we should be good
+     * until the year 2106.
+     * 1970+(2^32)/60/60/24/365 = 2106
+     */
+    uint32_t expire;
     struct trx_label trx_label;
     STATIC_SELVA_OBJECT(_obj_data);
     struct SelvaHierarchyMetadata metadata;
@@ -115,13 +127,22 @@ struct HierarchySaveNode {
     struct selva_io *io;
 };
 
-static void SelvaModify_DestroyNode(
+/**
+ * Period to check for expiring nodes.
+ * The resolution of the expire property is 1 sec.
+ */
+static const struct timespec hierarchy_expire_period = {
+    .tv_sec = 1,
+};
+
+static void SelvaHierarchy_DestroyNode(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node);
 static int removeRelationships(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
         enum SelvaHierarchyNode_Relationship rel);
+static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, uint32_t expire);
 RB_PROTOTYPE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type);
 static int restore_subtree(SelvaHierarchy *hierarchy, const Selva_NodeId id);
@@ -159,8 +180,22 @@ static int SVector_HierarchyNode_id_compare(const void ** restrict a_raw, const 
     const SelvaHierarchyNode *a = *(const SelvaHierarchyNode **)a_raw;
     const SelvaHierarchyNode *b = *(const SelvaHierarchyNode **)b_raw;
 
-    assert(a);
-    assert(b);
+    assert(a && b);
+
+    return memcmp(a->id, b->id, SELVA_NODE_ID_SIZE);
+}
+
+static int SVector_HierarchyNode_expire_compare(const void ** restrict a_raw, const void ** restrict b_raw) {
+    const SelvaHierarchyNode *a = *(const SelvaHierarchyNode **)a_raw;
+    const SelvaHierarchyNode *b = *(const SelvaHierarchyNode **)b_raw;
+    int diff;
+
+    assert(a && b);
+
+    diff = a->expire - b->expire;
+    if (diff) {
+        return diff;
+    }
 
     return memcmp(a->id, b->id, SELVA_NODE_ID_SIZE);
 }
@@ -210,6 +245,9 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
         }
     }
 
+    SVector_Init(&hierarchy->expiring.list, 0, SVector_HierarchyNode_expire_compare);
+    hierarchy->expiring.next = HIERARCHY_EXPIRING_NEVER;
+
 fail:
     return hierarchy;
 }
@@ -218,10 +256,16 @@ void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy) {
     SelvaHierarchyNode *node;
     SelvaHierarchyNode *next;
 
+    /*
+     * Destroy expire control.
+     */
+    evl_clear_timeout(hierarchy->expiring.tim_id, NULL);
+    SVector_Destroy(&hierarchy->expiring.list);
+
     for (node = RB_MIN(hierarchy_index_tree, &hierarchy->index_head); node != NULL; node = next) {
         next = RB_NEXT(hierarchy_index_tree, &hierarchy->index_head, node);
         RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
-        SelvaModify_DestroyNode(hierarchy, node);
+        SelvaHierarchy_DestroyNode(hierarchy, node);
     }
 
     SelvaSubscriptions_DestroyAll(hierarchy);
@@ -373,8 +417,14 @@ static void new_node_events(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node)
         SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, node->id, SELVA_NODE_ID_SIZE);
 }
 
-static void SelvaModify_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
+/**
+ * Destroy node.
+ * parents and children etc. must be empty unless the whole hierarchy is being freed.
+ */
+static void SelvaHierarchy_DestroyNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
     SelvaHierarchyMetadataDestructorHook **dtor_p;
+
+    hierarchy_set_expire(hierarchy, node, 0); /* Remove expire */
 
     SET_FOREACH(dtor_p, selva_HMDtor) {
         SelvaHierarchyMetadataDestructorHook *dtor = *dtor_p;
@@ -460,52 +510,48 @@ static SelvaHierarchyNode *find_node_index(SelvaHierarchy *hierarchy, const Selv
 }
 
 SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Selva_NodeId id) {
+    SelvaHierarchyNode *node;
     int err;
 
-    {
-        /* We want to reduce the scope of `node` for dev safety. */
-        SelvaHierarchyNode *node;
-
-        SELVA_TRACE_BEGIN(find_inmem);
-        node = find_node_index(hierarchy, id);
-        SELVA_TRACE_END(find_inmem);
-        if (node) {
-            if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-                return node;
-            } else if (isDecompressingSubtree) {
-                err = repopulate_detached_head(hierarchy, node);
-                if (err) {
-                    return NULL;
+    SELVA_TRACE_BEGIN(find_inmem);
+    node = find_node_index(hierarchy, id);
+    SELVA_TRACE_END(find_inmem);
+    if (node) {
+        if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
+            /* NOP */
+        } else if (isDecompressingSubtree) {
+            err = repopulate_detached_head(hierarchy, node);
+            if (err) {
+                return NULL;
+            }
+        } else {
+            node = NULL;
+        }
+    } else {
+        /*
+         * We don't want upsert to be looking from detached nodes.
+         * If isDecompressingSubtree is set it means that restore_subtree() was
+         * already called once.
+         */
+        if (SelvaHierarchyDetached_IndexExists(hierarchy) && !isDecompressingSubtree) {
+            SELVA_TRACE_BEGIN(find_detached);
+            err = restore_subtree(hierarchy, id);
+            SELVA_TRACE_END(find_detached);
+            if (err) {
+                if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
+                    SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
+                              (int)SELVA_NODE_ID_SIZE, id,
+                              selva_strerror(err));
                 }
 
-                return node;
+                return NULL;
             }
+
+            node = find_node_index(hierarchy, id);
         }
     }
 
-    /*
-     * We don't want upsert to be looking from detached nodes.
-     * If isDecompressingSubtree is set it means that restore_subtree() was
-     * already called once.
-     */
-    if (SelvaHierarchyDetached_IndexExists(hierarchy) && !isDecompressingSubtree) {
-        SELVA_TRACE_BEGIN(find_detached);
-        err = restore_subtree(hierarchy, id);
-        SELVA_TRACE_END(find_detached);
-        if (err) {
-            if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
-                          (int)SELVA_NODE_ID_SIZE, id,
-                          selva_strerror(err));
-            }
-
-            return NULL;
-        }
-
-        return find_node_index(hierarchy, id);
-    }
-
-    return NULL;
+    return node;
 }
 
 struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
@@ -624,7 +670,7 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
         rmHead(hierarchy, node);
 
         RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
-        SelvaModify_DestroyNode(hierarchy, node);
+        SelvaHierarchy_DestroyNode(hierarchy, node);
     }
 }
 
@@ -1101,7 +1147,7 @@ int SelvaModify_SetHierarchy(
 
     if (isNewNode) {
         if (unlikely(index_new_node(hierarchy, node))) {
-            SelvaModify_DestroyNode(hierarchy, node);
+            SelvaHierarchy_DestroyNode(hierarchy, node);
 
             return SELVA_HIERARCHY_EEXIST;
         }
@@ -1319,7 +1365,7 @@ int SelvaHierarchy_UpsertNode(
          /*
           * We are being extremely paranoid here as this shouldn't be possible.
           */
-         SelvaModify_DestroyNode(hierarchy, node);
+         SelvaHierarchy_DestroyNode(hierarchy, node);
 
          if (out) {
              *out = prev_node;
@@ -1472,7 +1518,7 @@ static int subr_del_adj_relationship(
  * @param flags controlling how the deletion is executed.
  * @param opt_arg is a pointer to an optional argument, depending on flags.
  */
-static int SelvaModify_DelHierarchyNodeP(
+static int SelvaHierarchy_DelNodeP(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
@@ -1554,7 +1600,7 @@ static int SelvaModify_DelHierarchyNodeP(
              * empty and no edge fields are pointing to it.
              */
             if ((flags & DEL_HIERARCHY_NODE_FORCE) || (SVector_Size(&child->parents) == 0 && Edge_Refcount(child) == 0)) {
-                err = SelvaModify_DelHierarchyNodeP(resp, hierarchy, child, flags, opt_arg);
+                err = SelvaHierarchy_DelNodeP(resp, hierarchy, child, flags, opt_arg);
                 if (err < 0) {
                     return err;
                 } else {
@@ -1573,7 +1619,7 @@ static int SelvaModify_DelHierarchyNodeP(
     return nr_deleted + 1;
 }
 
-int SelvaModify_DelHierarchyNode(
+int SelvaHierarchy_DelNode(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
@@ -1585,7 +1631,117 @@ int SelvaModify_DelHierarchyNode(
         return SELVA_HIERARCHY_ENOENT;
     }
 
-    return SelvaModify_DelHierarchyNodeP(resp, hierarchy, node, flags, NULL);
+    return SelvaHierarchy_DelNodeP(resp, hierarchy, node, flags, NULL);
+}
+
+/**
+ * Destroy the node if it's expiring.
+ * @returns true if the node was expired.
+ */
+static bool expire_node(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, time_t now) {
+    if (node->expire && !isLoading() && !hierarchy->flag_isSaving) {
+        static_assert(sizeof(time_t) >= sizeof(int64_t));
+
+        if (IS_EXPIRED(node->expire, now)) {
+            const enum SelvaModify_DelHierarchyNodeFlag flags = 0;
+
+            SELVA_LOG(SELVA_LOGL_DBG, "Expiring %.*s", (int)SELVA_NODE_ID_SIZE, node->id);
+            (void)SelvaHierarchy_DelNodeP(NULL, hierarchy, node, flags, NULL);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, uint32_t expire) {
+    uint32_t prev;
+    bool updated = false;
+
+    prev = node->expire;
+    if (prev != 0) {
+        (void)SVector_Remove(&hierarchy->expiring.list, node);
+        updated = true;
+    }
+
+    node->expire = expire;
+    if (expire != 0) {
+        (void)SVector_InsertFast(&hierarchy->expiring.list, node);
+        updated = true;
+    }
+
+    if (updated) {
+        struct SelvaHierarchyNode *top;
+
+        top = SVector_Peek(&hierarchy->expiring.list);
+        hierarchy->expiring.next = (top) ? top->expire : HIERARCHY_EXPIRING_NEVER;
+    }
+}
+
+/**
+ * Process expiring nodes every 1 sec.
+ */
+static void hierarchy_expire_tim_proc(struct event *e __unused, void *data) {
+    struct SelvaHierarchy *hierarchy = (struct SelvaHierarchy *)data;
+    const enum replication_mode rmode = selva_replication_get_mode();
+
+    hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, data);
+
+    /*
+     * Nodes are only expired on the origin and replicated to the replicas.
+     */
+    if (rmode == SELVA_REPLICATION_MODE_NONE ||
+        rmode == SELVA_REPLICATION_MODE_ORIGIN) {
+        struct timespec now;
+
+        ts_monorealtime(&now);
+
+        if (IS_EXPIRED(hierarchy->expiring.next, now.tv_sec)) {
+            struct SelvaHierarchyNode *node;
+
+            /*
+             * Expire/destroy all expiring nodes.
+             */
+            if (rmode == SELVA_REPLICATION_MODE_ORIGIN) {
+                /*
+                 * We need to replicate expirations.
+                 */
+                while ((node = SVector_Peek(&hierarchy->expiring.list))) {
+                    Selva_NodeId node_id;
+
+                    memcpy(node_id, node->id, SELVA_NODE_ID_SIZE);
+
+                    if (expire_node(hierarchy, node, now.tv_sec)) {
+                        struct selva_proto_builder_msg msg;
+
+                        selva_proto_builder_init(&msg);
+                        selva_proto_builder_insert_string(&msg, NULL, 0);
+                        selva_proto_builder_insert_string(&msg, node_id, SELVA_NODE_ID_SIZE);
+                        selva_proto_builder_end(&msg);
+
+                        /*
+                         * Replicate expiration as a delete cmd.
+                         */
+                        selva_replication_replicate(ts_now(), CMD_ID_HIERARCHY_DEL, msg.buf, msg.bsize);
+                        selva_proto_builder_deinit(&msg);
+                    } else {
+                        break;
+                    }
+                }
+            } else {
+                /*
+                 * Non-replication mode code can be much simpler.
+                 */
+                while ((node = SVector_Peek(&hierarchy->expiring.list))) {
+                    if (!expire_node(hierarchy, node, now.tv_sec)) {
+                        break;
+                    }
+                }
+            }
+
+            SelvaSubscriptions_SendDeferredEvents(hierarchy);
+        }
+    }
 }
 
 static int SelvaHierarchyHeadCallback_Dummy(
@@ -2658,7 +2814,7 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
     /*
      * Now delete the compressed nodes.
      */
-    err = SelvaModify_DelHierarchyNodeP(
+    err = SelvaHierarchy_DelNodeP(
             NULL, hierarchy, node,
             DEL_HIERARCHY_NODE_FORCE | DEL_HIERARCHY_NODE_DETACH,
             tag_compressed);
@@ -2955,9 +3111,8 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
         return err;
     }
 
-    if (encver > 3) {
-        node->flags = selva_io_load_unsigned(io);
-    }
+    node->flags = selva_io_load_unsigned(io);
+    node->expire = selva_io_load_unsigned(io);
 
     if (node->flags & SELVA_NODE_FLAGS_DETACHED && !isDecompressingSubtree) {
         /*
@@ -3039,12 +3194,10 @@ SelvaHierarchy *Hierarchy_Load(struct selva_io *io) {
         goto error;
     }
 
-    if (encver >= 5) {
-        if (!SelvaObjectTypeLoadTo(io, encver, SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy), NULL)) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "Failed to node types");
-            err = SELVA_HIERARCHY_EINVAL;
-            goto error;
-        }
+    if (!SelvaObjectTypeLoadTo(io, encver, SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy), NULL)) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to node types");
+        err = SELVA_HIERARCHY_EINVAL;
+        goto error;
     }
 
     err = EdgeConstraint_Load(io, encver, &hierarchy->edge_field_constraints);
@@ -3122,6 +3275,7 @@ static int HierarchySaveNode(
 
     selva_io_save_str(io, node->id, SELVA_NODE_ID_SIZE);
     selva_io_save_unsigned(io, node->flags);
+    selva_io_save_unsigned(io, node->expire);
 
     if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
         save_detached_node(io, hierarchy, node->id);
@@ -3306,7 +3460,7 @@ static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, str
 }
 
 /*
- * SELVA.HIERARCHY.DEL HIERARCHY_KEY FLAGS [NODE_ID1[, NODE_ID2, ...]]
+ * HIERARCHY.DEL FLAGS [NODE_ID1[, NODE_ID2, ...]]
  * If no NODE_IDs are given then nothing will be deleted.
  */
 static void SelvaHierarchy_DelNodeCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
@@ -3349,7 +3503,7 @@ static void SelvaHierarchy_DelNodeCommand(struct selva_server_response_out *resp
         int res;
 
         selva_string2node_id(nodeId, argv[i]);
-        res = SelvaModify_DelHierarchyNode(resp, hierarchy, nodeId, flags);
+        res = SelvaHierarchy_DelNode(resp, hierarchy, nodeId, flags);
         if (res >= 0) {
             nr_deleted += res;
         } else {
@@ -3374,6 +3528,43 @@ static void SelvaHierarchy_DelNodeCommand(struct selva_server_response_out *resp
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     }
     SelvaSubscriptions_SendDeferredEvents(hierarchy);
+}
+
+/*
+ * HIERARCHY.EXPIRE NODE_ID1 TS
+ */
+static void SelvaHierarchy_ExpireCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+    SelvaHierarchy *hierarchy = main_hierarchy;
+    Selva_NodeId nodeId;
+    uint32_t prev, expire = 0;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %" PRIu32, nodeId, &expire);
+    if (argc != 1 && argc != 2) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
+        return;
+    }
+
+    /*
+     * Find the node.
+     */
+    SelvaHierarchyNode *node = SelvaHierarchy_FindNode(hierarchy, nodeId);
+    if (!node) {
+        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
+        return;
+    }
+
+    prev = node->expire;
+    if (argc == 2) {
+        hierarchy_set_expire(hierarchy, node, expire);
+        selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
+    }
+
+    selva_send_ll(resp, prev);
 }
 
 static void SelvaHierarchy_HeadsCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
@@ -3409,7 +3600,6 @@ static void SelvaHierarchy_ParentsCommand(struct selva_server_response_out *resp
         }
         return;
     }
-
 
     /*
      * Find the node.
@@ -3737,6 +3927,7 @@ static int Hierarchy_OnLoad(void) {
      * Register commands.
      */
     selva_mk_command(CMD_ID_HIERARCHY_DEL, SELVA_CMD_MODE_MUTATE, "hierarchy.del", SelvaHierarchy_DelNodeCommand);
+    selva_mk_command(CMD_ID_HIERARCHY_EXPIRE, SELVA_CMD_MODE_MUTATE, "hierarchy.expire", SelvaHierarchy_ExpireCommand);
     selva_mk_command(CMD_ID_HIERARCHY_HEADS, SELVA_CMD_MODE_PURE, "hierarchy.heads", SelvaHierarchy_HeadsCommand);
     selva_mk_command(CMD_ID_HIERARCHY_PARENTS, SELVA_CMD_MODE_PURE, "hierarchy.parents", SelvaHierarchy_ParentsCommand);
     selva_mk_command(CMD_ID_HIERARCHY_CHILDREN, SELVA_CMD_MODE_PURE, "hierarchy.children", SelvaHierarchy_ChildrenCommand);
@@ -3752,6 +3943,8 @@ static int Hierarchy_OnLoad(void) {
         /* Probably not what happened but good enough. */
         return SELVA_HIERARCHY_ENOMEM;
     }
+
+    main_hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, main_hierarchy);
 
     return 0;
 }

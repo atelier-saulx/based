@@ -95,6 +95,10 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // flags
     { type: 'string', vararg: true }, // ... nodeID
   ]),
+  'hierarchy.expire': defaultEncoder([
+    { type: 'id' },
+    { type: 'longlong' }, // ts
+  ]),
   'hierarchy.addConstraint': strEncoder(4), // <src node type>,<contraint flags>,<fwd field name>,<bck field name>
   'hierarchy.listConstraints': null,
   'hierarchy.find': defaultEncoder([

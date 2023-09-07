@@ -22,7 +22,7 @@ expression using a single function but it wouldn't be as interesting example as
 the following filter is.
 
 ```
-SELVA.HIERARCHY.find test dfs descendants "grphnode_1" '$0 b "2X" d'
+hierarchy.find test dfs descendants "grphnode_1" '$0 b "2X" d'
 ```
 
 Breaking down the filter:
@@ -80,13 +80,13 @@ somewhat comparable to why SQL queries are usually parametrized.
 For example, instead of writing
 
 ```
-SELVA.HIERARCHY.find test dfs descendants "grphnode_1" '"field" f "test c'
+hierarchy.find test dfs descendants "grphnode_1" '"field" f "test c'
 ```
 
 you should consider writing
 
 ```
-SELVA.HIERARCHY.find test dfs descendants "grphnode_1" '"field" f $1 c' "test"
+hierarchy.find test dfs descendants "grphnode_1" '"field" f $1 c' "test"
 ```
 
 **Register references**

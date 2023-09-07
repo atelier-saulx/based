@@ -215,6 +215,20 @@ struct SelvaHierarchy {
          */
         struct SelvaObject *obj;
     } detached;
+
+    /**
+     * Expiring nodes.
+     */
+    struct {
+        int tim_id; /*!< 1 sec timer. */
+        SVector list; /*!< List of all expiring nodes. */
+#define HIERARCHY_EXPIRING_NEVER UINT32_MAX
+        /**
+         * Timestamp of the node expiring next.
+         * Set to HIERARCHY_EXPIRING_NEVER if nothing is expiring.
+         */
+        uint32_t next;
+    } expiring;
 };
 
 /**
@@ -445,8 +459,8 @@ int SelvaModify_DelHierarchy(
 
 /**
  * Delete a node from the hierarchy.
- * @param force if non-zero the even children that have other relationships will
- *              be deleted.
+ * @param flags if force is set then even children that have other relationships
+ *              will be deleted.
  * @returns The total number of nodes deleted; Otherwise an error code is returned.
  */
 int SelvaModify_DelHierarchyNode(
