@@ -87,7 +87,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('find - descendants', async (t) => {
+test('find - descendants 1', async (t) => {
   const { client } = t.context
 
   const team1 = await t.context.client.set({ type: 'team', name: 'team1' })
@@ -167,17 +167,6 @@ test('find - descendants', async (t) => {
 
   await wait(600)
   t.true(ids[0].slice(0, 2) === 'cl' && ids[1].slice(0, 2) === 'le')
-})
-
-test.afterEach.always(async (t) => {
-  const { srv, client } = t.context
-  await srv.destroy()
-  client.destroy()
-})
-
-test('find - descendants', async (t) => {
-  const { client } = t.context
-  // simple nested - single query
 
   try {
     await wait(2e3)
@@ -420,13 +409,18 @@ test('find - descendants', async (t) => {
     ])
   } catch (err) {
     console.error(err)
+    t.fail()
   }
 })
 
-// TODO: $inherit
+test.afterEach.always(async (t) => {
+  const { srv, client } = t.context
+  await srv.destroy()
+  client.destroy()
+})
 
 // from w_youri.ts
-test.skip('$inherit in a list', async (t) => {
+test('$inherit in a list', async (t) => {
   const { client } = t.context
 
   await client.set({
