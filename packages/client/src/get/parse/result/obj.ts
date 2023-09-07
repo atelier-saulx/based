@@ -4,6 +4,36 @@ import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
 import { joinPath } from '../../../util'
 
+function findFieldSchema(
+  f: string,
+  fieldSchema: BasedSchemaField
+): BasedSchemaField {
+  const parts = f.split('.')
+  for (let i = 0; i < parts.length - 1; i++) {
+    const s = parts[i]
+
+    if ((<BasedSchemaFieldObject>fieldSchema).properties) {
+      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[s]
+    } else if (fieldSchema.type === 'record') {
+      // @ts-ignore
+      fieldSchema = fieldSchema.values
+    }
+  }
+
+  if ((<BasedSchemaFieldObject>fieldSchema).properties) {
+    fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
+      parts[parts.length - 1]
+    ]
+  } else if (fieldSchema.type === 'record') {
+    // @ts-ignore
+    fieldSchema = fieldSchema.values
+  } else if (fieldSchema.type === 'text') {
+    fieldSchema = { type: 'string' }
+  }
+
+  return fieldSchema
+}
+
 export function parseObjFields(
   ctx: ExecContext,
   schema: BasedSchemaField,
@@ -20,32 +50,10 @@ export function parseObjFields(
   for (let i = 0; i < fields.length; i += 2) {
     const f = fields[i]
     let v = fields[i + 1]
-    let fieldSchema = schema
 
     const [alias, rest] = f.split('@')
 
-    const parts = (rest ?? alias).split('.')
-    for (let i = 0; i < parts.length - 1; i++) {
-      const s = parts[i]
-
-      if ((<BasedSchemaFieldObject>fieldSchema).properties) {
-        fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[s]
-      } else if (fieldSchema.type === 'record') {
-        // @ts-ignore
-        fieldSchema = fieldSchema.values
-      }
-    }
-
-    if ((<BasedSchemaFieldObject>fieldSchema).properties) {
-      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[
-        parts[parts.length - 1]
-      ]
-    } else if (fieldSchema.type === 'record') {
-      // @ts-ignore
-      fieldSchema = fieldSchema.values
-    } else if (fieldSchema.type === 'text') {
-      fieldSchema = { type: 'string' }
-    }
+    let fieldSchema = findFieldSchema(rest ?? alias, schema)
 
     // TODO: handle fields by type
     // const fs = cmd?.fields?.byType[schema?.type] ?? cmd?.fields?.$any
@@ -55,6 +63,18 @@ export function parseObjFields(
     })
 
     if (field?.inherit) {
+      const typeFields =
+        ctx.client.schema?.types[
+          ctx.client.schema.prefixToTypeMapping[v[0].slice(0, 2)]
+        ]?.fields
+
+      if (typeFields) {
+        fieldSchema = findFieldSchema(rest ?? alias, {
+          type: 'object',
+          properties: typeFields,
+        })
+      }
+
       v = v[1]
     }
 
