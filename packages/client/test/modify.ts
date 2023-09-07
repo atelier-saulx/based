@@ -938,6 +938,30 @@ test('set empty object', async (t) => {
   )
 })
 
+test('incrby', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'viDingDong',
+    value: 100,
+  })
+
+  t.is(
+    (await client.command('object.get', ['', 'viDingDong', 'value']))[0],
+    100
+  )
+
+  const [newVal] = await client.command('object.incrbydouble', [
+    'viDingDong',
+    'value',
+    10,
+  ])
+
+  t.deepEqualIgnoreOrder(await client.get({ $id: 'viDingDong', value: true }), {
+    value: 110,
+  })
+  t.deepEqualIgnoreOrder(newVal, 110)
+})
+
 test('$increment, $default', async (t) => {
   const { client } = t.context
   await client.set({
