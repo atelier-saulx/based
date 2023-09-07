@@ -22,6 +22,7 @@
 #include "selva_db.h"
 #include "hierarchy.h"
 #include "modify.h"
+#include "parsers.h"
 #include "rpn.h"
 #include "selva_object.h"
 #include "selva_onload.h"
@@ -150,23 +151,40 @@ int Inherit_FieldValue(
     return SelvaHierarchy_Traverse(hierarchy, node_id, SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS, &cb);
 }
 
-static void parse_type_and_field(const char *str, size_t len, const char **types_str, size_t *types_len, const char **name_str, size_t *name_len) {
+static void parse_type_and_field(
+        const char *str,
+        size_t len,
+        const char **types_str, size_t *types_len,
+        const char **full_name_str, size_t *full_name_len,
+        const char **name_str, size_t *name_len) {
     if (len < 2) {
         *types_str = NULL;
         *types_len = 0;
+        *full_name_str = NULL;
+        *full_name_len = 0;
         *name_str = NULL;
         *name_len = 0;
         return;
     }
 
     *types_str = str;
-    *name_str = memchr(str, ':', len);
-    if (*name_str) {
-        (*name_str)++;
+    *full_name_str = memchr(str, ':', len);
+    if (*full_name_str) {
+        (*full_name_str)++;
     }
 
-    *name_len = (size_t)((str + len) - *name_str);
-    *types_len = (size_t)(*name_str - *types_str - 1);
+    *full_name_len = (size_t)((str + len) - *full_name_str);
+    *types_len = (size_t)(*full_name_str - *types_str - 1);
+
+    const char *alias_end = memchr(*full_name_str, STRING_SET_ALIAS, *full_name_len);
+    const size_t alias_len = alias_end ? alias_end - *full_name_str : 0;
+    if (alias_len > 1) { /* name + @ */
+        *name_str = alias_end + 1;
+        *name_len = *full_name_len - alias_len;
+    } else {
+        *name_str = *full_name_str;
+        *name_len = *full_name_len;
+    }
 }
 
 static int Inherit_SendFields_NodeCb(
@@ -191,11 +209,16 @@ static int Inherit_SendFields_NodeCb(
         const struct selva_string *types_and_field = args->field_names[i];
         const char *types_str;
         size_t types_len;
+        const char *full_field_name_str;
+        size_t full_field_name_len;
         const char *field_name_str;
         size_t field_name_len;
         TO_STR(types_and_field);
 
-		parse_type_and_field(types_and_field_str, types_and_field_len, &types_str, &types_len, &field_name_str, &field_name_len);
+		parse_type_and_field(types_and_field_str, types_and_field_len,
+                             &types_str, &types_len,
+                             &full_field_name_str, &full_field_name_len,
+                             &field_name_str, &field_name_len);
 		if (field_name_len == 0) {
 			/* Invalid inherit string. */
 			continue;
@@ -218,7 +241,7 @@ static int Inherit_SendFields_NodeCb(
          */
         err = Inherit_SendFieldFind(args->resp, hierarchy, args->lang,
                                     node, obj,
-                                    field_name_str, field_name_len, /* Initially full_field is the same as field_name. */
+                                    full_field_name_str, full_field_name_len, /* Initially full_field is the same as field_name unless there is an alias. */
                                     field_name_str, field_name_len);
         if (err == 0) { /* found */
             bitmap_set(args->found, i); /* No need to look for this field anymore. */

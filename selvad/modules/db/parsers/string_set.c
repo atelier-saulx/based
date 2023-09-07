@@ -33,6 +33,26 @@ static struct selva_string *ensure_side_list(struct selva_string *list[], size_t
     return list[i];
 }
 
+static const char *find_alias(const char *str, size_t len, const char **alias_str_out, size_t *alias_len_out)
+{
+    const char *alias_end = memchr(str, STRING_SET_ALIAS, len);
+    const char *alias_str;
+    size_t alias_len;
+
+    if (alias_end && alias_end != str) {
+        alias_str = str;
+        alias_len = alias_end + 1 - alias_str;
+        str = alias_end + 1;
+    } else {
+        alias_str = NULL;
+        alias_len = 0;
+    }
+
+    *alias_str_out = alias_str;
+    *alias_len_out = alias_len;
+    return str;
+}
+
 int string_set_list_add(struct selva_string *sl, const char *opt_ignore_str, size_t opt_ignore_len, const char *el_str, size_t el_len)
 {
     const char sep[] = { STRING_SET_SEPARATOR_SET };
@@ -128,17 +148,10 @@ int parse_string_set(
                 }
                 /* Otherwise we ignore the empty element. */
             } else { /* Add to the regular list */
-                const char *alias_end = memchr(cur, STRING_SET_ALIAS, cur_len);
-                const char *alias_str = NULL;
-                size_t alias_len = 0;
+                const char *alias_str;
+                size_t alias_len;
 
-                if (alias_end && alias_end != cur) {
-                    alias_str = cur;
-                    alias_len = alias_end + 1 - alias_str;
-                    cur = alias_end + 1;
-                }
-
-                const char *cur_el = cur;
+                const char *cur_el = find_alias(cur, cur_len, &alias_str, &alias_len);
                 do {
                     const char *next_el = cur_el;
 
