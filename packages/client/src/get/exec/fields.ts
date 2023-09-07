@@ -5,13 +5,13 @@ import { ExecContext, Field, Fields } from '../types'
 function getField(field: Field): { str: string; isInherit: boolean } {
   let str = joinPath(field.field)
 
-  if (field.inherit) {
-    const types = field.inherit.types ?? []
-    str = `^${types.join(',')}:` + str
-  }
-
   if (field?.aliased?.length) {
     str = str + '@' + field.aliased.join('|')
+  }
+
+  if (field.inherit) {
+    const types = field.inherit.types
+    str = `^${types.join(',')}:` + str
   }
 
   if (field.exclude) {

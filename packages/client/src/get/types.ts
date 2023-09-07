@@ -34,7 +34,7 @@ export type Field = {
   field: Path
   aliased?: string[]
   exclude?: boolean
-  inherit?: { types?: string[]; merge?: FieldInheritMergeType }
+  inherit?: { types: string[]; merge?: FieldInheritMergeType }
 }
 
 // * = all

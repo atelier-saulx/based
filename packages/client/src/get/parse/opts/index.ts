@@ -105,14 +105,12 @@ export async function parseGetOpts(
         }
 
         if (value.$inherit) {
-          let types = value.$inherit.$type
-          if (types) {
-            types = (Array.isArray(types) ? types : [types])
-              .map((type) => {
-                return ctx.client?.schema?.types[type]?.prefix
-              })
-              .filter((prefix) => !!prefix)
-          }
+          let types = value.$inherit.$type ?? []
+          types = (Array.isArray(types) ? types : [types])
+            .map((type) => {
+              return ctx.client?.schema?.types[type]?.prefix
+            })
+            .filter((prefix) => !!prefix)
 
           field.inherit = { types }
         }
@@ -171,6 +169,9 @@ export async function parseGetOpts(
               }
             } else if (key === '$find') {
               return
+            } else if (value.$inherit) {
+              args.collect()
+              return
             } else if (key !== '' && value.$id) {
               return {
                 target: {
@@ -213,9 +214,6 @@ export async function parseGetOpts(
                 args.collect()
                 return
               }
-            } else if (value.$inherit) {
-              args.collect()
-              return
             } else if (value.$default) {
               target.defaultValues.push({
                 path: path,
