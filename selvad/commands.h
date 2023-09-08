@@ -132,13 +132,6 @@
 #define CMD_ID_HIERARCHY_FIND 19
 
 /**
- * Inherit.
- * module: db
- * cmd: hierarchy.inherit
- */
-#define CMD_ID_HIERARCHY_INHERIT 20
-
-/**
  * Aggregate.
  * module: db
  * cmd: hierarchy.aggregate

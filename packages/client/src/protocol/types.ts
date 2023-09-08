@@ -63,7 +63,6 @@ export const COMMAND_TYPES = {
   'subscriptions.del': 68,
   'subscriptions.delmarker': 69,
   // TODO:
-  // #define CMD_ID_HIERARCHY_INHERIT 20
   // #define CMD_ID_HIERARCHY_AGGREGATE 21
   // #define CMD_ID_HIERARCHY_HEADS 26
   // #define CMD_ID_HIERARCHY_TYPES_ADD 36
