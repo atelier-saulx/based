@@ -176,20 +176,19 @@ static int send_field_value(
         SelvaHierarchy_GetNodeId(node_id, node);
 
         return send_edge_field_value(resp, node_id, full_field_str, full_field_len, edge_field);
-    } else {
-        /*
-         * If field was not an edge field perhaps a substring of field is an edge field.
-         */
-        ssize_t n = field_len;
+    }
 
-        while ((n = strrnchr(field_str, n, '.')) > 0) {
-            edge_field = Edge_GetField(node, field_str, n);
-            if (edge_field) {
-                const char *rest_str = field_str + n + 1;
-                const size_t rest_len = field_len - n - 1;
+    /*
+     * If field was not an edge field perhaps a substring of field is an edge field.
+     */
+    ssize_t n = field_len;
+    while ((n = strrnchr(field_str, n, '.')) > 0) {
+        edge_field = Edge_GetField(node, field_str, n);
+        if (edge_field) {
+            const char *rest_str = field_str + n + 1;
+            const size_t rest_len = field_len - n - 1;
 
-                return send_edge_field_deref_value(resp, hierarchy, lang, full_field_str, full_field_len, edge_field, rest_str, rest_len);
-            }
+            return send_edge_field_deref_value(resp, hierarchy, lang, full_field_str, full_field_len, edge_field, rest_str, rest_len);
         }
     }
 
