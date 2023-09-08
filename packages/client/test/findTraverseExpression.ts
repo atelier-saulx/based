@@ -56,7 +56,12 @@ test.beforeEach(async (t) => {
               fromField: 'books',
             },
           },
-          author: { type: 'reference' },
+          author: {
+            type: 'reference',
+            bidirectional: {
+              fromField: 'books',
+            },
+          },
           publisher: {
             type: 'reference',
             bidirectional: {
@@ -92,6 +97,32 @@ test.beforeEach(async (t) => {
       },
     },
   })
+
+  // FIXME: make updateSchema
+  await t.context.client.command('hierarchy.addConstraint', [
+    'bk',
+    'SB',
+    'author',
+    'books',
+  ])
+  await t.context.client.command('hierarchy.addConstraint', [
+    'au',
+    'B',
+    'books',
+    'author',
+  ])
+  await t.context.client.command('hierarchy.addConstraint', [
+    'bk',
+    'SB',
+    'publisher',
+    'books',
+  ])
+  await t.context.client.command('hierarchy.addConstraint', [
+    'pb',
+    'B',
+    'books',
+    'publisher',
+  ])
 })
 
 test.afterEach.always(async (t) => {
@@ -100,8 +131,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// TODO: bidirectional reference not working
-test.skip('find - traverse expression - low level', async (t) => {
+test('find - traverse expression - low level', async (t) => {
   const { client } = t.context
 
   // A small delay is needed after setting the schema
@@ -172,7 +202,6 @@ test.skip('find - traverse expression - low level', async (t) => {
     name: 'The Great Library of Alexandria in Alexandria',
     books: booksIds,
   })
-
 
   t.log(
     '0000',
@@ -256,8 +285,7 @@ test.skip('find - traverse expression - low level', async (t) => {
   )
 })
 
-// TODO: waiting for records
-test.skip('find - traverse expression with records', async (t) => {
+test('find - traverse expression with records', async (t) => {
   const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
@@ -298,28 +326,12 @@ test.skip('find - traverse expression with records', async (t) => {
   // A small delay is needed after setting the schema
   await new Promise((r) => setTimeout(r, 100))
 
-  const v1Ids = await Promise.all(
-    [
+  const book = await client.set({
+    $language: 'en',
+    type: 'book',
+    name: 'Liber Optimus',
+    revisions: [
       {
-        $language: 'en',
-        $id: 'sc2',
-        type: 'section',
-        name: '1. Prologue',
-        text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      },
-      {
-        $language: 'en',
-        $id: 'sc3',
-        type: 'section',
-        name: '5. Epilogue',
-        text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
-      },
-    ].map((v) => client.set(v))
-  )
-  const revisionsIds = Promise.all(
-    [
-      {
-        $language: 'en',
         version: 'v1',
         publishedAt: new Date('2000').getTime(),
         contents: {
@@ -328,45 +340,45 @@ test.skip('find - traverse expression with records', async (t) => {
           name: 'Preface',
           text: 'Neque porro quisquam est qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit...',
           revisionedChildren: {
-            v1: v1Ids,
+            v1: [
+              {
+                $id: 'sc2',
+                type: 'section',
+                name: '1. Prologue',
+                text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+              },
+              {
+                $id: 'sc3',
+                type: 'section',
+                name: '5. Epilogue',
+                text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+              },
+            ],
           },
         },
       },
-    ].map((v) => client.set(v))
-  )
-  const book = await client.set({
-    $language: 'en',
-    type: 'book',
-    name: 'Liber Optimus',
-    revisions: revisionsIds,
+    ],
   })
-
-  const v2Ids = Promise.all(
-    [
-      {
-        $language: 'en',
-        $id: 'sc4',
-        type: 'section',
-        name: '1. Prologue',
-        text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      },
-      {
-        $language: 'en',
-        $id: 'sc5',
-        type: 'section',
-        name: '2. Epilogue',
-        text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
-      },
-    ].map((v) => client.set(v))
-  )
   await client.set({
     $id: 'sc1',
     $language: 'en',
     revisionedChildren: {
-      v2: v2Ids,
+      v2: [
+        {
+          $id: 'sc4',
+          type: 'section',
+          name: '1. Prologue',
+          text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        },
+        {
+          $id: 'sc5',
+          type: 'section',
+          name: '2. Epilogue',
+          text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+        },
+      ],
     },
   })
-
   // TODO reference field in an object in an array connot be visited with SELVA_HIERARCHY_TRAVERSAL_ARRAY
   //const preface = await client.get({
   //  $id: book,
@@ -434,45 +446,58 @@ test.skip('find - traverse expression with records', async (t) => {
     }
   )
 
-  // await client.set({
-  //   $id: 'sc1',
-  //   $language: 'en',
-  //   revisionedChildren: {
-  //     v3: [
-  //       {
-  //         $id: 'sc6',
-  //         type: 'section',
-  //         name: 'Prologue',
-  //         text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-  //       },
-  //       {
-  //         $id: 'sc7',
-  //         type: 'section',
-  //         name: 'Epilogue',
-  //         text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
-  //       },
-  //     ],
-  //   },
-  // })
+  await client.set({
+    $id: 'sc1',
+    $language: 'en',
+    revisionedChildren: {
+      v3: [
+        {
+          $id: 'sc6',
+          type: 'section',
+          name: 'Prologue',
+          text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+        },
+        {
+          $id: 'sc7',
+          type: 'section',
+          name: 'Epilogue',
+          text: 'Quis autem vel eum iure reprehenderit qui in ea voluptate velit esse quam nihil molestiae consequatur, vel illum qui dolorem eum fugiat quo voluptas nulla pariatur?',
+        },
+      ],
+    },
+  })
 
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     'en',
-  //     '___selva_hierarchy',
-  //     'bfs_expression',
-  //     '"bk" e >1 "v2" "lJ" "revisionedChildren" o Z .1:{"revisions[0].contents"}',
-  //     //'"bk" e >1 "revisionedChildren.v2" h L >2 {"revisionedChildren.v2"} Z .2:"revisionedChildren.v1" h L >3 {"revisionedChildren.v1"} Z .3:{} Z .1:{"revisions[0].contents"}',
-  //     'fields',
-  //     'name',
-  //     book,
-  //     '"sc" e'
-  //   ),
-  //   [
-  //     ['sc1', ['name', 'Preface']],
-  //     ['sc4', ['name', '1. Prologue']],
-  //     ['sc5', ['name', '2. Epilogue']],
-  //   ]
-  // )
+  t.deepEqual(
+    // await client.redis.selva_hierarchy_find(
+    //   'en',
+    //   '___selva_hierarchy',
+    //   'bfs_expression',
+    //   '"bk" e >1 "v2" "lJ" "revisionedChildren" o Z .1:{"revisions[0].contents"}',
+    //   //'"bk" e >1 "revisionedChildren.v2" h L >2 {"revisionedChildren.v2"} Z .2:"revisionedChildren.v1" h L >3 {"revisionedChildren.v1"} Z .3:{} Z .1:{"revisions[0].contents"}',
+    //   'fields',
+    //   'name',
+    //   book,
+    //   '"sc" e'
+    // )
+    (
+      await find({
+        lang: 'en',
+        client,
+        res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+        res_opt_str: 'name',
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION,
+        dir_opt_str:
+          '"bk" e >1 "v2" "lJ" "revisionedChildren" o Z .1:{"revisions[0].contents"}',
+        id: book,
+        rpn: ['"sc" e'],
+      })
+    )[0],
+    [
+      ['sc1', ['name', 'Preface']],
+      ['sc4', ['name', '1. Prologue']],
+      ['sc5', ['name', '2. Epilogue']],
+    ]
+  )
 })
 
 // TODO: waiting for records

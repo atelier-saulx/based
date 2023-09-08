@@ -101,7 +101,9 @@ export const find = async ({
   res_opt_str,
   res_type,
   rpn = ['#1'],
+  lang = '',
 }: {
+  lang?: string
   client: any
   dir: any
   id: string
@@ -111,7 +113,7 @@ export const find = async ({
   rpn?: string[]
 }) => {
   return client.command('hierarchy.find', [
-    '',
+    lang,
     createRecord(protocol.hierarchy_find_def, {
       dir,
       res_type:

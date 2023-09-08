@@ -557,19 +557,6 @@ test('basic', async (t) => {
     'match has no children after $add: []'
   )
 
-  // TODO: support $add ['']?
-
-  // await client.set({
-  //   $id: match,
-  //   children: { $add: [''] },
-  // })
-  //
-  // t.deepEqual(
-  //   (await client.command('hierarchy.children', [match]))[0],
-  //   [],
-  //   "match has no children after $add: ['']"
-  // )
-
   // set null children
   await t.throwsAsync(
     client.set({
