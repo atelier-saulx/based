@@ -69,6 +69,15 @@ export function arrayOpToModify(props: {
     ]
   }
 
+  if (!vals.length) {
+    // unset array
+    return toModifyArgs(<any>{
+      fieldSchema: valSchema,
+      path: iPath,
+      value: { $delete: true },
+    })
+  }
+
   const args = []
   for (const v of vals) {
     args.push(...opArgs)

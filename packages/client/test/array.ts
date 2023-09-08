@@ -109,8 +109,7 @@ test('can use $delete inside array', async (t) => {
   })
 })
 
-// TODO: Issue replacing array. Previous items not cleared
-test.skip('should replace array', async (t) => {
+test('should replace array', async (t) => {
   const { client } = t.context
   const originalMedia = [
     { src: 'http://wawa.com/111' },
