@@ -66,6 +66,9 @@ static int deref_single_ref(
     return 0;
 }
 
+/**
+ * Deref single ref and send either all (.*) or the selected field.
+ */
 static int send_edge_field_deref_value(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
@@ -88,6 +91,10 @@ static int send_edge_field_deref_value(
         /*
          * It's a wildcard and we should send the whole node object excluding
          * reference fields.
+         * This is a special case. Normally we'd inherit everything implicitly
+         * without using a wildcard but in the case of a reference we'd only
+         * return id(s) unless there is an explicit wildcard. This mimics the
+         * behavior of normal (non-inherit field get responses.
          */
         assert(full_field_len >= 2);
 
@@ -109,6 +116,9 @@ static int send_edge_field_deref_value(
     return 0;
 }
 
+/**
+ * Send a field value from a SelvaObject.
+ */
 static int send_object_field_value(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
@@ -139,6 +149,10 @@ static int send_object_field_value(
     return err;
 }
 
+/**
+ * Send a field value.
+ * The field path can contain edge fields.
+ */
 static int send_field_value(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
