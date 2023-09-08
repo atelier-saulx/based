@@ -13,7 +13,8 @@ function findFieldSchema(
     const s = parts[i]
 
     if ((<BasedSchemaFieldObject>fieldSchema).properties) {
-      fieldSchema = (<BasedSchemaFieldObject>fieldSchema).properties[s]
+      fieldSchema =
+        (<BasedSchemaFieldObject>fieldSchema).properties[s] ?? fieldSchema
     } else if (fieldSchema.type === 'record') {
       // @ts-ignore
       fieldSchema = fieldSchema.values

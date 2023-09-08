@@ -231,7 +231,7 @@ test('simple singular reference', async (t) => {
 })
 
 // TODO: needs $inherit
-test.skip('singular reference inherit', async (t) => {
+test('singular reference inherit', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'maB',
@@ -248,10 +248,21 @@ test.skip('singular reference inherit', async (t) => {
     },
   })
 
+  const club2 = await client.set({
+    $id: 'clB',
+    title: {
+      en: 'yesh club 2',
+    },
+    specialMatch: 'maB',
+  })
+
   const club1 = await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
+    },
+    parents: {
+      $add: 'clB',
     },
     specialMatch: match1,
   })
