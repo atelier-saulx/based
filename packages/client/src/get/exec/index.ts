@@ -164,7 +164,11 @@ export async function execParallel(
 
           n.source = { id: id }
           const newPath = [...cmd.target.path]
-          newPath.push(k, path[path.length - 1])
+          if (cmd.type === 'node') {
+            newPath.push(path[path.length - 1])
+          } else {
+            newPath.push(k, path[path.length - 1])
+          }
           n.target.path = newPath
           n.markerId = hashCmd(n)
 

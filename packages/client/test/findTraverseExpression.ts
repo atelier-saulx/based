@@ -500,8 +500,7 @@ test('find - traverse expression with records', async (t) => {
   )
 })
 
-// TODO: waiting for records
-test.skip('find - versioned hierarchies', async (t) => {
+test('find - versioned hierarchies', async (t) => {
   const { client } = t.context
   const versionedHierarchyFields: any = {
     versionedChildren: {
