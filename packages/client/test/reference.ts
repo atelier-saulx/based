@@ -350,7 +350,7 @@ test('singular reference $field', async (t) => {
   )
 })
 
-// TODO: $inherit
+// TODO: $inherit complex reference thing (needs client side work)
 test.skip('singular reference inherit reference', async (t) => {
   const { client } = t.context
   await client.set({
