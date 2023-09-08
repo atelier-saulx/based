@@ -39,6 +39,8 @@ static int get_next_edge_field(
          * not to a single data field.
          */
         return SELVA_EINTYPE;
+    } else if (!edge_field) {
+        return SELVA_ENOENT;
     } else {
         const char *next_field_str = field_str + off;
         const size_t next_field_len = field_len - off;
