@@ -11,7 +11,13 @@ export function encodeIncrement(
   opType: ModifyArgType
 ): Buffer {
   return createRecord(DEFS[opType], {
-    $default: x.$default,
-    $increment: x.$increment,
+    $default:
+      opType === ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT
+        ? BigInt(x.$default)
+        : x.$default,
+    $increment:
+      opType === ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT
+        ? BigInt(x.$increment)
+        : x.$increment,
   })
 }
