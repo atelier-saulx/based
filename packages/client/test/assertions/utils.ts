@@ -4,7 +4,7 @@ import { join } from 'path'
 import beforeExit from 'before-exit'
 import { hash } from '@saulx/hash'
 import { createRecord } from 'data-record'
-import { protocol } from '../../src'
+import { BasedDbClient, protocol } from '../../src'
 import { SelvaMergeStrategy } from '../../src/protocol'
 import rimraf from 'rimraf'
 
@@ -136,4 +136,12 @@ export const removeDump = (dir: string) => {
       rimraf.sync(dir)
     }
   }
+}
+
+export const idExists = async (
+  client: BasedDbClient,
+  id: string
+): Promise<boolean> => {
+  const result = await client.get({ $id: id, id: true })
+  return !!result.id
 }

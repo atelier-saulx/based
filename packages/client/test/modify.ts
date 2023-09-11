@@ -9,7 +9,7 @@ import { createRecord } from 'data-record'
 import { SelvaMergeStrategy, SelvaTraversal } from '../src/protocol'
 import { doubleDef } from '../src/protocol/encode/modify/types'
 import getPort from 'get-port'
-import { find } from './assertions/utils'
+import { find, idExists } from './assertions/utils'
 
 export function readDouble(x) {
   return readValue(doubleDef, x, '.d')
@@ -660,62 +660,60 @@ test('basic', async (t) => {
     ['root', league]
   )
 
-  // TODO: Waiting for delete
-
   // delete match from league
-  // await client.set({
-  //   $id: league,
-  //   children: { $delete: match },
-  // })
-  //
-  // t.deepEqual(
-  //   (await client.command('hierarchy.parents', [person]))[0].sort(),
-  //   [league, match].sort(),
-  //   'person has correct parents after removing match from league'
-  // )
+  await client.set({
+    $id: league,
+    children: { $remove: match },
+  })
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'ancestors',
-  //     person
-  //   ),
-  //   ['root', league, match]
-  // )
-  //
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_parents(DEFAULT_HIERARCHY, match),
-  //   ['root'].sort(),
-  //   'match has correct parents after removing match from league'
-  // )
-  //
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'ancestors',
-  //     match
-  //   ),
-  //   ['root'],
-  //   'match has correct ancestors after removing match from league'
-  // )
+  t.deepEqual(
+    (await client.command('hierarchy.parents', [person]))[0].sort(),
+    [league, match].sort(),
+    'person has correct parents after removing match from league'
+  )
 
-  // TODO: Waiting for delete
-  //
+  t.deepEqualIgnoreOrder(
+    (
+      await find({
+        client,
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+        id: person,
+      })
+    )[0],
+    ['root', league, match]
+  )
+
+  t.deepEqual(
+    (await client.command('hierarchy.parents', [match]))[0].sort(),
+    ['root'].sort(),
+    'match has correct parents after removing match from league'
+  )
+
+  t.deepEqual(
+    (
+      await find({
+        client,
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+        id: match,
+      })
+    )[0],
+    ['root'],
+    'match has correct ancestors after removing match from league'
+  )
+
   // delete person
-  // await client.delete(person)
-  // t.false(
-  //   await idExists(client, person),
-  //   'person is removed from db after delete'
-  // )
-  //
-  // // delete league
-  // await client.delete(league)
-  // t.false(
-  //   await idExists(client, league),
-  //   'league is removed from db after delete'
-  // )
+  await client.delete({ $id: person })
+  t.false(
+    await idExists(client, person),
+    'person is removed from db after delete'
+  )
+
+  // delete league
+  await client.delete({ $id: league })
+  t.false(
+    await idExists(client, league),
+    'league is removed from db after delete'
+  )
 })
 
 test('deep hierarchy manipulation', async (t) => {
@@ -784,41 +782,32 @@ test('deep hierarchy manipulation', async (t) => {
     ['root', 'cuX', 'cuA', 'cuD']
   )
 
-  // TODO: Waiting for delete
+  await client.set({
+    $id: 'cuD',
+    parents: { $remove: 'cuA' },
+  })
 
-  // await client.set({
-  //   $id: 'cuD',
-  //   parents: { $delete: 'cuA' },
-  // })
+  t.deepEqualIgnoreOrder(
+    (
+      await find({
+        client,
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+        id: 'cuD',
+      })
+    )[0],
+    ['root']
+  )
 
-  // console.log(
-  //   '???',
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'ancestors',
-  //     'cuD'
-  //   )
-  // )
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'ancestors',
-  //     'cuD'
-  //   ),
-  //   ['root']
-  // )
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.redis.selva_hierarchy_find(
-  //     '',
-  //     '___selva_hierarchy',
-  //     'ancestors',
-  //     'cuE'
-  //   ),
-  //   ['root', 'cuD']
-  // )
+  t.deepEqualIgnoreOrder(
+    (
+      await find({
+        client,
+        dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
+        id: 'cuE',
+      })
+    )[0],
+    ['root', 'cuD']
+  )
 })
 
 test('array, json and set', async (t) => {
@@ -1001,7 +990,7 @@ test('$increment, $default', async (t) => {
     'set default'
   )
 
-  // TODO: $default overwriting when value exists
+  // TODO: $default being overriden in text fields
   //
   // await client.set({
   //   $id: 'viDingDong',
@@ -1019,75 +1008,75 @@ test('$increment, $default', async (t) => {
   //   'does not overwrite if value exists'
   // )
 
-  // await client.set({
-  //   $id: 'viHelloYes',
-  //   obj: {
-  //     value: {
-  //       $default: 100,
-  //       $increment: 10,
-  //     },
-  //     rec: {
-  //       test1: {
-  //         value: {
-  //           $default: 10,
-  //           $increment: 11,
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-  //
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viHelloYes',
-  //     obj: true,
-  //   }),
-  //   {
-  //     obj: {
-  //       value: 100,
-  //       rec: {
-  //         test1: {
-  //           value: 10,
-  //         },
-  //       },
-  //     },
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'viHelloYes',
-  //   obj: {
-  //     value: {
-  //       $default: 100,
-  //       $increment: 10,
-  //     },
-  //     rec: {
-  //       test1: {
-  //         value: {
-  //           $default: 11,
-  //           $increment: 11,
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-  //
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viHelloYes',
-  //     obj: true,
-  //   }),
-  //   {
-  //     obj: {
-  //       value: 110,
-  //       rec: {
-  //         test1: {
-  //           value: 21,
-  //         },
-  //       },
-  //     },
-  //   }
-  // )
+  await client.set({
+    $id: 'viHelloYes',
+    obj: {
+      value: {
+        $default: 100,
+        $increment: 10,
+      },
+      rec: {
+        test1: {
+          value: {
+            $default: 10,
+            $increment: 11,
+          },
+        },
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viHelloYes',
+      obj: true,
+    }),
+    {
+      obj: {
+        value: 100,
+        rec: {
+          test1: {
+            value: 10,
+          },
+        },
+      },
+    }
+  )
+
+  await client.set({
+    $id: 'viHelloYes',
+    obj: {
+      value: {
+        $default: 100,
+        $increment: 10,
+      },
+      rec: {
+        test1: {
+          value: {
+            $default: 11,
+            $increment: 11,
+          },
+        },
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viHelloYes',
+      obj: true,
+    }),
+    {
+      obj: {
+        value: 110,
+        rec: {
+          test1: {
+            value: 21,
+          },
+        },
+      },
+    }
+  )
 })
 
 test('$default with string and number', async (t) => {
