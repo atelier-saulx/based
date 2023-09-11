@@ -19,6 +19,7 @@ const FIELD_PARSERS: Record<
   ) => any
 > = {
   string: (x) => x,
+  json: (x) => JSON.parse(x),
   boolean: (x) => !!x,
   number: (x) => Number(x),
   timestamp: (x) => Number(x),

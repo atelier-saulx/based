@@ -300,12 +300,15 @@ test('root', async (t) => {
     match,
   ])
 
-  t.deepEqualIgnoreOrder(await client.get({ $id: 'root', $all: true }), {
-    id: 'root',
-    type: 'root',
-    value: 9001,
-    hello: 'http://example.com/hello--yo-yes',
-  })
+  t.deepEqualIgnoreOrder(
+    await client.get({ $id: 'root', $all: true, schema: false }),
+    {
+      id: 'root',
+      type: 'root',
+      value: 9001,
+      hello: 'http://example.com/hello--yo-yes',
+    }
+  )
 })
 
 test('root.children $delete: []', async (t) => {

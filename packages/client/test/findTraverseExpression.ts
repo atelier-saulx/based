@@ -30,6 +30,16 @@ test.beforeEach(async (t) => {
   })
 
   console.log('updating schema')
+})
+
+test.afterEach.always(async (t) => {
+  const { srv, client } = t.context
+  await srv.destroy()
+  client.destroy()
+})
+
+test('find - traverse expression - low level', async (t) => {
+  const { client } = t.context
 
   await t.context.client.updateSchema({
     languages: ['en'],
@@ -97,42 +107,6 @@ test.beforeEach(async (t) => {
       },
     },
   })
-
-  // FIXME: make updateSchema
-  await t.context.client.command('hierarchy.addConstraint', [
-    'bk',
-    'SB',
-    'author',
-    'books',
-  ])
-  await t.context.client.command('hierarchy.addConstraint', [
-    'au',
-    'B',
-    'books',
-    'author',
-  ])
-  await t.context.client.command('hierarchy.addConstraint', [
-    'bk',
-    'SB',
-    'publisher',
-    'books',
-  ])
-  await t.context.client.command('hierarchy.addConstraint', [
-    'pb',
-    'B',
-    'books',
-    'publisher',
-  ])
-})
-
-test.afterEach.always(async (t) => {
-  const { srv, client } = t.context
-  await srv.destroy()
-  client.destroy()
-})
-
-test('find - traverse expression - low level', async (t) => {
-  const { client } = t.context
 
   // A small delay is needed after setting the schema
   await new Promise((r) => setTimeout(r, 100))

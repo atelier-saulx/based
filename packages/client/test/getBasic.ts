@@ -614,7 +614,9 @@ test('get - field with empty array', async (t) => {
     refs: true,
   })
 
-  t.deepEqual(result, {})
+  t.deepEqual(result, {
+    dong: { dingdong: [] },
+  })
 
   t.deepEqual(
     await client.get({
@@ -625,6 +627,7 @@ test('get - field with empty array', async (t) => {
     }),
     {
       id,
+      dong: { dingdong: [] },
       type: 'lekkerType',
     }
   )

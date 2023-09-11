@@ -29,6 +29,7 @@ import {
 import genId from './id'
 import { deepMergeArrays } from '@saulx/utils'
 import { getCmd, purgeCache } from './get/exec/cmd'
+import { DEFAULT_SCHEMA, updateSchema } from './schema'
 
 export * as protocol from './protocol'
 export * as dataRecord from 'data-record'
@@ -64,6 +65,8 @@ export class BasedDbClient extends Emitter {
   // TODO: periodic cleanup
   public incomingMessageBuffers: IncomingMessageBuffers = new Map()
 
+  public updateSchemaTimer: NodeJS.Timeout
+
   public backpressureBlock: Buffer | null = null
 
   constructor() {
@@ -76,59 +79,38 @@ export class BasedDbClient extends Emitter {
     return genId(this.schema, type)
   }
 
+  subscribeSchema(): void {
+    if (this.updateSchemaTimer) {
+      return
+    }
+
+    if (!this.schema) {
+      this.schema = DEFAULT_SCHEMA
+    }
+
+    this.updateSchemaTimer = setInterval(async () => {
+      try {
+        const { schema } = await this.get({ $id: 'root', schema: true })
+        if (schema) {
+          this.schema = schema
+        }
+      } catch (e) {
+        console.error('Error in schema subscription', e)
+      }
+    }, 3e3)
+  }
+
+  unsubscribeSchema(): void {
+    if (this.updateSchemaTimer) {
+      clearInterval(this.updateSchemaTimer)
+      this.updateSchemaTimer = undefined
+    }
+  }
+
   async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
-    // TODO: make it for real
-    this.schema = <BasedSchema>opts
-    if (!this.schema.prefixToTypeMapping) {
-      this.schema.prefixToTypeMapping = {}
-    }
-
-    const types: [string, string][] = []
-    for (const typeName in this.schema.types) {
-      const type = this.schema.types[typeName]
-      this.schema.prefixToTypeMapping[type.prefix] = typeName
-      types.push([type.prefix, typeName])
-
-      type.fields.id = { type: 'string' }
-      type.fields.createdAt = { type: 'timestamp' }
-      type.fields.updatedAt = { type: 'timestamp' }
-      type.fields.type = { type: 'string' }
-      type.fields.parents = { type: 'references' }
-      type.fields.children = { type: 'references' }
-      type.fields.ancestors = { type: 'references' }
-      type.fields.descendants = { type: 'references' }
-      type.fields.aliases = {
-        type: 'set',
-        items: { type: 'string' },
-      }
-
-      await this.command('hierarchy.types.add', [type.prefix, typeName])
-    }
-
-    // root
-    this.schema.prefixToTypeMapping['ro'] = 'root'
-    types.push(['ro', 'root'])
-
-    if (this.schema.root) {
-      this.schema.root.fields.id = { type: 'string' }
-      this.schema.root.fields.type = { type: 'string' }
-      this.schema.root.fields.children = { type: 'references' }
-      this.schema.root.fields.descendants = { type: 'references' }
-      this.schema.root.fields.aliases = {
-        type: 'set',
-        items: { type: 'string' },
-      }
-    }
-
-    // set type map in db
-    await this.command('hierarchy.types.clear')
-    await Promise.all(
-      types.map((args) => {
-        return this.command('hierarchy.types.add', args)
-      })
-    )
-
-    return this.schema
+    const newSchema = await updateSchema(this, opts)
+    this.schema = newSchema
+    return newSchema
   }
 
   // TODO: later take type from @based/schema
@@ -382,6 +364,8 @@ export class BasedDbClient extends Emitter {
     }
     this.opts = opts
     this.connection = connect(this, opts.port, opts.host)
+
+    this.subscribeSchema()
   }
 
   disconnect() {
@@ -402,6 +386,8 @@ export class BasedDbClient extends Emitter {
   }
 
   destroy() {
+    this.unsubscribeSchema()
+
     this.disconnect()
     for (const i in this) {
       delete this[i]

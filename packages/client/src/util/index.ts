@@ -51,7 +51,9 @@ export function aliasStrToPath(alias: string): Path {
 }
 
 export function getTypeSchema(ctx: ExecContext, id: string): BasedSchemaType {
-  const typeName = ctx.client.schema.prefixToTypeMapping[id.slice(0, 2)]
+  const prefix = id.slice(0, 2)
+  const typeName =
+    prefix === 'ro' ? 'root' : ctx.client.schema.prefixToTypeMapping[prefix]
   return typeName === 'root'
     ? ctx.client.schema.root
     : ctx.client.schema.types[typeName]

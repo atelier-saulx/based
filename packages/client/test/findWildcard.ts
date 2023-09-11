@@ -285,6 +285,7 @@ test('find - nothing found with a wildcard', async (t) => {
       },
     }),
     {
+      id: 'root',
       items: [
         {
           name: 'match 1',

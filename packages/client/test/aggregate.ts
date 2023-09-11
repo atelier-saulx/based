@@ -66,24 +66,6 @@ test.beforeEach(async (t) => {
       },
     },
   })
-
-  // FIXME: make updateSchema
-  console.log(
-    await t.context.client.command('hierarchy.addConstraint', [
-      'le',
-      'B',
-      'matches',
-      'league',
-    ])
-  )
-  console.log(
-    await t.context.client.command('hierarchy.addConstraint', [
-      'ma',
-      'SB',
-      'league',
-      'matches',
-    ])
-  )
 })
 
 test.afterEach.always(async (t) => {

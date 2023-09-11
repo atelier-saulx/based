@@ -111,40 +111,6 @@ test.beforeEach(async (t) => {
     },
   })
 
-  // FIXME: make updateSchema
-  await t.context.client.command('hierarchy.addConstraint', [
-    'ma',
-    'SB',
-    'bidirClub',
-    'bidirMatches',
-  ])
-  await t.context.client.command('hierarchy.addConstraint', [
-    'cl',
-    'B',
-    'bidirMatches',
-    'bidirClub',
-  ])
-
-  await t.context.client.command('hierarchy.addConstraint', [
-    'cl',
-    'B',
-    'relatedClubs',
-    'relatedClubs',
-  ])
-
-  await t.context.client.command('hierarchy.addConstraint', [
-    'lo',
-    'SB',
-    'bidirClub',
-    'bidirLogo',
-  ])
-  await t.context.client.command('hierarchy.addConstraint', [
-    'cl',
-    'SB',
-    'bidirLogo',
-    'bidirClub',
-  ])
-
   console.dir(await t.context.client.command('hierarchy.listConstraints'), {
     depth: 8,
   })
