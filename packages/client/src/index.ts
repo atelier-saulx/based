@@ -48,7 +48,7 @@ Only do counting if there is an active connection
 */
 
 export class BasedDbClient extends Emitter {
-  public schema: BasedSchema
+  public schema: BasedSchema = DEFAULT_SCHEMA
 
   public connected: boolean = false
   public connection: Connection
