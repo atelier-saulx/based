@@ -137,7 +137,7 @@ export async function updateSchema(
       const oldDef = currentSchema[typeName]
 
       // TODO: generate one if taken
-      const prefix = typeDef.prefix ?? oldDef.prefix ?? typeName.slice(0, 2)
+      const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)
 
       if (!oldDef) {
         const newDef: any = {
