@@ -33,6 +33,7 @@ import { DEFAULT_SCHEMA, updateSchema } from './schema'
 
 export * as protocol from './protocol'
 export * as dataRecord from 'data-record'
+export * as schema from '@based/schema'
 
 export * as get from './get'
 
