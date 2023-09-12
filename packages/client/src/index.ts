@@ -364,8 +364,6 @@ export class BasedDbClient extends Emitter {
     }
     this.opts = opts
     this.connection = connect(this, opts.port, opts.host)
-
-    this.subscribeSchema()
   }
 
   disconnect() {
@@ -386,8 +384,6 @@ export class BasedDbClient extends Emitter {
   }
 
   destroy() {
-    this.unsubscribeSchema()
-
     this.disconnect()
     for (const i in this) {
       delete this[i]

@@ -27,6 +27,7 @@ test.beforeEach(async (t) => {
     port: t.context.port,
     host: '127.0.0.1',
   })
+  t.context.client.subscribeSchema()
 
   console.log('updating schema')
 
@@ -204,6 +205,8 @@ test.beforeEach(async (t) => {
       },
     },
   })
+
+  t.context.client.unsubscribeSchema()
 })
 
 test.afterEach.always(async (t) => {
@@ -219,6 +222,7 @@ test('schema subs work implicitly', async (t) => {
     host: '127.0.0.1',
     port: t.context.port,
   })
+  otherClient.subscribeSchema()
 
   await client.updateSchema({
     types: {
@@ -242,5 +246,6 @@ test('schema subs work implicitly', async (t) => {
   })
   t.deepEqual(client.schema, otherClient.schema)
 
+  otherClient.unsubscribeSchema()
   otherClient.destroy()
 })
