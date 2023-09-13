@@ -182,12 +182,12 @@ static inline enum EdgeFieldConstraintFlag Edge_GetFieldConstraintFlags(const st
  * @param create if set the object will be created if it didn't exist before.
  * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
  */
-struct SelvaObject *Edge_GetFieldMetadata(struct EdgeField *edge_field, int create);
+struct SelvaObject *Edge_GetFieldMetadata(struct EdgeField *edge_field, bool create);
 
 /**
  * Get a pointer to the metadata of an edge in the EdgeField.
  */
-int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, int create, struct SelvaObject **out);
+int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out);
 
 /**
  * Delete all metadata from edge_field.

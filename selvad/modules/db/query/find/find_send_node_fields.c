@@ -268,33 +268,31 @@ static int send_edge_field(
                     selva_send_array_end(resp);
                 }
             } else if (Selva_isEdgemetaField(next_field_str, next_field_len)) {
+                struct SelvaObject *edge_metadata;
+                int err;
+
                 /*
                  * $edgeMeta pseudo field handling
                  * TODO This doesn't currently work over multiple edge fields.
                  */
-                if (edge_field->metadata) {
-                    struct SelvaObject *edge_metadata;
-                    int err;
+                err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+                if (!err && edge_metadata) {
+                    const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
+                    size_t meta_key_len = 0;
 
-                    err = SelvaObject_GetObjectStr(edge_field->metadata, dst_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
-                    if (!err) {
-                        const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
-                        size_t meta_key_len = 0;
-
-                        if (meta_key_str) {
-                            meta_key_str++;
-                            meta_key_len = (next_field_str + next_field_len) - meta_key_str;
-                            if (meta_key_len == 0) {
-                                meta_key_str = NULL;
-                            }
+                    if (meta_key_str) {
+                        meta_key_str++;
+                        meta_key_len = (next_field_str + next_field_len) - meta_key_str;
+                        if (meta_key_len == 0) {
+                            meta_key_str = NULL;
                         }
+                    }
 
-                        selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
-                        err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_field->metadata,
-                                                             meta_key_str, meta_key_len, 0);
-                        if (err) {
-                            selva_send_null(resp);
-                        }
+                    selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
+                    err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_field->metadata,
+                                                         meta_key_str, meta_key_len, 0);
+                    if (err) {
+                        selva_send_null(resp);
                     }
                 }
             } else {
