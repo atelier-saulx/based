@@ -10,5 +10,6 @@ export function hashCmd(cmd: GetCommand): number {
     nestedFind: undefined,
     target: undefined,
     noMerge: undefined,
+    sourceFieldByPath: undefined,
   })
 }

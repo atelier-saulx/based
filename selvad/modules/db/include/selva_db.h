@@ -199,6 +199,14 @@ static inline int Selva_CmpNodeIdType(const Selva_NodeId nodeId, const char type
     return Selva_CmpNodeType(nodeId, type);
 }
 
+static inline int Selva_isEdgemetaField(const char *field_str, size_t field_len)
+{
+    return field_len >= sizeof(SELVA_EDGE_META_FIELD) - 1 &&
+           !__builtin_memcmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1) &&
+           (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1 ||
+            (field_len >= sizeof(SELVA_EDGE_META_FIELD) && field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.'));
+}
+
 /**
  * Set if the database has been modified since last save.
  */

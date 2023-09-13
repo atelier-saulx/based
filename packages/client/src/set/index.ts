@@ -76,6 +76,10 @@ export function toModifyArgs(props: {
       // so encoding happens here instead of at modify encoding level
       return arrayOpToModify(props)
     case 'object':
+      if (!value) {
+        return []
+      }
+
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META,
         strPath,

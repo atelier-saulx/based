@@ -211,8 +211,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// TODO: traversing object arrays (THIS NEEDS TO BE RE-THOUGHT)
-test.skip('get - field with array', async (t) => {
+test('get - field with array', async (t) => {
   const { client } = t.context
   const id = await client.set({
     type: 'lekkerType',
@@ -677,7 +676,7 @@ test.skip('get - field with array', async (t) => {
             value: 3,
             fvalue: 1.7,
           },
-          {},
+          undefined,
         ],
       },
     },
@@ -736,7 +735,7 @@ test.skip('get - field with array', async (t) => {
             value: 3,
             fvalue: 1.7,
           },
-          {},
+          undefined,
           {
             hello: 'yes 11',
             value: 11,
@@ -824,7 +823,7 @@ test.skip('get - field with array', async (t) => {
             value: 3,
             fvalue: 1.7,
           },
-          {},
+          undefined,
           {
             hello: 'yes 11',
             value: 11,

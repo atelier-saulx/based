@@ -84,6 +84,10 @@ const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir)
         return (const char *)"bfs_expression";
     case SELVA_HIERARCHY_TRAVERSAL_EXPRESSION:
         return (const char *)"expression";
+    case SELVA_HIERARCHY_TRAVERSAL_FIELD:
+        return (const char *)"field";
+    case SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD:
+        return (const char *)"bfs_field";
     default:
         return "invalid";
     }

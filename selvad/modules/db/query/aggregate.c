@@ -379,11 +379,9 @@ static int AggregateCommand_ArrayObjectCb(
 }
 
 static size_t AggregateCommand_AggregateOrderResult(
-        struct selva_string *lang __unused,
         void *arg,
         ssize_t offset,
         ssize_t limit,
-        struct SelvaObject *fields __unused,
         SVector *order_result) {
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct TraversalOrderItem *item;
@@ -431,12 +429,9 @@ static size_t AggregateCommand_AggregateOrderResult(
 }
 
 static size_t AggregateCommand_AggregateOrderArrayResult(
-        struct selva_string *lang __unused,
         void *arg,
-        SelvaHierarchy *hierarchy __unused,
         ssize_t offset,
         ssize_t limit,
-        struct SelvaObject *fields __unused,
         SVector *order_result) {
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct TraversalOrderItem *item;
@@ -475,6 +470,34 @@ static size_t AggregateCommand_AggregateOrderArrayResult(
     }
 
     return len;
+}
+
+static size_t postprocess_aggregate_sort(
+        void *arg,
+        ssize_t offset,
+        ssize_t limit,
+        SVector *order_result) {
+    const struct TraversalOrderItem *first_item = SVector_Peek(order_result);
+    const enum TraversalOrderItemPtype result_type = first_item
+        ? PTAG_GETTAG(first_item->tagp)
+        : TRAVERSAL_ORDER_ITEM_PTYPE_NULL;
+
+    /*
+     * Note that the previous will fail/be invalid if the items in the `result`
+     * SVector are not type of struct TraversalOrderItem and created by one of
+     * the SelvaTraversalOrder_Create functions.
+     */
+
+    switch (result_type) {
+    case TRAVERSAL_ORDER_ITEM_PTYPE_NULL:
+        break;
+    case TRAVERSAL_ORDER_ITEM_PTYPE_OBJ:
+        return AggregateCommand_AggregateOrderArrayResult(arg, offset, limit, order_result);
+    case TRAVERSAL_ORDER_ITEM_PTYPE_NODE:
+        return AggregateCommand_AggregateOrderResult(arg, offset, limit, order_result);
+    }
+
+    return 0;
 }
 
 static int fixup_query_opts(struct SelvaAggregate_QueryOpts *qo, const char *base, size_t size) {
@@ -593,7 +616,9 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
           SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+          SELVA_HIERARCHY_TRAVERSAL_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)
          ) || __builtin_popcount(query_opts.dir) > 1
        ) {
         selva_send_errorf(resp, SELVA_EINVAL, "Invalid dir");
@@ -607,7 +632,9 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
          SELVA_HIERARCHY_TRAVERSAL_REF |
          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) &&
+         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD) &&
         query_opts.dir_opt_len == 0) {
         selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
         return;
@@ -782,7 +809,6 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             .send_param.order = query_opts.order,
             .send_param.order_field = order_by_field,
             .result = &order_result,
-            .process_node = NULL, /* Not used. */
         };
 
         if (query_opts.limit == 0) {
@@ -854,9 +880,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
         };
 
         init_uniq(&ord_args);
-        nr_nodes = (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY)
-            ? AggregateCommand_AggregateOrderArrayResult(lang, &ord_args, hierarchy, query_opts.offset, query_opts.limit, fields, &order_result)
-            : AggregateCommand_AggregateOrderResult(lang, &ord_args, query_opts.offset, query_opts.limit, fields, &order_result);
+        nr_nodes = postprocess_aggregate_sort(&ord_args, query_opts.offset, query_opts.limit, &order_result);
         count_uniq(&args);
         AggregateCommand_SendAggregateResult(&ord_args);
         destroy_uniq(&args);

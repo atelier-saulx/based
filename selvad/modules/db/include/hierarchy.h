@@ -521,6 +521,21 @@ void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct 
  */
 ssize_t SelvaModify_GetHierarchyHeads(SelvaHierarchy *hierarchy, Selva_NodeId **res);
 
+/**
+ * Get the SVector of a hierarchy field.
+ */
+SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type);
+
+/**
+ * Traverse adjacent vector.
+ * This function can be useful with edge fields,
+ * field_lookup_traversable, and SelvaHierarchy_GetHierarchyField().
+ * @param adj_vec can be children, parents, or an edge field arcs.
+ */
+void SelvaHierarchy_TraverseAdjacents(
+        struct SelvaHierarchy *hierarchy,
+        const SVector *adj_vec,
+        const struct SelvaHierarchyCallback *cb);
 void SelvaHierarchy_TraverseChildren(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -529,10 +544,16 @@ void SelvaHierarchy_TraverseParents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse ancestors without including node.
+ */
 int SelvaHierarchy_TraverseBFSAncestors(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse descendants without including node.
+ */
 int SelvaHierarchy_TraverseBFSDescendants(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
@@ -549,6 +570,27 @@ int SelvaHierarchy_TraverseField(
         const char *field_name_str,
         size_t field_name_len,
         const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse a field by first doing a full lookup.
+ * Supported callbacks:
+ * - head_cb
+ * - node_cb
+ * - ary_cb
+ */
+int SelvaHierarchy_TraverseField2(
+        struct SelvaHierarchy *hierarchy,
+        const Selva_NodeId node_id,
+        const char *ref_field_str,
+        size_t ref_field_len,
+        const struct SelvaHierarchyCallback *hcb,
+        const struct SelvaObjectArrayForeachCallback *acb);
+int SelvaHierarchy_TraverseField2Bfs(
+        struct SelvaHierarchy *hierarchy,
+        const Selva_NodeId node_id,
+        const char *ref_field_str,
+        size_t ref_field_len,
+        const struct SelvaHierarchyCallback *hcb,
+        const struct SelvaObjectArrayForeachCallback *acb);
 int SelvaHierarchy_TraverseExpression(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,

@@ -212,7 +212,7 @@ test('descendants sub', async (t) => {
   })
   await sub.cleanup()
   if (sub.pending) {
-    await client.refreshMarker(3805838763871)
+    await client.refreshMarker(12276536598524)
   }
   let find = await sub.fetch()
 
@@ -297,13 +297,13 @@ test('descendants sub', async (t) => {
     },
     {
       subId: 13416525902349,
-      markerId: 3805838763871, // descendants marker id
+      markerId: 12276536598524, // descendants marker id
     }
   )
 
   await sub.cleanup()
   if (sub.pending) {
-    await client.refreshMarker(3805838763871)
+    await client.refreshMarker(12276536598524)
   }
   find = await sub.fetch()
 
@@ -369,7 +369,7 @@ test('descendants sub', async (t) => {
 
   await wait(1e3)
   t.deepEqual(evCnt, 1)
-  t.deepEqual(markerId, 3805838763871)
+  t.deepEqual(markerId, 12276536598524)
 
   client.destroy()
   await server.destroy()
@@ -500,7 +500,7 @@ test('node sub', async (t) => {
   })
   await sub.cleanup()
   if (sub.pending) {
-    await client.refreshMarker(5334180829803)
+    await client.refreshMarker(12747838989715)
   }
   let find = await sub.fetch()
 
@@ -536,13 +536,13 @@ test('node sub', async (t) => {
     },
     {
       subId: 15586939349843,
-      markerId: 5334180829803, // node marker id
+      markerId: 12747838989715, // node marker id
     }
   )
 
   await sub.cleanup()
   if (sub.pending) {
-    await client.refreshMarker(5334180829803)
+    await client.refreshMarker(12747838989715)
   }
   find = await sub.fetch()
 
@@ -567,7 +567,7 @@ test('node sub', async (t) => {
 
   await wait(1e3)
   t.deepEqual(evCnt, 1)
-  t.deepEqual(markerId, 5334180829803)
+  t.deepEqual(markerId, 12747838989715)
 
   client.destroy()
   await server.destroy()

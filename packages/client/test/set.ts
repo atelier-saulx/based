@@ -332,7 +332,20 @@ test.only('set primitive fields', async (t) => {
       },
       aliases: true,
       $list: {
+        $sort: { $field: 'id', $order: 'desc' },
         $limit: 2,
+        $find: {
+          $filter: {
+            $field: 'type',
+            $operator: '=',
+            $value: 'post',
+            $and: {
+              $field: 'slug',
+              $operator: '!=',
+              $value: '/third',
+            },
+          },
+        },
       },
     },
 

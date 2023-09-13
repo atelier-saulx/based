@@ -381,7 +381,7 @@ static int FindCommand_ArrayObjectCb(
     return 0;
 }
 
-static size_t FindCommand_SendOrderedResult(
+static size_t FindCommand_SendOrderedNodeResult(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
@@ -420,7 +420,7 @@ static size_t FindCommand_SendOrderedResult(
     return len;
 }
 
-static void postprocess_array(
+static void FindCommand_SendOrderedObjectResult(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct SelvaHierarchy *hierarchy __unused,
@@ -459,8 +459,6 @@ static void postprocess_array(
                       selva_strerror(err));
         }
     }
-
-    selva_send_array_end(resp);
 }
 
 /**
@@ -475,7 +473,28 @@ static void postprocess_sort(
         ssize_t limit,
         struct SelvaNodeSendParam *args,
         SVector *result) {
-    (void)FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, result);
+    const struct TraversalOrderItem *first_item = SVector_Peek(result);
+    const enum TraversalOrderItemPtype result_type = first_item
+        ? PTAG_GETTAG(first_item->tagp)
+        : TRAVERSAL_ORDER_ITEM_PTYPE_NULL;
+
+    /*
+     * Note that the previous will fail/be invalid if the items in the `result`
+     * SVector are not type of struct TraversalOrderItem and created by one of
+     * the SelvaTraversalOrder_Create functions.
+     */
+
+    switch (result_type) {
+    case TRAVERSAL_ORDER_ITEM_PTYPE_NULL:
+        break;
+    case TRAVERSAL_ORDER_ITEM_PTYPE_OBJ:
+        (void)FindCommand_SendOrderedObjectResult(fin, resp, hierarchy, lang, offset, limit, args, result);
+        break;
+    case TRAVERSAL_ORDER_ITEM_PTYPE_NODE:
+        (void)FindCommand_SendOrderedNodeResult(fin, resp, hierarchy, lang, offset, limit, args, result);
+        break;
+    }
+
     selva_send_array_end(resp);
 }
 
@@ -534,7 +553,7 @@ static void postprocess_inherit(
 
         }
 
-        FindCommand_SendOrderedResult(fin, resp, hierarchy, lang, offset, limit, args, &order_result);
+        FindCommand_SendOrderedNodeResult(fin, resp, hierarchy, lang, offset, limit, args, &order_result);
         selva_send_array_end(resp);
     } else {
         struct SelvaHierarchyNode *node;
@@ -564,29 +583,22 @@ static void postprocess_inherit(
     }
 }
 
-static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaTraversal dir, enum SelvaResultOrder order, enum SelvaFind_ResType res_type) {
+static SelvaFind_Postprocess select_processing(struct FindCommand_Args *args, enum SelvaResultOrder order, enum SelvaFind_ResType res_type) {
     SelvaFind_Postprocess postprocess;
 
-    if (dir == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
-        if (order != SELVA_RESULT_ORDER_NONE) {
-            args->process_obj = &process_array_obj_sort;
-            postprocess = &postprocess_array;
-        } else {
-            args->process_obj = &process_array_obj_send;
-            postprocess = NULL;
-        }
+    if (res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
+        /* This will also handle sorting if it was requested. */
+        args->process_node = &process_node_inherit;
+        args->process_obj = NULL;
+        postprocess = &postprocess_inherit;
+    } else if (order != SELVA_RESULT_ORDER_NONE) {
+        args->process_node = &process_node_sort;
+        args->process_obj = &process_array_obj_sort;
+        postprocess = &postprocess_sort;
     } else {
-        if (res_type == SELVA_FIND_QUERY_RES_INHERIT_RPN) {
-            /* This will also handle sorting if it was requested. */
-            args->process_node = &process_node_inherit;
-            postprocess = &postprocess_inherit;
-        } else if (order != SELVA_RESULT_ORDER_NONE) {
-            args->process_node = &process_node_sort;
-            postprocess = &postprocess_sort;
-        } else {
-            args->process_node = &process_node_send;
-            postprocess = NULL;
-        }
+        args->process_node = &process_node_send;
+        args->process_obj = &process_array_obj_send;
+        postprocess = NULL;
     }
 
     return postprocess;
@@ -694,7 +706,9 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
           SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+          SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+          SELVA_HIERARCHY_TRAVERSAL_FIELD |
+          SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)
          ) || __builtin_popcount(query_opts.dir) > 1
        ) {
         selva_send_errorf(resp, SELVA_EINVAL, "Invalid dir");
@@ -708,7 +722,9 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
          SELVA_HIERARCHY_TRAVERSAL_REF |
          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) &&
+         SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_FIELD |
+         SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD) &&
         query_opts.dir_opt_len == 0) {
         selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
         return;
@@ -959,7 +975,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             .acc_take = 0,
         };
 
-        postprocess = select_processing(&args, query_opts.dir, query_opts.order, query_opts.res_type);
+        postprocess = select_processing(&args, query_opts.order, query_opts.res_type);
 
         if (ind_select >= 0) {
             /*

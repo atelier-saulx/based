@@ -195,6 +195,11 @@ struct Selva_SubscriptionMarker {
         int res;
     } history;
 
+    /**
+     * How many nodes are using this marker.
+     */
+    size_t ref_count;
+
     struct SVector subs; /*!< Subscriptions using this marker. */
     RB_ENTRY(Selva_SubscriptionMarker) _mrk_index_entry; /*!< Entry for hierarchy->mrks_head */
     char fields[]; /* \n separated and \0 terminated list of field names considered for change events. */

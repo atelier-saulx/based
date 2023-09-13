@@ -2,7 +2,9 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <assert.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/types.h>
 #include "selva_error.h"
 #include "selva_log.h"
@@ -14,6 +16,7 @@
 
 /*
  * Trace handles.
+ * TODO Traces in this file seem broken
  */
 SELVA_TRACE_HANDLE(cmd_find_array);
 SELVA_TRACE_HANDLE(cmd_find_bfs_expression);
@@ -71,6 +74,20 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
         SELVA_TRACE_BEGIN(query_traverse_traversal_expression);
         err = SelvaHierarchy_TraverseExpression(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
         SELVA_TRACE_END(query_traverse_traversal_expression);
+    } else if (qt->dir & (SELVA_HIERARCHY_TRAVERSAL_FIELD |
+                          SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)) {
+        const struct SelvaHierarchyCallback hcb = {
+            .node_cb = qt->node_cb,
+            .node_arg = args,
+        };
+        const struct SelvaObjectArrayForeachCallback acb = {
+            .cb = qt->ary_cb,
+            .cb_arg = args,
+        };
+
+        err = (qt->dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
+            ? SelvaHierarchy_TraverseField2(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb)
+            : SelvaHierarchy_TraverseField2Bfs(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb);
     } else {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,
@@ -80,16 +97,6 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
         SELVA_TRACE_BEGIN(query_traverse_rest);
         err = SelvaHierarchy_Traverse(hierarchy, node_id, qt->dir, &cb);
         SELVA_TRACE_END(query_traverse_rest);
-    }
-    if (err != 0) {
-        /*
-         * We can't send an error to the client at this point so we'll just log
-         * it and ignore the error.
-         */
-        SELVA_LOG(SELVA_LOGL_ERR, "Traversal failed. dir: %s node_id: \"%.*s\" err: \"%s\"",
-                  SelvaTraversal_Dir2str(qt->dir),
-                  (int)SELVA_NODE_ID_SIZE, node_id,
-                  selva_strerror(err));
     }
 
     return err;

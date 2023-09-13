@@ -267,7 +267,7 @@ static int send_edge_field(
                 if (next_prefix_str) {
                     selva_send_array_end(resp);
                 }
-            } else if (is_edgemeta(next_field_str, next_field_len)) {
+            } else if (Selva_isEdgemetaField(next_field_str, next_field_len)) {
                 /*
                  * $edgeMeta pseudo field handling
                  * TODO This doesn't currently work over multiple edge fields.

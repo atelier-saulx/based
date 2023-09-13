@@ -1,8 +1,10 @@
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { getTypeSchema } from '../../../util'
 import { ExecContext, GetCommand } from '../../types'
-import { parseObjFields } from './obj'
+import { findFieldSchema, parseObjFields } from './obj'
 import { setResultValue } from './setResultValue'
+import { SELVA_NODE_ID_LEN } from '../../../protocol'
+import { BasedSchemaFieldArray, BasedSchemaFieldObject } from '@based/schema'
 
 export function parseGetResult(
   ctx: ExecContext,
@@ -67,18 +69,33 @@ function parseResultRows(
 
     const [id, fields]: [string, any[]] = row
 
-    const typeSchema = getTypeSchema(rowCtx, id)
-    if (!typeSchema) {
+    let schema: BasedSchemaFieldObject
+    if (id === '\0'.repeat(SELVA_NODE_ID_LEN)) {
+      const typeSchema = getTypeSchema(rowCtx, cmd.source.id)
+      if (!typeSchema) {
+        return {}
+      }
+
+      const fieldSchema: BasedSchemaFieldArray = <BasedSchemaFieldArray>(
+        findFieldSchema((<any>cmd).sourceField, {
+          type: 'object',
+          properties: typeSchema?.fields,
+        })
+      )
+
+      schema = {
+        type: 'object',
+        properties: (<BasedSchemaFieldObject>fieldSchema?.values)?.properties,
+      }
+    } else {
+      schema = { type: 'object', properties: getTypeSchema(rowCtx, id)?.fields }
+    }
+
+    if (!schema.properties) {
       return {}
     }
 
-    const obj =
-      parseObjFields(
-        rowCtx,
-        { type: 'object', properties: typeSchema.fields },
-        cmd,
-        fields
-      ) || {}
+    const obj = parseObjFields(rowCtx, schema, cmd, fields) || {}
 
     for (const path in rowCtx.fieldAliases) {
       setResultValue({ obj, path, ...rowCtx.fieldAliases[path] })

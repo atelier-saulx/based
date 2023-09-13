@@ -43,6 +43,8 @@ const RECURSIVE_TRAVERSE_MODES: Record<number, protocol.SelvaTraversal> = {
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS,
   [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD]:
     SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD,
+  [SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_FIELD]:
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD,
 }
 
 const SORT_ORDERS: Record<string, SelvaResultOrder> = {
@@ -161,12 +163,12 @@ async function makeOpts(
     // traverse by field
     if (cmd.sourceField) {
       const mode = TRAVERSE_MODES[cmd.sourceField]
-      const dir = mode || SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
+      const dir = mode || SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_FIELD
 
       struct.dir = cmd.recursive ? RECURSIVE_TRAVERSE_MODES[dir] : dir
 
       if (!mode) {
-        // if edge field, supply field name
+        // if edge or array field, supply field name
         struct.dir_opt_str = cmd.sourceField
       }
     } else if (cmd.source.idList) {

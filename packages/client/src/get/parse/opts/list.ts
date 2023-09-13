@@ -35,7 +35,14 @@ export function parseList(
     cmd.nestedFind = nestedCmd
   }
 
-  const sourceField = $list?.$find?.$traverse ?? $list?.$field ?? String(key)
+  let sourceField = $list?.$find?.$traverse ?? $list?.$field
+  let sourceFieldByPath = false
+
+  if (!sourceField) {
+    sourceField = String(key)
+    sourceFieldByPath = true
+  }
+
   if (Array.isArray($list?.$find?.$traverse)) {
     // find in id list
     cmd.source = { idList: sourceField }
@@ -45,6 +52,7 @@ export function parseList(
     cmd.traverseExpr = sourceField
   } else {
     cmd.sourceField = sourceField
+    cmd.sourceFieldByPath = sourceFieldByPath
   }
 
   if ($list?.$limit !== undefined || $list?.$offset !== undefined) {

@@ -11,12 +11,13 @@ import { hashCmd } from '../../util'
 import { parseList } from './list'
 import { parseAlias } from './alias'
 import { deepEqual } from '@saulx/utils'
+import { joinPath } from '../../../util'
 
 export async function parseGetOpts(
   ctx: ExecContext,
   opts: any
 ): Promise<{ cmds: GetCommand[]; defaults: { path: Path; value: any }[] }> {
-  const topLevel: GetCommand[] = []
+  const hoisted: GetCommand[] = []
   let visited: GetCommand
   const walked = await walk<{
     id: string
@@ -319,7 +320,7 @@ export async function parseGetOpts(
               })
             } else if (nestedCmd.type === 'node') {
               // completely separate id queried, merge if id already exists
-              const existing = topLevel.find((cmd) => {
+              const existing = hoisted.find((cmd) => {
                 return (
                   cmd.type === 'node' &&
                   cmd.source.id === nestedCmd.source.id &&
@@ -331,7 +332,7 @@ export async function parseGetOpts(
                 existing.fields.$any.push(...nestedCmd.fields.$any)
                 existing.cmdId = hashCmd(existing)
               } else {
-                topLevel.push(nestedCmd)
+                hoisted.push(nestedCmd)
               }
             } else {
               // actual nested query dependent on this result
@@ -382,8 +383,15 @@ export async function parseGetOpts(
   const nested = visited.nestedCommands
   delete visited.nestedCommands
 
+  const topLevel = [...hoisted, ...nested]
+  topLevel.forEach((cmd) => {
+    if (cmd.type === 'traverse' && cmd.sourceFieldByPath) {
+      cmd.sourceField = joinPath(cmd.target.path)
+    }
+  })
+
   return {
-    cmds: [visited, ...nested, ...topLevel],
+    cmds: [visited, ...topLevel],
     defaults: walked.defaultValues,
   }
 }

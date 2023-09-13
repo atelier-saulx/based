@@ -86,7 +86,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.serial('find', async (t) => {
+test('find', async (t) => {
   const { client } = t.context
   // simple nested - single query
 

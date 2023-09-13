@@ -11,7 +11,7 @@
 #include "selva_object.h"
 #include "edge.h"
 #include "hierarchy.h"
-#include "inherit_fields.h"
+#include "field_lookup.h"
 
 static int get_field_value(
         SelvaHierarchy *hierarchy,
@@ -128,7 +128,7 @@ static int get_field_value(
     return SelvaObject_GetAnyLangStr(obj, lang, field_str, field_len, out);
 }
 
-int Inherit_GetField(
+int field_lookup_inherit(
         SelvaHierarchy *hierarchy,
         struct selva_string *lang,
         const struct SelvaHierarchyNode *node,

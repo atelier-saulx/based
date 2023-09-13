@@ -20,9 +20,11 @@
 #include "selva_proto.h"
 #include "selva_server.h"
 #include "selva_db.h"
+#include "field_lookup.h"
 #include "hierarchy.h"
 #include "modify.h"
 #include "parsers.h"
+#include "query.h"
 #include "rpn.h"
 #include "selva_object.h"
 #include "selva_onload.h"
@@ -92,7 +94,7 @@ static int Inherit_FieldValue_NodeCb(
         args->first_node = 0;
     }
 
-    err = Inherit_GetField(hierarchy, args->lang, node, obj, args->field_name_str, args->field_name_len, args->res);
+    err = field_lookup_inherit(hierarchy, args->lang, node, obj, args->field_name_str, args->field_name_len, args->res);
     if (err == 0) {
         return 1; /* found */
     } else if (err != SELVA_ENOENT) {

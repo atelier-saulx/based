@@ -30,13 +30,14 @@ OBJ := \
 	   query/find/find_send_array_object_fields.o \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \
-	   query/inherit/get_field.o \
 	   query/inherit/inherit.o \
 	   query/inherit/send_field.o \
 	   query/inherit/send_field_find.o \
+	   field_lookup/data_field.o \
+	   field_lookup/inherit_field.o \
+	   field_lookup/traversable.o \
 	   query/query_traverse.o \
 	   query/update.o \
-	   query/query_get_data_field.o \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \

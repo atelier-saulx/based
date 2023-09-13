@@ -10,11 +10,11 @@
 #include "util/ptag.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
-#include "selva_db.h"
 #include "db_config.h"
-#include "selva_object.h"
+#include "selva_db.h"
+#include "field_lookup.h"
 #include "hierarchy.h"
-#include "query.h"
+#include "selva_object.h"
 #include "traversal.h"
 
 /**
@@ -207,7 +207,7 @@ struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
         .type = ORDER_ITEM_TYPE_EMPTY,
     };
 
-    err = query_get_data_field(lang, node, order_field_str, order_field_len, &any);
+    err = field_lookup_data_field(lang, node, order_field_str, order_field_len, &any);
     if (!err) {
         obj_any2order_data(&any, &tmp);
     } else if (err != SELVA_ENOENT && err != SELVA_EINTYPE) {

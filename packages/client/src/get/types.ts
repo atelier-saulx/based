@@ -84,6 +84,7 @@ export type GetTraversalShared = {
   // one of these
   traverseExpr?: TraverseByType // also includes just array of fields ({ $first: [...field] })
   sourceField?: string
+  sourceFieldByPath?: boolean
 
   nestedFind?: GetTraverse | GetTraverseIds | GetAggregate
 

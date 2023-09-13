@@ -17,27 +17,31 @@ struct selva_string;
 
 /**
  * Hierarchy traversal order.
- * Recognized by SelvaHierarchy_Traverse().
  */
 enum SelvaTraversal {
-    SELVA_HIERARCHY_TRAVERSAL_NONE =            0x0000, /*!< Do nothing. */
-    SELVA_HIERARCHY_TRAVERSAL_NODE =            0x0001, /*!< Visit just the given node. */
-    SELVA_HIERARCHY_TRAVERSAL_ARRAY =           0x0002, /*!< Traverse an array. */
-    SELVA_HIERARCHY_TRAVERSAL_SET =             0x0004, /*!< Traverse an array. */
-    SELVA_HIERARCHY_TRAVERSAL_REF =             0x0008, /*!< Visit nodes pointed by a string ref field. */
-    SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD =      0x0010, /*!< Visit nodes pointed by an edge field. */
-    SELVA_HIERARCHY_TRAVERSAL_CHILDREN =        0x0020, /*!< Visit children of the given node. */
-    SELVA_HIERARCHY_TRAVERSAL_PARENTS =         0x0040, /*!< Visit parents of the given node. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS =   0x0080, /*!< Visit ancestors of the given node using BFS. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS = 0x0100, /*!< Visit descendants of the given node using BFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS =   0x0200, /*!< Visit ancestors of the given node using DFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS = 0x0400, /*!< Visit descendants of the given node using DFS. */
-    SELVA_HIERARCHY_TRAVERSAL_DFS_FULL =        0x0800, /*!< Full DFS traversal of the whole hierarchy. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD =  0x1000, /*!< Traverse an edge field according to its constraints using BFS. */
-    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION =  0x2000, /*!< Traverse with an expression returning a set of field names. */
-    SELVA_HIERARCHY_TRAVERSAL_EXPRESSION =      0x4000, /*!< Visit fields with an expression returning a set of field names. */
+    SELVA_HIERARCHY_TRAVERSAL_NONE =            0x00000, /*!< Do nothing. */
+    SELVA_HIERARCHY_TRAVERSAL_NODE =            0x00001, /*!< Visit just the given node. */
+    SELVA_HIERARCHY_TRAVERSAL_ARRAY =           0x00002, /*!< Traverse an array. */
+    SELVA_HIERARCHY_TRAVERSAL_SET =             0x00004, /*!< Traverse a set. */
+    SELVA_HIERARCHY_TRAVERSAL_REF =             0x00008, /*!< Visit nodes pointed by a string ref field. */
+    SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD =      0x00010, /*!< Visit nodes pointed by an edge field. */
+    SELVA_HIERARCHY_TRAVERSAL_CHILDREN =        0x00020, /*!< Visit children of the given node. */
+    SELVA_HIERARCHY_TRAVERSAL_PARENTS =         0x00040, /*!< Visit parents of the given node. */
+    SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS =   0x00080, /*!< Visit ancestors of the given node using BFS. */
+    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS = 0x00100, /*!< Visit descendants of the given node using BFS. */
+    SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS =   0x00200, /*!< Visit ancestors of the given node using DFS. */
+    SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS = 0x00400, /*!< Visit descendants of the given node using DFS. */
+    SELVA_HIERARCHY_TRAVERSAL_DFS_FULL =        0x00800, /*!< Full DFS traversal of the whole hierarchy. */
+    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD =  0x01000, /*!< Traverse an edge field according to its constraints using BFS. */
+    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION =  0x02000, /*!< Traverse with an expression returning a set of field names. */
+    SELVA_HIERARCHY_TRAVERSAL_EXPRESSION =      0x04000, /*!< Visit fields with an expression returning a set of field names. */
+    SELVA_HIERARCHY_TRAVERSAL_FIELD =           0x08000, /*!< Traverse any hierarchy, edge, or object array field. */
+    SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD =       0x10000, /*!< Traverse any hierarchy, edge, or object array field using BFS. */
 };
 
+/**
+ * Merge strategy used with find.
+ */
 enum SelvaMergeStrategy {
     MERGE_STRATEGY_NONE = 0, /* No merge. */
     MERGE_STRATEGY_ALL,
@@ -79,6 +83,7 @@ enum TraversalOrderItemType {
  * Tag type for tagp in struct TraversalOrderItem.
  */
 enum TraversalOrderItemPtype {
+    TRAVERSAL_ORDER_ITEM_PTYPE_NULL = 0,
     /**
      * A pointer to a node.
      */
@@ -86,7 +91,7 @@ enum TraversalOrderItemPtype {
     /**
      * A pointer to a SelvaObject.
      */
-    TRAVERSAL_ORDER_ITEM_PTYPE_OBJ,
+    TRAVERSAL_ORDER_ITEM_PTYPE_OBJ = 2,
 };
 
 /**
@@ -185,13 +190,22 @@ struct SelvaNodeSendParam {
     struct rpn_expression *fields_expression;
 };
 
+/**
+ * Type of a function to process each node in a query.
+ */
 typedef int (*SelvaFind_ProcessNode)(
         struct SelvaHierarchy *hierarchy,
         struct FindCommand_Args *args,
         struct SelvaHierarchyNode *node);
+/**
+ * Type of a function to process each object in a query when traversing an array of objects.
+ */
 typedef int (*SelvaFind_ProcessObject)(
         struct FindCommand_Args *args,
         struct SelvaObject *obj);
+/**
+ * Post processing callback in a query.
+ */
 typedef void (*SelvaFind_Postprocess)(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -228,12 +242,20 @@ struct FindCommand_Args {
     size_t acc_take; /*!< Numer of nodes selected during the traversal. */
     size_t acc_tot; /*!< Total number of nodes visited during the traversal. */
 
-    union {
-        SelvaFind_ProcessNode process_node;
-        SelvaFind_ProcessObject process_obj;
-    };
+    /*
+     * Process callbacks.
+     * While we'll only see either nodes or objects we don't necessarily know
+     * which one it will be before we are in query_traverse().
+     * E.g. SELVA_HIERARCHY_TRAVERSAL_FIELD makes the decission based on the
+     * what is resolved from the given field path.
+     */
+    SelvaFind_ProcessNode process_node;
+    SelvaFind_ProcessObject process_obj;
 };
 
+/**
+ * See skip in FindCommand_Args.
+ */
 static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
 {
     const int take = (args->skip > 0) ? !args->skip-- : 1;
@@ -241,6 +263,9 @@ static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
     return take;
 }
 
+/**
+ * See offset in FindCommand_Args.
+ */
 static inline int SelvaTraversal_ProcessOffset(struct FindCommand_Args *args)
 {
     const int take = (args->offset > 0) ? !args->offset-- : 1;

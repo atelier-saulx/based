@@ -4,12 +4,8 @@
  */
 #pragma once
 
-int query_get_data_field(
-        struct selva_string *lang,
-        struct SelvaHierarchyNode *node,
-        const char *field_str,
-        size_t field_len,
-        struct SelvaObjectAny *any);
+struct rpn_ctx;
+struct rpn_expression;
 
 struct query_traverse {
     enum SelvaTraversal dir;

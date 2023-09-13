@@ -4,15 +4,17 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/selva_string.h"
 #include "selva_error.h"
+#include "selva_db.h"
 #include "selva_object.h"
 #include "edge.h"
 #include "hierarchy.h"
-#include "query.h"
+#include "field_lookup.h"
 
-static int get_next_edge_field(
+static int get_from_edge_field(
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -32,10 +34,10 @@ static int get_next_edge_field(
     if (off == SELVA_EINTYPE) {
         return SELVA_EINTYPE;
     } else if (off < 0) {
-        return off;
+        return off; /* Probably SELVA_ENOENT */
     } else if (off == 0) {
         /*
-         * The field name leads to an edge field (->node),
+         * The field name leads to an edge field (->node(s)),
          * not to a single data field.
          */
         return SELVA_EINTYPE;
@@ -52,11 +54,37 @@ static int get_next_edge_field(
             return err;
         }
 
-        return query_get_data_field(lang, next_node, next_field_str, next_field_len, any);
+        if (Selva_isEdgemetaField(next_field_str, next_field_len)) {
+            if (edge_field->metadata) {
+                Selva_NodeId next_node_id;
+                struct SelvaObject *edge_metadata;
+                int err;
+
+                SelvaHierarchy_GetNodeId(next_node_id, next_node);
+                err = SelvaObject_GetObjectStr(edge_field->metadata, next_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
+                if (!err) {
+                    const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
+                    size_t meta_key_len = 0;
+
+                    if (meta_key_str) {
+                        meta_key_str++;
+                        meta_key_len = (next_field_str + next_field_len) - meta_key_str;
+                        if (meta_key_len == 0) {
+                            meta_key_str = NULL;
+                        }
+                    }
+
+                    return SelvaObject_GetAnyLangStr(edge_field->metadata, lang, meta_key_str, meta_key_len, any);
+                }
+            }
+            return SELVA_ENOENT;
+        } else {
+            return field_lookup_data_field(lang, next_node, next_field_str, next_field_len, any);
+        }
     }
 }
 
-int query_get_data_field(
+int field_lookup_data_field(
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -65,7 +93,7 @@ int query_get_data_field(
 {
     int err;
 
-    err = get_next_edge_field(lang, node, field_str, field_len, any);
+    err = get_from_edge_field(lang, node, field_str, field_len, any);
     if (err == SELVA_ENOENT) {
         struct SelvaObject *obj;
 

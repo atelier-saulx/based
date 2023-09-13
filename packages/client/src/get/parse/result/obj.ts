@@ -1,10 +1,14 @@
-import { BasedSchemaField, BasedSchemaFieldObject } from '@based/schema'
+import {
+  BasedSchemaField,
+  BasedSchemaFieldArray,
+  BasedSchemaFieldObject,
+} from '@based/schema'
 import { ExecContext, Field, GetCommand } from '../../types'
 import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
 import { joinPath } from '../../../util'
 
-function findFieldSchema(
+export function findFieldSchema(
   f: string,
   fieldSchema: BasedSchemaField
 ): BasedSchemaField {
@@ -16,6 +20,9 @@ function findFieldSchema(
       fieldSchema =
         (<BasedSchemaFieldObject>fieldSchema).properties[s] ?? fieldSchema
     } else if (fieldSchema.type === 'record') {
+      // @ts-ignore
+      fieldSchema = fieldSchema.values
+    } else if (fieldSchema.type === 'array') {
       // @ts-ignore
       fieldSchema = fieldSchema.values
     }
@@ -30,6 +37,8 @@ function findFieldSchema(
     fieldSchema = fieldSchema.values
   } else if (fieldSchema.type === 'text') {
     fieldSchema = { type: 'string' }
+  } else if (fieldSchema.type === 'array') {
+    fieldSchema = (<BasedSchemaFieldArray>fieldSchema).values
   }
 
   return fieldSchema
