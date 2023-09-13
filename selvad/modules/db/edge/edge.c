@@ -868,7 +868,7 @@ static void EdgeField_Free(void *p) {
     clear_field(ctx, hierarchy, node, edge_field);
 #endif
     SVector_Destroy(&edge_field->arcs);
-    SelvaObject_Destroy(edge_field->metadata);
+    Edge_DeleteFieldMetadata(edge_field);
     selva_free(p);
 }
 
