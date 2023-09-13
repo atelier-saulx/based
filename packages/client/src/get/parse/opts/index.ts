@@ -95,6 +95,20 @@ export async function parseGetOpts(
           return nestedCmd
         }
 
+        if (
+          value === true &&
+          ['ancestors', 'descendants'].includes(String(args.key))
+        ) {
+          return {
+            type: 'ids',
+            sourceField: args.key,
+            fields: { $any: [{ field: 'id' }] },
+            source: { id: id },
+            target: { path },
+            nestedCommands: [],
+          }
+        }
+
         // main logic
         const f = args.key === '$all' ? ['*'] : [args.key]
 

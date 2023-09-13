@@ -375,7 +375,7 @@ test('find - descendants 1', async (t) => {
 
     await wait(2000)
 
-    t.deepEqual(empty, [], 'does not throw for TAG fields')
+    t.deepEqual(empty, undefined, 'does not throw for TAG fields')
 
     await wait(2000)
 

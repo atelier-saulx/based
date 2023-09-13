@@ -713,6 +713,18 @@ test('get - hierarchy', async (t) => {
     children: ['vifla', 'viflo'],
   })
 
+  console.dir(
+    {
+      result: await client.get({
+        $id: 'viflapx',
+        descendants: true,
+        children: true,
+        parents: true,
+      }),
+    },
+    { depth: 6 }
+  )
+
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'viflapx',

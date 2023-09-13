@@ -618,7 +618,7 @@ test('find - versioned hierarchies', async (t) => {
     console.log('RES', i, JSON.stringify(res, null, 2))
   }
 
-  t.deepEqual(responses, [
+  t.deepEqualIgnoreOrder(responses, [
     {
       cooking: {
         things: [
@@ -631,9 +631,6 @@ test('find - versioned hierarchies', async (t) => {
             description: 'Nice food 2',
           },
         ],
-      },
-      travel: {
-        things: [],
       },
     },
     {

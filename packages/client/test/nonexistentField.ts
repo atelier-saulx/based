@@ -82,5 +82,5 @@ test('invalid filter should not return result', async (t) => {
       },
     },
   })
-  t.is(result.users.length, 0)
+  t.is(result.users, undefined)
 })

@@ -158,8 +158,8 @@ test('search user roles', async (t) => {
           },
         },
       })
-    ).descendants.length,
-    0
+    ).descendants,
+    undefined
   )
 })
 

@@ -222,7 +222,7 @@ async function makeOpts(
       recordDef: protocol.hierarchy_agg_def,
       extraArgs: [(cmd.function.$args || []).join('|')],
     }
-  } else if (cmd.type === 'ids' && cmd.nestedFind) {
+  } else if (cmd.type === 'ids') {
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
     struct.res_type = protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS
 

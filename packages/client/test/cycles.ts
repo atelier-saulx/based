@@ -79,7 +79,7 @@ test('children cycle: delete root', async (t) => {
   )
   t.deepEqual(
     await client.get({ $id: 'root', descendants: { id: true, $list: true } }),
-    { descendants: [] }
+    {}
   )
   t.deepEqual(await client.get({ $id: 'cy1', id: true }), {})
   t.deepEqual(await client.get({ $id: 'cy2', id: true }), {})
@@ -115,7 +115,7 @@ test('children cycle: delete first node', async (t) => {
   )
   t.deepEqual(
     await client.get({ $id: 'root', descendants: { id: true, $list: true } }),
-    { descendants: [] }
+    {}
   )
   t.deepEqual(await client.get({ $id: 'cy1', id: true }), {})
   t.deepEqual(await client.get({ $id: 'cy2', id: true }), {})

@@ -1,4 +1,4 @@
-import { deepMerge, getByPath, setByPath } from '@saulx/utils'
+import { deepEqual, deepMerge, getByPath, setByPath } from '@saulx/utils'
 import { getTypeSchema } from '../../../util'
 import { ExecContext, GetCommand } from '../../types'
 import { findFieldSchema, parseObjFields } from './obj'
@@ -12,6 +12,7 @@ export function parseGetResult(
   results: any[]
 ): any {
   let obj = {}
+  let hasKeys = false
   for (let i = 0; i < results.length; i++) {
     const result = results[i][0]
     const cmd: GetCommand = cmds[i]
@@ -24,6 +25,8 @@ export function parseGetResult(
       type === 'aggregate' ||
       (cmd.type === 'ids' && cmd.mainType === 'aggregate')
         ? Number(result)
+        : cmd.type === 'ids' && !cmd.nestedFind
+        ? result
         : parseResultRows({ ...ctx, commandPath: path }, cmd, result)
 
     // if it's a top level $list expression, just return in straight up
@@ -36,11 +39,19 @@ export function parseGetResult(
       return parsed
     }
 
+    if (typeof parsed !== 'number' && !parsed?.length) {
+      continue
+    }
+
     if (!path.length) {
       obj = { ...obj, ...parsed[0] }
     } else {
       if (cmd.type === 'node') {
         const v = parsed[0]
+        if (deepEqual(v, {})) {
+          continue
+        }
+
         const cur = getByPath(obj, path)
         const o = deepMerge({}, cur, v)
         setByPath(obj, path, o)
@@ -50,6 +61,12 @@ export function parseGetResult(
         setByPath(obj, path, parsed)
       }
     }
+
+    hasKeys = true
+  }
+
+  if (!hasKeys) {
+    return
   }
 
   return obj

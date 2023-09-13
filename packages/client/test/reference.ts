@@ -810,7 +810,6 @@ test('simple singular bidirectional reference', async (t) => {
     {
       id: 'clA',
       title: 'yesh club',
-      bidirMatches: [],
     }
   )
 
@@ -860,7 +859,6 @@ test('simple singular bidirectional reference', async (t) => {
     {
       id: 'clA',
       title: 'yesh club',
-      relatedClubs: [],
     }
   )
 
@@ -879,7 +877,6 @@ test('simple singular bidirectional reference', async (t) => {
     {
       id: 'clB',
       title: 'yesh club 2',
-      relatedClubs: [],
     }
   )
 })
