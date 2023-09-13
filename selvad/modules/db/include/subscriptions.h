@@ -189,6 +189,7 @@ struct Selva_SubscriptionMarker {
          * subscriptions.
          */
         Selva_NodeId node_id;
+
         /**
          * Filter result on SelvaSubscriptions_FieldChangePrecheck().
          */
@@ -196,7 +197,7 @@ struct Selva_SubscriptionMarker {
     } history;
 
     /**
-     * How many nodes are using this marker.
+     * How many markers structs are pointing to this marker.
      */
     size_t ref_count;
 
