@@ -1391,7 +1391,7 @@ static enum selva_op_repl_state modify_edge_meta_op(
     struct EdgeField *edge_field;
     struct SelvaObject *edge_metadata;
     const struct SelvaModify_OpEdgeMeta *op;
-    enum SelvaModify_OpEdgetMetaCode op_code;
+    enum SelvaModify_OpEdgeMetaCode op_code;
     int err;
 
     edge_field = Edge_GetField(node, field_str, field_len);

@@ -76,7 +76,7 @@ struct SelvaModify_OpSet {
     size_t $value_len;
 };
 
-enum SelvaModify_OpEdgetMetaCode {
+enum SelvaModify_OpEdgeMetaCode {
     SELVA_MODIFY_OP_EDGE_META_DEL = 0,
     SELVA_MODIFY_OP_EDGE_META_DEFAULT_STRING = 1,
     SELVA_MODIFY_OP_EDGE_META_STRING = 2,
