@@ -77,7 +77,8 @@ struct SelvaObjectKey {
 struct SelvaObject {
     uint32_t obj_size;
     uint16_t emb_res; /*!< Bitmap for reserved embedded fields. */
-    uint16_t flags;
+    uint8_t flags;
+    uint8_t ref_count; /*!< Used only with SELVA_OBJECT_FLAG_DYNAMIC. If rec_count > 0 the object is not removed on SelvaObject_Destroy() */
     struct SelvaObjectKeys keys_head;
     _Alignas(struct SelvaObjectKey) char emb_keys[NR_EMBEDDED_KEYS * EMBEDDED_KEY_SIZE];
 };
@@ -150,6 +151,16 @@ struct SelvaObject *SelvaObject_New(void) {
     obj->flags = SELVA_OBJECT_FLAG_DYNAMIC;
 
     return obj;
+}
+
+void SelvaObject_Ref(struct SelvaObject *obj) {
+    obj->ref_count++;
+    assert(obj->ref_count != 0);
+}
+
+void SelvaObject_Unref(struct SelvaObject *obj) {
+    assert(obj->ref_count > 0);
+    obj->ref_count--;
 }
 
 struct SelvaObject *SelvaObject_Init(char buf[SELVA_OBJECT_BSIZE]) {
@@ -459,9 +470,16 @@ void SelvaObject_Destroy(struct SelvaObject *obj) {
         return;
     }
 
+    const int dyn = obj->flags & SELVA_OBJECT_FLAG_DYNAMIC;
+
+    if (dyn && obj->ref_count > 0) {
+        obj->ref_count--;
+        return;
+    }
+
     SelvaObject_Clear(obj, NULL);
     memset(obj, 0, sizeof(*obj));
-    if (obj->flags & SELVA_OBJECT_FLAG_DYNAMIC) {
+    if (dyn) {
         selva_free(obj);
     }
 }

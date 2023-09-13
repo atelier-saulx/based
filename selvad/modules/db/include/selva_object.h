@@ -130,6 +130,16 @@ struct SelvaObjectAny {
  */
 struct SelvaObject *SelvaObject_New(void) __attribute__((returns_nonnull, warn_unused_result));
 /**
+ * Increment internal ref count.
+ * The ref count can be decremented with either SelvaObject_Unref() or
+ * SelvaObject_Destroy() but only one should be used.
+ */
+void SelvaObject_Ref(struct SelvaObject *obj);
+/**
+ * Decrement internal ref count.
+ */
+void SelvaObject_Unref(struct SelvaObject *obj);
+/**
  * Initialize a prealloced buffer as a SelvaObject.
  * The given buffer must be aligned the same way as the struct SelvaObject is
  * aligned.
