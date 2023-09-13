@@ -163,7 +163,13 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const
     return err ? NULL : src_edge_field;
 }
 
-struct SelvaObject *Edge_GetFieldMetadata(struct EdgeField *edge_field, bool create) {
+/**
+ * Get a pointer to the metadata object of an EdgeField.
+ * @param edge_field is a pointer to the EdgeField.
+ * @param create if set the object will be created if it didn't exist before.
+ * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
+ */
+struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
     if (!edge_field->metadata && create) {
         edge_field->metadata = SelvaObject_New();
     }
@@ -180,7 +186,7 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
         return SELVA_HIERARCHY_ENOENT;
     }
 
-    edge_field_metadata = Edge_GetFieldMetadata(edge_field, create);
+    edge_field_metadata = get_field_metadata(edge_field, create);
     if (!edge_field_metadata) {
         return SELVA_ENOENT;
     }

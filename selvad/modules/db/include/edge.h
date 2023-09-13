@@ -105,7 +105,15 @@ struct EdgeField {
     const struct EdgeFieldConstraint *constraint; /*!< A pointer to the constraint of this edge field. */
     Selva_NodeId src_node_id; /*!< Source/owner nodeId of this edge field. */
     struct SVector arcs; /*!< Pointers to hierarchy nodes. */
-    struct SelvaObject *metadata; /*!< Metadata organized by dst_node_id. Can be NULL. */
+    /**
+     * Metadata organized by dst_node_id.
+     * This object should not be accessed directly but by using functions
+     * provided in this header:
+     * - Edge_GetFieldEdgeMetadata()
+     * - Edge_DeleteFieldMetadata()
+     * Can be NULL.
+     */
+    struct SelvaObject *metadata;
 };
 
 /*
@@ -175,14 +183,6 @@ static inline size_t Edge_GetFieldLength(const struct EdgeField *edge_field) {
 static inline enum EdgeFieldConstraintFlag Edge_GetFieldConstraintFlags(const struct EdgeField *edge_field) {
     return edge_field->constraint->flags;
 }
-
-/**
- * Get a pointer to the metadata object of an EdgeField.
- * @param edge_field is a pointer to the EdgeField.
- * @param create if set the object will be created if it didn't exist before.
- * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
- */
-struct SelvaObject *Edge_GetFieldMetadata(struct EdgeField *edge_field, bool create);
 
 /**
  * Get a pointer to the metadata of an edge in the EdgeField.
