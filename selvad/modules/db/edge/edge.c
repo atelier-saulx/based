@@ -49,6 +49,17 @@ static void init_node_metadata_edge(
 SELVA_MODIFY_HIERARCHY_METADATA_CONSTRUCTOR(init_node_metadata_edge);
 
 /**
+ * Get the backwards edge field of this edge field.
+ */
+static struct EdgeField *get_bck_edge_field(struct EdgeField *src_edge_field, struct SelvaHierarchyNode *dst_node) {
+    const struct EdgeFieldConstraint *src_constraint = src_edge_field->constraint;
+    const char *bck_field_name_str = src_constraint->bck_field_name_str;
+    size_t bck_field_name_len = src_constraint->bck_field_name_len;
+
+    return Edge_GetField(dst_node, bck_field_name_str, bck_field_name_len);
+}
+
+/**
  * Get a pointer to the metadata object of an EdgeField.
  * @param edge_field is a pointer to the EdgeField.
  * @param create if set the object will be created if it didn't exist before.
@@ -63,19 +74,41 @@ struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create
 }
 
 /**
- * Apply edge_metadata to an edge.
+ * Apply edge_metadata to an edge/arc.
+ * Only one-way.
  */
 static int apply_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id, struct SelvaObject *edge_metadata)
 {
     return SelvaObject_SetObjectStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
 }
 
+static struct SelvaObject *get_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id) {
+    struct SelvaObject *edge_metadata = NULL;
+    int err;
+
+    err = SelvaObject_GetObjectStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
+    if (err && err != SELVA_ENOENT) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Odd error: dst: %.*s err: %s",
+                  (int)SELVA_NODE_ID_SIZE, dst_node_id,
+                  selva_strerror(err));
+    }
+
+    return (err) ? NULL : edge_metadata;
+}
+
+/**
+ * Delete metadata for an edge/arc.
+ * Only one-way.
+ */
 static void del_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id)
 {
-    /* FIXME Two-way? */
     (void)SelvaObject_DelKeyStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE);
 }
 
+/**
+ * Delete arc and its metadata.
+ * Only one-way.
+ */
 static void remove_arc(struct EdgeField *edge_field, Selva_NodeId node_id) {
     /*
      * This works because we know this SVector uses SelvaSVectorComparator_Node
@@ -193,7 +226,9 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const
 
 int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
     struct SelvaHierarchyNode *dst_node;
-    struct SelvaObject *edge_field_metadata;
+    struct EdgeField *bck_edge_field = NULL;
+    struct SelvaObject *fwd_edge_field_metadata = NULL;
+    struct SelvaObject *bck_edge_field_metadata = NULL;
     struct SelvaObject *edge_metadata = NULL;
     int err;
 
@@ -202,22 +237,44 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
         return SELVA_ENOENT;
     }
 
-    edge_field_metadata = get_field_metadata(edge_field, create);
-    if (!edge_field_metadata) {
-        return SELVA_ENOENT;
+    fwd_edge_field_metadata = get_field_metadata(edge_field, create);
+
+    /*
+     * In case of a bidirectional edge field it's possible that the backwards edge
+     * could already have metadata.
+     */
+    if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
+        bck_edge_field = get_bck_edge_field(edge_field, dst_node);
+        if (bck_edge_field) {
+            /* We don't want to create it yet. */
+            bck_edge_field_metadata = get_field_metadata(bck_edge_field, false);
+        }
     }
 
-    err = SelvaObject_GetObjectStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
-    if (err == SELVA_ENOENT || !edge_metadata) {
+    if (fwd_edge_field_metadata) {
+        edge_metadata = get_edge_metadata(fwd_edge_field_metadata, dst_node_id);
+    }
+    if (!edge_metadata && bck_edge_field_metadata) {
+        edge_metadata = get_edge_metadata(bck_edge_field_metadata, src_node_id);
+    }
+    if (!edge_metadata) {
         if (!create) {
             return SELVA_ENOENT;
         }
 
         edge_metadata = SelvaObject_New();
-        err = apply_edge_metadata(edge_field_metadata, dst_node_id, edge_metadata);
+        err = apply_edge_metadata(fwd_edge_field_metadata, dst_node_id, edge_metadata);
         if (err) {
             SelvaObject_Destroy(edge_metadata);
             return err;
+        }
+
+        /*
+         * Bidirectional edges must share the edge metadata.
+         */
+        if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL && bck_edge_field) {
+            SelvaObject_Ref(edge_metadata);
+            apply_edge_metadata(get_field_metadata(bck_edge_field, true), edge_field->src_node_id, edge_metadata);
         }
     } else if (err) {
         return err;
@@ -227,7 +284,34 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
     return 0;
 }
 
+/**
+ * Bidirectional edge fields share the same edge/arc metadata objects
+ * referenced in the metadata object of the fields at both ends. We
+ * need to trackback those fields and delete the references.
+ */
+static void del_bidir_metadata(struct EdgeField *edge_field) {
+    struct SVectorIterator it;
+    struct SelvaHierarchyNode *dst_node;
+
+    SVector_ForeachBegin(&it, &edge_field->arcs);
+    while ((dst_node = SVector_Foreach(&it))) {
+        struct EdgeField *bck_edge_field;
+
+        bck_edge_field = get_bck_edge_field(edge_field, dst_node);
+        if (bck_edge_field && bck_edge_field->metadata) {
+            /*
+             * This will delete the key and deref the actual object.
+             */
+            del_edge_metadata(bck_edge_field->metadata, edge_field->src_node_id);
+        }
+    }
+}
+
 void Edge_DeleteFieldMetadata(struct EdgeField *edge_field) {
+    if (edge_field->constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
+        del_bidir_metadata(edge_field);
+    }
+
     SelvaObject_Destroy(edge_field->metadata);
 }
 
@@ -527,17 +611,6 @@ static int remove_origin_ref(struct EdgeField *src_edge_field, struct SelvaHiera
     }
 
     return 0;
-}
-
-/**
- * Get the backwards edge field of this edge field.
- */
-static struct EdgeField *get_bck_edge_field(struct EdgeField *src_edge_field, struct SelvaHierarchyNode *dst_node) {
-    const struct EdgeFieldConstraint *src_constraint = src_edge_field->constraint;
-    const char *bck_field_name_str = src_constraint->bck_field_name_str;
-    size_t bck_field_name_len = src_constraint->bck_field_name_len;
-
-    return Edge_GetField(dst_node, bck_field_name_str, bck_field_name_len);
 }
 
 int Edge_Delete(
@@ -995,6 +1068,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
 
     /*
      * Metadata.
+     * FIXME Load metadata func: handle oneway and bidir
      */
     edge_field->metadata = SelvaObjectTypeLoad2(io, encver, NULL);
 
