@@ -2961,7 +2961,13 @@ static int load_object_array(struct selva_io *io, struct SelvaObject *obj, const
     case SELVA_OBJECT_OBJECT:
         for (size_t i = 0; i < n; i++) {
             struct SelvaObject *o = SelvaObjectTypeLoad(io, encver, ptr_load_data);
-            /* FIXME fix empty indices, this load doesn't load correctly */
+
+            if (!o) {
+                return SELVA_EINVAL;
+            } else if (o->obj_size == 0) {
+                SelvaObject_Destroy(o);
+                o = NULL;
+            }
             SVector_Insert(key->array, o);
         }
         break;
@@ -3130,6 +3136,7 @@ static int load_field(struct selva_io *io, struct SelvaObject *obj, int encver, 
 
 static struct SelvaObject *load_object_to(struct selva_io *io, int encver, struct SelvaObject *obj, int level, void *ptr_load_data) {
     const size_t obj_size = selva_io_load_unsigned(io);
+
     for (size_t i = 0; i < obj_size; i++) {
         int err;
 
