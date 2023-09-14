@@ -1073,10 +1073,56 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
     }
 
     /*
-     * Metadata.
-     * FIXME Load metadata func: handle oneway and bidir
+     * Field metadata.
+     * [dst_id] = obj
      */
     edge_field->metadata = SelvaObjectTypeLoad2(io, encver, NULL);
+
+    if (constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
+        SelvaObject_Iterator *obj_it;
+        const char *dst_id_str;
+        struct EdgeField *bck_edge_field;
+
+        obj_it = SelvaObject_ForeachBegin(edge_field->metadata);
+        while ((dst_id_str = SelvaObject_ForeachKey(edge_field->metadata, &obj_it))) {
+            Selva_NodeId dst_node_id;
+            struct SelvaHierarchyNode *dst_node;
+
+            strncpy(dst_node_id, dst_id_str, SELVA_NODE_ID_SIZE);
+            dst_node = SelvaHierarchy_FindNode(hierarchy, dst_node_id);
+            assert(dst_node);
+
+            /*
+             * Check if a shared edge_metadata is already created and
+             * should be shared.
+             */
+            bck_edge_field = get_bck_edge_field(edge_field, dst_node);
+            if (bck_edge_field) {
+                struct SelvaObject *bck_edge_field_metadata;
+                struct SelvaObject *bck_edge_metadata;
+
+                /*
+                 * We don't create it because it will be created later when the
+                 * dst_node is actually loaded. This way we don't need to Merge
+                 * two objects later.
+                 */
+                bck_edge_field_metadata = get_field_metadata(bck_edge_field, false);
+                bck_edge_metadata = (bck_edge_field_metadata) ? get_edge_metadata(bck_edge_field_metadata, src_node_id) : NULL;
+                if (bck_edge_metadata) {
+                    /*
+                     * Share previously loaded edge/arc metadata.
+                     * We assume that if it wasn't in dst_node yet then dst_node
+                     * will be loaded later and it will share edge_metadata
+                     * stored in our edge_field_metadata. The following apply
+                     * will now free our copy, so that we have only one copy
+                     * in memory.
+                     */
+                    SelvaObject_Ref(bck_edge_metadata);
+                    apply_edge_metadata(edge_field->metadata, dst_node_id, bck_edge_metadata);
+                }
+            }
+        }
+    }
 
     return edge_field;
 }
