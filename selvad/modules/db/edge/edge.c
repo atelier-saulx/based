@@ -77,9 +77,15 @@ struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create
  * Apply edge_metadata to an edge/arc.
  * Only one-way.
  */
-static int apply_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id, struct SelvaObject *edge_metadata)
+static void apply_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id, struct SelvaObject *edge_metadata)
 {
-    return SelvaObject_SetObjectStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
+    int err;
+
+    err = SelvaObject_SetObjectStr(edge_field_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to apply edge metadata: %s",
+                  selva_strerror(err));
+    }
 }
 
 static struct SelvaObject *get_edge_metadata(struct SelvaObject *edge_field_metadata, const Selva_NodeId dst_node_id) {
@@ -230,7 +236,6 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
     struct SelvaObject *fwd_edge_field_metadata = NULL;
     struct SelvaObject *bck_edge_field_metadata = NULL;
     struct SelvaObject *edge_metadata = NULL;
-    int err;
 
     dst_node = SVector_Search(&edge_field->arcs, (void *)dst_node_id);
     if (!dst_node) {
@@ -255,19 +260,22 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
         edge_metadata = get_edge_metadata(fwd_edge_field_metadata, dst_node_id);
     }
     if (!edge_metadata && bck_edge_field_metadata) {
-        edge_metadata = get_edge_metadata(bck_edge_field_metadata, src_node_id);
+        /*
+         * RFE will this ever return the metadata.
+         */
+        edge_metadata = get_edge_metadata(bck_edge_field_metadata, edge_field->src_node_id);
+        apply_edge_metadata(fwd_edge_field_metadata, dst_node_id, edge_metadata);
     }
     if (!edge_metadata) {
+        /*
+         * Create it.
+         */
         if (!create) {
             return SELVA_ENOENT;
         }
 
         edge_metadata = SelvaObject_New();
-        err = apply_edge_metadata(fwd_edge_field_metadata, dst_node_id, edge_metadata);
-        if (err) {
-            SelvaObject_Destroy(edge_metadata);
-            return err;
-        }
+        apply_edge_metadata(fwd_edge_field_metadata, dst_node_id, edge_metadata);
 
         /*
          * Bidirectional edges must share the edge metadata.
@@ -276,8 +284,6 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
             SelvaObject_Ref(edge_metadata);
             apply_edge_metadata(get_field_metadata(bck_edge_field, true), edge_field->src_node_id, edge_metadata);
         }
-    } else if (err) {
-        return err;
     }
 
     *out = edge_metadata;
