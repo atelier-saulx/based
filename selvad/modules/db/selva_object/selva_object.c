@@ -3115,19 +3115,24 @@ static int load_field(struct selva_io *io, struct SelvaObject *obj, int encver, 
     }
 
     /*
-     * Not the most efficient way to do this as we may need to look
-     * multiple lookups.
+     * 0 = default
      */
-    err = SelvaObject_SetUserMeta(obj, name, user_meta, NULL);
-    if (err) {
-        TO_STR(name);
-
+    if (user_meta) {
         /*
-         * This could be critical but sometimes we might just decide to not
-         * create something like an empty array at this point.
+         * Not the most efficient way to do this as we may need to look
+         * multiple lookups.
          */
-        SELVA_LOG(SELVA_LOGL_WARN, "Failed to set user meta on \"%.*s\": %s",
-                  (int)name_len, name_str, selva_strerror(err));
+        err = SelvaObject_SetUserMeta(obj, name, user_meta, NULL);
+        if (err) {
+            TO_STR(name);
+
+            /*
+             * This could be critical but sometimes we might just decide to not
+             * create something like an empty array at this point.
+             */
+            SELVA_LOG(SELVA_LOGL_WARN, "Failed to set user meta on \"%.*s\": %s",
+                      (int)name_len, name_str, selva_strerror(err));
+        }
     }
 
     selva_string_free(name);
