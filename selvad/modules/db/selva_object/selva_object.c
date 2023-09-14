@@ -3135,7 +3135,6 @@ static struct SelvaObject *load_object_to(struct selva_io *io, int encver, struc
 
         err = load_field(io, obj, encver, level, ptr_load_data);
         if (err) {
-            /* No need to do cleanup as we will terminate. */
             return NULL;
         }
     }
@@ -3144,7 +3143,14 @@ static struct SelvaObject *load_object_to(struct selva_io *io, int encver, struc
 }
 
 static struct SelvaObject *load_object(struct selva_io *io, int encver, int level, void *ptr_load_data) {
-    return load_object_to(io, encver, SelvaObject_New(), level, ptr_load_data);
+    struct SelvaObject *obj = SelvaObject_New();
+
+    if (!load_object_to(io, encver, obj, level, ptr_load_data)) {
+        SelvaObject_Destroy(obj);
+        return NULL;
+    }
+
+    return obj;
 }
 
 struct SelvaObject *SelvaObjectTypeLoadTo(struct selva_io *io, int encver, struct SelvaObject *obj, void *ptr_load_data) {
