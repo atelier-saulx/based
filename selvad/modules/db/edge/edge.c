@@ -23,6 +23,11 @@
 #include "comparator.h"
 #include "edge.h"
 
+#define EDGE_QP(T, F, S, ...) \
+    STATIC_IF(IS_POINTER_CONST((S)), \
+              (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
+              (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
+
 static void clear_all_fields(struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
 static void EdgeField_Reply(struct selva_server_response_out *resp, void *p);
 static void EdgeField_Free(void *p);
@@ -213,13 +218,17 @@ static struct SelvaObject *get_edges(const struct SelvaHierarchyNode *node) {
     return edges;
 }
 
+#define get_edges(NODE) \
+    EDGE_QP(struct SelvaObject, get_edges, (NODE))
+
 struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const char *field_name_str, size_t field_name_len) {
     struct SelvaObject *edges;
     void *p;
     struct EdgeField *src_edge_field;
     int err;
 
-    edges = get_edges(src_node);
+    /* TODO This needs typeof_unqual not yet supported on macOs. */
+    edges = get_edges((struct SelvaHierarchyNode *)src_node);
     if (!edges) {
         return NULL;
     }

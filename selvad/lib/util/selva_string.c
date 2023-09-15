@@ -22,9 +22,9 @@
 #define INVALID_FLAGS_MASK (~((_SELVA_STRING_LAST_FLAG - 1) | _SELVA_STRING_LAST_FLAG))
 
 #define SELVA_STRING_QP(T, F, S, ...) \
-    STATIC_IF (IS_POINTER_CONST((S)), \
-            (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
-            (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
+    STATIC_IF(IS_POINTER_CONST((S)), \
+              (T const *) (F) ((S) __VA_OPT__(,) __VA_ARGS__), \
+              (T *) (F) ((S) __VA_OPT__(,) __VA_ARGS__))
 
 struct selva_string {
     enum selva_string_flags flags;
