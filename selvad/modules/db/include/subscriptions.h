@@ -428,6 +428,8 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
 
 /**
  * Defer alias events and wipeout markers of the subscriptions hit.
+ * This function should be called before the alias moves because the
+ * alias marker is normally on the original node.
  */
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,

@@ -504,6 +504,9 @@ static struct Selva_SubscriptionMarker *find_sub_marker(
     });
 }
 
+/**
+ * Set mareker to a Selva_SubscriptionMarkers struct.
+ */
 static void set_marker(struct Selva_SubscriptionMarkers *sub_markers, struct Selva_SubscriptionMarker *marker) {
     if (!SVector_InsertFast(&sub_markers->vec, marker)) {
         sub_markers->flags_filter |= marker->marker_flags;
@@ -1757,21 +1760,21 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct selva_string *alias_name) {
     SVECTOR_AUTOFREE(wipe_subs);
-    Selva_NodeId orig_node_id;
-    struct SelvaHierarchyMetadata *orig_metadata;
+    Selva_NodeId node_id;
+    struct SelvaHierarchyMetadata *metadata;
     int err;
 
     SVector_Init(&wipe_subs, 0, subscription_svector_compare);
 
-    err = SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ alias_name }, 1, orig_node_id);
+    err = SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ alias_name }, 1, node_id);
     if (err < 0) {
         return;
     }
 
-    orig_metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, orig_node_id);
-    if (!orig_metadata) {
+    metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
+    if (!metadata) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to get metadata for node: \"%.*s\"",
-                  (int)SELVA_NODE_ID_SIZE, orig_node_id);
+                  (int)SELVA_NODE_ID_SIZE, node_id);
         return;
     }
 
@@ -1782,8 +1785,8 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
     /* Defer events for markers on the src node. */
     defer_alias_change_events(
             hierarchy,
-            &orig_metadata->sub_markers,
-            orig_node_id,
+            &metadata->sub_markers,
+            node_id,
             &wipe_subs);
 
     struct SVectorIterator it;
