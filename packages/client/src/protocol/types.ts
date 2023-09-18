@@ -56,7 +56,9 @@ export const COMMAND_TYPES = {
   'hierarchy.expire': 26,
   // subscriptions
   'subscriptions.addMarker': 59,
+  'subscriptions.addAlias': 60,
   'subscriptions.list': 65,
+  'subscriptions.listMissing': 66,
   'subscriptions.debug': 67,
   'subscriptions.refresh': 63,
   'subscriptions.refreshMarker': 64,
@@ -70,9 +72,7 @@ export const COMMAND_TYPES = {
   // #define CMD_ID_HIERARCHY_TYPES_LIST 38
   // subscriptions
   // TODO:
-  // #define CMD_ID_SUBSCRIPTIONS_ADDALIAS 60
   // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 62
-  // #define CMD_ID_SUBSCRIPTIONS_LISTMISSING 66
   // #define CMD_ID_SUBSCRIPTIONS_DEBUG 67
 }
 export type Command = keyof typeof COMMAND_TYPES

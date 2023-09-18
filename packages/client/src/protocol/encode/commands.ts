@@ -138,7 +138,13 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // filter expr (RPN string)
     { type: 'string', vararg: true }, // filter args
   ]),
+  'subscriptions.addAlias': defaultEncoder([
+    { type: 'longlong' }, // subId
+    { type: 'longlong' }, // markerId
+    { type: 'string' }, // alias
+  ]),
   'subscriptions.list': null,
+  'subscriptions.listMissing': null,
   'subscriptions.debug': defaultEncoder([
     { type: 'string' }, // subId as string
   ]),
