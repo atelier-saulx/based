@@ -1910,7 +1910,7 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
         selva_send_strf(resp, "%s", trigger_event_types[marker->event_type].name);
     } else {
         selva_send_strf(resp, "node_id");
-        selva_send_str(resp, marker->node_id, SELVA_NODE_ID_SIZE);
+        selva_send_str(resp, marker->node_id, Selva_NodeIdLen(marker->node_id));
 
         selva_send_strf(resp, "dir");
         selva_send_strf(resp, "%s", SelvaTraversal_Dir2str(marker->dir));
