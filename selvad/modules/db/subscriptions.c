@@ -252,6 +252,11 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
                   (int)SELVA_NODE_ID_SIZE, marker->node_id);
     }
 
+    /*
+     * Make sure no markers are deferred.
+     */
+    SelvaSubscriptions_SendDeferredEvents(hierarchy);
+
     RB_REMOVE(hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head, marker);
 
     rpn_destroy(marker->filter_ctx);
