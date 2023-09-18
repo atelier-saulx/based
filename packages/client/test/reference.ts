@@ -986,3 +986,131 @@ test('list of simple singular reference with $field usage', async (t) => {
     ],
   })
 })
+
+test('simple singular reference metadata', async (t) => {
+  const { client } = t.context
+  // const match1 = await client.set({
+  //   $id: 'maA',
+  //   title: {
+  //     en: 'yesh match'
+  //   }
+  // })
+
+  // const club1 = await client.set({
+  //   $id: 'clA',
+  //   title: {
+  //     en: 'yesh club'
+  //   },
+  //   specialMatch: match1
+  // })
+
+  await client.set({
+    $id: 'clA',
+    title: {
+      en: 'yesh club',
+    },
+    specialMatch: {
+      $id: 'maA',
+      title: {
+        en: 'yesh match',
+      },
+      $edgeMeta: { isItNice: 'pretty nice', howNice: 91 },
+      // parents: [ // TODO: if parents/chilrden are more like other edges
+      //   { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
+      // ],
+    },
+
+    // FIXME: if setting in same command, it doesn't work?
+    // bidirMatches: [
+    //   {
+    //     $id: 'maA',
+    //     $edgeMeta: { isItNice: 'kinda nice', howNice: 97 },
+    //     // parents: [ // TODO: if parents/chilrden are more like other edges
+    //     //   { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
+    //     // ],
+    //   },
+    // ],
+  })
+
+  await client.set({
+    $id: 'clA',
+    bidirMatches: [
+      {
+        $id: 'maA',
+        $edgeMeta: { isItNice: 'kinda nice', howNice: 97 },
+      },
+    ],
+  })
+
+  // TODO: needs alias support in C (Olli)
+  // t.deepEqualIgnoreOrder(
+  //   await client.get({
+  //     $id: 'clA',
+  //     $language: 'en',
+  //     title: true,
+  //     specialMatch: true,
+  //     specialMeta: {
+  //       $field: 'specialMatch.$edgeMeta',
+  //     },
+  //   }),
+  //   {
+  //     title: 'yesh club',
+  //     specialMatch: 'maA',
+  //     specialMeta: { isItNice: 'pretty nice', howNice: 91 },
+  //   }
+  // )
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'clA',
+      $language: 'en',
+      title: true,
+      specialMatch: {
+        title: true,
+        description: { $default: 'no description' },
+        $edgeMeta: true,
+        bidirClub: {
+          title: true,
+          $edgeMeta: {
+            isItNice: true,
+          },
+        },
+      },
+    }),
+    {
+      title: 'yesh club',
+      specialMatch: {
+        title: 'yesh match',
+        description: 'no description',
+        $edgeMeta: { isItNice: 'pretty nice', howNice: 91 },
+        bidirClub: {
+          title: 'yesh club',
+          $edgeMeta: {
+            isItNice: 'kinda nice',
+            // howNice: 97,
+          },
+        },
+      },
+    }
+  )
+
+  // TODO: if parents/children ae more like other edges
+  // t.deepEqualIgnoreOrder(
+  //   await client.get({
+  //     $id: 'maA',
+  //     parents: {
+  //       id: true,
+  //       $edgeMeta: true,
+  //       $list: true,
+  //     },
+  //   }),
+  //   {
+  //     parents: [
+  //       {
+  //         id: 'clA',
+  //         $edgeMeta: { isItNice: 'super nice', howNice: 9001 },
+  //       },
+  //     ],
+  //   }
+  // )
+})

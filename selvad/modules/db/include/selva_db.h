@@ -199,12 +199,29 @@ static inline int Selva_CmpNodeIdType(const Selva_NodeId nodeId, const char type
     return Selva_CmpNodeType(nodeId, type);
 }
 
-static inline int Selva_isEdgemetaField(const char *field_str, size_t field_len)
+static inline int Selva_IsEdgeMetaField(const char *field_str, size_t field_len)
 {
     return field_len >= sizeof(SELVA_EDGE_META_FIELD) - 1 &&
            !__builtin_memcmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1) &&
            (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1 ||
             (field_len >= sizeof(SELVA_EDGE_META_FIELD) && field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.'));
+}
+
+static inline const char *Selva_GetEdgeMetaKey(const char *field_str, size_t field_len, size_t *meta_key_len_out)
+{
+    const char *meta_key_str = __builtin_memchr(field_str, '.', field_len);
+    size_t meta_key_len = 0;
+
+    if (meta_key_str) {
+        meta_key_str++;
+        meta_key_len = (field_str + field_len) - meta_key_str;
+        if (meta_key_len == 0) {
+            meta_key_str = NULL;
+        }
+    }
+
+    *meta_key_len_out = meta_key_len;
+    return meta_key_str;
 }
 
 /**

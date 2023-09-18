@@ -54,7 +54,7 @@ static int get_from_edge_field(
             return err;
         }
 
-        if (Selva_isEdgemetaField(next_field_str, next_field_len)) {
+        if (Selva_IsEdgeMetaField(next_field_str, next_field_len)) {
             Selva_NodeId next_node_id;
             struct SelvaObject *edge_metadata;
             int err;
@@ -62,16 +62,8 @@ static int get_from_edge_field(
             SelvaHierarchy_GetNodeId(next_node_id, next_node);
             err = Edge_GetFieldEdgeMetadata(edge_field, next_node_id, false, &edge_metadata);
             if (!err && edge_metadata) {
-                const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
-                size_t meta_key_len = 0;
-
-                if (meta_key_str) {
-                    meta_key_str++;
-                    meta_key_len = (next_field_str + next_field_len) - meta_key_str;
-                    if (meta_key_len == 0) {
-                        meta_key_str = NULL;
-                    }
-                }
+                size_t meta_key_len;
+                const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
 
                 return SelvaObject_GetAnyLangStr(edge_field->metadata, lang, meta_key_str, meta_key_len, any);
             }

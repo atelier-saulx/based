@@ -23,6 +23,7 @@ export const VALUE_TYPES = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: { type: 'bin' },
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT_DOUBLE]: { type: 'bin' },
+  [ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META]: { type: 'bin' },
 }
 
 function identity<T>(x: T): T {

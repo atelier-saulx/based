@@ -17,7 +17,7 @@ import {
 } from './types'
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
-import { toModifyArgs } from './set'
+import { set, toModifyArgs } from './set'
 import {
   ExecContext,
   GetCommand,
@@ -121,119 +121,7 @@ export class BasedDbClient extends Emitter {
       throw new Error('No schema, bad')
     }
 
-    let { $id, $alias } = opts
-    if (!$id && $alias) {
-      const args = Array.isArray($alias) ? $alias : [$alias]
-      const resolved = await this.command('resolve.nodeid', [0, ...args])
-      $id = resolved?.[0]
-      if (!$id && !opts.aliases) {
-        opts.aliases = { $add: args }
-      }
-    }
-
-    if (!$id) {
-      $id = genId(this.schema, opts.type)
-    }
-
-    let flags: string = ''
-    // TODO: get this from target of setWalker
-    if (opts.$noRoot) {
-      flags += 'N'
-      delete opts.$noRoot // TODO: setWalker does not support $noRoot
-    }
-
-    if (opts.$merge === false) {
-      flags += 'M'
-    }
-
-    const { errors, collected } = await setWalker(
-      this.schema,
-      opts,
-      async (args, type) => {
-        if (type !== 'modifyObject') {
-          throw new Error(`Unsupported nested operation: ${type}`)
-        }
-
-        const { path, value } = args
-
-        const nestedOpts = { ...value, $noRoot: true }
-
-        const refField = String(path[0])
-        if (
-          !['parents', 'children'].includes(refField) &&
-          !nestedOpts.parents &&
-          !nestedOpts.children
-        ) {
-          nestedOpts.parents = ['root']
-        }
-
-        if (opts.$language) {
-          nestedOpts.$language = opts.$language
-        }
-
-        return this.set(nestedOpts)
-      }
-    )
-
-    if (errors?.length) {
-      // TODO
-      throw new Error(JSON.stringify(errors))
-    }
-
-    const args: any[] = []
-    collected?.forEach((props: Required<BasedSchemaCollectProps>) => {
-      let { path, value } = props
-
-      if (path.length === 1 && path[0] === 'type') {
-        return
-      }
-
-      if (props?.fieldSchema?.type === 'text') {
-        if (value.$delete === true) {
-          args.push(
-            ...toModifyArgs({
-              path: [...props.path],
-              fieldSchema: { type: 'string' },
-              value: value,
-            })
-          )
-
-          return
-        }
-
-        if (value.$default) {
-          value = value.$default
-        }
-        for (const lang in value) {
-          args.push(
-            ...toModifyArgs({
-              path: [...props.path, lang],
-              fieldSchema: { type: 'string' },
-              value: value.$default ? { $default: value[lang] } : value[lang],
-            })
-          )
-        }
-
-        args.push(...toModifyArgs(props))
-      } else {
-        args.push(...toModifyArgs(props))
-      }
-    })
-
-    if (!args.length) {
-      return $id
-    }
-
-    const resp = await this.command('modify', [$id, flags, args])
-    const err = resp?.[0]?.find((x: any) => {
-      return x instanceof Error
-    })
-
-    if (err) {
-      // console.error(err)
-    }
-
-    return resp?.[0]?.[0]
+    return set(this, opts)
   }
 
   async delete({
@@ -256,7 +144,7 @@ export class BasedDbClient extends Emitter {
 
   async get(opts: any): Promise<any> {
     const { merged, defaults } = await get(this, opts)
-    console.dir({ merged, defaults })
+    console.dir({ merged, defaults }, { depth: 6 })
 
     for (const d of defaults) {
       applyDefault(merged, d)
@@ -289,8 +177,6 @@ export class BasedDbClient extends Emitter {
     )
 
     await addMarkers({ client: this, subId, markerId }, markers)
-
-    console.dir({ merged, defaults, pending }, { depth: 7 })
 
     const cleanup = async () => {
       if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {

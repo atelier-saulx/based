@@ -249,6 +249,12 @@ export async function parseGetOpts(
             return {}
           } else if (key === '$fieldsByType') {
             return {}
+          } else if (key === '$edgeMeta') {
+            if (value === true) {
+              args.collect()
+            }
+
+            return {}
           }
 
           if (String(key).startsWith('$')) {

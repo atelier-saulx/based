@@ -1,7 +1,27 @@
-import { BasedSchemaField, BasedSchemaFieldSet, Path } from '@based/schema'
-import { ModifyArgType, ModifyOpSetType } from '../protocol/encode/modify/types'
+import {
+  BasedSchemaCollectProps,
+  BasedSchemaField,
+  BasedSchemaFieldSet,
+  Path,
+  setWalker,
+  walk,
+} from '@based/schema'
+import {
+  ModifyArgType,
+  ModifyOpSetType,
+  SelvaModify_OpEdgeMetaCode,
+  edgeMetaDef,
+} from '../protocol/encode/modify/types'
 import { arrayOpToModify } from './array'
 import { joinPath } from '../util'
+import { BasedDbClient } from '..'
+import genId from '../id'
+import { createRecord } from 'data-record'
+import { argv0 } from 'process'
+import {
+  encodeDouble,
+  encodeLongLong,
+} from '../protocol/encode/modify/primitiveTypes'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -114,4 +134,212 @@ export function toModifyArgs(props: {
 
       return [opType, strPath, value]
   }
+}
+
+export async function set(client: BasedDbClient, opts: any) {
+  let { $id, $alias } = opts
+  if (!$id && $alias) {
+    const args = Array.isArray($alias) ? $alias : [$alias]
+    const resolved = await client.command('resolve.nodeid', [0, ...args])
+    $id = resolved?.[0]
+    if (!$id && !opts.aliases) {
+      opts.aliases = { $add: args }
+    }
+  }
+
+  if (!$id) {
+    $id = genId(client.schema, opts.type)
+  }
+
+  let flags: string = ''
+  // TODO: get this from target of setWalker
+  if (opts.$noRoot) {
+    flags += 'N'
+    delete opts.$noRoot // TODO: setWalker does not support $noRoot
+  }
+
+  if (opts.$merge === false) {
+    flags += 'M'
+  }
+
+  const edgeMetas: any[] = []
+  const { errors, collected } = await setWalker(
+    client.schema,
+    opts,
+    async (args, type) => {
+      if (type !== 'modifyObject') {
+        throw new Error(`Unsupported nested operation: ${type}`)
+      }
+
+      const { path, value } = args
+      const refField = String(path[0])
+
+      const { $edgeMeta, ...nestedOpts } = value
+      nestedOpts.$noRoot = true
+
+      if (
+        !['parents', 'children'].includes(refField) &&
+        !nestedOpts.parents &&
+        !nestedOpts.children
+      ) {
+        nestedOpts.parents = ['root']
+      }
+
+      if (opts.$language) {
+        nestedOpts.$language = opts.$language
+      }
+
+      const nestedId = await set(client, nestedOpts)
+
+      if ($edgeMeta) {
+        edgeMetas.push(
+          ...(await parseEdgeMetaModifyArgs(
+            client,
+            refField,
+            nestedId,
+            $edgeMeta
+          ))
+        )
+      }
+
+      return nestedId
+    }
+  )
+
+  if (errors?.length) {
+    // TODO
+    throw new Error(JSON.stringify(errors))
+  }
+
+  const args: any[] = []
+  collected?.forEach((props: Required<BasedSchemaCollectProps>) => {
+    let { path, value } = props
+
+    if (path.length === 1 && path[0] === 'type') {
+      return
+    }
+
+    if (props?.fieldSchema?.type === 'text') {
+      if (value.$delete === true) {
+        args.push(
+          ...toModifyArgs({
+            path: [...props.path],
+            fieldSchema: { type: 'string' },
+            value: value,
+          })
+        )
+
+        return
+      }
+
+      if (value.$default) {
+        value = value.$default
+      }
+      for (const lang in value) {
+        args.push(
+          ...toModifyArgs({
+            path: [...props.path, lang],
+            fieldSchema: { type: 'string' },
+            value: value.$default ? { $default: value[lang] } : value[lang],
+          })
+        )
+      }
+
+      args.push(...toModifyArgs(props))
+    } else {
+      args.push(...toModifyArgs(props))
+    }
+  })
+
+  args.push(...edgeMetas)
+
+  if (!args.length) {
+    return $id
+  }
+
+  const resp = await client.command('modify', [$id, flags, args])
+  const err = resp?.[0]?.find((x: any) => {
+    return x instanceof Error
+  })
+
+  if (err) {
+    // console.error(err)
+  }
+
+  return resp?.[0]?.[0]
+}
+
+async function parseEdgeMetaModifyArgs(
+  client: BasedDbClient,
+  edgeField: string,
+  dstId: string,
+  $edgeMeta: any
+): Promise<any[]> {
+  if ($edgeMeta.$delete === true) {
+    const rec = createRecord(edgeMetaDef, {
+      op_code: SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_DEL,
+      delete_all: 1,
+      dst_node_id: dstId,
+    })
+
+    return [ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META, edgeField, rec]
+  }
+
+  const collected: any[] = []
+  await walk(
+    client.schema,
+    {
+      init: async () => {
+        return {}
+      },
+      collect: (args) => {
+        const { value, path } = args
+
+        let opCode: SelvaModify_OpEdgeMetaCode
+        let v: Buffer
+
+        const vType = typeof value
+        if (vType === 'object') {
+          opCode = SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_DEL
+        } else if (vType === 'number') {
+          if (Number.isInteger(value)) {
+            opCode =
+              SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_LONGLONG
+            v = encodeLongLong(value)
+          } else {
+            opCode = SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_DOUBLE
+            v = encodeDouble(value)
+          }
+        } else {
+          opCode = SelvaModify_OpEdgeMetaCode.SELVA_MODIFY_OP_EDGE_META_STRING
+          v = value
+        }
+
+        const rec = createRecord(edgeMetaDef, {
+          op_code: opCode,
+          delete_all: 0,
+          dst_node_id: dstId,
+          meta_field_name: joinPath(path),
+          meta_field_value: v,
+        })
+
+        collected.push(
+          ModifyArgType.SELVA_MODIFY_ARG_OP_EDGE_META,
+          edgeField,
+          rec
+        )
+      },
+      parsers: {
+        fields: {},
+        keys: {},
+        any: async (args) => {
+          // const { key, value, path, target } = args
+          args.collect()
+        },
+      },
+    },
+    $edgeMeta
+  )
+
+  return collected
 }

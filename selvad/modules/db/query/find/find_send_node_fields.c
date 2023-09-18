@@ -267,7 +267,7 @@ static int send_edge_field(
                 if (next_prefix_str) {
                     selva_send_array_end(resp);
                 }
-            } else if (Selva_isEdgemetaField(next_field_str, next_field_len)) {
+            } else if (Selva_IsEdgeMetaField(next_field_str, next_field_len)) {
                 struct SelvaObject *edge_metadata;
                 int err;
 
@@ -277,22 +277,24 @@ static int send_edge_field(
                  */
                 err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
                 if (!err && edge_metadata) {
-                    const char *meta_key_str = memchr(next_field_str, '.', next_field_len);
-                    size_t meta_key_len = 0;
-
-                    if (meta_key_str) {
-                        meta_key_str++;
-                        meta_key_len = (next_field_str + next_field_len) - meta_key_str;
-                        if (meta_key_len == 0) {
-                            meta_key_str = NULL;
-                        }
-                    }
+                    size_t meta_key_len;
+                    const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
+                    SelvaObject_Iterator *obj_it;
+                    struct SelvaObject *edge_metadata;
+                    const char *dst_id_str;
 
                     selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
-                    err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_field->metadata,
-                                                         meta_key_str, meta_key_len, 0);
-                    if (err) {
-                        selva_send_null(resp);
+                    selva_send_array(resp, 3 * SelvaObject_Len(edge_field->metadata, NULL));
+
+                    obj_it = SelvaObject_ForeachBegin(edge_field->metadata);
+                    while ((edge_metadata = SelvaObject_ForeachValue(edge_field->metadata, &obj_it, &dst_id_str, SELVA_OBJECT_OBJECT))) {
+                        selva_send_str(resp, dst_id_str, Selva_NodeIdLen(dst_id_str));
+                        selva_send_str(resp, meta_key_str, meta_key_len);
+                        err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_metadata,
+                                                             meta_key_str, meta_key_len, 0);
+                        if (err) {
+                            selva_send_null(resp);
+                        }
                     }
                 }
             } else {

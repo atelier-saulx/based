@@ -7,12 +7,14 @@ import { ExecContext, Field, GetCommand } from '../../types'
 import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
 import { joinPath } from '../../../util'
+import { setByPath } from '@saulx/utils'
 
 export function findFieldSchema(
   f: string,
   fieldSchema: BasedSchemaField
 ): BasedSchemaField {
   const parts = f.split('.')
+
   for (let i = 0; i < parts.length - 1; i++) {
     const s = parts[i]
 
@@ -62,6 +64,38 @@ export function parseObjFields(
     let v = fields[i + 1]
 
     const [alias, rest] = f.split('@')
+
+    if ((rest ?? alias).startsWith('$edgeMeta')) {
+      if (v[1] === '') {
+        v = v[2]
+      } else {
+        v = v.slice(1)
+      }
+
+      const res: any = {}
+      for (let j = 0; j < v.length; j += 2) {
+        const vv = typeof v[j + 1] === 'string' ? v[j + 1] : Number(v[j + 1])
+        setByPath(res, v[j].split('.'), vv)
+      }
+
+      if (rest) {
+        ctx.fieldAliases[alias] = {
+          value: res,
+          fieldSchema: { type: 'object', properties: {} },
+        }
+      } else {
+        setResultValue({
+          path: f,
+          obj,
+          value: res,
+          fieldSchema: { type: 'object', properties: {} },
+        })
+      }
+
+      keys++
+
+      continue
+    }
 
     let fieldSchema = findFieldSchema(rest ?? alias, schema)
 
