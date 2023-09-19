@@ -42,6 +42,7 @@ test('get - simple $list', async (t) => {
       custom: {
         prefix: 'cu',
         fields: {
+          related: { type: 'references' },
           name: { type: 'string' },
           value: { type: 'number' },
           age: { type: 'number' },
@@ -696,6 +697,108 @@ test('get - simple $list with $field option', async (t) => {
   })
 
   t.is(rangeResult.length, 10, 'non redis search range')
+
+  /*
+  const x = await client.get({
+    $id: 'cuA',
+    related: {
+      $inherit: true,
+      name: true,
+      value: true,
+      $list: {
+        $sort: { $field: 'value', $order: 'asc' },
+        $range: [0, 10]
+      }
+    }
+  })
+  */
+})
+
+test.only('get - edge meta sorting in $list with references', async (t) => {
+  const { client } = t.context
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    types: {
+      custom: {
+        prefix: 'cu',
+        fields: {
+          related: { type: 'references' },
+          name: { type: 'string' },
+          value: { type: 'number' },
+          age: { type: 'number' },
+          auth: {
+            type: 'json',
+          },
+          title: { type: 'text' },
+          description: { type: 'text' },
+          image: {
+            type: 'object',
+            properties: {
+              thumb: { type: 'string' },
+              poster: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  const related: any = []
+
+  for (let i = 0; i < 100; i++) {
+    related.push({
+      $id: 'cu' + String(i).padStart(3, '0'),
+      type: 'custom',
+      value: i,
+      name: 'flurp' + i,
+      $edgeMeta: {
+        niceValue: 100 - i, // reverse order
+      },
+    })
+  }
+
+  await Promise.all([
+    client.set({
+      $id: 'cuA',
+      image: {
+        thumb: 'flurp.jpg',
+      },
+      title: { en: 'snurf' },
+      related,
+    }),
+  ])
+
+  let c = await client.get({
+    $id: 'cuA',
+    related: {
+      name: true,
+      value: true,
+      $edgeMeta: true,
+      $list: {
+        $sort: { $field: '$edgeMeta.niceValue', $order: 'asc' },
+        $limit: 10,
+      },
+    },
+  })
+
+  t.deepEqual(
+    c,
+    {
+      related: [
+        { value: 99, name: 'flurp99', $edgeMeta: { niceValue: 1 } },
+        { value: 98, name: 'flurp98', $edgeMeta: { niceValue: 2 } },
+        { value: 97, name: 'flurp97', $edgeMeta: { niceValue: 3 } },
+        { value: 96, name: 'flurp96', $edgeMeta: { niceValue: 4 } },
+        { value: 95, name: 'flurp95', $edgeMeta: { niceValue: 5 } },
+        { value: 94, name: 'flurp94', $edgeMeta: { niceValue: 6 } },
+        { value: 93, name: 'flurp93', $edgeMeta: { niceValue: 7 } },
+        { value: 92, name: 'flurp92', $edgeMeta: { niceValue: 8 } },
+        { value: 91, name: 'flurp91', $edgeMeta: { niceValue: 9 } },
+        { value: 90, name: 'flurp90', $edgeMeta: { niceValue: 10 } },
+      ],
+    },
+    'non redis search sort'
+  )
 
   /*
   const x = await client.get({
