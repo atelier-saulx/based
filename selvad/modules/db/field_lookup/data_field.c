@@ -62,10 +62,18 @@ static int get_from_edge_field(
             SelvaHierarchy_GetNodeId(next_node_id, next_node);
             err = Edge_GetFieldEdgeMetadata(edge_field, next_node_id, false, &edge_metadata);
             if (!err && edge_metadata) {
+                Selva_NodeId next_node_id;
                 size_t meta_key_len;
                 const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
+                struct SelvaObject *edge_metadata;
 
-                return SelvaObject_GetAnyLangStr(edge_field->metadata, lang, meta_key_str, meta_key_len, any);
+                SelvaHierarchy_GetNodeId(next_node_id, next_node);
+                err = SelvaObject_GetObjectStr(edge_field->metadata, next_node_id, SELVA_NODE_ID_SIZE, &edge_metadata);
+                if (err) {
+                    return err;
+                }
+
+                return SelvaObject_GetAnyLangStr(edge_metadata, lang, meta_key_str, meta_key_len, any);
             }
             return SELVA_ENOENT;
         } else {

@@ -63,23 +63,37 @@ export function parseObjFields(
     const f = fields[i]
     let v = fields[i + 1]
 
-    const [alias, rest] = f.split('@')
-
-    if ((rest ?? alias).startsWith('$edgeMeta')) {
-      if (v[1] === '') {
+    if (f === '$edgeMeta') {
+      const edgeField = v[1]
+      if (edgeField === '' || edgeField.endsWith('@')) {
         v = v[2]
       } else {
         v = v.slice(1)
       }
 
       const res: any = {}
+      let nkeys = 0
       for (let j = 0; j < v.length; j += 2) {
+        const nf = v[j]
+
+        const [alias, rest] = nf.split('@')
+
         const vv = typeof v[j + 1] === 'string' ? v[j + 1] : Number(v[j + 1])
-        setByPath(res, v[j].split('.'), vv)
+
+        if (rest) {
+          ctx.fieldAliases[alias] = {
+            value: vv,
+            fieldSchema: { type: 'object', properties: {} },
+          }
+          continue
+        }
+
+        setByPath(res, nf.split('.'), vv)
+        nkeys++
       }
 
-      if (rest) {
-        ctx.fieldAliases[alias] = {
+      if (edgeField.endsWith('@')) {
+        ctx.fieldAliases[edgeField.slice(0, -1)] = {
           value: res,
           fieldSchema: { type: 'object', properties: {} },
         }
@@ -90,13 +104,16 @@ export function parseObjFields(
           value: res,
           fieldSchema: { type: 'object', properties: {} },
         })
-      }
 
-      keys++
+        if (nkeys) {
+          keys++
+        }
+      }
 
       continue
     }
 
+    const [alias, rest] = f.split('@')
     let fieldSchema = findFieldSchema(rest ?? alias, schema)
 
     // TODO: handle fields by type

@@ -289,7 +289,13 @@ static int send_edge_field(
                     obj_it = SelvaObject_ForeachBegin(edge_field->metadata);
                     while ((edge_metadata = SelvaObject_ForeachValue(edge_field->metadata, &obj_it, &dst_id_str, SELVA_OBJECT_OBJECT))) {
                         selva_send_str(resp, dst_id_str, Selva_NodeIdLen(dst_id_str));
-                        selva_send_str(resp, meta_key_str, meta_key_len);
+
+                        if (next_prefix_str) {
+                            selva_send_strf(resp, "%.*s@%.*s", (int)next_prefix_len - 1, next_prefix_str, (int)meta_key_len, meta_key_str);
+                        } else {
+                            selva_send_str(resp, meta_key_str, meta_key_len);
+                        }
+
                         err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_metadata,
                                                              meta_key_str, meta_key_len, 0);
                         if (err) {

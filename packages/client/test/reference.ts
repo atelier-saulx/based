@@ -196,7 +196,6 @@ test('simple singular reference', async (t) => {
   )
 })
 
-// TODO: needs $inherit
 test('singular reference inherit', async (t) => {
   const { client } = t.context
   await client.set({
@@ -1042,23 +1041,28 @@ test('simple singular reference metadata', async (t) => {
     ],
   })
 
-  // TODO: needs alias support in C (Olli)
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'clA',
-  //     $language: 'en',
-  //     title: true,
-  //     specialMatch: true,
-  //     specialMeta: {
-  //       $field: 'specialMatch.$edgeMeta',
-  //     },
-  //   }),
-  //   {
-  //     title: 'yesh club',
-  //     specialMatch: 'maA',
-  //     specialMeta: { isItNice: 'pretty nice', howNice: 91 },
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'clA',
+      $language: 'en',
+      title: true,
+      specialMeta: {
+        $field: 'specialMatch.$edgeMeta',
+      },
+      greatStuff: {
+        isNice: {
+          $field: 'specialMatch.$edgeMeta.howNice',
+        },
+      },
+    }),
+    {
+      title: 'yesh club',
+      specialMeta: { isItNice: 'pretty nice', howNice: 91 },
+      greatStuff: {
+        isNice: 91,
+      },
+    }
+  )
 
   t.deepEqualIgnoreOrder(
     await client.get({

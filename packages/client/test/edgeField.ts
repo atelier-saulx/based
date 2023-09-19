@@ -1546,3 +1546,113 @@ test('wildcard find with exclusions', async (t) => {
     ['ma2', ['ref', [['id', 'da3', 'id', 'da3', 'name', 'dong']]]],
   ])
 })
+
+test('edge meta alias', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'da1',
+  })
+  await client.set({
+    $id: 'ma1',
+    ref: {
+      $id: 'da1',
+      $edgeMeta: { note: 'very cool', antiNote: 'not very cool' },
+    },
+    description: { en: 'The most boring' },
+  })
+
+  const r1 = (
+    await find({
+      client,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      res_opt_str:
+        'expl@description.en\ncool@ref.$edgeMeta.note\nref.$edgeMeta.antiNote',
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      id: 'root',
+      rpn: ['"ma" e'],
+    })
+  )[0]
+  t.deepEqual(r1, [
+    [
+      'ma1',
+      [
+        'ref',
+        [[
+          'id',
+          'da1',
+          '$edgeMeta',
+          [ 'da1', 'antiNote', 'not very cool' ]
+        ]],
+        'ref',
+        [[
+          'id',
+          'da1',
+          '$edgeMeta',
+          [ 'da1', 'cool@note', 'very cool' ]
+        ]],
+        'expl@description.en',
+        'The most boring'
+      ]
+    ]
+  ])
+
+  const r2 = (
+    await find({
+      client,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      res_opt_str:
+        'ref.$edgeMeta',
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      id: 'root',
+      rpn: ['"ma" e'],
+    })
+  )[0]
+  t.deepEqual(r2, [
+    [
+      'ma1',
+      [
+        'ref',
+        [[
+          'id',
+          'da1',
+          '$edgeMeta',
+          [
+            'da1',
+            '',
+            [ 'antiNote', 'not very cool', 'note', 'very cool' ]
+          ]
+        ]]
+      ]
+    ]
+  ])
+
+  const r3 = (
+    await find({
+      client,
+      res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
+      res_opt_str:
+        'cool@ref.$edgeMeta',
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+      id: 'root',
+      rpn: ['"ma" e'],
+    })
+  )[0]
+  t.deepEqual(r3, [
+    [
+      'ma1',
+      [
+       'ref',
+       [[
+         'id',
+         'da1',
+         '$edgeMeta',
+         [
+           'da1',
+           'cool@',
+           [ 'antiNote', 'not very cool', 'note', 'very cool' ]
+         ]
+       ]]
+      ]
+    ]
+  ])
+})
