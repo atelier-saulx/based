@@ -651,4 +651,6 @@ test('alias sub', async (t) => {
   t.deepEqual(await client.command('subscriptions.debug', ['me2']), [[]])
   t.deepEqual(events, { '1': 1, '-9223372033370529000': 1 })
 
+  client.destroy()
+  await server.destroy()
 })
