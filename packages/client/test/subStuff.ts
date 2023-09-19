@@ -572,3 +572,83 @@ test('node sub', async (t) => {
   client.destroy()
   await server.destroy()
 })
+
+test('alias sub', async (t) => {
+  const port = await getPort()
+  const server = await startOrigin({
+    port,
+    name: 'default',
+  })
+
+  const client = new BasedDbClient()
+
+  client.connect({
+    port,
+    host: '127.0.0.1',
+  })
+
+  await client.updateSchema({
+    languages: ['en'],
+    $defs: {},
+    types: {
+      meh: {
+        prefix: 'me',
+        fields: {
+        },
+      },
+    },
+  })
+
+  const events = {}
+  client.on('pubsub', ([chId, val]) => {
+    if (chId != 0) return
+    const rec = deserialize(protocol.sub_marker_pubsub_message_def, val[0])
+    const markerId = Number(rec.marker_id)
+
+    events[markerId] = events[markerId] ?? 0 + 1;
+  })
+  await client.command('subscribe', [0])
+
+  await client.set({
+    $id: 'root',
+    children: [{
+      $id: 'me1',
+      aliases: [ 'meh' ],
+    }],
+  })
+  t.deepEqual(await client.command('lsaliases', []), [['meh', 'me1']])
+
+  await client.command('subscriptions.addAlias', [42n, 1n, 'meh'])
+  t.deepEqual(
+    await client.command('subscriptions.list'),
+    [[[ 42n, 1n ]]]
+  )
+
+  await client.set({
+    $id: 'me2',
+    aliases: [ 'meh' ],
+  })
+  t.deepEqual(await client.command('lsaliases', []), [['meh', 'me2']])
+
+  t.deepEqual(await client.command('resolve.nodeid', [24n, 'meh']), ['me2'])
+  t.deepEqual(
+    await client.command('subscriptions.list'),
+    [[[ 24n, 1n ], [ 42n, 0n ]]]
+  )
+
+  await new Promise((r) => setTimeout(r, 5e2))
+  await client.set({
+    $id: 'me1',
+    aliases: [ 'meh' ],
+  })
+  await new Promise((r) => setTimeout(r, 5e2))
+
+  t.deepEqual(
+    await client.command('subscriptions.list'),
+    [[[ 24n, 0n ], [ 42n, 0n ]]]
+  )
+  t.deepEqual(await client.command('subscriptions.debug', ['me1']), [[]])
+  t.deepEqual(await client.command('subscriptions.debug', ['me2']), [[]])
+  t.deepEqual(events, { '1': 1, '-9223372033370529000': 1 })
+
+})
