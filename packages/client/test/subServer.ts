@@ -103,17 +103,24 @@ const testSubscription = async (
     await dbClient.set(initialUpdate)
   }
   await new Promise<void>((resolve) => {
-    subClient.subscribe('db', query, async (result) => {
-      const expected = results.shift()
-      t.deepEqual(result, expected)
-      const update = updates.shift()
-      if (update) {
-        await dbClient.set(update)
+    const id = subClient.subscribe(
+      'db',
+      query,
+      async function listener(result) {
+        if (results.length) {
+          const expected = results.shift()
+          t.deepEqual(result, expected)
+          const update = updates.shift()
+          if (update) {
+            await dbClient.set(update)
+          }
+          if (!results.length) {
+            subClient.unsubscribe(id, listener)
+            resolve()
+          }
+        }
       }
-      if (!results.length) {
-        resolve()
-      }
-    })
+    )
   })
 }
 
