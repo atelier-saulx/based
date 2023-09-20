@@ -2,19 +2,34 @@ import { Authorize, VerifyAuthState } from '@based/functions'
 import * as jwt from 'jsonwebtoken'
 import { deepEqual } from '@saulx/utils'
 
-const authorize: Authorize = async (_based, _ctx, _name, _payload) => {
+// `authorize` function is run every time a
+// data funtion is called. The boolean return
+// value allows or denies access to the function.
+const authorize: Authorize = async (_based, ctx, _name, _payload) => {
+  // if there is an authState and a token,
+  // the user is logged in so we allow access.
+  // Note that `verifyAuthState` (see further bellow) function
+  // will still check the validity of the token
+  if (ctx.session?.authState?.token) {
+    return true
+  }
+
+  // otherwise we deny access to all functions.
+  // Note that functions with the property `public`
+  // in the function config will bypass the `authorize`
+  // function
   return false
 }
-
 export default authorize
 
+// `verifyAuthState` is a support function for `authorize`
+// it is meant to handle the validation and renewall of
+// session token freeing up authorize for business logic.
 export const verifyAuthState: VerifyAuthState = async (
   based,
   ctx,
   authState
 ) => {
-  console.log('this is verifyAuthState')
-
   if (!ctx.session) {
     return { error: 'Unauthorized' }
   }
@@ -23,8 +38,13 @@ export const verifyAuthState: VerifyAuthState = async (
     return { error: 'Unauthorized' }
   }
 
-  // TODO: This secret should come from the based secrets feature
-  const secret = 'supersecret'
+  // we get the secret using the based secrets functionality
+  // you can set the secret using the CLI like with the example bellow:
+  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
+  const secret = await based.query('based:secret', 'jwt-secret').get()
+  if (!secret) {
+    throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
+  }
 
   try {
     const decoded = jwt.verify(authState.token, secret, {
@@ -61,10 +81,8 @@ export const verifyAuthState: VerifyAuthState = async (
     // TODO: Add lastEvaluated
 
     if (deepEqual(ctx.session?.authState, authState)) {
-      console.log('---1')
       return true
     } else {
-      console.log('---2')
       return authState
     }
   } catch (err) {

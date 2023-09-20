@@ -48,13 +48,19 @@ const login: BasedFunction = async (based, payload, ctx) => {
     throw new Error('User not found')
   }
 
+  // we get the secret using the based secrets functionality
+  // you can set the secret using the CLI like with the example bellow:
+  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
+  const secret = await based.query('based:secret', 'jwt-secret').get()
+  if (!secret) {
+    throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
+  }
+
   const token = jwt.sign(
     {
       userId: existingUser.id,
     },
-    // TODO: this secret should come from based secrets
-    // feature and not added to the repository
-    'supersecret',
+    secret,
     {
       algorithm: 'HS256',
       expiresIn: '1w',
