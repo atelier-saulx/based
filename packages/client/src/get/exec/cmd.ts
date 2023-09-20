@@ -18,6 +18,7 @@ type CmdExecOpts = {
   struct: any
   extraArgs?: any[]
   rpn: string[]
+  hasNow: boolean
   cmdID: number
   nodeId: string
   fields: string
@@ -158,6 +159,7 @@ async function makeOpts(
   }
 
   let rpn = ['#1']
+  let hasNow = false
 
   if (cmd.type !== 'node') {
     // traverse by field
@@ -187,8 +189,12 @@ async function makeOpts(
 
     if (cmd.filter) {
       const ast = createAst(cmd.filter)
-      console.log('AST', JSON.stringify(ast, null, 2))
+
       if (ast) {
+        if (ast.hasNow) {
+          hasNow = true
+        }
+
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
       }
     }
@@ -217,6 +223,7 @@ async function makeOpts(
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields: fields,
@@ -232,6 +239,7 @@ async function makeOpts(
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields: '',
       strFields: '',
@@ -257,6 +265,7 @@ async function makeOpts(
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields,
