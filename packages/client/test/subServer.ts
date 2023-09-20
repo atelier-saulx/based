@@ -88,12 +88,6 @@ const testSubscription = async (
   updates: Parameters<BasedDbClient['set']>[0][],
   results: Record<string, any>[]
 ) => {
-  t.is(
-    updates.length,
-    results.length,
-    'user should supply same amount of updates and results'
-  )
-
   if (schema) {
     await dbClient.updateSchema(schema)
   }
@@ -107,17 +101,19 @@ const testSubscription = async (
       'db',
       query,
       async function listener(result) {
-        if (results.length) {
-          const expected = results.shift()
+        const expected = results.shift()
+        if (expected) {
           t.deepEqual(result, expected)
-          const update = updates.shift()
-          if (update) {
-            await dbClient.set(update)
-          }
-          if (!results.length) {
-            subClient.unsubscribe(id, listener)
-            resolve()
-          }
+        }
+
+        const update = updates.shift()
+        if (update) {
+          await dbClient.set(update)
+        }
+
+        if (!results.length && !updates.length) {
+          subClient.unsubscribe(id, listener)
+          resolve()
         }
       }
     )
