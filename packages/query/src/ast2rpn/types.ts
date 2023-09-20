@@ -65,6 +65,7 @@ export type Fork = {
   ids?: string[]
   isFork: true
   isNecessary?: true
+  hasNow?: true
 }
 
 export type TraverseByTypeExpression =

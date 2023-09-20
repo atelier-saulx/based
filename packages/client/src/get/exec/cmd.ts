@@ -187,6 +187,7 @@ async function makeOpts(
 
     if (cmd.filter) {
       const ast = createAst(cmd.filter)
+      console.log('AST', JSON.stringify(ast, null, 2))
       if (ast) {
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
       }

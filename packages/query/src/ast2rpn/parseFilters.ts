@@ -40,7 +40,7 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     'distance',
     'exists',
     'notExists',
-    'textSearch'
+    'textSearch',
   ])
   const o = filterOpt.$operator
   if (!ops.has(o)) {
@@ -77,14 +77,24 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
   }
 
   if (filterOpt.$or && filterOpt.$and) {
-    const fork: WithRequired<Fork, '$or'> = { isFork: true, $or: [] }
+    const fork: WithRequired<Fork, '$or'> = {
+      isFork: true,
+      $or: [],
+      hasNow: filter.hasNow,
+    }
     const [orFork, err] = convertFilter(filterOpt.$or)
     if (err) {
       return [{ isFork: true }, err]
     }
+    if (orFork.hasNow) {
+      fork.hasNow = true
+    }
     const [andFork, err2] = convertFilter(filterOpt.$and)
     if (err2) {
       return [{ isFork: true }, err2]
+    }
+    if (andFork.hasNow) {
+      fork.hasNow = true
     }
     if (andFork.$and) {
       andFork.$and[andFork.$and.length] = filter
@@ -95,6 +105,7 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     if (orFork.$or) {
       addToOption(fork.$or, orFork.$or)
     }
+
     return [fork, null]
   } else if (filterOpt.$or) {
     const [nestedFork, err] = convertFilter(filterOpt.$or)
@@ -104,6 +115,10 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     const fork: WithRequired<Fork, '$or'> = {
       isFork: true,
       $or: [filter],
+      hasNow: filter.hasNow,
+    }
+    if (nestedFork.hasNow) {
+      fork.hasNow = true
     }
     if (nestedFork.$and) {
       fork.$or[fork.$or.length] = nestedFork
@@ -121,6 +136,10 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     const fork: WithRequired<Fork, '$and'> = {
       isFork: true,
       $and: [filter],
+      hasNow: filter.hasNow,
+    }
+    if (nestedFork.hasNow) {
+      fork.hasNow = true
     }
     if (nestedFork.$and) {
       addToOption(fork.$and, nestedFork.$and)
@@ -131,7 +150,7 @@ const convertFilter = (filterOpt: Filter): [Fork, string | null] => {
     const reduceErr = reduceAnd(fork)
     return [fork, reduceErr]
   } else {
-    const fork: Fork = { isFork: true, $and: [filter] }
+    const fork: Fork = { isFork: true, hasNow: filter.hasNow, $and: [filter] }
     return [fork, null]
   }
 }
@@ -147,6 +166,11 @@ const parseFilters = ($filter: Filter | Filter[]): Fork | void => {
     if (err) {
       return
     }
+
+    if (nestedFork.hasNow) {
+      fork.hasNow = true
+    }
+
     if (nestedFork.$and) {
       for (let j = 0; j < nestedFork.$and.length; j++) {
         fork.$and[fork.$and.length] = nestedFork.$and[j]
