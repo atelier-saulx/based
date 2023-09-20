@@ -20,8 +20,12 @@
 /**
  * Create a tagged pointer.
  */
-#define PTAG(value, tag) \
-    ((typeof (value))(((uintptr_t)(value) & ~PTAG_MASK) | ((tag) & PTAG_MASK)))
+#define PTAG(value, tag) ({\
+    static_assert(__builtin_types_compatible_p(typeof(tag), short) || \
+                  __builtin_types_compatible_p(typeof(tag), int) || \
+                  __builtin_types_compatible_p(typeof(tag), unsigned)); \
+    ((typeof (value))(((uintptr_t)(value) & ~PTAG_MASK) | ((tag) & PTAG_MASK))); \
+    })
 
 /**
  * Get the tag value from a tagged pointer.
