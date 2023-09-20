@@ -23,22 +23,23 @@
     ]
   },
   "dependencies": {
-    "@saulx/diff": "^1.1.4",
-    "@saulx/utils": "^3.5.3",
     "@based/client": "^4.7.6",
+    "@based/db-subs": "^0.0.1",
     "@based/schema": "1.1.14",
-    "get-port": "^5.1.1",
+    "@saulx/diff": "^1.1.4",
+    "@saulx/hash": "^2.0.0",
+    "@saulx/utils": "^3.5.3",
     "data-record": "^1.0.2",
-    "uuid": "^9.0.0",
-    "@saulx/hash": "^2.0.0"
+    "get-port": "^5.1.1",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
+    "@types/uuid": "^9.0.2",
     "ava": "3.15.0",
-    "ts-node": "10.9.1",
-    "typescript": "^5.1.6",
-    "rimraf": "^3.0.2",
     "before-exit": "1.0.0",
-    "@types/uuid": "^9.0.2"
+    "rimraf": "^3.0.2",
+    "ts-node": "10.9.1",
+    "typescript": "^5.1.6"
   }
 }
