@@ -354,6 +354,7 @@ static int op_array_remove(
 
 static int update_node_cb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     const struct update_node_cb *args = (const struct update_node_cb *)arg;

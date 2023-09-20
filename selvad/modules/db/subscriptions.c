@@ -544,6 +544,7 @@ static void clear_marker(struct Selva_SubscriptionMarkers *sub_markers, struct S
  */
 static int set_node_marker_cb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct set_node_marker_data *data = (struct set_node_marker_data *)arg;
@@ -586,7 +587,8 @@ static int set_node_marker_cb(
 }
 
 static int clear_node_marker_cb(
-        struct SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct SelvaHierarchyMetadata *metadata;

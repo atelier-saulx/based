@@ -23,7 +23,8 @@ struct send_hierarchy_field_data {
  * Used for ancestors, children, descendants, parents
  */
 static int send_hierarchy_field_NodeCb(
-        struct SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     Selva_NodeId nodeId;

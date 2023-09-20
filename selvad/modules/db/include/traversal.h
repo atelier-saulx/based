@@ -273,16 +273,30 @@ static inline int SelvaTraversal_ProcessOffset(struct FindCommand_Args *args)
     return take;
 }
 
+enum SelvaHierarchyTraversalSVecPtag {
+    /*!<
+     * First node if is NULL, no source;
+     * if p is non-NULL then the source is unknown or can't be described.
+     */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_NONE = 0,
+    SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS = 1, /*!< Parents SVector. */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN = 2, /*!< Children SVector. */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE = 3, /*!< Edge field SVector. */
+};
+
 /**
- * Called for the first node in the traversal.
- * This is typically the node that was given as an argument to a traversal function.
- * @param node a pointer to the node.
- * @param arg a pointer to head_arg give in SelvaHierarchyCallback structure.
+ * Traversal metadata for child/adjacent nodes.
  */
-typedef int (*SelvaHierarchyHeadCallback)(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        void *arg);
+struct SelvaHierarchyTraversalMetadata {
+    //const char *origin_field_str;
+    //size_t origin_field_len;
+    //struct SelvaHierarchyNode *origin_node;
+    /*!<
+     * A tagged pointer to the origin field SVector.
+     * The tags are
+     */
+    const void *origin_field_svec_tagp;
+};
 
 /**
  * Called for each node found during a traversal.
@@ -292,27 +306,8 @@ typedef int (*SelvaHierarchyHeadCallback)(
  */
 typedef int (*SelvaHierarchyNodeCallback)(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        void *arg);
-
-/**
- * Traversal metadata for child/adjacent nodes.
- */
-struct SelvaHierarchyTraversalMetadata {
-    const char *origin_field_str;
-    size_t origin_field_len;
-    struct SelvaHierarchyNode *origin_node;
-};
-
-/**
- * Called for each adjacent node during a traversal.
- * @param node a pointer to the node.
- * @param arg a pointer to child_arg give in SelvaHierarchyCallback structure.
- */
-typedef void (*SelvaHierarchyChildCallback)(
-        struct SelvaHierarchy *hierarchy,
         const struct SelvaHierarchyTraversalMetadata *metadata,
-        struct SelvaHierarchyNode *child,
+        struct SelvaHierarchyNode *node,
         void *arg);
 
 int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);

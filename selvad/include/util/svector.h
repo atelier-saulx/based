@@ -101,15 +101,19 @@ ssize_t SVector_SearchIndex(const SVector * restrict vec, void *key);
 void *SVector_Search(const SVector * restrict vec, void *key);
 
 /**
- * Get a pointer value from the vector by index.
+ * Get a pointer value from the vector vec by index.
  */
 void *SVector_GetIndex(const SVector * restrict vec, size_t index);
 void *SVector_RemoveIndex(SVector * restrict vec, size_t index);
 void *SVector_Remove(SVector * restrict vec, void *key);
+
+/**
+ * Remove the last element from the vector vec.
+ */
 void *SVector_Pop(SVector * restrict vec);
 
 /**
- * Remove the first element from the vector.
+ * Remove the first element from the vector vec.
  */
 void *SVector_Shift(SVector * restrict vec);
 void *SVector_Peek(SVector * restrict vec);

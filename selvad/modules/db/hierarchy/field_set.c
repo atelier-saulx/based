@@ -41,7 +41,8 @@ static int is_edge_field(const struct SelvaHierarchyNode *node, const char *fiel
 }
 
 static int hierarchy_foreach_cb(
-        struct SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     const struct SelvaObjectSetForeachCallback *cb = (struct SelvaObjectSetForeachCallback *)arg;

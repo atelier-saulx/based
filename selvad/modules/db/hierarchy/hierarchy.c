@@ -16,6 +16,7 @@
 #include "util/backoff_timeout.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
+#include "util/ptag.h"
 #include "util/selva_proto_builder.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
@@ -1746,24 +1747,27 @@ static void hierarchy_expire_tim_proc(struct event *e __unused, void *data) {
 }
 
 static int SelvaHierarchyHeadCallback_Dummy(
-        struct SelvaHierarchy *hierarchy __unused,
-        SelvaHierarchyNode *node __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
+        SelvaHierarchyNode *head __unused,
         void *arg __unused) {
     return 0;
 }
 
 static int HierarchyNode_Callback_Dummy(
-        struct SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node __unused,
         void *arg __unused) {
     return 0;
 }
 
-static void SelvaHierarchyChildCallback_Dummy(
-        struct SelvaHierarchy *hierarchy __unused,
-        const struct SelvaHierarchyTraversalMetadata *metadata __unused,
+static int SelvaHierarchyChildCallback_Dummy(
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *child __unused,
         void *arg __unused) {
+    return 0;
 }
 
 /**
@@ -1774,21 +1778,19 @@ static int dfs(
         struct SelvaHierarchyNode *head,
         enum SelvaHierarchyNode_Relationship dir,
         const struct SelvaHierarchyCallback * restrict cb) {
-    SelvaHierarchyHeadCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
+    SelvaHierarchyNodeCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
     SelvaHierarchyNodeCallback node_cb = cb->node_cb ? cb->node_cb : &HierarchyNode_Callback_Dummy;
-    SelvaHierarchyChildCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
+    SelvaHierarchyNodeCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
+    enum SelvaHierarchyTraversalSVecPtag vec_tag;
     size_t offset;
-    struct SelvaHierarchyTraversalMetadata child_metadata;
 
     switch (dir) {
     case RELATIONSHIP_PARENT:
-        child_metadata.origin_field_str = (const char *)SELVA_PARENTS_FIELD;
-        child_metadata.origin_field_len = sizeof(SELVA_PARENTS_FIELD) - 1;
+        vec_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
         offset = offsetof(SelvaHierarchyNode, parents);
         break;
     case RELATIONSHIP_CHILD:
-        child_metadata.origin_field_str = (const char *)SELVA_CHILDREN_FIELD;
-        child_metadata.origin_field_len = sizeof(SELVA_CHILDREN_FIELD) - 1;
+        vec_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
         offset = offsetof(SelvaHierarchyNode, children);
         break;
     default:
@@ -1796,7 +1798,9 @@ static int dfs(
     }
 
     SVECTOR_AUTOFREE(stack);
+    SVECTOR_AUTOFREE(src_stack);
     SVector_Init(&stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
+    SVector_Init(&src_stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
 
     int err = 0;
     struct trx trx_cur;
@@ -1805,17 +1809,21 @@ static int dfs(
     }
 
     SVector_Insert(&stack, head);
-    if (head_cb(hierarchy, head, cb->head_arg)) {
+    SVector_Insert(&src_stack, NULL);
+    struct SelvaHierarchyTraversalMetadata head_cb_metadata = {};
+    if (head_cb(hierarchy, &head_cb_metadata, head, cb->head_arg)) {
         err = 0;
         goto out;
     }
 
     while (SVector_Size(&stack) > 0) {
-        SelvaHierarchyNode *node;
+        SelvaHierarchyNode *node = SVector_Pop(&stack);
+        const struct SelvaHierarchyTraversalMetadata node_cb_metadata = {
+            .origin_field_svec_tagp = SVector_Pop(&src_stack),
+        };
 
-        node = SVector_Pop(&stack);
         if (Trx_Visit(&trx_cur, &node->trx_label)) {
-            if (node_cb(hierarchy, node, cb->node_arg)) {
+            if (node_cb(hierarchy, &node_cb_metadata, node, cb->node_arg)) {
                 err = 0;
                 goto out;
             }
@@ -1827,6 +1835,10 @@ static int dfs(
 
             SVector_ForeachBegin(&it, vec);
             while ((adj = SVector_Foreach(&it))) {
+                const struct SelvaHierarchyTraversalMetadata child_metadata = {
+                    .origin_field_svec_tagp = PTAG(vec, vec_tag),
+                };
+
                 if (adj->flags & SELVA_NODE_FLAGS_DETACHED) {
                     err = restore_subtree(hierarchy, adj->id);
                     if (err) {
@@ -1838,11 +1850,11 @@ static int dfs(
                     }
                 }
 
-                child_metadata.origin_node = node;
-                child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
+                (void)child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
 
                 /* Add to the stack of unvisited nodes */
                 SVector_Insert(&stack, adj);
+                SVector_Insert(&src_stack, (void *)child_metadata.origin_field_svec_tagp);
             }
         }
     }
@@ -1858,14 +1870,16 @@ out:
 static int full_dfs(
         struct SelvaHierarchy *hierarchy,
         const struct SelvaHierarchyCallback * restrict cb) {
-    SelvaHierarchyHeadCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
+    SelvaHierarchyNodeCallback head_cb = cb->head_cb ? cb->head_cb : &SelvaHierarchyHeadCallback_Dummy;
     SelvaHierarchyNodeCallback node_cb = cb->node_cb ? cb->node_cb : &HierarchyNode_Callback_Dummy;
-    SelvaHierarchyChildCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
+    SelvaHierarchyNodeCallback child_cb = cb->child_cb ? cb->child_cb : &SelvaHierarchyChildCallback_Dummy;
     const int enable_restore = !(cb->flags & SELVA_HIERARCHY_CALLBACK_FLAGS_INHIBIT_RESTORE);
     SelvaHierarchyNode *head;
     SVECTOR_AUTOFREE(stack);
+    SVECTOR_AUTOFREE(source_stack);
 
     SVector_Init(&stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
+    SVector_Init(&source_stack, selva_glob_config.hierarchy_expected_resp_len, NULL);
 
     struct trx trx_cur;
     if (Trx_Begin(&hierarchy->trx_state, &trx_cur)) {
@@ -1874,10 +1888,6 @@ static int full_dfs(
 
     int err = 0;
     struct SVectorIterator it;
-    struct SelvaHierarchyTraversalMetadata child_metadata = {
-        .origin_field_str = (const char *)"children",
-        .origin_field_len = 8,
-    };
 
     /**
      * Set if we should track inactive nodes for auto compression.
@@ -1887,7 +1897,11 @@ static int full_dfs(
 
     SVector_ForeachBegin(&it, &hierarchy->heads);
     while ((head = SVector_Foreach(&it))) {
+        const struct SelvaHierarchyTraversalMetadata head_cb_metadata = {
+            .origin_field_svec_tagp = PTAG(&hierarchy->heads, SELVA_TRAVERSAL_SVECTOR_PTAG_NONE),
+        };
         SVector_Insert(&stack, head);
+        SVector_Insert(&source_stack, (void *)head_cb_metadata.origin_field_svec_tagp);
 
         if ((head->flags & SELVA_NODE_FLAGS_DETACHED) && enable_restore) {
             err = restore_subtree(hierarchy, head->id);
@@ -1900,7 +1914,7 @@ static int full_dfs(
             }
         }
 
-        if (head_cb(hierarchy, head, cb->head_arg)) {
+        if (head_cb(hierarchy, &head_cb_metadata, head, cb->head_arg)) {
             err = 0;
             goto out;
         }
@@ -1917,6 +1931,9 @@ static int full_dfs(
 
         while (SVector_Size(&stack) > 0) {
             SelvaHierarchyNode *node = SVector_Pop(&stack);
+            struct SelvaHierarchyTraversalMetadata node_cb_metadata = {
+                .origin_field_svec_tagp = SVector_Pop(&source_stack),
+            };
 
             /*
              * Note that the serialization child process won't touch the trxids
@@ -1938,7 +1955,7 @@ static int full_dfs(
                 struct SVectorIterator it2;
                 SelvaHierarchyNode *adj;
 
-                if (node_cb(hierarchy, node, cb->node_arg)) {
+                if (node_cb(hierarchy, &node_cb_metadata, node, cb->node_arg)) {
                     err = 0;
                     goto out;
                 }
@@ -1963,6 +1980,10 @@ static int full_dfs(
 
                 SVector_ForeachBegin(&it2, &node->children);
                 while ((adj = SVector_Foreach(&it2))) {
+                    const struct SelvaHierarchyTraversalMetadata child_metadata = {
+                        .origin_field_svec_tagp = PTAG(&node->children, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN),
+                    };
+
                     if ((adj->flags & SELVA_NODE_FLAGS_DETACHED) && enable_restore) {
                         err = restore_subtree(hierarchy, adj->id);
                         if (err) {
@@ -1970,11 +1991,11 @@ static int full_dfs(
                         }
                     }
 
-                    child_metadata.origin_node = node; /* parent */
-                    child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
+                    (void)child_cb(hierarchy, &child_metadata, adj, cb->child_arg);
 
                     /* Add to the stack of unvisited nodes */
                     SVector_Insert(&stack, adj);
+                    SVector_Insert(&source_stack, (void *)child_metadata.origin_field_svec_tagp);
                 }
             }
         }
@@ -1986,12 +2007,14 @@ out:
 }
 
 #define BFS_TRAVERSE(hierarchy, head, cb) \
-    SelvaHierarchyHeadCallback head_cb = (cb)->head_cb ? (cb)->head_cb : SelvaHierarchyHeadCallback_Dummy; \
+    SelvaHierarchyNodeCallback head_cb = (cb)->head_cb ? (cb)->head_cb : SelvaHierarchyHeadCallback_Dummy; \
     SelvaHierarchyNodeCallback node_cb = (cb)->node_cb ? (cb)->node_cb : HierarchyNode_Callback_Dummy; \
-    SelvaHierarchyChildCallback child_cb = (cb)->child_cb ? (cb)->child_cb : SelvaHierarchyChildCallback_Dummy; \
+    SelvaHierarchyNodeCallback child_cb = (cb)->child_cb ? (cb)->child_cb : SelvaHierarchyChildCallback_Dummy; \
     \
     SVECTOR_AUTOFREE(_bfs_q); \
-    SVector_Init(&_bfs_q, selva_glob_config.hierarchy_expected_resp_len, NULL); \
+    SVECTOR_AUTOFREE(_bfs_sq); /*!< origin PTAG(<SVector>, p/c/e) */ \
+    SVector_Init(&_bfs_q,  selva_glob_config.hierarchy_expected_resp_len, NULL); \
+    SVector_Init(&_bfs_sq, selva_glob_config.hierarchy_expected_resp_len, NULL); \
     \
     struct trx trx_cur; \
     if (Trx_Begin(&(hierarchy)->trx_state, &trx_cur)) { \
@@ -2000,18 +2023,22 @@ out:
     \
     Trx_Visit(&trx_cur, &(head)->trx_label); \
     SVector_Insert(&_bfs_q, (head)); \
-    if (head_cb((hierarchy), (head), (cb)->head_arg)) { Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; } \
+    SVector_Insert(&_bfs_sq, NULL); \
+    if (head_cb((hierarchy), &(const struct SelvaHierarchyTraversalMetadata){}, (head), (cb)->head_arg)) { Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; } \
     while (SVector_Size(&_bfs_q) > 0) { \
-        SelvaHierarchyNode *node = SVector_Shift(&_bfs_q);
+        SelvaHierarchyNode *node = SVector_Shift(&_bfs_q); \
+        struct SelvaHierarchyTraversalMetadata _node_cb_metadata = { \
+            .origin_field_svec_tagp = SVector_Shift(&_bfs_sq), \
+        };
 
 #define BFS_VISIT_NODE(hierarchy, cb) \
         /* Note that Trx_Visit() has been already called for this node. */ \
-        if (node_cb((hierarchy), node, (cb)->node_arg)) { \
+        if (node_cb((hierarchy), &_node_cb_metadata, node, (cb)->node_arg)) { \
             Trx_End(&(hierarchy)->trx_state, &trx_cur); \
             return 0; \
         }
 
-#define BFS_VISIT_ADJACENT(hierarchy, cb, _origin_field_str, _origin_field_len, adj_node) do { \
+#define BFS_VISIT_ADJACENT(hierarchy, cb, _origin_field_tag, _adj_vec, adj_node) do { \
         if (Trx_Visit(&trx_cur, &(adj_node)->trx_label)) { \
             if ((adj_node)->flags & SELVA_NODE_FLAGS_DETACHED) { \
                 int subtree_err = restore_subtree((hierarchy), (adj_node)->id); \
@@ -2020,23 +2047,23 @@ out:
                     return subtree_err; \
                 } \
             } \
-            const struct SelvaHierarchyTraversalMetadata _cb_metadata = { \
-                .origin_field_str = (_origin_field_str), \
-                .origin_field_len = (_origin_field_len), \
-                .origin_node = node, \
+            const void *_origin_field_svec_tagp = PTAG((_adj_vec), (_origin_field_tag)); \
+            const struct SelvaHierarchyTraversalMetadata _child_cb_metadata = { \
+                .origin_field_svec_tagp = _origin_field_svec_tagp, \
             }; \
-            child_cb((hierarchy), &_cb_metadata, (adj_node), (cb)->child_arg); \
+            (void)child_cb((hierarchy), &_child_cb_metadata, (adj_node), (cb)->child_arg); \
             SVector_Insert(&_bfs_q, (adj_node)); \
+            SVector_Insert(&_bfs_sq, (void *)_origin_field_svec_tagp); \
         } \
     } while (0)
 
-#define BFS_VISIT_ADJACENTS(hierarchy, cb, origin_field_str, origin_field_len, adj_vec) do { \
+#define BFS_VISIT_ADJACENTS(hierarchy, cb, origin_field_tag, adj_vec) do { \
         struct SVectorIterator _bfs_visit_it; \
         \
         SVector_ForeachBegin(&_bfs_visit_it, (adj_vec)); \
         SelvaHierarchyNode *_adj; \
         while ((_adj = SVector_Foreach(&_bfs_visit_it))) { \
-            BFS_VISIT_ADJACENT((hierarchy), (cb), (origin_field_str), (origin_field_len), _adj); \
+            BFS_VISIT_ADJACENT((hierarchy), (cb), (origin_field_tag), (adj_vec), _adj); \
         } \
     } while (0)
 
@@ -2141,19 +2168,16 @@ static __hot int bfs(
         struct SelvaHierarchyNode *head,
         enum SelvaHierarchyNode_Relationship dir,
         const struct SelvaHierarchyCallback * restrict cb) {
-    const char *origin_field_str;
-    size_t origin_field_len;
+    enum SelvaHierarchyTraversalSVecPtag origin_field_tag;
     size_t offset;
 
     switch (dir) {
     case RELATIONSHIP_PARENT:
-        origin_field_str = (const char *)SELVA_PARENTS_FIELD;
-        origin_field_len = sizeof(SELVA_PARENTS_FIELD) - 1;
+        origin_field_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
         offset = offsetof(SelvaHierarchyNode, parents);
         break;
     case RELATIONSHIP_CHILD:
-        origin_field_str = (const char *)SELVA_CHILDREN_FIELD;
-        origin_field_len = sizeof(SELVA_CHILDREN_FIELD) - 1;
+        origin_field_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
         offset = offsetof(SelvaHierarchyNode, children);
         break;
     default:
@@ -2164,7 +2188,7 @@ static __hot int bfs(
         const SVector *adj_vec = (SVector *)((char *)node + offset);
 
         BFS_VISIT_NODE(hierarchy, cb);
-        BFS_VISIT_ADJACENTS(hierarchy, cb, origin_field_str, origin_field_len, adj_vec);
+        BFS_VISIT_ADJACENTS(hierarchy, cb, origin_field_tag, adj_vec);
     } BFS_TRAVERSE_END(hierarchy);
 
     return 0;
@@ -2192,10 +2216,23 @@ static int bfs_edge(
             continue;
         }
 
-        BFS_VISIT_ADJACENTS(hierarchy, cb, field_name_str, field_name_len, &edge_field->arcs);
+        BFS_VISIT_ADJACENTS(hierarchy, cb, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, &edge_field->arcs);
     } BFS_TRAVERSE_END(hierarchy);
 
     return 0;
+}
+
+static enum SelvaHierarchyTraversalSVecPtag traversal2vec_tag(enum SelvaTraversal field_type) {
+    switch (field_type) {
+    case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
+        return SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
+    case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
+        return SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
+    case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
+        return SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE;
+    default:
+        return SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
+    };
 }
 
 static int bfs_expression(
@@ -2230,6 +2267,7 @@ static int bfs_expression(
             size_t field_len;
             const char *field_str = selva_string_to_str(field_el->value_string, &field_len);
             enum SelvaTraversal field_type;
+            enum SelvaHierarchyTraversalSVecPtag adj_tag;
             const SVector *adj_vec;
             struct SVectorIterator it;
             SelvaHierarchyNode *adj;
@@ -2239,6 +2277,8 @@ static int bfs_expression(
             if (!adj_vec) {
                 continue;
             }
+
+            adj_tag = traversal2vec_tag(field_type);
 
             /* Visit each node in this field. */
             SVector_ForeachBegin(&it, adj_vec);
@@ -2253,7 +2293,7 @@ static int bfs_expression(
                     continue;
                 }
 
-                BFS_VISIT_ADJACENT(hierarchy, cb, field_str, field_len, adj);
+                BFS_VISIT_ADJACENT(hierarchy, cb, adj_tag, adj_vec, adj);
             }
         }
 
@@ -2270,6 +2310,9 @@ void SelvaHierarchy_TraverseAdjacents(
     struct SVectorIterator it;
 
     if (cb->node_cb) {
+        const struct SelvaHierarchyTraversalMetadata metadata = {
+            .origin_field_svec_tagp = PTAG(adj_vec, SELVA_TRAVERSAL_SVECTOR_PTAG_NONE),
+        };
         SelvaHierarchyNode *node;
 
         SVector_ForeachBegin(&it, adj_vec);
@@ -2277,7 +2320,7 @@ void SelvaHierarchy_TraverseAdjacents(
             Trx_Sync(&hierarchy->trx_state, &node->trx_label);
 
             /* RFE Should we also call child_cb? */
-            if (cb->node_cb(hierarchy, node, cb->node_arg)) {
+            if (cb->node_cb(hierarchy, &metadata, node, cb->node_arg)) {
                 break;
             }
         }
@@ -2292,8 +2335,12 @@ static void traverse_edge_field(
         const struct SelvaHierarchyCallback *cb) {
     const struct EdgeField *edge_field;
 
-    if (cb->head_cb && cb->head_cb(hierarchy, head, cb->head_arg)) {
-        return;
+    if (cb->head_cb) {
+        const struct SelvaHierarchyTraversalMetadata metadata = {};
+
+        if (cb->head_cb(hierarchy, &metadata, head, cb->head_arg)) {
+            return;
+        }
     }
 
     if (cb->node_cb) {
@@ -2310,10 +2357,11 @@ static int traverse_ref(
         const char *ref_field_str,
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *cb) {
+    struct SelvaHierarchyTraversalMetadata cb_metadata = {};
     struct SelvaObject *head_obj = GET_NODE_OBJ(head);
     struct SelvaSet *ref_set;
 
-    if (cb->head_cb && cb->head_cb(hierarchy, head, cb->head_arg)) {
+    if (cb->head_cb && cb->head_cb(hierarchy, &cb_metadata, head, cb->head_arg)) {
         return 0;
     }
 
@@ -2333,7 +2381,7 @@ static int traverse_ref(
         selva_string2node_id(nodeId, el->value_string);
         node = SelvaHierarchy_FindNode(hierarchy, nodeId);
         if (node) {
-            if (cb->node_cb(hierarchy, node, cb->node_arg)) {
+            if (cb->node_cb(hierarchy, &cb_metadata, node, cb->node_arg)) {
                 return 0;
             }
         }
@@ -2362,8 +2410,12 @@ void SelvaHierarchy_TraverseChildren(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct SelvaHierarchyCallback *cb) {
-    if (cb->head_cb && cb->head_cb(hierarchy, node, cb->head_arg)) {
-        return;
+    if (cb->head_cb) {
+        const struct SelvaHierarchyTraversalMetadata metadata = {};
+
+        if (cb->head_cb(hierarchy, &metadata, node, cb->head_arg)) {
+            return;
+        }
     }
 
     SelvaHierarchy_TraverseAdjacents(hierarchy, &node->children, cb);
@@ -2373,8 +2425,12 @@ void SelvaHierarchy_TraverseParents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct SelvaHierarchyCallback *cb) {
-    if (cb->head_cb && cb->head_cb(hierarchy, node, cb->head_arg)) {
-        return;
+    if (cb->head_cb) {
+        const struct SelvaHierarchyTraversalMetadata metadata = {};
+
+        if (cb->head_cb(hierarchy, &metadata, node, cb->head_arg)) {
+            return;
+        }
     }
 
     SelvaHierarchy_TraverseAdjacents(hierarchy, &node->parents, cb);
@@ -2386,14 +2442,18 @@ struct pseudo_field_cb {
     int skip;
 };
 
+/**
+ * This is used to skip the first node with BFS ancestors/descendants traversal.
+ */
 static int pseudo_field_cb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *cb_metadata,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct pseudo_field_cb *cb = (struct pseudo_field_cb *)arg;
 
     if (likely(!cb->skip)) {
-        return cb->node_cb(hierarchy, node, cb->node_arg);
+        return cb->node_cb(hierarchy, cb_metadata, node, cb->node_arg);
     } else {
         cb->skip = 0;
         return 0;
@@ -2457,7 +2517,7 @@ int SelvaHierarchy_Traverse(
 
     switch (dir) {
     case SELVA_HIERARCHY_TRAVERSAL_NODE:
-        cb->node_cb(hierarchy, head, cb->node_arg);
+        cb->node_cb(hierarchy, &(const struct SelvaHierarchyTraversalMetadata){}, head, cb->node_arg);
         break;
     case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
         SelvaHierarchy_TraverseChildren(hierarchy, head, cb);
@@ -2537,8 +2597,12 @@ int SelvaHierarchy_TraverseField2(
         return SELVA_HIERARCHY_ENOENT;
     }
 
-    if (hcb->head_cb && hcb->head_cb(hierarchy, head, hcb->head_arg)) {
-        return 0;
+    if (hcb->head_cb) {
+        const struct SelvaHierarchyTraversalMetadata metadata = {};
+
+        if (hcb->head_cb(hierarchy, &metadata, head, hcb->head_arg)) {
+            return 0;
+        }
     }
 
     /*
@@ -2614,6 +2678,7 @@ int SelvaHierarchy_TraverseField2Bfs(
 
         struct field_lookup_traversable t;
         int err;
+        enum SelvaHierarchyTraversalSVecPtag adj_tag;
         SVector *adj_vec;
         struct SVectorIterator it;
 
@@ -2625,12 +2690,30 @@ int SelvaHierarchy_TraverseField2Bfs(
         if (t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
                       SELVA_HIERARCHY_TRAVERSAL_PARENTS |
                       SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) {
+            switch (t.type) {
+            case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
+                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
+                break;
+            case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
+                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
+                break;
+            case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
+                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE;
+                break;
+            default:
+                adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
+                break;
+            }
             adj_vec = t.vec;
         } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
+            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
             adj_vec = &node->parents;
         } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS) {
+            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
             adj_vec = &node->children;
         } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_ARRAY) {
+            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
+
             if (acb) {
                 assert(t.vec);
                 /*
@@ -2650,6 +2733,7 @@ int SelvaHierarchy_TraverseField2Bfs(
 
             break;
         } else {
+            adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_NONE;
             SELVA_LOG(SELVA_LOGL_WARN, "Unsupported traversal: %d", t.type);
             break;
         }
@@ -2660,7 +2744,7 @@ int SelvaHierarchy_TraverseField2Bfs(
         /* Visit each node in this field. */
         SVector_ForeachBegin(&it, adj_vec);
         while ((adj = SVector_Foreach(&it))) {
-            BFS_VISIT_ADJACENT(hierarchy, hcb, ref_field_str, ref_field_len, adj);
+            BFS_VISIT_ADJACENT(hierarchy, hcb, adj_tag, adj_vec, adj);
         }
     } BFS_TRAVERSE_END(hierarchy);
 
@@ -2719,9 +2803,14 @@ int SelvaHierarchy_TraverseExpression(
             continue;
         }
 
+        const struct SelvaHierarchyTraversalMetadata node_metadata = {
+            .origin_field_svec_tagp = PTAG(adj_vec, traversal2vec_tag(field_type)),
+        };
+
         /* Visit each node in this field. */
         SVector_ForeachBegin(&it, adj_vec);
         while ((adj = SVector_Foreach(&it))) {
+
             /*
              * If the field is an edge field we can filter edges by the
              * edge metadata.
@@ -2733,7 +2822,7 @@ int SelvaHierarchy_TraverseExpression(
             }
 
             if (Trx_Visit(&trx_cur, &adj->trx_label)) {
-                if (cb->node_cb(hierarchy, adj, cb->node_arg)) {
+                if (cb->node_cb(hierarchy, &node_metadata, adj, cb->node_arg)) {
                     Trx_End(&hierarchy->trx_state, &trx_cur);
                     return 0;
                 }
@@ -2832,6 +2921,7 @@ int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const 
  */
 static int verifyDetachableSubtreeNodeCb(
         struct SelvaHierarchy *hierarchy __unused,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct verifyDetachableSubtree *data = (struct verifyDetachableSubtree *)arg;
@@ -3472,6 +3562,7 @@ static void save_metadata(struct selva_io *io, SelvaHierarchyNode *node) {
  */
 static int HierarchySaveNode(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct HierarchySaveNode *args = (struct HierarchySaveNode *)arg;
@@ -3499,6 +3590,7 @@ static int HierarchySaveNode(
  */
 static int HierarchySaveSubtreeNode(
         struct SelvaHierarchy *hierarchy __unused,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct selva_io *io = (struct selva_io *)arg;
@@ -3511,9 +3603,9 @@ static int HierarchySaveSubtreeNode(
     return 0;
 }
 
-static void HierarchySaveChild(
+static int HierarchySaveChild(
         struct SelvaHierarchy *hierarchy __unused,
-        const struct SelvaHierarchyTraversalMetadata *metadata __unused,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *child,
         void *arg) {
     struct selva_io *io = (struct selva_io *)arg;
@@ -3525,6 +3617,8 @@ static void HierarchySaveChild(
      */
 
     selva_io_save_str(io, child->id, SELVA_NODE_ID_SIZE);
+
+    return 0;
 }
 
 static void save_hierarchy(struct selva_io *io, SelvaHierarchy *hierarchy) {

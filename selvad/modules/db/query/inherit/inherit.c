@@ -73,6 +73,7 @@ static int is_type_match(struct SelvaHierarchyNode *node, const Selva_NodeType *
 
 static int Inherit_FieldValue_NodeCb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct InheritFieldValue_Args *restrict args = (struct InheritFieldValue_Args *)arg;
@@ -153,6 +154,7 @@ static void parse_type_and_field(
 
 static int Inherit_SendFields_NodeCb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct InheritSendFields_Args *restrict args = (struct InheritSendFields_Args *)arg;

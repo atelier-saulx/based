@@ -250,6 +250,7 @@ static int process_node_inherit(
 
 static __hot int FindCommand_NodeCb(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct FindCommand_Args *args = (struct FindCommand_Args *)arg;

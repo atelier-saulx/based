@@ -926,6 +926,8 @@ int SelvaFindIndex_Traverse(
         struct SelvaFindIndexControlBlock *icb,
         SelvaHierarchyNodeCallback node_cb,
         void * node_arg) {
+    const struct SelvaHierarchyTraversalMetadata metadata = {};
+
     if (icb->flags.ordered) {
         struct SVectorIterator it;
         const struct TraversalOrderItem *item;
@@ -936,13 +938,14 @@ int SelvaFindIndex_Traverse(
 
             node = SelvaHierarchy_FindNode(hierarchy, item->node_id);
             if (node) {
+
                 /*
                  * We should be breaking here if requested. This should only
                  * happen in case the index order is the same as requested
                  * order. Otherwise find shouldn't return 1 but use OrderItem
                  * subr.
                  */
-                if (node_cb(hierarchy, node, node_arg)) {
+                if (node_cb(hierarchy, &metadata, node, node_arg)) {
                     break;
                 }
             }
@@ -962,7 +965,7 @@ int SelvaFindIndex_Traverse(
                  * same with and without indexing. However, find might still
                  * sort this response using the OrderItem subrs.
                  */
-                (void)node_cb(hierarchy, node, node_arg);
+                (void)node_cb(hierarchy, &metadata, node, node_arg);
             }
         }
     }
