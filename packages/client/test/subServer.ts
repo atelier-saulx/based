@@ -9,6 +9,7 @@ import {
 import { BasedDbClient } from '@based/db-client'
 import { startOrigin } from '@based/db-server'
 import getPort from 'get-port'
+import { wait } from '@saulx/utils'
 
 const startPoller = async (t: ExecutionContext<unknown>) => {
   const port = await getPort()
@@ -95,6 +96,7 @@ const testSubscription = async (
   const initialUpdate = updates.shift()
   if (initialUpdate) {
     await dbClient.set(initialUpdate)
+    await wait(500)
   }
   await new Promise<void>((resolve) => {
     const id = subClient.subscribe(
@@ -108,7 +110,7 @@ const testSubscription = async (
 
         const update = updates.shift()
         if (update) {
-          await dbClient.set(update)
+          await dbClient.set(update).catch(console.error)
         }
 
         if (!results.length && !updates.length) {
@@ -120,7 +122,7 @@ const testSubscription = async (
   })
 }
 
-test('blabla', async (t) => {
+test('subscribe to children', async (t) => {
   const { subClient, dbClient } = await start(t)
   await testSubscription(
     t,
@@ -160,11 +162,6 @@ test('blabla', async (t) => {
         $id: 'te3',
         name: 'ccc',
       },
-      // does not seem to work yet
-      // {
-      //   $id: 'te2',
-      //   $delete: true,
-      // },
     ],
     [
       {},
@@ -193,15 +190,86 @@ test('blabla', async (t) => {
           },
         ],
       },
-      // {
-      //   children: [
-      //     { id: 'te1', name: 'aaa' },
-      //     {
-      //       id: 'te3',
-      //       name: 'ccc',
-      //     },
-      //   ],
-      // },
+    ]
+  )
+})
+
+test.skip('subscribe to parents', async (t) => {
+  const { subClient, dbClient } = await start(t)
+  await testSubscription(
+    t,
+    subClient,
+    dbClient,
+    {
+      types: {
+        tester: {
+          prefix: 'te',
+          fields: {
+            name: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    },
+    {
+      $id: 'te1',
+      parents: {
+        id: true,
+        name: true,
+        $list: true,
+      },
+    },
+    [
+      {
+        $id: 'te1',
+        name: 'aaa',
+      },
+      {
+        $id: 'te2',
+        name: 'bbb',
+        children: ['te1'],
+      },
+      {
+        $id: 'te3',
+        name: 'ccc',
+        children: ['te1'],
+      },
+    ],
+    [
+      {
+        parents: [
+          {
+            id: 'root',
+          },
+        ],
+      },
+      {
+        parents: [
+          {
+            id: 'root',
+          },
+          {
+            id: 'te2',
+            name: 'bbb',
+          },
+        ],
+      },
+      {
+        parents: [
+          {
+            id: 'root',
+          },
+          {
+            id: 'te2',
+            name: 'bbb',
+          },
+          {
+            id: 'te3',
+            name: 'ccc',
+          },
+        ],
+      },
     ]
   )
 })
