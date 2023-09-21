@@ -105,7 +105,6 @@ test('text default', async (t) => {
     $language: 'za',
     text: { $default: 'sdsdds' },
   })
-  console.info(resultCollect(r))
   t.deepEqual(resultCollect(r), [
     { path: ['text', 'za'], value: { $default: 'sdsdds' } },
     { path: ['text'], value: { $default: 'sdsdds' } },
