@@ -17,7 +17,10 @@ export const walk = async <T>(
   }
 
   if (asyncOperationHandler) {
-    opts.asyncOperationHandler = asyncOperationHandler
+    opts = {
+      ...opts,
+      asyncOperationHandler,
+    }
   }
 
   const argsOpts = await opts.init(value, schema, opts.error)
