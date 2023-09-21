@@ -2085,7 +2085,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         const int nr_reg = argc - 6;
         const char *input = selva_string_to_str(filter_expr, NULL);
 
-        filter_ctx = rpn_init(nr_reg);
+        filter_ctx = rpn_init(nr_reg + 1);
         filter_expression = rpn_compile(input);
         if (!filter_expression) {
             err = SELVA_RPN_ECOMP;
