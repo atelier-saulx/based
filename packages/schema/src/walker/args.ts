@@ -24,6 +24,8 @@ export class ArgsClass<
 
   _target: T
 
+  _stopObject?: boolean
+
   _schema: BasedSchema
 
   parseTopLevel?: boolean

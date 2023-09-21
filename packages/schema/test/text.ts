@@ -39,7 +39,6 @@ test('throw error no language', async (t) => {
     $id: 'bl120',
     text: { $value: 'x' },
   })
-
   t.true(r.errors.length > 0)
 })
 
@@ -48,17 +47,56 @@ test('simple case', async (t) => {
     $id: 'bl120',
     text: { en: 'flap' },
   })
-  t.deepEqual(resultCollect(r), [{ path: ['text'], value: { en: 'flap' } }])
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: 'flap' },
+    { path: ['text'], value: { en: 'flap' } },
+  ])
+})
+
+test('simple case $value', async (t) => {
+  let r = await setWalker(schema, {
+    $id: 'bl120',
+    text: { en: { $value: 'flap' } },
+  })
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: 'flap' },
+    { path: ['text'], value: { en: { $value: 'flap' } } },
+  ])
+})
+
+test('simple case $language', async (t) => {
+  let r = await setWalker(schema, {
+    $id: 'bl120',
+    $language: 'en',
+    text: 'flap',
+  })
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: 'flap' },
+    { path: ['text'], value: { en: 'flap' } },
+  ])
 })
 
 test('simple case with value', async (t) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
-    text: { $value: 'sdsdds' },
+    text: { $value: 'flap' },
   })
-  t.deepEqual(resultCollect(r), [{ path: ['text'], value: { za: 'sdsdds' } }])
-  t.true(true)
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'za'], value: 'flap' },
+    { path: ['text'], value: { $value: 'flap' } },
+  ])
+})
+
+test('simple case $value /w obj', async (t) => {
+  let r = await setWalker(schema, {
+    $id: 'bl120',
+    text: { $value: { en: 'flap' } },
+  })
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: 'flap' },
+    { path: ['text'], value: { $value: { en: 'flap' } } },
+  ])
 })
 
 test('text default', async (t) => {
@@ -67,9 +105,10 @@ test('text default', async (t) => {
     $language: 'za',
     text: { $default: 'sdsdds' },
   })
-
+  console.info(resultCollect(r))
   t.deepEqual(resultCollect(r), [
-    { path: ['text'], value: { $default: { za: 'sdsdds' } } },
+    { path: ['text', 'za'], value: { $default: 'sdsdds' } },
+    { path: ['text'], value: { $default: 'sdsdds' } },
   ])
 })
 
@@ -81,9 +120,11 @@ test('default and lang:default', async (t) => {
   })
 
   t.deepEqual(resultCollect(r), [
+    { path: ['text', 'za'], value: { $default: 'sdsdds' } },
+    { path: ['text', 'en'], value: { $default: 'flapflap' } },
     {
       path: ['text'],
-      value: { $default: { za: 'sdsdds', en: 'flapflap' } },
+      value: { $default: 'sdsdds', en: { $default: 'flapflap' } },
     },
   ])
 })
@@ -94,11 +135,12 @@ test('default: lang, lang', async (t) => {
     $language: 'za',
     text: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
   })
-
   t.deepEqual(resultCollect(r), [
+    { path: ['text', 'de'], value: { $default: 'dsnfds' } },
+    { path: ['text', 'en'], value: { $default: 'flapflap' } },
     {
       path: ['text'],
-      value: { $default: { de: 'dsnfds', en: 'flapflap' } },
+      value: { $default: { de: 'dsnfds' }, en: { $default: 'flapflap' } },
     },
   ])
 })
@@ -113,11 +155,17 @@ test('defaullt:lang, lang, lang:default', async (t) => {
       en: { $default: 'flapflap' },
     },
   })
-
   t.deepEqual(resultCollect(r), [
+    { path: ['text', 'de'], value: { $default: 'dsnfds' } },
+    { path: ['text', 'nl'], value: 'flapperonus' },
+    { path: ['text', 'en'], value: { $default: 'flapflap' } },
     {
       path: ['text'],
-      value: { $default: { de: 'dsnfds', en: 'flapflap' }, nl: 'flapperonus' },
+      value: {
+        $default: { de: 'dsnfds' },
+        nl: 'flapperonus',
+        en: { $default: 'flapflap' },
+      },
     },
   ])
 })
@@ -135,12 +183,17 @@ test('default:lang, lang, lang:value, lang:default', async (t) => {
   })
 
   t.deepEqual(resultCollect(r), [
+    { path: ['text', 'de'], value: { $default: 'dsnfds' } },
+    { path: ['text', 'nl'], value: 'flapperonus' },
+    { path: ['text', 'ro'], value: 'durp' },
+    { path: ['text', 'en'], value: { $default: 'flapflap' } },
     {
       path: ['text'],
       value: {
-        $default: { de: 'dsnfds', en: 'flapflap' },
+        $default: { de: 'dsnfds' },
         nl: 'flapperonus',
-        ro: 'durp',
+        ro: { $value: 'durp' },
+        en: { $default: 'flapflap' },
       },
     },
   ])
@@ -162,13 +215,21 @@ test('value:lang, lang, default:lang, lang:value, lang:default', async (t) => {
   })
 
   t.deepEqual(resultCollect(r), [
+    { path: ['text', 'za'], value: 'durp' },
+    { path: ['text', 'nl'], value: 'flapperonus' },
+    { path: ['text', 'ae'], value: { $default: 'habibi' } },
+    { path: ['text', 'ro'], value: 'durp' },
+    { path: ['text', 'en'], value: { $default: 'flapflap' } },
     {
       path: ['text'],
       value: {
+        $value: 'durp',
         nl: 'flapperonus',
-        za: 'durp',
-        $default: { ae: 'habibi', en: 'flapflap' },
-        ro: 'durp',
+        $default: {
+          ae: 'habibi',
+        },
+        ro: { $value: 'durp' },
+        en: { $default: 'flapflap' },
       },
     },
   ])
@@ -198,8 +259,29 @@ test('text delete', async (t) => {
       $delete: true,
     },
   })
-
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { $delete: true } }])
+})
+
+test('text delete single language', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    text: {
+      en: {
+        $delete: true,
+      },
+    },
+  })
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: { $delete: true } },
+    {
+      path: ['text'],
+      value: {
+        en: {
+          $delete: true,
+        },
+      },
+    },
+  ])
 })
 
 test('just delete', async (t) => {
@@ -221,6 +303,39 @@ test('$default in collected path', async (t) => {
   })
   t.is(r.errors.length, 0)
   t.deepEqual(resultCollect(r), [
-    { path: ['text'], value: { $default: { en: 'title' } } },
+    { path: ['text', 'en'], value: { $default: 'title' } },
+    {
+      path: ['text'],
+      value: {
+        en: {
+          $default: 'title',
+        },
+      },
+    },
+  ])
+})
+
+test('$default in collected path + $merge:false', async (t) => {
+  r = await setWalker(schema, {
+    $id: 'bl120',
+    text: {
+      $merge: false,
+      en: {
+        $default: 'title',
+      },
+    },
+  })
+  t.is(r.errors.length, 0)
+  t.deepEqual(resultCollect(r), [
+    { path: ['text', 'en'], value: { $default: 'title' } },
+    {
+      path: ['text'],
+      value: {
+        $merge: false,
+        en: {
+          $default: 'title',
+        },
+      },
+    },
   ])
 })
