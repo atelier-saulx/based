@@ -48,9 +48,8 @@ export const errorListener = (
 
   // TODO: Change this make it one error handler
   if (obs.functionObserveClients.size) {
-    obs.functionObserveClients.forEach(async (fnUpdate) => {
-      try {
-      await fnUpdate(
+    obs.functionObserveClients.forEach((fnUpdate) => {
+      fnUpdate(
         obs.rawData,
         obs.checksum,
         obs.error,
@@ -58,9 +57,7 @@ export const errorListener = (
         obs.diffCache,
         obs.previousChecksum,
         obs.isDeflate
-      ) } catch (e) {
-        // TODO: This needs to send an error here
-      }
+      )
     })
   }
 

@@ -35,7 +35,7 @@ export const start = (server: BasedServer, id: number) => {
       errorListener(server, obs, err)
       return
     }
-    return updateListener(
+    updateListener(
       server,
       obs,
       data,
@@ -59,10 +59,10 @@ export const start = (server: BasedServer, id: number) => {
           throtDebounced = true
         } else {
           isThrottled = true
-          timer = setTimeout(async () => {
+          timer = setTimeout(() => {
             if (throtDebounced && !obs.isDestroyed) {
               // @ts-ignore
-              await updateRaw(...throttledArgs)
+              updateRaw(...throttledArgs)
               // deref
               throttledArgs = null
             }
@@ -70,7 +70,7 @@ export const start = (server: BasedServer, id: number) => {
             isThrottled = false
           }, spec.throttle)
           // @ts-ignore
-          return updateRaw(...args)
+          updateRaw(...args)
         }
       }
     : updateRaw

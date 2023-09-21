@@ -10,7 +10,7 @@ import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { createPatch } from '@saulx/diff'
 import { BasedServer } from '../../server'
 
-export const updateListener = async (
+export const updateListener = (
   server: BasedServer,
   obs: ActiveObservable,
   data: any,
@@ -121,21 +121,8 @@ export const updateListener = async (
     }
 
     if (obs.functionObserveClients.size) {
-      // obs.functionObserveClients.forEach((fnUpdate) => {
-      //   console.log('-----', fnUpdate.constructor?.name)
-      //   fnUpdate(
-      //     obs.rawData,
-      //     obs.checksum,
-      //     obs.error,
-      //     obs.cache,
-      //     obs.diffCache,
-      //     obs.previousChecksum,
-      //     obs.isDeflate
-      //   )
-      // })
-      for (const fnUpdate of obs.functionObserveClients) {
-        console.log('---1woop11--', fnUpdate.constructor?.name, fnUpdate.toString())
-        await fnUpdate(
+      obs.functionObserveClients.forEach((fnUpdate) => {
+        fnUpdate(
           obs.rawData,
           obs.checksum,
           obs.error,
@@ -144,8 +131,7 @@ export const updateListener = async (
           obs.previousChecksum,
           obs.isDeflate
         )
-        console.log('?????', fnUpdate.constructor?.name)
-      }
+      })
     }
 
     if (obs.onNextData) {
