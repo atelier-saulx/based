@@ -45,6 +45,7 @@
 #include "../field_names.h"
 #include "query.h"
 #include "find_send.h"
+#include "../find.h"
 #include "find_cmd.h"
 
 /*
@@ -250,7 +251,7 @@ static int process_node_inherit(
 
 static __hot int FindCommand_NodeCb(
         struct SelvaHierarchy *hierarchy,
-        const struct SelvaHierarchyTraversalMetadata *,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         void *arg) {
     struct FindCommand_Args *args = (struct FindCommand_Args *)arg;

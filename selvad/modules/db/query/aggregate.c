@@ -33,6 +33,7 @@
 #include "subscriptions.h"
 #include "traversal.h"
 #include "query.h"
+#include "find.h"
 #include "aggregate_cmd.h"
 
 struct AggregateCommand_Args;
