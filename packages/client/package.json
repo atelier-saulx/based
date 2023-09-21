@@ -12,7 +12,8 @@
   "sideEffects": false,
   "ava": {
     "files": [
-      "test/*.ts"
+      "test/*.ts",
+      "test/subs/*.ts"
     ],
     "concurrency": 5,
     "extensions": [
