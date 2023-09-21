@@ -30,6 +30,20 @@ const errorTimer = (_: any, __: any, update: ObservableUpdateFunction) => {
   }
 }
 
+const longQuery: BasedQueryFunction = async (_based, _payload, update) => {
+  const timer = setTimeout(() => {
+    update({})
+  }, 2000)
+  return () => {
+    clearTimeout(timer)
+  }
+}
+const asyncError: BasedQueryFunction = async (based) => {
+  return based.query('longQuery').subscribe((_data) => {
+    throw new Error('this is error')
+  })
+}
+
 const setup = async (t: ExecutionContext) => {
   t.timeout(4000)
   const coreClient = new BasedClient()
@@ -57,6 +71,16 @@ const setup = async (t: ExecutionContext) => {
           type: 'query',
           uninstallAfterIdleTime: 1e3,
           fn: errorTimer,
+        },
+        longQuery: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: longQuery,
+        },
+        asyncError: {
+          type: 'query',
+          uninstallAfterIdleTime: 1e3,
+          fn: asyncError,
         },
       },
     },
@@ -165,4 +189,17 @@ test.serial('throw in an interval', async (t) => {
       coreClient.query('errorTimer', {}).subscribe(() => {}, reject)
     )
   )
+})
+
+test.serial.only('throw on subscribe', async (t) => {
+  const { coreClient } = await setup(t)
+  coreClient.connect({
+    url: async () => {
+      return 'ws://localhost:9910'
+    },
+  })
+  const error = (await t.throwsAsync(
+    coreClient.query('asyncError').get()
+  )) as BasedError
+  t.is(error.code, BasedErrorCode.FunctionError)
 })
