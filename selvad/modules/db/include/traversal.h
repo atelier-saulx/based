@@ -159,8 +159,6 @@ typedef int (*SelvaHierarchyNodeCallback)(
         struct SelvaHierarchyNode *node,
         void *arg);
 
-int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
-
 /**
  * Calculate skip.
  *  -1 = Always include the starting node.

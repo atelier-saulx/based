@@ -54,42 +54,6 @@
 SELVA_TRACE_HANDLE(cmd_find_index);
 SELVA_TRACE_HANDLE(cmd_find_sort_result);
 
-static int parse_fields(
-        struct finalizer *fin,
-        const struct selva_string *raw_in,
-        struct SelvaObject **fields_out,
-        struct selva_string ***inherit_fields_out,
-        size_t *nr_inherit_fields_out,
-        struct selva_string **excluded_fields_out
-) {
-    struct selva_string *inherit_fields_tmp = NULL;
-    int err;
-
-    err = parse_string_set(fin, raw_in, fields_out,
-            (char []){ STRING_SET_INH_PREFIX, STRING_SET_EXCL_PREFIX, '\0' },
-            (struct selva_string **[]){ &inherit_fields_tmp, excluded_fields_out });
-    if (err) {
-        return err;
-    }
-
-    if (inherit_fields_tmp) {
-        TO_STR(inherit_fields_tmp);
-        struct selva_string **inherit_fields;
-        size_t n = 0;
-
-        inherit_fields = parse_string_list(fin, inherit_fields_tmp_str, inherit_fields_tmp_len, '\n');
-
-        struct selva_string *s = inherit_fields[0];
-        while (s) {
-            s = inherit_fields[++n];
-        }
-        *inherit_fields_out = inherit_fields;
-        *nr_inherit_fields_out = n;
-    }
-
-    return 0;
-}
-
 static int exec_fields_expression(
         struct finalizer *fin,
         struct SelvaHierarchy *hierarchy,
@@ -119,7 +83,7 @@ static int exec_fields_expression(
         return SELVA_EGENERAL;
     }
 
-    err = parse_fields(fin, out, fields, inherit, nr_inherit, excluded);
+    err = find_parse_fields(fin, out, fields, inherit, nr_inherit, excluded);
     selva_string_free(out);
 
     return err;
@@ -831,7 +795,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         raw = selva_string_create(query_opts.res_opt_str, query_opts.res_opt_len, 0);
         selva_string_auto_finalize(&fin, raw);
 
-        err = parse_fields(&fin, raw, &fields, &inherit_fields, &nr_inherit_fields, &excluded_fields);
+        err = find_parse_fields(&fin, raw, &fields, &inherit_fields, &nr_inherit_fields, &excluded_fields);
         if (err) {
             selva_send_errorf(resp, err, "Parsing fields list failed");
             return;
@@ -858,7 +822,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
         return;
     }
     if (query_opts.merge_strategy != MERGE_STRATEGY_NONE &&
-        (!fields || SelvaTraversal_FieldsContains(fields, "*", 1))) {
+        (!fields || find_fields_contains(fields, "*", 1))) {
         /* Merge needs a fields object but it must be empty. */
         if (fields) {
             SelvaObject_Clear(fields, NULL);

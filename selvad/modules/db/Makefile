@@ -27,6 +27,7 @@ OBJ := \
 	   query/aggregate.o \
 	   query/field_names.o \
 	   query/find/find.o \
+	   query/find/find_fields.o \
 	   query/find/find_send_array_object_fields.o \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \

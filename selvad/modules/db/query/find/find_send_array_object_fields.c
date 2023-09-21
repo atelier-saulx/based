@@ -18,6 +18,7 @@
 #include "selva_db.h"
 #include "traversal.h"
 #include "../field_names.h"
+#include "../find.h"
 #include "find_send.h"
 
 static int send_array_object_field(
@@ -104,7 +105,7 @@ int find_send_array_object_fields(
 
     const ssize_t fields_len = SelvaObject_Len(fields, NULL);
     if (fields_len == 1 &&
-        SelvaTraversal_FieldsContains(fields, wildcard, sizeof(wildcard) - 1)) {
+        find_fields_contains(fields, wildcard, sizeof(wildcard) - 1)) {
         err = SelvaObject_ReplyWithObject(resp, lang, obj, NULL, 0);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to send all fields for selva object in array. err: \"%s\"",

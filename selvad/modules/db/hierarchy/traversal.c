@@ -2,35 +2,9 @@
  * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
-#include <string.h>
 #include <sys/types.h>
-#include "util/selva_string.h"
-#include "util/svector.h"
-#include "selva_object.h"
+#include "selva_db.h"
 #include "traversal.h"
-
-int SelvaTraversal_FieldsContains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len)
-{
-    void *iterator;
-    const SVector *vec;
-
-    iterator = SelvaObject_ForeachBegin(fields);
-    while ((vec = SelvaObject_ForeachValue(fields, &iterator, NULL, SELVA_OBJECT_ARRAY))) {
-        struct SVectorIterator it;
-        const struct selva_string *s;
-
-        SVector_ForeachBegin(&it, vec);
-        while ((s = SVector_Foreach(&it))) {
-            TO_STR(s);
-
-            if (s_len == field_name_len && !memcmp(s_str, field_name_str, s_len)) {
-                return 1;
-            }
-        }
-    }
-
-    return 0;
-}
 
 int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip)
 {
