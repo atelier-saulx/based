@@ -259,3 +259,273 @@ test.serial('basic id based nested query subscriptions', async (t) => {
 
   await wait(500 * 2)
 })
+
+test.serial('using $field works', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: { yesh: { type: 'string' } },
+    },
+    types: {
+      yeshType: {
+        fields: {
+          yesh: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  t.plan(2)
+
+  let o1counter = 0
+  observe(
+    t,
+    {
+      $id: 'root',
+      id: true,
+      aliasedField: { $field: 'yesh' },
+    },
+    (d) => {
+      if (o1counter === 0) {
+        // gets start event
+        t.deepEqualIgnoreOrder(d, { id: 'root' })
+      } else if (o1counter === 1) {
+        // gets update event
+        t.deepEqualIgnoreOrder(d, { id: 'root', aliasedField: 'so nice' })
+      } else {
+        // doesn't get any more events
+        t.fail()
+      }
+      o1counter++
+    }
+  )
+
+  await wait(1000 * 1)
+
+  await client.set({
+    $id: 'root',
+    yesh: 'so nice',
+  })
+
+  await wait(1000 * 1)
+})
+
+test.serial('basic $inherit when ancestors change', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: { yesh: { type: 'string' } },
+    },
+    types: {
+      yeshType: {
+        fields: {
+          hmm: { type: 'number' },
+          yesh: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  t.plan(2)
+
+  const thing = await client.set({
+    type: 'yeshType',
+    hmm: 0,
+  })
+
+  let o1counter = 0
+  observe(
+    t,
+    {
+      $id: thing,
+      id: true,
+      yesh: { $inherit: { $type: ['yeshType', 'root'] } },
+    },
+
+    (d) => {
+      if (o1counter === 0) {
+        // gets start event
+        t.deepEqualIgnoreOrder(d, { id: thing })
+      } else if (o1counter === 1) {
+        // gets update event
+        t.deepEqualIgnoreOrder(d, { id: thing, yesh: 'so nice' })
+      } else {
+        // doesn't get any more events
+        t.fail()
+      }
+      o1counter++
+    }
+  )
+
+  await wait(1000 * 1)
+
+  await client.set({
+    type: 'yeshType',
+    yesh: 'so nice',
+    children: [thing],
+  })
+
+  await wait(1000 * 1)
+})
+
+// TODO: reference event not firing
+test.serial.skip('basic id based reference subscriptions', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
+    },
+    types: {
+      refType: {
+        prefix: 're',
+        fields: {
+          yesh: { type: 'string' },
+          myRef: { type: 'reference' },
+        },
+      },
+    },
+  })
+
+  t.plan(3)
+
+  await client.set({
+    $id: 're2',
+    yesh: 'hello from 2',
+  })
+
+  await client.set({
+    $id: 're1',
+    yesh: 'hello from 1',
+    myRef: 're2',
+  })
+
+  let o1counter = 0
+  observe(
+    t,
+    {
+      $id: 're1',
+      yesh: true,
+      myRef: {
+        yesh: true,
+      },
+    },
+    (d) => {
+      console.log('ddd', d)
+      if (o1counter === 0) {
+        // gets start event
+        t.deepEqualIgnoreOrder(d, {
+          yesh: 'hello from 1',
+          myRef: { yesh: 'hello from 2' },
+        })
+      } else if (o1counter === 1) {
+        // gets update event
+        t.deepEqualIgnoreOrder(d, {
+          yesh: 'hello from 1!',
+          myRef: { yesh: 'hello from 2' },
+        })
+      } else if (o1counter === 2) {
+        t.deepEqualIgnoreOrder(d, {
+          yesh: 'hello from 1!',
+          myRef: { yesh: 'hello from 2!' },
+        })
+      } else {
+        // doesn't get any more events
+        t.fail()
+      }
+      o1counter++
+    }
+  )
+
+  await wait(500 * 2)
+
+  await client.set({
+    $id: 're1',
+    yesh: 'hello from 1!',
+  })
+
+  await wait(500 * 2)
+
+  await client.set({
+    $id: 're2',
+    yesh: 'hello from 2!',
+  })
+
+  await wait(500 * 2)
+})
+
+test.serial('subscribe with timeout right away record', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
+    },
+    types: {
+      hello: {
+        fields: {
+          name: { type: 'string' },
+          lol: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: {
+                x: { type: 'string' },
+                y: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+    },
+  })
+
+  t.plan(2)
+
+  const id = await client.set({
+    type: 'hello',
+    name: 'derp',
+  })
+
+  observe(
+    t,
+    {
+      $id: id,
+      name: true,
+      lol: {
+        '*': {
+          x: true,
+          y: true,
+        },
+      },
+    },
+    (data) => {
+      if (data.name && !data.lol) t.is(data.name, 'derp')
+      if (data.name && data.lol) t.is(data.name, 'haha')
+    }
+  )
+
+  await wait(200)
+
+  await client.set({
+    $id: id,
+    name: 'haha',
+    lol: {
+      yes: {
+        y: 'yyyyyyyyyyyyy',
+      },
+    },
+  })
+
+  await wait(1000)
+})
