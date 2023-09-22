@@ -1285,10 +1285,9 @@ void SelvaSubscriptions_InheritParent(
         struct SVectorIterator it;
         struct Selva_SubscriptionMarker *marker;
         struct Selva_SubscriptionMarkers *node_sub_markers = &node_metadata->sub_markers;
-        const SVector *markers_vec;
+        const SVector *markers_vec = &SelvaHierarchy_GetNodeMetadataByPtr(parent)->sub_markers.vec;
 
         SelvaHierarchy_GetNodeId(parent_id, parent);
-        markers_vec = &SelvaHierarchy_GetNodeMetadataByPtr(parent)->sub_markers.vec;
 
         SVector_ForeachBegin(&it, markers_vec);
         while ((marker = SVector_Foreach(&it))) {
@@ -1341,12 +1340,12 @@ void SelvaSubscriptions_InheritChild(
         Selva_NodeId child_id;
         struct SVectorIterator it;
         struct Selva_SubscriptionMarker *marker;
-        struct Selva_SubscriptionMarkers *node_sub_markers;
+        struct Selva_SubscriptionMarkers *node_sub_markers = &node_metadata->sub_markers;
+        const SVector *markers_vec = &SelvaHierarchy_GetNodeMetadataByPtr(child)->sub_markers.vec;
 
-        node_sub_markers = &node_metadata->sub_markers;
         SelvaHierarchy_GetNodeId(child_id, child);
 
-        SVector_ForeachBegin(&it, &SelvaHierarchy_GetNodeMetadataByPtr(child)->sub_markers.vec);
+        SVector_ForeachBegin(&it, markers_vec);
         while ((marker = SVector_Foreach(&it))) {
 #if 0
             SELVA_LOG(SELVA_LOGL_DBG, "inherit marker %" PRImrkId " to %.*s <- %.*s",
@@ -1495,8 +1494,8 @@ static void defer_traversing(
 
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        if (marker->dir != SELVA_HIERARCHY_TRAVERSAL_NONE &&
-            marker->dir != SELVA_HIERARCHY_TRAVERSAL_NODE) {
+        if (!(marker->dir & (SELVA_HIERARCHY_TRAVERSAL_NONE |
+                            SELVA_HIERARCHY_TRAVERSAL_NODE))) {
             enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
             marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
