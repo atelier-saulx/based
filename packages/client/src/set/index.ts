@@ -212,6 +212,7 @@ export async function set(client: BasedDbClient, opts: any) {
   }
 
   const args: any[] = []
+  const edgeArgs: any[] = []
   collected?.forEach((props: Required<BasedSchemaCollectProps>) => {
     let { path, value } = props
 
@@ -246,16 +247,21 @@ export async function set(client: BasedDbClient, opts: any) {
       }
 
       args.push(...toModifyArgs(props))
+    } else if (['reference', 'references'].includes(props?.fieldSchema?.type)) {
+      edgeArgs.push(...toModifyArgs(props))
     } else {
       args.push(...toModifyArgs(props))
     }
   })
 
+  args.unshift(...edgeArgs)
   args.push(...edgeMetas)
 
   if (!args.length) {
     return $id
   }
+
+  console.dir({ op: 'modify', args: [$id, flags, args] }, { depth: 6 })
 
   const resp = await client.command('modify', [$id, flags, args])
   const err = resp?.[0]?.find((x: any) => {
