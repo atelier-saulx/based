@@ -39,12 +39,39 @@ export async function get(
     client,
   }
 
+  if (isSubscription) {
+    ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
+    ctx.markerId = markerId
+    ctx.markers = []
+  }
+
   let { $id, $language, $alias } = opts
   if ($alias) {
     const aliases = Array.isArray($alias) ? $alias : [$alias]
     const resolved = await ctx.client.command('resolve.nodeid', [0, ...aliases])
 
     $id = resolved?.[0]
+
+    if (isSubscription) {
+      const aliasMarkerId = 1
+      if (aliasMarkerId === ctx.markerId) {
+        // run as if fresh query
+        delete ctx.markerId
+        ctx.cleanup = true
+
+        // await client.command('subscriptions.del', [ctx.subId])
+      }
+
+      await Promise.all(
+        aliases.map((alias) => {
+          return client.command('subscriptions.addAlias', [
+            ctx.subId,
+            aliasMarkerId,
+            alias,
+          ])
+        })
+      )
+    }
 
     if (!$id) {
       return { merged: {}, defaults: [] }
@@ -56,12 +83,6 @@ export async function get(
   }
 
   const { cmds, defaults } = await parseGetOpts(ctx, { ...opts, $id })
-
-  if (isSubscription) {
-    ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
-    ctx.markerId = markerId
-    ctx.markers = []
-  }
 
   const { nestedObjs, pending } = await execParallel(ctx, cmds)
 

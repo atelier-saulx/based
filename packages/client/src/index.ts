@@ -155,7 +155,11 @@ export class BasedDbClient extends Emitter {
 
   async refreshMarker(markerId: number): Promise<void> {
     purgeCache(markerId)
-    await this.command('subscriptions.refreshMarker', [markerId])
+    try {
+      await this.command('subscriptions.refreshMarker', [markerId])
+    } catch (e) {
+      console.error('Marker refresh error', e)
+    }
   }
 
   async sub(
