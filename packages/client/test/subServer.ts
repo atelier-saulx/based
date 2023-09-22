@@ -194,7 +194,7 @@ test('subscribe to children', async (t) => {
   )
 })
 
-test.skip('subscribe to parents', async (t) => {
+test('subscribe to parents', async (t) => {
   const { subClient, dbClient } = await start(t)
   await testSubscription(
     t,
