@@ -1841,6 +1841,10 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
         const char type_code = type_str[0]; /* [0] always points to a valid char. */
         enum selva_op_repl_state repl_state = SELVA_OP_REPL_STATE_UNCHANGED;
 
+#if 0
+        SELVA_LOG(SELVA_LOGL_DBG, "modify %.*s field: %.*s", (int)SELVA_NODE_ID_SIZE, nodeId, (int)field_len, field_str);
+#endif
+
         if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
             selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
             continue;

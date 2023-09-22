@@ -1293,10 +1293,10 @@ void SelvaSubscriptions_InheritParent(
         SVector_ForeachBegin(&it, markers_vec);
         while ((marker = SVector_Foreach(&it))) {
 #if 0
-            SELVA_LOG(SELVA_LOGL_DBG, "Inherit marker %d %.*s <- %.*s",
-                    (int)marker->dir,
-                    (int)SELVA_NODE_ID_SIZE, node_id,
-                    (int)SELVA_NODE_ID_SIZE, parent_id);
+            SELVA_LOG(SELVA_LOGL_DBG, "Inherit marker %" PRImrkId " to %.*s <- %.*s",
+                      marker->marker_id,
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)SELVA_NODE_ID_SIZE, parent_id);
 #endif
             switch (marker->dir) {
             case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
@@ -1348,6 +1348,12 @@ void SelvaSubscriptions_InheritChild(
 
         SVector_ForeachBegin(&it, &SelvaHierarchy_GetNodeMetadataByPtr(child)->sub_markers.vec);
         while ((marker = SVector_Foreach(&it))) {
+#if 0
+            SELVA_LOG(SELVA_LOGL_DBG, "inherit marker %" PRImrkId " to %.*s <- %.*s",
+                      marker->marker_id,
+                      (int)SELVA_NODE_ID_SIZE, node_id,
+                      (int)SELVA_NODE_ID_SIZE, child_id);
+#endif
             switch (marker->dir) {
             case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
             case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
@@ -1489,7 +1495,8 @@ static void defer_traversing(
 
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        if (marker->dir != SELVA_HIERARCHY_TRAVERSAL_NONE) {
+        if (marker->dir != SELVA_HIERARCHY_TRAVERSAL_NONE &&
+            marker->dir != SELVA_HIERARCHY_TRAVERSAL_NODE) {
             enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 
             marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
