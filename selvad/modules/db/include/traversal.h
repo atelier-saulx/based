@@ -50,6 +50,18 @@ enum SelvaMergeStrategy {
 };
 
 /**
+ * Traversal metadata for child/adjacent nodes.
+ * Note that SelvaTraversalOrder expects this to be copyable.
+ */
+struct SelvaHierarchyTraversalMetadata {
+    /**
+     * A tagged pointer to the origin field SVector.
+     * The tag is one of SelvaHierarchyTraversalSVecPtag.
+     */
+    const void *origin_field_svec_tagp;
+};
+
+/**
  * Traversal result order.
  */
 enum SelvaResultOrder {
@@ -104,6 +116,7 @@ struct TraversalOrderItem {
      * Value type of this ordered item.
      */
     enum TraversalOrderItemType type;
+    struct SelvaHierarchyTraversalMetadata traversal_metadata;
     /**
      * Associated NodeId of this item.
      */
@@ -131,20 +144,6 @@ enum SelvaHierarchyTraversalSVecPtag {
     SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS = 1, /*!< Parents SVector. */
     SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN = 2, /*!< Children SVector. */
     SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE = 3, /*!< Edge field SVector. */
-};
-
-/**
- * Traversal metadata for child/adjacent nodes.
- */
-struct SelvaHierarchyTraversalMetadata {
-    //const char *origin_field_str;
-    //size_t origin_field_len;
-    //struct SelvaHierarchyNode *origin_node;
-    /*!<
-     * A tagged pointer to the origin field SVector.
-     * The tags are
-     */
-    const void *origin_field_svec_tagp;
 };
 
 /**
@@ -193,6 +192,7 @@ void SelvaTraversalOrder_DestroyOrderResult(struct finalizer *fin, struct SVecto
 struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
         struct finalizer *fin,
         struct selva_string *lang,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         const struct selva_string *order_field);
 
