@@ -62,12 +62,7 @@ function getSimpleFieldsStr(fields: Field[]): string {
     }
   }
 
-  const str = [...strs].join('\n')
-  if (str === '*') {
-    return ''
-  }
-
-  return str
+  return [...strs].join('\n')
 }
 
 export function getFields(
