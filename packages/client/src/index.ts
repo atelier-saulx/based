@@ -194,6 +194,7 @@ export class BasedDbClient extends Emitter {
       }
 
       const ctx: ExecContext = {
+        lang: opts.$language,
         client: this,
         subId,
         markerId,
@@ -207,6 +208,7 @@ export class BasedDbClient extends Emitter {
     const fetch = async () => {
       if (pending) {
         const ctx: ExecContext = {
+          lang: opts.$language,
           client: this,
           subId,
           markerId,

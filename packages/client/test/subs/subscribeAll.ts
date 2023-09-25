@@ -97,8 +97,7 @@ const observe = async (
   return id
 }
 
-// TODO: $all in subs not working?
-test.serial.skip('subscribing to all fields', async (t) => {
+test.serial('subscribing to all fields', async (t) => {
   await start(t)
   const client = t.context.dbClient
   await client.updateSchema({
