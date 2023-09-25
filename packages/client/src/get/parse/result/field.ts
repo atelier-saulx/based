@@ -8,6 +8,12 @@ import { ExecContext, Field, GetCommand } from '../../types'
 import { parseRecFields } from './rec'
 import { getTypeSchema } from '../../../util'
 import { parseObjFields } from './obj'
+import { hashCmd } from '../../util'
+import {
+  addSubMarkerMapping,
+  makeOpts,
+  purgeSubMarkerMapping,
+} from '../../exec/cmd'
 
 const FIELD_PARSERS: Record<
   string,
@@ -73,6 +79,41 @@ const FIELD_PARSERS: Record<
 
       if (ary.length > 1) {
         const [, id, ...fields] = ary
+        // We need to do some trickery here to make markers for edge de-ref
+        if (ctx.subId) {
+          const subCmd: GetCommand = {
+            type: 'node',
+            source: {
+              id,
+            },
+            fields: { $any: [{ type: 'field', field: ['*'] }] }, // TODO: do this better, now it fires for any field change
+            target: { path: [] },
+          }
+
+          subCmd.cmdId = hashCmd(subCmd)
+
+          if (ctx.cleanup || ctx.markerId === cmd.markerId) {
+            const purged = purgeSubMarkerMapping(subCmd.cmdId)
+            if (purged) {
+              ctx.client.command('subscriptions.delmarker', [
+                ctx.subId,
+                subCmd.cmdId,
+              ])
+            }
+          } else {
+            const added = addSubMarkerMapping(
+              subCmd.cmdId,
+              cmd.markerId || cmd.cmdId
+            )
+
+            if (added) {
+              const marker = makeOpts(ctx, subCmd)
+              console.dir({ subCmd, marker }, { depth: 6 })
+              ctx.markers.push(marker)
+            }
+          }
+        }
+
         const typeSchema = getTypeSchema(ctx, id)
         const obj = parseObjFields(
           ctx,

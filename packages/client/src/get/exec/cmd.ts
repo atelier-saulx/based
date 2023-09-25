@@ -65,6 +65,25 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 // DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
 // TODO: make it an LRU cache so we can do sanity checks on interval to see if we missed updates
 const CMD_RESULT_CACHE: Map<number, any> = new Map()
+const CMD_SUB_MARKER_MAPPING_CACHE: Map<number, number> = new Map()
+
+export function addSubMarkerMapping(from: number, to: number): boolean {
+  const current = CMD_SUB_MARKER_MAPPING_CACHE.get(from)
+  if (current === to) {
+    return false
+  }
+
+  CMD_SUB_MARKER_MAPPING_CACHE.set(from, to)
+  return true
+}
+
+export function mapSubMarkerId(id: number): number {
+  return CMD_SUB_MARKER_MAPPING_CACHE.get(id) || id
+}
+
+export function purgeSubMarkerMapping(id: number): boolean {
+  return CMD_SUB_MARKER_MAPPING_CACHE.delete(id)
+}
 
 export function purgeCache(cmdID: number): void {
   CMD_RESULT_CACHE.delete(cmdID)
@@ -73,7 +92,14 @@ export function purgeCache(cmdID: number): void {
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client, subId } = ctx
 
-  const opts = await makeOpts(ctx, cmd)
+  if (cmd.source.alias && !cmd.source.id) {
+    cmd.source.id = await ctx.client.command('resolve.nodeid', [
+      0,
+      cmd.source.alias,
+    ])
+  }
+
+  const opts = makeOpts(ctx, cmd)
   const { cmdID } = opts
 
   let result = subId ? CMD_RESULT_CACHE.get(cmdID) : undefined
@@ -137,18 +163,8 @@ async function execCmd(
   return op
 }
 
-async function makeOpts(
-  ctx: ExecContext,
-  cmd: GetCommand
-): Promise<CmdExecOpts> {
+export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
   const cmdID = cmd.markerId ?? cmd.cmdId
-
-  if (cmd.source.alias && !cmd.source.id) {
-    cmd.source.id = await ctx.client.command('resolve.nodeid', [
-      0,
-      cmd.source.alias,
-    ])
-  }
 
   const struct: any = {
     dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,

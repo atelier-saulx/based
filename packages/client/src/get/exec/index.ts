@@ -6,7 +6,7 @@ export * from '../types'
 export * from '../parse'
 
 import { parseGetOpts, parseGetResult } from '../parse'
-import { getCmd } from './cmd'
+import { getCmd, mapSubMarkerId } from './cmd'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
@@ -41,7 +41,8 @@ export async function get(
 
   if (isSubscription) {
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
-    ctx.markerId = markerId
+
+    ctx.markerId = mapSubMarkerId(markerId)
     ctx.markers = []
   }
 

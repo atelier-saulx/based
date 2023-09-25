@@ -375,7 +375,7 @@ test.serial('basic $inherit when ancestors change', async (t) => {
 })
 
 // TODO: reference event not firing
-test.serial.skip('basic id based reference subscriptions', async (t) => {
+test.serial.only('basic id based reference subscriptions', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -415,6 +415,7 @@ test.serial.skip('basic id based reference subscriptions', async (t) => {
       $id: 're1',
       yesh: true,
       myRef: {
+        type: true,
         yesh: true,
       },
     },
@@ -424,18 +425,18 @@ test.serial.skip('basic id based reference subscriptions', async (t) => {
         // gets start event
         t.deepEqualIgnoreOrder(d, {
           yesh: 'hello from 1',
-          myRef: { yesh: 'hello from 2' },
+          myRef: { type: 'refType', yesh: 'hello from 2' },
         })
       } else if (o1counter === 1) {
         // gets update event
         t.deepEqualIgnoreOrder(d, {
           yesh: 'hello from 1!',
-          myRef: { yesh: 'hello from 2' },
+          myRef: { type: 'refType', yesh: 'hello from 2' },
         })
       } else if (o1counter === 2) {
         t.deepEqualIgnoreOrder(d, {
           yesh: 'hello from 1!',
-          myRef: { yesh: 'hello from 2!' },
+          myRef: { type: 'refType', yesh: 'hello from 2!' },
         })
       } else {
         // doesn't get any more events
@@ -453,6 +454,15 @@ test.serial.skip('basic id based reference subscriptions', async (t) => {
   })
 
   await wait(500 * 2)
+
+  let subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 6 })
 
   await client.set({
     $id: 're2',
