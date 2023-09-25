@@ -28,7 +28,7 @@ import {
 } from './get'
 import genId from './id'
 import { deepMergeArrays } from '@saulx/utils'
-import { getCmd, purgeCache } from './get/exec/cmd'
+import { getCmd, mapSubMarkerId, purgeCache } from './get/exec/cmd'
 import { DEFAULT_SCHEMA, updateSchema } from './schema'
 
 export * as protocol from './protocol'
@@ -154,9 +154,10 @@ export class BasedDbClient extends Emitter {
   }
 
   async refreshMarker(markerId: number): Promise<void> {
-    purgeCache(markerId)
+    const id = mapSubMarkerId(markerId)
+    purgeCache(id)
     try {
-      await this.command('subscriptions.refreshMarker', [markerId])
+      await this.command('subscriptions.refreshMarker', [id])
     } catch (e) {
       console.error('Marker refresh error', e)
     }

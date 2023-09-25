@@ -374,8 +374,7 @@ test.serial('basic $inherit when ancestors change', async (t) => {
   await wait(1000 * 1)
 })
 
-// TODO: reference event not firing
-test.serial.only('basic id based reference subscriptions', async (t) => {
+test.serial('basic id based reference subscriptions', async (t) => {
   await start(t)
   const client = t.context.dbClient
 

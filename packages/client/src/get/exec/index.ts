@@ -43,6 +43,7 @@ export async function get(
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
 
     ctx.markerId = mapSubMarkerId(markerId)
+    console.log({ markerId, ctxMarkerId: ctx.markerId })
     ctx.markers = []
   }
 
