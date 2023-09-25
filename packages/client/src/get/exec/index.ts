@@ -100,7 +100,7 @@ export async function get(
     defaults,
     pending,
     subId: ctx.subId,
-    markerId,
+    markerId: ctx.markerId,
     markers: ctx.markers,
   }
 }

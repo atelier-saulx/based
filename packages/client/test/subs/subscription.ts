@@ -394,7 +394,7 @@ test.serial('basic id based reference subscriptions', async (t) => {
     },
   })
 
-  t.plan(3)
+  t.plan(4)
 
   await client.set({
     $id: 're2',
@@ -437,6 +437,11 @@ test.serial('basic id based reference subscriptions', async (t) => {
           yesh: 'hello from 1!',
           myRef: { type: 'refType', yesh: 'hello from 2!' },
         })
+      } else if (o1counter === 3) {
+        t.deepEqualIgnoreOrder(d, {
+          yesh: 'hello from 1!',
+          myRef: { type: 'refType', yesh: 'hello from 3...' },
+        })
       } else {
         // doesn't get any more events
         t.fail()
@@ -469,6 +474,26 @@ test.serial('basic id based reference subscriptions', async (t) => {
   })
 
   await wait(500 * 2)
+
+  await client.set({
+    $id: 're3',
+    yesh: 'hello from 3...',
+  })
+  await client.set({
+    $id: 're1',
+    myRef: 're3',
+  })
+
+  await wait(500 * 2)
+
+  subs = await Promise.all(
+    (
+      await client.command('subscriptions.list')
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 6 })
 })
 
 test.serial('subscribe with timeout right away record', async (t) => {

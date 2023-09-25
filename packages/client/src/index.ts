@@ -172,6 +172,7 @@ export class BasedDbClient extends Emitter {
     fetch: () => Promise<any>
     pending?: GetCommand
   }> {
+    const origMarkerId = eventOpts?.markerId
     const { subId, markerId, merged, defaults, pending, markers } = await get(
       this,
       opts,
@@ -184,6 +185,10 @@ export class BasedDbClient extends Emitter {
     await addMarkers({ client: this, subId, markerId }, markers)
 
     const cleanup = async () => {
+      if (origMarkerId !== markerId) {
+        await this.command('subscriptions.delmarker', [subId, origMarkerId])
+      }
+
       if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
         return
       }
