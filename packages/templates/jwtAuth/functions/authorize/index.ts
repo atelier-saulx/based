@@ -47,28 +47,29 @@ export const verifyAuthState: VerifyAuthState = async (
   }
 
   try {
+    // We verify and decode the jwt
     const decoded = jwt.verify(authState.token, secret, {
       algorithms: ['HS256'],
     }) as jwt.JwtPayload
 
+    // check for token format
     if (!decoded.userId) {
       throw new Error('invalid token, no userId')
     }
 
+    // We check if the user exists in the database
     const existingUser = await based
       .query('db', {
         $id: decoded.userId,
         id: true,
       })
       .get()
-
-    console.log({ existingUser, decoded })
-
     if (!existingUser) {
       // user does not exist
       throw new Error('invalid token, user does not exist')
     }
 
+    // We upodate the authState if the token if for a new user
     if (authState.userId !== decoded.userId) {
       return {
         authState: {
@@ -78,16 +79,23 @@ export const verifyAuthState: VerifyAuthState = async (
       }
     }
 
-    // TODO: Add lastEvaluated
-
     if (deepEqual(ctx.session?.authState, authState)) {
+      // If the new authState is the same as the current one
+      // we return true meaning the current authState is still
+      // valid and no action needs to be taken.
       return true
     } else {
+      // If it's a new authState we update it.
       return authState
     }
   } catch (err) {
+    // This will trigger if the jwt verification fails
+
+    // In case the token is valid but expired, lets renew the user token.
     if (err.name === 'TokenExpiredError') {
       const decoded: any = jwt.decode(authState.token)
+      // We only renew the user token if it's not older than a week.
+      // Otherwise lets make the user login again.
       if (
         !decoded.exp ||
         typeof decoded.exp !== 'number' ||
@@ -96,10 +104,12 @@ export const verifyAuthState: VerifyAuthState = async (
         console.info('Token is older than a week:', authState?.userId)
         return { error: 'token expired' }
       }
+      // We create a new token.
       const updatedToken = jwt.sign({ userId: decoded.userId }, secret, {
         algorithm: 'HS256',
         expiresIn: '1w',
       })
+      // We return a new authState updating the session authState.
       return {
         userId: decoded.userId,
         token: updatedToken,

@@ -15,6 +15,7 @@ const login: BasedFunction = async (based, payload, ctx) => {
     .query('db', {
       existingUser: {
         id: true,
+        status: true,
         $find: {
           $traverse: 'children',
           $filter: [
@@ -48,6 +49,11 @@ const login: BasedFunction = async (based, payload, ctx) => {
     throw new Error('User not found')
   }
 
+  // If user has not confirmed the email, throw.
+  if (existingUser?.status === 'waitingForConfirmation') {
+    throw new Error('User email not confirmed yet. Check your email.')
+  }
+
   // we get the secret using the based secrets functionality
   // you can set the secret using the CLI like with the example bellow:
   // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
@@ -56,6 +62,7 @@ const login: BasedFunction = async (based, payload, ctx) => {
     throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
   }
 
+  // We create a signed jwt token for the session
   const token = jwt.sign(
     {
       userId: existingUser.id,

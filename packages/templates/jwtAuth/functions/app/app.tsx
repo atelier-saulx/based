@@ -19,10 +19,8 @@ const Authorize = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const client = useClient()
-  client.on('authstate-change', (authState) =>
-    console.log('auth state change', authState)
-  )
   const authState = useAuthState()
+
   if (!authState.token) {
     return (
       <div
@@ -95,7 +93,6 @@ const Authorize = () => {
                     email,
                     password,
                   })
-                  console.log({ response })
                 }}
               >
                 Register
@@ -107,7 +104,6 @@ const Authorize = () => {
                     email,
                     password,
                   })
-                  console.log({ response })
                 }}
               >
                 Login

@@ -1,10 +1,6 @@
 import { BasedFunction } from '@based/functions'
 import * as jwt from 'jsonwebtoken'
 
-enum UserStatuses {
-  confirmed = 1,
-}
-
 const register: BasedFunction = async (based, payload, ctx) => {
   const { email, password } = payload
 
@@ -16,7 +12,6 @@ const register: BasedFunction = async (based, payload, ctx) => {
   // you can set the secret using the CLI like with the example bellow:
   // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
   const secret = await based.query('based:secret', 'jwt-secret').get()
-  console.log({ secret })
   if (!secret) {
     throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
   }
@@ -66,7 +61,7 @@ const register: BasedFunction = async (based, payload, ctx) => {
     secret,
     {
       algorithm: 'HS256',
-      expiresIn: '15m',
+      expiresIn: '10d', // TODO: TBD expiration of registration token
     }
   )
 
@@ -75,7 +70,9 @@ const register: BasedFunction = async (based, payload, ctx) => {
     process.env.CLUSTER === 'local'
       ? `http://${process.env.DOMAIN}`
       : `https://${process.env.DOMAIN}`
-  const actionUrl = `${actionDomain}/registrationConfirmation?t=confirmationToken`
+  const actionUrl = `${actionDomain}/registerConfirmation?t=${encodeURIComponent(
+    confirmationToken
+  )}`
 
   // We send the email using the based.io default template and register email feature.
   // You can override this with your own email provider and email template.
@@ -87,27 +84,56 @@ const register: BasedFunction = async (based, payload, ctx) => {
     throw new Error(emailResult.error)
   }
 
+  // We set the new user in the database and set it's status to
+  // waiting for confirmation.
   await based.call('db:set', {
     $id: id,
     email: email.trim().toLowerCase(),
     password,
+    status: 'waitingForConfirmation',
   })
 
-  const token = jwt.sign(
-    {
-      userId: id,
-    },
-    secret,
-    {
-      algorithm: 'HS256',
-      expiresIn: '15m',
-    }
-  )
+  // Instead of just returning a result, we can hold the response until the user
+  // clicks the action button on the confirmation email he will receive.
+  // By calling this function asynchronously we can have a message in the UI
+  // telling the user the click the email link.
+  // When the user clicks the link function will resume and log the user in.
+  return new Promise((resolve, reject) => {
+    // based.query.subscribe() method return a cleanup function that we use to
+    // stop the subscription.
+    const close = based
+      // We query the database for a change in the status field of the user
+      .query('db', {
+        $id: id,
+        status: true,
+      })
+      .subscribe((data) => {
+        // When the status is confirmed we create a token and update the authState.
+        if (data.status === 'confirmed') {
+          const token = jwt.sign(
+            {
+              userId: id,
+            },
+            secret,
+            {
+              algorithm: 'HS256',
+              expiresIn: '15m',
+            }
+          )
 
-  const authState = { id, token }
-  based.sendAuthState(ctx, { ...authState, persistent: true })
+          const authState = { id, token }
+          clearTimeout(timeout)
+          // We send the new authState to the client
+          based.sendAuthState(ctx, { ...authState, persistent: true })
+          resolve(authState)
+        }
+      })
 
-  return authState
+    const timeout = setTimeout(() => {
+      close()
+      reject(new Error('Register timeout'))
+    }, 10 * 60e3)
+  })
 }
 
 export default register
