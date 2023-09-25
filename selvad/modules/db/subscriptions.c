@@ -150,7 +150,8 @@ static int field_match(const char *list, const char *field_str, size_t field_len
     int match = 0;
 
     if (list[0] == '\0') {
-        /* Empty string equals to a wildcard */
+        match = 0;
+    } else if (list[0] == '*' && list[1] == '\0') {
         match = 1;
     } else {
         /* Test if field matches to any of the fields in list. */
@@ -173,8 +174,7 @@ static int field_match(const char *list, const char *field_str, size_t field_len
 }
 
 static int contains_hierarchy_fields(const char *list) {
-    return list[0] == '\0' /* wildcard */ ||
-           field_match(list, SELVA_ANCESTORS_FIELD, sizeof(SELVA_ANCESTORS_FIELD) - 1) ||
+    return field_match(list, SELVA_ANCESTORS_FIELD, sizeof(SELVA_ANCESTORS_FIELD) - 1) ||
            field_match(list, SELVA_CHILDREN_FIELD, sizeof(SELVA_CHILDREN_FIELD) - 1) ||
            field_match(list, SELVA_DESCENDANTS_FIELD, sizeof(SELVA_DESCENDANTS_FIELD) - 1) ||
            field_match(list, SELVA_PARENTS_FIELD, sizeof(SELVA_PARENTS_FIELD) - 1);
