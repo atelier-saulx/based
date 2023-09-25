@@ -6,11 +6,13 @@
 #include <stdint.h>
 #include <string.h>
 #include <sys/types.h>
+#include "util/ptag.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_db.h"
 #include "selva_object.h"
 #include "edge.h"
+#include "traversal.h"
 #include "hierarchy.h"
 #include "field_lookup.h"
 
@@ -77,19 +79,70 @@ static int get_from_edge_field(
             }
             return SELVA_ENOENT;
         } else {
-            return field_lookup_data_field(lang, next_node, next_field_str, next_field_len, any);
+            return field_lookup_data_field(lang, NULL, next_node, next_field_str, next_field_len, any);
         }
     }
 }
 
+static int get_top_level_edge_meta(
+        struct selva_string *lang,
+        struct SelvaHierarchyNode *node,
+        struct EdgeField *edge_field,
+        const char *field_str,
+        size_t field_len,
+        struct SelvaObjectAny *any)
+{
+    if (!strncmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1)) {
+        Selva_NodeId dst_node_id;
+        size_t meta_key_len;
+        const char *meta_key_str = Selva_GetEdgeMetaKey(field_str, field_len, &meta_key_len);
+        struct SelvaObject *edge_metadata;
+        int err;
+
+        SelvaHierarchy_GetNodeId(dst_node_id, node);
+        err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+        if (err || !edge_metadata) {
+            return err;
+        }
+
+        if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
+            /* All fields. */
+            *any = (struct SelvaObjectAny){
+                .type = SELVA_OBJECT_OBJECT,
+                .obj = edge_metadata,
+            };
+
+            return 0;
+        } else if (field_str[sizeof(SELVA_EDGE_META_FIELD)] == '.') {
+            /* Specific field. */
+            return SelvaObject_GetAnyLangStr(edge_metadata, lang, meta_key_str, meta_key_len, any);
+        } /* Otherwise the field name was something else. */
+    }
+
+    /* field not found here. */
+    return SELVA_ENOENT;
+}
+
 int field_lookup_data_field(
         struct selva_string *lang,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
         struct SelvaObjectAny *any)
 {
     int err;
+
+    if (traversal_metadata && traversal_metadata->origin_field_svec_tagp &&
+        PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
+        SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
+        struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+
+        err = get_top_level_edge_meta(lang, node, edge_field, field_str, field_len, any);
+        if (err != SELVA_ENOENT) {
+            return err;
+        }
+    }
 
     err = get_from_edge_field(lang, node, field_str, field_len, any);
     if (err == SELVA_ENOENT) {

@@ -646,7 +646,7 @@ static void send_node_fields_named(
     }
 }
 
-void send_top_level_edge_meta(
+static void send_top_level_edge_meta(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,

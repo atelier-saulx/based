@@ -31,9 +31,11 @@ struct field_lookup_traversable {
 
 /**
  * Get a sortable field value.
+ * @param traversal_metadata Optional metadata to find $edgeMeta.
  */
 int field_lookup_data_field(
         struct selva_string *lang,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
