@@ -714,7 +714,7 @@ test('get - simple $list with $field option', async (t) => {
   */
 })
 
-test.only('get - edge meta sorting in $list with references', async (t) => {
+test('get - edge meta sorting in $list with references', async (t) => {
   const { client } = t.context
   await client.updateSchema({
     languages: ['en', 'de', 'nl'],
