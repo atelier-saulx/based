@@ -117,18 +117,170 @@ export const string: FieldParser<'string'> = async (args) => {
   args.collect()
 }
 
-async function next<T>(args: ArgsClass<T>, key: string): Promise<any> {
-  const valueArgs = args.create({
-    key,
-    value: args.value[key],
-    skipCollection: true,
-  })
-  await valueArgs.parse()
-  return valueArgs.value
-}
-
+// --- bla
+// if typeof === string
 export const text: FieldParser<'text'> = async (args) => {
   const value = args.value
+
+  args.stop()
+
+  if (value === null) {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+
+  if (typeof value === 'object') {
+    for (const key in value) {
+      if (key === '$merge') {
+        if (typeof value.$merge !== 'boolean') {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+      } else if (key === '$delete') {
+        if (value[key] !== true) {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+        args.collect({ $delete: true })
+        return
+      } else if (key === '$value') {
+        const valueArgs = args.create({
+          path: args.path,
+          value: args.value[key],
+        })
+        valueArgs._stopObject = true
+        await valueArgs.parse()
+      } else if (key === '$default') {
+        if (value[key] === null) {
+          args.error(ParseError.incorrectFormat)
+          return
+        }
+        if (typeof value[key] === 'object') {
+          for (const k in value[key]) {
+            if (!validateString(args, args.value[key][k])) {
+              args.error(ParseError.incorrectFormat)
+              return
+            }
+            args
+              .create({
+                key: k,
+                value: { $default: args.value[key][k] },
+              })
+              .collect()
+          }
+        } else if (typeof value[key] !== 'string') {
+          args.error(ParseError.incorrectFormat)
+          return
+        } else if (!args.target.$language) {
+          args.error(ParseError.noLanguageFound)
+          return
+        } else if (!validateString(args, value[key])) {
+          args.error(ParseError.incorrectFormat)
+          return
+        } else {
+          args
+            .create({
+              key: args.target.$language,
+              value: { $default: args.value[key] },
+            })
+            .collect()
+        }
+      } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
+        if (value[key] && typeof value[key] === 'object') {
+          for (const k in value[key]) {
+            if (k === '$delete') {
+              if (value[key].$delete !== true) {
+                args.error(ParseError.incorrectFormat)
+                return
+              }
+              args
+                .create({
+                  key,
+                  value: args.value[key],
+                })
+                .collect()
+            } else if (k === '$value') {
+              if (!validateString(args, value[key].$value)) {
+                args.create({ key }).error(ParseError.incorrectFormat)
+              } else {
+                args
+                  .create({
+                    key,
+                    value: args.value[key].$value,
+                  })
+                  .collect()
+              }
+            } else if (k === '$default') {
+              if (!validateString(args, value[key].$default)) {
+                args.create({ key }).error(ParseError.incorrectFormat)
+              } else {
+                args
+                  .create({
+                    key,
+                    value: { $default: args.value[key].$default },
+                  })
+                  .collect()
+              }
+            } else {
+              args
+                .create({ path: [...args.path, key, k] })
+                .error(ParseError.fieldDoesNotExist)
+              return
+            }
+          }
+        } else {
+          if (!validateString(args, args.value[key])) {
+            args.error(ParseError.incorrectFormat)
+            return
+          }
+          args
+            .create({
+              key,
+              value: args.value[key],
+            })
+            .collect()
+        }
+      } else {
+        args.create({ key }).error(ParseError.languageNotSupported)
+      }
+    }
+    if (!args._stopObject) {
+      args.collect()
+    }
+    return
+  }
+
+  if (typeof value !== 'string') {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+
+  if (!args.target.$language) {
+    args.error(ParseError.noLanguageFound)
+    return
+  }
+
+  if (!validateString(args, args.value)) {
+    args.error(ParseError.incorrectFormat)
+    return
+  }
+
+  args
+    .create({
+      value,
+      key: args.target.$language,
+    })
+    .collect()
+
+  if (!args._stopObject) {
+    args.collect({
+      [args.target.$language]: value,
+    })
+  }
+}
+
+/*
+const value = args.value
   if (value !== null && typeof value === 'object') {
     args.stop()
     const result: any = {}
@@ -199,4 +351,4 @@ export const text: FieldParser<'text'> = async (args) => {
   }
 
   args.collect()
-}
+*/
