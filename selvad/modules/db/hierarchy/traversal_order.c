@@ -213,7 +213,7 @@ struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
         .traversal_metadata = traversal_metadata,
     };
 
-    err = field_lookup_data_field(lang, traversal_metadata, node,  order_field_str, order_field_len, &any);
+    err = field_lookup_data_field(lang, traversal_metadata, node, order_field_str, order_field_len, &any);
     if (!err) {
         obj_any2order_data(&any, &tmp);
     } else if (err != SELVA_ENOENT && err != SELVA_EINTYPE) {

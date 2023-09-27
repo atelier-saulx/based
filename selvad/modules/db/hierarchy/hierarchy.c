@@ -2303,15 +2303,22 @@ static int bfs_expression(
     return 0;
 }
 
-void SelvaHierarchy_TraverseAdjacents(
+/**
+ * Traverse adjacent vector.
+ * This function can be useful with edge fields,
+ * field_lookup_traversable, and SelvaHierarchy_GetHierarchyField().
+ * @param adj_vec can be children, parents, or an edge field arcs.
+ */
+static void SelvaHierarchy_TraverseAdjacents(
         struct SelvaHierarchy *hierarchy,
+        enum SelvaHierarchyTraversalSVecPtag adj_tag,
         const SVector *adj_vec,
         const struct SelvaHierarchyCallback *cb) {
     struct SVectorIterator it;
 
     if (cb->node_cb) {
         const struct SelvaHierarchyTraversalMetadata metadata = {
-            .origin_field_svec_tagp = PTAG(adj_vec, SELVA_TRAVERSAL_SVECTOR_PTAG_NONE),
+            .origin_field_svec_tagp = PTAG(adj_vec, adj_tag),
         };
         SelvaHierarchyNode *node;
 
@@ -2346,7 +2353,7 @@ static void traverse_edge_field(
     if (cb->node_cb) {
         edge_field = Edge_GetField(head, ref_field_str, ref_field_len);
         if (edge_field) {
-            SelvaHierarchy_TraverseAdjacents(hierarchy, &edge_field->arcs, cb);
+            SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, &edge_field->arcs, cb);
         }
     }
 }
@@ -2418,7 +2425,7 @@ void SelvaHierarchy_TraverseChildren(
         }
     }
 
-    SelvaHierarchy_TraverseAdjacents(hierarchy, &node->children, cb);
+    SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, &node->children, cb);
 }
 
 void SelvaHierarchy_TraverseParents(
@@ -2433,7 +2440,7 @@ void SelvaHierarchy_TraverseParents(
         }
     }
 
-    SelvaHierarchy_TraverseAdjacents(hierarchy, &node->parents, cb);
+    SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, &node->parents, cb);
 }
 
 struct pseudo_field_cb {
@@ -2617,12 +2624,20 @@ int SelvaHierarchy_TraverseField2(
         return err;
     }
 
-    if (t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-                  SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                  SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) {
+    if (t.type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
         assert(t.vec);
 
-        SelvaHierarchy_TraverseAdjacents(hierarchy, t.vec, hcb);
+        SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, t.vec, hcb);
+        return 0;
+    } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
+        assert(t.vec);
+
+        SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, t.vec, hcb);
+        return 0;
+    } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
+        assert(t.vec);
+
+        SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, t.vec, hcb);
         return 0;
     } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
         /* TODO trace */
