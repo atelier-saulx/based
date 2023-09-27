@@ -130,6 +130,14 @@ static int send_obj_field(
         long resp_count = 0;
         int err;
 
+        /* RFE Should we send the possible prefix? */
+        if (field_prefix_str && field_prefix_len) {
+            SELVA_LOG(SELVA_LOGL_WARN, "field_prefix ignored");
+#if 0
+            __builtin_trap();
+#endif
+        }
+
         err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, field_str, field_len, &resp_count, -1, 0);
         if (err && err != SELVA_ENOENT) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the wildcard field \"%.*s\": %s",
@@ -149,7 +157,7 @@ static int send_obj_field(
             field_len -= 2;
         }
 
-        if (SelvaObject_ExistsStr(obj, field_str, field_len)) {
+        if (field_len && SelvaObject_ExistsStr(obj, field_str, field_len)) {
             /* Field didn't exist in the node. */
             return 0;
         }
@@ -194,15 +202,18 @@ static int send_edge_meta_field(
     }
 
     selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
-    selva_send_array(resp, 3);
+    selva_send_array(resp, 2);
 
-    selva_send_str(resp, dst_node_id, Selva_NodeIdLen(dst_node_id));
+    //selva_send_str(resp, dst_node_id, Selva_NodeIdLen(dst_node_id));
+#if 0
     if (field_prefix_str) {
         selva_send_strf(resp, "%.*s@%.*s", (int)field_prefix_len - 1, field_prefix_str, (int)meta_key_len, meta_key_str);
     } else {
         selva_send_str(resp, meta_key_str, meta_key_len);
     }
-    if (!send_obj_field(resp, lang, edge_metadata, "", 0, meta_key_str, meta_key_len)) {
+#endif
+    if (!send_obj_field(resp, lang, edge_metadata, field_prefix_str, field_prefix_len, meta_key_str, meta_key_len)) {
+        selva_send_null(resp);
         selva_send_null(resp);
     }
 
@@ -230,7 +241,7 @@ static int send_edge_meta_fields(
     }
 
     selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
-    selva_send_array(resp, SELVA_PROTO_ARRAY_FPOSTPONED_LENGTH);
+    selva_send_array(resp, -1);
 
     obj_it = SelvaObject_ForeachBegin(edge_metadata);
     while ((meta_key_str = SelvaObject_ForeachKey(edge_metadata, &obj_it))) {
