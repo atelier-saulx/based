@@ -8,15 +8,15 @@ const register: BasedFunction = async (based, payload, ctx) => {
     throw new Error('Email and Password required')
   }
 
-  // we get the secret using the based secrets functionality
-  // you can set the secret using the CLI like with the example bellow:
-  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
+  // We get the secret using the based secrets functionality.
+  // You can set the secret using the CLI with the example below:
+  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret`
   const secret = await based.query('based:secret', 'jwt-secret').get()
   if (!secret) {
     throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
   }
 
-  // we check if a user with that email already exists in the db
+  // We check if a user with that email already exists in the database.
   const { existingUser } = await based
     .query('db', {
       existingUser: {
@@ -43,16 +43,16 @@ const register: BasedFunction = async (based, payload, ctx) => {
     throw new Error('User already exists.')
   }
 
-  // We generate a id for the user.
-  // Note that we're not yet creating the user. We do this
-  // so a user is not created in case the confirmation email
-  // fails to be sent
+  // We generate an ID for the user.
+  // Note that we're not creating the user yet. We do this to
+  // prevent a user from being created in case the confirmation email
+  // fails to be sent.
   const { id } = await based.call('db:id', {
     type: 'user',
   })
 
-  // We generate a signed token to include in the email actionUrl.
-  // this will prove the origin of the confirmation email.
+  // We generate a signed token to include in the email action URL.
+  // This token will serve as proof of the origin of the confirmation email.
   const confirmationToken = jwt.sign(
     {
       userId: id,
@@ -65,7 +65,7 @@ const register: BasedFunction = async (based, payload, ctx) => {
     }
   )
 
-  // We generate the action url to be included in the email
+  // We generate the action URL to be included in the email.
   const actionDomain =
     process.env.CLUSTER === 'local'
       ? `http://${process.env.DOMAIN}`
@@ -74,8 +74,9 @@ const register: BasedFunction = async (based, payload, ctx) => {
     confirmationToken
   )}`
 
-  // We send the email using the based.io default template and register email feature.
-  // You can override this with your own email provider and email template.
+  // We send the email using the based.io default template and register
+  // email feature. You can override this with your own email provider
+  // and email template.
   const emailResult = await based.call('based:send-register-email', {
     email,
     actionUrl,
@@ -84,7 +85,7 @@ const register: BasedFunction = async (based, payload, ctx) => {
     throw new Error(emailResult.error)
   }
 
-  // We set the new user in the database and set it's status to
+  // We set the new user in the database and set their status to
   // waiting for confirmation.
   await based.call('db:set', {
     $id: id,
@@ -94,21 +95,21 @@ const register: BasedFunction = async (based, payload, ctx) => {
   })
 
   // Instead of just returning a result, we can hold the response until the user
-  // clicks the action button on the confirmation email he will receive.
-  // By calling this function asynchronously we can have a message in the UI
-  // telling the user the click the email link.
-  // When the user clicks the link function will resume and log the user in.
+  // clicks the action button in the confirmation email they will receive.
+  // By calling this function asynchronously, we can display a message in the UI
+  // prompting the user to click the email link.
+  // When the user clicks the link, the function will resume and log the user in.
   return new Promise((resolve, reject) => {
-    // based.query.subscribe() method return a cleanup function that we use to
-    // stop the subscription.
+    // The `based.query.subscribe()` method returns a cleanup function that we
+    // use to stop the subscription.
     const close = based
-      // We query the database for a change in the status field of the user
+      // We subscibe to the database for a change in the status field of the user.
       .query('db', {
         $id: id,
         status: true,
       })
       .subscribe((data) => {
-        // When the status is confirmed we create a token and update the authState.
+        // When the status is confirmed, we create a token and update the authState.
         if (data.status === 'confirmed') {
           const token = jwt.sign(
             {

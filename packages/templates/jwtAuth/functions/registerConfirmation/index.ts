@@ -2,7 +2,7 @@ import { BasedFunction } from '@based/functions'
 import * as jwt from 'jsonwebtoken'
 
 // This confirmation function is called via HTTP REST when the user clicks the
-// confirmation email sent when registering.
+// confirmation email sent during registration.
 
 const register: BasedFunction = async (based, payload, ctx) => {
   const { t: token } = payload
@@ -11,22 +11,22 @@ const register: BasedFunction = async (based, payload, ctx) => {
     throw new Error('Invalid request')
   }
 
-  // Get the jwt secret from the based.io secrets functionality. Check
-  // register function for more details
+  // Get the JWT secret from the based.io secrets functionality. Check
+  // the register function for more details.
   const secret = await based.query('based:secret', 'jwt-secret').get()
   if (!secret) {
     throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
   }
 
   try {
-    // We verify and decode the jwt to get the body contents back
+    // We verify and decode the JWT to retrieve the body contents.
     const tokenBody = jwt.verify(token, secret, {
       algorithms: ['HS256'],
     }) as { userId: string; type: string }
 
-    // Body contains the userId and the type of token
+    // The body contains the userId and the type of token.
     const { userId, type } = tokenBody
-    // We check the body format of the jwt
+    // We check the JWT body format
     if (!userId || type !== 'emailConfirmation') {
       throw new Error('Invalid  token')
     }
@@ -48,8 +48,8 @@ const register: BasedFunction = async (based, payload, ctx) => {
 
     return 'Email confirmed'
   } catch (error) {
-    // If the jwt verify is expired or the signature verification
-    // fails this will be triggered.
+    // If the JWT is expired or the signature verification
+    // fails, this will be triggered.
     throw new Error('Invalid or expired confirmation token')
   }
 }

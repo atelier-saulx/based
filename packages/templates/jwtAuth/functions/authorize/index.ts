@@ -2,29 +2,27 @@ import { Authorize, VerifyAuthState } from '@based/functions'
 import * as jwt from 'jsonwebtoken'
 import { deepEqual } from '@saulx/utils'
 
-// `authorize` function is run every time a
-// data funtion is called. The boolean return
-// value allows or denies access to the function.
+// The `authorize` function runs every time a data function is called.
+// The boolean return value determines whether access to the function
+// is allowed or denied.
 const authorize: Authorize = async (_based, ctx, _name, _payload) => {
-  // if there is an authState and a token,
-  // the user is logged in so we allow access.
-  // Note that `verifyAuthState` (see further bellow) function
-  // will still check the validity of the token
+  // If there is an authState and a token, a user is logged in, so we
+  // allow access. Note that the `verifyAuthState` function (see further
+  // below) will still check the validity of the token.
   if (ctx.session?.authState?.token) {
     return true
   }
 
-  // otherwise we deny access to all functions.
-  // Note that functions with the property `public`
-  // in the function config will bypass the `authorize`
-  // function
+  // Otherwise, we deny access to all functions. Note that functions
+  // with the property public in the function config will bypass the
+  // authorize function.
   return false
 }
 export default authorize
 
-// `verifyAuthState` is a support function for `authorize`
-// it is meant to handle the validation and renewall of
-// session token freeing up authorize for business logic.
+// `verifyAuthState` is a support function for `authorize`.
+// It is meant to handle the validation and renewal of
+// session tokens, freeing up `authorize` for business logic.
 export const verifyAuthState: VerifyAuthState = async (
   based,
   ctx,
@@ -38,9 +36,9 @@ export const verifyAuthState: VerifyAuthState = async (
     return { error: 'Unauthorized' }
   }
 
-  // we get the secret using the based secrets functionality
-  // you can set the secret using the CLI like with the example bellow:
-  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret``
+  // We get the secret using the based secrets functionality.
+  // You can set the secret using the CLI like with the example below:
+  // `npx @based/cli secrets set --key jwt-secret --value mysupersecret`
   const secret = await based.query('based:secret', 'jwt-secret').get()
   if (!secret) {
     throw new Error('Secret `jwt-secret` not found in the env. Is it set?')
@@ -52,7 +50,7 @@ export const verifyAuthState: VerifyAuthState = async (
       algorithms: ['HS256'],
     }) as jwt.JwtPayload
 
-    // check for token format
+    // Check the token format
     if (!decoded.userId) {
       throw new Error('invalid token, no userId')
     }
@@ -65,11 +63,10 @@ export const verifyAuthState: VerifyAuthState = async (
       })
       .get()
     if (!existingUser) {
-      // user does not exist
       throw new Error('invalid token, user does not exist')
     }
 
-    // We upodate the authState if the token if for a new user
+    // We update the authState if the token is for a new user.
     if (authState.userId !== decoded.userId) {
       return {
         authState: {
@@ -80,9 +77,9 @@ export const verifyAuthState: VerifyAuthState = async (
     }
 
     if (deepEqual(ctx.session?.authState, authState)) {
-      // If the new authState is the same as the current one
-      // we return true meaning the current authState is still
-      // valid and no action needs to be taken.
+      // If the new authState is the same as the current one,
+      // we return true, meaning the current authState is still
+      // valid, and no action needs to be taken.
       return true
     } else {
       // If it's a new authState we update it.
@@ -91,11 +88,11 @@ export const verifyAuthState: VerifyAuthState = async (
   } catch (err) {
     // This will trigger if the jwt verification fails
 
-    // In case the token is valid but expired, lets renew the user token.
+    // In case the token is valid but expired, let's renew the user token.
     if (err.name === 'TokenExpiredError') {
       const decoded: any = jwt.decode(authState.token)
       // We only renew the user token if it's not older than a week.
-      // Otherwise lets make the user login again.
+      // Otherwise, let's make the user log in again.
       if (
         !decoded.exp ||
         typeof decoded.exp !== 'number' ||
@@ -109,7 +106,7 @@ export const verifyAuthState: VerifyAuthState = async (
         algorithm: 'HS256',
         expiresIn: '1w',
       })
-      // We return a new authState updating the session authState.
+      // We return a new authState updating the session.
       return {
         userId: decoded.userId,
         token: updatedToken,
