@@ -87,7 +87,7 @@ static int get_from_edge_field(
 static int get_top_level_edge_meta(
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,
-        struct EdgeField *edge_field,
+        struct EdgeField *src_edge_field,
         const char *field_str,
         size_t field_len,
         struct SelvaObjectAny *any)
@@ -100,7 +100,7 @@ static int get_top_level_edge_meta(
         int err;
 
         SelvaHierarchy_GetNodeId(dst_node_id, node);
-        err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+        err = Edge_GetFieldEdgeMetadata(src_edge_field, dst_node_id, false, &edge_metadata);
         if (err || !edge_metadata) {
             return err;
         }
@@ -113,7 +113,7 @@ static int get_top_level_edge_meta(
             };
 
             return 0;
-        } else if (field_str[sizeof(SELVA_EDGE_META_FIELD)] == '.') {
+        } else if (field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.') {
             /* Specific field. */
             return SelvaObject_GetAnyLangStr(edge_metadata, lang, meta_key_str, meta_key_len, any);
         } /* Otherwise the field name was something else. */
