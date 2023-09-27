@@ -249,3 +249,22 @@ test('schema subs work implicitly', async (t) => {
   otherClient.unsubscribeSchema()
   otherClient.destroy()
 })
+
+test.only('Creating an already used prefix', async (t) => {
+  const { client } = t.context
+
+  const e = await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        flurpydurpy: {
+          prefix: 'ma',
+          fields: {
+            niceStrField: { type: 'string' },
+          },
+        },
+      },
+    })
+  )
+
+  t.true(e.stack?.includes('Prefix ma is already in use'))
+})
