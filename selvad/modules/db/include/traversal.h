@@ -59,6 +59,7 @@ struct SelvaHierarchyTraversalMetadata {
      * The tag is one of SelvaHierarchyTraversalSVecPtag.
      */
     const void *origin_field_svec_tagp;
+    long long depth;
 };
 
 /**

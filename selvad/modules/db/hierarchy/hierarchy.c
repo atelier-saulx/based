@@ -2015,6 +2015,11 @@ out:
     SVECTOR_AUTOFREE(_bfs_sq); /*!< origin PTAG(<SVector>, p/c/e) */ \
     SVector_Init(&_bfs_q,  selva_glob_config.hierarchy_expected_resp_len, NULL); \
     SVector_Init(&_bfs_sq, selva_glob_config.hierarchy_expected_resp_len, NULL); \
+    struct { \
+        long long cur_depth; /*!< Current depth. */ \
+        long long count; /*!< Elements left to next depth Increment. */ \
+        long long next_count; /*!< Next initial cont. */ \
+    } _bfs_depth = { 0, 1, 0 }; \
     \
     struct trx trx_cur; \
     if (Trx_Begin(&(hierarchy)->trx_state, &trx_cur)) { \
@@ -2024,19 +2029,21 @@ out:
     Trx_Visit(&trx_cur, &(head)->trx_label); \
     SVector_Insert(&_bfs_q, (head)); \
     SVector_Insert(&_bfs_sq, NULL); \
-    if (head_cb((hierarchy), &(const struct SelvaHierarchyTraversalMetadata){}, (head), (cb)->head_arg)) { Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; } \
+    if (head_cb((hierarchy), &(const struct SelvaHierarchyTraversalMetadata){ .depth = _bfs_depth.cur_depth }, (head), (cb)->head_arg)) { Trx_End(&(hierarchy)->trx_state, &trx_cur); return 0; } \
     while (SVector_Size(&_bfs_q) > 0) { \
         SelvaHierarchyNode *node = SVector_Shift(&_bfs_q); \
         struct SelvaHierarchyTraversalMetadata _node_cb_metadata = { \
             .origin_field_svec_tagp = SVector_Shift(&_bfs_sq), \
+            .depth = _bfs_depth.cur_depth, \
         };
 
-#define BFS_VISIT_NODE(hierarchy, cb) \
+#define BFS_VISIT_NODE(hierarchy, cb) do { \
         /* Note that Trx_Visit() has been already called for this node. */ \
         if (node_cb((hierarchy), &_node_cb_metadata, node, (cb)->node_arg)) { \
             Trx_End(&(hierarchy)->trx_state, &trx_cur); \
             return 0; \
-        }
+        } \
+    } while (0)
 
 #define BFS_VISIT_ADJACENT(hierarchy, cb, _origin_field_tag, _adj_vec, adj_node) do { \
         if (Trx_Visit(&trx_cur, &(adj_node)->trx_label)) { \
@@ -2050,10 +2057,12 @@ out:
             const void *_origin_field_svec_tagp = PTAG((_adj_vec), (_origin_field_tag)); \
             const struct SelvaHierarchyTraversalMetadata _child_cb_metadata = { \
                 .origin_field_svec_tagp = _origin_field_svec_tagp, \
+                .depth = _bfs_depth.cur_depth, \
             }; \
             (void)child_cb((hierarchy), &_child_cb_metadata, (adj_node), (cb)->child_arg); \
             SVector_Insert(&_bfs_q, (adj_node)); \
             SVector_Insert(&_bfs_sq, (void *)_origin_field_svec_tagp); \
+            _bfs_depth.next_count++; \
         } \
     } while (0)
 
@@ -2068,6 +2077,11 @@ out:
     } while (0)
 
 #define BFS_TRAVERSE_END(hierarchy) \
+        if (--_bfs_depth.count == 0) { \
+            _bfs_depth.cur_depth++; \
+            _bfs_depth.count = _bfs_depth.next_count; \
+            _bfs_depth.next_count = 0; \
+        } \
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
