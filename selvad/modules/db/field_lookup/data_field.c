@@ -84,6 +84,9 @@ static int get_from_edge_field(
     }
 }
 
+/**
+ * @param field_str must be verified to start with SELVA_EDGE_META_FIELD.
+ */
 static int get_top_level_edge_meta(
         struct selva_string *lang,
         struct SelvaHierarchyNode *node,
@@ -92,32 +95,30 @@ static int get_top_level_edge_meta(
         size_t field_len,
         struct SelvaObjectAny *any)
 {
-    if (!strncmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1)) {
-        Selva_NodeId dst_node_id;
-        size_t meta_key_len;
-        const char *meta_key_str = Selva_GetEdgeMetaKey(field_str, field_len, &meta_key_len);
-        struct SelvaObject *edge_metadata;
-        int err;
+    Selva_NodeId dst_node_id;
+    size_t meta_key_len;
+    const char *meta_key_str = Selva_GetEdgeMetaKey(field_str, field_len, &meta_key_len);
+    struct SelvaObject *edge_metadata;
+    int err;
 
-        SelvaHierarchy_GetNodeId(dst_node_id, node);
-        err = Edge_GetFieldEdgeMetadata(src_edge_field, dst_node_id, false, &edge_metadata);
-        if (err || !edge_metadata) {
-            return err;
-        }
-
-        if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
-            /* All fields. */
-            *any = (struct SelvaObjectAny){
-                .type = SELVA_OBJECT_OBJECT,
-                .obj = edge_metadata,
-            };
-
-            return 0;
-        } else if (field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.') {
-            /* Specific field. */
-            return SelvaObject_GetAnyLangStr(edge_metadata, lang, meta_key_str, meta_key_len, any);
-        } /* Otherwise the field name was something else. */
+    SelvaHierarchy_GetNodeId(dst_node_id, node);
+    err = Edge_GetFieldEdgeMetadata(src_edge_field, dst_node_id, false, &edge_metadata);
+    if (err || !edge_metadata) {
+        return err;
     }
+
+    if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
+        /* All fields. */
+        *any = (struct SelvaObjectAny){
+            .type = SELVA_OBJECT_OBJECT,
+            .obj = edge_metadata,
+        };
+
+        return 0;
+    } else if (field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.') {
+        /* Specific field. */
+        return SelvaObject_GetAnyLangStr(edge_metadata, lang, meta_key_str, meta_key_len, any);
+    } /* Otherwise the field name was something else. */
 
     /* field not found here. */
     return SELVA_ENOENT;
@@ -133,15 +134,28 @@ int field_lookup_data_field(
 {
     int err;
 
-    if (traversal_metadata && traversal_metadata->origin_field_svec_tagp &&
-        PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
-        SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
-        struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+    if (field_len > 1 && field_str[0] == '$' &&
+        traversal_metadata) {
+        if (!strncmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1)) {
+            if (traversal_metadata->origin_field_svec_tagp &&
+                PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
+                SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
+                struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
 
-        err = get_top_level_edge_meta(lang, node, edge_field, field_str, field_len, any);
-        if (err != SELVA_ENOENT) {
-            return err;
-        }
+                err = get_top_level_edge_meta(lang, node, edge_field, field_str, field_len, any);
+                if (err != SELVA_ENOENT) {
+                    return err;
+                }
+            }
+            return SELVA_ENOENT;
+        } else if (field_len == sizeof(SELVA_DEPTH_FIELD) - 1 &&
+                   !memcmp(field_str, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1)) {
+            *any = (struct SelvaObjectAny){
+                .type = SELVA_OBJECT_LONGLONG,
+                .ll = traversal_metadata->depth,
+            };
+            return 0;
+        } /* Try if it's something else... */
     }
 
     err = get_from_edge_field(lang, node, field_str, field_len, any);

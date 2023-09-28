@@ -60,6 +60,7 @@
  * Pseudo field name for retrieving edge metadata.
  */
 #define SELVA_EDGE_META_FIELD   "$edgeMeta"
+#define SELVA_DEPTH_FIELD       "$depth"
 /**
  * @}
  */
