@@ -49,42 +49,12 @@ export const DEFAULT_FIELDS: any = {
   },
 }
 
-function findEdgeConstraints(
+const findEdgeConstraints = (
   prefix: string,
   path: string[],
   typeSchema: any,
   constraints: EdgeConstraint[]
-): void {
-  if (typeSchema.fields) {
-    for (const field in typeSchema.fields) {
-      findEdgeConstraints(
-        prefix,
-        [field],
-        typeSchema.fields[field],
-        constraints
-      )
-    }
-  }
-
-  if (typeSchema.properties) {
-    for (const field in typeSchema.properties) {
-      findEdgeConstraints(
-        prefix,
-        [...path, field],
-        typeSchema.properties[field],
-        constraints
-      )
-    }
-  }
-
-  if (typeSchema.values) {
-    findEdgeConstraints(prefix, [...path, '*'], typeSchema.values, constraints)
-  }
-
-  if (typeSchema.items) {
-    findEdgeConstraints(prefix, [...path, '*'], typeSchema.items, constraints)
-  }
-
+) => {
   if (!['reference', 'references'].includes(typeSchema.type)) {
     return
   }
@@ -103,6 +73,40 @@ function findEdgeConstraints(
   }
 
   constraints.push(ref)
+}
+
+function schemaWalker(
+  prefix: string,
+  path: string[],
+  typeSchema: any,
+  constraints: EdgeConstraint[]
+): void {
+  if (typeSchema.fields) {
+    for (const field in typeSchema.fields) {
+      schemaWalker(prefix, [field], typeSchema.fields[field], constraints)
+    }
+  }
+
+  if (typeSchema.properties) {
+    for (const field in typeSchema.properties) {
+      schemaWalker(
+        prefix,
+        [...path, field],
+        typeSchema.properties[field],
+        constraints
+      )
+    }
+  }
+
+  if (typeSchema.values) {
+    schemaWalker(prefix, [...path, '*'], typeSchema.values, constraints)
+  }
+
+  if (typeSchema.items) {
+    schemaWalker(prefix, [...path, '*'], typeSchema.items, constraints)
+  }
+
+  findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
 export async function updateSchema(
@@ -154,7 +158,8 @@ export async function updateSchema(
         newSchema.types[typeName] = deepMerge(oldDef, typeDef)
       }
 
-      findEdgeConstraints(prefix, [], typeDef, newConstraints)
+      // findEdgeConstraints(prefix, [], typeDef, newConstraints)
+      schemaWalker(prefix, [], typeDef, newConstraints)
     }
   }
 
