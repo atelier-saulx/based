@@ -746,12 +746,19 @@ int find_send_node_fields(
 
     selva_send_array(resp, -1);
 
-    if (traversal_metadata && traversal_metadata->origin_field_svec_tagp &&
-        PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
-        SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
-        struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+    if (traversal_metadata) {
+       if (find_fields_contains(fields, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1)) {
+            selva_send_str(resp, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1);
+            selva_send_ll(resp, traversal_metadata->depth);
+       }
 
-        send_top_level_edge_meta(resp, lang, node, edge_field, fields, excluded_fields);
+       if (traversal_metadata->origin_field_svec_tagp &&
+           PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
+           SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
+           struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+
+           send_top_level_edge_meta(resp, lang, node, edge_field, fields, excluded_fields);
+       }
     }
 
     send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);

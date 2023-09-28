@@ -110,6 +110,14 @@ export function parseObjFields(
       }
 
       continue
+    } else if (f === '$depth') {
+      setResultValue({
+        path: f,
+        obj,
+        value: v,
+        fieldSchema: { type: 'integer' },
+      })
+      continue
     }
 
     const [alias, rest] = f.split('@')
