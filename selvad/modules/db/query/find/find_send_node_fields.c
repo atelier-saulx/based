@@ -212,12 +212,7 @@ static int send_edge_meta_field(
         selva_send_str(resp, meta_key_str, meta_key_len);
     }
 #endif
-    if (!send_obj_field(resp, lang, edge_metadata, field_prefix_str, field_prefix_len, meta_key_str, meta_key_len)) {
-        selva_send_null(resp);
-        selva_send_null(resp);
-    }
-
-    return 1;
+    return send_obj_field(resp, lang, edge_metadata, field_prefix_str, field_prefix_len, meta_key_str, meta_key_len);
 }
 
 /**
