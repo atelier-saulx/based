@@ -2504,7 +2504,6 @@ void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, cons
 
         selva_send_array_end(resp);
     } else if (list_type == SUBSCRIPTIONS_LIST_CMD_MRKS) {
-        SelvaHierarchy *hierarchy = main_hierarchy;
         struct Selva_SubscriptionMarker *marker;
 
         selva_send_array(resp, -1);
