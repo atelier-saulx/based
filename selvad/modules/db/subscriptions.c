@@ -2507,11 +2507,6 @@ void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, cons
         SelvaHierarchy *hierarchy = main_hierarchy;
         struct Selva_SubscriptionMarker *marker;
 
-        if (len != 0) {
-            selva_send_error_arity(resp);
-            return;
-        }
-
         selva_send_array(resp, -1);
 
         RB_FOREACH(marker, hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head) {

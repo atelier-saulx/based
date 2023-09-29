@@ -143,7 +143,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'longlong' }, // markerId
     { type: 'string' }, // alias
   ]),
-  'subscriptions.list': null,
+  'subscriptions.list': defaultEncoder([
+    { type: 'longlong' }
+  ]),
   'subscriptions.debug': defaultEncoder([
     { type: 'string' }, // subId as string
   ]),
