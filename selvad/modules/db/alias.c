@@ -65,9 +65,8 @@ static struct SelvaHierarchyNode *deref_alias(struct SelvaHierarchy *hierarchy, 
 int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
-    struct SelvaHierarchyNode *old_node = deref_alias(hierarchy, ref);
 
-    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref, old_node, NULL);
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, deref_alias(hierarchy, ref));
 
     return SelvaObject_DelKey(aliases, ref);
 }
@@ -85,7 +84,7 @@ static int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set
     SELVA_SET_STRING_FOREACH(el, set) {
         struct selva_string *alias = el->value_string;
 
-        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, alias, deref_alias(hierarchy, alias), NULL);
+        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, deref_alias(hierarchy, alias));
         (void)SelvaObject_DelKey(aliases, alias);
     }
 
@@ -112,7 +111,7 @@ void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct 
     struct SelvaHierarchyNode *old_node = deref_alias_str(hierarchy, ref_str, ref_len);
 
     SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, ref_str, ref_len);
-    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref, old_node, SelvaHierarchy_FindNode(hierarchy, node_id));
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, old_node);
 
     /*
      * Remove the alias from the previous node.

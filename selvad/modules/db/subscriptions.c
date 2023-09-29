@@ -1566,7 +1566,7 @@ static void defer_alias_change_events(
         struct SelvaHierarchy *hierarchy,
         const struct Selva_SubscriptionMarkers *sub_markers,
         struct SelvaHierarchyNode *node,
-        SVector *wipe_markers) {
+        SVector *wipe_subs) {
     struct SVectorIterator it;
     struct Selva_SubscriptionMarker *marker;
 
@@ -1586,10 +1586,11 @@ static void defer_alias_change_events(
             marker->marker_action(hierarchy, marker, flags, NULL, 0, node);
 
             /*
-             * Wipe this marker after the events have been
-             * deferred.
+             * Wipe the markers of this subscription after the events have been
+             * deferred. We assume that these subscriptions wanted to always
+             * observer the alias not the specific node.
              */
-            SVector_InsertFast(wipe_markers, marker);
+            SVector_Concat(wipe_subs, &marker->subs);
         }
     }
 }
@@ -1743,26 +1744,23 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
 
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
-        struct selva_string *alias_name,
-        struct SelvaHierarchyNode *old_node,
-        struct SelvaHierarchyNode *new_node) {
-    SVECTOR_AUTOFREE(wipe_markers);
+        struct SelvaHierarchyNode *node) {
+    SVECTOR_AUTOFREE(wipe_subs);
     struct SelvaHierarchyMetadata *metadata;
-    int err;
 
-    SVector_Init(&wipe_markers, 0, marker_svector_compare);
+    SVector_Init(&wipe_subs, 0, subscription_svector_compare);
 
-    if (!old_node) {
+    if (!node) {
         return;
     }
 
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(old_node);
+    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     if (!metadata) {
-        Selva_NodeId old_node_id;
+        Selva_NodeId node_id;
 
-        SelvaHierarchy_GetNodeId(old_node_id, old_node);
+        SelvaHierarchy_GetNodeId(node_id, node);
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to get metadata for node: \"%.*s\"",
-                  (int)SELVA_NODE_ID_SIZE, old_node_id);
+                  (int)SELVA_NODE_ID_SIZE, node_id);
         return;
     }
 
@@ -1774,61 +1772,15 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
     defer_alias_change_events(
             hierarchy,
             &metadata->sub_markers,
-            old_node,
-            &wipe_markers);
+            node,
+            &wipe_subs);
 
-    struct SVectorIterator markers_it;
-    struct Selva_SubscriptionMarker *marker;
+    struct SVectorIterator sub_it;
+    struct Selva_Subscription *sub;
 
-    /* Recreate all markers of the subscriptions that were hit. */
-    SVector_ForeachBegin(&markers_it, &wipe_markers);
-    while ((marker = SVector_Foreach(&markers_it))) {
-        SVECTOR_AUTOFREE(subs);
-        Selva_SubscriptionMarkerId marker_id;
-        struct SVectorIterator subs_it;
-        struct Selva_Subscription *sub;
-
-
-        SVector_Clone(&subs, &marker->subs, NULL);
-        marker_id = marker->marker_id;
-        marker = NULL; /* It will get freed soon. */
-
-        SELVA_LOG(SELVA_LOGL_ERR, "HEllo %" PRImrkId " %zu", marker_id, SVector_Size(&subs));
-
-        /*
-         * First delete the marker from each sub because its attached to
-         * the old node.
-         */
-        SVector_ForeachBegin(&subs_it, &subs);
-        while ((sub = SVector_Foreach(&subs_it))) {
-            delete_marker(hierarchy, sub, marker_id);
-        }
-
-        /*
-         * Then create new a new marker.
-         * There should be no risk of a conflicting marker_id as we do this
-         * after deleting the marker from every sub, thus hopefully deleting
-         * the marker first.
-         */
-        if (new_node) {
-            while ((sub = SVector_Foreach(&subs_it))) {
-                Selva_SubscriptionId sub_id = sub->sub_id;
-                Selva_NodeId new_node_id;
-
-                SelvaHierarchy_GetNodeId(new_node_id, new_node);
-                err = Selva_AddSubscriptionAliasMarker(
-                        hierarchy,
-                        sub_id, marker_id,
-                        alias_name,
-                        new_node_id);
-                //if (err) {
-                    SELVA_LOG(SELVA_LOGL_ERR, "Failed to recreate an alias marker: %s -> %.*s: %s",
-                              selva_string_to_str(alias_name, NULL),
-                              (int)SELVA_NODE_ID_SIZE, new_node_id,
-                              selva_strerror(err));
-                //}
-            }
-        }
+    SVector_ForeachBegin(&sub_it, &wipe_subs);
+    while ((sub = SVector_Foreach(&sub_it))) {
+        remove_sub_markers(hierarchy, sub);
     }
 }
 
