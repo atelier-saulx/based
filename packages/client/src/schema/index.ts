@@ -140,6 +140,14 @@ export async function updateSchema(
       const typeDef = opts.types[typeName]
       const oldDef = currentSchema[typeName]
 
+      // Move to a function?
+      const typeWithSamePrefix = Object.keys(currentSchema.types).find(
+        (name) => currentSchema.types[name].prefix === typeDef.prefix
+      )
+      if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
+        throw new Error(`Prefix ${typeDef.prefix} is already in use`)
+      }
+
       // TODO: generate one if taken
       const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)
 

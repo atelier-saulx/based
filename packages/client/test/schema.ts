@@ -250,7 +250,7 @@ test('schema subs work implicitly', async (t) => {
   otherClient.destroy()
 })
 
-test.only('Creating an already used prefix', async (t) => {
+test('Creating an already used prefix', async (t) => {
   const { client } = t.context
 
   const e = await t.throwsAsync(
@@ -267,4 +267,21 @@ test.only('Creating an already used prefix', async (t) => {
   )
 
   t.true(e.stack?.includes('Prefix ma is already in use'))
+})
+
+test('Keeping the same prefix of a type should not fail', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          prefix: 'ma',
+          fields: {
+            title: { type: 'text' },
+          },
+        },
+      },
+    })
+  )
 })
