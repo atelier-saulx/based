@@ -159,7 +159,9 @@ export class BasedDbClient extends Emitter {
     try {
       await this.command('subscriptions.refreshMarker', [id])
     } catch (e) {
-      console.error('Marker refresh error', e)
+      console.log(await this.command("subscriptions.list", []))
+      console.log(await this.command("subscriptions.listMarkers", []))
+      console.error('Marker refresh error', id, e)
     }
   }
 

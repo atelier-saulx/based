@@ -2490,6 +2490,26 @@ void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, cons
     selva_send_array_end(resp);
 }
 
+void SelvaSubscriptions_ListMarkersCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+    SelvaHierarchy *hierarchy = main_hierarchy;
+    struct Selva_SubscriptionMarker *marker;
+
+    if (len != 0) {
+        selva_send_error_arity(resp);
+        return;
+    }
+
+    selva_send_array(resp, -1);
+
+    RB_FOREACH(marker, hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head) {
+        selva_send_array(resp, 2);
+        selva_send_ll(resp, marker->marker_id);
+        selva_send_ll(resp, SVector_Size(&marker->subs));
+    }
+
+    selva_send_array_end(resp);
+}
+
 void SelvaSubscriptions_ListMissingCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
@@ -2667,6 +2687,7 @@ static int Subscriptions_OnLoad(void) {
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LIST, SELVA_CMD_MODE_PURE, "subscriptions.list", SelvaSubscriptions_ListCommand);
+    selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMARKERS, SELVA_CMD_MODE_PURE, "subscriptions.listMarkers", SelvaSubscriptions_ListMarkersCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMISSING, SELVA_CMD_MODE_PURE, "subscriptions.listMissing", SelvaSubscriptions_ListMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEBUG, SELVA_CMD_MODE_PURE, "subscriptions.debug", SelvaSubscriptions_DebugCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEL, SELVA_CMD_MODE_PURE, "subscriptions.del", SelvaSubscriptions_DelCommand);
