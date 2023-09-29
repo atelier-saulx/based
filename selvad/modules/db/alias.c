@@ -37,16 +37,42 @@ int get_alias(struct SelvaHierarchy *hierarchy, const struct selva_string *ref, 
     return get_alias_str(hierarchy, ref_str, ref_len, node_id);
 }
 
+static struct SelvaHierarchyNode *deref_alias_str(struct SelvaHierarchy *hierarchy, const char *ref_str, size_t ref_len)
+{
+    struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
+    struct selva_string *val = NULL;
+
+    if (!SelvaObject_GetStringStr(aliases, ref_str, ref_len, &val)) {
+        if (val) {
+            TO_STR(val);
+            Selva_NodeId node_id;
+
+            Selva_NodeIdCpy(node_id, val_str);
+            return SelvaHierarchy_FindNode(hierarchy, node_id);
+        }
+    }
+
+    return NULL;
+}
+
+static struct SelvaHierarchyNode *deref_alias(struct SelvaHierarchy *hierarchy, const struct selva_string *ref)
+{
+    TO_STR(ref);
+
+    return deref_alias_str(hierarchy, ref_str, ref_len);
+}
+
 int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
+    struct SelvaHierarchyNode *old_node = deref_alias(hierarchy, ref);
 
-    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref, old_node, NULL);
 
     return SelvaObject_DelKey(aliases, ref);
 }
 
-int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set)
+static int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
     struct SelvaSetElement *el;
@@ -59,22 +85,11 @@ int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set)
     SELVA_SET_STRING_FOREACH(el, set) {
         struct selva_string *alias = el->value_string;
 
+        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, alias, deref_alias(hierarchy, alias), NULL);
         (void)SelvaObject_DelKey(aliases, alias);
     }
 
     return 0;
-}
-
-static void defer_alias_set_change_events(
-        SelvaHierarchy *hierarchy,
-        struct SelvaSet *aliases) {
-    struct SelvaSetElement *el;
-
-    SELVA_SET_STRING_FOREACH(el, aliases) {
-        struct selva_string *alias_name = el->value_string;
-
-        SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, alias_name);
-    }
 }
 
 void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node_obj)
@@ -85,7 +100,6 @@ void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node
 
     node_aliases = SelvaObject_GetSetStr(node_obj, field_str, field_len);
     if (node_aliases) {
-        defer_alias_set_change_events(hierarchy, node_aliases);
         (void)delete_aliases(hierarchy, node_aliases);
         (void)SelvaObject_DelKeyStr(node_obj, field_str, field_len);
     }
@@ -94,29 +108,19 @@ void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node
 void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
-    struct selva_string *old = NULL;
     TO_STR(ref);
+    struct SelvaHierarchyNode *old_node = deref_alias_str(hierarchy, ref_str, ref_len);
 
     SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, ref_str, ref_len);
-    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref);
+    SelvaSubscriptions_DeferAliasChangeEvents(hierarchy, ref, old_node, SelvaHierarchy_FindNode(hierarchy, node_id));
 
     /*
      * Remove the alias from the previous node.
      */
-    if (!SelvaObject_GetString(aliases, ref, &old)) {
-        if (old) {
-            TO_STR(old);
-            Selva_NodeId old_node_id;
-            const struct SelvaHierarchyNode *old_node;
+    if (old_node) {
+        struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(old_node);
 
-            Selva_NodeIdCpy(old_node_id, old_str);
-            old_node = SelvaHierarchy_FindNode(hierarchy, old_node_id);
-            if (old_node) {
-                struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(old_node);
-
-                SelvaObject_RemStringSetStr(obj, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1, ref);
-            }
-        }
+        SelvaObject_RemStringSetStr(obj, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1, ref);
     }
 
     SelvaObject_SetStringStr(aliases, ref_str, ref_len, selva_string_create(node_id, Selva_NodeIdLen(node_id), 0));
