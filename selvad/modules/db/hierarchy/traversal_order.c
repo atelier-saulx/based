@@ -21,6 +21,7 @@
  * Used internally to pass the data needed for creating order items.
  */
 struct order_data {
+    const struct SelvaHierarchyTraversalMetadata *traversal_metadata; /* Used when TRAVERSAL_ORDER_ITEM_PTYPE_NODE */
     double d;
     const char *data;
     size_t data_len;
@@ -182,6 +183,9 @@ static struct TraversalOrderItem *create_item(struct finalizer *fin, const struc
     case TRAVERSAL_ORDER_ITEM_PTYPE_NODE:
         item->tagp = PTAG(p, TRAVERSAL_ORDER_ITEM_PTYPE_NODE);
         SelvaHierarchy_GetNodeId(item->node_id, p);
+        if (tmp->traversal_metadata) {
+            item->traversal_metadata = *tmp->traversal_metadata;
+        }
         break;
     case TRAVERSAL_ORDER_ITEM_PTYPE_OBJ:
         item->tagp = PTAG(p, TRAVERSAL_ORDER_ITEM_PTYPE_OBJ);
@@ -198,6 +202,7 @@ static struct TraversalOrderItem *create_item(struct finalizer *fin, const struc
 struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
         struct finalizer *fin,
         struct selva_string *lang,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         const struct selva_string *order_field) {
     int err;
@@ -205,9 +210,10 @@ struct TraversalOrderItem *SelvaTraversalOrder_CreateNodeOrderItem(
     struct SelvaObjectAny any;
     struct order_data tmp = {
         .type = ORDER_ITEM_TYPE_EMPTY,
+        .traversal_metadata = traversal_metadata,
     };
 
-    err = field_lookup_data_field(lang, node, order_field_str, order_field_len, &any);
+    err = field_lookup_data_field(lang, traversal_metadata, node, order_field_str, order_field_len, &any);
     if (!err) {
         obj_any2order_data(&any, &tmp);
     } else if (err != SELVA_ENOENT && err != SELVA_EINTYPE) {

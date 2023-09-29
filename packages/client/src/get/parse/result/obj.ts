@@ -64,11 +64,10 @@ export function parseObjFields(
     let v = fields[i + 1]
 
     if (f === '$edgeMeta') {
-      const edgeField = v[1]
+      const edgeField = v[0]
+        console.log({v, edgeField})
       if (edgeField === '' || edgeField.endsWith('@')) {
-        v = v[2]
-      } else {
-        v = v.slice(1)
+        v = v[1]
       }
 
       const res: any = {}
@@ -110,6 +109,14 @@ export function parseObjFields(
         }
       }
 
+      continue
+    } else if (f === '$depth') {
+      setResultValue({
+        path: f,
+        obj,
+        value: v,
+        fieldSchema: { type: 'integer' },
+      })
       continue
     }
 

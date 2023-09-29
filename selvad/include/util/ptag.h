@@ -37,7 +37,7 @@
  * Get the pointer value from a tagged pointer.
  */
 #define PTAG_GETP(ptag) \
-    (void *)((uintptr_t)ptag & ~PTAG_MASK)
+    (void *)((uintptr_t)(ptag) & ~PTAG_MASK)
 
 /**
  * @}

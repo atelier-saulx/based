@@ -261,7 +261,7 @@ export async function set(client: BasedDbClient, opts: any) {
     return $id
   }
 
-  console.dir({ op: 'modify', args: [$id, flags, args] }, { depth: 6 })
+  console.dir({ op: 'modify', args: [$id, flags, args] }, { depth: 8 })
 
   const resp = await client.command('modify', [$id, flags, args])
   const err = resp?.[0]?.find((x: any) => {
@@ -269,7 +269,7 @@ export async function set(client: BasedDbClient, opts: any) {
   })
 
   if (err) {
-    // console.error(err)
+    console.error('MODIFY ERROR', err)
   }
 
   return resp?.[0]?.[0]

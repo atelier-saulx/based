@@ -22,6 +22,7 @@
 #include "util/timestamp.h"
 #include "selva_db.h"
 #include "hierarchy.h"
+#include "field_lookup.h"
 #include "selva_object.h"
 #include "selva_set.h"
 #include "selva_set_ops.h"
@@ -232,7 +233,7 @@ static inline double js_fmod(double x, double y) {
     return copysign(result, x);
 }
 
-static void rpn_operand2string(struct rpn_ctx *ctx, const struct rpn_operand *o) {
+static struct selva_string *rpn_operand2string(struct rpn_ctx *ctx, const struct rpn_operand *o) {
     const char *str = OPERAND_GET_S(o);
     const size_t len = OPERAND_GET_S_LEN(o);
 
@@ -241,6 +242,8 @@ static void rpn_operand2string(struct rpn_ctx *ctx, const struct rpn_operand *o)
     } else {
         (void)selva_string_replace(ctx->string, str, len);
     }
+
+    return ctx->string;
 }
 
 static struct rpn_operand *alloc_rpn_operand(size_t s_size) {
@@ -670,11 +673,15 @@ static enum rpn_error rpn_getfld(struct rpn_ctx *ctx, const struct rpn_operand *
     struct SelvaObjectAny any;
     int err;
 
-    if (!ctx->obj) {
+    if (ctx->node) {
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
+
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
+    } else if (ctx->obj) {
+        err = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+    } else {
         return RPN_ERR_NPE;
     }
-
-    err = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
     if (err || any.type == SELVA_OBJECT_NULL) {
         return (type == RPN_LVTYPE_NUMBER) ? push_double_result(ctx, nan_undefined()) : push_empty_value(ctx);
         /* RFE The field_str might be also misformatted, in which case an error would make sense. */
@@ -942,30 +949,32 @@ static enum rpn_error rpn_op_over(struct rpn_ctx *ctx) {
 }
 
 static enum rpn_error rpn_op_exists(struct rpn_ctx *ctx) {
-    int exists;
     OPERAND(ctx, field);
     AUTO_OPERANDS(field);
     const char *field_str = OPERAND_GET_S(field);
     const size_t field_len = OPERAND_GET_S_LEN(field);
     const struct SelvaHierarchyNode *node = ctx->node;
+    int res;
 
     /*
      * First check if it's a non-empty hierarchy/edge field.
      */
     if (node && SelvaHierarchy_IsNonEmptyField(node, field_str, field_len) > 0) {
-        return push_int_result(ctx, 1);
+        res = 0;
+    } else if (node) {
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
+        struct SelvaObjectAny any;
+
+        res = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
+    } else if (ctx->obj) {
+        struct SelvaObjectAny any;
+
+        res = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+    } else {
+        res = SELVA_ENOENT;
     }
 
-    if (!ctx->obj) {
-        return push_int_result(ctx, 0);
-    }
-
-    /*
-     * Finally check if it's a node object field.
-     */
-    exists = !SelvaObject_ExistsStr(ctx->obj, field_str, field_len);
-
-    return push_int_result(ctx, exists);
+    return push_int_result(ctx, !res);
 }
 
 static enum rpn_error rpn_op_range(struct rpn_ctx *ctx) {
@@ -977,52 +986,79 @@ static enum rpn_error rpn_op_range(struct rpn_ctx *ctx) {
     return push_int_result(ctx, a->d <= b->d && b->d <= c->d);
 }
 
-static enum rpn_error rpn_op_has(struct rpn_ctx *ctx) {
+/**
+ * rpn_op_has: check if set has v.
+ */
+static int set_has(struct rpn_ctx *ctx, struct SelvaSet *set, const struct rpn_operand *v) {
+    switch (set->type) {
+    case SELVA_SET_TYPE_STRING:
+        return SelvaSet_Has(set, rpn_operand2string(ctx, v));
+    case SELVA_SET_TYPE_DOUBLE:
+        return SelvaSet_Has(set, v->d);
+    case SELVA_SET_TYPE_LONGLONG:
+        return SelvaSet_Has(set, (long long)v->d);
+    default:
+        return 0;
+    }
+}
+
+/**
+ * rpn_op_has: check if operand maybe_set has v.
+ * @returns 0 = error;
+ *          1 = no match;
+ *          2 = match.
+ */
+static int operand_has(struct rpn_ctx *ctx, const struct rpn_operand *maybe_set, const struct rpn_operand *v) {
     struct SelvaSet *set;
-    OPERAND(ctx, s); /* set */
-    OPERAND(ctx, v); /* value */
-    AUTO_OPERANDS(s, v);
 
-    set = OPERAND_GET_SET(s); /* The operand `s` is a set if this gets set. */
-    if (!set) {
-        /* The operand `s` is a field_name string. */
-        const char *field_name_str = OPERAND_GET_S(s);
-        const size_t field_name_len = OPERAND_GET_S_LEN(s);
+    set = OPERAND_GET_SET(maybe_set); /* The operand `s` is a set if this gets set. */
+    return (set) ? set_has(ctx, set, v) + 1 : 0;
+}
 
-        if (!ctx->obj) {
-            return RPN_ERR_NPE;
-        }
+/**
+ * rpn_op_has: check if operand field has v.
+ * @returns 0 = error;
+ *          1 = no match;
+ *          2 = match.
+ */
+static int data_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, const struct rpn_operand *v) {
+    /*
+     * The operand `s` is a field_name string.
+     */
+    const char *field_name_str = OPERAND_GET_S(field);
+    const size_t field_name_len = OPERAND_GET_S_LEN(field);
+    struct SelvaObjectAny any;
+    int err;
 
-        /*
-         * First check if it's a data field because we can optimize this a bit by
-         * using SelvaSet_Has().
-         */
-        set = SelvaObject_GetSetStr(ctx->obj, field_name_str, field_name_len);
+    if (ctx->node) {
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
+
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_name_str, field_name_len, &any);
+    } else if (ctx->obj) {
+        err = SelvaObject_GetAnyStr(ctx->obj, field_name_str, field_name_len, &any);
+    } else {
+        err = SELVA_ENOENT;
     }
 
-    if (set) {
-        if (set->type == SELVA_SET_TYPE_STRING) {
-            rpn_operand2string(ctx, v);
+    return (!err && any.type == SELVA_OBJECT_SET) ? set_has(ctx, any.set, v) + 1 : 0;
+}
 
-            return push_int_result(ctx, SelvaSet_Has(set, ctx->string));
-        } else if (set->type == SELVA_SET_TYPE_DOUBLE) {
-            return push_int_result(ctx, SelvaSet_Has(set, v->d));
-        } else if (set->type == SELVA_SET_TYPE_LONGLONG) {
-            return push_int_result(ctx, SelvaSet_Has(set, (long long)v->d));
-        } else {
-            return push_int_result(ctx, 0);
-        }
-    } else {
+/**
+ * rpn_op_has: check if operand is a set-like field and it has v.
+ * @returns 0 = error;
+ *          1 = no match;
+ *          2 = match.
+ */
+static int set_like_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, const struct rpn_operand *v) {
+    if (ctx->node) {
         /*
-         * Perhaps it's a set-like field.
+         * The operand `s` is the name of a set-like field.
          */
-        const char *field_name_str = OPERAND_GET_S(s);
-        const size_t field_name_len = OPERAND_GET_S_LEN(s);
+        const char *field_name_str = OPERAND_GET_S(field);
+        const size_t field_name_len = OPERAND_GET_S_LEN(field);
         int res;
 
-        if (OPERAND_GET_SET(v) || OPERAND_GET_OBJ(v)) {
-            return RPN_ERR_TYPE;
-        } else if (isnan(v->d) || v->s_size > 0) { /* Assume string */
+        if (isnan(v->d) || v->s_size > 0) { /* Assume string */
             const char *value_str = OPERAND_GET_S(v);
             const size_t value_len = OPERAND_GET_S_LEN(v);
 
@@ -1031,8 +1067,28 @@ static enum rpn_error rpn_op_has(struct rpn_ctx *ctx) {
             res = SelvaSet_field_has_double(ctx->hierarchy, ctx->node, field_name_str, field_name_len, v->d);
         }
 
-        return push_int_result(ctx, !!res);
+        return !!res + 1;
     }
+
+    return 0;
+}
+
+static enum rpn_error rpn_op_has(struct rpn_ctx *ctx) {
+    OPERAND(ctx, s); /* set */
+    OPERAND(ctx, v); /* value */
+    AUTO_OPERANDS(s, v);
+    int res;
+
+    if (OPERAND_GET_SET(v) || OPERAND_GET_OBJ(v)) {
+        return RPN_ERR_TYPE;
+    }
+
+    res = operand_has(ctx, s, v);
+    res = res ? res : data_field_has(ctx, s, v);
+    res = res ? res : set_like_field_has(ctx, s, v);
+    return (!res)
+        ? RPN_ERR_TYPE
+        : push_int_result(ctx, res - 1);
 }
 
 static enum rpn_error rpn_op_typeof(struct rpn_ctx *ctx) {

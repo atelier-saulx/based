@@ -15,6 +15,7 @@ int find_send_node_fields(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
         struct selva_string **inherit_fields,

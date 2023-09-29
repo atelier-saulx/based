@@ -122,7 +122,7 @@ static int icb_res_add(struct SelvaFindIndexControlBlock *icb, struct SelvaHiera
          */
         struct selva_string *lang = NULL;
 
-        item = SelvaTraversalOrder_CreateNodeOrderItem(NULL, lang, node, icb->traversal.sort.order_field);
+        item = SelvaTraversalOrder_CreateNodeOrderItem(NULL, lang, NULL, node, icb->traversal.sort.order_field);
         if (SVector_InsertFast(&icb->res.ord, item)) {
             SelvaTraversalOrder_DestroyOrderItem(item);
         }
