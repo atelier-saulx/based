@@ -461,7 +461,7 @@ test.serial('basic id based reference subscriptions', async (t) => {
 
   let subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
@@ -488,7 +488,7 @@ test.serial('basic id based reference subscriptions', async (t) => {
 
   subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })

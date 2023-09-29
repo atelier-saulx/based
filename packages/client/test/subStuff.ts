@@ -255,7 +255,7 @@ test('descendants sub', async (t) => {
 
   let subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
@@ -355,7 +355,7 @@ test('descendants sub', async (t) => {
 
   subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
@@ -516,7 +516,7 @@ test('node sub', async (t) => {
 
   let subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
@@ -558,7 +558,7 @@ test('node sub', async (t) => {
 
   subs = await Promise.all(
     (
-      await client.command('subscriptions.list')
+      await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
@@ -620,7 +620,7 @@ test('alias sub', async (t) => {
 
   await client.command('subscriptions.addAlias', [42n, 1n, 'meh'])
   t.deepEqual(
-    await client.command('subscriptions.list'),
+    await client.command('subscriptions.list', []),
     [[[ 42n, 1n ]]]
   )
 
@@ -632,7 +632,7 @@ test('alias sub', async (t) => {
 
   t.deepEqual(await client.command('resolve.nodeid', [24n, 'meh']), ['me2'])
   t.deepEqual(
-    await client.command('subscriptions.list'),
+    await client.command('subscriptions.list', []),
     [[[ 24n, 1n ], [ 42n, 0n ]]]
   )
 
@@ -644,7 +644,7 @@ test('alias sub', async (t) => {
   await new Promise((r) => setTimeout(r, 5e2))
 
   t.deepEqual(
-    await client.command('subscriptions.list'),
+    await client.command('subscriptions.list', []),
     [[[ 24n, 0n ], [ 42n, 0n ]]]
   )
   t.deepEqual(await client.command('subscriptions.debug', ['me1']), [[]])
