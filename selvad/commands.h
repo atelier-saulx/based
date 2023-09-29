@@ -436,25 +436,11 @@
 #define CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER 64
 
 /**
- * List all current subscriptions on this server.
+ * List all current subscriptions or markers on this server.
  * module: db
  * cmd: subscriptions.list
  */
 #define CMD_ID_SUBSCRIPTIONS_LIST 65
-
-/**
- * List all markers on this server.
- * module: db
- * cmd: subscriptions.listMarkers
- */
-#define CMD_ID_SUBSCRIPTIONS_LISTMARKERS 81
-
-/**
- * List triggers for missing nodes.
- * module: db
- * cmd: subscriptions.listMissing
- */
-#define CMD_ID_SUBSCRIPTIONS_LISTMISSING 66
 
 /**
  * Describe a subscription or marker.

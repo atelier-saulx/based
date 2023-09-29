@@ -144,8 +144,6 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // alias
   ]),
   'subscriptions.list': null,
-  'subscriptions.listMarkers': null,
-  'subscriptions.listMissing': null,
   'subscriptions.debug': defaultEncoder([
     { type: 'string' }, // subId as string
   ]),

@@ -2474,55 +2474,63 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
  */
 void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
-    struct Selva_Subscription *sub;
+    enum {
+        SUBSCRIPTIONS_LIST_CMD_SUBS = 0,
+        SUBSCRIPTIONS_LIST_CMD_MRKS = 1,
+        SUBSCRIPTIONS_LIST_CMD_MISSING = 2,
+    } list_type = SUBSCRIPTIONS_LIST_CMD_SUBS;
+    int argc;
 
-    if (len != 0) {
-        selva_send_error_arity(resp);
+    static_assert(sizeof(list_type) == sizeof(int));
+
+    argc = selva_proto_scanf(NULL, buf, len, "%d", &list_type);
+    if (argc != 0 && argc != 1) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
         return;
     }
 
-    selva_send_array(resp, -1);
+    if (list_type == SUBSCRIPTIONS_LIST_CMD_SUBS) {
+        struct Selva_Subscription *sub;
 
-    RB_FOREACH(sub, hierarchy_subscriptions_tree, &hierarchy->subs.subs_head) {
-        SelvaSubscriptions_ReplyWithSubscription(resp, sub);
-    }
+        selva_send_array(resp, -1);
 
-    selva_send_array_end(resp);
-}
+        RB_FOREACH(sub, hierarchy_subscriptions_tree, &hierarchy->subs.subs_head) {
+            SelvaSubscriptions_ReplyWithSubscription(resp, sub);
+        }
 
-void SelvaSubscriptions_ListMarkersCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    struct Selva_SubscriptionMarker *marker;
+        selva_send_array_end(resp);
+    } else if (list_type == SUBSCRIPTIONS_LIST_CMD_MRKS) {
+        SelvaHierarchy *hierarchy = main_hierarchy;
+        struct Selva_SubscriptionMarker *marker;
 
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
+        if (len != 0) {
+            selva_send_error_arity(resp);
+            return;
+        }
 
-    selva_send_array(resp, -1);
+        selva_send_array(resp, -1);
 
-    RB_FOREACH(marker, hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head) {
-        selva_send_array(resp, 2);
-        selva_send_ll(resp, marker->marker_id);
-        selva_send_ll(resp, SVector_Size(&marker->subs));
-    }
+        RB_FOREACH(marker, hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head) {
+            selva_send_array(resp, 2);
+            selva_send_ll(resp, marker->marker_id);
+            selva_send_ll(resp, SVector_Size(&marker->subs));
+        }
 
-    selva_send_array_end(resp);
-}
+        selva_send_array_end(resp);
+    } else if (list_type == SUBSCRIPTIONS_LIST_CMD_MISSING) {
+        struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
+        int err;
 
-void SelvaSubscriptions_ListMissingCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
-    int err;
-
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
-
-    err = SelvaObject_ReplyWithObject(resp, NULL, missing, NULL, 0);
-    if (err) {
-        selva_send_error(resp, err, NULL, 0);
+        err = SelvaObject_ReplyWithObject(resp, NULL, missing, NULL, 0);
+        if (err) {
+            selva_send_error(resp, err, NULL, 0);
+        }
+    } else {
+        selva_send_errorf(resp, SELVA_SUBSCRIPTIONS_EINVAL, "Invalid list type");
     }
 }
 
@@ -2687,8 +2695,6 @@ static int Subscriptions_OnLoad(void) {
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LIST, SELVA_CMD_MODE_PURE, "subscriptions.list", SelvaSubscriptions_ListCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMARKERS, SELVA_CMD_MODE_PURE, "subscriptions.listMarkers", SelvaSubscriptions_ListMarkersCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMISSING, SELVA_CMD_MODE_PURE, "subscriptions.listMissing", SelvaSubscriptions_ListMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEBUG, SELVA_CMD_MODE_PURE, "subscriptions.debug", SelvaSubscriptions_DebugCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEL, SELVA_CMD_MODE_PURE, "subscriptions.del", SelvaSubscriptions_DelCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DELMARKER, SELVA_CMD_MODE_PURE, "subscriptions.delMarker", SelvaSubscriptions_DelMarkerCommand);

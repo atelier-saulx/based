@@ -103,8 +103,6 @@ export const COMMAND_TYPES = {
   'subscriptions.addMarker': 59,
   'subscriptions.addAlias': 60,
   'subscriptions.list': 65,
-  'subscriptions.listMarkers': 81,
-  'subscriptions.listMissing': 66,
   'subscriptions.debug': 67,
   'subscriptions.refresh': 63,
   'subscriptions.refreshMarker': 64,
