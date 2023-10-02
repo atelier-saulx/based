@@ -2348,19 +2348,27 @@ static void SelvaHierarchy_TraverseAdjacents(
     }
 }
 
-static void traverse_edge_field(
+int SelvaHierarchy_TraverseEdgeField(
         struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *head,
+        const Selva_NodeId id,
         const char *ref_field_str,
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *cb) {
+    struct SelvaHierarchyNode *head;
     const struct EdgeField *edge_field;
+
+    head = SelvaHierarchy_FindNode(hierarchy, id);
+    if (!head) {
+        return SELVA_HIERARCHY_ENOENT;
+    }
+
+    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
 
     if (cb->head_cb) {
         const struct SelvaHierarchyTraversalMetadata metadata = {};
 
         if (cb->head_cb(hierarchy, &metadata, head, cb->head_arg)) {
-            return;
+            return 0;
         }
     }
 
@@ -2370,9 +2378,11 @@ static void traverse_edge_field(
             SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, &edge_field->arcs, cb);
         }
     }
+
+    return 0;
 }
 
-static int traverse_bfs_edge_field(
+int SelvaHierarchy_TraverseEdgeFieldBfs(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         const char *field_name_str,
@@ -2384,6 +2394,8 @@ static int traverse_bfs_edge_field(
     if (!head) {
         return SELVA_HIERARCHY_ENOENT;
     }
+
+    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
 
     return bfs_edge(hierarchy, head, field_name_str, field_name_len, cb);
 }
@@ -2530,35 +2542,6 @@ int SelvaHierarchy_Traverse(
     }
 
     return err;
-}
-
-int SelvaHierarchy_TraverseField(
-        struct SelvaHierarchy *hierarchy,
-        const Selva_NodeId id,
-        enum SelvaTraversal dir,
-        const char *field_name_str,
-        size_t field_name_len,
-        const struct SelvaHierarchyCallback *cb) {
-    SelvaHierarchyNode *head;
-
-    head = SelvaHierarchy_FindNode(hierarchy, id);
-    if (!head) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-
-    Trx_Sync(&hierarchy->trx_state, &head->trx_label);
-
-    switch (dir) {
-    case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
-        traverse_edge_field(hierarchy, head, field_name_str, field_name_len, cb);
-        return 0;
-    case SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD:
-        return traverse_bfs_edge_field(hierarchy, id, field_name_str, field_name_len, cb);
-     default:
-        /* Should probably use some other traversal function. */
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid traversal requested (%d)", (int)dir);
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
 }
 
 int SelvaHierarchy_TraverseField2(
