@@ -411,3 +411,29 @@ test('Only allow field type text if languages are defined', async (t) => {
   await server.destroy()
   client.destroy()
 })
+
+test('Default prefix should not be an existing one', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        matriarch: {
+          fields: {
+            title: { type: 'text' },
+          },
+        },
+        another: {
+          fields: {
+            title: { type: 'text' },
+          },
+        },
+      },
+    })
+  )
+
+  // TODO: is this a direct property of going to be a method?
+  const newSchema = client.schema
+  t.true(newSchema.types['matriarch'].prefix !== 'ma')
+  t.true(newSchema.types['another'].prefix === 'an')
+})
