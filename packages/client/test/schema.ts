@@ -306,3 +306,24 @@ test('Adding a type with `ro` prefix should fail because of `root`', async (t) =
     }
   )
 })
+
+// TODO: can this be allowed?
+test('Should not allow to change the prefix of existing type', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          prefix: 'me',
+          fields: {
+            title: { type: 'text' },
+          },
+        },
+      },
+    }),
+    {
+      message: 'Cannot change prefix of existing type',
+    }
+  )
+})

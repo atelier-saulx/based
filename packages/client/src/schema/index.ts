@@ -126,6 +126,19 @@ const checkTypeWithSamePrefix = (
   }
 }
 
+const checkChangingExistingTypePrefix = (
+  currentSchema: any,
+  typeDef: any,
+  typeName: string
+) => {
+  if (
+    currentSchema.types[typeName] &&
+    currentSchema.types[typeName]?.prefix !== typeDef.prefix
+  ) {
+    throw new Error('Cannot change prefix of existing type')
+  }
+}
+
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial
@@ -158,6 +171,7 @@ export async function updateSchema(
       const oldDef = currentSchema[typeName]
 
       checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
+      checkChangingExistingTypePrefix(currentSchema, typeDef, typeName)
 
       // TODO: generate one if taken
       const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)
