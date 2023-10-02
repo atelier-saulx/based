@@ -2561,6 +2561,21 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
     return metadata ? &metadata->sub_markers.vec : NULL;
 }
 
+static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
+{
+    char buf[SELVA_SUB_ID_STR_MAXLEN + 1]; /* TODO marker id version */
+    Selva_SubscriptionId marker_id;
+
+    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
+    errno = 0;
+    marker_id = strtoull(buf, NULL, 10);
+    if (errno) {
+        return NULL;
+    }
+
+    return find_marker(hierarchy, marker_id);
+}
+
 /*
  * KEY SUB_ID
  */
@@ -2591,20 +2606,29 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
     if (!markers) {
         markers = debug_get_node_markers(hierarchy, id_str, id_len);
     }
-    if (!markers) {
-        selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
+    if (markers) {
+        struct SVectorIterator it;
+        struct Selva_SubscriptionMarker *marker;
+
+        selva_send_array(resp, -1);
+        SVector_ForeachBegin(&it, markers);
+        while ((marker = SVector_Foreach(&it))) {
+            SelvaSubscriptions_ReplyWithMarker(resp, marker);
+        }
+        selva_send_array_end(resp);
+        return;
+    } else {
+        struct Selva_SubscriptionMarker *marker;
+
+        marker = debug_get_marker(hierarchy, id_str, id_len);
+        if (marker) {
+            selva_send_array(resp, 1);
+            SelvaSubscriptions_ReplyWithMarker(resp, marker);
+        }
         return;
     }
 
-    struct SVectorIterator it;
-    struct Selva_SubscriptionMarker *marker;
-
-    selva_send_array(resp, -1);
-    SVector_ForeachBegin(&it, markers);
-    while ((marker = SVector_Foreach(&it))) {
-        SelvaSubscriptions_ReplyWithMarker(resp, marker);
-    }
-    selva_send_array_end(resp);
+    selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
 }
 
 /*
