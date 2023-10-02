@@ -100,6 +100,17 @@ const checkInvalidFieldType = (typeSchema: any) => {
   }
 }
 
+const checkArrayFieldTypeProperties = (typeSchema: any) => {
+  if (typeSchema?.type === 'array') {
+    const keys = Object.keys(typeSchema)
+    for (const k of keys) {
+      if (!(k === 'type' || k === 'values')) {
+        throw new Error(`Wrong field passed for type array on schema (${k})`)
+      }
+    }
+  }
+}
+
 function schemaWalker(
   prefix: string,
   path: string[],
@@ -132,6 +143,7 @@ function schemaWalker(
   }
 
   checkInvalidFieldType(typeSchema)
+  checkArrayFieldTypeProperties(typeSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 

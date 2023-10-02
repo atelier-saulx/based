@@ -348,3 +348,24 @@ test('Should not allow to create invalid type', async (t) => {
     }
   )
 })
+
+test('Array field type properties validation', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        aNewType: {
+          prefix: 'ne',
+          fields: {
+            // @ts-ignore
+            intArray: { type: 'array', items: { type: 'integer' } },
+          },
+        },
+      },
+    }),
+    {
+      message: 'Wrong field passed for type array on schema (items)',
+    }
+  )
+})
