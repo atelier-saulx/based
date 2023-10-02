@@ -75,6 +75,31 @@ const findEdgeConstraints = (
   constraints.push(ref)
 }
 
+const checkInvalidFieldType = (typeSchema: any) => {
+  if (
+    typeSchema.type &&
+    ![
+      'enum',
+      'array',
+      'object',
+      'set',
+      'record',
+      'string',
+      'boolean',
+      'number',
+      'json',
+      'integer',
+      'timestamp',
+      'reference',
+      'references',
+      'text',
+      'cardinality',
+    ].includes(typeSchema.type)
+  ) {
+    throw new Error(`Invalid field type ${typeSchema.type}`)
+  }
+}
+
 function schemaWalker(
   prefix: string,
   path: string[],
@@ -106,6 +131,7 @@ function schemaWalker(
     schemaWalker(prefix, [...path, '*'], typeSchema.items, constraints)
   }
 
+  checkInvalidFieldType(typeSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 

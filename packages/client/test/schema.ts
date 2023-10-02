@@ -327,3 +327,24 @@ test('Should not allow to change the prefix of existing type', async (t) => {
     }
   )
 })
+
+test('Should not allow to create invalid type', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        aNewType: {
+          prefix: 'ne',
+          fields: {
+            // @ts-ignore
+            title: { type: 'nonExisting' },
+          },
+        },
+      },
+    }),
+    {
+      message: 'Invalid field type nonExisting',
+    }
+  )
+})
