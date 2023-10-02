@@ -100,7 +100,7 @@ const checkInvalidFieldType = (typeSchema: any) => {
   }
 }
 
-const checkArrayFieldTypeProperties = (typeSchema: any) => {
+const checkArrayFieldTypeRequirements = (typeSchema: any) => {
   if (typeSchema?.type === 'array') {
     const keys = Object.keys(typeSchema)
     for (const k of keys) {
@@ -111,15 +111,34 @@ const checkArrayFieldTypeProperties = (typeSchema: any) => {
   }
 }
 
+const checkTextFieldTypeRequirements = (
+  typeSchema: any,
+  newSchema: BasedSchema
+) => {
+  const hasLanguages = newSchema?.languages?.length > 0
+  if (typeSchema?.type === 'text' && !hasLanguages) {
+    throw new Error(
+      'Cannot use fields of type text without `languages` being defined`'
+    )
+  }
+}
+
 function schemaWalker(
   prefix: string,
   path: string[],
   typeSchema: any,
-  constraints: EdgeConstraint[]
+  constraints: EdgeConstraint[],
+  newSchema: BasedSchema
 ): void {
   if (typeSchema.fields) {
     for (const field in typeSchema.fields) {
-      schemaWalker(prefix, [field], typeSchema.fields[field], constraints)
+      schemaWalker(
+        prefix,
+        [field],
+        typeSchema.fields[field],
+        constraints,
+        newSchema
+      )
     }
   }
 
@@ -129,21 +148,35 @@ function schemaWalker(
         prefix,
         [...path, field],
         typeSchema.properties[field],
-        constraints
+        constraints,
+        newSchema
       )
     }
   }
 
   if (typeSchema.values) {
-    schemaWalker(prefix, [...path, '*'], typeSchema.values, constraints)
+    schemaWalker(
+      prefix,
+      [...path, '*'],
+      typeSchema.values,
+      constraints,
+      newSchema
+    )
   }
 
   if (typeSchema.items) {
-    schemaWalker(prefix, [...path, '*'], typeSchema.items, constraints)
+    schemaWalker(
+      prefix,
+      [...path, '*'],
+      typeSchema.items,
+      constraints,
+      newSchema
+    )
   }
 
   checkInvalidFieldType(typeSchema)
-  checkArrayFieldTypeProperties(typeSchema)
+  checkArrayFieldTypeRequirements(typeSchema)
+  checkTextFieldTypeRequirements(typeSchema, newSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
@@ -230,7 +263,7 @@ export async function updateSchema(
       }
 
       // findEdgeConstraints(prefix, [], typeDef, newConstraints)
-      schemaWalker(prefix, [], typeDef, newConstraints)
+      schemaWalker(prefix, [], typeDef, newConstraints, newSchema)
     }
   }
 

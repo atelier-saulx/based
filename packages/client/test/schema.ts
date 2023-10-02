@@ -369,3 +369,45 @@ test('Array field type properties validation', async (t) => {
     }
   )
 })
+
+test('Only allow field type text if languages are defined', async (t) => {
+  const port = await getPort()
+  console.log('origin')
+  const server = await startOrigin({
+    port: port,
+    name: 'default',
+  })
+
+  console.log('connecting')
+  const client = new BasedDbClient()
+  client.connect({
+    port: port,
+    host: '127.0.0.1',
+  })
+  client.subscribeSchema()
+
+  console.log('updating schema')
+
+  await t.throwsAsync(
+    client.updateSchema({
+      languages: [],
+      types: {
+        textType: {
+          prefix: 'te',
+          fields: {
+            textField: { type: 'text' },
+          },
+        },
+      },
+    }),
+    {
+      message:
+        'Cannot use fields of type text without `languages` being defined`',
+    }
+  )
+
+  client.unsubscribeSchema()
+
+  await server.destroy()
+  client.destroy()
+})
