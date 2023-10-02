@@ -109,6 +109,23 @@ function schemaWalker(
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
+// TODO: What is PartialObjectDeep<> type?
+const checkTypeWithSamePrefix = (
+  currentSchema: any,
+  typeDef: any,
+  typeName: string
+) => {
+  const typeWithSamePrefix =
+    typeDef.prefix === 'ro'
+      ? 'ro'
+      : Object.keys(currentSchema.types).find(
+          (name) => currentSchema.types[name].prefix === typeDef.prefix
+        )
+  if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
+    throw new Error(`Prefix ${typeDef.prefix} is already in use`)
+  }
+}
+
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial
@@ -140,13 +157,7 @@ export async function updateSchema(
       const typeDef = opts.types[typeName]
       const oldDef = currentSchema[typeName]
 
-      // Move to a function?
-      const typeWithSamePrefix = Object.keys(currentSchema.types).find(
-        (name) => currentSchema.types[name].prefix === typeDef.prefix
-      )
-      if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
-        throw new Error(`Prefix ${typeDef.prefix} is already in use`)
-      }
+      checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
 
       // TODO: generate one if taken
       const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)

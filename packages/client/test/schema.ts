@@ -263,10 +263,11 @@ test('Creating an already used prefix', async (t) => {
           },
         },
       },
-    })
+    }),
+    {
+      message: 'Prefix ma is already in use',
+    }
   )
-
-  t.true(e.stack?.includes('Prefix ma is already in use'))
 })
 
 test('Keeping the same prefix of a type should not fail', async (t) => {
@@ -283,5 +284,25 @@ test('Keeping the same prefix of a type should not fail', async (t) => {
         },
       },
     })
+  )
+})
+
+test('Adding a type with `ro` prefix should fail because of `root`', async (t) => {
+  const { client } = t.context
+
+  const e = await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        anotherRoot: {
+          prefix: 'ro',
+          fields: {
+            niceStrField: { type: 'string' },
+          },
+        },
+      },
+    }),
+    {
+      message: 'Prefix ro is already in use',
+    }
   )
 })
