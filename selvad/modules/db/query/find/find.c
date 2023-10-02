@@ -668,7 +668,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
           SELVA_HIERARCHY_TRAVERSAL_NODE |
           SELVA_HIERARCHY_TRAVERSAL_ARRAY |
           SELVA_HIERARCHY_TRAVERSAL_SET |
-          SELVA_HIERARCHY_TRAVERSAL_REF |
           SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
           SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
           SELVA_HIERARCHY_TRAVERSAL_PARENTS |
@@ -693,7 +692,6 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     __auto_free_rpn_expression struct rpn_expression *traversal_expression = NULL;
     if (query_opts.dir & (
          SELVA_HIERARCHY_TRAVERSAL_ARRAY |
-         SELVA_HIERARCHY_TRAVERSAL_REF |
          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
          SELVA_HIERARCHY_TRAVERSAL_FIELD |

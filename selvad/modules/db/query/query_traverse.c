@@ -42,8 +42,7 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
         err = SelvaHierarchy_TraverseArray(hierarchy, node_id, ref_field_str, ref_field_len, &ary_cb);
         SELVA_TRACE_END(query_traverse_array);
     } else if ((qt->dir &
-                (SELVA_HIERARCHY_TRAVERSAL_REF |
-                 SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+                (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
                  SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
                && qt->dir_opt_str) {
         const struct SelvaHierarchyCallback cb = {

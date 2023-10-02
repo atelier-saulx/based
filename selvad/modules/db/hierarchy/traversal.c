@@ -48,8 +48,6 @@ const char *SelvaTraversal_Dir2str(enum SelvaTraversal dir)
         return (const char *)"dfs_descendants";
     case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
         return (const char *)"dfs_full";
-    case SELVA_HIERARCHY_TRAVERSAL_REF:
-        return (const char *)"ref";
     case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
         return (const char *)"edge_field";
     case SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD:

@@ -502,8 +502,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
     /*
      * Parse the traversal arguments.
      */
-    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
                           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
         if (!query_opts.dir_opt_str) {
             selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
@@ -603,8 +602,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             .filter = filter_expression,
         };
 
-        if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+        if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
                                SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
                    && query_opts.dir_opt_str) {
             const struct SelvaHierarchyCallback cb = {

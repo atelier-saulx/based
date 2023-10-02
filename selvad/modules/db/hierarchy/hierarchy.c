@@ -2372,45 +2372,6 @@ static void traverse_edge_field(
     }
 }
 
-static int traverse_ref(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *head,
-        const char *ref_field_str,
-        size_t ref_field_len,
-        const struct SelvaHierarchyCallback *cb) {
-    struct SelvaHierarchyTraversalMetadata cb_metadata = {};
-    struct SelvaObject *head_obj = GET_NODE_OBJ(head);
-    struct SelvaSet *ref_set;
-
-    if (cb->head_cb && cb->head_cb(hierarchy, &cb_metadata, head, cb->head_arg)) {
-        return 0;
-    }
-
-    ref_set = SelvaObject_GetSetStr(head_obj, ref_field_str, ref_field_len);
-    if (!ref_set) {
-        return SELVA_HIERARCHY_ENOENT;
-    }
-    if (ref_set->type != SELVA_SET_TYPE_STRING) {
-        return SELVA_EINTYPE;
-    }
-
-    struct SelvaSetElement *el;
-    SELVA_SET_STRING_FOREACH(el, ref_set) {
-        Selva_NodeId nodeId;
-        SelvaHierarchyNode *node;
-
-        selva_string2node_id(nodeId, el->value_string);
-        node = SelvaHierarchy_FindNode(hierarchy, nodeId);
-        if (node) {
-            if (cb->node_cb(hierarchy, &cb_metadata, node, cb->node_arg)) {
-                return 0;
-            }
-        }
-    }
-
-    return 0;
-}
-
 static int traverse_bfs_edge_field(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
@@ -2588,8 +2549,6 @@ int SelvaHierarchy_TraverseField(
     Trx_Sync(&hierarchy->trx_state, &head->trx_label);
 
     switch (dir) {
-    case SELVA_HIERARCHY_TRAVERSAL_REF:
-        return traverse_ref(hierarchy, head, field_name_str, field_name_len, cb);
     case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
         traverse_edge_field(hierarchy, head, field_name_str, field_name_len, cb);
         return 0;
