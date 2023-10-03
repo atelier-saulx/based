@@ -148,7 +148,7 @@ int SelvaHierarchy_ForeachInField(
 
         SelvaHierarchy_GetNodeId(id, node);
 
-        SelvaHierarchy_TraverseEdgeField(
+        return SelvaHierarchy_TraverseEdgeField(
                 hierarchy,
                 id,
                 field_str, field_len,

@@ -1150,7 +1150,8 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
     /*
      * Remove subscription markers.
      */
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
+    if (dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD &
+               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
         const char *ref_field_str = marker->ref_field;
         size_t ref_field_len = strlen(ref_field_str);
 
@@ -1165,9 +1166,8 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
         (dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
             ? (void)SelvaHierarchy_TraverseField2(hierarchy, marker->node_id, ref_field_str, ref_field_len, &cb, NULL)
             : (void)SelvaHierarchy_TraverseField2Bfs(hierarchy, marker->node_id, ref_field_str, ref_field_len, &cb, NULL);
-    } else if (dir &
-               (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
-                SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+    } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+                      SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)) {
         struct rpn_ctx *rpn_ctx;
         int err;
 #if 0
@@ -1177,9 +1177,9 @@ static void clear_node_sub(struct SelvaHierarchy *hierarchy, struct Selva_Subscr
 #endif
 
         rpn_ctx = rpn_init(1);
-        err = (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)
-            ? SelvaHierarchy_TraverseExpressionBfs(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb)
-            : SelvaHierarchy_TraverseExpression(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
+        err = (dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+            ? SelvaHierarchy_TraverseExpression(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb)
+            : SelvaHierarchy_TraverseExpressionBfs(hierarchy, marker->node_id, rpn_ctx, marker->traversal_expression, NULL, NULL, &cb);
         rpn_destroy(rpn_ctx);
         /* RFE SELVA_HIERARCHY_ENOENT is not good in case something was left but it's too late then */
         if (err && err != SELVA_HIERARCHY_ENOENT) {
