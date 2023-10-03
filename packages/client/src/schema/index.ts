@@ -1,4 +1,9 @@
-import { BasedSchema, BasedSchemaPartial, BasedSchemaType } from '@based/schema'
+import {
+  BasedSchema,
+  BasedSchemaField,
+  BasedSchemaPartial,
+  BasedSchemaType,
+} from '@based/schema'
 import { BasedDbClient } from '..'
 import { deepCopy, deepMerge } from '@saulx/utils'
 import { joinPath } from '../util'
@@ -10,6 +15,26 @@ type EdgeConstraint = {
   field: string
   bidirectional: { fromField: string }
 }
+
+export type SchemaMutations = (
+  | {
+      mutation: 'delete_type'
+      type: string
+    }
+  | {
+      mutation: 'change_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+      new: BasedSchemaField
+    }
+  | {
+      mutation: 'remove_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+    }
+)[]
 
 export const DEFAULT_SCHEMA: BasedSchema = {
   $defs: {},
@@ -175,10 +200,10 @@ function schemaWalker(
     )
   }
 
-  checkInvalidFieldType(typeSchema)
-  checkArrayFieldTypeRequirements(typeSchema)
-  checkTextFieldTypeRequirements(typeSchema, newSchema)
-  findEdgeConstraints(prefix, path, typeSchema, constraints)
+  // checkInvalidFieldType(typeSchema)
+  // checkArrayFieldTypeRequirements(typeSchema)
+  // checkTextFieldTypeRequirements(typeSchema, newSchema)
+  // findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
 // TODO: What is PartialObjectDeep<> type?
@@ -200,12 +225,12 @@ const checkTypeWithSamePrefix = (
 
 const checkChangingExistingTypePrefix = (
   currentSchema: any,
-  typeDef: any,
+  prefix: string,
   typeName: string
 ) => {
   if (
     currentSchema.types[typeName] &&
-    currentSchema.types[typeName]?.prefix !== typeDef.prefix
+    currentSchema.types[typeName]?.prefix !== prefix
   ) {
     throw new Error('Cannot change prefix of existing type')
   }
@@ -213,10 +238,13 @@ const checkChangingExistingTypePrefix = (
 
 export async function updateSchema(
   client: BasedDbClient,
-  opts: BasedSchemaPartial
+  opts: BasedSchemaPartial,
+  merge: boolean = true
 ): Promise<BasedSchema> {
   const newTypes: [string, string][] = []
+  const typesToDelete: [string, string][] = []
   const newConstraints: EdgeConstraint[] = []
+  const mutations: SchemaMutations[] = []
 
   let currentSchema = client.schema
   if (!currentSchema) {
@@ -226,9 +254,17 @@ export async function updateSchema(
 
     newTypes.push(['ro', 'root'])
   }
-  const newSchema = deepCopy(currentSchema)
+  // const newSchema = deepCopy(currentSchema)
+  const newSchema: BasedSchema = {
+    $defs: {},
+    languages: [],
+    prefixToTypeMapping: {},
+    root: { fields: {} },
+    types: {},
+  }
 
   if (opts.languages) {
+    // TODO: Add merge languages
     newSchema.languages = opts.languages
   }
 
@@ -237,38 +273,101 @@ export async function updateSchema(
     deepMerge(newSchema.root, opts.root)
   }
 
-  if (opts.types) {
-    for (const typeName in opts.types) {
-      const typeDef = opts.types[typeName]
-      const oldDef = currentSchema[typeName]
+  const currentTypeNames = Object.keys(currentSchema.types || {})
+  const optsTypeNames = Object.keys(opts.types || {})
+  const typesToParse = new Set([...currentTypeNames, ...optsTypeNames])
 
-      checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
-      checkChangingExistingTypePrefix(currentSchema, typeDef, typeName)
-
-      const prefix =
-        typeDef.prefix ??
-        oldDef?.prefix ??
-        generateNewPrefix(typeName, currentSchema)
-
-      if (!oldDef) {
-        const newDef: any = {
-          prefix,
-          fields: deepCopy(DEFAULT_FIELDS),
-        }
-        deepMerge(newDef, typeDef)
-        newSchema.types[typeName] = newDef
-
-        newTypes.push([prefix, typeName])
-        newSchema.prefixToTypeMapping[prefix] = typeName
-      } else {
-        // TODO: guard for breaking changes
-        newSchema.types[typeName] = deepMerge(oldDef, typeDef)
-      }
-
-      // findEdgeConstraints(prefix, [], typeDef, newConstraints)
-      schemaWalker(prefix, [], typeDef, newConstraints, newSchema)
+  for (const typeName of typesToParse) {
+    const typeDef = (opts as BasedSchema).types[typeName]
+    const oldDef = currentSchema.types[typeName]
+    console.log('======', typeName, typeDef)
+    if (
+      // TODO: add $delete to BasedSchemaType
+      // @ts-ignore
+      typeDef?.$delete ||
+      (merge === false && !optsTypeNames.includes(typeName))
+    ) {
+      // type to delete
+      typesToDelete.push([oldDef?.prefix, typeName])
+      continue
     }
+
+    const prefix =
+      typeDef?.prefix ??
+      oldDef?.prefix ??
+      generateNewPrefix(typeName, currentSchema)
+    console.log('??????', typeName, oldDef, oldDef?.prefix, prefix)
+
+    // checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
+    // checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
+
+    if (!currentTypeNames.includes(typeName)) {
+      // new type
+      const newDef: any = {
+        prefix,
+        fields: deepCopy(DEFAULT_FIELDS),
+      }
+      deepMerge(newDef, typeDef) // TODO: needs custom merge
+      newSchema.types[typeName] = newDef
+
+      newTypes.push([prefix, typeName])
+      newSchema.prefixToTypeMapping[prefix] = typeName
+    } else {
+      // existing type
+
+      // TODO: guard for breaking changes
+      newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
+
+      // check for mutations
+    }
+
+    console.log('------000---', typeName, typeDef)
+    schemaWalker(
+      prefix,
+      [],
+      newSchema.types[typeName],
+      newConstraints,
+      newSchema
+    )
   }
+  console.log(
+    '----',
+    { newTypes, typesToDelete },
+    JSON.stringify(newSchema, null, 2)
+  )
+
+  // if (opts.types) {
+  //   for (const typeName in opts.types) {
+  //     const typeDef = opts.types[typeName]
+  //     const oldDef = currentSchema[typeName]
+  //
+  //     checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
+  //     checkChangingExistingTypePrefix(currentSchema, typeDef, typeName)
+  //
+  //     const prefix =
+  //       typeDef.prefix ??
+  //       oldDef?.prefix ??
+  //       generateNewPrefix(typeName, currentSchema)
+  //
+  //     if (!oldDef) {
+  //       const newDef: any = {
+  //         prefix,
+  //         fields: deepCopy(DEFAULT_FIELDS),
+  //       }
+  //       deepMerge(newDef, typeDef)
+  //       newSchema.types[typeName] = newDef
+  //
+  //       newTypes.push([prefix, typeName])
+  //       newSchema.prefixToTypeMapping[prefix] = typeName
+  //     } else {
+  //       // TODO: guard for breaking changes
+  //       newSchema.types[typeName] = deepMerge(oldDef, typeDef)
+  //     }
+  //
+  //     // findEdgeConstraints(prefix, [], typeDef, newConstraints)
+  //     schemaWalker(prefix, [], typeDef, newConstraints, newSchema)
+  //   }
+  // }
 
   await client.set({
     $id: 'root',

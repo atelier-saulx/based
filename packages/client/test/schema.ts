@@ -437,3 +437,41 @@ test('Default prefix should not be an existing one', async (t) => {
   t.true(newSchema.types['matriarch'].prefix !== 'ma')
   t.true(newSchema.types['another'].prefix === 'an')
 })
+
+test.only('temp remove this', async (t) => {
+  const { client } = t.context
+
+  const error = await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        custom: {
+          fields: {
+            name: { type: 'text' },
+            value: { type: 'integer' },
+            age: { type: 'number' },
+            auth: {
+              type: 'string',
+            },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            image: {
+              type: 'object',
+              properties: {
+                thumb: { type: 'text' },
+                poster: { type: 'number' },
+              },
+            },
+          },
+        },
+        lekkerType: {
+          // @ts-ignore
+          $delete: true,
+        },
+      },
+    }),
+    {
+      message: 'Cannot change prefix of existing type',
+    }
+  )
+  t.log(error)
+})
