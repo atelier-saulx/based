@@ -2474,35 +2474,57 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
  */
 void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
-    struct Selva_Subscription *sub;
+    enum {
+        SUBSCRIPTIONS_LIST_CMD_SUBS = 0,
+        SUBSCRIPTIONS_LIST_CMD_MRKS = 1,
+        SUBSCRIPTIONS_LIST_CMD_MISSING = 2,
+    } list_type = SUBSCRIPTIONS_LIST_CMD_SUBS;
+    int argc;
 
-    if (len != 0) {
-        selva_send_error_arity(resp);
+    static_assert(sizeof(list_type) == sizeof(int));
+
+    argc = selva_proto_scanf(NULL, buf, len, "%d", &list_type);
+    if (argc != 0 && argc != 1) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
         return;
     }
 
-    selva_send_array(resp, -1);
+    if (list_type == SUBSCRIPTIONS_LIST_CMD_SUBS) {
+        struct Selva_Subscription *sub;
 
-    RB_FOREACH(sub, hierarchy_subscriptions_tree, &hierarchy->subs.subs_head) {
-        SelvaSubscriptions_ReplyWithSubscription(resp, sub);
-    }
+        selva_send_array(resp, -1);
 
-    selva_send_array_end(resp);
-}
+        RB_FOREACH(sub, hierarchy_subscriptions_tree, &hierarchy->subs.subs_head) {
+            SelvaSubscriptions_ReplyWithSubscription(resp, sub);
+        }
 
-void SelvaSubscriptions_ListMissingCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
-    int err;
+        selva_send_array_end(resp);
+    } else if (list_type == SUBSCRIPTIONS_LIST_CMD_MRKS) {
+        struct Selva_SubscriptionMarker *marker;
 
-    if (len != 0) {
-        selva_send_error_arity(resp);
-        return;
-    }
+        selva_send_array(resp, -1);
 
-    err = SelvaObject_ReplyWithObject(resp, NULL, missing, NULL, 0);
-    if (err) {
-        selva_send_error(resp, err, NULL, 0);
+        RB_FOREACH(marker, hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head) {
+            selva_send_array(resp, 2);
+            selva_send_ll(resp, marker->marker_id);
+            selva_send_ll(resp, SVector_Size(&marker->subs));
+        }
+
+        selva_send_array_end(resp);
+    } else if (list_type == SUBSCRIPTIONS_LIST_CMD_MISSING) {
+        struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
+        int err;
+
+        err = SelvaObject_ReplyWithObject(resp, NULL, missing, NULL, 0);
+        if (err) {
+            selva_send_error(resp, err, NULL, 0);
+        }
+    } else {
+        selva_send_errorf(resp, SELVA_SUBSCRIPTIONS_EINVAL, "Invalid list type");
     }
 }
 
@@ -2539,6 +2561,21 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
     return metadata ? &metadata->sub_markers.vec : NULL;
 }
 
+static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
+{
+    char buf[SELVA_SUB_ID_STR_MAXLEN + 1]; /* TODO marker id version */
+    Selva_SubscriptionId marker_id;
+
+    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
+    errno = 0;
+    marker_id = strtoull(buf, NULL, 10);
+    if (errno) {
+        return NULL;
+    }
+
+    return find_marker(hierarchy, marker_id);
+}
+
 /*
  * KEY SUB_ID
  */
@@ -2569,20 +2606,29 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
     if (!markers) {
         markers = debug_get_node_markers(hierarchy, id_str, id_len);
     }
-    if (!markers) {
-        selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
+    if (markers) {
+        struct SVectorIterator it;
+        struct Selva_SubscriptionMarker *marker;
+
+        selva_send_array(resp, -1);
+        SVector_ForeachBegin(&it, markers);
+        while ((marker = SVector_Foreach(&it))) {
+            SelvaSubscriptions_ReplyWithMarker(resp, marker);
+        }
+        selva_send_array_end(resp);
+        return;
+    } else {
+        struct Selva_SubscriptionMarker *marker;
+
+        marker = debug_get_marker(hierarchy, id_str, id_len);
+        if (marker) {
+            selva_send_array(resp, 1);
+            SelvaSubscriptions_ReplyWithMarker(resp, marker);
+        }
         return;
     }
 
-    struct SVectorIterator it;
-    struct Selva_SubscriptionMarker *marker;
-
-    selva_send_array(resp, -1);
-    SVector_ForeachBegin(&it, markers);
-    while ((marker = SVector_Foreach(&it))) {
-        SelvaSubscriptions_ReplyWithMarker(resp, marker);
-    }
-    selva_send_array_end(resp);
+    selva_send_error(resp, SELVA_SUBSCRIPTIONS_ENOENT, NULL, 0);
 }
 
 /*
@@ -2667,7 +2713,6 @@ static int Subscriptions_OnLoad(void) {
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_LIST, SELVA_CMD_MODE_PURE, "subscriptions.list", SelvaSubscriptions_ListCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_LISTMISSING, SELVA_CMD_MODE_PURE, "subscriptions.listMissing", SelvaSubscriptions_ListMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEBUG, SELVA_CMD_MODE_PURE, "subscriptions.debug", SelvaSubscriptions_DebugCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DEL, SELVA_CMD_MODE_PURE, "subscriptions.del", SelvaSubscriptions_DelCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_DELMARKER, SELVA_CMD_MODE_PURE, "subscriptions.delMarker", SelvaSubscriptions_DelMarkerCommand);

@@ -1581,14 +1581,14 @@ test('edge meta alias', async (t) => {
           'id',
           'da1',
           '$edgeMeta',
-          [ 'da1', 'antiNote', 'not very cool' ]
+          [ 'antiNote', 'not very cool' ]
         ]],
         'ref',
         [[
           'id',
           'da1',
           '$edgeMeta',
-          [ 'da1', 'cool@note', 'very cool' ]
+          [ 'cool@note', 'very cool' ]
         ]],
         'expl@description.en',
         'The most boring'
@@ -1617,7 +1617,6 @@ test('edge meta alias', async (t) => {
           'da1',
           '$edgeMeta',
           [
-            'da1',
             '',
             [ 'antiNote', 'not very cool', 'note', 'very cool' ]
           ]
@@ -1647,7 +1646,6 @@ test('edge meta alias', async (t) => {
          'da1',
          '$edgeMeta',
          [
-           'da1',
            'cool@',
            [ 'antiNote', 'not very cool', 'note', 'very cool' ]
          ]

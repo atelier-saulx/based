@@ -85,6 +85,7 @@ struct SelvaNodeSendParam {
  */
 typedef int (*SelvaFind_ProcessNode)(
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct FindCommand_Args *args,
         struct SelvaHierarchyNode *node);
 /**

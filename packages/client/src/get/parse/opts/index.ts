@@ -255,6 +255,12 @@ export async function parseGetOpts(
             }
 
             return {}
+          } else if (key == '$depth') {
+            if (value === true) {
+              args.collect()
+            }
+
+            return {}
           }
 
           if (String(key).startsWith('$')) {

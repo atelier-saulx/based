@@ -99,8 +99,9 @@ static int exec_fields_expression(
 static void send_node(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
-        SelvaHierarchy *hierarchy,
         struct selva_string *lang,
+        SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         struct SelvaNodeSendParam *args) {
     int err;
@@ -108,7 +109,8 @@ static void send_node(
     if (args->merge_strategy != MERGE_STRATEGY_NONE) {
         err = send_node_merge(fin, resp, lang, node, args->merge_strategy, args->merge_path, args->fields);
     } else if (args->fields) { /* Predefined list of fields. */
-        err = find_send_node_fields(fin, resp, lang, hierarchy, node,
+        err = find_send_node_fields(fin, resp, lang, hierarchy, traversal_metadata,
+                                    node,
                                     args->fields,
                                     args->inherit_fields, args->nr_inherit_fields,
                                     args->excluded_fields);
@@ -137,7 +139,8 @@ static void send_node(
                                      &inherit_fields, &nr_inherit_fields,
                                      &excluded_fields);
         if (!err) {
-            err = find_send_node_fields(fin, resp, lang, hierarchy, node,
+            err = find_send_node_fields(fin, resp, lang, hierarchy, traversal_metadata,
+                                        node,
                                         fields,
                                         inherit_fields, nr_inherit_fields,
                                         excluded_fields);
@@ -164,13 +167,14 @@ static void send_node(
 }
 
 static int process_node_send(
-        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct FindCommand_Args *args,
         struct SelvaHierarchyNode *node) {
     ssize_t *nr_nodes = args->nr_nodes;
     ssize_t * restrict limit = args->limit;
 
-    send_node(args->fin, args->resp, hierarchy, args->lang, node, &args->send_param);
+    send_node(args->fin, args->resp, args->lang, hierarchy, traversal_metadata, node, &args->send_param);
 
     *nr_nodes = *nr_nodes + 1;
     *limit = *limit - 1;
@@ -179,12 +183,13 @@ static int process_node_send(
 }
 
 static int process_node_sort(
-        SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct FindCommand_Args *args,
         struct SelvaHierarchyNode *node) {
     struct TraversalOrderItem *item;
 
-    item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->lang, node, args->send_param.order_field);
+    item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->lang, traversal_metadata, node, args->send_param.order_field);
     if (item) {
         (void)SVector_InsertFast(args->result, item);
     } else {
@@ -205,7 +210,8 @@ static int process_node_sort(
 }
 
 static int process_node_inherit(
-        SelvaHierarchy *hierarchy __unused,
+        struct SelvaHierarchy *,
+        const struct SelvaHierarchyTraversalMetadata *,
         struct FindCommand_Args *args,
         struct SelvaHierarchyNode *node) {
     SVector_Insert(args->result, node);
@@ -250,7 +256,7 @@ static __hot int FindCommand_NodeCb(
     if (take) {
         args->acc_take++;
 
-        return args->process_node(hierarchy, args, node);
+        return args->process_node(hierarchy, traversal_metadata, args, node);
     }
 
     return 0;
@@ -378,7 +384,7 @@ static size_t FindCommand_SendOrderedNodeResult(
         }
 
         assert(PTAG_GETTAG(item->tagp) == TRAVERSAL_ORDER_ITEM_PTYPE_NODE);
-        send_node(fin, resp, hierarchy, lang, PTAG_GETP(item->tagp), args);
+        send_node(fin, resp, lang, hierarchy, &item->traversal_metadata, PTAG_GETP(item->tagp), args);
 
         len++;
     }
@@ -542,7 +548,8 @@ static void postprocess_inherit(
                 break;
             }
 
-            send_node(fin, resp, hierarchy, lang, node, args);
+            /* No traversal_metadata with inherit. */
+            send_node(fin, resp, lang, hierarchy, NULL, node, args);
         }
 
         selva_send_array_end(resp);

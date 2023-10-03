@@ -7,6 +7,7 @@ import {
   selva_proto_longlong_def,
   selva_proto_null_def,
   selva_proto_string_def,
+  selvaError,
 } from '../types'
 import { deserialize } from 'data-record'
 
@@ -36,7 +37,7 @@ export const VALUE_PARSERS: Record<ValueType, ParserFn> = {
 
     const err = new Error(msg)
     // @ts-ignore
-    err.code = v.err_code
+    err.code = selvaError[-v.err_code] || v.err_code
 
     return [err, msg_end]
   },

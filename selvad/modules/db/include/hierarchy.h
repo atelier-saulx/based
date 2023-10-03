@@ -527,16 +527,6 @@ ssize_t SelvaModify_GetHierarchyHeads(SelvaHierarchy *hierarchy, Selva_NodeId **
  */
 SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type);
 
-/**
- * Traverse adjacent vector.
- * This function can be useful with edge fields,
- * field_lookup_traversable, and SelvaHierarchy_GetHierarchyField().
- * @param adj_vec can be children, parents, or an edge field arcs.
- */
-void SelvaHierarchy_TraverseAdjacents(
-        struct SelvaHierarchy *hierarchy,
-        const SVector *adj_vec,
-        const struct SelvaHierarchyCallback *cb);
 void SelvaHierarchy_TraverseChildren(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,

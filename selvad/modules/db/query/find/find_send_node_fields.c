@@ -10,6 +10,7 @@
 #include <sys/types.h>
 #include "util/cstrings.h"
 #include "util/finalizer.h"
+#include "util/ptag.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
 #include "selva_error.h"
@@ -21,6 +22,7 @@
 #include "hierarchy.h"
 #include "inherit.h"
 #include "../field_names.h"
+#include "../find.h"
 #include "find_send.h"
 
 static int send_node_field(
@@ -45,8 +47,32 @@ static void send_all_node_data_fields(
         size_t field_prefix_len,
         struct selva_string *excluded_fields);
 
-static inline int is_alias_name(const char *name, size_t len) {
+static inline int is_alias_name(const char *name, size_t len)
+{
     return (len > 0 && name[len - 1] == STRING_SET_ALIAS);
+}
+
+static int is_excluded(struct selva_string *excluded_fields, const char *full_field_name_str, size_t full_field_name_len)
+{
+    if (excluded_fields) {
+        TO_STR(excluded_fields);
+
+        /*
+         * Excluding the `id` field is not allowed but we drop it already from
+         * the list in string_set_list_add(). It's not allowed because the
+         * client must be able to find the schema for whatever was returned by
+         * the server.
+         */
+
+        if (stringlist_searchn(excluded_fields_str, full_field_name_str, full_field_name_len)) {
+            /*
+             * This field should be excluded from the results.
+             */
+            return 1;
+        }
+    }
+
+    return 0;
 }
 
 static int send_hierarchy_field(
@@ -56,7 +82,8 @@ static int send_hierarchy_field(
         const char *full_field_name_str,
         size_t full_field_name_len,
         const char *field_str,
-        size_t field_len) {
+        size_t field_len)
+{
 #define SEND_FIELD_NAME() selva_send_str(resp, full_field_name_str, full_field_name_len)
 #define IS_FIELD(name) \
     (field_len == (sizeof(name) - 1) && !memcmp(field_str, name, sizeof(name) - 1))
@@ -86,6 +113,158 @@ static int send_hierarchy_field(
 #undef IS_FIELD
 }
 
+static int send_obj_field(
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        struct SelvaObject *obj,
+        const char *field_prefix_str,
+        size_t field_prefix_len,
+        const char *field_str,
+        size_t field_len)
+{
+    /*
+     * Check if we have a wildcard in the middle of the field name
+     * and process it.
+     */
+    if (containswildcard(field_str, field_len)) {
+        long resp_count = 0;
+        int err;
+
+        /* RFE Should we send the possible prefix? */
+        if (field_prefix_str && field_prefix_len) {
+            SELVA_LOG(SELVA_LOGL_WARN, "field_prefix ignored");
+#if 0
+            __builtin_trap();
+#endif
+        }
+
+        err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, field_str, field_len, &resp_count, -1, 0);
+        if (err && err != SELVA_ENOENT) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the wildcard field \"%.*s\": %s",
+                      (int)field_len, field_str,
+                      selva_strerror(err));
+        }
+
+        return (int)(resp_count / 2);
+    } else {
+        int err;
+
+        /*
+         * Finally check if the field name is a key on the node object.
+         */
+
+        if (endswithwildcard(field_str, field_len)) {
+            field_len -= 2;
+        }
+
+        if (field_len && SelvaObject_ExistsStr(obj, field_str, field_len)) {
+            /* Field didn't exist in the node. */
+            return 0;
+        }
+
+        /*
+         * Send the reply.
+         */
+        selva_send_strf(resp, "%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
+        err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, field_str, field_len, 0);
+        if (err) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the field \"%.*s\": \"%s\"",
+                      (int)field_len, field_str,
+                      selva_strerror(err));
+            selva_send_null(resp);
+        }
+
+        return 1;
+    }
+}
+
+/**
+ * Send a field from edge metadata.
+ * meta_key must not include the SELVA_EDGE_META_FIELD part.
+ * @param field_prefix_str only used for aliasing
+ */
+static int send_edge_meta_field(
+                struct selva_server_response_out *resp,
+                struct selva_string *lang,
+                Selva_NodeId dst_node_id,
+                struct EdgeField *edge_field,
+                const char *field_prefix_str,
+                size_t field_prefix_len,
+                const char *meta_key_str,
+                size_t meta_key_len)
+{
+    struct SelvaObject *edge_metadata;
+    int err;
+
+	err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+    if (err || !edge_metadata) {
+        return 0;
+    }
+
+    selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
+    selva_send_array(resp, 2);
+
+    //selva_send_str(resp, dst_node_id, Selva_NodeIdLen(dst_node_id));
+#if 0
+    if (field_prefix_str) {
+        selva_send_strf(resp, "%.*s@%.*s", (int)field_prefix_len - 1, field_prefix_str, (int)meta_key_len, meta_key_str);
+    } else {
+        selva_send_str(resp, meta_key_str, meta_key_len);
+    }
+#endif
+    return send_obj_field(resp, lang, edge_metadata, field_prefix_str, field_prefix_len, meta_key_str, meta_key_len);
+}
+
+/**
+ * Send all edge metadata fields.
+ */
+static int send_edge_meta_fields(
+                struct selva_server_response_out *resp,
+                struct selva_string *lang,
+                Selva_NodeId dst_node_id,
+                struct EdgeField *edge_field,
+                struct selva_string *excluded_fields)
+{
+    struct SelvaObject *edge_metadata;
+    SelvaObject_Iterator *obj_it;
+    const char *meta_key_str;
+    int err;
+
+    err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+    if (err || !edge_metadata) {
+        return 0;
+    }
+
+    selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
+    selva_send_array(resp, -1);
+
+    obj_it = SelvaObject_ForeachBegin(edge_metadata);
+    while ((meta_key_str = SelvaObject_ForeachKey(edge_metadata, &obj_it))) {
+        size_t meta_key_len = strlen(meta_key_str);
+        size_t full_field_name_len = sizeof(SELVA_EDGE_META_FIELD) + meta_key_len;
+        char full_field_name_str[full_field_name_len];
+
+        snprintf(full_field_name_str, full_field_name_len + 1, "%s.%.s", SELVA_EDGE_META_FIELD, meta_key_str);
+        if (!is_excluded(excluded_fields, full_field_name_str, full_field_name_len)) {
+            int err;
+
+            selva_send_str(resp, meta_key_str, meta_key_len);
+            err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_metadata, meta_key_str, meta_key_len, 0);
+            if (err) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the edge meta field (%.*s) for node_id: \"%.*s\" err: \"%s\"",
+                          (int)meta_key_len, meta_key_str,
+                          (int)SELVA_NODE_ID_SIZE, dst_node_id,
+                          selva_strerror(err));
+                selva_send_null(resp);
+            }
+        }
+    }
+
+    selva_send_array_end(resp);
+
+    return 1;
+}
+
 static int send_edge_field(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -96,7 +275,8 @@ static int send_edge_field(
         size_t field_prefix_len,
         const char *field_str,
         size_t field_len,
-        struct selva_string *excluded_fields) {
+        struct selva_string *excluded_fields)
+{
     struct SelvaHierarchyMetadata *metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     struct SelvaObject *edges = metadata->edge_fields.edges;
     struct EdgeField *edge_field;
@@ -268,41 +448,19 @@ static int send_edge_field(
                     selva_send_array_end(resp);
                 }
             } else if (Selva_IsEdgeMetaField(next_field_str, next_field_len)) {
-                struct SelvaObject *edge_metadata;
-                int err;
+                size_t meta_key_len;
+                const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
 
                 /*
                  * $edgeMeta pseudo field handling
                  * TODO This doesn't currently work over multiple edge fields.
                  */
-                err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
-                if (!err && edge_metadata) {
-                    size_t meta_key_len;
-                    const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
-                    SelvaObject_Iterator *obj_it;
-                    struct SelvaObject *edge_metadata;
-                    const char *dst_id_str;
-
-                    selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
-                    selva_send_array(resp, 3 * SelvaObject_Len(edge_field->metadata, NULL));
-
-                    obj_it = SelvaObject_ForeachBegin(edge_field->metadata);
-                    while ((edge_metadata = SelvaObject_ForeachValue(edge_field->metadata, &obj_it, &dst_id_str, SELVA_OBJECT_OBJECT))) {
-                        selva_send_str(resp, dst_id_str, Selva_NodeIdLen(dst_id_str));
-
-                        if (next_prefix_str) {
-                            selva_send_strf(resp, "%.*s@%.*s", (int)next_prefix_len - 1, next_prefix_str, (int)meta_key_len, meta_key_str);
-                        } else {
-                            selva_send_str(resp, meta_key_str, meta_key_len);
-                        }
-
-                        err = SelvaObject_ReplyWithObjectStr(resp, lang, edge_metadata,
-                                                             meta_key_str, meta_key_len, 0);
-                        if (err) {
-                            selva_send_null(resp);
-                        }
-                    }
-                }
+                 (void)send_edge_meta_field(
+                         resp, lang,
+                         dst_node_id,
+                         edge_field,
+                         next_prefix_str, next_prefix_len,
+                         meta_key_str, meta_key_len);
             } else {
                 struct SelvaObject *dst_obj = SelvaHierarchy_GetNodeObject(dst_node);
 
@@ -336,7 +494,8 @@ static int send_node_field(
         size_t field_prefix_len,
         const char *field_str,
         size_t field_len,
-        struct selva_string *excluded_fields) {
+        struct selva_string *excluded_fields)
+{
     Selva_NodeId nodeId;
     const char *full_field_name_str;
     size_t full_field_name_len;
@@ -345,22 +504,8 @@ static int send_node_field(
     SelvaHierarchy_GetNodeId(nodeId, node);
     full_field_name_str = make_full_field_name_str(fin, field_prefix_str, field_prefix_len, field_str, field_len, &full_field_name_len);
 
-    if (excluded_fields) {
-        TO_STR(excluded_fields);
-
-        /*
-         * Excluding the `id` field is not allowed but we drop it already from
-         * the list in string_set_list_add(). It's not allowed because the
-         * client must be able to find the schema for whatever was returned by
-         * the server.
-         */
-
-        if (stringlist_searchn(excluded_fields_str, full_field_name_str, full_field_name_len)) {
-            /*
-             * This field should be excluded from the results.
-             */
-            return 0;
-        }
+    if (is_excluded(excluded_fields, full_field_name_str, full_field_name_len)) {
+        return 0;
     }
 
     int res = 0;
@@ -387,53 +532,10 @@ static int send_node_field(
         } else if (err >= 0) {
             res += err;
         }
+        /* Note that we might still need to send something from the data object. */
     }
 
-    /*
-     * Check if we have a wildcard in the middle of the field name
-     * and process it.
-     */
-    if (containswildcard(field_str, field_len)) {
-        long resp_count = 0;
-
-        err = SelvaObject_ReplyWithWildcardStr(resp, lang, obj, field_str, field_len, &resp_count, -1, 0);
-        if (err && err != SELVA_ENOENT) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Sending wildcard field \"%.*s\" of %.*s failed: %s",
-                      (int)field_len, field_str,
-                      (int)SELVA_NODE_ID_SIZE, nodeId,
-                      selva_strerror(err));
-        }
-
-        res += (int)(resp_count / 2);
-    } else {
-        /*
-         * Finally check if the field name is a key on the node object.
-         */
-
-        if (endswithwildcard(field_str, field_len)) {
-            field_len -= 2;
-        }
-
-        if (SelvaObject_ExistsStr(obj, field_str, field_len)) {
-            /* Field didn't exist in the node. */
-            return res;
-        }
-
-        /*
-         * Send the reply.
-         */
-        selva_send_strf(resp, "%.*s%.*s", (int)field_prefix_len, field_prefix_str, (int)field_len, field_str);
-        err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, field_str, field_len, 0);
-        if (err) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to send the field (%.*s) for node_id: \"%.*s\" err: \"%s\"",
-                      (int)field_len, field_str,
-                      (int)SELVA_NODE_ID_SIZE, nodeId,
-                      selva_strerror(err));
-            selva_send_null(resp);
-        }
-
-        res++;
-    }
+    res += send_obj_field(resp, lang, obj, field_prefix_str, field_prefix_len, field_str, field_len);
 
     return res;
 }
@@ -449,7 +551,8 @@ static void send_all_node_data_fields(
         struct SelvaHierarchyNode *node,
         const char *field_prefix_str,
         size_t field_prefix_len,
-        struct selva_string *excluded_fields) {
+        struct selva_string *excluded_fields)
+{
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     void *iterator;
     const char *field_name_str;
@@ -474,6 +577,31 @@ static void send_all_node_data_fields(
 }
 
 /**
+ * Init field prefix variable.
+ * @param buf size of the buffer must be strlen(fields_idx_str) + 1.
+ * @param[in, out] plen inputs the buf len; outputs the final string length.
+ */
+static const char *init_field_prefix(char *buf, const char *fields_idx_str, size_t *plen)
+{
+    size_t len = *plen;
+
+    /*
+     * Add alias prefix using the field_prefix system,
+     * if requested.
+     */
+    if (is_alias_name(fields_idx_str, len)) {
+        memcpy(buf, fields_idx_str, len);
+        buf[len] = '\0';
+
+        /* We know that string_set does the reverse of this replacement. */
+        return ch_replace(buf, len, ':', '.');
+    } else {
+        *plen = 0;
+        return NULL;
+    }
+}
+
+/**
  * Send named fields.
  * Should be only used by send_node_fields().
  */
@@ -484,7 +612,8 @@ static void send_node_fields_named(
         SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
-        struct selva_string *excluded_fields) {
+        struct selva_string *excluded_fields)
+{
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     void *iterator;
     const SVector *vec;
@@ -510,27 +639,66 @@ static void send_node_fields_named(
                 send_all_node_data_fields(fin, resp, lang, hierarchy, node, NULL, 0, excluded_fields);
                 break;
             } else {
-                const size_t alias_len = strlen(fields_idx_str);
-                char alias_str[alias_len + 1];
-                const char *field_prefix_str = NULL;
-                size_t field_prefix_len = 0;
-
-                /*
-                 * Add alias prefix using the field_prefix system,
-                 * if requested.
-                 */
-                if (is_alias_name(fields_idx_str, alias_len)) {
-                    memcpy(alias_str, fields_idx_str, alias_len);
-                    alias_str[alias_len] = '\0';
-
-                    field_prefix_str = ch_replace(alias_str, alias_len, ':', '.');
-                    field_prefix_len = alias_len;
-                }
+                size_t field_prefix_len = strlen(fields_idx_str);
+                char buf[field_prefix_len + 1];
+                const char *field_prefix_str = init_field_prefix(buf, fields_idx_str, &field_prefix_len);
 
                 res = send_node_field(fin, resp, lang, hierarchy, node, obj, field_prefix_str, field_prefix_len, field_str, field_len, excluded_fields);
                 if (res > 0) {
                     break;
                 }
+            }
+        }
+    }
+}
+
+static void send_top_level_edge_meta(
+        struct selva_server_response_out *resp,
+        struct selva_string *lang,
+        struct SelvaHierarchyNode *node,
+        struct EdgeField *edge_field,
+        struct SelvaObject *fields,
+        struct selva_string *excluded_fields)
+{
+    void *iterator;
+    const SVector *vec;
+    const char *fields_idx_str;
+
+    iterator = SelvaObject_ForeachBegin(fields);
+    while ((vec = SelvaObject_ForeachValue(fields, &iterator, &fields_idx_str, SELVA_OBJECT_ARRAY))) {
+        struct SVectorIterator it;
+        struct selva_string *field;
+
+        SVector_ForeachBegin(&it, vec);
+        while ((field = SVector_Foreach(&it))) {
+            TO_STR(field);
+
+            if (!strncmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1)) {
+                Selva_NodeId dst_node_id;
+                size_t field_prefix_len = strlen(fields_idx_str);
+                char buf[field_prefix_len + 1];
+                const char *field_prefix_str = init_field_prefix(buf, fields_idx_str, &field_prefix_len);
+                size_t meta_key_len;
+                const char *meta_key_str = Selva_GetEdgeMetaKey(field_str, field_len, &meta_key_len);
+
+                SelvaHierarchy_GetNodeId(dst_node_id, node);
+
+                if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
+                    /* Send all but excluded. */
+                    if (send_edge_meta_fields(resp, lang, dst_node_id, edge_field, excluded_fields)) {
+                        break;
+                    }
+                } else if (field_str[sizeof(SELVA_EDGE_META_FIELD)] == '.') {
+                    /* Send a specific field. */
+                    if (send_edge_meta_field(
+                                    resp, lang,
+                                    dst_node_id,
+                                    edge_field,
+                                    field_prefix_str, field_prefix_len,
+                                    meta_key_str, meta_key_len) > 0) {
+                        break;
+                    }
+                } /* Otherwise the field name was something else. */
             }
         }
     }
@@ -544,11 +712,13 @@ int find_send_node_fields(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         struct SelvaHierarchy *hierarchy,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         struct SelvaObject *fields,
         struct selva_string **inherit_fields,
         size_t nr_inherit_fields,
-        struct selva_string *excluded_fields) {
+        struct selva_string *excluded_fields)
+{
     Selva_NodeId nodeId;
 
     SelvaHierarchy_GetNodeId(nodeId, node);
@@ -575,6 +745,22 @@ int find_send_node_fields(
     selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId));
 
     selva_send_array(resp, -1);
+
+    if (traversal_metadata) {
+       if (find_fields_contains(fields, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1)) {
+            selva_send_str(resp, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1);
+            selva_send_ll(resp, traversal_metadata->depth);
+       }
+
+       if (traversal_metadata->origin_field_svec_tagp &&
+           PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
+           SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
+           struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+
+           send_top_level_edge_meta(resp, lang, node, edge_field, fields, excluded_fields);
+       }
+    }
+
     send_node_fields_named(fin, resp, lang, hierarchy, node, fields, excluded_fields);
     if (inherit_fields) {
         /*

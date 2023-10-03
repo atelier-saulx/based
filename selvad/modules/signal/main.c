@@ -65,6 +65,7 @@ static void setup_async_signals(void)
     TERM_SIGNALS(DEL_SIGNAL);
     sigdelset(&mask, SIGPIPE);
     sigdelset(&mask, SIGCHLD); /* We want to catch this where we use fork(). */
+    sigdelset(&mask, SIGWINCH);
 #undef DEL_SIGNAL
 
 #ifdef __linux__

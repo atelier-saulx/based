@@ -222,7 +222,7 @@ GENERATE_STATIC_FUNMAP(get_agg_func, agg_funcs, int, num_elem(agg_funcs) - 2);
 
 static int AggregateCommand_NodeCb(
         struct SelvaHierarchy *hierarchy,
-        const struct SelvaHierarchyTraversalMetadata *,
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         void *arg) {
     Selva_NodeId nodeId;
@@ -280,7 +280,7 @@ static int AggregateCommand_NodeCb(
         } else {
             struct TraversalOrderItem *item;
 
-            item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->find_args.lang, node, args->find_args.send_param.order_field);
+            item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->find_args.lang, traversal_metadata, node, args->find_args.send_param.order_field);
             if (item) {
                 SVector_InsertFast(args->find_args.result, item);
             } else {

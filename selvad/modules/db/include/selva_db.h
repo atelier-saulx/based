@@ -60,6 +60,7 @@
  * Pseudo field name for retrieving edge metadata.
  */
 #define SELVA_EDGE_META_FIELD   "$edgeMeta"
+#define SELVA_DEPTH_FIELD       "$depth"
 /**
  * @}
  */
@@ -207,6 +208,10 @@ static inline int Selva_IsEdgeMetaField(const char *field_str, size_t field_len)
             (field_len >= sizeof(SELVA_EDGE_META_FIELD) && field_str[sizeof(SELVA_EDGE_META_FIELD) - 1] == '.'));
 }
 
+/**
+ * Get the edge metadata key from a field name.
+ * Strip SELVA_EDGE_META_FIELD from a field name that was already detected with Selva_IsEdgeMetaField().
+ */
 static inline const char *Selva_GetEdgeMetaKey(const char *field_str, size_t field_len, size_t *meta_key_len_out)
 {
     const char *meta_key_str = __builtin_memchr(field_str, '.', field_len);
