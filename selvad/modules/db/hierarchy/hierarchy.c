@@ -2175,34 +2175,34 @@ __attribute__((nonnull (5))) static int exec_edge_filter(
 }
 
 /**
- * BFS from a given head node towards its descendants or ancestors.
+ * BFS from a given head node towards its ancestors.
  */
-static __hot int bfs(
+static __hot int bfs_ancestors(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *head,
-        enum SelvaHierarchyNode_Relationship dir,
         const struct SelvaHierarchyCallback * restrict cb) {
-    enum SelvaHierarchyTraversalSVecPtag origin_field_tag;
-    size_t offset;
-
-    switch (dir) {
-    case RELATIONSHIP_PARENT:
-        origin_field_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
-        offset = offsetof(SelvaHierarchyNode, parents);
-        break;
-    case RELATIONSHIP_CHILD:
-        origin_field_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN;
-        offset = offsetof(SelvaHierarchyNode, children);
-        break;
-    default:
-        return SELVA_HIERARCHY_ENOTSUP;
-    }
-
     BFS_TRAVERSE(hierarchy, head, cb) {
-        const SVector *adj_vec = (SVector *)((char *)node + offset);
+        const SVector *adj_vec = (SVector *)((char *)node + offsetof(SelvaHierarchyNode, parents));
 
         BFS_VISIT_NODE(hierarchy, cb);
-        BFS_VISIT_ADJACENTS(hierarchy, cb, origin_field_tag, adj_vec);
+        BFS_VISIT_ADJACENTS(hierarchy, cb, SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS, adj_vec);
+    } BFS_TRAVERSE_END(hierarchy);
+
+    return 0;
+}
+
+/**
+ * BFS from a given head node towards its descendants.
+ */
+static __hot int bfs_descendants(
+        struct SelvaHierarchy *hierarchy,
+        struct SelvaHierarchyNode *head,
+        const struct SelvaHierarchyCallback * restrict cb) {
+    BFS_TRAVERSE(hierarchy, head, cb) {
+        const SVector *adj_vec = (SVector *)((char *)node + offsetof(SelvaHierarchyNode, children));
+
+        BFS_VISIT_NODE(hierarchy, cb);
+        BFS_VISIT_ADJACENTS(hierarchy, cb, SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN, adj_vec);
     } BFS_TRAVERSE_END(hierarchy);
 
     return 0;
@@ -2468,7 +2468,7 @@ int SelvaHierarchy_TraverseBFSAncestors(
         .node_arg = &data,
     };
 
-    return bfs(hierarchy, node, RELATIONSHIP_PARENT, &bfs_cb);
+    return bfs_ancestors(hierarchy, node, &bfs_cb);
 }
 
 int SelvaHierarchy_TraverseBFSDescendants(
@@ -2485,7 +2485,7 @@ int SelvaHierarchy_TraverseBFSDescendants(
         .node_arg = &data,
     };
 
-    return bfs(hierarchy, node, RELATIONSHIP_CHILD, &bfs_cb);
+    return bfs_descendants(hierarchy, node, &bfs_cb);
 }
 
 int SelvaHierarchy_Traverse(
@@ -2520,10 +2520,10 @@ int SelvaHierarchy_Traverse(
         SelvaHierarchy_TraverseParents(hierarchy, head, cb);
         break;
     case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
-        err = bfs(hierarchy, head, RELATIONSHIP_PARENT, cb);
+        err = bfs_ancestors(hierarchy, head, cb);
         break;
     case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
-        err = bfs(hierarchy, head, RELATIONSHIP_CHILD, cb);
+        err = bfs_descendants(hierarchy, head, cb);
         break;
     case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
         err = dfs(hierarchy, head, RELATIONSHIP_PARENT, cb);
@@ -2982,7 +2982,7 @@ static int verifyDetachableSubtree(struct SelvaHierarchy *hierarchy, struct Selv
     }
     SelvaSet_Init(&data.edge_origin_node_ids, SELVA_SET_TYPE_NODEID);
 
-    err = bfs(hierarchy, node, RELATIONSHIP_CHILD, &cb);
+    err = bfs_descendants(hierarchy, node, &cb);
     if (!err && data.err) {
         err = SELVA_HIERARCHY_ENOTSUP;
     }
