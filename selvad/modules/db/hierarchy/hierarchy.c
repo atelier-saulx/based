@@ -89,6 +89,13 @@ typedef struct SelvaHierarchyNode {
     struct SelvaHierarchyMetadata metadata;
     SVector parents;
     SVector children;
+    /**
+     * Children metadata.
+     * Used the same way as metadata in struct EdgeField.
+     * Only parent has metadata as it's easy enough to find this object
+     * anyway.
+     */
+    struct SelvaObject *children_metadata;
     RB_ENTRY(SelvaHierarchyNode) _index_entry;
 } SelvaHierarchyNode;
 
@@ -576,6 +583,65 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
     node = SelvaHierarchy_FindNode(hierarchy, id);
 
     return !node ? NULL : &node->metadata;
+}
+
+static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
+        if (!parent->children_metadata && create) {
+            parent->children_metadata = SelvaObject_New();
+        }
+
+        if (parent->children_metadata) {
+            return SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
+        }
+
+        return SELVA_ENOENT;
+}
+
+int SelvaHierarchy_GetEdgeMetadata(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        const Selva_NodeId dst_node_id,
+        bool delete_all,
+        bool create,
+        struct SelvaObject **out) {
+#define IS_FIELD(name) \
+    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
+
+    if (IS_FIELD(SELVA_PARENTS_FIELD)) {
+        struct SelvaHierarchyNode *parent;
+
+        parent = SVector_Search(&node->parents, (void *)dst_node_id);
+        if (!parent) {
+            return SELVA_HIERARCHY_ENOENT;
+        }
+
+        /* TODO Support delete_all, how? */
+
+        return get_hierarchy_edge_metadata(parent, node->id, create, out);
+    } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
+        /* TODO Support delete_all */
+        return get_hierarchy_edge_metadata(node, dst_node_id, create, out);
+    } else {
+        struct EdgeField *edge_field;
+
+        edge_field = Edge_GetField(node, field_str, field_len);
+        if (!edge_field) {
+            return SELVA_HIERARCHY_ENOENT;
+        }
+
+        if (delete_all) {
+            Edge_DeleteFieldMetadata(edge_field);
+            if (!create) {
+                *out = NULL;
+                return 0;
+            }
+        }
+
+        return Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, create, out);
+    }
+    unreachable();
+#undef IS_FIELD
 }
 
 static const char * const excluded_fields[] = {
@@ -2085,6 +2151,47 @@ out:
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
+/* TODO a wrapper with traversal_metadata */
+/* TODO Remember to allow creating children/parents metadata */
+/* TODO Add children/parents metadata to field_lookup, find etc. */
+static struct SelvaObject *get_edge_metadata(struct SelvaHierarchyNode *node, enum SelvaTraversal field_type, const SVector *adj_vec) {
+    struct SelvaObject *edge_metadata = NULL;
+
+    if (field_type & (SELVA_HIERARCHY_TRAVERSAL_PARENTS |
+                      SELVA_HIERARCHY_TRAVERSAL_CHILDREN)) {
+        struct SelvaHierarchyNode *parent;
+        struct SelvaHierarchyNode *child;
+        struct SelvaObject *field_metadata;
+
+        if (field_type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
+            parent = node;
+            child = containerof(adj_vec, struct SelvaHierarchyNode, parents);
+        } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
+            parent = containerof(adj_vec, struct SelvaHierarchyNode, children);
+            child = node;
+        } else {
+            unreachable();
+        }
+
+        field_metadata = parent->children_metadata;
+        if (field_metadata) {
+            int err;
+
+            err = SelvaObject_GetObjectStr(field_metadata, child->id, SELVA_NODE_ID_SIZE, &edge_metadata);
+            if (err && err != SELVA_ENOENT) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Odd error: dst: %.*s err: %s",
+                          (int)SELVA_NODE_ID_SIZE, node->id,
+                          selva_strerror(err));
+            }
+        }
+    } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
+        struct EdgeField *edge_field = containerof(adj_vec, struct EdgeField, arcs);
+        (void)Edge_GetFieldEdgeMetadata(edge_field, node->id, false, &edge_metadata);
+    }
+
+    return edge_metadata;
+}
+
 SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type) {
 #define IS_FIELD(name) \
     (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
@@ -2106,32 +2213,22 @@ SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const
  * Execute an edge filter for the node.
  * @param edge_filter_ctx is a context for the filter.
  * @param edge_filter is a pointer to the compiled edge filter.
- * @param adj_vec is a pointer to the arcs vector field of an EdgeField structure.
+ * @param edge_metadata can be NULL.
  * @param node is a pointer to the node the edge is pointing to.
  */
 __attribute__((nonnull (5))) static int exec_edge_filter(
         struct SelvaHierarchy *hierarchy,
         struct rpn_ctx *edge_filter_ctx,
         const struct rpn_expression *edge_filter,
-        const SVector *adj_vec,
+        struct SelvaObject *edge_metadata,
         struct SelvaHierarchyNode *node) {
-    struct EdgeField *edge_field = containerof(adj_vec, struct EdgeField, arcs);
     STATIC_SELVA_OBJECT(tmp_obj);
-    struct SelvaObject *edge_metadata;
-    int err;
     enum rpn_error rpn_err;
     int res;
 
-    err = Edge_GetFieldEdgeMetadata(edge_field, node->id, 0, &edge_metadata);
-    if (err == SELVA_HIERARCHY_ENOENT || err == SELVA_ENOENT) {
+    if (!edge_metadata) {
         /* Execute the filter with an empty object. */
         edge_metadata = SelvaObject_Init(tmp_obj);
-    } else if (err) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to get edge metadata %.*s -> %.*s. err: \"%s\"",
-                  (int)SELVA_NODE_ID_SIZE, edge_field->src_node_id,
-                  (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-        return 0;
     }
 
     rpn_set_reg(edge_filter_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
@@ -2254,6 +2351,7 @@ static int bfs_expression(
             SelvaHierarchyNode *adj;
             int err;
 
+            /* FIXME Should probably get the field the same way as SELVA_HIERARCHY_TRAVERSAL_FIELD? */
             /* Get an SVector for the field. */
             err = field_lookup_traversable(node, field_str, field_len, &t);
             if (err || !t.vec) {
@@ -2266,14 +2364,12 @@ static int bfs_expression(
             /* Visit each node in this field. */
             SVector_ForeachBegin(&it, t.vec);
             while ((adj = SVector_Foreach(&it))) {
-                /*
-                 * If the field is an edge field we can filter edges by the
-                 * edge metadata.
-                 */
-                if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
-                    !Trx_HasVisited(&trx_cur, &adj->trx_label) && /* skip if already visited. */
-                    !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, t.vec, adj)) {
-                    continue;
+                if (!Trx_HasVisited(&trx_cur, &adj->trx_label) && edge_filter) {
+                    struct SelvaObject *edge_metadata = get_edge_metadata(adj, t.type, t.vec);
+
+                    if (!exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, edge_metadata, adj)) {
+                        continue;
+                    }
                 }
 
                 BFS_VISIT_ADJACENT(hierarchy, cb, adj_tag, t.vec, adj);
@@ -2540,7 +2636,7 @@ int SelvaHierarchy_TraverseField2(
     /*
      * Otherwise we need to get a traversable SVector field value.
      * TODO Add traces */
-    /* TODO We don't know the node where t.vec comes from, so we don't do
+    /* TODO We ~~don't~~ know the node where t.vec comes from, so we don't do
      * Trx_Sync(). We probably would need it for some tracking purposes
      * like automatic compression.
      */
@@ -2737,6 +2833,7 @@ int SelvaHierarchy_TraverseExpression(
         SelvaHierarchyNode *adj;
         int err;
 
+        /* FIXME Should probably get the field the same way as SELVA_HIERARCHY_TRAVERSAL_FIELD? */
         /* Get an SVector for the field. */
         err = field_lookup_traversable(head, field_str, field_len, &t);
         if (err || !t.vec) {
@@ -2751,18 +2848,15 @@ int SelvaHierarchy_TraverseExpression(
         /* Visit each node in this field. */
         SVector_ForeachBegin(&it, t.vec);
         while ((adj = SVector_Foreach(&it))) {
-
-            /*
-             * If the field is an edge field we can filter edges by the
-             * edge metadata.
-             */
-            if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
-                !Trx_HasVisited(&trx_cur, &adj->trx_label) && /* skip if already visited. */
-                !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, t.vec, adj)) {
-                continue;
-            }
-
             if (Trx_Visit(&trx_cur, &adj->trx_label)) {
+                if (edge_filter) {
+                    struct SelvaObject *edge_metadata = get_edge_metadata(adj, t.type, t.vec);
+
+                    if (!exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, edge_metadata, adj)) {
+                        continue;
+                    }
+                }
+
                 if (cb->node_cb(hierarchy, &node_metadata, adj, cb->node_arg)) {
                     Trx_End(&hierarchy->trx_state, &trx_cur);
                     return 0;

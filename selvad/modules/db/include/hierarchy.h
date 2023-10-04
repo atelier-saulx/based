@@ -340,6 +340,19 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id);
 
+/**
+ * Get edge metadata.
+ * Supports both hierarchy parents/children metadata as well as Edge metadata.
+ */
+int SelvaHierarchy_GetEdgeMetadata(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        const Selva_NodeId dst_node_id,
+        bool delete_all,
+        bool create,
+        struct SelvaObject **out);
+
 int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node);
 
 /**

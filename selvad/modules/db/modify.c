@@ -1382,17 +1382,11 @@ static enum selva_op_repl_state modify_edge_meta_op(
         struct selva_string *field,
         struct selva_string *raw_value) {
     TO_STR(field);
-    struct EdgeField *edge_field;
     struct SelvaObject *edge_metadata;
     const struct SelvaModify_OpEdgeMeta *op;
     enum SelvaModify_OpEdgeMetaCode op_code;
     int err;
 
-    edge_field = Edge_GetField(node, field_str, field_len);
-    if (!edge_field) {
-        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found");
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
 
     op = SelvaModify_OpEdgeMeta_align(fin, raw_value);
     if (!op) {
@@ -1400,14 +1394,12 @@ static enum selva_op_repl_state modify_edge_meta_op(
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
-    if (op->delete_all) {
-        Edge_DeleteFieldMetadata(edge_field);
-        return SELVA_OP_REPL_STATE_UPDATED;
-    }
-
-    err = Edge_GetFieldEdgeMetadata(edge_field, op->dst_node_id, 1, &edge_metadata);
-    if (err) {
-        selva_send_errorf(resp, err, "Failed to get the metadata object");
+    err = SelvaHierarchy_GetEdgeMetadata(node, field_str, field_len, op->dst_node_id, op->delete_all, true, &edge_metadata);
+    if (err == SELVA_ENOENT || !edge_metadata) {
+        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found");
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    } else if (err) {
+        selva_send_errorf(resp, err, "Failed to get edge metadata");
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
