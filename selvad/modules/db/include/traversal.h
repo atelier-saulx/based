@@ -22,8 +22,6 @@ enum SelvaTraversal {
     SELVA_HIERARCHY_TRAVERSAL_NONE =            0x00000, /*!< Do nothing. */
     SELVA_HIERARCHY_TRAVERSAL_NODE =            0x00001, /*!< Visit just the given node. */
     SELVA_HIERARCHY_TRAVERSAL_ARRAY =           0x00002, /*!< Traverse an array. */
-    SELVA_HIERARCHY_TRAVERSAL_SET =             0x00004, /*!< Traverse a set. */
-    SELVA_HIERARCHY_TRAVERSAL_REF =             0x00008, /*!< Visit nodes pointed by a string ref field. */
     SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD =      0x00010, /*!< Visit nodes pointed by an edge field. */
     SELVA_HIERARCHY_TRAVERSAL_CHILDREN =        0x00020, /*!< Visit children of the given node. */
     SELVA_HIERARCHY_TRAVERSAL_PARENTS =         0x00040, /*!< Visit parents of the given node. */

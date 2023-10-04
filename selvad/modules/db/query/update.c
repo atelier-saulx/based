@@ -502,8 +502,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
     /*
      * Parse the traversal arguments.
      */
-    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                          SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
+    if (query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
                           SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD)) {
         if (!query_opts.dir_opt_str) {
             selva_send_errorf(resp, SELVA_EINVAL, "Missing ref field");
@@ -603,10 +602,7 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             .filter = filter_expression,
         };
 
-        if ((query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_REF |
-                               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                               SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
-                   && query_opts.dir_opt_str) {
+        if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && query_opts.dir_opt_str) {
             const struct SelvaHierarchyCallback cb = {
                 .node_cb = update_node_cb,
                 .node_arg = &args,
@@ -615,7 +611,18 @@ void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf
             size_t ref_field_len = query_opts.dir_opt_len;
 
             SELVA_TRACE_BEGIN(cmd_update_refs);
-            err = SelvaHierarchy_TraverseField(hierarchy, nodeId, query_opts.dir, ref_field_str, ref_field_len, &cb);
+            err = SelvaHierarchy_TraverseEdgeField(hierarchy, nodeId, ref_field_str, ref_field_len, &cb);
+            SELVA_TRACE_END(cmd_update_refs);
+        } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD && query_opts.dir_opt_str) {
+            const struct SelvaHierarchyCallback cb = {
+                .node_cb = update_node_cb,
+                .node_arg = &args,
+            };
+            const char *ref_field_str = query_opts.dir_opt_str;
+            size_t ref_field_len = query_opts.dir_opt_len;
+
+            SELVA_TRACE_BEGIN(cmd_update_refs);
+            err = SelvaHierarchy_TraverseEdgeFieldBfs(hierarchy, nodeId, ref_field_str, ref_field_len, &cb);
             SELVA_TRACE_END(cmd_update_refs);
         } else if (query_opts.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
             const struct SelvaHierarchyCallback cb = {

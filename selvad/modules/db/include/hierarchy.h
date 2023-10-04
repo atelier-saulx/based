@@ -554,10 +554,15 @@ int SelvaHierarchy_Traverse(
         const Selva_NodeId id,
         enum SelvaTraversal dir,
         const struct SelvaHierarchyCallback *cb);
-int SelvaHierarchy_TraverseField(
+int SelvaHierarchy_TraverseEdgeField(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
-        enum SelvaTraversal dir,
+        const char *ref_field_str,
+        size_t ref_field_len,
+        const struct SelvaHierarchyCallback *cb);
+int SelvaHierarchy_TraverseEdgeFieldBfs(
+        struct SelvaHierarchy *hierarchy,
+        const Selva_NodeId id,
         const char *field_name_str,
         size_t field_name_len,
         const struct SelvaHierarchyCallback *cb);
