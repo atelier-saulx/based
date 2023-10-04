@@ -1,6 +1,7 @@
 import {
   BasedSchema,
   BasedSchemaField,
+  BasedSchemaLanguage,
   BasedSchemaPartial,
   BasedSchemaType,
 } from '@based/schema'
@@ -139,10 +140,13 @@ const checkArrayFieldTypeRequirements = (typeSchema: any) => {
 
 const checkTextFieldTypeRequirements = (
   typeSchema: any,
-  newSchema: BasedSchema
+  newSchema: BasedSchema,
+  path,
+  prefix
 ) => {
   const hasLanguages = newSchema?.languages?.length > 0
   if (typeSchema?.type === 'text' && !hasLanguages) {
+    console.log('=====', { typeSchema, newSchema, path, prefix })
     throw new Error(
       'Cannot use fields of type text without `languages` being defined`'
     )
@@ -200,10 +204,10 @@ function schemaWalker(
     )
   }
 
-  // checkInvalidFieldType(typeSchema)
-  // checkArrayFieldTypeRequirements(typeSchema)
-  // checkTextFieldTypeRequirements(typeSchema, newSchema)
-  // findEdgeConstraints(prefix, path, typeSchema, constraints)
+  checkInvalidFieldType(typeSchema)
+  checkArrayFieldTypeRequirements(typeSchema)
+  checkTextFieldTypeRequirements(typeSchema, newSchema, path, prefix)
+  findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
 // TODO: What is PartialObjectDeep<> type?
@@ -236,6 +240,34 @@ const checkChangingExistingTypePrefix = (
   }
 }
 
+function mergeLanguages(
+  oldLangs: BasedSchemaLanguage[],
+  newLangs: BasedSchemaLanguage[]
+): BasedSchemaLanguage[] {
+  const langs: Set<BasedSchemaLanguage> = new Set()
+
+  // TODO: have default lang?
+
+  // if (!Array.isArray(oldLangs)) {
+  //   oldLangs = ['en']
+  // }
+  if (!Array.isArray(oldLangs)) {
+    oldLangs = []
+  }
+  for (const lang of oldLangs) {
+    langs.add(lang)
+  }
+
+  if (!Array.isArray(newLangs)) {
+    newLangs = []
+  }
+  for (const lang of newLangs) {
+    langs.add(lang)
+  }
+
+  return [...langs.values()]
+}
+
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial,
@@ -263,10 +295,7 @@ export async function updateSchema(
     types: {},
   }
 
-  if (opts.languages) {
-    // TODO: Add merge languages
-    newSchema.languages = opts.languages
-  }
+  newSchema.languages = mergeLanguages(currentSchema.languages, opts.languages)
 
   if (opts.root) {
     // TODO: guard for breaking changes
@@ -280,7 +309,6 @@ export async function updateSchema(
   for (const typeName of typesToParse) {
     const typeDef = (opts as BasedSchema).types[typeName]
     const oldDef = currentSchema.types[typeName]
-    console.log('======', typeName, typeDef)
     if (
       // TODO: add $delete to BasedSchemaType
       // @ts-ignore
@@ -296,13 +324,12 @@ export async function updateSchema(
       typeDef?.prefix ??
       oldDef?.prefix ??
       generateNewPrefix(typeName, currentSchema)
-    console.log('??????', typeName, oldDef, oldDef?.prefix, prefix)
-
-    // checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
-    // checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
 
     if (!currentTypeNames.includes(typeName)) {
       // new type
+
+      checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
+      checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
       const newDef: any = {
         prefix,
         fields: deepCopy(DEFAULT_FIELDS),
@@ -321,7 +348,6 @@ export async function updateSchema(
       // check for mutations
     }
 
-    console.log('------000---', typeName, typeDef)
     schemaWalker(
       prefix,
       [],
@@ -330,11 +356,6 @@ export async function updateSchema(
       newSchema
     )
   }
-  console.log(
-    '----',
-    { newTypes, typesToDelete },
-    JSON.stringify(newSchema, null, 2)
-  )
 
   // if (opts.types) {
   //   for (const typeName in opts.types) {

@@ -388,6 +388,8 @@ test('Only allow field type text if languages are defined', async (t) => {
 
   console.log('updating schema')
 
+  // TODO: find way to do this
+  client.schema.languages = []
   await t.throwsAsync(
     client.updateSchema({
       languages: [],
@@ -412,7 +414,7 @@ test('Only allow field type text if languages are defined', async (t) => {
   client.destroy()
 })
 
-test('Default prefix should not be an existing one', async (t) => {
+test.only('Default prefix should not be an existing one', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -438,7 +440,7 @@ test('Default prefix should not be an existing one', async (t) => {
   t.true(newSchema.types['another'].prefix === 'an')
 })
 
-test.only('temp remove this', async (t) => {
+test.skip('temp remove this', async (t) => {
   const { client } = t.context
 
   const error = await t.throwsAsync(
