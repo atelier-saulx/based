@@ -2085,38 +2085,6 @@ out:
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
 
-/**
- * Get the next vector to be traversed.
- * @param node is the current node the traversal is visiting.
- * @param field is the next field to be traversed.
- * @param[out] field_type returns the type of the field being traversed.
- */
-static SVector *get_adj_vec(SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type) {
-#define IS_FIELD(name) \
-    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
-
-    if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        *field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
-        return &node->children;
-    } else if (IS_FIELD(SELVA_PARENTS_FIELD)) {
-        *field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
-        return &node->parents;
-    } else {
-        /* Try EdgeField */
-        struct EdgeField *edge_field;
-
-        edge_field = Edge_GetField(node, field_str, field_len);
-        if (edge_field) {
-            *field_type = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
-            return &edge_field->arcs;
-        }
-    }
-
-    *field_type = SELVA_HIERARCHY_TRAVERSAL_NONE;
-    return NULL;
-#undef IS_FIELD
-}
-
 SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type) {
 #define IS_FIELD(name) \
     (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
@@ -2280,34 +2248,35 @@ static int bfs_expression(
         SELVA_SET_STRING_FOREACH(field_el, &fields) {
             size_t field_len;
             const char *field_str = selva_string_to_str(field_el->value_string, &field_len);
-            enum SelvaTraversal field_type;
+            struct field_lookup_traversable t;
             enum SelvaHierarchyTraversalSVecPtag adj_tag;
-            const SVector *adj_vec;
             struct SVectorIterator it;
             SelvaHierarchyNode *adj;
+            int err;
 
             /* Get an SVector for the field. */
-            adj_vec = get_adj_vec(node, field_str, field_len, &field_type);
-            if (!adj_vec) {
+            err = field_lookup_traversable(node, field_str, field_len, &t);
+            if (err || !t.vec) {
+                /* RFE What if it's not ENOENT? */
                 continue;
             }
 
-            adj_tag = traversal2vec_tag(field_type);
+            adj_tag = traversal2vec_tag(t.type);
 
             /* Visit each node in this field. */
-            SVector_ForeachBegin(&it, adj_vec);
+            SVector_ForeachBegin(&it, t.vec);
             while ((adj = SVector_Foreach(&it))) {
                 /*
                  * If the field is an edge field we can filter edges by the
                  * edge metadata.
                  */
-                if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
+                if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
                     !Trx_HasVisited(&trx_cur, &adj->trx_label) && /* skip if already visited. */
-                    !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, adj_vec, adj)) {
+                    !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, t.vec, adj)) {
                     continue;
                 }
 
-                BFS_VISIT_ADJACENT(hierarchy, cb, adj_tag, adj_vec, adj);
+                BFS_VISIT_ADJACENT(hierarchy, cb, adj_tag, t.vec, adj);
             }
         }
 
@@ -2648,10 +2617,10 @@ int SelvaHierarchy_TraverseField2Bfs(
         BFS_VISIT_NODE(hierarchy, hcb);
 
         struct field_lookup_traversable t;
-        int err;
         enum SelvaHierarchyTraversalSVecPtag adj_tag;
         SVector *adj_vec;
         struct SVectorIterator it;
+        int err;
 
         err = field_lookup_traversable(node, ref_field_str, ref_field_len, &t);
         if (err) {
@@ -2763,32 +2732,33 @@ int SelvaHierarchy_TraverseExpression(
     SELVA_SET_STRING_FOREACH(field_el, &fields) {
         size_t field_len;
         const char *field_str = selva_string_to_str(field_el->value_string, &field_len);
-        enum SelvaTraversal field_type;
-        const SVector *adj_vec;
+        struct field_lookup_traversable t;
         struct SVectorIterator it;
         SelvaHierarchyNode *adj;
+        int err;
 
         /* Get an SVector for the field. */
-        adj_vec = get_adj_vec(head, field_str, field_len, &field_type);
-        if (!adj_vec) {
+        err = field_lookup_traversable(head, field_str, field_len, &t);
+        if (err || !t.vec) {
+            /* RFE What if it's not ENOENT? */
             continue;
         }
 
         const struct SelvaHierarchyTraversalMetadata node_metadata = {
-            .origin_field_svec_tagp = PTAG(adj_vec, traversal2vec_tag(field_type)),
+            .origin_field_svec_tagp = PTAG(t.vec, traversal2vec_tag(t.type)),
         };
 
         /* Visit each node in this field. */
-        SVector_ForeachBegin(&it, adj_vec);
+        SVector_ForeachBegin(&it, t.vec);
         while ((adj = SVector_Foreach(&it))) {
 
             /*
              * If the field is an edge field we can filter edges by the
              * edge metadata.
              */
-            if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
+            if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && edge_filter &&
                 !Trx_HasVisited(&trx_cur, &adj->trx_label) && /* skip if already visited. */
-                !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, adj_vec, adj)) {
+                !exec_edge_filter(hierarchy, edge_filter_ctx, edge_filter, t.vec, adj)) {
                 continue;
             }
 
