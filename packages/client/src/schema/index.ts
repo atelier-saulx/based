@@ -275,7 +275,7 @@ export async function updateSchema(
   const newTypes: [string, string][] = []
   const typesToDelete: [string, string][] = []
   const newConstraints: EdgeConstraint[] = []
-  const mutations: SchemaMutations[] = []
+  const mutations: SchemaMutations = []
 
   let currentSchema = client.schema
   if (!currentSchema) {
@@ -317,6 +317,10 @@ export async function updateSchema(
     ) {
       // type to delete
       typesToDelete.push([oldDef?.prefix, typeName])
+      mutations.push({
+        mutation: 'delete_type',
+        type: typeName
+      })
       continue
     }
 
@@ -333,7 +337,7 @@ export async function updateSchema(
         prefix,
         fields: deepCopy(DEFAULT_FIELDS),
       }
-      deepMerge(newDef, typeDef) // TODO: needs custom merge
+      deepMerge(newDef, typeDef)
       newSchema.types[typeName] = newDef
 
       newTypes.push([prefix, typeName])
@@ -341,9 +345,13 @@ export async function updateSchema(
     } else {
       // existing type
 
-      // TODO: guard for breaking changes
       checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
+
+      // TODO: guard for breaking changes
+      // TODO: needs custom merge
       newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
+
+
 
       // check for mutations
     }
