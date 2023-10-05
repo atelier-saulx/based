@@ -1,6 +1,8 @@
 import {
   BasedSchema,
   BasedSchemaField,
+  BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
   BasedSchemaLanguage,
   BasedSchemaPartial,
   BasedSchemaType,
@@ -19,22 +21,22 @@ type EdgeConstraint = {
 
 export type SchemaMutations = (
   | {
-    mutation: 'delete_type'
-    type: string
-  }
+      mutation: 'delete_type'
+      type: string
+    }
   | {
-    mutation: 'change_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-    new: BasedSchemaField
-  }
+      mutation: 'change_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+      new: BasedSchemaField
+    }
   | {
-    mutation: 'remove_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-  }
+      mutation: 'remove_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+    }
 )[]
 
 export const DEFAULT_SCHEMA: BasedSchema = {
@@ -219,8 +221,8 @@ const checkTypeWithSamePrefix = (
     typeDef.prefix === 'ro'
       ? 'ro'
       : Object.keys(currentSchema.types).find(
-        (name) => currentSchema.types[name].prefix === typeDef.prefix
-      )
+          (name) => currentSchema.types[name].prefix === typeDef.prefix
+        )
   if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
     throw new Error(`Prefix ${typeDef.prefix} is already in use`)
   }
@@ -265,6 +267,73 @@ function mergeLanguages(
   }
 
   return [...langs.values()]
+}
+
+const mergeFields = (
+  path: string[],
+  currentFields: { [name: string]: BasedSchemaField },
+  requestedFields: { [name: string]: BasedSchemaField },
+  mutations: SchemaMutations,
+  merge: boolean
+) => {
+  const currentFieldsNames = Object.keys(currentFields || {})
+  const newFieldsNames = Object.keys(requestedFields || {})
+  const fieldsToParse = new Set([...currentFieldsNames, ...newFieldsNames])
+
+  const newFields: { [name: string]: BasedSchemaField } = {}
+
+  for (const fieldName of fieldsToParse) {
+    const currentFieldDef: BasedSchemaField = currentFields[fieldName]
+    const requestedFieldDef: BasedSchemaField = requestedFields[fieldName]
+
+    if (
+      // TODO: add $delete to BasedSchemaField
+      // @ts-ignore
+      requestedFieldDef?.$delete ||
+      (merge === false && !newFieldsNames.includes(fieldName))
+    ) {
+      // field to remove
+      mutations.push({
+        mutation: 'remove_field',
+        type: currentFieldDef.type,
+        path,
+        old: currentFieldDef,
+      })
+      continue
+    }
+
+    if (!currentFieldsNames.includes(fieldName)) {
+      // new field
+      newFields[fieldName] = requestedFieldDef
+    } else {
+      // existing field
+      // TODO: Check if it's a mutation
+      mutations.push({
+        mutation: 'change_field',
+        type: requestedFieldDef?.type || currentFieldDef.type,
+        path,
+        old: currentFieldDef,
+        new: { ...currentFieldDef, ...requestedFieldDef },
+      })
+
+      newFields[fieldName] = { ...currentFieldDef, ...requestedFieldDef }
+    }
+
+    if (newFields[fieldName].type === 'object') {
+      // @ts-ignore
+      newFields[fieldName].properties = mergeFields(
+        [...path, fieldName],
+        // @ts-ignore
+        currentFieldDef?.properties || {},
+        // @ts-ignore
+        requestedFieldDef.properties,
+        mutations,
+        merge
+      )
+    }
+  }
+
+  return newFields
 }
 
 export async function updateSchema(
@@ -319,7 +388,7 @@ export async function updateSchema(
       typesToDelete.push([oldDef?.prefix, typeName])
       mutations.push({
         mutation: 'delete_type',
-        type: typeName
+        type: typeName,
       })
       continue
     }
@@ -333,11 +402,22 @@ export async function updateSchema(
       // new type
 
       checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
-      const newDef: any = {
+      // const newDef: any = {
+      //   prefix,
+      //   fields: deepCopy(DEFAULT_FIELDS),
+      // }
+      // deepMerge(newDef, typeDef)
+      const newDef = {
+        ...typeDef,
         prefix,
-        fields: deepCopy(DEFAULT_FIELDS),
+        fields: mergeFields(
+          [typeName],
+          {},
+          { ...DEFAULT_FIELDS, ...typeDef.fields },
+          mutations,
+          merge
+        ),
       }
-      deepMerge(newDef, typeDef)
       newSchema.types[typeName] = newDef
 
       newTypes.push([prefix, typeName])
@@ -348,10 +428,21 @@ export async function updateSchema(
       checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
 
       // TODO: guard for breaking changes
-      // TODO: needs custom merge
-      newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
-
-
+      // newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
+      if (merge) {
+        newSchema.types[typeName] = {
+          ...typeDef,
+          fields: mergeFields(
+            [typeName],
+            oldDef.fields,
+            { ...DEFAULT_FIELDS, ...(typeDef?.fields || oldDef?.fields || {}) },
+            mutations,
+            merge
+          ),
+        }
+      } else {
+        newSchema.types[typeName] = typeDef
+      }
 
       // check for mutations
     }
