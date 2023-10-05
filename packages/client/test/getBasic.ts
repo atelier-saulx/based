@@ -209,6 +209,7 @@ test.afterEach.always(async (t) => {
   const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 test('get null', async (t) => {

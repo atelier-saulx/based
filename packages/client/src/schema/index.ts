@@ -19,22 +19,22 @@ type EdgeConstraint = {
 
 export type SchemaMutations = (
   | {
-      mutation: 'delete_type'
-      type: string
-    }
+    mutation: 'delete_type'
+    type: string
+  }
   | {
-      mutation: 'change_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-      new: BasedSchemaField
-    }
+    mutation: 'change_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+    new: BasedSchemaField
+  }
   | {
-      mutation: 'remove_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-    }
+    mutation: 'remove_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+  }
 )[]
 
 export const DEFAULT_SCHEMA: BasedSchema = {
@@ -146,7 +146,6 @@ const checkTextFieldTypeRequirements = (
 ) => {
   const hasLanguages = newSchema?.languages?.length > 0
   if (typeSchema?.type === 'text' && !hasLanguages) {
-    console.log('=====', { typeSchema, newSchema, path, prefix })
     throw new Error(
       'Cannot use fields of type text without `languages` being defined`'
     )
@@ -220,8 +219,8 @@ const checkTypeWithSamePrefix = (
     typeDef.prefix === 'ro'
       ? 'ro'
       : Object.keys(currentSchema.types).find(
-          (name) => currentSchema.types[name].prefix === typeDef.prefix
-        )
+        (name) => currentSchema.types[name].prefix === typeDef.prefix
+      )
   if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
     throw new Error(`Prefix ${typeDef.prefix} is already in use`)
   }
@@ -297,10 +296,11 @@ export async function updateSchema(
 
   newSchema.languages = mergeLanguages(currentSchema.languages, opts.languages)
 
-  if (opts.root) {
-    // TODO: guard for breaking changes
-    deepMerge(newSchema.root, opts.root)
-  }
+  // TODO: this is not being validated
+  // TODO: guard for breaking changes
+  newSchema.root = currentSchema.root
+  deepMerge(newSchema.root, opts.root)
+  newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
 
   const currentTypeNames = Object.keys(currentSchema.types || {})
   const optsTypeNames = Object.keys(opts.types || {})
@@ -329,7 +329,6 @@ export async function updateSchema(
       // new type
 
       checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
-      checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
       const newDef: any = {
         prefix,
         fields: deepCopy(DEFAULT_FIELDS),
@@ -343,6 +342,7 @@ export async function updateSchema(
       // existing type
 
       // TODO: guard for breaking changes
+      checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
       newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
 
       // check for mutations

@@ -215,7 +215,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('schema subs work implicitly', async (t) => {
+test.serial('schema subs work implicitly', async (t) => {
   const { client } = t.context
   const otherClient = new BasedDbClient()
   otherClient.connect({
@@ -414,7 +414,7 @@ test('Only allow field type text if languages are defined', async (t) => {
   client.destroy()
 })
 
-test.only('Default prefix should not be an existing one', async (t) => {
+test('Default prefix should not be an existing one', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -440,40 +440,3 @@ test.only('Default prefix should not be an existing one', async (t) => {
   t.true(newSchema.types['another'].prefix === 'an')
 })
 
-test.skip('temp remove this', async (t) => {
-  const { client } = t.context
-
-  const error = await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        custom: {
-          fields: {
-            name: { type: 'text' },
-            value: { type: 'integer' },
-            age: { type: 'number' },
-            auth: {
-              type: 'string',
-            },
-            title: { type: 'string' },
-            description: { type: 'string' },
-            image: {
-              type: 'object',
-              properties: {
-                thumb: { type: 'text' },
-                poster: { type: 'number' },
-              },
-            },
-          },
-        },
-        lekkerType: {
-          // @ts-ignore
-          $delete: true,
-        },
-      },
-    }),
-    {
-      message: 'Cannot change prefix of existing type',
-    }
-  )
-  t.log(error)
-})
