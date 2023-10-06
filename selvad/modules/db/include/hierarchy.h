@@ -353,6 +353,10 @@ int SelvaHierarchy_GetEdgeMetadata(
         bool create,
         struct SelvaObject **out);
 
+struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
+        struct SelvaHierarchyNode *node);
+
 int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node);
 
 /**

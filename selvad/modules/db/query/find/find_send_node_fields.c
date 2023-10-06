@@ -186,32 +186,15 @@ static int send_obj_field(
 static int send_edge_meta_field(
                 struct selva_server_response_out *resp,
                 struct selva_string *lang,
-                Selva_NodeId dst_node_id,
-                struct EdgeField *edge_field,
+                struct SelvaObject *edge_metadata,
                 const char *field_prefix_str,
                 size_t field_prefix_len,
                 const char *meta_key_str,
                 size_t meta_key_len)
 {
-    struct SelvaObject *edge_metadata;
-    int err;
-
-	err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
-    if (err || !edge_metadata) {
-        return 0;
-    }
-
     selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
     selva_send_array(resp, 2);
 
-    //selva_send_str(resp, dst_node_id, Selva_NodeIdLen(dst_node_id));
-#if 0
-    if (field_prefix_str) {
-        selva_send_strf(resp, "%.*s@%.*s", (int)field_prefix_len - 1, field_prefix_str, (int)meta_key_len, meta_key_str);
-    } else {
-        selva_send_str(resp, meta_key_str, meta_key_len);
-    }
-#endif
     return send_obj_field(resp, lang, edge_metadata, field_prefix_str, field_prefix_len, meta_key_str, meta_key_len);
 }
 
@@ -221,19 +204,12 @@ static int send_edge_meta_field(
 static int send_edge_meta_fields(
                 struct selva_server_response_out *resp,
                 struct selva_string *lang,
+                struct SelvaObject *edge_metadata,
                 Selva_NodeId dst_node_id,
-                struct EdgeField *edge_field,
                 struct selva_string *excluded_fields)
 {
-    struct SelvaObject *edge_metadata;
     SelvaObject_Iterator *obj_it;
     const char *meta_key_str;
-    int err;
-
-    err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
-    if (err || !edge_metadata) {
-        return 0;
-    }
 
     selva_send_str(resp, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1);
     selva_send_array(resp, -1);
@@ -450,17 +426,21 @@ static int send_edge_field(
             } else if (Selva_IsEdgeMetaField(next_field_str, next_field_len)) {
                 size_t meta_key_len;
                 const char *meta_key_str = Selva_GetEdgeMetaKey(next_field_str, next_field_len, &meta_key_len);
+                struct SelvaObject *edge_metadata;
+                int err;
 
-                /*
-                 * $edgeMeta pseudo field handling
-                 * TODO This doesn't currently work over multiple edge fields.
-                 */
-                 (void)send_edge_meta_field(
-                         resp, lang,
-                         dst_node_id,
-                         edge_field,
-                         next_prefix_str, next_prefix_len,
-                         meta_key_str, meta_key_len);
+	            err = Edge_GetFieldEdgeMetadata(edge_field, dst_node_id, false, &edge_metadata);
+                if (!err && edge_metadata) {
+                    /*
+                     * $edgeMeta pseudo field handling
+                     * TODO This doesn't currently work over multiple edge fields.
+                     */
+                     (void)send_edge_meta_field(
+                             resp, lang,
+                             edge_metadata,
+                             next_prefix_str, next_prefix_len,
+                             meta_key_str, meta_key_len);
+                }
             } else {
                 struct SelvaObject *dst_obj = SelvaHierarchy_GetNodeObject(dst_node);
 
@@ -655,8 +635,8 @@ static void send_node_fields_named(
 static void send_top_level_edge_meta(
         struct selva_server_response_out *resp,
         struct selva_string *lang,
+        struct SelvaObject *edge_metadata,
         struct SelvaHierarchyNode *node,
-        struct EdgeField *edge_field,
         struct SelvaObject *fields,
         struct selva_string *excluded_fields)
 {
@@ -685,15 +665,14 @@ static void send_top_level_edge_meta(
 
                 if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
                     /* Send all but excluded. */
-                    if (send_edge_meta_fields(resp, lang, dst_node_id, edge_field, excluded_fields)) {
+                    if (send_edge_meta_fields(resp, lang, edge_metadata, dst_node_id, excluded_fields)) {
                         break;
                     }
                 } else if (field_str[sizeof(SELVA_EDGE_META_FIELD)] == '.') {
                     /* Send a specific field. */
                     if (send_edge_meta_field(
                                     resp, lang,
-                                    dst_node_id,
-                                    edge_field,
+                                    edge_metadata,
                                     field_prefix_str, field_prefix_len,
                                     meta_key_str, meta_key_len) > 0) {
                         break;
@@ -752,12 +731,13 @@ int find_send_node_fields(
             selva_send_ll(resp, traversal_metadata->depth);
        }
 
-       if (traversal_metadata->origin_field_svec_tagp &&
-           PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
-           SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
-           struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+       if (traversal_metadata->origin_field_svec_tagp) {
+           struct SelvaObject *edge_metadata;
 
-           send_top_level_edge_meta(resp, lang, node, edge_field, fields, excluded_fields);
+           edge_metadata = SelvaHierarchy_GetEdgeMetadataByTraversal(traversal_metadata, node);
+           if (edge_metadata) {
+               send_top_level_edge_meta(resp, lang, edge_metadata, node, fields, excluded_fields);
+           }
        }
     }
 

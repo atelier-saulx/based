@@ -644,6 +644,70 @@ int SelvaHierarchy_GetEdgeMetadata(
 #undef IS_FIELD
 }
 
+/**
+ * Get edge metadata.
+ * @param node is the destination node.
+ * @param adj_vec is the source vector.
+ */
+static struct SelvaObject *get_edge_metadata(struct SelvaHierarchyNode *node, enum SelvaTraversal field_type, const SVector *adj_vec) {
+    struct SelvaObject *edge_metadata = NULL;
+
+    if (field_type & (SELVA_HIERARCHY_TRAVERSAL_PARENTS |
+                      SELVA_HIERARCHY_TRAVERSAL_CHILDREN)) {
+        struct SelvaHierarchyNode *parent;
+        struct SelvaHierarchyNode *child;
+        struct SelvaObject *field_metadata;
+
+        if (field_type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
+            parent = node;
+            child = containerof(adj_vec, struct SelvaHierarchyNode, parents);
+        } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
+            parent = containerof(adj_vec, struct SelvaHierarchyNode, children);
+            child = node;
+        } else {
+            unreachable();
+        }
+
+        field_metadata = parent->children_metadata;
+        if (field_metadata) {
+            int err;
+
+            err = SelvaObject_GetObjectStr(field_metadata, child->id, SELVA_NODE_ID_SIZE, &edge_metadata);
+            if (err && err != SELVA_ENOENT) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Odd error: dst: %.*s err: %s",
+                          (int)SELVA_NODE_ID_SIZE, node->id,
+                          selva_strerror(err));
+            }
+        }
+    } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
+        struct EdgeField *edge_field = containerof(adj_vec, struct EdgeField, arcs);
+        (void)Edge_GetFieldEdgeMetadata(edge_field, node->id, false, &edge_metadata);
+    }
+
+    return edge_metadata;
+}
+
+struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct SelvaHierarchyTraversalMetadata *traversal_metadata, struct SelvaHierarchyNode *node) {
+    const enum SelvaHierarchyTraversalSVecPtag tag = PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp);
+    enum SelvaTraversal field_type;
+
+    switch (tag) {
+        case SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS:
+            field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
+            break;
+        case SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN:
+            field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
+            break;
+        case SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE:
+            field_type = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
+            break;
+        default:
+            abort();
+    }
+
+    return get_edge_metadata(node, field_type, PTAG_GETP(traversal_metadata->origin_field_svec_tagp));
+}
+
 static const char * const excluded_fields[] = {
     SELVA_ID_FIELD,
     SELVA_TYPE_FIELD,
@@ -2150,47 +2214,6 @@ out:
         } \
     } \
     Trx_End(&(hierarchy)->trx_state, &trx_cur)
-
-/* TODO a wrapper with traversal_metadata */
-/* TODO Remember to allow creating children/parents metadata */
-/* TODO Add children/parents metadata to field_lookup, find etc. */
-static struct SelvaObject *get_edge_metadata(struct SelvaHierarchyNode *node, enum SelvaTraversal field_type, const SVector *adj_vec) {
-    struct SelvaObject *edge_metadata = NULL;
-
-    if (field_type & (SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                      SELVA_HIERARCHY_TRAVERSAL_CHILDREN)) {
-        struct SelvaHierarchyNode *parent;
-        struct SelvaHierarchyNode *child;
-        struct SelvaObject *field_metadata;
-
-        if (field_type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
-            parent = node;
-            child = containerof(adj_vec, struct SelvaHierarchyNode, parents);
-        } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
-            parent = containerof(adj_vec, struct SelvaHierarchyNode, children);
-            child = node;
-        } else {
-            unreachable();
-        }
-
-        field_metadata = parent->children_metadata;
-        if (field_metadata) {
-            int err;
-
-            err = SelvaObject_GetObjectStr(field_metadata, child->id, SELVA_NODE_ID_SIZE, &edge_metadata);
-            if (err && err != SELVA_ENOENT) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Odd error: dst: %.*s err: %s",
-                          (int)SELVA_NODE_ID_SIZE, node->id,
-                          selva_strerror(err));
-            }
-        }
-    } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
-        struct EdgeField *edge_field = containerof(adj_vec, struct EdgeField, arcs);
-        (void)Edge_GetFieldEdgeMetadata(edge_field, node->id, false, &edge_metadata);
-    }
-
-    return edge_metadata;
-}
 
 SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type) {
 #define IS_FIELD(name) \

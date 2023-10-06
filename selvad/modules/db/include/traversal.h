@@ -47,6 +47,17 @@ enum SelvaMergeStrategy {
     MERGE_STRATEGY_DEEP,
 };
 
+enum SelvaHierarchyTraversalSVecPtag {
+    /*!<
+     * First node if is NULL, no source;
+     * if p is non-NULL then the source is unknown or can't be described.
+     */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_NONE = 0,
+    SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS = 1, /*!< Parents SVector. */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN = 2, /*!< Children SVector. */
+    SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE = 3, /*!< Edge field SVector. */
+};
+
 /**
  * Traversal metadata for child/adjacent nodes.
  * Note that SelvaTraversalOrder expects this to be copyable.
@@ -132,17 +143,6 @@ struct TraversalOrderItem {
      * Sortable data for ORDER_ITEM_TYPE_TEXT.
      */
     char data[];
-};
-
-enum SelvaHierarchyTraversalSVecPtag {
-    /*!<
-     * First node if is NULL, no source;
-     * if p is non-NULL then the source is unknown or can't be described.
-     */
-    SELVA_TRAVERSAL_SVECTOR_PTAG_NONE = 0,
-    SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS = 1, /*!< Parents SVector. */
-    SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN = 2, /*!< Children SVector. */
-    SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE = 3, /*!< Edge field SVector. */
 };
 
 /**

@@ -89,23 +89,13 @@ static int get_from_edge_field(
  */
 static int get_top_level_edge_meta(
         struct selva_string *lang,
-        struct SelvaHierarchyNode *node,
-        struct EdgeField *src_edge_field,
+        struct SelvaObject *edge_metadata,
         const char *field_str,
         size_t field_len,
         struct SelvaObjectAny *any)
 {
-    Selva_NodeId dst_node_id;
     size_t meta_key_len;
     const char *meta_key_str = Selva_GetEdgeMetaKey(field_str, field_len, &meta_key_len);
-    struct SelvaObject *edge_metadata;
-    int err;
-
-    SelvaHierarchy_GetNodeId(dst_node_id, node);
-    err = Edge_GetFieldEdgeMetadata(src_edge_field, dst_node_id, false, &edge_metadata);
-    if (err || !edge_metadata) {
-        return err;
-    }
 
     if (field_len == sizeof(SELVA_EDGE_META_FIELD) - 1) {
         /* All fields. */
@@ -137,17 +127,17 @@ int field_lookup_data_field(
     if (field_len > 1 && field_str[0] == '$' &&
         traversal_metadata) {
         if (!strncmp(field_str, SELVA_EDGE_META_FIELD, sizeof(SELVA_EDGE_META_FIELD) - 1)) {
-            if (traversal_metadata->origin_field_svec_tagp &&
-                PTAG_GETTAG(traversal_metadata->origin_field_svec_tagp) == SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE) {
-                SVector *edge_field_arcs = PTAG_GETP(traversal_metadata->origin_field_svec_tagp);
-                struct EdgeField *edge_field = containerof(edge_field_arcs, struct EdgeField, arcs);
+            err = SELVA_ENOENT;
 
-                err = get_top_level_edge_meta(lang, node, edge_field, field_str, field_len, any);
-                if (err != SELVA_ENOENT) {
-                    return err;
+            if (traversal_metadata->origin_field_svec_tagp) {
+                struct SelvaObject *edge_metadata;
+
+                edge_metadata = SelvaHierarchy_GetEdgeMetadataByTraversal(traversal_metadata, node);
+                if (edge_metadata) {
+                    err = get_top_level_edge_meta(lang, edge_metadata, field_str, field_len, any);
                 }
             }
-            return SELVA_ENOENT;
+            return err;
         } else if (field_len == sizeof(SELVA_DEPTH_FIELD) - 1 &&
                    !memcmp(field_str, SELVA_DEPTH_FIELD, sizeof(SELVA_DEPTH_FIELD) - 1)) {
             *any = (struct SelvaObjectAny){
