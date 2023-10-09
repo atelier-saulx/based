@@ -440,3 +440,18 @@ test('Default prefix should not be an existing one', async (t) => {
   t.true(newSchema.types['another'].prefix === 'an')
 })
 
+test('Change field type', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          fields: {
+            title: { type: 'string' },
+          },
+        },
+      },
+    })
+  )
+})

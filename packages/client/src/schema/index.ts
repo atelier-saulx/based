@@ -211,7 +211,6 @@ function schemaWalker(
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
-// TODO: What is PartialObjectDeep<> type?
 const checkTypeWithSamePrefix = (
   currentSchema: any,
   typeDef: any,
@@ -307,14 +306,18 @@ const mergeFields = (
       newFields[fieldName] = requestedFieldDef
     } else {
       // existing field
-      // TODO: Check if it's a mutation
-      mutations.push({
-        mutation: 'change_field',
-        type: requestedFieldDef?.type || currentFieldDef.type,
-        path,
-        old: currentFieldDef,
-        new: { ...currentFieldDef, ...requestedFieldDef },
-      })
+      if (
+        requestedFieldDef?.type &&
+        requestedFieldDef.type !== currentFieldDef.type
+      ) {
+        mutations.push({
+          mutation: 'change_field',
+          type: requestedFieldDef?.type || currentFieldDef.type,
+          path,
+          old: currentFieldDef,
+          new: { ...currentFieldDef, ...requestedFieldDef },
+        })
+      }
 
       newFields[fieldName] = { ...currentFieldDef, ...requestedFieldDef }
     }
@@ -365,9 +368,14 @@ export async function updateSchema(
 
   newSchema.languages = mergeLanguages(currentSchema.languages, opts.languages)
 
-  // TODO: this is not being validated
-  // TODO: guard for breaking changes
   newSchema.root = currentSchema.root
+  newSchema.root.fields = mergeFields(
+    ['root'],
+    newSchema.root.fields,
+    currentSchema.root.fields,
+    mutations,
+    true
+  )
   deepMerge(newSchema.root, opts.root)
   newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
 
@@ -443,8 +451,6 @@ export async function updateSchema(
       } else {
         newSchema.types[typeName] = typeDef
       }
-
-      // check for mutations
     }
 
     schemaWalker(
