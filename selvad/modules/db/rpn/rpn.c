@@ -18,6 +18,7 @@
 #include "selva_log.h"
 #include "util/cstrings.h"
 #include "util/fast_parsei.h"
+#include "util/selva_math.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva_db.h"
@@ -179,22 +180,6 @@ void _rpn_auto_free_ctx(void *p) {
     struct rpn_ctx *ctx = *(void **)p;
 
     rpn_destroy(ctx);
-}
-
-static double nan_undefined(void) {
-    return nan("1");
-}
-
-__used static int isnan_undefined(double x) {
-    long long i;
-
-    if (!isnan(x)) {
-      return 0;
-    }
-
-    memcpy(&i, &x, sizeof(i));
-
-    return i & 1;
 }
 
 /**
