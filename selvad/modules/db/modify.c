@@ -1115,26 +1115,20 @@ static enum selva_op_repl_state modify_array_op(
         finalizer_del(fin, value);
     } else if (type_code == SELVA_MODIFY_ARG_DOUBLE) {
         int err;
-        union {
-            char s[sizeof(double)];
-            double d;
-            void *p;
-        } v = {
-            .d = 0.0,
-        };
+        double d;
 
-        if (value_len != sizeof(v.d)) {
-            REPLY_WITH_ARG_TYPE_ERROR(v.d);
+        if (value_len != sizeof(d)) {
+            REPLY_WITH_ARG_TYPE_ERROR(d);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
 
-        memcpy(v.s, value_str, sizeof(v.d));
+        d = ledoubletoh(value_str);
 
         if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, v.p);
+            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
             *active_insert_idx = -1;
         } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, v.p);
+            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
         }
 
         if (err) {
@@ -1146,7 +1140,6 @@ static enum selva_op_repl_state modify_array_op(
         union {
             char s[sizeof(long long)];
             long long ll;
-            void *p;
         } v = {
             .ll = 0,
         };
@@ -1157,12 +1150,13 @@ static enum selva_op_repl_state modify_array_op(
         }
 
         memcpy(v.s, value_str, sizeof(v.ll));
+        v.ll = le64toh(v.ll);
 
         if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, v.p);
+            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
             *active_insert_idx = -1;
         } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, v.p);
+            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
         }
 
         if (err) {
