@@ -355,6 +355,11 @@ struct SelvaSet *SelvaObject_GetSet(struct SelvaObject *obj, const struct selva_
  * @{
  */
 
+void *SelvaObject_ToLongLongArray(long long v);
+long long SelvaObject_FromLongLongArray(void *p);
+void *SelvaObject_ToDoubleArray(double d);
+double SelvaObject_FromDoubleArray(void *p);
+
 int SelvaObject_InsertArrayStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, void *p) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_InsertArray(struct SelvaObject *obj, const struct selva_string *key_name, enum SelvaObjectType subtype, void *p);
 int SelvaObject_AssignArrayIndexStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectType subtype, ssize_t idx, void *p) __attribute__((access(read_only, 2, 3)));
