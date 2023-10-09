@@ -142,9 +142,7 @@ const checkArrayFieldTypeRequirements = (typeSchema: any) => {
 
 const checkTextFieldTypeRequirements = (
   typeSchema: any,
-  newSchema: BasedSchema,
-  path,
-  prefix
+  newSchema: BasedSchema
 ) => {
   const hasLanguages = newSchema?.languages?.length > 0
   if (typeSchema?.type === 'text' && !hasLanguages) {
@@ -207,7 +205,7 @@ function schemaWalker(
 
   checkInvalidFieldType(typeSchema)
   checkArrayFieldTypeRequirements(typeSchema)
-  checkTextFieldTypeRequirements(typeSchema, newSchema, path, prefix)
+  checkTextFieldTypeRequirements(typeSchema, newSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 

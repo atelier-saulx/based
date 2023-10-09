@@ -454,4 +454,6 @@ test('Change field type', async (t) => {
       },
     })
   )
+  const newSchema = client.schema
+  t.true(newSchema.types['match'].fields?.title?.type === 'string')
 })
