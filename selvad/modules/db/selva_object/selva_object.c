@@ -377,7 +377,7 @@ double SelvaObject_FromDoubleArray(void *p) {
     static_assert(sizeof(p) == sizeof(d));
     memcpy(&d, &p, sizeof(d));
 
-    return d;
+    return (isnan_undefined(d)) ? 0.0 : d;
 }
 
 static struct SelvaObjectPointerOpts *get_ptr_opts(unsigned ptr_type_id) {
@@ -1894,8 +1894,8 @@ int SelvaObject_InsertArrayIndexStr(struct SelvaObject *obj, const char *key_nam
     if (!err) {
         ssize_t arr_len = SVector_Size(key->array);
 
-        if (arr_len < idx && subtype == SELVA_OBJECT_DOUBLE) {
-            clear_array_range(key->array, key->subtype, arr_len, idx);
+        if (idx >= 1 && arr_len < idx && subtype == SELVA_OBJECT_DOUBLE) {
+            clear_array_range(key->array, key->subtype, arr_len, idx - 1);
         }
 
         SVector_InsertIndex(key->array, vec_idx_to_abs(key->array, idx), p);
