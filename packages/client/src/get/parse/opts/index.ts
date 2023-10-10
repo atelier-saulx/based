@@ -203,7 +203,7 @@ export async function parseGetOpts(
                 '',
                 ...aliases,
               ])
-              const id = resolved?.[0]
+              const id = resolved?.[1]
 
               return {
                 target: {

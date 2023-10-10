@@ -1565,9 +1565,8 @@ void SelvaSubscriptions_DeferHierarchyDeletionEvents(
 static void defer_alias_change_events(
         struct SelvaHierarchy *hierarchy,
         const struct Selva_SubscriptionMarkers *sub_markers,
-        const Selva_NodeId node_id,
+        struct SelvaHierarchyNode *node,
         SVector *wipe_subs) {
-    struct SelvaHierarchyNode *node;
     struct SVectorIterator it;
     struct Selva_SubscriptionMarker *marker;
 
@@ -1575,8 +1574,6 @@ static void defer_alias_change_events(
         /* No alias markers in this structure. */
         return;
     }
-
-    node = SelvaHierarchy_FindNode(hierarchy, node_id);
 
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
@@ -1590,7 +1587,8 @@ static void defer_alias_change_events(
 
             /*
              * Wipe the markers of this subscription after the events have been
-             * deferred.
+             * deferred. We assume that these subscriptions wanted to always
+             * observer the alias not the specific node.
              */
             SVector_Concat(wipe_subs, &marker->subs);
         }
@@ -1746,21 +1744,21 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
 
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
-        struct selva_string *alias_name) {
+        struct SelvaHierarchyNode *node) {
     SVECTOR_AUTOFREE(wipe_subs);
-    Selva_NodeId node_id;
     struct SelvaHierarchyMetadata *metadata;
-    int err;
 
     SVector_Init(&wipe_subs, 0, subscription_svector_compare);
 
-    err = SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ alias_name }, 1, node_id);
-    if (err < 0) {
+    if (!node) {
         return;
     }
 
-    metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
+    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     if (!metadata) {
+        Selva_NodeId node_id;
+
+        SelvaHierarchy_GetNodeId(node_id, node);
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to get metadata for node: \"%.*s\"",
                   (int)SELVA_NODE_ID_SIZE, node_id);
         return;
@@ -1774,15 +1772,14 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
     defer_alias_change_events(
             hierarchy,
             &metadata->sub_markers,
-            node_id,
+            node,
             &wipe_subs);
 
-    struct SVectorIterator it;
+    struct SVectorIterator sub_it;
     struct Selva_Subscription *sub;
 
-    /* Wipe all markers of the subscriptions that were hit. */
-    SVector_ForeachBegin(&it, &wipe_subs);
-    while ((sub = SVector_Foreach(&it))) {
+    SVector_ForeachBegin(&sub_it, &wipe_subs);
+    while ((sub = SVector_Foreach(&sub_it))) {
         remove_sub_markers(hierarchy, sub);
     }
 }

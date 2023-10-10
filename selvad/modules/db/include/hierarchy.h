@@ -501,12 +501,6 @@ int get_alias(struct SelvaHierarchy *hierarchy, const struct selva_string *ref, 
 int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref);
 
 /**
- * Remove aliases listed in set.
- * Caller must update the node aliases if necessary.
- */
-int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set);
-
-/**
  * Delete all aliases of the node.
  */
 void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node_obj);
