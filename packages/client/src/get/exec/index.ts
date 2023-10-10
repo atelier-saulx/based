@@ -45,7 +45,6 @@ export async function get(
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
 
     ctx.markerId = mapSubMarkerId(markerId)
-    console.log({ markerId, ctxMarkerId: ctx.markerId })
     ctx.markers = []
     ctx.cleanup = cleanup
   }
@@ -143,7 +142,6 @@ export async function execParallel(
     const ids =
       results?.map((cmdResult, i) => {
         if (!cmdResult) {
-          console.log('WUT', JSON.stringify(q[i], null, 2))
           return []
         }
 
