@@ -140,8 +140,8 @@ export async function set(client: BasedDbClient, opts: any) {
   let { $id, $alias } = opts
   if (!$id && $alias) {
     const args = Array.isArray($alias) ? $alias : [$alias]
-    const resolved = await client.command('resolve.nodeid', [0, ...args])
-    $id = resolved?.[0]
+    const [resolved] = await client.command('resolve.nodeid', [0, ...args])
+    $id = resolved?.[1]
     if (!$id && !opts.aliases) {
       opts.aliases = { $add: args }
     }

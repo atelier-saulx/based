@@ -99,49 +99,60 @@ export async function getAlias(
   getOpts: any,
   aliases: string[]
 ): Promise<string> {
-  if (ctx.cleanup) {
+  if (ctx.subId) {
+    if (ctx.cleanup) {
+      for (const alias of aliases) {
+        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+        if (aliasMarkerId === ctx.markerId) {
+          return ALIAS_MARKER_CACHE.get(aliasMarkerId)
+        }
+      }
+    }
+
     for (const alias of aliases) {
       const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
       if (aliasMarkerId === ctx.markerId) {
-        return ALIAS_MARKER_CACHE.get(aliasMarkerId)
+        await get(ctx.client, getOpts, {
+          isSubscription: true,
+          subId: ctx.subId,
+          markerId: ctx.markerId,
+          cleanup: true,
+        })
       }
     }
   }
 
-  for (const alias of aliases) {
-    const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-    if (aliasMarkerId === ctx.markerId) {
-      await get(ctx.client, getOpts, {
-        isSubscription: true,
-        subId: ctx.subId,
-        markerId: ctx.markerId,
-        cleanup: true,
-      })
-    }
-  }
-
-  const resolved = await ctx.client.command('resolve.nodeid', [0, ...aliases])
+  const [resolved] = await ctx.client.command('resolve.nodeid', [0, ...aliases])
   console.dir({ resolved }, { depth: 6 })
-  const id = resolved?.[0]
-  const resolvedAlias = resolved?.[1] || aliases[0] // TODO: remove fallback case
 
-  ALIAS_MARKER_CACHE.set(hashObjectIgnoreKeyOrder({ alias: resolvedAlias }), id)
+  if (resolved?.length !== 2) {
+    return
+  }
 
-  await Promise.all(
-    aliases.map(async (alias) => {
-      const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-      console.log('adding alias marker', ctx.subId, aliasMarkerId, alias)
-      try {
-        await ctx.client.command('subscriptions.addAlias', [
-          ctx.subId,
-          aliasMarkerId,
-          alias,
-        ])
-      } catch (e) {
-        console.log('Error adding alias marker', e)
-      }
-    })
-  )
+  const [resolvedAlias, id] = resolved
+
+  if (ctx.subId) {
+    ALIAS_MARKER_CACHE.set(
+      hashObjectIgnoreKeyOrder({ alias: resolvedAlias }),
+      id
+    )
+
+    await Promise.all(
+      aliases.map(async (alias) => {
+        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+        console.log('adding alias marker', ctx.subId, aliasMarkerId, alias)
+        try {
+          await ctx.client.command('subscriptions.addAlias', [
+            ctx.subId,
+            aliasMarkerId,
+            alias,
+          ])
+        } catch (e) {
+          console.log('Error adding alias marker', e)
+        }
+      })
+    )
+  }
 
   return id
 }
@@ -150,10 +161,9 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
   const { client, subId } = ctx
 
   if (cmd.source.alias && !cmd.source.id) {
-    cmd.source.id = await ctx.client.command('resolve.nodeid', [
-      0,
-      cmd.source.alias,
-    ])
+    cmd.source.id = (
+      await ctx.client.command('resolve.nodeid', [0, cmd.source.alias])
+    )[1]
   }
 
   const opts = makeOpts(ctx, cmd)
