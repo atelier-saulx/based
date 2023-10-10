@@ -12,6 +12,8 @@ import { sourceId } from '../id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { get } from '.'
 
 type CmdExecOpts = {
   cmdName: Command
@@ -67,6 +69,9 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 const CMD_RESULT_CACHE: Map<number, any> = new Map()
 const CMD_SUB_MARKER_MAPPING_CACHE: Map<number, number> = new Map()
 
+// maps alias marker id to id for cleanup purposes
+const ALIAS_MARKER_CACHE: Map<number, string> = new Map()
+
 export function addSubMarkerMapping(from: number, to: number): boolean {
   const current = CMD_SUB_MARKER_MAPPING_CACHE.get(from)
   if (current === to) {
@@ -87,6 +92,58 @@ export function purgeSubMarkerMapping(id: number): boolean {
 
 export function purgeCache(cmdID: number): void {
   CMD_RESULT_CACHE.delete(cmdID)
+}
+
+export async function getAlias(
+  ctx: ExecContext,
+  getOpts: any,
+  aliases: string[]
+): Promise<string> {
+  if (ctx.cleanup) {
+    for (const alias of aliases) {
+      const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+      if (aliasMarkerId === ctx.markerId) {
+        return ALIAS_MARKER_CACHE.get(aliasMarkerId)
+      }
+    }
+  }
+
+  for (const alias of aliases) {
+    const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+    if (aliasMarkerId === ctx.markerId) {
+      await get(ctx.client, getOpts, {
+        isSubscription: true,
+        subId: ctx.subId,
+        markerId: ctx.markerId,
+        cleanup: true,
+      })
+    }
+  }
+
+  const resolved = await ctx.client.command('resolve.nodeid', [0, ...aliases])
+  console.dir({ resolved }, { depth: 6 })
+  const id = resolved?.[0]
+  const resolvedAlias = resolved?.[1] || aliases[0] // TODO: remove fallback case
+
+  ALIAS_MARKER_CACHE.set(hashObjectIgnoreKeyOrder({ alias: resolvedAlias }), id)
+
+  await Promise.all(
+    aliases.map(async (alias) => {
+      const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+      console.log('adding alias marker', ctx.subId, aliasMarkerId, alias)
+      try {
+        await ctx.client.command('subscriptions.addAlias', [
+          ctx.subId,
+          aliasMarkerId,
+          alias,
+        ])
+      } catch (e) {
+        console.log('Error adding alias marker', e)
+      }
+    })
+  )
+
+  return id
 }
 
 export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
@@ -110,7 +167,11 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       return result
     }
 
-    await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+    try {
+      await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+    } catch (e) {
+      console.error('Error cleaning up marker', ctx.subId, cmdID)
+    }
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
     CMD_RESULT_CACHE.delete(cmdID)

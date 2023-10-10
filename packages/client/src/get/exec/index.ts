@@ -6,7 +6,7 @@ export * from '../types'
 export * from '../parse'
 
 import { parseGetOpts, parseGetResult } from '../parse'
-import { getCmd, mapSubMarkerId } from './cmd'
+import { getAlias, getCmd, mapSubMarkerId } from './cmd'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
@@ -20,10 +20,12 @@ export async function get(
     isSubscription,
     subId,
     markerId,
+    cleanup,
   }: {
     isSubscription: boolean
     subId?: number
     markerId?: number
+    cleanup?: boolean
   } = {
     isSubscription: false,
   }
@@ -45,35 +47,13 @@ export async function get(
     ctx.markerId = mapSubMarkerId(markerId)
     console.log({ markerId, ctxMarkerId: ctx.markerId })
     ctx.markers = []
+    ctx.cleanup = cleanup
   }
 
   let { $id, $language, $alias } = opts
   if ($alias) {
     const aliases = Array.isArray($alias) ? $alias : [$alias]
-    const resolved = await ctx.client.command('resolve.nodeid', [0, ...aliases])
-
-    $id = resolved?.[0]
-
-    if (isSubscription) {
-      const aliasMarkerId = 1
-      if (aliasMarkerId === ctx.markerId) {
-        // run as if fresh query
-        delete ctx.markerId
-        ctx.cleanup = true
-
-        // await client.command('subscriptions.del', [ctx.subId])
-      }
-
-      await Promise.all(
-        aliases.map((alias) => {
-          return client.command('subscriptions.addAlias', [
-            ctx.subId,
-            aliasMarkerId,
-            alias,
-          ])
-        })
-      )
-    }
+    $id = await getAlias(ctx, opts, aliases)
 
     if (!$id) {
       return { merged: {}, defaults: [] }
@@ -161,7 +141,13 @@ export async function execParallel(
     )
 
     const ids =
-      results?.map(([cmdResult]) => {
+      results?.map((cmdResult, i) => {
+        if (!cmdResult) {
+          console.log('WUT', JSON.stringify(q[i], null, 2))
+          return []
+        }
+
+        cmdResult = cmdResult[0]
         if (!Array.isArray(cmdResult)) {
           return []
         }

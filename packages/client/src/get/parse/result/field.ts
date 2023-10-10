@@ -95,10 +95,15 @@ const FIELD_PARSERS: Record<
           if (ctx.cleanup || ctx.markerId === cmd.markerId) {
             const purged = purgeSubMarkerMapping(subCmd.cmdId)
             if (purged) {
-              ctx.client.command('subscriptions.delmarker', [
-                ctx.subId,
-                subCmd.cmdId,
-              ])
+              ctx.client
+                .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
+                .catch((e) => {
+                  console.error(
+                    'Error cleaning up marker',
+                    ctx.subId,
+                    subCmd.cmdId
+                  )
+                })
             }
           } else {
             const added = addSubMarkerMapping(

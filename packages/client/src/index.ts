@@ -186,7 +186,11 @@ export class BasedDbClient extends Emitter {
 
     const cleanup = async () => {
       if (origMarkerId !== markerId) {
-        await this.command('subscriptions.delmarker', [subId, origMarkerId])
+        try {
+          await this.command('subscriptions.delmarker', [subId, origMarkerId])
+        } catch (e) {
+          console.error('Error cleaning up marker', subId, origMarkerId)
+        }
       }
 
       if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
