@@ -457,3 +457,23 @@ test('Change field type', async (t) => {
   const newSchema = client.schema
   t.true(newSchema.types['match'].fields?.title?.type === 'string')
 })
+
+test.only('Remove field', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          fields: {
+            // TODO: add delete to BasedSchemaField
+            // @ts-ignore
+            title: { $delete: true },
+          },
+        },
+      },
+    })
+  )
+  const newSchema = client.schema
+  t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
+})
