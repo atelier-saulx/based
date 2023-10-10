@@ -1831,7 +1831,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
      * Each part is also replicated separately.
      */
     selva_send_array(resp, 1 + nr_triplets);
-    selva_send_str(resp, nodeId, SELVA_NODE_ID_SIZE);
+    selva_send_str(resp, nodeId, Selva_NodeIdLen(nodeId));
 
     for (int i = 2; i < argc; i += 3) {
         struct selva_string *type = argv[i];

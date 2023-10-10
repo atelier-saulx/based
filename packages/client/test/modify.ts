@@ -290,7 +290,7 @@ test('root', async (t) => {
     hello: 'http://example.com/hello--yo-yes',
   })
 
-  t.deepEqual(root, 'root'.padEnd(16, '\0'))
+  t.deepEqual(root, 'root')
   t.deepEqual(
     (await client.command('object.get', ['', 'root', 'value']))[0],
     9001
@@ -322,7 +322,7 @@ test('root.children $delete: []', async (t) => {
     children: [match],
   })
 
-  t.deepEqual(root, 'root'.padEnd(16, '\0'))
+  t.deepEqual(root, 'root')
   t.deepEqual(await client.command('hierarchy.children', ['root']), [[match]])
 
   // I guess empty array not allowed?
@@ -1357,7 +1357,7 @@ test('$delete: true', async (t) => {
     value: 9001,
   })
 
-  t.deepEqual(root, 'root'.padEnd(16, '\0'))
+  t.deepEqual(root, 'root')
   t.deepEqual(
     (await client.command('object.get', ['', 'root', 'value']))[0],
     9001

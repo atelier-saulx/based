@@ -18,13 +18,11 @@
  * Trace handles.
  * TODO Traces in this file seem broken
  */
-SELVA_TRACE_HANDLE(cmd_find_array);
-SELVA_TRACE_HANDLE(cmd_find_bfs_expression);
-SELVA_TRACE_HANDLE(cmd_find_index);
-SELVA_TRACE_HANDLE(cmd_find_refs);
-SELVA_TRACE_HANDLE(cmd_find_rest);
-SELVA_TRACE_HANDLE(cmd_find_sort_result);
-SELVA_TRACE_HANDLE(cmd_find_traversal_expression);
+SELVA_TRACE_HANDLE(query_traverse_array);
+SELVA_TRACE_HANDLE(query_traverse_bfs_edge_field);
+SELVA_TRACE_HANDLE(query_traverse_traversal_expression);
+SELVA_TRACE_HANDLE(query_traverse_traversal_field);
+SELVA_TRACE_HANDLE(query_traverse_rest);
 
 int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struct query_traverse *qt, void *args)
 {
@@ -41,11 +39,7 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
         SELVA_TRACE_BEGIN(query_traverse_array);
         err = SelvaHierarchy_TraverseArray(hierarchy, node_id, ref_field_str, ref_field_len, &ary_cb);
         SELVA_TRACE_END(query_traverse_array);
-    } else if ((qt->dir &
-                (SELVA_HIERARCHY_TRAVERSAL_REF |
-                 SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD |
-                 SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD))
-               && qt->dir_opt_str) {
+    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && qt->dir_opt_str) {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,
             .node_arg = args,
@@ -54,25 +48,30 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
         size_t ref_field_len = qt->dir_opt_len;
 
         SELVA_TRACE_BEGIN(query_traverse_refs);
-        err = SelvaHierarchy_TraverseField(hierarchy, node_id, qt->dir, ref_field_str, ref_field_len, &cb);
+        err = SelvaHierarchy_TraverseEdgeField(hierarchy, node_id, ref_field_str, ref_field_len, &cb);
         SELVA_TRACE_END(query_traverse_refs);
-    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
+    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD && qt->dir_opt_str) {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,
             .node_arg = args,
         };
+        const char *ref_field_str = qt->dir_opt_str;
+        size_t ref_field_len = qt->dir_opt_len;
 
-        SELVA_TRACE_BEGIN(query_traverse_bfs_expression);
-        err = SelvaHierarchy_TraverseExpressionBfs(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
-        SELVA_TRACE_END(query_traverse_bfs_expression);
-    } else if (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) {
+        SELVA_TRACE_BEGIN(query_traverse_bfs_edge_field);
+        err = SelvaHierarchy_TraverseEdgeFieldBfs(hierarchy, node_id, ref_field_str, ref_field_len, &cb);
+        SELVA_TRACE_END(query_traverse_bfs_edge_field);
+    } else if (qt->dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION |
+                          SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)) {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,
             .node_arg = args,
         };
 
         SELVA_TRACE_BEGIN(query_traverse_traversal_expression);
-        err = SelvaHierarchy_TraverseExpression(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
+        err = (qt->dir == SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)
+            ? SelvaHierarchy_TraverseExpression(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb)
+            :SelvaHierarchy_TraverseExpressionBfs(hierarchy, node_id, qt->traversal_rpn_ctx, qt->traversal_expression, qt->edge_filter_ctx, qt->edge_filter, &cb);
         SELVA_TRACE_END(query_traverse_traversal_expression);
     } else if (qt->dir & (SELVA_HIERARCHY_TRAVERSAL_FIELD |
                           SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)) {
@@ -85,9 +84,11 @@ int query_traverse(struct SelvaHierarchy *hierarchy, Selva_NodeId node_id, struc
             .cb_arg = args,
         };
 
+        SELVA_TRACE_BEGIN(query_traverse_traversal_field);
         err = (qt->dir == SELVA_HIERARCHY_TRAVERSAL_FIELD)
             ? SelvaHierarchy_TraverseField2(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb)
             : SelvaHierarchy_TraverseField2Bfs(hierarchy, node_id, qt->dir_opt_str, qt->dir_opt_len, &hcb, &acb);
+        SELVA_TRACE_END(query_traverse_traversal_field);
     } else {
         const struct SelvaHierarchyCallback cb = {
             .node_cb = qt->node_cb,

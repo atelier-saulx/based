@@ -549,20 +549,51 @@ int SelvaHierarchy_TraverseBFSDescendants(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse the hierarchy.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_NONE
+ * - SELVA_HIERARCHY_TRAVERSAL_DFS_FULL
+ * - SELVA_HIERARCHY_TRAVERSAL_NODE
+ * - SELVA_HIERARCHY_TRAVERSAL_CHILDREN
+ * - SELVA_HIERARCHY_TRAVERSAL_PARENTS
+ * - SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS
+ * - SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS
+ * - SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS
+ * - SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS
+ * - SELVA_HIERARCHY_TRAVERSAL_DFS_FULL
+ */
 int SelvaHierarchy_Traverse(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         enum SelvaTraversal dir,
         const struct SelvaHierarchyCallback *cb);
-int SelvaHierarchy_TraverseField(
+/**
+ * Traverse an edge field.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
+ */
+int SelvaHierarchy_TraverseEdgeField(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
-        enum SelvaTraversal dir,
+        const char *ref_field_str,
+        size_t ref_field_len,
+        const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse an edge field using BFS.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD
+ */
+int SelvaHierarchy_TraverseEdgeFieldBfs(
+        struct SelvaHierarchy *hierarchy,
+        const Selva_NodeId id,
         const char *field_name_str,
         size_t field_name_len,
         const struct SelvaHierarchyCallback *cb);
 /**
  * Traverse a field by first doing a full lookup.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_FIELD
  * Supported callbacks:
  * - head_cb
  * - node_cb
@@ -575,6 +606,11 @@ int SelvaHierarchy_TraverseField2(
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *hcb,
         const struct SelvaObjectArrayForeachCallback *acb);
+/**
+ * Traverse fields by first doing a full lookup and using BFS.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
+ */
 int SelvaHierarchy_TraverseField2Bfs(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id,
@@ -582,6 +618,11 @@ int SelvaHierarchy_TraverseField2Bfs(
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *hcb,
         const struct SelvaObjectArrayForeachCallback *acb);
+/**
+ * Traverse a field by expression.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_EXPRESSION
+ */
 int SelvaHierarchy_TraverseExpression(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
@@ -590,6 +631,11 @@ int SelvaHierarchy_TraverseExpression(
         struct rpn_ctx *edge_filter_ctx,
         const struct rpn_expression *edge_filter,
         const struct SelvaHierarchyCallback *cb);
+/**
+ * Traverse a field by expression using BFS.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION
+ */
 int SelvaHierarchy_TraverseExpressionBfs(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
@@ -600,6 +646,8 @@ int SelvaHierarchy_TraverseExpressionBfs(
         const struct SelvaHierarchyCallback *cb);
 /**
  * Foreach value in an array field.
+ * Implements:
+ * - SELVA_HIERARCHY_TRAVERSAL_ARRAY
  */
 int SelvaHierarchy_TraverseArray(
         struct SelvaHierarchy *hierarchy,
