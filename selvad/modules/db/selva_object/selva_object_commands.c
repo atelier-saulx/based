@@ -691,6 +691,113 @@ void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, const vo
     MODIFIED(resp, 1);
 }
 
+void SelvaObject_GetStringCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+{
+    Selva_NodeId node_id;
+    const char *okey_str = NULL;
+    size_t okey_len = 0;
+    struct SelvaHierarchyNode *node;
+    struct SelvaObject *obj;
+    struct selva_string *value;
+    int argc, err;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %.*s",
+                             &node_id,
+                             &okey_len, &okey_str);
+    if (argc != 2) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
+        return;
+    }
+
+    node = SelvaHierarchy_FindNode(main_hierarchy, node_id);
+    if (!node) {
+        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
+        return;
+    }
+
+    obj = SelvaHierarchy_GetNodeObject(node);
+    err = SelvaObject_GetStringStr(obj, okey_str, okey_len, &value);
+    if (err) {
+        selva_send_errorf(resp, err, "Failed to get the field value");
+        return;
+    }
+
+    selva_send_array(resp, 3);
+    selva_send_ll(resp, selva_string_get_flags(value));
+    selva_send_ll(resp, selva_string_get_crc(value));
+    selva_send_string(resp, value);
+}
+
+void SelvaObject_CasCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+{
+    __auto_finalizer struct finalizer fin;
+    Selva_NodeId node_id;
+    size_t okey_len;
+    const char *okey_str;
+    uint32_t old_crc;
+    struct selva_string *new_value;
+    struct SelvaHierarchyNode *node;
+    struct SelvaObject *obj;
+    int argc, err;
+
+    finalizer_init(&fin);
+
+    argc = selva_proto_scanf(&fin, buf, len, "%" SELVA_SCA_NODE_ID ", %.*s, %" SCNu32 ", %s",
+                             &node_id,
+                             &okey_len, &okey_str,
+                             &old_crc,
+                             &new_value);
+    if (argc != 4) {
+        if (argc < 0) {
+            selva_send_errorf(resp, argc, "Failed to parse args");
+        } else {
+            selva_send_error_arity(resp);
+        }
+        return;
+    }
+
+    if (!selva_field_prot_check_str(okey_str, okey_len, SELVA_OBJECT_STRING, SELVA_FIELD_PROT_WRITE)) {
+        selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
+        return;
+    }
+
+    node = SelvaHierarchy_FindNode(main_hierarchy, node_id);
+    if (!node) {
+        selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
+        return;
+    }
+
+    obj = SelvaHierarchy_GetNodeObject(node);
+    SelvaSubscriptions_FieldChangePrecheck(main_hierarchy, node);
+
+    struct selva_string *old_value = NULL;
+    err = SelvaObject_GetStringStr(obj, okey_str, okey_len, &old_value);
+    if (err && err != SELVA_ENOENT) {
+        selva_send_errorf(resp, err, "Failed to get the old value");
+        return;
+    }
+
+    if (old_value && selva_string_get_crc(old_value) != old_crc) {
+        selva_send_errorf(resp, SELVA_OBJECT_EMISMATCH, "CRC mismatch");
+        return;
+    }
+
+    selva_string_en_crc(new_value);
+    err = SelvaObject_SetStringStr(obj, okey_str, okey_len, new_value);
+    if (err == 0) {
+        finalizer_del(&fin, new_value);
+    } else if (err) {
+        selva_send_error(resp, err, NULL, 0);
+        return;
+    }
+
+    MODIFIED(resp, 1);
+}
+
 static int SelvaObject_OnLoad(void)
 {
     selva_mk_command(CMD_ID_OBJECT_DEL, SELVA_CMD_MODE_MUTATE, "object.del", SelvaObject_DelCommand);
@@ -704,6 +811,8 @@ static int SelvaObject_OnLoad(void)
     selva_mk_command(CMD_ID_OBJECT_LEN, SELVA_CMD_MODE_PURE, "object.len", SelvaObject_LenCommand);
     selva_mk_command(CMD_ID_OBJECT_GETMETA, SELVA_CMD_MODE_PURE, "object.getMeta", SelvaObject_GetMetaCommand);
     selva_mk_command(CMD_ID_OBJECT_SETMETA, SELVA_CMD_MODE_MUTATE, "object.setMeta", SelvaObject_SetMetaCommand);
+    selva_mk_command(CMD_ID_OBJECT_GET_STRING, SELVA_CMD_MODE_MUTATE, "object.getString", SelvaObject_GetStringCommand);
+    selva_mk_command(CMD_ID_OBJECT_CAS, SELVA_CMD_MODE_MUTATE, "object.cas", SelvaObject_CasCommand);
 
     return 0;
 }

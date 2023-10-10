@@ -171,8 +171,12 @@
  * Selva object has reached the maximum size.
  */
 #define SELVA_OBJECT_EOBIG              (-39)
+/**
+ * Selva object precondition mismatch or failed.
+ */
+#define SELVA_OBJECT_EMISMATCH          (-40)
 /* This must be the last error */
-#define SELVA_INVALID_ERROR             (-40)
+#define SELVA_INVALID_ERROR             (-41)
 
 /**
  * Selva error code to string.

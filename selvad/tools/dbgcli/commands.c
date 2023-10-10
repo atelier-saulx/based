@@ -43,6 +43,7 @@ static int cmd_lscmd_req(const struct cmd *cmd, int sock, int seqno, int argc, c
 
 static int cmd_loglevel_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
@@ -91,6 +92,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_OBJECT_INCRBY,
         .cmd_name = "object.incrby",
         .cmd_req = cmd_object_incrby_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_OBJECT_CAS] = {
+        .cmd_id = CMD_ID_OBJECT_CAS,
+        .cmd_name = "object.cas",
+        .cmd_req = cmd_object_cas_req,
         .cmd_res = generic_res,
     },
     [CMD_ID_PUBLISH] = {
@@ -401,6 +408,81 @@ static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int
 
     memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(0, buf, buf_size))}, sizeof(CHK_T));
     if (send_message(sock, buf, buf_size, 0)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 5) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    const size_t okey_len = strlen(argv[2]);
+    const char *value_str = argv[4];
+    const size_t value_len = strlen(value_str);
+    const size_t node_id_len = NODE_ID_SIZE;
+    size_t buf_size = sizeof(struct selva_proto_header) +
+             sizeof(struct selva_proto_string) + node_id_len +
+             sizeof(struct selva_proto_string) + okey_len +
+             sizeof(struct selva_proto_longlong) +
+             sizeof(struct selva_proto_string);
+    uint8_t buf[buf_size];
+    uint8_t *p = buf;
+
+    memset(buf, 0, buf_size);
+
+    memcpy(p, &(struct selva_proto_header){
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(buf_size + value_len),
+            .msg_bsize = 0,
+        },
+        sizeof(struct selva_proto_header));
+    p += sizeof(struct selva_proto_header);
+
+    memcpy(p, &(struct selva_proto_string){
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(node_id_len),
+        },
+        sizeof(struct selva_proto_string));
+    p += sizeof(struct selva_proto_string);
+    strncpy((char *)p, argv[1], node_id_len);
+    p += node_id_len;
+
+    memcpy(p, &(struct selva_proto_string){
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(okey_len),
+        },
+        sizeof(struct selva_proto_string));
+    p += sizeof(struct selva_proto_string);
+    memcpy(p, argv[2], okey_len);
+    p += okey_len;
+
+    memcpy(p, &(struct selva_proto_longlong){
+            .type = SELVA_PROTO_LONGLONG,
+            .flags = 0,
+            .v = htole64(strtol(argv[3], NULL, 10)),
+        },
+        sizeof(struct selva_proto_longlong));
+    p += sizeof(struct selva_proto_longlong);
+
+    memcpy(p, &(struct selva_proto_string){
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(value_len),
+        },
+        sizeof(struct selva_proto_string));
+
+    memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(crc32c(0, buf, buf_size), value_str, value_len))}, sizeof(CHK_T));
+    if (send_message(sock, buf, buf_size, MSG_MORE) ||
+        send_message(sock, value_str, value_len, 0)) {
         return -1;
     }
 

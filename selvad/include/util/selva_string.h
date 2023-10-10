@@ -238,6 +238,11 @@ void selva_string_en_crc(struct selva_string *s);
 int selva_string_verify_crc(struct selva_string *s);
 
 /**
+ * Get the CRC of the string s.
+ */
+uint32_t selva_string_get_crc(struct selva_string *s);
+
+/**
  * Set SELVA_STRING_COMPRESS flag on an existing string.
  * Setting the flag won't compress the string but mark it as compressed;
  * i.e. it's only a metadata update.
