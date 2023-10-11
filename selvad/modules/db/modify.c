@@ -1396,7 +1396,8 @@ static enum selva_op_repl_state modify_edge_meta_op(
 
     err = SelvaHierarchy_GetEdgeMetadata(node, field_str, field_len, op->dst_node_id, op->delete_all, true, &edge_metadata);
     if (err == SELVA_ENOENT || !edge_metadata) {
-        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found");
+        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found, field: \"%.*s\"",
+                          (int)field_len, field_str);
         return SELVA_OP_REPL_STATE_UNCHANGED;
     } else if (err) {
         selva_send_errorf(resp, err, "Failed to get edge metadata");
@@ -1662,9 +1663,11 @@ int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char t
         type = SELVA_OBJECT_HLL;
         break;
     case SELVA_MODIFY_ARG_OP_OBJ_META:
-    case SELVA_MODIFY_ARG_OP_EDGE_META: /* not so sure about this. */
         type = SELVA_OBJECT_OBJECT;
         break;
+    case SELVA_MODIFY_ARG_OP_EDGE_META:
+        /* Non-edge fields will be caught later, incl. protected ones. */
+        return 1;
     case SELVA_MODIFY_ARG_INVALID:
     case SELVA_MODIFY_ARG_OP_DEL:
     default:
@@ -1832,7 +1835,8 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
 #endif
 
         if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
-            selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
+            selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field. type_code: %c field: \"%.*s\"",
+                              type_code, (int)field_len, field_str);
             continue;
         }
 

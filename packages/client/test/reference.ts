@@ -1014,9 +1014,9 @@ test('simple singular reference metadata', async (t) => {
         en: 'yesh match',
       },
       $edgeMeta: { isItNice: 'pretty nice', howNice: 91 },
-      // parents: [ // TODO: if parents/chilrden are more like other edges
-      //   { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
-      // ],
+      parents: [
+        { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
+      ],
     },
 
     // FIXME: if setting in same command, it doesn't work?
@@ -1099,22 +1099,22 @@ test('simple singular reference metadata', async (t) => {
   )
 
   // TODO: if parents/children ae more like other edges
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     parents: {
-  //       id: true,
-  //       $edgeMeta: true,
-  //       $list: true,
-  //     },
-  //   }),
-  //   {
-  //     parents: [
-  //       {
-  //         id: 'clA',
-  //         $edgeMeta: { isItNice: 'super nice', howNice: 9001 },
-  //       },
-  //     ],
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      parents: {
+        id: true,
+        $edgeMeta: true,
+        $list: true,
+      },
+    }),
+    {
+      parents: [
+        {
+          id: 'clA',
+          $edgeMeta: { isItNice: 'super nice', howNice: 9001 },
+        },
+      ],
+    }
+  )
 })

@@ -586,15 +586,27 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
 }
 
 static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
-        if (!parent->children_metadata && create) {
-            parent->children_metadata = SelvaObject_New();
-        }
+    int err = SELVA_ENOENT;
 
-        if (parent->children_metadata) {
-            return SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
-        }
+    if (!parent->children_metadata && create) {
+        parent->children_metadata = SelvaObject_New();
+    }
 
-        return SELVA_ENOENT;
+    if (parent->children_metadata) {
+        err = SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
+        if (err == SELVA_ENOENT) {
+            struct SelvaObject *edge_metadata = SelvaObject_New();
+
+            err = SelvaObject_SetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
+            if (err) {
+                SelvaObject_Destroy(edge_metadata);
+            } else {
+                *out = edge_metadata;
+            }
+        }
+    }
+
+    return err;
 }
 
 int SelvaHierarchy_GetEdgeMetadata(
@@ -658,13 +670,16 @@ static struct SelvaObject *get_edge_metadata(struct SelvaHierarchyNode *node, en
         struct SelvaHierarchyNode *child;
         struct SelvaObject *field_metadata;
 
-        if (field_type == SELVA_HIERARCHY_TRAVERSAL_PARENTS) {
+        switch (field_type) {
+        case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
             parent = node;
             child = containerof(adj_vec, struct SelvaHierarchyNode, parents);
-        } else if (field_type == SELVA_HIERARCHY_TRAVERSAL_CHILDREN) {
+            break;
+        case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
             parent = containerof(adj_vec, struct SelvaHierarchyNode, children);
             child = node;
-        } else {
+            break;
+        default:
             unreachable();
         }
 
@@ -692,17 +707,17 @@ struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct Selva
     enum SelvaTraversal field_type;
 
     switch (tag) {
-        case SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS:
-            field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
-            break;
-        case SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN:
-            field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
-            break;
-        case SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE:
-            field_type = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
-            break;
-        default:
-            abort();
+    case SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS:
+        field_type = SELVA_HIERARCHY_TRAVERSAL_PARENTS;
+        break;
+    case SELVA_TRAVERSAL_SVECTOR_PTAG_CHILDREN:
+        field_type = SELVA_HIERARCHY_TRAVERSAL_CHILDREN;
+        break;
+    case SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE:
+        field_type = SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD;
+        break;
+    default:
+        abort();
     }
 
     return get_edge_metadata(node, field_type, PTAG_GETP(traversal_metadata->origin_field_svec_tagp));
