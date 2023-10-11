@@ -219,15 +219,16 @@ test.serial.skip('get - correct order', async (t) => {
     results.push(v)
   })
 
+  console.log('1', await client.command('subscriptions.list', []))
+  await client.set({ $id: 'ma1', published: false })
+
   await wait(1e3)
+  console.log('2', await client.command('subscriptions.list', []))
 
-  client.set({ $id: 'ma1', published: false })
-
-  await wait(1e3)
-
-  client.set({ $id: 'ma1', published: true })
+  await client.set({ $id: 'ma1', published: true })
 
   await wait(3e3)
+  console.log('3', await client.command('subscriptions.list', []))
 
   t.is(results.length, 3)
   t.is(results[0].children.length, 3)

@@ -10,7 +10,7 @@ import {
 import { hashCmd } from '../../util'
 import { parseList } from './list'
 import { parseAlias } from './alias'
-import { deepEqual } from '@saulx/utils'
+import { deepCopy, deepEqual } from '@saulx/utils'
 import { joinPath } from '../../../util'
 
 export async function parseGetOpts(
@@ -161,7 +161,7 @@ export async function parseGetOpts(
                 target: {
                   ...target,
                   type: 'traverse',
-                  $list: value.$list,
+                  $list: deepCopy(value.$list),
                 },
               }
             } else if (value.$aggregate) {
