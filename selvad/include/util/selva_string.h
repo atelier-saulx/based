@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 struct finalizer;
 struct selva_string;
 
