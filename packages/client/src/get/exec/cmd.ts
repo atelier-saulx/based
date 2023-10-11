@@ -157,7 +157,11 @@ export async function getAlias(
   return id
 }
 
-export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
+export async function getCmd(
+  ctx: ExecContext,
+  cmd: GetCommand,
+  setPending?: Function
+): Promise<any> {
   const { client, subId } = ctx
 
   if (cmd.source.alias && !cmd.source.id) {
@@ -201,6 +205,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
     nestedFind.markerId = hashCmd(nestedFind)
+
+    if (subId && nestedFind.markerId === ctx.markerId) {
+      setPending(nestedFind)
+    }
     return getCmd(ctx, nestedFind)
   }
 

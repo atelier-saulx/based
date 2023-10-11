@@ -135,7 +135,9 @@ export async function execParallel(
           return [[]]
         }
 
-        return getCmd(ctx, cmd)
+        return getCmd(ctx, cmd, (p) => {
+          pending = p
+        })
       })
     )
 

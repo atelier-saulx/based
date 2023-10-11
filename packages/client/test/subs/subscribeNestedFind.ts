@@ -98,7 +98,7 @@ const observe = async (
 }
 
 // TODO: rpn evaluation issue??
-test.serial.skip('get - correct order', async (t) => {
+test.serial.only('get - correct order', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
