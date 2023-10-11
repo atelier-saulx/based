@@ -175,14 +175,17 @@ export async function set(client: BasedDbClient, opts: any) {
       const refField = String(path[0])
 
       const { $edgeMeta, ...nestedOpts } = value
-      nestedOpts.$noRoot = true
 
       if (
         !['parents', 'children'].includes(refField) &&
         !nestedOpts.parents &&
         !nestedOpts.children
       ) {
-        nestedOpts.parents = ['root']
+        // essentially:
+        // nestedOpts.$noRoot = false
+        // nestedOpts.parents = ['root']
+      } else {
+        nestedOpts.$noRoot = true
       }
 
       if (opts.$language) {
