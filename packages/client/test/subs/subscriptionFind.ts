@@ -131,7 +131,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
   })
 }
 
-// TODO: rpn evaluation issue??
+// TODO: sub events should de de-duplicated better (on sub manager side)
 test.serial.skip('subscription find', async (t) => {
   await start(t)
   const client = t.context.dbClient
