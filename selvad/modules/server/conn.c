@@ -143,6 +143,15 @@ void free_stream_resp(struct selva_server_response_out *stream_resp)
     stream_resp->ctx = NULL;
 }
 
+struct conn_ctx *get_conn_by_idx(size_t idx)
+{
+    if (!bitmap_get(clients_map, idx)) {
+        return &clients[idx];
+    }
+
+    return NULL;
+}
+
 size_t conn_to_str(struct conn_ctx *ctx, char buf[CONN_STR_LEN], size_t bsize)
 {
     return fd_to_str(ctx->fd, buf, bsize);
@@ -159,7 +168,10 @@ void send_client_list(struct selva_server_response_out *resp)
             char buf[CONN_STR_LEN];
             size_t len;
 
-            selva_send_array(resp, 5 << 1);
+            selva_send_array(resp, 6 << 1);
+
+            selva_send_str(resp, "idx", 3);
+            selva_send_ll(resp, i);
 
             selva_send_str(resp, "addr", 4);
             len = conn_to_str(client, buf, sizeof(buf));

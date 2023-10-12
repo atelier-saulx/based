@@ -117,6 +117,8 @@ struct selva_server_response_out *alloc_stream_resp(struct conn_ctx *ctx);
  */
 void free_stream_resp(struct selva_server_response_out *stream_resp);
 
+struct conn_ctx *get_conn_by_idx(size_t idx);
+
 #ifdef INET_ADDRSTRLEN
 /**
  * Describe a client connection.

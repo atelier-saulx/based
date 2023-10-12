@@ -408,21 +408,48 @@ static void rusage(struct selva_server_response_out *resp, const void *buf __unu
 
 static void client_command(struct selva_server_response_out *resp, const void *buf, size_t size)
 {
-    const char *op_str;
-    size_t op_len;
+    const char *op_str = NULL;
+    size_t op_len = 0;
+    const char *arg_str = "";
+    size_t arg_len = 0;
     int argc;
 
-    argc = selva_proto_scanf(NULL, buf, size, "%.*s", &op_len, &op_str);
+    argc = selva_proto_scanf(NULL, buf, size, "%.*s, %.*s",
+                             &op_len, &op_str,
+                             &arg_len, &arg_str);
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
-    } else if (argc != 1) {
+    } else if (argc < 1) {
         selva_send_error_arity(resp);
         return;
     }
 
     if (op_len == 4 && !memcmp(op_str, "list", 4)) {
+        if (argc != 1) {
+            selva_send_error_arity(resp);
+            return;
+        }
+
         send_client_list(resp);
+    } else if (op_len == 4 && !memcmp(op_str, "kill", 4)) {
+        char idx[arg_len + 1];
+        struct conn_ctx *client;
+
+        if (argc != 2) {
+            selva_send_error_arity(resp);
+            return;
+        }
+
+        memcpy(idx, arg_str, arg_len);
+        idx[arg_len] = '\0';
+        client = get_conn_by_idx(strtoll(idx, NULL, 10));
+        if (client) {
+            (void)shutdown(client->fd, SHUT_RDWR);
+            selva_send_ll(resp, 1);
+        } else {
+            selva_send_ll(resp, 0);
+        }
     } else {
         selva_send_error(resp, SELVA_EINVAL, NULL, 0);
         return;
