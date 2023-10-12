@@ -90,6 +90,13 @@
 #define CMD_ID_RUSAGE 11
 
 /**
+ * Client ops.
+ * module: server
+ * cmd: client
+ */
+#define CMD_ID_CLIENT 12
+
+/**
  * Load db.
  * module: db
  * cmd: load

@@ -390,7 +390,7 @@ static void mallocprofdump(struct selva_server_response_out *resp, const void *b
     selva_send_ll(resp, 1);
 }
 
-static void rusage(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
+static void rusage(struct selva_server_response_out *resp, const void *buf __unused, size_t size)
 {
     struct selva_rusage net_rusage;
 
@@ -404,6 +404,29 @@ static void rusage(struct selva_server_response_out *resp, const void *buf __unu
 
     selva_getrusage_net(SELVA_RUSAGE_CHILDREN, &net_rusage);
     selva_send_bin(resp, &net_rusage, sizeof(net_rusage));
+}
+
+static void client_command(struct selva_server_response_out *resp, const void *buf, size_t size)
+{
+    const char *op_str;
+    size_t op_len;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, size, "%.*s", &op_len, &op_str);
+    if (argc < 0) {
+        selva_send_errorf(resp, argc, "Failed to parse args");
+        return;
+    } else if (argc != 1) {
+        selva_send_error_arity(resp);
+        return;
+    }
+
+    if (op_len == 4 && !memcmp(op_str, "list", 4)) {
+        send_client_list(resp);
+    } else {
+        selva_send_error(resp, SELVA_EINVAL, NULL, 0);
+        return;
+    }
 }
 
 static int new_server(int port)
@@ -606,6 +629,7 @@ __constructor void init(void)
     SELVA_MK_COMMAND(CMD_ID_MALLOCSTATS, SELVA_CMD_MODE_PURE, mallocstats);
     SELVA_MK_COMMAND(CMD_ID_MALLOCPROFDUMP, SELVA_CMD_MODE_PURE, mallocprofdump);
     SELVA_MK_COMMAND(CMD_ID_RUSAGE, SELVA_CMD_MODE_PURE, rusage);
+    selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
     pubsub_init();
 

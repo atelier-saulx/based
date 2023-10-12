@@ -124,6 +124,8 @@ void free_stream_resp(struct selva_server_response_out *stream_resp);
 size_t conn_to_str(struct conn_ctx *ctx, char buf[CONN_STR_LEN], size_t bsize);
 #endif
 
+void send_client_list(struct selva_server_response_out *resp);
+
 /**
  * @}
  */

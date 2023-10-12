@@ -14,6 +14,7 @@
 #include "event_loop.h"
 #include "selva_proto.h"
 #include "selva_log.h"
+#include "selva_server.h"
 #include "server.h"
 #include "../../tunables.h"
 
@@ -145,4 +146,34 @@ void free_stream_resp(struct selva_server_response_out *stream_resp)
 size_t conn_to_str(struct conn_ctx *ctx, char buf[CONN_STR_LEN], size_t bsize)
 {
     return fd_to_str(ctx->fd, buf, bsize);
+}
+
+void send_client_list(struct selva_server_response_out *resp)
+{
+    size_t max_clients = clients_map->nbits;
+
+    selva_send_array(resp, -1);
+    for (size_t i = 0; i < max_clients; i++) {
+        if (!bitmap_get(clients_map, i)) {
+            struct conn_ctx *client = &clients[i];
+            char buf[CONN_STR_LEN];
+            size_t len;
+
+            selva_send_array(resp, 4 << 1);
+
+            selva_send_str(resp, "addr", 4);
+            len = conn_to_str(client, buf, sizeof(buf));
+            selva_send_str(resp, buf, len);
+
+            selva_send_str(resp, "fd", 2);
+            selva_send_ll(resp, client->fd);
+
+            selva_send_str(resp, "recv_msg_buf_size", 17);
+            selva_send_ll(resp, client->recv_msg_buf_size);
+
+            selva_send_str(resp, "nr_streams", 10);
+            selva_send_ll(resp, MAX_STREAMS - __builtin_popcount(atomic_load(&client->streams.free_map)));
+        }
+    }
+    selva_send_array_end(resp);
 }
