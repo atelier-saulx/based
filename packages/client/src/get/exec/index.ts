@@ -135,9 +135,16 @@ export async function execParallel(
           return [[]]
         }
 
-        return getCmd(ctx, cmd, (p) => {
+        let omit = false
+        const r = await getCmd(ctx, cmd, (p) => {
           pending = p
+
+          if (!refresh && subId && !cleanup) {
+            omit = true
+          }
         })
+
+        return omit ? [[]] : r
       })
     )
 
