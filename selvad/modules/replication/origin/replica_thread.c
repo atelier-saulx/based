@@ -114,16 +114,15 @@ void *replication_thread(void *arg)
              * incomplete sdb structs will ever be completed.
              */
             res = selva_send_replication_pseudo_sdb(resp, e->id);
+        } else if (e->cmd_id == CMD_ID_PING) {
+            res = selva_send_replication_cmd(resp, e->id, e->ts, e->cmd_id, NULL, 0);
+        } else if (e->data_size == 0) {
+            /* `data` is a selva_string */
+            res = selva_send_replication_cmd_s(resp, e->id, e->ts, e->cmd_id, (struct selva_string *)e->data);
         } else {
-            if (e->data_size == 0) {
-                /* `data` is a selva_string */
-                res = selva_send_replication_cmd_s(resp, e->id, e->ts, e->cmd_id, (struct selva_string *)e->data);
-            } else {
-                /* `data` is a raw buffer */
-                res = selva_send_replication_cmd(resp, e->id, e->ts, e->cmd_id, e->data, e->data_size);
-            }
+            /* `data` is a raw buffer */
+            res = selva_send_replication_cmd(resp, e->id, e->ts, e->cmd_id, e->data, e->data_size);
         }
-
         if (res < 0) {
             break;
         }

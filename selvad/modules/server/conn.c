@@ -66,7 +66,6 @@ struct conn_ctx *alloc_conn_ctx(void)
     return ctx;
 }
 
-
 static void retry_free_con_ctx(struct event *, void *arg)
 {
     SELVA_LOG(SELVA_LOGL_DBG, "Retrying free_conn_ctx(%p)", arg);
