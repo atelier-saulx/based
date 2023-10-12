@@ -159,7 +159,7 @@ void send_client_list(struct selva_server_response_out *resp)
             char buf[CONN_STR_LEN];
             size_t len;
 
-            selva_send_array(resp, 4 << 1);
+            selva_send_array(resp, 5 << 1);
 
             selva_send_str(resp, "addr", 4);
             len = conn_to_str(client, buf, sizeof(buf));
@@ -173,6 +173,9 @@ void send_client_list(struct selva_server_response_out *resp)
 
             selva_send_str(resp, "nr_streams", 10);
             selva_send_ll(resp, MAX_STREAMS - __builtin_popcount(atomic_load(&client->streams.free_map)));
+
+            selva_send_str(resp, "last_cmd", 8);
+            selva_send_ll(resp, client->recv_frame_hdr_buf.cmd);
         }
     }
     selva_send_array_end(resp);
