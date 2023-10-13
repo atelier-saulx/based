@@ -1406,6 +1406,12 @@ void SelvaSubscriptions_InheritEdge(
                     marker->marker_action(hierarchy, marker, flags, NULL, 0, dst_node);
                 }
             }
+        } else if (marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+            enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+
+            /* TODO Is it actually src_node that changed in this case? */
+            /* TODO should we execute the expression */
+            marker->marker_action(hierarchy, marker, flags, NULL, 0, dst_node);
         }
     }
 
