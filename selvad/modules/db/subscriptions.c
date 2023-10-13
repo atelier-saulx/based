@@ -788,16 +788,13 @@ static int traverse_marker(
         const size_t ref_field_len = strlen(ref_field_str);
         struct field_lookup_traversable t;
 
-        SELVA_LOG(SELVA_LOGL_ERR, "DADA");
         head = SelvaHierarchy_FindNode(hierarchy, marker->node_id);
         if (!head) {
             return SELVA_HIERARCHY_ENOENT;
         }
-        SELVA_LOG(SELVA_LOGL_ERR, "DODO");
 
         /* FIXME This check is not perfect for SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD */
         err = field_lookup_traversable(head, ref_field_str, ref_field_len, &t);
-        SELVA_LOG(SELVA_LOGL_ERR, "DODO err: %d type: %s", err, SelvaTraversal_Dir2str(t.type));
         if (err) {
             return err;
         } else if (!(t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
@@ -1065,7 +1062,12 @@ int SelvaSubscriptions_AddCallbackMarker(
         return upsert_sub_marker(hierarchy, sub_id, marker);
     }
 
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) && dir_expression_str) {
+    if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        if (!dir_expression_str) {
+            err = SELVA_EINVAL;
+            goto out;
+        }
+
         dir_expression = rpn_compile(dir_expression_str);
         if (!dir_expression) {
             err = SELVA_RPN_ECOMP;
@@ -1103,9 +1105,7 @@ int SelvaSubscriptions_AddCallbackMarker(
         marker_set_ref_field(marker, dir_field, strlen(dir_field));
     }
 
-    if (filter) {
-        marker_set_filter(marker, filter_ctx, filter);
-    }
+    marker_set_filter(marker, filter_ctx, filter);
 
     marker_set_action_owner_ctx(marker, owner_ctx);
 
@@ -2128,11 +2128,11 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_node_id(marker, node_id);
     marker_set_dir(marker, query_opts.dir);
-    if (query_opts.dir_opt_str) {
-        marker_set_ref_field(marker, query_opts.dir_opt_str, query_opts.dir_opt_len);
-    }
+
     if (traversal_expression) {
         marker_set_traversal_expression(marker, traversal_expression);
+    } else if (query_opts.dir_opt_str) {
+        marker_set_ref_field(marker, query_opts.dir_opt_str, query_opts.dir_opt_len);
     }
 
     marker_set_filter(marker, filter_ctx, filter_expression);
