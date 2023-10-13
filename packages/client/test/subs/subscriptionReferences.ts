@@ -124,7 +124,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
 
 // TODO: Adding to references not triggering subscription callback
 // working fine with a get
-test.serial.skip('add new reference', async (t) => {
+test.serial('add new reference', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -213,9 +213,9 @@ test.serial.skip('add new reference', async (t) => {
   //const subs = await client.redis.selva_subscriptions_list('___selva_hierarchy')
   //console.log(subs)
   //console.log(await client.redis.selva_subscriptions_debug('___selva_hierarchy', subs[0]))
-  //console.log('ma1', await client.redis.selva_subscriptions_debug('___selva_hierarchy', 'ma1'))
-  //console.log('ma2', await client.redis.selva_subscriptions_debug('___selva_hierarchy', 'ma2'))
-  //console.log('ma3', await client.redis.selva_subscriptions_debug('___selva_hierarchy', 'ma3'))
+  //console.log('ma1', await client.command('subscriptions.debug', ['ma1']))
+  //console.log('ma2', await client.command('subscriptions.debug', ['ma2']))
+  //console.log('ma3', await client.command('subscriptions.debug', ['ma3']))
 
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma2' }, { id: 'ma3' }] })
 

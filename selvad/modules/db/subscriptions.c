@@ -788,22 +788,22 @@ static int traverse_marker(
         const size_t ref_field_len = strlen(ref_field_str);
         struct field_lookup_traversable t;
 
+        SELVA_LOG(SELVA_LOGL_ERR, "DADA");
         head = SelvaHierarchy_FindNode(hierarchy, marker->node_id);
         if (!head) {
             return SELVA_HIERARCHY_ENOENT;
         }
+        SELVA_LOG(SELVA_LOGL_ERR, "DODO");
 
         /* FIXME This check is not perfect for SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD */
         err = field_lookup_traversable(head, ref_field_str, ref_field_len, &t);
+        SELVA_LOG(SELVA_LOGL_ERR, "DODO err: %d type: %s", err, SelvaTraversal_Dir2str(t.type));
         if (err) {
             return err;
         } else if (!(t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
                                SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                               /* TODO Fix SELVA_HIERARCHY_TRAVERSAL_FIELD and SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD with ancestors and descendants */
-#if 0
                                SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
                                SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-#endif
                                SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) ||
                    head != t.node) {
             return SELVA_ENOTSUP;
@@ -1374,14 +1374,11 @@ void SelvaSubscriptions_InheritEdge(
     SelvaHierarchy_GetNodeId(src_node_id, src_node);
     SelvaHierarchy_GetNodeId(dst_node_id, dst_node);
 
-    /*
-     * TODO Add SELVA_HIERARCHY_TRAVERSAL_FIELD
-     * TODO Add SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
-     */
     SVector_ForeachBegin(&it, &src_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        if ((marker->dir & SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) ||
-            ((marker->dir & SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) && !memcmp(src_node_id, marker->node_id, SELVA_NODE_ID_SIZE))) {
+        if ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD)) ||
+            ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD)) &&
+             !memcmp(src_node_id, marker->node_id, SELVA_NODE_ID_SIZE))) {
             const size_t ref_field_len = strlen(marker->ref_field);
 
             if (field_len == ref_field_len && !strncmp(field_str, marker->ref_field, ref_field_len)) {
