@@ -1376,7 +1376,7 @@ void SelvaSubscriptions_InheritEdge(
 
     SVector_ForeachBegin(&it, &src_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        if ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD)) ||
+        if ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)) ||
             ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD)) &&
              !memcmp(src_node_id, marker->node_id, SELVA_NODE_ID_SIZE))) {
             const size_t ref_field_len = strlen(marker->ref_field);
