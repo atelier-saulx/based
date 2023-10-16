@@ -20,6 +20,7 @@ type CmdExecOpts = {
   struct: any
   extraArgs?: any[]
   rpn: string[]
+  hasNow: boolean
   cmdID: number
   nodeId: string
   fields: string
@@ -253,6 +254,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
   }
 
   let rpn = ['#1']
+  let hasNow = false
 
   if (cmd.type !== 'node') {
     // traverse by field
@@ -282,7 +284,12 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
 
     if (cmd.filter) {
       const ast = createAst(cmd.filter)
+
       if (ast) {
+        if (ast.hasNow) {
+          hasNow = true
+        }
+
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
       }
     }
@@ -311,6 +318,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields: fields,
@@ -326,6 +334,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields: '',
       strFields: '',
@@ -351,6 +360,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields,
