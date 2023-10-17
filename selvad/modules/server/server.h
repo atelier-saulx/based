@@ -178,18 +178,6 @@ ssize_t server_recv_frame(struct conn_ctx *ctx);
 int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame);
 
 /**
- * Cork the underlying socket.
- */
-void server_cork_resp(struct selva_server_response_out *resp);
-
-/**
- * Uncork the underlying socket.
- * The actual uncorking might not happen immediately if corking the socket is
- * requested through some other mean. E.g. batch processing.
- */
-void server_uncork_resp(struct selva_server_response_out *resp);
-
-/**
  * Send buffer as a part of the response resp.
  * The data is sent as is framed within selva_proto frames. Typically the buf
  * should point to one of the selva_proto value structs. The buffer might be

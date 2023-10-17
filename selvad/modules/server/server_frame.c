@@ -22,6 +22,34 @@
 
 #define MAX_RETRIES 3
 
+/**
+ * Cork the underlying socket if not yet corked.
+ */
+static void maybe_cork(struct selva_server_response_out *resp)
+{
+    struct conn_ctx *ctx = resp->ctx;
+
+    if (ctx && !ctx->flags.corked) {
+        tcp_cork(ctx->fd);
+        ctx->flags.corked = 1;
+    }
+}
+
+/**
+ * Uncork the underlying socket if conditions are met.
+ * Uncorks the underlying socket if response or conn_ctx properties don't require
+ * corked socket.
+ */
+static void maybe_uncork(struct selva_server_response_out *resp, enum server_send_flags flags)
+{
+    struct conn_ctx *ctx = resp->ctx;
+
+    if ((flags & SERVER_SEND_MORE) == 0 && resp->cork == 0 && ctx && !ctx->flags.batch_active) {
+        tcp_uncork(ctx->fd);
+        ctx->flags.corked = 0;
+    }
+}
+
 /*
  * NOTICE: All logs are commented out for perf. Please keep it this way in prod.
  */
@@ -134,51 +162,12 @@ int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_fra
     err = send_frame(resp->ctx->fd, resp->buf, resp->buf_i, 0);
     resp->buf_i = 0;
 
-    return err;
-}
-
-/**
- * Cork the underlying socket if not yet corked.
- */
-static void maybe_cork(struct selva_server_response_out *resp)
-{
-    struct conn_ctx *ctx = resp->ctx;
-
-    if (ctx && !ctx->flags.corked) {
-        tcp_cork(ctx->fd);
-        ctx->flags.corked = 1;
-    }
-}
-
-/**
- * Uncork the underlying socket if conditions are met.
- * Uncorks the underlying socket if response or conn_ctx properties don't require
- * corked socket.
- */
-static void maybe_uncork(struct selva_server_response_out *resp, enum server_send_flags flags)
-{
-    struct conn_ctx *ctx = resp->ctx;
-
-    if ((flags & SERVER_SEND_MORE) == 0 && resp->cork == 0 && ctx && !ctx->flags.batch_active) {
-        tcp_uncork(ctx->fd);
-        ctx->flags.corked = 0;
-    }
-}
-
-void server_cork_resp(struct selva_server_response_out *resp)
-{
-    resp->cork = 1;
-    maybe_cork(resp);
-}
-
-void server_uncork_resp(struct selva_server_response_out *resp)
-{
-    if (resp->cork) {
+    if (last_frame) {
         resp->cork = 0;
-        if (resp->ctx) {
-            maybe_uncork(resp, 0);
-        }
+        maybe_uncork(resp, 0);
     }
+
+    return err;
 }
 
 ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags)
