@@ -32,7 +32,6 @@ OBJ := \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \
 	   query/inherit/inherit.o \
-	   query/inherit/send_field.o \
 	   query/inherit/send_field_find.o \
 	   field_lookup/data_field.o \
 	   field_lookup/inherit_field.o \
