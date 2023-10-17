@@ -446,4 +446,386 @@ test.serial.skip('inherit object', async (t) => {
   ])
 })
 
-// TODO: old com
+// TODO: old comment. Should we add?
+// FIXME type for `no` is missing from the schema
+// test.serial.skip('inherit record', async (t) => {
+//   const client = connect({ port }, { loglevel: 'info' })
+//
+//   await client.updateSchema({
+//     languages: ['en', 'de', 'nl'],
+//     types: {
+//       yeshType: {
+//         prefix: 'ye',
+//         fields: {
+//           funkono: {
+//             type: 'record',
+//             values: {
+//               type: 'object',
+//               properties: {
+//                 texty: {
+//                   type: 'text',
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//       noType: {
+//         prefix: 'no',
+//         fields: {
+//           funkono: {
+//             type: 'record',
+//             values: {
+//               type: 'object',
+//               properties: {
+//                 texty: {
+//                   type: 'text',
+//                 },
+//               },
+//             },
+//           },
+//         },
+//       },
+//     },
+//   })
+//
+//   let cnt = 0
+//
+//   await client.set({
+//     $id: 'yefoo',
+//     $language: 'en',
+//     funkono: {
+//       0: {
+//         texty: 'purple',
+//       },
+//     },
+//   })
+//
+//   await client.set({
+//     $id: 'nobar',
+//     parents: ['yefoo'],
+//   })
+//
+//   const subs = client
+//     .observe({
+//       $id: 'nobar',
+//       funkono: { $inherit: { $type: 'yeshType', $merge: true } },
+//     })
+//     .subscribe((res) => {
+//       cnt++
+//       console.dir(res, { depth: null })
+//     })
+//
+//   await wait(500)
+//
+//   await client.set({
+//     $id: 'nobar',
+//     $language: 'en',
+//     funkono: {
+//       0: {
+//         texty: 'yellow',
+//       },
+//     },
+//   })
+//
+//   await wait(500)
+//   subs.unsubscribe()
+//
+//   await client.delete('root')
+//   await client.destroy()
+//   t.is(cnt, 2)
+// })
+
+// TODO: error using inherit
+// TypeError {
+//   message: 'Cannot create property \'$find\' on boolean \'true\'',
+// }
+test.serial.skip('list inherit subscription', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: {
+        yesh: { type: 'string' },
+        no: { type: 'string' },
+        flapper: {
+          type: 'object',
+          properties: {
+            snurk: { type: 'json' },
+            bob: { type: 'json' },
+          },
+        },
+      },
+    },
+    types: {
+      yeshType: {
+        prefix: 'ye',
+        fields: {
+          yesh: { type: 'string' },
+          flapper: {
+            type: 'object',
+            properties: {
+              snurk: { type: 'json' },
+              bob: { type: 'json' },
+            },
+          },
+        },
+      },
+    },
+  })
+  await wait(100)
+
+  await client.set({
+    $id: 'root',
+    yesh: 'yesh',
+    no: 'no',
+  })
+
+  await client.set({
+    $id: 'yeA',
+    yesh: 'yesh a',
+  })
+
+  await client.set({
+    $id: 'yeB',
+    parents: ['yeA'],
+  })
+
+  for (let i = 0; i < 2; i++) {
+    await client.set({
+      $id: 'ye' + i,
+      parents: ['yeA'],
+    })
+  }
+
+  console.log(
+    '---------',
+    await client.get({
+      $id: 'yeA',
+      flapdrol: {
+        id: true,
+        yesh: { $inherit: true },
+        $field: 'children',
+        $list: true,
+      },
+    })
+  )
+  const results: any[] = []
+  observe(
+    t,
+    {
+      $id: 'yeA',
+      flapdrol: {
+        id: true,
+        yesh: { $inherit: true },
+        $field: 'children',
+        $list: true,
+      },
+    },
+    (p) => {
+      results.push(deepCopy(p))
+    }
+  )
+
+  await wait(1000)
+
+  await client.set({
+    $id: 'yeA',
+    yesh: 'yesh a!',
+  })
+
+  await wait(1000)
+
+  await client.set({
+    $id: 'yeB',
+    yesh: 'yesh b',
+  })
+
+  await wait(1000)
+
+  t.deepEqualIgnoreOrder(results, [
+    {
+      flapdrol: [
+        { id: 'ye0', yesh: 'yesh a' },
+        { id: 'yeB', yesh: 'yesh a' },
+        { id: 'ye1', yesh: 'yesh a' },
+      ],
+    },
+    {
+      flapdrol: [
+        { id: 'ye0', yesh: 'yesh a!' },
+        { id: 'yeB', yesh: 'yesh a!' },
+        { id: 'ye1', yesh: 'yesh a!' },
+      ],
+    },
+    {
+      flapdrol: [
+        { id: 'ye0', yesh: 'yesh a!' },
+        { id: 'yeB', yesh: 'yesh b' },
+        { id: 'ye1', yesh: 'yesh a!' },
+      ],
+    },
+  ])
+})
+
+// TODO: error using inherit
+// TypeError {
+//   message: 'Cannot create property \'$find\' on boolean \'true\'',
+// }
+test.serial.skip('list inherit + field subscription', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: {
+        yesh: { type: 'string' },
+        no: { type: 'string' },
+        flapper: {
+          type: 'object',
+          properties: {
+            snurk: { type: 'json' },
+            bob: { type: 'json' },
+          },
+        },
+      },
+    },
+    types: {
+      yeshType: {
+        prefix: 'ye',
+        fields: {
+          no: { type: 'string' },
+          yesh: { type: 'string' },
+          flapper: {
+            type: 'object',
+            properties: {
+              snurk: { type: 'json' },
+              bob: { type: 'json' },
+            },
+          },
+        },
+      },
+    },
+  })
+  await wait(100)
+
+  await client.set({
+    $id: 'root',
+    yesh: 'yesh',
+  })
+
+  await client.set({
+    $id: 'yeA',
+    yesh: 'yesh a',
+    no: 'no',
+  })
+
+  await client.set({
+    $id: 'yeB',
+    parents: ['yeA'],
+  })
+
+  for (let i = 0; i < 2; i++) {
+    await client.set({
+      $id: 'ye' + i,
+      parents: ['yeA'],
+    })
+  }
+
+  const results: any[] = []
+
+  console.log(
+    '---------',
+    await client.get({
+      $id: 'yeA',
+      flapdrol: {
+        id: true,
+        yesh: {
+          $field: 'no',
+          $inherit: true,
+        },
+        $field: 'children',
+        $list: true,
+      },
+    })
+  )
+  observe(
+    t,
+    {
+      $id: 'yeA',
+      flapdrol: {
+        id: true,
+        yesh: {
+          $field: 'no',
+          $inherit: true,
+        },
+        $field: 'children',
+        $list: true,
+      },
+    },
+    (p) => {
+      results.push(deepCopy(p))
+    }
+  )
+
+  await wait(1000)
+
+  await client.set({
+    $id: 'yeA',
+    no: 'no!',
+  })
+
+  await wait(1000)
+
+  await client.set({
+    $id: 'yeB',
+    no: 'o yes?',
+  })
+
+  const x = await client.get({
+    $id: 'yeB',
+    id: true,
+    yesh: {
+      $field: 'no',
+      $inherit: true,
+    },
+  })
+
+  t.deepEqual(
+    x,
+    {
+      id: 'yeB',
+      yesh: 'o yes?',
+    },
+    'get'
+  )
+
+  await wait(1000)
+
+  t.deepEqualIgnoreOrder(results, [
+    {
+      flapdrol: [
+        { id: 'ye0', yesh: 'no' },
+        { id: 'yeB', yesh: 'no' },
+        { id: 'ye1', yesh: 'no' },
+      ],
+    },
+    {
+      flapdrol: [
+        { id: 'ye0', yesh: 'no!' },
+        { id: 'yeB', yesh: 'no!' },
+        { id: 'ye1', yesh: 'no!' },
+      ],
+    },
+    {
+      flapdrol: [
+        { id: 'yeB', yesh: 'o yes?' },
+        { id: 'ye0', yesh: 'no!' },
+        { id: 'ye1', yesh: 'no!' },
+      ],
+    },
+  ])
+})
