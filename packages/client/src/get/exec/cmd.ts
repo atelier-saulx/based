@@ -100,7 +100,7 @@ export function addSubMarker(
   cmd: GetCommand,
   subCmd: GetCommand
 ) {
-  if (ctx.cleanup || ctx.markerId === cmd.markerId) {
+  if (ctx.cleanup) {
     const purged = purgeSubMarkerMapping(subCmd.cmdId)
     if (purged) {
       ctx.client

@@ -240,8 +240,7 @@ test.serial('inherit object youzi', async (t) => {
   ])
 })
 
-// TODO: inherit not triggering subscription. Get works fine
-test.serial.only('basic inherit subscription', async (t) => {
+test.serial('basic inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
