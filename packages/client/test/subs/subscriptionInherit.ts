@@ -101,7 +101,7 @@ const observe = async (
 
 async function updateSchema(t: ExecutionContext<TestCtx>) {}
 
-// TODO: inherit op in marker broken
+// TODO: inherit op on non-existing doesn't inherit from root
 test.serial.skip('inherit object nested field from root youzi', async (t) => {
   await start(t)
   const client = t.context.dbClient
@@ -240,8 +240,7 @@ test.serial('inherit object youzi', async (t) => {
   ])
 })
 
-// TODO: inherit not triggering subscription. Get works fine
-test.serial.skip('basic inherit subscription', async (t) => {
+test.serial('basic inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -309,6 +308,14 @@ test.serial.skip('basic inherit subscription', async (t) => {
 
   await wait(1000)
 
+  const subs = await Promise.all(
+    (
+      await client.command('subscriptions.list', [])
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+
   await client.set({
     $id: 'yeA',
     yesh: 'yesh a!',
@@ -322,6 +329,8 @@ test.serial.skip('basic inherit subscription', async (t) => {
   })
 
   await wait(1000)
+
+  console.dir({ subs }, { depth: 8 })
 
   t.deepEqual(results, [
     { yesh: 'yesh a' },
