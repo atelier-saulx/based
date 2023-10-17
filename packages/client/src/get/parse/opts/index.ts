@@ -153,6 +153,10 @@ export async function parseGetOpts(
             }
 
             if (value.$list) {
+              if (value.$list === true) {
+                value.$list = {}
+              }
+
               if (value.$field) {
                 if (!value.$list.$find) {
                   value.$list.$find = {}

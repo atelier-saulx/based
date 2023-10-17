@@ -542,7 +542,7 @@ test.serial('inherit object', async (t) => {
 // TypeError {
 //   message: 'Cannot create property \'$find\' on boolean \'true\'',
 // }
-test.serial.skip('list inherit subscription', async (t) => {
+test.serial('list inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -676,7 +676,7 @@ test.serial.skip('list inherit subscription', async (t) => {
 // TypeError {
 //   message: 'Cannot create property \'$find\' on boolean \'true\'',
 // }
-test.serial.skip('list inherit + field subscription', async (t) => {
+test.serial('list inherit + field subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
