@@ -141,8 +141,9 @@ static int send_object_field_value(
 
         err = SelvaObject_ReplyWithObjectStr(resp, lang, obj, field_str, field_len, 0);
         if (err) {
-            (void)selva_send_errorf(resp, err, "failed to inherit field: \"%.*s\"",
-                                    (int)field_len, field_str);
+            (void)selva_send_errorf(resp, err, "Failed to inherit field: \"%.*s\" node: %.*s",
+                                    (int)field_len, field_str,
+                                    (int)SELVA_NODE_ID_SIZE, node_id);
         }
     }
 

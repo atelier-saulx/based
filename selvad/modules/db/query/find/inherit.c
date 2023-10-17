@@ -120,35 +120,35 @@ static void parse_type_and_field(
         const char *str,
         size_t len,
         const char **types_str, size_t *types_len,
-        const char **full_name_str, size_t *full_name_len,
         const char **name_str, size_t *name_len) {
+    const char *full_name_str;
+    size_t full_name_len;
+
     if (len < 2) {
         *types_str = NULL;
         *types_len = 0;
-        *full_name_str = NULL;
-        *full_name_len = 0;
         *name_str = NULL;
         *name_len = 0;
         return;
     }
 
     *types_str = str;
-    *full_name_str = memchr(str, ':', len);
-    if (*full_name_str) {
-        (*full_name_str)++;
+    full_name_str = memchr(str, ':', len);
+    if (full_name_str) {
+        full_name_str++;
     }
 
-    *full_name_len = (size_t)((str + len) - *full_name_str);
-    *types_len = (size_t)(*full_name_str - *types_str - 1);
+    full_name_len = (size_t)((str + len) - full_name_str);
+    *types_len = (size_t)(full_name_str - *types_str - 1);
 
-    const char *alias_end = memchr(*full_name_str, STRING_SET_ALIAS, *full_name_len);
-    const size_t alias_len = alias_end ? alias_end - *full_name_str : 0;
+    const char *alias_end = memchr(full_name_str, STRING_SET_ALIAS, full_name_len);
+    const size_t alias_len = alias_end ? alias_end - full_name_str : 0;
     if (alias_len > 1) { /* name + @ */
         *name_str = alias_end + 1;
-        *name_len = *full_name_len - alias_len;
+        *name_len = full_name_len - alias_len;
     } else {
-        *name_str = *full_name_str;
-        *name_len = *full_name_len;
+        *name_str = full_name_str;
+        *name_len = full_name_len;
     }
 }
 
@@ -175,20 +175,23 @@ static int Inherit_SendFields_NodeCb(
         const struct selva_string *types_and_field = args->field_names[i];
         const char *types_str;
         size_t types_len;
-        const char *full_field_name_str;
-        size_t full_field_name_len;
         const char *field_name_str;
         size_t field_name_len;
         TO_STR(types_and_field);
 
 		parse_type_and_field(types_and_field_str, types_and_field_len,
                              &types_str, &types_len,
-                             &full_field_name_str, &full_field_name_len,
                              &field_name_str, &field_name_len);
 		if (field_name_len == 0) {
 			/* Invalid inherit string. */
 			continue;
 		}
+
+        size_t full_field_name_len = types_and_field_len + 1;
+        char full_field_name_str[full_field_name_len] __attribute__((nonstring));
+
+        full_field_name_str[0] = '^';
+        memcpy(full_field_name_str + 1, types_and_field_str, types_and_field_len);
 
 		if (!first_node &&
             types_str && !is_type_match(node, (const char (*)[SELVA_NODE_TYPE_SIZE])types_str, types_len / sizeof(Selva_NodeType))) {
