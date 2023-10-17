@@ -123,6 +123,10 @@ export async function parseGetOpts(
           let types = value.$inherit.$type ?? []
           types = (Array.isArray(types) ? types : [types])
             .map((type) => {
+              if (type === 'root') {
+                return 'ro'
+              }
+
               return ctx.client?.schema?.types[type]?.prefix
             })
             .filter((prefix) => !!prefix)

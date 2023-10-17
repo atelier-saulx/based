@@ -340,7 +340,7 @@ test.serial('basic inherit subscription', async (t) => {
 })
 
 // TODO: $inherit with $type not working
-test.serial.skip('inherit object', async (t) => {
+test.serial('inherit object', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -382,9 +382,10 @@ test.serial.skip('inherit object', async (t) => {
     },
   })
 
-  // await client.set({
-  //   $id: 'yeA'
-  // })
+  await client.set({
+    $id: 'yeA',
+    parents: ['root'],
+  })
 
   await client.set({
     $id: 'yeB',
@@ -395,7 +396,8 @@ test.serial.skip('inherit object', async (t) => {
     await client.get({
       $id: 'yeB',
       // TODO: should work without $type
-      flapper: { $inherit: { $merge: true, $type: ['yeshType', 'root'] } },
+      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
+      flapper: { $inherit: true },
     }),
     {
       flapper: {
@@ -411,7 +413,8 @@ test.serial.skip('inherit object', async (t) => {
     {
       $id: 'yeB',
       // TODO: should work without $type
-      flapper: { $inherit: { $merge: true, $type: ['yeshType', 'root'] } },
+      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
+      flapper: { $inherit: true },
     },
     (p) => {
       results.push(deepCopy(p))
@@ -440,8 +443,8 @@ test.serial.skip('inherit object', async (t) => {
 
   t.deepEqual(results, [
     { flapper: { snurk: 'hello', bob: 'xxx' } },
-    { flapper: { snurk: 'snurkels', bob: 'xxx' } },
-    { flapper: { snurk: 'power bro', bob: 'xxx' } },
+    { flapper: { snurk: 'snurkels' } },
+    { flapper: { snurk: 'power bro' } },
   ])
 })
 

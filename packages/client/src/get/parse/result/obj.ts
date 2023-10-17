@@ -136,6 +136,10 @@ export function parseObjFields(
           .slice(1)
           .split(',')
           .map((prefix) => {
+            if (prefix === 'ro') {
+              return 'root'
+            }
+
             return ctx.client.schema.prefixToTypeMapping[prefix]
           })
           .filter((type) => !!type)
@@ -162,9 +166,11 @@ export function parseObjFields(
       }
 
       const typeFields =
-        ctx.client.schema?.types[
-          ctx.client.schema.prefixToTypeMapping[v[0].slice(0, 2)]
-        ]?.fields
+        v[0] === 'root'
+          ? ctx.client.schema?.root?.fields
+          : ctx.client.schema?.types[
+              ctx.client.schema.prefixToTypeMapping[v[0].slice(0, 2)]
+            ]?.fields
 
       if (typeFields) {
         fieldSchema = findFieldSchema(rest ?? alias, {
