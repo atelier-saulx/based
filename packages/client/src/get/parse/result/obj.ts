@@ -7,7 +7,9 @@ import { ExecContext, Field, GetCommand } from '../../types'
 import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
 import { joinPath } from '../../../util'
-import { setByPath } from '@saulx/utils'
+import { deepCopy, setByPath } from '@saulx/utils'
+import { hashCmd } from '../../util'
+import { addSubMarker } from '../../exec/cmd'
 
 export function findFieldSchema(
   f: string,
@@ -65,7 +67,7 @@ export function parseObjFields(
 
     if (f === '$edgeMeta') {
       const edgeField = v[0]
-        console.log({v, edgeField})
+      console.log({ v, edgeField })
       if (edgeField === '' || edgeField.endsWith('@')) {
         v = v[1]
       }
@@ -120,17 +122,46 @@ export function parseObjFields(
       continue
     }
 
-    const [alias, rest] = f.split('@')
+    let [alias, rest] = f.split('@')
     let fieldSchema = findFieldSchema(rest ?? alias, schema)
 
-    // TODO: handle fields by type
-    // const fs = cmd?.fields?.byType[schema?.type] ?? cmd?.fields?.$any
-    const fs = cmd?.fields?.$any
-    const field = fs.find((f) => {
-      return joinPath(f.field) === alias
-    })
+    if (f.startsWith('^')) {
+      // is inherit
 
-    if (field?.inherit) {
+      let inh: string
+      ;[inh, alias] = alias.split(':')
+
+      if (ctx.subId) {
+        const types = inh
+          .slice(1)
+          .split(',')
+          .map((prefix) => {
+            return ctx.client.schema.prefixToTypeMapping[prefix]
+          })
+          .filter((type) => !!type)
+
+        const subCmd: GetCommand = {
+          type: 'traverse',
+          source: deepCopy(cmd.source),
+          fields: { $any: [{ type: 'field', field: [rest ?? alias] }] }, // TODO: do this better, now it fires for any field change
+          target: { path: [] },
+          sourceField: 'ancestors',
+        }
+
+        if (types.length) {
+          subCmd.filter = {
+            $field: 'type',
+            $operator: '=',
+            $value: types,
+          }
+        }
+
+        subCmd.cmdId = hashCmd(subCmd)
+
+        console.dir({ ADDINGSUBMARKER: subCmd }, { depth: 6 })
+        addSubMarker(ctx, cmd, subCmd)
+      }
+
       const typeFields =
         ctx.client.schema?.types[
           ctx.client.schema.prefixToTypeMapping[v[0].slice(0, 2)]

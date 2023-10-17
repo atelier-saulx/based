@@ -95,6 +95,30 @@ export function purgeCache(cmdID: number): void {
   CMD_RESULT_CACHE.delete(cmdID)
 }
 
+export function addSubMarker(
+  ctx: ExecContext,
+  cmd: GetCommand,
+  subCmd: GetCommand
+) {
+  if (ctx.cleanup || ctx.markerId === cmd.markerId) {
+    const purged = purgeSubMarkerMapping(subCmd.cmdId)
+    if (purged) {
+      ctx.client
+        .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
+        .catch((e) => {
+          console.error('Error cleaning up marker', ctx.subId, subCmd.cmdId)
+        })
+    }
+  } else {
+    const added = addSubMarkerMapping(subCmd.cmdId, cmd.markerId || cmd.cmdId)
+
+    if (added) {
+      const marker = makeOpts(ctx, subCmd)
+      ctx.markers.push(marker)
+    }
+  }
+}
+
 export async function getAlias(
   ctx: ExecContext,
   getOpts: any,

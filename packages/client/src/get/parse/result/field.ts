@@ -9,11 +9,7 @@ import { parseRecFields } from './rec'
 import { getTypeSchema } from '../../../util'
 import { parseObjFields } from './obj'
 import { hashCmd } from '../../util'
-import {
-  addSubMarkerMapping,
-  makeOpts,
-  purgeSubMarkerMapping,
-} from '../../exec/cmd'
+import { addSubMarker } from '../../exec/cmd'
 
 const FIELD_PARSERS: Record<
   string,
@@ -92,31 +88,7 @@ const FIELD_PARSERS: Record<
 
           subCmd.cmdId = hashCmd(subCmd)
 
-          if (ctx.cleanup || ctx.markerId === cmd.markerId) {
-            const purged = purgeSubMarkerMapping(subCmd.cmdId)
-            if (purged) {
-              ctx.client
-                .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
-                .catch((e) => {
-                  console.error(
-                    'Error cleaning up marker',
-                    ctx.subId,
-                    subCmd.cmdId
-                  )
-                })
-            }
-          } else {
-            const added = addSubMarkerMapping(
-              subCmd.cmdId,
-              cmd.markerId || cmd.cmdId
-            )
-
-            if (added) {
-              const marker = makeOpts(ctx, subCmd)
-              console.dir({ subCmd, marker }, { depth: 6 })
-              ctx.markers.push(marker)
-            }
-          }
+          addSubMarker(ctx, cmd, subCmd)
         }
 
         const typeSchema = getTypeSchema(ctx, id)
