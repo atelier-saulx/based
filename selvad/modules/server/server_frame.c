@@ -114,6 +114,10 @@ int server_flush_frame_buf(struct selva_server_response_out *resp, int last_fram
 {
     int err;
 
+    if (!resp->ctx) {
+        return SELVA_PROTO_ENOTCONN;
+    }
+
     if (resp->buf_i == 0) {
         if (last_frame) {
             start_resp_frame_buf(resp);
@@ -140,7 +144,7 @@ static void maybe_cork(struct selva_server_response_out *resp)
 {
     struct conn_ctx *ctx = resp->ctx;
 
-    if (!ctx->flags.corked) {
+    if (ctx && !ctx->flags.corked) {
         tcp_cork(ctx->fd);
         ctx->flags.corked = 1;
     }
@@ -176,7 +180,6 @@ void server_uncork_resp(struct selva_server_response_out *resp)
         }
     }
 }
-
 
 ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags)
 {
