@@ -158,7 +158,6 @@ export function parseObjFields(
 
         subCmd.cmdId = hashCmd(subCmd)
 
-        console.dir({ ADDINGSUBMARKER: subCmd }, { depth: 6 })
         addSubMarker(ctx, cmd, subCmd)
       }
 
