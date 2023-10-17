@@ -110,7 +110,7 @@ static void finalize_frame(void *buf, size_t bsize, int last_frame)
     hdr->chk = htole32(crc32c(0, buf, bsize));
 }
 
-int server_flush_frame_buf(struct selva_server_response_out *resp, int last_frame)
+int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame)
 {
     int err;
 
@@ -194,7 +194,7 @@ ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const v
     while (i < len) {
         if (resp->buf_i >= sizeof(resp->buf)) {
             int err;
-            err = server_flush_frame_buf(resp, 0);
+            err = server_flush_frame_buf(resp, false);
             if (err) {
                 ret = err;
                 goto out;
@@ -226,10 +226,10 @@ ssize_t server_send_file(struct selva_server_response_out *resp, int fd, size_t 
     /*
      * Create and send a new frame header with no payload and msg_bsize set.
      */
-    server_flush_frame_buf(resp, 0);
+    server_flush_frame_buf(resp, false);
     start_resp_frame_buf(resp);
     set_resp_msg_len(resp, size);
-    server_flush_frame_buf(resp, 0);
+    server_flush_frame_buf(resp, false);
 
     off_t bytes_sent = tcp_sendfile(resp->ctx->fd, fd, &(off_t){0}, size);
     if (bytes_sent != (off_t)size) {
@@ -282,7 +282,7 @@ int selva_start_stream(struct selva_server_response_out *resp, struct selva_serv
         return SELVA_PROTO_ENOBUFS;
     }
 
-    server_flush_frame_buf(resp, 0);
+    server_flush_frame_buf(resp, false);
     resp->frame_flags |= SELVA_PROTO_HDR_STREAM;
     memcpy(stream_resp, resp, sizeof(*stream_resp));
     stream_resp->cork = 0; /* Streams should not be corked at response level. */

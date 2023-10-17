@@ -175,7 +175,7 @@ ssize_t server_recv_frame(struct conn_ctx *ctx);
  * Sends the data currently in the outgoing buffer.
  * @param last_frame if set the current message will be terminated.
  */
-int server_flush_frame_buf(struct selva_server_response_out *resp, int last_frame);
+int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame);
 
 /**
  * Cork the underlying socket.

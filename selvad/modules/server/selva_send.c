@@ -43,7 +43,7 @@ static int send_hdr_and_payload(
 
 int selva_send_flush(struct selva_server_response_out *restrict resp)
 {
-    return server_flush_frame_buf(resp, 0);
+    return server_flush_frame_buf(resp, false);
 }
 
 int selva_send_raw(struct selva_server_response_out *restrict resp, void *restrict p, size_t len)
@@ -374,7 +374,7 @@ int selva_send_end(struct selva_server_response_out *restrict resp)
 {
     int err;
 
-    err = server_flush_frame_buf(resp, 1);
+    err = server_flush_frame_buf(resp, true);
     if (err == SELVA_PROTO_ENOTCONN) {
         /* Likely no ctx. */
         return err;
