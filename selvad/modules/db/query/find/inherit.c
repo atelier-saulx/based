@@ -203,18 +203,23 @@ static int Inherit_SendFields_NodeCb(
 			return 0;
 		}
 
-        /*
-         * Get and send the field value to the client.
-         * The response should always start like this: [node_id, field_name, ...]
-         * but we don't send the header yet.
-         */
         err = Inherit_SendFieldFind(args->resp, hierarchy, args->lang,
                                     node, obj,
                                     full_field_name_str, full_field_name_len, /* Initially full_field is the same as field_name unless there is an alias. */
                                     field_name_str, field_name_len);
         if (err == 0) { /* found */
             bitmap_set(args->found, i); /* No need to look for this field anymore. */
-        } else if (err != SELVA_ENOENT) {
+        } else if (err == SELVA_ENOENT) {
+            struct selva_server_response_out *resp = args->resp;
+            Selva_NodeId node_id;
+
+            SelvaHierarchy_GetNodeId(node_id, node);
+
+            selva_send_str(resp, full_field_name_str, full_field_name_len);
+            selva_send_array(resp, 2);
+            selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
+            selva_send_null(resp);
+        } else {
             Selva_NodeId nodeId;
 
             SelvaHierarchy_GetNodeId(nodeId, node);
