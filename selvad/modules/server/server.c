@@ -514,6 +514,7 @@ static void on_data(struct event *event, void *arg)
         struct selva_server_response_out resp = {
             .ctx = ctx,
             .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
+            .resp_msg_handler = SERVER_MESSAGE_HANDLER_SOCK,
             .cmd = ctx->recv_frame_hdr_buf.cmd,
             .frame_flags = SELVA_PROTO_HDR_FFIRST,
             .seqno = seqno,
@@ -599,6 +600,7 @@ int selva_server_run_cmd(int8_t cmd_id, int64_t ts, void *msg, size_t msg_size)
 {
     struct selva_server_response_out resp = {
         .ctx = NULL,
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_NONE,
         .cmd = cmd_id,
         .last_error = 0,
         .ts = ts ? ts : ts_now(),
@@ -662,8 +664,7 @@ __constructor static void init(void)
     selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
     pubsub_init();
-
-    /* Async server for receiving messages. */
+    message_sock_init();
     conn_init(max_clients);
     server_sockfd = new_server(selva_port);
     evl_wait_fd(server_sockfd, on_connection, NULL, NULL, NULL);

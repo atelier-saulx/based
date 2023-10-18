@@ -25,7 +25,8 @@ int server_recv_message(struct conn_ctx *ctx)
         ctx->recv_msg_buf_i = 0;
     }
 
-    ssize_t frame_bsize = server_recv_frame(ctx);
+    /* Only sockets are suported for now. */
+    ssize_t frame_bsize = message_handlers[SERVER_MESSAGE_HANDLER_SOCK].recv_frame(ctx);
     if (frame_bsize <= 0) {
         char peer[CONN_STR_LEN];
 

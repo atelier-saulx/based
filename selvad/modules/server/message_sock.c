@@ -17,7 +17,6 @@
 #include "selva_log.h"
 #endif
 #include "selva_proto.h"
-#include "selva_server.h"
 #include "server.h"
 
 #define MAX_RETRIES 3
@@ -138,7 +137,7 @@ static void finalize_frame(void *buf, size_t bsize, int last_frame)
     hdr->chk = htole32(crc32c(0, buf, bsize));
 }
 
-int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame)
+static int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame)
 {
     int err;
 
@@ -170,7 +169,7 @@ int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_fra
     return err;
 }
 
-ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags)
+static ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags)
 {
     size_t i = 0;
     ssize_t ret = (ssize_t)len;
@@ -204,7 +203,7 @@ out:
     return ret;
 }
 
-ssize_t server_send_file(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags)
+static ssize_t server_send_file(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags)
 {
     if (!resp->ctx) {
         return SELVA_PROTO_ENOTCONN;
@@ -253,7 +252,7 @@ ssize_t server_send_file(struct selva_server_response_out *resp, int fd, size_t 
     return bytes_sent;
 }
 
-int selva_start_stream(struct selva_server_response_out *resp, struct selva_server_response_out **stream_resp_out)
+static int server_start_stream(struct selva_server_response_out *resp, struct selva_server_response_out **stream_resp_out)
 {
     struct selva_server_response_out *stream_resp;
 
@@ -280,13 +279,13 @@ int selva_start_stream(struct selva_server_response_out *resp, struct selva_serv
     return 0;
 }
 
-void selva_cancel_stream(struct selva_server_response_out *resp, struct selva_server_response_out *stream_resp)
+static void server_cancel_stream(struct selva_server_response_out *resp, struct selva_server_response_out *stream_resp)
 {
     resp->frame_flags &= ~SELVA_PROTO_HDR_STREAM;
     free_stream_resp(stream_resp);
 }
 
-ssize_t server_recv_frame(struct conn_ctx *ctx)
+static ssize_t server_recv_frame(struct conn_ctx *ctx)
 {
     int fd = ctx->fd;
     ssize_t r;
@@ -352,4 +351,16 @@ ssize_t server_recv_frame(struct conn_ctx *ctx)
     }
 
     return frame_bsize;
+}
+
+void message_sock_init(void)
+{
+    message_handlers[SERVER_MESSAGE_HANDLER_SOCK] = (struct message_handlers_vtable){
+        .recv_frame = server_recv_frame,
+        .flush = server_flush_frame_buf,
+        .send_buf = server_send_buf,
+        .send_file = server_send_file,
+        .start_stream = server_start_stream,
+        .cancel_stream = server_cancel_stream,
+    };
 }
