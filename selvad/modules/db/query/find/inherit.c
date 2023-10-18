@@ -260,6 +260,31 @@ int Inherit_FieldValue(
     return SelvaHierarchy_Traverse(hierarchy, node_id, SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS, &cb);
 }
 
+static void send_null_for_missing_fields(struct InheritSendFields_Args *args, const Selva_NodeId node_id) {
+    struct selva_server_response_out *resp = args->resp;
+    const size_t nr_fields = args->nr_fields;
+
+    for (size_t i = 0; i < nr_fields; i++) {
+        /* Field already found. */
+        if (bitmap_get(args->found, i)) {
+            continue;
+        }
+
+        const struct selva_string *types_and_field = args->field_names[i];
+        TO_STR(types_and_field);
+        size_t full_field_name_len = types_and_field_len + 1;
+        char full_field_name_str[full_field_name_len] __attribute__((nonstring));
+
+        full_field_name_str[0] = '^';
+        memcpy(full_field_name_str + 1, types_and_field_str, types_and_field_len);
+
+        selva_send_str(resp, full_field_name_str, full_field_name_len);
+        selva_send_array(resp, 2);
+        selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
+        selva_send_null(resp);
+    }
+}
+
 void Inherit_SendFields(
         struct selva_server_response_out *resp,
         struct SelvaHierarchy *hierarchy,
@@ -289,4 +314,6 @@ void Inherit_SendFields(
         /* TODO Better error handling? */
         SELVA_LOG(SELVA_LOGL_ERR, "Inherit failed: %s", selva_strerror(err));
     }
+
+    send_null_for_missing_fields(&args, node_id);
 }
