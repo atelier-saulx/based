@@ -180,6 +180,11 @@ export function parseObjFields(
       }
 
       v = v[1]
+
+      // inherited null values should be omitted
+      if (v === null) {
+        v = undefined
+      }
     }
 
     const res = parseFieldResult(ctx, fieldSchema, cmd, v)
