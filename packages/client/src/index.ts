@@ -159,9 +159,7 @@ export class BasedDbClient extends Emitter {
     try {
       await this.command('subscriptions.refreshMarker', [id])
     } catch (e) {
-      console.log(await this.command("subscriptions.list", []))
-      console.log(await this.command("subscriptions.list", [1]))
-      console.error('Marker refresh error', id, e)
+      console.error('Marker refresh error', e)
     }
   }
 
@@ -188,7 +186,11 @@ export class BasedDbClient extends Emitter {
 
     const cleanup = async () => {
       if (origMarkerId !== markerId) {
-        await this.command('subscriptions.delmarker', [subId, origMarkerId])
+        try {
+          await this.command('subscriptions.delmarker', [subId, origMarkerId])
+        } catch (e) {
+          console.error('Error cleaning up marker', subId, origMarkerId)
+        }
       }
 
       if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {

@@ -117,12 +117,16 @@ struct selva_server_response_out *alloc_stream_resp(struct conn_ctx *ctx);
  */
 void free_stream_resp(struct selva_server_response_out *stream_resp);
 
+struct conn_ctx *get_conn_by_idx(size_t idx);
+
 #ifdef INET_ADDRSTRLEN
 /**
  * Describe a client connection.
  */
 size_t conn_to_str(struct conn_ctx *ctx, char buf[CONN_STR_LEN], size_t bsize);
 #endif
+
+void send_client_list(struct selva_server_response_out *resp);
 
 /**
  * @}
@@ -171,19 +175,7 @@ ssize_t server_recv_frame(struct conn_ctx *ctx);
  * Sends the data currently in the outgoing buffer.
  * @param last_frame if set the current message will be terminated.
  */
-int server_flush_frame_buf(struct selva_server_response_out *resp, int last_frame);
-
-/**
- * Cork the underlying socket.
- */
-void server_cork_resp(struct selva_server_response_out *resp);
-
-/**
- * Uncork the underlying socket.
- * The actual uncorking might not happen immediately if corking the socket is
- * requested through some other mean. E.g. batch processing.
- */
-void server_uncork_resp(struct selva_server_response_out *resp);
+int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame);
 
 /**
  * Send buffer as a part of the response resp.

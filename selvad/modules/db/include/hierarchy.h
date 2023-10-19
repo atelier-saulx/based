@@ -340,6 +340,23 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id);
 
+/**
+ * Get edge metadata.
+ * Supports both hierarchy parents/children metadata as well as Edge metadata.
+ */
+int SelvaHierarchy_GetEdgeMetadata(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        const Selva_NodeId dst_node_id,
+        bool delete_all,
+        bool create,
+        struct SelvaObject **out);
+
+struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(
+        const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
+        struct SelvaHierarchyNode *node);
+
 int SelvaHierarchy_ClearNodeFlagImplicit(struct SelvaHierarchyNode *node);
 
 /**
@@ -499,12 +516,6 @@ int get_alias(struct SelvaHierarchy *hierarchy, const struct selva_string *ref, 
  * Caller must update the node aliases if necessary.
  */
 int delete_alias(struct SelvaHierarchy *hierarchy, struct selva_string *ref);
-
-/**
- * Remove aliases listed in set.
- * Caller must update the node aliases if necessary.
- */
-int delete_aliases(struct SelvaHierarchy *hierarchy, struct SelvaSet *set);
 
 /**
  * Delete all aliases of the node.

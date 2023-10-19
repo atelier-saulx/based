@@ -101,7 +101,7 @@ const observe = async (
 
 async function updateSchema(t: ExecutionContext<TestCtx>) {}
 
-// TODO: inherit op in marker broken
+// TODO: inherit op on non-existing doesn't inherit from root
 test.serial.skip('inherit object nested field from root youzi', async (t) => {
   await start(t)
   const client = t.context.dbClient
@@ -240,8 +240,7 @@ test.serial('inherit object youzi', async (t) => {
   ])
 })
 
-// TODO: inherit not triggering subscription. Get works fine
-test.serial.skip('basic inherit subscription', async (t) => {
+test.serial('basic inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -309,6 +308,14 @@ test.serial.skip('basic inherit subscription', async (t) => {
 
   await wait(1000)
 
+  const subs = await Promise.all(
+    (
+      await client.command('subscriptions.list', [])
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+
   await client.set({
     $id: 'yeA',
     yesh: 'yesh a!',
@@ -323,6 +330,8 @@ test.serial.skip('basic inherit subscription', async (t) => {
 
   await wait(1000)
 
+  console.dir({ subs }, { depth: 8 })
+
   t.deepEqual(results, [
     { yesh: 'yesh a' },
     { yesh: 'yesh a!' },
@@ -331,7 +340,7 @@ test.serial.skip('basic inherit subscription', async (t) => {
 })
 
 // TODO: $inherit with $type not working
-test.serial.skip('inherit object', async (t) => {
+test.serial('inherit object', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -373,9 +382,10 @@ test.serial.skip('inherit object', async (t) => {
     },
   })
 
-  // await client.set({
-  //   $id: 'yeA'
-  // })
+  await client.set({
+    $id: 'yeA',
+    parents: ['root'],
+  })
 
   await client.set({
     $id: 'yeB',
@@ -386,7 +396,8 @@ test.serial.skip('inherit object', async (t) => {
     await client.get({
       $id: 'yeB',
       // TODO: should work without $type
-      flapper: { $inherit: { $merge: true, $type: ['yeshType', 'root'] } },
+      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
+      flapper: { $inherit: true },
     }),
     {
       flapper: {
@@ -402,7 +413,8 @@ test.serial.skip('inherit object', async (t) => {
     {
       $id: 'yeB',
       // TODO: should work without $type
-      flapper: { $inherit: { $merge: true, $type: ['yeshType', 'root'] } },
+      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
+      flapper: { $inherit: true },
     },
     (p) => {
       results.push(deepCopy(p))
@@ -431,8 +443,8 @@ test.serial.skip('inherit object', async (t) => {
 
   t.deepEqual(results, [
     { flapper: { snurk: 'hello', bob: 'xxx' } },
-    { flapper: { snurk: 'snurkels', bob: 'xxx' } },
-    { flapper: { snurk: 'power bro', bob: 'xxx' } },
+    { flapper: { snurk: 'snurkels' } },
+    { flapper: { snurk: 'power bro' } },
   ])
 })
 
@@ -530,7 +542,7 @@ test.serial.skip('inherit object', async (t) => {
 // TypeError {
 //   message: 'Cannot create property \'$find\' on boolean \'true\'',
 // }
-test.serial.skip('list inherit subscription', async (t) => {
+test.serial('list inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -664,7 +676,7 @@ test.serial.skip('list inherit subscription', async (t) => {
 // TypeError {
 //   message: 'Cannot create property \'$find\' on boolean \'true\'',
 // }
-test.serial.skip('list inherit + field subscription', async (t) => {
+test.serial('list inherit + field subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
 

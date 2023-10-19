@@ -289,6 +289,10 @@ function reduceAnd(fork: WithRequired<Fork, '$and'>): string | null {
     } else {
       forks[forks.length] = filter
     }
+
+    if (filter.hasNow) {
+      fork.hasNow = true
+    }
   }
 
   const $and: (FilterAST | Fork)[] = []

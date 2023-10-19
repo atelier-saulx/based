@@ -607,6 +607,11 @@ int selva_string_verify_crc(struct selva_string *s)
     return s->crc == calc_crc(&hdr, get_buf(s));
 }
 
+uint32_t selva_string_get_crc(struct selva_string *s)
+{
+    return s->crc;
+}
+
 void selva_string_set_compress(struct selva_string *s)
 {
     s->flags |= SELVA_STRING_COMPRESS;

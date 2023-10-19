@@ -77,7 +77,7 @@ int replication_origin_check_sdb(uint64_t eid);
  * @returns 0 if successful; Otherwise a selva error is returned.
  */
 int replication_origin_register_replica(
-        struct selva_server_response_out *resp,
+        struct selva_server_response_out *stream_resp,
         uint64_t start_eid,
         const uint8_t start_sdb_hash[SELVA_IO_HASH_SIZE],
         enum replication_sync_mode mode);

@@ -46,6 +46,7 @@ static const char * const err2str[-SELVA_INVALID_ERROR + 1] = {
     [-SELVA_SUBSCRIPTIONS_EEXIST]       = (const char *)"ERR_SUBSCRIPTIONS EEXIST Exist",
     [-SELVA_RPN_ECOMP]                  = (const char *)"ERR_RPN ECOMP Expression compilation failed",
     [-SELVA_OBJECT_EOBIG]               = (const char *)"ERROR_SELVA_OBJECT Maximum number of keys reached",
+    [-SELVA_OBJECT_EMISMATCH]           = (const char *)"ERROR_SELVA_OBJECT Precondition mismatch or failed",
     [-SELVA_INVALID_ERROR]              = (const char *)"ERR_SELVA Invalid error code"
 };
 

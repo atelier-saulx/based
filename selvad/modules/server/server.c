@@ -390,7 +390,7 @@ static void mallocprofdump(struct selva_server_response_out *resp, const void *b
     selva_send_ll(resp, 1);
 }
 
-static void rusage(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
+static void rusage(struct selva_server_response_out *resp, const void *buf __unused, size_t size)
 {
     struct selva_rusage net_rusage;
 
@@ -404,6 +404,56 @@ static void rusage(struct selva_server_response_out *resp, const void *buf __unu
 
     selva_getrusage_net(SELVA_RUSAGE_CHILDREN, &net_rusage);
     selva_send_bin(resp, &net_rusage, sizeof(net_rusage));
+}
+
+static void client_command(struct selva_server_response_out *resp, const void *buf, size_t size)
+{
+    const char *op_str = NULL;
+    size_t op_len = 0;
+    const char *arg_str = "";
+    size_t arg_len = 0;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, size, "%.*s, %.*s",
+                             &op_len, &op_str,
+                             &arg_len, &arg_str);
+    if (argc < 0) {
+        selva_send_errorf(resp, argc, "Failed to parse args");
+        return;
+    } else if (argc < 1) {
+        selva_send_error_arity(resp);
+        return;
+    }
+
+    if (op_len == 4 && !memcmp(op_str, "list", 4)) {
+        if (argc != 1) {
+            selva_send_error_arity(resp);
+            return;
+        }
+
+        send_client_list(resp);
+    } else if (op_len == 4 && !memcmp(op_str, "kill", 4)) {
+        char idx[arg_len + 1];
+        struct conn_ctx *client;
+
+        if (argc != 2) {
+            selva_send_error_arity(resp);
+            return;
+        }
+
+        memcpy(idx, arg_str, arg_len);
+        idx[arg_len] = '\0';
+        client = get_conn_by_idx(strtoll(idx, NULL, 10));
+        if (client) {
+            (void)shutdown(client->fd, SHUT_RDWR);
+            selva_send_ll(resp, 1);
+        } else {
+            selva_send_ll(resp, 0);
+        }
+    } else {
+        selva_send_error(resp, SELVA_EINVAL, NULL, 0);
+        return;
+    }
 }
 
 static int new_server(int port)
@@ -460,7 +510,7 @@ static void on_data(struct event *event, void *arg)
         const uint32_t seqno = le32toh(ctx->recv_frame_hdr_buf.seqno);
         struct selva_server_response_out resp = {
             .ctx = ctx,
-            .cork = 1, /* Cork the full response. This will be turned off if a stream is started. */
+            .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
             .cmd = ctx->recv_frame_hdr_buf.cmd,
             .frame_flags = SELVA_PROTO_HDR_FFIRST,
             .seqno = seqno,
@@ -606,6 +656,7 @@ __constructor void init(void)
     SELVA_MK_COMMAND(CMD_ID_MALLOCSTATS, SELVA_CMD_MODE_PURE, mallocstats);
     SELVA_MK_COMMAND(CMD_ID_MALLOCPROFDUMP, SELVA_CMD_MODE_PURE, mallocprofdump);
     SELVA_MK_COMMAND(CMD_ID_RUSAGE, SELVA_CMD_MODE_PURE, rusage);
+    selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
     pubsub_init();
 

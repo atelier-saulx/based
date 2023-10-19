@@ -1115,26 +1115,20 @@ static enum selva_op_repl_state modify_array_op(
         finalizer_del(fin, value);
     } else if (type_code == SELVA_MODIFY_ARG_DOUBLE) {
         int err;
-        union {
-            char s[sizeof(double)];
-            double d;
-            void *p;
-        } v = {
-            .d = 0.0,
-        };
+        double d;
 
-        if (value_len != sizeof(v.d)) {
-            REPLY_WITH_ARG_TYPE_ERROR(v.d);
+        if (value_len != sizeof(d)) {
+            REPLY_WITH_ARG_TYPE_ERROR(d);
             return SELVA_OP_REPL_STATE_UNCHANGED;
         }
 
-        memcpy(v.s, value_str, sizeof(v.d));
+        d = ledoubletoh(value_str);
 
         if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, v.p);
+            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
             *active_insert_idx = -1;
         } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, v.p);
+            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_DOUBLE, idx, SelvaObject_ToDoubleArray(d));
         }
 
         if (err) {
@@ -1146,7 +1140,6 @@ static enum selva_op_repl_state modify_array_op(
         union {
             char s[sizeof(long long)];
             long long ll;
-            void *p;
         } v = {
             .ll = 0,
         };
@@ -1157,12 +1150,13 @@ static enum selva_op_repl_state modify_array_op(
         }
 
         memcpy(v.s, value_str, sizeof(v.ll));
+        v.ll = le64toh(v.ll);
 
         if (*active_insert_idx == idx) {
-            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, v.p);
+            err = SelvaObject_InsertArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
             *active_insert_idx = -1;
         } else {
-            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, v.p);
+            err = SelvaObject_AssignArrayIndexStr(obj, field_str, new_len, SELVA_OBJECT_LONGLONG, idx, SelvaObject_ToLongLongArray(v.ll));
         }
 
         if (err) {
@@ -1388,17 +1382,11 @@ static enum selva_op_repl_state modify_edge_meta_op(
         struct selva_string *field,
         struct selva_string *raw_value) {
     TO_STR(field);
-    struct EdgeField *edge_field;
     struct SelvaObject *edge_metadata;
     const struct SelvaModify_OpEdgeMeta *op;
     enum SelvaModify_OpEdgeMetaCode op_code;
     int err;
 
-    edge_field = Edge_GetField(node, field_str, field_len);
-    if (!edge_field) {
-        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found");
-        return SELVA_OP_REPL_STATE_UNCHANGED;
-    }
 
     op = SelvaModify_OpEdgeMeta_align(fin, raw_value);
     if (!op) {
@@ -1406,14 +1394,13 @@ static enum selva_op_repl_state modify_edge_meta_op(
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
-    if (op->delete_all) {
-        Edge_DeleteFieldMetadata(edge_field);
-        return SELVA_OP_REPL_STATE_UPDATED;
-    }
-
-    err = Edge_GetFieldEdgeMetadata(edge_field, op->dst_node_id, 1, &edge_metadata);
-    if (err) {
-        selva_send_errorf(resp, err, "Failed to get the metadata object");
+    err = SelvaHierarchy_GetEdgeMetadata(node, field_str, field_len, op->dst_node_id, op->delete_all, true, &edge_metadata);
+    if (err == SELVA_ENOENT || !edge_metadata) {
+        selva_send_errorf(resp, SELVA_ENOENT, "Edge field not found, field: \"%.*s\"",
+                          (int)field_len, field_str);
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    } else if (err) {
+        selva_send_errorf(resp, err, "Failed to get edge metadata");
         return SELVA_OP_REPL_STATE_UNCHANGED;
     }
 
@@ -1676,9 +1663,11 @@ int SelvaModify_field_prot_check(const char *field_str, size_t field_len, char t
         type = SELVA_OBJECT_HLL;
         break;
     case SELVA_MODIFY_ARG_OP_OBJ_META:
-    case SELVA_MODIFY_ARG_OP_EDGE_META: /* not so sure about this. */
         type = SELVA_OBJECT_OBJECT;
         break;
+    case SELVA_MODIFY_ARG_OP_EDGE_META:
+        /* Non-edge fields will be caught later, incl. protected ones. */
+        return 1;
     case SELVA_MODIFY_ARG_INVALID:
     case SELVA_MODIFY_ARG_OP_DEL:
     default:
@@ -1846,7 +1835,8 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
 #endif
 
         if (!SelvaModify_field_prot_check(field_str, field_len, type_code)) {
-            selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field");
+            selva_send_errorf(resp, SELVA_ENOTSUP, "Protected field. type_code: %c field: \"%.*s\"",
+                              type_code, (int)field_len, field_str);
             continue;
         }
 

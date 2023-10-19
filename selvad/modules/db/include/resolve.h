@@ -14,6 +14,7 @@ struct selva_string;
 #define SELVA_RESOLVE_NODE_ID   0x40000000
 #define SELVA_RESOLVE_ALIAS     0x20000000
 #define SELVA_RESOLVE_FLAGS     0x60000000
+#define SELVA_RESOLVE_MAX       0x1FFFFFFF
 
 /**
  * Resolve the first existing node_id from a list of aliases and node_ids.

@@ -799,11 +799,8 @@ static int traverse_marker(
             return err;
         } else if (!(t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
                                SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                               /* TODO Fix SELVA_HIERARCHY_TRAVERSAL_FIELD and SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD with ancestors and descendants */
-#if 0
                                SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
                                SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-#endif
                                SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) ||
                    head != t.node) {
             return SELVA_ENOTSUP;
@@ -1065,7 +1062,12 @@ int SelvaSubscriptions_AddCallbackMarker(
         return upsert_sub_marker(hierarchy, sub_id, marker);
     }
 
-    if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION) && dir_expression_str) {
+    if (dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+        if (!dir_expression_str) {
+            err = SELVA_EINVAL;
+            goto out;
+        }
+
         dir_expression = rpn_compile(dir_expression_str);
         if (!dir_expression) {
             err = SELVA_RPN_ECOMP;
@@ -1103,9 +1105,7 @@ int SelvaSubscriptions_AddCallbackMarker(
         marker_set_ref_field(marker, dir_field, strlen(dir_field));
     }
 
-    if (filter) {
-        marker_set_filter(marker, filter_ctx, filter);
-    }
+    marker_set_filter(marker, filter_ctx, filter);
 
     marker_set_action_owner_ctx(marker, owner_ctx);
 
@@ -1374,14 +1374,11 @@ void SelvaSubscriptions_InheritEdge(
     SelvaHierarchy_GetNodeId(src_node_id, src_node);
     SelvaHierarchy_GetNodeId(dst_node_id, dst_node);
 
-    /*
-     * TODO Add SELVA_HIERARCHY_TRAVERSAL_FIELD
-     * TODO Add SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
-     */
     SVector_ForeachBegin(&it, &src_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
-        if ((marker->dir & SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD) ||
-            ((marker->dir & SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) && !memcmp(src_node_id, marker->node_id, SELVA_NODE_ID_SIZE))) {
+        if ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)) ||
+            ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD)) &&
+             !memcmp(src_node_id, marker->node_id, SELVA_NODE_ID_SIZE))) {
             const size_t ref_field_len = strlen(marker->ref_field);
 
             if (field_len == ref_field_len && !strncmp(field_str, marker->ref_field, ref_field_len)) {
@@ -1409,6 +1406,12 @@ void SelvaSubscriptions_InheritEdge(
                     marker->marker_action(hierarchy, marker, flags, NULL, 0, dst_node);
                 }
             }
+        } else if (marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_EXPRESSION)) {
+            enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+
+            /* TODO Is it actually src_node that changed in this case? */
+            /* TODO should we execute the expression */
+            marker->marker_action(hierarchy, marker, flags, NULL, 0, dst_node);
         }
     }
 
@@ -1565,9 +1568,8 @@ void SelvaSubscriptions_DeferHierarchyDeletionEvents(
 static void defer_alias_change_events(
         struct SelvaHierarchy *hierarchy,
         const struct Selva_SubscriptionMarkers *sub_markers,
-        const Selva_NodeId node_id,
+        struct SelvaHierarchyNode *node,
         SVector *wipe_subs) {
-    struct SelvaHierarchyNode *node;
     struct SVectorIterator it;
     struct Selva_SubscriptionMarker *marker;
 
@@ -1575,8 +1577,6 @@ static void defer_alias_change_events(
         /* No alias markers in this structure. */
         return;
     }
-
-    node = SelvaHierarchy_FindNode(hierarchy, node_id);
 
     SVector_ForeachBegin(&it, &sub_markers->vec);
     while ((marker = SVector_Foreach(&it))) {
@@ -1590,7 +1590,8 @@ static void defer_alias_change_events(
 
             /*
              * Wipe the markers of this subscription after the events have been
-             * deferred.
+             * deferred. We assume that these subscriptions wanted to always
+             * observer the alias not the specific node.
              */
             SVector_Concat(wipe_subs, &marker->subs);
         }
@@ -1746,21 +1747,21 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
 
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
-        struct selva_string *alias_name) {
+        struct SelvaHierarchyNode *node) {
     SVECTOR_AUTOFREE(wipe_subs);
-    Selva_NodeId node_id;
     struct SelvaHierarchyMetadata *metadata;
-    int err;
 
     SVector_Init(&wipe_subs, 0, subscription_svector_compare);
 
-    err = SelvaResolve_NodeId(hierarchy, (struct selva_string *[]){ alias_name }, 1, node_id);
-    if (err < 0) {
+    if (!node) {
         return;
     }
 
-    metadata = SelvaHierarchy_GetNodeMetadata(hierarchy, node_id);
+    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
     if (!metadata) {
+        Selva_NodeId node_id;
+
+        SelvaHierarchy_GetNodeId(node_id, node);
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to get metadata for node: \"%.*s\"",
                   (int)SELVA_NODE_ID_SIZE, node_id);
         return;
@@ -1774,15 +1775,14 @@ void SelvaSubscriptions_DeferAliasChangeEvents(
     defer_alias_change_events(
             hierarchy,
             &metadata->sub_markers,
-            node_id,
+            node,
             &wipe_subs);
 
-    struct SVectorIterator it;
+    struct SVectorIterator sub_it;
     struct Selva_Subscription *sub;
 
-    /* Wipe all markers of the subscriptions that were hit. */
-    SVector_ForeachBegin(&it, &wipe_subs);
-    while ((sub = SVector_Foreach(&it))) {
+    SVector_ForeachBegin(&sub_it, &wipe_subs);
+    while ((sub = SVector_Foreach(&sub_it))) {
         remove_sub_markers(hierarchy, sub);
     }
 }
@@ -2134,11 +2134,11 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
     upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_node_id(marker, node_id);
     marker_set_dir(marker, query_opts.dir);
-    if (query_opts.dir_opt_str) {
-        marker_set_ref_field(marker, query_opts.dir_opt_str, query_opts.dir_opt_len);
-    }
+
     if (traversal_expression) {
         marker_set_traversal_expression(marker, traversal_expression);
+    } else if (query_opts.dir_opt_str) {
+        marker_set_ref_field(marker, query_opts.dir_opt_str, query_opts.dir_opt_len);
     }
 
     marker_set_filter(marker, filter_ctx, filter_expression);

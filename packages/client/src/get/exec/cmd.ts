@@ -12,12 +12,15 @@ import { sourceId } from '../id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
+import { get } from '.'
 
 type CmdExecOpts = {
   cmdName: Command
   struct: any
   extraArgs?: any[]
   rpn: string[]
+  hasNow: boolean
   cmdID: number
   nodeId: string
   fields: string
@@ -67,6 +70,9 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
 const CMD_RESULT_CACHE: Map<number, any> = new Map()
 const CMD_SUB_MARKER_MAPPING_CACHE: Map<number, number> = new Map()
 
+// maps alias marker id to id for cleanup purposes
+const ALIAS_MARKER_CACHE: Map<number, string> = new Map()
+
 export function addSubMarkerMapping(from: number, to: number): boolean {
   const current = CMD_SUB_MARKER_MAPPING_CACHE.get(from)
   if (current === to) {
@@ -89,14 +95,104 @@ export function purgeCache(cmdID: number): void {
   CMD_RESULT_CACHE.delete(cmdID)
 }
 
-export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
+export function addSubMarker(
+  ctx: ExecContext,
+  cmd: GetCommand,
+  subCmd: GetCommand
+) {
+  if (ctx.cleanup) {
+    const purged = purgeSubMarkerMapping(subCmd.cmdId)
+    if (purged) {
+      ctx.client
+        .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
+        .catch((e) => {
+          console.error('Error cleaning up marker', ctx.subId, subCmd.cmdId)
+        })
+    }
+  } else {
+    const added = addSubMarkerMapping(subCmd.cmdId, cmd.markerId || cmd.cmdId)
+
+    if (added) {
+      const marker = makeOpts(ctx, subCmd)
+      ctx.markers.push(marker)
+    }
+  }
+}
+
+export async function getAlias(
+  ctx: ExecContext,
+  getOpts: any,
+  aliases: string[]
+): Promise<string> {
+  if (ctx.subId) {
+    if (ctx.cleanup) {
+      for (const alias of aliases) {
+        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+        if (aliasMarkerId === ctx.markerId) {
+          return ALIAS_MARKER_CACHE.get(aliasMarkerId)
+        }
+      }
+    }
+
+    for (const alias of aliases) {
+      const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+      if (aliasMarkerId === ctx.markerId) {
+        await get(ctx.client, getOpts, {
+          isSubscription: true,
+          subId: ctx.subId,
+          markerId: ctx.markerId,
+          cleanup: true,
+        })
+      }
+    }
+  }
+
+  const [resolved] = await ctx.client.command('resolve.nodeid', [0, ...aliases])
+  console.dir({ resolved }, { depth: 6 })
+
+  if (resolved?.length !== 2) {
+    return
+  }
+
+  const [resolvedAlias, id] = resolved
+
+  if (ctx.subId) {
+    ALIAS_MARKER_CACHE.set(
+      hashObjectIgnoreKeyOrder({ alias: resolvedAlias }),
+      id
+    )
+
+    await Promise.all(
+      aliases.map(async (alias) => {
+        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
+        console.log('adding alias marker', ctx.subId, aliasMarkerId, alias)
+        try {
+          await ctx.client.command('subscriptions.addAlias', [
+            ctx.subId,
+            aliasMarkerId,
+            alias,
+          ])
+        } catch (e) {
+          console.log('Error adding alias marker', e)
+        }
+      })
+    )
+  }
+
+  return id
+}
+
+export async function getCmd(
+  ctx: ExecContext,
+  cmd: GetCommand,
+  setPending?: Function
+): Promise<any> {
   const { client, subId } = ctx
 
   if (cmd.source.alias && !cmd.source.id) {
-    cmd.source.id = await ctx.client.command('resolve.nodeid', [
-      0,
-      cmd.source.alias,
-    ])
+    cmd.source.id = (
+      await ctx.client.command('resolve.nodeid', [0, cmd.source.alias])
+    )[1]
   }
 
   const opts = makeOpts(ctx, cmd)
@@ -110,7 +206,11 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
       return result
     }
 
-    await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+    try {
+      await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
+    } catch (e) {
+      console.error('Error cleaning up marker', ctx.subId, cmdID)
+    }
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
     CMD_RESULT_CACHE.delete(cmdID)
@@ -130,6 +230,10 @@ export async function getCmd(ctx: ExecContext, cmd: GetCommand): Promise<any> {
     const { nestedFind } = cmd
     nestedFind.source = { idList: ids }
     nestedFind.markerId = hashCmd(nestedFind)
+
+    if (subId && nestedFind.markerId === ctx.markerId) {
+      setPending(nestedFind)
+    }
     return getCmd(ctx, nestedFind)
   }
 
@@ -174,6 +278,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
   }
 
   let rpn = ['#1']
+  let hasNow = false
 
   if (cmd.type !== 'node') {
     // traverse by field
@@ -203,7 +308,12 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
 
     if (cmd.filter) {
       const ast = createAst(cmd.filter)
+
       if (ast) {
+        if (ast.hasNow) {
+          hasNow = true
+        }
+
         rpn = ast2rpn(ctx.client.schema.types, ast, ctx.lang || '')
       }
     }
@@ -232,6 +342,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields: fields,
@@ -247,6 +358,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields: '',
       strFields: '',
@@ -272,6 +384,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       struct,
       nodeId,
       rpn,
+      hasNow,
       cmdID,
       fields,
       strFields,

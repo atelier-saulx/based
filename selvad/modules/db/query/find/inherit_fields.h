@@ -24,22 +24,6 @@ int Inherit_GetField(
         struct SelvaObjectAny *out);
 
 /**
- * Send a field value to the client.
- * Particularly this function sends the node_id, field name, and field value in
- * the format expected by the client.
- */
-int Inherit_SendField(
-        struct selva_server_response_out *resp,
-        struct SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
-        const struct SelvaHierarchyNode *node,
-        struct SelvaObject *obj,
-        const char *full_field_str,
-        size_t full_field_len,
-        const char *field_str,
-        size_t field_len);
-
-/**
  * Send a field value to the client in the find command format.
  */
 int Inherit_SendFieldFind(

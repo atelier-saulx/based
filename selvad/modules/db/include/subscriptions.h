@@ -433,7 +433,7 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
  */
 void SelvaSubscriptions_DeferAliasChangeEvents(
         struct SelvaHierarchy *hierarchy,
-        struct selva_string *alias_name);
+        struct SelvaHierarchyNode *node);
 void SelvaSubscriptions_DeferTriggerEvents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,

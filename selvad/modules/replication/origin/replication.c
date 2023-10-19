@@ -13,6 +13,8 @@
 #include <unistd.h>
 #include "jemalloc.h"
 #include "util/selva_string.h"
+#include "util/timestamp.h"
+#include "event_loop.h"
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_replication.h"
@@ -23,6 +25,11 @@
 #include "replica.h"
 
 static_assert(sizeof(ring_buffer_eid_t) >= sizeof(uint64_t));
+
+static const struct timespec replication_heartbeat_interval = {
+    .tv_sec = 3,
+    .tv_nsec = 0,
+};
 
 struct origin_state {
     /*!<
@@ -184,7 +191,7 @@ static unsigned next_replica_id(unsigned replica_id)
 /**
  * Allocate a new replica_id.
  */
-static struct replica *new_replica(struct selva_server_response_out *resp)
+static struct replica *new_replica(struct selva_server_response_out *stream_resp)
 {
     static unsigned last_replica_id;
     unsigned replica_id = last_replica_id;
@@ -196,7 +203,7 @@ static struct replica *new_replica(struct selva_server_response_out *resp)
 
         if (!r->in_use) {
             r->in_use = 1;
-            r->resp = resp;
+            r->resp = stream_resp;
             last_replica_id = replica_id;
             return r;
         }
@@ -247,14 +254,14 @@ static void drop_replicas(unsigned replicas)
 }
 
 int replication_origin_register_replica(
-        struct selva_server_response_out *resp,
+        struct selva_server_response_out *stream_resp,
         uint64_t start_eid,
         const uint8_t start_sdb_hash[SELVA_IO_HASH_SIZE],
         enum replication_sync_mode mode)
 {
     struct replica *replica;
 
-    replica = new_replica(resp);
+    replica = new_replica(stream_resp);
     if (!replica) {
         return SELVA_ENOBUFS;
     }
@@ -328,7 +335,7 @@ static ring_buffer_eid_t next_eid(void)
 
 void replication_origin_replicate(int64_t ts, int8_t cmd, const void *buf, size_t buf_size)
 {
-    struct selva_string *p = selva_string_createz(buf, buf_size, 0);
+    struct selva_string *p = (buf_size > 0) ? selva_string_createz(buf, buf_size, 0) : NULL;
 
     /* We mark it to be a selva_string by settings the size to 0. */
     insert(next_eid(), ts, cmd, p, 0);
@@ -361,6 +368,24 @@ int replication_origin_check_sdb(uint64_t eid)
     return 0;
 }
 
+/**
+ * Replica heartbeat.
+ * Replication heartbeat will attempt to send a PING command to each replica at
+ * every replication_heartbeat_interval. This causes each replica_thread to
+ * attempt a flush on its connection. If the flush fails it means that the
+ * replica connection is down and it can be released and resources freed.
+ * Without this mechanism an origin that never receives any writes would
+ * eventually run out of available connection structs even if all the
+ * connectiontions would be effectively dead, because the server (conn.c)
+ * can't free a connection if it has open streams. Moreover, we'd have a
+ * lot of stale replica threads.
+ */
+static void replication_heartbeat(struct event *, void *)
+{
+    evl_set_timeout(&replication_heartbeat_interval, replication_heartbeat, NULL);
+    replication_origin_replicate(ts_now(), CMD_ID_PING, NULL, 0);
+}
+
 void replication_origin_init(void)
 {
     memset(&origin_state, 0, sizeof(origin_state));
@@ -372,4 +397,5 @@ void replication_origin_init(void)
         r->rb = &origin_state.rb;
     }
     ring_buffer_init(&origin_state.rb, origin_state.buffer, num_elem(origin_state.buffer), free_replbuf);
+    evl_set_timeout(&replication_heartbeat_interval, replication_heartbeat, NULL);
 }

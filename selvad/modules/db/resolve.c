@@ -86,10 +86,14 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
             selva_send_error_arity(resp);
         }
         return;
+    } else if (argc >= SELVA_RESOLVE_MAX) {
+        selva_send_errorf(resp, SELVA_EINVAL, "Too many aliases");
+        return;
     }
 
+    const size_t nr_ids = argc - 1;
     Selva_NodeId node_id;
-    const int resolved = SelvaResolve_NodeId(hierarchy, ids, argc - 1, node_id);
+    const int resolved = SelvaResolve_NodeId(hierarchy, ids, nr_ids, node_id);
     if (resolved == SELVA_ENOENT) {
         selva_send_null(resp);
         return;
@@ -98,7 +102,7 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
         return;
     }
 
-    if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id) {
+    if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id && nr_ids > 0) {
         struct selva_string *alias_name = ids[(resolved & ~SELVA_RESOLVE_FLAGS)];
         Selva_SubscriptionMarkerId marker_id;
         int err;
@@ -115,6 +119,12 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
         }
     }
 
+    selva_send_array(resp, 2);
+    if (nr_ids == 0) {
+        selva_send_str(resp, ROOT_NODE_ID, Selva_NodeIdLen(ROOT_NODE_ID));
+    } else {
+        selva_send_string(resp, ids[(resolved & ~SELVA_RESOLVE_FLAGS)]);
+    }
     selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
 }
 

@@ -90,6 +90,13 @@
 #define CMD_ID_RUSAGE 11
 
 /**
+ * Client ops.
+ * module: server
+ * cmd: client
+ */
+#define CMD_ID_CLIENT 12
+
+/**
  * Load db.
  * module: db
  * cmd: load
@@ -542,3 +549,13 @@
  * cmd: unsubscribe
  */
 #define CMD_ID_UNSUBSCRIBE 80
+
+/**
+ * Get a selva_string field flags, crc, and value.
+ */
+#define CMD_ID_OBJECT_GET_STRING 81
+
+/**
+ * Compare & Swap a string.
+ */
+#define CMD_ID_OBJECT_CAS 82

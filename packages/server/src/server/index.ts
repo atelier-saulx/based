@@ -54,8 +54,6 @@ export class SelvaServer extends EventEmitter {
       env: {
         ...process.env,
         ...{
-          SELVA_MALLOC_CONF:
-            'prof:true,prof_active:true,prof_leak:true,lg_prof_interval:30,lg_prof_sample:17,prof_prefix:jeprof.out',
           LOCPATH: path.join(
             execPath,
             '..',
@@ -66,8 +64,9 @@ export class SelvaServer extends EventEmitter {
           SELVA_PORT: String(this.port),
           SERVER_SO_REUSE: '1',
           SELVA_REPLICATION_MODE: '1',
-          AUTO_SAVE_INTERVAL: '1200',
+          AUTO_SAVE_INTERVAL: '0',
         },
+        ...opts.env
       },
       stdio: 'inherit',
     })

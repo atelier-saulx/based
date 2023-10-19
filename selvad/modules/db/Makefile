@@ -31,9 +31,8 @@ OBJ := \
 	   query/find/find_send_array_object_fields.o \
 	   query/find/find_send_node_fields.o \
 	   query/find/find_send_node_merge.o \
-	   query/inherit/inherit.o \
-	   query/inherit/send_field.o \
-	   query/inherit/send_field_find.o \
+	   query/find/inherit.o \
+	   query/find/inherit_send_field.o \
 	   field_lookup/data_field.o \
 	   field_lookup/inherit_field.o \
 	   field_lookup/traversable.o \

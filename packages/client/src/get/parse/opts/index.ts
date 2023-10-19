@@ -10,7 +10,7 @@ import {
 import { hashCmd } from '../../util'
 import { parseList } from './list'
 import { parseAlias } from './alias'
-import { deepEqual } from '@saulx/utils'
+import { deepCopy, deepEqual } from '@saulx/utils'
 import { joinPath } from '../../../util'
 
 export async function parseGetOpts(
@@ -123,6 +123,10 @@ export async function parseGetOpts(
           let types = value.$inherit.$type ?? []
           types = (Array.isArray(types) ? types : [types])
             .map((type) => {
+              if (type === 'root') {
+                return 'ro'
+              }
+
               return ctx.client?.schema?.types[type]?.prefix
             })
             .filter((prefix) => !!prefix)
@@ -149,6 +153,10 @@ export async function parseGetOpts(
             }
 
             if (value.$list) {
+              if (value.$list === true) {
+                value.$list = {}
+              }
+
               if (value.$field) {
                 if (!value.$list.$find) {
                   value.$list.$find = {}
@@ -161,7 +169,7 @@ export async function parseGetOpts(
                 target: {
                   ...target,
                   type: 'traverse',
-                  $list: value.$list,
+                  $list: deepCopy(value.$list),
                 },
               }
             } else if (value.$aggregate) {
@@ -203,7 +211,7 @@ export async function parseGetOpts(
                 '',
                 ...aliases,
               ])
-              const id = resolved?.[0]
+              const id = resolved?.[1]
 
               return {
                 target: {

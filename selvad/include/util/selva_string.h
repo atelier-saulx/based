@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include <stdint.h>
+
 struct finalizer;
 struct selva_string;
 
@@ -236,6 +238,11 @@ void selva_string_en_crc(struct selva_string *s);
  * @param s is a pointer to a selva_string.
  */
 int selva_string_verify_crc(struct selva_string *s);
+
+/**
+ * Get the CRC of the string s.
+ */
+uint32_t selva_string_get_crc(struct selva_string *s);
 
 /**
  * Set SELVA_STRING_COMPRESS flag on an existing string.

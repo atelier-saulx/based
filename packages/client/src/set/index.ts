@@ -140,8 +140,8 @@ export async function set(client: BasedDbClient, opts: any) {
   let { $id, $alias } = opts
   if (!$id && $alias) {
     const args = Array.isArray($alias) ? $alias : [$alias]
-    const resolved = await client.command('resolve.nodeid', [0, ...args])
-    $id = resolved?.[0]
+    const [resolved] = await client.command('resolve.nodeid', [0, ...args])
+    $id = resolved?.[1]
     if (!$id && !opts.aliases) {
       opts.aliases = { $add: args }
     }
@@ -175,14 +175,17 @@ export async function set(client: BasedDbClient, opts: any) {
       const refField = String(path[0])
 
       const { $edgeMeta, ...nestedOpts } = value
-      nestedOpts.$noRoot = true
 
       if (
         !['parents', 'children'].includes(refField) &&
         !nestedOpts.parents &&
         !nestedOpts.children
       ) {
-        nestedOpts.parents = ['root']
+        // essentially:
+        // nestedOpts.$noRoot = false
+        // nestedOpts.parents = ['root']
+      } else {
+        nestedOpts.$noRoot = true
       }
 
       if (opts.$language) {
@@ -260,8 +263,6 @@ export async function set(client: BasedDbClient, opts: any) {
   if (!args.length) {
     return $id
   }
-
-  console.dir({ op: 'modify', args: [$id, flags, args] }, { depth: 8 })
 
   const resp = await client.command('modify', [$id, flags, args])
   const err = resp?.[0]?.find((x: any) => {

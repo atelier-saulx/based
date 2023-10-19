@@ -9,7 +9,7 @@ import {
 import { BasedDbClient } from '@based/db-client'
 import { SelvaServer, startOrigin } from '@based/db-server'
 import getPort from 'get-port'
-import { wait } from '@saulx/utils'
+import { deepCopy, wait } from '@saulx/utils'
 import '../assertions'
 
 type TestCtx = {
@@ -97,8 +97,7 @@ const observe = async (
   return id
 }
 
-// TODO: rpn evaluation issue??
-test.serial.skip('get - correct order', async (t) => {
+test.serial('get - correct order', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -216,18 +215,24 @@ test.serial.skip('get - correct order', async (t) => {
   const results: any[] = []
 
   observe(t, obs, (v) => {
-    results.push(v)
+    console.dir({ v }, { depth: 6 })
+    results.push(deepCopy(v))
   })
 
   await wait(1e3)
 
-  client.set({ $id: 'ma1', published: false })
+  console.log('1', await client.command('subscriptions.list', []))
+  await client.set({ $id: 'ma1', published: false })
 
   await wait(1e3)
+  console.log('2', await client.command('subscriptions.list', []))
 
-  client.set({ $id: 'ma1', published: true })
+  await client.set({ $id: 'ma1', published: true })
 
   await wait(3e3)
+  console.log('3', await client.command('subscriptions.list', []))
+
+  console.dir({ results }, { depth: 6 })
 
   t.is(results.length, 3)
   t.is(results[0].children.length, 3)
