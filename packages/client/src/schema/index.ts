@@ -1,14 +1,11 @@
 import {
   BasedSchema,
   BasedSchemaField,
-  BasedSchemaFieldObject,
-  BasedSchemaFieldRecord,
   BasedSchemaLanguage,
   BasedSchemaPartial,
-  BasedSchemaType,
 } from '@based/schema'
 import { BasedDbClient } from '..'
-import { deepCopy, deepMerge } from '@saulx/utils'
+import { deepMerge } from '@saulx/utils'
 import { joinPath } from '../util'
 import { generateNewPrefix } from './utils'
 
@@ -19,24 +16,30 @@ type EdgeConstraint = {
   bidirectional: { fromField: string }
 }
 
+enum SchemaUpdateMode {
+  strict,
+  flexible,
+  migration
+}
+
 export type SchemaMutations = (
   | {
-      mutation: 'delete_type'
-      type: string
-    }
+    mutation: 'delete_type'
+    type: string
+  }
   | {
-      mutation: 'change_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-      new: BasedSchemaField
-    }
+    mutation: 'change_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+    new: BasedSchemaField
+  }
   | {
-      mutation: 'remove_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-    }
+    mutation: 'remove_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+  }
 )[]
 
 export const DEFAULT_SCHEMA: BasedSchema = {
@@ -218,8 +221,8 @@ const checkTypeWithSamePrefix = (
     typeDef.prefix === 'ro'
       ? 'ro'
       : Object.keys(currentSchema.types).find(
-          (name) => currentSchema.types[name].prefix === typeDef.prefix
-        )
+        (name) => currentSchema.types[name].prefix === typeDef.prefix
+      )
   if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
     throw new Error(`Prefix ${typeDef.prefix} is already in use`)
   }
@@ -271,7 +274,8 @@ const mergeFields = (
   currentFields: { [name: string]: BasedSchemaField },
   requestedFields: { [name: string]: BasedSchemaField },
   mutations: SchemaMutations,
-  merge: boolean
+  merge: boolean,
+  mode: SchemaUpdateMode
 ) => {
   const currentFieldsNames = Object.keys(currentFields || {})
   const newFieldsNames = Object.keys(requestedFields || {})
@@ -308,6 +312,9 @@ const mergeFields = (
         requestedFieldDef?.type &&
         requestedFieldDef.type !== currentFieldDef.type
       ) {
+        if (mode === SchemaUpdateMode.strict) {
+          throw new Error(`Cannot change field '${fieldName}' type in strict mode`)
+        }
         mutations.push({
           mutation: 'change_field',
           type: requestedFieldDef?.type || currentFieldDef.type,
@@ -340,7 +347,8 @@ const mergeFields = (
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial,
-  merge: boolean = true
+  merge: boolean = true,
+  mode: SchemaUpdateMode = SchemaUpdateMode.strict
 ): Promise<BasedSchema> {
   const newTypes: [string, string][] = []
   const typesToDelete: [string, string][] = []
@@ -372,7 +380,8 @@ export async function updateSchema(
     newSchema.root.fields,
     currentSchema.root.fields,
     mutations,
-    true
+    true,
+    mode
   )
   deepMerge(newSchema.root, opts.root)
   newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
@@ -421,7 +430,8 @@ export async function updateSchema(
           {},
           { ...DEFAULT_FIELDS, ...typeDef.fields },
           mutations,
-          merge
+          merge,
+          mode
         ),
       }
       newSchema.types[typeName] = newDef
@@ -443,7 +453,8 @@ export async function updateSchema(
             oldDef.fields,
             { ...DEFAULT_FIELDS, ...(typeDef?.fields || oldDef?.fields || {}) },
             mutations,
-            merge
+            merge,
+            mode
           ),
         }
       } else {

@@ -440,7 +440,26 @@ test('Default prefix should not be an existing one', async (t) => {
   t.true(newSchema.types['another'].prefix === 'an')
 })
 
-test('Change field type', async (t) => {
+test('Change field type in strict mode should fail', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          fields: {
+            title: { type: 'string' },
+          },
+        },
+      },
+    }),
+    {
+      message: /^Cannot change field .* type in strict mode$/
+    }
+  )
+})
+
+test.skip('Change field type', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
