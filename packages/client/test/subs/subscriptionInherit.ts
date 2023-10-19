@@ -101,8 +101,7 @@ const observe = async (
 
 async function updateSchema(t: ExecutionContext<TestCtx>) {}
 
-// TODO: inherit op on non-existing doesn't inherit from root
-test.serial.skip('inherit object nested field from root youzi', async (t) => {
+test.serial('inherit object nested field from root youzi', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -146,6 +145,7 @@ test.serial.skip('inherit object nested field from root youzi', async (t) => {
 
   await client.set({
     $id: 'yeA',
+    parents: ['root'],
   })
 
   const results: any[] = []
