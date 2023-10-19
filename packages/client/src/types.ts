@@ -1,3 +1,4 @@
+import { BasedSchemaField } from '@based/schema';
 import { Command } from './protocol/types'
 
 export type CommandResponseListeners = Map<
@@ -14,3 +15,30 @@ export type CommandQueueItem = { seqno: number; command: Command; payload: any }
 export type CommandQueue = CommandQueueItem[]
 
 export type IncomingMessageBuffers = Map<number, { ts: Number; bufs: Buffer[] }>
+
+export enum SchemaUpdateMode {
+  strict,
+  flexible,
+  migration
+}
+
+export type SchemaMutations = (
+  | {
+    mutation: 'delete_type'
+    type: string
+  }
+  | {
+    mutation: 'change_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+    new: BasedSchemaField
+  }
+  | {
+    mutation: 'remove_field'
+    type: string
+    path: string[]
+    old: BasedSchemaField
+  }
+)[]
+

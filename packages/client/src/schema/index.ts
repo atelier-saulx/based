@@ -8,6 +8,8 @@ import { BasedDbClient } from '..'
 import { deepMerge } from '@saulx/utils'
 import { joinPath } from '../util'
 import { generateNewPrefix } from './utils'
+import { SchemaMutations, SchemaUpdateMode } from '../types'
+import { BasedQuery } from '@based/client'
 
 type EdgeConstraint = {
   prefix: string
@@ -15,32 +17,6 @@ type EdgeConstraint = {
   field: string
   bidirectional: { fromField: string }
 }
-
-enum SchemaUpdateMode {
-  strict,
-  flexible,
-  migration
-}
-
-export type SchemaMutations = (
-  | {
-    mutation: 'delete_type'
-    type: string
-  }
-  | {
-    mutation: 'change_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-    new: BasedSchemaField
-  }
-  | {
-    mutation: 'remove_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-  }
-)[]
 
 export const DEFAULT_SCHEMA: BasedSchema = {
   $defs: {},
@@ -296,7 +272,7 @@ const mergeFields = (
       // field to remove
       mutations.push({
         mutation: 'remove_field',
-        type: currentFieldDef.type,
+        type: path[0],
         path,
         old: currentFieldDef,
       })
@@ -317,7 +293,7 @@ const mergeFields = (
         }
         mutations.push({
           mutation: 'change_field',
-          type: requestedFieldDef?.type || currentFieldDef.type,
+          type: path[0],
           path,
           old: currentFieldDef,
           new: { ...currentFieldDef, ...requestedFieldDef },
@@ -342,6 +318,35 @@ const mergeFields = (
   }
 
   return newFields
+}
+
+const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: SchemaMutations) => {
+  if (!mutations.length) {
+    return
+  }
+  const query: any = {}
+  mutations.forEach((mutation) => {
+    query[mutation.type] = {
+      $aggregate: {
+        $function: 'count',
+        $traverse: 'descendants',
+        $filter: [
+          {
+            $field: 'type',
+            $operator: '=',
+            $value: mutation.type,
+          }
+        ],
+        $limit: 1,
+      },
+    }
+  })
+  const result = await client.get(query)
+  for (const type in result) {
+    if (result[type] > 0) {
+      throw new Error(`Cannot mutate type "${type}" in flexible mode with exsiting nodes.`)
+    }
+  }
 }
 
 export async function updateSchema(
@@ -503,6 +508,8 @@ export async function updateSchema(
   //     schemaWalker(prefix, [], typeDef, newConstraints, newSchema)
   //   }
   // }
+
+  await checkMutationsForExistingNodes(client, mutations)
 
   await client.set({
     $id: 'root',

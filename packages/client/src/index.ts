@@ -13,6 +13,7 @@ import {
   CommandQueue,
   CommandResponseListeners,
   IncomingMessageBuffers,
+  SchemaUpdateMode,
   SubscriptionHandlers,
 } from './types'
 import { incoming } from './incoming'
@@ -108,8 +109,14 @@ export class BasedDbClient extends Emitter {
     }
   }
 
-  async updateSchema(opts: BasedSchemaPartial): Promise<BasedSchema> {
-    const newSchema = await updateSchema(this, opts)
+  async updateSchema(
+    schema: BasedSchemaPartial,
+    options?: {
+      merge?: boolean,
+      mode?: SchemaUpdateMode
+    }
+  ): Promise<BasedSchema> {
+    const newSchema = await updateSchema(this, schema, options?.merge, options?.mode)
     this.schema = newSchema
     return newSchema
   }

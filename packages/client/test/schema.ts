@@ -6,6 +6,7 @@ import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
 import { DEFAULT_FIELDS } from '../src/schema'
+import { SchemaUpdateMode } from '../src/types'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -459,7 +460,7 @@ test('Change field type in strict mode should fail', async (t) => {
   )
 })
 
-test.skip('Change field type', async (t) => {
+test('Change field type in flexible mode without any nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -471,11 +472,39 @@ test.skip('Change field type', async (t) => {
           },
         },
       },
-    })
+    }, { mode: SchemaUpdateMode.flexible })
   )
   const newSchema = client.schema
   t.true(newSchema.types['match'].fields?.title?.type === 'string')
 })
+
+test('Change field type in flexible mode with existing nodes', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'match',
+    title: {
+      en: 'this is title'
+    }
+  })
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          fields: {
+            title: { type: 'string' },
+          },
+        },
+      },
+    }, { mode: SchemaUpdateMode.flexible }),
+    {
+      message: /^Cannot mutate type .* in flexible mode with exsiting nodes.$/
+    }
+  )
+})
+
+// TODO: Check flexible mode with objects
 
 test('Remove field', async (t) => {
   const { client } = t.context
