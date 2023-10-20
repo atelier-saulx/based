@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include "selva_db.h"
 #include "traversal.h"
 
 struct SelvaFind_QueryOpts {

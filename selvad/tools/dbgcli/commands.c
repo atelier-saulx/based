@@ -13,6 +13,7 @@
 #include "cdefs.h"
 #include "endian.h"
 #include "jemalloc.h"
+#include "selva_db.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "util/crc32c.h"
@@ -359,7 +360,7 @@ static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int
     }
 
     const size_t okey_len = strlen(argv[2]);
-    const size_t node_id_len = NODE_ID_SIZE;
+    const size_t node_id_len = SELVA_NODE_ID_SIZE;
     size_t buf_size = sizeof(struct selva_proto_header) +
              sizeof(struct selva_proto_string) + node_id_len +
              sizeof(struct selva_proto_string) + okey_len +
@@ -424,7 +425,7 @@ static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int ar
     const size_t okey_len = strlen(argv[2]);
     const char *value_str = argv[4];
     const size_t value_len = strlen(value_str);
-    const size_t node_id_len = NODE_ID_SIZE;
+    const size_t node_id_len = SELVA_NODE_ID_SIZE;
     size_t buf_size = sizeof(struct selva_proto_header) +
              sizeof(struct selva_proto_string) + node_id_len +
              sizeof(struct selva_proto_string) + okey_len +
