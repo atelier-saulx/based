@@ -4,6 +4,7 @@
 OBJ := \
 	   conn.o \
 	   message.o \
+	   message_buf.o \
 	   message_sock.o \
 	   pubsub.o \
 	   selva_send.o \

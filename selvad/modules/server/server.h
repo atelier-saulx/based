@@ -7,8 +7,9 @@
 
 #define MAX_STREAMS 2
 
-struct selva_server_response_out;
 struct conn_ctx;
+struct selva_server_response_out;
+struct selva_string;
 
 typedef uint16_t pubsub_ch_mask_t;
 
@@ -41,7 +42,16 @@ struct selva_server_response_out {
     int last_error; /*!< Last error. Set by send_error functions. 0 if none. */
     int64_t ts; /*!< Timestamp when the command execution started. */
     size_t buf_i; /*!< Index into buf */
-    _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    union {
+        /**
+         * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
+         */
+        struct selva_string *msg_buf;
+        /**
+         * Used with SERVER_MESSAGE_HANDLER_SOCK.
+         */
+        _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    };
 };
 
 /**
@@ -220,3 +230,5 @@ extern struct message_handlers_vtable message_handlers[3];
  * Init message handlers vtable for sock.
  */
 void message_sock_init(void);
+
+void message_buf_init(void);
