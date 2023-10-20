@@ -9,34 +9,40 @@ const defaultMigrationScripts: {
   'number-string': async (oldValue) => String(oldValue)
 }
 
+const PAGE_AMOUNT = 3e3
 export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutations) => {
   // console.log('----- mutations', JSON.stringify(mutations, null, 2))
 
-  const nodeDeletions = []
-
   for (const mutation of mutations) {
     if (mutation.mutation === 'delete_type') {
-      const ids = (await client.get({
-        ids: {
-          id: true,
-          $list: {
-            $find: {
-              $traverse: 'descendants',
-              $filter: {
-                $field: 'type',
-                $operator: '=',
-                $value: mutation.type
+      let finished = false
+
+      while (!finished) {
+        const nodeDeletions = []
+        const ids = (await client.get({
+          ids: {
+            id: true,
+            $list: {
+              $limit: PAGE_AMOUNT,
+              $find: {
+                $traverse: 'descendants',
+                $filter: {
+                  $field: 'type',
+                  $operator: '=',
+                  $value: mutation.type
+                }
               }
             }
           }
+        })).ids.map((node: any) => node.id)
+        ids.forEach((id: string) => {
+          nodeDeletions.push(client.delete({ $id: id, $recursive: true }))
+        })
+        await Promise.all(nodeDeletions)
+        if (ids.length < PAGE_AMOUNT) {
+          finished = true
         }
-      })).ids.map((node: any) => node.id)
-      ids.forEach((id: string) => {
-        nodeDeletions.push(client.delete({ $id: id }))
-      })
+      }
     }
   }
-
-  // TODO: Throttle this
-  await Promise.all(nodeDeletions)
 }

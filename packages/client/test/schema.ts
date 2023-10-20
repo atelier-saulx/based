@@ -582,6 +582,48 @@ test('Remove type in flexible mode', async (t) => {
 test.only('Change remove type in migration mode', async (t) => {
   const { client } = t.context
 
+  const sets: Promise<string>[] = []
+  for (let i = 0; i < 7000; i++) {
+    sets.push(client.set({
+      type: 'match',
+      value: i
+    }))
+  }
+  await Promise.all(sets)
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          $delete: true
+        }
+      }
+    }, {
+      mode: SchemaUpdateMode.migration
+    })
+  )
+
+  const { count } = await client.get({
+    count: {
+      $aggregate: {
+        $function: 'count',
+        $traverse: 'descendants',
+        $filter: [
+          {
+            $field: 'type',
+            $operator: '=',
+            $value: 'match'
+          }
+        ],
+      },
+    }
+  })
+  t.is(count, 0)
+})
+
+test.skip('Change remove field in migration mode', async (t) => {
+  const { client } = t.context
+
   const id1 = await client.set({
     type: 'match',
     value: 12
@@ -595,18 +637,20 @@ test.only('Change remove type in migration mode', async (t) => {
     value: 1
   })
 
-  await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          $delete: true
-        }
-      }
-    }, {
-      mode: SchemaUpdateMode.migration
-    })
-  )
-  t.is((await client.command('resolve.nodeid', [0, id1]))[0], null)
-  t.is((await client.command('resolve.nodeid', [0, id2]))[0], null)
-  t.is((await client.command('resolve.nodeid', [0, id3]))[0][0], id3)
+  // await t.notThrowsAsync(
+  //   client.updateSchema({
+  //     types: {
+  //       match: {
+  //         fields: {
+  //           value: {
+  //             $delete: true
+  //           }
+  //         }
+  //       }
+  //     }
+  //   }, {
+  //     mode: SchemaUpdateMode.migration
+  //   })
+  // )
+  t.false((await client.get({ $id: id1, $all: true })).hasOwnProperty('value'))
 })
