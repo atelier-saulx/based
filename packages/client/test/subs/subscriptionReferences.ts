@@ -122,8 +122,6 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
   })
 }
 
-// TODO: Adding to references not triggering subscription callback
-// working fine with a get
 test.serial('add new reference', async (t) => {
   await start(t)
   const client = t.context.dbClient
