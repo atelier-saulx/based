@@ -514,8 +514,6 @@ test('Remove field in strict mode', async (t) => {
       types: {
         match: {
           fields: {
-            // TODO: add delete to BasedSchemaField
-            // @ts-ignore
             title: { $delete: true },
           },
         },
@@ -534,8 +532,6 @@ test('Remove field in flexible mode', async (t) => {
       types: {
         match: {
           fields: {
-            // TODO: add delete to BasedSchemaField
-            // @ts-ignore
             title: { $delete: true },
           },
         },
@@ -555,8 +551,6 @@ test('Remove type in strict mode', async (t) => {
     client.updateSchema({
       types: {
         match: {
-          // TODO: add delete to BasedSchemaType
-          // @ts-ignore
           $delete: true,
         },
       },
@@ -573,8 +567,6 @@ test('Remove type in flexible mode', async (t) => {
     client.updateSchema({
       types: {
         match: {
-          // TODO: add delete to BasedSchemaType
-          // @ts-ignore
           $delete: true,
         },
       },

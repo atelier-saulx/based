@@ -1,8 +1,6 @@
 import {
   BasedSchema,
-  BasedSchemaCollectProps,
   BasedSchemaPartial,
-  setWalker,
 } from '@based/schema'
 
 import Emitter from './Emitter'
