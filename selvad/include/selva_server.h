@@ -110,7 +110,7 @@ SELVA_SERVER_EXPORT(int, selva_send_end, struct selva_server_response_out *restr
  * Send raw data.
  * Warning: Use carefully because this can break the protocol value parsing.
  */
-SELVA_SERVER_EXPORT(int, selva_send_raw, struct selva_server_response_out *restrict resp, void *restrict p, size_t len);
+SELVA_SERVER_EXPORT(int, selva_send_raw, struct selva_server_response_out *restrict resp, const void *restrict p, size_t len);
 
 /**
  * Send a null value.
