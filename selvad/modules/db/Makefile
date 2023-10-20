@@ -55,7 +55,7 @@ OBJ := \
 	   selva_type.o \
 	   subscriptions.o
 DEP := $(OBJ:%.o=%.d)
-CFLAGS += -I./include -include ../../tunables.h
+CFLAGS += -iquote ./include -include ../../tunables.h
 LDFLAGS += -ldeflate -lutil -ljemalloc_selva
 TARGET := ../mod_db$(MOD_SUFFIX)
 
