@@ -10,6 +10,7 @@ import { joinPath } from '../util'
 import { generateNewPrefix } from './utils'
 import { SchemaMutations, SchemaUpdateMode } from '../types'
 import { BasedQuery } from '@based/client'
+import { migrateNodes } from './migrateNodes'
 
 type EdgeConstraint = {
   prefix: string
@@ -509,7 +510,11 @@ export async function updateSchema(
   //   }
   // }
 
-  await checkMutationsForExistingNodes(client, mutations)
+  if (mode === SchemaUpdateMode.flexible) {
+    await checkMutationsForExistingNodes(client, mutations)
+  } else {
+    await migrateNodes(client, mutations)
+  }
 
   await client.set({
     $id: 'root',

@@ -577,3 +577,36 @@ test('Remove type in flexible mode', async (t) => {
   const newSchema = client.schema
   t.false(newSchema.types.hasOwnProperty('match'))
 })
+
+
+test.only('Change remove type in migration mode', async (t) => {
+  const { client } = t.context
+
+  const id1 = await client.set({
+    type: 'match',
+    value: 12
+  })
+  const id2 = await client.set({
+    type: 'match',
+    value: 16
+  })
+  const id3 = await client.set({
+    type: 'club',
+    value: 1
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          $delete: true
+        }
+      }
+    }, {
+      mode: SchemaUpdateMode.migration
+    })
+  )
+  t.is((await client.command('resolve.nodeid', [0, id1]))[0], null)
+  t.is((await client.command('resolve.nodeid', [0, id2]))[0], null)
+  t.is((await client.command('resolve.nodeid', [0, id3]))[0][0], id3)
+})
