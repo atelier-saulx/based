@@ -371,6 +371,7 @@ int selva_proto_buf2strings(struct finalizer *fin, const char *buf, size_t bsize
  * - `{` and `}` marks an array and `,` advances the buffer index
  * - Supported specifiers: i, d, u, f, c, s, p
  * - Length specifiers: hh, h, l, ll, j, z, t, L
+ * - `...` captures the rest of the arguments into an array (must be string, can be selva_proto_array)
  * - Using width specifier with `%s` changes output from `selva_string` to `char` buffer
  * Since using `%s` with a selva_string structure pointer gives a warning it's
  * also possible achieve the same result using `%p`.
@@ -385,7 +386,7 @@ int selva_proto_buf2strings(struct finalizer *fin, const char *buf, size_t bsize
  * not fully consumed by the format string then the function will return an
  * error (SELVA_PROTO_EINVAL).
  *
- * See [doc/selva_proto.md](/selvad/doc/selva_proto.md) for the complete documentation.
+ * See [doc/selva_proto.md](/selvad/doc/modules/server/selva_proto.md) for the complete documentation.
  * TODO format checker
  */
 int selva_proto_scanf(struct finalizer * restrict fin, const void *restrict buf, size_t szbuf, const char * restrict fmt, ...); /* __attribute__((format(scanf, 4, 5))); */
