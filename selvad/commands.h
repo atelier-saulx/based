@@ -556,3 +556,10 @@
  * cmd: object.cas
  */
 #define CMD_ID_OBJECT_CAS 82
+
+/**
+ * Pipe.
+ * module: piper
+ * cmd: pipe
+ */
+#define CMD_ID_PIPE 83
