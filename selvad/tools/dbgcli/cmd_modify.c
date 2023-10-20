@@ -10,6 +10,7 @@
 #include <sys/socket.h>
 #include "cdefs.h"
 #include "endian.h"
+#include "selva_db.h"
 #include "selva_proto.h"
 #include "util/crc32c.h"
 #include "commands.h"
@@ -25,7 +26,7 @@ static int send_cmd_head(int sock, int cmd_id, int seqno, const char * restrict 
         struct selva_proto_header hdr;
         struct selva_proto_array arr;
         struct selva_proto_string id;
-        char id_str[NODE_ID_SIZE];
+        char id_str[SELVA_NODE_ID_SIZE];
         struct selva_proto_string flags;
     } __packed buf = {
         .hdr = {
@@ -44,7 +45,7 @@ static int send_cmd_head(int sock, int cmd_id, int seqno, const char * restrict 
         .id = {
             .type = SELVA_PROTO_STRING,
             .flags = 0,
-            .bsize = htole32(NODE_ID_SIZE),
+            .bsize = htole32(SELVA_NODE_ID_SIZE),
         },
         .flags = {
             .type = SELVA_PROTO_STRING,
@@ -54,7 +55,7 @@ static int send_cmd_head(int sock, int cmd_id, int seqno, const char * restrict 
     };
     uint32_t chk;
 
-    strncpy(buf.id_str, node_id, NODE_ID_SIZE);
+    strncpy(buf.id_str, node_id, SELVA_NODE_ID_SIZE);
     chk = crc32c(0, &buf, sizeof(buf));
     chk = crc32c(chk, flags, flags_len);
     buf.hdr.chk = htole32(chk);

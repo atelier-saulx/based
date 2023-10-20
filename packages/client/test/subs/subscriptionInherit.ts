@@ -101,8 +101,7 @@ const observe = async (
 
 async function updateSchema(t: ExecutionContext<TestCtx>) {}
 
-// TODO: inherit op on non-existing doesn't inherit from root
-test.serial.skip('inherit object nested field from root youzi', async (t) => {
+test.serial('inherit object nested field from root youzi', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -146,6 +145,7 @@ test.serial.skip('inherit object nested field from root youzi', async (t) => {
 
   await client.set({
     $id: 'yeA',
+    parents: ['root'],
   })
 
   const results: any[] = []
@@ -339,7 +339,6 @@ test.serial('basic inherit subscription', async (t) => {
   ])
 })
 
-// TODO: $inherit with $type not working
 test.serial('inherit object', async (t) => {
   await start(t)
   const client = t.context.dbClient
@@ -395,8 +394,6 @@ test.serial('inherit object', async (t) => {
   t.deepEqual(
     await client.get({
       $id: 'yeB',
-      // TODO: should work without $type
-      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
       flapper: { $inherit: true },
     }),
     {
@@ -412,8 +409,6 @@ test.serial('inherit object', async (t) => {
     t,
     {
       $id: 'yeB',
-      // TODO: should work without $type
-      // flapper: { $inherit: { $type: ['yeshType', 'root'] } },
       flapper: { $inherit: true },
     },
     (p) => {
@@ -448,100 +443,6 @@ test.serial('inherit object', async (t) => {
   ])
 })
 
-// TODO: old comment. Should we add?
-// FIXME type for `no` is missing from the schema
-// test.serial.skip('inherit record', async (t) => {
-//   const client = connect({ port }, { loglevel: 'info' })
-//
-//   await client.updateSchema({
-//     languages: ['en', 'de', 'nl'],
-//     types: {
-//       yeshType: {
-//         prefix: 'ye',
-//         fields: {
-//           funkono: {
-//             type: 'record',
-//             values: {
-//               type: 'object',
-//               properties: {
-//                 texty: {
-//                   type: 'text',
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//       noType: {
-//         prefix: 'no',
-//         fields: {
-//           funkono: {
-//             type: 'record',
-//             values: {
-//               type: 'object',
-//               properties: {
-//                 texty: {
-//                   type: 'text',
-//                 },
-//               },
-//             },
-//           },
-//         },
-//       },
-//     },
-//   })
-//
-//   let cnt = 0
-//
-//   await client.set({
-//     $id: 'yefoo',
-//     $language: 'en',
-//     funkono: {
-//       0: {
-//         texty: 'purple',
-//       },
-//     },
-//   })
-//
-//   await client.set({
-//     $id: 'nobar',
-//     parents: ['yefoo'],
-//   })
-//
-//   const subs = client
-//     .observe({
-//       $id: 'nobar',
-//       funkono: { $inherit: { $type: 'yeshType', $merge: true } },
-//     })
-//     .subscribe((res) => {
-//       cnt++
-//       console.dir(res, { depth: null })
-//     })
-//
-//   await wait(500)
-//
-//   await client.set({
-//     $id: 'nobar',
-//     $language: 'en',
-//     funkono: {
-//       0: {
-//         texty: 'yellow',
-//       },
-//     },
-//   })
-//
-//   await wait(500)
-//   subs.unsubscribe()
-//
-//   await client.delete('root')
-//   await client.destroy()
-//   t.is(cnt, 2)
-// })
-
-// TODO: error using inherit
-// TypeError {
-//   message: 'Cannot create property \'$find\' on boolean \'true\'',
-// }
 test.serial('list inherit subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient
@@ -672,10 +573,6 @@ test.serial('list inherit subscription', async (t) => {
   ])
 })
 
-// TODO: error using inherit
-// TypeError {
-//   message: 'Cannot create property \'$find\' on boolean \'true\'',
-// }
 test.serial('list inherit + field subscription', async (t) => {
   await start(t)
   const client = t.context.dbClient

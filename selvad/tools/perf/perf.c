@@ -19,12 +19,12 @@
 #include "util/crc32c.h"
 #include "util/ctime.h"
 #include "util/timestamp.h"
+#include "selva_db.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "../../modules/db/include/find_cmd.h"
 #include "../../commands.h"
 
-#define NODE_ID_SIZE 16
 #define MSG_BUF_SIZE 100 * 1048576
 
 typedef typeof_field(struct selva_proto_header, flags) flags_t;
@@ -80,13 +80,13 @@ static int send_message(int fd, const void *buf, size_t size, int flags)
     return 0;
 }
 
-static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[NODE_ID_SIZE])
+static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
     struct {
         struct selva_proto_header hdr;
         struct selva_proto_array arr;
         struct selva_proto_string id_hdr;
-        char id_str[NODE_ID_SIZE];
+        char id_str[SELVA_NODE_ID_SIZE];
         struct selva_proto_string flags_hdr;
         /* field 1 */
         struct selva_proto_string type1_hdr;
@@ -119,7 +119,7 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
         .id_hdr = {
             .type = SELVA_PROTO_STRING,
             .flags = 0,
-            .bsize = htole32(NODE_ID_SIZE),
+            .bsize = htole32(SELVA_NODE_ID_SIZE),
         },
         .flags_hdr = {
             .type = SELVA_PROTO_STRING,
@@ -165,7 +165,7 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
         },
     };
 
-    strncpy(buf.id_str, node_id, NODE_ID_SIZE);
+    strncpy(buf.id_str, node_id, SELVA_NODE_ID_SIZE);
     memcpy(buf.value2_str, &(uint64_t){seqno}, sizeof(uint64_t));
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
@@ -173,13 +173,13 @@ static int send_modify(int fd, int seqno, flags_t frame_extra_flags, char node_i
     return send_message(fd, &buf, sizeof(buf), 0);
 }
 
-static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_id[NODE_ID_SIZE])
+static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
 #define FIELD "thumbs"
     struct {
         struct selva_proto_header hdr;
         struct selva_proto_string id_hdr;
-        char id_str[NODE_ID_SIZE];
+        char id_str[SELVA_NODE_ID_SIZE];
         struct selva_proto_string field_hdr;
         char field_str[sizeof(FIELD) - 1];
         struct selva_proto_longlong incrby;
@@ -195,7 +195,7 @@ static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_i
         .id_hdr = {
             .type = SELVA_PROTO_STRING,
             .flags = 0,
-            .bsize = htole32(NODE_ID_SIZE),
+            .bsize = htole32(SELVA_NODE_ID_SIZE),
         },
         .field_hdr = {
             .type = SELVA_PROTO_STRING,
@@ -211,20 +211,20 @@ static int send_incrby(int fd, int seqno, flags_t frame_extra_flags, char node_i
     };
 #undef FIELD
 
-    strncpy(buf.id_str, node_id, NODE_ID_SIZE);
+    strncpy(buf.id_str, node_id, SELVA_NODE_ID_SIZE);
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
     return send_message(fd, &buf, sizeof(buf), 0);
 }
 
-static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[NODE_ID_SIZE])
+static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
 #define FIELD "clients"
     struct {
         struct selva_proto_header hdr;
         struct selva_proto_string id_hdr;
-        char id_str[NODE_ID_SIZE];
+        char id_str[SELVA_NODE_ID_SIZE];
         struct selva_proto_string field_hdr;
         char field_str[sizeof(FIELD) - 1];
         struct selva_proto_string op_hdr;
@@ -243,7 +243,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[N
         .id_hdr = {
             .type = SELVA_PROTO_STRING,
             .flags = 0,
-            .bsize = htole32(NODE_ID_SIZE),
+            .bsize = htole32(SELVA_NODE_ID_SIZE),
         },
         .field_hdr = {
             .type = SELVA_PROTO_STRING,
@@ -265,7 +265,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[N
     };
 #undef FIELD
 
-    strncpy(buf.id_str, node_id, NODE_ID_SIZE);
+    strncpy(buf.id_str, node_id, SELVA_NODE_ID_SIZE);
     snprintf(buf.value_str, sizeof(buf.value_str), "%d", seqno);
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
@@ -273,7 +273,7 @@ static int send_hll(int fd, int seqno, flags_t frame_extra_flags, char node_id[N
     return send_message(fd, &buf, sizeof(buf), 0);
 }
 
-static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[NODE_ID_SIZE])
+static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[SELVA_NODE_ID_SIZE])
 {
     struct SelvaFind_QueryOpts qo = {
         .dir = SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
@@ -290,7 +290,7 @@ static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[
         struct selva_proto_string qo_hdr;
         char qo_str[sizeof(qo)];
         struct selva_proto_string ids_hdr;
-        char ids_str[NODE_ID_SIZE];
+        char ids_str[SELVA_NODE_ID_SIZE];
     } buf = {
         .hdr = {
             .cmd = CMD_ID_HIERARCHY_FIND,
@@ -317,7 +317,7 @@ static int send_find(int fd, int seqno, flags_t frame_extra_flags, char node_id[
         },
     };
     memcpy(buf.qo_str, &qo, sizeof(qo));
-    strncpy(buf.ids_str, node_id, NODE_ID_SIZE);
+    strncpy(buf.ids_str, node_id, SELVA_NODE_ID_SIZE);
 
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
@@ -484,26 +484,26 @@ pthread_t start_recv(int fd, int n)
 
 static void test_modify(int fd, int seqno, flags_t frame_extra_flags)
 {
-    char node_id[NODE_ID_SIZE + 1];
+    char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", NODE_ID_SIZE - 2, seqno);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, seqno);
     send_modify(fd, seqno, frame_extra_flags, node_id);
 }
 
 static void test_modify_single(int fd, int seqno, flags_t frame_extra_flags)
 {
-    char node_id[NODE_ID_SIZE + 1];
+    char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
     send_modify(fd, seqno, frame_extra_flags, node_id);
 }
 
 static void test_incrby(int fd, int seqno, flags_t frame_extra_flags)
 {
     static int first = 1;
-    char node_id[NODE_ID_SIZE + 1];
+    char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
     if (first) {
         first = 0;
 
@@ -515,9 +515,9 @@ static void test_incrby(int fd, int seqno, flags_t frame_extra_flags)
 static void test_hll(int fd, int seqno, flags_t frame_extra_flags)
 {
     static int first = 1;
-    char node_id[NODE_ID_SIZE + 1];
+    char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
     if (first) {
         first = 0;
 
@@ -528,7 +528,7 @@ static void test_hll(int fd, int seqno, flags_t frame_extra_flags)
 
 static void test_find(int fd, int seqno, flags_t frame_extra_flags)
 {
-    char node_id[NODE_ID_SIZE] = "root";
+    char node_id[SELVA_NODE_ID_SIZE] = "root";
     send_find(fd, seqno, frame_extra_flags, node_id);
 }
 
