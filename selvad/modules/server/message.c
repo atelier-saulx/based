@@ -22,10 +22,10 @@ static int none_flush(struct selva_server_response_out *resp __unused, bool last
 
 static ssize_t none_send_buf(
         struct selva_server_response_out *restrict resp __unused,
-        const void *restrict buf __unused, size_t len __unused,
+        const void *restrict buf __unused, size_t len,
         enum server_send_flags flags __unused)
 {
-    return 0;
+    return len;
 }
 
 static ssize_t none_send_file(
