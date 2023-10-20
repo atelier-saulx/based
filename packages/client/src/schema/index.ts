@@ -274,7 +274,7 @@ const mergeFields = (
       mutations.push({
         mutation: 'remove_field',
         type: path[0],
-        path,
+        path: path.slice(1).concat(fieldName),
         old: currentFieldDef,
       })
       continue
