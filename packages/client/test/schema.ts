@@ -506,7 +506,7 @@ test('Change field type in flexible mode with existing nodes', async (t) => {
 
 // TODO: Check flexible mode with objects
 
-test('Remove field', async (t) => {
+test('Remove field in strict mode', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -526,7 +526,29 @@ test('Remove field', async (t) => {
   t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
 })
 
-test('Remove type', async (t) => {
+test('Remove field in flexible mode', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          fields: {
+            // TODO: add delete to BasedSchemaField
+            // @ts-ignore
+            title: { $delete: true },
+          },
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
+    })
+  )
+  const newSchema = client.schema
+  t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
+})
+
+test('Remove type in strict mode', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -538,6 +560,26 @@ test('Remove type', async (t) => {
           $delete: true,
         },
       },
+    })
+  )
+  const newSchema = client.schema
+  t.false(newSchema.types.hasOwnProperty('match'))
+})
+
+test('Remove type in flexible mode', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        match: {
+          // TODO: add delete to BasedSchemaType
+          // @ts-ignore
+          $delete: true,
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
     })
   )
   const newSchema = client.schema
