@@ -611,10 +611,11 @@ static int run_cmd(struct selva_server_response_out * restrict resp, const void 
             err = resp->last_error;
         } else {
             err = SELVA_PROTO_ENOTSUP;
+            selva_send_errorf(resp, err, "Server is read-only");
         }
     } else {
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid cmd_id: %d", resp->cmd);
         err = SELVA_EINVAL;
+        selva_send_errorf(resp, err, "Invalid cmd_id: %d", resp->cmd);
     }
 
     return err;
