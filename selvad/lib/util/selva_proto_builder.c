@@ -73,6 +73,22 @@ void selva_proto_builder_insert_null(struct selva_proto_builder_msg *msg)
     selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
 }
 
+void selva_proto_builder_insert_error(
+        struct selva_proto_builder_msg * restrict msg,
+        int err,
+        const char * restrict str,
+        size_t len)
+{
+    struct selva_proto_error hdr = {
+        .type = SELVA_PROTO_ERROR,
+        .err_code = err,
+        .bsize = len,
+    };
+
+    selva_proto_builder_insert_header(msg, &hdr, sizeof(hdr));
+    selva_proto_builder_insert_payload(msg, str, len);
+}
+
 void selva_proto_builder_insert_double(struct selva_proto_builder_msg *msg, double v)
 {
     struct selva_proto_double hdr = {
