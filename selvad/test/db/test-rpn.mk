@@ -15,6 +15,7 @@ SRC-rpn += ../../lib/util/selva_error.c
 SRC-rpn += ../../lib/util/selva_string.c
 SRC-rpn += ../../lib/util/svector.c
 SRC-rpn += ../../lib/util/timestamp.c
+SRC-rpn += ../../modules/db/field_lookup/data_field.c
 SRC-rpn += ../../modules/db/rpn/rpn.c
 SRC-rpn += ../../modules/db/selva_object/selva_object.c
 SRC-rpn += ../../modules/db/selva_set/field_has.c

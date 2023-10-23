@@ -13,7 +13,7 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *node, const cha
     return NULL;
 }
 
-int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, int create, struct SelvaObject **out) {
+int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
     return 0;
 }
 
@@ -30,5 +30,9 @@ void Edge_DeinitEdgeFieldConstraints(struct EdgeFieldConstraints *data) {
 }
 
 int Edge_Usage(const struct SelvaHierarchyNode *node) {
+    return 0;
+}
+
+int Edge_DerefSingleRef(const struct EdgeField *edge_field, struct SelvaHierarchyNode **node_out) {
     return 0;
 }

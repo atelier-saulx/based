@@ -33,3 +33,7 @@ int SelvaHierarchy_ForeachInField(
         const struct SelvaObjectSetForeachCallback *cb) {
     return 0;
 }
+
+struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(const struct SelvaHierarchyTraversalMetadata *traversal_metadata, struct SelvaHierarchyNode *node) {
+    return NULL;
+}
