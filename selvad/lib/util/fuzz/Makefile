@@ -12,3 +12,6 @@ get_array_field_index: get_array_field_index.c ../cstrings.c
 
 selva_proto_parse_vtype: get_array_field_index.c ../cstrings.c
 	clang $(CFLAGS) -fsanitize=fuzzer,signed-integer-overflow $^ -o $@
+
+stringlist_search: stringlist_search.c ../cstrings.c
+	clang $(CFLAGS) -fsanitize=fuzzer,signed-integer-overflow $^ -o $@
