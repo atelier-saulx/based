@@ -26,6 +26,7 @@ type CmdExecOpts = {
   fields: string
   strFields: string
   recordDef: CompiledRecordDef
+  cmd: GetCommand
 }
 
 const TRAVERSE_MODES: Record<string, protocol.SelvaTraversal> = {
@@ -348,6 +349,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       strFields: fields,
       recordDef: protocol.hierarchy_agg_def,
       extraArgs: [(cmd.function.$args || []).join('|')],
+      cmd,
     }
   } else if (cmd.type === 'ids') {
     struct.merge_strategy = protocol.SelvaMergeStrategy.MERGE_STRATEGY_NONE
@@ -363,6 +365,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       fields: '',
       strFields: '',
       recordDef: protocol.hierarchy_find_def,
+      cmd,
     }
   } else {
     const {
@@ -389,6 +392,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
       fields,
       strFields,
       recordDef: protocol.hierarchy_find_def,
+      cmd,
     }
   }
 }
