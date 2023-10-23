@@ -2678,7 +2678,7 @@ static void replyWithObject(struct selva_server_response_out *resp, struct selva
         const char *name_str = key->name;
         const size_t name_len = key->name_len;
 
-        if (excluded && stringlist_searchn(excluded, name_str, name_len)) {
+        if (excluded && stringlist_search(excluded, name_str, name_len, '*')) {
             continue;
         }
 

@@ -149,23 +149,23 @@ static int inhibitMarkerEvent(const Selva_NodeId node_id, const struct Selva_Sub
 static int field_match(const char *list, const char *field_str, size_t field_len) {
     int match = 0;
 
-    if (list[0] == '\0') {
-        match = 0;
-    } else if (list[0] == '*' && list[1] == '\0') {
-        match = 1;
-    } else {
-        /* Test if field matches to any of the fields in list. */
+    SELVA_LOG(SELVA_LOGL_ERR, "Match \"%.*s\" list: \"%s\"", (int)field_len, field_str, list);
+
+    /* Test if field matches to any of the fields in list. */
+    match = stringlist_search(list, field_str, field_len, '*');
+
+    /*
+     * Test for each subfield if there was no exact match.
+     */
+    if (!match) {
         const char *sep = ".";
         char *p;
 
-        match = stringlist_searchn(list, field_str, field_len);
-
-        /* Test for each subfield if there was no exact match. */
-        if (!match && (p = strstr(field_str, sep))) {
+        if ((p = strstr(field_str, sep))) {
             do {
                 const size_t len = (ptrdiff_t)p++ - (ptrdiff_t)field_str;
 
-                match = stringlist_searchn(list, field_str, len);
+                match = stringlist_search(list, field_str, len, '*');
             } while (!match && p && (p = strstr(p, sep)));
         }
     }

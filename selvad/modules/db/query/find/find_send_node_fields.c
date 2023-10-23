@@ -64,7 +64,7 @@ static int is_excluded(struct selva_string *excluded_fields, const char *full_fi
          * the server.
          */
 
-        if (stringlist_searchn(excluded_fields_str, full_field_name_str, full_field_name_len)) {
+        if (stringlist_search(excluded_fields_str, full_field_name_str, full_field_name_len, '*')) {
             /*
              * This field should be excluded from the results.
              */

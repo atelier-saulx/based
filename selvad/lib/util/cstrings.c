@@ -4,6 +4,7 @@
  */
 #define _GNU_SOURCE
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 #include "jemalloc.h"
 #include "util/cstrings.h"
@@ -113,58 +114,56 @@ const char *sztok(const char *s, size_t size, size_t * restrict i) {
 	return r;
 }
 
-int stringlist_search(const char *list, const char *str) {
+int stringlist_search(const char *list, const char *str, size_t n, char wildcard) {
     const char *s1 = list;
 
-    while (*s1 != '\0') {
-        const char *s2 = str;
-
-        /* strcmp */
-        while (*s1 == *s2++) {
-            const char c = *s1++;
-            if (c == '\n' || c == '\0') {
-                return 1;
-            }
-        }
-        if (*s1 == '\n' && *(s2 - 1) == '\0') {
-            return 1;
-        }
-
-        /* Skip the rest of the current field */
-        while (*s1 != '\0') {
-            s1++;
-            if (*s1 == '\n') {
-                s1++;
-                break;
-            }
-        }
-    }
-
-    return 0;
-}
-
-int stringlist_searchn(const char *list, const char *str, size_t n) {
-    const char *s1 = list;
-
+    /* Never match if `str` is empty. */
     if (!str || str[0] == '\0' || n == 0) {
         return 0;
     }
 
+    /* Always match if `str` is non-empty and `list` starts with a wildcard. */
+    if (wildcard != '\0' && list[0] == wildcard && list[1] == '\0') {
+        return 1;
+    }
+
+    /* Note that if `list` is empty then we'll immediately return 0. */
     while (*s1 != '\0') {
         ssize_t i = n;
         const char *s2 = str;
 
+was_wildcard:
         while (i-- >= 0 && *s1 && *s2 && *s1++ == *s2++);
         --s1;
         --s2;
 
-        if (i == (ssize_t)(-1) &&
-            ((s1[0] == '\n' || s1[0] == '\0') ||
-             (s1[1] == '\0' || s1[1] == '\n'))) {
-            return 1;
+        if (!(i == (ssize_t)(-1))) {
+            if (wildcard != '\0' && *s1 == wildcard && s1 > list && *(s1 - 1) == '.') {
+                const char *s1n = strchr(s1, '.');
+                if (!s1n) {
+                    goto next;
+                }
+
+                const size_t left = n - (s2 - str);
+                const char *s2n = memchr(s2, '.', left);
+                if (s2n) {
+                    s1 = s1n;
+                    i = n - (s2n - str);
+                    s2 = s2n;
+                    goto was_wildcard;
+                } else {
+                    goto next;
+                }
+            }
+        } else {
+            if ((s1[0] == '\n' || s1[0] == '\0') ||
+                (s1[1] == '\0' || s1[1] == '\n')) {
+                return 1;
+            }
         }
 
         /* Skip the rest of the current field */
+next:
         while (*s1 != '\0') {
             s1++;
             if (*s1 == '\n') {

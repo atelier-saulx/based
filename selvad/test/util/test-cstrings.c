@@ -28,12 +28,12 @@ static int field_matcher(const char *list, const char *field)
     int match;
     char *p;
 
-    match = stringlist_searchn(list, field, strlen(field));
+    match = stringlist_search(list, field, strlen(field), '\0');
     if (!match && (p = strstr(field, sep))) {
         do {
             const size_t len = (ptrdiff_t)p++ - (ptrdiff_t)field;
 
-            match = stringlist_searchn(list, field, len);
+            match = stringlist_search(list, field, len, '\0');
         } while (!match && p && (p = strstr(p, sep)));
     }
 
@@ -119,10 +119,10 @@ static char * test_invalid_cases(void)
     match = field_matcher("", field);
     pu_assert_equal("should not match", match, 0);
 
-    match = stringlist_searchn("title", "", 0);
+    match = stringlist_search("title", "", 0, '\0');
     pu_assert_equal("should not match", match, 0);
 
-    match = stringlist_searchn("title", "\0", 1);
+    match = stringlist_search("title", "\0", 1, '\0');
     pu_assert_equal("should not match", match, 0);
 
     return NULL;
@@ -278,13 +278,13 @@ static char * test_long_string(void)
     const char field[] = "titlee";
     int match;
 
-    match = stringlist_searchn(list, field, sizeof(field) - 3);
+    match = stringlist_search(list, field, sizeof(field) - 3, '\0');
     pu_assert_equal("no match", match, 0);
 
-    match = stringlist_searchn(list, field, sizeof(field) - 2);
+    match = stringlist_search(list, field, sizeof(field) - 2, '\0');
     pu_assert_equal("match", match, 1);
 
-    match = stringlist_searchn(list, field, sizeof(field) - 1);
+    match = stringlist_search(list, field, sizeof(field) - 1, '\0');
     pu_assert_equal("no match", match, 0);
 
     return NULL;
