@@ -218,7 +218,7 @@ static int send_edge_meta_fields(
     while ((meta_key_str = SelvaObject_ForeachKey(edge_metadata, &obj_it))) {
         size_t meta_key_len = strlen(meta_key_str);
         size_t full_field_name_len = sizeof(SELVA_EDGE_META_FIELD) + meta_key_len;
-        char full_field_name_str[full_field_name_len];
+        char full_field_name_str[full_field_name_len + 1];
 
         snprintf(full_field_name_str, full_field_name_len + 1, "%s.%.s", SELVA_EDGE_META_FIELD, meta_key_str);
         if (!is_excluded(excluded_fields, full_field_name_str, full_field_name_len)) {
