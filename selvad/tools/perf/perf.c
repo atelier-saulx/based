@@ -19,7 +19,7 @@
 #include "util/crc32c.h"
 #include "util/ctime.h"
 #include "util/timestamp.h"
-#include "selva_db.h"
+#include "selva_db_types.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "../../modules/db/include/find_cmd.h"

@@ -10,7 +10,7 @@
 #include <sys/socket.h>
 #include "cdefs.h"
 #include "endian.h"
-#include "selva_db.h"
+#include "selva_db_types.h"
 #include "selva_proto.h"
 #include "util/crc32c.h"
 #include "commands.h"
