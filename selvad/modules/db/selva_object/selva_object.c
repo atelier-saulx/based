@@ -108,7 +108,7 @@ static const struct SelvaObjectPointerOpts default_ptr_opts = {
 SELVA_OBJECT_POINTER_OPTS(default_ptr_opts);
 
 RB_PROTOTYPE_STATIC(SelvaObjectKeys, SelvaObjectKey, _entry, SelvaObject_Compare)
-static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, unsigned flags, struct SelvaObjectKey **out);
+static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectGetKeyFlags flags, struct SelvaObjectKey **out);
 static void replyWithKeyValue(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObjectKey *key);
 static void replyWithObject(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObject *obj, const char *excluded);
 static struct SelvaObject *load_object(struct selva_io *io, int encver, int level, void *ptr_load_data);
