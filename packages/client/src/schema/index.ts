@@ -271,6 +271,9 @@ const mergeFields = (
       (merge === false && !newFieldsNames.includes(fieldName))
     ) {
       // field to remove
+      if (mode === SchemaUpdateMode.strict) {
+        throw new Error(`Cannot remove field '${fieldName}' type in strict mode`)
+      }
       mutations.push({
         mutation: 'remove_field',
         type: path[0],
@@ -311,9 +314,10 @@ const mergeFields = (
         // @ts-ignore
         currentFieldDef?.properties || {},
         // @ts-ignore
-        requestedFieldDef.properties,
+        requestedFieldDef?.properties || {},
         mutations,
-        merge
+        merge,
+        mode
       )
     }
   }

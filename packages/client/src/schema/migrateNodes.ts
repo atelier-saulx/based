@@ -16,7 +16,7 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
       let finished = false
       while (!finished) {
         const nodeDeletions = []
-        const ids = (await client.get({
+        const query = {
           ids: {
             id: true,
             $list: {
@@ -31,7 +31,8 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
               }
             }
           }
-        })).ids.map((node: any) => node.id)
+        }
+        const ids = (await client.get(query)).ids.map((node: any) => node.id)
         ids.forEach((id: string) => {
           nodeDeletions.push(client.delete({ $id: id, $recursive: true }))
         })
@@ -47,7 +48,7 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
       let page = 0
       while (!finished) {
         const nodeDeletions = []
-        const ids = (await client.get({
+        const query = {
           ids: {
             id: true,
             $list: {
@@ -63,18 +64,24 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
               }
             }
           }
-        })).ids.map((node: any) => node.id)
-        ids.forEach((id: string) => {
-          nodeDeletions.push(client.set({
-            $id: id,
-            [mutation.path[0]]: {
-              $delete: true
-            }
-          }))
-        })
-        await Promise.all(nodeDeletions)
-        if (ids.length === PAGE_AMOUNT) {
-          page++
+        }
+        const ids = (await client.get(query)).ids?.map((node: any) => node.id)
+        if (ids) {
+          ids.forEach((id: string) => {
+            nodeDeletions.push(client.set({
+              $id: id,
+              [mutation.path[0]]: {
+                $delete: true
+              }
+            }))
+          })
+          await Promise.all(nodeDeletions)
+          if (ids.length === PAGE_AMOUNT) {
+            page++
+          } else {
+            finished = true
+          }
+
         } else {
           finished = true
         }

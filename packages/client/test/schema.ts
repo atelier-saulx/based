@@ -504,8 +504,6 @@ test('Change field type in flexible mode with existing nodes', async (t) => {
   )
 })
 
-// TODO: Check flexible mode with objects
-
 test('Remove field in strict mode', async (t) => {
   const { client } = t.context
 
@@ -644,7 +642,7 @@ test('Change remove type in migration mode', async (t) => {
   t.is(countClubs, 1000)
 })
 
-test.only('Change remove field in migration mode', async (t) => {
+test('Change remove field in migration mode', async (t) => {
   const { client } = t.context
 
   const sets: Promise<string>[] = []
