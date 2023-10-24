@@ -321,7 +321,10 @@ struct name {								\
 struct {								\
 	struct type *rbe_left;		/* left element */		\
 	struct type *rbe_right;		/* right element */		\
-	struct type *rbe_parent;	/* parent element */		\
+    union {                                             \
+	    struct type *rbe_parent;	/* parent element */		\
+        uintptr_t rbe_parent_bits;                      \
+    };                                                  \
 }
 
 #define RB_LEFT(elm, field)		(elm)->field.rbe_left
@@ -335,7 +338,8 @@ struct {								\
  * that the left or right child of the tree node is "red".
  */
 #define RB_UP(elm, field)		(elm)->field.rbe_parent
-#define RB_BITS(elm, field)		(*(uintptr_t *)&RB_UP(elm, field))
+#define RB_UP_BITS(elm, field)  (elm)->field.rbe_parent_bits
+#define RB_BITS(elm, field)		(RB_UP_BITS(elm, field))
 #define RB_RED_L			((uintptr_t)1)
 #define RB_RED_R			((uintptr_t)2)
 #define RB_RED_MASK			((uintptr_t)3)

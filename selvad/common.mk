@@ -16,7 +16,7 @@ export ZERO_AR_DATE := 1
 
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra
+CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wstrict-aliasing=3
 CFLAGS += -DDCACHE_LINESIZE=64
 
 # Add these for valgrind
