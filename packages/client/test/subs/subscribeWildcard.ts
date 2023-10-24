@@ -153,8 +153,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
   })
 }
 
-// TODO: wildcard within record not working
-test.serial.skip('sub find - list with wildcard', async (t) => {
+test.serial('sub find - list with wildcard', async (t) => {
   // simple nested - single query
   await start(t)
   const client = t.context.dbClient
@@ -297,8 +296,7 @@ test.serial.skip('sub find - list with wildcard', async (t) => {
   t.deepEqual(cnt, 2)
 })
 
-// TODO: wildcard within record not working
-test.serial.skip('sub find - single with wildcard', async (t) => {
+test.serial('sub find - single with wildcard', async (t) => {
   // simple nested - single query
   await start(t)
   const client = t.context.dbClient
