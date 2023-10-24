@@ -14,6 +14,12 @@
 #include "hierarchy.h"
 #include "field_lookup.h"
 
+static int do_field_lookup_traversable(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        struct field_lookup_traversable *out);
+
 static int get_from_edge_field(
         struct SelvaHierarchyNode *node,
         const char *field_str,
@@ -55,7 +61,8 @@ static int get_from_edge_field(
             return err;
         }
 
-        return field_lookup_traversable(next_node, next_field_str, next_field_len, out);
+        out->hops++;
+        return do_field_lookup_traversable(next_node, next_field_str, next_field_len, out);
     }
 }
 
@@ -74,7 +81,7 @@ static enum SelvaTraversal get_pseudo_field(const char *field_str, size_t field_
 #undef IS_FIELD
 }
 
-int field_lookup_traversable(
+static int do_field_lookup_traversable(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
@@ -138,4 +145,14 @@ int field_lookup_traversable(
         out->node = node;
         return 0;
     }
+}
+
+int field_lookup_traversable(
+        struct SelvaHierarchyNode *node,
+        const char *field_str,
+        size_t field_len,
+        struct field_lookup_traversable *out)
+{
+    memset(out, 0, sizeof(*out));
+    return do_field_lookup_traversable(node, field_str, field_len, out);
 }
