@@ -7,7 +7,7 @@
 #include "traversal.h"
 
 struct SVector;
-struct SelvaHierarchy *hierarchy;
+struct SelvaHierarchy;
 struct SelvaHierarchyNode;
 struct selva_string;
 
