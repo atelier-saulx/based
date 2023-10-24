@@ -16,7 +16,7 @@ export ZERO_AR_DATE := 1
 
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wstrict-aliasing=3
+CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra
 CFLAGS += -DDCACHE_LINESIZE=64
 
 # Add these for valgrind
@@ -34,7 +34,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 		TARGET_CFLAGS += -fcf-protection=full
 	endif
 
-	CFLAGS += $(TARGET_CFLAGS)
+	CFLAGS += $(TARGET_CFLAGS) -Wstrict-aliasing=3
 	LDFLAGS += -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so
