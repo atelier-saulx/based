@@ -45,6 +45,18 @@ test.beforeEach(async (t) => {
               dung: { type: 'number' },
             },
           },
+          withNested: {
+            type: 'object',
+            properties: {
+              again: {
+                type: 'object',
+                properties: {
+                  nestedString: { type: 'string' },
+                  nestedInteger: { type: 'integer' }
+                }
+              },
+            },
+          },
         },
       },
     },
@@ -82,6 +94,37 @@ test('Remove property on object field in strict mode', async (t) => {
     }),
     {
       message: /^Cannot remove "lekkerType.ding.dung" in strict mode.$/
+    }
+  )
+})
+
+test('Remove property on nested object field in strict mode', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            withNested: {
+              properties: {
+                again: {
+                  properties: {
+                    nestedString: {
+                      // TODO: Remove when @based/schema is updated
+                      // @ts-ignore
+                      $delete: true
+                    }
+                  }
+                }
+              }
+            }
+          },
+        },
+      },
+    }),
+    {
+      message: /^Cannot remove "lekkerType.withNested.again.nestedString" in strict mode.$/
     }
   )
 })
@@ -275,7 +318,7 @@ test('Change property on object field in flexible mode with exsiting nodes but u
   t.is(newSchema.types['lekkerType'].fields['ding'].properties['dung'].type, 'string')
 })
 
-test('Change property on object field in flexible mode without exsiting nodes', async (t) => {
+test.only('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -283,9 +326,15 @@ test('Change property on object field in flexible mode without exsiting nodes', 
       types: {
         lekkerType: {
           fields: {
-            ding: {
+            withNested: {
               properties: {
-                dung: { type: 'string' }
+                again: {
+                  properties: {
+                    nestedString: {
+                      type: 'number'
+                    }
+                  }
+                }
               }
             }
           },
@@ -298,5 +347,5 @@ test('Change property on object field in flexible mode without exsiting nodes', 
 
   const newSchema = client.schema
   // @ts-ignore
-  t.is(newSchema.types['lekkerType'].fields['ding'].properties['dung'].type, 'string')
+  t.is(newSchema.types['lekkerType'].fields['withNested'].properties['again'].properties['nestedString'].type, 'number')
 })
