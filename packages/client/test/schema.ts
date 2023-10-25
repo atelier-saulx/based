@@ -456,7 +456,7 @@ test('Change field type in strict mode should fail', async (t) => {
       },
     }),
     {
-      message: /^Cannot change field .* type in strict mode$/
+      message: /^Cannot change "match.title" in strict mode.$/
     }
   )
 })

@@ -293,7 +293,7 @@ const mergeFields = (
         requestedFieldDef.type !== currentFieldDef.type
       ) {
         if (mode === SchemaUpdateMode.strict) {
-          throw new Error(`Cannot change field '${fieldName}' type in strict mode`)
+          throw new Error(`Cannot change "${path.join('.')}.${fieldName}" in strict mode.`)
         }
         mutations.push({
           mutation: 'change_field',

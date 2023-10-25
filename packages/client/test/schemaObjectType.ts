@@ -184,3 +184,119 @@ test('Remove property on object field in flexible mode without exsiting nodes', 
   // @ts-ignore
   t.false(newSchema.types['lekkerType'].fields.ding?.properties.hasOwnProperty('title'))
 })
+
+test('Change property on object field in strict mode', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            ding: {
+              properties: {
+                dung: {
+                  type: 'string'
+                }
+              }
+            }
+          },
+        },
+      },
+    }),
+    {
+      message: /^Cannot change "lekkerType.ding.dung" in strict mode.$/
+    }
+  )
+})
+
+test('Change property on object field in flexible mode with exsiting nodes', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'lekkerType',
+    ding: {
+      dung: 123
+    }
+  })
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            ding: {
+              properties: {
+                dung: { type: 'string' }
+              }
+            }
+          },
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
+    }),
+    {
+      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/
+    }
+  )
+})
+
+test('Change property on object field in flexible mode with exsiting nodes but unused property', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'lekkerType',
+    ding: {
+      wawa: 123
+    }
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            ding: {
+              properties: {
+                dung: { type: 'string' }
+              }
+            }
+          },
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
+    })
+  )
+
+  const newSchema = client.schema
+  // @ts-ignore
+  t.is(newSchema.types['lekkerType'].fields['ding'].properties['dung'].type, 'string')
+})
+
+test('Change property on object field in flexible mode without exsiting nodes', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            ding: {
+              properties: {
+                dung: { type: 'string' }
+              }
+            }
+          },
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
+    })
+  )
+
+  const newSchema = client.schema
+  // @ts-ignore
+  t.is(newSchema.types['lekkerType'].fields['ding'].properties['dung'].type, 'string')
+})
