@@ -3,15 +3,15 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _SELVA_DB_PRIVATE_
-#define _SELVA_DB_PRIVATE_
+#ifndef _SELVA_DB_
+#define _SELVA_DB_
 
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "cdefs.h"
 #include "selva_object_type.h"
-#include_next "selva_db.h"
+#include "selva_db_types.h"
 
 /**
  * Field protection modes.
@@ -128,4 +128,4 @@ static inline const char *Selva_GetEdgeMetaKey(const char *field_str, size_t fie
  */
 extern int selva_db_is_dirty;
 
-#endif /* _SELVA_DB_PRIVATE_ */
+#endif /* _SELVA_DB_ */

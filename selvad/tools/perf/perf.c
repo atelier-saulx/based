@@ -19,7 +19,7 @@
 #include "util/crc32c.h"
 #include "util/ctime.h"
 #include "util/timestamp.h"
-#include "selva_db.h"
+#include "selva_db_types.h"
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "../../modules/db/include/find_cmd.h"
@@ -486,7 +486,7 @@ static void test_modify(int fd, int seqno, flags_t frame_extra_flags)
 {
     char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, seqno);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", (int)(SELVA_NODE_ID_SIZE - 2), seqno);
     send_modify(fd, seqno, frame_extra_flags, node_id);
 }
 
@@ -494,7 +494,7 @@ static void test_modify_single(int fd, int seqno, flags_t frame_extra_flags)
 {
     char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", (int)(SELVA_NODE_ID_SIZE - 2), 1);
     send_modify(fd, seqno, frame_extra_flags, node_id);
 }
 
@@ -503,7 +503,7 @@ static void test_incrby(int fd, int seqno, flags_t frame_extra_flags)
     static int first = 1;
     char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", (int)(SELVA_NODE_ID_SIZE - 2), 1);
     if (first) {
         first = 0;
 
@@ -517,7 +517,7 @@ static void test_hll(int fd, int seqno, flags_t frame_extra_flags)
     static int first = 1;
     char node_id[SELVA_NODE_ID_SIZE + 1];
 
-    snprintf(node_id, sizeof(node_id), "ma%.*x", SELVA_NODE_ID_SIZE - 2, 1);
+    snprintf(node_id, sizeof(node_id), "ma%.*x", (int)(SELVA_NODE_ID_SIZE - 2), 1);
     if (first) {
         first = 0;
 

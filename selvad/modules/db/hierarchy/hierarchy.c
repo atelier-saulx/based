@@ -2696,6 +2696,11 @@ int SelvaHierarchy_TraverseField2(
     } else if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD) {
         assert(t.vec);
 
+        /* TODO Temp hack to prevent multi-hop derefs because we can't handle those in subscriptions. */
+        if (t.hops > 1) {
+            return SELVA_ENOTSUP;
+        }
+
         SelvaHierarchy_TraverseAdjacents(hierarchy, SELVA_TRAVERSAL_SVECTOR_PTAG_EDGE, t.vec, hcb);
         return 0;
     } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
@@ -2758,6 +2763,7 @@ int SelvaHierarchy_TraverseField2Bfs(
 
         err = field_lookup_traversable(node, ref_field_str, ref_field_len, &t);
         if (err) {
+            Trx_End(&hierarchy->trx_state, &trx_cur);
             return err;
         }
 
@@ -2779,6 +2785,12 @@ int SelvaHierarchy_TraverseField2Bfs(
                 break;
             }
             adj_vec = t.vec;
+
+            /* TODO Temp hack to prevent multi-hop derefs because we can't handle those in subscriptions. */
+            if (t.type == SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD && t.hops > 1) {
+                Trx_End(&hierarchy->trx_state, &trx_cur);
+                return SELVA_ENOTSUP;
+            }
         } else if (t.type & SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS) {
             adj_tag = SELVA_TRAVERSAL_SVECTOR_PTAG_PARENTS;
             adj_vec = &node->parents;

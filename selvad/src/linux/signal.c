@@ -34,7 +34,7 @@ int evl_create_sigfd(sigset_t *mask)
     return sfd;
 }
 
-int evl_close_sigfd(sigset_t *mask)
+void evl_close_sigfd(sigset_t *mask __unused)
 {
     /*
      * NOP

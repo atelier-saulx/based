@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 #pragma once
-#ifndef _SELVA_DB_
-#define _SELVA_DB_
+#ifndef _SELVA_DB_TYPES_
+#define _SELVA_DB_TYPES_
 
 /**
  * NodeId size including the type prefix.
@@ -108,4 +108,4 @@ typedef int64_t Selva_SubscriptionMarkerId;
 
 #define SELVA_SUB_ID_STR_MAXLEN 20
 
-#endif /* _SELVA_DB_ */
+#endif /* _SELVA_DB_TYPES_ */

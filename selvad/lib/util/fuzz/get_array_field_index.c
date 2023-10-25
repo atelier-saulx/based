@@ -1,11 +1,11 @@
-// Copyright (c) 2022 SAULX
+// Copyright (c) 2022-2023 SAULX
 //
 // SPDX-License-Identifier: MIT
 
 #include <stdint.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include "util/cstrings.h"
+#include "util/array_field.h"
 
 void *selva_malloc(size_t n)
 {

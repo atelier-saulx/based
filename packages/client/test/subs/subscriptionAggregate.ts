@@ -505,7 +505,6 @@ test.serial('list avg aggregate sub', async (t) => {
   ])
 
   await wait(1e3)
-  // TODO: if I put this in Promise.all, it doesn't work?
   await client.set({
     $id: 'ma13',
     parents: ['le0'],

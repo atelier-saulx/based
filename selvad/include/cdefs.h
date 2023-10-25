@@ -9,7 +9,9 @@
 
 #if __STDC_VERSION__ < 202311L
 #define static_assert _Static_assert
+#if defined(__clang__)
 #define unreachable __builtin_unreachable
+#endif
 #endif
 
 #if defined(__GNUC__) && !defined(__clang__)

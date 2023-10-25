@@ -34,7 +34,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 		TARGET_CFLAGS += -fcf-protection=full
 	endif
 
-	CFLAGS += $(TARGET_CFLAGS)
+	CFLAGS += $(TARGET_CFLAGS) -Wstrict-aliasing=3
 	LDFLAGS += -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so

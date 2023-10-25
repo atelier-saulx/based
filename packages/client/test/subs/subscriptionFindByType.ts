@@ -126,10 +126,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
   })
 }
 
-// TODO: Selva assertion fail
-// Assertion failed: ((marker->dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD | SELVA_HIERARCHY_TRAVERSAL_FIELD | SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)) && !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_TRIGGER)), function marker_set_ref_field, file subscriptions.c, line 746.
-
-test.serial.skip('subscription find by type', async (t) => {
+test.serial('subscription find by type', async (t) => {
   await start(t)
   const client = t.context.dbClient
 

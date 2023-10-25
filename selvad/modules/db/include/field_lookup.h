@@ -7,7 +7,7 @@
 #include "traversal.h"
 
 struct SVector;
-struct SelvaHierarchy *hierarchy;
+struct SelvaHierarchy;
 struct SelvaHierarchyNode;
 struct selva_string;
 
@@ -25,6 +25,7 @@ struct field_lookup_traversable {
      * - SELVA_HIERARCHY_TRAVERSAL_ARRAY
      */
     enum SelvaTraversal type;
+    int hops; /*!< Number of edge_field hops. */
     struct SVector *vec; /*!< The field value. */
     struct SelvaHierarchyNode *node;
 };

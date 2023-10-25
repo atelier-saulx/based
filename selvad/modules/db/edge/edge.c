@@ -902,10 +902,10 @@ int Edge_DeleteAll(
         it = SelvaObject_ForeachBegin(any.obj);
         while ((key_str = SelvaObject_ForeachKey(any.obj, &it))) {
             const size_t key_len = strlen(key_str);
-            const size_t slen = field_name_len + key_len + 2;
-            char s[slen];
+            const size_t slen = field_name_len + key_len + 1;
+            char s[slen + 1];
 
-            snprintf(s, slen, "%.*s.%.*s",
+            snprintf(s, slen + 1, "%.*s.%.*s",
                      (int)field_name_len, field_name_str,
                      (int)key_len, key_str);
 

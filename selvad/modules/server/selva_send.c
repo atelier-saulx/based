@@ -46,7 +46,7 @@ int selva_send_flush(struct selva_server_response_out *restrict resp)
     return server_flush_frame_buf(resp, false);
 }
 
-int selva_send_raw(struct selva_server_response_out *restrict resp, void *restrict p, size_t len)
+int selva_send_raw(struct selva_server_response_out *restrict resp, const void *restrict p, size_t len)
 {
     ssize_t res;
 
