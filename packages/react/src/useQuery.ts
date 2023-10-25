@@ -77,22 +77,20 @@ export const useQueries = <T = any>(
 
 export const useQuery = <N extends keyof QueryMap>(
   name: N,
-  payload?: QueryMap[N].payload,
+  payload?: QueryMap[N]['payload'],
   opts?: {
     persistent: boolean
   }
 ): {
   loading: boolean
-  data?: QueryMap[N].result
+  data?: QueryMap[N]['result']
   error?: BasedError
   checksum?: number
 } => {
   const client: BasedClient = useContext(Ctx)
 
-  let x = name
-
-
   if (client && name) {
+    // @ts-ignore
     const q = client.query(name, payload, opts)
     const { id, cache } = q
     const [checksumOrError, update] = useState<number | BasedError>(
