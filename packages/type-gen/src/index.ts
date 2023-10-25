@@ -6,5 +6,13 @@ export const parseFunction = async (
 ): Promise<string> => {
   console.info('go parse this', config, contents)
 
+  if (!config) {
+    throw new Error('Provide a config to parse an fn from!')
+  }
+
+  const fnTypes = parseCode(contents)
+
+  console.info(fnTypes)
+
   return 'lullz types'
 }

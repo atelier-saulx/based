@@ -34,6 +34,9 @@ import {
 } from './types/channel'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
+
+import { CallOptions } from './types'
+
 import { deepEqual } from '@saulx/utils'
 
 export * from './authState/parseAuthState'
@@ -334,26 +337,8 @@ export class BasedClient extends Emitter {
   // -------- Function
   /**
   Callable function, mostly used for modifications
-  
-  ```javascript
-  await client.call('db:set', { 
-    type: 'fruit', 
-    subType: 'apple', 
-    name: 'jonagold' 
-  })
-  ```
   */
-  call(
-    name: string,
-    payload?: any,
-    opts?: {
-      retryStrategy: (
-        err: Error,
-        time: number,
-        retries: number
-      ) => 0 | null | undefined | false | number
-    }
-  ): Promise<any> {
+  call(name: string, payload?: any, opts?: CallOptions): Promise<any> {
     const retryStrategy = opts?.retryStrategy
     if (retryStrategy) {
       return new Promise((resolve) => {
