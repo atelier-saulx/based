@@ -15,6 +15,7 @@ const test = anyTest as TestInterface<{
 }>
 
 test.beforeEach(async (t) => {
+  t.timeout(4000)
   t.context.port = await getPort()
   console.log('origin')
   t.context.srv = await startOrigin({
@@ -499,7 +500,7 @@ test('Change field type in flexible mode with existing nodes', async (t) => {
       },
     }, { mode: SchemaUpdateMode.flexible }),
     {
-      message: /^Cannot mutate type .* in flexible mode with exsiting nodes.$/
+      message: /^Cannot mutate "match.title" in flexible mode with exsiting data.$/
     }
   )
 })
@@ -507,19 +508,22 @@ test('Change field type in flexible mode with existing nodes', async (t) => {
 test('Remove field in strict mode', async (t) => {
   const { client } = t.context
 
-  await t.notThrowsAsync(
+  await t.throwsAsync(
     client.updateSchema({
       types: {
         match: {
           fields: {
+            // TODO: Remove when @based/schema is updated
+            // @ts-ignore
             title: { $delete: true },
           },
         },
       },
-    })
+    }),
+    {
+      message: /^Cannot remove "match.title" in strict mode.$/
+    }
   )
-  const newSchema = client.schema
-  t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
 })
 
 test('Remove field in flexible mode', async (t) => {
@@ -530,6 +534,8 @@ test('Remove field in flexible mode', async (t) => {
       types: {
         match: {
           fields: {
+            // TODO: Remove when @based/schema is updated
+            // @ts-ignore
             title: { $delete: true },
           },
         },
@@ -545,17 +551,20 @@ test('Remove field in flexible mode', async (t) => {
 test('Remove type in strict mode', async (t) => {
   const { client } = t.context
 
-  await t.notThrowsAsync(
+  await t.throwsAsync(
     client.updateSchema({
       types: {
         match: {
+          // TODO: Remove when @based/schema is updated
+          // @ts-ignore
           $delete: true,
         },
       },
-    })
+    }),
+    {
+      message: /^Cannot remove "match" in strict mode.$/
+    }
   )
-  const newSchema = client.schema
-  t.false(newSchema.types.hasOwnProperty('match'))
 })
 
 test('Remove type in flexible mode', async (t) => {
@@ -565,6 +574,8 @@ test('Remove type in flexible mode', async (t) => {
     client.updateSchema({
       types: {
         match: {
+          // TODO: Remove when @based/schema is updated
+          // @ts-ignore
           $delete: true,
         },
       },
@@ -599,6 +610,8 @@ test('Change remove type in migration mode', async (t) => {
     client.updateSchema({
       types: {
         match: {
+          // TODO: Remove when @based/schema is updated
+          // @ts-ignore
           $delete: true
         }
       }
@@ -660,6 +673,8 @@ test('Change remove field in migration mode', async (t) => {
         match: {
           fields: {
             value: {
+              // TODO: Remove when @based/schema is updated
+              // @ts-ignore
               $delete: true
             }
           }

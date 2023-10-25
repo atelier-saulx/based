@@ -32,7 +32,8 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
             }
           }
         }
-        const ids = (await client.get(query)).ids.map((node: any) => node.id)
+        const result = await client.get(query)
+        const ids = result.ids?.map((node: any) => node.id) || []
         ids.forEach((id: string) => {
           nodeDeletions.push(client.delete({ $id: id, $recursive: true }))
         })

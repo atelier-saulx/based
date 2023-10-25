@@ -272,7 +272,7 @@ const mergeFields = (
     ) {
       // field to remove
       if (mode === SchemaUpdateMode.strict) {
-        throw new Error(`Cannot remove field '${fieldName}' type in strict mode`)
+        throw new Error(`Cannot remove "${path.join('.')}.${fieldName}" in strict mode.`)
       }
       mutations.push({
         mutation: 'remove_field',
@@ -298,7 +298,7 @@ const mergeFields = (
         mutations.push({
           mutation: 'change_field',
           type: path[0],
-          path,
+          path: path.slice(1).concat(fieldName),
           old: currentFieldDef,
           new: { ...currentFieldDef, ...requestedFieldDef },
         })
@@ -331,7 +331,13 @@ const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: 
   }
   const query: any = {}
   mutations.forEach((mutation) => {
-    query[mutation.type] = {
+    // console.log('----- mutation', mutation)
+    let path: string[] = []
+    if (mutation.mutation !== 'delete_type') {
+      path = mutation.path
+    }
+    const fullFieldPath = [mutation.type].concat(path).join('.')
+    query[fullFieldPath] = {
       $aggregate: {
         $function: 'count',
         $traverse: 'descendants',
@@ -340,6 +346,10 @@ const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: 
             $field: 'type',
             $operator: '=',
             $value: mutation.type,
+          },
+          {
+            $field: path.join('.'),
+            $operator: 'exists'
           }
         ],
         $limit: 1,
@@ -347,9 +357,9 @@ const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: 
     }
   })
   const result = await client.get(query)
-  for (const type in result) {
-    if (result[type] > 0) {
-      throw new Error(`Cannot mutate type "${type}" in flexible mode with exsiting nodes.`)
+  for (const fullFieldPath in result) {
+    if (result[fullFieldPath] > 0) {
+      throw new Error(`Cannot mutate "${fullFieldPath}" in flexible mode with exsiting data.`)
     }
   }
 }
@@ -404,12 +414,15 @@ export async function updateSchema(
     const typeDef = (opts as BasedSchema).types[typeName]
     const oldDef = currentSchema.types[typeName]
     if (
-      // TODO: add $delete to BasedSchemaType
+      // TODO: Remove when @based/schema is updated
       // @ts-ignore
       typeDef?.$delete ||
       (merge === false && !optsTypeNames.includes(typeName))
     ) {
       // type to delete
+      if (mode === SchemaUpdateMode.strict) {
+        throw new Error(`Cannot remove "${typeName}" in strict mode.`)
+      }
       typesToDelete.push([oldDef?.prefix, typeName])
       mutations.push({
         mutation: 'delete_type',

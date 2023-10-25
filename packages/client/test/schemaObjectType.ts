@@ -41,6 +41,7 @@ test.beforeEach(async (t) => {
             type: 'object',
             properties: {
               texty: { type: 'text' },
+              wawa: { type: 'integer' },
               dung: { type: 'number' },
             },
           },
@@ -69,6 +70,8 @@ test('Remove property on object field in strict mode', async (t) => {
             ding: {
               properties: {
                 dung: {
+                  // TODO: Remove when @based/schema is updated
+                  // @ts-ignore
                   $delete: true
                 }
               }
@@ -76,9 +79,10 @@ test('Remove property on object field in strict mode', async (t) => {
           },
         },
       },
-    }), {
-    message: /^Cannot remove field '.*' in flexible mode with exsiting nodes.$/
-  }
+    }),
+    {
+      message: /^Cannot remove "lekkerType.ding.dung" in strict mode.$/
+    }
   )
 })
 
@@ -92,7 +96,6 @@ test('Remove property on object field in flexible mode with exsiting nodes', asy
     }
   })
 
-
   await t.throwsAsync(
     client.updateSchema({
       types: {
@@ -101,6 +104,8 @@ test('Remove property on object field in flexible mode with exsiting nodes', asy
             ding: {
               properties: {
                 dung: {
+                  // TODO: Remove when @based/schema is updated
+                  // @ts-ignore
                   $delete: true
                 }
               }
@@ -110,13 +115,48 @@ test('Remove property on object field in flexible mode with exsiting nodes', asy
       },
     }, {
       mode: SchemaUpdateMode.flexible
-    }), {
-    message: /^Cannot remove field '.*' type in strict mode$/
-  }
+    }),
+    {
+      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/
+    }
   )
 })
 
-test.only('Remove property on object field in flexible mode without exsiting nodes', async (t) => {
+test('Remove property on object field in flexible mode with exsiting nodes but unused property', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'lekkerType',
+    ding: {
+      wawa: 123
+    }
+  })
+
+
+  await t.notThrowsAsync(
+    client.updateSchema({
+      types: {
+        lekkerType: {
+          fields: {
+            ding: {
+              properties: {
+                dung: {
+                  // TODO: Remove when @based/schema is updated
+                  // @ts-ignore
+                  $delete: true
+                }
+              }
+            }
+          },
+        },
+      },
+    }, {
+      mode: SchemaUpdateMode.flexible
+    })
+  )
+})
+
+test('Remove property on object field in flexible mode without exsiting nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -127,6 +167,8 @@ test.only('Remove property on object field in flexible mode without exsiting nod
             ding: {
               properties: {
                 dung: {
+                  // TODO: Remove when @based/schema is updated
+                  // @ts-ignore
                   $delete: true
                 }
               }
@@ -139,7 +181,6 @@ test.only('Remove property on object field in flexible mode without exsiting nod
     })
   )
   const newSchema = client.schema
-  t.log(JSON.stringify(newSchema, null, 2))
   // @ts-ignore
   t.false(newSchema.types['lekkerType'].fields.ding?.properties.hasOwnProperty('title'))
 })
