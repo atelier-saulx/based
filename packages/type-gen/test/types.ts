@@ -40,8 +40,7 @@ test.serial('Generare types file from examples', async (t) => {
     encoding: 'utf-8',
   })
 
-  const client = based({})
-
+  t.true(result)
   t.true(file.includes('counter'))
   t.true(file.includes('db:schema'))
   t.true(file.includes('db:update-schema'))
