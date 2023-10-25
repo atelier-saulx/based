@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from 'react'
-import { BasedClient, BasedError } from '@based/client'
+import { BasedClient, BasedError, QueryMap } from '@based/client'
 import { Ctx } from './Ctx'
 import { hooksLoading, useLoadingListeners } from './useLoading'
 
@@ -23,6 +23,7 @@ export const useQueries = <T = any>(
   if (client && name) {
     const queries = Array(payloads.length)
     const result = payloads.map((payload, i) => {
+      // @ts-ignore
       const q = client.query(name, payload, opts)
       const { id, cache } = q
       queries[i] = q
@@ -74,21 +75,22 @@ export const useQueries = <T = any>(
   return Array(payloads.length).fill({ loading: true })
 }
 
-export const useQuery = <T = any>(
-  name?: string,
-  payload?: any,
+export const useQuery = <N extends keyof QueryMap>(
+  name: N,
+  payload?: QueryMap[N]['payload'],
   opts?: {
     persistent: boolean
   }
 ): {
   loading: boolean
-  data?: T
+  data?: QueryMap[N]['result']
   error?: BasedError
   checksum?: number
 } => {
   const client: BasedClient = useContext(Ctx)
 
   if (client && name) {
+    // @ts-ignore
     const q = client.query(name, payload, opts)
     const { id, cache } = q
     const [checksumOrError, update] = useState<number | BasedError>(

@@ -46,6 +46,8 @@ export const updateTypes = async (
   let fnCnt = 0
   let queryCnt = 0
 
+  let queryMap = '\n'
+
   let needsParsing = opts.extraImports ?? false
 
   for (const fn of fns) {
@@ -73,13 +75,19 @@ export const updateTypes = async (
       }
     } else if (fn.config.type === 'query') {
       queryCnt++
+
       if ('path' in fn) {
         const name = 'Q_Type_' + queryCnt
         imports += `import type ${name} from '${fn.path}';\n`
+
+        queryMap += `'${fn.config.name}': { payload: Parameters<typeof ${name}>[1], result: Parameters<Parameters<typeof ${name}>[2]>[0] },`
+
         queryFns += `
         query(name: '${fn.config.name}', payload: Parameters<typeof ${name}>[1], opts?: QueryOptions): BasedQuery<Parameters<typeof ${name}>[1],Parameters<Parameters<typeof ${name}>[2]>[0]>;
     `
       } else {
+        queryMap += `'${fn.config.name}': { payload: ${fn.payload}, result: ${fn.result} },`
+
         queryFns += `
         query(name: '${fn.config.name}', payload: ${fn.payload}, opts?: QueryOptions): BasedQuery<${fn.payload},${fn.result}>;
     `
@@ -99,6 +107,13 @@ export const updateTypes = async (
       x = x.replace(
         `query(name: string, payload?: any, opts?: QueryOptions): BasedQuery;`,
         queryFns
+      )
+
+      console.info('fix')
+
+      x = x.replace(
+        /export type QueryMap = ([^@]*?)\};([^@]*?)\};/,
+        `export type QueryMap = {${queryMap}}`
       )
     }
     await writeFile(decPath, x)
