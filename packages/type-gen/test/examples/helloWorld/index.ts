@@ -1,5 +1,9 @@
 import { BasedFunction } from '@based/functions'
 
+type Flap<T extends string> = {
+  bla: T
+}
+
 const helloWorld: BasedFunction<
   {
     msg: string
@@ -8,9 +12,10 @@ const helloWorld: BasedFunction<
   {
     bla: number
     msg: string
+    f: Flap<'snurp'>
   }
 > = async (based, payload) => {
-  return { msg: 'hello ' + payload.msg, bla: 0 }
+  return { msg: 'hello ' + payload.msg, bla: 0, f: { bla: 'snurp' } }
 }
 
 export default helloWorld

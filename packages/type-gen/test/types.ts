@@ -1,24 +1,50 @@
 import test from 'ava'
-import fs from 'fs'
-import { parseFunction } from '../src'
+import { updateTypes } from '../src'
 import { join } from 'path'
-import based, { BasedClient } from '@based/client'
+import based from '@based/client'
+import { readFile } from 'fs-extra'
 
 test.serial('Generare types file from examples', async (t) => {
-  const config = require('./examples/helloWorld/based.config.json')
-  const helloWorld = fs
-    .readFileSync(join(__dirname, '/examples/helloWorld/index.ts'))
-    .toString('utf-8')
+  const result = await updateTypes([
+    {
+      config: require('./examples/helloWorld/based.config.json'),
+      path: join(__dirname, '/examples/helloWorld/index.ts'),
+    },
+    {
+      config: require('./examples/query/based.config.json'),
+      path: join(__dirname, '/examples/query/index.ts'),
+    },
+    {
+      config: { name: 'db:set', type: 'function' },
+      payload: 'any',
+      result: 'any',
+    },
+    {
+      config: { name: 'db:update-schema', type: 'function' },
+      payload: 'any',
+      result: 'any',
+    },
+    {
+      config: { name: 'db', type: 'query' },
+      payload: 'any',
+      result: 'any',
+    },
+    {
+      config: { name: 'db:schema', type: 'query' },
+      payload: 'any',
+      result: 'any',
+    },
+  ])
 
-  const result = await parseFunction(config, helloWorld)
-
-  console.info('RESULT', result)
+  const file = await readFile(join(__dirname, '../../client/dist/index.d.ts'), {
+    encoding: 'utf-8',
+  })
 
   const client = based({})
 
-  // client.call('')
-
-  const y = await client.call('hello-world', { msg: 'x', gurt: 1 })
-
-  t.pass('flap')
+  t.true(file.includes('counter'))
+  t.true(file.includes('db:schema'))
+  t.true(file.includes('db:update-schema'))
+  t.true(file.includes('db:set'))
+  t.true(file.includes('hello-world'))
 })

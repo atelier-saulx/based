@@ -15,3 +15,5 @@ export type CallOptions = {
     retries: number
   ) => 0 | null | undefined | false | number
 }
+
+export type QueryOptions = { persistent: boolean }

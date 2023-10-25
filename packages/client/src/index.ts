@@ -35,7 +35,7 @@ import {
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import parseOpts from '@based/opts'
 
-import { CallOptions } from './types'
+import { CallOptions, QueryOptions } from './types'
 
 import { deepEqual } from '@saulx/utils'
 
@@ -326,17 +326,13 @@ export class BasedClient extends Emitter {
   }).get()
   ```
   */
-  query(
-    name: string,
-    payload?: any,
-    opts?: { persistent: boolean }
-  ): BasedQuery {
+  query(name: string, payload?: any, opts?: QueryOptions): BasedQuery {
     return new BasedQuery(this, name, payload, opts)
   }
 
   // -------- Function
   /**
-  Callable function, mostly used for modifications
+  Callable function, mostly used for modifications.
   */
   call(name: string, payload?: any, opts?: CallOptions): Promise<any> {
     const retryStrategy = opts?.retryStrategy
