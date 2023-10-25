@@ -456,3 +456,5 @@ export default function based(
 ): BasedClient {
   return new BasedClient(opts, settings)
 }
+
+export type QueryMap = { [key: string]: { payload: any; result: any } }
