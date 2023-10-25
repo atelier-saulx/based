@@ -1,10 +1,9 @@
 import test from 'ava'
 import { updateTypes } from '../src'
 import { join } from 'path'
-import based from '@based/client'
 import { readFile } from 'fs-extra'
 
-test.serial('Generare types file from examples', async (t) => {
+test.serial('Generate types file from examples', async (t) => {
   const result = await updateTypes([
     {
       config: require('./examples/helloWorld/based.config.json'),
@@ -40,7 +39,7 @@ test.serial('Generare types file from examples', async (t) => {
     encoding: 'utf-8',
   })
 
-  t.true(result)
+  t.is(result, join(__dirname, '../../client/dist/index.d.ts'))
   t.true(file.includes('counter'))
   t.true(file.includes('db:schema'))
   t.true(file.includes('db:update-schema'))

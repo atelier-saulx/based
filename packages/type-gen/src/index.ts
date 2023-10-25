@@ -10,10 +10,12 @@ export const updateTypes = async (
     extraImports?: string[]
     basedPath?: string
   } = {}
-): Promise<boolean> => {
+): Promise<string | void> => {
   // check if client is correct version
 
-  const basedClientPath = opts.basedPath || require.resolve('@based/client')
+  const basedClientPath =
+    opts.basedPath ||
+    require.resolve('@based/client', { paths: [process.cwd()] })
 
   if (!basedClientPath) {
     throw new Error('Cannot find basedClient')
@@ -100,8 +102,6 @@ export const updateTypes = async (
       )
     }
     await writeFile(decPath, x)
-    return true
+    return decPath
   }
-
-  return false
 }
