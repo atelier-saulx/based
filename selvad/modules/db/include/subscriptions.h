@@ -139,6 +139,14 @@ struct Selva_SubscriptionMarker {
     enum SelvaSubscriptionsMarkerFlags marker_flags;
 
     /**
+     * Trigger marker specific.
+     * Only used when SELVA_SUBSCRIPTION_FLAG_TRIGGER is set.
+     */
+    struct {
+        enum Selva_SubscriptionTriggerType event_type;
+    } trigger_marker;
+
+    /**
      * Change marker specific.
      * Never used when SELVA_SUBSCRIPTION_FLAG_TRIGGER or SELVA_SUBSCRIPTION_FLAG_MISSING is set.
      */
@@ -165,14 +173,6 @@ struct Selva_SubscriptionMarker {
             struct rpn_expression *traversal_expression;
         };
     } change_marker;
-
-    /**
-     * Trigger marker specific.
-     * Only used when SELVA_SUBSCRIPTION_FLAG_TRIGGER is set.
-     */
-    struct {
-        enum Selva_SubscriptionTriggerType event_type;
-    } trigger_marker;
 
     struct rpn_ctx *filter_ctx;
     struct rpn_expression *filter_expression;
