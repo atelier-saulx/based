@@ -13,6 +13,7 @@ const defaultMutationHandlers: {
   'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
   'number-integer': (oldValue) => Math.round(oldValue),
   'integer-number': (oldValue) => parseFloat(oldValue),
+  'text-string': (oldValue) => oldValue,
 }
 
 const PAGE_AMOUNT = 3e3
@@ -131,7 +132,9 @@ export const migrateNodes = async (
         const ids = (await client.get(query)).ids?.map((node: any) => node.id)
         if (ids) {
           ids.forEach((id: string) => {
+            const defaultLanguage = client.schema.languages[0]
             const query = {
+              $language: defaultLanguage,
               $id: id,
               ...pathToQuery(mutation.path, true),
             }

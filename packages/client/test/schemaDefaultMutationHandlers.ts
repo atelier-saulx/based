@@ -45,6 +45,9 @@ test.beforeEach(async (t) => {
           level1string: {
             type: 'string',
           },
+          level1text: {
+            type: 'text',
+          },
           level1object: {
             type: 'object',
             properties: {
@@ -54,6 +57,7 @@ test.beforeEach(async (t) => {
                   level3number: { type: 'number' },
                   level3integer: { type: 'integer' },
                   level3string: { type: 'string' },
+                  level3text: { type: 'text' },
                 },
               },
             },
@@ -377,4 +381,70 @@ test('Mutate field integer to number', async (t) => {
   t.is(level1integer, 1234)
   t.is(typeof level3integer, 'number')
   t.is(level3integer, 456)
+})
+
+test.only('Mutate field text to string', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1text: {
+      en: 'one',
+      de: 'eins',
+      nl: 'een',
+    },
+    level1object: {
+      level2object: {
+        level3text: {
+          en: 'two',
+          de: 'zwei',
+          nl: 'twee',
+        },
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1text: { type: 'string' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3text: {
+                        type: 'string',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1text'].type, 'string')
+  const {
+    level1text,
+    level1object: {
+      level2object: { level3text },
+    },
+  } = await client.get({
+    $id: id,
+    level1text: true,
+    level1object: true,
+  })
+  t.is(typeof level1text, 'string')
+  t.is(level1text, 'one')
+  t.is(typeof level3text, 'string')
+  t.is(level3text, 'two')
 })
