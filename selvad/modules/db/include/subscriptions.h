@@ -203,17 +203,17 @@ struct Selva_SubscriptionMarker {
      */
     struct {
         /**
-         * Flags for deferred events.
-         * defer_event() will OR the flags received to this.
-         */
-        enum SelvaSubscriptionsMarkerFlags flags;
-
-        /**
          * The node that is undergoing a change.
          * This shall be used as an invariant between function calls to
          * subscriptions.
          */
         Selva_NodeId node_id;
+
+        /**
+         * Flags for deferred events.
+         * defer_event() will OR the flags received to this.
+         */
+        enum SelvaSubscriptionsMarkerFlags flags;
 
         /**
          * Filter result on SelvaSubscriptions_FieldChangePrecheck().
