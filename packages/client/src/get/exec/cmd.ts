@@ -149,7 +149,7 @@ export async function getAlias(
   }
 
   const [resolved] = await ctx.client.command('resolve.nodeid', [0, ...aliases])
-  console.dir({ resolved }, { depth: 6 })
+  // console.dir({ resolved }, { depth: 6 })
 
   if (resolved?.length !== 2) {
     return
@@ -247,15 +247,15 @@ async function execCmd(
 ): Promise<any> {
   const { client } = ctx
 
-  console.dir(
-    {
-      op: {
-        cmdName,
-        args: [makeLangArg(ctx), struct, nodeId, ...(extraArgs || []), ...rpn],
-      },
-    },
-    { depth: 9 }
-  )
+  // console.dir(
+  //   {
+  //     op: {
+  //       cmdName,
+  //       args: [makeLangArg(ctx), struct, nodeId, ...(extraArgs || []), ...rpn],
+  //     },
+  //   },
+  //   { depth: 9 }
+  // )
 
   const op = await client.command(cmdName, [
     makeLangArg(ctx),

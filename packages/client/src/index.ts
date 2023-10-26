@@ -1,7 +1,4 @@
-import {
-  BasedSchema,
-  BasedSchemaPartial,
-} from '@based/schema'
+import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
@@ -110,11 +107,16 @@ export class BasedDbClient extends Emitter {
   async updateSchema(
     schema: BasedSchemaPartial,
     options?: {
-      merge?: boolean,
+      merge?: boolean
       mode?: SchemaUpdateMode
     }
   ): Promise<BasedSchema> {
-    const newSchema = await updateSchema(this, schema, options?.merge, options?.mode)
+    const newSchema = await updateSchema(
+      this,
+      schema,
+      options?.merge,
+      options?.mode
+    )
     this.schema = newSchema
     return newSchema
   }
@@ -149,7 +151,7 @@ export class BasedDbClient extends Emitter {
 
   async get(opts: any): Promise<any> {
     const { merged, defaults } = await get(this, opts)
-    console.dir({ merged, defaults }, { depth: 6 })
+    // console.dir({ merged, defaults }, { depth: 6 })
 
     for (const d of defaults) {
       applyDefault(merged, d)
