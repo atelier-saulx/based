@@ -149,8 +149,6 @@ static int inhibitMarkerEvent(const Selva_NodeId node_id, const struct Selva_Sub
 static int field_match(const char *list, const char *field_str, size_t field_len) {
     int match = 0;
 
-    SELVA_LOG(SELVA_LOGL_ERR, "Match \"%.*s\" list: \"%s\"", (int)field_len, field_str, list);
-
     /* Test if field matches to any of the fields in list. */
     match = stringlist_search(list, field_str, field_len, '*');
 
