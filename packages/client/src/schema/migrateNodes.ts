@@ -12,6 +12,7 @@ const defaultMutationHandlers: {
   'string-number': (oldValue) => parseFloat(oldValue),
   'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
   'number-integer': (oldValue) => Math.round(oldValue),
+  'integer-number': (oldValue) => parseFloat(oldValue),
 }
 
 const PAGE_AMOUNT = 3e3
