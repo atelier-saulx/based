@@ -40,7 +40,7 @@ test.beforeEach(async (t) => {
       properties: {
         component: { type: 'string' },
         name: { type: 'string' },
-        index: { type: 'int' },
+        index: { type: 'integer' },
         text: { type: 'text' },
         color: { type: 'string' },
         image: { type: 'string' },

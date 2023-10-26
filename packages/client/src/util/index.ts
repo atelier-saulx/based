@@ -58,3 +58,30 @@ export function getTypeSchema(ctx: ExecContext, id: string): BasedSchemaType {
     ? ctx.client.schema.root
     : ctx.client.schema.types[typeName]
 }
+
+export function pathToQuery(path: string[], value: any) {
+  const result = {}
+  let current = result
+  for (let i = 0; i < path.length; i++) {
+    current = current[path[i]] = i === path.length - 1 ? value : {}
+  }
+  return result
+}
+
+export function getValueByPath(obj: object | undefined, path: string | string[] | undefined) {
+  const p = typeof path === 'string' ? path.split('.') : path
+  if (typeof obj === 'object') {
+    let current = obj
+    for (let i = 0; i < p.length; i++) {
+      const key = p[i];
+      if (!current.hasOwnProperty(key)) {
+        return undefined
+      }
+      if (i == p.length - 1) {
+        return current[key]
+      }
+      current = current[key]
+    }
+  }
+  return undefined
+}
