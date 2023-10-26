@@ -1,17 +1,24 @@
-import { SchemaMutations } from "../types";
-import { BasedDbClient } from "..";
-import { getValueByPath, pathToQuery } from "../util";
+import { SchemaMutations } from '../types'
+import { BasedDbClient } from '..'
+import { getValueByPath, pathToQuery } from '../util'
 
 type MutationHandler = (oldValue: any) => any
 
 const defaultMutationHandlers: {
   [name: string]: MutationHandler
 } = {
-  'number-string': (oldValue) => String(oldValue)
+  'number-string': (oldValue) => String(oldValue),
+  'integer-string': (oldValue) => String(oldValue),
+  'string-number': (oldValue) => parseFloat(oldValue),
+  'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
+  'number-integer': (oldValue) => Math.round(oldValue),
 }
 
 const PAGE_AMOUNT = 3e3
-export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutations) => {
+export const migrateNodes = async (
+  client: BasedDbClient,
+  mutations: SchemaMutations
+) => {
   for (const mutation of mutations) {
     if (mutation.mutation === 'delete_type') {
       let finished = false
@@ -27,11 +34,11 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
                 $filter: {
                   $field: 'type',
                   $operator: '=',
-                  $value: mutation.type
-                }
-              }
-            }
-          }
+                  $value: mutation.type,
+                },
+              },
+            },
+          },
         }
         const result = await client.get(query)
         const ids = result.ids?.map((node: any) => node.id) || []
@@ -61,21 +68,23 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
                 $filter: {
                   $field: 'type',
                   $operator: '=',
-                  $value: mutation.type
-                }
-              }
-            }
-          }
+                  $value: mutation.type,
+                },
+              },
+            },
+          },
         }
         const ids = (await client.get(query)).ids?.map((node: any) => node.id)
         if (ids) {
           ids.forEach((id: string) => {
-            nodeDeletions.push(client.set({
-              $id: id,
-              [mutation.path[0]]: {
-                $delete: true
-              }
-            }))
+            nodeDeletions.push(
+              client.set({
+                $id: id,
+                [mutation.path[0]]: {
+                  $delete: true,
+                },
+              })
+            )
           })
           await Promise.all(nodeDeletions)
           if (ids.length === PAGE_AMOUNT) {
@@ -83,7 +92,6 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
           } else {
             finished = true
           }
-
         } else {
           finished = true
         }
@@ -95,7 +103,6 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
       let finished = false
       let page = 0
       while (!finished) {
-        console.log('---==---', page)
         const nodeGets = []
         const query = {
           ids: {
@@ -105,26 +112,27 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
               $limit: PAGE_AMOUNT,
               $find: {
                 $traverse: 'descendants',
-                $filter: [{
-                  $field: 'type',
-                  $operator: '=',
-                  $value: mutation.type
-                },
-                {
-                  $field: mutation.path.join('.'),
-                  $operator: 'exists'
-                }
-                ]
-              }
-            }
-          }
+                $filter: [
+                  {
+                    $field: 'type',
+                    $operator: '=',
+                    $value: mutation.type,
+                  },
+                  {
+                    $field: mutation.path.join('.'),
+                    $operator: 'exists',
+                  },
+                ],
+              },
+            },
+          },
         }
         const ids = (await client.get(query)).ids?.map((node: any) => node.id)
         if (ids) {
           ids.forEach((id: string) => {
             const query = {
               $id: id,
-              ...pathToQuery(mutation.path, true)
+              ...pathToQuery(mutation.path, true),
             }
             nodeGets.push(client.get(query))
           })
@@ -134,17 +142,46 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
             let oldValue = getValueByPath(results[index], mutation.path)
             let newValue: any
             try {
-              newValue = defaultMutationHandlers[`${mutation.old.type}-${mutation.new.type}`](oldValue)
+              newValue =
+                defaultMutationHandlers[
+                  `${mutation.old.type}-${mutation.new.type}`
+                ](oldValue)
             } catch (error) {
-              console.warn(`Error running migration handler for ${id} on field ${mutation.path.join('.')}`)
-
+              console.warn(
+                `Error running migration handler for ${id} on field ${mutation.path.join(
+                  '.'
+                )}`
+              )
             }
-            lowLevelSets.push(client.command('object.set', [
-              id,
-              mutation.path.join('.'),
-              's', // TODO: Change depending
-              newValue
-            ]))
+            let selvaObjectType: string
+            switch (mutation.new.type) {
+              case 'number':
+                selvaObjectType = 'f'
+                break
+              case 'integer':
+                selvaObjectType = 'i'
+                break
+              default:
+                selvaObjectType = 's'
+                break
+            }
+            // console.log(
+            //   '--=---',
+            //   id,
+            //   mutation.path.join('.'),
+            //   mutation.old,
+            //   mutation.new,
+            //   selvaObjectType,
+            //   newValue
+            // )
+            lowLevelSets.push(
+              client.command('object.set', [
+                id,
+                mutation.path.join('.'),
+                selvaObjectType,
+                String(newValue),
+              ])
+            )
           })
 
           await Promise.all(lowLevelSets)
@@ -154,7 +191,6 @@ export const migrateNodes = async (client: BasedDbClient, mutations: SchemaMutat
           } else {
             finished = true
           }
-
         } else {
           finished = true
         }

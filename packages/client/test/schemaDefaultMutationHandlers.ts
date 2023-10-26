@@ -36,22 +36,26 @@ test.beforeEach(async (t) => {
       aType: {
         prefix: 'at',
         fields: {
-          field1: {
-            type: 'number'
+          level1number: {
+            type: 'number',
           },
-          objectField: {
+          level1string: {
+            type: 'string',
+          },
+          level1object: {
             type: 'object',
             properties: {
-              field2: {
+              level2object: {
                 type: 'object',
                 properties: {
-                  field3: { type: 'number' }
-                }
-              }
-            }
-          }
-        }
-      }
+                  level3number: { type: 'number' },
+                  level3string: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
     },
   })
 
@@ -69,63 +73,188 @@ test('Mutate field number to string', async (t) => {
 
   const sets: Promise<string>[] = []
   for (let i = 0; i < 7000; i++) {
-    sets.push(client.set({
-      type: 'aType',
-      field1: i,
-      objectField: {
-        field2: {
-          field3: i
-        }
-      }
-    }))
+    sets.push(
+      client.set({
+        type: 'aType',
+        level1number: i,
+        level1object: {
+          level2object: {
+            level3number: i,
+          },
+        },
+      })
+    )
   }
   const ids = await Promise.all(sets)
   const id = ids[ids.length - 100]
 
   await client.set({
     $id: id,
-    field1: 1234,
-    objectField: {
-      field2: {
-        field3: 456
-      }
-    }
+    level1number: 1234,
+    level1object: {
+      level2object: {
+        level3number: 456,
+      },
+    },
   })
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        aType: {
-          fields: {
-            field1: { type: 'string' },
-            objectField: {
-              properties: {
-                field2: {
-                  properties: {
-                    field3: {
-                      type: 'string'
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1number: { type: 'string' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3number: {
+                        type: 'string',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
-    }, {
-      mode: SchemaUpdateMode.migration
-    })
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
   )
 
-  t.is(client.schema.types['aType'].fields['field1'].type, 'string')
-  const { field1, objectField: { field2: { field3 } } } = await client.get({
+  t.is(client.schema.types['aType'].fields['level1number'].type, 'string')
+  const {
+    level1number,
+    level1object: {
+      level2object: { level3number },
+    },
+  } = await client.get({
     $id: ids[ids.length - 100],
-    field1: true,
-    objectField: true
+    level1number: true,
+    level1object: true,
   })
-  t.is(typeof field1, 'string')
-  t.is(field1, '1234')
-  t.is(typeof field3, 'string')
-  t.is(field3, '456')
+  t.is(typeof level1number, 'string')
+  t.is(level1number, '1234')
+  t.is(typeof level3number, 'string')
+  t.is(level3number, '456')
 })
 
+test('Mutate field string to number', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1string: '1234.56',
+    level1object: {
+      level2object: {
+        level3string: '456',
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1string: { type: 'number' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3string: {
+                        type: 'number',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1string'].type, 'number')
+  const {
+    level1string,
+    level1object: {
+      level2object: { level3string },
+    },
+  } = await client.get({
+    $id: id,
+    level1string: true,
+    level1object: true,
+  })
+  t.is(typeof level1string, 'number')
+  t.is(level1string, 1234.56)
+  t.is(typeof level3string, 'number')
+  t.is(level3string, 456)
+})
+
+test('Mutate field string to integer', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1string: '1234.56',
+    level1object: {
+      level2object: {
+        level3string: '456',
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1string: { type: 'integer' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3string: {
+                        type: 'integer',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1string'].type, 'integer')
+  const {
+    level1string,
+    level1object: {
+      level2object: { level3string },
+    },
+  } = await client.get({
+    $id: id,
+    level1string: true,
+    level1object: true,
+  })
+  t.is(typeof level1string, 'number')
+  t.is(level1string, 1235)
+  t.is(typeof level3string, 'number')
+  t.is(level3string, 456)
+})
