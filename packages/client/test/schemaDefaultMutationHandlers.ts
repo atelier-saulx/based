@@ -383,7 +383,7 @@ test('Mutate field integer to number', async (t) => {
   t.is(level3integer, 456)
 })
 
-test.only('Mutate field text to string', async (t) => {
+test('Mutate field text to string', async (t) => {
   const { client } = t.context
 
   const id = await client.set({
@@ -447,4 +447,254 @@ test.only('Mutate field text to string', async (t) => {
   t.is(level1text, 'one')
   t.is(typeof level3text, 'string')
   t.is(level3text, 'two')
+})
+
+test('Mutate field string to text', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1string: 'one',
+    level1object: {
+      level2object: {
+        level3string: 'two',
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1string: { type: 'text' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3string: {
+                        type: 'text',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1string'].type, 'text')
+  const {
+    level1string,
+    level1object: {
+      level2object: { level3string },
+    },
+  } = await client.get({
+    $id: id,
+    level1string: true,
+    level1object: true,
+  })
+  const defaultLanguage = client.schema.languages[0]
+  t.is(typeof level1string, 'object')
+  t.deepEqual(level1string, { [defaultLanguage]: 'one' })
+  t.is(typeof level3string, 'object')
+  t.deepEqual(level3string, { [defaultLanguage]: 'two' })
+})
+
+test('Mutate field number to text', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1number: 1234.56,
+    level1object: {
+      level2object: {
+        level3number: 456,
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1number: { type: 'text' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3number: {
+                        type: 'text',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1number'].type, 'text')
+  const {
+    level1number,
+    level1object: {
+      level2object: { level3number },
+    },
+  } = await client.get({
+    $id: id,
+    level1number: true,
+    level1object: true,
+  })
+  const defaultLanguage = client.schema.languages[0]
+  t.is(typeof level1number, 'object')
+  t.deepEqual(level1number, { [defaultLanguage]: '1234.56' })
+  t.is(typeof level3number, 'object')
+  t.deepEqual(level3number, { [defaultLanguage]: '456' })
+})
+
+test('Mutate field text to number', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1text: {
+      en: '1234.56',
+      de: '234.45',
+      nl: '567.33',
+    },
+    level1object: {
+      level2object: {
+        level3text: {
+          en: '456',
+          de: '789',
+          nl: '10023',
+        },
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1text: { type: 'number' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3text: {
+                        type: 'number',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1text'].type, 'number')
+  const {
+    level1text,
+    level1object: {
+      level2object: { level3text },
+    },
+  } = await client.get({
+    $id: id,
+    level1text: true,
+    level1object: true,
+  })
+  t.is(typeof level1text, 'number')
+  t.is(level1text, 1234.56)
+  t.is(typeof level3text, 'number')
+  t.is(level3text, 456)
+})
+
+test('Mutate field text to integer', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1text: {
+      en: '1234.84',
+      de: '234.45',
+      nl: '567.33',
+    },
+    level1object: {
+      level2object: {
+        level3text: {
+          en: '456',
+          de: '789',
+          nl: '10023',
+        },
+      },
+    },
+  })
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1text: { type: 'integer' },
+              level1object: {
+                properties: {
+                  level2object: {
+                    properties: {
+                      level3text: {
+                        type: 'integer',
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
+      }
+    )
+  )
+
+  t.is(client.schema.types['aType'].fields['level1text'].type, 'integer')
+  const {
+    level1text,
+    level1object: {
+      level2object: { level3text },
+    },
+  } = await client.get({
+    $id: id,
+    level1text: true,
+    level1object: true,
+  })
+  t.is(typeof level1text, 'number')
+  t.is(level1text, 1235)
+  t.is(typeof level3text, 'number')
+  t.is(level3text, 456)
 })

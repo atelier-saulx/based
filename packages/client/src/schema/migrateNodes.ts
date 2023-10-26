@@ -2,19 +2,21 @@ import { SchemaMutations } from '../types'
 import { BasedDbClient } from '..'
 import { getValueByPath, pathToQuery } from '../util'
 
-type MutationHandler = (oldValue: any) => any
-
-const defaultMutationHandlers: {
-  [name: string]: MutationHandler
-} = {
-  'number-string': (oldValue) => String(oldValue),
-  'integer-string': (oldValue) => String(oldValue),
-  'string-number': (oldValue) => parseFloat(oldValue),
-  'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
-  'number-integer': (oldValue) => Math.round(oldValue),
-  'integer-number': (oldValue) => parseFloat(oldValue),
-  'text-string': (oldValue) => oldValue,
-}
+// type MutationHandler = (oldValue: any) => any
+//
+// const defaultMutationHandlers: {
+//   [name: string]: MutationHandler
+// } = {
+//   // probably a switch is more efficient
+//   'number-string': (oldValue) => String(oldValue),
+//   'integer-string': (oldValue) => String(oldValue),
+//   'string-number': (oldValue) => parseFloat(oldValue),
+//   'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
+//   'number-integer': (oldValue) => Math.round(oldValue),
+//   'integer-number': (oldValue) => parseFloat(oldValue),
+//   'text-string': (oldValue) => oldValue,
+//   'string-text': (oldValue) => oldValue,
+// }
 
 const PAGE_AMOUNT = 3e3
 export const migrateNodes = async (
@@ -146,10 +148,36 @@ export const migrateNodes = async (
             let oldValue = getValueByPath(results[index], mutation.path)
             let newValue: any
             try {
-              newValue =
-                defaultMutationHandlers[
-                  `${mutation.old.type}-${mutation.new.type}`
-                ](oldValue)
+              // newValue =
+              //   defaultMutationHandlers[
+              //     `${mutation.old.type}-${mutation.new.type}`
+              //   ](oldValue)
+              switch (`${mutation.old.type}-${mutation.new.type}`) {
+                case 'number-string':
+                case 'integer-string':
+                case 'integer-text':
+                  newValue = String(oldValue)
+                  break
+                case 'string-number':
+                case 'text-number':
+                  newValue = parseFloat(oldValue)
+                  break
+                case 'string-integer':
+                case 'text-integer':
+                  newValue = Math.round(parseFloat(oldValue))
+                  break
+                case 'number-integer':
+                  newValue = Math.round(oldValue)
+                  break
+                case 'integer-number':
+                  newValue = parseFloat(oldValue)
+                  break
+                default:
+                  // text-string
+                  // string-text
+                  newValue = oldValue
+                  break
+              }
             } catch (error) {
               console.warn(
                 `Error running migration handler for ${id} on field ${mutation.path.join(
@@ -178,10 +206,14 @@ export const migrateNodes = async (
             //   selvaObjectType,
             //   newValue
             // )
+            const path =
+              mutation.new.type === 'text'
+                ? mutation.path.concat(client.schema.languages[0])
+                : mutation.path
             lowLevelSets.push(
               client.command('object.set', [
                 id,
-                mutation.path.join('.'),
+                path.join('.'),
                 selvaObjectType,
                 String(newValue),
               ])
