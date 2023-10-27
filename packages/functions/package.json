@@ -4,7 +4,7 @@
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
-    "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts",
+    "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts && cp ./dist/client.d.ts ./dist/client_original.d.ts",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
