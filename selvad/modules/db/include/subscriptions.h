@@ -432,14 +432,11 @@ void SelvaSubscriptions_InheritEdge(
 /**
  * Defer an event if id_str was a missing accessor a subscription was waiting for.
  */
-void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *id_str, size_t id_len);
+void SelvaSubscriptions_DeferMissingAccessorEvents(
+        struct SelvaHierarchy *hierarchy,
+        const char *id_str,
+        size_t id_len);
 
-void SelvaSubscriptions_DeferHierarchyEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node);
-void SelvaSubscriptions_DeferHierarchyDeletionEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node);
 void SelvaSubscriptions_FieldChangePrecheck(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);

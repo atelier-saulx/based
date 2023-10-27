@@ -115,13 +115,6 @@ static void defer_event_for_traversing_markers(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);
 
-/**
- * The given marker flags matches to a hierarchy marker of any kind.
- */
-static bool isHierarchyMarker(enum SelvaSubscriptionsMarkerFlags flags) {
-    return !!(flags & SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY);
-}
-
 static bool isAliasMarker(enum SelvaSubscriptionsMarkerFlags flags) {
     return !!(flags & SELVA_SUBSCRIPTION_FLAG_CH_ALIAS);
 }
@@ -184,13 +177,6 @@ static int field_match(const char *list, const char *field_str, size_t field_len
     }
 
     return match;
-}
-
-static int contains_hierarchy_fields(const char *list) {
-    return field_match(list, SELVA_ANCESTORS_FIELD, sizeof(SELVA_ANCESTORS_FIELD) - 1) ||
-           field_match(list, SELVA_CHILDREN_FIELD, sizeof(SELVA_CHILDREN_FIELD) - 1) ||
-           field_match(list, SELVA_DESCENDANTS_FIELD, sizeof(SELVA_DESCENDANTS_FIELD) - 1) ||
-           field_match(list, SELVA_PARENTS_FIELD, sizeof(SELVA_PARENTS_FIELD) - 1);
 }
 
 /**
@@ -700,10 +686,6 @@ static int new_marker(
         }
 
         flags |= SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
-        if (contains_hierarchy_fields(fields_str)) {
-            flags |= SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
-        }
-
         marker_size += fields_len + 1;
     }
 
@@ -738,6 +720,7 @@ static int new_marker(
 static void marker_set_dir(struct Selva_SubscriptionMarker *marker, enum SelvaTraversal dir) {
     assert(!(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_TRIGGER));
     marker->change_marker.dir = dir;
+    marker->marker_flags |= SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
 }
 
 static void marker_set_trigger(struct Selva_SubscriptionMarker *marker, enum Selva_SubscriptionTriggerType event_type) {
@@ -1545,75 +1528,6 @@ static void defer_event_for_traversing_markers(
     defer_traversing(hierarchy, node, &SelvaHierarchy_GetNodeMetadataByPtr(node)->sub_markers);
 }
 
-static void defer_hierarchy_events(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct Selva_SubscriptionMarkers *sub_markers) {
-    if (isHierarchyMarker(sub_markers->flags_filter)) {
-        struct SVectorIterator it;
-        struct Selva_SubscriptionMarker *marker;
-
-        SVector_ForeachBegin(&it, &sub_markers->vec);
-        while ((marker = SVector_Foreach(&it))) {
-            if (isHierarchyMarker(marker->marker_flags) &&
-                Selva_SubscriptionFilterMatch(hierarchy, node, marker)) {
-                enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
-
-                marker->action.marker_action(hierarchy, marker, flags, NULL, 0, node);
-            }
-        }
-    }
-}
-
-void SelvaSubscriptions_DeferHierarchyEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    const struct SelvaHierarchyMetadata *metadata;
-
-    /* Detached markers. */
-    defer_hierarchy_events(hierarchy, node, &hierarchy->subs.detached_markers);
-
-    /* Markers on the node. */
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
-    defer_hierarchy_events(hierarchy, node, &metadata->sub_markers);
-}
-
-static void defer_hierarchy_deletion_events(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct Selva_SubscriptionMarkers *sub_markers) {
-    if (isHierarchyMarker(sub_markers->flags_filter)) {
-        struct SVectorIterator it;
-        struct Selva_SubscriptionMarker *marker;
-
-        SVector_ForeachBegin(&it, &sub_markers->vec);
-        while ((marker = SVector_Foreach(&it))) {
-            /*
-             * Deletions are always sent to all hierarchy markers regardless of
-             * field subscriptions or inhibits.
-             */
-            if (isHierarchyMarker(marker->marker_flags)) {
-                enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
-
-                marker->action.marker_action(hierarchy, marker, flags, NULL, 0, node);
-            }
-        }
-    }
-}
-
-void SelvaSubscriptions_DeferHierarchyDeletionEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    const struct SelvaHierarchyMetadata *metadata;
-
-    /* Detached markers. */
-    defer_hierarchy_deletion_events(hierarchy, node, &hierarchy->subs.detached_markers);
-
-    /* Markers on the node. */
-    metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
-    defer_hierarchy_deletion_events(hierarchy, node, &metadata->sub_markers);
-}
-
 static void defer_alias_change_events(
         struct SelvaHierarchy *hierarchy,
         const struct Selva_SubscriptionMarkers *sub_markers,
@@ -1688,13 +1602,52 @@ void SelvaSubscriptions_FieldChangePrecheck(
     field_change_precheck(hierarchy, node, &metadata->sub_markers);
 }
 
+static bool is_field_traversed(
+        struct Selva_SubscriptionMarker * restrict marker,
+        const char * restrict field_str, size_t field_len) {
+#define IS_FIELD(name) \
+    (field_len == (sizeof(name) - 1) && !memcmp(name, field_str, sizeof(name) - 1))
+    if ((marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY)) {
+        switch (marker->change_marker.dir) {
+        case SELVA_HIERARCHY_TRAVERSAL_NONE:
+        case SELVA_HIERARCHY_TRAVERSAL_NODE:
+        case SELVA_HIERARCHY_TRAVERSAL_DFS_FULL:
+        case SELVA_HIERARCHY_TRAVERSAL_ARRAY:
+            return false;
+        case SELVA_HIERARCHY_TRAVERSAL_CHILDREN:
+            return IS_FIELD(SELVA_CHILDREN_FIELD);
+        case SELVA_HIERARCHY_TRAVERSAL_PARENTS:
+            return IS_FIELD(SELVA_PARENTS_FIELD);
+        case SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS:
+        case SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS:
+            return IS_FIELD(SELVA_ANCESTORS_FIELD);
+        case SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS:
+        case SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS:
+            return IS_FIELD(SELVA_DESCENDANTS_FIELD);
+        case SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION:
+            return true;
+        case SELVA_HIERARCHY_TRAVERSAL_EXPRESSION:
+            return true; /* Can't be sure. */
+        case SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD:
+        case SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD:
+        case SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD:
+        case SELVA_HIERARCHY_TRAVERSAL_FIELD:
+            return (field_len == strlen(marker->change_marker.ref_field) &&
+                    !memcmp(field_str, marker->change_marker.ref_field, field_len));
+        }
+    }
+
+    return false;
+#undef IS_FIELD
+}
+
 static void defer_field_change_events(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const struct Selva_SubscriptionMarkers *sub_markers,
         const char *field_str,
         size_t field_len) {
-    const enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
+    enum SelvaSubscriptionsMarkerFlags flags = SELVA_SUBSCRIPTION_FLAG_CH_FIELD;
 
     if ((sub_markers->flags_filter & flags) == flags) {
         struct SVectorIterator it;
@@ -1706,7 +1659,10 @@ static void defer_field_change_events(
 
             SelvaHierarchy_GetNodeId(node_id, node);
 
-            if (((marker->marker_flags & flags) == flags) && !inhibitMarkerEvent(node_id, marker)) {
+            if (is_field_traversed(marker, field_str, field_len)) {
+                flags |= SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY;
+                marker->action.marker_action(hierarchy, marker, flags, field_str, field_len, node);
+            } else if (((marker->marker_flags & flags) == flags) && !inhibitMarkerEvent(node_id, marker)) {
                 const int expressionMatchBefore = marker->history.res && !memcmp(marker->history.node_id, node_id, SELVA_NODE_ID_SIZE);
                 const int expressionMatchAfter = Selva_SubscriptionFilterMatch(hierarchy, node, marker);
                 const int fieldsMatch = Selva_SubscriptionFieldMatch(marker, field_str, field_len);
