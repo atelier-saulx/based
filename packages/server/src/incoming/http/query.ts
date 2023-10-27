@@ -251,12 +251,6 @@ export const httpGet = (
     return
   }
 
-  if (payload === undefined && 'query' in ctx.session) {
-    try {
-      payload = parseQuery(decodeURIComponent(ctx.session.query))
-    } catch (err) {}
-  }
-
   authorize(
     route,
     server,

@@ -6,7 +6,7 @@
   "scripts": {
     "build": "npx tsc && cp ./dist/index.d.ts ./dist/index_original.d.ts",
     "test-stream": "npx ts-node ./test/browser/upload-file.ts",
-    "watch": "npm run build -- --watch",
+    "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
     "browser": "concurrently \"nodemon ./test/browser/based-server.ts --watch ../server/dist --watch ./test/browser/based-server.ts\" \"aristotle watch -t test/browser/index.tsx -p 8006\""

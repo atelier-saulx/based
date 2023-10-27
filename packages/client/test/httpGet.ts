@@ -42,7 +42,7 @@ test.serial('http get falsy check', async (t) => {
   await server.destroy()
 })
 
-test.serial('http get authorize', async (t) => {
+test.only('http get authorize', async (t) => {
   const server = new BasedServer({
     port: 9910,
     functions: {
@@ -54,6 +54,14 @@ test.serial('http get authorize', async (t) => {
           version: 1,
           fn: async (_based, _payload) => {
             return { ok: true }
+          },
+        },
+        bla: {
+          type: 'query',
+          fn: (_based, payload, update) => {
+            console.info(payload)
+            update(payload)
+            return () => {}
           },
         },
       },
@@ -77,18 +85,23 @@ test.serial('http get authorize', async (t) => {
   const authorization = encodeAuthState({
     token: 'bla',
   })
-  const r2 = await fetch(
-    `http://localhost:9910/yeye?authorization=${authorization}`
-  )
+  const r2 = await fetch(`http://localhost:9910/yeye?token=${authorization}`)
   const rj2 = await r2.json()
+
   t.is(r2.status, 200)
   t.true(rj2.ok)
+
+  const q1 = await fetch(
+    `http://localhost:9910/bla?token=${authorization}&hello=world`
+  )
+  const qj1 = await q1.json()
+  t.deepEqual(qj1, { hello: 'world' })
 
   const wrongAuthorization = encodeAuthState({
     token: 'wrong',
   })
   const r3 = await fetch(
-    `http://localhost:9910/yeye?authorization=${wrongAuthorization}`
+    `http://localhost:9910/yeye?token=${wrongAuthorization}`
   )
   const rj3 = await r3.json()
   t.is(r3.status, 403)
@@ -96,7 +109,7 @@ test.serial('http get authorize', async (t) => {
 
   const invalidAuthorization = 'sdlkfjklsjf2354'
   const r4 = await fetch(
-    `http://localhost:9910/yeye?authorization=${invalidAuthorization}`
+    `http://localhost:9910/yeye?token=${invalidAuthorization}`
   )
   const rj4 = await r4.json()
   t.is(r4.status, 403)
