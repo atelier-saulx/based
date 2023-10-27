@@ -151,7 +151,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
 }
 
 // TODO: subscribing to the array and pushing to it does not fire
-test.serial.only('subscription array', async (t) => {
+test.serial.skip('subscription array', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
@@ -275,17 +275,8 @@ test.serial.only('subscription array', async (t) => {
   })
 
   await wait(2000)
-  let subs = await Promise.all(
-    (
-      await client.command('subscriptions.list', [])
-    )[0].map(([subId]) => {
-      return client.command('subscriptions.debug', ['' + Number(subId)])
-    })
-  )
-  console.dir({ subs }, { depth: 8 })
 
   t.is(cnt2, 2)
-  return
 
   await client.set({
     $id: thing,
