@@ -1984,7 +1984,7 @@ void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, 
         selva_send_str(resp, "unset", 5);
     }
 
-    if (!is_trigger && (marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_CH_FIELD)) {
+    if (marker->fields) {
         selva_send_strf(resp, "fields");
         selva_send_strf(resp, "%s", marker->fields);
     }
