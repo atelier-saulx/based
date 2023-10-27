@@ -1675,68 +1675,25 @@ static void defer_field_change_events(
     }
 }
 
-static void defer_array_field_change_events(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct Selva_SubscriptionMarkers *sub_markers,
-        const char *field_str,
-        size_t field_len) {
-    const char *ary_field_start = (const char *)memrchr(field_str, '[', field_len);
-    ssize_t ary_field_len;
-
-    if (ary_field_start) {
-        ary_field_len = ary_field_start - field_str;
-    } else {
-        ary_field_len = -1;
-    }
-
-    if (ary_field_len > 0) {
-        char ary_field_str[ary_field_len + 1];
-        int path_field_len = -1;
-        const char *path_field_start = NULL;
-
-        path_field_start = (const char *)memrchr(field_str + ary_field_len, ']', field_len - ary_field_len);
-        if (path_field_start) {
-            path_field_start++;
-            /* path part */
-            path_field_len = field_len - (path_field_start - field_str);
-
-            /* array field part */
-            path_field_len += ary_field_len;
-
-            /* [n] part */
-            path_field_len += 3;
-        }
-
-        if (path_field_start && *path_field_start != '\0') {
-            char path_field_str[path_field_len + 1];
-
-            snprintf(path_field_str, path_field_len + 1, "%.*s[n]%s", (int)ary_field_len, field_str, path_field_start);
-            defer_field_change_events(hierarchy, node, sub_markers, path_field_str, path_field_len);
-        }
-
-        memcpy(ary_field_str, field_str, ary_field_len);
-        ary_field_str[ary_field_len] = '\0';
-        /* check for direct subscriptions on arrayField: true */
-        defer_field_change_events(hierarchy, node, sub_markers, ary_field_str, ary_field_len);
-    }
-}
-
 void SelvaSubscriptions_DeferFieldChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len) {
-    if (memrchr(field_str, '[', field_len)) {
+    const char *ary_start = (const char *)memrchr(field_str, '[', field_len);
+
+    if (ary_start) {
+        size_t ary_field_len = ary_start - field_str;
+
         /* Array */
         /* Detached markers. */
-        defer_array_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, field_len);
+        defer_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, ary_field_len);
 
         const struct SelvaHierarchyMetadata *metadata;
         metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 
         /* Markers on the node. */
-        defer_array_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, field_len);
+        defer_field_change_events(hierarchy, node,  &metadata->sub_markers, field_str, ary_field_len);
     } else {
         /* Regular field */
         /* Detached markers. */
