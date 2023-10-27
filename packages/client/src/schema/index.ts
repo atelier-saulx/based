@@ -198,8 +198,8 @@ const checkTypeWithSamePrefix = (
     typeDef.prefix === 'ro'
       ? 'ro'
       : Object.keys(currentSchema.types).find(
-        (name) => currentSchema.types[name].prefix === typeDef.prefix
-      )
+          (name) => currentSchema.types[name].prefix === typeDef.prefix
+        )
   if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
     throw new Error(`Prefix ${typeDef.prefix} is already in use`)
   }
@@ -272,7 +272,9 @@ const mergeFields = (
     ) {
       // field to remove
       if (mode === SchemaUpdateMode.strict) {
-        throw new Error(`Cannot remove "${path.join('.')}.${fieldName}" in strict mode.`)
+        throw new Error(
+          `Cannot remove "${path.join('.')}.${fieldName}" in strict mode.`
+        )
       }
       mutations.push({
         mutation: 'remove_field',
@@ -288,12 +290,18 @@ const mergeFields = (
       newFields[fieldName] = requestedFieldDef
     } else {
       // existing field
+      // console.log('=-====', requestedFieldDef.type, currentFieldDef.type)
       if (
-        requestedFieldDef?.type &&
-        requestedFieldDef.type !== currentFieldDef.type
+        (requestedFieldDef?.type &&
+          requestedFieldDef.type !== currentFieldDef.type) ||
+        (currentFieldDef.type === 'array' &&
+          // @ts-ignore
+          currentFieldDef.values.type !== requestedFieldDef.values.type)
       ) {
         if (mode === SchemaUpdateMode.strict) {
-          throw new Error(`Cannot change "${path.join('.')}.${fieldName}" in strict mode.`)
+          throw new Error(
+            `Cannot change "${path.join('.')}.${fieldName}" in strict mode.`
+          )
         }
         mutations.push({
           mutation: 'change_field',
@@ -325,7 +333,10 @@ const mergeFields = (
   return newFields
 }
 
-const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: SchemaMutations) => {
+const checkMutationsForExistingNodes = async (
+  client: BasedDbClient,
+  mutations: SchemaMutations
+) => {
   if (!mutations.length) {
     return
   }
@@ -349,8 +360,8 @@ const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: 
           },
           {
             $field: path.join('.'),
-            $operator: 'exists'
-          }
+            $operator: 'exists',
+          },
         ],
         $limit: 1,
       },
@@ -359,7 +370,9 @@ const checkMutationsForExistingNodes = async (client: BasedDbClient, mutations: 
   const result = await client.get(query)
   for (const fullFieldPath in result) {
     if (result[fullFieldPath] > 0) {
-      throw new Error(`Cannot mutate "${fullFieldPath}" in flexible mode with exsiting data.`)
+      throw new Error(
+        `Cannot mutate "${fullFieldPath}" in flexible mode with exsiting data.`
+      )
     }
   }
 }
