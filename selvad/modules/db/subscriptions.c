@@ -763,6 +763,15 @@ static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *mar
     marker->change_marker.traversal_expression = traversal_expression;
 }
 
+static int traverse_marker_from_acb(union SelvaObjectArrayForeachValue, enum SelvaObjectType, void *)
+{
+    /*
+     * NOP, this function is only provided to avoid errors being returned from
+     * SelvaHierarchy_TraverseField2() and SelvaHierarchy_TraverseField2BFS().
+     */
+    return 0;
+}
+
 /**
  * Do a traversal over the given marker.
  * Bear in mind that cb is passed directly to the hierarchy traversal, thus any
@@ -823,6 +832,10 @@ static int traverse_marker_from(
         const size_t ref_field_len = strlen(ref_field_str);
         struct SelvaHierarchyNode *head;
         struct field_lookup_traversable t;
+        struct SelvaObjectArrayForeachCallback acb = {
+            .cb = traverse_marker_from_acb,
+            .cb_arg = NULL,
+        };
         int (*traverse)(
                 struct SelvaHierarchy *hierarchy,
                 const Selva_NodeId node_id,
@@ -844,17 +857,12 @@ static int traverse_marker_from(
         err = field_lookup_traversable(head, ref_field_str, ref_field_len, &t);
         if (err) {
             goto fail;
-        } else if (!(t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-                               SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                               SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-                               SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-                               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) ||
-                   head != t.node) {
+        } else if (head != t.node) {
             err = SELVA_ENOTSUP;
             goto fail;
         }
 
-        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb, NULL);
+        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb, &acb);
     } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)) {
         struct rpn_ctx *rpn_ctx;
         int (*traverse)(
