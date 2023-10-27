@@ -1701,7 +1701,7 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
         metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 
         /* Markers on the node. */
-        defer_field_change_events(hierarchy, node,  &metadata->sub_markers, field_str, ary_field_len);
+        defer_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, ary_field_len);
     } else {
         /* Regular field */
         /* Detached markers. */
