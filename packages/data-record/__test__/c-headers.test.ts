@@ -1,11 +1,11 @@
-import CC from './util/cc';
-import { compile, generateCHeader, deserialize } from '../src';
+import CC from './util/cc'
+import { compile, generateCHeader, deserialize } from '../src'
 
-const cc = new CC();
+const cc = new CC()
 
 afterAll(() => {
-	cc.clean();
-});
+	cc.clean()
+})
 
 test('Generates a C header that compiles and produces correct output', async () => {
 	const def = [
@@ -18,9 +18,9 @@ test('Generates a C header that compiles and produces correct output', async () 
 		{ name: 'str', type: 'cstring', size: 10 },
 		{ name: 'str_a', type: 'cstring_p' },
 		{ name: 'str_b', type: 'cstring_p' },
-	];
-	const compiled = compile(def, { align: true });
-	const cHeader = generateCHeader(compiled, 'my_record');
+	]
+	const compiled = compile(def, { align: true })
+	const cHeader = generateCHeader(compiled, 'my_record')
 
 	const code = `
 #include <stdio.h>
@@ -61,11 +61,11 @@ int main(void)
 
 	return 0;
 }
-`;
+`
 
-	await cc.compile(code);
-	const buf = await cc.run();
-	const obj = deserialize(compiled, buf);
+	await cc.compile(code)
+	const buf = await cc.run()
+	const obj = deserialize(compiled, buf)
 	const expected = {
 		a: 1,
 		b: 2,
@@ -76,10 +76,10 @@ int main(void)
 		str: 'QWERTYUI',
 		str_a: 'Hello world!',
 		str_b: 'Ciao a tutti!',
-	};
+	}
 
-	expect(obj).toEqual(expected);
-});
+	expect(obj).toEqual(expected)
+})
 
 test("Unaligned records don't support C Header gen", () => {
 	const def = [
@@ -92,8 +92,10 @@ test("Unaligned records don't support C Header gen", () => {
 		{ name: 'str', type: 'cstring', size: 10 },
 		{ name: 'str_a', type: 'cstring_p' },
 		{ name: 'str_b', type: 'cstring_p' },
-	];
-	const compiled = compile(def, { align: false });
+	]
+	const compiled = compile(def, { align: false })
 
-	expect(() => generateCHeader(compiled, 'my_record')).toThrowError(/Unaligned/);
-});
+	expect(() => generateCHeader(compiled, 'my_record')).toThrowError(
+		/Unaligned/
+	)
+})

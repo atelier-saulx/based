@@ -64,7 +64,12 @@ export function serialize(
 						// for each value
 						const d = v[j]
 						incrHeap(
-							ops[type](d, z[0] + i * typeSize, typeSize, heapOffset)
+							ops[type](
+								d,
+								z[0] + i * typeSize,
+								typeSize,
+								heapOffset
+							)
 						)
 						j++
 					}

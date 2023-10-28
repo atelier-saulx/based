@@ -1,71 +1,74 @@
-import { join as pathJoin } from 'path';
-import { spawn } from 'child_process';
-import { unlinkSync } from 'fs';
-import tmp from 'tmp-promise';
+import { join as pathJoin } from 'path'
+import { spawn } from 'child_process'
+import { unlinkSync } from 'fs'
+import tmp from 'tmp-promise'
 
 export default class CC {
-	#tmpFile: string = tmp.tmpNameSync({ tmpdir: __dirname, template: pathJoin(__dirname, `tmp-XXXXXX`) });
+	#tmpFile: string = tmp.tmpNameSync({
+		tmpdir: __dirname,
+		template: pathJoin(__dirname, `tmp-XXXXXX`),
+	})
 
 	async compile(source: string): Promise<void> {
 		return new Promise((resolve, reject) => {
-			const cc = spawn('gcc', ['-xc', '-', '-o', this.#tmpFile]);
+			const cc = spawn('gcc', ['-xc', '-', '-o', this.#tmpFile])
 
-			cc.stdin.end(source);
+			cc.stdin.end(source)
 			cc.stderr.on('data', (data: Buffer) => {
-				const str = data.toString('utf8');
+				const str = data.toString('utf8')
 
 				if (!str.includes('#pragma')) {
-					console.error(data.toString('utf8'));
+					console.error(data.toString('utf8'))
 				}
-			});
+			})
 			cc.on('close', (code) => {
 				if (code !== 0) {
-					return reject(`gcc failed with: ${code}`);
+					return reject(`gcc failed with: ${code}`)
 				}
-				resolve();
-			});
-		});
+				resolve()
+			})
+		})
 	}
 
 	run(input?: Buffer, outputEncoding?: 'hex' | 'utf8'): Promise<Buffer> {
 		return new Promise((resolve, reject) => {
-			let out = '';
-			let prg;
+			let out = ''
+			let prg
 
 			try {
-				prg = spawn(this.#tmpFile);
+				prg = spawn(this.#tmpFile)
 			} catch (err) {
-				return reject(err);
+				return reject(err)
 			}
 
 			if (input) {
-				prg.stdin.write(input);
-				prg.stdin.end();
+				prg.stdin.write(input)
+				prg.stdin.end()
 			}
 
 			prg.stdout.on('data', (data: Buffer) => {
-				out += data.toString('utf8');
-			});
+				out += data.toString('utf8')
+			})
 			prg.stderr.on('data', (data: Buffer) => {
-				console.error(data.toString('utf8'));
-			});
+				console.error(data.toString('utf8'))
+			})
 			prg.on('close', (code, signal) => {
 				if (code !== 0) {
 					if (code !== null) {
-						reject(`Failed with code ${code}`);
+						reject(`Failed with code ${code}`)
 					} else {
-						reject(`Received signal ${signal}`);
+						reject(`Received signal ${signal}`)
 					}
-					return;
+					return
 				}
-				resolve(Buffer.from(out, outputEncoding || 'hex'));
-			});
-		});
+				resolve(Buffer.from(out, outputEncoding || 'hex'))
+			})
+		})
 	}
 
 	clean() {
 		try {
-			unlinkSync(this.#tmpFile);
+			unlinkSync(this.#tmpFile)
 		} catch (err) {}
 	}
 }

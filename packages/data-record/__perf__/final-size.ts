@@ -1,6 +1,6 @@
-import v8 from 'v8';
-import printResult from './util/print-result';
-import { compile, createRecord } from '../src';
+import v8 from 'v8'
+import printResult from './util/print-result'
+import { compile, createRecord } from '../src'
 
 export default function finalSize() {
 	const recordDefEx = [
@@ -21,10 +21,14 @@ export default function finalSize() {
 			type: 'record',
 			def: [
 				{ name: 'a', type: 'uint32_le' },
-				{ name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+				{
+					name: 'y',
+					type: 'record',
+					def: [{ name: 'a', type: 'uint32_le' }],
+				},
 			],
 		},
-	];
+	]
 
 	const obj = {
 		a: 4,
@@ -41,14 +45,14 @@ export default function finalSize() {
 				a: 5,
 			},
 		},
-	};
+	}
 
-	const compiled = compile(recordDefEx);
-	const objV8Serialized = v8.serialize(obj);
-	const jsonStr = JSON.stringify(obj);
-	const recordBuf = createRecord(compiled, obj);
+	const compiled = compile(recordDefEx)
+	const objV8Serialized = v8.serialize(obj)
+	const jsonStr = JSON.stringify(obj)
+	const recordBuf = createRecord(compiled, obj)
 
-	printResult('objV8Serialized.length', objV8Serialized.length, 'bytes');
-	printResult('jsonStr.length', Buffer.from(jsonStr).length, 'bytes');
-	printResult('recordBuf.length', recordBuf.length, 'bytes');
+	printResult('objV8Serialized.length', objV8Serialized.length, 'bytes')
+	printResult('jsonStr.length', Buffer.from(jsonStr).length, 'bytes')
+	printResult('recordBuf.length', recordBuf.length, 'bytes')
 }
