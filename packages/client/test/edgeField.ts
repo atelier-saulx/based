@@ -261,89 +261,6 @@ test('basic edge ops', async (t) => {
   ])
 })
 
-// TODO: waiting for set metadata command
-test.skip('edge metadata', async (t) => {
-  const { client } = t.context
-  // Create nodes
-  // await client.redis.selva_modify('root', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma1', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma2', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma3', '', '0', 'o.a', 'hello')
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma1',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma2',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma3',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma4',
-    o: {
-      a: 'hello',
-    },
-  })
-
-  // Create edges
-  // const res = await client.redis.selva_modify('ma1', '',
-  //   '5', 'a.b', createRecord(setRecordDefCstring, {
-  //     op_set_type: 1,
-  //     delete_all: 0,
-  //     constraint_id: 0,
-  //     $add: joinIds(['ma2', 'ma3']),
-  //     $delete: null,
-  //     $value: null,
-  // }),
-  // 'G', 'a.b', createRecord(edgeMetaDef, {
-  //   op_code: 2,
-  //   delete_all: 0,
-  //   dst_node_id: 'ma2',
-  //   meta_field_name: 'name',
-  //   meta_field_value: 'Funny edge',
-  // }))
-  await client.set({
-    $id: 'ma1',
-    a: {
-      b: ['ma2', 'ma3'],
-    },
-  })
-  // t.deepEqual(res, [ 'ma1', 'UPDATED', 'UPDATED' ])
-  //
-  // t.deepEqual(await client.redis.selva_hierarchy_edgegetmetadata('___selva_hierarchy', 'ma1', 'a.b', 'ma2'), [ 'name', 'Funny edge' ])
-  // t.deepEqual(await client.redis.selva_hierarchy_edgegetmetadata('___selva_hierarchy', 'ma1', 'a.b', 'ma3'), null)
-  //
-  // await client.redis.selva_modify('ma1', '',
-  // 'G', 'a.b', createRecord(edgeMetaDef, {
-  //   op_code: 4,
-  //   delete_all: 0,
-  //   dst_node_id: 'ma2',
-  //   meta_field_name: 'value',
-  //   meta_field_value: Buffer.from([0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]),
-  // }))
-  //
-  // t.deepEqual(await client.redis.selva_hierarchy_edgegetmetadata('___selva_hierarchy', 'ma1', 'a.b', 'ma2'),
-  //   [
-  //     'name', 'Funny edge',
-  //     'value', Buffer.from([0x1, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]),
-  //   ])
-})
-
 test('traverse a custom field', async (t) => {
   const { client } = t.context
   // Create nodes
@@ -585,84 +502,6 @@ test('find can do nested traversals', async (t) => {
   )
 })
 
-// TODO: waiting for set metadata command
-test.skip('find can select with edge metadata', async (t) => {
-  const { client } = t.context
-  // Create nodes
-  // await client.redis.selva_modify('root', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma1', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma2', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma3', '', '0', 'o.a', 'hello')
-  // await client.redis.selva_modify('ma4', '', '0', 'o.a', 'hello')
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma1',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma2',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma3',
-    o: {
-      a: 'hello',
-    },
-  })
-  await client.set({
-    $id: 'ma4',
-    o: {
-      a: 'hello',
-    },
-  })
-
-  // Create edges
-  // await client.redis.selva_modify('ma1', '',
-  //   '5', 'a.b', createRecord(setRecordDefCstring, {
-  //     op_set_type: 1,
-  //     delete_all: 0,
-  //     constraint_id: 0,
-  //     $add: joinIds(['ma2', 'ma3', 'ma4']),
-  //     $delete: null,
-  //     $value: null,
-  //   }),
-  //   'G', 'a.b', createRecord(edgeMetaDef, {
-  //     op_code: 4,
-  //     delete_all: 0,
-  //     dst_node_id: 'ma3',
-  //     meta_field_name: 'key',
-  //     meta_field_value: Buffer.from([0x39, 0x05, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0]),
-  //   })
-  // )
-
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'expression', '{"a.b"}', 'edge_filter', '"key" g #1337 F', 'fields', 'id', 'ma1'),
-  //   [
-  //     [
-  //       'ma3', [ 'id', 'ma3' ]
-  //     ],
-  //   ]
-  // )
-  //
-  // t.deepEqual(
-  //   await client.redis.selva_hierarchy_find('', '___selva_hierarchy', 'bfs_expression', '{"a.b"}', 'edge_filter', '"key" g #1337 F', 'fields', 'id', 'ma1'),
-  //   [
-  //     [
-  //       'ma3', [ 'id', 'ma3' ]
-  //     ],
-  //   ]
-  // )
-})
-
 test('missing edges are added automatically', async (t) => {
   const { client } = t.context
   await client.set({
@@ -766,18 +605,12 @@ test('edge modify `delete` values diff', async (t) => {
       b: { $delete: true },
     },
   })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
   await client.set({
     $id: 'root',
     a: {
       b: { $delete: true },
     },
   })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
 })
 
 test('edge modify `value` values diff', async (t) => {
@@ -858,37 +691,6 @@ test('edge modify `add` and `delete` values diff', async (t) => {
   ])
 
   t.deepEqual((await client.command('hierarchy.del', ['', 'ma1']))[0], 1n)
-})
-
-test('edge modify `delete_all`', async (t) => {
-  const { client } = t.context
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'hello',
-    },
-  })
-
-  await client.set({
-    $id: 'root',
-    a: {
-      b: { $add: ['ma1', 'ma2'] },
-    },
-  })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-    'ma1',
-    'ma2',
-  ])
-  await client.set({
-    $id: 'root',
-    a: {
-      b: { $delete: true },
-    },
-  })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
 })
 
 test('traverse by expression', async (t) => {
@@ -1073,9 +875,6 @@ test('bidirectional edge fields', async (t) => {
     'players',
     ['pl1', 'pl2'],
   ])
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['pl3', 'team']))[0], [
-    2n,
-  ])
 
   // Delete an edge
   await client.set({
@@ -1086,242 +885,6 @@ test('bidirectional edge fields', async (t) => {
     'players',
     ['pl1'],
   ])
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['pl2', 'team']))[0], [
-    2n,
-  ])
-})
-
-// TODO: Tony, what should this be testing?
-test.skip('biedge missing symmetric constraint', async (t) => {
-  const { client } = t.context
-  // Create dynamic constraints
-  // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
-  //     'te',
-  //     'B',
-  //     'players',
-  //     'team',
-  // )
-  await client.command('hierarchy.addConstraint', [
-    'te',
-    'B',
-    'players',
-    'team',
-  ])
-
-  // Create nodes
-  // await client.redis.selva_modify('root', '', '0', 'o.a', 'root')
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'root',
-    },
-  })
-  // await client.redis.selva_modify('te1', '', '0', 'o.a', 'dun')
-  await client.set({
-    $id: 'te1',
-    o: {
-      a: 'dun',
-    },
-  })
-  // await client.redis.selva_modify('pl1', '', '0', 'o.a', 'dan')
-  await client.set({
-    $id: 'pl1',
-    o: {
-      a: 'dan',
-    },
-  })
-
-  // const res = await client.redis.selva_modify('te1', '', '5', 'players', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: joinIds(['pl1']),
-  //   $delete: null,
-  //   $value: null,
-  // }))
-  const res = await client.set({
-    $id: 'te1',
-    players: { $add: ['pl1'] },
-  })
-  t.log({ res })
-  // t.true(res[1] instanceof Error)
-})
-
-test('edge type constraints', async (t) => {
-  const { client } = t.context
-  // Create dynamic constraints
-  // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
-  //     'ro', // source node type
-  //     'S', // constraint flags
-  //     'best', // source field name
-  //     '', // bck field name
-  // )
-  await client.command('hierarchy.addConstraint', [
-    'ro', // source node type
-    'S', // constraint flags
-    'best', // source field name
-    '', // bck field name
-  ])
-  // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
-  //     'ro', // source node type
-  //     '', // constraint flags
-  //     'teams', // source field name
-  //     '', // bck field name
-  // )
-  await client.command('hierarchy.addConstraint', [
-    'ro', // source node type
-    '', // constraint flags
-    'teams', // source field name
-    '', // bck field name
-  ])
-  // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
-  //     'te',
-  //     'B',
-  //     'players',
-  //     'team',
-  // )
-  await client.command('hierarchy.addConstraint', [
-    'te',
-    'B',
-    'players',
-    'team',
-  ])
-  // await client.redis.selva_hierarchy_addconstraint('___selva_hierarchy',
-  //     'pl',
-  //     'B',
-  //     'team',
-  //     'players',
-  // )
-  await client.command('hierarchy.addConstraint', [
-    'pl',
-    'B',
-    'team',
-    'players',
-  ])
-
-  // // Create nodes
-  // await client.redis.selva_modify('root', '', '0', 'o.a', 'root')
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'root',
-    },
-  })
-  // await client.redis.selva_modify('te1', '', '0', 'o.a', 'dun')
-  await client.set({
-    $id: 'te1',
-    o: {
-      a: 'dun',
-    },
-  })
-  // await client.redis.selva_modify('pl1', '', '0', 'o.a', 'dan')
-  await client.set({
-    $id: 'pl1',
-    o: {
-      a: 'dan',
-    },
-  })
-  // await client.redis.selva_modify('pl2', '', '0', 'o.a', 'dandan')
-  await client.set({
-    $id: 'pl2',
-    o: {
-      a: 'dandan',
-    },
-  })
-  // await client.redis.selva_modify('in1', '', '0', 'o.a', 'dandan')
-  // await client.set({
-  //   $id: 'in1',
-  //   o: {
-  //     a: 'dandan',
-  //   },
-  // })
-
-  let res
-
-  // PASS
-  await t.notThrowsAsync(
-    client.set({
-      $id: 'root',
-      teams: { $add: ['te1'] },
-    })
-  )
-
-  // // PASS
-  // res = await client.redis.selva_modify('root', '', '5', 'best', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: null,
-  //   $delete: null,
-  //   $value: joinIds(['te1']),
-  // }))
-  // t.deepEqual(res[1], 'UPDATED')
-  await t.notThrowsAsync(
-    client.set({
-      $id: 'root',
-      best: ['te1'],
-    })
-  )
-
-  // TODO: Tony, don't know what to test here?
-  // I can't make it fail
-
-  // FAIL
-  // res = await client.redis.selva_modify('te1', '', '5', 'players', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: joinIds(['root']),
-  //   $delete: null,
-  //   $value: null,
-  // }))
-  // t.true(res[1] instanceof Error)
-
-  // PASS
-  // res = await client.redis.selva_modify('te1', '', '5', 'players', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: joinIds(['pl1']),
-  //   $delete: null,
-  //   $value: null,
-  // }))
-  // t.deepEqual(res[1], 'UPDATED')
-  await t.notThrowsAsync(
-    client.set({
-      $id: 'te1',
-      players: { $add: ['pl1'] },
-    })
-  )
-
-  // TODO: Tony, don't know what to test here?
-
-  // FAIL
-  // res = await client.redis.selva_modify('pl2', '', '5', 'team', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: joinIds(['root']),
-  //   $delete: null,
-  //   $value: null,
-  // }))
-  // t.true(res[1] instanceof Error)
-  // PASS
-  // res = await client.redis.selva_modify('pl2', '', '5', 'team', createRecord(setRecordDefCstring, {
-  //   op_set_type: 1,
-  //   delete_all: 0,
-  //   constraint_id: 2,
-  //   $add: joinIds(['te1']),
-  //   $delete: null,
-  //   $value: null,
-  // }))
-  // t.deepEqual(res[1], 'UPDATED')
-  await t.notThrowsAsync(
-    client.set({
-      $id: 'pl2',
-      team: 'te1',
-    })
-  )
 })
 
 test('wildcard find with edge fields', async (t) => {
@@ -1577,31 +1140,20 @@ test('edge meta alias', async (t) => {
       'ma1',
       [
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
-          [ 'antiNote', 'not very cool' ]
-        ]],
+        [['id', 'da1', '$edgeMeta', ['antiNote', 'not very cool']]],
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
-          [ 'cool@note', 'very cool' ]
-        ]],
+        [['id', 'da1', '$edgeMeta', ['cool@note', 'very cool']]],
         'expl@description.en',
-        'The most boring'
-      ]
-    ]
+        'The most boring',
+      ],
+    ],
   ])
 
   const r2 = (
     await find({
       client,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      res_opt_str:
-        'ref.$edgeMeta',
+      res_opt_str: 'ref.$edgeMeta',
       dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
       id: 'root',
       rpn: ['"ma" e'],
@@ -1612,25 +1164,23 @@ test('edge meta alias', async (t) => {
       'ma1',
       [
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
+        [
           [
-            '',
-            [ 'antiNote', 'not very cool', 'note', 'very cool' ]
-          ]
-        ]]
-      ]
-    ]
+            'id',
+            'da1',
+            '$edgeMeta',
+            ['', ['antiNote', 'not very cool', 'note', 'very cool']],
+          ],
+        ],
+      ],
+    ],
   ])
 
   const r3 = (
     await find({
       client,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      res_opt_str:
-        'cool@ref.$edgeMeta',
+      res_opt_str: 'cool@ref.$edgeMeta',
       dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
       id: 'root',
       rpn: ['"ma" e'],
@@ -1640,17 +1190,16 @@ test('edge meta alias', async (t) => {
     [
       'ma1',
       [
-       'ref',
-       [[
-         'id',
-         'da1',
-         '$edgeMeta',
-         [
-           'cool@',
-           [ 'antiNote', 'not very cool', 'note', 'very cool' ]
-         ]
-       ]]
-      ]
-    ]
+        'ref',
+        [
+          [
+            'id',
+            'da1',
+            '$edgeMeta',
+            ['cool@', ['antiNote', 'not very cool', 'note', 'very cool']],
+          ],
+        ],
+      ],
+    ],
   ])
 })

@@ -1,12 +1,10 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import { readValue } from 'data-record'
 import './assertions'
-import { createRecord } from 'data-record'
-import { SelvaMergeStrategy, SelvaTraversal } from '../src/protocol'
+import { SelvaTraversal } from '../src/protocol'
 import { doubleDef } from '../src/protocol/encode/modify/types'
 import getPort from 'get-port'
 import { find, idExists } from './assertions/utils'
@@ -990,23 +988,21 @@ test('$increment, $default', async (t) => {
     'set default'
   )
 
-  // TODO: $default being overriden in text fields
-  //
-  // await client.set({
-  //   $id: 'viDingDong',
-  //   title: {
-  //     en: {
-  //       $default: 'flurp',
-  //     },
-  //   },
-  // })
-  //
-  // t.is(
-  //   // await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
-  //   (await client.command('object.get', ['', 'viDingDong', 'title.en']))[0],
-  //   'title',
-  //   'does not overwrite if value exists'
-  // )
+  await client.set({
+    $id: 'viDingDong',
+    title: {
+      en: {
+        $default: 'flurp',
+      },
+    },
+  })
+
+  t.is(
+    // await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
+    (await client.command('object.get', ['', 'viDingDong', 'title.en']))[0],
+    'title',
+    'does not overwrite if value exists'
+  )
 
   await client.set({
     $id: 'viHelloYes',
@@ -1167,28 +1163,35 @@ test('$merge = false', async (t) => {
     'deutschland'
   )
 
-  // TODO: $merge inside text field object not working
-  //
-  // await client.set({
-  //   $id: 'arPower',
-  //   title: {
-  //     $merge: false,
-  //     nl: 'nl',
-  //   },
-  // })
+  await client.set({
+    $id: 'arPower',
+    title: {
+      $merge: false,
+      nl: 'nl',
+    },
+  })
 
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'title.nl'), 'nl')
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'title.de'), null)
-  //
-  // await client.set({
-  //   $id: 'arPower',
-  //   image: {
-  //     $merge: false,
-  //     poster: 'x',
-  //   },
-  // })
-  //
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'image.thumb'), null)
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'title.nl']))[0],
+    'nl'
+  )
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'title.de']))[0],
+    null
+  )
+
+  await client.set({
+    $id: 'arPower',
+    image: {
+      $merge: false,
+      poster: 'x',
+    },
+  })
+
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'image.thumb']))[0],
+    null
+  )
 })
 
 test('automatic child creation', async (t) => {
@@ -1411,189 +1414,185 @@ test('$delete: true', async (t) => {
     }
   )
 
-  // TODO: $delete inside a text field object
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   title: { de: { $delete: true } },
-  // })
+  await client.set({
+    $id: 'maA',
+    title: { de: { $delete: true } },
+  })
 
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yesh extra nice',
-  //     },
-  //     obj: {
-  //       hello: 'yes hello',
-  //     },
-  //     reffyRef: 'root',
-  //     reffyRefs: ['root'],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yesh extra nice',
+      },
+      obj: {
+        hello: 'yes hello',
+      },
+      reffyRef: 'root',
+      reffyRefs: ['root'],
+      settySet: ['hmmmm'],
+    }
+  )
 
-  // await client.set({
-  //   $id: 'maA',
-  //   obj: { hello: { $delete: true }, hallo: 'mmmmh' },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yesh extra nice',
-  //     },
-  //     obj: {
-  //       hallo: 'mmmmh',
-  //     },
-  //     reffyRef: 'root',
-  //     reffyRefs: ['root'],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   obj: { $delete: true },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yesh extra nice',
-  //     },
-  //     reffyRef: 'root',
-  //     reffyRefs: ['root'],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   title: { $delete: true },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     reffyRef: 'root',
-  //     reffyRefs: ['root'],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   reffyRef: { $delete: true },
-  //   title: { en: 'yes title is back!!!' },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yes title is back!!!',
-  //     },
-  //     reffyRefs: ['root'],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   reffyRefs: { $delete: true },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yes title is back!!!',
-  //     },
-  //     reffyRefs: [],
-  //     settySet: ['hmmmm'],
-  //   }
-  // )
-  //
-  // await client.set({
-  //   $id: 'maA',
-  //   settySet: { $delete: true },
-  // })
-  //
-  // t.deepEqualIgnoreOrder(
-  //   await client.get({
-  //     $id: 'maA',
-  //     id: true,
-  //     title: true,
-  //     obj: true,
-  //     reffyRef: true,
-  //     reffyRefs: true,
-  //     settySet: true,
-  //   }),
-  //   {
-  //     id: 'maA',
-  //     title: {
-  //       en: 'yes title is back!!!',
-  //     },
-  //     reffyRefs: [],
-  //   }
-  // )
+  await client.set({
+    $id: 'maA',
+    obj: { hello: { $delete: true }, hallo: 'mmmmh' },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yesh extra nice',
+      },
+      obj: {
+        hallo: 'mmmmh',
+      },
+      reffyRef: 'root',
+      reffyRefs: ['root'],
+      settySet: ['hmmmm'],
+    }
+  )
+
+  await client.set({
+    $id: 'maA',
+    obj: { $delete: true },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yesh extra nice',
+      },
+      reffyRef: 'root',
+      reffyRefs: ['root'],
+      settySet: ['hmmmm'],
+    }
+  )
+
+  await client.set({
+    $id: 'maA',
+    title: { $delete: true },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      reffyRef: 'root',
+      reffyRefs: ['root'],
+      settySet: ['hmmmm'],
+    }
+  )
+
+  await client.set({
+    $id: 'maA',
+    reffyRef: { $delete: true },
+    title: { en: 'yes title is back!!!' },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yes title is back!!!',
+      },
+      reffyRefs: ['root'],
+      settySet: ['hmmmm'],
+    }
+  )
+
+  await client.set({
+    $id: 'maA',
+    reffyRefs: { $delete: true },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yes title is back!!!',
+      },
+      settySet: ['hmmmm'],
+    }
+  )
+
+  await client.set({
+    $id: 'maA',
+    settySet: { $delete: true },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $id: 'maA',
+      id: true,
+      title: true,
+      obj: true,
+      reffyRef: true,
+      reffyRefs: true,
+      settySet: true,
+    }),
+    {
+      id: 'maA',
+      title: {
+        en: 'yes title is back!!!',
+      },
+    }
+  )
 })
 
 test('deleting an object', async (t) => {
@@ -1686,22 +1685,6 @@ test('set - push into array', async (t) => {
       },
     },
   })
-
-  // TODO: needs validation
-  // let e = await t.throwsAsync(
-  //   client.set({
-  //     $id: id,
-  //     objRec: {
-  //       abba: {
-  //         intArray: {
-  //           $add: [2, 2],
-  //         },
-  //       },
-  //     },
-  //   })
-  // )
-
-  // t.true(e.stack?.includes('Unknown operator for arrays'))
 
   await client.set({
     $id: id,
@@ -2649,7 +2632,6 @@ test('set - insert and set into start of array', async (t) => {
         intArray: {
           $unshift: {
             $value: 123,
-            // $maxLen: 10, // TODO: we want $maxLen operator??
           },
         },
       },
@@ -2665,7 +2647,7 @@ test('set - insert and set into start of array', async (t) => {
       objRec: {
         abba: {
           floatArray: [1.1, 2.2, 3.3, 4.4],
-          intArray: [123, -11, -12, -13, 11, 12, 13, 1, 2, 3, 4, 5], // TODO: without 4 and 5 with $maxLen
+          intArray: [123, -11, -12, -13, 11, 12, 13, 1, 2, 3, 4, 5],
           strArray: ['a', 'b', 'c'],
           objArray: [
             {
@@ -2685,49 +2667,4 @@ test('set - insert and set into start of array', async (t) => {
       },
     }
   )
-
-  // TODO: want $maxLen?
-  // await client.set({
-  //   $id: id,
-  //   objRec: {
-  //     abba: {
-  //       intArray: {
-  //         $unshift: {
-  //           $value: 321,
-  //           $maxLen: 10,
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: id,
-  //     objRec: true,
-  //   }),
-  //   {
-  //     objRec: {
-  //       abba: {
-  //         floatArray: [1.1, 2.2, 3.3, 4.4],
-  //         intArray: [321, 123, -11, -12, -13, 11, 12, 13, 1, 2],
-  //         strArray: ['a', 'b', 'c'],
-  //         objArray: [
-  //           {
-  //             hello: 'yes 1',
-  //             value: 1,
-  //           },
-  //           {
-  //             hello: 'yes 2',
-  //             value: 2,
-  //           },
-  //           {
-  //             hello: 'yes 3',
-  //             value: 3,
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   }
-  // )
 })

@@ -154,6 +154,8 @@ export async function set(client: BasedDbClient, opts: any) {
     $id = genId(client.schema, opts.type)
   }
 
+  opts.$id = $id
+
   let flags: string = ''
   // TODO: get this from target of setWalker
   if (opts.$noRoot) {

@@ -30,7 +30,6 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    // TODO: add 'en_us' and 'en_uk'?
     languages: ['en', /* 'en_us', 'en_uk',*/ 'de', 'nl'],
     root: {
       fields: {
@@ -950,16 +949,15 @@ test('simple singular reference metadata', async (t) => {
       ],
     },
 
-    // FIXME: if setting in same command, it doesn't work?
-    // bidirMatches: [
-    //   {
-    //     $id: 'maA',
-    //     $edgeMeta: { isItNice: 'kinda nice', howNice: 97 },
-    //     // parents: [ // TODO: if parents/chilrden are more like other edges
-    //     //   { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
-    //     // ],
-    //   },
-    // ],
+    bidirMatches: [
+      {
+        $id: 'maA',
+        $edgeMeta: { isItNice: 'kinda nice', howNice: 97 },
+        parents: [
+          { $id: 'clA', $edgeMeta: { isItNice: 'super nice', howNice: 9001 } },
+        ],
+      },
+    ],
   })
 
   await client.set({
@@ -1029,7 +1027,6 @@ test('simple singular reference metadata', async (t) => {
     }
   )
 
-  // TODO: if parents/children ae more like other edges
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'maA',
