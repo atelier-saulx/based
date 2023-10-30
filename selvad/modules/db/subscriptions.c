@@ -763,6 +763,15 @@ static void marker_set_traversal_expression(struct Selva_SubscriptionMarker *mar
     marker->change_marker.traversal_expression = traversal_expression;
 }
 
+static int traverse_marker_from_acb(union SelvaObjectArrayForeachValue, enum SelvaObjectType, void *)
+{
+    /*
+     * NOP, this function is only provided to avoid errors being returned from
+     * SelvaHierarchy_TraverseField2() and SelvaHierarchy_TraverseField2BFS().
+     */
+    return 0;
+}
+
 /**
  * Do a traversal over the given marker.
  * Bear in mind that cb is passed directly to the hierarchy traversal, thus any
@@ -823,6 +832,10 @@ static int traverse_marker_from(
         const size_t ref_field_len = strlen(ref_field_str);
         struct SelvaHierarchyNode *head;
         struct field_lookup_traversable t;
+        struct SelvaObjectArrayForeachCallback acb = {
+            .cb = traverse_marker_from_acb,
+            .cb_arg = NULL,
+        };
         int (*traverse)(
                 struct SelvaHierarchy *hierarchy,
                 const Selva_NodeId node_id,
@@ -844,17 +857,12 @@ static int traverse_marker_from(
         err = field_lookup_traversable(head, ref_field_str, ref_field_len, &t);
         if (err) {
             goto fail;
-        } else if (!(t.type & (SELVA_HIERARCHY_TRAVERSAL_CHILDREN |
-                               SELVA_HIERARCHY_TRAVERSAL_PARENTS |
-                               SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
-                               SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
-                               SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD)) ||
-                   head != t.node) {
+        } else if (head != t.node) {
             err = SELVA_ENOTSUP;
             goto fail;
         }
 
-        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb, NULL);
+        err = traverse(hierarchy, node_id, ref_field_str, ref_field_len, &cb, &acb);
     } else if (dir & (SELVA_HIERARCHY_TRAVERSAL_EXPRESSION | SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)) {
         struct rpn_ctx *rpn_ctx;
         int (*traverse)(
@@ -1675,68 +1683,25 @@ static void defer_field_change_events(
     }
 }
 
-static void defer_array_field_change_events(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node,
-        const struct Selva_SubscriptionMarkers *sub_markers,
-        const char *field_str,
-        size_t field_len) {
-    const char *ary_field_start = (const char *)memrchr(field_str, '[', field_len);
-    ssize_t ary_field_len;
-
-    if (ary_field_start) {
-        ary_field_len = ary_field_start - field_str;
-    } else {
-        ary_field_len = -1;
-    }
-
-    if (ary_field_len > 0) {
-        char ary_field_str[ary_field_len + 1];
-        int path_field_len = -1;
-        const char *path_field_start = NULL;
-
-        path_field_start = (const char *)memrchr(field_str + ary_field_len, ']', field_len - ary_field_len);
-        if (path_field_start) {
-            path_field_start++;
-            /* path part */
-            path_field_len = field_len - (path_field_start - field_str);
-
-            /* array field part */
-            path_field_len += ary_field_len;
-
-            /* [n] part */
-            path_field_len += 3;
-        }
-
-        if (path_field_start && *path_field_start != '\0') {
-            char path_field_str[path_field_len + 1];
-
-            snprintf(path_field_str, path_field_len + 1, "%.*s[n]%s", (int)ary_field_len, field_str, path_field_start);
-            defer_field_change_events(hierarchy, node, sub_markers, path_field_str, path_field_len);
-        }
-
-        memcpy(ary_field_str, field_str, ary_field_len);
-        ary_field_str[ary_field_len] = '\0';
-        /* check for direct subscriptions on arrayField: true */
-        defer_field_change_events(hierarchy, node, sub_markers, ary_field_str, ary_field_len);
-    }
-}
-
 void SelvaSubscriptions_DeferFieldChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len) {
-    if (memrchr(field_str, '[', field_len)) {
+    const char *ary_start = (const char *)memrchr(field_str, '[', field_len);
+
+    if (ary_start) {
+        size_t ary_field_len = ary_start - field_str;
+
         /* Array */
         /* Detached markers. */
-        defer_array_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, field_len);
+        defer_field_change_events(hierarchy, node, &hierarchy->subs.detached_markers, field_str, ary_field_len);
 
         const struct SelvaHierarchyMetadata *metadata;
         metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);
 
         /* Markers on the node. */
-        defer_array_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, field_len);
+        defer_field_change_events(hierarchy, node, &metadata->sub_markers, field_str, ary_field_len);
     } else {
         /* Regular field */
         /* Detached markers. */
