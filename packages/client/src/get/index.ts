@@ -24,7 +24,11 @@ export function applyDefault(
 
     if (typeof next === 'number') {
       // specific indexed paths are set specifically
+      // $value with specific indexed path is set using this if
     } else if (Array.isArray(obj)) {
+      // when there is an array without indexed path segment next
+      // means that it's a default value on a traverse result field
+      // and we will apply defautls on each element separately
       obj.forEach((x) => applyDefault(x, { path: path.slice(i + 1), value }))
       return
     }
