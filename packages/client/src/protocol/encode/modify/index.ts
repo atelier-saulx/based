@@ -65,7 +65,7 @@ export function modify(payload: [nodeId: string, ...fields: any]) {
 
     if (
       value?.$delete === true &&
-      opType !== ModifyArgType.SELVA_MODIFY_ARG_OP_SET
+      (opType !== ModifyArgType.SELVA_MODIFY_ARG_OP_SET || value?.isSingle)
     ) {
       defs.push({ type: 'string' }, { type: 'string' }, { type: 'string' })
       setFields.push(ModifyArgType.SELVA_MODIFY_ARG_OP_DEL, name, '')
