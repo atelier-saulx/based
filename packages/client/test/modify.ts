@@ -2650,7 +2650,6 @@ test('set - insert and set into start of array', async (t) => {
         intArray: {
           $unshift: {
             $value: 123,
-            // $maxLen: 10, // TODO: we want $maxLen operator??
           },
         },
       },
@@ -2666,7 +2665,7 @@ test('set - insert and set into start of array', async (t) => {
       objRec: {
         abba: {
           floatArray: [1.1, 2.2, 3.3, 4.4],
-          intArray: [123, -11, -12, -13, 11, 12, 13, 1, 2, 3, 4, 5], // TODO: without 4 and 5 with $maxLen
+          intArray: [123, -11, -12, -13, 11, 12, 13, 1, 2, 3, 4, 5],
           strArray: ['a', 'b', 'c'],
           objArray: [
             {
@@ -2686,49 +2685,4 @@ test('set - insert and set into start of array', async (t) => {
       },
     }
   )
-
-  // TODO: want $maxLen?
-  // await client.set({
-  //   $id: id,
-  //   objRec: {
-  //     abba: {
-  //       intArray: {
-  //         $unshift: {
-  //           $value: 321,
-  //           $maxLen: 10,
-  //         },
-  //       },
-  //     },
-  //   },
-  // })
-
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: id,
-  //     objRec: true,
-  //   }),
-  //   {
-  //     objRec: {
-  //       abba: {
-  //         floatArray: [1.1, 2.2, 3.3, 4.4],
-  //         intArray: [321, 123, -11, -12, -13, 11, 12, 13, 1, 2],
-  //         strArray: ['a', 'b', 'c'],
-  //         objArray: [
-  //           {
-  //             hello: 'yes 1',
-  //             value: 1,
-  //           },
-  //           {
-  //             hello: 'yes 2',
-  //             value: 2,
-  //           },
-  //           {
-  //             hello: 'yes 3',
-  //             value: 3,
-  //           },
-  //         ],
-  //       },
-  //     },
-  //   }
-  // )
 })
