@@ -1124,7 +1124,7 @@ test('$default with string and number', async (t) => {
   })
 })
 
-test('$merge = false', async (t) => {
+test.only('$merge = false', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'arPower',
@@ -1167,28 +1167,35 @@ test('$merge = false', async (t) => {
     'deutschland'
   )
 
-  // TODO: $merge inside text field object not working
-  //
-  // await client.set({
-  //   $id: 'arPower',
-  //   title: {
-  //     $merge: false,
-  //     nl: 'nl',
-  //   },
-  // })
+  await client.set({
+    $id: 'arPower',
+    title: {
+      $merge: false,
+      nl: 'nl',
+    },
+  })
 
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'title.nl'), 'nl')
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'title.de'), null)
-  //
-  // await client.set({
-  //   $id: 'arPower',
-  //   image: {
-  //     $merge: false,
-  //     poster: 'x',
-  //   },
-  // })
-  //
-  // t.is(await client.redis.selva_object_get('', 'arPower', 'image.thumb'), null)
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'title.nl']))[0],
+    'nl'
+  )
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'title.de']))[0],
+    null
+  )
+
+  await client.set({
+    $id: 'arPower',
+    image: {
+      $merge: false,
+      poster: 'x',
+    },
+  })
+
+  t.is(
+    (await client.command('object.get', ['', 'arPower', 'image.thumb']))[0],
+    null
+  )
 })
 
 test('automatic child creation', async (t) => {
