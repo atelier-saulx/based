@@ -72,6 +72,18 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
+test.only('temp', async (t) => {
+  const { client } = t.context
+
+  await client.updateSchema({
+    types: {
+      lekkerType: {
+        $delete: true,
+      },
+    },
+  })
+})
+
 test('Remove property on object field in strict mode', async (t) => {
   const { client } = t.context
 
@@ -341,7 +353,7 @@ test('Change property on object field in flexible mode with exsiting nodes but u
   )
 })
 
-test.only('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
+test('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(

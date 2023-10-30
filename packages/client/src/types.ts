@@ -1,4 +1,4 @@
-import { BasedSchemaField } from '@based/schema';
+import { BasedSchemaField } from '@based/schema'
 import { Command } from './protocol/types'
 
 export type CommandResponseListeners = Map<
@@ -19,26 +19,30 @@ export type IncomingMessageBuffers = Map<number, { ts: Number; bufs: Buffer[] }>
 export enum SchemaUpdateMode {
   strict,
   flexible,
-  migration
+  migration,
 }
 
 export type SchemaMutations = (
   | {
-    mutation: 'delete_type'
-    type: string
-  }
+      mutation: 'new_type'
+      type: string
+      new: BasedSchemaField
+    }
   | {
-    mutation: 'change_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-    new: BasedSchemaField
-  }
+      mutation: 'delete_type'
+      type: string
+    }
   | {
-    mutation: 'remove_field'
-    type: string
-    path: string[]
-    old: BasedSchemaField
-  }
+      mutation: 'change_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+      new: BasedSchemaField
+    }
+  | {
+      mutation: 'remove_field'
+      type: string
+      path: string[]
+      old: BasedSchemaField
+    }
 )[]
-

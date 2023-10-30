@@ -11,6 +11,7 @@ import { generateNewPrefix } from './utils'
 import { SchemaMutations, SchemaUpdateMode } from '../types'
 import { BasedQuery } from '@based/client'
 import { migrateNodes } from './migrateNodes'
+import { getMutations } from './getMutations'
 
 type EdgeConstraint = {
   prefix: string
@@ -316,7 +317,10 @@ const checkMutationsForExistingNodes = async (
   mutations.forEach((mutation) => {
     // console.log('----- mutation', mutation)
     let path: string[] = []
-    if (mutation.mutation !== 'delete_type') {
+    if (
+      mutation.mutation !== 'delete_type' &&
+      mutation.mutation !== 'new_type'
+    ) {
       path = mutation.path
     }
     const fullFieldPath = [mutation.type].concat(path).join('.')
@@ -410,6 +414,9 @@ export async function updateSchema(
   )
   deepMerge(newSchema.root, opts.root)
   newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
+
+  // TODO: testing this
+  const result = getMutations(currentSchema, opts)
 
   const currentTypeNames = Object.keys(currentSchema.types || {})
   const optsTypeNames = Object.keys(opts.types || {})
