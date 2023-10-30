@@ -1550,7 +1550,6 @@ test('$delete: true', async (t) => {
       settySet: ['hmmmm'],
     }
   )
-  return
 
   await client.set({
     $id: 'maA',
@@ -1572,7 +1571,6 @@ test('$delete: true', async (t) => {
       title: {
         en: 'yes title is back!!!',
       },
-      reffyRefs: [],
       settySet: ['hmmmm'],
     }
   )
@@ -1597,7 +1595,6 @@ test('$delete: true', async (t) => {
       title: {
         en: 'yes title is back!!!',
       },
-      reffyRefs: [],
     }
   )
 })
