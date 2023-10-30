@@ -31,3 +31,5 @@ export abstract class BasedFunctionClient {
     authState?: AuthState
   ): Promise<AuthState>
 }
+
+export type QueryMap = { [key: string]: { payload: any; result: any } }

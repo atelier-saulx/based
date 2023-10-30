@@ -35,14 +35,22 @@ test.serial('Generate types file from examples', async (t) => {
     },
   ])
 
-  const file = await readFile(join(__dirname, '../../client/dist/index.d.ts'), {
-    encoding: 'utf-8',
-  })
+  const files = await Promise.all(
+    ['client/dist/index.d.ts', 'functions/dist/client.d.ts'].map((f) =>
+      readFile(join(__dirname, '../../' + f), {
+        encoding: 'utf-8',
+      })
+    )
+  )
 
-  t.is(result, join(__dirname, '../../client/dist/index.d.ts'))
-  t.true(file.includes('counter'))
-  t.true(file.includes('db:schema'))
-  t.true(file.includes('db:update-schema'))
-  t.true(file.includes('db:set'))
-  t.true(file.includes('hello-world'))
+  t.is(result.clientPath, join(__dirname, '../../client/dist/index.d.ts'))
+  t.is(result.functionPath, join(__dirname, '../../functions/dist/client.d.ts'))
+
+  for (const file of files) {
+    t.true(file.includes('counter'))
+    t.true(file.includes('db:schema'))
+    t.true(file.includes('db:update-schema'))
+    t.true(file.includes('db:set'))
+    t.true(file.includes('hello-world'))
+  }
 })
