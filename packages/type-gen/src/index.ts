@@ -18,9 +18,7 @@ export const updateTypesPath = async (
   try {
     decFile = (await readFile(opts.originalDeclartionPath)).toString('utf-8')
   } catch (err) {
-    throw new Error(
-      'Cannot find original declaration file - you may need to upgrade to @based/client ^4.8.8'
-    )
+    throw new Error(`Cannot find ${opts.originalDeclartionPath}`)
   }
 
   let imports = opts.imports ? opts.imports.join('\n') + '\n' : '\n'
@@ -134,6 +132,10 @@ export const updateTypes = async (
       imports: opts.imports,
       originalDeclartionPath,
       declarationPath,
+    }).catch(() => {
+      console.error(
+        'Cannot find original declaration file - you may need to upgrade to @based/client ^4.8.8'
+      )
     })
   }
 
@@ -150,6 +152,10 @@ export const updateTypes = async (
       imports: opts.imports,
       originalDeclartionPath,
       declarationPath,
+    }).catch(() => {
+      console.error(
+        'Cannot find original declaration file - you may need to upgrade to @based/functions ^2.2.4'
+      )
     })
   }
 
