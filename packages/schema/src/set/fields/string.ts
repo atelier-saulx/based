@@ -164,6 +164,7 @@ export const text: FieldParser<'text'> = async (args) => {
             args
               .create({
                 key: k,
+                fieldSchema: { type: 'string' },
                 value: { $default: args.value[key][k] },
               })
               .collect()
@@ -180,6 +181,7 @@ export const text: FieldParser<'text'> = async (args) => {
         } else {
           args
             .create({
+              fieldSchema: { type: 'string' },
               key: args.target.$language,
               value: { $default: args.value[key] },
             })
@@ -196,6 +198,7 @@ export const text: FieldParser<'text'> = async (args) => {
               args
                 .create({
                   key,
+                  fieldSchema: { type: 'string' },
                   value: args.value[key],
                 })
                 .collect()
@@ -206,6 +209,7 @@ export const text: FieldParser<'text'> = async (args) => {
                 args
                   .create({
                     key,
+                    fieldSchema: { type: 'string' },
                     value: args.value[key].$value,
                   })
                   .collect()
@@ -217,6 +221,7 @@ export const text: FieldParser<'text'> = async (args) => {
                 args
                   .create({
                     key,
+                    fieldSchema: { type: 'string' },
                     value: { $default: args.value[key].$default },
                   })
                   .collect()
@@ -236,6 +241,7 @@ export const text: FieldParser<'text'> = async (args) => {
           args
             .create({
               key,
+              fieldSchema: { type: 'string' },
               value: args.value[key],
             })
             .collect()
@@ -269,6 +275,7 @@ export const text: FieldParser<'text'> = async (args) => {
     .create({
       value,
       key: args.target.$language,
+      fieldSchema: { type: 'string' },
     })
     .collect()
 
@@ -278,77 +285,3 @@ export const text: FieldParser<'text'> = async (args) => {
     })
   }
 }
-
-/*
-const value = args.value
-  if (value !== null && typeof value === 'object') {
-    args.stop()
-    const result: any = {}
-    for (const key in value) {
-      if (key === '$value') {
-        const nValue = await next(args, key)
-        if (typeof nValue === 'object') {
-          deepMerge(result, nValue)
-        } else {
-          args.error(ParseError.incorrectFormat)
-          return
-        }
-      } else if (key === '$default') {
-        result.$default = await next(args, key)
-      } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
-        if (value[key] && typeof value[key] === 'object') {
-          for (const k in value[key]) {
-            if (k === '$value') {
-              if (!validateString(args, value[key].$value)) {
-                args.create({ key }).error(ParseError.incorrectFormat)
-              } else {
-                result[key] = value[key].$value
-              }
-            } else if (k === '$default') {
-              if (!validateString(args, value[key].$default)) {
-                args.create({ key }).error(ParseError.incorrectFormat)
-              } else {
-                setByPath(result, ['$default', key], value[key].$default)
-              }
-            } else {
-              args
-                .create({ path: [...args.path, key, k] })
-                .error(ParseError.fieldDoesNotExist)
-            }
-          }
-        } else {
-          if (!validateString(args, args.value[key])) {
-            args.error(ParseError.incorrectFormat)
-            return
-          }
-          result[key] = args.value[key]
-        }
-      } else {
-        args.create({ key }).error(ParseError.languageNotSupported)
-      }
-    }
-    args.collect(result)
-    return
-  }
-
-  if (typeof value !== 'string') {
-    args.error(ParseError.incorrectFormat)
-    return
-  }
-
-  if (!args.target.$language) {
-    args.error(ParseError.noLanguageFound)
-    return
-  }
-
-  if (!validateString(args, args.value)) {
-    args.error(ParseError.incorrectFormat)
-    return
-  }
-
-  args.value = {
-    [args.target.$language]: value,
-  }
-
-  args.collect()
-*/
