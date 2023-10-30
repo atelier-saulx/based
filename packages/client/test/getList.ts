@@ -1,7 +1,6 @@
 import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
-import { wait } from '@saulx/utils'
 import { SelvaServer } from '../../server/dist/server'
 import getPort from 'get-port'
 import './assertions'
@@ -37,7 +36,8 @@ test.afterEach.always(async (t) => {
 test('get - simple $list', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -147,7 +147,8 @@ test('get - simple $list', async (t) => {
 test('get - simple $list with $field of one field', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -229,7 +230,8 @@ test('get - simple $list with $field of one field', async (t) => {
 test('get - simple $list with $field of two field entries', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -312,7 +314,8 @@ test('get - simple $list with $field of two field entries', async (t) => {
 test('get - simple $list nested query structure', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -471,7 +474,8 @@ test('get - simple $list nested query structure', async (t) => {
 test('get - default sorting in $list with references', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -600,7 +604,8 @@ test('get - default sorting in $list with references', async (t) => {
 test('get - simple $list with $field option', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',
@@ -717,7 +722,8 @@ test('get - simple $list with $field option', async (t) => {
 test('get - edge meta sorting in $list with references', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       custom: {
         prefix: 'cu',

@@ -1,6 +1,5 @@
 import test from 'ava'
 import { BasedDbClient } from '../src'
-import { ModifyOpSetType } from '../src/protocol/encode/modify/types'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'

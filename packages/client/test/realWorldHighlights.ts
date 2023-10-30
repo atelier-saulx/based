@@ -1,8 +1,7 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import './assertions'
-import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { SelvaServer } from '../../server/dist/server'
 

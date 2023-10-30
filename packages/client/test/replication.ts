@@ -55,7 +55,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         value: { type: 'number' },

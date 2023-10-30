@@ -4,7 +4,6 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { BasedDbClient } from '../src'
 import './assertions'
-import { SchemaUpdateMode } from '../src/types'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -31,7 +30,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       aType: {
         prefix: 'at',

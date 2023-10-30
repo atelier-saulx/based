@@ -106,7 +106,8 @@ test.serial('inherit object nested field from root youzi', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         flapper: {
@@ -185,7 +186,8 @@ test.serial('inherit object youzi', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       yeshType: {
         prefix: 'ye',
@@ -245,7 +247,8 @@ test.serial('basic inherit subscription', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         yesh: { type: 'string' },
@@ -344,7 +347,8 @@ test.serial('inherit object', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         flapper: {
@@ -448,7 +452,8 @@ test.serial('list inherit subscription', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         yesh: { type: 'string' },
@@ -578,7 +583,8 @@ test.serial('list inherit + field subscription', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         yesh: { type: 'string' },

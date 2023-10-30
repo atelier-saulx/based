@@ -2,7 +2,6 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
@@ -30,7 +29,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       match: {
         prefix: 'ma',
@@ -51,7 +50,8 @@ test.afterEach.always(async (t) => {
 
 test('expiring matches on direct get', async (t) => {
   const { client } = t.context
-  const matches = await Promise.all([client.set({
+  const matches = await Promise.all([
+    client.set({
       type: 'match',
       value: 1,
       title: 'value1',
@@ -60,17 +60,26 @@ test('expiring matches on direct get', async (t) => {
       type: 'match',
       value: 2,
       title: 'value2',
-    })])
+    }),
+  ])
 
   const expire = BigInt((Date.now() / 1000 + 1) | 0)
-  const before = await Promise.all(matches.map((id) => client.command('hierarchy.expire', [id])))
-  await Promise.all(matches.map((id) => client.command('hierarchy.expire', [id, expire])))
-  const after = await Promise.all(matches.map((id) => client.command('hierarchy.expire', [id])))
+  const before = await Promise.all(
+    matches.map((id) => client.command('hierarchy.expire', [id]))
+  )
+  await Promise.all(
+    matches.map((id) => client.command('hierarchy.expire', [id, expire]))
+  )
+  const after = await Promise.all(
+    matches.map((id) => client.command('hierarchy.expire', [id]))
+  )
 
   t.deepEqual(before, [[0n], [0n]])
   t.deepEqual(after, [[expire], [expire]])
 
-  await new Promise((r) => setTimeout(r, Number(expire * 1000n) - Date.now() + 1000))
+  await new Promise((r) =>
+    setTimeout(r, Number(expire * 1000n) - Date.now() + 1000)
+  )
 
   t.deepEqual(
     await Promise.all(matches.map((id) => client.get({ $id: id, type: true }))),

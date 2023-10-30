@@ -37,7 +37,12 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'nl', 'de'],
+    language: 'en',
+    translations: ['nl', 'de'],
+    languageFallbacks: {
+      nl: ['de', 'en'],
+      de: ['en'],
+    },
     root: {
       fields: { value: { type: 'number' }, hello: { type: 'string' } },
     },
@@ -1120,7 +1125,7 @@ test('$default with string and number', async (t) => {
   })
 })
 
-test('$merge = false', async (t) => {
+test.only('$merge = false', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'arPower',

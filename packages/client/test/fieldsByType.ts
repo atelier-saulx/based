@@ -2,8 +2,7 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { deepCopy, wait } from '@saulx/utils'
-import { worker } from './assertions/utils'
+import { deepCopy } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
@@ -38,7 +37,7 @@ test.afterEach.always(async (t) => {
 test('$fieldsByType simple', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       car: {
         prefix: 'ma',
@@ -168,7 +167,7 @@ test('$fieldsByType huge', async (t) => {
     .reduce((prev, cur) => ({ ...prev, [cur.prefix]: cur }), {})
 
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: deepCopy(types),
   })
 

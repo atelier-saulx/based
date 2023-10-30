@@ -2,7 +2,6 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
@@ -30,7 +29,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       blurf: {
         prefix: 'bl',
@@ -75,7 +74,7 @@ test.afterEach.always(async (t) => {
 test('language in all types of objects', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       blurf: {
         prefix: 'bl',

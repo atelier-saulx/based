@@ -134,9 +134,8 @@ export const migrateNodes = async (
         const ids = (await client.get(query)).ids?.map((node: any) => node.id)
         if (ids) {
           ids.forEach((id: string) => {
-            const defaultLanguage = client.schema.languages[0]
             const query = {
-              $language: defaultLanguage,
+              $language: client.schema.language,
               $id: id,
               ...pathToQuery(mutation.path, true),
             }
@@ -208,7 +207,7 @@ export const migrateNodes = async (
             // )
             const path =
               mutation.new.type === 'text'
-                ? mutation.path.concat(client.schema.languages[0])
+                ? mutation.path.concat(client.schema.language)
                 : mutation.path
             lowLevelSets.push(
               client.command('object.set', [

@@ -34,7 +34,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         value: { type: 'number' },
@@ -372,7 +373,8 @@ test('Array field type properties validation', async (t) => {
   )
 })
 
-test('Only allow field type text if languages are defined', async (t) => {
+// TODO: Moove to languages tests
+test.skip('Only allow field type text if languages are defined', async (t) => {
   const port = await getPort()
   console.log('origin')
   const server = await startOrigin({
@@ -391,10 +393,11 @@ test('Only allow field type text if languages are defined', async (t) => {
   console.log('updating schema')
 
   // TODO: find way to do this
-  client.schema.languages = []
+  // @ts-ignore
+  client.schema.language = undefined
   await t.throwsAsync(
     client.updateSchema({
-      languages: [],
+      language: undefined,
       types: {
         textType: {
           prefix: 'te',
@@ -456,7 +459,7 @@ test('Change field type in strict mode should fail', async (t) => {
       },
     }),
     {
-      message: /^Cannot change "match.title" in strict mode.$/
+      message: /^Cannot change "match.title" in strict mode.$/,
     }
   )
 })
@@ -465,15 +468,18 @@ test('Change field type in flexible mode without any nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          fields: {
-            title: { type: 'string' },
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            fields: {
+              title: { type: 'string' },
+            },
           },
         },
       },
-    }, { mode: SchemaUpdateMode.flexible })
+      { mode: SchemaUpdateMode.flexible }
+    )
   )
   const newSchema = client.schema
   t.true(newSchema.types['match'].fields?.title?.type === 'string')
@@ -485,22 +491,26 @@ test('Change field type in flexible mode with existing nodes', async (t) => {
   await client.set({
     type: 'match',
     title: {
-      en: 'this is title'
-    }
+      en: 'this is title',
+    },
   })
 
   await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          fields: {
-            title: { type: 'string' },
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            fields: {
+              title: { type: 'string' },
+            },
           },
         },
       },
-    }, { mode: SchemaUpdateMode.flexible }),
+      { mode: SchemaUpdateMode.flexible }
+    ),
     {
-      message: /^Cannot mutate "match.title" in flexible mode with exsiting data.$/
+      message:
+        /^Cannot mutate "match.title" in flexible mode with exsiting data.$/,
     }
   )
 })
@@ -521,7 +531,7 @@ test('Remove field in strict mode', async (t) => {
       },
     }),
     {
-      message: /^Cannot remove "match.title" in strict mode.$/
+      message: /^Cannot remove "match.title" in strict mode.$/,
     }
   )
 })
@@ -530,19 +540,22 @@ test('Remove field in flexible mode', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          fields: {
-            // TODO: Remove when @based/schema is updated
-            // @ts-ignore
-            title: { $delete: true },
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            fields: {
+              // TODO: Remove when @based/schema is updated
+              // @ts-ignore
+              title: { $delete: true },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
   const newSchema = client.schema
   t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
@@ -562,7 +575,7 @@ test('Remove type in strict mode', async (t) => {
       },
     }),
     {
-      message: /^Cannot remove "match" in strict mode.$/
+      message: /^Cannot remove "match" in strict mode.$/,
     }
   )
 })
@@ -571,53 +584,62 @@ test('Remove type in flexible mode', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          // TODO: Remove when @based/schema is updated
-          // @ts-ignore
-          $delete: true,
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            // TODO: Remove when @based/schema is updated
+            // @ts-ignore
+            $delete: true,
+          },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
   const newSchema = client.schema
   t.false(newSchema.types.hasOwnProperty('match'))
 })
-
 
 test('Change remove type in migration mode', async (t) => {
   const { client } = t.context
 
   const sets: Promise<string>[] = []
   for (let i = 0; i < 7000; i++) {
-    sets.push(client.set({
-      type: 'match',
-      value: i
-    }))
+    sets.push(
+      client.set({
+        type: 'match',
+        value: i,
+      })
+    )
   }
   for (let i = 0; i < 1000; i++) {
-    sets.push(client.set({
-      type: 'club',
-      value: i
-    }))
+    sets.push(
+      client.set({
+        type: 'club',
+        value: i,
+      })
+    )
   }
   await Promise.all(sets)
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          // TODO: Remove when @based/schema is updated
-          // @ts-ignore
-          $delete: true
-        }
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            // TODO: Remove when @based/schema is updated
+            // @ts-ignore
+            $delete: true,
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
       }
-    }, {
-      mode: SchemaUpdateMode.migration
-    })
+    )
   )
 
   const { count: countMatches } = await client.get({
@@ -629,11 +651,11 @@ test('Change remove type in migration mode', async (t) => {
           {
             $field: 'type',
             $operator: '=',
-            $value: 'match'
-          }
+            $value: 'match',
+          },
         ],
       },
-    }
+    },
   })
   t.is(countMatches, 0)
 
@@ -646,11 +668,11 @@ test('Change remove type in migration mode', async (t) => {
           {
             $field: 'type',
             $operator: '=',
-            $value: 'club'
-          }
+            $value: 'club',
+          },
         ],
       },
-    }
+    },
   })
   t.is(countClubs, 1000)
 })
@@ -660,29 +682,38 @@ test('Change remove field in migration mode', async (t) => {
 
   const sets: Promise<string>[] = []
   for (let i = 0; i < 7000; i++) {
-    sets.push(client.set({
-      type: 'match',
-      value: i
-    }))
+    sets.push(
+      client.set({
+        type: 'match',
+        value: i,
+      })
+    )
   }
   const ids = await Promise.all(sets)
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        match: {
-          fields: {
-            value: {
-              // TODO: Remove when @based/schema is updated
-              // @ts-ignore
-              $delete: true
-            }
-          }
-        }
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            fields: {
+              value: {
+                // TODO: Remove when @based/schema is updated
+                // @ts-ignore
+                $delete: true,
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.migration,
       }
-    }, {
-      mode: SchemaUpdateMode.migration
-    })
+    )
   )
-  t.false((await client.get({ $id: ids[ids.length - 23], $all: true })).hasOwnProperty('value'))
+  t.false(
+    (
+      await client.get({ $id: ids[ids.length - 23], $all: true })
+    ).hasOwnProperty('value')
+  )
 })

@@ -2,7 +2,6 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
@@ -30,7 +29,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       team: {
         prefix: 'te',
@@ -146,7 +145,7 @@ test('sort by ref to name field', async (t) => {
             name: 'Best',
           },
           value: 4,
-          id: 'ma4'
+          id: 'ma4',
         },
         {
           homeTeam: {
@@ -165,8 +164,8 @@ test('sort by ref to name field', async (t) => {
           id: 'ma2',
         },
         {
-         value: 5,
-         id: 'ma5',
+          value: 5,
+          id: 'ma5',
         },
         {
           id: 'te1',
@@ -176,8 +175,8 @@ test('sort by ref to name field', async (t) => {
         },
         {
           id: 'te3',
-        }
-      ]
+        },
+      ],
     }
   )
 })

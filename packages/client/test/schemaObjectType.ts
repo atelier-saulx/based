@@ -31,7 +31,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       lekkerType: {
         prefix: 'vi',
@@ -52,8 +53,8 @@ test.beforeEach(async (t) => {
                 type: 'object',
                 properties: {
                   nestedString: { type: 'string' },
-                  nestedInteger: { type: 'integer' }
-                }
+                  nestedInteger: { type: 'integer' },
+                },
               },
             },
           },
@@ -84,16 +85,16 @@ test('Remove property on object field in strict mode', async (t) => {
                 dung: {
                   // TODO: Remove when @based/schema is updated
                   // @ts-ignore
-                  $delete: true
-                }
-              }
-            }
+                  $delete: true,
+                },
+              },
+            },
           },
         },
       },
     }),
     {
-      message: /^Cannot remove "lekkerType.ding.dung" in strict mode.$/
+      message: /^Cannot remove "lekkerType.ding.dung" in strict mode.$/,
     }
   )
 })
@@ -113,18 +114,19 @@ test('Remove property on nested object field in strict mode', async (t) => {
                     nestedString: {
                       // TODO: Remove when @based/schema is updated
                       // @ts-ignore
-                      $delete: true
-                    }
-                  }
-                }
-              }
-            }
+                      $delete: true,
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
     }),
     {
-      message: /^Cannot remove "lekkerType.withNested.again.nestedString" in strict mode.$/
+      message:
+        /^Cannot remove "lekkerType.withNested.again.nestedString" in strict mode.$/,
     }
   )
 })
@@ -135,32 +137,35 @@ test('Remove property on object field in flexible mode with exsiting nodes', asy
   await client.set({
     type: 'lekkerType',
     ding: {
-      dung: 123
-    }
+      dung: 123,
+    },
   })
 
   await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            ding: {
-              properties: {
-                dung: {
-                  // TODO: Remove when @based/schema is updated
-                  // @ts-ignore
-                  $delete: true
-                }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: {
+                    // TODO: Remove when @based/schema is updated
+                    // @ts-ignore
+                    $delete: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    }),
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
     {
-      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/
+      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/,
     }
   )
 })
@@ -171,31 +176,33 @@ test('Remove property on object field in flexible mode with exsiting nodes but u
   await client.set({
     type: 'lekkerType',
     ding: {
-      wawa: 123
-    }
+      wawa: 123,
+    },
   })
 
-
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            ding: {
-              properties: {
-                dung: {
-                  // TODO: Remove when @based/schema is updated
-                  // @ts-ignore
-                  $delete: true
-                }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: {
+                    // TODO: Remove when @based/schema is updated
+                    // @ts-ignore
+                    $delete: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
 })
 
@@ -203,29 +210,36 @@ test('Remove property on object field in flexible mode without exsiting nodes', 
   const { client } = t.context
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            ding: {
-              properties: {
-                dung: {
-                  // TODO: Remove when @based/schema is updated
-                  // @ts-ignore
-                  $delete: true
-                }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: {
+                    // TODO: Remove when @based/schema is updated
+                    // @ts-ignore
+                    $delete: true,
+                  },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
   const newSchema = client.schema
-  // @ts-ignore
-  t.false(newSchema.types['lekkerType'].fields.ding?.properties.hasOwnProperty('title'))
+  t.false(
+    // @ts-ignore
+    newSchema.types['lekkerType'].fields.ding?.properties.hasOwnProperty(
+      'title'
+    )
+  )
 })
 
 test('Change property on object field in strict mode', async (t) => {
@@ -239,16 +253,16 @@ test('Change property on object field in strict mode', async (t) => {
             ding: {
               properties: {
                 dung: {
-                  type: 'string'
-                }
-              }
-            }
+                  type: 'string',
+                },
+              },
+            },
           },
         },
       },
     }),
     {
-      message: /^Cannot change "lekkerType.ding.dung" in strict mode.$/
+      message: /^Cannot change "lekkerType.ding.dung" in strict mode.$/,
     }
   )
 })
@@ -259,28 +273,31 @@ test('Change property on object field in flexible mode with exsiting nodes', asy
   await client.set({
     type: 'lekkerType',
     ding: {
-      dung: 123
-    }
+      dung: 123,
+    },
   })
 
   await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            ding: {
-              properties: {
-                dung: { type: 'string' }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: { type: 'string' },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    }),
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
     {
-      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/
+      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/,
     }
   )
 })
@@ -291,61 +308,74 @@ test('Change property on object field in flexible mode with exsiting nodes but u
   await client.set({
     type: 'lekkerType',
     ding: {
-      wawa: 123
-    }
+      wawa: 123,
+    },
   })
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            ding: {
-              properties: {
-                dung: { type: 'string' }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: { type: 'string' },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
 
   const newSchema = client.schema
-  // @ts-ignore
-  t.is(newSchema.types['lekkerType'].fields['ding'].properties['dung'].type, 'string')
+  t.is(
+    // @ts-ignore
+    newSchema.types['lekkerType'].fields['ding'].properties['dung'].type,
+    'string'
+  )
 })
 
 test.only('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
-    client.updateSchema({
-      types: {
-        lekkerType: {
-          fields: {
-            withNested: {
-              properties: {
-                again: {
-                  properties: {
-                    nestedString: {
-                      type: 'number'
-                    }
-                  }
-                }
-              }
-            }
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              withNested: {
+                properties: {
+                  again: {
+                    properties: {
+                      nestedString: {
+                        type: 'number',
+                      },
+                    },
+                  },
+                },
+              },
+            },
           },
         },
       },
-    }, {
-      mode: SchemaUpdateMode.flexible
-    })
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
   )
 
   const newSchema = client.schema
-  // @ts-ignore
-  t.is(newSchema.types['lekkerType'].fields['withNested'].properties['again'].properties['nestedString'].type, 'number')
+  t.is(
+    // @ts-ignore
+    newSchema.types['lekkerType'].fields['withNested'].properties['again']
+      .properties['nestedString'].type,
+    'number'
+  )
 })

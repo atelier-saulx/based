@@ -101,7 +101,8 @@ test.serial('subscribing to all fields', async (t) => {
   await start(t)
   const client = t.context.dbClient
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       folder: {
         prefix: 'fo',

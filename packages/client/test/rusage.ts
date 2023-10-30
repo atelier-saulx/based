@@ -1,10 +1,9 @@
 import anyTest, { TestInterface } from 'ava'
-import { deserialize, readValue } from 'data-record'
+import { deserialize } from 'data-record'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { selva_rusage } from '../src/protocol'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
@@ -32,7 +31,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       match: {
         prefix: 'ma',
@@ -54,7 +53,9 @@ test.afterEach.always(async (t) => {
 test('test rusage command', async (t) => {
   const { client } = t.context
 
-  const [rusage_self, rusage_children] = (await client.command('rusage')).map((buf) =>  deserialize(selva_rusage, buf))
+  const [rusage_self, rusage_children] = (await client.command('rusage')).map(
+    (buf) => deserialize(selva_rusage, buf)
+  )
 
   t.truthy(Number(rusage_self.ru_maxrss) > 20 * 1024 * 1024)
   t.deepEqual(rusage_children.ru_maxrss, 0n)

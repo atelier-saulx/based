@@ -31,7 +31,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       aType: {
         prefix: 'at',
@@ -501,7 +502,7 @@ test('Mutate field string to text', async (t) => {
     level1string: true,
     level1object: true,
   })
-  const defaultLanguage = client.schema.languages[0]
+  const defaultLanguage = client.schema.language
   t.is(typeof level1string, 'object')
   t.deepEqual(level1string, { [defaultLanguage]: 'one' })
   t.is(typeof level3string, 'object')
@@ -560,7 +561,7 @@ test('Mutate field number to text', async (t) => {
     level1number: true,
     level1object: true,
   })
-  const defaultLanguage = client.schema.languages[0]
+  const defaultLanguage = client.schema.language
   t.is(typeof level1number, 'object')
   t.deepEqual(level1number, { [defaultLanguage]: '1234.56' })
   t.is(typeof level3number, 'object')

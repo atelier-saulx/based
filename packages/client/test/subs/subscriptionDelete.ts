@@ -101,7 +101,8 @@ const observe = async (
 
 async function updateSchema(t: ExecutionContext<TestCtx>) {
   await t.context.dbClient.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       thing: {
         prefix: 'th',

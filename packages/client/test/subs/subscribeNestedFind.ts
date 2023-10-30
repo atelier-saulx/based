@@ -102,7 +102,8 @@ test.serial('get - correct order', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     types: {
       folder: {
         prefix: 'fl',

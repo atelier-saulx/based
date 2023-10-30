@@ -106,7 +106,8 @@ test.serial('changing alias to another node fires subscription', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' }, no: { type: 'string' } },
     },

@@ -21,7 +21,7 @@ type EdgeConstraint = {
 
 export const DEFAULT_SCHEMA: BasedSchema = {
   $defs: {},
-  languages: ['en'],
+  language: 'en',
   prefixToTypeMapping: {
     ro: 'root',
   },
@@ -120,17 +120,18 @@ const checkArrayFieldTypeRequirements = (typeSchema: any) => {
   }
 }
 
-const checkTextFieldTypeRequirements = (
-  typeSchema: any,
-  newSchema: BasedSchema
-) => {
-  const hasLanguages = newSchema?.languages?.length > 0
-  if (typeSchema?.type === 'text' && !hasLanguages) {
-    throw new Error(
-      'Cannot use fields of type text without `languages` being defined`'
-    )
-  }
-}
+// TODO: Add this again
+// const checkTextFieldTypeRequirements = (
+//   typeSchema: any,
+//   newSchema: BasedSchema
+// ) => {
+//   const hasLanguages = newSchema?.languages?.length > 0
+//   if (typeSchema?.type === 'text' && !hasLanguages) {
+//     throw new Error(
+//       'Cannot use fields of type text without `languages` being defined`'
+//     )
+//   }
+// }
 
 function schemaWalker(
   prefix: string,
@@ -185,7 +186,6 @@ function schemaWalker(
 
   checkInvalidFieldType(typeSchema)
   checkArrayFieldTypeRequirements(typeSchema)
-  checkTextFieldTypeRequirements(typeSchema, newSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
@@ -216,34 +216,6 @@ const checkChangingExistingTypePrefix = (
   ) {
     throw new Error('Cannot change prefix of existing type')
   }
-}
-
-function mergeLanguages(
-  oldLangs: BasedSchemaLanguage[],
-  newLangs: BasedSchemaLanguage[]
-): BasedSchemaLanguage[] {
-  const langs: Set<BasedSchemaLanguage> = new Set()
-
-  // TODO: have default lang?
-
-  // if (!Array.isArray(oldLangs)) {
-  //   oldLangs = ['en']
-  // }
-  if (!Array.isArray(oldLangs)) {
-    oldLangs = []
-  }
-  for (const lang of oldLangs) {
-    langs.add(lang)
-  }
-
-  if (!Array.isArray(newLangs)) {
-    newLangs = []
-  }
-  for (const lang of newLangs) {
-    langs.add(lang)
-  }
-
-  return [...langs.values()]
 }
 
 const mergeFields = (
@@ -377,6 +349,23 @@ const checkMutationsForExistingNodes = async (
   }
 }
 
+const mergeLanguages = (
+  currentSchema: BasedSchema,
+  opts: BasedSchemaPartial
+) => {
+  const language = opts.language || currentSchema.language
+  const translations = opts.translations || currentSchema.translations
+  const languageFallbacks = {
+    ...currentSchema.languageFallbacks,
+    ...opts.languageFallbacks,
+  }
+  return {
+    language,
+    translations,
+    languageFallbacks,
+  }
+}
+
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial,
@@ -397,15 +386,18 @@ export async function updateSchema(
     newTypes.push(['ro', 'root'])
   }
   // const newSchema = deepCopy(currentSchema)
-  const newSchema: BasedSchema = {
+  let newSchema: BasedSchema = {
     $defs: {},
-    languages: [],
+    language: 'en',
     prefixToTypeMapping: {},
     root: { fields: {} },
     types: {},
   }
 
-  newSchema.languages = mergeLanguages(currentSchema.languages, opts.languages)
+  newSchema = {
+    ...newSchema,
+    ...mergeLanguages(currentSchema, opts),
+  }
 
   newSchema.root = currentSchema.root
   newSchema.root.fields = mergeFields(

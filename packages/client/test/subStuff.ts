@@ -5,8 +5,6 @@ import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { deserialize } from 'data-record'
 import { protocol } from '../src'
-import { SELVA_NODE_ID_LEN } from '../src/protocol'
-// import { wait } from '@saulx/utils'
 
 test('descendants sub', async (t) => {
   const port = await getPort()
@@ -23,7 +21,8 @@ test('descendants sub', async (t) => {
   })
 
   await client.updateSchema({
-    languages: ['en', 'nl', 'de', 'fi'],
+    language: 'en',
+    translations: ['nl', 'de', 'fi'],
     $defs: {},
     prefixToTypeMapping: {
       po: 'post',
@@ -390,7 +389,8 @@ test('node sub', async (t) => {
   })
 
   await client.updateSchema({
-    languages: ['en', 'nl', 'de', 'fi'],
+    language: 'en',
+    translations: ['nl', 'de', 'fi'],
     $defs: {},
     prefixToTypeMapping: {
       po: 'post',
@@ -588,7 +588,7 @@ test('alias sub', async (t) => {
   })
 
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     $defs: {},
     types: {
       meh: {
