@@ -353,16 +353,6 @@ test('find - traverse expression with records', async (t) => {
       ],
     },
   })
-  // TODO reference field in an object in an array connot be visited with SELVA_HIERARCHY_TRAVERSAL_ARRAY
-  //const preface = await client.get({
-  //  $id: book,
-  //  id: true,
-  //  revisions: {
-  //    version: true,
-  //    contents: true,
-  //    $list: true
-  //  },
-  //})
 
   // TODO This doesn't currently work
   //const sections = await client.get({
