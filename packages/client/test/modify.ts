@@ -990,23 +990,21 @@ test('$increment, $default', async (t) => {
     'set default'
   )
 
-  // TODO: $default being overriden in text fields
-  //
-  // await client.set({
-  //   $id: 'viDingDong',
-  //   title: {
-  //     en: {
-  //       $default: 'flurp',
-  //     },
-  //   },
-  // })
-  //
-  // t.is(
-  //   // await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
-  //   (await client.command('object.get', ['', 'viDingDong', 'title.en']))[0],
-  //   'title',
-  //   'does not overwrite if value exists'
-  // )
+  await client.set({
+    $id: 'viDingDong',
+    title: {
+      en: {
+        $default: 'flurp',
+      },
+    },
+  })
+
+  t.is(
+    // await client.redis.selva_object_get('', 'viDingDong', 'title.en'),
+    (await client.command('object.get', ['', 'viDingDong', 'title.en']))[0],
+    'title',
+    'does not overwrite if value exists'
+  )
 
   await client.set({
     $id: 'viHelloYes',
