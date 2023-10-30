@@ -577,65 +577,7 @@ test('ways to clear aliases', async (t) => {
   t.deepEqual((await client.command('lsaliases'))[0], [])
 })
 
-// TODO: waiting for observe()
-test.skip('set alias, get it, remove it, get it again', async (t) => {
-  const { client } = t.context
-  const al = 'mybeautifulaliasmyesh'
-
-  const custom1 = await client.set({
-    type: 'custom',
-    aliases: [al],
-    value: 0,
-  })
-
-  const data = await client.get({
-    $alias: al,
-    id: true,
-    value: true,
-  })
-
-  console.log('data', data)
-
-  t.deepEqualIgnoreOrder(data, {
-    id: custom1,
-    value: 0,
-  })
-
-  let cnt = 0
-
-  // client
-  //   .observe({
-  //     $alias: al,
-  //     id: true,
-  //     value: true,
-  //     aliases: true,
-  //   })
-  //   .subscribe((data, checksum) => {
-  //     console.log(data, checksum)
-  //     cnt++
-  //   })
-
-  await wait(3000)
-
-  await client.set({
-    $id: custom1,
-    value: 1,
-  })
-
-  await wait(250)
-
-  await client.set({
-    $id: custom1,
-    aliases: { $delete: [al] },
-  })
-
-  await wait(3000)
-
-  t.is(cnt, 3) // initial + change value + remove alias
-})
-
-// TODO: issue with $alias
-test.skip('set with $alias', async (t) => {
+test('set with $alias', async (t) => {
   const { client } = t.context
   await client.updateSchema({
     languages: ['en'],
