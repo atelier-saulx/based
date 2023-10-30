@@ -150,8 +150,7 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
   })
 }
 
-// TODO: subscribing to the array and pushing to it does not fire
-test.serial.skip('subscription array', async (t) => {
+test.serial('subscription array', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
