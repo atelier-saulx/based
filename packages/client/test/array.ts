@@ -185,3 +185,29 @@ test('should replace array', async (t) => {
     }
   )
 })
+
+test('delete index', async (t) => {
+  const { client } = t.context
+
+  const lekker = await client.set({
+    type: 'lekkerType',
+    media: [{ src: 'http://wawa.com/111' }],
+  })
+
+  await client.set({
+    $id: lekker,
+    media: { $remove: { $idx: 0 } },
+  })
+
+  t.deepEqualIgnoreOrder(
+    await client.get({
+      $language: 'en',
+      $id: lekker,
+      id: true,
+      media: true,
+    }),
+    {
+      id: lekker,
+    }
+  )
+})

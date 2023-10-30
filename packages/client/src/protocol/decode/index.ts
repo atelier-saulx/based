@@ -46,7 +46,7 @@ export function findFrame(buf: Buffer): {
 }
 
 export function decodeMessage(buf: Buffer, n: number): [any, Buffer | null] {
-  if (!buf || buf.length === 0) {
+  if (!buf || buf.length === 0 || n === 0) {
     return [[], null]
   }
 
