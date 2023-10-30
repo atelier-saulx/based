@@ -187,7 +187,11 @@ export const text: FieldParser<'text'> = async (args) => {
             })
             .collect()
         }
-      } else if (args.schema.languages.includes(<BasedSchemaLanguage>key)) {
+      } else if (
+        (args.schema.translations || [])
+          .concat(args.schema.language)
+          .includes(<BasedSchemaLanguage>key)
+      ) {
         if (value[key] && typeof value[key] === 'object') {
           for (const k in value[key]) {
             if (k === '$delete') {

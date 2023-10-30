@@ -110,7 +110,8 @@ const schema: BasedSchema = {
     },
   },
   $defs: {},
-  languages: ['en', 'de', 'nl', 'ro', 'za', 'ae'],
+  language: 'en',
+  translations: ['de', 'nl', 'ro', 'za', 'ae'],
   root: {
     fields: {},
   },

@@ -1,7 +1,7 @@
 import { setWalker, BasedSchema } from '../src'
 import test from 'ava'
-import { ParseError } from '../src/error'
 import { resultCollect } from './utils'
+import { languages } from '../src/languages'
 
 const schema: BasedSchema = {
   types: {
@@ -22,7 +22,13 @@ const schema: BasedSchema = {
     },
   },
   $defs: {},
-  languages: ['en', 'de', 'nl', 'ro', 'za', 'ae'],
+  language: 'en',
+  translations: ['de', 'nl', 'ro', 'za', 'ae'],
+  languageFallbacks: {
+    en: ['en'],
+    de: ['en'],
+    fr: ['aa'],
+  },
   root: {
     fields: {},
   },

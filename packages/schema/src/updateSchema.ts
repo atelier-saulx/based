@@ -5,7 +5,7 @@ export const updateSchema = async (
   oldSchema: BasedSchema = {
     $defs: {},
     types: {},
-    languages: ['en'],
+    language: 'en',
     root: { fields: {} },
     prefixToTypeMapping: {},
   }
