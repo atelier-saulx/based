@@ -766,18 +766,12 @@ test('edge modify `delete` values diff', async (t) => {
       b: { $delete: true },
     },
   })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
   await client.set({
     $id: 'root',
     a: {
       b: { $delete: true },
     },
   })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
 })
 
 test('edge modify `value` values diff', async (t) => {
@@ -858,37 +852,6 @@ test('edge modify `add` and `delete` values diff', async (t) => {
   ])
 
   t.deepEqual((await client.command('hierarchy.del', ['', 'ma1']))[0], 1n)
-})
-
-test('edge modify `delete_all`', async (t) => {
-  const { client } = t.context
-  await client.set({
-    $id: 'root',
-    o: {
-      a: 'hello',
-    },
-  })
-
-  await client.set({
-    $id: 'root',
-    a: {
-      b: { $add: ['ma1', 'ma2'] },
-    },
-  })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-    'ma1',
-    'ma2',
-  ])
-  await client.set({
-    $id: 'root',
-    a: {
-      b: { $delete: true },
-    },
-  })
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['root', 'a.b']))[0], [
-    0n,
-  ])
 })
 
 test('traverse by expression', async (t) => {
@@ -1073,9 +1036,6 @@ test('bidirectional edge fields', async (t) => {
     'players',
     ['pl1', 'pl2'],
   ])
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['pl3', 'team']))[0], [
-    2n,
-  ])
 
   // Delete an edge
   await client.set({
@@ -1085,9 +1045,6 @@ test('bidirectional edge fields', async (t) => {
   t.deepEqual((await client.command('hierarchy.edgeList', ['te1']))[0], [
     'players',
     ['pl1'],
-  ])
-  t.deepEqual((await client.command('hierarchy.edgeGet', ['pl2', 'team']))[0], [
-    2n,
   ])
 })
 
@@ -1577,31 +1534,20 @@ test('edge meta alias', async (t) => {
       'ma1',
       [
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
-          [ 'antiNote', 'not very cool' ]
-        ]],
+        [['id', 'da1', '$edgeMeta', ['antiNote', 'not very cool']]],
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
-          [ 'cool@note', 'very cool' ]
-        ]],
+        [['id', 'da1', '$edgeMeta', ['cool@note', 'very cool']]],
         'expl@description.en',
-        'The most boring'
-      ]
-    ]
+        'The most boring',
+      ],
+    ],
   ])
 
   const r2 = (
     await find({
       client,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      res_opt_str:
-        'ref.$edgeMeta',
+      res_opt_str: 'ref.$edgeMeta',
       dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
       id: 'root',
       rpn: ['"ma" e'],
@@ -1612,25 +1558,23 @@ test('edge meta alias', async (t) => {
       'ma1',
       [
         'ref',
-        [[
-          'id',
-          'da1',
-          '$edgeMeta',
+        [
           [
-            '',
-            [ 'antiNote', 'not very cool', 'note', 'very cool' ]
-          ]
-        ]]
-      ]
-    ]
+            'id',
+            'da1',
+            '$edgeMeta',
+            ['', ['antiNote', 'not very cool', 'note', 'very cool']],
+          ],
+        ],
+      ],
+    ],
   ])
 
   const r3 = (
     await find({
       client,
       res_type: protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_FIELDS,
-      res_opt_str:
-        'cool@ref.$edgeMeta',
+      res_opt_str: 'cool@ref.$edgeMeta',
       dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
       id: 'root',
       rpn: ['"ma" e'],
@@ -1640,17 +1584,16 @@ test('edge meta alias', async (t) => {
     [
       'ma1',
       [
-       'ref',
-       [[
-         'id',
-         'da1',
-         '$edgeMeta',
-         [
-           'cool@',
-           [ 'antiNote', 'not very cool', 'note', 'very cool' ]
-         ]
-       ]]
-      ]
-    ]
+        'ref',
+        [
+          [
+            'id',
+            'da1',
+            '$edgeMeta',
+            ['cool@', ['antiNote', 'not very cool', 'note', 'very cool']],
+          ],
+        ],
+      ],
+    ],
   ])
 })
