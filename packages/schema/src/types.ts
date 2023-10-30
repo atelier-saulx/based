@@ -322,9 +322,7 @@ export type BasedSchemaType = {
 
 // this is the return value,, optional for insert
 export type BasedSchema = {
-  languages: {
-    [key in BasedSchemaLanguage]: BasedSchemaLanguage[]
-  }
+  languages: Record<BasedSchemaLanguage, BasedSchemaLanguage[]>
   root: BasedSchemaType
   // in our setup this is used as top level /$defs/[name]/
   // in our setup this is used as top level /types/[name]/$defs/[name]
