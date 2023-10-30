@@ -2,7 +2,6 @@ import {
   BasedSchemaPartial,
   BasedSchemaFieldPartial,
   BasedSchemaTypePartial,
-  BasedSchemaField,
 } from './types'
 
 // gaurd in the schema for refs in arrays
@@ -39,8 +38,12 @@ export const validateSchema = (
     throw new Error('Schema is not an object')
   }
 
-  if (schema.languages && !Array.isArray(schema.languages)) {
-    throw new Error('Languages needs to be an array')
+  if (schema.language && typeof schema.language !== 'string') {
+    throw new Error('Language must be a string')
+  }
+
+  if (schema.translations && !Array.isArray(schema.translations)) {
+    throw new Error('Translations needs to be an array')
   }
 
   if (schema.$defs) {

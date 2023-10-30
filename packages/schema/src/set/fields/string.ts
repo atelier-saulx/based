@@ -188,7 +188,9 @@ export const text: FieldParser<'text'> = async (args) => {
             .collect()
         }
       } else if (
-        Object.keys(args.schema.languages).includes(<BasedSchemaLanguage>key)
+        (args.schema.translations || [])
+          .concat(args.schema.language)
+          .includes(<BasedSchemaLanguage>key)
       ) {
         if (value[key] && typeof value[key] === 'object') {
           for (const k in value[key]) {

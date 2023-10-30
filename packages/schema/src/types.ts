@@ -322,8 +322,9 @@ export type BasedSchemaType = {
 
 // this is the return value,, optional for insert
 export type BasedSchema = {
-  languages: BasedSchemaLanguage[]
-  languageFallBackStrategy?: Partial<
+  language: BasedSchemaLanguage
+  translations?: BasedSchemaLanguage[]
+  languageFallbacks?: Partial<
     Record<BasedSchemaLanguage, BasedSchemaLanguage[]>
   >
   root: BasedSchemaType
