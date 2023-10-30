@@ -6,6 +6,7 @@ export const object: FieldParser<'object'> = async (args) => {
     args.error(ParseError.incorrectFormat)
     return
   }
+
   const isArray = Array.isArray(args.value)
   if (isArray) {
     args.error(ParseError.incorrectFormat)

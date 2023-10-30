@@ -79,7 +79,10 @@ test('$merge on object', async (t) => {
 
   t.true(r.errors.length === 0)
   t.deepEqual(resultCollect(r), [
+    { path: ['x'], value: { $delete: true } },
+
     { path: ['x', 'bla'], value: 'x' },
+
     { path: ['x'], value: { $merge: false, bla: 'x' } },
   ])
 })
