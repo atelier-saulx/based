@@ -17,7 +17,6 @@ import { joinPath } from '../util'
 import { BasedDbClient } from '..'
 import genId from '../id'
 import { createRecord } from 'data-record'
-import { argv0 } from 'process'
 import {
   encodeDouble,
   encodeLongLong,
@@ -106,6 +105,10 @@ export function toModifyArgs(props: {
         value.$delete === true ? { $delete: true } : [0],
       ]
     case 'record':
+      if (!value) {
+        return []
+      }
+
       return [
         ModifyArgType.SELVA_MODIFY_ARG_OP_OBJ_META,
         strPath,
@@ -217,40 +220,13 @@ export async function set(client: BasedDbClient, opts: any) {
   const args: any[] = []
   const edgeArgs: any[] = []
   collected?.forEach((props: Required<BasedSchemaCollectProps>) => {
-    let { path, value } = props
+    let { path } = props
 
     if (path.length === 1 && path[0] === 'type') {
       return
     }
 
-    if (props?.fieldSchema?.type === 'text') {
-      if (value.$delete === true) {
-        args.push(
-          ...toModifyArgs({
-            path: [...props.path],
-            fieldSchema: { type: 'string' },
-            value: value,
-          })
-        )
-
-        return
-      }
-
-      if (value.$default) {
-        value = value.$default
-      }
-      for (const lang in value) {
-        args.push(
-          ...toModifyArgs({
-            path: [...props.path, lang],
-            fieldSchema: { type: 'string' },
-            value: value.$default ? { $default: value[lang] } : value[lang],
-          })
-        )
-      }
-
-      args.push(...toModifyArgs(props))
-    } else if (['reference', 'references'].includes(props?.fieldSchema?.type)) {
+    if (['reference', 'references'].includes(props?.fieldSchema?.type)) {
       edgeArgs.push(...toModifyArgs(props))
     } else {
       args.push(...toModifyArgs(props))

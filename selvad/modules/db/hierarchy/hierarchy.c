@@ -778,9 +778,6 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
                   selva_strerror(err));
         return;
     }
-    if (send_events) {
-        SelvaSubscriptions_DeferHierarchyDeletionEvents(hierarchy, node);
-    }
 
     delete_all_node_aliases(hierarchy, obj);
 
@@ -946,8 +943,6 @@ static int cross_insert_children(
                  */
                 publishParentsUpdate(hierarchy, child);
                 publishAncestorsUpdate(hierarchy, child);
-
-                SelvaSubscriptions_DeferHierarchyEvents(hierarchy, child);
             }
 
             res++; /* Count actual insertions */
@@ -955,10 +950,6 @@ static int cross_insert_children(
 
         publishChildrenUpdate(hierarchy, node);
         publishDescendantsUpdate(hierarchy, node);
-    }
-
-    if (send_events) {
-        SelvaSubscriptions_DeferHierarchyEvents(hierarchy, node);
     }
 
     /*
@@ -1047,16 +1038,10 @@ static int cross_insert_parents(
                  */
                 publishChildrenUpdate(hierarchy, parent);
                 publishDescendantsUpdate(hierarchy, parent);
-
-                SelvaSubscriptions_DeferHierarchyEvents(hierarchy, parent);
             }
 
             res++;
         }
-    }
-
-    if (send_events) {
-        SelvaSubscriptions_DeferHierarchyEvents(hierarchy, node);
     }
 
     /*

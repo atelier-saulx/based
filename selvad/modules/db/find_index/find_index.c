@@ -165,7 +165,7 @@ static void update_index(
      * Presumably as long as this function is called the owner_ctx pointer
      * should be always point to a valid icb too.
      */
-    icb = (struct SelvaFindIndexControlBlock *)marker->marker_action_owner_ctx;
+    icb = (struct SelvaFindIndexControlBlock *)marker->action.owner_ctx;
 
     if (event_flags & SELVA_SUBSCRIPTION_FLAG_CL_HIERARCHY) {
         /*

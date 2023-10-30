@@ -138,37 +138,62 @@ struct Selva_SubscriptionMarker {
     Selva_SubscriptionMarkerId marker_id;
     enum SelvaSubscriptionsMarkerFlags marker_flags;
 
-    enum SelvaTraversal dir;
-    union {
-        /*
-         * node_id is never used when SELVA_SUBSCRIPTION_FLAG_TRIGGER is set.
-         */
-        Selva_NodeId node_id;
-        enum Selva_SubscriptionTriggerType event_type;
-    };
-    /*
-     * Which one is used depends on dir.
+    /**
+     * Trigger marker specific.
+     * Only used when SELVA_SUBSCRIPTION_FLAG_TRIGGER is set.
      */
-    union {
-        char *ref_field; /*!< Ref field name for traversal when dir requires it. */
-        struct rpn_expression *traversal_expression; /*!< Used when SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION. */
-    };
+    struct {
+        enum Selva_SubscriptionTriggerType event_type;
+    } trigger_marker;
+
+    /**
+     * Change marker specific.
+     * Never used when SELVA_SUBSCRIPTION_FLAG_TRIGGER or SELVA_SUBSCRIPTION_FLAG_MISSING is set.
+     */
+    struct {
+        Selva_NodeId *node_ids;
+        size_t nr_node_ids;
+        enum SelvaTraversal dir;
+
+        /*
+         * Which one is used depends on dir.
+         */
+        union {
+            /**
+             * Ref field name for traversal when dir requires it.
+             * - SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD
+             * - SELVA_HIERARCHY_TRAVERSAL_EDGE_FIELD
+             * - SELVA_HIERARCHY_TRAVERSAL_FIELD
+             * - SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
+             */
+            char *ref_field;
+            /**
+             * Used when SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION.
+             */
+            struct rpn_expression *traversal_expression;
+        };
+    } change_marker;
+
     struct rpn_ctx *filter_ctx;
     struct rpn_expression *filter_expression;
 
-    /**
-     * A function that should defer an action that will be typically taken at later moment.
-     * Typically this function should add the subscription in one of the
-     * deferred events lists and eventually SelvaSubscriptions_SendDeferredEvents
-     * will be called to handle the event. Normally all this mangling is done just
-     * to dedup multiple events for the same subscription but this function
-     * pointer can be alternatively used to execute or defer any action.
-     */
-    Selva_SubscriptionMarkerAction *marker_action;
-    /**
-     * A pointer to optional data for the action to grab the required context.
-     */
-    void *marker_action_owner_ctx;
+    char *fields; /* \n separated and \0 terminated list of field names considered for change events. */
+
+    struct {
+        /**
+         * A function that should defer an action that will be typically taken at later moment.
+         * Typically this function should add the subscription in one of the
+         * deferred events lists and eventually SelvaSubscriptions_SendDeferredEvents
+         * will be called to handle the event. Normally all this mangling is done just
+         * to dedup multiple events for the same subscription but this function
+         * pointer can be alternatively used to execute or defer any action.
+         */
+        Selva_SubscriptionMarkerAction *marker_action;
+        /**
+         * A pointer to optional data for the action to grab the required context.
+         */
+        void *owner_ctx;
+    } action;
 
     /*
      * Temp storage for tracking filter result changes.
@@ -178,17 +203,17 @@ struct Selva_SubscriptionMarker {
      */
     struct {
         /**
-         * Flags for deferred events.
-         * defer_event() will OR the flags received to this.
-         */
-        enum SelvaSubscriptionsMarkerFlags flags;
-
-        /**
          * The node that is undergoing a change.
          * This shall be used as an invariant between function calls to
          * subscriptions.
          */
         Selva_NodeId node_id;
+
+        /**
+         * Flags for deferred events.
+         * defer_event() will OR the flags received to this.
+         */
+        enum SelvaSubscriptionsMarkerFlags flags;
 
         /**
          * Filter result on SelvaSubscriptions_FieldChangePrecheck().
@@ -203,7 +228,6 @@ struct Selva_SubscriptionMarker {
 
     struct SVector subs; /*!< Subscriptions using this marker. */
     RB_ENTRY(Selva_SubscriptionMarker) _mrk_index_entry; /*!< Entry for hierarchy->mrks_head */
-    char fields[]; /* \n separated and \0 terminated list of field names considered for change events. */
 };
 
 /**
@@ -235,7 +259,6 @@ struct SelvaSubscriptions_DeferredEvents {
 struct SelvaSubscriptions_PubsubMessage {
     Selva_SubscriptionMarkerId marker_id;
     enum SelvaSubscriptionsMarkerFlags flags;
-    Selva_NodeId node_id;
     Selva_SubscriptionId *sub_ids; /* Expect uint64_le_p */
     size_t sub_ids_size;
 };
@@ -409,14 +432,11 @@ void SelvaSubscriptions_InheritEdge(
 /**
  * Defer an event if id_str was a missing accessor a subscription was waiting for.
  */
-void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *id_str, size_t id_len);
+void SelvaSubscriptions_DeferMissingAccessorEvents(
+        struct SelvaHierarchy *hierarchy,
+        const char *id_str,
+        size_t id_len);
 
-void SelvaSubscriptions_DeferHierarchyEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node);
-void SelvaSubscriptions_DeferHierarchyDeletionEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node);
 void SelvaSubscriptions_FieldChangePrecheck(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);
