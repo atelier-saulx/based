@@ -322,7 +322,10 @@ export type BasedSchemaType = {
 
 // this is the return value,, optional for insert
 export type BasedSchema = {
-  languages: Partial<Record<BasedSchemaLanguage, BasedSchemaLanguage[]>>
+  languages: BasedSchemaLanguage[]
+  languageFallBackStrategy?: Partial<
+    Record<BasedSchemaLanguage, BasedSchemaLanguage[]>
+  >
   root: BasedSchemaType
   // in our setup this is used as top level /$defs/[name]/
   // in our setup this is used as top level /types/[name]/$defs/[name]

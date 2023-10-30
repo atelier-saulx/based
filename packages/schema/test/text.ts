@@ -22,7 +22,7 @@ const schema: BasedSchema = {
     },
   },
   $defs: {},
-  languages: { en: ['en'] },
+  languages: { en: ['en'], de: ['en'], fr: ['aa'] },
   root: {
     fields: {},
   },
