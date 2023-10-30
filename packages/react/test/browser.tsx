@@ -15,6 +15,8 @@ const Tester = () => {
     payload: { bla: true },
   })
 
+  // useQuery('')
+
   const x = useQuery(q.name, q.payload)
 
   const payloads = [
