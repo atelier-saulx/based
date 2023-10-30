@@ -47,7 +47,7 @@ const opts: Opts<BasedSetTarget> = {
         }
       },
       $language: async (args) => {
-        if (!args.schema.languages.includes(args.value)) {
+        if (!Object.keys(args.schema.languages).includes(args.value)) {
           args.error(ParseError.languageNotSupported)
           return
         }

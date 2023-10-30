@@ -64,8 +64,8 @@ export type BasedSchemaContentMediaType =
 
 export type BasedSchemaFieldShared = {
   hooks?:
-  | { interval?: number; hook: string }
-  | { interval?: number; hook: string }[]
+    | { interval?: number; hook: string }
+    | { interval?: number; hook: string }[]
   type?: BasedSchemaFieldType
   $id?: string
   $schema?: string
@@ -97,67 +97,67 @@ export type BasedSchemaStringShared = {
   contentMediaType?: BasedSchemaContentMediaType // 'image/*'
   pattern?: BasedSchemaPattern // TODO: does not exist
   format?:
-  | 'email'
-  | 'URL'
-  | 'MACAddress'
-  | 'IP'
-  | 'IPRange'
-  | 'FQDN'
-  | 'IBAN'
-  | 'BIC'
-  | 'alpha'
-  | 'alphaLocales'
-  | 'alphanumeric'
-  | 'alphanumericLocales'
-  | 'passportNumber'
-  | 'port'
-  | 'lowercase'
-  | 'uppercase'
-  | 'ascii'
-  | 'semVer'
-  | 'surrogatePair'
-  | 'IMEI'
-  | 'hexadecimal'
-  | 'octal'
-  | 'hexColor'
-  | 'rgbColor'
-  | 'HSL'
-  | 'ISRC'
-  | 'MD5'
-  | 'JWT'
-  | 'UUID'
-  | 'luhnNumber'
-  | 'creditCard'
-  | 'identityCard'
-  | 'EAN'
-  | 'ISIN'
-  | 'ISBN'
-  | 'ISSN'
-  | 'mobilePhone'
-  | 'mobilePhoneLocales'
-  | 'postalCode'
-  | 'postalCodeLocales'
-  | 'ethereumAddress'
-  | 'currency'
-  | 'btcAddress'
-  | 'ISO6391'
-  | 'ISO8601'
-  | 'RFC3339'
-  | 'ISO31661Alpha2'
-  | 'ISO31661Alpha3'
-  | 'ISO4217'
-  | 'base32'
-  | 'base58'
-  | 'base64'
-  | 'dataURI'
-  | 'magnetURI'
-  | 'mimeType'
-  | 'latLong'
-  | 'slug'
-  | 'strongPassword'
-  | 'taxID'
-  | 'licensePlate'
-  | 'VAT'
+    | 'email'
+    | 'URL'
+    | 'MACAddress'
+    | 'IP'
+    | 'IPRange'
+    | 'FQDN'
+    | 'IBAN'
+    | 'BIC'
+    | 'alpha'
+    | 'alphaLocales'
+    | 'alphanumeric'
+    | 'alphanumericLocales'
+    | 'passportNumber'
+    | 'port'
+    | 'lowercase'
+    | 'uppercase'
+    | 'ascii'
+    | 'semVer'
+    | 'surrogatePair'
+    | 'IMEI'
+    | 'hexadecimal'
+    | 'octal'
+    | 'hexColor'
+    | 'rgbColor'
+    | 'HSL'
+    | 'ISRC'
+    | 'MD5'
+    | 'JWT'
+    | 'UUID'
+    | 'luhnNumber'
+    | 'creditCard'
+    | 'identityCard'
+    | 'EAN'
+    | 'ISIN'
+    | 'ISBN'
+    | 'ISSN'
+    | 'mobilePhone'
+    | 'mobilePhoneLocales'
+    | 'postalCode'
+    | 'postalCodeLocales'
+    | 'ethereumAddress'
+    | 'currency'
+    | 'btcAddress'
+    | 'ISO6391'
+    | 'ISO8601'
+    | 'RFC3339'
+    | 'ISO31661Alpha2'
+    | 'ISO31661Alpha3'
+    | 'ISO4217'
+    | 'base32'
+    | 'base58'
+    | 'base64'
+    | 'dataURI'
+    | 'magnetURI'
+    | 'mimeType'
+    | 'latLong'
+    | 'slug'
+    | 'strongPassword'
+    | 'taxID'
+    | 'licensePlate'
+    | 'VAT'
 }
 
 export type BasedSchemaFieldString = {
@@ -283,10 +283,10 @@ export type BasedSchemaField =
   | BasedSchemaFieldReferences
   | BasedSchemaFieldCardinality
   | {
-    type?: BasedSchemaFieldType
-    isRequired?: boolean // our own
-    $ref: string // to mimic json schema will just load it in place (so only for setting)
-  }
+      type?: BasedSchemaFieldType
+      isRequired?: boolean // our own
+      $ref: string // to mimic json schema will just load it in place (so only for setting)
+    }
 
 export type BasedSchemaFields = {
   enum: BasedSchemaFieldEnum
@@ -322,7 +322,9 @@ export type BasedSchemaType = {
 
 // this is the return value,, optional for insert
 export type BasedSchema = {
-  languages: BasedSchemaLanguage[]
+  languages: {
+    [key in BasedSchemaLanguage]: BasedSchemaLanguage[]
+  }
   root: BasedSchemaType
   // in our setup this is used as top level /$defs/[name]/
   // in our setup this is used as top level /types/[name]/$defs/[name]
