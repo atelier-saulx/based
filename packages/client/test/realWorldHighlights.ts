@@ -174,14 +174,13 @@ test('real world highlights', async (t) => {
     ),
   })
 
-  // TODO: support $value?
   t.deepEqualIgnoreOrder(
     await client.get({
       $id: 'sp1',
       $language: 'en',
-      // component: {
-      //   $value: 'Highlights',
-      // },
+      component: {
+        $value: 'Highlights',
+      },
       children: {
         type: true,
         title: true,
@@ -217,13 +216,13 @@ test('real world highlights', async (t) => {
         date: true,
         video: true,
       },
-      // title: {
-      //   $value: 'Bla bla',
-      // },
+      title: {
+        $value: 'Bla bla',
+      },
     }),
     {
-      // component: 'Highlights',
-      // title: 'Bla bla',
+      component: 'Highlights',
+      title: 'Bla bla',
       children: [
         { id: 'ma1', type: 'match', title: 'match 1' },
         { id: 'ma2', type: 'match', title: 'match 2' },

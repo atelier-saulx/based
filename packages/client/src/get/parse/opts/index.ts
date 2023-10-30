@@ -244,6 +244,13 @@ export async function parseGetOpts(
               })
               args.collect(true)
               return
+            } else if (value.$value) {
+              target.defaultValues.push({
+                path: path,
+                value: value.$value,
+              })
+              // apply default value but don't collect operation to execute
+              return
             }
 
             return {

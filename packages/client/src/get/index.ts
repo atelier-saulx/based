@@ -11,6 +11,8 @@ export function applyDefault(
 ): void {
   for (let i = 0; i < path.length - 1; i++) {
     const part = path[i]
+    const next = path[i + 1]
+
     if (!obj[part]) {
       const o = {}
       setByPath(o, path.slice(i + 1), value)
@@ -20,7 +22,9 @@ export function applyDefault(
 
     obj = obj[part]
 
-    if (Array.isArray(obj)) {
+    if (typeof next === 'number') {
+      // specific indexed paths are set specifically
+    } else if (Array.isArray(obj)) {
       obj.forEach((x) => applyDefault(x, { path: path.slice(i + 1), value }))
       return
     }

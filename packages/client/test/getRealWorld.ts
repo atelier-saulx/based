@@ -70,8 +70,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// TODO: waiting for $value
-test.skip('real world highlights', async (t) => {
+test('real world highlights', async (t) => {
   const { client } = t.context
   await client.set({
     $language: 'en',
