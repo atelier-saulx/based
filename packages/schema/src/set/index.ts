@@ -38,6 +38,11 @@ const opts: Opts<BasedSetTarget> = {
           args.error(ParseError.incorrectFormat)
           return
         }
+
+        if (args.prev !== args.root) {
+          args.prev.collect({ $delete: true })
+        }
+
         return
       },
       $id: async (args) => {

@@ -326,6 +326,8 @@ test('$default in collected path + $merge:false', async (t) => {
   })
   t.is(r.errors.length, 0)
   t.deepEqual(resultCollect(r), [
+    { path: ['text'], value: { $delete: true } },
+
     { path: ['text', 'en'], value: { $default: 'title' } },
     {
       path: ['text'],
