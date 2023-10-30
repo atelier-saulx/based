@@ -1686,22 +1686,6 @@ test('set - push into array', async (t) => {
     },
   })
 
-  // TODO: needs validation
-  // let e = await t.throwsAsync(
-  //   client.set({
-  //     $id: id,
-  //     objRec: {
-  //       abba: {
-  //         intArray: {
-  //           $add: [2, 2],
-  //         },
-  //       },
-  //     },
-  //   })
-  // )
-
-  // t.true(e.stack?.includes('Unknown operator for arrays'))
-
   await client.set({
     $id: id,
     objRec: {
