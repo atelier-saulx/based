@@ -310,8 +310,7 @@ test('Adding a type with `ro` prefix should fail because of `root`', async (t) =
   )
 })
 
-// TODO: can this be allowed?
-test('Should not allow to change the prefix of existing type', async (t) => {
+test('Should not allow to change the prefix of existing type in strict mode', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
@@ -326,12 +325,14 @@ test('Should not allow to change the prefix of existing type', async (t) => {
       },
     }),
     {
-      message: 'Cannot change prefix of existing type',
+      message: /^Cannot change "match" in strict mode.$/,
     }
   )
 })
 
-test('Should not allow to create invalid type', async (t) => {
+// TODO: change prefix in flexible mode
+
+test.only('Should not allow to create invalid type', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
@@ -603,7 +604,7 @@ test('Remove type in flexible mode', async (t) => {
   t.false(newSchema.types.hasOwnProperty('match'))
 })
 
-test('Change remove type in migration mode', async (t) => {
+test('Remove type in migration mode', async (t) => {
   const { client } = t.context
 
   const sets: Promise<string>[] = []

@@ -12,6 +12,8 @@ import { SchemaMutations, SchemaUpdateMode } from '../types'
 import { BasedQuery } from '@based/client'
 import { migrateNodes } from './migrateNodes'
 import { getMutations } from './getMutations'
+import { validateSchemaMutations } from './checkRules'
+import { mergeSchema } from './mergeSchema'
 
 type EdgeConstraint = {
   prefix: string
@@ -319,6 +321,7 @@ const checkMutationsForExistingNodes = async (
     let path: string[] = []
     if (
       mutation.mutation !== 'delete_type' &&
+      mutation.mutation !== 'change_type' &&
       mutation.mutation !== 'new_type'
     ) {
       path = mutation.path
@@ -376,10 +379,10 @@ export async function updateSchema(
   merge: boolean = true,
   mode: SchemaUpdateMode = SchemaUpdateMode.strict
 ): Promise<BasedSchema> {
-  const newTypes: [string, string][] = []
-  const typesToDelete: [string, string][] = []
-  const newConstraints: EdgeConstraint[] = []
-  const mutations: SchemaMutations = []
+  // const newTypes: [string, string][] = []
+  // const typesToDelete: [string, string][] = []
+  // const newConstraints: EdgeConstraint[] = []
+  // const mutations: SchemaMutations = []
 
   let currentSchema = client.schema
   if (!currentSchema) {
@@ -387,124 +390,125 @@ export async function updateSchema(
     currentSchema = DEFAULT_SCHEMA
     client.schema = DEFAULT_SCHEMA
 
-    newTypes.push(['ro', 'root'])
+    // newTypes.push(['ro', 'root'])
+    await client.command('hierarchy.types.add', ['ro', 'root'])
   }
-  // const newSchema = deepCopy(currentSchema)
-  let newSchema: BasedSchema = {
-    $defs: {},
-    language: 'en',
-    prefixToTypeMapping: {},
-    root: { fields: {} },
-    types: {},
-  }
-
-  newSchema = {
-    ...newSchema,
-    ...mergeLanguages(currentSchema, opts),
-  }
-
-  newSchema.root = currentSchema.root
-  newSchema.root.fields = mergeFields(
-    ['root'],
-    newSchema.root.fields,
-    currentSchema.root.fields,
-    mutations,
-    true,
-    mode
-  )
-  deepMerge(newSchema.root, opts.root)
-  newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
-
-  // TODO: testing this
-  const result = getMutations(currentSchema, opts)
-
-  const currentTypeNames = Object.keys(currentSchema.types || {})
-  const optsTypeNames = Object.keys(opts.types || {})
-  const typesToParse = new Set([...currentTypeNames, ...optsTypeNames])
-
-  for (const typeName of typesToParse) {
-    const typeDef = (opts as BasedSchema).types[typeName]
-    const oldDef = currentSchema.types[typeName]
-    if (
-      // TODO: Remove when @based/schema is updated
-      // @ts-ignore
-      typeDef?.$delete ||
-      (merge === false && !optsTypeNames.includes(typeName))
-    ) {
-      // type to delete
-      if (mode === SchemaUpdateMode.strict) {
-        throw new Error(`Cannot remove "${typeName}" in strict mode.`)
-      }
-      typesToDelete.push([oldDef?.prefix, typeName])
-      mutations.push({
-        mutation: 'delete_type',
-        type: typeName,
-      })
-      continue
-    }
-
-    const prefix =
-      typeDef?.prefix ??
-      oldDef?.prefix ??
-      generateNewPrefix(typeName, currentSchema)
-
-    if (!currentTypeNames.includes(typeName)) {
-      // new type
-
-      checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
-      // const newDef: any = {
-      //   prefix,
-      //   fields: deepCopy(DEFAULT_FIELDS),
-      // }
-      // deepMerge(newDef, typeDef)
-      const newDef = {
-        ...typeDef,
-        prefix,
-        fields: mergeFields(
-          [typeName],
-          {},
-          { ...DEFAULT_FIELDS, ...typeDef.fields },
-          mutations,
-          merge,
-          mode
-        ),
-      }
-      newSchema.types[typeName] = newDef
-
-      newTypes.push([prefix, typeName])
-      newSchema.prefixToTypeMapping[prefix] = typeName
-    } else {
-      // existing type
-
-      checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
-
-      // TODO: guard for breaking changes
-      // newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
-      if (merge) {
-        newSchema.types[typeName] = {
-          ...typeDef,
-          fields: mergeFields(
-            [typeName],
-            oldDef.fields,
-            { ...DEFAULT_FIELDS, ...(typeDef?.fields || oldDef?.fields || {}) },
-            mutations,
-            merge,
-            mode
-          ),
-        }
-      } else {
-        newSchema.types[typeName] = typeDef
-      }
-    }
-
-    schemaWalker(
-      prefix,
-      [],
-      newSchema.types[typeName],
-      newConstraints,
-      newSchema
-    )
-  }
+  // // const newSchema = deepCopy(currentSchema)
+  // let newSchema: BasedSchema = {
+  //   $defs: {},
+  //   language: 'en',
+  //   prefixToTypeMapping: {},
+  //   root: { fields: {} },
+  //   types: {},
+  // }
+  //
+  // newSchema = {
+  //   ...newSchema,
+  //   ...mergeLanguages(currentSchema, opts),
+  // }
+  //
+  // newSchema.root = currentSchema.root
+  // newSchema.root.fields = mergeFields(
+  //   ['root'],
+  //   newSchema.root.fields,
+  //   currentSchema.root.fields,
+  //   mutations,
+  //   true,
+  //   mode
+  // )
+  // deepMerge(newSchema.root, opts.root)
+  // newSchema.prefixToTypeMapping = currentSchema.prefixToTypeMapping
+  //
+  // // TODO: testing this
+  // const result = getMutations(currentSchema, opts)
+  //
+  // const currentTypeNames = Object.keys(currentSchema.types || {})
+  // const optsTypeNames = Object.keys(opts.types || {})
+  // const typesToParse = new Set([...currentTypeNames, ...optsTypeNames])
+  //
+  // for (const typeName of typesToParse) {
+  //   const typeDef = (opts as BasedSchema).types[typeName]
+  //   const oldDef = currentSchema.types[typeName]
+  //   if (
+  //     // TODO: Remove when @based/schema is updated
+  //     // @ts-ignore
+  //     typeDef?.$delete ||
+  //     (merge === false && !optsTypeNames.includes(typeName))
+  //   ) {
+  //     // type to delete
+  //     if (mode === SchemaUpdateMode.strict) {
+  //       throw new Error(`Cannot remove "${typeName}" in strict mode.`)
+  //     }
+  //     typesToDelete.push([oldDef?.prefix, typeName])
+  //     mutations.push({
+  //       mutation: 'delete_type',
+  //       type: typeName,
+  //     })
+  //     continue
+  //   }
+  //
+  //   const prefix =
+  //     typeDef?.prefix ??
+  //     oldDef?.prefix ??
+  //     generateNewPrefix(typeName, currentSchema)
+  //
+  //   if (!currentTypeNames.includes(typeName)) {
+  //     // new type
+  //
+  //     checkTypeWithSamePrefix(currentSchema, typeDef, typeName)
+  //     // const newDef: any = {
+  //     //   prefix,
+  //     //   fields: deepCopy(DEFAULT_FIELDS),
+  //     // }
+  //     // deepMerge(newDef, typeDef)
+  //     const newDef = {
+  //       ...typeDef,
+  //       prefix,
+  //       fields: mergeFields(
+  //         [typeName],
+  //         {},
+  //         { ...DEFAULT_FIELDS, ...typeDef.fields },
+  //         mutations,
+  //         merge,
+  //         mode
+  //       ),
+  //     }
+  //     newSchema.types[typeName] = newDef
+  //
+  //     newTypes.push([prefix, typeName])
+  //     newSchema.prefixToTypeMapping[prefix] = typeName
+  //   } else {
+  //     // existing type
+  //
+  //     checkChangingExistingTypePrefix(currentSchema, prefix, typeName)
+  //
+  //     // TODO: guard for breaking changes
+  //     // newSchema.types[typeName] = merge ? deepMerge(oldDef, typeDef) : typeDef
+  //     if (merge) {
+  //       newSchema.types[typeName] = {
+  //         ...typeDef,
+  //         fields: mergeFields(
+  //           [typeName],
+  //           oldDef.fields,
+  //           { ...DEFAULT_FIELDS, ...(typeDef?.fields || oldDef?.fields || {}) },
+  //           mutations,
+  //           merge,
+  //           mode
+  //         ),
+  //       }
+  //     } else {
+  //       newSchema.types[typeName] = typeDef
+  //     }
+  //   }
+  //
+  //   schemaWalker(
+  //     prefix,
+  //     [],
+  //     newSchema.types[typeName],
+  //     newConstraints,
+  //     newSchema
+  //   )
+  // }
 
   // if (opts.types) {
   //   for (const typeName in opts.types) {
@@ -538,44 +542,62 @@ export async function updateSchema(
   //     schemaWalker(prefix, [], typeDef, newConstraints, newSchema)
   //   }
   // }
+  //
+  // if (mode === SchemaUpdateMode.flexible) {
+  //   await checkMutationsForExistingNodes(client, mutations)
+  // } else {
+  //   await migrateNodes(client, mutations)
+  // }
 
-  if (mode === SchemaUpdateMode.flexible) {
-    await checkMutationsForExistingNodes(client, mutations)
-  } else {
-    await migrateNodes(client, mutations)
-  }
+  const mutations = getMutations(currentSchema, opts)
+  console.log('=======================================')
+  mutations.forEach((mutation) => {
+    console.log(
+      mutation.mutation,
+      mutation.type,
+      // @ts-ignore
+      mutation.path,
+      // @ts-ignore
+      mutation.old,
+      // @ts-ignore
+      mutation.new
+    )
+  })
+  console.log('---------------------------------------')
+  const newSchema = mergeSchema(currentSchema, mutations)
+  validateSchemaMutations(currentSchema, opts, mutations, mode)
 
   await client.set({
     $id: 'root',
     schema: newSchema,
   })
-
-  if (newTypes?.length) {
-    await Promise.all(
-      newTypes.map(([prefix, typeName]) => {
-        return client.command('hierarchy.types.add', [prefix, typeName])
-      })
-    )
-  }
-
-  if (newConstraints?.length) {
-    await Promise.all(
-      newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
-        console.log('yoyo', [
-          prefix,
-          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
-          field,
-          bidirectional?.fromField ?? '',
-        ])
-        return client.command('hierarchy.addConstraint', [
-          prefix,
-          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
-          field,
-          bidirectional?.fromField ?? '',
-        ])
-      })
-    )
-  }
+  //
+  // if (newTypes?.length) {
+  //   await Promise.all(
+  //     newTypes.map(([prefix, typeName]) => {
+  //       return client.command('hierarchy.types.add', [prefix, typeName])
+  //     })
+  //   )
+  // }
+  //
+  // if (newConstraints?.length) {
+  //   await Promise.all(
+  //     newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
+  //       console.log('yoyo', [
+  //         prefix,
+  //         `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
+  //         field,
+  //         bidirectional?.fromField ?? '',
+  //       ])
+  //       return client.command('hierarchy.addConstraint', [
+  //         prefix,
+  //         `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
+  //         field,
+  //         bidirectional?.fromField ?? '',
+  //       ])
+  //     })
+  //   )
+  // }
 
   return newSchema
 }

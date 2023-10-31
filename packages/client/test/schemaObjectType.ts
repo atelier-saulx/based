@@ -72,7 +72,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.only('temp', async (t) => {
+test('temp', async (t) => {
   const { client } = t.context
 
   await client.updateSchema({

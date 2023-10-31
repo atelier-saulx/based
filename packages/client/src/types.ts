@@ -1,4 +1,9 @@
-import { BasedSchemaField } from '@based/schema'
+import {
+  BasedSchemaField,
+  BasedSchemaFieldPartial,
+  BasedSchemaType,
+  BasedSchemaTypePartial,
+} from '@based/schema'
 import { Command } from './protocol/types'
 
 export type CommandResponseListeners = Map<
@@ -22,27 +27,51 @@ export enum SchemaUpdateMode {
   migration,
 }
 
+export type NewTypeSchemaMutation = {
+  mutation: 'new_type'
+  type: string
+  new: BasedSchemaTypePartial
+}
+
+export type DeleteTypeSchemaMutation = {
+  mutation: 'delete_type'
+  type: string
+}
+
+export type ChangeTypeSchemaMutation = {
+  mutation: 'change_type'
+  type: string
+  old: BasedSchemaType
+  new: BasedSchemaTypePartial
+}
+
+export type NewFieldSchemaMutation = {
+  mutation: 'new_field'
+  type: string
+  path: string[]
+  new: BasedSchemaFieldPartial
+}
+
+export type ChangeFieldSchemaMutation = {
+  mutation: 'change_field'
+  type: string
+  path: string[]
+  old: BasedSchemaField
+  new: BasedSchemaFieldPartial
+}
+
+export type RemoveFieldSchemaMutation = {
+  mutation: 'remove_field'
+  type: string
+  path: string[]
+  old: BasedSchemaField
+}
+
 export type SchemaMutations = (
-  | {
-      mutation: 'new_type'
-      type: string
-      new: BasedSchemaField
-    }
-  | {
-      mutation: 'delete_type'
-      type: string
-    }
-  | {
-      mutation: 'change_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-      new: BasedSchemaField
-    }
-  | {
-      mutation: 'remove_field'
-      type: string
-      path: string[]
-      old: BasedSchemaField
-    }
+  | NewTypeSchemaMutation
+  | DeleteTypeSchemaMutation
+  | ChangeTypeSchemaMutation
+  | NewFieldSchemaMutation
+  | ChangeFieldSchemaMutation
+  | RemoveFieldSchemaMutation
 )[]
