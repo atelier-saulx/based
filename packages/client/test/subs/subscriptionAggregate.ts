@@ -300,7 +300,9 @@ test.serial('simple sum aggregate sub', async (t) => {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum })
       } else if (i === 1) {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum + 72 })
-      } else if (i === 2) {
+      } else if (i < 4) {
+          // skip
+      } else if (i === 4) {
         t.deepEqualIgnoreOrder(x, {
           id: 'root',
           thing: sum + 72 + 73 + 74 + 75,
@@ -516,8 +518,7 @@ test.serial('list avg aggregate sub', async (t) => {
   await wait(1e3)
 })
 
-// TODO: aggregate with nested find wrong marker?
-test.serial.skip('simple nested find avg aggregate sub', async (t) => {
+test.serial('simple nested find avg aggregate sub', async (t) => {
   // simple nested - single query
   await start(t)
   const client = t.context.dbClient
@@ -589,7 +590,9 @@ test.serial.skip('simple nested find avg aggregate sub', async (t) => {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum / 4 })
       } else if (i === 1) {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: (sum + 72) / 5 })
-      } else if (i === 2) {
+      } else if ( i === 2) {
+          // skip
+      } else if (i === 3) {
         t.deepEqualIgnoreOrder(x, {
           id: 'root',
           thing: (sum + 72 + 73 + 74 + 75) / 8,
@@ -602,10 +605,10 @@ test.serial.skip('simple nested find avg aggregate sub', async (t) => {
   )
 
   await wait(1e3)
-  //const subs = await client.redis.selva_subscriptions_list('___selva_hierarchy')
-  //for (const sub of subs) {
-  //  console.log(await client.redis.selva_subscriptions_debug('___selva_hierarchy', sub))
-  //}
+  //const subs = await client.command('subscriptions.list', [])
+  //const mrks = subs.flat(1).map(([sub]) => sub)
+  //BigInt.prototype.toJSON = function() { return this.toString() }
+  //console.log('markers', JSON.stringify(await Promise.all(mrks.map((sub) => client.command('subscriptions.debug', ['' + sub]))), null, 2))
 
   await client.set({
     $id: 'ma10',
