@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 SHELL := /bin/bash
+MAKEFLAGS += --jobs=4 --output-sync=target
 
 include common.mk
 export uname_S
