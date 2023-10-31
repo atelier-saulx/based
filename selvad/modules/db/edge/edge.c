@@ -575,10 +575,7 @@ int Edge_Add(
     }
 
     SelvaSubscriptions_InheritEdge(hierarchy, src_node, dst_node, field_name_str, field_name_len);
-    /*
-     * Note that the regular change events for edges are only sent by the modify
-     * command. Therefore we expect we don't need to do anything here.
-     */
+    SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, src_node, field_name_str, field_name_len);
 
     return err;
 }
