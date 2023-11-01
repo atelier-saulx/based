@@ -12,7 +12,7 @@ import { SchemaMutations, SchemaUpdateMode } from '../types'
 import { BasedQuery } from '@based/client'
 import { migrateNodes } from './migrateNodes'
 import { getMutations } from './getMutations'
-import { validateSchemaMutations } from './checkRules'
+import { validateSchemaMutations } from './validationRules'
 import { mergeSchema } from './mergeSchema'
 
 type EdgeConstraint = {
@@ -87,41 +87,41 @@ const findEdgeConstraints = (
   constraints.push(ref)
 }
 
-const checkInvalidFieldType = (typeSchema: any) => {
-  if (
-    typeSchema.type &&
-    ![
-      'enum',
-      'array',
-      'object',
-      'set',
-      'record',
-      'string',
-      'boolean',
-      'number',
-      'json',
-      'integer',
-      'timestamp',
-      'reference',
-      'references',
-      'text',
-      'cardinality',
-    ].includes(typeSchema.type)
-  ) {
-    throw new Error(`Invalid field type ${typeSchema.type}`)
-  }
-}
+// const checkInvalidFieldType = (typeSchema: any) => {
+//   if (
+//     typeSchema.type &&
+//     ![
+//       'enum',
+//       'array',
+//       'object',
+//       'set',
+//       'record',
+//       'string',
+//       'boolean',
+//       'number',
+//       'json',
+//       'integer',
+//       'timestamp',
+//       'reference',
+//       'references',
+//       'text',
+//       'cardinality',
+//     ].includes(typeSchema.type)
+//   ) {
+//     throw new Error(`Invalid field type ${typeSchema.type}`)
+//   }
+// }
 
-const checkArrayFieldTypeRequirements = (typeSchema: any) => {
-  if (typeSchema?.type === 'array') {
-    const keys = Object.keys(typeSchema)
-    for (const k of keys) {
-      if (!(k === 'type' || k === 'values')) {
-        throw new Error(`Wrong field passed for type array on schema (${k})`)
-      }
-    }
-  }
-}
+// const checkArrayFieldTypeRequirements = (typeSchema: any) => {
+//   if (typeSchema?.type === 'array') {
+//     const keys = Object.keys(typeSchema)
+//     for (const k of keys) {
+//       if (!(k === 'type' || k === 'values')) {
+//         throw new Error(`Wrong field passed for type array on schema (${k})`)
+//       }
+//     }
+//   }
+// }
 
 // TODO: Add this again
 // const checkTextFieldTypeRequirements = (
@@ -187,8 +187,8 @@ function schemaWalker(
     )
   }
 
-  checkInvalidFieldType(typeSchema)
-  checkArrayFieldTypeRequirements(typeSchema)
+  // checkInvalidFieldType(typeSchema)
+  // checkArrayFieldTypeRequirements(typeSchema)
   findEdgeConstraints(prefix, path, typeSchema, constraints)
 }
 
@@ -565,7 +565,21 @@ export async function updateSchema(
   })
   console.log('---------------------------------------')
   const newSchema = mergeSchema(currentSchema, mutations)
-  validateSchemaMutations(currentSchema, opts, mutations, mode)
+  // console.log('----====', JSON.stringify(newSchema, null, 2))
+  await validateSchemaMutations(client, currentSchema, opts, mutations, mode)
+
+  // TODO: integrate this
+  // EdgeConstraints
+  const newConstraints: EdgeConstraint[] = []
+  if (opts.types) {
+    for (const typeName in opts.types) {
+      if (newSchema.types[typeName]) {
+        const typeDef = newSchema.types[typeName]
+        const prefix = typeDef.prefix
+        findEdgeConstraints(prefix, [], typeDef, newConstraints)
+      }
+    }
+  }
 
   await client.set({
     $id: 'root',
@@ -579,25 +593,38 @@ export async function updateSchema(
   //     })
   //   )
   // }
-  //
-  // if (newConstraints?.length) {
-  //   await Promise.all(
-  //     newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
-  //       console.log('yoyo', [
-  //         prefix,
-  //         `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
-  //         field,
-  //         bidirectional?.fromField ?? '',
-  //       ])
-  //       return client.command('hierarchy.addConstraint', [
-  //         prefix,
-  //         `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
-  //         field,
-  //         bidirectional?.fromField ?? '',
-  //       ])
-  //     })
-  //   )
-  // }
+  const newTypeMutations = mutations.filter(
+    (mutation) => mutation.mutation === 'new_type'
+  )
+  if (newTypeMutations.length) {
+    await Promise.all(
+      newTypeMutations.map((mutation) => {
+        return client.command('hierarchy.types.add', [
+          newSchema.types[mutation.type].prefix,
+          mutation.type,
+        ])
+      })
+    )
+  }
+
+  if (newConstraints?.length) {
+    await Promise.all(
+      newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
+        console.log('yoyo', [
+          prefix,
+          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
+          field,
+          bidirectional?.fromField ?? '',
+        ])
+        return client.command('hierarchy.addConstraint', [
+          prefix,
+          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
+          field,
+          bidirectional?.fromField ?? '',
+        ])
+      })
+    )
+  }
 
   return newSchema
 }

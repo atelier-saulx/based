@@ -313,6 +313,38 @@ test('Adding a type with `ro` prefix should fail because of `root`', async (t) =
 test('Should not allow to change the prefix of existing type in strict mode', async (t) => {
   const { client } = t.context
 
+  await client.set({
+    type: 'match',
+    title: {
+      en: 'this is title',
+    },
+  })
+
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            prefix: 'me',
+            fields: {
+              title: { type: 'text' },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message: /^Cannot mutate "match" in flexible mode with exsiting data.$/,
+    }
+  )
+})
+
+test('Should not allow to change the prefix in flexible mode if there exist nodes', async (t) => {
+  const { client } = t.context
+
   await t.throwsAsync(
     client.updateSchema({
       types: {
@@ -330,9 +362,7 @@ test('Should not allow to change the prefix of existing type in strict mode', as
   )
 })
 
-// TODO: change prefix in flexible mode
-
-test.only('Should not allow to create invalid type', async (t) => {
+test('Should not allow to create invalid type', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
@@ -348,7 +378,7 @@ test.only('Should not allow to create invalid type', async (t) => {
       },
     }),
     {
-      message: 'Invalid field type nonExisting',
+      message: 'Invalid field type "nonExisting" on "aNewType.title"',
     }
   )
 })
@@ -369,7 +399,8 @@ test('Array field type properties validation', async (t) => {
       },
     }),
     {
-      message: 'Wrong field passed for type array on schema (items)',
+      message:
+        'Invalid property "items" for array definition on "aNewType.intArray"',
     }
   )
 })
@@ -442,8 +473,8 @@ test('Default prefix should not be an existing one', async (t) => {
 
   // TODO: is this a direct property of going to be a method?
   const newSchema = client.schema
-  t.true(newSchema.types['matriarch'].prefix !== 'ma')
-  t.true(newSchema.types['another'].prefix === 'an')
+  t.not(newSchema.types['matriarch'].prefix, 'ma')
+  t.is(newSchema.types['another'].prefix, 'an')
 })
 
 test('Change field type in strict mode should fail', async (t) => {
@@ -524,8 +555,6 @@ test('Remove field in strict mode', async (t) => {
       types: {
         match: {
           fields: {
-            // TODO: Remove when @based/schema is updated
-            // @ts-ignore
             title: { $delete: true },
           },
         },
@@ -537,7 +566,7 @@ test('Remove field in strict mode', async (t) => {
   )
 })
 
-test('Remove field in flexible mode', async (t) => {
+test('Remove field in flexible mode without exisitng nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -546,8 +575,6 @@ test('Remove field in flexible mode', async (t) => {
         types: {
           match: {
             fields: {
-              // TODO: Remove when @based/schema is updated
-              // @ts-ignore
               title: { $delete: true },
             },
           },
@@ -562,6 +589,38 @@ test('Remove field in flexible mode', async (t) => {
   t.false(newSchema.types['match'].fields.hasOwnProperty('title'))
 })
 
+test('Remove field in flexible mode withexisitng nodes', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    type: 'match',
+    title: {
+      en: 'this is title',
+    },
+  })
+
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          match: {
+            fields: {
+              title: { $delete: true },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message:
+        /^Cannot mutate "match.title" in flexible mode with exsiting data.$/,
+    }
+  )
+})
+
 test('Remove type in strict mode', async (t) => {
   const { client } = t.context
 
@@ -569,8 +628,6 @@ test('Remove type in strict mode', async (t) => {
     client.updateSchema({
       types: {
         match: {
-          // TODO: Remove when @based/schema is updated
-          // @ts-ignore
           $delete: true,
         },
       },
@@ -581,7 +638,7 @@ test('Remove type in strict mode', async (t) => {
   )
 })
 
-test('Remove type in flexible mode', async (t) => {
+test('Remove type in flexible mode without existing nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -589,8 +646,6 @@ test('Remove type in flexible mode', async (t) => {
       {
         types: {
           match: {
-            // TODO: Remove when @based/schema is updated
-            // @ts-ignore
             $delete: true,
           },
         },
@@ -631,8 +686,6 @@ test('Remove type in migration mode', async (t) => {
       {
         types: {
           match: {
-            // TODO: Remove when @based/schema is updated
-            // @ts-ignore
             $delete: true,
           },
         },
@@ -699,8 +752,6 @@ test('Change remove field in migration mode', async (t) => {
           match: {
             fields: {
               value: {
-                // TODO: Remove when @based/schema is updated
-                // @ts-ignore
                 $delete: true,
               },
             },

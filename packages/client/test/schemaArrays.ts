@@ -54,7 +54,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.only('Remove array field in strick mode should fail', async (t) => {
+test('Remove array field in strick mode should fail', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
