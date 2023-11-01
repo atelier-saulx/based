@@ -22,21 +22,23 @@ import { ArgsClass, Path } from './walker'
 
 export type AllowedTypes = (string | { type?: string; $filter: any | any[] })[]
 
-export type BasedSchemaFieldType =
-  | 'array'
-  | 'object'
-  | 'record'
-  | 'set'
-  | 'string'
-  | 'boolean'
-  | 'number'
-  | 'json'
-  | 'integer'
-  | 'timestamp'
-  | 'reference'
-  | 'references'
-  | 'text'
-  | 'cardinality'
+export const basedSchemaFieldTypes = [
+  'array',
+  'object',
+  'record',
+  'set',
+  'string',
+  'boolean',
+  'number',
+  'json',
+  'integer',
+  'timestamp',
+  'reference',
+  'references',
+  'text',
+  'cardinality',
+] as const
+export type BasedSchemaFieldType = (typeof basedSchemaFieldTypes)[number]
 
 export const isCollection = (type: string): boolean => {
   return type === 'array' || type === 'object' || type === 'record'
