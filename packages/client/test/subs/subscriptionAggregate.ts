@@ -301,7 +301,7 @@ test.serial('simple sum aggregate sub', async (t) => {
       } else if (i === 1) {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum + 72 })
       } else if (i < 4) {
-          // skip
+        // skip
       } else if (i === 4) {
         t.deepEqualIgnoreOrder(x, {
           id: 'root',
@@ -489,24 +489,23 @@ test.serial('list avg aggregate sub', async (t) => {
 
   await wait(2e3)
 
-  await Promise.all([
-    client.set({
-      $id: 'ma11',
-      parents: ['le0'],
-      type: 'match',
-      name: 'match 11',
-      value: 73,
-    }),
-    client.set({
-      $id: 'ma12',
-      parents: ['le1'],
-      type: 'match',
-      name: 'match 12',
-      value: 74,
-    }),
-  ])
-
+  await client.set({
+    $id: 'ma11',
+    parents: ['le0'],
+    type: 'match',
+    name: 'match 11',
+    value: 73,
+  })
   await wait(1e3)
+  await client.set({
+    $id: 'ma12',
+    parents: ['le1'],
+    type: 'match',
+    name: 'match 12',
+    value: 74,
+  })
+  await wait(1e3)
+
   await client.set({
     $id: 'ma13',
     parents: ['le0'],
@@ -590,8 +589,8 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum / 4 })
       } else if (i === 1) {
         t.deepEqualIgnoreOrder(x, { id: 'root', thing: (sum + 72) / 5 })
-      } else if ( i === 2) {
-          // skip
+      } else if (i === 2) {
+        // skip
       } else if (i === 3) {
         t.deepEqualIgnoreOrder(x, {
           id: 'root',
