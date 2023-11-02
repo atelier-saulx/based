@@ -42,7 +42,7 @@ export class SelvaServer extends EventEmitter {
 
     this.backupDir = opts.dir
     if (opts.save) {
-      this.saveInterval = opts.save === true ? 60 * 5 : opts.save.seconds
+      this.saveInterval = opts.save === true ? 60 : opts.save.seconds
     }
 
     if (this.backupDir) {
