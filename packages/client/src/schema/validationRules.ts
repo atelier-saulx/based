@@ -1,6 +1,5 @@
 import {
   BasedSchema,
-  BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
   BasedSchemaLanguage,
@@ -8,6 +7,7 @@ import {
   basedSchemaFieldTypes,
   languages,
 } from '@based/schema'
+import { BasedDbClient } from '..'
 import {
   ChangeFieldSchemaMutation,
   ChangeLanguagesMutation,
@@ -16,16 +16,10 @@ import {
   NewFieldSchemaMutation,
   NewTypeSchemaMutation,
   RemoveFieldSchemaMutation,
-  SchemaFieldMutation,
   SchemaMutation,
-  SchemaTypeMutation,
   SchemaUpdateMode,
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
-import { BasedDbClient } from '..'
-
-type ArrayElement<ArrayType extends readonly unknown[]> =
-  ArrayType extends readonly (infer ElementType)[] ? ElementType : never
 
 type ExistingNodes = {
   [fullFieldPath: string]: number

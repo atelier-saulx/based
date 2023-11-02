@@ -7,8 +7,8 @@ import {
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
-import { SchemaMutation } from '../types'
 import { deepEqual } from '@saulx/utils'
+import { SchemaMutation } from '../types'
 
 const diffField = (
   typeName: string,

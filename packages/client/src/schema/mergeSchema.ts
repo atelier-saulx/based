@@ -1,8 +1,8 @@
-import { BasedSchema, BasedSchemaField, BasedSchemaType } from '@based/schema'
+import { BasedSchema, BasedSchemaField } from '@based/schema'
 import { deepCopy, deepMerge } from '@saulx/utils'
 import { SchemaMutation } from '../types'
-import { generateNewPrefix } from './utils'
 import { getSchemaTypeFieldByPath } from '../util'
+import { generateNewPrefix } from './utils'
 
 export const DEFAULT_FIELDS: any = {
   id: { type: 'string' },
@@ -19,44 +19,12 @@ export const DEFAULT_FIELDS: any = {
   },
 }
 
-// const addDefaultFieldsToNestedProperties = (fields: any) => {
-//   for (const fieldName in fields) {
-//     fields[fieldName] = {
-//       ...DEFAULT_FIELDS,
-//       ...fields[fieldName],
-//     }
-//     if (fields[fieldName].properties) {
-//       addDefaultFieldsToNestedProperties(fields[fieldName].properties)
-//     }
-//   }
-// }
-
-// const mergeLanguages = (
-//   currentSchema: BasedSchema,
-//   opts: BasedSchemaPartial
-// ) => {
-//   const language = opts.language || currentSchema.language
-//   const translations = opts.translations || currentSchema.translations
-//   const languageFallbacks = {
-//     ...currentSchema.languageFallbacks,
-//     ...opts.languageFallbacks,
-//   }
-//   return {
-//     language,
-//     translations,
-//     languageFallbacks,
-//   }
-// }
-
 export const mergeSchema = (
   currentSchema: BasedSchema,
   mutations: SchemaMutation[]
 ) => {
   const newSchema = deepCopy(currentSchema)
-  // TODO: check changes to root
-
   // TODO: try to add DEFAULT_SCHEMA initialization here
-
   // TODO: change mutation.mutation to enum
 
   for (const mutation of mutations) {

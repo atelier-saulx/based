@@ -1,22 +1,6 @@
-import { SchemaMutation } from '../types'
 import { BasedDbClient } from '..'
+import { SchemaMutation } from '../types'
 import { getValueByPath, pathToQuery } from '../util'
-
-// type MutationHandler = (oldValue: any) => any
-//
-// const defaultMutationHandlers: {
-//   [name: string]: MutationHandler
-// } = {
-//   // probably a switch is more efficient
-//   'number-string': (oldValue) => String(oldValue),
-//   'integer-string': (oldValue) => String(oldValue),
-//   'string-number': (oldValue) => parseFloat(oldValue),
-//   'string-integer': (oldValue) => Math.round(parseFloat(oldValue)),
-//   'number-integer': (oldValue) => Math.round(oldValue),
-//   'integer-number': (oldValue) => parseFloat(oldValue),
-//   'text-string': (oldValue) => oldValue,
-//   'string-text': (oldValue) => oldValue,
-// }
 
 const PAGE_AMOUNT = 3e3
 export const migrateNodes = async (
@@ -103,7 +87,6 @@ export const migrateNodes = async (
     }
 
     if (mutation.mutation === 'change_field') {
-      // console.log('------', mutation)
       let finished = false
       let page = 0
       while (!finished) {
@@ -147,10 +130,6 @@ export const migrateNodes = async (
             let oldValue = getValueByPath(results[index], mutation.path)
             let newValue: any
             try {
-              // newValue =
-              //   defaultMutationHandlers[
-              //     `${mutation.old.type}-${mutation.new.type}`
-              //   ](oldValue)
               switch (`${mutation.old.type}-${mutation.new.type}`) {
                 case 'number-string':
                 case 'integer-string':
@@ -196,15 +175,6 @@ export const migrateNodes = async (
                 selvaObjectType = 's'
                 break
             }
-            // console.log(
-            //   '--=---',
-            //   id,
-            //   mutation.path.join('.'),
-            //   mutation.old,
-            //   mutation.new,
-            //   selvaObjectType,
-            //   newValue
-            // )
             const path =
               mutation.new.type === 'text'
                 ? mutation.path.concat(client.schema.language)
