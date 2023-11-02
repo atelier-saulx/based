@@ -550,21 +550,21 @@ export async function updateSchema(
   // }
 
   const mutations = getMutations(currentSchema, opts)
-  // console.log('=======================================')
-  // mutations.forEach((mutation) => {
-  //   console.log(
-  //     mutation.mutation,
-  //     // @ts-ignore
-  //     mutation.type,
-  //     // @ts-ignore
-  //     mutation.path,
-  //     // @ts-ignore
-  //     mutation.old,
-  //     // @ts-ignore
-  //     mutation.new
-  //   )
-  // })
-  // console.log('---------------------------------------')
+  console.log('=======================================')
+  mutations.forEach((mutation) => {
+    console.log(
+      mutation.mutation,
+      // @ts-ignore
+      mutation.type,
+      // @ts-ignore
+      mutation.path,
+      // @ts-ignore
+      mutation.old,
+      // @ts-ignore
+      mutation.new
+    )
+  })
+  console.log('---------------------------------------')
 
   const newSchema = mergeSchema(currentSchema, mutations)
 

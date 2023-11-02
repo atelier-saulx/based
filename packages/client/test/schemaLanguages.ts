@@ -4,6 +4,7 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { BasedDbClient } from '../src'
 import './assertions'
+import { SchemaUpdateMode } from '../src/types'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -54,16 +55,16 @@ test.afterEach.always(async (t) => {
 test('Changes existing languages', async (t) => {
   const { client } = t.context
 
-  // await t.notThrowsAsync(
-  await client.updateSchema({
-    language: 'de',
-    translations: ['pt', 'it'],
-    languageFallbacks: {
-      pt: ['de'],
-      it: ['it'],
-    },
-  })
-  // )
+  await t.notThrowsAsync(
+    client.updateSchema({
+      language: 'de',
+      translations: ['pt', 'it'],
+      languageFallbacks: {
+        pt: ['de'],
+        it: ['it'],
+      },
+    })
+  )
 
   const newSchema = client.schema
   t.is(newSchema.language, 'de')
@@ -162,4 +163,29 @@ test("Don't allow valid languages", async (t) => {
     },
     'language not configured in languageFallbacks values'
   )
+})
+
+test('Not touching languages should not fail', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1string: { type: 'number' },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
+  )
+
+  const newSchema = client.schema
+  t.is(newSchema.language, 'en')
+  t.deepEqual(newSchema.translations, ['de', 'nl'])
 })

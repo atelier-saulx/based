@@ -196,9 +196,11 @@ export const getMutations = (
   const mutations: SchemaMutation[] = []
 
   if (
-    opts.language !== currentSchema.language ||
-    opts.translations !== currentSchema.translations ||
-    (opts.languageFallbacks &&
+    (opts.language !== undefined && opts.language !== currentSchema.language) ||
+    (opts.translations !== undefined &&
+      opts.translations !== currentSchema.translations) ||
+    (opts.languageFallbacks !== undefined &&
+      opts.languageFallbacks &&
       !deepEqual(opts.languageFallbacks, currentSchema.languageFallbacks))
   ) {
     mutations.push({
