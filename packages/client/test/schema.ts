@@ -5,8 +5,8 @@ import { wait } from '@saulx/utils'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
-import { DEFAULT_FIELDS } from '../src/schema'
 import { SchemaUpdateMode } from '../src/types'
+import { DEFAULT_FIELDS } from '../src/schema/mergeSchema'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
