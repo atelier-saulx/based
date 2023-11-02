@@ -15,8 +15,6 @@ const connect = (
       return
     }
 
-    console.info('RECONNECT')
-
     const socket = (connection.socket = new Socket())
 
     socket.connect(
