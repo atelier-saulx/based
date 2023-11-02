@@ -7,6 +7,7 @@ export type ServerOptions = {
   port: number
   name?: string
   dir?: string
+  save?: boolean | { seconds: number }
   env?: NodeJS.ProcessEnv
   default?: boolean
 }
