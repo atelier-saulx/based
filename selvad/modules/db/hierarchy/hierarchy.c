@@ -867,7 +867,6 @@ static int cross_insert_children(
         SelvaHierarchyNode *node,
         size_t n,
         const Selva_NodeId *nodes) {
-    const int send_events = !isLoading();
     int res = 0;
 
     if (n == 0) {
@@ -935,15 +934,13 @@ static int cross_insert_children(
                     SVector_Size(&node->parents),
                     child);
 
-            if (send_events) {
-                /*
-                 * Publish that the parents field was changed.
-                 * Actual events are only sent if there are subscription markers
-                 * set on this node.
-                 */
-                publishParentsUpdate(hierarchy, child);
-                publishAncestorsUpdate(hierarchy, child);
-            }
+            /*
+             * Publish that the parents field was changed.
+             * Actual events are only sent if there are subscription markers
+             * set on this node.
+             */
+            publishParentsUpdate(hierarchy, child);
+            publishAncestorsUpdate(hierarchy, child);
 
             res++; /* Count actual insertions */
         }
@@ -969,7 +966,6 @@ static int cross_insert_parents(
         size_t n,
         const Selva_NodeId *nodes,
         enum SelvaModify_SetFlags flags) {
-    const int send_events = isLoading();
     int res = 0;
 
     if (n == 0) {
@@ -1030,15 +1026,13 @@ static int cross_insert_parents(
                     SVector_Size(&parent->parents),
                     node);
 
-            if (send_events) {
-                /*
-                 * Publish that the children field was changed.
-                 * Actual events are only sent if there are subscription markers
-                 * set on this node.
-                 */
-                publishChildrenUpdate(hierarchy, parent);
-                publishDescendantsUpdate(hierarchy, parent);
-            }
+            /*
+             * Publish that the children field was changed.
+             * Actual events are only sent if there are subscription markers
+             * set on this node.
+             */
+            publishChildrenUpdate(hierarchy, parent);
+            publishDescendantsUpdate(hierarchy, parent);
 
             res++;
         }

@@ -181,24 +181,23 @@ test('layout query', async (t) => {
     ],
   })
 
-  console.dir(result, { depth: 8 })
+  console.dir({ result }, { depth: 8 })
 
-  // TODO: support $value?
-  t.deepEqualIgnoreOrder(result, {
+  t.deepEqual(result, {
     id: 'league1',
     components: [
       {
-        // component: 'description',
+        component: 'description',
         title: '🌊 mr flurpels 🌊',
         description: 'I like fancy 🌊',
       },
       {
-        // component: 'gridLarge',
-        // showall: true,
+        component: 'gridLarge',
+        showall: true,
         children: [{ title: '🌊 TEAM 🌊' }],
       },
       {
-        // component: 'list',
+        component: 'list',
         children: [{ title: '🌊 MATCH 🌊' }],
       },
     ],

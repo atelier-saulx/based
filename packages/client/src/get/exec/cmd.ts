@@ -66,43 +66,15 @@ const AGGREGATE_FNS: Record<string, protocol.SelvaHierarchy_AggregateType> = {
   max: SelvaHierarchy_AggregateType.SELVA_AGGREGATE_TYPE_MAX_FIELD,
 }
 
-// DB event come in as: `<marker_id>:<sub_id1>,<sub_id2>,...`
-// TODO: make it an LRU cache so we can do sanity checks on interval to see if we missed updates
-const CMD_RESULT_CACHE: Map<number, any> = new Map()
-const CMD_SUB_MARKER_MAPPING_CACHE: Map<number, number> = new Map()
-
-// maps alias marker id to id for cleanup purposes
-const ALIAS_MARKER_CACHE: Map<number, string> = new Map()
-
-export function addSubMarkerMapping(from: number, to: number): boolean {
-  const current = CMD_SUB_MARKER_MAPPING_CACHE.get(from)
-  if (current === to) {
-    return false
-  }
-
-  CMD_SUB_MARKER_MAPPING_CACHE.set(from, to)
-  return true
-}
-
-export function mapSubMarkerId(id: number): number {
-  return CMD_SUB_MARKER_MAPPING_CACHE.get(id) || id
-}
-
-export function purgeSubMarkerMapping(id: number): boolean {
-  return CMD_SUB_MARKER_MAPPING_CACHE.delete(id)
-}
-
-export function purgeCache(cmdID: number): void {
-  CMD_RESULT_CACHE.delete(cmdID)
-}
-
 export function addSubMarker(
   ctx: ExecContext,
   cmd: GetCommand,
   subCmd: GetCommand
 ) {
+  const { client } = ctx
+
   if (ctx.cleanup) {
-    const purged = purgeSubMarkerMapping(subCmd.cmdId)
+    const purged = client.purgeSubMarkerMapping(subCmd.cmdId)
     if (purged) {
       ctx.client
         .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
@@ -111,7 +83,10 @@ export function addSubMarker(
         })
     }
   } else {
-    const added = addSubMarkerMapping(subCmd.cmdId, cmd.markerId || cmd.cmdId)
+    const added = client.addSubMarkerMapping(
+      subCmd.cmdId,
+      cmd.markerId || cmd.cmdId
+    )
 
     if (added) {
       const marker = makeOpts(ctx, subCmd)
@@ -125,12 +100,14 @@ export async function getAlias(
   getOpts: any,
   aliases: string[]
 ): Promise<string> {
+  const { client } = ctx
+
   if (ctx.subId) {
     if (ctx.cleanup) {
       for (const alias of aliases) {
         const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
         if (aliasMarkerId === ctx.markerId) {
-          return ALIAS_MARKER_CACHE.get(aliasMarkerId)
+          return client.ALIAS_MARKER_CACHE.get(aliasMarkerId)
         }
       }
     }
@@ -158,7 +135,7 @@ export async function getAlias(
   const [resolvedAlias, id] = resolved
 
   if (ctx.subId) {
-    ALIAS_MARKER_CACHE.set(
+    client.ALIAS_MARKER_CACHE.set(
       hashObjectIgnoreKeyOrder({ alias: resolvedAlias }),
       id
     )
@@ -199,7 +176,7 @@ export async function getCmd(
   const opts = makeOpts(ctx, cmd)
   const { cmdID } = opts
 
-  let result = subId ? CMD_RESULT_CACHE.get(cmdID) : undefined
+  let result = subId ? client.CMD_RESULT_CACHE.get(cmdID) : undefined
 
   if (ctx.cleanup) {
     if (cmdID === ctx.markerId) {
@@ -214,7 +191,7 @@ export async function getCmd(
     }
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)
-    CMD_RESULT_CACHE.delete(cmdID)
+    client.CMD_RESULT_CACHE.delete(cmdID)
   } else {
     if (!result) {
       result = await execCmd(ctx, opts)
@@ -222,7 +199,7 @@ export async function getCmd(
 
     if (subId) {
       ctx.markers.push(opts)
-      CMD_RESULT_CACHE.set(cmdID, result)
+      client.CMD_RESULT_CACHE.set(cmdID, result)
     }
   }
 

@@ -11,6 +11,7 @@ import { ServerOptions } from '../types'
 import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
+import { mkdirSync } from 'fs'
 
 export class SelvaServer extends EventEmitter {
   public pm: ChildProcess
@@ -19,6 +20,7 @@ export class SelvaServer extends EventEmitter {
   public name: string
   public origin: ServerDescriptor
   public backupDir: string
+  public saveInterval: number = 0
 
   constructor(serverType: ServerType) {
     super()
@@ -39,6 +41,13 @@ export class SelvaServer extends EventEmitter {
     this.name = opts.name
 
     this.backupDir = opts.dir
+    if (opts.save) {
+      this.saveInterval = opts.save === true ? 60 : opts.save.seconds
+    }
+
+    if (this.backupDir) {
+      mkdirSync(this.backupDir, { recursive: true })
+    }
 
     const execPath = path.join(
       __dirname,
@@ -64,10 +73,12 @@ export class SelvaServer extends EventEmitter {
           SELVA_PORT: String(this.port),
           SERVER_SO_REUSE: '1',
           SELVA_REPLICATION_MODE: '1',
-          AUTO_SAVE_INTERVAL: '0',
+          AUTO_SAVE_INTERVAL: String(this.saveInterval),
+          SAVE_AT_EXIT: opts.save ? '1' : '0',
         },
-        ...opts.env
+        ...opts.env,
       },
+      cwd: this.backupDir ?? process.cwd(),
       stdio: 'inherit',
     })
   }

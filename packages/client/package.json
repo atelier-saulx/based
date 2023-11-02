@@ -7,7 +7,7 @@
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "SAVE_AT_EXIT=0 ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
+    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
     "testGet": "npm run test --concurrency 5 test/*.ts",
     "testSub": "npm run test test/subs/*.ts"
   },
