@@ -1,9 +1,4 @@
-import {
-  BasedSchema,
-  BasedSchemaCollectProps,
-  BasedSchemaPartial,
-  setWalker,
-} from '@based/schema'
+import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 
 import Emitter from './Emitter'
 import { addCommandToQueue, drainQueue } from './outgoing'
@@ -17,7 +12,7 @@ import {
 } from './types'
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
-import { set, toModifyArgs } from './set'
+import { set } from './set'
 import {
   ExecContext,
   GetCommand,
@@ -28,7 +23,6 @@ import {
 } from './get'
 import genId from './id'
 import { deepMergeArrays } from '@saulx/utils'
-import { getCmd, mapSubMarkerId, purgeCache } from './get/exec/cmd'
 import { DEFAULT_SCHEMA, updateSchema } from './schema'
 
 export * as protocol from './protocol'
@@ -69,6 +63,12 @@ export class BasedDbClient extends Emitter {
   public updateSchemaTimer: NodeJS.Timeout
 
   public backpressureBlock: Buffer | null = null
+
+  // subscription cache state
+  public CMD_RESULT_CACHE: Map<number, any> = new Map()
+  public CMD_SUB_MARKER_MAPPING_CACHE: Map<number, number> = new Map()
+  // maps alias marker id to id for cleanup purposes
+  public ALIAS_MARKER_CACHE: Map<number, string> = new Map()
 
   constructor() {
     super()
@@ -154,8 +154,8 @@ export class BasedDbClient extends Emitter {
   }
 
   async refreshMarker(markerId: number): Promise<void> {
-    const id = mapSubMarkerId(markerId)
-    purgeCache(id)
+    const id = this.mapSubMarkerId(markerId)
+    this.purgeCache(id)
     try {
       await this.command('subscriptions.refreshMarker', [id])
     } catch (e) {
@@ -234,6 +234,28 @@ export class BasedDbClient extends Emitter {
     }
 
     return { pending, cleanup, fetch, subId }
+  }
+
+  addSubMarkerMapping(from: number, to: number): boolean {
+    const current = this.CMD_SUB_MARKER_MAPPING_CACHE.get(from)
+    if (current === to) {
+      return false
+    }
+
+    this.CMD_SUB_MARKER_MAPPING_CACHE.set(from, to)
+    return true
+  }
+
+  mapSubMarkerId(id: number): number {
+    return this.CMD_SUB_MARKER_MAPPING_CACHE.get(id) || id
+  }
+
+  purgeSubMarkerMapping(id: number): boolean {
+    return this.CMD_SUB_MARKER_MAPPING_CACHE.delete(id)
+  }
+
+  purgeCache(cmdID: number): void {
+    this.CMD_RESULT_CACHE.delete(cmdID)
   }
 
   onData(data: Buffer) {
