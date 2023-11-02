@@ -99,14 +99,17 @@ export async function parseGetOpts(
           value === true &&
           ['ancestors', 'descendants'].includes(String(args.key))
         ) {
-          return {
+          const nestedCmd: GetCommand = {
             type: 'ids',
-            sourceField: args.key,
-            fields: { $any: [{ field: 'id' }] },
+            sourceField: <string>args.key,
+            fields: { $any: [{ type: 'field', field: ['id'] }] },
             source: { id: id },
             target: { path },
             nestedCommands: [],
           }
+
+          nestedCmd.cmdId = hashCmd(nestedCmd)
+          return nestedCmd
         }
 
         // main logic

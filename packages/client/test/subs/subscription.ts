@@ -563,3 +563,75 @@ test.serial('subscribe with timeout right away record', async (t) => {
 
   await wait(1000)
 })
+
+test.serial('subscribe to descendants: true in list', async (t) => {
+  await start(t)
+  const client = t.context.dbClient
+
+  await client.updateSchema({
+    languages: ['en', 'de', 'nl'],
+    root: {
+      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
+    },
+    types: {
+      refType: {
+        prefix: 're',
+        fields: {
+          yesh: { type: 'string' },
+        },
+      },
+    },
+  })
+
+  t.plan(4)
+
+  await client.set({
+    $id: 're1',
+    yesh: 'hello from 1',
+  })
+
+  await client.set({
+    $id: 're2',
+    yesh: 'hello from 2',
+    parents: ['re1'],
+  })
+
+  let o1counter = 0
+  let res
+  observe(
+    t,
+    {
+      $id: 'root',
+      descendants: true,
+    },
+    (d) => {
+      console.log('ddd', d)
+      o1counter++
+      res = d
+    }
+  )
+
+  await wait(500 * 2)
+  t.deepEqual(o1counter, 1)
+  t.deepEqualIgnoreOrder(res, { descendants: ['re1', 're2'] })
+
+  await client.set({
+    $id: 're3',
+    yesh: 'hello from 3',
+    parents: ['re2'],
+  })
+
+  await wait(500 * 2)
+
+  t.deepEqual(o1counter, 2)
+  t.deepEqualIgnoreOrder(res, { descendants: ['re1', 're2', 're3'] })
+
+  let subs = await Promise.all(
+    (
+      await client.command('subscriptions.list', [])
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 6 })
+})
