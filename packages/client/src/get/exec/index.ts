@@ -67,8 +67,6 @@ export async function get(
 
   const { nestedObjs, pending } = await execParallel(ctx, cmds)
 
-  // console.dir({ cmds, defaults, nestedObjs }, { depth: 8 })
-
   const merged =
     nestedObjs.length === 1 && cmds[0].type === 'traverse' && !cmds[0].isSingle
       ? Array.from(nestedObjs[0]) // if it's a top-level $list expression, just parse it into array
