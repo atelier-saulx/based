@@ -16,10 +16,13 @@ import {
   NewFieldSchemaMutation,
   NewTypeSchemaMutation,
   RemoveFieldSchemaMutation,
+  SchemaFieldMutation,
   SchemaMutation,
   SchemaUpdateMode,
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
+import { DEFAULT_FIELDS } from './mergeSchema'
+import { deepEqual } from '@saulx/utils'
 
 type ExistingNodes = {
   [fullFieldPath: string]: number
@@ -279,6 +282,42 @@ const cannotDeleteRoot: MutationRule = (mutation: DeleteTypeSchemaMutation) => {
   }
 }
 
+const noDefaultFieldMutations: MutationRule = (
+  mutation: SchemaMutation,
+  { currentSchema }
+) => {
+  const defaultFields = Object.keys(DEFAULT_FIELDS)
+
+  if (mutation.mutation === 'new_type' || mutation.mutation === 'change_type') {
+    Object.keys(mutation.new.fields).forEach((fieldName) => {
+      if (
+        defaultFields.includes(fieldName) &&
+        !deepEqual(DEFAULT_FIELDS[fieldName], mutation.new.fields[fieldName])
+      ) {
+        throw new Error(`Cannot change default field "${fieldName}".`)
+      }
+    })
+  } else if (
+    mutation.mutation === 'new_field' ||
+    mutation.mutation === 'change_field'
+  ) {
+    if (
+      mutation.path.length === 1 &&
+      defaultFields.includes(mutation.path[0]) &&
+      !deepEqual(DEFAULT_FIELDS[mutation.path[0]], mutation.new)
+    ) {
+      throw new Error(`Cannot change default field "${mutation.path[0]}".`)
+    }
+  } else if (mutation.mutation === 'remove_field') {
+    if (
+      mutation.path.length === 1 &&
+      defaultFields.includes(mutation.path[0])
+    ) {
+      throw new Error(`Cannot change default field "${mutation.path[0]}".`)
+    }
+  }
+}
+
 export const validateSchemaMutations = async (
   client: BasedDbClient,
   currentSchema: BasedSchema,
@@ -299,23 +338,31 @@ export const validateSchemaMutations = async (
     if (mutation.mutation === 'new_type') {
       cannotUserExistingPrefixes(mutation, ctx)
       onlyAllowedFieldTypes(mutation, ctx)
+      noDefaultFieldMutations(mutation, ctx)
       onlyAllowedArrayProperties(mutation, ctx)
     } else if (mutation.mutation === 'change_type') {
       noChangesInStrictMode(mutation, ctx)
       onlyAllowedFieldTypes(mutation, ctx)
+      noDefaultFieldMutations(mutation, ctx)
       onlyAllowedArrayProperties(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
+    } else if (mutation.mutation === 'delete_type') {
+      noChangesInStrictMode(mutation, ctx)
+      cannotDeleteRoot(mutation, ctx)
+      noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
+    } else if (mutation.mutation === 'new_field') {
+      noDefaultFieldMutations(mutation, ctx)
+      onlyAllowedFieldTypes(mutation, ctx)
+      onlyAllowedArrayProperties(mutation, ctx)
     } else if (mutation.mutation === 'change_field') {
       noChangesInStrictMode(mutation, ctx)
+      noDefaultFieldMutations(mutation, ctx)
       onlyAllowedFieldTypes(mutation, ctx)
       onlyAllowedArrayProperties(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
     } else if (mutation.mutation === 'remove_field') {
       noChangesInStrictMode(mutation, ctx)
-      noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
-    } else if (mutation.mutation === 'delete_type') {
-      noChangesInStrictMode(mutation, ctx)
-      cannotDeleteRoot(mutation, ctx)
+      noDefaultFieldMutations(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
     } else if (mutation.mutation === 'change_languages') {
       validateLanguages(mutation, ctx)

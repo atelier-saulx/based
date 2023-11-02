@@ -723,3 +723,82 @@ test('Change remove field in migration mode', async (t) => {
     ).hasOwnProperty('value')
   )
 })
+
+test('Delete defaults should fail', async (t) => {
+  const { client } = t.context
+
+  for (const fieldName in DEFAULT_FIELDS) {
+    await t.throwsAsync(
+      client.updateSchema(
+        {
+          types: {
+            match: {
+              fields: {
+                [fieldName]: { $delete: true },
+              },
+            },
+          },
+        },
+        {
+          mode: SchemaUpdateMode.migration,
+        }
+      ),
+      {
+        message: new RegExp(`^Cannot change default field "${fieldName}".$`),
+      }
+    )
+  }
+})
+
+test('Change defaults should fail', async (t) => {
+  const { client } = t.context
+
+  for (const fieldName in DEFAULT_FIELDS) {
+    await t.throwsAsync(
+      client.updateSchema(
+        {
+          types: {
+            match: {
+              fields: {
+                [fieldName]: { type: 'number' },
+              },
+            },
+          },
+        },
+        {
+          mode: SchemaUpdateMode.migration,
+        }
+      ),
+      {
+        message: new RegExp(`^Cannot change default field "${fieldName}".$`),
+      }
+    )
+  }
+})
+
+test('Change defaults when adding new type should fail', async (t) => {
+  const { client } = t.context
+
+  for (const fieldName in DEFAULT_FIELDS) {
+    await t.throwsAsync(
+      client.updateSchema(
+        {
+          types: {
+            newType: {
+              fields: {
+                id: { type: 'number' },
+                createdAt: { type: 'number' },
+              },
+            },
+          },
+        },
+        {
+          mode: SchemaUpdateMode.migration,
+        }
+      ),
+      {
+        message: /^Cannot change default field "id|createdAt".$/,
+      }
+    )
+  }
+})

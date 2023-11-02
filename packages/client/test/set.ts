@@ -3,7 +3,7 @@ import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import getPort from 'get-port'
 
-test.only('set primitive fields', async (t) => {
+test('set primitive fields', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
