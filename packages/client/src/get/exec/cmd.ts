@@ -126,7 +126,6 @@ export async function getAlias(
   }
 
   const [resolved] = await ctx.client.command('resolve.nodeid', [0, ...aliases])
-  console.dir({ resolved }, { depth: 6 })
 
   if (resolved?.length !== 2) {
     return
@@ -143,7 +142,6 @@ export async function getAlias(
     await Promise.all(
       aliases.map(async (alias) => {
         const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-        console.log('adding alias marker', ctx.subId, aliasMarkerId, alias)
         try {
           await ctx.client.command('subscriptions.addAlias', [
             ctx.subId,
@@ -151,7 +149,7 @@ export async function getAlias(
             alias,
           ])
         } catch (e) {
-          console.log('Error adding alias marker', e)
+          console.error('Error adding alias marker', e)
         }
       })
     )
@@ -223,16 +221,6 @@ async function execCmd(
   { cmdName, nodeId, struct, rpn, recordDef, extraArgs }: CmdExecOpts
 ): Promise<any> {
   const { client } = ctx
-
-  console.dir(
-    {
-      op: {
-        cmdName,
-        args: [makeLangArg(ctx), struct, nodeId, ...(extraArgs || []), ...rpn],
-      },
-    },
-    { depth: 9 }
-  )
 
   const op = await client.command(cmdName, [
     makeLangArg(ctx),
