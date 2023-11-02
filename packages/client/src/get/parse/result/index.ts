@@ -39,7 +39,11 @@ export function parseGetResult(
       return parsed
     }
 
-    if (typeof parsed !== 'number' && !parsed?.length) {
+    if (
+      cmd.type !== 'traverse' &&
+      typeof parsed !== 'number' &&
+      !parsed?.length
+    ) {
       continue
     }
 
