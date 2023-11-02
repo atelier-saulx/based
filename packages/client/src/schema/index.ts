@@ -134,7 +134,7 @@ export async function updateSchema(
   if (opts.types) {
     for (const typeName in opts.types) {
       const typeDef = opts.types[typeName]
-      const oldDef = currentSchema[typeName]
+      const oldDef = currentSchema.types[typeName]
 
       // TODO: generate one if taken
       const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)
