@@ -133,7 +133,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
     { type: 'bin' }, // find query opts
-    { type: 'id' },
+    { type: 'string' }, // ids (concatenated)
     { type: 'string' }, // fields str
     { type: 'string' }, // filter expr (RPN string)
     { type: 'string', vararg: true }, // filter args

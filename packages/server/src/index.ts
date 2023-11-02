@@ -102,6 +102,7 @@ export async function start(opts: Options) {
   const origin = await startOrigin({
     name: 'default',
     dir: parsedOpts.dir,
+    save: parsedOpts.save,
     port: parsedOpts.port,
   })
 
