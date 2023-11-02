@@ -405,52 +405,6 @@ test('Array field type properties validation', async (t) => {
   )
 })
 
-// TODO: Moove to languages tests
-test.skip('Only allow field type text if languages are defined', async (t) => {
-  const port = await getPort()
-  console.log('origin')
-  const server = await startOrigin({
-    port: port,
-    name: 'default',
-  })
-
-  console.log('connecting')
-  const client = new BasedDbClient()
-  client.connect({
-    port: port,
-    host: '127.0.0.1',
-  })
-  client.subscribeSchema()
-
-  console.log('updating schema')
-
-  // TODO: find way to do this
-  // @ts-ignore
-  client.schema.language = undefined
-  await t.throwsAsync(
-    client.updateSchema({
-      language: undefined,
-      types: {
-        textType: {
-          prefix: 'te',
-          fields: {
-            textField: { type: 'text' },
-          },
-        },
-      },
-    }),
-    {
-      message:
-        'Cannot use fields of type text without `languages` being defined`',
-    }
-  )
-
-  client.unsubscribeSchema()
-
-  await server.destroy()
-  client.destroy()
-})
-
 test('Default prefix should not be an existing one', async (t) => {
   const { client } = t.context
 

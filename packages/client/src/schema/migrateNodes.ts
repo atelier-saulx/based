@@ -1,4 +1,4 @@
-import { SchemaMutations } from '../types'
+import { SchemaMutation } from '../types'
 import { BasedDbClient } from '..'
 import { getValueByPath, pathToQuery } from '../util'
 
@@ -21,7 +21,7 @@ import { getValueByPath, pathToQuery } from '../util'
 const PAGE_AMOUNT = 3e3
 export const migrateNodes = async (
   client: BasedDbClient,
-  mutations: SchemaMutations
+  mutations: SchemaMutation[]
 ) => {
   for (const mutation of mutations) {
     if (mutation.mutation === 'delete_type') {

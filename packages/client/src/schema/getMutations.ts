@@ -7,7 +7,8 @@ import {
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
-import { SchemaMutations } from '../types'
+import { SchemaMutation } from '../types'
+import { deepEqual } from '@saulx/utils'
 
 const diffField = (
   typeName: string,
@@ -15,7 +16,7 @@ const diffField = (
   currentField: BasedSchemaField,
   optsField: BasedSchemaFieldPartial
 ) => {
-  const mutations: SchemaMutations = []
+  const mutations: SchemaMutation[] = []
 
   // @ts-ignore
   if (optsField?.$delete) {
@@ -78,7 +79,7 @@ const diffFields = (
   currentFields: { [fieldName: string]: BasedSchemaField },
   optsFields: { [fieldName: string]: BasedSchemaFieldPartial }
 ) => {
-  const mutations: SchemaMutations = []
+  const mutations: SchemaMutation[] = []
 
   const currentFieldsNames = Object.keys(currentFields || {})
   const optsFieldsNames = Object.keys(optsFields || {})
@@ -113,8 +114,8 @@ const diffType = (
   typeName: string,
   currentType: BasedSchemaType,
   optsType: BasedSchemaTypePartial
-): SchemaMutations => {
-  const mutations: SchemaMutations = []
+): SchemaMutation[] => {
+  const mutations: SchemaMutation[] = []
 
   mutations.push(
     ...diffFields(typeName, [], currentType.fields, optsType?.fields)
@@ -149,8 +150,8 @@ const diffType = (
 const diffTypes = (
   currentTypes: { [type: string]: BasedSchemaType },
   optsTypes: { [type: string]: BasedSchemaTypePartial }
-): SchemaMutations => {
-  const mutations: SchemaMutations = []
+): SchemaMutation[] => {
+  const mutations: SchemaMutation[] = []
 
   const currentTypeNames = Object.keys(currentTypes || {})
   const optsTypeNames = Object.keys(optsTypes || {})
@@ -192,10 +193,31 @@ export const getMutations = (
   currentSchema: BasedSchema,
   opts: BasedSchemaPartial
 ) => {
-  const mutations: SchemaMutations = []
+  const mutations: SchemaMutation[] = []
+
+  if (
+    opts.language !== currentSchema.language ||
+    opts.translations !== currentSchema.translations ||
+    (opts.languageFallbacks &&
+      !deepEqual(opts.languageFallbacks, currentSchema.languageFallbacks))
+  ) {
+    mutations.push({
+      mutation: 'change_languages',
+      old: {
+        language: currentSchema.language,
+        translations: currentSchema.translations,
+        languageFallbacks: currentSchema.languageFallbacks,
+      },
+      new: {
+        language: opts.language,
+        translations: opts.translations,
+        languageFallbacks: opts.languageFallbacks,
+      },
+    })
+  }
 
   // TODO: add root
-  mutations.push(...diffTypes(currentSchema.types, opts.types))
+  mutations.push(...diffTypes(currentSchema.types, opts.types || {}))
 
   return mutations
 }

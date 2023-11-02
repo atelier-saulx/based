@@ -1,6 +1,6 @@
-import { BasedSchema, BasedSchemaType } from '@based/schema'
+import { BasedSchema, BasedSchemaField, BasedSchemaType } from '@based/schema'
 import { deepCopy, deepMerge } from '@saulx/utils'
-import { SchemaMutations } from '../types'
+import { SchemaMutation } from '../types'
 import { generateNewPrefix } from './utils'
 import { getSchemaTypeFieldByPath } from '../util'
 
@@ -19,7 +19,6 @@ export const DEFAULT_FIELDS: any = {
   },
 }
 
-// not needed?
 // const addDefaultFieldsToNestedProperties = (fields: any) => {
 //   for (const fieldName in fields) {
 //     fields[fieldName] = {
@@ -32,9 +31,26 @@ export const DEFAULT_FIELDS: any = {
 //   }
 // }
 
+// const mergeLanguages = (
+//   currentSchema: BasedSchema,
+//   opts: BasedSchemaPartial
+// ) => {
+//   const language = opts.language || currentSchema.language
+//   const translations = opts.translations || currentSchema.translations
+//   const languageFallbacks = {
+//     ...currentSchema.languageFallbacks,
+//     ...opts.languageFallbacks,
+//   }
+//   return {
+//     language,
+//     translations,
+//     languageFallbacks,
+//   }
+// }
+
 export const mergeSchema = (
   currentSchema: BasedSchema,
-  mutations: SchemaMutations
+  mutations: SchemaMutation[]
 ) => {
   const newSchema = deepCopy(currentSchema)
   // TODO: check changes to root
@@ -61,7 +77,8 @@ export const mergeSchema = (
         ]
       }
     } else if (mutation.mutation === 'new_type') {
-      const prefix = generateNewPrefix(mutation.type, currentSchema)
+      const prefix =
+        mutation.new.prefix || generateNewPrefix(mutation.type, currentSchema)
       newSchema.types[mutation.type] = deepMerge(
         {
           prefix,
@@ -73,22 +90,33 @@ export const mergeSchema = (
     } else if (mutation.mutation === 'change_type') {
       deepMerge(newSchema.types[mutation.type], mutation.new)
     } else if (mutation.mutation === 'new_field') {
-      // newSchema.types[mutation.type] = deepMerge(
-      //   {
-      //     prefix,
-      //     fields: deepCopy(DEFAULT_FIELDS),
-      //   },
-      //   mutation.new
-      // )
-      console.log('=======', mutation)
-      // getSchemaTypeFieldByPath(newSchema.types[mutation.type], mutation.path)
+      if (mutation.path.length > 1) {
+        getSchemaTypeFieldByPath(
+          newSchema.types[mutation.type],
+          mutation.path.slice(0, -1)
+        ).properties[mutation.path[mutation.path.length - 1]] = mutation.new
+      } else {
+        newSchema.types[mutation.type].fields[mutation.path[0]] =
+          mutation.new as BasedSchemaField
+      }
     } else if (mutation.mutation === 'change_field') {
       const field = getSchemaTypeFieldByPath(
         newSchema.types[mutation.type],
         mutation.path
       )
       // TODO: test prefix change
+      // TODO: test adding nested field
       deepMerge(field, mutation.new)
+    } else if (mutation.mutation === 'change_languages') {
+      if (mutation.new.language) {
+        newSchema.language = mutation.new.language
+      }
+      if (mutation.new.translations) {
+        newSchema.translations = mutation.new.translations
+      }
+      if (mutation.new.languageFallbacks) {
+        newSchema.languageFallbacks = mutation.new.languageFallbacks
+      }
     } else {
       throw new Error('Unknow mutation type')
     }

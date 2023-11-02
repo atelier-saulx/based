@@ -5,10 +5,15 @@ import {
 } from '@based/schema'
 import { BasedDbClient } from '..'
 import { joinPath } from '../util'
-import { SchemaMutations, SchemaUpdateMode } from '../types'
+import {
+  NewTypeSchemaMutation,
+  SchemaMutation,
+  SchemaUpdateMode,
+} from '../types'
 import { getMutations } from './getMutations'
 import { validateSchemaMutations } from './validationRules'
 import { mergeSchema } from './mergeSchema'
+import { migrateNodes } from './migrateNodes'
 
 type EdgeConstraint = {
   prefix: string
@@ -216,140 +221,140 @@ const checkChangingExistingTypePrefix = (
   }
 }
 
-const mergeFields = (
-  path: string[],
-  currentFields: { [name: string]: BasedSchemaField },
-  requestedFields: { [name: string]: BasedSchemaField },
-  mutations: SchemaMutations,
-  merge: boolean,
-  mode: SchemaUpdateMode
-) => {
-  const currentFieldsNames = Object.keys(currentFields || {})
-  const newFieldsNames = Object.keys(requestedFields || {})
-  const fieldsToParse = new Set([...currentFieldsNames, ...newFieldsNames])
+// const mergeFields = (
+//   path: string[],
+//   currentFields: { [name: string]: BasedSchemaField },
+//   requestedFields: { [name: string]: BasedSchemaField },
+//   mutations: SchemaMutation,
+//   merge: boolean,
+//   mode: SchemaUpdateMode
+// ) => {
+//   const currentFieldsNames = Object.keys(currentFields || {})
+//   const newFieldsNames = Object.keys(requestedFields || {})
+//   const fieldsToParse = new Set([...currentFieldsNames, ...newFieldsNames])
+//
+//   const newFields: { [name: string]: BasedSchemaField } = {}
+//
+//   for (const fieldName of fieldsToParse) {
+//     const currentFieldDef: BasedSchemaField = currentFields[fieldName]
+//     const requestedFieldDef: BasedSchemaField = requestedFields[fieldName]
+//
+//     if (
+//       // TODO: add $delete to BasedSchemaField
+//       // @ts-ignore
+//       requestedFieldDef?.$delete ||
+//       (merge === false && !newFieldsNames.includes(fieldName))
+//     ) {
+//       // field to remove
+//       if (mode === SchemaUpdateMode.strict) {
+//         throw new Error(
+//           `Cannot remove "${path.join('.')}.${fieldName}" in strict mode.`
+//         )
+//       }
+//       mutations.push({
+//         mutation: 'remove_field',
+//         type: path[0],
+//         path: path.slice(1).concat(fieldName),
+//         old: currentFieldDef,
+//       })
+//       continue
+//     }
+//
+//     if (!currentFieldsNames.includes(fieldName)) {
+//       // new field
+//       newFields[fieldName] = requestedFieldDef
+//     } else {
+//       // existing field
+//       // console.log('=-====', requestedFieldDef.type, currentFieldDef.type)
+//       if (
+//         (requestedFieldDef?.type &&
+//           requestedFieldDef.type !== currentFieldDef.type) ||
+//         (currentFieldDef.type === 'array' &&
+//           // @ts-ignore
+//           currentFieldDef.values.type !== requestedFieldDef.values.type)
+//       ) {
+//         if (mode === SchemaUpdateMode.strict) {
+//           throw new Error(
+//             `Cannot change "${path.join('.')}.${fieldName}" in strict mode.`
+//           )
+//         }
+//         mutations.push({
+//           mutation: 'change_field',
+//           type: path[0],
+//           path: path.slice(1).concat(fieldName),
+//           old: currentFieldDef,
+//           new: { ...currentFieldDef, ...requestedFieldDef },
+//         })
+//       }
+//
+//       newFields[fieldName] = { ...currentFieldDef, ...requestedFieldDef }
+//     }
+//
+//     if (newFields[fieldName].type === 'object') {
+//       // @ts-ignore
+//       newFields[fieldName].properties = mergeFields(
+//         [...path, fieldName],
+//         // @ts-ignore
+//         currentFieldDef?.properties || {},
+//         // @ts-ignore
+//         requestedFieldDef?.properties || {},
+//         mutations,
+//         merge,
+//         mode
+//       )
+//     }
+//   }
+//
+//   return newFields
+// }
 
-  const newFields: { [name: string]: BasedSchemaField } = {}
-
-  for (const fieldName of fieldsToParse) {
-    const currentFieldDef: BasedSchemaField = currentFields[fieldName]
-    const requestedFieldDef: BasedSchemaField = requestedFields[fieldName]
-
-    if (
-      // TODO: add $delete to BasedSchemaField
-      // @ts-ignore
-      requestedFieldDef?.$delete ||
-      (merge === false && !newFieldsNames.includes(fieldName))
-    ) {
-      // field to remove
-      if (mode === SchemaUpdateMode.strict) {
-        throw new Error(
-          `Cannot remove "${path.join('.')}.${fieldName}" in strict mode.`
-        )
-      }
-      mutations.push({
-        mutation: 'remove_field',
-        type: path[0],
-        path: path.slice(1).concat(fieldName),
-        old: currentFieldDef,
-      })
-      continue
-    }
-
-    if (!currentFieldsNames.includes(fieldName)) {
-      // new field
-      newFields[fieldName] = requestedFieldDef
-    } else {
-      // existing field
-      // console.log('=-====', requestedFieldDef.type, currentFieldDef.type)
-      if (
-        (requestedFieldDef?.type &&
-          requestedFieldDef.type !== currentFieldDef.type) ||
-        (currentFieldDef.type === 'array' &&
-          // @ts-ignore
-          currentFieldDef.values.type !== requestedFieldDef.values.type)
-      ) {
-        if (mode === SchemaUpdateMode.strict) {
-          throw new Error(
-            `Cannot change "${path.join('.')}.${fieldName}" in strict mode.`
-          )
-        }
-        mutations.push({
-          mutation: 'change_field',
-          type: path[0],
-          path: path.slice(1).concat(fieldName),
-          old: currentFieldDef,
-          new: { ...currentFieldDef, ...requestedFieldDef },
-        })
-      }
-
-      newFields[fieldName] = { ...currentFieldDef, ...requestedFieldDef }
-    }
-
-    if (newFields[fieldName].type === 'object') {
-      // @ts-ignore
-      newFields[fieldName].properties = mergeFields(
-        [...path, fieldName],
-        // @ts-ignore
-        currentFieldDef?.properties || {},
-        // @ts-ignore
-        requestedFieldDef?.properties || {},
-        mutations,
-        merge,
-        mode
-      )
-    }
-  }
-
-  return newFields
-}
-
-const checkMutationsForExistingNodes = async (
-  client: BasedDbClient,
-  mutations: SchemaMutations
-) => {
-  if (!mutations.length) {
-    return
-  }
-  const query: any = {}
-  mutations.forEach((mutation) => {
-    // console.log('----- mutation', mutation)
-    let path: string[] = []
-    if (
-      mutation.mutation !== 'delete_type' &&
-      mutation.mutation !== 'change_type' &&
-      mutation.mutation !== 'new_type'
-    ) {
-      path = mutation.path
-    }
-    const fullFieldPath = [mutation.type].concat(path).join('.')
-    query[fullFieldPath] = {
-      $aggregate: {
-        $function: 'count',
-        $traverse: 'descendants',
-        $filter: [
-          {
-            $field: 'type',
-            $operator: '=',
-            $value: mutation.type,
-          },
-          {
-            $field: path.join('.'),
-            $operator: 'exists',
-          },
-        ],
-        $limit: 1,
-      },
-    }
-  })
-  const result = await client.get(query)
-  for (const fullFieldPath in result) {
-    if (result[fullFieldPath] > 0) {
-      throw new Error(
-        `Cannot mutate "${fullFieldPath}" in flexible mode with exsiting data.`
-      )
-    }
-  }
-}
+// const checkMutationsForExistingNodes = async (
+//   client: BasedDbClient,
+//   mutations: SchemaMutations
+// ) => {
+//   if (!mutations.length) {
+//     return
+//   }
+//   const query: any = {}
+//   mutations.forEach((mutation) => {
+//     // console.log('----- mutation', mutation)
+//     let path: string[] = []
+//     if (
+//       mutation.mutation !== 'delete_type' &&
+//       mutation.mutation !== 'change_type' &&
+//       mutation.mutation !== 'new_type'
+//     ) {
+//       path = mutation.path
+//     }
+//     const fullFieldPath = [mutation.type].concat(path).join('.')
+//     query[fullFieldPath] = {
+//       $aggregate: {
+//         $function: 'count',
+//         $traverse: 'descendants',
+//         $filter: [
+//           {
+//             $field: 'type',
+//             $operator: '=',
+//             $value: mutation.type,
+//           },
+//           {
+//             $field: path.join('.'),
+//             $operator: 'exists',
+//           },
+//         ],
+//         $limit: 1,
+//       },
+//     }
+//   })
+//   const result = await client.get(query)
+//   for (const fullFieldPath in result) {
+//     if (result[fullFieldPath] > 0) {
+//       throw new Error(
+//         `Cannot mutate "${fullFieldPath}" in flexible mode with exsiting data.`
+//       )
+//     }
+//   }
+// }
 
 const mergeLanguages = (
   currentSchema: BasedSchema,
@@ -545,23 +550,29 @@ export async function updateSchema(
   // }
 
   const mutations = getMutations(currentSchema, opts)
-  console.log('=======================================')
-  mutations.forEach((mutation) => {
-    console.log(
-      mutation.mutation,
-      mutation.type,
-      // @ts-ignore
-      mutation.path,
-      // @ts-ignore
-      mutation.old,
-      // @ts-ignore
-      mutation.new
-    )
-  })
-  console.log('---------------------------------------')
+  // console.log('=======================================')
+  // mutations.forEach((mutation) => {
+  //   console.log(
+  //     mutation.mutation,
+  //     // @ts-ignore
+  //     mutation.type,
+  //     // @ts-ignore
+  //     mutation.path,
+  //     // @ts-ignore
+  //     mutation.old,
+  //     // @ts-ignore
+  //     mutation.new
+  //   )
+  // })
+  // console.log('---------------------------------------')
+
   const newSchema = mergeSchema(currentSchema, mutations)
-  // console.log('----====', JSON.stringify(newSchema, null, 2))
+
   await validateSchemaMutations(client, currentSchema, opts, mutations, mode)
+
+  if (mode === SchemaUpdateMode.migration) {
+    await migrateNodes(client, mutations)
+  }
 
   // TODO: integrate this
   // EdgeConstraints
@@ -588,9 +599,9 @@ export async function updateSchema(
   //     })
   //   )
   // }
-  const newTypeMutations = mutations.filter(
+  const newTypeMutations: NewTypeSchemaMutation[] = mutations.filter(
     (mutation) => mutation.mutation === 'new_type'
-  )
+  ) as NewTypeSchemaMutation[]
   if (newTypeMutations.length) {
     await Promise.all(
       newTypeMutations.map((mutation) => {

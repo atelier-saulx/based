@@ -3,17 +3,22 @@ import {
   BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaLanguage,
   BasedSchemaPartial,
   basedSchemaFieldTypes,
+  languages,
 } from '@based/schema'
 import {
   ChangeFieldSchemaMutation,
+  ChangeLanguagesMutation,
   ChangeTypeSchemaMutation,
   DeleteTypeSchemaMutation,
   NewFieldSchemaMutation,
   NewTypeSchemaMutation,
   RemoveFieldSchemaMutation,
-  SchemaMutations,
+  SchemaFieldMutation,
+  SchemaMutation,
+  SchemaTypeMutation,
   SchemaUpdateMode,
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
@@ -31,10 +36,7 @@ type RulesContext = {
   mode: SchemaUpdateMode
   existingNodes: ExistingNodes
 }
-type MutationRule = (
-  mutation: ArrayElement<SchemaMutations>,
-  ctx: RulesContext
-) => void
+type MutationRule = (mutation: SchemaMutation, ctx: RulesContext) => void
 
 const cannotUserExistingPrefixes: MutationRule = (
   mutation: NewTypeSchemaMutation,
@@ -156,22 +158,71 @@ const onlyAllowedArrayProperties: MutationRule = (
   }, mutation)
 }
 
+const validateLanguages: MutationRule = (
+  mutation: ChangeLanguagesMutation,
+  { currentSchema }
+) => {
+  if (
+    mutation.new.language !== undefined &&
+    (!mutation.new.language || !languages.includes(mutation.new.language))
+  ) {
+    throw new Error(`Invalid language "${mutation.new.language}".`)
+  }
+
+  const configuredLanguages = [
+    mutation.new.language || currentSchema.language,
+  ].concat(mutation.new.translations || currentSchema.translations)
+
+  if (mutation.new.translations !== undefined) {
+    mutation.new.translations.forEach((lang) => {
+      if (!languages.includes(lang)) {
+        throw new Error(`Invalid language "${lang}".`)
+      }
+      if (!configuredLanguages.includes(lang)) {
+        throw new Error(`Language "${lang}" is not configured.`)
+      }
+    })
+  }
+  if (mutation.new.languageFallbacks !== undefined) {
+    Object.keys(mutation.new.languageFallbacks).forEach((key) => {
+      if (!Array.isArray(mutation.new.languageFallbacks[key])) {
+        throw new Error(
+          `Language fallbacks for language "${key}" should be an array.`
+        )
+      }
+      if (!languages.includes(key)) {
+        throw new Error(`Invalid language "${key}".`)
+      }
+      mutation.new.languageFallbacks[key].forEach(
+        (lang: BasedSchemaLanguage) => {
+          if (!configuredLanguages.includes(lang)) {
+            throw new Error(`Language "${key}" cannot fallback to "${lang}".`)
+          }
+        }
+      )
+    })
+  }
+}
+
 const getExistingNodes = async (
   client: BasedDbClient,
-  mutations: SchemaMutations
+  mutations: SchemaMutation[]
 ) => {
   if (!mutations.length) {
     return
   }
   const query: any = {}
   mutations.forEach((mutation) => {
+    if (mutation.mutation === 'change_languages') {
+      return
+    }
     // console.log('----- mutation', mutation)
     let path: string[] = []
     let isField = false
     if (
-      mutation.mutation !== 'delete_type' &&
-      mutation.mutation !== 'change_type' &&
-      mutation.mutation !== 'new_type'
+      mutation.mutation === 'new_field' ||
+      mutation.mutation === 'change_field' ||
+      mutation.mutation === 'remove_field'
     ) {
       path = mutation.path
       isField = true
@@ -202,7 +253,12 @@ const getExistingNodes = async (
 }
 
 const noMutationsOnFlexibleModeWithExistingNodes: MutationRule = (
-  mutation: Exclude<ArrayElement<SchemaMutations>, NewTypeSchemaMutation>,
+  mutation:
+    | DeleteTypeSchemaMutation
+    | ChangeTypeSchemaMutation
+    | NewFieldSchemaMutation
+    | ChangeFieldSchemaMutation
+    | RemoveFieldSchemaMutation,
   { mode, existingNodes }
 ) => {
   if (mode === SchemaUpdateMode.flexible) {
@@ -227,14 +283,13 @@ export const validateSchemaMutations = async (
   client: BasedDbClient,
   currentSchema: BasedSchema,
   opts: BasedSchemaPartial,
-  mutations: SchemaMutations,
+  mutations: SchemaMutation[],
   mode: SchemaUpdateMode
 ) => {
   let existingNodes: ExistingNodes = {}
   if (mode === SchemaUpdateMode.flexible) {
     existingNodes = await getExistingNodes(client, mutations)
   }
-  console.log({ existingNodes })
   const ctx: RulesContext = {
     currentSchema,
     mode,
@@ -261,6 +316,8 @@ export const validateSchemaMutations = async (
     } else if (mutation.mutation === 'delete_type') {
       noChangesInStrictMode(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
+    } else if (mutation.mutation === 'change_languages') {
+      validateLanguages(mutation, ctx)
     }
   }
 }

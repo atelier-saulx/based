@@ -1,6 +1,7 @@
 import {
   BasedSchemaField,
   BasedSchemaFieldPartial,
+  BasedSchemaLanguage,
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
@@ -67,11 +68,35 @@ export type RemoveFieldSchemaMutation = {
   old: BasedSchemaField
 }
 
-export type SchemaMutations = (
+export type ChangeLanguagesMutation = {
+  mutation: 'change_languages'
+  old: {
+    language?: BasedSchemaLanguage
+    translations?: BasedSchemaLanguage[]
+    languageFallbacks?: Partial<
+      Record<BasedSchemaLanguage, BasedSchemaLanguage[]>
+    >
+  }
+  new: {
+    language?: BasedSchemaLanguage
+    translations?: BasedSchemaLanguage[]
+    languageFallbacks?: Partial<
+      Record<BasedSchemaLanguage, BasedSchemaLanguage[]>
+    >
+  }
+}
+
+export type SchemaTypeMutation =
   | NewTypeSchemaMutation
   | DeleteTypeSchemaMutation
   | ChangeTypeSchemaMutation
+
+export type SchemaFieldMutation =
   | NewFieldSchemaMutation
   | ChangeFieldSchemaMutation
   | RemoveFieldSchemaMutation
-)[]
+
+export type SchemaMutation =
+  | SchemaTypeMutation
+  | SchemaFieldMutation
+  | ChangeLanguagesMutation

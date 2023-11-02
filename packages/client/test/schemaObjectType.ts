@@ -127,10 +127,8 @@ test('Remove property on nested object field in strict mode', async (t) => {
   )
 })
 
-test.only('Remove property on object field in flexible mode with exsiting nodes', async (t) => {
+test('Remove property on object field in flexible mode with exsiting nodes', async (t) => {
   const { client } = t.context
-
-  console.log(JSON.stringify(client.schema, null, 2))
 
   await client.set({
     type: 'lekkerType',
@@ -139,31 +137,31 @@ test.only('Remove property on object field in flexible mode with exsiting nodes'
     },
   })
 
-  // await t.throwsAsync(
-  //   client.updateSchema(
-  //     {
-  //       types: {
-  //         lekkerType: {
-  //           fields: {
-  //             ding: {
-  //               properties: {
-  //                 dung: {
-  //                   $delete: true,
-  //                 },
-  //               },
-  //             },
-  //           },
-  //         },
-  //       },
-  //     },
-  //     {
-  //       mode: SchemaUpdateMode.flexible,
-  //     }
-  //   ),
-  //   {
-  //     message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/,
-  //   }
-  // )
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: {
+                    $delete: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message: /^Cannot mutate ".*?" in flexible mode with exsiting data.$/,
+    }
+  )
 })
 
 test('Remove property on object field in flexible mode with exsiting nodes but unused property', async (t) => {
@@ -372,6 +370,53 @@ test('Change property on nested object field in flexible mode without exsiting n
     // @ts-ignore
     newSchema.types['lekkerType'].fields['withNested'].properties['again']
       .properties['nestedString'].type,
+    'number'
+  )
+})
+
+test('Add nested property flexible mode without exsiting nodes', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              withNested: {
+                properties: {
+                  again: {
+                    properties: {
+                      three: {
+                        type: 'object',
+                        properties: {
+                          four: {
+                            type: 'object',
+                            properties: {
+                              five: { type: 'number' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
+  )
+
+  const newSchema = client.schema
+  t.is(
+    // @ts-ignore
+    newSchema.types['lekkerType'].fields['withNested'].properties['again']
+      .properties['three'].properties['four'].properties['five'].type,
     'number'
   )
 })
