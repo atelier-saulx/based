@@ -621,6 +621,9 @@ test('find - versioned hierarchies', async (t) => {
           },
         ],
       },
+      travel: {
+        things: [],
+      },
     },
     {
       cooking: {

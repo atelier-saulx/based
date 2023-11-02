@@ -164,7 +164,7 @@ test('subscribe to children', async (t) => {
       },
     ],
     [
-      {},
+      { children: [] },
       {
         children: [{ id: 'te1', name: 'aaa' }],
       },

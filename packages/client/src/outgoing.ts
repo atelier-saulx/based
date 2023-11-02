@@ -28,10 +28,13 @@ export const drainQueue = (client: BasedDbClient) => {
               }
 
               console.error('Socket write error', err)
-              const [resolve, reject] = client.commandResponseListeners.get(
-                c.seqno
-              )
+              const listeners = client.commandResponseListeners.get(c.seqno)
 
+              if (!listeners) {
+                return
+              }
+
+              const [resolve, reject] = listeners
               client.commandResponseListeners.delete(c.seqno)
               addCommandToQueue(client, c.payload, c.command, resolve, reject)
             })

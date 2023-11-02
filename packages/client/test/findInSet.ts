@@ -142,7 +142,7 @@ test('search user roles', async (t) => {
     2
   )
 
-  t.is(
+  t.deepEqualIgnoreOrder(
     (
       await client.get({
         descendants: {
@@ -159,7 +159,7 @@ test('search user roles', async (t) => {
         },
       })
     ).descendants,
-    undefined
+    []
   )
 })
 

@@ -224,7 +224,7 @@ test.serial('subscribe and delete a descendant', async (t) => {
           t.deepEqual(v, { items: [{ id: 'th2' }] })
           break
         case 1:
-          t.deepEqual(v, {})
+          t.deepEqual(v, { items: [] })
           break
       }
     }
@@ -284,7 +284,7 @@ test.serial('subscribe and delete over a reference field', async (t) => {
           t.deepEqual(v, { items: [{ id: 'th2' }] })
           break
         case 1:
-          t.deepEqual(v, {})
+          t.deepEqual(v, { items: [] })
           break
       }
     }

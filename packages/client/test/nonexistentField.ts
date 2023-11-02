@@ -81,5 +81,5 @@ test('invalid filter should not return result', async (t) => {
       },
     },
   })
-  t.is(result.users, undefined)
+  t.deepEqualIgnoreOrder(result.users, [])
 })
