@@ -7,7 +7,7 @@ type EdgeConstraint = {
   bidirectional: { fromField: string }
 }
 
-const findEdgeConstraints = (
+export const findEdgeConstraints = (
   prefix: string,
   path: string[],
   typeSchema: any,

@@ -14,6 +14,7 @@ import { getMutations } from './getMutations'
 import { validateSchemaMutations } from './validationRules'
 import { mergeSchema } from './mergeSchema'
 import { migrateNodes } from './migrateNodes'
+import { findEdgeConstraints } from './findEdgeConstraints'
 
 type EdgeConstraint = {
   prefix: string
@@ -61,31 +62,31 @@ export const DEFAULT_FIELDS: any = {
   },
 }
 
-const findEdgeConstraints = (
-  prefix: string,
-  path: string[],
-  typeSchema: any,
-  constraints: EdgeConstraint[]
-) => {
-  if (!['reference', 'references'].includes(typeSchema.type)) {
-    return
-  }
-
-  const ref = {
-    prefix,
-    bidirectional: typeSchema.bidirectional
-      ? { fromField: typeSchema?.bidirectional?.fromField }
-      : undefined,
-    isSingle: typeSchema.type === 'reference',
-    field: joinPath(path),
-  }
-
-  if (!ref.bidirectional && !ref.isSingle) {
-    return
-  }
-
-  constraints.push(ref)
-}
+// const findEdgeConstraints = (
+//   prefix: string,
+//   path: string[],
+//   typeSchema: any,
+//   constraints: EdgeConstraint[]
+// ) => {
+//   if (!['reference', 'references'].includes(typeSchema.type)) {
+//     return
+//   }
+//
+//   const ref = {
+//     prefix,
+//     bidirectional: typeSchema.bidirectional
+//       ? { fromField: typeSchema?.bidirectional?.fromField }
+//       : undefined,
+//     isSingle: typeSchema.type === 'reference',
+//     field: joinPath(path),
+//   }
+//
+//   if (!ref.bidirectional && !ref.isSingle) {
+//     return
+//   }
+//
+//   constraints.push(ref)
+// }
 
 // const checkInvalidFieldType = (typeSchema: any) => {
 //   if (
@@ -136,90 +137,90 @@ const findEdgeConstraints = (
 //   }
 // }
 
-function schemaWalker(
-  prefix: string,
-  path: string[],
-  typeSchema: any,
-  constraints: EdgeConstraint[],
-  newSchema: BasedSchema
-): void {
-  if (typeSchema.fields) {
-    for (const field in typeSchema.fields) {
-      schemaWalker(
-        prefix,
-        [field],
-        typeSchema.fields[field],
-        constraints,
-        newSchema
-      )
-    }
-  }
+// function schemaWalker(
+//   prefix: string,
+//   path: string[],
+//   typeSchema: any,
+//   constraints: EdgeConstraint[],
+//   newSchema: BasedSchema
+// ): void {
+//   if (typeSchema.fields) {
+//     for (const field in typeSchema.fields) {
+//       schemaWalker(
+//         prefix,
+//         [field],
+//         typeSchema.fields[field],
+//         constraints,
+//         newSchema
+//       )
+//     }
+//   }
+//
+//   if (typeSchema.properties) {
+//     for (const field in typeSchema.properties) {
+//       schemaWalker(
+//         prefix,
+//         [...path, field],
+//         typeSchema.properties[field],
+//         constraints,
+//         newSchema
+//       )
+//     }
+//   }
+//
+//   if (typeSchema.values) {
+//     schemaWalker(
+//       prefix,
+//       [...path, '*'],
+//       typeSchema.values,
+//       constraints,
+//       newSchema
+//     )
+//   }
+//
+//   if (typeSchema.items) {
+//     schemaWalker(
+//       prefix,
+//       [...path, '*'],
+//       typeSchema.items,
+//       constraints,
+//       newSchema
+//     )
+//   }
+//
+//   // checkInvalidFieldType(typeSchema)
+//   // checkArrayFieldTypeRequirements(typeSchema)
+//   findEdgeConstraints(prefix, path, typeSchema, constraints)
+// }
 
-  if (typeSchema.properties) {
-    for (const field in typeSchema.properties) {
-      schemaWalker(
-        prefix,
-        [...path, field],
-        typeSchema.properties[field],
-        constraints,
-        newSchema
-      )
-    }
-  }
+// const checkTypeWithSamePrefix = (
+//   currentSchema: any,
+//   typeDef: any,
+//   typeName: string
+// ) => {
+//   const typeWithSamePrefix =
+//     typeDef.prefix === 'ro'
+//       ? 'ro'
+//       : Object.keys(currentSchema.types).find(
+//           (name) => currentSchema.types[name].prefix === typeDef.prefix
+//         )
+//   if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
+//     throw new Error(`Prefix ${typeDef.prefix} is already in use`)
+//   }
+// }
 
-  if (typeSchema.values) {
-    schemaWalker(
-      prefix,
-      [...path, '*'],
-      typeSchema.values,
-      constraints,
-      newSchema
-    )
-  }
-
-  if (typeSchema.items) {
-    schemaWalker(
-      prefix,
-      [...path, '*'],
-      typeSchema.items,
-      constraints,
-      newSchema
-    )
-  }
-
-  // checkInvalidFieldType(typeSchema)
-  // checkArrayFieldTypeRequirements(typeSchema)
-  findEdgeConstraints(prefix, path, typeSchema, constraints)
-}
-
-const checkTypeWithSamePrefix = (
-  currentSchema: any,
-  typeDef: any,
-  typeName: string
-) => {
-  const typeWithSamePrefix =
-    typeDef.prefix === 'ro'
-      ? 'ro'
-      : Object.keys(currentSchema.types).find(
-          (name) => currentSchema.types[name].prefix === typeDef.prefix
-        )
-  if (typeWithSamePrefix && typeWithSamePrefix !== typeName) {
-    throw new Error(`Prefix ${typeDef.prefix} is already in use`)
-  }
-}
-
-const checkChangingExistingTypePrefix = (
-  currentSchema: any,
-  prefix: string,
-  typeName: string
-) => {
-  if (
-    currentSchema.types[typeName] &&
-    currentSchema.types[typeName]?.prefix !== prefix
-  ) {
-    throw new Error('Cannot change prefix of existing type')
-  }
-}
+// const checkChangingExistingTypePrefix = (
+//   currentSchema: any,
+//   prefix: string,
+//   typeName: string
+// ) => {
+//   if (
+//     currentSchema.types[typeName] &&
+//     currentSchema.types[typeName]?.prefix !== prefix
+//   ) {
+//     throw new Error('Cannot change prefix of existing type')
+//   }
+// }
 
 // const mergeFields = (
 //   path: string[],
@@ -550,21 +551,21 @@ export async function updateSchema(
   // }
 
   const mutations = getMutations(currentSchema, opts)
-  console.log('=======================================')
-  mutations.forEach((mutation) => {
-    console.log(
-      mutation.mutation,
-      // @ts-ignore
-      mutation.type,
-      // @ts-ignore
-      mutation.path,
-      // @ts-ignore
-      mutation.old,
-      // @ts-ignore
-      mutation.new
-    )
-  })
-  console.log('---------------------------------------')
+  // console.log('=======================================')
+  // mutations.forEach((mutation) => {
+  //   console.log(
+  //     mutation.mutation,
+  //     // @ts-ignore
+  //     mutation.type,
+  //     // @ts-ignore
+  //     mutation.path,
+  //     // @ts-ignore
+  //     mutation.old,
+  //     // @ts-ignore
+  //     mutation.new
+  //   )
+  // })
+  // console.log('---------------------------------------')
 
   const newSchema = mergeSchema(currentSchema, mutations)
 
@@ -579,11 +580,9 @@ export async function updateSchema(
   const newConstraints: EdgeConstraint[] = []
   if (opts.types) {
     for (const typeName in opts.types) {
-      if (newSchema.types[typeName]) {
-        const typeDef = newSchema.types[typeName]
-        const prefix = typeDef.prefix
-        findEdgeConstraints(prefix, [], typeDef, newConstraints)
-      }
+      const typeDef = opts.types[typeName]
+      const prefix = typeDef.prefix
+      findEdgeConstraints(prefix, [], typeDef, newConstraints)
     }
   }
 

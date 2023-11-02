@@ -107,7 +107,10 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
         prefix: 'le',
         fields: {
           name: { type: 'string' },
-          matches: { type: 'references', bidirectional: { fromField: 'league' }},
+          matches: {
+            type: 'references',
+            bidirectional: { fromField: 'league' },
+          },
         },
       },
       match: {
@@ -116,7 +119,10 @@ async function updateSchema(t: ExecutionContext<TestCtx>) {
           matchType: { type: 'string' },
           date: { type: 'number' },
           completedAt: { type: 'number' },
-          league: { type: 'reference', bidirectional: { fromField: 'matches' }},
+          league: {
+            type: 'reference',
+            bidirectional: { fromField: 'matches' },
+          },
         },
       },
     },
@@ -248,10 +254,10 @@ test.serial('add new reference reverse', async (t) => {
   await wait(100)
   const match = await client.set({
     type: 'match',
-    league
+    league,
   })
   await wait(100)
 
   //console.log(await client.command('subscriptions.debug', [league]))
-  t.deepEqual(res, { id: league, matches: [ match ] })
+  t.deepEqual(res, { id: league, matches: [match] })
 })
