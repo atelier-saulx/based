@@ -287,6 +287,11 @@ export class BasedDbClient extends Emitter {
     ) {
       this.disconnect()
     }
+
+    if (this.connected) {
+      return
+    }
+
     this.opts = opts
     this.connection = connect(this, opts.port, opts.host)
   }
