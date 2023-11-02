@@ -1,4 +1,5 @@
 import type { Language } from './languages'
+import { languages as allLanguages } from './languages'
 import type { PartialDeep, SetOptional } from 'type-fest'
 import { ParseError } from './error'
 import { ArgsClass, Path } from './walker'
@@ -47,6 +48,7 @@ export const isCollection = (type: string): boolean => {
 export type BasedSchemaPattern = string // RE ^[A-Za-z_][A-Za-z0-9_]*$
 
 export type BasedSchemaLanguage = Language // fix
+export const languages = Object.keys(allLanguages)
 
 export type BasedSchemaTypePrefix = string // fix
 

@@ -4,6 +4,7 @@ import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { SchemaUpdateMode } from '../src/types'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -73,41 +74,46 @@ test.afterEach.always(async (t) => {
 
 test('language in all types of objects', async (t) => {
   const { client } = t.context
-  await client.updateSchema({
-    language: 'en',
-    types: {
-      blurf: {
-        prefix: 'bl',
-        fields: {
-          title: { type: 'text' },
-          randoObject: {
-            type: 'object',
-            properties: {
-              title: { type: 'text' },
-            },
-          },
-          randoArray: {
-            type: 'array',
-            values: {
+  await client.updateSchema(
+    {
+      language: 'en',
+      types: {
+        blurf: {
+          prefix: 'bl',
+          fields: {
+            title: { type: 'text' },
+            randoObject: {
               type: 'object',
               properties: {
                 title: { type: 'text' },
               },
             },
-          },
-          randoRecord: {
-            type: 'record',
-            values: {
-              type: 'object',
-              properties: {
-                title: { type: 'text' },
+            randoArray: {
+              type: 'array',
+              values: {
+                type: 'object',
+                properties: {
+                  title: { type: 'text' },
+                },
+              },
+            },
+            randoRecord: {
+              type: 'record',
+              values: {
+                type: 'object',
+                properties: {
+                  title: { type: 'text' },
+                },
               },
             },
           },
         },
       },
     },
-  })
+    {
+      mode: SchemaUpdateMode.flexible,
+    }
+  )
 
   await client.set({
     $id: 'bl1',

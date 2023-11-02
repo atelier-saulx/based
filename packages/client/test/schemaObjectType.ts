@@ -83,8 +83,6 @@ test('Remove property on object field in strict mode', async (t) => {
             ding: {
               properties: {
                 dung: {
-                  // TODO: Remove when @based/schema is updated
-                  // @ts-ignore
                   $delete: true,
                 },
               },
@@ -112,8 +110,6 @@ test('Remove property on nested object field in strict mode', async (t) => {
                 again: {
                   properties: {
                     nestedString: {
-                      // TODO: Remove when @based/schema is updated
-                      // @ts-ignore
                       $delete: true,
                     },
                   },
@@ -150,8 +146,6 @@ test('Remove property on object field in flexible mode with exsiting nodes', asy
               ding: {
                 properties: {
                   dung: {
-                    // TODO: Remove when @based/schema is updated
-                    // @ts-ignore
                     $delete: true,
                   },
                 },
@@ -341,7 +335,7 @@ test('Change property on object field in flexible mode with exsiting nodes but u
   )
 })
 
-test.only('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
+test('Change property on nested object field in flexible mode without exsiting nodes', async (t) => {
   const { client } = t.context
 
   await t.notThrowsAsync(
@@ -376,6 +370,53 @@ test.only('Change property on nested object field in flexible mode without exsit
     // @ts-ignore
     newSchema.types['lekkerType'].fields['withNested'].properties['again']
       .properties['nestedString'].type,
+    'number'
+  )
+})
+
+test('Add nested property flexible mode without exsiting nodes', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              withNested: {
+                properties: {
+                  again: {
+                    properties: {
+                      three: {
+                        type: 'object',
+                        properties: {
+                          four: {
+                            type: 'object',
+                            properties: {
+                              five: { type: 'number' },
+                            },
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
+  )
+
+  const newSchema = client.schema
+  t.is(
+    // @ts-ignore
+    newSchema.types['lekkerType'].fields['withNested'].properties['again']
+      .properties['three'].properties['four'].properties['five'].type,
     'number'
   )
 })
