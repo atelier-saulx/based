@@ -616,12 +616,6 @@ export async function updateSchema(
   if (newConstraints?.length) {
     await Promise.all(
       newConstraints.map(({ prefix, isSingle, bidirectional, field }) => {
-        console.log('yoyo', [
-          prefix,
-          `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,
-          field,
-          bidirectional?.fromField ?? '',
-        ])
         return client.command('hierarchy.addConstraint', [
           prefix,
           `${isSingle ? 'S' : ''}${!!bidirectional ? 'B' : ''}`,

@@ -11,7 +11,6 @@ export function parseGetResult(
   cmds: GetCommand[],
   results: any[]
 ): any {
-  // console.dir({ results }, { depth: 16 })
   let obj = {}
   let hasKeys = false
   for (let i = 0; i < results.length; i++) {

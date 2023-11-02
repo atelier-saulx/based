@@ -25,6 +25,7 @@ import {
 import genId from './id'
 import { deepMergeArrays } from '@saulx/utils'
 import { DEFAULT_SCHEMA, updateSchema } from './schema'
+import { sub } from './sub'
 
 export * as protocol from './protocol'
 export * as dataRecord from 'data-record'
@@ -156,7 +157,6 @@ export class BasedDbClient extends Emitter {
 
   async get(opts: any): Promise<any> {
     const { merged, defaults } = await get(this, opts)
-    // console.dir({ merged, defaults }, { depth: 6 })
 
     for (const d of defaults) {
       applyDefault(merged, d)
@@ -184,68 +184,7 @@ export class BasedDbClient extends Emitter {
     fetch: () => Promise<any>
     pending?: GetCommand
   }> {
-    const origMarkerId = eventOpts?.markerId
-    const { subId, markerId, merged, defaults, pending, markers } = await get(
-      this,
-      opts,
-      {
-        isSubscription: true,
-        ...eventOpts,
-      }
-    )
-
-    await addMarkers({ client: this, subId, markerId }, markers)
-
-    const cleanup = async () => {
-      if (origMarkerId !== markerId) {
-        try {
-          await this.command('subscriptions.delmarker', [subId, origMarkerId])
-        } catch (e) {
-          console.error('Error cleaning up marker', subId, origMarkerId)
-        }
-      }
-
-      if (!eventOpts?.markerId || !pending?.nestedCommands?.length) {
-        return
-      }
-
-      const ctx: ExecContext = {
-        lang: opts.$language,
-        client: this,
-        subId,
-        markerId,
-        cleanup: true,
-      }
-
-      await execParallel(ctx, [pending])
-    }
-
-    // new results
-    const fetch = async () => {
-      if (pending) {
-        const ctx: ExecContext = {
-          lang: opts.$language,
-          client: this,
-          subId,
-          markerId,
-          markers: [],
-          refresh: true,
-        }
-
-        const { nestedObjs } = await execParallel(ctx, [pending])
-        await addMarkers(ctx, [...ctx.markers])
-
-        deepMergeArrays(merged, ...nestedObjs)
-      }
-
-      for (const d of defaults) {
-        applyDefault(merged, d)
-      }
-
-      return merged
-    }
-
-    return { pending, cleanup, fetch, subId }
+    return sub(this, opts, eventOpts)
   }
 
   addSubMarkerMapping(from: number, to: number): boolean {

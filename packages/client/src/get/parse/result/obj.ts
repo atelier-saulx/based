@@ -67,7 +67,6 @@ export function parseObjFields(
 
     if (f === '$edgeMeta') {
       const edgeField = v[0]
-      console.log({ v, edgeField })
       if (edgeField === '' || edgeField.endsWith('@')) {
         v = v[1]
       }
