@@ -130,6 +130,8 @@ test('Remove property on nested object field in strict mode', async (t) => {
 test.only('Remove property on object field in flexible mode with exsiting nodes', async (t) => {
   const { client } = t.context
 
+  console.log(JSON.stringify(client.schema, null, 2))
+
   await client.set({
     type: 'lekkerType',
     ding: {

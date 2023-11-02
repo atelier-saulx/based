@@ -6,7 +6,6 @@ import {
   BasedSchemaPartial,
   basedSchemaFieldTypes,
 } from '@based/schema'
-import { SchemaMutations } from '../../dist/types'
 import {
   ChangeFieldSchemaMutation,
   ChangeTypeSchemaMutation,
@@ -14,6 +13,7 @@ import {
   NewFieldSchemaMutation,
   NewTypeSchemaMutation,
   RemoveFieldSchemaMutation,
+  SchemaMutations,
   SchemaUpdateMode,
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'

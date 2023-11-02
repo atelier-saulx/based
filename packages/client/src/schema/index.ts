@@ -1,16 +1,11 @@
 import {
   BasedSchema,
   BasedSchemaField,
-  BasedSchemaLanguage,
   BasedSchemaPartial,
 } from '@based/schema'
 import { BasedDbClient } from '..'
-import { deepMerge } from '@saulx/utils'
 import { joinPath } from '../util'
-import { generateNewPrefix } from './utils'
 import { SchemaMutations, SchemaUpdateMode } from '../types'
-import { BasedQuery } from '@based/client'
-import { migrateNodes } from './migrateNodes'
 import { getMutations } from './getMutations'
 import { validateSchemaMutations } from './validationRules'
 import { mergeSchema } from './mergeSchema'
