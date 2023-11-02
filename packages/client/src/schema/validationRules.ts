@@ -279,6 +279,12 @@ const noMutationsOnFlexibleModeWithExistingNodes: MutationRule = (
   }
 }
 
+const cannotDeleteRoot: MutationRule = (mutation: DeleteTypeSchemaMutation) => {
+  if (mutation.type === 'root') {
+    throw new Error('Cannot delete root.')
+  }
+}
+
 export const validateSchemaMutations = async (
   client: BasedDbClient,
   currentSchema: BasedSchema,
@@ -315,6 +321,7 @@ export const validateSchemaMutations = async (
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
     } else if (mutation.mutation === 'delete_type') {
       noChangesInStrictMode(mutation, ctx)
+      cannotDeleteRoot(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
     } else if (mutation.mutation === 'change_languages') {
       validateLanguages(mutation, ctx)

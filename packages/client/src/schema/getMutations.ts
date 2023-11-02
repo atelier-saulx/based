@@ -218,7 +218,22 @@ export const getMutations = (
     })
   }
 
-  // TODO: add root
+  if (opts.root?.$delete) {
+    mutations.push({
+      mutation: 'delete_type',
+      type: 'root',
+    })
+  }
+
+  mutations.push(
+    ...diffFields(
+      'root',
+      [],
+      currentSchema.root.fields,
+      opts.root?.fields || {}
+    )
+  )
+
   mutations.push(...diffTypes(currentSchema.types, opts.types || {}))
 
   return mutations

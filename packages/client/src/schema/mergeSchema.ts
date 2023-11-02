@@ -63,18 +63,21 @@ export const mergeSchema = (
     if (mutation.mutation === 'delete_type') {
       delete newSchema.types[mutation.type]
     } else if (mutation.mutation === 'remove_field') {
-      // TODO: test root support
-      if (mutation.type === 'root') {
-        throw new Error('>>>> implement!')
-      } else if (mutation.path.length > 1) {
+      if (mutation.path.length > 1) {
         delete getSchemaTypeFieldByPath(
-          newSchema.types[mutation.type],
+          mutation.type === 'root'
+            ? newSchema.root
+            : newSchema.types[mutation.type],
           mutation.path.slice(0, -1)
         )[mutation.type]
       } else {
-        delete newSchema.types[mutation.type].fields[
-          mutation.path[mutation.path.length - 1]
-        ]
+        if (mutation.type === 'root') {
+          delete newSchema.root.fields[mutation.path[mutation.path.length - 1]]
+        } else {
+          delete newSchema.types[mutation.type].fields[
+            mutation.path[mutation.path.length - 1]
+          ]
+        }
       }
     } else if (mutation.mutation === 'new_type') {
       const prefix =
@@ -92,20 +95,28 @@ export const mergeSchema = (
     } else if (mutation.mutation === 'new_field') {
       if (mutation.path.length > 1) {
         getSchemaTypeFieldByPath(
-          newSchema.types[mutation.type],
+          mutation.type === 'root'
+            ? newSchema.root
+            : newSchema.types[mutation.type],
           mutation.path.slice(0, -1)
         ).properties[mutation.path[mutation.path.length - 1]] = mutation.new
       } else {
-        newSchema.types[mutation.type].fields[mutation.path[0]] =
-          mutation.new as BasedSchemaField
+        if (mutation.type === 'root') {
+          newSchema.root.fields[mutation.path[0]] =
+            mutation.new as BasedSchemaField
+        } else {
+          newSchema.types[mutation.type].fields[mutation.path[0]] =
+            mutation.new as BasedSchemaField
+        }
       }
     } else if (mutation.mutation === 'change_field') {
       const field = getSchemaTypeFieldByPath(
-        newSchema.types[mutation.type],
+        mutation.type === 'root'
+          ? newSchema.root
+          : newSchema.types[mutation.type],
         mutation.path
       )
       // TODO: test prefix change
-      // TODO: test adding nested field
       deepMerge(field, mutation.new)
     } else if (mutation.mutation === 'change_languages') {
       if (mutation.new.language) {
