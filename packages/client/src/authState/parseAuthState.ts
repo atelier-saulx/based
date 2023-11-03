@@ -21,8 +21,6 @@ export const decodeAuthState = (authState: string): AuthState => {
 */
 // | HT (what is this?)
 
-// can also encode the json - no base64
-
 const { encode } = createEncoder(
   [
     '(',
@@ -48,5 +46,13 @@ const { encode } = createEncoder(
 )
 
 export const encodeAuthState = (authState: AuthState): string => {
-  return encodeURI(encode(global.btoa(JSON.stringify(authState))))
+  return encodeURI(
+    encode(
+      global.btoa(
+        String.fromCodePoint(
+          ...new TextEncoder().encode(JSON.stringify(authState))
+        )
+      )
+    )
+  )
 }
