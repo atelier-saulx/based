@@ -1,44 +1,23 @@
 import uws from '@based/uws'
-import { BasedServer } from '../../server'
-import {
-  HttpSession,
-  Context,
-  AuthState,
-  isBasedRoute,
-  BasedRoute,
-} from '@based/functions'
-import { httpFunction } from './function'
-import { httpStreamFunction } from './streamFunction'
-import { httpGet } from './query'
-import { readBody } from './readBody'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
+import { BasedServer } from '../../server.js'
+import { HttpSession, Context, AuthState, isBasedRoute } from '@based/functions'
+import { httpFunction } from './function.js'
+import { httpStreamFunction } from './streamFunction/index.js'
+import { httpGet } from './query.js'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
 import {
   blockIncomingRequest,
   rateLimitRequest,
   endRateLimitHttp,
-} from '../../security'
-import parseQuery from './parseQuery'
-import { parseAuthState, parseJSONAuthState } from '../../auth'
-import { authorize } from '../../authorize'
-import { end } from '../../sendHttpResponse'
-import { httpPublish } from './publish'
+} from '../../security.js'
+import { parseAuthState, parseJSONAuthState } from '../../auth/index.js'
+import { authorize } from '../../authorize.js'
+import { end } from '../../sendHttpResponse.js'
+import { httpPublish } from './publish.js'
+import { handleRequest } from './handleRequest.js'
 
 let clientId = 0
-
-const handleRequest = (
-  server: BasedServer,
-  method: string,
-  ctx: Context<HttpSession>,
-  route: BasedRoute,
-  ready: (payload?: any) => void
-) => {
-  if (method === 'post') {
-    readBody(server, ctx, ready, route)
-  } else {
-    ready(parseQuery(ctx, route))
-  }
-}
 
 export const httpHandler = (
   server: BasedServer,

@@ -1,5 +1,5 @@
-import { BasedErrorCode } from './error'
-import type { BasedServer } from './server'
+import { BasedErrorCode } from './error/index.js'
+import type { BasedServer } from './server.js'
 import uws from '@based/uws'
 import { HttpSession, WebSocketSession, Context } from '@based/functions'
 

@@ -4,9 +4,9 @@ import {
   Context,
   InternalSessionClient,
 } from '@based/functions'
-import { genObservableId } from '../../query'
-import { publish } from '../publish'
-import { subscribeChannel } from '../channelSubscribe'
+import { genObservableId } from '../../query/index.js'
+import { publish } from '../publish.js'
+import { subscribeChannel } from '../channelSubscribe.js'
 
 export class BasedChannel extends BasedChannelAbstract {
   public payload: any

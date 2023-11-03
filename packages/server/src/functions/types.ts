@@ -5,7 +5,7 @@ import {
   BasedFunctionConfigs,
   BasedFunctionConfigComplete,
 } from '@based/functions'
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 
 export type FunctionConfig = {
   /** Default number to close channels & queries when no subscribers are active in ms */

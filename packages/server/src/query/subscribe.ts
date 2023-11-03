@@ -1,10 +1,10 @@
-import { BasedServer } from '../server'
-import { ActiveObservable, ObservableUpdateFunction } from './types'
-import { extendCache } from './extendCache'
-import { BasedErrorCode, BasedErrorData } from '../error'
-import { sendObsWs } from './send'
-import { getObsAndStopRemove } from './get'
-import { sendErrorData } from '../sendError'
+import { BasedServer } from '../server.js'
+import { ActiveObservable, ObservableUpdateFunction } from './types.js'
+import { extendCache } from './extendCache.js'
+import { BasedErrorCode, BasedErrorData } from '../error/index.js'
+import { sendObsWs } from './send.js'
+import { getObsAndStopRemove } from './get.js'
+import { sendErrorData } from '../sendError.js'
 import { WebSocketSession, Context } from '@based/functions'
 
 export const subscribeWs = (

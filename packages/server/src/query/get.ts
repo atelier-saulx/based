@@ -1,6 +1,6 @@
-import { ActiveObservable } from './types'
-import { BasedServer } from '../server'
-import { extendCache } from './extendCache'
+import { ActiveObservable } from './types.js'
+import { BasedServer } from '../server.js'
+import { extendCache } from './extendCache.js'
 
 export const getObsAndStopRemove = (
   server: BasedServer,

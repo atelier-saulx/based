@@ -1,7 +1,7 @@
-import { BasedServer } from '../server'
-import { ActiveObservable } from './types'
-import { start } from './start'
-import { hasObs } from './get'
+import { BasedServer } from '../server.js'
+import { ActiveObservable } from './types.js'
+import { start } from './start/index.js'
+import { hasObs } from './get.js'
 
 export const createObs = (
   server: BasedServer,

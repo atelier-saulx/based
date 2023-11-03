@@ -5,14 +5,14 @@ import {
   encodeFunctionResponse,
   valueToBuffer,
   parsePayload,
-} from '../../protocol'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
+} from '../../protocol.js'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
-import { rateLimitRequest } from '../../security'
-import { verifyRoute } from '../../verifyRoute'
-import { authorize, IsAuthorizedHandler } from '../../authorize'
-import { BinaryMessageHandler } from './types'
+import { rateLimitRequest } from '../../security.js'
+import { verifyRoute } from '../../verifyRoute.js'
+import { authorize, IsAuthorizedHandler } from '../../authorize.js'
+import { BinaryMessageHandler } from './types.js'
 import { Duplex, Readable } from 'stream'
 import { readStream } from '@saulx/utils'
 
@@ -35,14 +35,14 @@ const sendFunction: IsAuthorizedHandler<
 
     client
       .call(spec.relay.target ?? spec.name, payload)
-      .then(async (v) => {
+      .then(async (v: any) => {
         ctx.session?.ws.send(
           encodeFunctionResponse(requestId, valueToBuffer(v)),
           true,
           false
         )
       })
-      .catch((err) => {
+      .catch((err: Error) => {
         sendError(server, ctx, BasedErrorCode.FunctionError, {
           route,
           requestId,

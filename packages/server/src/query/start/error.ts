@@ -1,7 +1,7 @@
-import { ActiveObservable, ObservableError } from '../types'
-import { BasedServer } from '../../server'
-import { createError, BasedErrorCode } from '../../error'
-import { encodeErrorResponse, valueToBuffer } from '../../protocol'
+import { ActiveObservable, ObservableError } from '../types.js'
+import { BasedServer } from '../../server.js'
+import { createError, BasedErrorCode } from '../../error/index.js'
+import { encodeErrorResponse, valueToBuffer } from '../../protocol.js'
 
 export const errorListener = (
   server: BasedServer,

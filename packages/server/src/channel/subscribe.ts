@@ -1,11 +1,11 @@
-import { BasedServer } from '../server'
-import { getChannelAndStopRemove } from './get'
+import { BasedServer } from '../server.js'
+import { getChannelAndStopRemove } from './get.js'
 import {
   WebSocketSession,
   Context,
   ChannelMessageFunctionInternal,
 } from '@based/functions'
-import { startChannel } from './start'
+import { startChannel } from './start.js'
 
 export const subscribeChannel = (
   server: BasedServer,

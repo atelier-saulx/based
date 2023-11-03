@@ -1,4 +1,4 @@
-import { BasedErrorCode, ErrorPayload, ErrorHandler } from './types'
+import { BasedErrorCode, ErrorPayload, ErrorHandler } from './types.js'
 
 const addName = (
   payload: { name: string } & { [key: string]: unknown }

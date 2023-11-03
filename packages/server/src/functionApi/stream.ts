@@ -1,5 +1,5 @@
-import { BasedServer } from '../server'
-import { BasedErrorCode, createError } from '../error'
+import { BasedServer } from '../server.js'
+import { BasedErrorCode, createError } from '../error/index.js'
 import {
   Context,
   BasedDataStream,
@@ -7,8 +7,8 @@ import {
   StreamFunctionOpts,
   isStreamFunctionOpts,
 } from '@based/functions'
-import { verifyRoute } from '../verifyRoute'
-import { installFn } from '../installFn'
+import { verifyRoute } from '../verifyRoute.js'
+import { installFn } from '../installFn.js'
 import { Duplex, Readable } from 'stream'
 
 const wrapStream = (

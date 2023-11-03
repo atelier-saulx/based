@@ -1,14 +1,14 @@
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 import { ChannelMessageFunctionInternal } from '@based/functions'
-import { verifyRoute } from '../verifyRoute'
+import { verifyRoute } from '../verifyRoute.js'
 import {
   unsubscribeFunction,
   subscribeChannelFunction,
   hasChannel,
   createChannel,
-} from '../channel'
-import { installFn } from '../installFn'
-import { createError, BasedErrorCode } from '../error'
+} from '../channel/index.js'
+import { installFn } from '../installFn.js'
+import { createError, BasedErrorCode } from '../error/index.js'
 
 export const subscribeChannel = (
   server: BasedServer,

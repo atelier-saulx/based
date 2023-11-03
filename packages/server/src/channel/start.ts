@@ -1,11 +1,11 @@
-import { BasedServer } from '../server'
-import { ActiveChannel } from './types'
+import { BasedServer } from '../server.js'
+import { ActiveChannel } from './types.js'
 import {
   valueToBuffer,
   encodeChannelMessage,
   encodeErrorResponse,
-} from '../protocol'
-import { BasedErrorData, BasedErrorCode, createError } from '../error'
+} from '../protocol.js'
+import { BasedErrorData, BasedErrorCode, createError } from '../error/index.js'
 import { isBasedFunctionConfig } from '@based/functions'
 
 const updateChannelListener = (
@@ -129,7 +129,6 @@ export const startChannel = (
         let tempMsg: any
         let isThrottled: boolean
         let throtDebounced = false
-        let timer: NodeJS.Timeout
 
         const update = (msg: any) => {
           if (isThrottled) {
@@ -137,7 +136,7 @@ export const startChannel = (
             throtDebounced = true
           } else {
             isThrottled = true
-            timer = setTimeout(() => {
+            setTimeout(() => {
               if (throtDebounced && !channel.isDestroyed) {
                 updateChannelListener(server, channel, tempMsg)
                 // deref

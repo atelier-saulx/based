@@ -1,4 +1,4 @@
-import { BasedServer } from './server'
+import { BasedServer } from './server.js'
 import {
   Context,
   isClientContext,
@@ -7,14 +7,14 @@ import {
   isBasedFunctionConfig,
   BasedFunctionTypes,
 } from '@based/functions'
-import { sendSimpleError } from './sendError'
-import { BasedErrorCode } from './error'
+import { sendSimpleError } from './sendError.js'
+import { BasedErrorCode } from './error/index.js'
 
 const functionNotFound = (
   server: BasedServer,
   ctx: Context,
   route: BasedRoute,
-  type?: BasedFunctionTypes,
+  _type?: BasedFunctionTypes,
   id?: number
 ) => {
   if (!isClientContext(ctx)) {

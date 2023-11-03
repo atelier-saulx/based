@@ -1,14 +1,14 @@
-import { ActiveObservable } from '../types'
+import { ActiveObservable } from '../types.js'
 import {
   updateId,
   valueToBuffer,
   encodeObservableResponse,
   encodeObservableDiffResponse,
-} from '../../protocol'
+} from '../../protocol.js'
 import { deepCopy } from '@saulx/utils'
 import { hashObjectIgnoreKeyOrder, hash } from '@saulx/hash'
 import { createPatch } from '@saulx/diff'
-import { BasedServer } from '../../server'
+import { BasedServer } from '../../server.js'
 
 export const updateListener = (
   server: BasedServer,

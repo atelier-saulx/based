@@ -1,6 +1,6 @@
-import { BasedServer } from '../server'
-import { cleanUpObs } from './cleanup'
-import { ActiveObservable } from './types'
+import { BasedServer } from '../server.js'
+import { cleanUpObs } from './cleanup.js'
+import { ActiveObservable } from './types.js'
 import { isBasedFunctionConfig } from '@based/functions'
 
 export const updateDestroyTimer = (

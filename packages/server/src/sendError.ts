@@ -1,5 +1,5 @@
-import { end } from './sendHttpResponse'
-import { BasedServer } from './server'
+import { end } from './sendHttpResponse.js'
+import { BasedServer } from './server.js'
 import {
   HttpSession,
   WebSocketSession,
@@ -8,13 +8,13 @@ import {
   isWsSession,
   BasedRoute,
 } from '@based/functions'
-import { valueToBuffer, encodeErrorResponse } from './protocol'
+import { valueToBuffer, encodeErrorResponse } from './protocol.js'
 import {
   BasedErrorCode,
   ErrorPayload,
   createError,
   BasedErrorData,
-} from './error'
+} from './error/index.js'
 
 const sendHttpErrorData = (
   errorData: BasedErrorData,

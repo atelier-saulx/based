@@ -1,4 +1,4 @@
-import { BasedErrorCode, BasedErrorData } from '../error'
+import { BasedErrorCode, BasedErrorData } from '../error/index.js'
 
 export type ObservableError =
   | BasedErrorData<BasedErrorCode.FunctionError>

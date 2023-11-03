@@ -4,22 +4,22 @@ import {
   BasedRoute,
   BasedFunctionConfig,
 } from '@based/functions'
-import { sendHttpResponse } from '../../sendHttpResponse'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
-import { installFn } from '../../installFn'
-import { IsAuthorizedHandler } from '../../authorize'
-import { genObservableId } from '../../query'
+import { sendHttpResponse } from '../../sendHttpResponse.js'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
+import { installFn } from '../../installFn.js'
+import { IsAuthorizedHandler } from '../../authorize.js'
+import { genObservableId } from '../../query/index.js'
 import {
   hasChannel,
   createChannel,
   destroyChannel,
   extendChannel,
-} from '../../channel'
+} from '../../channel/index.js'
 
 export const httpPublish: IsAuthorizedHandler<HttpSession> = async (
   route: BasedRoute<'channel'>,
-  spec: BasedFunctionConfig<'channel'>,
+  _spec: BasedFunctionConfig<'channel'>,
   server,
   ctx,
   payload

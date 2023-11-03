@@ -5,10 +5,10 @@ import {
   BasedDataStream,
   BasedRoute,
 } from '@based/functions'
-import { BasedErrorCode } from '../../../../error'
-import { sendError } from '../../../../sendError'
-import getExtension from '../getExtension'
-import { BasedServer } from '../../../../server'
+import { BasedErrorCode } from '../../../../error/index.js'
+import { sendError } from '../../../../sendError.js'
+import getExtension from '../getExtension.js'
+import { BasedServer } from '../../../../server.js'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 

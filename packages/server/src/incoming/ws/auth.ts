@@ -2,20 +2,20 @@ import {
   valueToBuffer,
   decodePayload,
   encodeAuthResponse,
-} from '../../protocol'
-import { BasedServer } from '../../server'
-import { enableSubscribe } from './query'
-import { rateLimitRequest } from '../../security'
+} from '../../protocol.js'
+import { BasedServer } from '../../server.js'
+import { enableSubscribe } from './query.js'
+import { rateLimitRequest } from '../../security.js'
 import {
   AuthState,
   WebSocketSession,
   Context,
   BasedRoute,
 } from '@based/functions'
-import { BinaryMessageHandler } from './types'
-import { enableChannelSubscribe } from './channelSubscribe'
-import { installFn } from '../../installFn'
-import { authorize } from '../../authorize'
+import { BinaryMessageHandler } from './types.js'
+import { enableChannelSubscribe } from './channelSubscribe.js'
+import { installFn } from '../../installFn.js'
+import { authorize } from '../../authorize.js'
 
 const sendAuthMessage = (ctx: Context<WebSocketSession>, payload: any) =>
   ctx.session?.ws.send(encodeAuthResponse(valueToBuffer(payload)), true, false)

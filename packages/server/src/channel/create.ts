@@ -1,7 +1,7 @@
-import { BasedServer } from '../server'
-import { ActiveChannel } from './types'
-import { startChannel } from './start'
-import { hasChannel } from './get'
+import { BasedServer } from '../server.js'
+import { ActiveChannel } from './types.js'
+import { startChannel } from './start.js'
+import { hasChannel } from './get.js'
 
 export const createChannel = (
   server: BasedServer,

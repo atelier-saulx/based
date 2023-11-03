@@ -1,14 +1,14 @@
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 import { Context, isAnyBasedRoute } from '@based/functions'
 import {
   BasedErrorCode,
   ErrorPayload,
   BasedErrorData,
   EMPTY_ROUTE,
-} from './types'
+} from './types.js'
 
-import { errorTypeHandlers } from './errorTypeHandlers'
-export * from './types'
+import { errorTypeHandlers } from './errorTypeHandlers.js'
+export * from './types.js'
 
 export function createErrorData<T extends BasedErrorCode>(
   code: T,

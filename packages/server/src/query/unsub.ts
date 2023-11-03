@@ -1,7 +1,7 @@
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 import { WebSocketSession, Context } from '@based/functions'
-import { destroyObs } from './destroy'
-import { ObservableUpdateFunction } from './types'
+import { destroyObs } from './destroy.js'
+import { ObservableUpdateFunction } from './types.js'
 
 export const unsubscribeFunction = (
   server: BasedServer,

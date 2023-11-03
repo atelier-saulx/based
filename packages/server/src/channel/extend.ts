@@ -1,5 +1,5 @@
-import { ActiveChannel } from './types'
-import { BasedServer } from '../server'
+import { ActiveChannel } from './types.js'
+import { BasedServer } from '../server.js'
 
 export const stopRemoveChannel = (channel: ActiveChannel) => {
   if (channel.timeTillDestroy) {

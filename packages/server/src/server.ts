@@ -6,16 +6,16 @@ import {
   Geo,
   isClientContext,
 } from '@based/functions'
-import type { ActiveObservable } from './query'
+import type { ActiveObservable } from './query/index.js'
 import uws from '@based/uws'
-import initNetwork from './incoming'
-import { BasedFunctions, FunctionConfig } from './functions'
-import { BasedAuth, AuthConfig } from './auth'
-import { BasedErrorCode, BasedErrorData } from './error'
+import initNetwork from './incoming/index.js'
+import { BasedFunctions, FunctionConfig } from './functions/index.js'
+import { BasedAuth, AuthConfig } from './auth/index.js'
+import { BasedErrorCode, BasedErrorData } from './error/index.js'
 import { wait } from '@saulx/utils'
 import picocolors = require('picocolors')
-import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi'
-import { ActiveChannel } from './channel'
+import { BasedFunctionClient as BasedServerFunctionClient } from './functionApi/index.js'
+import { ActiveChannel } from './channel/index.js'
 import util from 'node:util'
 
 type EventMap = {

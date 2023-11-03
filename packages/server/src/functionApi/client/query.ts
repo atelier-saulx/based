@@ -1,6 +1,9 @@
-import { ObservableUpdateFunction, ObserveErrorListener } from '../../query'
-import { observe } from '../observe'
-import { get } from '../get'
+import {
+  ObservableUpdateFunction,
+  ObserveErrorListener,
+} from '../../query/index.js'
+import { observe } from '../observe.js'
+import { get } from '../get.js'
 import {
   BasedQuery as BasedQueryAbstract,
   Context,

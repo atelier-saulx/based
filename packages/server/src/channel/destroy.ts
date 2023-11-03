@@ -1,7 +1,7 @@
 import { isBasedFunctionConfig } from '@based/functions'
-import { BasedServer } from '../server'
-import { cleanUpChannels } from './cleanup'
-import { ActiveChannel } from './types'
+import { BasedServer } from '../server.js'
+import { cleanUpChannels } from './cleanup.js'
+import { ActiveChannel } from './types.js'
 
 export const updateDestroyTimer = (
   server: BasedServer,

@@ -1,9 +1,9 @@
-import { BasedServer } from '../../../server'
-import { sendError } from '../../../sendError'
+import { BasedServer } from '../../../server.js'
+import { sendError } from '../../../sendError.js'
 import { HttpSession, Context, BasedRoute } from '@based/functions'
-import { BasedErrorCode } from '../../../error'
-import { multiPart } from './multiPart'
-import { singleStream } from './stream'
+import { BasedErrorCode } from '../../../error/index.js'
+import { multiPart } from './multiPart/index.js'
+import { singleStream } from './stream/index.js'
 
 export const httpStreamFunction = (
   server: BasedServer,

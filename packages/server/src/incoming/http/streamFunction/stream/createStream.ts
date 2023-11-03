@@ -4,10 +4,10 @@ import {
   BasedDataStream,
   BasedRoute,
 } from '@based/functions'
-import { sendError } from '../../../../sendError'
+import { sendError } from '../../../../sendError.js'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../../../error'
-import { BasedServer } from '../../../../server'
+import { BasedErrorCode } from '../../../../error/index.js'
+import { BasedServer } from '../../../../server.js'
 
 const MAX_CHUNK_SIZE = 1024 * 1024 * 5
 

@@ -1,5 +1,5 @@
-import { BasedServer } from '../server'
-import { ActiveObservable } from './types'
+import { BasedServer } from '../server.js'
+import { ActiveObservable } from './types.js'
 
 const destroyObs = (server: BasedServer, obs: ActiveObservable) => {
   const id = obs.id

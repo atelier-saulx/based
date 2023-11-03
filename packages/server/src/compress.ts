@@ -1,6 +1,6 @@
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import { COMPRESS_FROM_BYTES } from './protocol'
+import { COMPRESS_FROM_BYTES } from './protocol.js'
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)

@@ -1,13 +1,13 @@
 import uws from '@based/uws'
-import { parseAuthState } from '../auth'
-import { blockIncomingRequest } from '../security'
-import { BasedServer } from '../server'
+import { parseAuthState } from '../auth/index.js'
+import { blockIncomingRequest } from '../security.js'
+import { BasedServer } from '../server.js'
 // import { BasedErrorCode } from '../error'
 
 let clientId = 0
 
 const upgradeInternal = (
-  server: BasedServer,
+  _server: BasedServer,
   res: uws.HttpResponse,
   req: uws.HttpRequest,
   // eslint-disable-next-line
@@ -30,7 +30,6 @@ const upgradeInternal = (
     // )
     // res.close()
     // return
-
     // TODO: fix this, no bueno
     console.warn('No sec-websocket-protocol in handshake...')
   }
