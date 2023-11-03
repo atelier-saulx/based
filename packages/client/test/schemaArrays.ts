@@ -62,8 +62,6 @@ test('Remove array field in strick mode should fail', async (t) => {
       types: {
         aType: {
           fields: {
-            // TODO: remove when @based/schema is updated
-            // @ts-ignore
             level1array: { $delete: true },
           },
         },
