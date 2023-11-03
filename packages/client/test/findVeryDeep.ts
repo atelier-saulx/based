@@ -182,7 +182,7 @@ test('get very deep results', async (t) => {
           })
 
           await client.updateSchema({
-            languages: ['en'],
+            language: 'en',
             root: {
               prefix: 'ro',
               fields: {},

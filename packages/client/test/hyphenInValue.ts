@@ -29,7 +29,6 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    // languages: ['en'],
     types: {
       actor: {
         prefix: 'ac',

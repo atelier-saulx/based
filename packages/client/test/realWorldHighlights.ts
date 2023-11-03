@@ -80,7 +80,8 @@ test.beforeEach(async (t) => {
   }
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de'],
+    language: 'en',
+    translations: ['de'],
     root: {
       fields: {
         // @ts-ignore
