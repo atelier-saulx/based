@@ -1,4 +1,11 @@
-import { compile, createRecord, readValue, readString, writeValue, deserializeRecordPArray } from '../src'
+import {
+	compile,
+	createRecord,
+	readValue,
+	readString,
+	writeValue,
+	deserializeRecordPArray,
+} from '../src'
 
 const subRecordDef = [{ name: 'value', type: 'uint32_le' }]
 const recordDef = [
@@ -26,7 +33,7 @@ describe('Test record pointers', () => {
 		const subBuf = readValue<Buffer>(rec, buf, '.values')
 		expect(subBuf).toBeTruthy()
 		expect(readValue(sub, subBuf, '.value')).toBe(1337)
-		expect(readString(rec, buf, '.more','utf-8')).toBe('hello hello')
+		expect(readString(rec, buf, '.more', 'utf-8')).toBe('hello hello')
 	})
 
 	test('Deserialize a record pointer', () => {
@@ -44,7 +51,7 @@ describe('Test record pointers', () => {
 		const subs = deserializeRecordPArray(rec, buf, '.values', sub)
 		expect(subs).toEqual([{ value: 1 }])
 
-		expect(readString(rec, buf, '.more','utf-8')).toBe('hello hello')
+		expect(readString(rec, buf, '.more', 'utf-8')).toBe('hello hello')
 	})
 
 	test('An array of records', () => {
@@ -65,8 +72,13 @@ describe('Test record pointers', () => {
 		expect(readValue(rec, buf, '.a')).toBe(42)
 
 		const subs = deserializeRecordPArray(rec, buf, '.values', sub)
-		expect(subs).toEqual([{ value: 1 }, { value: 2 }, { value: 3 }, { value: 4 }])
+		expect(subs).toEqual([
+			{ value: 1 },
+			{ value: 2 },
+			{ value: 3 },
+			{ value: 4 },
+		])
 
-		expect(readString(rec, buf, '.more','utf-8')).toBe('hello hello')
+		expect(readString(rec, buf, '.more', 'utf-8')).toBe('hello hello')
 	})
 })

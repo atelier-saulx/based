@@ -56,11 +56,13 @@ export function calcHeapSize(compiledDef: CompiledRecordDef, obj: any): number {
 			const typeSize = SIZES[typeCode.charAt(1)] || 1
 			if (typeCode === TYPES.record_p) {
 				// The values should be already Buffers
-				if (Array.isArray(node)) {
-					size += node.reduce((acc, cur) => acc + cur.length, 0)
-				} else {
-					size += node.length
-				}
+				size += node
+					? compiledDef.align(
+							Array.isArray(node)
+								? node.reduce((acc, cur) => acc + cur.length, 0)
+								: node.length
+					  )
+					: 0
 			} else {
 				size += node ? compiledDef.align(node.length * typeSize) : 0
 			}
@@ -89,5 +91,7 @@ export function deserializeRecordPArray<T = Object>(
 	const subBuf = readValue<Buffer>(compiledDef, buf, path)
 	const elemSize = subDef.size
 
-	return Array.from(Array(subBuf.length / elemSize), (_, i) => subBuf.slice(i * elemSize, (i + 1) * elemSize)).map((elem) => deserialize(subDef, elem))
+	return Array.from(Array(subBuf.length / elemSize), (_, i) =>
+		subBuf.slice(i * elemSize, (i + 1) * elemSize)
+	).map((elem) => deserialize(subDef, elem))
 }
