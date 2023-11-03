@@ -41,10 +41,8 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 import { deepEqual } from '@saulx/utils'
 
-// bah
-const bla = require('@based/opts')
-
-const { parseOpts } = bla
+import basedOptsPkg from '@based/opts'
+const parseOpts = basedOptsPkg.default
 
 export * from './authState/parseAuthState.js'
 

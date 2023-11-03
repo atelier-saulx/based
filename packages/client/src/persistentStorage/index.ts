@@ -17,7 +17,7 @@ export const removeStorage = (client: BasedClient, key: string) => {
     key += '-' + env
     removeStorageBrowser(client, key)
   } else if (client.storagePath) {
-    require('./node').removeStorageNode(client, key)
+    // require('./node').removeStorageNode(client, key)
   }
 }
 
@@ -30,7 +30,7 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
     key += '-' + env
     setStorageBrowser(client, key, value)
   } else if (client.storagePath) {
-    require('./node').setStorageNode(client, key, value)
+    // require('./node').setStorageNode(client, key, value)
   }
 }
 
@@ -38,7 +38,7 @@ export const updateStorage = async (client: BasedClient) => {
   if (isBrowser) {
     // not nessecary...
   } else if (client.storagePath) {
-    return require('./node').store(client)
+    // return require('./node').store(client)
   }
 }
 
@@ -46,7 +46,7 @@ export const initStorage = async (client: BasedClient) => {
   if (isBrowser) {
     return initStorageBrowser(client)
   } else if (client.storagePath) {
-    return require('./node').initStorageNode(client)
+    // return require('./node').initStorageNode(client)
   }
 }
 
@@ -54,6 +54,6 @@ export const clearStorage = async (client: BasedClient) => {
   if (isBrowser) {
     return clearStorageBrowser()
   } else if (client.storagePath) {
-    return require('./node').clearStorageNode(client)
+    // return require('./node').clearStorageNode(client)
   }
 }

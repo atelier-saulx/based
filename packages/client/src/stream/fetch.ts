@@ -1,6 +1,6 @@
 import { BasedClient, encodeAuthState } from '../index.js'
 import { StreamFunctionContents, StreamHeaders } from './types.js'
-const fetch = require('@based/fetch')
+import fetch from '@based/fetch'
 import { serializeQuery } from '@saulx/utils'
 import parseOpts from '@based/opts'
 
@@ -29,6 +29,7 @@ export default async (
     q = '?' + serializeQuery(options.payload)
   }
 
+  // @ts-ignore
   const result = await fetch(url + '/' + name + q, {
     method: 'POST',
     cache: 'no-cache',
