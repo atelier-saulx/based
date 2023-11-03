@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedClient } from '../src/index.js'
-import { BasedServer } from '../../server/src/index.js'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
