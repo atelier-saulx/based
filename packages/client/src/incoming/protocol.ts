@@ -1,5 +1,5 @@
-import { BasedClient } from '..'
-import { addGetToQueue } from '../outgoing'
+import { BasedClient } from '../index.js'
+import { addGetToQueue } from '../outgoing/index.js'
 
 export const decodeHeader = (
   nr: number

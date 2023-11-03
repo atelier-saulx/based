@@ -45,9 +45,9 @@ export const defaultAuthError: AuthErrorHandler = (
   route,
   server,
   ctx,
-  payload,
+  _payload,
   id,
-  checksum,
+  _checksum,
   err
 ) => {
   const code = err

@@ -4,7 +4,7 @@ import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import { encodeAuthState } from '../src/index'
+import { encodeAuthState } from '../src/index.js'
 import { BasedFunctionConfigComplete, isHttpContext } from '@based/functions'
 
 const deflate = promisify(zlib.deflate)

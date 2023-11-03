@@ -21,7 +21,6 @@ import {
   genObservableId,
 } from '../../query'
 import zlib from 'node:zlib'
-import { parseQuery } from '@saulx/utils'
 import { BasedErrorCode } from '../../error'
 import { sendError } from '../../sendError'
 import { promisify } from 'node:util'

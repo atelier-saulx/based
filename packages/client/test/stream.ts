@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
 import { join } from 'path'

@@ -1,6 +1,6 @@
-import { BasedClient } from '..'
-import { AuthState, GenericObject } from '../types'
-import { updateAuthState } from '../authState/updateAuthState'
+import { BasedClient } from '../index.js'
+import { AuthState, GenericObject } from '../types/index.js'
+import { updateAuthState } from '../authState/updateAuthState.js'
 import {
   encodeAuthMessage,
   encodeFunctionMessage,
@@ -8,15 +8,8 @@ import {
   encodeObserveMessage,
   encodePublishMessage,
   encodeSubscribeChannelMessage,
-} from './protocol'
+} from './protocol.js'
 import { deepEqual } from '@saulx/utils'
-import {
-  debugChannel,
-  debugFunction,
-  debugGet,
-  debugObserve,
-  debugPublish,
-} from './debug'
 
 const PING = new Uint8Array(0)
 
@@ -52,8 +45,6 @@ export const drainQueue = (client: BasedClient) => {
         return
       }
 
-      const debug = client.listeners.debug
-
       if (
         client.functionQueue.length ||
         client.observeQueue.size ||
@@ -75,9 +66,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len
-          if (debug) {
-            debugChannel(client, id, o)
-          }
         }
 
         // ------- GetObserve
@@ -85,9 +73,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeGetObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
-          if (debug) {
-            debugGet(client, id, o)
-          }
         }
 
         // ------- Observe
@@ -95,10 +80,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
-
-          if (debug) {
-            debugObserve(client, id, o)
-          }
         }
 
         // ------- Function
@@ -106,21 +87,12 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeFunctionMessage(f)
           buffs.push(...buffers)
           l += len
-
-          if (debug) {
-            debugFunction(client, f)
-          }
         }
 
         // ------- Publish
         for (const f of publish) {
           const { buffers, len } = encodePublishMessage(f)
           buffs.push(...buffers)
-
-          if (debug) {
-            debugPublish(client, f)
-          }
-
           l += len
         }
 

@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { createReadStream, readFileSync } from 'fs'
 import { join } from 'path'
 import fetch from 'cross-fetch'

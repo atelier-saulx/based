@@ -1,0 +1,1066 @@
+{
+  "inputs": {
+    "dist/websocket/urlLoader.js": {
+      "bytes": 286,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/deepCopy.js": {
+      "bytes": 411,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/isObject.js": {
+      "bytes": 244,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/wait.js": {
+      "bytes": 207,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/deepEqual.js": {
+      "bytes": 2559,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/envVar.js": {
+      "bytes": 295,
+      "imports": [],
+      "format": "cjs"
+    },
+    "(disabled):stream": {
+      "bytes": 0,
+      "imports": []
+    },
+    "../../node_modules/@saulx/utils/dist/readStream.js": {
+      "bytes": 625,
+      "imports": [
+        {
+          "path": "(disabled):stream",
+          "kind": "require-call",
+          "original": "stream"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/stringHash.js": {
+      "bytes": 331,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hashObjectNest.js": {
+      "bytes": 3085,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
+          "kind": "require-call",
+          "original": "./stringHash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hashObject.js": {
+      "bytes": 476,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
+          "kind": "require-call",
+          "original": "./hashObjectNest"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hash.js": {
+      "bytes": 1343,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
+          "kind": "require-call",
+          "original": "./hashObject"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
+          "kind": "require-call",
+          "original": "./stringHash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hashCompact.js": {
+      "bytes": 2630,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hash.js",
+          "kind": "require-call",
+          "original": "./hash"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
+          "kind": "require-call",
+          "original": "./stringHash"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
+          "kind": "require-call",
+          "original": "./hashObject"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "."
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js": {
+      "bytes": 3584,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
+          "kind": "require-call",
+          "original": "./stringHash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js": {
+      "bytes": 568,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
+          "kind": "require-call",
+          "original": "./hashObjectIgnoreKeyOrderNest"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/hash/dist/index.js": {
+      "bytes": 1115,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hash.js",
+          "kind": "require-call",
+          "original": "./hash"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashCompact.js",
+          "kind": "require-call",
+          "original": "./hashCompact"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
+          "kind": "require-call",
+          "original": "./hashObject"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js",
+          "kind": "require-call",
+          "original": "./hashObjectIgnoreKeyOrder"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
+          "kind": "require-call",
+          "original": "./hashObjectIgnoreKeyOrderNest"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
+          "kind": "require-call",
+          "original": "./hashObjectNest"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
+          "kind": "require-call",
+          "original": "./stringHash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/is-plain-obj/index.js": {
+      "bytes": 245,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/queued.js": {
+      "bytes": 3668,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/hash"
+        },
+        {
+          "path": "../../node_modules/is-plain-obj/index.js",
+          "kind": "require-call",
+          "original": "is-plain-obj"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/retry.js": {
+      "bytes": 1035,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/randomString.js": {
+      "bytes": 1419,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/padding.js": {
+      "bytes": 524,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/encoder/decode.js": {
+      "bytes": 2470,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/encoder/encode.js": {
+      "bytes": 3490,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/encoder/index.js": {
+      "bytes": 1959,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/encoder/decode.js",
+          "kind": "require-call",
+          "original": "./decode"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/encoder/encode.js",
+          "kind": "require-call",
+          "original": "./encode"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/padding.js",
+          "kind": "require-call",
+          "original": "../padding"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/deepMerge.js": {
+      "bytes": 3645,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/walker.js": {
+      "bytes": 1767,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "./"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/getType.js": {
+      "bytes": 277,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/query.js": {
+      "bytes": 4225,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/base64.js": {
+      "bytes": 2762,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/utf8.js": {
+      "bytes": 4254,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/path.js": {
+      "bytes": 1159,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/utils/dist/index.js": {
+      "bytes": 2371,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/deepCopy.js",
+          "kind": "require-call",
+          "original": "./deepCopy"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/isObject.js",
+          "kind": "require-call",
+          "original": "./isObject"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/wait.js",
+          "kind": "require-call",
+          "original": "./wait"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/deepEqual.js",
+          "kind": "require-call",
+          "original": "./deepEqual"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/envVar.js",
+          "kind": "require-call",
+          "original": "./envVar"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/readStream.js",
+          "kind": "require-call",
+          "original": "./readStream"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/queued.js",
+          "kind": "require-call",
+          "original": "./queued"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/retry.js",
+          "kind": "require-call",
+          "original": "./retry"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/randomString.js",
+          "kind": "require-call",
+          "original": "./randomString"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/padding.js",
+          "kind": "require-call",
+          "original": "./padding"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/encoder/index.js",
+          "kind": "require-call",
+          "original": "./encoder"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/deepMerge.js",
+          "kind": "require-call",
+          "original": "./deepMerge"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/walker.js",
+          "kind": "require-call",
+          "original": "./walker"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/getType.js",
+          "kind": "require-call",
+          "original": "./getType"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/query.js",
+          "kind": "require-call",
+          "original": "./query"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/base64.js",
+          "kind": "require-call",
+          "original": "./base64"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/utf8.js",
+          "kind": "require-call",
+          "original": "./utf8"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/path.js",
+          "kind": "require-call",
+          "original": "./path"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/authState/parseAuthState.js": {
+      "bytes": 1329,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../fetch/index.js": {
+      "bytes": 232,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/@based/opts/dist/index.js": {
+      "bytes": 2578,
+      "imports": [
+        {
+          "path": "../fetch/index.js",
+          "kind": "require-call",
+          "original": "@based/fetch"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/hash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/types/error.js": {
+      "bytes": 1182,
+      "imports": [],
+      "format": "cjs"
+    },
+    "dist/stream/uploadFileBrowser.js": {
+      "bytes": 4524,
+      "imports": [
+        {
+          "path": "dist/index.js",
+          "kind": "require-call",
+          "original": ".."
+        },
+        {
+          "path": "../../node_modules/@based/opts/dist/index.js",
+          "kind": "require-call",
+          "original": "@based/opts"
+        },
+        {
+          "path": "dist/types/error.js",
+          "kind": "require-call",
+          "original": "../types/error"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/isomorphic-ws/browser.js": {
+      "bytes": 540,
+      "imports": [],
+      "format": "esm"
+    },
+    "dist/websocket/index.js": {
+      "bytes": 4407,
+      "imports": [
+        {
+          "path": "dist/websocket/urlLoader.js",
+          "kind": "require-call",
+          "original": "./urlLoader"
+        },
+        {
+          "path": "dist/authState/parseAuthState.js",
+          "kind": "require-call",
+          "original": "../authState/parseAuthState"
+        },
+        {
+          "path": "dist/stream/uploadFileBrowser.js",
+          "kind": "require-call",
+          "original": "../stream/uploadFileBrowser"
+        },
+        {
+          "path": "../../node_modules/isomorphic-ws/browser.js",
+          "kind": "require-call",
+          "original": "isomorphic-ws"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/Emitter.js": {
+      "bytes": 2057,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/fflate/lib/worker.cjs": {
+      "bytes": 639,
+      "imports": [],
+      "format": "cjs"
+    },
+    "../../node_modules/fflate/lib/index.cjs": {
+      "bytes": 84833,
+      "imports": [
+        {
+          "path": "../../node_modules/fflate/lib/worker.cjs",
+          "kind": "require-call",
+          "original": "./node-worker.cjs"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/persistentStorage/browser.js": {
+      "bytes": 6816,
+      "imports": [
+        {
+          "path": "../../node_modules/fflate/lib/index.cjs",
+          "kind": "require-call",
+          "original": "fflate"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/persistentStorage/node.js": {
+      "bytes": 3417,
+      "imports": []
+    },
+    "dist/persistentStorage/index.js": {
+      "bytes": 1816,
+      "imports": [
+        {
+          "path": "dist/persistentStorage/browser.js",
+          "kind": "require-call",
+          "original": "./browser"
+        },
+        {
+          "path": "dist/persistentStorage/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "dist/persistentStorage/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "dist/persistentStorage/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "dist/persistentStorage/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        },
+        {
+          "path": "dist/persistentStorage/node.js",
+          "kind": "require-call",
+          "original": "./node"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/authState/updateAuthState.js": {
+      "bytes": 559,
+      "imports": [
+        {
+          "path": "dist/persistentStorage/index.js",
+          "kind": "require-call",
+          "original": "../persistentStorage"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/outgoing/protocol.js": {
+      "bytes": 7369,
+      "imports": [
+        {
+          "path": "../../node_modules/fflate/lib/index.cjs",
+          "kind": "require-call",
+          "original": "fflate"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/outgoing/index.js": {
+      "bytes": 8472,
+      "imports": [
+        {
+          "path": "dist/authState/updateAuthState.js",
+          "kind": "require-call",
+          "original": "../authState/updateAuthState"
+        },
+        {
+          "path": "dist/outgoing/protocol.js",
+          "kind": "require-call",
+          "original": "./protocol"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/diff/dist/applyPatch.js": {
+      "bytes": 4456,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/diff/dist/partialDiff.js": {
+      "bytes": 6890,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        },
+        {
+          "path": "../../node_modules/@saulx/diff/dist/index.js",
+          "kind": "require-call",
+          "original": "."
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/diff/dist/createPatch.js": {
+      "bytes": 9542,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/hash"
+        },
+        {
+          "path": "../../node_modules/@saulx/diff/dist/partialDiff.js",
+          "kind": "require-call",
+          "original": "./partialDiff"
+        }
+      ],
+      "format": "cjs"
+    },
+    "../../node_modules/@saulx/diff/dist/index.js": {
+      "bytes": 765,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/diff/dist/applyPatch.js",
+          "kind": "require-call",
+          "original": "./applyPatch"
+        },
+        {
+          "path": "../../node_modules/@saulx/diff/dist/createPatch.js",
+          "kind": "require-call",
+          "original": "./createPatch"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/incoming/protocol.js": {
+      "bytes": 1955,
+      "imports": [
+        {
+          "path": "dist/outgoing/index.js",
+          "kind": "require-call",
+          "original": "../outgoing"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/getTargetInfo.js": {
+      "bytes": 516,
+      "imports": [],
+      "format": "cjs"
+    },
+    "dist/incoming/index.js": {
+      "bytes": 14048,
+      "imports": [
+        {
+          "path": "../../node_modules/fflate/lib/index.cjs",
+          "kind": "require-call",
+          "original": "fflate"
+        },
+        {
+          "path": "../../node_modules/@saulx/diff/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/diff"
+        },
+        {
+          "path": "dist/types/error.js",
+          "kind": "require-call",
+          "original": "../types/error"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        },
+        {
+          "path": "dist/authState/updateAuthState.js",
+          "kind": "require-call",
+          "original": "../authState/updateAuthState"
+        },
+        {
+          "path": "dist/persistentStorage/index.js",
+          "kind": "require-call",
+          "original": "../persistentStorage"
+        },
+        {
+          "path": "dist/incoming/protocol.js",
+          "kind": "require-call",
+          "original": "./protocol"
+        },
+        {
+          "path": "dist/outgoing/protocol.js",
+          "kind": "require-call",
+          "original": "../outgoing/protocol"
+        },
+        {
+          "path": "dist/getTargetInfo.js",
+          "kind": "require-call",
+          "original": "../getTargetInfo"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/genObserveId.js": {
+      "bytes": 413,
+      "imports": [
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/hash"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/query/index.js": {
+      "bytes": 4231,
+      "imports": [
+        {
+          "path": "dist/outgoing/index.js",
+          "kind": "require-call",
+          "original": "../outgoing"
+        },
+        {
+          "path": "dist/genObserveId.js",
+          "kind": "require-call",
+          "original": "../genObserveId"
+        },
+        {
+          "path": "dist/persistentStorage/index.js",
+          "kind": "require-call",
+          "original": "../persistentStorage"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/stream/index.js": {
+      "bytes": 2891,
+      "imports": [],
+      "format": "cjs"
+    },
+    "dist/channel/cleanUp.js": {
+      "bytes": 1155,
+      "imports": [],
+      "format": "cjs"
+    },
+    "dist/channel/index.js": {
+      "bytes": 2731,
+      "imports": [
+        {
+          "path": "dist/genObserveId.js",
+          "kind": "require-call",
+          "original": "../genObserveId"
+        },
+        {
+          "path": "dist/outgoing/index.js",
+          "kind": "require-call",
+          "original": "../outgoing"
+        },
+        {
+          "path": "dist/channel/cleanUp.js",
+          "kind": "require-call",
+          "original": "./cleanUp"
+        }
+      ],
+      "format": "cjs"
+    },
+    "dist/index.js": {
+      "bytes": 12492,
+      "imports": [
+        {
+          "path": "dist/websocket/index.js",
+          "kind": "require-call",
+          "original": "./websocket"
+        },
+        {
+          "path": "dist/Emitter.js",
+          "kind": "require-call",
+          "original": "./Emitter"
+        },
+        {
+          "path": "dist/outgoing/index.js",
+          "kind": "require-call",
+          "original": "./outgoing"
+        },
+        {
+          "path": "dist/incoming/index.js",
+          "kind": "require-call",
+          "original": "./incoming"
+        },
+        {
+          "path": "dist/query/index.js",
+          "kind": "require-call",
+          "original": "./query"
+        },
+        {
+          "path": "dist/stream/index.js",
+          "kind": "require-call",
+          "original": "./stream"
+        },
+        {
+          "path": "dist/persistentStorage/index.js",
+          "kind": "require-call",
+          "original": "./persistentStorage"
+        },
+        {
+          "path": "dist/channel/index.js",
+          "kind": "require-call",
+          "original": "./channel"
+        },
+        {
+          "path": "../../node_modules/@saulx/hash/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/hash"
+        },
+        {
+          "path": "../../node_modules/@based/opts/dist/index.js",
+          "kind": "require-call",
+          "original": "@based/opts"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "require-call",
+          "original": "@saulx/utils"
+        },
+        {
+          "path": "dist/authState/parseAuthState.js",
+          "kind": "require-call",
+          "original": "./authState/parseAuthState"
+        },
+        {
+          "path": "dist/types/error.js",
+          "kind": "require-call",
+          "original": "./types/error"
+        }
+      ],
+      "format": "cjs"
+    },
+    "test/browser/index.ts": {
+      "bytes": 279,
+      "imports": [
+        {
+          "path": "dist/index.js",
+          "kind": "import-statement",
+          "original": "@based/client"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "test/browser/out.js": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "test/browser/index.ts",
+      "inputs": {
+        "dist/websocket/urlLoader.js": {
+          "bytesInOutput": 145
+        },
+        "../../node_modules/@saulx/utils/dist/deepCopy.js": {
+          "bytesInOutput": 217
+        },
+        "../../node_modules/@saulx/utils/dist/isObject.js": {
+          "bytesInOutput": 160
+        },
+        "../../node_modules/@saulx/utils/dist/wait.js": {
+          "bytesInOutput": 139
+        },
+        "../../node_modules/@saulx/utils/dist/deepEqual.js": {
+          "bytesInOutput": 863
+        },
+        "../../node_modules/@saulx/utils/dist/envVar.js": {
+          "bytesInOutput": 197
+        },
+        "(disabled):stream": {
+          "bytesInOutput": 17
+        },
+        "../../node_modules/@saulx/utils/dist/readStream.js": {
+          "bytesInOutput": 302
+        },
+        "../../node_modules/@saulx/hash/dist/stringHash.js": {
+          "bytesInOutput": 180
+        },
+        "../../node_modules/@saulx/hash/dist/hashObjectNest.js": {
+          "bytesInOutput": 1103
+        },
+        "../../node_modules/@saulx/hash/dist/hashObject.js": {
+          "bytesInOutput": 245
+        },
+        "../../node_modules/@saulx/hash/dist/hash.js": {
+          "bytesInOutput": 548
+        },
+        "../../node_modules/@saulx/hash/dist/hashCompact.js": {
+          "bytesInOutput": 985
+        },
+        "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js": {
+          "bytesInOutput": 1267
+        },
+        "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js": {
+          "bytesInOutput": 251
+        },
+        "../../node_modules/@saulx/hash/dist/index.js": {
+          "bytesInOutput": 478
+        },
+        "../../node_modules/is-plain-obj/index.js": {
+          "bytesInOutput": 185
+        },
+        "../../node_modules/@saulx/utils/dist/queued.js": {
+          "bytesInOutput": 1256
+        },
+        "../../node_modules/@saulx/utils/dist/retry.js": {
+          "bytesInOutput": 297
+        },
+        "../../node_modules/@saulx/utils/dist/randomString.js": {
+          "bytesInOutput": 454
+        },
+        "../../node_modules/@saulx/utils/dist/padding.js": {
+          "bytesInOutput": 278
+        },
+        "../../node_modules/@saulx/utils/dist/encoder/decode.js": {
+          "bytesInOutput": 730
+        },
+        "../../node_modules/@saulx/utils/dist/encoder/encode.js": {
+          "bytesInOutput": 938
+        },
+        "../../node_modules/@saulx/utils/dist/encoder/index.js": {
+          "bytesInOutput": 654
+        },
+        "../../node_modules/@saulx/utils/dist/deepMerge.js": {
+          "bytesInOutput": 1217
+        },
+        "../../node_modules/@saulx/utils/dist/walker.js": {
+          "bytesInOutput": 921
+        },
+        "../../node_modules/@saulx/utils/dist/getType.js": {
+          "bytesInOutput": 171
+        },
+        "../../node_modules/@saulx/utils/dist/query.js": {
+          "bytesInOutput": 1160
+        },
+        "../../node_modules/@saulx/utils/dist/base64.js": {
+          "bytesInOutput": 821
+        },
+        "../../node_modules/@saulx/utils/dist/utf8.js": {
+          "bytesInOutput": 1345
+        },
+        "../../node_modules/@saulx/utils/dist/path.js": {
+          "bytesInOutput": 494
+        },
+        "../../node_modules/@saulx/utils/dist/index.js": {
+          "bytesInOutput": 1125
+        },
+        "dist/authState/parseAuthState.js": {
+          "bytesInOutput": 531
+        },
+        "../fetch/index.js": {
+          "bytesInOutput": 38
+        },
+        "../../node_modules/@based/opts/dist/index.js": {
+          "bytesInOutput": 2516
+        },
+        "dist/types/error.js": {
+          "bytesInOutput": 560
+        },
+        "dist/stream/uploadFileBrowser.js": {
+          "bytesInOutput": 1768
+        },
+        "../../node_modules/isomorphic-ws/browser.js": {
+          "bytesInOutput": 319
+        },
+        "dist/websocket/index.js": {
+          "bytesInOutput": 1399
+        },
+        "dist/Emitter.js": {
+          "bytesInOutput": 780
+        },
+        "../../node_modules/fflate/lib/worker.cjs": {
+          "bytesInOutput": 414
+        },
+        "../../node_modules/fflate/lib/index.cjs": {
+          "bytesInOutput": 29030
+        },
+        "dist/persistentStorage/browser.js": {
+          "bytesInOutput": 3398
+        },
+        "dist/persistentStorage/node.js": {
+          "bytesInOutput": 17
+        },
+        "dist/persistentStorage/index.js": {
+          "bytesInOutput": 834
+        },
+        "dist/authState/updateAuthState.js": {
+          "bytesInOutput": 263
+        },
+        "dist/outgoing/protocol.js": {
+          "bytesInOutput": 2856
+        },
+        "dist/outgoing/index.js": {
+          "bytesInOutput": 3842
+        },
+        "../../node_modules/@saulx/diff/dist/applyPatch.js": {
+          "bytesInOutput": 1445
+        },
+        "../../node_modules/@saulx/diff/dist/partialDiff.js": {
+          "bytesInOutput": 1699
+        },
+        "../../node_modules/@saulx/diff/dist/createPatch.js": {
+          "bytesInOutput": 2689
+        },
+        "../../node_modules/@saulx/diff/dist/index.js": {
+          "bytesInOutput": 472
+        },
+        "dist/incoming/protocol.js": {
+          "bytesInOutput": 834
+        },
+        "dist/getTargetInfo.js": {
+          "bytesInOutput": 309
+        },
+        "dist/incoming/index.js": {
+          "bytesInOutput": 4849
+        },
+        "dist/genObserveId.js": {
+          "bytesInOutput": 208
+        },
+        "dist/query/index.js": {
+          "bytesInOutput": 1954
+        },
+        "dist/stream/index.js": {
+          "bytesInOutput": 109
+        },
+        "dist/channel/cleanUp.js": {
+          "bytesInOutput": 456
+        },
+        "dist/channel/index.js": {
+          "bytesInOutput": 1389
+        },
+        "dist/index.js": {
+          "bytesInOutput": 4410
+        },
+        "test/browser/index.ts": {
+          "bytesInOutput": 192
+        }
+      },
+      "bytes": 89407
+    }
+  }
+}

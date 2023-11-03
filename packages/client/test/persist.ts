@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
-import { BasedServer } from '../../server/src'
+import { BasedClient } from '../src/index.js'
+import { BasedServer } from '../../server/src/index.js'
 import { wait } from '@saulx/utils'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
@@ -145,7 +145,7 @@ test.serial.only('auth persist', async (t) => {
         }
         return true
       },
-      authorize: async (based, ctx, name) => {
+      authorize: async (based, ctx) => {
         await based.renewAuthState(ctx)
         const userId = ctx.session?.authState.userId
         if (!userId) return false

@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { wait } from '@saulx/utils'

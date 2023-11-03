@@ -7,7 +7,7 @@ export const stopRemoveChannel = (channel: ActiveChannel) => {
   }
 }
 
-export const extendChannel = (server: BasedServer, channel: ActiveChannel) => {
+export const extendChannel = (_server: BasedServer, channel: ActiveChannel) => {
   if (channel.closeAfterIdleTime && channel.timeTillDestroy !== null) {
     channel.timeTillDestroy = channel.closeAfterIdleTime
   }

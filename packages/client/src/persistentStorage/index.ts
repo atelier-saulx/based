@@ -1,10 +1,10 @@
-import { BasedClient } from '..'
+import { BasedClient } from '../index.js'
 import {
   initStorageBrowser,
   setStorageBrowser,
   removeStorageBrowser,
   clearStorageBrowser,
-} from './browser'
+} from './browser.js'
 
 const isBrowser = typeof window !== 'undefined'
 

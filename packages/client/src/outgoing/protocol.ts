@@ -1,7 +1,12 @@
 import * as fflate from 'fflate'
-import { AuthState } from '../types/auth'
-import { FunctionQueueItem, GetObserveQueue, ObserveQueue } from '../types'
-import { ChannelPublishQueueItem, ChannelQueueItem } from '../types/channel'
+import { AuthState } from '../types/auth.js'
+import {
+  ChannelPublishQueueItem,
+  ChannelQueueItem,
+  FunctionQueueItem,
+  GetObserveQueue,
+  ObserveQueue,
+} from '../types/index.js'
 
 const encoder = new TextEncoder()
 

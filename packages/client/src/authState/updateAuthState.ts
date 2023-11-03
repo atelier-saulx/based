@@ -1,6 +1,6 @@
-import { AuthState } from '../types'
-import { BasedClient } from '..'
-import { setStorage, removeStorage } from '../persistentStorage'
+import { AuthState } from '../types/index.js'
+import { BasedClient } from '../index.js'
+import { setStorage, removeStorage } from '../persistentStorage/index.js'
 
 export const updateAuthState = (client: BasedClient, authState: AuthState) => {
   if (authState.persistent) {

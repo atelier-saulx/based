@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 test.serial('Channel does not exist', async (t) => {
@@ -13,7 +13,7 @@ test.serial('Channel does not exist', async (t) => {
   let errCnt = 0
   client.channel('bla').subscribe(
     () => {},
-    (err) => {
+    () => {
       errCnt++
     }
   )

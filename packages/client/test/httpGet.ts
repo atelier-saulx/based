@@ -2,7 +2,7 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { wait } from '@saulx/utils'
-import { encodeAuthState } from '@based/client'
+import { encodeAuthState } from '../src/index.js'
 
 test.serial('http get falsy check', async (t) => {
   const server = new BasedServer({

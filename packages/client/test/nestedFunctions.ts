@@ -1,5 +1,5 @@
 import test, { ExecutionContext } from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 // make this methods on the server
 import { BasedServer, callFunction, get, observe } from '@based/server'
 import { wait } from '@saulx/utils'

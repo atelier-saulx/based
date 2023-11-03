@@ -1,6 +1,6 @@
-import { BasedClient, encodeAuthState } from '..'
-import { StreamFunctionContents, StreamHeaders } from './types'
-import fetch from '@based/fetch'
+import { BasedClient, encodeAuthState } from '../index.js'
+import { StreamFunctionContents, StreamHeaders } from './types.js'
+const fetch = require('@based/fetch')
 import { serializeQuery } from '@saulx/utils'
 import parseOpts from '@based/opts'
 

@@ -1,7 +1,7 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedError, BasedErrorCode } from '../src/types/error.js'
 import { wait } from '@saulx/utils'
 import { Authorize, BasedFunction, BasedQueryFunction } from '@based/functions'
 

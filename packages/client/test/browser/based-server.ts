@@ -266,6 +266,23 @@ const start = async () => {
           type: 'query',
           fn: staticSub,
         },
+
+        text: {
+          type: 'query',
+          fn: (based, payload, update) => {
+            const u = () => {
+              let x: any = []
+              for (let i = 0; i < 1000; i++) {
+                x.push(Math.random() * 1e6).toString(16)
+              }
+              update(x)
+            }
+            u()
+            const inter = setInterval(u, 3000)
+            return () => clearInterval(inter)
+          },
+        },
+
         staticSubHuge: {
           type: 'query',
           fn: staticSubHuge,

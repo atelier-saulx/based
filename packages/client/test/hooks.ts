@@ -1,6 +1,6 @@
 import test from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 
@@ -10,10 +10,10 @@ test.serial('Channel hook', async (t) => {
   const server = new BasedServer({
     port: 9910,
     channel: {
-      subscribe: (channel, ctx) => {
+      subscribe: () => {
         subCnt++
       },
-      unsubscribe: (channel, ctx) => {
+      unsubscribe: () => {
         unSubCnt++
       },
     },
@@ -22,7 +22,7 @@ test.serial('Channel hook', async (t) => {
         blap: {
           closeAfterIdleTime: 500,
           type: 'channel',
-          subscriber: (based, payload, id, update) => {
+          subscriber: (based, _payload, _id, update) => {
             return based.channel('mychannel').subscribe(update)
           },
         },
@@ -49,7 +49,7 @@ test.serial('Channel hook', async (t) => {
   })
   const closeChannel = client
     .channel('mychannel', { bla: true })
-    .subscribe((msg) => {})
+    .subscribe(() => {})
 
   await wait(500)
 
@@ -62,7 +62,7 @@ test.serial('Channel hook', async (t) => {
 
   const closeChannel2 = client
     .channel('blap', { bla: true })
-    .subscribe((msg) => {})
+    .subscribe(() => {})
 
   await wait(500)
 
@@ -84,7 +84,7 @@ test.serial('Query hook', async (t) => {
   const server = new BasedServer({
     port: 9910,
     query: {
-      subscribe: (obs, ctx) => {
+      subscribe: () => {
         subCnt++
       },
       unsubscribe: () => {
@@ -105,7 +105,7 @@ test.serial('Query hook', async (t) => {
         myobs2: {
           type: 'query',
           closeAfterIdleTime: 500,
-          fn: (based, payload, update) => {
+          fn: (based, _payload, update) => {
             return based.query('myobs').subscribe(update)
           },
         },
@@ -125,7 +125,7 @@ test.serial('Query hook', async (t) => {
   await client.connect({
     url: async () => 'ws://localhost:9910',
   })
-  const close = client.query('myobs', { bla: true }).subscribe((msg) => {})
+  const close = client.query('myobs', { bla: true }).subscribe(() => {})
 
   await wait(500)
 
@@ -144,7 +144,7 @@ test.serial('Query hook', async (t) => {
 
   t.is(getCnt, 2)
 
-  const close2 = client.query('myobs2', { bla: true }).subscribe((msg) => {})
+  const close2 = client.query('myobs2', { bla: true }).subscribe(() => {})
 
   await wait(500)
 

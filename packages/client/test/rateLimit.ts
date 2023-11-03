@@ -2,7 +2,7 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 
 test.serial('rate limit', async (t) => {
   const server = new BasedServer({

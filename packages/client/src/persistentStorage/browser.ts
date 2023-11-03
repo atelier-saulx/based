@@ -1,15 +1,12 @@
-import { BasedClient } from '..'
+import { BasedClient } from '../index.js'
 import * as fflate from 'fflate'
-import {
-  decodeBase64,
-  encodeBase64,
-  stringToUtf8,
-  uft8ToString,
-} from '@saulx/utils'
+
+const decoder = new TextDecoder()
+const encoder = new TextEncoder()
 
 const decode = (dataURI: string): any => {
-  const data = decodeBase64(dataURI)
-  const uncompressed = uft8ToString(fflate.inflateSync(data))
+  const data = global.atob(dataURI)
+  const uncompressed = decoder.decode(fflate.inflateSync(encoder.encode(data)))
   const parsed = JSON.parse(uncompressed)
   return parsed
 }
@@ -55,7 +52,9 @@ export const setStorageBrowser = (
     const stringifiedJson = JSON.stringify(value)
     const encoded =
       stringifiedJson.length > 70 || key === '@based-authState-' + env
-        ? encodeBase64(fflate.deflateSync(stringToUtf8(stringifiedJson)))
+        ? global.btoa(
+            decoder.decode(fflate.deflateSync(encoder.encode(stringifiedJson)))
+          )
         : stringifiedJson
 
     const blob = new Blob([encoded])
@@ -107,6 +106,12 @@ export const initStorageBrowser = async (client: BasedClient) => {
   const env = client.storageEnvKey
   if (!env) {
     return
+  }
+
+  const prevCache = global.__basedcache__ ?? {}
+
+  for (const key in prevCache) {
+    client.cache.set(Number(key), prevCache[key])
   }
 
   try {

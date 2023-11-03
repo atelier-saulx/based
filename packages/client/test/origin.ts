@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { isClientContext } from '@based/functions'
 
@@ -13,7 +13,7 @@ test.serial('origin header is included', async (t) => {
         getOrigin: {
           type: 'function',
           maxPayloadSize: 1e8,
-          fn: async (_, payload, ctx) => {
+          fn: async (_, __, ctx) => {
             if (isClientContext(ctx)) {
               return ctx.session?.origin
             }

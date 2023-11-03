@@ -1,7 +1,6 @@
 import test from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
-import { wait } from '@saulx/utils'
+import { BasedClient } from '../src/index.js'
 
 test.serial('Call retry option', async (t) => {
   let cnt = 0

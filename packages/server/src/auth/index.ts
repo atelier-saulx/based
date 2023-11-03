@@ -83,7 +83,11 @@ export class BasedAuth {
       return
     }
 
-    if (typeof ctx.session.authState === 'object' && typeof verified === 'object' && deepEqual(ctx.session.authState, verified)) {
+    if (
+      typeof ctx.session.authState === 'object' &&
+      typeof verified === 'object' &&
+      deepEqual(ctx.session.authState, verified)
+    ) {
       return
     }
 

@@ -1,8 +1,8 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedError, BasedErrorCode } from '../src/types/error.js'
 
 const setup = async () => {
   const coreClient = new BasedClient()

@@ -1,39 +1,25 @@
-import { BasedClient } from '..'
+import { BasedClient } from '../index.js'
 import * as fflate from 'fflate'
+// add diff to the bundle as well
 import { applyPatch } from '@saulx/diff'
-import { convertDataToBasedError } from '../types/error'
+import { convertDataToBasedError } from '../types/error.js'
 import { deepEqual } from '@saulx/utils'
-import { updateAuthState } from '../authState/updateAuthState'
-import { setStorage } from '../persistentStorage'
-import {
-  debugDiff,
-  debugFunction,
-  debugGet,
-  debugSubscribe,
-  debugAuth,
-  debugError,
-  debugChannel,
-  debugChannelReqId,
-} from './debug'
+import { updateAuthState } from '../authState/updateAuthState.js'
+import { setStorage } from '../persistentStorage/index.js'
 import {
   parseArrayBuffer,
   decodeHeader,
   readUint8,
   requestFullData,
-} from './protocol'
-import { encodeSubscribeChannelMessage } from '../outgoing/protocol'
-import { getTargetInfo } from '../getTargetInfo'
-import { CacheValue } from '../types'
+} from './protocol.js'
+import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
+import { getTargetInfo } from '../getTargetInfo.js'
+import { CacheValue } from '../types/index.js'
 
-export const incoming = async (
-  client: BasedClient,
-  data: any /* TODO: type */
-) => {
+export const incoming = async (client: BasedClient, data: any) => {
   if (client.isDestroyed) {
     return
   }
-
-  const debug = client.listeners.debug
 
   try {
     const d = data.data
@@ -66,10 +52,6 @@ export const incoming = async (
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
       }
-
-      if (debug) {
-        debugFunction(client, payload, id)
-      }
     }
 
     // ------- Get checksum is up to date
@@ -82,10 +64,6 @@ export const incoming = async (
           resolve(client.cache.get(id).value)
         }
         client.getState.delete(id)
-      }
-
-      if (debug) {
-        debugGet(client, id)
       }
     }
 
@@ -128,9 +106,6 @@ export const incoming = async (
         cachedData.value = applyPatch(cachedData.value, diff)
         cachedData.checksum = checksum
       } catch (err) {
-        if (debug) {
-          debugDiff(client, diff, id, checksum, true)
-        }
         requestFullData(client, id)
         return
       }
@@ -154,10 +129,6 @@ export const incoming = async (
           resolve(cachedData.value)
         }
         client.getState.delete(id)
-      }
-
-      if (debug) {
-        debugDiff(client, diff, id, checksum)
       }
     }
 
@@ -186,22 +157,18 @@ export const incoming = async (
         value: payload,
         checksum,
       }
-      client.cache.set(id, cacheData)
 
-      let found = false
+      client.cache.set(id, cacheData)
 
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
-
         if (observable.persistent) {
           cacheData.persistent = true
           setStorage(client, '@based-cache-' + id, cacheData)
         }
-
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
         }
-        found = true
       }
 
       if (client.getState.has(id)) {
@@ -210,11 +177,6 @@ export const incoming = async (
           resolve(payload)
         }
         client.getState.delete(id)
-        found = true
-      }
-
-      if (debug) {
-        debugSubscribe(client, id, payload, checksum, found)
       }
     }
 
@@ -251,10 +213,6 @@ export const incoming = async (
           updateAuthState(client, payload)
         }
         client.authRequest?.resolve?.(client.authState)
-      }
-
-      if (debug) {
-        debugAuth(client, payload)
       }
     }
 
@@ -330,22 +288,13 @@ export const incoming = async (
           client.getState.delete(payload.observableId)
         }
       }
-
-      if (debug) {
-        debugError(client, payload)
-      }
-      // else emit ERROR maybe?
     } // ------- Re-Publish send channel name + payload
     else if (type === 6) {
       // | 4 header | 8 id | * payload |
       // get id add last send on the state
       const id = readUint8(buffer, 4, 8)
       const channel = client.channelState.get(id)
-      if (!id) {
-        if (debug) {
-          debugChannelReqId(client, id, 'not-found')
-        }
-      } else {
+      if (id) {
         if (!channel.inTransit) {
           channel.inTransit = true
           const { buffers, len } = encodeSubscribeChannelMessage(id, [
@@ -369,15 +318,8 @@ export const incoming = async (
               channel.inTransit = false
             }
           }, 5e3)
-          if (debug) {
-            debugChannelReqId(client, id, 'register')
-          }
         }
-
         client.connection.ws.send(buffer)
-        if (debug) {
-          debugChannelReqId(client, id, 'publish', buffer, isDeflate)
-        }
       }
     } // ----------- Channel message
     else if (type === 7) {
@@ -406,22 +348,18 @@ export const incoming = async (
           }
         }
 
-        let found = false
-
         if (client.channelState.has(id)) {
           const observable = client.channelState.get(id)
           for (const [, handlers] of observable.subscribers) {
             handlers.onMessage(payload)
           }
-          found = true
-        }
-        if (debug) {
-          debugChannel(client, id, payload, found)
         }
       }
     }
     // ---------------------------------
   } catch (err) {
-    console.error('Error parsing incoming data', err)
+    // just code can load error codes as well
+    // 981 - cannot parse data
+    console.error(981, err)
   }
 }

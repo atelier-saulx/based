@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 
@@ -42,12 +42,6 @@ test.serial('message incoming/outgoing', async (t) => {
   })
   await server.start()
 
-  let debugMessages = 0
-
-  client.on('debug', () => {
-    debugMessages++
-  })
-
   client.connect({
     url: async () => {
       return 'ws://localhost:9910'
@@ -77,13 +71,11 @@ test.serial('message incoming/outgoing', async (t) => {
 
   await wait(100)
   const hardCnt = cnt
-  const hardDebugCnt = debugMessages
   const hardchannelCnt = cntChannel
 
   await wait(2e3)
   t.is(cntChannel, hardchannelCnt, 'actualy unsubscribed channel')
   t.is(cnt, hardCnt, 'actualy unsubscribed')
-  t.is(debugMessages, hardDebugCnt, 'no more messages received')
 
   client.disconnect()
   await server.destroy()

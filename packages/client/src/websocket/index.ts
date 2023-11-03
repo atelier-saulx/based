@@ -1,8 +1,8 @@
-import urlLoader from './urlLoader'
-import { Connection } from './types'
-import { BasedClient } from '..'
-import { encodeAuthState } from '../authState/parseAuthState'
-import { isStreaming } from '../stream/uploadFileBrowser'
+import urlLoader from './urlLoader.js'
+import { Connection } from './types.js'
+import { BasedClient } from '../index.js'
+import { encodeAuthState } from '../authState/parseAuthState.js'
+import { isStreaming } from '../stream/uploadFileBrowser.js'
 
 import WebSocket from 'isomorphic-ws'
 

@@ -1,8 +1,8 @@
 import test from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import createPatch from '@saulx/diff'
+import { createPatch } from '@saulx/diff'
 
 test.serial('query reuse diff', async (t) => {
   const client = new BasedClient()
@@ -48,21 +48,6 @@ test.serial('query reuse diff', async (t) => {
     console.info('   connect', isConnected)
   })
 
-  const incoming: { [key: string]: 0 } = {}
-
-  client.on('debug', (d) => {
-    if (d.direction !== 'incoming') return
-    if (incoming[d.type] === undefined) {
-      incoming[d.type] = 0
-    }
-    if (d.type === 'subscriptionDiff') {
-      if (!d.payload.bla) {
-        t.fail('No diff passed')
-      }
-    }
-    incoming[d.type]++
-  })
-
   const obs1Results: any[] = []
   const obs2Results: any[] = []
 
@@ -86,9 +71,6 @@ test.serial('query reuse diff', async (t) => {
     })
 
   await wait(1e3)
-
-  t.is(incoming.subscribe, 1)
-  t.true(incoming.subscriptionDiff > 5)
 
   t.true(
     !('bla' in server.activeObservables.counter.get(12244891731268)?.rawData)

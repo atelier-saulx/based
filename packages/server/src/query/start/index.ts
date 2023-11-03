@@ -50,7 +50,6 @@ export const start = (server: BasedServer, id: number) => {
   let isThrottled: boolean
   let throttledArgs: any[]
   let throtDebounced = false
-  let timer: NodeJS.Timeout
 
   const update: ObservableUpdateFunction = spec.throttle
     ? (...args) => {
@@ -59,7 +58,7 @@ export const start = (server: BasedServer, id: number) => {
           throtDebounced = true
         } else {
           isThrottled = true
-          timer = setTimeout(() => {
+          setTimeout(() => {
             if (throtDebounced && !obs.isDestroyed) {
               // @ts-ignore
               updateRaw(...throttledArgs)

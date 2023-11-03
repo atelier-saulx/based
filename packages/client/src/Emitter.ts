@@ -1,4 +1,4 @@
-import { EventMap, Event, Listener } from './types'
+import { EventMap, Event, Listener } from './types/index.js'
 
 class Emitter {
   constructor() {

@@ -1,15 +1,9 @@
-import { AuthState } from '../types'
-import {
-  decodeBase64,
-  encodeBase64,
-  stringToUtf8,
-  uft8ToString,
-  createEncoder,
-} from '@saulx/utils'
+import { AuthState } from '../types/index.js'
+import { createEncoder } from '@saulx/utils'
 
 export const decodeAuthState = (authState: string): AuthState => {
   try {
-    const str = uft8ToString(decodeBase64(decodeURI(authState)))
+    const str = global.atob(decodeURI(authState))
     return JSON.parse(str)
   } catch (err) {
     return { error: 'Invalid authState' }
@@ -54,6 +48,5 @@ const { encode } = createEncoder(
 )
 
 export const encodeAuthState = (authState: AuthState): string => {
-  const b64 = encode(encodeBase64(stringToUtf8(JSON.stringify(authState))))
-  return encodeURI(b64)
+  return encodeURI(encode(global.btoa(JSON.stringify(authState))))
 }
