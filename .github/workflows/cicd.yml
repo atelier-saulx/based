@@ -8,7 +8,7 @@ jobs:
       - name: Install gcc
         run: |
          sudo apt update
-         sudo apt install gcc-15
+         sudo apt install gcc-12
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -21,5 +21,5 @@ jobs:
           cd selvad
           make
         env:
-         CC: gcc-15
+         CC: gcc-12
         
