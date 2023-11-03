@@ -25,12 +25,6 @@ describe('generateRecordDef()', () => {
 		}
 		const def = generateRecordDef(obj)
 
-		;[
-			{ name: 'value', type: 'double_le' },
-			{ name: 'num', type: 'double_le' },
-			{ name: 'text', type: 'cstring', size: 5 },
-		]
-
 		if (ENDIANNESS === 'BE') {
 			expect(def[0]).toEqual({ name: 'value', type: 'double_be' })
 			expect(def[1]).toEqual({ name: 'num', type: 'double_be' })
