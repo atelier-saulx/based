@@ -20,6 +20,8 @@ jobs:
         run: |
           cd selvad
           make
+          cd ..
         env:
          CC: gcc-13
-        
+      - name: Build based-db
+        run: npm run build
