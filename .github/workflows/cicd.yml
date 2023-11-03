@@ -5,6 +5,10 @@ jobs:
   Setup:
     runs-on: ubuntu-latest
     steps:
+      - name: Install gcc
+        run: |
+         sudo apt update
+         sudo apt install gcc-15
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -13,5 +17,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
       - name: Build selva
-        run: cd selvad; make
+        run: |
+          cd selvad
+          make
+        env:
+         CC: gcc-15
         
