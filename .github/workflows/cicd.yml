@@ -25,3 +25,7 @@ jobs:
          CC: gcc-13
       - name: Build based-db
         run: npm run build
+      - name: Run client tests
+        run: |
+          cd packages/client
+          npm test -- test/utils.ts
