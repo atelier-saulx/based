@@ -8,6 +8,7 @@
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --verbose",
+    "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
     "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json",
     "browser": "concurrently \"nodemon ./dist/test/browser/based-server.js --watch ../server/dist --watch ./dist/test/browser/based-server.js\" \"aristotle watch -t ./dist/test/browser/empty.js -p 8006\""
   },
@@ -36,6 +37,7 @@
     "ws": "^8.13.0"
   },
   "devDependencies": {
+    "microbundle": "^0.15.1",
     "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",

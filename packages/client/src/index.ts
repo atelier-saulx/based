@@ -90,11 +90,11 @@ export class BasedClient extends Emitter {
   isDrainingStreams: boolean = false
   // --------- Queue
   maxPublishQueue: number = 1000
-  publishQueue: ChannelPublishQueue = []
-  functionQueue: FunctionQueue = []
-  observeQueue: ObserveQueue = new Map()
-  channelQueue: ChannelQueue = new Map()
-  getObserveQueue: GetObserveQueue = new Map()
+  pQ: ChannelPublishQueue = []
+  fQ: FunctionQueue = []
+  oQ: ObserveQueue = new Map()
+  cQ: ChannelQueue = new Map()
+  gQ: GetObserveQueue = new Map()
   drainInProgress: boolean = false
   drainTimeout?: ReturnType<typeof setTimeout>
   idlePing?: ReturnType<typeof setTimeout>
@@ -133,10 +133,10 @@ export class BasedClient extends Emitter {
   onClose() {
     this.connected = false
     // Rare edge case where server got dc'ed while sending the queue - before recieving result)
-    if (this.functionResponseListeners.size > this.functionQueue.length) {
+    if (this.functionResponseListeners.size > this.fQ.length) {
       this.functionResponseListeners.forEach((p, k) => {
         if (
-          !this.functionQueue.find(([id]) => {
+          !this.fQ.find(([id]) => {
             if (id === k) {
               return true
             }
@@ -166,7 +166,7 @@ export class BasedClient extends Emitter {
 
     // Resend all subscriptions
     for (const [id, obs] of this.observeState) {
-      if (!this.observeQueue.has(id)) {
+      if (!this.oQ.has(id)) {
         const cachedData = this.cache.get(id)
         addObsToQueue(
           this,
@@ -180,7 +180,7 @@ export class BasedClient extends Emitter {
 
     // Resend all channels
     for (const [id, channel] of this.channelState) {
-      if (!this.channelQueue.has(id)) {
+      if (!this.cQ.has(id)) {
         if (channel.subscribers.size) {
           addChannelSubscribeToQueue(this, channel.name, id, channel.payload)
         } else {

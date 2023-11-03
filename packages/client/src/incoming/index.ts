@@ -16,6 +16,19 @@ import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue } from '../types/index.js'
 
+const decodeAndDeflate = (
+  start: number,
+  end: number,
+  isDeflate: boolean,
+  buffer: Uint8Array
+): any => {
+  return new TextDecoder().decode(
+    isDeflate
+      ? fflate.inflateSync(buffer.slice(start, end))
+      : buffer.slice(start, end)
+  )
+}
+
 export const incoming = async (client: BasedClient, data: any) => {
   if (client.isDestroyed) {
     return
@@ -39,13 +52,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (client.functionResponseListeners.has(id)) {
@@ -93,13 +100,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 24) {
-        diff = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        diff = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       try {
@@ -144,13 +145,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // If not empty response, parse it
       if (len !== 16) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       const cacheData: CacheValue = {
@@ -189,13 +184,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (payload === true) {
@@ -225,13 +214,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (payload.requestId) {
@@ -336,11 +319,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         // if not empty response, parse it
         if (len !== 9) {
-          const r = new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
+          const r = decodeAndDeflate(start, end, isDeflate, buffer)
           try {
             payload = JSON.parse(r)
           } catch (err) {
