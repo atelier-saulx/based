@@ -20,6 +20,7 @@ jobs:
         run: |
           cd selvad
           make
+          make install
           cd ..
         env:
          CC: gcc-13
@@ -28,4 +29,4 @@ jobs:
       - name: Run client tests
         run: |
           cd packages/client
-          npm test -- test/utils.ts
+          npm test
