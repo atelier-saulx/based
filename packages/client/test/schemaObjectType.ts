@@ -183,8 +183,6 @@ test('Remove property on object field in flexible mode with exsiting nodes but u
               ding: {
                 properties: {
                   dung: {
-                    // TODO: Remove when @based/schema is updated
-                    // @ts-ignore
                     $delete: true,
                   },
                 },
@@ -212,8 +210,6 @@ test('Remove property on object field in flexible mode without exsiting nodes', 
               ding: {
                 properties: {
                   dung: {
-                    // TODO: Remove when @based/schema is updated
-                    // @ts-ignore
                     $delete: true,
                   },
                 },
