@@ -8,6 +8,7 @@
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
+    "testSchema": "npm run test --concurrency 5 test/schema/*.ts",
     "testGet": "npm run test --concurrency 5 test/*.ts",
     "testSub": "npm run test test/subs/*.ts"
   },
@@ -15,6 +16,7 @@
   "ava": {
     "files": [
       "test/*.ts",
+      "test/schema/*.ts",
       "test/subs/*.ts"
     ],
     "concurrency": 5,

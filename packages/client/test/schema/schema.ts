@@ -1,12 +1,11 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../../src'
+import { SelvaServer, startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import '../assertions'
 import getPort from 'get-port'
-import { SchemaUpdateMode } from '../src/types'
-import { DEFAULT_FIELDS } from '../src/schema/mergeSchema'
+import { SchemaUpdateMode } from '../../src/types'
+import { DEFAULT_FIELDS } from '../../src/schema/mergeSchema'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer

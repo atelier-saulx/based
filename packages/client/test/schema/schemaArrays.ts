@@ -1,9 +1,8 @@
 import anyTest, { TestInterface } from 'ava'
 import getPort from 'get-port'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import { BasedDbClient } from '../src'
-import './assertions'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import { BasedDbClient } from '../../src'
+import '../assertions'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
