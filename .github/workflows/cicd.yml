@@ -21,13 +21,14 @@ jobs:
           cd selvad
           make
           make install
+          ldd selvad
           cd ..
         env:
          CC: gcc-13
       - name: Build based-db
         run: npm run build
-      - name: Run client tests
-        run: |
-          ldd selvad
+#      - name: Run client tests
+#        run: |
+#          ldd selvad
 #          cd packages/client
 #          npm test
