@@ -1,8 +1,9 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { CompiledRecordDef } from './compiler'
-import { serialize, getNode } from './serializer'
-import { isPointerType, SIZES } from './types'
+import { getNode, serialize, deserialize } from './serializer'
+import { isPointerType, SIZES, TYPES } from './types'
+import { readValue } from './accessors'
 export {
 	RecordDef,
 	CompiledRecordDef,
@@ -53,7 +54,16 @@ export function calcHeapSize(compiledDef: CompiledRecordDef, obj: any): number {
 			const node = getNode(obj, path, fullName)
 
 			const typeSize = SIZES[typeCode.charAt(1)] || 1
-			size += node ? compiledDef.align(node.length * typeSize) : 0
+			if (typeCode === TYPES.record_p) {
+				// The values should be already Buffers
+				if (Array.isArray(node)) {
+					size += node.reduce((acc, cur) => acc + cur.length, 0)
+				} else {
+					size += node.length
+				}
+			} else {
+				size += node ? compiledDef.align(node.length * typeSize) : 0
+			}
 		}
 	}
 
@@ -68,4 +78,16 @@ export function createRecord(compiledDef: CompiledRecordDef, obj: any): Buffer {
 	serialize(compiledDef, buf, obj)
 
 	return buf
+}
+
+export function deserializeRecordPArray<T = Object>(
+	compiledDef: CompiledRecordDef,
+	buf: Buffer,
+	path: string,
+	subDef: CompiledRecordDef
+): T[] {
+	const subBuf = readValue<Buffer>(compiledDef, buf, path)
+	const elemSize = subDef.size
+
+	return Array.from(Array(subBuf.length / elemSize), (_, i) => subBuf.slice(i * elemSize, (i + 1) * elemSize)).map((elem) => deserialize(subDef, elem))
 }
