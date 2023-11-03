@@ -417,16 +417,6 @@ static SelvaHierarchyNode *newNode(struct SelvaHierarchy *hierarchy, const Selva
 }
 
 /**
- * Actions that must be executed for a new node.
- * Generally this must be always called after newNode() unless we are loading.
- */
-static void new_node_events(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1);
-        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1);
-        SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, node->id, SELVA_NODE_ID_SIZE);
-}
-
-/**
  * Destroy node.
  * parents and children etc. must be empty unless the whole hierarchy is being freed.
  */
@@ -815,6 +805,18 @@ static void del_node(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
 
         RB_REMOVE(hierarchy_index_tree, &hierarchy->index_head, node);
         SelvaHierarchy_DestroyNode(hierarchy, node);
+    }
+}
+
+/**
+ * Actions that must be executed for a new node.
+ * Generally this must be always called after newNode().
+ */
+static void publishNewNode(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
+    if (!isLoading()) {
+        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_CREATED_AT_FIELD, sizeof(SELVA_CREATED_AT_FIELD) - 1);
+        SelvaSubscriptions_DeferFieldChangeEvents(hierarchy, node, SELVA_UPDATED_AT_FIELD, sizeof(SELVA_UPDATED_AT_FIELD) - 1);
+        SelvaSubscriptions_DeferMissingAccessorEvents(hierarchy, node->id, SELVA_NODE_ID_SIZE);
     }
 }
 
@@ -1265,9 +1267,7 @@ int SelvaModify_SetHierarchy(
             return SELVA_HIERARCHY_ENOMEM;
         }
 
-        if (!isLoading()) {
-            new_node_events(hierarchy, node);
-        }
+        publishNewNode(hierarchy, node);
         isNewNode = 1;
     }
 
@@ -1460,7 +1460,6 @@ int SelvaHierarchy_UpsertNode(
         SelvaHierarchyNode **out) {
     SelvaHierarchyNode *node = SelvaHierarchy_FindNode(hierarchy, id);
     SelvaHierarchyNode *prev_node;
-    const int fIsLoading = isLoading();
 
     if (node) {
         if (out) {
@@ -1475,13 +1474,7 @@ int SelvaHierarchy_UpsertNode(
          return SELVA_HIERARCHY_ENOMEM;
      }
 
-     /*
-      * No need to check if we have event registrations while loading the
-      * database.
-      */
-     if (!fIsLoading) {
-        new_node_events(hierarchy, node);
-     }
+     publishNewNode(hierarchy, node);
 
      /*
       * All nodes must be indexed.
