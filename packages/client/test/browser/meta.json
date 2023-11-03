@@ -1,34 +1,28 @@
 {
   "inputs": {
-    "dist/websocket/urlLoader.js": {
-      "bytes": 286,
-      "imports": [],
-      "format": "cjs"
+    "dist/src/websocket/urlLoader.js": {
+      "bytes": 206,
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/deepCopy.js": {
       "bytes": 411,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/isObject.js": {
       "bytes": 244,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/wait.js": {
       "bytes": 207,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/deepEqual.js": {
       "bytes": 2559,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/envVar.js": {
       "bytes": 295,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "(disabled):stream": {
       "bytes": 0,
@@ -39,832 +33,701 @@
       "imports": [
         {
           "path": "(disabled):stream",
-          "kind": "require-call",
-          "original": "stream"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/stringHash.js": {
       "bytes": 331,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/hash/dist/hashObjectNest.js": {
       "bytes": 3085,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/hashObject.js": {
       "bytes": 476,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectNest"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/hash.js": {
       "bytes": 1343,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/hashCompact.js": {
       "bytes": 2630,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/hash.js",
-          "kind": "require-call",
-          "original": "./hash"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "."
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js": {
       "bytes": 3584,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js": {
       "bytes": 568,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrderNest"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/hash/dist/index.js": {
       "bytes": 1115,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/hash.js",
-          "kind": "require-call",
-          "original": "./hash"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashCompact.js",
-          "kind": "require-call",
-          "original": "./hashCompact"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrder"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrderNest"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectNest"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/is-plain-obj/index.js": {
       "bytes": 245,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/queued.js": {
       "bytes": 3668,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/is-plain-obj/index.js",
-          "kind": "require-call",
-          "original": "is-plain-obj"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/utils/dist/retry.js": {
       "bytes": 1035,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/randomString.js": {
       "bytes": 1419,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/padding.js": {
       "bytes": 524,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/encoder/decode.js": {
       "bytes": 2470,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/encoder/encode.js": {
       "bytes": 3490,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/encoder/index.js": {
       "bytes": 1959,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/encoder/decode.js",
-          "kind": "require-call",
-          "original": "./decode"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/encoder/encode.js",
-          "kind": "require-call",
-          "original": "./encode"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/padding.js",
-          "kind": "require-call",
-          "original": "../padding"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/utils/dist/deepMerge.js": {
       "bytes": 3645,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/walker.js": {
       "bytes": 1767,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "./"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/utils/dist/getType.js": {
       "bytes": 277,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/query.js": {
       "bytes": 4225,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/base64.js": {
       "bytes": 2762,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/utf8.js": {
       "bytes": 4254,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/path.js": {
       "bytes": 1159,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@saulx/utils/dist/index.js": {
       "bytes": 2371,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/deepCopy.js",
-          "kind": "require-call",
-          "original": "./deepCopy"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/isObject.js",
-          "kind": "require-call",
-          "original": "./isObject"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/wait.js",
-          "kind": "require-call",
-          "original": "./wait"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/deepEqual.js",
-          "kind": "require-call",
-          "original": "./deepEqual"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/envVar.js",
-          "kind": "require-call",
-          "original": "./envVar"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/readStream.js",
-          "kind": "require-call",
-          "original": "./readStream"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/queued.js",
-          "kind": "require-call",
-          "original": "./queued"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/retry.js",
-          "kind": "require-call",
-          "original": "./retry"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/randomString.js",
-          "kind": "require-call",
-          "original": "./randomString"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/padding.js",
-          "kind": "require-call",
-          "original": "./padding"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/encoder/index.js",
-          "kind": "require-call",
-          "original": "./encoder"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/deepMerge.js",
-          "kind": "require-call",
-          "original": "./deepMerge"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/walker.js",
-          "kind": "require-call",
-          "original": "./walker"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/getType.js",
-          "kind": "require-call",
-          "original": "./getType"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/query.js",
-          "kind": "require-call",
-          "original": "./query"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/base64.js",
-          "kind": "require-call",
-          "original": "./base64"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/utf8.js",
-          "kind": "require-call",
-          "original": "./utf8"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/path.js",
-          "kind": "require-call",
-          "original": "./path"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/authState/parseAuthState.js": {
-      "bytes": 1329,
+    "dist/src/authState/parseAuthState.js": {
+      "bytes": 1020,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../fetch/index.js": {
       "bytes": 232,
-      "imports": [],
-      "format": "cjs"
+      "imports": []
     },
     "../../node_modules/@based/opts/dist/index.js": {
       "bytes": 2578,
       "imports": [
         {
           "path": "../fetch/index.js",
-          "kind": "require-call",
-          "original": "@based/fetch"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/types/error.js": {
-      "bytes": 1182,
-      "imports": [],
-      "format": "cjs"
+    "dist/src/types/generic.js": {
+      "bytes": 46,
+      "imports": []
     },
-    "dist/stream/uploadFileBrowser.js": {
-      "bytes": 4524,
+    "dist/src/types/observe.js": {
+      "bytes": 46,
+      "imports": []
+    },
+    "dist/src/types/events.js": {
+      "bytes": 45,
+      "imports": []
+    },
+    "dist/src/types/auth.js": {
+      "bytes": 43,
+      "imports": []
+    },
+    "dist/src/types/cache.js": {
+      "bytes": 44,
+      "imports": []
+    },
+    "dist/src/types/functions.js": {
+      "bytes": 48,
+      "imports": []
+    },
+    "dist/src/types/channel.js": {
+      "bytes": 46,
+      "imports": []
+    },
+    "dist/src/types/error.js": {
+      "bytes": 2878,
+      "imports": []
+    },
+    "dist/src/types/index.js": {
+      "bytes": 267,
       "imports": [
         {
-          "path": "dist/index.js",
-          "kind": "require-call",
-          "original": ".."
+          "path": "dist/src/types/generic.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/observe.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/events.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/auth.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/cache.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/functions.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/channel.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/types/error.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/src/stream/uploadFileBrowser.js": {
+      "bytes": 4214,
+      "imports": [
+        {
+          "path": "dist/src/index.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@based/opts/dist/index.js",
-          "kind": "require-call",
-          "original": "@based/opts"
+          "kind": "import-statement"
         },
         {
-          "path": "dist/types/error.js",
-          "kind": "require-call",
-          "original": "../types/error"
+          "path": "dist/src/types/index.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/isomorphic-ws/browser.js": {
       "bytes": 540,
-      "imports": [],
-      "format": "esm"
+      "imports": []
     },
-    "dist/websocket/index.js": {
-      "bytes": 4407,
+    "dist/src/websocket/index.js": {
+      "bytes": 4063,
       "imports": [
         {
-          "path": "dist/websocket/urlLoader.js",
-          "kind": "require-call",
-          "original": "./urlLoader"
+          "path": "dist/src/websocket/urlLoader.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/authState/parseAuthState.js",
-          "kind": "require-call",
-          "original": "../authState/parseAuthState"
+          "path": "dist/src/authState/parseAuthState.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/stream/uploadFileBrowser.js",
-          "kind": "require-call",
-          "original": "../stream/uploadFileBrowser"
+          "path": "dist/src/stream/uploadFileBrowser.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/isomorphic-ws/browser.js",
-          "kind": "require-call",
-          "original": "isomorphic-ws"
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/Emitter.js": {
-      "bytes": 2057,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/fflate/lib/worker.cjs": {
-      "bytes": 639,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/fflate/lib/index.cjs": {
-      "bytes": 84833,
-      "imports": [
-        {
-          "path": "../../node_modules/fflate/lib/worker.cjs",
-          "kind": "require-call",
-          "original": "./node-worker.cjs"
-        }
-      ],
-      "format": "cjs"
-    },
-    "dist/persistentStorage/browser.js": {
-      "bytes": 6816,
-      "imports": [
-        {
-          "path": "../../node_modules/fflate/lib/index.cjs",
-          "kind": "require-call",
-          "original": "fflate"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
-        }
-      ],
-      "format": "cjs"
-    },
-    "dist/persistentStorage/node.js": {
-      "bytes": 3417,
+    "dist/src/Emitter.js": {
+      "bytes": 1968,
       "imports": []
     },
-    "dist/persistentStorage/index.js": {
-      "bytes": 1816,
-      "imports": [
-        {
-          "path": "dist/persistentStorage/browser.js",
-          "kind": "require-call",
-          "original": "./browser"
-        },
-        {
-          "path": "dist/persistentStorage/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "dist/persistentStorage/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "dist/persistentStorage/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "dist/persistentStorage/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        },
-        {
-          "path": "dist/persistentStorage/node.js",
-          "kind": "require-call",
-          "original": "./node"
-        }
-      ],
-      "format": "cjs"
+    "../../node_modules/fflate/esm/browser.js": {
+      "bytes": 84905,
+      "imports": []
     },
-    "dist/authState/updateAuthState.js": {
-      "bytes": 559,
+    "dist/src/persistentStorage/browser.js": {
+      "bytes": 5333,
       "imports": [
         {
-          "path": "dist/persistentStorage/index.js",
-          "kind": "require-call",
-          "original": "../persistentStorage"
+          "path": "../../node_modules/fflate/esm/browser.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/outgoing/protocol.js": {
-      "bytes": 7369,
+    "dist/src/persistentStorage/index.js": {
+      "bytes": 1493,
       "imports": [
         {
-          "path": "../../node_modules/fflate/lib/index.cjs",
-          "kind": "require-call",
-          "original": "fflate"
+          "path": "dist/src/persistentStorage/browser.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/outgoing/index.js": {
-      "bytes": 8472,
+    "dist/src/authState/updateAuthState.js": {
+      "bytes": 376,
       "imports": [
         {
-          "path": "dist/authState/updateAuthState.js",
-          "kind": "require-call",
-          "original": "../authState/updateAuthState"
+          "path": "dist/src/persistentStorage/index.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/src/outgoing/protocol.js": {
+      "bytes": 5751,
+      "imports": [
+        {
+          "path": "../../node_modules/fflate/esm/browser.js",
+          "kind": "import-statement"
+        }
+      ]
+    },
+    "dist/src/outgoing/index.js": {
+      "bytes": 7427,
+      "imports": [
+        {
+          "path": "dist/src/authState/updateAuthState.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/outgoing/protocol.js",
-          "kind": "require-call",
-          "original": "./protocol"
+          "path": "dist/src/outgoing/protocol.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/diff/dist/applyPatch.js": {
       "bytes": 4456,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/diff/dist/partialDiff.js": {
       "bytes": 6890,
       "imports": [
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/diff/dist/index.js",
-          "kind": "require-call",
-          "original": "."
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/diff/dist/createPatch.js": {
       "bytes": 9542,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/diff/dist/partialDiff.js",
-          "kind": "require-call",
-          "original": "./partialDiff"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "../../node_modules/@saulx/diff/dist/index.js": {
       "bytes": 765,
       "imports": [
         {
           "path": "../../node_modules/@saulx/diff/dist/applyPatch.js",
-          "kind": "require-call",
-          "original": "./applyPatch"
+          "kind": "require-call"
         },
         {
           "path": "../../node_modules/@saulx/diff/dist/createPatch.js",
-          "kind": "require-call",
-          "original": "./createPatch"
+          "kind": "require-call"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/incoming/protocol.js": {
-      "bytes": 1955,
+    "dist/src/incoming/protocol.js": {
+      "bytes": 1641,
       "imports": [
         {
-          "path": "dist/outgoing/index.js",
-          "kind": "require-call",
-          "original": "../outgoing"
+          "path": "dist/src/outgoing/index.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/getTargetInfo.js": {
-      "bytes": 516,
-      "imports": [],
-      "format": "cjs"
+    "dist/src/getTargetInfo.js": {
+      "bytes": 375,
+      "imports": []
     },
-    "dist/incoming/index.js": {
-      "bytes": 14048,
+    "dist/src/incoming/index.js": {
+      "bytes": 12331,
       "imports": [
         {
-          "path": "../../node_modules/fflate/lib/index.cjs",
-          "kind": "require-call",
-          "original": "fflate"
+          "path": "../../node_modules/fflate/esm/browser.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@saulx/diff/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/diff"
+          "kind": "import-statement"
         },
         {
-          "path": "dist/types/error.js",
-          "kind": "require-call",
-          "original": "../types/error"
+          "path": "dist/src/types/error.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "kind": "import-statement"
         },
         {
-          "path": "dist/authState/updateAuthState.js",
-          "kind": "require-call",
-          "original": "../authState/updateAuthState"
+          "path": "dist/src/authState/updateAuthState.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/persistentStorage/index.js",
-          "kind": "require-call",
-          "original": "../persistentStorage"
+          "path": "dist/src/persistentStorage/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/incoming/protocol.js",
-          "kind": "require-call",
-          "original": "./protocol"
+          "path": "dist/src/incoming/protocol.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/outgoing/protocol.js",
-          "kind": "require-call",
-          "original": "../outgoing/protocol"
+          "path": "dist/src/outgoing/protocol.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/getTargetInfo.js",
-          "kind": "require-call",
-          "original": "../getTargetInfo"
+          "path": "dist/src/getTargetInfo.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/genObserveId.js": {
-      "bytes": 413,
+    "dist/src/genObserveId.js": {
+      "bytes": 274,
       "imports": [
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/query/index.js": {
-      "bytes": 4231,
+    "dist/src/query/index.js": {
+      "bytes": 4099,
       "imports": [
         {
-          "path": "dist/outgoing/index.js",
-          "kind": "require-call",
-          "original": "../outgoing"
+          "path": "dist/src/outgoing/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/genObserveId.js",
-          "kind": "require-call",
-          "original": "../genObserveId"
+          "path": "dist/src/genObserveId.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/persistentStorage/index.js",
-          "kind": "require-call",
-          "original": "../persistentStorage"
+          "path": "dist/src/persistentStorage/index.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/stream/index.js": {
-      "bytes": 2891,
-      "imports": [],
-      "format": "cjs"
+    "dist/src/stream/index.js": {
+      "bytes": 2815,
+      "imports": []
     },
-    "dist/channel/cleanUp.js": {
-      "bytes": 1155,
-      "imports": [],
-      "format": "cjs"
+    "dist/src/channel/cleanUp.js": {
+      "bytes": 982,
+      "imports": []
     },
-    "dist/channel/index.js": {
-      "bytes": 2731,
+    "dist/src/channel/index.js": {
+      "bytes": 2627,
       "imports": [
         {
-          "path": "dist/genObserveId.js",
-          "kind": "require-call",
-          "original": "../genObserveId"
+          "path": "dist/src/genObserveId.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/outgoing/index.js",
-          "kind": "require-call",
-          "original": "../outgoing"
+          "path": "dist/src/outgoing/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/channel/cleanUp.js",
-          "kind": "require-call",
-          "original": "./cleanUp"
+          "path": "dist/src/channel/cleanUp.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
-    "dist/index.js": {
-      "bytes": 12492,
+    "dist/src/index.js": {
+      "bytes": 11133,
       "imports": [
         {
-          "path": "dist/websocket/index.js",
-          "kind": "require-call",
-          "original": "./websocket"
+          "path": "dist/src/websocket/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/Emitter.js",
-          "kind": "require-call",
-          "original": "./Emitter"
+          "path": "dist/src/Emitter.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/outgoing/index.js",
-          "kind": "require-call",
-          "original": "./outgoing"
+          "path": "dist/src/outgoing/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/incoming/index.js",
-          "kind": "require-call",
-          "original": "./incoming"
+          "path": "dist/src/incoming/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/query/index.js",
-          "kind": "require-call",
-          "original": "./query"
+          "path": "dist/src/query/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/stream/index.js",
-          "kind": "require-call",
-          "original": "./stream"
+          "path": "dist/src/stream/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/persistentStorage/index.js",
-          "kind": "require-call",
-          "original": "./persistentStorage"
+          "path": "dist/src/persistentStorage/index.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/channel/index.js",
-          "kind": "require-call",
-          "original": "./channel"
+          "path": "dist/src/channel/index.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
+          "kind": "import-statement"
+        },
+        {
+          "path": "../../node_modules/@saulx/utils/dist/index.js",
+          "kind": "import-statement"
         },
         {
           "path": "../../node_modules/@based/opts/dist/index.js",
-          "kind": "require-call",
-          "original": "@based/opts"
+          "kind": "import-statement"
         },
         {
-          "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/utils"
+          "path": "dist/src/authState/parseAuthState.js",
+          "kind": "import-statement"
         },
         {
-          "path": "dist/authState/parseAuthState.js",
-          "kind": "require-call",
-          "original": "./authState/parseAuthState"
-        },
-        {
-          "path": "dist/types/error.js",
-          "kind": "require-call",
-          "original": "./types/error"
+          "path": "dist/src/types/error.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "cjs"
+      ]
     },
     "test/browser/index.ts": {
       "bytes": 279,
       "imports": [
         {
-          "path": "dist/index.js",
-          "kind": "import-statement",
-          "original": "@based/client"
+          "path": "dist/src/index.js",
+          "kind": "import-statement"
         }
-      ],
-      "format": "esm"
+      ]
     }
   },
   "outputs": {
@@ -873,9 +736,6 @@
       "exports": [],
       "entryPoint": "test/browser/index.ts",
       "inputs": {
-        "dist/websocket/urlLoader.js": {
-          "bytesInOutput": 145
-        },
         "../../node_modules/@saulx/utils/dist/deepCopy.js": {
           "bytesInOutput": 217
         },
@@ -919,7 +779,7 @@
           "bytesInOutput": 251
         },
         "../../node_modules/@saulx/hash/dist/index.js": {
-          "bytesInOutput": 478
+          "bytesInOutput": 467
         },
         "../../node_modules/is-plain-obj/index.js": {
           "bytesInOutput": 185
@@ -937,7 +797,7 @@
           "bytesInOutput": 278
         },
         "../../node_modules/@saulx/utils/dist/encoder/decode.js": {
-          "bytesInOutput": 730
+          "bytesInOutput": 684
         },
         "../../node_modules/@saulx/utils/dist/encoder/encode.js": {
           "bytesInOutput": 938
@@ -969,53 +829,11 @@
         "../../node_modules/@saulx/utils/dist/index.js": {
           "bytesInOutput": 1125
         },
-        "dist/authState/parseAuthState.js": {
-          "bytesInOutput": 531
-        },
         "../fetch/index.js": {
           "bytesInOutput": 38
         },
         "../../node_modules/@based/opts/dist/index.js": {
           "bytesInOutput": 2516
-        },
-        "dist/types/error.js": {
-          "bytesInOutput": 560
-        },
-        "dist/stream/uploadFileBrowser.js": {
-          "bytesInOutput": 1768
-        },
-        "../../node_modules/isomorphic-ws/browser.js": {
-          "bytesInOutput": 319
-        },
-        "dist/websocket/index.js": {
-          "bytesInOutput": 1399
-        },
-        "dist/Emitter.js": {
-          "bytesInOutput": 780
-        },
-        "../../node_modules/fflate/lib/worker.cjs": {
-          "bytesInOutput": 414
-        },
-        "../../node_modules/fflate/lib/index.cjs": {
-          "bytesInOutput": 29030
-        },
-        "dist/persistentStorage/browser.js": {
-          "bytesInOutput": 3398
-        },
-        "dist/persistentStorage/node.js": {
-          "bytesInOutput": 17
-        },
-        "dist/persistentStorage/index.js": {
-          "bytesInOutput": 834
-        },
-        "dist/authState/updateAuthState.js": {
-          "bytesInOutput": 263
-        },
-        "dist/outgoing/protocol.js": {
-          "bytesInOutput": 2856
-        },
-        "dist/outgoing/index.js": {
-          "bytesInOutput": 3842
         },
         "../../node_modules/@saulx/diff/dist/applyPatch.js": {
           "bytesInOutput": 1445
@@ -1024,43 +842,85 @@
           "bytesInOutput": 1699
         },
         "../../node_modules/@saulx/diff/dist/createPatch.js": {
-          "bytesInOutput": 2689
+          "bytesInOutput": 2678
         },
         "../../node_modules/@saulx/diff/dist/index.js": {
-          "bytesInOutput": 472
+          "bytesInOutput": 461
         },
-        "dist/incoming/protocol.js": {
-          "bytesInOutput": 834
+        "dist/src/websocket/urlLoader.js": {
+          "bytesInOutput": 62
         },
-        "dist/getTargetInfo.js": {
-          "bytesInOutput": 309
+        "dist/src/authState/parseAuthState.js": {
+          "bytesInOutput": 239
         },
-        "dist/incoming/index.js": {
-          "bytesInOutput": 4849
+        "dist/src/types/index.js": {
+          "bytesInOutput": 0
         },
-        "dist/genObserveId.js": {
-          "bytesInOutput": 208
+        "dist/src/types/error.js": {
+          "bytesInOutput": 1489
         },
-        "dist/query/index.js": {
-          "bytesInOutput": 1954
+        "dist/src/stream/uploadFileBrowser.js": {
+          "bytesInOutput": 22
         },
-        "dist/stream/index.js": {
-          "bytesInOutput": 109
+        "../../node_modules/isomorphic-ws/browser.js": {
+          "bytesInOutput": 270
         },
-        "dist/channel/cleanUp.js": {
-          "bytesInOutput": 456
+        "dist/src/websocket/index.js": {
+          "bytesInOutput": 1130
         },
-        "dist/channel/index.js": {
-          "bytesInOutput": 1389
+        "dist/src/Emitter.js": {
+          "bytesInOutput": 688
         },
-        "dist/index.js": {
-          "bytesInOutput": 4410
+        "../../node_modules/fflate/esm/browser.js": {
+          "bytesInOutput": 7933
+        },
+        "dist/src/persistentStorage/browser.js": {
+          "bytesInOutput": 2325
+        },
+        "dist/src/persistentStorage/index.js": {
+          "bytesInOutput": 306
+        },
+        "dist/src/authState/updateAuthState.js": {
+          "bytesInOutput": 95
+        },
+        "dist/src/outgoing/protocol.js": {
+          "bytesInOutput": 1777
+        },
+        "dist/src/outgoing/index.js": {
+          "bytesInOutput": 2790
+        },
+        "dist/src/incoming/index.js": {
+          "bytesInOutput": 3415
+        },
+        "dist/src/incoming/protocol.js": {
+          "bytesInOutput": 561
+        },
+        "dist/src/getTargetInfo.js": {
+          "bytesInOutput": 186
+        },
+        "dist/src/genObserveId.js": {
+          "bytesInOutput": 93
+        },
+        "dist/src/query/index.js": {
+          "bytesInOutput": 1736
+        },
+        "dist/src/stream/index.js": {
+          "bytesInOutput": 26
+        },
+        "dist/src/channel/cleanUp.js": {
+          "bytesInOutput": 290
+        },
+        "dist/src/channel/index.js": {
+          "bytesInOutput": 1098
+        },
+        "dist/src/index.js": {
+          "bytesInOutput": 3217
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 192
+          "bytesInOutput": 168
         }
       },
-      "bytes": 89407
+      "bytes": 58243
     }
   }
 }
