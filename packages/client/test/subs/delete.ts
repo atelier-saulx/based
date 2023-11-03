@@ -1,123 +1,27 @@
-import anyTest, { ExecutionContext, TestInterface } from 'ava'
-import { BasedServer } from '@based/server'
-import { BasedClient } from '@based/client'
-import {
-  SubsClient,
-  createServerSettings,
-  createPollerSettings,
-} from '@based/db-subs'
-import { BasedDbClient } from '@based/db-client'
-import { SelvaServer, startOrigin } from '@based/db-server'
-import getPort from 'get-port'
+import anyTest, { TestInterface } from 'ava'
 import { wait } from '@saulx/utils'
-import '../assertions'
-
-type TestCtx = {
-  srv: SelvaServer
-  subClient: SubsClient
-  dbClient: BasedDbClient
-  pollerClient: BasedClient
-  port: number
-}
+import { TestCtx, observe, startSubs } from '../assertions'
+import { BasedSchemaPartial } from '@based/schema'
 
 const test = anyTest as TestInterface<TestCtx>
 
-const startPoller = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  t.context.port = port
-  const server = new BasedServer({
-    ...createPollerSettings(),
-    port,
-  })
-
-  await server.start()
-
-  const client = new BasedClient({
-    url: `ws://localhost:${port}`,
-  })
-
-  t.teardown(async () => {
-    await server.destroy()
-    await client.destroy()
-  })
-
-  t.context.pollerClient = client
-}
-
-const startDb = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  t.context.srv = await startOrigin({
-    name: 'default',
-    port,
-  })
-  t.context.dbClient = new BasedDbClient()
-  t.context.dbClient.connect({ port, host: '127.0.0.1' })
-
-  t.teardown(async () => {
-    await t.context.srv.destroy()
-    t.context.dbClient.destroy()
-  })
-}
-
-const startServer = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  const server = new BasedServer({
-    ...createServerSettings(
-      t.context.pollerClient,
-      () => {
-        return t.context.dbClient
-      },
-      `ws://localhost:${port}`
-    ),
-    port,
-  })
-  await server.start()
-  const client = new SubsClient(t.context.pollerClient)
-  t.context.subClient = client
-
-  t.teardown(async () => {
-    await server.destroy()
-    await client.destroy()
-  })
-}
-
-const start = async (t: ExecutionContext<TestCtx>) => {
-  await startPoller(t)
-  await startDb(t)
-  await startServer(t)
-
-  await updateSchema(t)
-}
-
-const observe = async (
-  t: ExecutionContext<TestCtx>,
-  q: any,
-  cb: (d: any) => void
-) => {
-  const { subClient } = t.context
-  const id = subClient.subscribe('db', q, cb)
-  return id
-}
-
-async function updateSchema(t: ExecutionContext<TestCtx>) {
-  await t.context.dbClient.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    types: {
-      thing: {
-        prefix: 'th',
-        fields: {
-          yesh: { type: 'number' },
-          next: { type: 'reference' },
-          things: { type: 'references' },
-        },
+const schema: BasedSchemaPartial = {
+  language: 'en',
+  translations: ['de', 'nl'],
+  types: {
+    thing: {
+      prefix: 'th',
+      fields: {
+        yesh: { type: 'number' },
+        next: { type: 'reference' },
+        things: { type: 'references' },
       },
     },
-  })
+  },
 }
 
 test.serial('subscribe and delete', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
 
   const q: any[] = []
@@ -173,7 +77,7 @@ test.serial('subscribe and delete', async (t) => {
 })
 
 test.serial('subscribe and delete a descendant', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
 
   const id = await client.set({
@@ -236,7 +140,7 @@ test.serial('subscribe and delete a descendant', async (t) => {
 })
 
 test.serial('subscribe and delete over a reference field', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
 
   const id = await client.set({
@@ -296,7 +200,7 @@ test.serial('subscribe and delete over a reference field', async (t) => {
 })
 
 test.serial('subscribe and delete over references field', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
 
   const id = await client.set({
@@ -364,7 +268,7 @@ test.serial('subscribe and delete over references field', async (t) => {
 
 // TODO: subscribing on ids that don't exist
 test.serial.skip('subscribe and delete one item', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
   let cnt = 0
   observe(
@@ -409,7 +313,7 @@ test.serial.skip('subscribe and delete one item', async (t) => {
 })
 
 test.serial('subscribe and delete one item: root', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
   let cnt = 0
   observe(

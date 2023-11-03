@@ -1,124 +1,28 @@
 import anyTest, { ExecutionContext, TestInterface } from 'ava'
-import { BasedServer } from '@based/server'
-import { BasedClient } from '@based/client'
-import {
-  SubsClient,
-  createServerSettings,
-  createPollerSettings,
-} from '@based/db-subs'
-import { BasedDbClient } from '@based/db-client'
-import { SelvaServer, startOrigin } from '@based/db-server'
-import getPort from 'get-port'
 import { wait } from '@saulx/utils'
-import '../assertions'
-
-type TestCtx = {
-  srv: SelvaServer
-  subClient: SubsClient
-  dbClient: BasedDbClient
-  pollerClient: BasedClient
-  port: number
-}
+import { TestCtx, observe, startSubs } from '../assertions'
+import { BasedSchemaPartial } from '@based/schema'
 
 const test = anyTest as TestInterface<TestCtx>
 
-const startPoller = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  t.context.port = port
-  const server = new BasedServer({
-    ...createPollerSettings(),
-    port,
-  })
-
-  await server.start()
-
-  const client = new BasedClient({
-    url: `ws://localhost:${port}`,
-  })
-
-  t.teardown(async () => {
-    await server.destroy()
-    await client.destroy()
-  })
-
-  t.context.pollerClient = client
-}
-
-const startDb = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  t.context.srv = await startOrigin({
-    name: 'default',
-    port,
-  })
-  t.context.dbClient = new BasedDbClient()
-  t.context.dbClient.connect({ port, host: '127.0.0.1' })
-
-  t.teardown(async () => {
-    await t.context.srv.destroy()
-    t.context.dbClient.destroy()
-  })
-}
-
-const startServer = async (t: ExecutionContext<TestCtx>) => {
-  const port = await getPort()
-  const server = new BasedServer({
-    ...createServerSettings(
-      t.context.pollerClient,
-      () => {
-        return t.context.dbClient
-      },
-      `ws://localhost:${port}`
-    ),
-    port,
-  })
-  await server.start()
-  const client = new SubsClient(t.context.pollerClient)
-  t.context.subClient = client
-
-  t.teardown(async () => {
-    await server.destroy()
-    await client.destroy()
-  })
-}
-
-const start = async (t: ExecutionContext<TestCtx>) => {
-  await startPoller(t)
-  await startDb(t)
-  await startServer(t)
-
-  await updateSchema(t)
-}
-
-const observe = async (
-  t: ExecutionContext<TestCtx>,
-  q: any,
-  cb: (d: any) => void
-) => {
-  const { subClient } = t.context
-  const id = subClient.subscribe('db', q, cb)
-  return id
-}
-
-async function updateSchema(t: ExecutionContext<TestCtx>) {
-  await t.context.dbClient.updateSchema({
-    language: 'en',
-    types: {
-      match: {
-        prefix: 'ma',
-        fields: {
-          title: { type: 'text' },
-          name: { type: 'string' },
-          value: { type: 'number' },
-          status: { type: 'number' },
-          date: { type: 'number' },
-        },
+const schema: BasedSchemaPartial = {
+  language: 'en',
+  types: {
+    match: {
+      prefix: 'ma',
+      fields: {
+        title: { type: 'text' },
+        name: { type: 'string' },
+        value: { type: 'number' },
+        status: { type: 'number' },
+        date: { type: 'number' },
       },
     },
-  })
+  },
 }
 
 test.serial('subscription list', async (t) => {
-  await start(t)
+  await startSubs(t, schema)
   const client = t.context.dbClient
 
   const matches: any[] = []
