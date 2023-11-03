@@ -457,11 +457,19 @@
       "bytes": 84905,
       "imports": []
     },
+    "dist/src/persistentStorage/constants.js": {
+      "bytes": 227,
+      "imports": []
+    },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 5333,
+      "bytes": 5465,
       "imports": [
         {
           "path": "../../node_modules/fflate/esm/browser.js",
+          "kind": "import-statement"
+        },
+        {
+          "path": "dist/src/persistentStorage/constants.js",
           "kind": "import-statement"
         }
       ]
@@ -485,7 +493,7 @@
       ]
     },
     "dist/src/outgoing/protocol.js": {
-      "bytes": 5751,
+      "bytes": 5328,
       "imports": [
         {
           "path": "../../node_modules/fflate/esm/browser.js",
@@ -494,7 +502,7 @@
       ]
     },
     "dist/src/outgoing/index.js": {
-      "bytes": 7427,
+      "bytes": 6904,
       "imports": [
         {
           "path": "dist/src/authState/updateAuthState.js",
@@ -559,7 +567,7 @@
       ]
     },
     "dist/src/incoming/protocol.js": {
-      "bytes": 1641,
+      "bytes": 1549,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -572,7 +580,7 @@
       "imports": []
     },
     "dist/src/incoming/index.js": {
-      "bytes": 12331,
+      "bytes": 11974,
       "imports": [
         {
           "path": "../../node_modules/fflate/esm/browser.js",
@@ -599,6 +607,10 @@
           "kind": "import-statement"
         },
         {
+          "path": "dist/src/persistentStorage/constants.js",
+          "kind": "import-statement"
+        },
+        {
           "path": "dist/src/incoming/protocol.js",
           "kind": "import-statement"
         },
@@ -622,7 +634,7 @@
       ]
     },
     "dist/src/query/index.js": {
-      "bytes": 4099,
+      "bytes": 4079,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -664,7 +676,7 @@
       ]
     },
     "dist/src/index.js": {
-      "bytes": 11133,
+      "bytes": 11037,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -872,10 +884,13 @@
           "bytesInOutput": 688
         },
         "../../node_modules/fflate/esm/browser.js": {
-          "bytesInOutput": 7933
+          "bytesInOutput": 7922
+        },
+        "dist/src/persistentStorage/constants.js": {
+          "bytesInOutput": 66
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 2325
+          "bytesInOutput": 1631
         },
         "dist/src/persistentStorage/index.js": {
           "bytesInOutput": 306
@@ -884,16 +899,16 @@
           "bytesInOutput": 95
         },
         "dist/src/outgoing/protocol.js": {
-          "bytesInOutput": 1777
+          "bytesInOutput": 1609
         },
         "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2790
+          "bytesInOutput": 2285
         },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 3415
+          "bytesInOutput": 3185
         },
         "dist/src/incoming/protocol.js": {
-          "bytesInOutput": 561
+          "bytesInOutput": 457
         },
         "dist/src/getTargetInfo.js": {
           "bytesInOutput": 186
@@ -902,7 +917,7 @@
           "bytesInOutput": 93
         },
         "dist/src/query/index.js": {
-          "bytesInOutput": 1736
+          "bytesInOutput": 1716
         },
         "dist/src/stream/index.js": {
           "bytesInOutput": 26
@@ -914,13 +929,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 3217
+          "bytesInOutput": 3121
         },
         "test/browser/index.ts": {
           "bytesInOutput": 168
         }
       },
-      "bytes": 58243
+      "bytes": 56481
     }
   }
 }

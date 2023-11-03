@@ -1,5 +1,11 @@
 import { BasedClient } from '../index.js'
 import * as fflate from 'fflate'
+import {
+  CACHE_PREFIX,
+  CACHE_SIZE,
+  CACHE_NAME,
+  CACHE_AUTH,
+} from './constants.js'
 
 const decoder = new TextDecoder()
 const encoder = new TextEncoder()
@@ -15,7 +21,7 @@ export const removeStorageBrowser = (client: BasedClient, key: string) => {
   const prev = localStorage.getItem(key)
   if (prev) {
     client.storageSize -= new Blob([prev]).size
-    localStorage.setItem('@based-size', String(client.storageSize))
+    localStorage.setItem(CACHE_SIZE, String(client.storageSize))
     localStorage.removeItem(key)
   }
 }
@@ -24,7 +30,7 @@ export const clearStorageBrowser = () => {
   const keys = Object.keys(localStorage)
   try {
     for (const key of keys) {
-      if (key.startsWith('@based')) {
+      if (key.startsWith(CACHE_NAME)) {
         localStorage.removeItem(key)
       }
     }
@@ -32,7 +38,7 @@ export const clearStorageBrowser = () => {
     try {
       localStorage.clear()
     } catch (err) {
-      console.error(`Based - Error clearing localStorage`)
+      // console.error(`Based - Error clearing localStorage`)
     }
   }
 }
@@ -51,7 +57,7 @@ export const setStorageBrowser = (
     const prev = localStorage.getItem(key)
     const stringifiedJson = JSON.stringify(value)
     const encoded =
-      stringifiedJson.length > 70 || key === '@based-authState-' + env
+      stringifiedJson.length > 70 || key === CACHE_AUTH + env
         ? global.btoa(
             decoder.decode(fflate.deflateSync(encoder.encode(stringifiedJson)))
           )
@@ -66,18 +72,18 @@ export const setStorageBrowser = (
 
     client.storageSize += size
     if (client.storageSize > client.maxStorageSize) {
-      console.info('Based - Max localStorage size reached - clear')
+      // console.info('Based - Max localStorage size reached - clear')
       clearStorageBrowser()
       client.storageSize = 0
       if (client.authState.persistent === true) {
-        setStorageBrowser(client, '@based-authState-' + env, client.authState)
+        setStorageBrowser(client, CACHE_AUTH + env, client.authState)
       }
       client.storageSize += size
     }
-    localStorage.setItem('@based-size', String(client.storageSize))
+    localStorage.setItem(CACHE_SIZE, String(client.storageSize))
     localStorage.setItem(key, encoded)
   } catch (err) {
-    console.error(`Based - Error writing ${key} to localStorage`, err)
+    // console.error(`Based - Error writing ${key} to localStorage`, err)
   }
 }
 
@@ -89,7 +95,7 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
   try {
     const value = localStorage.getItem(key)
     if (value !== undefined) {
-      if (value.length < 70 && key !== '@based-authState-' + env) {
+      if (value.length < 70 && key !== CACHE_AUTH + env) {
         try {
           return JSON.parse(value)
         } catch (err) {}
@@ -98,7 +104,7 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
     }
     return
   } catch (err) {
-    console.error(`Based - Error parsing ${key} from localStorage`)
+    // console.error(`Based - Error parsing ${key} from localStorage`)
   }
 }
 
@@ -116,10 +122,10 @@ export const initStorageBrowser = async (client: BasedClient) => {
 
   try {
     // compress as option!
-    let totalSize = Number(localStorage.getItem('@based-size') || 0)
+    let totalSize = Number(localStorage.getItem(CACHE_SIZE) || 0)
 
     if (totalSize < 0) {
-      console.error('Based - Corrupt localStorage (negative size) - clear')
+      // console.error('Based - Corrupt localStorage (negative size) - clear')
       clearStorageBrowser()
       totalSize = 0
     }
@@ -129,25 +135,25 @@ export const initStorageBrowser = async (client: BasedClient) => {
     const keys = Object.keys(localStorage)
 
     if (keys.length === 1 && totalSize > 0) {
-      console.error(
-        'Based - Corrupt localStorage (size but no keys) - clear',
-        totalSize
-      )
+      // console.error(
+      //   'Based - Corrupt localStorage (size but no keys) - clear',
+      //   totalSize
+      // )
       clearStorageBrowser()
       totalSize = 0
     }
 
-    console.info(
-      `Based - init localstorage stored ${~~(totalSize / 1024) + 'kb'}`
-    )
+    // console.info(
+    //   `Based - init localstorage stored ${~~(totalSize / 1024) + 'kb'}`
+    // )
 
     if (totalSize > 0) {
       for (const key of keys) {
-        if (key === '@based-size' || !key.startsWith('@based')) {
+        if (key === CACHE_SIZE || !key.startsWith(CACHE_NAME)) {
           continue
         }
 
-        if (key === '@based-authState-' + env) {
+        if (key === CACHE_AUTH + env) {
           const authState = getStorageBrowser(client, key)
           if (authState) {
             client.setAuthState(authState).catch((err) => {
@@ -158,7 +164,7 @@ export const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
-        const [, keyValuePair] = key.split('@based-cache-')
+        const [, keyValuePair] = key.split(CACHE_PREFIX)
 
         if (!keyValuePair) {
           continue
@@ -171,7 +177,7 @@ export const initStorageBrowser = async (client: BasedClient) => {
         }
 
         if (!id) {
-          console.warn('Based - clear corrupt localStorage item')
+          // console.warn('Based - clear corrupt localStorage item')
           removeStorageBrowser(client, key)
           continue
         }
@@ -181,6 +187,6 @@ export const initStorageBrowser = async (client: BasedClient) => {
       }
     }
   } catch (err) {
-    console.error('Based - Cannot read localStorage')
+    // console.error('Based - Cannot read localStorage')
   }
 }

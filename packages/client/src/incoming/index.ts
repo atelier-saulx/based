@@ -6,6 +6,7 @@ import { convertDataToBasedError } from '../types/error.js'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState.js'
 import { setStorage } from '../persistentStorage/index.js'
+import { CACHE_PREFIX } from '../persistentStorage/constants.js'
 import {
   parseArrayBuffer,
   decodeHeader,
@@ -36,12 +37,9 @@ export const incoming = async (client: BasedClient, data: any) => {
 
   try {
     const d = data.data
-
     const buffer = await parseArrayBuffer(d)
-
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
     // reader for batched replies
-
     // ------- Function
     if (type === 0) {
       // | 4 header | 3 id | * payload |
@@ -116,7 +114,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
         if (observable.persistent) {
           cachedData.persistent = true
-          setStorage(client, '@based-cache-' + id, cachedData)
+          setStorage(client, CACHE_PREFIX + id, cachedData)
         }
 
         for (const [, handlers] of observable.subscribers) {
@@ -159,7 +157,7 @@ export const incoming = async (client: BasedClient, data: any) => {
         const observable = client.observeState.get(id)
         if (observable.persistent) {
           cacheData.persistent = true
-          setStorage(client, '@based-cache-' + id, cacheData)
+          setStorage(client, CACHE_PREFIX + id, cacheData)
         }
         for (const [, handlers] of observable.subscribers) {
           handlers.onData(payload, checksum)
