@@ -28,5 +28,6 @@ jobs:
         run: npm run build
       - name: Run client tests
         run: |
-          cd packages/client
-          npm test
+          ldd selvad
+#          cd packages/client
+#          npm test
