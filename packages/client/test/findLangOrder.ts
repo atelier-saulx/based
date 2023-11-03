@@ -30,7 +30,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['cs', 'en', 'de', 'fi', 'pt'],
+    language: 'cs',
+    translations: ['en', 'de', 'fi', 'pt'],
     types: {
       match: {
         prefix: 'ma',

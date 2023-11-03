@@ -102,7 +102,8 @@ test.serial('basic id based subscriptions', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' }, no: { type: 'string' } },
     },
@@ -186,7 +187,8 @@ test.serial('basic id based nested query subscriptions', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' }, no: { type: 'string' } },
     },
@@ -265,7 +267,8 @@ test.serial('using $field works', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' } },
     },
@@ -318,7 +321,8 @@ test.serial('basic $inherit when ancestors change', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' } },
     },
@@ -379,7 +383,8 @@ test.serial('basic id based reference subscriptions', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' }, no: { type: 'string' } },
     },
@@ -501,7 +506,8 @@ test.serial('subscribe with timeout right away record', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: { yesh: { type: 'string' }, no: { type: 'string' } },
     },

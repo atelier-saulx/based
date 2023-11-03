@@ -1,4 +1,8 @@
-import { BasedSchemaType } from '@based/schema'
+import {
+  BasedSchemaFieldObject,
+  BasedSchemaType,
+  BasedSchemaTypePartial,
+} from '@based/schema'
 import { ExecContext, Path } from '../get'
 
 export function joinPath(path: (string | number)[]): string {
@@ -57,4 +61,60 @@ export function getTypeSchema(ctx: ExecContext, id: string): BasedSchemaType {
   return typeName === 'root'
     ? ctx.client.schema.root
     : ctx.client.schema.types[typeName]
+}
+
+export function pathToQuery(path: string[], value: any) {
+  const result = {}
+  let current = result
+  for (let i = 0; i < path.length; i++) {
+    current = current[path[i]] = i === path.length - 1 ? value : {}
+  }
+  return result
+}
+
+export function getValueByPath(
+  obj: object | undefined,
+  path: string | string[] | undefined
+) {
+  const p = typeof path === 'string' ? path.split('.') : path
+  if (typeof obj === 'object') {
+    let current = obj
+    for (let i = 0; i < p.length; i++) {
+      const key = p[i]
+      if (!current.hasOwnProperty(key)) {
+        return undefined
+      }
+      if (i === p.length - 1) {
+        return current[key]
+      }
+      current = current[key]
+    }
+  }
+  return undefined
+}
+
+export const getSchemaTypeFieldByPath = (
+  type: BasedSchemaTypePartial | undefined,
+  path: string[] | undefined
+): any => {
+  if (typeof type === 'object') {
+    let currentFields = type.fields
+    for (let i = 0; i < path.length; i++) {
+      if (!currentFields) {
+        return undefined
+      }
+      const fieldName = path[i]
+      if (!currentFields.hasOwnProperty(fieldName)) {
+        return undefined
+      }
+      const field = currentFields[fieldName]
+      if (i === path.length - 1) {
+        return field
+      }
+      if (field.type === 'object') {
+        currentFields = (field as BasedSchemaFieldObject).properties
+      }
+    }
+  }
+  return undefined
 }

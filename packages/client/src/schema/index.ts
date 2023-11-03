@@ -1,7 +1,11 @@
-import { BasedSchema, BasedSchemaPartial, BasedSchemaType } from '@based/schema'
+import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 import { BasedDbClient } from '..'
-import { deepCopy, deepMerge } from '@saulx/utils'
-import { joinPath } from '../util'
+import { NewTypeSchemaMutation, SchemaUpdateMode } from '../types'
+import { findEdgeConstraints } from './findEdgeConstraints'
+import { getMutations } from './getMutations'
+import { mergeSchema } from './mergeSchema'
+import { migrateNodes } from './migrateNodes'
+import { validateSchemaMutations } from './validationRules'
 
 type EdgeConstraint = {
   prefix: string
@@ -12,7 +16,7 @@ type EdgeConstraint = {
 
 export const DEFAULT_SCHEMA: BasedSchema = {
   $defs: {},
-  languages: ['en'],
+  language: 'en',
   prefixToTypeMapping: {
     ro: 'root',
   },
@@ -34,126 +38,54 @@ export const DEFAULT_SCHEMA: BasedSchema = {
   },
 }
 
-export const DEFAULT_FIELDS: any = {
-  id: { type: 'string' },
-  createdAt: { type: 'timestamp' },
-  updatedAt: { type: 'timestamp' },
-  type: { type: 'string' },
-  parents: { type: 'references' },
-  children: { type: 'references' },
-  ancestors: { type: 'references' },
-  descendants: { type: 'references' },
-  aliases: {
-    type: 'set',
-    items: { type: 'string' },
-  },
-}
-
-function findEdgeConstraints(
-  prefix: string,
-  path: string[],
-  typeSchema: any,
-  constraints: EdgeConstraint[]
-): void {
-  if (typeSchema.fields) {
-    for (const field in typeSchema.fields) {
-      findEdgeConstraints(
-        prefix,
-        [field],
-        typeSchema.fields[field],
-        constraints
-      )
-    }
-  }
-
-  if (typeSchema.properties) {
-    for (const field in typeSchema.properties) {
-      findEdgeConstraints(
-        prefix,
-        [...path, field],
-        typeSchema.properties[field],
-        constraints
-      )
-    }
-  }
-
-  if (typeSchema.values) {
-    findEdgeConstraints(prefix, [...path, '*'], typeSchema.values, constraints)
-  }
-
-  if (typeSchema.items) {
-    findEdgeConstraints(prefix, [...path, '*'], typeSchema.items, constraints)
-  }
-
-  if (!['reference', 'references'].includes(typeSchema.type)) {
-    return
-  }
-
-  const ref = {
-    prefix,
-    bidirectional: typeSchema.bidirectional
-      ? { fromField: typeSchema?.bidirectional?.fromField }
-      : undefined,
-    isSingle: typeSchema.type === 'reference',
-    field: joinPath(path),
-  }
-
-  if (!ref.bidirectional && !ref.isSingle) {
-    return
-  }
-
-  constraints.push(ref)
-}
-
 export async function updateSchema(
   client: BasedDbClient,
-  opts: BasedSchemaPartial
+  opts: BasedSchemaPartial,
+  merge: boolean = true,
+  mode: SchemaUpdateMode = SchemaUpdateMode.strict
 ): Promise<BasedSchema> {
-  const newTypes: [string, string][] = []
-  const newConstraints: EdgeConstraint[] = []
-
   let currentSchema = client.schema
   if (!currentSchema) {
     // TODO: get schema from DB
     currentSchema = DEFAULT_SCHEMA
     client.schema = DEFAULT_SCHEMA
 
-    newTypes.push(['ro', 'root'])
-  }
-  const newSchema = deepCopy(currentSchema)
-
-  if (opts.languages) {
-    newSchema.languages = opts.languages
+    // newTypes.push(['ro', 'root'])
+    await client.command('hierarchy.types.add', ['ro', 'root'])
   }
 
-  if (opts.root) {
-    // TODO: guard for breaking changes
-    deepMerge(newSchema.root, opts.root)
+  const mutations = getMutations(currentSchema, opts)
+  // console.log('=======================================')
+  // mutations.forEach((mutation) => {
+  //   console.log(
+  //     mutation.mutation,
+  //     // @ts-ignore
+  //     mutation.type,
+  //     // @ts-ignore
+  //     mutation.path,
+  //     // @ts-ignore
+  //     mutation.old,
+  //     // @ts-ignore
+  //     mutation.new
+  //   )
+  // })
+  // console.log('---------------------------------------')
+
+  const newSchema = mergeSchema(currentSchema, mutations)
+
+  await validateSchemaMutations(client, currentSchema, opts, mutations, mode)
+
+  if (mode === SchemaUpdateMode.migration) {
+    await migrateNodes(client, mutations)
   }
 
+  // TODO: integrate this
+  // EdgeConstraints
+  const newConstraints: EdgeConstraint[] = []
   if (opts.types) {
     for (const typeName in opts.types) {
       const typeDef = opts.types[typeName]
-      const oldDef = currentSchema.types[typeName]
-
-      // TODO: generate one if taken
-      const prefix = typeDef.prefix ?? oldDef?.prefix ?? typeName.slice(0, 2)
-
-      if (!oldDef) {
-        const newDef: any = {
-          prefix,
-          fields: deepCopy(DEFAULT_FIELDS),
-        }
-        deepMerge(newDef, typeDef)
-        newSchema.types[typeName] = newDef
-
-        newTypes.push([prefix, typeName])
-        newSchema.prefixToTypeMapping[prefix] = typeName
-      } else {
-        // TODO: guard for breaking changes
-        newSchema.types[typeName] = deepMerge(oldDef, typeDef)
-      }
-
+      const prefix = typeDef.prefix
       findEdgeConstraints(prefix, [], typeDef, newConstraints)
     }
   }
@@ -163,10 +95,16 @@ export async function updateSchema(
     schema: newSchema,
   })
 
-  if (newTypes?.length) {
+  const newTypeMutations: NewTypeSchemaMutation[] = mutations.filter(
+    (mutation) => mutation.mutation === 'new_type'
+  ) as NewTypeSchemaMutation[]
+  if (newTypeMutations.length) {
     await Promise.all(
-      newTypes.map(([prefix, typeName]) => {
-        return client.command('hierarchy.types.add', [prefix, typeName])
+      newTypeMutations.map((mutation) => {
+        return client.command('hierarchy.types.add', [
+          newSchema.types[mutation.type].prefix,
+          mutation.type,
+        ])
       })
     )
   }

@@ -2,7 +2,6 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 import { find } from './assertions/utils'
@@ -42,7 +41,7 @@ test('find - traverse expression - low level', async (t) => {
   const { client } = t.context
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       library: {
         prefix: 'li',
@@ -262,7 +261,7 @@ test('find - traverse expression - low level', async (t) => {
 test('find - traverse expression with records', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       book: {
         prefix: 'bk',
@@ -490,7 +489,7 @@ test('find - versioned hierarchies', async (t) => {
   }
 
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       category: {
         prefix: 'ca',

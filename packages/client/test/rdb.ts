@@ -1,8 +1,7 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 import { join } from 'path'
@@ -35,7 +34,8 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
     root: {
       fields: {
         value: { type: 'number' },

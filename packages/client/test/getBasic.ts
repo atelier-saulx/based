@@ -30,7 +30,12 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en', 'de', 'nl'],
+    language: 'en',
+    translations: ['de', 'nl'],
+    languageFallbacks: {
+      en: ['de'],
+      nl: ['de', 'en'],
+    },
     root: {
       fields: {
         value: { type: 'number' },
@@ -209,6 +214,7 @@ test.afterEach.always(async (t) => {
   const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
+  await wait(300)
 })
 
 test('get null', async (t) => {

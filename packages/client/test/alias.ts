@@ -30,7 +30,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       lekkerType: {
         prefix: 'vi',
@@ -580,7 +580,7 @@ test('ways to clear aliases', async (t) => {
 test('set with $alias', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       match: {
         prefix: 'ma',

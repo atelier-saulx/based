@@ -1,11 +1,9 @@
 import test from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
-import { wait } from '@saulx/utils'
 import getPort from 'get-port'
-// import { wait } from '@saulx/utils'
 
-test.only('set primitive fields', async (t) => {
+test('set primitive fields', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -20,7 +18,8 @@ test.only('set primitive fields', async (t) => {
   })
 
   await client.updateSchema({
-    languages: ['en', 'nl', 'de', 'fi'],
+    language: 'en',
+    translations: ['nl', 'de', 'fi'],
     $defs: {},
     prefixToTypeMapping: {
       po: 'post',

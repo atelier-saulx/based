@@ -30,7 +30,7 @@ test.beforeEach(async (t) => {
   console.log('updating schema')
 
   await t.context.client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       book: {
         prefix: 'bk',
@@ -90,7 +90,7 @@ test.afterEach.always(async (t) => {
 test('find - inherit', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       book: {
         prefix: 'bk',
@@ -179,7 +179,7 @@ test('find - inherit', async (t) => {
 test('find - inherit by type', async (t) => {
   const { client } = t.context
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       book: {
         prefix: 'bk',

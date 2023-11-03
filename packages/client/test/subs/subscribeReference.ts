@@ -103,7 +103,7 @@ test.serial.skip('subscription to a reference', async (t) => {
   const client = t.context.dbClient
 
   await client.updateSchema({
-    languages: ['en'],
+    language: 'en',
     types: {
       sport: {
         prefix: 'sp',

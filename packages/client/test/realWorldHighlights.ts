@@ -1,8 +1,7 @@
 import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
+import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import './assertions'
-import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { SelvaServer } from '../../server/dist/server'
 
@@ -40,7 +39,7 @@ test.beforeEach(async (t) => {
       properties: {
         component: { type: 'string' },
         name: { type: 'string' },
-        index: { type: 'int' },
+        index: { type: 'integer' },
         text: { type: 'text' },
         color: { type: 'string' },
         image: { type: 'string' },

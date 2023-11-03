@@ -7,7 +7,9 @@ export function makeLangArg(ctx: ExecContext) {
     return ''
   }
 
-  const languages = ctx?.client?.schema?.languages ?? []
+  const fallbacks = ctx?.client?.schema?.languageFallbacks ?? {}
+  const primaryLanguage = ctx?.client?.schema?.language ?? 'en'
+  const languages = fallbacks[lang] ?? [primaryLanguage]
 
   let str = lang
   for (let i = 0; i < languages.length; i++) {
