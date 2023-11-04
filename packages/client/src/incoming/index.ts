@@ -1,5 +1,5 @@
 import { BasedClient } from '../index.js'
-import * as fflate from 'fflate'
+import { inflateSync } from 'fflate'
 // add diff to the bundle as well
 import { applyPatch } from '@saulx/diff'
 import { deepEqual } from '@saulx/utils'
@@ -23,9 +23,7 @@ const decodeAndDeflate = (
   buffer: Uint8Array
 ): any => {
   return new TextDecoder().decode(
-    isDeflate
-      ? fflate.inflateSync(buffer.slice(start, end))
-      : buffer.slice(start, end)
+    isDeflate ? inflateSync(buffer.slice(start, end)) : buffer.slice(start, end)
   )
 }
 

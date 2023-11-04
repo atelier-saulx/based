@@ -1,4 +1,4 @@
-import * as fflate from 'fflate'
+import { deflateSync } from 'fflate'
 import { AuthState } from '../types/auth.js'
 import {
   ChannelPublishQueueItem,
@@ -70,7 +70,7 @@ const encodePayload = (
       typeof payload === 'string' ? payload : JSON.stringify(payload)
     )
     if (!noDeflate && p.length > 150) {
-      p = fflate.deflateSync(p)
+      p = deflateSync(p)
       isDeflate = true
     }
     return [isDeflate, p]

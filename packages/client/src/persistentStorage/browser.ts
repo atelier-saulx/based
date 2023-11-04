@@ -1,5 +1,5 @@
 import { BasedClient } from '../index.js'
-import * as fflate from 'fflate'
+import { inflateSync, deflateSync } from 'fflate'
 import {
   CACHE_PREFIX,
   CACHE_SIZE,
@@ -12,7 +12,7 @@ const encoder = new TextEncoder()
 
 const decode = (dataURI: string): any => {
   const data = global.atob(dataURI)
-  const uncompressed = decoder.decode(fflate.inflateSync(encoder.encode(data)))
+  const uncompressed = decoder.decode(inflateSync(encoder.encode(data)))
   const parsed = JSON.parse(uncompressed)
   return parsed
 }
@@ -59,7 +59,7 @@ export const setStorageBrowser = (
     const encoded =
       stringifiedJson.length > 70 || key === CACHE_AUTH + env
         ? global.btoa(
-            decoder.decode(fflate.deflateSync(encoder.encode(stringifiedJson)))
+            decoder.decode(deflateSync(encoder.encode(stringifiedJson)))
           )
         : stringifiedJson
 

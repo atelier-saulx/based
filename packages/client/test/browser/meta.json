@@ -547,7 +547,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 5465,
+      "bytes": 5468,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -585,7 +585,7 @@
       "format": "esm"
     },
     "dist/src/outgoing/protocol.js": {
-      "bytes": 5328,
+      "bytes": 5325,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -692,7 +692,7 @@
       "format": "esm"
     },
     "dist/src/incoming/index.js": {
-      "bytes": 12091,
+      "bytes": 12072,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -811,7 +811,7 @@
       "format": "esm"
     },
     "dist/src/index.js": {
-      "bytes": 10987,
+      "bytes": 10726,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -882,7 +882,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 1039,
+      "bytes": 1114,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -1002,7 +1002,7 @@
           "bytesInOutput": 457
         },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 2975
+          "bytesInOutput": 2977
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
@@ -1020,13 +1020,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 2887
+          "bytesInOutput": 2735
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 647
+          "bytesInOutput": 687
         }
       },
-      "bytes": 34855
+      "bytes": 34745
     }
   }
 }

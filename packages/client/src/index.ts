@@ -428,20 +428,20 @@ export class BasedClient extends Emitter {
     return updateStorage(this)
   }
 
-  genCacheScript() {
-    return `<script>window.__basedcache__=${JSON.stringify(
-      genCacheObject(this)
-    )}</script>`
-  }
+  // genCacheScript() {
+  //   return `<script>window.__basedcache__=${JSON.stringify(
+  //     genCacheObject(this)
+  //   )}</script>`
+  // }
 }
 
-const genCacheObject = (client: BasedClient): any => {
-  const m: any = {}
-  client.cache.forEach((v, k) => {
-    m[k] = v
-  })
-  return m
-}
+// const genCacheObject = (client: BasedClient): any => {
+//   const m: any = {}
+//   client.cache.forEach((v, k) => {
+//     m[k] = v
+//   })
+//   return m
+// }
 
 export { BasedOpts }
 
