@@ -29,7 +29,7 @@
   "dependencies": {
     "@saulx/diff": "^2.0.1",
     "@saulx/hash": "^3.0.0",
-    "@saulx/utils": "^4.0.1",
+    "@saulx/utils": "^4.0.4",
     "@based/fetch": "^1.0.3",
     "@based/opts": "0.7.4",
     "fflate": "0.8.1",

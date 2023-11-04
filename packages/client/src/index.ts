@@ -41,8 +41,12 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 import { deepEqual } from '@saulx/utils'
 
-import basedOptsPkg from '@based/opts'
-const parseOpts = basedOptsPkg.default
+// import basedOptsPkg from '@based/opts'
+// const parseOpts = basedOptsPkg.default
+
+const parseOpts = async (x: any): Promise<string> => {
+  return 'bla'
+}
 
 export * from './authState/parseAuthState.js'
 

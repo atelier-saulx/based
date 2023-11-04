@@ -1,9 +1,6 @@
-// if (!!global.WebSocketPair) {
-// 	module.exports = fetch
-// 	module.exports.default = fetch
-// } else {
-// 	module.exports = require('cross-fetch')
-// 	module.exports.default = require('cross-fetch')
-// }
-
-module.exports = fetch
+import nFetch from 'node-fetch'
+let fetchP = nFetch
+if ('fetch' in global) {
+	fetchP = fetch
+}
+export default fetchP
