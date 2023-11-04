@@ -146,6 +146,10 @@ export const incoming = async (client: BasedClient, data: any) => {
         payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
+      if (client.cache.has(id) && client.cache.get(id).checksum === checksum) {
+        return
+      }
+
       const cacheData: CacheValue = {
         value: payload,
         checksum,
@@ -155,6 +159,7 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       if (client.observeState.has(id)) {
         const observable = client.observeState.get(id)
+
         if (observable.persistent) {
           cacheData.persistent = true
           setStorage(client, CACHE_PREFIX + id, cacheData)

@@ -81,7 +81,7 @@ export class BasedFunctions {
 
     if (this.config.closeAfterIdleTime === undefined) {
       this.config.closeAfterIdleTime = {
-        query: 3e3, // 3 seconds
+        query: 3e3, // 3 seconds - get it higher e.g 20 seconds / and cache size
         channel: 60e3, // 3 1 Min
       }
     }

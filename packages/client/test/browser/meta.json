@@ -367,407 +367,31 @@
       ],
       "format": "esm"
     },
-    "../fetch/index.js": {
-      "bytes": 232,
+    "../fetch/browser.js": {
+      "bytes": 21,
       "imports": [],
-      "format": "cjs"
+      "format": "esm"
     },
-    "../../node_modules/@saulx/utils/dist/deepCopy.js": {
-      "bytes": 411,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/isObject.js": {
-      "bytes": 244,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/wait.js": {
-      "bytes": 207,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/deepEqual.js": {
-      "bytes": 2559,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/envVar.js": {
-      "bytes": 295,
-      "imports": [],
-      "format": "cjs"
-    },
-    "(disabled):stream": {
-      "bytes": 0,
-      "imports": []
-    },
-    "../../node_modules/@saulx/utils/dist/readStream.js": {
-      "bytes": 625,
+    "node_modules/@based/opts/dist/index.js": {
+      "bytes": 1864,
       "imports": [
         {
-          "path": "(disabled):stream",
-          "kind": "require-call",
-          "original": "stream"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/stringHash.js": {
-      "bytes": 331,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hashObjectNest.js": {
-      "bytes": 3085,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hashObject.js": {
-      "bytes": 476,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectNest"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hash.js": {
-      "bytes": 1343,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hashCompact.js": {
-      "bytes": 2630,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hash.js",
-          "kind": "require-call",
-          "original": "./hash"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "."
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js": {
-      "bytes": 3584,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js": {
-      "bytes": 568,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrderNest"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/hash/dist/index.js": {
-      "bytes": 1115,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hash.js",
-          "kind": "require-call",
-          "original": "./hash"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashCompact.js",
-          "kind": "require-call",
-          "original": "./hashCompact"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObject.js",
-          "kind": "require-call",
-          "original": "./hashObject"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrder.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrder"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObjectIgnoreKeyOrderNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectIgnoreKeyOrderNest"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/hashObjectNest.js",
-          "kind": "require-call",
-          "original": "./hashObjectNest"
-        },
-        {
-          "path": "../../node_modules/@saulx/hash/dist/stringHash.js",
-          "kind": "require-call",
-          "original": "./stringHash"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/is-plain-obj/index.js": {
-      "bytes": 245,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/queued.js": {
-      "bytes": 3668,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
-          "original": "@saulx/hash"
-        },
-        {
-          "path": "../../node_modules/is-plain-obj/index.js",
-          "kind": "require-call",
-          "original": "is-plain-obj"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/retry.js": {
-      "bytes": 1035,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/randomString.js": {
-      "bytes": 1419,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/padding.js": {
-      "bytes": 524,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/encoder/decode.js": {
-      "bytes": 2470,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/encoder/encode.js": {
-      "bytes": 3490,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/encoder/index.js": {
-      "bytes": 1959,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/utils/dist/encoder/decode.js",
-          "kind": "require-call",
-          "original": "./decode"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/encoder/encode.js",
-          "kind": "require-call",
-          "original": "./encode"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/padding.js",
-          "kind": "require-call",
-          "original": "../padding"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/deepMerge.js": {
-      "bytes": 3645,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/walker.js": {
-      "bytes": 1767,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
-          "original": "./"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/getType.js": {
-      "bytes": 277,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/query.js": {
-      "bytes": 4225,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/base64.js": {
-      "bytes": 2762,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/utf8.js": {
-      "bytes": 4254,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/path.js": {
-      "bytes": 1159,
-      "imports": [],
-      "format": "cjs"
-    },
-    "../../node_modules/@saulx/utils/dist/index.js": {
-      "bytes": 2371,
-      "imports": [
-        {
-          "path": "../../node_modules/@saulx/utils/dist/deepCopy.js",
-          "kind": "require-call",
-          "original": "./deepCopy"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/isObject.js",
-          "kind": "require-call",
-          "original": "./isObject"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/wait.js",
-          "kind": "require-call",
-          "original": "./wait"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/deepEqual.js",
-          "kind": "require-call",
-          "original": "./deepEqual"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/envVar.js",
-          "kind": "require-call",
-          "original": "./envVar"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/readStream.js",
-          "kind": "require-call",
-          "original": "./readStream"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/queued.js",
-          "kind": "require-call",
-          "original": "./queued"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/retry.js",
-          "kind": "require-call",
-          "original": "./retry"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/randomString.js",
-          "kind": "require-call",
-          "original": "./randomString"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/padding.js",
-          "kind": "require-call",
-          "original": "./padding"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/encoder/index.js",
-          "kind": "require-call",
-          "original": "./encoder"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/deepMerge.js",
-          "kind": "require-call",
-          "original": "./deepMerge"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/walker.js",
-          "kind": "require-call",
-          "original": "./walker"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/getType.js",
-          "kind": "require-call",
-          "original": "./getType"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/query.js",
-          "kind": "require-call",
-          "original": "./query"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/base64.js",
-          "kind": "require-call",
-          "original": "./base64"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/utf8.js",
-          "kind": "require-call",
-          "original": "./utf8"
-        },
-        {
-          "path": "../../node_modules/@saulx/utils/dist/path.js",
-          "kind": "require-call",
-          "original": "./path"
-        }
-      ],
-      "format": "cjs"
-    },
-    "../../node_modules/@based/opts/dist/index.js": {
-      "bytes": 2578,
-      "imports": [
-        {
-          "path": "../fetch/index.js",
-          "kind": "require-call",
+          "path": "../fetch/browser.js",
+          "kind": "import-statement",
           "original": "@based/fetch"
         },
         {
-          "path": "../../node_modules/@saulx/utils/dist/index.js",
-          "kind": "require-call",
+          "path": "node_modules/@saulx/utils/dist/src/index.js",
+          "kind": "import-statement",
           "original": "@saulx/utils"
         },
         {
-          "path": "../../node_modules/@saulx/hash/dist/index.js",
-          "kind": "require-call",
+          "path": "node_modules/@saulx/hash/dist/src/index.js",
+          "kind": "import-statement",
           "original": "@saulx/hash"
         }
       ],
-      "format": "cjs"
+      "format": "esm"
     },
     "dist/src/types/generic.js": {
       "bytes": 46,
@@ -864,7 +488,7 @@
           "original": "../index.js"
         },
         {
-          "path": "../../node_modules/@based/opts/dist/index.js",
+          "path": "node_modules/@based/opts/dist/index.js",
           "kind": "import-statement",
           "original": "@based/opts"
         },
@@ -923,7 +547,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 5465,
+      "bytes": 5499,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -972,7 +596,7 @@
       "format": "esm"
     },
     "dist/src/outgoing/index.js": {
-      "bytes": 6904,
+      "bytes": 6943,
       "imports": [
         {
           "path": "dist/src/authState/updateAuthState.js",
@@ -1068,7 +692,7 @@
       "format": "esm"
     },
     "dist/src/incoming/index.js": {
-      "bytes": 11974,
+      "bytes": 12098,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -1187,7 +811,7 @@
       "format": "esm"
     },
     "dist/src/index.js": {
-      "bytes": 11095,
+      "bytes": 10994,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -1240,6 +864,11 @@
           "original": "@saulx/utils"
         },
         {
+          "path": "node_modules/@based/opts/dist/index.js",
+          "kind": "import-statement",
+          "original": "@based/opts"
+        },
+        {
           "path": "dist/src/authState/parseAuthState.js",
           "kind": "import-statement",
           "original": "./authState/parseAuthState.js"
@@ -1253,7 +882,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 279,
+      "bytes": 891,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -1275,6 +904,9 @@
         },
         "node_modules/@saulx/utils/dist/src/deepCopy.js": {
           "bytesInOutput": 130
+        },
+        "node_modules/@saulx/utils/dist/src/wait.js": {
+          "bytesInOutput": 56
         },
         "node_modules/@saulx/utils/dist/src/deepEqual.js": {
           "bytesInOutput": 776
@@ -1301,7 +933,7 @@
           "bytesInOutput": 361
         },
         "node_modules/@saulx/hash/dist/src/hashObjectIgnoreKeyOrder.js": {
-          "bytesInOutput": 63
+          "bytesInOutput": 62
         },
         "node_modules/@saulx/utils/dist/src/padding.js": {
           "bytesInOutput": 70
@@ -1318,6 +950,12 @@
         "dist/src/authState/parseAuthState.js": {
           "bytesInOutput": 203
         },
+        "../fetch/browser.js": {
+          "bytesInOutput": 13
+        },
+        "node_modules/@based/opts/dist/index.js": {
+          "bytesInOutput": 1673
+        },
         "dist/src/types/index.js": {
           "bytesInOutput": 0
         },
@@ -1328,7 +966,7 @@
           "bytesInOutput": 22
         },
         "../../node_modules/isomorphic-ws/browser.js": {
-          "bytesInOutput": 270
+          "bytesInOutput": 230
         },
         "dist/src/websocket/index.js": {
           "bytesInOutput": 1130
@@ -1337,13 +975,13 @@
           "bytesInOutput": 688
         },
         "node_modules/fflate/esm/browser.js": {
-          "bytesInOutput": 8160
+          "bytesInOutput": 8169
         },
         "dist/src/persistentStorage/constants.js": {
           "bytesInOutput": 66
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1629
+          "bytesInOutput": 1658
         },
         "dist/src/persistentStorage/index.js": {
           "bytesInOutput": 304
@@ -1355,7 +993,7 @@
           "bytesInOutput": 1598
         },
         "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2248
+          "bytesInOutput": 2274
         },
         "node_modules/@saulx/diff/dist/src/applyPatch.js": {
           "bytesInOutput": 1332
@@ -1367,10 +1005,10 @@
           "bytesInOutput": 186
         },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 3120
+          "bytesInOutput": 3174
         },
         "dist/src/genObserveId.js": {
-          "bytesInOutput": 41
+          "bytesInOutput": 40
         },
         "dist/src/query/index.js": {
           "bytesInOutput": 1716
@@ -1385,13 +1023,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 3031
+          "bytesInOutput": 3008
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 168
+          "bytesInOutput": 488
         }
       },
-      "bytes": 33667
+      "bytes": 35782
     }
   }
 }

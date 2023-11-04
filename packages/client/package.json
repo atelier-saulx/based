@@ -9,8 +9,8 @@
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --verbose",
     "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
-    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --drop:console",
-    "browser": "aristotle watch -t ./test/browser/empty.ts -p 8006"
+    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
+    "browser": "node ./test/browser/server.js"
   },
   "type": "module",
   "main": "./dist/src/index.js",
@@ -41,10 +41,7 @@
     "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
-    "nodemon": "^2.0.20",
     "@based/functions": "^2.0.1",
-    "concurrently": "^7.1.0",
-    "@saulx/aristotle": "^4.3.0",
     "ava": "5.3.1",
     "@saulx/tsconfig": "^1.0.6",
     "@saulx/prettier-config": "^1.0.0",
