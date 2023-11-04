@@ -70,7 +70,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.checksum || 0
+        cachedData?.c || 0
       )
     } else {
       const obs = this.client.observeState.get(this.id)
@@ -88,7 +88,7 @@ export class BasedQuery<P = any, K = any> {
     }
 
     if (cachedData) {
-      onData(cachedData.value, cachedData.checksum)
+      onData(cachedData.v, cachedData.c)
     }
 
     return () => {
@@ -135,7 +135,7 @@ export class BasedQuery<P = any, K = any> {
           }
         }
         if (cachedData) {
-          resolve(cachedData.value)
+          resolve(cachedData.v)
           return
         }
       }
@@ -145,7 +145,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.checksum || 0
+        cachedData?.c || 0
       )
     })
   }

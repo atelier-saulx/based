@@ -218,7 +218,6 @@ export const addObsToQueue = (
   payload: GenericObject,
   checksum: number = 0
 ) => {
-  console.log('SEND SUB', checksum)
   const type = client.oQ.get(id)?.[0]
   if (type === 1) {
     return

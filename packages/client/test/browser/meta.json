@@ -547,7 +547,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 5499,
+      "bytes": 5465,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -596,7 +596,7 @@
       "format": "esm"
     },
     "dist/src/outgoing/index.js": {
-      "bytes": 6943,
+      "bytes": 6904,
       "imports": [
         {
           "path": "dist/src/authState/updateAuthState.js",
@@ -692,7 +692,7 @@
       "format": "esm"
     },
     "dist/src/incoming/index.js": {
-      "bytes": 12098,
+      "bytes": 12091,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -703,11 +703,6 @@
           "path": "node_modules/@saulx/diff/dist/src/index.js",
           "kind": "import-statement",
           "original": "@saulx/diff"
-        },
-        {
-          "path": "dist/src/types/error.js",
-          "kind": "import-statement",
-          "original": "../types/error.js"
         },
         {
           "path": "node_modules/@saulx/utils/dist/src/index.js",
@@ -743,6 +738,11 @@
           "path": "dist/src/getTargetInfo.js",
           "kind": "import-statement",
           "original": "../getTargetInfo.js"
+        },
+        {
+          "path": "dist/src/types/index.js",
+          "kind": "import-statement",
+          "original": "../types/index.js"
         }
       ],
       "format": "esm"
@@ -759,7 +759,7 @@
       "format": "esm"
     },
     "dist/src/query/index.js": {
-      "bytes": 4079,
+      "bytes": 4050,
       "imports": [
         {
           "path": "dist/src/outgoing/index.js",
@@ -811,7 +811,7 @@
       "format": "esm"
     },
     "dist/src/index.js": {
-      "bytes": 10994,
+      "bytes": 10987,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -882,7 +882,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 891,
+      "bytes": 1039,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -969,7 +969,7 @@
           "bytesInOutput": 230
         },
         "dist/src/websocket/index.js": {
-          "bytesInOutput": 1130
+          "bytesInOutput": 979
         },
         "dist/src/Emitter.js": {
           "bytesInOutput": 688
@@ -981,7 +981,7 @@
           "bytesInOutput": 66
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1658
+          "bytesInOutput": 1604
         },
         "dist/src/persistentStorage/index.js": {
           "bytesInOutput": 304
@@ -993,25 +993,22 @@
           "bytesInOutput": 1598
         },
         "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2274
+          "bytesInOutput": 2090
         },
         "node_modules/@saulx/diff/dist/src/applyPatch.js": {
-          "bytesInOutput": 1332
+          "bytesInOutput": 1236
         },
         "dist/src/incoming/protocol.js": {
           "bytesInOutput": 457
         },
-        "dist/src/getTargetInfo.js": {
-          "bytesInOutput": 186
-        },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 3174
+          "bytesInOutput": 2975
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
         },
         "dist/src/query/index.js": {
-          "bytesInOutput": 1716
+          "bytesInOutput": 1621
         },
         "dist/src/stream/index.js": {
           "bytesInOutput": 26
@@ -1023,13 +1020,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 3008
+          "bytesInOutput": 2887
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 488
+          "bytesInOutput": 647
         }
       },
-      "bytes": 35782
+      "bytes": 34855
     }
   }
 }

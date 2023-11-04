@@ -1,7 +1,7 @@
 export type CacheValue = {
-  value: any
-  checksum: number
-  persistent?: boolean
+  v: any
+  c: number
+  p?: boolean
 }
 
 export type Cache = Map<number, CacheValue>

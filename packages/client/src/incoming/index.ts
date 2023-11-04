@@ -2,7 +2,6 @@ import { BasedClient } from '../index.js'
 import * as fflate from 'fflate'
 // add diff to the bundle as well
 import { applyPatch } from '@saulx/diff'
-import { convertDataToBasedError } from '../types/error.js'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState.js'
 import { setStorage } from '../persistentStorage/index.js'
@@ -15,7 +14,7 @@ import {
 } from './protocol.js'
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
-import { CacheValue } from '../types/index.js'
+import { CacheValue, convertDataToBasedError } from '../types/index.js'
 
 const decodeAndDeflate = (
   start: number,
@@ -66,7 +65,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       if (client.getState.has(id) && client.cache.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
-          resolve(client.cache.get(id).value)
+          resolve(client.cache.get(id).v)
         }
         client.getState.delete(id)
       }
@@ -87,7 +86,7 @@ export const incoming = async (client: BasedClient, data: any) => {
       const checksum = readUint8(buffer, 12, 8)
       const previousChecksum = readUint8(buffer, 20, 8)
 
-      if (cachedData.checksum !== previousChecksum) {
+      if (cachedData.c !== previousChecksum) {
         requestFullData(client, id)
         return
       }
@@ -102,8 +101,8 @@ export const incoming = async (client: BasedClient, data: any) => {
       }
 
       try {
-        cachedData.value = applyPatch(cachedData.value, diff)
-        cachedData.checksum = checksum
+        cachedData.v = applyPatch(cachedData.v, diff)
+        cachedData.c = checksum
       } catch (err) {
         requestFullData(client, id)
         return
@@ -113,19 +112,19 @@ export const incoming = async (client: BasedClient, data: any) => {
         const observable = client.observeState.get(id)
 
         if (observable.persistent) {
-          cachedData.persistent = true
+          cachedData.p = true
           setStorage(client, CACHE_PREFIX + id, cachedData)
         }
 
         for (const [, handlers] of observable.subscribers) {
-          handlers.onData(cachedData.value, checksum)
+          handlers.onData(cachedData.v, checksum)
         }
       }
 
       if (client.getState.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
-          resolve(cachedData.value)
+          resolve(cachedData.v)
         }
         client.getState.delete(id)
       }
@@ -146,26 +145,23 @@ export const incoming = async (client: BasedClient, data: any) => {
         payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
-      if (client.cache.has(id) && client.cache.get(id).checksum === checksum) {
-        return
-      }
+      const noChange = client.cache.get(id)?.c === checksum
 
-      const cacheData: CacheValue = {
-        value: payload,
-        checksum,
-      }
-
-      client.cache.set(id, cacheData)
-
-      if (client.observeState.has(id)) {
-        const observable = client.observeState.get(id)
-
-        if (observable.persistent) {
-          cacheData.persistent = true
-          setStorage(client, CACHE_PREFIX + id, cacheData)
+      if (!noChange) {
+        const cacheData: CacheValue = {
+          v: payload,
+          c: checksum,
         }
-        for (const [, handlers] of observable.subscribers) {
-          handlers.onData(payload, checksum)
+        client.cache.set(id, cacheData)
+        if (client.observeState.has(id)) {
+          const observable = client.observeState.get(id)
+          if (observable.persistent) {
+            cacheData.p = true
+            setStorage(client, CACHE_PREFIX + id, cacheData)
+          }
+          for (const [, handlers] of observable.subscribers) {
+            handlers.onData(payload, checksum)
+          }
         }
       }
 

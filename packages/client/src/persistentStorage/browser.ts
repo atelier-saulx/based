@@ -114,7 +114,6 @@ export const initStorageBrowser = async (client: BasedClient) => {
     return
   }
 
-  console.info('INIT STORAGE')
   const prevCache = global.__basedcache__ ?? {}
 
   for (const key in prevCache) {

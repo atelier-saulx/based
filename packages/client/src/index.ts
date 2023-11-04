@@ -167,13 +167,7 @@ export class BasedClient extends Emitter {
     for (const [id, obs] of this.observeState) {
       if (!this.oQ.has(id)) {
         const cachedData = this.cache.get(id)
-        addObsToQueue(
-          this,
-          obs.name,
-          id,
-          obs.payload,
-          cachedData?.checksum || 0
-        )
+        addObsToQueue(this, obs.name, id, obs.payload, cachedData?.c || 0)
       }
     }
 
