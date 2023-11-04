@@ -1,4 +1,3 @@
-import nodeFetch from 'node-fetch'
+import fetch from 'node-fetch'
 
-const fetch: typeof nodeFetch
-export default fetch
+export default typeof fetch
