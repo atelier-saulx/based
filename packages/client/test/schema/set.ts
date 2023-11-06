@@ -4,7 +4,7 @@ import { startOrigin, SelvaServer } from '@based/db-server'
 import { BasedDbClient } from '../../src'
 import '../assertions'
 import { SchemaUpdateMode } from '../../src/types'
-import { BasedSchemaFieldArray } from '@based/schema'
+import { BasedSchemaFieldSet } from '@based/schema'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -37,9 +37,9 @@ test.beforeEach(async (t) => {
       aType: {
         prefix: 'at',
         fields: {
-          level1array: {
-            type: 'array',
-            values: { type: 'string' },
+          level1set: {
+            type: 'set',
+            items: { type: 'string' },
           },
         },
       },
@@ -55,7 +55,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('Remove array field in strick mode should fail', async (t) => {
+test('Remove set field in strick mode should fail', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
@@ -63,58 +63,23 @@ test('Remove array field in strick mode should fail', async (t) => {
       types: {
         aType: {
           fields: {
-            level1array: { $delete: true },
+            level1set: { $delete: true },
           },
         },
       },
     }),
     {
-      message: /^Cannot remove "aType.level1array" in strict mode.$/,
-    }
-  )
-})
-test('Change array field in strick mode should fail', async (t) => {
-  const { client } = t.context
-
-  await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        aType: {
-          fields: {
-            level1array: { type: 'string' },
-          },
-        },
-      },
-    }),
-    {
-      message: /^Cannot change "aType.level1array" in strict mode.$/,
-    }
-  )
-
-  await t.throwsAsync(
-    client.updateSchema({
-      types: {
-        aType: {
-          fields: {
-            level1array: {
-              values: { type: 'number' },
-            },
-          },
-        },
-      },
-    }),
-    {
-      message: /^Cannot change "aType.level1array" in strict mode.$/,
+      message: /^Cannot remove "aType.level1set" in strict mode.$/,
     }
   )
 })
 
-test('Change array field in flexible mode with existing nodes should fail', async (t) => {
+test('Remove set field in flexible mode with exsiting nodes should fail', async (t) => {
   const { client } = t.context
 
   const id = await client.set({
     type: 'aType',
-    level1array: ['one', 'one', 'three'],
+    level1set: ['one', 'two', 'three'],
   })
 
   await t.throwsAsync(
@@ -123,7 +88,7 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
         types: {
           aType: {
             fields: {
-              level1array: { type: 'string' },
+              level1set: { $delete: true },
             },
           },
         },
@@ -134,7 +99,73 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
     ),
     {
       message:
-        /^Cannot mutate "aType.level1array" in flexible mode with exsiting data.$/,
+        /^Cannot mutate "aType.level1set" in flexible mode with exsiting data.$/,
+    }
+  )
+})
+
+test('Change set field in strick mode should fail', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        aType: {
+          fields: {
+            level1set: { type: 'string' },
+          },
+        },
+      },
+    }),
+    {
+      message: /^Cannot change "aType.level1set" in strict mode.$/,
+    }
+  )
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        aType: {
+          fields: {
+            level1set: {
+              items: { type: 'number' },
+            },
+          },
+        },
+      },
+    }),
+    {
+      message: /^Cannot change "aType.level1set" in strict mode.$/,
+    }
+  )
+})
+
+test('Change set field in flexible mode with existing nodes should fail', async (t) => {
+  const { client } = t.context
+
+  const id = await client.set({
+    type: 'aType',
+    level1set: ['one', 'two', 'three'],
+  })
+
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          aType: {
+            fields: {
+              level1set: { type: 'string' },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message:
+        /^Cannot mutate "aType.level1set" in flexible mode with exsiting data.$/,
     }
   )
 
@@ -144,8 +175,8 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
         types: {
           aType: {
             fields: {
-              level1array: {
-                values: { type: 'number' },
+              level1set: {
+                items: { type: 'number' },
               },
             },
           },
@@ -157,7 +188,7 @@ test('Change array field in flexible mode with existing nodes should fail', asyn
     ),
     {
       message:
-        /^Cannot mutate "aType.level1array" in flexible mode with exsiting data.$/,
+        /^Cannot mutate "aType.level1set" in flexible mode with exsiting data.$/,
     }
   )
 })
@@ -171,8 +202,8 @@ test('Change set field in flexible mode without existing nodes should fail', asy
         types: {
           aType: {
             fields: {
-              level1array: {
-                values: { type: 'number' },
+              level1set: {
+                items: { type: 'number' },
               },
             },
           },
@@ -186,8 +217,8 @@ test('Change set field in flexible mode without existing nodes should fail', asy
 
   let newSchema = client.schema
   t.is(
-    (newSchema.types['aType'].fields['level1array'] as BasedSchemaFieldArray)
-      .values.type,
+    (newSchema.types['aType'].fields['level1set'] as BasedSchemaFieldSet).items
+      .type,
     'number'
   )
 
@@ -197,7 +228,7 @@ test('Change set field in flexible mode without existing nodes should fail', asy
         types: {
           aType: {
             fields: {
-              level1array: { type: 'string' },
+              level1set: { type: 'string' },
             },
           },
         },
@@ -209,10 +240,10 @@ test('Change set field in flexible mode without existing nodes should fail', asy
   )
 
   newSchema = client.schema
-  t.is(newSchema.types['aType'].fields['level1array'].type, 'string')
+  t.is(newSchema.types['aType'].fields['level1set'].type, 'string')
 })
 
-test('Add array field without values should fail', async (t) => {
+test('Add set field without items should fail', async (t) => {
   const { client } = t.context
 
   await t.throwsAsync(
@@ -220,8 +251,8 @@ test('Add array field without values should fail', async (t) => {
       types: {
         anotherType: {
           fields: {
-            level1array: {
-              type: 'array',
+            level1set: {
+              type: 'set',
             },
           },
         },
@@ -229,7 +260,7 @@ test('Add array field without values should fail', async (t) => {
     }),
     {
       message:
-        /^Field "anotherType.level1array" is of type "array" but does not include a valid "values" property.$/,
+        /^Field "anotherType.level1set" is of type "set" but does not include a valid "items" property.$/,
     }
   )
 })

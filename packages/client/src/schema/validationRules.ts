@@ -1,7 +1,9 @@
 import {
   BasedSchema,
+  BasedSchemaFieldArray,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaFieldSet,
   BasedSchemaFields,
   BasedSchemaLanguage,
   BasedSchemaPartial,
@@ -138,6 +140,28 @@ const onlyAllowedFieldTypes: MutationRule = (
         `Invalid field type "${field.type}" on "${mutation.type}.${path.join(
           '.'
         )}"`
+      )
+    }
+
+    if (
+      field.type === 'array' &&
+      (!(field as BasedSchemaFieldArray).values ||
+        !(field as BasedSchemaFieldArray).values.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "array" but does not include a valid "values" property.`
+      )
+    } else if (
+      field.type === 'set' &&
+      (!(field as BasedSchemaFieldSet).items ||
+        !(field as BasedSchemaFieldSet).items.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "set" but does not include a valid "items" property.`
       )
     }
   }, mutation)
