@@ -1125,7 +1125,7 @@ test('$default with string and number', async (t) => {
   })
 })
 
-test.only('$merge = false', async (t) => {
+test('$merge = false', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'arPower',
