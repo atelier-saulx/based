@@ -36,6 +36,10 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   // indexes
   'index.list': null,
+  'index.del': defaultEncoder([
+    { type: 'string' }, // index name
+    { type: 'longlong' }, // ?discard
+  ]),
   // object primitives
   'object.set': defaultEncoder([
     { type: 'id' },
