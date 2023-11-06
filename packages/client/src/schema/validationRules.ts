@@ -2,6 +2,7 @@ import {
   BasedSchema,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaFields,
   BasedSchemaLanguage,
   BasedSchemaPartial,
   basedSchemaFieldTypes,
@@ -22,7 +23,7 @@ import {
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
 import { DEFAULT_FIELDS } from './mergeSchema'
-import { deepEqual } from '@saulx/utils'
+import { deepEqual, deepMerge } from '@saulx/utils'
 
 type ExistingNodes = {
   [fullFieldPath: string]: number
@@ -94,16 +95,25 @@ const checkAllFields = (
   ctx?: RulesContext,
   recursionPath: string[] = []
 ) => {
-  if (
-    mutation.mutation === 'new_field' ||
-    mutation.mutation === 'change_field'
-  ) {
+  if (mutation.mutation === 'new_field') {
     fieldFn(mutation.path, mutation.new)
+  } else if (mutation.mutation === 'change_field') {
+    fieldFn(mutation.path, deepMerge(mutation.old, mutation.new))
   } else {
     for (const fieldName in recursionPath.length
       ? getSchemaTypeFieldByPath(mutation.new.fields, recursionPath)
       : mutation.new.fields) {
-      const field = mutation.new.fields[fieldName]
+      let field: any
+      if (mutation.mutation === 'new_type') {
+        field = mutation.new.fields[fieldName]
+      } else if (mutation.mutation === 'change_type') {
+        field = deepMerge(
+          mutation.old.fields[fieldName],
+          mutation.new.fields[fieldName]
+        )
+      } else {
+        throw new Error('Invalid mutation')
+      }
       fieldFn(recursionPath.concat(fieldName), field)
       if (
         field.type === 'object' &&
