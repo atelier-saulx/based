@@ -1223,34 +1223,16 @@ static void SelvaFindIndex_DelCommand(struct selva_server_response_out *resp, co
     SelvaHierarchy *hierarchy = main_hierarchy;
     const char *index_name_str;
     size_t index_name_len;
-    int op;
     struct SelvaFindIndexControlBlock *icb;
-    int discard;
-    int argc, err;
+    int discard = 0, argc, err;
 
     argc = selva_proto_scanf(NULL, buf, len, "%.*s, %d",
                              &index_name_len, &index_name_str,
-                             &op);
+                             &discard);
     if (argc < 0) {
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
-    }
-
-    if (argc == 1) {
-        discard = 0;
-    } else if (argc == 2) {
-        switch (op) {
-        case 0:
-            discard = 0;
-            break;
-        case 1:
-            discard = 1;
-            break;
-        default:
-            selva_send_error(resp, SELVA_ENOTSUP, NULL, 0);
-            return;
-        }
-    } else {
+    } else if (argc > 2) {
         selva_send_error_arity(resp);
         return;
     }
