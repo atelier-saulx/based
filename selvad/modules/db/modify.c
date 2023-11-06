@@ -1522,7 +1522,12 @@ static enum selva_op_repl_state modify_hll(
         updated |= SelvaObject_AddHllStr(obj, field_str, field_len, s, slen) > 0;
     }
 
-    return updated ? SELVA_OP_REPL_STATE_UPDATED : SELVA_OP_REPL_STATE_UNCHANGED;
+    if (updated) {
+        return SELVA_OP_REPL_STATE_UPDATED;
+    } else {
+        selva_send_str(resp, "OK", 2);
+        return SELVA_OP_REPL_STATE_UNCHANGED;
+    }
 }
 
 static void replicate_modify(struct selva_server_response_out *resp, const struct bitmap *replset, struct selva_string **orig_argv, const struct replicate_ts *rs)

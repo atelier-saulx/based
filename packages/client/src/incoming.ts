@@ -50,7 +50,13 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
 
     if (header.flags & SELVA_PROTO_HDR_STREAM) {
       const msg = frame.subarray(IGNORED_FIRST_BYTES)
-      const [parsed] = decodeMessage(msg, -1)
+      let parsed: any
+      try {
+        ;[parsed] = decodeMessage(msg, -1)
+      } catch (e) {
+        console.error('Error decoding stream message payload', e)
+        continue
+      }
 
       const chId = client.subscriptionHandlers.get(header.seqno)
       if (chId === undefined) {
@@ -75,14 +81,18 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
       client.incomingMessageBuffers.delete(header.seqno)
       client.commandResponseListeners.delete(header.seqno)
 
-      const [parsed] = decodeMessage(msg, -1)
-      const err = parsed.find((x: any) => {
-        return x instanceof Error
-      })
-      if (err) {
-        reject(err)
-      } else {
-        resolve(parsed)
+      try {
+        const [parsed] = decodeMessage(msg, -1)
+        const err = parsed.find((x: any) => {
+          return x instanceof Error
+        })
+        if (err) {
+          reject(err)
+        } else {
+          resolve(parsed)
+        }
+      } catch (e) {
+        reject(e)
       }
 
       continue

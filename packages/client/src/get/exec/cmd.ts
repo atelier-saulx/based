@@ -14,6 +14,7 @@ import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { get } from '.'
+import { inspect } from 'node:util'
 
 type CmdExecOpts = {
   cmdName: Command
@@ -192,7 +193,12 @@ export async function getCmd(
     client.CMD_RESULT_CACHE.delete(cmdID)
   } else {
     if (!result) {
-      result = await execCmd(ctx, opts)
+      try {
+        result = await execCmd(ctx, opts)
+      } catch (e) {
+        result = []
+        console.error('Error executing command', e, inspect(cmd, { depth: 3 }))
+      }
     }
 
     if (subId) {

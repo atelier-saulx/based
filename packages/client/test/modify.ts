@@ -44,7 +44,10 @@ test.beforeEach(async (t) => {
       de: ['en'],
     },
     root: {
-      fields: { value: { type: 'number' }, hello: { type: 'string' } },
+      fields: {
+        value: { type: 'number' },
+        hello: { type: 'string' },
+      },
     },
     types: {
       match: {
