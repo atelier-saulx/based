@@ -33,6 +33,10 @@
 #include "pick_icb.h"
 #include "find_index.h"
 
+#if 0
+#define DISABLE_ORDERED_INDICES 1
+#endif
+
 #define INDEX_ERR_MSG_DISABLED "Indexing disabled"
 #define FIND_INDEX_SUB_ID (Selva_SubscriptionId)0
 #define ALLOWED_DIRS \
@@ -894,6 +898,9 @@ int SelvaFindIndex_AutoMulti(
          * Hint: It's possible to disable ordered indices completely
          * by changing order here to SELVA_RESULT_ORDER_NONE.
          */
+#if DISABLE_ORDERED_INDICES
+        order = SELVA_RESULT_ORDER_NONE
+#endif
         err = SelvaFindIndex_Auto(hierarchy, dir, dir_expression, node_id, order, order_field, index_hints[i], &icb);
         ind_icb_out[i] = icb;
         if (!err) {
