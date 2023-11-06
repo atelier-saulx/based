@@ -14,7 +14,11 @@ export function parseGetResult(
   let obj = {}
   let hasKeys = false
   for (let i = 0; i < results.length; i++) {
-    const result = results[i][0]
+    const result = results[i]?.[0]
+    if (!result) {
+      continue
+    }
+
     const cmd: GetCommand = cmds[i]
     const {
       type,
