@@ -415,13 +415,6 @@
 #define CMD_ID_SUBSCRIPTIONS_ADD_ALIAS 60
 
 /**
- * Add subscription marker.
- * module: db
- * cmd: subscriptions.addMissing
- */
-#define CMD_ID_SUBSCRIPTIONS_ADD_MISSING 61
-
-/**
  * Add subscription trigger.
  * module: db
  * cmd: subscriptions.addTrigger

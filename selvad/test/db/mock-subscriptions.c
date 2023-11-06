@@ -71,9 +71,6 @@ int SelvaSubscriptions_DeleteMarker(
         Selva_SubscriptionMarkerId marker_id) {
     return 0;
 }
-void SelvaSubscriptions_DeleteMarkerByPtr(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
-    return;
-}
 
 void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *id_str, size_t id_len) {
     return;

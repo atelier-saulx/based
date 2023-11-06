@@ -95,6 +95,26 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
     Selva_NodeId node_id;
     const int resolved = SelvaResolve_NodeId(hierarchy, ids, nr_ids, node_id);
     if (resolved == SELVA_ENOENT) {
+        /*
+         * Create a missing marker if a sub_id was given.
+         */
+        if (sub_id && nr_ids > 0) {
+            Selva_SubscriptionMarkerId marker_id = 0;
+            int err;
+
+            for (size_t i = 0; i < nr_ids; i++) {
+                marker_id = Selva_GenSubscriptionMarkerId(marker_id, selva_string_to_str(ids[i], NULL));
+            }
+
+            err = SelvaSubscriptions_AddMissingMarker(hierarchy, sub_id, marker_id, ids, nr_ids);
+            if (err) {
+                (void)SelvaSubscriptions_DeleteMarker(hierarchy, sub_id, marker_id);
+
+                selva_send_errorf(resp, err, "Failed to add a missing marker");
+                return;
+            }
+        }
+
         selva_send_null(resp);
         return;
     } else if (resolved < 0) {
@@ -102,6 +122,9 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
         return;
     }
 
+    /*
+     * Create an alias marker if a sub_id was given.
+     */
     if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id && nr_ids > 0) {
         struct selva_string *alias_name = ids[(resolved & ~SELVA_RESOLVE_FLAGS)];
         Selva_SubscriptionMarkerId marker_id;
@@ -109,7 +132,7 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
 
         marker_id = Selva_GenSubscriptionMarkerId(0, selva_string_to_str(alias_name, NULL));
 
-        err = Selva_AddSubscriptionAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
+        err = SelvaSubscriptions_AddAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
         if (err && err != SELVA_SUBSCRIPTIONS_EEXIST) {
             selva_send_errorf(resp, err, "Failed to subscribe sub_id: \"%" PRIsubId ".%" PRImrkId "\" alias_name: %s node_id: %.*s\n",
                               sub_id, marker_id,

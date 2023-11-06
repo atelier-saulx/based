@@ -350,25 +350,6 @@ int SelvaSubscriptions_DeleteMarker(
 }
 
 /**
- * Remove all subscriptions from a marker but leave the marker.
- * do_sub_marker_removal() will certainly destroy the marker after this
- * function.
- */
-static void remove_all_subs_from_marker(struct Selva_SubscriptionMarker *marker) {
-    struct Selva_Subscription *sub;
-
-    while ((sub = SVector_Shift(&marker->subs))) {
-        (void)SVector_Remove(&sub->markers, marker);
-    }
-    SVector_ShiftReset(&sub->markers);
-}
-
-void SelvaSubscriptions_DeleteMarkerByPtr(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
-    remove_all_subs_from_marker(marker);
-    do_sub_marker_removal(hierarchy, marker);
-}
-
-/**
  * Remove and destroy all markers of a subscription.
  */
 static void remove_sub_markers(SelvaHierarchy *hierarchy, struct Selva_Subscription *sub) {
@@ -1036,8 +1017,8 @@ void SelvaSubscriptions_RefreshSubsByMarker(struct SelvaHierarchy *hierarchy, co
     }
 }
 
-int Selva_AddSubscriptionAliasMarker(
-        SelvaHierarchy *hierarchy,
+int SelvaSubscriptions_AddAliasMarker(
+        struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         struct selva_string *alias_name,
@@ -1122,8 +1103,50 @@ fail:
     return err;
 }
 
+int SelvaSubscriptions_AddMissingMarker(
+        struct SelvaHierarchy *hierarchy,
+        Selva_SubscriptionId sub_id,
+        Selva_SubscriptionMarkerId marker_id,
+        struct selva_string **accessors,
+        size_t nr_accessors
+    ) {
+    struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
+    struct Selva_SubscriptionMarker *marker;
+
+    if (nr_accessors == 0) {
+        return SELVA_EINVAL;
+    }
+
+    marker = find_marker(hierarchy, marker_id);
+    if (marker && !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_MISSING)) {
+        return SELVA_EINVAL;
+    } else if (!marker) {
+        int err;
+
+        err = new_marker(hierarchy, marker_id, NULL, 0, NULL, 0,
+                         SELVA_SUBSCRIPTION_FLAG_MISSING,
+                         defer_event, &marker);
+        if (err) {
+            return err;
+        }
+    }
+    upsert_sub_marker(hierarchy, sub_id, marker);
+
+    for (size_t i = 0; i < nr_accessors; i++) {
+        int err;
+
+        err = SelvaObject_SetPointer(missing, accessors[i], marker, &subs_missing_obj_opts);
+        if (err) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Failed to set a missing marker (%" PRImrkId "): %s",
+                      marker_id, selva_strerror(err));
+        }
+    }
+
+    return 0;
+}
+
 int SelvaSubscriptions_AddCallbackMarker(
-        SelvaHierarchy *hierarchy,
+        struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         enum SelvaSubscriptionsMarkerFlags marker_flags,
@@ -1474,32 +1497,44 @@ static void defer_event(
     }
 }
 
+static void remove_missing_marker(struct SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker)
+{
+    struct Selva_Subscription *sub;
+
+    /**
+     * Remove all subscriptions from a marker but leave the marker.
+     * do_sub_marker_removal() will certainly destroy the marker after this.
+     */
+    while ((sub = SVector_Shift(&marker->subs))) {
+        //SELVA_LOG(SELVA_LOGL_ERR, "sub: %p", sub);
+        (void)SVector_Remove(&sub->markers, marker);
+    }
+    SVector_ShiftReset(&marker->subs);
+
+    do_sub_marker_removal(hierarchy, marker);
+}
+
 /**
  * Defer events for missing accessor signaling creation of nodes and aliases.
  * @param id nodeId or alias.
  */
-void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *id_str, size_t id_len) {
+void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierarchy, const char *accessor_str, size_t accessor_len) {
     struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
     void *p;
-    struct Selva_SubscriptionMarker *marker;
     int err;
 
-    err = SelvaObject_GetPointerStr(missing, id_str, id_len, &p);
-    if (err || !p) {
-        if (!(err == SELVA_ENOENT || (!err && !p))) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to retrieve a missing accessor marker: \"%.*s\" err: %s",
-                      (int)id_len, id_str,
-                      selva_strerror(err));
-        }
+    err = SelvaObject_GetPointerStr(missing, accessor_str, accessor_len, &p);
+    if (!err && p) {
+        struct Selva_SubscriptionMarker *marker = p;
 
-        return;
+        marker->action.marker_action(hierarchy, marker, SELVA_SUBSCRIPTION_FLAG_MISSING, NULL, 0, NULL);
+        SelvaObject_DelKeyStr(missing, accessor_str, accessor_len);
+        remove_missing_marker(hierarchy, marker);
+    } else if (err != SELVA_ENOENT) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to retrieve a missing accessor marker: \"%.*s\" err: %s",
+                  (int)accessor_len, accessor_str,
+                  selva_strerror(err));
     }
-    marker = p;
-
-    marker->action.marker_action(hierarchy, marker, SELVA_SUBSCRIPTION_FLAG_MISSING, NULL, 0, NULL);
-
-    /* Finally delete the ID as the event was deferred. */
-    SelvaObject_DelKeyStr(missing, id_str, id_len);
 }
 
 /**
@@ -2174,67 +2209,12 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
         return;
     }
 
-    err = Selva_AddSubscriptionAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
+    err = SelvaSubscriptions_AddAliasMarker(hierarchy, sub_id, marker_id, alias_name, node_id);
     if (err) {
         selva_send_error(resp, err, NULL, 0);
     } else {
         selva_send_ll(resp, 1);
     }
-}
-
-/**
- * Add missing node/alias markers.
- * SUB_ID MARKER_ID NODEID|ALIAS
- */
-void SelvaSubscriptions_AddMissingCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
-    SelvaHierarchy *hierarchy = main_hierarchy;
-    __auto_finalizer struct finalizer fin;
-    Selva_SubscriptionId sub_id;
-    Selva_SubscriptionMarkerId marker_id;
-    const char *id_str;
-    size_t id_len;
-    struct Selva_SubscriptionMarker *marker;
-    int argc, err;
-
-    finalizer_init(&fin);
-
-    argc = selva_proto_scanf(&fin, buf, len, "%" PRIsubId ", %" PRImrkId ", %.*s",
-                             &sub_id, &marker_id,
-                             &id_len, &id_str);
-    if (argc != 3) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
-            selva_send_error_arity(resp);
-        }
-        return;
-    }
-
-    marker = find_marker(hierarchy, marker_id);
-    if (marker) {
-        if (!(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_MISSING)) {
-            selva_send_errorf(resp, SELVA_SUBSCRIPTIONS_EINVAL, "Unexpected marker found");
-            return;
-        }
-    } else if (!marker) {
-        err = new_marker(hierarchy, marker_id, NULL, 0, NULL, 0,
-                         SELVA_SUBSCRIPTION_FLAG_MISSING,
-                         defer_event, &marker);
-        if (err) {
-            selva_send_errorf(resp, err, "Failed to create a new marker");
-            return;
-        }
-    }
-    upsert_sub_marker(hierarchy, sub_id, marker);
-
-    struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
-    err = SelvaObject_SetPointerStr(missing, id_str, id_len, marker, &subs_missing_obj_opts);
-    if (err) {
-        selva_send_error(resp, err, NULL, 0);
-        return;
-    }
-
-    selva_send_ll(resp, 1);
 }
 
 /**
@@ -2665,7 +2645,6 @@ static int Subscriptions_OnLoad(void) {
      */
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.addMarker", SelvaSubscriptions_AddMarkerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_ALIAS, SELVA_CMD_MODE_PURE, "subscriptions.addAlias", SelvaSubscriptions_AddAliasCommand);
-    selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_MISSING, SELVA_CMD_MODE_PURE, "subscriptions.addMissing", SelvaSubscriptions_AddMissingCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_ADD_TRIGGER, SELVA_CMD_MODE_PURE, "subscriptions.addTrigger", SelvaSubscriptions_AddTriggerCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH, SELVA_CMD_MODE_PURE, "subscriptions.refresh", SelvaSubscriptions_RefreshCommand);
     selva_mk_command(CMD_ID_SUBSCRIPTIONS_REFRESH_MARKER, SELVA_CMD_MODE_PURE, "subscriptions.refreshMarker", SelvaSubscriptions_RefreshMarkerCommand);

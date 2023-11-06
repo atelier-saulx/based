@@ -330,23 +330,27 @@ int SelvaSubscriptions_DeleteMarker(
         Selva_SubscriptionMarkerId marker_id);
 
 /**
- * Delete a single marker from a subscription by a pointer to the marker.
- */
-void SelvaSubscriptions_DeleteMarkerByPtr(
-        struct SelvaHierarchy *hierarchy,
-        struct Selva_SubscriptionMarker *marker);
-
-/**
  * Add a marker to a hierarchy alias.
  * @param alias_name is a pointer to the alias name.
  * @param node_id is the node the alias is currently pointing at.
  */
-int Selva_AddSubscriptionAliasMarker(
+int SelvaSubscriptions_AddAliasMarker(
         struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         struct selva_string *alias_name,
         Selva_NodeId node_id);
+
+/**
+ * Add one-shot marker for one or more node accessors that were not found.
+ * The marker is deleted once one or more matching of the accessors are created.
+ */
+int SelvaSubscriptions_AddMissingMarker(
+        struct SelvaHierarchy *hierarchy,
+        Selva_SubscriptionId sub_id,
+        Selva_SubscriptionMarkerId marker_id,
+        struct selva_string **accessors,
+        size_t nr_accessors);
 
 /**
  * Add a subscription marker with a callback.
@@ -434,8 +438,8 @@ void SelvaSubscriptions_InheritEdge(
  */
 void SelvaSubscriptions_DeferMissingAccessorEvents(
         struct SelvaHierarchy *hierarchy,
-        const char *id_str,
-        size_t id_len);
+        const char *accessor_str,
+        size_t accessor_len);
 
 void SelvaSubscriptions_FieldChangePrecheck(
         struct SelvaHierarchy *hierarchy,
