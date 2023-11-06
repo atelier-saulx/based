@@ -5,7 +5,7 @@ import beforeExit from 'before-exit'
 import { hash } from '@saulx/hash'
 import { createRecord } from 'data-record'
 import { BasedDbClient, protocol } from '../../src'
-import { SelvaMergeStrategy } from '../../src/protocol'
+import { SelvaFindResultType, SelvaMergeStrategy, SelvaTraversal } from '../../src/protocol'
 import rimraf from 'rimraf'
 
 const tmp = join(__dirname, '../../tmp')
@@ -102,28 +102,31 @@ export const find = async ({
   res_type,
   rpn = ['#1'],
   lang = '',
+  index_hints,
 }: {
   lang?: string
   client: any
-  dir: any
+  dir: SelvaTraversal
   id: string
   dir_opt_str?: string
   res_opt_str?: string
-  res_type?: any
+  res_type?: SelvaFindResultType
   rpn?: string[]
+  index_hints?: string
 }) => {
   return client.command('hierarchy.find', [
     lang,
     createRecord(protocol.hierarchy_find_def, {
       dir,
-      res_type:
-        res_type || protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
-      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
       dir_opt_str,
-      res_opt_str,
+      index_hints_str: index_hints,
       limit: BigInt(-1),
       skip: BigInt(0),
       offset: BigInt(0),
+      merge_strategy: SelvaMergeStrategy.MERGE_STRATEGY_NONE,
+      res_type:
+        res_type || protocol.SelvaFindResultType.SELVA_FIND_QUERY_RES_IDS,
+      res_opt_str,
     }),
     id.padEnd(protocol.SELVA_NODE_ID_LEN, '\0'),
     ...rpn,
