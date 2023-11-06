@@ -27,7 +27,6 @@ export const drainQueue = (client: BasedDbClient) => {
                 return
               }
 
-              console.error('Socket write error', err)
               const listeners = client.commandResponseListeners.get(c.seqno)
 
               if (!listeners) {

@@ -48,6 +48,7 @@ const connect = (
         return
       }
       client.onClose()
+
       connect(
         client,
         port,
