@@ -163,6 +163,14 @@ const onlyAllowedFieldTypes: MutationRule = (
           '.'
         )}" is of type "set" but does not include a valid "items" property.`
       )
+    } else if (field.type === 'object') {
+      if (!(field as BasedSchemaFieldObject).properties) {
+        throw new Error(
+          `Field "${mutation.type}.${path.join(
+            '.'
+          )}" is of type "object" but does not include a valid "properties" property.`
+        )
+      }
     }
   }, mutation)
 }

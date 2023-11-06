@@ -415,3 +415,25 @@ test('Add nested property flexible mode without exsiting nodes', async (t) => {
     'number'
   )
 })
+
+test('Add object field without properties should fail', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema({
+      types: {
+        anotherType: {
+          fields: {
+            level1object: {
+              type: 'object',
+            },
+          },
+        },
+      },
+    }),
+    {
+      message:
+        /^Field "anotherType.level1object" is of type "object" but does not include a valid "properties" property.$/,
+    }
+  )
+})
