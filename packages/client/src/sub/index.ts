@@ -8,6 +8,7 @@ import {
   get,
 } from '../get'
 import { BasedDbClient } from '..'
+import { nextTimestamp } from '../get/exec/timebased'
 
 export async function sub(
   client: BasedDbClient,
@@ -18,6 +19,7 @@ export async function sub(
   cleanup: () => Promise<void>
   fetch: () => Promise<any>
   pending?: GetCommand
+  nextRefresh?: () => Promise<{ nextRefresh: number; markerId: number }[]>
 }> {
   const origMarkerId = eventOpts?.markerId
   const { subId, markerId, merged, defaults, pending, markers } = await get(
@@ -30,6 +32,7 @@ export async function sub(
   )
 
   await addMarkers({ client, subId, markerId }, markers)
+  const nowMarkers = markers.filter((m) => m.hasNow)
 
   const cleanup = async () => {
     if (origMarkerId !== markerId) {
@@ -71,6 +74,8 @@ export async function sub(
       await addMarkers(ctx, [...ctx.markers])
 
       deepMergeArrays(merged, ...nestedObjs)
+
+      nowMarkers.push(...ctx.markers.filter((m) => m.hasNow))
     }
 
     for (const d of defaults) {
@@ -80,5 +85,13 @@ export async function sub(
     return merged
   }
 
-  return { pending, cleanup, fetch, subId }
+  const nextRefresh = async () => {
+    if (!nowMarkers?.length) {
+      return []
+    }
+
+    return nextTimestamp(client, opts.$language, nowMarkers)
+  }
+
+  return { pending, cleanup, fetch, subId, nextRefresh }
 }

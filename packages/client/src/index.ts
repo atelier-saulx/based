@@ -14,16 +14,8 @@ import {
 import { incoming } from './incoming'
 import { Command } from './protocol/types'
 import { set } from './set'
-import {
-  ExecContext,
-  GetCommand,
-  addMarkers,
-  applyDefault,
-  execParallel,
-  get,
-} from './get'
+import { GetCommand, applyDefault, get } from './get'
 import genId from './id'
-import { deepMergeArrays } from '@saulx/utils'
 import { DEFAULT_SCHEMA, updateSchema } from './schema'
 import { sub } from './sub'
 
@@ -183,6 +175,7 @@ export class BasedDbClient extends Emitter {
     cleanup: () => Promise<void>
     fetch: () => Promise<any>
     pending?: GetCommand
+    nextRefresh?: () => Promise<{ nextRefresh: number; markerId: number }[]>
   }> {
     return sub(this, opts, eventOpts)
   }

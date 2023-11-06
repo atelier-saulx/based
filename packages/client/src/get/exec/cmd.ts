@@ -216,7 +216,7 @@ export async function getCmd(
   return result
 }
 
-async function execCmd(
+export async function execCmd(
   ctx: ExecContext,
   { cmdName, nodeId, struct, rpn, recordDef, extraArgs }: CmdExecOpts
 ): Promise<any> {
