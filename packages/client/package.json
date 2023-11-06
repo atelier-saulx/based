@@ -11,14 +11,16 @@
     "test-ci": "ava --color --node-arguments='--expose-gc' --concurrency 1 --timeout 3m",
     "testSchema": "npm run test --concurrency 5 test/schema/*.ts",
     "testGet": "npm run test --concurrency 5 test/*.ts",
-    "testSub": "npm run test test/subs/*.ts"
+    "testSub": "npm run test test/subs/*.ts",
+    "testIndexing": "npm run test test/indexing/*.ts"
   },
   "sideEffects": false,
   "ava": {
     "files": [
       "test/*.ts",
       "test/schema/*.ts",
-      "test/subs/*.ts"
+      "test/subs/*.ts",
+      "test/indexing/*.ts"
     ],
     "concurrency": 5,
     "extensions": [
