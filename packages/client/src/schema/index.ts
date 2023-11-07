@@ -73,7 +73,14 @@ export async function updateSchema(
 
   const newSchema = mergeSchema(currentSchema, mutations)
 
-  await validateSchemaMutations(client, currentSchema, opts, mutations, mode)
+  await validateSchemaMutations(
+    client,
+    currentSchema,
+    newSchema,
+    opts,
+    mutations,
+    mode
+  )
 
   if (mode === SchemaUpdateMode.migration) {
     await migrateNodes(client, mutations)

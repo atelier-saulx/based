@@ -4,6 +4,7 @@ import { startOrigin, SelvaServer } from '@based/db-server'
 import '../assertions'
 import getPort from 'get-port'
 import { SchemaUpdateMode } from '../../src/types'
+import { BasedSchemaFieldObject } from '@based/schema'
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -228,6 +229,134 @@ test('Remove property on object field in flexible mode without exsiting nodes', 
     newSchema.types['lekkerType'].fields.ding?.properties.hasOwnProperty(
       'title'
     )
+  )
+})
+
+test('Remove last property on object field', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  texty: {
+                    $delete: true,
+                  },
+                  wawa: {
+                    $delete: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    )
+  )
+
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  dung: {
+                    $delete: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message:
+        /^Cannot remove last property of object field "lekkerType.ding".$/,
+    }
+  )
+
+  const newSchema = client.schema
+  t.false(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('texty')
+  )
+  t.false(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('wawa')
+  )
+  t.true(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('dung')
+  )
+})
+
+test('Remove all properties on object field', async (t) => {
+  const { client } = t.context
+
+  await t.throwsAsync(
+    client.updateSchema(
+      {
+        types: {
+          lekkerType: {
+            fields: {
+              ding: {
+                properties: {
+                  texty: {
+                    $delete: true,
+                  },
+                  wawa: {
+                    $delete: true,
+                  },
+                  dung: {
+                    $delete: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      {
+        mode: SchemaUpdateMode.flexible,
+      }
+    ),
+    {
+      message:
+        /^Cannot remove last property of object field "lekkerType.ding".$/,
+    }
+  )
+
+  const newSchema = client.schema
+  t.true(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('texty')
+  )
+  t.true(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('wawa')
+  )
+  t.true(
+    (
+      newSchema.types['lekkerType'].fields.ding as BasedSchemaFieldObject
+    ).properties.hasOwnProperty('dung')
   )
 })
 
