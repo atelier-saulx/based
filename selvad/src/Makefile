@@ -18,7 +18,7 @@ CFLAGS += -fvisibility=hidden \
 		  -include ../include/cdefs.h \
 		  -DEVL_MAIN=1
 
-LDFLAGS += -L ../lib -ljemalloc_selva -lutil -ldeflate -lsha3iuf
+LDFLAGS += -L ../lib -ljemalloc_selva -lutil -ldeflate
 ifeq ($(uname_S),Linux)
 OBJ += \
 	   linux/poll.o \
