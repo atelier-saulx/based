@@ -35,7 +35,7 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	endif
 
 	CFLAGS += $(TARGET_CFLAGS) -Wstrict-aliasing=3
-	LDFLAGS += -z noexecstack -z relro -z now
+	LDFLAGS += -Wl,--no-as-needed -z noexecstack -z relro -z now
 
 	LIB_SUFFIX := .so
 	MOD_SUFFIX := .so
