@@ -22,6 +22,8 @@ jobs:
           make
           make install
           ldd selvad
+          readelf -d selvad
+          readelf -d modules/mod_io.so
           cd ..
         env:
          CC: gcc-13
