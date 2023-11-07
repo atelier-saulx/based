@@ -25,7 +25,7 @@ import {
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
 import { DEFAULT_FIELDS } from './mergeSchema'
-import { deepEqual, deepMerge } from '@saulx/utils'
+import { deepCopy, deepEqual, deepMerge } from '@saulx/utils'
 
 type ExistingNodes = {
   [fullFieldPath: string]: number
@@ -100,7 +100,7 @@ const checkAllFields = (
   if (mutation.mutation === 'new_field') {
     fieldFn(mutation.path, mutation.new)
   } else if (mutation.mutation === 'change_field') {
-    fieldFn(mutation.path, deepMerge(mutation.old, mutation.new))
+    fieldFn(mutation.path, deepMerge(deepCopy(mutation.old), mutation.new))
   } else {
     for (const fieldName in recursionPath.length
       ? getSchemaTypeFieldByPath(mutation.new.fields, recursionPath)
