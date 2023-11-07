@@ -1,7 +1,10 @@
 import {
   BasedSchema,
+  BasedSchemaFieldArray,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaFieldSet,
+  BasedSchemaFields,
   BasedSchemaLanguage,
   BasedSchemaPartial,
   basedSchemaFieldTypes,
@@ -22,7 +25,7 @@ import {
 } from '../types'
 import { getSchemaTypeFieldByPath } from '../util'
 import { DEFAULT_FIELDS } from './mergeSchema'
-import { deepEqual } from '@saulx/utils'
+import { deepCopy, deepEqual, deepMerge } from '@saulx/utils'
 
 type ExistingNodes = {
   [fullFieldPath: string]: number
@@ -94,16 +97,25 @@ const checkAllFields = (
   ctx?: RulesContext,
   recursionPath: string[] = []
 ) => {
-  if (
-    mutation.mutation === 'new_field' ||
-    mutation.mutation === 'change_field'
-  ) {
+  if (mutation.mutation === 'new_field') {
     fieldFn(mutation.path, mutation.new)
+  } else if (mutation.mutation === 'change_field') {
+    fieldFn(mutation.path, deepMerge(deepCopy(mutation.old), mutation.new))
   } else {
     for (const fieldName in recursionPath.length
       ? getSchemaTypeFieldByPath(mutation.new.fields, recursionPath)
       : mutation.new.fields) {
-      const field = mutation.new.fields[fieldName]
+      let field: any
+      if (mutation.mutation === 'new_type') {
+        field = mutation.new.fields[fieldName]
+      } else if (mutation.mutation === 'change_type') {
+        field = deepMerge(
+          mutation.old.fields[fieldName],
+          mutation.new.fields[fieldName]
+        )
+      } else {
+        throw new Error('Invalid mutation')
+      }
       fieldFn(recursionPath.concat(fieldName), field)
       if (
         field.type === 'object' &&
@@ -129,6 +141,36 @@ const onlyAllowedFieldTypes: MutationRule = (
           '.'
         )}"`
       )
+    }
+
+    if (
+      field.type === 'array' &&
+      (!(field as BasedSchemaFieldArray).values ||
+        !(field as BasedSchemaFieldArray).values.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "array" but does not include a valid "values" property.`
+      )
+    } else if (
+      field.type === 'set' &&
+      (!(field as BasedSchemaFieldSet).items ||
+        !(field as BasedSchemaFieldSet).items.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "set" but does not include a valid "items" property.`
+      )
+    } else if (field.type === 'object') {
+      if (!(field as BasedSchemaFieldObject).properties) {
+        throw new Error(
+          `Field "${mutation.type}.${path.join(
+            '.'
+          )}" is of type "object" but does not include a valid "properties" property.`
+        )
+      }
     }
   }, mutation)
 }
