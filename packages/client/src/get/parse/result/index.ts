@@ -14,16 +14,21 @@ export function parseGetResult(
   let obj = {}
   let hasKeys = false
   for (let i = 0; i < results.length; i++) {
-    const result = results[i]?.[0]
-    if (!result) {
-      continue
-    }
+    let result = results[i]?.[0]
 
     const cmd: GetCommand = cmds[i]
     const {
       type,
       target: { path },
     } = cmd
+
+    if (!result) {
+      if (type === 'aggregate') {
+        result = 0
+      } else {
+        continue
+      }
+    }
 
     const parsed =
       type === 'aggregate' ||
