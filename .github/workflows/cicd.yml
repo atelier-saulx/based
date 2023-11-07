@@ -24,6 +24,7 @@ jobs:
           ldd selvad
           readelf -d selvad
           readelf -d modules/mod_io.so
+          gcc -print-prog-name=ld
           cd ..
         env:
          CC: gcc-13
