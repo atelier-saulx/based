@@ -33,6 +33,7 @@ type ExistingNodes = {
 
 type RulesContext = {
   currentSchema: BasedSchema
+  newSchema: BasedSchema
   mode: SchemaUpdateMode
   existingNodes: ExistingNodes
 }
@@ -93,7 +94,8 @@ const checkAllFields = (
     | NewTypeSchemaMutation
     | ChangeTypeSchemaMutation
     | NewFieldSchemaMutation
-    | ChangeFieldSchemaMutation,
+    | ChangeFieldSchemaMutation
+    | RemoveFieldSchemaMutation,
   ctx?: RulesContext,
   recursionPath: string[] = []
 ) => {
@@ -101,7 +103,7 @@ const checkAllFields = (
     fieldFn(mutation.path, mutation.new)
   } else if (mutation.mutation === 'change_field') {
     fieldFn(mutation.path, deepMerge(deepCopy(mutation.old), mutation.new))
-  } else {
+  } else if (mutation.mutation !== 'remove_field') {
     for (const fieldName in recursionPath.length
       ? getSchemaTypeFieldByPath(mutation.new.fields, recursionPath)
       : mutation.new.fields) {
@@ -152,6 +154,16 @@ const onlyAllowedFieldTypes: MutationRule = (
         `Field "${mutation.type}.${path.join(
           '.'
         )}" is of type "array" but does not include a valid "values" property.`
+      )
+    } else if (
+      field.type === 'record' &&
+      (!(field as BasedSchemaFieldArray).values ||
+        !(field as BasedSchemaFieldArray).values.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "record" but does not include a valid "values" property.`
       )
     } else if (
       field.type === 'set' &&
@@ -360,9 +372,30 @@ const noDefaultFieldMutations: MutationRule = (
   }
 }
 
+const cannotDeleteLastProperties: MutationRule = (
+  mutation: RemoveFieldSchemaMutation,
+  { newSchema }
+) => {
+  const parentField = getSchemaTypeFieldByPath(
+    mutation.type === 'root' ? newSchema.root : newSchema.types[mutation.type],
+    mutation.path.slice(0, -1)
+  )
+  if (
+    parentField?.type === 'object' &&
+    !Object.keys(parentField.properties).length
+  ) {
+    throw new Error(
+      `Cannot remove last property of object field "${
+        mutation.type
+      }.${mutation.path.slice(0, -1).join('.')}".`
+    )
+  }
+}
+
 export const validateSchemaMutations = async (
   client: BasedDbClient,
   currentSchema: BasedSchema,
+  newSchema: BasedSchema,
   opts: BasedSchemaPartial,
   mutations: SchemaMutation[],
   mode: SchemaUpdateMode
@@ -373,6 +406,7 @@ export const validateSchemaMutations = async (
   }
   const ctx: RulesContext = {
     currentSchema,
+    newSchema,
     mode,
     existingNodes,
   }
@@ -405,6 +439,7 @@ export const validateSchemaMutations = async (
     } else if (mutation.mutation === 'remove_field') {
       noChangesInStrictMode(mutation, ctx)
       noDefaultFieldMutations(mutation, ctx)
+      cannotDeleteLastProperties(mutation, ctx)
       noMutationsOnFlexibleModeWithExistingNodes(mutation, ctx)
     } else if (mutation.mutation === 'change_languages') {
       validateLanguages(mutation, ctx)

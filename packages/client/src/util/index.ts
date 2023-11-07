@@ -1,5 +1,6 @@
 import {
   BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
@@ -113,6 +114,14 @@ export const getSchemaTypeFieldByPath = (
       }
       if (field.type === 'object') {
         currentFields = (field as BasedSchemaFieldObject).properties
+      }
+      if (
+        field.type === 'record' &&
+        (field as BasedSchemaFieldRecord).values?.type === 'object'
+      ) {
+        currentFields = (
+          (field as BasedSchemaFieldRecord).values as BasedSchemaFieldObject
+        ).properties
       }
     }
   }

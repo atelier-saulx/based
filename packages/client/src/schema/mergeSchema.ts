@@ -37,7 +37,7 @@ export const mergeSchema = (
             ? newSchema.root
             : newSchema.types[mutation.type],
           mutation.path.slice(0, -1)
-        )[mutation.type]
+        ).properties[mutation.path[mutation.path.length - 1]]
       } else {
         if (mutation.type === 'root') {
           delete newSchema.root.fields[mutation.path[mutation.path.length - 1]]
