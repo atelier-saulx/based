@@ -21,6 +21,7 @@ jobs:
           cd selvad
           make
           make install
+          ldd selvad
           cd ..
         env:
          CC: gcc-13
