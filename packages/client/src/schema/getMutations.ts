@@ -3,6 +3,7 @@ import {
   BasedSchemaField,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaFieldRecord,
   BasedSchemaPartial,
   BasedSchemaType,
   BasedSchemaTypePartial,
@@ -45,6 +46,26 @@ const diffField = (
     )
   }
 
+  if (
+    currentField.type === 'record' &&
+    (currentField as BasedSchemaFieldRecord).values?.type === 'object'
+  ) {
+    mutations.push(
+      ...diffFields(
+        typeName,
+        path,
+        (
+          (currentField as BasedSchemaFieldRecord)
+            .values as BasedSchemaFieldObject
+        ).properties,
+        (
+          (optsField as BasedSchemaFieldRecord)
+            ?.values as BasedSchemaFieldObject
+        )?.properties
+      )
+    )
+  }
+
   const currentFieldProperties = Object.keys(currentField || {})
   const optsFieldProperties = Object.keys(optsField || {})
   const fieldPropertiesToParse = new Set([
@@ -52,6 +73,12 @@ const diffField = (
     ...optsFieldProperties,
   ])
   fieldPropertiesToParse.delete('properties')
+  if (
+    currentField.type === 'record' &&
+    (currentField as BasedSchemaFieldRecord).values.type === 'object'
+  ) {
+    fieldPropertiesToParse.delete('values')
+  }
 
   for (const fieldProperty of fieldPropertiesToParse) {
     if (

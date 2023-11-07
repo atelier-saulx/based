@@ -156,6 +156,16 @@ const onlyAllowedFieldTypes: MutationRule = (
         )}" is of type "array" but does not include a valid "values" property.`
       )
     } else if (
+      field.type === 'record' &&
+      (!(field as BasedSchemaFieldArray).values ||
+        !(field as BasedSchemaFieldArray).values.type)
+    ) {
+      throw new Error(
+        `Field "${mutation.type}.${path.join(
+          '.'
+        )}" is of type "record" but does not include a valid "values" property.`
+      )
+    } else if (
       field.type === 'set' &&
       (!(field as BasedSchemaFieldSet).items ||
         !(field as BasedSchemaFieldSet).items.type)

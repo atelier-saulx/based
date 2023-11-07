@@ -159,3 +159,55 @@ test('getSchemaTypeFieldByPath', (t) => {
   }
   t.true(getSchemaTypeFieldByPath(schema, ['level1']) === schema.fields?.level1)
 })
+
+test('getSchemaTypeFieldByPath on recordsith object values', (t) => {
+  t.deepEqual(
+    getSchemaTypeFieldByPath(
+      {
+        fields: {
+          level1: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: {
+                level2: { type: 'string' },
+              },
+            },
+          },
+        },
+      },
+      ['level1', 'level2']
+    ),
+    { type: 'string' }
+  )
+
+  t.deepEqual(
+    getSchemaTypeFieldByPath(
+      {
+        fields: {
+          level1: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: {
+                level2: {
+                  type: 'object',
+                  properties: {
+                    level3: {
+                      type: 'object',
+                      properties: {
+                        level4: { type: 'string' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+      ['level1', 'level2', 'level3', 'level4']
+    ),
+    { type: 'string' }
+  )
+})
