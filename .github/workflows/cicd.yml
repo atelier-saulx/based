@@ -31,3 +31,5 @@ jobs:
           ldd selvad
           cd packages/client
           npm test
+        env:
+         LD_DEBUG: libs
