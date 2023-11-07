@@ -190,7 +190,7 @@ static int Selva_SubscriptionFieldMatch(const struct Selva_SubscriptionMarker *m
     int match = 0;
 
     if (!!(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_CH_FIELD)) {
-        match = field_match(marker->fields, field_str, field_len);
+        match = marker->fields ? field_match(marker->fields, field_str, field_len) : 1;
     }
 
     return match;
