@@ -75,6 +75,7 @@ test.serial('addSpecs', async (t) => {
   // t.is(msgCnt, 1) TODO: have to make this
 
   await server.destroy()
+  await client.destroy()
 
   t.true(true)
 })
