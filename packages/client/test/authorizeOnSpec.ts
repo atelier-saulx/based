@@ -91,8 +91,12 @@ test.serial('Specific authorize on spec', async (t) => {
     contents: Buffer.from(JSON.stringify({ bla: true }), 'base64'),
   })
 
-  t.is(authCalled, 5)
   await wait(1e3)
-  await client.destroy()
-  await server.destroy()
+
+  t.is(authCalled, 5)
+
+  t.teardown(async () => {
+    await client.destroy()
+    await server.destroy()
+  })
 })

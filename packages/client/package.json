@@ -24,6 +24,7 @@
   "ava": {
     "concurrency": 1,
     "timeout": "2m",
+    "workerThreads": false,
     "files": [
       "./dist/test/**/*.js"
     ]
