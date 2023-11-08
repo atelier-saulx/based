@@ -1,6 +1,6 @@
 {
   "name": "@based/client",
-  "version": "4.8.10",
+  "version": "5.0.0",
   "license": "MIT",
   "scripts": {
     "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts",
@@ -14,6 +14,12 @@
   },
   "type": "module",
   "main": "./dist/src/index.js",
+  "browser": {
+    "./stream/dist/index.js": "./stream/dist/browser.js"
+  },
+  "exports": {
+    "./ssr": "./dist/ssr.js"
+  },
   "ava": {
     "concurrency": 1,
     "timeout": "2m",
