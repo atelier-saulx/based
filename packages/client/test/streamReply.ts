@@ -2,8 +2,10 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { createReadStream, readFileSync } from 'fs'
-import { join } from 'path'
 import fetch from 'cross-fetch'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 test.serial('reply with a stream from call fn (http)', async (t) => {
   const filePath = join(__dirname, './browser/tmp.json')
