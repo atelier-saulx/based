@@ -26,11 +26,12 @@ export default async (
     return fetch(client, name, options)
   }
 
-  if (typeof options.contents === 'string') {
+  if (
+    typeof options.contents === 'string' ||
+    options.contents instanceof global.Buffer
+  ) {
     return fetch(client, name, options)
   }
-
-  console.log('start stream', options, fetch)
 
   throw new Error(
     `Invalid opts for file api ${name} ${JSON.stringify(options, null, 2)}`
