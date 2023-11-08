@@ -429,7 +429,7 @@
       "format": "esm"
     },
     "dist/src/types/error.js": {
-      "bytes": 2878,
+      "bytes": 2861,
       "imports": [],
       "format": "esm"
     },
@@ -547,7 +547,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 5468,
+      "bytes": 6062,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -562,22 +562,11 @@
       ],
       "format": "esm"
     },
-    "dist/src/persistentStorage/index.js": {
-      "bytes": 1493,
-      "imports": [
-        {
-          "path": "dist/src/persistentStorage/browser.js",
-          "kind": "import-statement",
-          "original": "./browser.js"
-        }
-      ],
-      "format": "esm"
-    },
     "dist/src/authState/updateAuthState.js": {
       "bytes": 376,
       "imports": [
         {
-          "path": "dist/src/persistentStorage/index.js",
+          "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "../persistentStorage/index.js"
         }
@@ -715,7 +704,7 @@
           "original": "../authState/updateAuthState.js"
         },
         {
-          "path": "dist/src/persistentStorage/index.js",
+          "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "../persistentStorage/index.js"
         },
@@ -772,7 +761,7 @@
           "original": "../genObserveId.js"
         },
         {
-          "path": "dist/src/persistentStorage/index.js",
+          "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "../persistentStorage/index.js"
         }
@@ -858,7 +847,7 @@
       "format": "esm"
     },
     "dist/src/index.js": {
-      "bytes": 10726,
+      "bytes": 10732,
       "imports": [
         {
           "path": "dist/src/websocket/index.js",
@@ -891,7 +880,7 @@
           "original": "./stream/index.js"
         },
         {
-          "path": "dist/src/persistentStorage/index.js",
+          "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "./persistentStorage/index.js"
         },
@@ -1010,7 +999,7 @@
           "bytesInOutput": 0
         },
         "dist/src/types/error.js": {
-          "bytesInOutput": 1489
+          "bytesInOutput": 1486
         },
         "dist/src/stream/uploadFileBrowser.js": {
           "bytesInOutput": 1290
@@ -1031,10 +1020,7 @@
           "bytesInOutput": 66
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1604
-        },
-        "dist/src/persistentStorage/index.js": {
-          "bytesInOutput": 304
+          "bytesInOutput": 1773
         },
         "dist/src/authState/updateAuthState.js": {
           "bytesInOutput": 95
@@ -1076,13 +1062,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 2735
+          "bytesInOutput": 2738
         },
         "test/browser/index.ts": {
           "bytesInOutput": 687
         }
       },
-      "bytes": 37448
+      "bytes": 37313
     }
   }
 }
