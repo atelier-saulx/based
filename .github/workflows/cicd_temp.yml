@@ -1,0 +1,32 @@
+name: CI/CD Temp
+run-name: ${{ github.actor }} is running CI/CD 🚀
+on: [workflow_dispatch]
+jobs:
+  Setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install gcc
+        run: |
+         sudo apt update
+         sudo apt install gcc-13
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Install dependencies
+        run: npm ci
+      - name: Build selva
+        run: |
+          cd selvad
+          make
+          make install
+          cd ..
+        env:
+         CC: gcc-13
+      - name: Build based-db
+        run: npm run build
+      - name: Run client tests
+        run: |
+          cd packages/client
+          npm run test-ci
