@@ -33,7 +33,7 @@ const schema: BasedSchema = {
   },
 }
 
-test('string max length', async (t) => {
+test('string max length', async (t: T) => {
   const err1 = await setWalker(schema, {
     $id: 'bl1',
     name: 'ax',
@@ -53,7 +53,7 @@ test('string max length', async (t) => {
 })
 
 //set parser
-test('set with strings', async (t) => {
+test('set with strings', async (t: T) => {
   const err1 = await setWalker(schema, {
     $id: 'bl1',
     bla: ['ax', 'axa', 'axxxxa'],
@@ -71,7 +71,7 @@ test('set with strings', async (t) => {
 })
 
 // this one causes weird array lenght issue in string max length test
-test('string pattern', async (t) => {
+test('string pattern', async (t: T) => {
   const err1 = await setWalker(schema, {
     $id: 'bl1',
     phonkName: 'blabla',
@@ -86,7 +86,7 @@ test('string pattern', async (t) => {
   t.deepEqual(resultCollect(res1), [{ path: ['phonkName'], value: 'bla$' }])
 })
 
-test('setting $default', async (t) => {
+test('setting $default', async (t: T) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     phonkName: { $default: 'blabla' },
@@ -104,7 +104,7 @@ test('setting $default', async (t) => {
   ])
 })
 
-test('setting $value', async (t) => {
+test('setting $value', async (t: T) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     phonkName: { $value: 'blabla' },

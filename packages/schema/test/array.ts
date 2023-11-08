@@ -49,7 +49,7 @@ const schema: BasedSchema = {
   },
 }
 
-test('arrayNum', async (t) => {
+test('arrayNum', async (t: T) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     arrNum: ['1', '2'],
@@ -73,7 +73,7 @@ test('arrayNum', async (t) => {
   ])
 })
 
-test('value arr', async (t) => {
+test('value arr', async (t: T) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     arrNum: { $value: ['1', '2'] },
@@ -100,7 +100,7 @@ test('value arr', async (t) => {
   ])
 })
 
-test.only('default arr', async (t) => {
+test.only('default arr', async (t: T) => {
   const err = await setWalker(schema, {
     $id: 'bl1',
     arrNum: ['1', '2'],
@@ -132,7 +132,7 @@ test.only('default arr', async (t) => {
 
 let r
 
-test('assign idx value', async (t) => {
+test('assign idx value', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -146,7 +146,7 @@ test('assign idx value', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['intarray', 0], value: 6 }])
 })
 
-test('push ints', async (t) => {
+test('push ints', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -159,7 +159,7 @@ test('push ints', async (t) => {
   ])
 })
 
-test('push objs', async (t) => {
+test('push objs', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     objArray: {
@@ -183,7 +183,7 @@ test('push objs', async (t) => {
   ])
 })
 
-test('unshift ints', async (t) => {
+test('unshift ints', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -197,7 +197,7 @@ test('unshift ints', async (t) => {
   t.true(true)
 })
 
-test('nested default unshift', async (t) => {
+test('nested default unshift', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -215,7 +215,7 @@ test('nested default unshift', async (t) => {
   ])
 })
 
-test('nested default in push', async (t) => {
+test('nested default in push', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -233,7 +233,7 @@ test('nested default in push', async (t) => {
   ])
 })
 
-test('assign idx default value error', async (t) => {
+test('assign idx default value error', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -246,7 +246,7 @@ test('assign idx default value error', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('assign idx no value', async (t) => {
+test('assign idx no value', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -258,7 +258,7 @@ test('assign idx no value', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('assign idx value spelled wrong', async (t) => {
+test('assign idx value spelled wrong', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -272,7 +272,7 @@ test('assign idx value spelled wrong', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('assign idx value wrong type', async (t) => {
+test('assign idx value wrong type', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -286,7 +286,7 @@ test('assign idx value wrong type', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('assign idx value value wrong type', async (t) => {
+test('assign idx value value wrong type', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -300,7 +300,7 @@ test('assign idx value value wrong type', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('assign idx default value', async (t) => {
+test('assign idx default value', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -316,7 +316,7 @@ test('assign idx default value', async (t) => {
   ])
 })
 
-test('assign idx value value error', async (t) => {
+test('assign idx value value error', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -330,7 +330,7 @@ test('assign idx value value error', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('insert idx intarray', async (t) => {
+test('insert idx intarray', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -350,7 +350,7 @@ test('insert idx intarray', async (t) => {
   ])
 })
 
-test('unshift array', async (t) => {
+test('unshift array', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     intarray: {
@@ -364,7 +364,7 @@ test('unshift array', async (t) => {
   ])
 })
 
-test('assign + $delete', async (t) => {
+test('assign + $delete', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     objArray: {

@@ -1,10 +1,19 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
+import getPort from 'get-port'
 
-test.serial('custom http response', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('custom http response', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         bla: {
@@ -36,11 +45,11 @@ test.serial('custom http response', async (t) => {
     },
   })
   await server.start()
-  const rawResp = await fetch('http://localhost:9910/hello')
+  const rawResp = await fetch(t.context.http + '/hello')
   t.is(rawResp.headers.get('blabla'), '1,2,3,4')
   const result = await rawResp.text()
   t.is(result, 'flap')
-  const rawRespGet = await fetch('http://localhost:9910/bla')
+  const rawRespGet = await fetch(t.context.http + '/bla')
   t.is(rawRespGet.headers.get('blabla'), '1,2,3,4')
   const resultGet = await rawRespGet.text()
   // Get is by default json parsed

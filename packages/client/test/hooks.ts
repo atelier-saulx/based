@@ -1,14 +1,23 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
+import getPort from 'get-port'
 
-test.serial('Channel hook', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('Channel hook', async (t: T) => {
   let subCnt = 0
   let unSubCnt = 0
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     channel: {
       subscribe: () => {
         subCnt++
@@ -45,7 +54,7 @@ test.serial('Channel hook', async (t) => {
   await server.start()
   const client = new BasedClient()
   await client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const closeChannel = client
     .channel('mychannel', { bla: true })
@@ -77,12 +86,12 @@ test.serial('Channel hook', async (t) => {
   await server.destroy()
 })
 
-test.serial('Query hook', async (t) => {
+test('Query hook', async (t: T) => {
   let subCnt = 0
   let getCnt = 0
   let unSubCnt = 0
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     query: {
       subscribe: () => {
         subCnt++
@@ -123,7 +132,7 @@ test.serial('Query hook', async (t) => {
   await server.start()
   const client = new BasedClient()
   await client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const close = client.query('myobs', { bla: true }).subscribe(() => {})
 
@@ -140,7 +149,7 @@ test.serial('Query hook', async (t) => {
 
   t.is(getCnt, 1)
 
-  await (await fetch('http://localhost:9910/myobs')).text()
+  await (await fetch(t.context.http + '/myobs')).text()
 
   t.is(getCnt, 2)
 
@@ -159,7 +168,7 @@ test.serial('Query hook', async (t) => {
 
   t.is(getCnt, 3)
 
-  await (await fetch('http://localhost:9910/flap')).text()
+  await (await fetch(t.context.http + '/flap')).text()
 
   t.is(getCnt, 4)
 

@@ -45,7 +45,7 @@ const schema: BasedSchema = {
 
 let r
 
-test('simple error', async (t) => {
+test('simple error', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'sdfefewfewfewewffwe',
@@ -54,7 +54,7 @@ test('simple error', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('simple case ', async (t) => {
+test('simple case ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'tibla',
@@ -65,7 +65,7 @@ test('simple case ', async (t) => {
   ])
 })
 
-test('reference to wrong type', async (t) => {
+test('reference to wrong type', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referenceToThing: 'blbla',
@@ -73,7 +73,7 @@ test('reference to wrong type', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('references with wrongly formatted ids and incorrect types ', async (t) => {
+test('references with wrongly formatted ids and incorrect types ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: ['blbla', 'ti123', 'ewiohfdoweihfw'],
@@ -82,7 +82,7 @@ test('references with wrongly formatted ids and incorrect types ', async (t) => 
   t.true(r.errors.length === 2)
 })
 
-test('references to empty array (clear)', async (t) => {
+test('references to empty array (clear)', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: [],
@@ -93,7 +93,7 @@ test('references to empty array (clear)', async (t) => {
   t.is(r.errors.length, 0)
 })
 
-test('$remove references', async (t) => {
+test('$remove references', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $remove: ['ti123'] },
@@ -104,7 +104,7 @@ test('$remove references', async (t) => {
   ])
 })
 
-test('$add 0 2 wrong', async (t) => {
+test('$add 0 2 wrong', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: ['blbla', 'ti123', 'ewiohfdoweihfw'] },
@@ -113,7 +113,7 @@ test('$add 0 2 wrong', async (t) => {
   t.true(r.errors.length === 2)
 })
 
-test('$add correct ', async (t) => {
+test('$add correct ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $add: 'ti123' },
@@ -124,7 +124,7 @@ test('$add correct ', async (t) => {
   ])
 })
 
-test('$remove $value not allowed', async (t) => {
+test('$remove $value not allowed', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     referencesToThings: { $remove: { $value: 'ti123' } },
@@ -133,7 +133,7 @@ test('$remove $value not allowed', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('reference to an object', async (t) => {
+test('reference to an object', async (t: T) => {
   r = await setWalker(
     schema,
     {
@@ -161,7 +161,7 @@ test('reference to an object', async (t) => {
   t.true(true)
 })
 
-test('nested references + $add (deep)', async (t) => {
+test('nested references + $add (deep)', async (t: T) => {
   r = await setWalker(
     schema,
     {
@@ -188,7 +188,7 @@ test('nested references + $add (deep)', async (t) => {
   ])
 })
 
-test('nested ref + references', async (t) => {
+test('nested ref + references', async (t: T) => {
   r = await setWalker(
     schema,
     {

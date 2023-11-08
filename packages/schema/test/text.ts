@@ -40,7 +40,7 @@ const schema: BasedSchema = {
 
 let r
 
-test('throw error no language', async (t) => {
+test('throw error no language', async (t: T) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     text: { $value: 'x' },
@@ -48,7 +48,7 @@ test('throw error no language', async (t) => {
   t.true(r.errors.length > 0)
 })
 
-test('simple case', async (t) => {
+test('simple case', async (t: T) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     text: { en: 'flap' },
@@ -59,7 +59,7 @@ test('simple case', async (t) => {
   ])
 })
 
-test('simple case $value', async (t) => {
+test('simple case $value', async (t: T) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     text: { en: { $value: 'flap' } },
@@ -70,7 +70,7 @@ test('simple case $value', async (t) => {
   ])
 })
 
-test('simple case $language', async (t) => {
+test('simple case $language', async (t: T) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'en',
@@ -82,7 +82,7 @@ test('simple case $language', async (t) => {
   ])
 })
 
-test('simple case with value', async (t) => {
+test('simple case with value', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -94,7 +94,7 @@ test('simple case with value', async (t) => {
   ])
 })
 
-test('simple case $value /w obj', async (t) => {
+test('simple case $value /w obj', async (t: T) => {
   let r = await setWalker(schema, {
     $id: 'bl120',
     text: { $value: { en: 'flap' } },
@@ -105,7 +105,7 @@ test('simple case $value /w obj', async (t) => {
   ])
 })
 
-test('text default', async (t) => {
+test('text default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -117,7 +117,7 @@ test('text default', async (t) => {
   ])
 })
 
-test('default and lang:default', async (t) => {
+test('default and lang:default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -134,7 +134,7 @@ test('default and lang:default', async (t) => {
   ])
 })
 
-test('default: lang, lang', async (t) => {
+test('default: lang, lang', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -150,7 +150,7 @@ test('default: lang, lang', async (t) => {
   ])
 })
 
-test('defaullt:lang, lang, lang:default', async (t) => {
+test('defaullt:lang, lang, lang:default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -175,7 +175,7 @@ test('defaullt:lang, lang, lang:default', async (t) => {
   ])
 })
 
-test('default:lang, lang, lang:value, lang:default', async (t) => {
+test('default:lang, lang, lang:value, lang:default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -204,7 +204,7 @@ test('default:lang, lang, lang:value, lang:default', async (t) => {
   ])
 })
 
-test('value:lang, lang, default:lang, lang:value, lang:default', async (t) => {
+test('value:lang, lang, default:lang, lang:value, lang:default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -240,7 +240,7 @@ test('value:lang, lang, default:lang, lang:value, lang:default', async (t) => {
   ])
 })
 
-test('value: wrong pattern, lang, default:lang, lang:value, lang:default', async (t) => {
+test('value: wrong pattern, lang, default:lang, lang:value, lang:default', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $language: 'za',
@@ -257,7 +257,7 @@ test('value: wrong pattern, lang, default:lang, lang:value, lang:default', async
   t.true(r.errors.length > 0)
 })
 
-test('text delete', async (t) => {
+test('text delete', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     text: {
@@ -267,7 +267,7 @@ test('text delete', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['text'], value: { $delete: true } }])
 })
 
-test('text delete single language', async (t) => {
+test('text delete single language', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     text: {
@@ -289,7 +289,7 @@ test('text delete single language', async (t) => {
   ])
 })
 
-test('just delete', async (t) => {
+test('just delete', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $delete: true,
@@ -297,7 +297,7 @@ test('just delete', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('$default in collected path', async (t) => {
+test('$default in collected path', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     text: {
@@ -320,7 +320,7 @@ test('$default in collected path', async (t) => {
   ])
 })
 
-test('$default in collected path + $merge:false', async (t) => {
+test('$default in collected path + $merge:false', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     text: {
