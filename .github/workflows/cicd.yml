@@ -53,6 +53,7 @@ jobs:
           path: |
             selvad/binaries/Linux_x86_64
   SchemaTests:
+    needs: BuildSelva
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
