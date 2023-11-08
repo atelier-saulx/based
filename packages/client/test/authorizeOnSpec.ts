@@ -86,9 +86,11 @@ test.serial('Specific authorize on spec', async (t) => {
   client.channel('klax').publish(1)
   await wait(100)
   t.is(authCalled, 4)
+
   await client.stream('snax', {
     contents: Buffer.from(JSON.stringify({ bla: true }), 'base64'),
   })
+
   t.is(authCalled, 5)
   await wait(1e3)
   await server.destroy()
