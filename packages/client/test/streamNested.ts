@@ -4,7 +4,10 @@ import { BasedClient } from '../src/index.js'
 import { readStream, wait } from '@saulx/utils'
 import { stat, createReadStream, readFileSync } from 'fs'
 import { promisify } from 'util'
-import { join } from 'path'
+
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const statAsync = promisify(stat)
 

@@ -2,7 +2,9 @@ import test from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { createReadStream, readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 test.serial('function Stream (http)', async (t) => {
   const p = join(__dirname, '../package.json')

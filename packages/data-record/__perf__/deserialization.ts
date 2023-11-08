@@ -1,6 +1,5 @@
 import { performance } from 'perf_hooks'
 import fs from 'fs'
-import { join as pathJoin } from 'path'
 import gc from './util/gc'
 import {
 	compile,
@@ -8,6 +7,11 @@ import {
 	generateRecordDef,
 	createRecord,
 } from '../src/index'
+
+import { dirname, join as pathJoin } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const dataFiles: [number, string][] = [
 	[99999, './data/simple.json'],

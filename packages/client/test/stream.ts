@@ -3,8 +3,11 @@ import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
 import { Duplex } from 'node:stream'
-import { join } from 'path'
 import { readFileSync } from 'node:fs'
+
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 test.serial('stream functions - buffer contents', async (t) => {
   const progressEvents: number[] = []

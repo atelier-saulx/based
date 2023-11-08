@@ -2,8 +2,11 @@ import test from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
+
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
