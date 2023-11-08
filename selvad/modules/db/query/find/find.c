@@ -978,7 +978,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
 
             err = query_traverse(hierarchy, nodeId, &qt, &args);
         }
-        if (err != 0) {
+        if (err != 0 && err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
             /*
              * We can't send an error to the client at this point so we'll just log
              * it and ignore the error.
