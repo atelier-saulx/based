@@ -51,7 +51,4 @@ jobs:
         with:
           name: selvad-build
           path: |
-            selvad/lib/**/*.so
-            selvad/lib/**/*.dylib
-            selvad/locale
-            selvad
+            selvad/binaries/Linux_x86_64
