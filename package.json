@@ -27,6 +27,7 @@
   "scripts": {
     "watch": "turbo run watch --parallel --no-cache",
     "build": "turbo run build",
+    "build-c": "sh scripts/build-c.sh",
     "test": "cd packages/client && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },

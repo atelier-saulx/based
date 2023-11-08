@@ -49,15 +49,7 @@ export class SelvaServer extends EventEmitter {
       mkdirSync(this.backupDir, { recursive: true })
     }
 
-    const execPath = path.join(
-      __dirname,
-      '..',
-      '..',
-      '..',
-      '..',
-      'selvad',
-      'selvad'
-    )
+    const execPath = path.join(__dirname, '..', '..', 'selvad', 'selvad')
 
     this.pm = spawn(execPath, [], {
       env: {
