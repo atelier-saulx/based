@@ -39,7 +39,7 @@ test('function Stream (http)', async (t: T) => {
 
   server.on('error', console.error)
 
-  const x = await fetch(t.context.ws + '/hello')
+  const x = await fetch(t.context.http + '/hello')
   const y = await x.text()
 
   const file = readFileSync(p)

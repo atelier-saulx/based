@@ -19,7 +19,7 @@ test.beforeEach(async (t: T) => {
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test('functions (session url)', async (t: T) => {
+test.serial('functions (session url)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -43,7 +43,7 @@ test('functions (session url)', async (t: T) => {
   await server.destroy()
 })
 
-test('functions (custom headers)', async (t: T) => {
+test.serial('functions (custom headers)', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -71,7 +71,7 @@ test('functions (custom headers)', async (t: T) => {
   await server.destroy()
 })
 
-test('functions (over http)', async (t: T) => {
+test.serial('functions (over http)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -172,7 +172,7 @@ test('functions (over http)', async (t: T) => {
   server.destroy()
 })
 
-test('get (over http)', async (t: T) => {
+test.serial('get (over http)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -290,7 +290,7 @@ test('get (over http)', async (t: T) => {
   server.destroy()
 })
 
-test('functions (over http + contentEncoding)', async (t: T) => {
+test.serial('functions (over http + contentEncoding)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -410,7 +410,7 @@ test('functions (over http + contentEncoding)', async (t: T) => {
   server.destroy()
 })
 
-test('auth', async (t: T) => {
+test.serial('auth', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
     functions: {
@@ -465,7 +465,7 @@ test('auth', async (t: T) => {
   server.destroy()
 })
 
-test('bad accept-encoding header', async (t: T) => {
+test.serial('bad accept-encoding header', async (t: T) => {
   const server = new BasedServer({
     port: t.context.port,
   })

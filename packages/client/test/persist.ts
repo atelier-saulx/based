@@ -17,7 +17,7 @@ test.beforeEach(async (t: T) => {
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-test('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
+test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 
   await mkdir(persistentStorage).catch(() => {})
