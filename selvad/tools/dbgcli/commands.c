@@ -43,6 +43,7 @@ static void cmd_ping_res(const struct cmd *cmd, const void *msg, size_t msg_size
 static int cmd_lscmd_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 static int cmd_loglevel_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_resolve_nodeid_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
@@ -87,6 +88,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_LOGLEVEL,
         .cmd_name = "loglevel",
         .cmd_req = cmd_loglevel_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_RESOLVE_NODEID] = {
+        .cmd_id = CMD_ID_RESOLVE_NODEID,
+        .cmd_name = "resolve.nodeid",
+        .cmd_req = cmd_resolve_nodeid_req,
         .cmd_res = generic_res,
     },
     [CMD_ID_OBJECT_INCRBY] = {
@@ -298,6 +305,49 @@ static void cmd_ping_res(const struct cmd *, const void *msg, size_t msg_size)
     } else {
         fprintf(stderr, "Response is shorter than expected\n");
     }
+}
+
+static int cmd_resolve_nodeid_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 3) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    const char *accessor_str = argv[2];
+    size_t accessor_len = strlen(accessor_str);
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_longlong sub_id;
+        struct selva_proto_string accessor;
+    } buf = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf) + accessor_len),
+            .msg_bsize = 0,
+            .chk = 0,
+        },
+        .sub_id = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = htole64(strtol(argv[1], NULL, 10)),
+        },
+        .accessor = {
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(accessor_len),
+        },
+    };
+
+    buf.hdr.chk = htole32(crc32c(crc32c(0, &buf, sizeof(buf)), accessor_str, accessor_len));
+
+    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
+        send_message(sock, accessor_str, accessor_len, 0)) {
+        return -1;
+    }
+
+    return 0;
 }
 
 static int cmd_lscmd_req(const struct cmd *cmd, int sock, int seqno, int argc __unused, char *argv[] __unused)
