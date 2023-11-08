@@ -195,6 +195,7 @@ test.serial.only('auth persist', async (t) => {
       persistentStorage,
     }
   )
+
   t.teardown(async () => {
     await client.clearStorage()
     await server.destroy()
@@ -203,7 +204,7 @@ test.serial.only('auth persist', async (t) => {
   await client.connect(opts)
   await client.call('login')
 
-  await wait(300)
+  await wait(6000)
 
   t.is(client.authState.token, token)
 

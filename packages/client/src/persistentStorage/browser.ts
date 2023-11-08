@@ -205,7 +205,10 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
   setStorageBrowser(client, key, value)
 }
 
-export const updateStorage = async (_client: BasedClient) => {}
+export const updateStorage = async (
+  _client: BasedClient,
+  _instant?: boolean
+) => {}
 
 export const initStorage = async (client: BasedClient) => {
   return initStorageBrowser(client)

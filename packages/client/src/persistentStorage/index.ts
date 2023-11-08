@@ -32,7 +32,6 @@ const store = async (client: BasedClient) => {
       f.authState = client.authState
     }
     client.storageBeingWritten = null
-
     await writeFile(file, await compress(JSON.stringify(f)))
   } catch (err) {
     console.error(
@@ -42,9 +41,16 @@ const store = async (client: BasedClient) => {
   }
 }
 
-const writeToStorage = (client: BasedClient) => {
+const writeToStorage = (client: BasedClient, instant?: boolean) => {
   if (!client.storageBeingWritten) {
-    client.storageBeingWritten = setTimeout(() => store(client), 5e3)
+    if (instant) {
+      store(client)
+    } else {
+      client.storageBeingWritten = setTimeout(() => store(client), 5e3)
+    }
+  } else if (instant) {
+    clearTimeout(client.storageBeingWritten)
+    store(client)
   }
 }
 
@@ -57,8 +63,6 @@ const initStorageNode = async (client: BasedClient) => {
     const s = existsSync(file)
 
     if (s) {
-      console.info('f exists -- store', file)
-
       try {
         const r = readFileSync(file)
         const unpacked = gunzipSync(r)
@@ -77,7 +81,6 @@ const initStorageNode = async (client: BasedClient) => {
           })
         }
       } catch (err) {
-        console.log('NO FILE / err', err)
         console.error('    [Based-client] Corrupt persistent storage - clear')
         await clearStorageNode(client)
       }
@@ -93,9 +96,7 @@ const initStorageNode = async (client: BasedClient) => {
         }
       })
     }
-  } catch (err) {
-    console.info('WRONG STAT?', file, err)
-  }
+  } catch (err) {}
 }
 
 const clearStorageNode = async (client: BasedClient) => {
@@ -107,11 +108,11 @@ const clearStorageNode = async (client: BasedClient) => {
   return rm(file)
 }
 
-export const removeStorageNode = (client: BasedClient, _key: string) => {
+const removeStorageNode = (client: BasedClient, _key: string) => {
   writeToStorage(client)
 }
 
-export const setStorageNode = (client: BasedClient) => {
+const setStorageNode = (client: BasedClient) => {
   writeToStorage(client)
 }
 
@@ -135,9 +136,9 @@ export const setStorage = (client: BasedClient, _key: string, _value: any) => {
   }
 }
 
-export const updateStorage = async (client: BasedClient) => {
+export const updateStorage = async (client: BasedClient, instant?: boolean) => {
   if (client.storagePath) {
-    setStorageNode(client)
+    writeToStorage(client, instant)
   }
 }
 
