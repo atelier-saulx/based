@@ -46,16 +46,28 @@ jobs:
           cd ..
         env:
          CC: gcc-13
-      - name: Archive selva binaries
+      # - name: Archive selva binaries
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: selvad-build
+      #     path: |
+      #       selvad/binaries/Linux_x86_64
+      #       selvad/lib/**/*.so
+      #       selvad/modules/**/*.so
+      #       selvad/locale
+      #       selvad/selvad
+      - name: Tar selva binaries
+        run: |
+          tar -cvf selva_build.tar selvad/binaries/Linux_x86_64 selvad/lib/**/*.so selvad/modules/**/*.so selvad/locale selvad/selvad
+          find selvad/ -name "*.so*" -type l
+          find selvad/ -name "*.so*" -type l | xargs tar -cvfh selva_build_linked_files.tar
+      - name: Archive selva binaries tar
         uses: actions/upload-artifact@v3
         with:
-          name: selvad-build
+          name: selvad-build-archived
           path: |
-            selvad/binaries/Linux_x86_64
-            selvad/lib/**/*.so
-            selvad/modules/**/*.so
-            selvad/locale
-            selvad/selvad
+            selva_build.tar
+            selva_build_linked_files.tar
   SchemaTests:
     needs: BuildSelva
     runs-on: ubuntu-latest
@@ -65,11 +77,17 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      - name: Download selva binaries
+      - name: Download selva binaries tar
         uses: actions/download-artifact@v3
         with:
-          name: selvad-build
+          name: selvad-build-archived
           path: selvad/
+      - name: Untar selva binaries
+        run: |
+          tar -xvf selva_build.tar
+          tar -xvfh selva_build_linked_files.tar
+          ls -la
+          la -la selvad
       - name: Setup selvad permissions
         run: chmod +x selvad/selvad
       - name: Install dependencies
