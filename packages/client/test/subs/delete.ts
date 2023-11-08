@@ -266,8 +266,7 @@ test.serial('subscribe and delete over references field', async (t) => {
   await wait(100)
 })
 
-// TODO: subscribing on ids that don't exist
-test.serial.skip('subscribe and delete one item', async (t) => {
+test.serial('subscribe and delete one item', async (t) => {
   await startSubs(t, schema)
   const client = t.context.dbClient
   let cnt = 0
@@ -297,6 +296,16 @@ test.serial.skip('subscribe and delete one item', async (t) => {
   )
 
   await wait(1000)
+
+  let subs = await Promise.all(
+    (
+      await client.command('subscriptions.list', [])
+    )[0].map(([subId]) => {
+      return client.command('subscriptions.debug', ['' + Number(subId)])
+    })
+  )
+  console.dir({ subs }, { depth: 8 })
+  console.dir({ cache: client.CMD_SUB_MARKER_MAPPING_CACHE })
 
   const id = (await client.set({
     type: 'thing',

@@ -12,8 +12,6 @@ import { sourceId } from '../id'
 import { getFields } from './fields'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
 import { hashCmd } from '../util'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { get } from '.'
 import { inspect } from 'node:util'
 
 type CmdExecOpts = {
@@ -96,67 +94,27 @@ export function addSubMarker(
   }
 }
 
-export async function getAlias(
+export async function resolveNodeId(
   ctx: ExecContext,
-  getOpts: any,
+  cmd: GetCommand,
   aliases: string[]
 ): Promise<string> {
-  const { client } = ctx
+  const [resolved] = await ctx.client.command('resolve.nodeid', [
+    ctx.subId ?? 0,
+    ...aliases,
+  ])
 
-  if (ctx.subId) {
-    if (ctx.cleanup) {
-      for (const alias of aliases) {
-        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-        if (aliasMarkerId === ctx.markerId) {
-          return client.ALIAS_MARKER_CACHE.get(aliasMarkerId)
-        }
-      }
-    }
-
-    for (const alias of aliases) {
-      const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-      if (aliasMarkerId === ctx.markerId) {
-        await get(ctx.client, getOpts, {
-          isSubscription: true,
-          subId: ctx.subId,
-          markerId: ctx.markerId,
-          cleanup: true,
-        })
-      }
-    }
-  }
-
-  const [resolved] = await ctx.client.command('resolve.nodeid', [0, ...aliases])
-
-  if (resolved?.length !== 2) {
+  if (!resolved) {
     return
   }
 
-  const [resolvedAlias, id] = resolved
+  const [markerId, name, nodeId] = resolved
 
-  if (ctx.subId) {
-    client.ALIAS_MARKER_CACHE.set(
-      hashObjectIgnoreKeyOrder({ alias: resolvedAlias }),
-      id
-    )
-
-    await Promise.all(
-      aliases.map(async (alias) => {
-        const aliasMarkerId = hashObjectIgnoreKeyOrder({ alias })
-        try {
-          await ctx.client.command('subscriptions.addAlias', [
-            ctx.subId,
-            aliasMarkerId,
-            alias,
-          ])
-        } catch (e) {
-          console.error('Error adding alias marker', e)
-        }
-      })
-    )
+  if (markerId) {
+    ctx.client.addSubMarkerMapping(Number(markerId), cmd.markerId || cmd.cmdId)
   }
 
-  return id
+  return nodeId
 }
 
 export async function getCmd(
@@ -167,9 +125,7 @@ export async function getCmd(
   const { client, subId } = ctx
 
   if (cmd.source.alias && !cmd.source.id) {
-    cmd.source.id = (
-      await ctx.client.command('resolve.nodeid', [0, cmd.source.alias])
-    )[1]
+    cmd.source.id = await resolveNodeId(ctx, cmd, [cmd.source.alias])
   }
 
   const opts = makeOpts(ctx, cmd)
@@ -195,6 +151,10 @@ export async function getCmd(
     if (!result) {
       try {
         result = await execCmd(ctx, opts)
+        if (!result?.[0]?.length && cmd.source.id && ctx.subId) {
+          // if id missing, make markers
+          await resolveNodeId(ctx, cmd, [cmd.source.id])
+        }
       } catch (e) {
         result = []
         console.error('Error executing command', e, inspect(cmd, { depth: 3 }))

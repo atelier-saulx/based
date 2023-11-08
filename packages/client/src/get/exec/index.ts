@@ -6,7 +6,7 @@ export * from '../types'
 export * from '../parse'
 
 import { parseGetOpts, parseGetResult } from '../parse'
-import { getAlias, getCmd } from './cmd'
+import { getCmd, resolveNodeId } from './cmd'
 import { hashCmd } from '../util'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
@@ -37,6 +37,24 @@ export async function get(
   markerId?: number
   markers?: any[]
 }> {
+  if (markerId && cleanup && markerId === subId) {
+    // initial lookup invalidated, do full cleanup
+    await get(client, opts, {
+      isSubscription: true,
+      subId,
+      markerId,
+      cleanup: true,
+    })
+
+    client.purgeCache(subId)
+
+    // then do the real get again without marker id
+    return get(client, opts, {
+      isSubscription: true,
+      subId,
+    })
+  }
+
   const ctx: ExecContext = {
     client,
   }
@@ -52,7 +70,18 @@ export async function get(
   let { $id, $language, $alias } = opts
   if ($alias) {
     const aliases = Array.isArray($alias) ? $alias : [$alias]
-    $id = await getAlias(ctx, opts, aliases)
+    $id = await resolveNodeId(
+      // pass both as sub-id and track this case with it
+      { client, subId: ctx.subId, markerId: ctx.subId },
+      {
+        type: 'node',
+        fields: { $any: [{ type: 'field', field: ['id'] }] },
+        source: { alias: aliases[0] },
+        target: { path: [] },
+        cmdId: ctx.subId,
+      },
+      aliases
+    )
 
     if (!$id) {
       return { merged: {}, defaults: [] }

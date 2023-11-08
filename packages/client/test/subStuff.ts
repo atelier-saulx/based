@@ -629,7 +629,7 @@ test('alias sub', async (t) => {
   t.deepEqual(await client.command('lsaliases', []), [['meh', 'me2']])
 
   t.deepEqual(await client.command('resolve.nodeid', [24n, 'meh']), [
-    ['meh', 'me2'],
+    [3844743431n, 'meh', 'me2'],
   ])
   t.deepEqual(await client.command('subscriptions.list', []), [
     [
@@ -653,7 +653,7 @@ test('alias sub', async (t) => {
   ])
   t.deepEqual(await client.command('subscriptions.debug', ['me1']), [[]])
   t.deepEqual(await client.command('subscriptions.debug', ['me2']), [[]])
-  t.deepEqual(events, { '1': 1, '-9223372033370529000': 1 })
+  t.deepEqual(events, { '1': 1, '3844743431': 1 })
 
   client.destroy()
   await server.destroy()

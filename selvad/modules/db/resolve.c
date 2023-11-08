@@ -94,12 +94,13 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
     const size_t nr_ids = argc - 1;
     Selva_NodeId node_id;
     const int resolved = SelvaResolve_NodeId(hierarchy, ids, nr_ids, node_id);
+    Selva_SubscriptionMarkerId marker_id = 0;
+
     if (resolved == SELVA_ENOENT) {
         /*
          * Create a missing marker if a sub_id was given.
          */
         if (sub_id && nr_ids > 0) {
-            Selva_SubscriptionMarkerId marker_id = 0;
             int err;
 
             for (size_t i = 0; i < nr_ids; i++) {
@@ -114,20 +115,14 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
                 return;
             }
         }
-
-        selva_send_null(resp);
-        return;
     } else if (resolved < 0) {
         selva_send_errorf(resp, resolved, "Resolve failed");
         return;
-    }
-
-    /*
-     * Create an alias marker if a sub_id was given.
-     */
-    if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id && nr_ids > 0) {
+    } else if ((resolved & SELVA_RESOLVE_ALIAS) && sub_id && nr_ids > 0) {
+        /*
+         * Create an alias marker if a sub_id was given.
+         */
         struct selva_string *alias_name = ids[(resolved & ~SELVA_RESOLVE_FLAGS)];
-        Selva_SubscriptionMarkerId marker_id;
         int err;
 
         marker_id = Selva_GenSubscriptionMarkerId(0, selva_string_to_str(alias_name, NULL));
@@ -142,13 +137,23 @@ void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const vo
         }
     }
 
-    selva_send_array(resp, 2);
-    if (nr_ids == 0) {
-        selva_send_str(resp, ROOT_NODE_ID, Selva_NodeIdLen(ROOT_NODE_ID));
+    selva_send_array(resp, 3);
+    if (marker_id) {
+        selva_send_ll(resp, marker_id);
     } else {
-        selva_send_string(resp, ids[(resolved & ~SELVA_RESOLVE_FLAGS)]);
+        selva_send_null(resp);
     }
-    selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
+    if (resolved < 0) {
+        selva_send_null(resp);
+        selva_send_null(resp);
+    } else {
+        if (nr_ids == 0) {
+            selva_send_str(resp, ROOT_NODE_ID, Selva_NodeIdLen(ROOT_NODE_ID));
+        } else {
+            selva_send_string(resp, ids[(resolved & ~SELVA_RESOLVE_FLAGS)]);
+        }
+        selva_send_str(resp, node_id, Selva_NodeIdLen(node_id));
+    }
 }
 
 static int SelvaResolve_OnLoad(void) {

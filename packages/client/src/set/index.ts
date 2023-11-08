@@ -21,6 +21,7 @@ import {
   encodeDouble,
   encodeLongLong,
 } from '../protocol/encode/modify/primitiveTypes'
+import { resolveNodeId } from '../get/exec/cmd'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -143,8 +144,7 @@ export async function set(client: BasedDbClient, opts: any) {
   let { $id, $alias } = opts
   if (!$id && $alias) {
     const args = Array.isArray($alias) ? $alias : [$alias]
-    const [resolved] = await client.command('resolve.nodeid', [0, ...args])
-    $id = resolved?.[1]
+    $id = await resolveNodeId({ client }, null, args)
     if (!$id && !opts.aliases) {
       opts.aliases = { $add: args }
     }

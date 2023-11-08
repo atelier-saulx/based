@@ -210,11 +210,11 @@ export async function parseGetOpts(
             } else if (key !== '' && value.$alias) {
               const { $alias } = value
               const aliases = Array.isArray($alias) ? $alias : [$alias]
-              const resolved = await this.command('resolve.nodeid', [
-                '',
+              const [resolved] = await this.command('resolve.nodeid', [
+                0,
                 ...aliases,
               ])
-              const id = resolved?.[1]
+              const [, , id] = resolved
 
               return {
                 target: {

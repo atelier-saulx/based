@@ -199,6 +199,7 @@ export class BasedDbClient extends Emitter {
   }
 
   purgeCache(cmdID: number): void {
+    this.CMD_SUB_MARKER_MAPPING_CACHE.delete(cmdID)
     this.CMD_RESULT_CACHE.delete(cmdID)
   }
 

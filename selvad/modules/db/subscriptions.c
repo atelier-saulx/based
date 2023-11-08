@@ -114,6 +114,10 @@ static void defer_event(
 static void defer_event_for_traversing_markers(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);
+/**
+ * Send deferred event of this marker if set.
+ */
+static bool send_deferred_event(struct SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker);
 
 static bool isAliasMarker(enum SelvaSubscriptionsMarkerFlags flags) {
     return !!(flags & SELVA_SUBSCRIPTION_FLAG_CH_ALIAS);
@@ -223,17 +227,17 @@ int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *nod
     return SVector_Size(&node_metadata->sub_markers.vec) > 0;
 }
 
-Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId prev, const char *s) {
-    const Selva_SubscriptionMarkerId auto_flag = (Selva_SubscriptionMarkerId)1 << ((sizeof(Selva_SubscriptionMarkerId) * 8) - 1);
-    uint32_t hash;
-
-    /* fnv32 */
-    hash = prev > 0 ? (uint32_t)(prev & 0x7FFFFFFF) : 2166136261u;
+uint32_t string_hash(uint32_t hash, const char *s) {
     for (; *s; s++) {
-        hash = (hash ^ *s) * 0x01000193;
+        hash = (hash * 33) ^ *s;
     }
 
-    return (Selva_SubscriptionMarkerId)(auto_flag | hash);
+    return hash;
+}
+
+Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId prev, const char *s) {
+    uint32_t prev_hash = prev && (uint32_t)(prev & 0x7FFFFFFF);
+    return prev_hash + (string_hash(5381, s) >> 0) * 4096 + (string_hash(52711, s) >> 0);
 }
 
 /*
@@ -251,9 +255,14 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
     }
 
     /*
-     * Make sure no markers are deferred.
+     * Make sure its not deferred.
+     * This is the last chance to make sure that we have no pointers to this
+     * marker. If there was the event sent won't contain any sub_ids.
      */
-    SelvaSubscriptions_SendDeferredEvents(hierarchy);
+    if (send_deferred_event(hierarchy, marker)) {
+        SELVA_LOG(SELVA_LOGL_WARN, "Marker (%" PRImrkId ") event sent without sub_ids just before freeing resources",
+                  marker->marker_id);
+    }
 
     RB_REMOVE(hierarchy_subscription_markers_tree, &hierarchy->subs.mrks_head, marker);
 
@@ -273,8 +282,12 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
 
 /**
  * Clear and destroy a marker.
- * The marker must have been removed from the sub->markers SVector before
- * this function is called.
+ * The marker must have been removed from the sub->markers SVectors before
+ * this function is called (and thus should be marker->subs empty) if actual
+ * removal is expected to happen.
+ * It's advisable to call send_deferred_event(hierarchy, marker) before removing
+ * the subs and calling this function or otherwise any pending event will be
+ * missing sub_ids when sent later by destroy_marer.
  * The marker is only actually destroyed if no subscription is using it.
  */
 static void do_sub_marker_removal(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
@@ -330,6 +343,12 @@ static int delete_marker(SelvaHierarchy *hierarchy, struct Selva_Subscription *s
         return SELVA_SUBSCRIPTIONS_ENOENT;
     }
 
+    /*
+     * Send the possibly deferred event before removing the link to the other
+     * direction.
+     */
+    (void)send_deferred_event(hierarchy, marker);
+
     (void)SVector_Remove(&marker->subs, sub);
     do_sub_marker_removal(hierarchy, marker);
     return 0;
@@ -357,6 +376,7 @@ static void remove_sub_markers(SelvaHierarchy *hierarchy, struct Selva_Subscript
         struct Selva_SubscriptionMarker *marker;
 
         while ((marker = SVector_Shift(&sub->markers))) {
+            (void)send_deferred_event(hierarchy, marker);
             (void)SVector_Remove(&marker->subs, sub);
             do_sub_marker_removal(hierarchy, marker);
         }
@@ -1529,6 +1549,7 @@ void SelvaSubscriptions_DeferMissingAccessorEvents(struct SelvaHierarchy *hierar
 
         marker->action.marker_action(hierarchy, marker, SELVA_SUBSCRIPTION_FLAG_MISSING, NULL, 0, NULL);
         SelvaObject_DelKeyStr(missing, accessor_str, accessor_len);
+        (void)send_deferred_event(hierarchy, marker);
         remove_missing_marker(hierarchy, marker);
     } else if (err != SELVA_ENOENT) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to retrieve a missing accessor marker: \"%.*s\" err: %s",
@@ -1855,6 +1876,19 @@ static void send_event(const struct Selva_SubscriptionMarker *marker) {
 
     selva_pubsub_publish(SELVA_SUBSCRIPTIONS_PUBSUB_CH_ID, msg, msg_size);
     selva_free(msg);
+}
+
+static bool send_deferred_event(struct SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
+    struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
+    bool res = false;
+
+    if (SVector_Remove(&def->marker_events, marker)) {
+        send_event(marker);
+        memset(&marker->history, 0, sizeof(marker->history));
+        res = true;
+    }
+
+    return res;
 }
 
 void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy) {
