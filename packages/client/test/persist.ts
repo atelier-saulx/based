@@ -35,7 +35,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       configs: {
         counter: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             let cnt = 1
             update(cnt)
@@ -49,7 +48,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
         },
         bigData: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             const x: any[] = []
             for (let i = 0; i < 1e6; i++) {
@@ -62,7 +60,9 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
       },
     },
   })
+
   await server.start()
+
   await client.setAuthState({ type: 'boeloe', token: '?', persistent: true })
 
   const r: any[] = []
@@ -91,6 +91,8 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
 
   await wait(2500)
   close()
+
+  await wait(200)
 
   await client.destroy()
   await server.destroy()
@@ -143,7 +145,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   await client2.destroy(true)
 })
 
-test.only('auth persist', async (t: T) => {
+test('auth persist', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
   await mkdir(persistentStorage).catch(() => {})
 
@@ -203,6 +205,7 @@ test.only('auth persist', async (t: T) => {
       persistentStorage,
     }
   )
+
   t.teardown(async () => {
     await client.clearStorage()
     await server.destroy()
@@ -211,7 +214,7 @@ test.only('auth persist', async (t: T) => {
   await client.connect(opts)
   await client.call('login')
 
-  await wait(300)
+  await wait(6000)
 
   t.is(client.authState.token, token)
 

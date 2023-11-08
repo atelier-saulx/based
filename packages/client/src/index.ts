@@ -271,7 +271,7 @@ export class BasedClient extends Emitter {
    */
   public async destroy(noStorage?: boolean) {
     if (!noStorage) {
-      await updateStorage(this)
+      await updateStorage(this, true)
     }
     clearTimeout(this.storageBeingWritten)
     clearTimeout(this.channelCleanTimeout)
