@@ -93,7 +93,7 @@ const testShared = async (
   await server.destroy()
 }
 
-test('nested functions (raw api)', async (t: T) => {
+test.serial('nested functions (raw api)', async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
@@ -197,7 +197,7 @@ test('nested functions (raw api)', async (t: T) => {
   await testShared(t, coreClient, server)
 })
 
-test('nested functions (fancy api)', async (t: T) => {
+test.serial('nested functions (fancy api)', async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
