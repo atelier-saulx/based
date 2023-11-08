@@ -51,6 +51,7 @@ jobs:
         with:
           name: selvad-build
           path: |
-            selvad/lib
+            selvad/lib/**/*.so
+            selvad/lib/**/*.dylib
             selvad/locale
             selvad
