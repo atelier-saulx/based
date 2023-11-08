@@ -13,7 +13,11 @@ export default async (
     await client.once('connect')
   }
 
+  console.info('go go go')
+
   const url = await parseOpts(client.opts, true)
+
+  console.info(parseOpts)
 
   const headers: StreamHeaders = {
     'Content-Type': options.mimeType || 'text/plain',

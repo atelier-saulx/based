@@ -16,6 +16,7 @@ export default async (
   if (isStreamFunctionPath(options)) {
     return uploadFilePath(client, name, options)
   }
+
   if (isStreamFunctionStream(options)) {
     return uploadFileStream(client, name, options)
   }
@@ -28,6 +29,8 @@ export default async (
   if (typeof options.contents === 'string') {
     return fetch(client, name, options)
   }
+
+  console.log('start stream', options, fetch)
 
   throw new Error(
     `Invalid opts for file api ${name} ${JSON.stringify(options, null, 2)}`

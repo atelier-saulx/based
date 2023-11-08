@@ -7,7 +7,7 @@
     "test-stream": "npx ts-node ./test/browser/upload-file.ts",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --verbose",
+    "test": "npx ava",
     "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
     "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window --drop:console",
     "browser": "node ./test/browser/server.js"
