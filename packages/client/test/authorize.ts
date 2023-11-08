@@ -209,7 +209,6 @@ test.serial('authorize from server after observe', async (t) => {
   const token = 'mock_token'
 
   const { client, server } = await setup()
-  let counter: ReturnType<typeof setInterval>
 
   t.teardown(() => {
     client.disconnect()
@@ -245,8 +244,7 @@ test.serial('authorize from server after observe', async (t) => {
   })
   await wait(1500)
 
-  // @ts-ignore - totally incorrect typescript error...
-  clearInterval(counter)
-
   t.true(receiveCnt > 0)
+
+  t.true(true)
 })

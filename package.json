@@ -40,6 +40,6 @@
     "@saulx/prettier-config": "^1.0.0",
     "lint-staged": "12.1.2",
     "rimraf": "^3.0.2",
-    "typescript": "^4.3.5"
+    "typescript": "^5.2.2"
   }
 }

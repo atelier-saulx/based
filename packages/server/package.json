@@ -1,6 +1,6 @@
 {
   "name": "@based/server",
-  "version": "6.9.0",
+  "version": "7.0.0",
   "license": "MIT",
   "main": "./dist/index.js",
   "type": "module",
@@ -9,11 +9,6 @@
     "README.md",
     "dist"
   ],
-  "exports": {
-    ".": "./dist/index.js",
-    "./worker": "./dist/worker/api.js",
-    "./dist/worker/api": "./dist/worker/api.js"
-  },
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
