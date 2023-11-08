@@ -15,10 +15,11 @@
   "type": "module",
   "main": "./dist/src/index.js",
   "browser": {
-    "./stream/dist/index.js": "./stream/dist/browser.js"
+    "./dist/src/stream/index.js": "./dist/src/stream/browser.js"
   },
   "exports": {
-    "./ssr": "./dist/ssr.js"
+    "./ssr": "./dist/src/ssr.js",
+    ".": "./dist/src/index.js"
   },
   "ava": {
     "concurrency": 1,

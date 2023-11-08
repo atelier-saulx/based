@@ -1,4 +1,6 @@
 import { BasedServer } from '@based/server'
+import { createCacheScriptTag } from '@based/client/ssr'
+
 import based from '@based/client'
 import fs from 'node:fs/promises'
 import { watch } from 'node:fs'
@@ -18,7 +20,7 @@ const fn = async () => {
 
   return `<html>
 <head>
-    ${client.genCacheScript()}
+    ${createCacheScriptTag(client)}
 </head>
 <body>
     <script src="/bundle"></script> 
