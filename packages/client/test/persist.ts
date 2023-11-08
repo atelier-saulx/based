@@ -25,7 +25,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
       configs: {
         counter: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             let cnt = 1
             update(cnt)
@@ -39,7 +38,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
         },
         bigData: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             const x: any[] = []
             for (let i = 0; i < 1e6; i++) {
@@ -83,6 +81,8 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
 
   await wait(2500)
   close()
+
+  await wait(200)
 
   await client.destroy()
   await server.destroy()
@@ -135,7 +135,7 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   await client2.destroy(true)
 })
 
-test.serial.only('auth persist', async (t) => {
+test.serial('auth persist', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
   await mkdir(persistentStorage).catch(() => {})
 

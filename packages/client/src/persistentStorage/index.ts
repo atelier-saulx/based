@@ -41,7 +41,7 @@ const store = async (client: BasedClient) => {
   }
 }
 
-const writeToStorage = (client: BasedClient, instant?: boolean) => {
+const writeToStorage = async (client: BasedClient, instant?: boolean) => {
   if (!client.storageBeingWritten) {
     if (instant) {
       store(client)
@@ -50,7 +50,7 @@ const writeToStorage = (client: BasedClient, instant?: boolean) => {
     }
   } else if (instant) {
     clearTimeout(client.storageBeingWritten)
-    store(client)
+    await store(client)
   }
 }
 
@@ -138,7 +138,7 @@ export const setStorage = (client: BasedClient, _key: string, _value: any) => {
 
 export const updateStorage = async (client: BasedClient, instant?: boolean) => {
   if (client.storagePath) {
-    writeToStorage(client, instant)
+    return writeToStorage(client, instant)
   }
 }
 
