@@ -64,7 +64,7 @@ jobs:
           find selvad/modules -name "*.so*" >> files_to_archive.txt
           find selvad/locale >> files_to_archive.txt
           echo selvad/selvad >> files_to_archive.txt 
-          tar -czvf selva_build.tar.gz -T files_to_archive.txt
+          tar -czvf selva_build.tar -T files_to_archive.txt
       - name: Archive selva binaries tar
         uses: actions/upload-artifact@v3
         with:
