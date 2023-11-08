@@ -84,7 +84,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: selvad-build-archived
-          path: selvad/
+#          path: selvad/
       - name: Untar selva binaries
         run: |
           tar -xzvf selva_build.tar
