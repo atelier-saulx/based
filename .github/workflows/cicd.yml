@@ -88,8 +88,8 @@ jobs:
       - name: Untar selva binaries
         run: |
           tar -xzvf selva_build.tar
-          la -la selvad
-          la -la selvad/lib
+          ls -la selvad
+          ls -la selvad/lib
       - name: Setup selvad permissions
         run: chmod +x selvad/selvad
       - name: Install dependencies
