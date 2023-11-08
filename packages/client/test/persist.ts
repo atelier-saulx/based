@@ -3,7 +3,6 @@ import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { mkdir } from 'node:fs/promises'
-
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
@@ -53,7 +52,9 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
       },
     },
   })
+
   await server.start()
+
   await client.setAuthState({ type: 'boeloe', token: '?', persistent: true })
 
   const r: any[] = []

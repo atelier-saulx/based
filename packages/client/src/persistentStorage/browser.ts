@@ -17,7 +17,7 @@ const decode = (dataURI: string): any => {
   return parsed
 }
 
-export const removeStorageBrowser = (client: BasedClient, key: string) => {
+const removeStorageBrowser = (client: BasedClient, key: string) => {
   const prev = localStorage.getItem(key)
   if (prev) {
     client.storageSize -= new Blob([prev]).size
@@ -26,7 +26,7 @@ export const removeStorageBrowser = (client: BasedClient, key: string) => {
   }
 }
 
-export const clearStorageBrowser = () => {
+const clearStorageBrowser = () => {
   const keys = Object.keys(localStorage)
   try {
     for (const key of keys) {
@@ -43,11 +43,7 @@ export const clearStorageBrowser = () => {
   }
 }
 
-export const setStorageBrowser = (
-  client: BasedClient,
-  key: string,
-  value: any
-) => {
+const setStorageBrowser = (client: BasedClient, key: string, value: any) => {
   try {
     const env = client.storageEnvKey
     if (!env) {
@@ -108,7 +104,7 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
   }
 }
 
-export const initStorageBrowser = async (client: BasedClient) => {
+const initStorageBrowser = async (client: BasedClient) => {
   const env = client.storageEnvKey
   if (!env) {
     return
@@ -189,4 +185,32 @@ export const initStorageBrowser = async (client: BasedClient) => {
   } catch (err) {
     // console.error('Based - Cannot read localStorage')
   }
+}
+
+export const removeStorage = (client: BasedClient, key: string) => {
+  const env = client.storageEnvKey
+  if (!env) {
+    return
+  }
+  key += '-' + env
+  removeStorageBrowser(client, key)
+}
+
+export const setStorage = (client: BasedClient, key: string, value: any) => {
+  const env = client.storageEnvKey
+  if (!env) {
+    return
+  }
+  key += '-' + env
+  setStorageBrowser(client, key, value)
+}
+
+export const updateStorage = async (_client: BasedClient) => {}
+
+export const initStorage = async (client: BasedClient) => {
+  return initStorageBrowser(client)
+}
+
+export const clearStorage = async (_client: BasedClient) => {
+  return clearStorageBrowser()
 }

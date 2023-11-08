@@ -15,7 +15,8 @@
   "type": "module",
   "main": "./dist/src/index.js",
   "browser": {
-    "./dist/src/stream/index.js": "./dist/src/stream/browser.js"
+    "./dist/src/stream/index.js": "./dist/src/stream/browser.js",
+    "./dist/src/persistentStorage/index.js": "./dist/src/persistentStorage/browser.js"
   },
   "exports": {
     "./ssr": "./dist/src/ssr.js",
