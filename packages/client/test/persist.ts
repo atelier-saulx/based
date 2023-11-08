@@ -6,7 +6,7 @@ import { mkdir } from 'node:fs/promises'
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')

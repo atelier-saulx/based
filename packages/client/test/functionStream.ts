@@ -4,7 +4,7 @@ import fetch from 'cross-fetch'
 import { createReadStream, readFileSync } from 'fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 test.serial('function Stream (http)', async (t) => {
   const p = join(__dirname, '../package.json')

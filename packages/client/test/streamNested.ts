@@ -7,7 +7,7 @@ import { promisify } from 'util'
 
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 const statAsync = promisify(stat)
 

@@ -8,7 +8,7 @@ import { watch } from 'node:fs'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 // tmp to test
 const client = based({
