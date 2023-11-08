@@ -59,9 +59,10 @@ jobs:
       #         tar -cvf selva_build.tar selvad/binaries/Linux_x86_64 selvad/lib/**/*.so selvad/modules/**/*.so selvad/locale selvad/selvad
       - name: Tar selva binaries
         run: |
-          tar -cvf selva_build.tar selvad/lib/**/*.so
-          find selvad/ -name "*.so*" -type l
-          find selvad/ -name "*.so*" -type l | xargs tar -cvfh selva_build_linked_files.tar
+          find selvad/lib -name "*.so*"
+          find selvad/lib -name "*.so*" | xargs tar -cvf selva_build.tar
+          find selvad/lib -name "*.so*" -type l
+          find selvad/lib -name "*.so*" -type l | xargs tar -cvfh selva_build_linked_files.tar
       - name: Archive selva binaries tar
         uses: actions/upload-artifact@v3
         with:
