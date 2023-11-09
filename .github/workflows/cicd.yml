@@ -10,12 +10,12 @@ jobs:
          sudo apt update
          sudo apt install gcc-13
       - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
       - name: Build selva
-        run: |
-          cd selvad
-          make
-          make install
-          cd ..
+        run: npm run build-c
         env:
          CC: gcc-13
       # - name: Tar selva binaries
