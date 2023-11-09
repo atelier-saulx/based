@@ -2734,7 +2734,10 @@ int SelvaHierarchy_TraverseField2Bfs(
         int err;
 
         err = field_lookup_traversable(node, ref_field_str, ref_field_len, &t);
-        if (err) {
+        if (err == SELVA_ENOENT || err == SELVA_HIERARCHY_ENOENT) {
+            continue;
+        } else if (err) {
+            SELVA_LOG(SELVA_LOGL_ERR, "err: %s", selva_strerror(err));
             Trx_End(&hierarchy->trx_state, &trx_cur);
             return err;
         }
