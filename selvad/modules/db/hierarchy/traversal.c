@@ -18,7 +18,8 @@ int SelvaTraversal_GetSkip(enum SelvaTraversal dir, ssize_t skip)
             SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
             SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
             SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
-            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) & dir);
+            SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+            SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD) & dir);
 
     return (skip <= -1) ? 0 : r + skip;
 }
