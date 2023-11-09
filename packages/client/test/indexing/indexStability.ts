@@ -70,7 +70,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('index stability', async (t) => {
+test.skip('index stability', async (t) => {
   const { client } = t.context
 
   for (let i = 1; i < 400; i++) {

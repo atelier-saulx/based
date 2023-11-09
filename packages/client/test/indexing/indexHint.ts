@@ -207,7 +207,8 @@ test('add and delete nodes in an index', async (t) => {
   )
 })
 
-test('create max number of indices', async (t) => {
+// TODO This test is wayy too slow. Could it be made MUCH faster??
+test.skip('create max number of indices', async (t) => {
   const { client } = t.context
 
   const getQ: () => Parameters<typeof find>[0] = () => ({

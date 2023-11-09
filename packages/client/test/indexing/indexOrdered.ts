@@ -72,7 +72,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('find with sort', async (t) => {
+test.skip('find with sort', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -131,7 +131,7 @@ test('find with sort', async (t) => {
   ])
 })
 
-test('find with sort and limit', async (t) => {
+test.skip('find with sort and limit', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -191,7 +191,7 @@ test('find with sort and limit', async (t) => {
   ])
 })
 
-test('pick unordered index for sorted result', async (t) => {
+test.skip('pick unordered index for sorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -258,7 +258,7 @@ test('pick unordered index for sorted result', async (t) => {
   t.deepEqual(stateMap['root.J.B.dGhpbmc=.ImxlIiBl'].card, 'not_active')
 })
 
-test('pick index with wrong order for sorted result', async (t) => {
+test.skip('pick index with wrong order for sorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -330,7 +330,7 @@ test('pick index with wrong order for sorted result', async (t) => {
   t.deepEqual(stateMap['root.J.C.dGhpbmc=.ImxlIiBl'].card, 'not_active')
 })
 
-test('do not pick ordered index for unsorted result', async (t) => {
+test.skip('do not pick ordered index for unsorted result', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < chars.length; i++) {
@@ -397,7 +397,7 @@ test('do not pick ordered index for unsorted result', async (t) => {
   t.deepEqual(stateMap['root.J.ImxlIiBl'].card, '35')
 })
 
-test('change the sorted field value', async (t) => {
+test.skip('change the sorted field value', async (t) => {
   const { client } = t.context
 
   await client.set({

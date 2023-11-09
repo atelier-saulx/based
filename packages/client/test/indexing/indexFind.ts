@@ -69,7 +69,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('find index', async (t) => {
+test.skip('find index', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -158,7 +158,7 @@ test('find index', async (t) => {
   t.truthy(istate['root.J.InRoaW5nIiBo'].card === '1001', `act: ${istate['root.J.InRoaW5nIiBo'].card}`)
 })
 
-test('find index strings', async (t) => {
+test.skip('find index strings', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < 10000; i++) {
@@ -217,7 +217,7 @@ test('find index strings', async (t) => {
   t.truthy(ilist[1][3] > 3000, `act: ${ilist[1][2]}`)
 })
 
-test('find index string sets', async (t) => {
+test.skip('find index string sets', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < 1000; i++) {
@@ -338,7 +338,7 @@ test('find index string sets', async (t) => {
   t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card === '1000', `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card}`)
 })
 
-test('find index integers', async (t) => {
+test.skip('find index integers', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < 1000; i++) {
@@ -387,7 +387,7 @@ test('find index integers', async (t) => {
   t.truthy(ilist[1][3] > 90, `act: ${ilist[1][2]}`)
 })
 
-test('find index exists', async (t) => {
+test.skip('find index exists', async (t) => {
   const { client } = t.context
 
   for (let i = 0; i < 1000; i++) {

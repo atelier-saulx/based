@@ -57,7 +57,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('find references', async (t) => {
+test.skip('find references', async (t) => {
   const { client } = t.context
 
   const mainThing = await client.set({

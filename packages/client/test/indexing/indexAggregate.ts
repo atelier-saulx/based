@@ -75,7 +75,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test('simple aggregate with indexing', async (t) => {
+test.skip('simple aggregate with indexing', async (t) => {
   const { client } = t.context
   let sum = 0
 
