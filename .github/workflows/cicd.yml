@@ -19,12 +19,12 @@ jobs:
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
       - name: Use Node.js
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true }}
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
       - name: Build selva
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true }}
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         run: npm run build-c
         env:
          CC: gcc-13
@@ -35,7 +35,7 @@ jobs:
       #     path: |
       #       packages/server/selvad
       - name: Save selvad build cache
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true }}
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         id: cache-selvad-save
         uses: actions/cache/save@v3
         with:
