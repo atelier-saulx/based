@@ -26,6 +26,8 @@ jobs:
       #     find selvad/locale >> files_to_archive.txt
       #     echo selvad/selvad >> files_to_archive.txt 
       #     tar -czf selva_build.tar -T files_to_archive.txt
+      - run: ls -la packages/server
+      - run: ls -la packages/server/selvad
       - name: Archive selva binaries tar
         uses: actions/upload-artifact@v3
         with:
@@ -72,6 +74,7 @@ jobs:
         with:
           name: selvad-build
           path: packages/server
+      - run: ls -la packages/server
       - run: ls -la packages/server/selvad
       # - name: Setup selvad permissions
       #   run: chmod +x selvad/selvad
