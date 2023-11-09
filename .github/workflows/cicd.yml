@@ -37,9 +37,13 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
-  MainTests:
+  run-ests:
+    name: Run ${{ matrix.tests }} tests
     needs: BuildSelva
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tests: ['test/*.ts', 'test/schema/*.ts', 'test/subs/*.ts']
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -67,67 +71,67 @@ jobs:
       - name: Run client schema tests
         run: |
           cd packages/client
-          npm run test-ci -- test/*.ts
-  SchemaTests:
-    needs: BuildSelva
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - name: Restore selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad
-          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - name: Restore node_modules
-        id: cache-npm-try
-        uses: actions/cache@v3
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-      - name: Install dependencies
-        if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
-        run: npm ci
-      - name: Build based-db
-        run: npm run build
-      - name: Run client schema tests
-        run: |
-          cd packages/client
-          npm run test-ci -- test/schema/*.ts
-  SubscriptionTests:
-    needs: BuildSelva
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - name: Restore selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad
-          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - name: Restore node_modules
-        id: cache-npm-try
-        uses: actions/cache@v3
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-      - name: Install dependencies
-        if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
-        run: npm ci
-      - name: Build based-db
-        run: npm run build
-      - name: Run client schema tests
-        run: |
-          cd packages/client
-          npm run test-ci -- test/subs/*.ts
+          npm run test-ci -- ${{ matrix.tests }}
+  # SchemaTests:
+  #   needs: BuildSelva
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18.x'
+  #     - name: Restore selvad build cache
+  #       id: cache-selvad-try
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad
+  #         key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+  #     - name: Restore node_modules
+  #       id: cache-npm-try
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: '**/node_modules'
+  #         key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+  #     - name: Install dependencies
+  #       if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+  #       run: npm ci
+  #     - name: Build based-db
+  #       run: npm run build
+  #     - name: Run client schema tests
+  #       run: |
+  #         cd packages/client
+  #         npm run test-ci -- test/schema/*.ts
+  # SubscriptionTests:
+  #   needs: BuildSelva
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18.x'
+  #     - name: Restore selvad build cache
+  #       id: cache-selvad-try
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad
+  #         key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+  #     - name: Restore node_modules
+  #       id: cache-npm-try
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: '**/node_modules'
+  #         key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+  #     - name: Install dependencies
+  #       if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+  #       run: npm ci
+  #     - name: Build based-db
+  #       run: npm run build
+  #     - name: Run client schema tests
+  #       run: |
+  #         cd packages/client
+  #         npm run test-ci -- test/subs/*.ts
   
