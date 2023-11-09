@@ -48,6 +48,7 @@ jobs:
           - test/*.ts
           - test/schema/*.ts
           # - test/subs/*.ts
+          - test/indexing/*.ts
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -76,4 +77,4 @@ jobs:
         run: |
           cd packages/client
           npm run test-ci -- ${{ matrix.tests }}
- 
+ # add make test
