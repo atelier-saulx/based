@@ -23,6 +23,7 @@ export default class CC {
 			})
 			cc.on('close', (code) => {
 				if (code !== 0) {
+					// eslint-disable-next-line prefer-promise-reject-errors
 					return reject(`gcc failed with: ${code}`)
 				}
 				resolve()
@@ -55,8 +56,10 @@ export default class CC {
 			prg.on('close', (code, signal) => {
 				if (code !== 0) {
 					if (code !== null) {
+						// eslint-disable-next-line prefer-promise-reject-errors
 						reject(`Failed with code ${code}`)
 					} else {
+						// eslint-disable-next-line prefer-promise-reject-errors
 						reject(`Received signal ${signal}`)
 					}
 					return

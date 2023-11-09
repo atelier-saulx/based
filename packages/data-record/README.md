@@ -73,6 +73,7 @@ human-readable record definition object.
 | `uint_le`     | 0 to 48 bit variable size little-endian unsigned integer                                  |
 | `cstring`     | null-terminated C-string (termination not enforced, same behavior as `strcpy()`)          |
 | `record`      | A nested record                                                                           |
+| `record_p`    | A pointer to an array of records                                                          |
 | `int8_p`      | A pointer to an array of 8-bit signed integers                                            |
 | `int16_p`     | A pointer to an array of 16-bit signed integers in host byte order                        |
 | `int16_be_p`  | A pointer to an array of 16-bit signed integers in big-endian order                       |
