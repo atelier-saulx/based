@@ -70,7 +70,7 @@ jobs:
       - name: Download selva binaries tar
         uses: actions/download-artifact@v3
         with:
-          name: selvad-build-archived
+          name: selvad-build
           path: packages/server/selvad
       # - name: Setup selvad permissions
       #   run: chmod +x selvad/selvad
