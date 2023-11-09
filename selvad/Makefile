@@ -9,7 +9,7 @@ export uname_S
 export uname_M
 export TARGET_CFLAGS
 
-INSTALL_DIR := binaries/$(uname_S)_$(uname_M)
+INSTALL_DIR ?= binaries/$(uname_S)_$(uname_M)
 
 # Ordered list of libraries
 LIBS := \
@@ -33,14 +33,20 @@ $(LIBS):
 modules: lib
 	$(MAKE) -C modules
 
+ifeq ($(uname_S),Linux)
+install: locale
+endif
+
+locale:
+	$(MAKE) -C locale LOCPATH=../$(INSTALL_DIR)/locale
+
 install: all
 	mkdir -p "$(INSTALL_DIR)/lib"
 	mkdir -p "$(INSTALL_DIR)/modules"
 	mkdir -p "$(INSTALL_DIR)/locale"
-	install -s $(wildcard lib/lib*) "$(INSTALL_DIR)/lib"
-	install -s $(wildcard modules/*$(MOD_SUFFIX)) "$(INSTALL_DIR)/modules"
-	install -s selvad "$(INSTALL_DIR)/"
-	$(MAKE) -C locale LOCPATH=../$(INSTALL_DIR)/locale
+	install $(wildcard lib/lib*) "$(INSTALL_DIR)/lib"
+	install $(wildcard modules/*$(MOD_SUFFIX)) "$(INSTALL_DIR)/modules"
+	install selvad "$(INSTALL_DIR)/"
 
 test:
 	$(MAKE) -C test
@@ -73,5 +79,5 @@ clean: mostlyclean
 	$(MAKE) -C test clean
 	find ./lib -type d -maxdepth 1 -exec $(MAKE) -C {} clean \;
 
-.PHONY: all clean check test mostlyclean selvad modules lib $(LIBS)
+.PHONY: all clean check test mostlyclean selvad modules lib $(LIBS) locale
 .NOTPARALLEL:
