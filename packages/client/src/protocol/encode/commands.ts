@@ -40,6 +40,14 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // index name
     { type: 'longlong' }, // ?discard
   ]),
+  'index.new': defaultEncoder([
+    { type: 'longlong' }, // SelvaTraversal
+    { type: 'string' }, // ref field
+    { type: 'longlong' }, // SelvaResultOrder
+    { type: 'string' }, // order field
+    { type: 'id' }, // nodeId
+    { type: 'string' }, // filter
+  ]),
   // object primitives
   'object.set': defaultEncoder([
     { type: 'id' },

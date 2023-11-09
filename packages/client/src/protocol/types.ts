@@ -67,9 +67,9 @@ export const COMMAND_TYPES = {
   unsubscribe: 80,
   // indexes
   'index.list': 39,
+  'index.new': 40,
   'index.del': 41,
   // TODO:
-  // #define CMD_ID_INDEX_NEW 40
   // #define CMD_ID_INDEX_DEBUG 42
   // object primitives
   'object.get': 50,
