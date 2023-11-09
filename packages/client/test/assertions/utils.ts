@@ -148,3 +148,24 @@ export const idExists = async (
   const result = await client.get({ $id: id, id: true })
   return !!result.id
 }
+
+export const getIndexingState = async (client: BasedDbClient) => {
+  const l = (await client.command('index.list'))[0]
+  const stateMap = {}
+
+  for (let i = 0; i < l.length; i += 2) {
+    const key = l[i].split('.')
+    const expression = Buffer.from(key[key.length - 1], 'base64').toString()
+    const state = {
+      expression: expression,
+      take_max_ave: l[i + 1][0],
+      tot_max_ave: l[i + 1][1],
+      ind_take_max_ave: l[i + 1][2],
+      card: l[i + 1][3],
+    }
+
+    stateMap[l[i]] = state
+  }
+
+  return stateMap
+}
