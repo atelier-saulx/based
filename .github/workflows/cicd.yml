@@ -5,6 +5,7 @@ on:
   pull_request_target:
     branches:
       - main
+    types: [review_requested, ready_for_review]
 jobs:
   build-selva:
     name: Build Selvad
