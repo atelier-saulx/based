@@ -9,7 +9,7 @@ on:
 jobs:
   build-selva:
     name: Build Selvad
-    if: github.event.pull_request_target.draft == false
+    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
