@@ -73,7 +73,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: selvad-build
-          path: packages/server
+          path: packages/server/selvad
       - run: ls -la packages/server
       - run: ls -la packages/server/selvad
       # - name: Setup selvad permissions
