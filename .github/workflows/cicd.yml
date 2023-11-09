@@ -75,7 +75,7 @@ jobs:
           name: selvad-build
           path: packages/server/selvad
       - name: Setup selvad permissions
-        run: chmod +x selvad/selvad
+        run: chmod +x packages/server/selvad
       - run: ls -la packages/server
       - run: ls -la packages/server/selvad
       - name: Install dependencies
