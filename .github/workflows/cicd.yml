@@ -71,7 +71,7 @@ jobs:
         uses: actions/download-artifact@v3
         with:
           name: selvad-build
-          path: packages/server/selvad
+          path: packages/server
       # - name: Setup selvad permissions
       #   run: chmod +x selvad/selvad
       - name: Install dependencies
