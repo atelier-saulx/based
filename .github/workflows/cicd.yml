@@ -1,6 +1,10 @@
 name: CI/CD Parallel
 run-name: ${{ github.actor }} is running CI/CD 🚀
-on: [workflow_dispatch]
+on:
+  workflow_dispatch:
+  pull_request_target:
+    branches:
+      - main
 jobs:
   build-selva:
     name: Build Selvad
