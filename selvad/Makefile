@@ -37,9 +37,9 @@ install: all
 	mkdir -p "$(INSTALL_DIR)/lib"
 	mkdir -p "$(INSTALL_DIR)/modules"
 	mkdir -p "$(INSTALL_DIR)/locale"
-	install -s $(wildcard lib/lib*) "$(INSTALL_DIR)/lib"
-	install -s $(wildcard modules/*$(MOD_SUFFIX)) "$(INSTALL_DIR)/modules"
-	install -s selvad "$(INSTALL_DIR)/"
+	install $(wildcard lib/lib*) "$(INSTALL_DIR)/lib"
+	install $(wildcard modules/*$(MOD_SUFFIX)) "$(INSTALL_DIR)/modules"
+	install selvad "$(INSTALL_DIR)/"
 	$(MAKE) -C locale LOCPATH=../$(INSTALL_DIR)/locale
 
 test:
