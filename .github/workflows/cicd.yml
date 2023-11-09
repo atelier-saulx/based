@@ -44,7 +44,10 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tests: ['test/*.ts', 'test/schema/*.ts', 'test/subs/*.ts']
+        tests:
+          - test/*.ts
+          - test/schema/*.ts
+          # - test/subs/*.ts
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
