@@ -74,10 +74,10 @@ jobs:
         with:
           name: selvad-build
           path: packages/server/selvad
+      - name: Setup selvad permissions
+        run: chmod +x selvad/selvad
       - run: ls -la packages/server
       - run: ls -la packages/server/selvad
-      # - name: Setup selvad permissions
-      #   run: chmod +x selvad/selvad
       - name: Install dependencies
         run: npm ci
       - name: Build based-db
