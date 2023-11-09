@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
         run: npm ci
@@ -89,7 +89,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
         run: npm ci
@@ -120,7 +120,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: '**/node_modules'
-          key: ${{ runner.os }}-${{ hashFiles('**/package-lock.json') }}
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
       - name: Install dependencies
         if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
         run: npm ci
