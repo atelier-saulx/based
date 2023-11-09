@@ -6,6 +6,12 @@ on:
     branches:
       - main
     types: ['opened', 'edited', 'reopened', 'synchronize', 'ready_for_review']
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - 'README.md'
+      - '.github/**'
 jobs:
   build-selva:
     name: Build Selvad
