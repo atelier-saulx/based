@@ -5,10 +5,6 @@ jobs:
   BuildSelva:
     runs-on: ubuntu-latest
     steps:
-      - name: Install gcc
-        run: |
-         sudo apt update
-         sudo apt install gcc-13
       - uses: actions/checkout@v4
       - name: Try selvad build cache
         id: cache-selvad-try
@@ -18,6 +14,11 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+      - name: Install gcc
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: |
+         sudo apt update
+         sudo apt install gcc-13
       - name: Use Node.js
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         uses: actions/setup-node@v3
@@ -28,12 +29,6 @@ jobs:
         run: npm run build-c
         env:
          CC: gcc-13
-      # - name: Archive selva binaries tar
-      #   uses: actions/upload-artifact@v3
-      #   with:
-      #     name: selvad-build
-      #     path: |
-      #       packages/server/selvad
       - name: Save selvad build cache
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         id: cache-selvad-save
@@ -42,31 +37,30 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
-  # MainTests:
-  #   needs: BuildSelva
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - uses: actions/checkout@v4
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: '18.x'
-  #     - name: Download selva binaries tar
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: selvad-build
-  #         path: packages/server/selvad
-  #     - name: Setup selvad permissions
-  #       run: chmod +x packages/server/selvad/selvad
-  #     - name: Install dependencies
-  #       run: npm ci
-  #     - name: Build based-db
-  #       run: npm run build
-  #     - name: Run client schema tests
-  #       run: |
-  #         cd packages/client
-  #         npm run test-ci -- test/*.ts
+  MainTests:
+    needs: BuildSelva
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            packages/server/selvad
+          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Build based-db
+        run: npm run build
+      - name: Run client schema tests
+        run: |
+          cd packages/client
+          npm run test-ci -- test/*.ts
   SchemaTests:
     needs: BuildSelva
     runs-on: ubuntu-latest
@@ -76,11 +70,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '18.x'
-      # - name: Download selva binaries tar
-      #   uses: actions/download-artifact@v3
-      #   with:
-      #     name: selvad-build
-      #     path: packages/server/selvad
       - name: Restore selvad build cache
         id: cache-selvad-try
         uses: actions/cache/restore@v3
@@ -88,10 +77,6 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - run: ls -la packages/server
-      - run: ls -la packages/server/selvad
-      - name: Setup selvad permissions
-        run: chmod +x packages/server/selvad/selvad
       - name: Install dependencies
         run: npm ci
       - name: Build based-db
@@ -100,28 +85,28 @@ jobs:
         run: |
           cd packages/client
           npm run test-ci -- test/schema/*.ts
-  # SubscriptionTests:
-  #   needs: BuildSelva
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Use Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: '18.x'
-  #     - name: Download selva binaries tar
-  #       uses: actions/download-artifact@v3
-  #       with:
-  #         name: selvad-build
-  #         path: packages/server/selvad
-  #     - name: Setup selvad permissions
-  #       run: chmod +x packages/server/selvad/selvad
-  #     - name: Install dependencies
-  #       run: npm ci
-  #     - name: Build based-db
-  #       run: npm run build
-  #     - name: Run client schema tests
-  #       run: |
-  #         cd packages/client
-  #         npm run test-ci -- test/subs/*.ts
+  SubscriptionTests:
+    needs: BuildSelva
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            packages/server/selvad
+          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+      - name: Install dependencies
+        run: npm ci
+      - name: Build based-db
+        run: npm run build
+      - name: Run client schema tests
+        run: |
+          cd packages/client
+          npm run test-ci -- test/subs/*.ts
   
