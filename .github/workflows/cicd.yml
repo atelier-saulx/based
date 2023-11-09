@@ -14,7 +14,7 @@ on:
       - '.github/**'
 jobs:
   build-selva:
-    name: Build Selvad
+    name: Build and Test Selvad
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
@@ -42,6 +42,12 @@ jobs:
         run: npm run build-c
         env:
          CC: gcc-13
+      - name: Test selva
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: |
+          cd selvad
+          make test
+          cd ..
       - name: Save selvad build cache
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         id: cache-selvad-save
