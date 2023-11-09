@@ -1,5 +1,5 @@
-name: CI/CD Parallel
-run-name: ${{ github.actor }} is running CI/CD 🚀
+name: CI/CD
+run-name: based-db CI/CD 🚀
 on:
   workflow_dispatch:
   pull_request_target:
@@ -9,6 +9,7 @@ on:
 jobs:
   build-selva:
     name: Build Selvad
+    if: github.event.pull_request_target.draft == false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,7 +79,7 @@ jobs:
         run: npm ci
       - name: Build based-db
         run: npm run build
-      - name: Run client schema tests
+      - name: Run tests
         run: |
           cd packages/client
           npm run test-ci -- ${{ matrix.tests }}
