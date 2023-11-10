@@ -20,6 +20,10 @@ export const updateListener = (
   previousChecksum?: number,
   isDeflate?: boolean
 ) => {
+  if (!server.uwsApp) {
+    return
+  }
+
   if (checksum === undefined) {
     if (data === undefined) {
       checksum = 0

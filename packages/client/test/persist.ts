@@ -130,9 +130,10 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
 
   t.is(x.length, 1e6)
 
-  await wait(500)
-  await client2.clearStorage()
-  await client2.destroy(true)
+  t.teardown(async () => {
+    await client2.clearStorage()
+    await client2.destroy(true)
+  })
 })
 
 test.serial('auth persist', async (t) => {
@@ -196,11 +197,6 @@ test.serial('auth persist', async (t) => {
     }
   )
 
-  t.teardown(async () => {
-    await client.clearStorage()
-    await server.destroy()
-  })
-
   await client.connect(opts)
   await client.call('login')
 
@@ -218,13 +214,16 @@ test.serial('auth persist', async (t) => {
 
   t.is(client2.authState.token, token)
 
-  t.teardown(async () => {
-    await client2.clearStorage()
-    await client2.destroy()
-  })
-
   // this is where its at
   console.log('call hello and not throw!')
 
   await t.notThrowsAsync(client2.call('hello'))
+
+  t.teardown(async () => {
+    await wait(300)
+    await client.clearStorage()
+    await server.destroy()
+    await client2.clearStorage()
+    await client2.destroy()
+  })
 })
