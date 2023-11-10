@@ -394,13 +394,13 @@ static char * test_range(void)
     pu_assert_equal("No error", err, RPN_ERR_OK);
     pu_assert_equal("1 <= 1 <= 10 == true", res, 1);
 
-    err = rpn_set_reg(ctx, 1, "10", 1, 0);
+    err = rpn_set_reg(ctx, 1, "10", 2, 0);
     pu_assert_equal("reg is set", err, RPN_ERR_OK);
     err = rpn_integer(ctx, expr, &res);
     pu_assert_equal("No error", err, RPN_ERR_OK);
     pu_assert_equal("1 <= 10 <= 10 == true", res, 1);
 
-    err = rpn_set_reg(ctx, 1, "11", 1, 0);
+    err = rpn_set_reg(ctx, 1, "11", 2, 0);
     pu_assert_equal("reg is set", err, RPN_ERR_OK);
     err = rpn_integer(ctx, expr, &res);
     pu_assert_equal("No error", err, RPN_ERR_OK);
