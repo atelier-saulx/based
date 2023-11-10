@@ -3,15 +3,40 @@ const client = based({
   url: 'ws://localhost:9910',
 })
 let firstLoad = false
-client.query('meta').subscribe((x, c) => {
-  if (firstLoad) {
-    window.location.reload()
+client.query('meta').subscribe(
+  (x, c) => {
+    if (firstLoad) {
+      window.location.reload()
+    }
+    firstLoad = true
+  },
+  (err) => {
+    console.error('??')
   }
-  firstLoad = true
-})
+)
 
 export const app = () => {
   const body = document.body
+
+  const login = document.createElement('button')
+
+  login.innerHTML = 'LOGIN'
+
+  login.onclick = () => {
+    client.call('login', { name: 'x', password: 'x' })
+  }
+
+  body.appendChild(login)
+
+  const logout = document.createElement('button')
+
+  logout.innerHTML = 'LOGOUT'
+
+  logout.onclick = () => {
+    client.setAuthState({})
+  }
+  body.appendChild(logout)
+
   const log = document.createElement('div')
   body.appendChild(log)
   const meta = document.createElement('pre')
@@ -19,6 +44,16 @@ export const app = () => {
   client.on('connect', (v) => {
     log.innerHTML += `<div>CONNECT: true</div>`
   })
+
+  client.query('counter').subscribe(
+    (d) => {
+      console.info(d)
+      log.innerHTML += `<div>cnt: ${d}</div>`
+    },
+    (err) => {
+      console.error(err)
+    }
+  )
 
   client.query('meta').subscribe((x, c) => {
     // @ts-ignore

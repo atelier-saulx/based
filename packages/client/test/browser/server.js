@@ -15,6 +15,10 @@ const client = based({
   url: 'ws://localhost:9910',
 })
 
+client.setAuthState({
+  token: 'mock_token',
+})
+
 const fn = async () => {
   await client.query('meta').get()
 
@@ -31,9 +35,22 @@ const fn = async () => {
 const start = async () => {
   const server = new BasedServer({
     port: 9910,
+    auth: {
+      // TODO: make this the default...
+      verifyAuthState: async (_, ctx, authState) => {
+        if (authState.token !== ctx.session?.authState.token) {
+          return { ...authState }
+        }
+        return true
+      },
+      authorize: async (_, ctx) => {
+        return ctx.session?.authState.token === 'mock_token'
+      },
+    },
     functions: {
       configs: {
         bundle: {
+          public: true,
           type: 'function',
           fn: async () => {
             return fs.readFile(join(__dirname, './out.js'), 'utf-8')
@@ -70,9 +87,36 @@ const start = async () => {
             }
           },
         },
+        login: {
+          type: 'function',
+          public: true,
+          fn: async (based, payload, ctx) => {
+            if (payload.name === 'x' && payload.password === 'x') {
+              based.renewAuthState(ctx, {
+                token: 'mock_token',
+                persistent: true,
+              })
+            }
+          },
+        },
+        counter: {
+          type: 'query',
+          closeAfterIdleTime: 60e3,
+          fn: async (based, payload, update) => {
+            let cnt = 0
+            update(cnt)
+            const interval = setInterval(() => {
+              update(++cnt)
+            }, 100)
+            return () => {
+              clearInterval(interval)
+            }
+          },
+        },
         hello2: {
           type: 'function',
           maxPayloadSize: 1e8,
+          public: true,
           path: '/',
           fn,
           httpResponse: async (_, __, data, send) => {

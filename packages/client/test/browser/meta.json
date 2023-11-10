@@ -547,7 +547,7 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 6062,
+      "bytes": 6117,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -918,7 +918,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 1114,
+      "bytes": 1708,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -1038,7 +1038,7 @@
           "bytesInOutput": 457
         },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 2977
+          "bytesInOutput": 2975
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
@@ -1065,10 +1065,10 @@
           "bytesInOutput": 2738
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 687
+          "bytesInOutput": 1017
         }
       },
-      "bytes": 37313
+      "bytes": 37641
     }
   }
 }

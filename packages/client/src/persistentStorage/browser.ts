@@ -105,6 +105,7 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
 }
 
 const initStorageBrowser = async (client: BasedClient) => {
+  console.info('INIT LS')
   const env = client.storageEnvKey
   if (!env) {
     return
@@ -211,6 +212,7 @@ export const updateStorage = async (
 ) => {}
 
 export const initStorage = async (client: BasedClient) => {
+  console.error('(NIT')
   return initStorageBrowser(client)
 }
 
