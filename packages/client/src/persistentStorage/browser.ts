@@ -12,12 +12,7 @@ const decoder = new TextDecoder('utf-8')
 const encoder = new TextEncoder()
 
 const decode = (dataURI: string): any => {
-  console.info('DECODE', dataURI)
-
   const uncompressed = decoder.decode(inflateSync(decodeBase64(dataURI)))
-
-  console.info(',,,x', uncompressed)
-
   const parsed = JSON.parse(uncompressed)
   return parsed
 }
@@ -155,9 +150,6 @@ const initStorageBrowser = async (client: BasedClient) => {
 
         if (key === CACHE_AUTH + '-' + env) {
           const authState = getStorageBrowser(client, key)
-
-          console.info('-------->', authState)
-
           if (authState) {
             client.setAuthState(authState).catch((err) => {
               console.error(err.message)
@@ -208,11 +200,7 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
   if (!env) {
     return
   }
-
   key += '-' + env
-
-  console.info(key)
-
   setStorageBrowser(client, key, value)
 }
 
