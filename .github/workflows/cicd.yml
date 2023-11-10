@@ -65,7 +65,7 @@ jobs:
         tests:
           - test/*.ts
           - test/schema/*.ts
-          # - test/subs/*.ts
+          - test/subs/*.ts
           - test/indexing/*.ts
     steps:
       - uses: actions/checkout@v4
