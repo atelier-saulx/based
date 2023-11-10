@@ -1,5 +1,5 @@
 import anyTest, { TestInterface } from 'ava'
-import { wait } from '@saulx/utils'
+import { deepCopy, wait } from '@saulx/utils'
 import { TestCtx, observe, startSubs } from '../assertions'
 import { BasedSchemaPartial } from '@based/schema'
 
@@ -8,6 +8,13 @@ const test = anyTest as TestInterface<TestCtx>
 const schema: BasedSchemaPartial = {
   language: 'en',
   types: {
+    thing: {
+      prefix: 'th',
+      fields: {
+        name: { type: 'string' },
+        subthings: { type: 'references' },
+      },
+    },
     league: {
       prefix: 'le',
       fields: {
@@ -164,4 +171,141 @@ test.serial('add new reference reverse', async (t) => {
 
   //console.log(await client.command('subscriptions.debug', [league]))
   t.deepEqual(res, { id: league, matches: [match] })
+})
+
+test.serial('find references recursive', async (t) => {
+  await startSubs(t, schema)
+  const client = t.context.dbClient
+
+  const mainThing = await client.set({
+    $id: 'thMain',
+    type: 'thing',
+    name: 'Main thing',
+    subthings: [
+      {
+        $id: 'th1',
+        type: 'thing',
+        name: 'sub 1',
+        subthings: [
+          {
+            $id: 'th2',
+            type: 'thing',
+            name: 'sub 2',
+            subthings: [
+              {
+                $id: 'th3',
+                type: 'thing',
+                name: 'sub 3',
+                subthings: [
+                  {
+                    $id: 'th4',
+                    type: 'thing',
+                    name: 'sub 4',
+                  },
+                  {
+                    $id: 'th6',
+                    type: 'thing',
+                    name: 'sub 6',
+                  },
+                  {
+                    $id: 'th7',
+                    type: 'thing',
+                    name: 'sub 7',
+                  },
+                ],
+              },
+              {
+                $id: 'th5',
+                type: 'thing',
+                name: 'sub 5',
+              },
+            ],
+          },
+          {
+            $id: 'th8',
+            type: 'thing',
+            name: 'sub 8',
+            subthings: [
+              {
+                $id: 'th10',
+                type: 'thing',
+                name: 'sub 10',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        $id: 'th9',
+        type: 'thing',
+        name: 'sub 9',
+      },
+    ],
+  })
+
+  const q = {
+    $id: mainThing,
+    items: {
+      name: true,
+      $list: {
+        $find: {
+          $traverse: 'subthings',
+          $recursive: true,
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'thing',
+            },
+          ],
+        },
+      },
+    },
+  }
+
+  let results: any[] = []
+  observe(t, q, (d) => {
+    console.log('ddd', d)
+    results.push(deepCopy(d))
+  })
+
+  await wait(1e3)
+
+  await client.set({
+    $id: 'th10',
+    name: 'sub 10!',
+  })
+
+  await wait(1e3)
+
+  t.deepEqualIgnoreOrder(results, [
+    {
+      items: [
+        { name: 'sub 1' },
+        { name: 'sub 2' },
+        { name: 'sub 3' },
+        { name: 'sub 4' },
+        { name: 'sub 5' },
+        { name: 'sub 6' },
+        { name: 'sub 7' },
+        { name: 'sub 8' },
+        { name: 'sub 9' },
+        { name: 'sub 10' },
+      ],
+    },
+    {
+      items: [
+        { name: 'sub 1' },
+        { name: 'sub 2' },
+        { name: 'sub 3' },
+        { name: 'sub 4' },
+        { name: 'sub 5' },
+        { name: 'sub 6' },
+        { name: 'sub 7' },
+        { name: 'sub 8' },
+        { name: 'sub 9' },
+        { name: 'sub 10!' },
+      ],
+    },
+  ])
 })
