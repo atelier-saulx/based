@@ -1025,13 +1025,13 @@
           "bytesInOutput": 1486
         },
         "dist/src/stream/uploadFileBrowser.js": {
-          "bytesInOutput": 1438
+          "bytesInOutput": 1290
         },
         "../../node_modules/isomorphic-ws/browser.js": {
           "bytesInOutput": 230
         },
         "dist/src/websocket/index.js": {
-          "bytesInOutput": 1130
+          "bytesInOutput": 979
         },
         "dist/src/Emitter.js": {
           "bytesInOutput": 688
@@ -1043,7 +1043,7 @@
           "bytesInOutput": 64
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1935
+          "bytesInOutput": 1754
         },
         "dist/src/authState/updateAuthState.js": {
           "bytesInOutput": 63
@@ -1052,25 +1052,22 @@
           "bytesInOutput": 1598
         },
         "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2248
+          "bytesInOutput": 2090
         },
         "node_modules/@saulx/diff/dist/src/applyPatch.js": {
-          "bytesInOutput": 1332
+          "bytesInOutput": 1236
         },
         "dist/src/incoming/protocol.js": {
           "bytesInOutput": 457
         },
-        "dist/src/getTargetInfo.js": {
-          "bytesInOutput": 186
-        },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 3085
+          "bytesInOutput": 2975
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
         },
         "dist/src/query/index.js": {
-          "bytesInOutput": 1687
+          "bytesInOutput": 1621
         },
         "dist/src/stream/types.js": {
           "bytesInOutput": 258
@@ -1088,13 +1085,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 2852
+          "bytesInOutput": 2738
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 1054
+          "bytesInOutput": 1019
         }
       },
-      "bytes": 39461
+      "bytes": 38216
     }
   }
 }
