@@ -1,9 +1,9 @@
 import { AuthState } from '../types/index.js'
-import { createEncoder } from '@saulx/utils'
+import { createEncoder, encodeBase64, decodeBase64 } from '@saulx/utils'
 
 export const decodeAuthState = (authState: string): AuthState => {
   try {
-    const str = global.atob(decodeURI(authState))
+    const str = new TextDecoder().decode(decodeBase64(decode(authState)))
     return JSON.parse(str)
   } catch (err) {
     return { error: 'Invalid authState' }
@@ -21,7 +21,7 @@ export const decodeAuthState = (authState: string): AuthState => {
 */
 // | HT (what is this?)
 
-const { encode } = createEncoder(
+const { encode, decode } = createEncoder(
   [
     '(',
     ')',
@@ -46,13 +46,7 @@ const { encode } = createEncoder(
 )
 
 export const encodeAuthState = (authState: AuthState): string => {
-  return encodeURI(
-    encode(
-      global.btoa(
-        String.fromCodePoint(
-          ...new TextEncoder().encode(JSON.stringify(authState))
-        )
-      )
-    )
+  return encode(
+    encodeBase64(new TextEncoder().encode(JSON.stringify(authState)))
   )
 }

@@ -270,8 +270,13 @@
       "imports": [],
       "format": "esm"
     },
+    "node_modules/@saulx/utils/dist/src/base64.js": {
+      "bytes": 2571,
+      "imports": [],
+      "format": "esm"
+    },
     "node_modules/@saulx/utils/dist/src/index.js": {
-      "bytes": 660,
+      "bytes": 689,
       "imports": [
         {
           "path": "node_modules/@saulx/utils/dist/src/deepCopy.js",
@@ -352,12 +357,17 @@
           "path": "node_modules/@saulx/utils/dist/src/path.js",
           "kind": "import-statement",
           "original": "./path.js"
+        },
+        {
+          "path": "node_modules/@saulx/utils/dist/src/base64.js",
+          "kind": "import-statement",
+          "original": "./base64.js"
         }
       ],
       "format": "esm"
     },
     "dist/src/authState/parseAuthState.js": {
-      "bytes": 1020,
+      "bytes": 1045,
       "imports": [
         {
           "path": "node_modules/@saulx/utils/dist/src/index.js",
@@ -542,12 +552,12 @@
       "format": "esm"
     },
     "dist/src/persistentStorage/constants.js": {
-      "bytes": 227,
+      "bytes": 225,
       "imports": [],
       "format": "esm"
     },
     "dist/src/persistentStorage/browser.js": {
-      "bytes": 6117,
+      "bytes": 6255,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -558,17 +568,27 @@
           "path": "dist/src/persistentStorage/constants.js",
           "kind": "import-statement",
           "original": "./constants.js"
+        },
+        {
+          "path": "node_modules/@saulx/utils/dist/src/index.js",
+          "kind": "import-statement",
+          "original": "@saulx/utils"
         }
       ],
       "format": "esm"
     },
     "dist/src/authState/updateAuthState.js": {
-      "bytes": 376,
+      "bytes": 424,
       "imports": [
         {
           "path": "dist/src/persistentStorage/browser.js",
           "kind": "import-statement",
           "original": "../persistentStorage/index.js"
+        },
+        {
+          "path": "dist/src/persistentStorage/constants.js",
+          "kind": "import-statement",
+          "original": "../persistentStorage/constants.js"
         }
       ],
       "format": "esm"
@@ -681,7 +701,7 @@
       "format": "esm"
     },
     "dist/src/incoming/index.js": {
-      "bytes": 12072,
+      "bytes": 12038,
       "imports": [
         {
           "path": "node_modules/fflate/esm/browser.js",
@@ -918,7 +938,7 @@
       "format": "esm"
     },
     "test/browser/index.ts": {
-      "bytes": 1708,
+      "bytes": 1688,
       "imports": [
         {
           "path": "dist/src/index.js",
@@ -986,8 +1006,11 @@
         "node_modules/@saulx/utils/dist/src/query.js": {
           "bytesInOutput": 393
         },
+        "node_modules/@saulx/utils/dist/src/base64.js": {
+          "bytesInOutput": 661
+        },
         "dist/src/authState/parseAuthState.js": {
-          "bytesInOutput": 203
+          "bytesInOutput": 168
         },
         "../fetch/browser.js": {
           "bytesInOutput": 13
@@ -1002,13 +1025,13 @@
           "bytesInOutput": 1486
         },
         "dist/src/stream/uploadFileBrowser.js": {
-          "bytesInOutput": 1290
+          "bytesInOutput": 1438
         },
         "../../node_modules/isomorphic-ws/browser.js": {
           "bytesInOutput": 230
         },
         "dist/src/websocket/index.js": {
-          "bytesInOutput": 979
+          "bytesInOutput": 1130
         },
         "dist/src/Emitter.js": {
           "bytesInOutput": 688
@@ -1017,34 +1040,37 @@
           "bytesInOutput": 8169
         },
         "dist/src/persistentStorage/constants.js": {
-          "bytesInOutput": 66
+          "bytesInOutput": 64
         },
         "dist/src/persistentStorage/browser.js": {
-          "bytesInOutput": 1773
+          "bytesInOutput": 1935
         },
         "dist/src/authState/updateAuthState.js": {
-          "bytesInOutput": 95
+          "bytesInOutput": 63
         },
         "dist/src/outgoing/protocol.js": {
           "bytesInOutput": 1598
         },
         "dist/src/outgoing/index.js": {
-          "bytesInOutput": 2090
+          "bytesInOutput": 2248
         },
         "node_modules/@saulx/diff/dist/src/applyPatch.js": {
-          "bytesInOutput": 1236
+          "bytesInOutput": 1332
         },
         "dist/src/incoming/protocol.js": {
           "bytesInOutput": 457
         },
+        "dist/src/getTargetInfo.js": {
+          "bytesInOutput": 186
+        },
         "dist/src/incoming/index.js": {
-          "bytesInOutput": 2975
+          "bytesInOutput": 3085
         },
         "dist/src/genObserveId.js": {
           "bytesInOutput": 40
         },
         "dist/src/query/index.js": {
-          "bytesInOutput": 1621
+          "bytesInOutput": 1687
         },
         "dist/src/stream/types.js": {
           "bytesInOutput": 258
@@ -1062,13 +1088,13 @@
           "bytesInOutput": 1098
         },
         "dist/src/index.js": {
-          "bytesInOutput": 2738
+          "bytesInOutput": 2852
         },
         "test/browser/index.ts": {
-          "bytesInOutput": 1017
+          "bytesInOutput": 1054
         }
       },
-      "bytes": 37641
+      "bytes": 39461
     }
   }
 }

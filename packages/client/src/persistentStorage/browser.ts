@@ -6,13 +6,18 @@ import {
   CACHE_NAME,
   CACHE_AUTH,
 } from './constants.js'
+import { encodeBase64, decodeBase64 } from '@saulx/utils'
 
-const decoder = new TextDecoder()
+const decoder = new TextDecoder('utf-8')
 const encoder = new TextEncoder()
 
 const decode = (dataURI: string): any => {
-  const data = global.atob(dataURI)
-  const uncompressed = decoder.decode(inflateSync(encoder.encode(data)))
+  console.info('DECODE', dataURI)
+
+  const uncompressed = decoder.decode(inflateSync(decodeBase64(dataURI)))
+
+  console.info(',,,x', uncompressed)
+
   const parsed = JSON.parse(uncompressed)
   return parsed
 }
@@ -52,11 +57,10 @@ const setStorageBrowser = (client: BasedClient, key: string, value: any) => {
 
     const prev = localStorage.getItem(key)
     const stringifiedJson = JSON.stringify(value)
+
     const encoded =
-      stringifiedJson.length > 70 || key === CACHE_AUTH + env
-        ? global.btoa(
-            decoder.decode(deflateSync(encoder.encode(stringifiedJson)))
-          )
+      stringifiedJson.length > 70 || key === CACHE_AUTH + '-' + env
+        ? encodeBase64(deflateSync(encoder.encode(stringifiedJson)))
         : stringifiedJson
 
     const blob = new Blob([encoded])
@@ -72,14 +76,14 @@ const setStorageBrowser = (client: BasedClient, key: string, value: any) => {
       clearStorageBrowser()
       client.storageSize = 0
       if (client.authState.persistent === true) {
-        setStorageBrowser(client, CACHE_AUTH + env, client.authState)
+        setStorageBrowser(client, CACHE_AUTH + '-' + env, client.authState)
       }
       client.storageSize += size
     }
     localStorage.setItem(CACHE_SIZE, String(client.storageSize))
     localStorage.setItem(key, encoded)
   } catch (err) {
-    // console.error(`Based - Error writing ${key} to localStorage`, err)
+    console.error(`Based - Error writing ${key} to localStorage`, err)
   }
 }
 
@@ -91,7 +95,7 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
   try {
     const value = localStorage.getItem(key)
     if (value !== undefined) {
-      if (value.length < 70 && key !== CACHE_AUTH + env) {
+      if (value.length < 70 && key !== CACHE_AUTH + '-' + env) {
         try {
           return JSON.parse(value)
         } catch (err) {}
@@ -105,7 +109,6 @@ const getStorageBrowser = (client: BasedClient, key: string): any => {
 }
 
 const initStorageBrowser = async (client: BasedClient) => {
-  console.info('INIT LS')
   const env = client.storageEnvKey
   if (!env) {
     return
@@ -150,8 +153,11 @@ const initStorageBrowser = async (client: BasedClient) => {
           continue
         }
 
-        if (key === CACHE_AUTH + env) {
+        if (key === CACHE_AUTH + '-' + env) {
           const authState = getStorageBrowser(client, key)
+
+          console.info('-------->', authState)
+
           if (authState) {
             client.setAuthState(authState).catch((err) => {
               console.error(err.message)
@@ -202,7 +208,11 @@ export const setStorage = (client: BasedClient, key: string, value: any) => {
   if (!env) {
     return
   }
+
   key += '-' + env
+
+  console.info(key)
+
   setStorageBrowser(client, key, value)
 }
 
@@ -212,7 +222,6 @@ export const updateStorage = async (
 ) => {}
 
 export const initStorage = async (client: BasedClient) => {
-  console.error('(NIT')
   return initStorageBrowser(client)
 }
 

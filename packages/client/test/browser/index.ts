@@ -47,8 +47,7 @@ export const app = () => {
 
   client.query('counter').subscribe(
     (d) => {
-      console.info(d)
-      log.innerHTML += `<div>cnt: ${d}</div>`
+      log.innerHTML += `<span>cnt: ${d}</span>`
     },
     (err) => {
       console.error(err)

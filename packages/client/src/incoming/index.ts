@@ -1,6 +1,5 @@
 import { BasedClient } from '../index.js'
 import { inflateSync } from 'fflate'
-// add diff to the bundle as well
 import { applyPatch } from '@saulx/diff'
 import { deepEqual } from '@saulx/utils'
 import { updateAuthState } from '../authState/updateAuthState.js'
