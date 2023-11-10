@@ -36,6 +36,13 @@ test.beforeEach(async (t) => {
       fields: {},
     },
     types: {
+      thing: {
+        prefix: 'th',
+        fields: {
+          name: { type: 'string' },
+          subthings: { type: 'references' },
+        },
+      },
       league: {
         prefix: 'le',
         fields: {
@@ -304,4 +311,98 @@ test('find - references', async (t) => {
     ],
     'Nested query'
   )
+})
+
+test('find references recursive', async (t) => {
+  const { client } = t.context
+
+  const mainThing = await client.set({
+    type: 'thing',
+    name: 'Main thing',
+    subthings: [
+      {
+        type: 'thing',
+        name: 'sub 1',
+        subthings: [
+          {
+            type: 'thing',
+            name: 'sub 2',
+            subthings: [
+              {
+                type: 'thing',
+                name: 'sub 3',
+                subthings: [
+                  {
+                    type: 'thing',
+                    name: 'sub 4',
+                  },
+                  {
+                    type: 'thing',
+                    name: 'sub 6',
+                  },
+                  {
+                    type: 'thing',
+                    name: 'sub 7',
+                  },
+                ],
+              },
+              {
+                type: 'thing',
+                name: 'sub 5',
+              },
+            ],
+          },
+          {
+            type: 'thing',
+            name: 'sub 8',
+            subthings: [
+              {
+                type: 'thing',
+                name: 'sub 10',
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'thing',
+        name: 'sub 9',
+      },
+    ],
+  })
+
+  const q = {
+    $id: mainThing,
+    items: {
+      name: true,
+      $list: {
+        $find: {
+          $traverse: 'subthings',
+          $recursive: true,
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'thing',
+            },
+          ],
+        },
+      },
+    },
+  }
+
+  t.deepEqualIgnoreOrder(await client.get(q), {
+    items: [
+      { name: 'sub 1' },
+      { name: 'sub 2' },
+      { name: 'sub 3' },
+      { name: 'sub 4' },
+      { name: 'sub 5' },
+      { name: 'sub 6' },
+      { name: 'sub 7' },
+      { name: 'sub 8' },
+      { name: 'sub 9' },
+      { name: 'sub 10' },
+    ],
+  })
 })

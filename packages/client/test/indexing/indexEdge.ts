@@ -88,13 +88,13 @@ test.skip('find references', async (t) => {
                     type: 'thing',
                     name: 'sub 7',
                   },
-                ]
+                ],
               },
               {
                 type: 'thing',
                 name: 'sub 5',
-              }
-            ]
+              },
+            ],
           },
           {
             type: 'thing',
@@ -103,16 +103,16 @@ test.skip('find references', async (t) => {
               {
                 type: 'thing',
                 name: 'sub 10',
-              }
-            ]
+              },
+            ],
           },
-        ]
+        ],
       },
       {
         type: 'thing',
         name: 'sub 9',
       },
-    ]
+    ],
   })
 
   const q = {
@@ -136,23 +136,20 @@ test.skip('find references', async (t) => {
   }
 
   for (let i = 0; i < 300; i++) {
-    t.deepEqualIgnoreOrder(
-      await client.get(q),
-      {
-        items: [
-          { name: 'sub 1' },
-          { name: 'sub 2' },
-          { name: 'sub 3' },
-          { name: 'sub 4' },
-          { name: 'sub 5' },
-          { name: 'sub 6' },
-          { name: 'sub 7' },
-          { name: 'sub 8' },
-          { name: 'sub 9' },
-          { name: 'sub 10' },
-        ]
-      }
-    )
+    t.deepEqualIgnoreOrder(await client.get(q), {
+      items: [
+        { name: 'sub 1' },
+        { name: 'sub 2' },
+        { name: 'sub 3' },
+        { name: 'sub 4' },
+        { name: 'sub 5' },
+        { name: 'sub 6' },
+        { name: 'sub 7' },
+        { name: 'sub 8' },
+        { name: 'sub 9' },
+        { name: 'sub 10' },
+      ],
+    })
     await wait(1)
   }
 
