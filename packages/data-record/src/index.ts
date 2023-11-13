@@ -19,6 +19,10 @@ export {
 	createWriter,
 } from './accessors.js'
 
+export * from './mach.js'
+
+export * from './types.js'
+
 export function allocRecord(
 	compiledDef: CompiledRecordDef,
 	opts?: { unpool?: boolean; heapSize?: number }

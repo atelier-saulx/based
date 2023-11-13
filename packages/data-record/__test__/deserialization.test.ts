@@ -1,4 +1,4 @@
-import { compile, createRecord, deserialize } from '../src/index';
+import { compile, createRecord, deserialize } from '../'
 
 test('deserialization can deconstruct the object it serialized', () => {
 	const recordDef = [
@@ -19,12 +19,16 @@ test('deserialization can deconstruct the object it serialized', () => {
 			type: 'record',
 			def: [
 				{ name: 'a', type: 'uint32_le' },
-				{ name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+				{
+					name: 'y',
+					type: 'record',
+					def: [{ name: 'a', type: 'uint32_le' }],
+				},
 			],
 		},
-	];
+	]
 
-	const compiled = compile(recordDef, { align: false });
+	const compiled = compile(recordDef, { align: false })
 
 	const obj1 = {
 		a: 4,
@@ -41,44 +45,44 @@ test('deserialization can deconstruct the object it serialized', () => {
 				a: 5,
 			},
 		},
-	};
+	}
 
-	const buf = createRecord(compiled, obj1);
-	const obj2 = deserialize(compiled, buf);
+	const buf = createRecord(compiled, obj1)
+	const obj2 = deserialize(compiled, buf)
 
-	expect(obj1).toEqual(obj2);
-});
+	expect(obj1).toEqual(obj2)
+})
 
 test('A string can be reconstructed', () => {
 	const recordDef = [
 		{ name: 'a', type: 'uint32_le' },
 		{ name: 'firstName', type: 'cstring', size: 15 },
-	];
+	]
 	const obj = {
 		a: 4,
 		firstName: 'Olli',
-	};
+	}
 
-	const compiled = compile(recordDef, { align: false });
-	const buf = createRecord(compiled, obj);
-	const deser = deserialize(compiled, buf);
+	const compiled = compile(recordDef, { align: false })
+	const buf = createRecord(compiled, obj)
+	const deser = deserialize(compiled, buf)
 
-	expect(deser.a).toBe(4);
-	expect(deser.firstName.toString('utf8')).toBe('Olli');
-});
+	expect(deser.a).toBe(4)
+	expect(deser.firstName.toString('utf8')).toBe('Olli')
+})
 
 test('An integer array can be reconstructed', () => {
-	const recordDef = [{ name: 'a', type: 'uint16_be[4]' }];
+	const recordDef = [{ name: 'a', type: 'uint16_be[4]' }]
 	const obj = {
 		a: [0xbeef, 0xface, 0xcafe, 0xf00d],
-	};
+	}
 
-	const compiled = compile(recordDef, { align: false });
-	expect(compiled.size).toBe(4 * 2);
+	const compiled = compile(recordDef, { align: false })
+	expect(compiled.size).toBe(4 * 2)
 
-	const buf = createRecord(compiled, obj);
-	expect(buf.toString('hex')).toBe('beeffacecafef00d');
+	const buf = createRecord(compiled, obj)
+	expect(buf.toString('hex')).toBe('beeffacecafef00d')
 
-	const deser = deserialize(compiled, buf);
-	expect(deser.a).toEqual([0xbeef, 0xface, 0xcafe, 0xf00d]);
-});
+	const deser = deserialize(compiled, buf)
+	expect(deser.a).toEqual([0xbeef, 0xface, 0xcafe, 0xf00d])
+})

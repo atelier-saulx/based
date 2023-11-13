@@ -18,26 +18,18 @@
     "dist/"
   ],
   "scripts": {
-    "build": "rm -rf ./lib && tsc",
+    "watch": "npx tsc --watch",
+    "build": "rm -rf ./dist && tsc",
     "perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
     "test": "jest --runInBand --clearCache && jest --coverage",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "prettier": "@saulx/prettier-config",
   "devDependencies": {
-    "@types/jest": "27.0.3",
-    "@types/node": "16.11.11",
-    "jest": "27.4.3",
-    "tmp-promise": "3.0.3",
-    "ts-jest": "27.0.7",
-    "ts-node": "10.9.1",
-    "rimraf": "^3.0.2",
+    "ava": "5.3.1",
     "@saulx/tsconfig": "^1.0.6",
     "@saulx/prettier-config": "^1.0.0",
-    "typescript": "^5.2.2"
-  },
-  "jest": {
-    "preset": "ts-jest",
-    "verbose": true
+    "typescript": "^5.2.2",
+    "rimraf": "^3.0.2"
   }
 }
