@@ -1,3 +1,3 @@
-import type fetch from 'node-fetch'
+import fetch from 'node-fetch'
 
 export default fetch

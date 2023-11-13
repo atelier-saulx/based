@@ -29,11 +29,11 @@ export default async (
     q = '?' + serializeQuery(options.payload)
   }
 
-  // @ts-ignore
   const result = await fetch(url + '/' + name + q, {
     method: 'POST',
     cache: 'no-cache',
     headers,
+    // @ts-ignore
     body: options.contents,
   }).then((t) => t.text())
 
