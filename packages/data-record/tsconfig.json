@@ -1,22 +1,11 @@
 {
+  "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
-    "declaration": true,
+    "outDir": "dist",
     "esModuleInterop": true,
-    "lib": ["esnext"],
-    "module": "CommonJS",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "strictNullChecks": true,
-    "noImplicitAny": true,
-    "noUnusedLocals": false,
-    "noUnusedParameters": true,
-    "removeComments": true,
-    "outDir": "./lib",
-    "strict": true,
-    "target": "ES2018",
-    "inlineSourceMap": true,
-    "types": ["node", "@types/jest"],
-    "typeRoots": ["node_modules/@types"]
+    "allowJs": true,
+    "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["./src"]
+  "include": ["./src"],
+  "exclude": ["./dist", "__test__", "__perf__"]
 }

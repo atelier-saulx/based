@@ -1,4 +1,4 @@
-import { ENDIANNESS, WORD_SIZE } from './mach'
+import { ENDIANNESS, WORD_SIZE } from './mach.js'
 
 /**
  * Encodings accepted by Record read and write operations.

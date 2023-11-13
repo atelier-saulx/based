@@ -1,16 +1,14 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import { CompiledRecordDef } from './compiler'
-import { serialize, getNode } from './serializer'
-import { isPointerType, SIZES } from './types'
+import { CompiledRecordDef } from './compiler.js'
+import { serialize, getNode } from './serializer.js'
+import { isPointerType, SIZES } from './types.js'
 export {
 	RecordDef,
 	CompiledRecordDef,
 	compile,
 	generateRecordDef,
 	generateCHeader,
-} from './compiler'
-export { serialize, deserialize } from './serializer'
+} from './compiler.js'
+export { serialize, deserialize } from './serializer.js'
 export {
 	readValue,
 	writeValue,
@@ -19,7 +17,7 @@ export {
 	createReader,
 	createStringReader,
 	createWriter,
-} from './accessors'
+} from './accessors.js'
 
 export function allocRecord(
 	compiledDef: CompiledRecordDef,

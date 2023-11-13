@@ -1,7 +1,9 @@
-/* eslint-disable no-unused-vars */
-/* eslint-disable @typescript-eslint/no-unused-vars */
-/* eslint-disable camelcase */
-import { ENDIANNESS, WORD_SIZE, memalign_padding, memalign_word } from './mach'
+import {
+	ENDIANNESS,
+	WORD_SIZE,
+	memalign_padding,
+	memalign_word,
+} from './mach.js'
 import {
 	FieldTypeCode,
 	TYPES,
@@ -10,7 +12,7 @@ import {
 	isVirtualType,
 	isPointerType,
 	C_TYPES,
-} from './types'
+} from './types.js'
 
 export interface RecordDef {
 	name: string
@@ -385,7 +387,7 @@ export function generateCHeader(
 
 	code.push(`struct ${recordName} {\n`)
 	for (const [
-		offset,
+		_offset,
 		size,
 		arrSize,
 		typeCode,
