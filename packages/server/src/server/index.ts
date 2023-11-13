@@ -11,7 +11,7 @@ import { ServerOptions } from '../types'
 import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
-import { mkdirSync } from 'fs'
+import { mkdirSync, existsSync } from 'fs'
 
 export class SelvaServer extends EventEmitter {
   public pm: ChildProcess
@@ -49,7 +49,14 @@ export class SelvaServer extends EventEmitter {
       mkdirSync(this.backupDir, { recursive: true })
     }
 
-    const execPath = path.join(__dirname, '..', '..', 'selvad', 'selvad')
+    const execPath = path.join(
+      __dirname,
+      '..',
+      '..',
+      'selvad',
+      'local',
+      'selvad'
+    )
 
     this.pm = spawn(execPath, [], {
       env: {
@@ -58,8 +65,10 @@ export class SelvaServer extends EventEmitter {
           LOCPATH: path.join(
             execPath,
             '..',
-            'binaries',
-            'Linux_x86_64',
+            '..',
+            existsSync(path.join(execPath, '..', '..', 'Linux_x86_64'))
+              ? 'Linux_x86_64'
+              : 'local',
             'locale'
           ),
           SELVA_PORT: String(this.port),
