@@ -13,17 +13,17 @@
     "struct"
   ],
   "repository": "https://github.com/atelier-saulx/based/tree/main/packages/data-record",
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "files": [
-    "lib/"
+    "dist/"
   ],
-  "prettier": "@saulx/prettier-config",
   "scripts": {
     "build": "rm -rf ./lib && tsc",
     "perf": "node --prof ./node_modules/.bin/ts-node __perf__/",
     "test": "jest --runInBand --clearCache && jest --coverage",
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
+  "prettier": "@saulx/prettier-config",
   "devDependencies": {
     "@types/jest": "27.0.3",
     "@types/node": "16.11.11",
