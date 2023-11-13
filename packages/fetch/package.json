@@ -1,6 +1,6 @@
 {
   "name": "@based/fetch",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "CF worker compatible cross-fetch",
   "author": "Tony Kovanen",
   "license": "ISC",
@@ -9,6 +9,13 @@
   "repository": "https://github.com/atelier-saulx/based/tree/main/packages/fetch",
   "main": "index.js",
   "browser": "browser.js",
+  "files": [
+    "index.d.ts",
+    "index.js",
+    "browser.js",
+    "README.md",
+    "package.json"
+  ],
   "scripts": {
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
@@ -16,6 +23,6 @@
     "node-fetch": "^3.3.2"
   },
   "devDependencies": {
-    "rimraf": "^3.0.2"
+    "@saulx/prettier-config": "^1.0.0"
   }
 }
