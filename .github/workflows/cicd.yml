@@ -57,16 +57,17 @@ jobs:
             packages/server/selvad
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
   run-tests:
-    name: Run ${{ matrix.tests }} tests
+    name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
     needs: build-selva
     runs-on: ubuntu-latest
     strategy:
       matrix:
         tests:
-          - test/*.ts
-          - test/schema/*.ts
-          - test/subs/*.ts
-          - test/indexing/*.ts
+          - ["packages/client","test/*.ts"]
+          - ["packages/client", "test/schema/*.ts"]
+          - ["packages/client", "test/subs/*.ts"]
+          - ["packages/client", "test/indexing/*.ts"]
+          - ["packages/schema", "test/*.ts"]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js
@@ -93,6 +94,6 @@ jobs:
         run: npm run build
       - name: Run tests
         run: |
-          cd packages/client
-          npm run test-ci -- ${{ matrix.tests }}
+          cd ${{ matrix.tests[0] }}
+          npm run test-ci -- ${{ matrix.tests[1] }}
  # add make test
