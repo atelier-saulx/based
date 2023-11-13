@@ -1,26 +1,36 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import { mkdir } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
+test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 
   await mkdir(persistentStorage).catch(() => {})
   const opts = {
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   }
   const client = new BasedClient(opts, {
     persistentStorage,
   })
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         counter: {
@@ -136,13 +146,13 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
   })
 })
 
-test.serial('auth persist', async (t) => {
+test('auth persist', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
   await mkdir(persistentStorage).catch(() => {})
 
   const token = 'this is token'
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     auth: {
       verifyAuthState: async (_, ctx, authState) => {
         if (authState.token !== ctx.session?.authState.token) {
@@ -186,7 +196,7 @@ test.serial('auth persist', async (t) => {
 
   const opts = {
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   }
 

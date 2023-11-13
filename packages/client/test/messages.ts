@@ -1,12 +1,21 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('message incoming/outgoing', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('message incoming/outgoing', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         a: {
@@ -44,7 +53,7 @@ test.serial('message incoming/outgoing', async (t) => {
 
   client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 

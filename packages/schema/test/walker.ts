@@ -121,7 +121,7 @@ const schema: BasedSchema = {
   },
 }
 
-test('backtracking', async (t) => {
+test('backtracking', async (t: T) => {
   const results: any[] = []
 
   const setObj = {
@@ -238,7 +238,7 @@ test('backtracking', async (t) => {
   t.deepEqual(results, results3)
 })
 
-test.only('parseTop update target', async (t) => {
+test.only('parseTop update target', async (t: T) => {
   const parsed: { path: (number | string)[]; target: any }[] = []
   await walk<any>(
     schema,
@@ -300,7 +300,7 @@ test.only('parseTop update target', async (t) => {
   ])
 })
 
-test.serial('perf setWalker', async (t) => {
+test('perf setWalker', async (t: T) => {
   let d = Date.now()
   let collected = 0
   let errs = 0

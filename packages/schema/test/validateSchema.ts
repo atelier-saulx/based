@@ -1,7 +1,7 @@
 import test from 'ava'
 import { validateSchema } from '../src/index'
 
-test.serial('throw on invalid schema', async (t) => {
+test('throw on invalid schema', async (t: T) => {
   const prefixError = t.throws(() => {
     validateSchema({
       $defs: {

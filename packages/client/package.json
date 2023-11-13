@@ -24,7 +24,6 @@
     ".": "./dist/src/index.js"
   },
   "ava": {
-    "concurrency": 1,
     "timeout": "2m",
     "workerThreads": false,
     "files": [
@@ -47,6 +46,7 @@
     "ws": "^8.13.0"
   },
   "devDependencies": {
+    "get-port": "7.0.0",
     "microbundle": "^0.15.1",
     "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",

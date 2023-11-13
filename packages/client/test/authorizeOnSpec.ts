@@ -1,12 +1,21 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('Specific authorize on spec', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('Specific authorize on spec', async (t: T) => {
   let authCalled = 0
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     rateLimit: {
       ws: 1e9,
       drain: 1e3,
@@ -72,7 +81,7 @@ test.serial('Specific authorize on spec', async (t) => {
   })
   await server.start()
   const client = new BasedClient({
-    url: 'ws://localhost:9910',
+    url: t.context.ws,
   })
 
   await client.call('hello', 'snurp')

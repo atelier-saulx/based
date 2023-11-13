@@ -59,7 +59,7 @@ const schema: BasedSchema = {
 
 //todo need help typing this maybe
 
-test('min-max', async (t) => {
+test('min-max', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     number: 1,
@@ -88,7 +88,7 @@ test('min-max', async (t) => {
   ])
 })
 
-test('min-max exclusive', async (t) => {
+test('min-max exclusive', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     exclusiveminmax: 3,
@@ -117,7 +117,7 @@ test('min-max exclusive', async (t) => {
   ])
 })
 
-test('isInteger', async (t) => {
+test('isInteger', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     integer: 6.5,
@@ -132,7 +132,7 @@ test('isInteger', async (t) => {
   t.deepEqual(resultCollect(res1), [{ path: ['integer'], value: 5 }])
 })
 
-test('isMultiple', async (t) => {
+test('isMultiple', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     multipleOf: 7,
@@ -148,7 +148,7 @@ test('isMultiple', async (t) => {
 })
 
 //TODO fix
-test('numbers in a set', async (t) => {
+test('numbers in a set', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     set: [9, 4, 5, 2],
@@ -161,7 +161,7 @@ test('numbers in a set', async (t) => {
   ])
 })
 //TODO fix
-test('value', async (t) => {
+test('value', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     number: { $value: 7 },
@@ -216,7 +216,7 @@ test('value', async (t) => {
   ])
 })
 
-test('default', async (t) => {
+test('default', async (t: T) => {
   const e1 = await setWalker(schema, {
     $id: 'bl1',
     number: { $default: 7 },
@@ -272,7 +272,7 @@ test('default', async (t) => {
   ])
 })
 
-test('decrement', async (t) => {
+test('decrement', async (t: T) => {
   //maxmin
   const e1 = await setWalker(schema, {
     $id: 'bl1',
@@ -333,7 +333,7 @@ test('decrement', async (t) => {
   ])
 })
 
-test('increment', async (t) => {
+test('increment', async (t: T) => {
   //maxmin
   const e1 = await setWalker(schema, {
     $id: 'bl1',
@@ -394,7 +394,7 @@ test('increment', async (t) => {
   ])
 })
 
-test('NaN', async (t) => {
+test('NaN', async (t: T) => {
   const r = await setWalker(schema, {
     $id: 'bl120',
     integer: NaN,
@@ -402,7 +402,7 @@ test('NaN', async (t) => {
   t.is(r.errors.length, 1)
 })
 
-test('Infinity (integer)', async (t) => {
+test('Infinity (integer)', async (t: T) => {
   const r = await setWalker(schema, {
     $id: 'bl120',
     integer: Infinity,
@@ -410,7 +410,7 @@ test('Infinity (integer)', async (t) => {
   t.is(r.errors.length, 1)
 })
 
-test('Infinity (number)', async (t) => {
+test('Infinity (number)', async (t: T) => {
   const r = await setWalker(schema, {
     $id: 'bl120',
     infiniteNum: Infinity,
@@ -418,7 +418,7 @@ test('Infinity (number)', async (t) => {
   t.is(r.errors.length, 1)
 })
 
-test('number -infinity', async (t) => {
+test('number -infinity', async (t: T) => {
   const r = await setWalker(schema, {
     $id: 'bl120',
     infiniteNum: -Infinity,
@@ -426,7 +426,7 @@ test('number -infinity', async (t) => {
   t.is(r.errors.length, 1)
 })
 
-test('number with max infinity', async (t) => {
+test('number with max infinity', async (t: T) => {
   const r = await setWalker(schema, {
     $id: 'bl120',
     number: Infinity,

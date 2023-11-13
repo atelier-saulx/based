@@ -1,4 +1,4 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { BasedClient } from '../src/index.js'
 import { wait, readStream } from '@saulx/utils'
@@ -6,14 +6,23 @@ import { Duplex } from 'node:stream'
 import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'url'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
 
 const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
-test.serial('stream functions - buffer contents', async (t) => {
+test('stream functions - buffer contents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -34,7 +43,7 @@ test.serial('stream functions - buffer contents', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const bigBod: any[] = []
   for (let i = 0; i < 10; i++) {
@@ -55,11 +64,11 @@ test.serial('stream functions - buffer contents', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream functions - streamContents', async (t) => {
+test('stream functions - streamContents', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -84,7 +93,7 @@ test.serial('stream functions - streamContents', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const bigBod: any[] = []
   for (let i = 0; i < 1000; i++) {
@@ -130,9 +139,9 @@ test.serial('stream functions - streamContents', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream functions - streamContents error', async (t) => {
+test('stream functions - streamContents error', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -149,7 +158,7 @@ test.serial('stream functions - streamContents error', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const bigBod: any[] = []
   for (let i = 0; i < 1000; i++) {
@@ -189,9 +198,9 @@ test.serial('stream functions - streamContents error', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream functions - path', async (t) => {
+test('stream functions - path', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -210,7 +219,7 @@ test.serial('stream functions - path', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const s = await client.stream('hello', {
     payload: { power: true },
@@ -226,9 +235,9 @@ test.serial('stream functions - path', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream functions - path json', async (t) => {
+test('stream functions - path json', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -247,7 +256,7 @@ test.serial('stream functions - path json', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const s = await client.stream('hello', {
     payload: { power: true },

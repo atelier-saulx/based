@@ -45,7 +45,7 @@ const schema: BasedSchema = {
   },
 }
 
-test('simple setNum', async (t) => {
+test('simple setNum', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: [1, 2, 3, 4, 5],
@@ -57,7 +57,7 @@ test('simple setNum', async (t) => {
   ])
 })
 
-test('default arr', async (t) => {
+test('default arr', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     setOfNumbers: { $add: 20 },
@@ -69,7 +69,7 @@ test('default arr', async (t) => {
   ])
 })
 
-test('$merge on object', async (t) => {
+test('$merge on object', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     x: {
@@ -88,7 +88,7 @@ test('$merge on object', async (t) => {
   ])
 })
 
-test('$merge on set', async (t) => {
+test('$merge on set', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $merge: false,

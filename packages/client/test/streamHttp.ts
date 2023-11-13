@@ -1,17 +1,26 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { wait, readStream } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
 
 const gzip = promisify(zlib.gzip)
 
-test.serial('stream functions (small over http + file)', async (t) => {
+test('stream functions (small over http + file)', async (t: T) => {
   const progressEvents: number[] = []
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -31,7 +40,7 @@ test.serial('stream functions (small over http + file)', async (t) => {
   await server.start()
 
   const result = await (
-    await fetch('http://localhost:9910/hello?bla', {
+    await fetch(t.context.http + '/hello?bla', {
       method: 'post',
       headers: {
         'content-type': 'application/json',
@@ -49,11 +58,11 @@ test.serial('stream functions (small over http + file)', async (t) => {
   server.destroy()
 })
 
-test.serial('stream functions (over http + stream)', async (t) => {
+test('stream functions (over http + stream)', async (t: T) => {
   let progressEvents: number[] = []
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -81,7 +90,7 @@ test.serial('stream functions (over http + stream)', async (t) => {
   }
 
   const result = await (
-    await fetch('http://localhost:9910/hello', {
+    await fetch(t.context.http + '/hello', {
       method: 'post',
       headers: {
         'content-type': 'application/json',
@@ -101,7 +110,7 @@ test.serial('stream functions (over http + stream)', async (t) => {
 
   try {
     const resultBrotli = await (
-      await fetch('http://localhost:9910/hello', {
+      await fetch(t.context.http + '/hello', {
         method: 'post',
         headers: {
           'content-encoding': 'gzip',

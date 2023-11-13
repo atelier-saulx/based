@@ -86,7 +86,7 @@ const schema: BasedSchema = {
 
 let r
 
-test('enum simple', async (t) => {
+test('enum simple', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: 'tony',
@@ -96,7 +96,7 @@ test('enum simple', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: 0 }])
 })
 
-test('enum not exist error', async (t) => {
+test('enum not exist error', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: 'kyle',
@@ -104,7 +104,7 @@ test('enum not exist error', async (t) => {
   t.true(r.errors.length === 1)
 })
 
-test('default enum', async (t) => {
+test('default enum', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $default: 'tony' },
@@ -113,7 +113,7 @@ test('default enum', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: { $default: 0 } }])
 })
 
-test('value enum ', async (t) => {
+test('value enum ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $value: 'tony' },
@@ -123,7 +123,7 @@ test('value enum ', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: 0 }])
 })
 
-test('value &  default enum ', async (t) => {
+test('value &  default enum ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $default: 'jim', $value: 'tony' },
@@ -132,7 +132,7 @@ test('value &  default enum ', async (t) => {
   t.true(r.errors.length === 2)
 })
 
-test('$value & $default enum ', async (t) => {
+test('$value & $default enum ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $value: { $default: 'tony' } },
@@ -141,7 +141,7 @@ test('$value & $default enum ', async (t) => {
   t.deepEqual(resultCollect(r), [{ path: ['enum'], value: { $default: 0 } }])
 })
 
-test('default: value enum ', async (t) => {
+test('default: value enum ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     enum: { $default: { $value: 'tony' } },
@@ -151,7 +151,7 @@ test('default: value enum ', async (t) => {
 })
 
 // ask about alias
-test('$alias ', async (t) => {
+test('$alias ', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $alias: 'bla',
@@ -160,7 +160,7 @@ test('$alias ', async (t) => {
   t.true(r.errors.length === 0)
 })
 
-test('$alias array', async (t) => {
+test('$alias array', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     $alias: ['bla'],
@@ -169,7 +169,7 @@ test('$alias array', async (t) => {
   t.true(r.errors.length === 0)
 })
 
-test('object: boolean', async (t) => {
+test('object: boolean', async (t: T) => {
   r = await setWalker(schema, {
     $id: 'bl120',
     object: {

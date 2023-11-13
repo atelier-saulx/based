@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 // tmp to test
 const client = based({
-  url: 'ws://localhost:9910',
+  url: t.context.ws,
 })
 
 client.setAuthState({
