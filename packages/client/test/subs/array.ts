@@ -144,7 +144,7 @@ test.serial('subscription array', async (t) => {
   })
 
   let cnt2 = 0
-  let lastResult2
+  let lastResult2: any
   observe(
     t,
     {
