@@ -57,7 +57,7 @@ jobs:
             packages/server/selvad
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
   run-tests:
-    name: Run ${{ matrix.tests[0] }} ${{ matrix.tests[1] }}tests
+    name: Run ${{ matrix.tests[0] }} ${{ matrix.tests[1] }} tests
     needs: build-selva
     runs-on: ubuntu-latest
     strategy:
