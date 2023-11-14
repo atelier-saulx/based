@@ -308,8 +308,8 @@ static void del_bidir_metadata(struct EdgeField *edge_field) {
     struct SVectorIterator it;
     struct SelvaHierarchyNode *dst_node;
 
-    SVector_ForeachBegin(&it, &edge_field->arcs);
-    while ((dst_node = SVector_Foreach(&it))) {
+    Edge_ForeachBegin(&it, edge_field);
+    while ((dst_node = Edge_Foreach(&it))) {
         struct EdgeField *bck_edge_field;
 
         bck_edge_field = get_bck_edge_field(edge_field, dst_node);
@@ -690,12 +690,9 @@ static int clear_field(
     const struct SelvaHierarchyNode *dst_node;
     int err = 0, err_bck = 0;
 
-    /*
-     * Clone the arcs vector to be safe with deletes.
-     * Never fails, and if it does nothing bad will
-     * happen.
-     */
-    (void)SVector_Clone(&arcs, &edge_field->arcs, NULL);
+    if (!Edge_CloneArcs(&arcs, edge_field)) {
+        return SELVA_EGENERAL;
+    }
 
     SVector_ForeachBegin(&it, &arcs);
     while ((dst_node = SVector_Foreach(&it))) {
@@ -945,14 +942,13 @@ size_t Edge_Refcount(struct SelvaHierarchyNode *node) {
 
 static void EdgeField_Reply(struct selva_server_response_out *resp, void *p) {
     const struct EdgeField *edge_field = (struct EdgeField *)p;
-    const SVector *arcs = &edge_field->arcs;
     const struct SelvaHierarchyNode *dst_node;
     struct SVectorIterator it;
 
-    selva_send_array(resp, SVector_Size(arcs));
+    selva_send_array(resp, Edge_GetFieldLength(edge_field));
 
-    SVector_ForeachBegin(&it, arcs);
-    while ((dst_node = SVector_Foreach(&it))) {
+    Edge_ForeachBegin(&it, edge_field);
+    while ((dst_node = Edge_Foreach(&it))) {
         Selva_NodeId dst_node_id;
 
         SelvaHierarchy_GetNodeId(dst_node_id, dst_node);
@@ -988,7 +984,7 @@ static void EdgeField_Free(void *p) {
 static size_t EdgeField_Len(void *p) {
     const struct EdgeField *edge_field = (struct EdgeField *)p;
 
-    return SVector_Size(&edge_field->arcs);
+    return Edge_GetFieldLength(edge_field);
 }
 
 /**
@@ -1173,9 +1169,9 @@ static void EdgeField_Save(struct selva_io *io, void *value, __unused void *save
     /*
      * Edges/arcs.
      */
-    selva_io_save_unsigned(io, SVector_Size(&edge_field->arcs)); /* nr_edges */
-    SVector_ForeachBegin(&vec_it, &edge_field->arcs);
-    while ((dst_node = SVector_Foreach(&vec_it))) {
+    selva_io_save_unsigned(io, Edge_GetFieldLength(edge_field));
+    Edge_ForeachBegin(&vec_it, edge_field);
+    while ((dst_node = Edge_Foreach(&vec_it))) {
         Selva_NodeId dst_node_id;
 
         SelvaHierarchy_GetNodeId(dst_node_id, dst_node);
