@@ -49,12 +49,16 @@ export class SelvaServer extends EventEmitter {
       mkdirSync(this.backupDir, { recursive: true })
     }
 
+    const localBuild = existsSync(
+      path.join(__dirname, '..', '..', 'selvad', 'local')
+    )
+
     const execPath = path.join(
       __dirname,
       '..',
       '..',
       'selvad',
-      'local',
+      localBuild ? 'local' : 'Linux_x86_64',
       'selvad'
     )
 
@@ -62,15 +66,7 @@ export class SelvaServer extends EventEmitter {
       env: {
         ...process.env,
         ...{
-          LOCPATH: path.join(
-            execPath,
-            '..',
-            '..',
-            existsSync(path.join(execPath, '..', '..', 'Linux_x86_64'))
-              ? 'Linux_x86_64'
-              : 'local',
-            'locale'
-          ),
+          LOCPATH: path.join(execPath, '..', 'locale'),
           SELVA_PORT: String(this.port),
           SERVER_SO_REUSE: '1',
           SELVA_REPLICATION_MODE: '1',
