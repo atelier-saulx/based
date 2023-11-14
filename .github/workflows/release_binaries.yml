@@ -1,0 +1,24 @@
+name: Release Binaries
+run-name: based-db CI/CD Release Binaries 🚀
+on:
+  push:
+    tags:
+      - 'selvad-v[0-9]+.*'
+jobs:
+  build-selva:
+    uses: './.github/workflows/cicd.yml'
+  release:
+    name: Release {GITHUB_REF#refs/*/} binaries
+    needs: build-selva
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            packages/server/selvad
+          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+      - run: ls -la packages/server/selvad
+    
