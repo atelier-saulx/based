@@ -9,7 +9,6 @@ static inline void data_record_fixup_cstring_p(const void *data_region, const ch
     uintptr_t base = (uintptr_t)data_region;
     const char *p = *pp;
 
-
     *pp = (len && p) ? base + p : NULL;
 }
 
@@ -26,6 +25,7 @@ static inline int data_record_is_valid_cstring_p(const void *data_region, size_t
 }
 
 #define DATA_RECORD_FIXUP_CSTRING_P_1(_rec, _data, _data_size, _field) \
+    (_rec)->_field##_len = le64toh((_rec)->_field##_len); \
     data_record_fixup_cstring_p((_data), &((_rec)->_field##_str), ((_rec)->_field##_len)); \
     if (!data_record_is_valid_cstring_p((_data), (_data_size), ((_rec)->_field##_str), ((_rec)->_field##_len))) return SELVA_EINVAL;
 
