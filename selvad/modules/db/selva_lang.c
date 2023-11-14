@@ -18,6 +18,45 @@
 
 #define FALLBACK_LANG "en"
 
+#if (__APPLE__)
+#define FORALL_LANGS(apply) \
+    apply(af, af_ZA) \
+    apply(am, am_ET) \
+    apply(be, be_BY) \
+    apply(bg, bg_BG) \
+    apply(ca, ca_ES) \
+    apply(cs, cs_CZ) \
+    apply(da, da_DK) \
+    apply(de, de_DE) \
+    apply(el, el_GR) \
+    apply(en, en_GB) \
+    apply(es, es_ES) \
+    apply(et, et_EE) \
+    apply(eu, eu_ES) \
+    apply(fi, fi_FI) \
+    apply(fr, fr_FR) \
+    apply(he, he_IL) \
+    apply(hr, hr_HR) \
+    apply(hu, hu_HU) \
+    apply(hy, hy_AM) \
+    apply(is, is_IS) \
+    apply(it, it_IT) \
+    apply(ja, ja_JP) \
+    apply(kk, kk_KZ) \
+    apply(ko, ko_KR) \
+    apply(lt, lt_LT) \
+    apply(nl, nl_NL) \
+    apply(pl, pl_PL) \
+    apply(pt, pt_PT) \
+    apply(ro, ro_RO) \
+    apply(ru, ru_RU) \
+    apply(sk, sk_SK) \
+    apply(sl, sl_SI) \
+    apply(sv, sv_SE) \
+    apply(tr, tr_TR) \
+    apply(uk, uk_UA) \
+    apply(zh, zh_CN)
+#elif (__linux__)
 #define FORALL_LANGS(apply) \
     apply(af, af_ZA) \
     apply(am, am_ET) \
@@ -59,6 +98,10 @@
     apply(tr, tr_TR) \
     apply(uk, uk_UA) \
     apply(zh, zh_CN)
+#else
+#define FORALL_LANGS(apply) \
+    apply(en, en_GB)
+#endif
 
 struct SelvaLang {
     __nonstring char name[LANG_NAME_MAX];
