@@ -2960,7 +2960,7 @@ int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const 
         return SVector_Size(&node->children) > 0;
     } else if (field_len > 0) {
         /*
-         * Check if field is a custom edge field name.
+         * Check if field is an edge field name.
          */
         const struct EdgeField *edge_field;
 
@@ -2969,7 +2969,7 @@ int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const 
             return 0;
         }
 
-        return SVector_Size(&edge_field->arcs);
+        return Edge_GetFieldLength(edge_field);
     }
 
     return 0;
@@ -4114,15 +4114,14 @@ static void SelvaHierarchy_EdgeGetCommand(struct selva_server_response_out *resp
         return;
     }
 
-    const struct SVector *arcs = &edge_field->arcs;
     struct SVectorIterator it;
     const SelvaHierarchyNode *dst;
 
-    selva_send_array(resp, 1 + SVector_Size(arcs));
+    selva_send_array(resp, 1 + Edge_GetFieldLength(edge_field));
     selva_send_ll(resp, edge_field->constraint ? edge_field->constraint->constraint_id : EDGE_FIELD_CONSTRAINT_ID_DEFAULT);
 
-    SVector_ForeachBegin(&it, arcs);
-    while ((dst = SVector_Foreach(&it))) {
+    Edge_ForeachBegin(&it, edge_field);
+    while ((dst = Edge_Foreach(&it))) {
         selva_send_str(resp, dst->id, Selva_NodeIdLen(dst->id));
     }
 }

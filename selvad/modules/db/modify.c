@@ -265,14 +265,17 @@ static int update_edge(
 
             struct SVectorIterator it;
             SVECTOR_AUTOFREE(old_arcs);
-            char *dst_id;
+            const struct SelvaHierarchyNode *dst_node;
 
-            if (!SVector_Clone(&old_arcs, &edgeField->arcs, NULL)) {
-                return SELVA_ENOMEM;
+            if (!Edge_CloneArcs(&old_arcs, edgeField)) {
+                return SELVA_EGENERAL;
             }
 
             SVector_ForeachBegin(&it, &old_arcs);
-            while ((dst_id = SVector_Foreach(&it))) {
+            while ((dst_node = SVector_Foreach(&it))) {
+                Selva_NodeId dst_id;
+
+                SelvaHierarchy_GetNodeId(dst_id, dst_node);
                 if (!SVector_Search(&new_ids, dst_id)) {
                     Edge_Delete(hierarchy, edgeField, node, dst_id);
                     res++; /* Count delete as a change. */

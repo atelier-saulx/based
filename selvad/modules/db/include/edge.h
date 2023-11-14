@@ -210,6 +210,10 @@ int Edge_HasNodeId(const struct EdgeField *edge_field, const Selva_NodeId dst_no
  */
 int Edge_DerefSingleRef(const struct EdgeField *edge_field, struct SelvaHierarchyNode **node_out);
 
+static inline struct SVector *Edge_CloneArcs(struct SVector *arcs_copy, const struct EdgeField *edge_field) {
+    return SVector_Clone(arcs_copy, &edge_field->arcs, NULL);
+}
+
 static inline void Edge_ForeachBegin(struct SVectorIterator *it, const struct EdgeField *edge_field) {
     SVector_ForeachBegin(it, &edge_field->arcs);
 }
