@@ -2,6 +2,7 @@ name: CI/CD
 run-name: based-db CI/CD 🚀
 on:
   workflow_dispatch:
+  workflow_call:
   pull_request:
     branches:
       - main
