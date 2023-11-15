@@ -8,7 +8,8 @@
 #include "selva_error.h"
 #include "config.h"
 
-static struct config_list config_list[100];
+#define SELVA_MAX_CONFIG 100
+static struct config_list config_list[SELVA_MAX_CONFIG];
 static size_t config_list_next;
 
 static int parse_size_t(void *dst, const char *src)

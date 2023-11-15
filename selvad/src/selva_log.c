@@ -8,18 +8,26 @@
 #include <string.h>
 #include <unistd.h>
 #include "util/selva_string.h"
+#include "config.h"
 #include "selva_log.h"
 
 static FILE *log_stream;
 static enum selva_log_level selva_log_level = SELVA_LOGL_INFO;
 
-static int use_colors;
-static char *colors[] = {
+static const char * const colors[] = {
     [SELVA_LOGL_CRIT] = "\033[0;31m", /* red */
     [SELVA_LOGL_ERR] = "\033[0;31m", /* red */
     [SELVA_LOGL_WARN] = "\033[0;33m", /* yellow */
     [SELVA_LOGL_INFO] = "\033[0;32m", /* green */
     [SELVA_LOGL_DBG] = "\033[0;34m", /* blue */
+};
+static int env_force_color;
+static int env_no_color;
+static int use_colors;
+
+static const struct config selva_log_cfg_map[] = {
+    { "FORCE_COLOR",            CONFIG_INT, &env_force_color },
+    { "NO_COLOR",               CONFIG_INT, &env_no_color },
 };
 
 static struct selva_string *dbg_pattern;
@@ -89,6 +97,8 @@ void selva_log_set_dbgpattern(const char *str, size_t len)
 
 __attribute__((constructor(101))) static void init_selva_log(void)
 {
+	(void)config_resolve("selva_log", selva_log_cfg_map, num_elem(selva_log_cfg_map));
+
     log_stream = stderr;
-    use_colors = isatty(fileno(log_stream));
+    use_colors = (isatty(fileno(log_stream)) || env_force_color) && !env_no_color;
 }
