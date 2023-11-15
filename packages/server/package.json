@@ -9,6 +9,10 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "sideEffects": false,
+  "files": [
+    "selvad/*",
+    "!selvad/local"
+  ],
   "dependencies": {
     "@saulx/diff": "^1.1.4",
     "@saulx/utils": "^3.2.2",
