@@ -8,7 +8,7 @@ jobs:
   build-selva:
     uses: './.github/workflows/cicd.yml'
   release:
-    name: Release {GITHUB_REF#refs/*/} binaries
+    name: Release ${{github.ref_name}} binaries
     needs: build-selva
     runs-on: ubuntu-latest
     steps:
@@ -20,5 +20,9 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - run: ls -la packages/server/selvad
-    
+      - name: Tar release files
+        run: |
+          tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
+      - name: Create release
+        run: |
+          gh release create ${{github.ref_name}} Linux_x86_64.tar.gz --draft --prerelease

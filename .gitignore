@@ -145,4 +145,4 @@ local-cloud/
 # heap dumps
 jeprof.out.*
 
-packages/server/selvad
+packages/server/selvad/local

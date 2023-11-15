@@ -1,6 +1,6 @@
 #!/bin/sh
 
-rm -rf packages/server/selvad/*
+rm -rf packages/server/selvad/local/*
 cd selvad
 make
-INSTALL_DIR=../packages/server/selvad make install
+INSTALL_DIR=../packages/server/selvad/local make install
