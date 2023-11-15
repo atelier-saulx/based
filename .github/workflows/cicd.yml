@@ -2,14 +2,9 @@ name: CI/CD
 run-name: based-db CI/CD 🚀
 on:
   workflow_dispatch:
-    inputs:
-      skip-tests:
-        description: 'Skip Tests'
-        default: false
-        type: boolean
   workflow_call:
     inputs:
-      skipTests:
+      skip-tests:
         default: false
         type: boolean
   pull_request:
