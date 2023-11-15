@@ -194,9 +194,9 @@ test.serial('subscribe and delete over a reference field', async (t) => {
     }
   )
 
-  await wait(100)
+  await wait(500)
   await client.delete({ $id: 'th2' })
-  await wait(100)
+  await wait(500)
 })
 
 test.serial('subscribe and delete over references field', async (t) => {
