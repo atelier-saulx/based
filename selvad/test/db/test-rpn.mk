@@ -29,3 +29,4 @@ SRC-rpn += ../../src/selva_log.c
 SRC-rpn += ./mock-edge.c
 SRC-rpn += ./mock-hierarchy.c
 SRC-rpn += ./mock-subscriptions.c
+SRC-rpn += ./mock-config.c
