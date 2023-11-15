@@ -26,7 +26,7 @@ jobs:
         with:
           lookup-only: true
           path: |
-            packages/server/selvad
+            packages/server/selvad/local
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
       - name: Install gcc
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
@@ -55,7 +55,7 @@ jobs:
         uses: actions/cache/save@v3
         with:
           path: |
-            packages/server/selvad
+            packages/server/selvad/local
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
   run-tests:
     name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
@@ -80,7 +80,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            packages/server/selvad
+            packages/server/selvad/local
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
       - name: Restore node_modules
         id: cache-npm-try
@@ -97,4 +97,3 @@ jobs:
         run: |
           cd ${{ matrix.tests[0] }}
           npm run test-ci -- ${{ matrix.tests[1] }}
- # add make test
