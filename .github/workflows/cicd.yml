@@ -68,7 +68,7 @@ jobs:
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
   run-tests:
     name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
-    if: ${{ inputs.skipTests = false }}
+    if: ${{ inputs.skipTests == false }}
     needs: build-selva
     runs-on: ubuntu-latest
     strategy:
