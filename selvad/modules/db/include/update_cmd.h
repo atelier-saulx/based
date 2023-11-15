@@ -17,4 +17,12 @@ struct SelvaUpdate_QueryOpts {
      */
     const char *edge_filter_str;
     size_t edge_filter_len;
+
+    /**
+     * RPN registers for edge_filter_str.
+     * Format: [uint32_t len, string, uint32_t len, string]
+     * Each string is unterminated.
+     */
+    __nonstring const char *edge_filter_regs_str;
+    size_t edge_filter_regs_len;
 };

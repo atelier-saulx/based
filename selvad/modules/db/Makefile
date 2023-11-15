@@ -25,6 +25,7 @@ OBJ := \
 	   parsers/string_list.o \
 	   parsers/string_set.o \
 	   query/aggregate.o \
+	   query/count_filter_regs.o \
 	   query/field_names.o \
 	   query/find/find.o \
 	   query/find/find_fields.o \

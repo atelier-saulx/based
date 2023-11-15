@@ -100,9 +100,30 @@ static inline void rpn_set_obj(struct rpn_ctx *ctx, struct SelvaObject *obj) {
     ctx->obj = obj;
 }
 
+/**
+ * Set register value.
+ * A pointer to s is held until the register is cleared or changed.
+ */
 enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags);
 
+
+/**
+ * Set register values from an array of selva_strings.
+ * The pointers are held.
+ */
 enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, struct selva_string *a[], size_t n);
+
+/**
+ * Set all registers using a single buffer.
+ * Buffer format:
+ * ```
+ * Byte |  0 |  1 |  2 |  3 |                 ...                   | length - 1 | ...
+ *      +----+----+----+----+---------------------------------------+------------+----
+ *      | length            | length - 1 bytes of data for reg 0    | \0         | ...
+ *      +-------------------+---------------------------------------+------------+----
+ * ```
+ */
+enum rpn_error rpn_set_regs(struct rpn_ctx *ctx, const char *regs_buf, size_t regs_len);
 
 /**
  * Set a register value from a selva_string.

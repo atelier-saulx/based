@@ -43,6 +43,7 @@
 #include "inherit.h"
 #include "find_index.h"
 #include "../field_names.h"
+#include "../count_filter_regs.h"
 #include "query.h"
 #include "find_send.h"
 #include "../find.h"
@@ -600,7 +601,7 @@ static int fixup_query_opts(struct SelvaFind_QueryOpts *qo, const char *base, si
     qo->res_type = le32toh(qo->res_type);
 
     DATA_RECORD_FIXUP_CSTRING_P(qo, base, size,
-            dir_opt, edge_filter, index_hints, order_by_field, merge, res_opt);
+            dir_opt, edge_filter, edge_filter_regs, index_hints, order_by_field, merge, res_opt);
     return 0;
 }
 
@@ -720,11 +721,26 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
 
-        edge_filter_ctx = rpn_init(1);
+        const int nr_regs = query_count_filter_regs(query_opts.edge_filter_regs_str, query_opts.edge_filter_regs_len);
+        if (nr_regs < 0) {
+            selva_send_errorf(resp, nr_regs, "Invalid edge_filter_regs");
+        }
+
+        edge_filter_ctx = rpn_init(1 + nr_regs);
         edge_filter = rpn_compile_len(query_opts.edge_filter_str, query_opts.edge_filter_len);
         if (!edge_filter) {
             selva_send_errorf(resp, SELVA_RPN_ECOMP, "edge_filter");
             return;
+        }
+
+        if (nr_regs) {
+            enum rpn_error rpn_err;
+
+            rpn_err = rpn_set_regs(edge_filter_ctx, query_opts.edge_filter_regs_str, query_opts.edge_filter_regs_len);
+            if (rpn_err) {
+                selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize edge_filter registers: %s", rpn_str_error[rpn_err]);
+                return;
+            }
         }
     }
 
