@@ -23,7 +23,6 @@ jobs:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     steps:
-      - run: echo ${{ toJSON(inputs.skip-tests) }}
       - uses: actions/checkout@v4
       - name: Try selvad build cache
         id: cache-selvad-try
