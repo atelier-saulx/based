@@ -4114,7 +4114,7 @@ static void SelvaHierarchy_EdgeGetCommand(struct selva_server_response_out *resp
         return;
     }
 
-    struct SVectorIterator it;
+    struct EdgeFieldIterator it;
     const SelvaHierarchyNode *dst;
 
     selva_send_array(resp, 1 + Edge_GetFieldLength(edge_field));

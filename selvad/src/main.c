@@ -4,7 +4,6 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
 #include "selva_log.h"
@@ -28,9 +27,6 @@ int main(void)
 {
     evl_module_init("main");
     evl_init();
-
-    SELVA_LOG(SELVA_LOGL_INFO, "Selva build: %s pid: %jd",
-              __DATE__, (intmax_t)getpid());
 
     for (size_t i = 0; i < num_elem(modules); i++) {
         if (!evl_load_module(modules[i])) {

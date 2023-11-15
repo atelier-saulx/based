@@ -486,7 +486,7 @@ static int new_server(int port)
                   port);
         exit(EXIT_FAILURE);
     }
-    SELVA_LOG(SELVA_LOGL_INFO, "Listening on port: %d", port);
+    SELVA_LOG(SELVA_LOGL_INFO, "Listening on port: %d pid: %jd", port, (intmax_t)getpid());
 
     return sockfd;
 }

@@ -17,7 +17,7 @@ void *evl_load_module(const char *path)
     struct evl_module_info *info;
     void *hndl;
 
-    SELVA_LOG(SELVA_LOGL_INFO, "Loading module: \"%s\"", path);
+    SELVA_LOG(SELVA_LOGL_DBG, "Loading module: \"%s\"", path);
     hndl = dlopen(path, RTLD_NOW | RTLD_LOCAL);
     if (!hndl) {
         SELVA_LOG(SELVA_LOGL_ERR, "Loading module failed (\"%s\"): %s", path, dlerror());

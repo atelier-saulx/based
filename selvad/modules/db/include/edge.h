@@ -214,12 +214,16 @@ static inline struct SVector *Edge_CloneArcs(struct SVector *arcs_copy, const st
     return SVector_Clone(arcs_copy, &edge_field->arcs, NULL);
 }
 
-static inline void Edge_ForeachBegin(struct SVectorIterator *it, const struct EdgeField *edge_field) {
-    SVector_ForeachBegin(it, &edge_field->arcs);
+struct EdgeFieldIterator {
+    struct SVectorIterator vec_it;
+};
+
+static inline void Edge_ForeachBegin(struct EdgeFieldIterator *it, const struct EdgeField *edge_field) {
+    SVector_ForeachBegin(&it->vec_it, &edge_field->arcs);
 }
 
-static inline struct SelvaHierarchyNode *Edge_Foreach(struct SVectorIterator *it) {
-    return SVector_Foreach(it);
+static inline struct SelvaHierarchyNode *Edge_Foreach(struct EdgeFieldIterator *it) {
+    return SVector_Foreach(&it->vec_it);
 }
 
 /**

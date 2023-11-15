@@ -394,7 +394,7 @@ static int send_edge_field(
                     next_field_str, next_field_len);
         }
 
-        struct SVectorIterator it;
+        struct EdgeFieldIterator it;
         struct SelvaHierarchyNode *dst_node;
         const int is_wildcard = iswildcard(next_field_str, next_field_len);
 
