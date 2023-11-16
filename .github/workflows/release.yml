@@ -1,122 +1,133 @@
 name: Release
 run-name: based-db CI/CD Release 🚀
 on:
-  push:
-    tags:
-      - 'v[0-9]+.*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version
+        type: string
+      notes:
+        description: Release notes
+        type: string
 jobs:
-  build-selva:
-    uses: './.github/workflows/cicd.yml'
-    with:
-      skip-tests: true
-      # force-build: true
-  release-binaries:
-    name: Release ${{github.ref_name}} binaries
-    needs: build-selva
+  temp:
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      steps:
+        - run: echo "${{ inputs.ref }}"
+  # build-selva:
+  #   uses: './.github/workflows/cicd.yml'
+  #   with:
+  #     skip-tests: true
+  #     # force-build: true
+  # release-binaries:
+  #   name: Release ${{github.ref_name}} binaries
+  #   needs: build-selva
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
       
-      # we can't use a cache made in main from a tag so we have to rebuild it
-      - name: Try selvad build cache
-        if: ${{ !inputs.force-build }}
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad/local
-          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - run: ls -la packages/server
-      - name: Install gcc
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-        run: |
-         sudo apt update
-         sudo apt install gcc-13
-      - name: Use Node.js
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - name: Build selva
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-        run: npm run build-c
-        env:
-         CC: gcc-13
-      - name: Save selvad build cache
-        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-        id: cache-selvad-save
-        uses: actions/cache/save@v3
-        with:
-          path: |
-            packages/server/selvad/local
-          key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
-      - name: Tar release files
-        run: |
-          tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
-      - name: Create release
-        run: |
-          gh release create ${{github.ref_name}} Linux_x86_64.tar.gz --draft --prerelease
-  publish-npm:
-    name: Publish ${{github.ref_name}} npm packages
-    needs: build-selva
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-          registry-url: 'https://registry.npmjs.org'
-      - name: Restore selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad
-          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - name: Restore node_modules
-        id: cache-npm-try
-        uses: actions/cache@v3
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-      - name: Install dependencies
-        if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
-        run: npm ci
-      - name: Build based-db
-        run: npm run build
-      - name: Update client version
-        run: |
-          cd packages/client
-          npm version --no-git-tag-version ${{github.ref_name}}
-          cd ../..
-      - name: Publish client package
-        run: |
-          cd packages/client
-          npm publish
-          cd ../..
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Move local binaries to Linux_x86_64
-        run: |
-          mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
-      - run: |
-          ls -la packages/server/selvad
-      - name: Update server version
-        run: |
-          cd packages/server
-          npm version --no-git-tag-version ${{github.ref_name}}
-          cd ../..
-      - name: Publish server package
-        run: |
-          cd packages/server
-          npm publish
-          cd ../..
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Commit and push changes
-        run: |
-          git config --global user.name 'CI/CD'
-          git config --global user.email 'dev@saulx.com'
-          git commit -am "CI/CD update package.json files"
-          git push
+  #     # we can't use a cache made in main from a tag so we have to rebuild it
+  #     - name: Try selvad build cache
+  #       if: ${{ !inputs.force-build }}
+  #       id: cache-selvad-try
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad/local
+  #         key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+  #     - run: ls -la packages/server
+  #     - name: Install gcc
+  #       if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+  #       run: |
+  #        sudo apt update
+  #        sudo apt install gcc-13
+  #     - name: Use Node.js
+  #       if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18.x'
+  #     - name: Build selva
+  #       if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+  #       run: npm run build-c
+  #       env:
+  #        CC: gcc-13
+  #     - name: Save selvad build cache
+  #       if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+  #       id: cache-selvad-save
+  #       uses: actions/cache/save@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad/local
+  #         key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
+  #     - name: Tar release files
+  #       run: |
+  #         tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
+  #     - name: Create release
+  #       run: |
+  #         gh release create ${{github.ref_name}} Linux_x86_64.tar.gz --draft --prerelease
+  #       env:
+  #         GH_TOKEN: ${{ github.token }}
+  # publish-npm:
+  #   name: Publish ${{github.ref_name}} npm packages
+  #   needs: build-selva
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '18.x'
+  #         registry-url: 'https://registry.npmjs.org'
+  #     - name: Restore selvad build cache
+  #       id: cache-selvad-try
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad
+  #         key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+  #     - name: Restore node_modules
+  #       id: cache-npm-try
+  #       uses: actions/cache@v3
+  #       with:
+  #         path: '**/node_modules'
+  #         key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+  #     - name: Install dependencies
+  #       if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+  #       run: npm ci
+  #     - name: Build based-db
+  #       run: npm run build
+  #     - name: Update client version
+  #       run: |
+  #         cd packages/client
+  #         npm version --no-git-tag-version ${{github.ref_name}}
+  #         cd ../..
+  #     - name: Publish client package
+  #       run: |
+  #         cd packages/client
+  #         npm publish
+  #         cd ../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Move local binaries to Linux_x86_64
+  #       run: |
+  #         mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
+  #     - run: |
+  #         ls -la packages/server/selvad
+  #     - name: Update server version
+  #       run: |
+  #         cd packages/server
+  #         npm version --no-git-tag-version ${{github.ref_name}}
+  #         cd ../..
+  #     - name: Publish server package
+  #       run: |
+  #         cd packages/server
+  #         npm publish
+  #         cd ../..
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  #     - name: Commit and push changes
+  #       run: |
+  #         git config --global user.name 'CI/CD'
+  #         git config --global user.email 'dev@saulx.com'
+  #         git commit -am "CI/CD update package.json files"
+  #         git push
