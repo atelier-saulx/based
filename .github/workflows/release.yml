@@ -26,7 +26,7 @@ jobs:
   #         echo "No version provided on inputs"
   #         exit 1
   #     - uses: actions/checkout@v4
-  #     - name: Try selvad build cache
+  #     - name: Restore selvad build cache
   #       id: cache-selvad-try
   #       uses: actions/cache/restore@v3
   #       with:
@@ -58,7 +58,7 @@ jobs:
         uses: actions/cache/restore@v3
         with:
           path: |
-            packages/server/selvad
+            packages/server/selvad/local
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
           fail-on-cache-miss: true
       - run: ls -la packages/server
