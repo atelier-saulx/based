@@ -2,9 +2,6 @@ name: Release
 run-name: based-db CI/CD Release 🚀
 on:
   push:
-    branches:
-      - 'main'
-      - 'v[0-9]+.*'
     tags:
       - 'v[0-9]+.*'
 jobs:
