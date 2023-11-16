@@ -23,6 +23,8 @@ jobs:
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
           fail-on-cache-miss: true
+      - run: ls -la packages/server
+      - run: ls -la packages/server/selvad
       - name: Tar release files
         run: |
           tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
@@ -47,8 +49,8 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - run: |
-          ls -la packages/server/selvad
+      - run: ls -la packages/server
+      - run: ls -la packages/server/selvad
       - name: Restore node_modules
         id: cache-npm-try
         uses: actions/cache@v3
