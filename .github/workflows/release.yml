@@ -79,8 +79,7 @@ jobs:
       - name: Publish client package
         run: |
           cd packages/client
-          echo $NODE_AUTH_TOKEN
-          npm publish
+          npm publish --access=public
           cd ../..
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -97,7 +96,7 @@ jobs:
       - name: Publish server package
         run: |
           cd packages/server
-          npm publish
+          npm publish --access=public
           cd ../..
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
