@@ -17,16 +17,38 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: mkdir packages/server/selvad
-      - name: Restore selvad build cache
+      - name: Try selvad build cache
+        if: ${{ !inputs.force-build }}
         id: cache-selvad-try
         uses: actions/cache/restore@v3
         with:
+          lookup-only: true
           path: |
-            packages/server/selvad
+            packages/server/selvad/local
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-          fail-on-cache-miss: true
-      - run: ls -la packages/server
-      - run: ls -la packages/server/selvad
+      - name: Install gcc
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: |
+         sudo apt update
+         sudo apt install gcc-13
+      - name: Use Node.js
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Build selva
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: npm run build-c
+        env:
+         CC: gcc-13
+      - name: Save selvad build cache
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        id: cache-selvad-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            packages/server/selvad/local
+          key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
       - name: Tar release files
         run: |
           tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
