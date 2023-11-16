@@ -16,7 +16,7 @@ jobs:
     with:
       skip-tests: true
   release-binaries:
-    name: Release ${{input.version}} binaries
+    name: Release ${{inputs.version}} binaries
     needs: build-selva
     runs-on: ubuntu-latest
     steps:
