@@ -33,7 +33,7 @@ jobs:
           tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
       - name: Create release
         run: |
-          gh release create ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --draft --prerelease
+          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
   # publish-npm:
