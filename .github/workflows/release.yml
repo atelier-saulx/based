@@ -82,7 +82,7 @@ jobs:
           npm publish --access=public
           cd ../..
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Move local binaries to Linux_x86_64
         run: |
           mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
@@ -99,7 +99,7 @@ jobs:
           npm publish --access=public
           cd ../..
         env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Commit and push changes
         run: |
           git config --global user.name 'CI/CD'
