@@ -29,6 +29,7 @@
     "build": "turbo run build",
     "build-c": "sh scripts/build-c.sh",
     "clean-c": "cd selvad; make mostlyclean",
+    "release-publish": "sh scripts/release-publish.sh",
     "test": "cd packages/client && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },
