@@ -74,7 +74,7 @@ jobs:
       - name: Update client version
         run: |
           cd packages/client
-          npm version --no-git-tag-version ${{github.ref_name}}
+          npm version --no-git-tag-version ${{inputs.version}}
           cd ../..
       - name: Publish client package
         run: |
@@ -92,7 +92,7 @@ jobs:
       - name: Update server version
         run: |
           cd packages/server
-          npm version --no-git-tag-version ${{github.ref_name}}
+          npm version --no-git-tag-version ${{inputs.version}}
           cd ../..
       - name: Publish server package
         run: |
@@ -100,7 +100,7 @@ jobs:
           npm publish
           cd ../..
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Commit and push changes
         run: |
           git config --global user.name 'CI/CD'
