@@ -84,9 +84,19 @@ void SVector_Init(SVector *vec, size_t initial_len, int (*compar)(const void **a
 void SVector_Destroy(SVector *vec);
 SVector *SVector_Concat(SVector *dest, const SVector *src);
 SVector *SVector_Clone(SVector *dest, const SVector *src, int (*compar)(const void **a, const void **b));
-void SVector_Insert(SVector *vec, void *el);
+
+/**
+ * Insert into an SVector as the last element.
+ * @returns NULL if succeed;
+ *          If vec_compar is set and a previous element was found it's returned and no insertion happens.
+ */
+void *SVector_Insert(SVector *vec, void *el);
 void SVector_SetIndex(SVector *vec, size_t idx, void *el);
-void *SVector_InsertFast(SVector *vec, void *el);
+
+/**
+ * Insert into given index of an SVector.
+ * vec_compar must not be set.
+ */
 void SVector_InsertIndex(SVector * restrict vec, size_t index, void *el);
 
 /**

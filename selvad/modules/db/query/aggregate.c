@@ -283,7 +283,7 @@ static int AggregateCommand_NodeCb(
 
             item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->find_args.lang, traversal_metadata, node, args->find_args.send_param.order_field);
             if (item) {
-                SVector_InsertFast(args->find_args.result, item);
+                SVector_Insert(args->find_args.result, item);
             } else {
                 Selva_NodeId nodeId;
 
@@ -364,7 +364,7 @@ static int AggregateCommand_ArrayObjectCb(
 
             item = SelvaTraversalOrder_CreateObjectOrderItem(args->fin, args->find_args.lang, obj, args->find_args.send_param.order_field);
             if (item) {
-                SVector_InsertFast(args->find_args.result, item);
+                SVector_Insert(args->find_args.result, item);
             } else {
                 /*
                  * It's not so easy to make the response fail at this point.

@@ -25,6 +25,7 @@
 
 static int svector_rbtree_compar_wrap(struct SVector_rbnode *a, struct SVector_rbnode *b);
 RB_PROTOTYPE_STATIC(SVector_rbtree, SVector_rbnode, entry, svector_rbtree_compar_wrap)
+static void *SVector_InsertFast(SVector *vec, void *el);
 
 static int svector_rbtree_compar_wrap(struct SVector_rbnode *a, struct SVector_rbnode *b) {
     const void * an = a->p;
@@ -224,44 +225,8 @@ static void SVector_Resize(SVector *vec, size_t i) {
     }
 }
 
-void SVector_Insert(SVector *vec, void *el) {
-    assert(vec->vec_mode == SVECTOR_MODE_ARRAY || vec->vec_mode == SVECTOR_MODE_RBTREE);
-
-    if (vec->vec_mode == SVECTOR_MODE_ARRAY && vec->vec_compar &&
-        vec->vec_last - vec->vec_arr_shift_index >= SVECTOR_THRESHOLD) {
-        migrate_arr_to_rbtree(vec);
-    }
-
-    if (vec->vec_mode == SVECTOR_MODE_ARRAY) {
-        if (vec->vec_compar && SVector_Search(vec, el)) {
-            /* Already inserted into a sorted vector. */
-            return;
-        }
-
-        ssize_t i = vec->vec_last++;
-        SVector_Resize(vec, i);
-
-        void **vec_arr = vec->vec_arr;
-
-        vec_arr[i] = el;
-
-        if (vec->vec_compar) {
-            qsort(vec_arr + vec->vec_arr_shift_index,
-                  vec->vec_last - vec->vec_arr_shift_index,
-                  sizeof(void *), VEC_COMPAR(vec->vec_compar));
-        }
-
-        assert(vec->vec_last <= vec->vec_arr_len);
-    } else if (vec->vec_mode == SVECTOR_MODE_RBTREE) {
-        if (!rbtree_insert(vec, el)) {
-            vec->vec_last++;
-        }
-    }
-}
-
-void *SVector_InsertFast(SVector *vec, void *el) {
+static void *SVector_InsertFast(SVector *vec, void *el) {
     assert(el);
-    assert(vec->vec_compar);
     assert(vec->vec_mode == SVECTOR_MODE_ARRAY || vec->vec_mode == SVECTOR_MODE_RBTREE);
 
     if (vec->vec_mode == SVECTOR_MODE_ARRAY &&
@@ -328,6 +293,28 @@ void *SVector_InsertFast(SVector *vec, void *el) {
         return res;
     } else {
         /* Uninitialized SVector. */
+        return NULL;
+    }
+}
+
+void *SVector_Insert(SVector *vec, void *el) {
+    assert(vec->vec_mode == SVECTOR_MODE_ARRAY || vec->vec_mode == SVECTOR_MODE_RBTREE);
+
+    if (vec->vec_compar) {
+        if (vec->vec_mode == SVECTOR_MODE_ARRAY &&
+            vec->vec_last - vec->vec_arr_shift_index >= SVECTOR_THRESHOLD) {
+            migrate_arr_to_rbtree(vec);
+        }
+
+        return SVector_InsertFast(vec, el);
+    } else {
+        ssize_t i = vec->vec_last++;
+        void **vec_arr;
+
+        SVector_Resize(vec, i);
+        vec_arr = vec->vec_arr;
+        vec_arr[i] = el;
+
         return NULL;
     }
 }
@@ -478,7 +465,7 @@ void *SVector_RemoveIndex(SVector * restrict vec, size_t index) {
 }
 
 void SVector_SetIndex(SVector * restrict vec, size_t index, void *el) {
-    assert(("vec_compare must not be set", !vec->vec_compar));
+    assert(("vec_compar must not be set", !vec->vec_compar));
     assert(vec->vec_mode == SVECTOR_MODE_ARRAY);
 
     SVector_ShiftReset(vec);
@@ -496,7 +483,7 @@ void SVector_SetIndex(SVector * restrict vec, size_t index, void *el) {
 }
 
 void SVector_InsertIndex(SVector * restrict vec, size_t index, void *el) {
-    assert(("vec_compare must not be set", !vec->vec_compar));
+    assert(("vec_compar must not be set", !vec->vec_compar));
     assert(("vec mode must be array", vec->vec_mode == SVECTOR_MODE_ARRAY));
 
     SVector_ShiftReset(vec);

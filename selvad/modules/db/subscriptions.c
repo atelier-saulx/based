@@ -328,8 +328,8 @@ static void do_sub_marker_removal(SelvaHierarchy *hierarchy, struct Selva_Subscr
  * Register a marker to a subscription.
  */
 static void sub_add_marker(struct Selva_Subscription *sub, struct Selva_SubscriptionMarker *marker) {
-    (void)SVector_InsertFast(&marker->subs, sub);
-    (void)SVector_InsertFast(&sub->markers, marker);
+    (void)SVector_Insert(&marker->subs, sub);
+    (void)SVector_Insert(&sub->markers, marker);
 }
 
 static int delete_marker(SelvaHierarchy *hierarchy, struct Selva_Subscription *sub, Selva_SubscriptionMarkerId marker_id) {
@@ -511,7 +511,7 @@ static struct Selva_SubscriptionMarker *find_sub_marker(
  * Set mareker to a Selva_SubscriptionMarkers struct.
  */
 static void set_marker(struct Selva_SubscriptionMarkers *sub_markers, struct Selva_SubscriptionMarker *marker) {
-    if (!SVector_InsertFast(&sub_markers->vec, marker)) {
+    if (!SVector_Insert(&sub_markers->vec, marker)) {
         sub_markers->flags_filter |= marker->marker_flags;
         marker->ref_count++;
     }
@@ -1513,7 +1513,7 @@ static void defer_event(
     marker->history.flags |= event_flags;
 
     if (SVector_IsInitialized(&def->marker_events)) {
-        SVector_InsertFast(&def->marker_events, marker);
+        SVector_Insert(&def->marker_events, marker);
     }
 }
 

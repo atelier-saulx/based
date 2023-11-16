@@ -192,7 +192,7 @@ static int process_node_sort(
 
     item = SelvaTraversalOrder_CreateNodeOrderItem(args->fin, args->lang, traversal_metadata, node, args->send_param.order_field);
     if (item) {
-        (void)SVector_InsertFast(args->result, item);
+        (void)SVector_Insert(args->result, item);
     } else {
         Selva_NodeId nodeId;
 
@@ -295,7 +295,7 @@ static int process_array_obj_sort(
 
     item = SelvaTraversalOrder_CreateObjectOrderItem(args->fin, args->lang, obj, args->send_param.order_field);
     if (item) {
-        SVector_InsertFast(args->result, item);
+        SVector_Insert(args->result, item);
     } else {
         /*
          * It's not so easy to make the response fail at this point.
@@ -518,7 +518,7 @@ static void postprocess_inherit(
 
             item = SelvaTraversalOrder_CreateAnyNodeOrderItem(fin, node, &fv);
             if (item) {
-                SVector_InsertFast(&order_result, item);
+                SVector_Insert(&order_result, item);
             } else {
                 SELVA_LOG(SELVA_LOGL_ERR, "Failed to create an order item for the node %.*s",
                           (int)SELVA_NODE_ID_SIZE, node_id);
