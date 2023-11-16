@@ -15,6 +15,9 @@
     "testIndexing": "npm run test test/indexing/*.ts"
   },
   "sideEffects": false,
+  "files": [
+    "dist"
+  ],
   "ava": {
     "files": [
       "test/*.ts",
