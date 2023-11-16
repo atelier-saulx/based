@@ -15,33 +15,33 @@ jobs:
     uses: './.github/workflows/cicd.yml'
     with:
       skip-tests: true
-  release-binaries:
-    name: Release ${{inputs.version}} binaries
-    needs: build-selva
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check version
-        if: ${{ !inputs.version }}
-        run: |
-          echo "No version provided on inputs"
-          exit 1
-      - uses: actions/checkout@v4
-      - name: Try selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad/local
-          key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-          fail-on-cache-miss: true
-      - name: Tar release files
-        run: |
-          tar -czf Linux_x86_64.tar.gz -C packages/server/selvad/local .
-      - name: Create release
-        run: |
-          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
+  # release-binaries:
+  #   name: Release ${{inputs.version}} binaries
+  #   needs: build-selva
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check version
+  #       if: ${{ !inputs.version }}
+  #       run: |
+  #         echo "No version provided on inputs"
+  #         exit 1
+  #     - uses: actions/checkout@v4
+  #     - name: Try selvad build cache
+  #       id: cache-selvad-try
+  #       uses: actions/cache/restore@v3
+  #       with:
+  #         path: |
+  #           packages/server/selvad/local
+  #         key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
+  #         fail-on-cache-miss: true
+  #     - name: Tar release files
+  #       run: |
+  #         tar -czf Linux_x86_64.tar.gz -C packages/server/selvad/local .
+  #     - name: Create release
+  #       run: |
+  #         gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
+  #       env:
+  #         GH_TOKEN: ${{ github.token }}
   publish-npm:
     name: Publish ${{inputs.version}} npm packages
     needs: build-selva
@@ -60,49 +60,52 @@ jobs:
           path: |
             packages/server/selvad
           key: ${{ runner.os }}-selvad-${{ hashFiles('selvad') }}
-      - name: Restore node_modules
-        id: cache-npm-try
-        uses: actions/cache@v3
-        with:
-          path: '**/node_modules'
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
-      - name: Install dependencies
-        if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
-        run: npm ci
-      - name: Build based-db
-        run: npm run build
-      - name: Update client version
-        run: |
-          cd packages/client
-          npm version --no-git-tag-version ${{inputs.version}}
-          cd ../..
-      - name: Publish client package
-        run: |
-          cd packages/client
-          npm publish --access=public
-          cd ../..
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Move local binaries to Linux_x86_64
-        run: |
-          mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
-      - run: |
-          ls -la packages/server/selvad
-      - name: Update server version
-        run: |
-          cd packages/server
-          npm version --no-git-tag-version ${{inputs.version}}
-          cd ../..
-      - name: Publish server package
-        run: |
-          cd packages/server
-          npm publish --access=public
-          cd ../..
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Commit and push changes
-        run: |
-          git config --global user.name 'CI/CD'
-          git config --global user.email 'dev@saulx.com'
-          git commit -am "CI/CD update package.json files"
-          git push
+          fail-on-cache-miss: true
+      - run: ls -la packages/server
+      - run: ls -la packages/server/selvad
+      # - name: Restore node_modules
+      #   id: cache-npm-try
+      #   uses: actions/cache@v3
+      #   with:
+      #     path: '**/node_modules'
+      #     key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+      # - name: Install dependencies
+      #   if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+      #   run: npm ci
+      # - name: Build based-db
+      #   run: npm run build
+      # - name: Update client version
+      #   run: |
+      #     cd packages/client
+      #     npm version --no-git-tag-version ${{inputs.version}}
+      #     cd ../..
+      # - name: Publish client package
+      #   run: |
+      #     cd packages/client
+      #     npm publish --access=public
+      #     cd ../..
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Move local binaries to Linux_x86_64
+      #   run: |
+      #     mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
+      # - run: |
+      #     ls -la packages/server/selvad
+      # - name: Update server version
+      #   run: |
+      #     cd packages/server
+      #     npm version --no-git-tag-version ${{inputs.version}}
+      #     cd ../..
+      # - name: Publish server package
+      #   run: |
+      #     cd packages/server
+      #     npm publish --access=public
+      #     cd ../..
+      #   env:
+      #     NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # - name: Commit and push changes
+      #   run: |
+      #     git config --global user.name 'CI/CD'
+      #     git config --global user.email 'dev@saulx.com'
+      #     git commit -am "CI/CD update package.json files"
+      #     git push
