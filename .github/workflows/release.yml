@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Release version
+        description: Release version (starts with `v`)
         type: string
       notes:
         description: Release notes
@@ -33,7 +33,7 @@ jobs:
           tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
       - name: Create release
         run: |
-          gh release create ${{github.ref_name}} Linux_x86_64.tar.gz --draft --prerelease
+          gh release create ${{inputs.version}} Linux_x86_64.tar.gz --draft --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
   # publish-npm:
