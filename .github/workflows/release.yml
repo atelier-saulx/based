@@ -30,7 +30,7 @@ jobs:
           fail-on-cache-miss: true
       - name: Tar release files
         run: |
-          tar -czf Linux_x86_64.tar.gz packages/server/selvad/local/*
+          tar -czf Linux_x86_64.tar.gz -C packages/server/selvad/local .
       - name: Create release
         run: |
           gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
