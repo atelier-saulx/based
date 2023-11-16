@@ -6,6 +6,6 @@
     "allowJs": true,
     "noPropertyAccessFromIndexSignature": false
   },
-  "include": ["./src"],
-  "exclude": ["./dist", "__test__", "__perf__"]
+  "include": ["./src", "./test"],
+  "exclude": ["./test/browser", "./dist/test", "./dist/src"]
 }
