@@ -21,7 +21,9 @@ jobs:
     steps:
       - name: Check version
         if: ${{ !inputs.version }}
-        run: exit 1
+        run: |
+          echo "No version provided on inputs"
+          exit 1
       - uses: actions/checkout@v4
       - name: Try selvad build cache
         id: cache-selvad-try
