@@ -39,7 +39,7 @@ jobs:
           tar -czf Linux_x86_64.tar.gz -C packages/server/selvad/local .
       - name: Create release
         run: |
-          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
+          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x86_64.tar.gz --notes "${{inputs.notes}}"
         env:
           GH_TOKEN: ${{ github.token }}
   publish-npm:
@@ -87,8 +87,6 @@ jobs:
       - name: Move local binaries to Linux_x86_64
         run: |
           mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
-      - run: |
-          ls -la packages/server/selvad
       - name: Update server version
         run: |
           cd packages/server
