@@ -5,6 +5,7 @@ on:
     inputs:
       version:
         description: Release version (starts with `v`)
+        required: true
         type: string
       notes:
         description: Release notes
