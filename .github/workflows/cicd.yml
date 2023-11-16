@@ -36,6 +36,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
+      # we can't use a cache made in main from a tag so we have to rebuild it
       - name: Try selvad build cache
         if: ${{ !inputs.force-build }}
         id: cache-selvad-try
