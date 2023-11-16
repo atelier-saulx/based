@@ -14,7 +14,7 @@ jobs:
   build-selva:
     uses: './.github/workflows/cicd.yml'
     with:
-      skip-tests: true
+      skip-tests: false
   release-binaries:
     name: Release ${{inputs.version}} binaries
     needs: build-selva
