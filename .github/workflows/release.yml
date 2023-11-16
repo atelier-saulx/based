@@ -11,9 +11,10 @@ on:
         type: string
 jobs:
   temp:
+    name: Temp
     runs-on: ubuntu-latest
-      steps:
-        - run: echo "${{ inputs.ref }}"
+    steps:
+      - run: echo "${{ inputs.ref }}"
   # build-selva:
   #   uses: './.github/workflows/cicd.yml'
   #   with:
