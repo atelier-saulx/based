@@ -19,6 +19,9 @@ jobs:
     needs: build-selva
     runs-on: ubuntu-latest
     steps:
+      - name: Check version
+        if: ${{ !inputs.version }}
+        run: exit 1
       - uses: actions/checkout@v4
       - name: Try selvad build cache
         id: cache-selvad-try
