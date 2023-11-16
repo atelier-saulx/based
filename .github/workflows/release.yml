@@ -9,6 +9,7 @@ jobs:
     uses: './.github/workflows/cicd.yml'
     with:
       skip-tests: true
+      force-build: true
   release-binaries:
     name: Release ${{github.ref_name}} binaries
     needs: build-selva
