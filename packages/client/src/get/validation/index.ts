@@ -1,6 +1,6 @@
 import { getValueByPath, nonRecursiveWalker } from '../../util'
 
-const LIST_ALOWED_CHILDREN = ['$find']
+const LIST_ALOWED_CHILDREN = ['$find', '$sort', '$offset', '$limit']
 const listValidation = (query: any, path: string[]) => {
   const queryPart = getValueByPath(query, path)
   Object.keys(queryPart).forEach((key) => {
