@@ -4,13 +4,7 @@ on:
   workflow_dispatch:
 jobs:
   test:
-    name: Testing arch
-    runs-on: macos-13-xlarge
-    steps:
-      - name: Use Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - run: |
-          node -e "console.log(process.arch)"
-          echo ${{ runner.os }}
+    uses: './.github/workflows/build-binaries.yml'
+    with:
+      platform: macos-12
+      
