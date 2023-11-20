@@ -85,8 +85,8 @@ export const COMMAND_TYPES = {
   'object.keys': 55,
   // modify related commands
   modify: 70,
+  update: 71,
   // TODO:
-  // #define CMD_ID_UPDATE 71
   // hierarchy
   'hierarchy.types.add': 36,
   'hierarchy.types.clear': 37,
@@ -296,6 +296,18 @@ export const selva_rusage = compile([
   selva_server_timespec('ru_stime'),
   { name: 'ru_maxrss', type: 'uint64_le' },
 ])
+
+export const update_def = compile(
+  [
+    { name: 'dir', type: enum_type },
+    { name: 'dir_opt_str', type: 'cstring_p' },
+    { name: 'edge_filter_str', type: 'cstring_p' },
+    { name: 'edge_filter_regs', type: 'cstring_p' },
+  ],
+  {
+    align: true,
+  }
+)
 
 export const hierarchy_find_def = compile(
   [

@@ -1,6 +1,7 @@
 import { Command } from '../types'
 import { defaultEncoder, strEncoder } from './defaultEncoder'
 import { modify } from './modify'
+import { update } from './update'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 
@@ -100,6 +101,7 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   // modify related commands
   modify,
+  update,
   // hierarchy
   'hierarchy.types.add': defaultEncoder([
     { type: 'string' }, // prefix

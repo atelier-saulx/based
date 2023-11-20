@@ -456,15 +456,13 @@ static void SelvaCommand_Update(struct selva_server_response_out *resp, const vo
 
     finalizer_init(&fin);
 
-    const int ARGV_QUERY_OPTS       = 0;
-    int ARGV_NR_UPDATE_OPS          = 1;
-    __unused int ARGV_UPDATE_OPS    = 2;
-    int ARGV_NODE_IDS               = 2;
-    int ARGV_FILTER_EXPR            = 2;
-    int ARGV_FILTER_ARGS            = 3;
+    const int ARGV_QUERY_OPTS           = 0;
+    const int ARGV_NR_UPDATE_OPS        = 1;
+    __unused const int ARGV_UPDATE_OPS  = 2;
+    int ARGV_NODE_IDS                   = 2;
+    int ARGV_FILTER_EXPR                = 3;
+    int ARGV_FILTER_ARGS                = 4;
 #define SHIFT_ARGS(i) \
-    ARGV_NR_UPDATE_OPS += i; \
-    ARGV_UPDATE_OPS += i; \
     ARGV_NODE_IDS += i; \
     ARGV_FILTER_EXPR += i; \
     ARGV_FILTER_ARGS += i
@@ -564,7 +562,7 @@ static void SelvaCommand_Update(struct selva_server_response_out *resp, const vo
         selva_send_errorf(resp, nr_update_ops, "update_ops");
         return;
     }
-    SHIFT_ARGS(1 + nr_update_ops * 3);
+    SHIFT_ARGS(nr_update_ops * 3);
 
     /*
      * Prepare the filter expression if given.
