@@ -10,7 +10,7 @@ on:
           - macos-12
           - macos-13-xlarge
         default: ubuntu-latest
-        type: string
+        type: choice
       skip-tests:
         description: "Skip Tests"
         default: false
