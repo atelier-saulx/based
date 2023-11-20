@@ -42,6 +42,7 @@ jobs:
           echo "exitcode=$?" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
+        continue-on-error: true
       - name: Create release
         if: ${{ steps.check-release.outputs.exitcode == 1 }}
         run: |
