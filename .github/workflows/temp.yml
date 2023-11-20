@@ -5,7 +5,7 @@ on:
 jobs:
   test:
     name: Testing arch
-    runs-on: macos-13
+    runs-on: macos-13-xlarge
     steps:
       - name: Use Node.js
         uses: actions/setup-node@v3
