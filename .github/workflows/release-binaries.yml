@@ -42,15 +42,14 @@ jobs:
           echo "exitcode=$?" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ github.token }}
-        continue-on-error: true
       - name: Create release
-        if: ${{ steps.check-release.outputs.exitcode == 1 }}
+        if: ${{ steps.check-release.outputs.exitcode == 0 }}
         run: |
           gh release upload ${{inputs.version}} $(node scripts/getArch.js).tar.gz
         env:
           GH_TOKEN: ${{ github.token }}
       - name: Update release
-        if: ${{ steps.check-release.outputs.exitcode == 0 }}
+        if: ${{ steps.check-release.outputs.exitcode == 1 }}
         run: |
           gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} $(node scripts/getArch.js).tar.gz --notes "${{inputs.notes}}" --draft --prerelease
         env:
