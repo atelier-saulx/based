@@ -40,11 +40,6 @@ jobs:
           path: |
             packages/server/selvad/local
           key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
-      # - name: Install gcc
-      #   if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
-      #   run: |
-      #    sudo apt update
-      #    sudo apt install gcc-13
       - name: Use Node.js
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         uses: actions/setup-node@v3
