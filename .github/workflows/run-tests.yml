@@ -68,3 +68,5 @@ jobs:
     name: Continue if skipping tests
     if: ${{ inputs.skip-tests == true }}
     runs-on: ${{ inputs.target }}
+    steps:
+      - run: echo ok
