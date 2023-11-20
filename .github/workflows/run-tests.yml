@@ -25,7 +25,7 @@ on:
         type: boolean
 jobs:
   run-tests:
-    name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests ${{ runner.os }} ${{ runner.arch }}
+    name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests ${{ inputs.target }}
     if: ${{ inputs.skip-tests == false }}
     runs-on: ${{ inputs.target }}
     strategy:
