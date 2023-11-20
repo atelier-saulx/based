@@ -3,12 +3,23 @@ run-name: based-db CI/CD Run Tests 🚀
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: "Target platform"
+        options:
+          - ubuntu-latest
+          - macos-13
+          - macos-13-xlarge
+        default: ubuntu-latest
+        type: choice
       skip-tests:
         description: "Skip Tests"
         default: false
         type: boolean
   workflow_call:
     inputs:
+      target:
+        default: ubuntu-latest
+        type: string
       skip-tests:
         default: false
         type: boolean
@@ -16,8 +27,7 @@ jobs:
   run-tests:
     name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
     if: ${{ inputs.skip-tests == false }}
-    needs: build-selva
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.target }}
     strategy:
       matrix:
         tests:
