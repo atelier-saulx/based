@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -109,7 +109,7 @@ static char * test_insert_one_fast(void)
     };
 
     SVector_Init(&vec, 5, compar);
-    SVector_InsertFast(&vec, &el1);
+    SVector_Insert(&vec, &el1);
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
@@ -185,7 +185,7 @@ static char * test_insertFast_lazy_alloc(void)
     };
 
     SVector_Init(&vec, 0, compar);
-    SVector_InsertFast(&vec, &el1);
+    SVector_Insert(&vec, &el1);
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert("vec_arr is allocated", vec.vec_arr != NULL);
@@ -256,7 +256,7 @@ static char * test_insertFast_many(void)
     SVector_Init(&vec, 5, compar);
 
     for (size_t i = 0; i < num_elem(el); i++) {
-        const void * r = SVector_InsertFast(&vec, &el[i]);
+        const void * r = SVector_Insert(&vec, &el[i]);
         pu_assert_ptr_equal("No return value", r, NULL);
     }
 
@@ -274,8 +274,8 @@ static char * test_insertFast_dedup(void)
     };
 
     SVector_Init(&vec, 5, compar);
-    const void *r1 = SVector_InsertFast(&vec, &el1);
-    const void *r2 = SVector_InsertFast(&vec, &el1);
+    const void *r1 = SVector_Insert(&vec, &el1);
+    const void *r2 = SVector_Insert(&vec, &el1);
 
     pu_assert_equal("last is incremented", vec.vec_last, 1);
     pu_assert_ptr_equal("el1 was inserted", vec.vec_arr[0], &el1);
@@ -349,7 +349,7 @@ static char * test_mixed_insertFast_and_Remove(void)
     for (size_t i = 0; i < num_elem(el); i++) {
         const void * r;
 
-        r = SVector_InsertFast(&vec, &el[i]);
+        r = SVector_Insert(&vec, &el[i]);
         pu_assert_ptr_equal("no return value", r, NULL);
 
         if (i > 0 &&i % 3 == 0) {
@@ -731,7 +731,7 @@ static char * test_foreach_large_fast_insert(void)
 
     SVector_Init(&vec, 3, compar);
     for (size_t i = 0; i < num_elem(el); i++) {
-        SVector_InsertFast(&vec, &el[i]);
+        SVector_Insert(&vec, &el[i]);
     }
 
     size_t i = 0;

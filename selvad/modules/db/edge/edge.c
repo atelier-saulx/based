@@ -375,7 +375,7 @@ static void insert_edge(struct EdgeField *src_edge_field, struct SelvaHierarchyN
     /*
      *  Insert the hierarchy node to the edge field.
      */
-    SVector_InsertFast(&src_edge_field->arcs, dst_node);
+    SVector_Insert(&src_edge_field->arcs, dst_node);
 
     /*
      * Add origin reference.

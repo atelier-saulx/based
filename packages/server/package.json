@@ -1,6 +1,6 @@
 {
   "name": "@based/db-server",
-  "version": "0.0.1",
+  "version": "2.0.0-alpha.7",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -9,6 +9,10 @@
     "clean": "rimraf {.turbo,dist,node_modules}"
   },
   "sideEffects": false,
+  "files": [
+    "selvad/*",
+    "!selvad/local"
+  ],
   "dependencies": {
     "@saulx/diff": "^1.1.4",
     "@saulx/utils": "^3.2.2",

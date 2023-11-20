@@ -18,3 +18,4 @@ SRC-selva_object += ../../src/selva_log.c
 SRC-selva_object += ../../modules/db/selva_object/selva_object.c
 SRC-selva_object += ../../modules/db/selva_set/selva_set.c
 SRC-selva_object += ../../modules/db/selva_type.c
+SRC-selva_object += ./mock-config.c

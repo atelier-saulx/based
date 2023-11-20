@@ -444,7 +444,7 @@ static int add_set_values(
             /* Add to the node object. */
             err = SelvaObject_AddStringSet(obj, field, ref);
             if (remove_diff && (err == 0 || err == SELVA_EEXIST)) {
-                SVector_InsertFast(&new_set, ref);
+                SVector_Insert(&new_set, ref);
             }
             if (err == 0) {
                 finalizer_del(&fin, ref);

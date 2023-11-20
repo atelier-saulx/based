@@ -2,7 +2,23 @@ name: CI/CD
 run-name: based-db CI/CD 🚀
 on:
   workflow_dispatch:
+    inputs:
+      skip-tests:
+        description: "Skip Tests"
+        default: false
+        type: boolean
+      force-build:
+        description: "Force build"
+        default: false
+        type: boolean
   workflow_call:
+    inputs:
+      skip-tests:
+        default: false
+        type: boolean
+      force-build:
+        default: false
+        type: boolean
   pull_request:
     branches:
       - main
@@ -21,6 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Try selvad build cache
+        if: ${{ !inputs.force-build }}
         id: cache-selvad-try
         uses: actions/cache/restore@v3
         with:
@@ -59,6 +76,7 @@ jobs:
           key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
   run-tests:
     name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
+    if: ${{ inputs.skip-tests == false }}
     needs: build-selva
     runs-on: ubuntu-latest
     strategy:

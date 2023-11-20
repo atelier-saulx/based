@@ -736,7 +736,7 @@ void SelvaHierarchy_ClearNodeFields(struct SelvaObject *obj) {
 }
 
 static inline void mkHead(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
-    (void)SVector_InsertFast(&hierarchy->heads, node);
+    (void)SVector_Insert(&hierarchy->heads, node);
 }
 
 static inline void rmHead(SelvaHierarchy *hierarchy, SelvaHierarchyNode *node) {
@@ -904,13 +904,13 @@ static int cross_insert_children(
             }
         }
 
-        if (SVector_InsertFast(&node->children, child) == NULL) {
+        if (SVector_Insert(&node->children, child) == NULL) {
             /* The child node is no longer an orphan */
             if (SVector_Size(&child->parents) == 0) {
                 rmHead(hierarchy, child);
             }
 
-            (void)SVector_InsertFast(&child->parents, node);
+            (void)SVector_Insert(&child->parents, node);
 
 #if 0
             SELVA_LOG(SELVA_LOGL_DBG, "Inserted %.*s.children <= %.*s",
@@ -1001,8 +1001,8 @@ static int cross_insert_parents(
         }
 
         /* Do inserts only if the relationship doesn't exist already */
-        if (SVector_InsertFast(&node->parents, parent) == NULL) {
-            (void)SVector_InsertFast(&parent->children, node);
+        if (SVector_Insert(&node->parents, parent) == NULL) {
+            (void)SVector_Insert(&parent->children, node);
 
 #if 0
             SELVA_LOG(SELVA_LOGL_DBG, "Inserted %.*s.parents <= %.*s",
@@ -1785,7 +1785,7 @@ static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, struct SelvaH
 
     node->expire = expire;
     if (expire != 0) {
-        (void)SVector_InsertFast(&hierarchy->expiring.list, node);
+        (void)SVector_Insert(&hierarchy->expiring.list, node);
         updated = true;
     }
 

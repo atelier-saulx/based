@@ -23,7 +23,7 @@ CFLAGS := $(CFLAGS) \
 		   -Wno-unknown-attributes \
 		   $(EN_VALGRIND_CFLAGS) \
 		   -g3 \
-		   -include ../../tunables.h \
+		   -include ../../tunables.h -include ../../include/cdefs.h \
 
 ifeq ($(uname_S),Linux)
 LDFLAGS := -Wl,-rpath,'$$ORIGIN'/../../../lib
