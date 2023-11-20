@@ -14,38 +14,38 @@ jobs:
   build-selva-linux-x64:
     uses: './.github/workflows/build-binaries.yml'
     with:
-      platform: ubuntu-latest
+      target: ubuntu-latest
   test-selva-linux-x64:
     uses: './.github/workflows/run-tests.yml'
     needs: build-selva-linux-x64
     with:
       skip-tests: true # TODO: remove if it works
-      platform: ubuntu-latest
+      target: ubuntu-latest
   release-binaries-linux-x64:
     uses: './.github/workflows/release-binaries.yml'
     needs: test-selva-linux-x64
     with:
-      platform: ubuntu-latest
+      target: ubuntu-latest
   build-selva-mac-x64:
     uses: './.github/workflows/build-binaries.yml'
     needs: test-selva-linux-x64
     with:
-      platform: macos-13
+      target: macos-13
   release-binaries-mac-x64:
     uses: './.github/workflows/release-binaries.yml'
     needs: build-selva-mac-x64
     with:
-      platform: ubuntu-latest
+      target: ubuntu-latest
   build-selva-mac-arm64:
     uses: './.github/workflows/build-binaries.yml'
     needs: test-selva-linux-x64
     with:
-      platform: macos-13-xlarge
+      target: macos-13-xlarge
   release-binaries-mac-arm64:
     uses: './.github/workflows/release-binaries.yml'
     needs: build-selva-mac-arm64
     with:
-      platform: ubuntu-latest-xlarge
+      target: ubuntu-latest-xlarge
   # publish-npm:
   #   name: Publish ${{inputs.version}} npm packages
   #   needs: build-selva
