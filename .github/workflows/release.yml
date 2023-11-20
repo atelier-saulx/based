@@ -11,37 +11,41 @@ on:
         description: Release notes
         type: string
 jobs:
-  build-selva:
-    uses: './.github/workflows/cicd.yml'
+  build-selva-linux-x64:
+    uses: './.github/workflows/build-binaries.yml'
     with:
-      skip-tests: false
-  release-binaries:
-    name: Release ${{inputs.version}} binaries
-    needs: build-selva
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check version
-        if: ${{ !inputs.version }}
-        run: |
-          echo "No version provided on inputs"
-          exit 1
-      - uses: actions/checkout@v4
-      - name: Restore selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
-        with:
-          path: |
-            packages/server/selvad/local
-          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
-          fail-on-cache-miss: true
-      - name: Tar release files
-        run: |
-          tar -czf $(node scripts/getArch.js).tar.gz -C packages/server/selvad/local .
-      - name: Create release
-        run: |
-          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} $(node scripts/getArch.js).tar.gz --notes "${{inputs.notes}}" --draft --prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
+      platform: ubuntu-latest
+  test-selva-linux-x64:
+    uses: './.github/workflows/run-tests.yml'
+    needs: build-selva-linux-x64
+    with:
+      skip-tests: true # TODO: remove if it works
+      platform: ubuntu-latest
+  release-binaries-linux-x64:
+    uses: './.github/workflows/release-binaries.yml'
+    needs: test-selva-linux-x64
+    with:
+      platform: ubuntu-latest
+  build-selva-mac-x64:
+    uses: './.github/workflows/build-binaries.yml'
+    needs: build-selva-linux-x64
+    with:
+      platform: macos-13
+  release-binaries-mac-x64:
+    uses: './.github/workflows/release-binaries.yml'
+    needs: build-selva-mac-x64
+    with:
+      platform: ubuntu-latest
+  build-selva-mac-arm64:
+    uses: './.github/workflows/build-binaries.yml'
+    needs: build-selva-linux-x64
+    with:
+      platform: macos-13-xlarge
+  release-binaries-mac-arm64:
+    uses: './.github/workflows/release-binaries.yml'
+    needs: build-selva-mac-arm64
+    with:
+      platform: ubuntu-latest-xlarge
   # publish-npm:
   #   name: Publish ${{inputs.version}} npm packages
   #   needs: build-selva
