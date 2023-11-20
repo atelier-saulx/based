@@ -85,7 +85,7 @@ const observe = async (
   return id
 }
 
-test.serial.skip('subs layout', async (t) => {
+test.serial('subs layout', async (t) => {
   await start(t)
   const client = t.context.dbClient
 
