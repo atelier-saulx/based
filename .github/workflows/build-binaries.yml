@@ -7,8 +7,8 @@ on:
         description: "Force build"
         default: false
         type: boolean
-      platform:
-        description: "Platform"
+      target:
+        description: "Target platform"
         options:
           - ubuntu-latest
           - macos-12
@@ -20,8 +20,7 @@ on:
       force-build:
         default: false
         type: boolean
-      platform:
-        description: "Platform"
+      target:
         default: ubuntu-latest
         type: string
 jobs:
