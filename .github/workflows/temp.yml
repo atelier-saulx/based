@@ -13,3 +13,4 @@ jobs:
           node-version: '18.x'
       - run: |
           node -e "console.log(process.arch)"
+          echo ${{ runner.os }}
