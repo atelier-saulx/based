@@ -90,7 +90,7 @@ export async function sub(
       return []
     }
 
-    return nextTimestamp(client, opts.$language, nowMarkers)
+    return nextTimestamp(client, opts.$language, subId, nowMarkers)
   }
 
   return { pending, cleanup, fetch, subId, nextRefresh }
