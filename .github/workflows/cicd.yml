@@ -11,10 +11,6 @@ on:
           - macos-13-xlarge
         default: ubuntu-latest
         type: choice
-      skip-tests:
-        description: "Skip Tests"
-        default: false
-        type: boolean
       force-build:
         description: "Force build"
         default: false
@@ -24,9 +20,6 @@ on:
       target:
         default: ubuntu-latest
         type: string
-      skip-tests:
-        default: false
-        type: boolean
       force-build:
         default: false
         type: boolean
@@ -49,5 +42,4 @@ jobs:
     uses: './.github/workflows/run-tests.yml'
     with:
       target: ${{ inputs.target }}
-      skip-tests: false
     needs: build-selva
