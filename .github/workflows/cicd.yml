@@ -7,7 +7,7 @@ on:
         description: "Target platform"
         options:
           - ubuntu-latest
-          - macos-12
+          - macos-13
           - macos-13-xlarge
         default: ubuntu-latest
         type: choice
