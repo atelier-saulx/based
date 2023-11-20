@@ -893,6 +893,7 @@ test.serial.skip('subs layout', async (t) => {
     upcoming: [{ id: 'mau1' }, { id: 'mau2' }].concat(
       upcomingPublishedIds.slice(0, 8)
     ),
+    live: [],
     past: pastPublishedIds.slice(0, 10),
   })
   // t.deepEqualIgnoreOrder(otherResult1.components[0].children, [])
