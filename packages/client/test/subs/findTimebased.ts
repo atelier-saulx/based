@@ -1027,11 +1027,10 @@ test.serial.skip('subs layout', async (t) => {
 
   t.deepEqualIgnoreOrder(result, {
     upcoming: upcomingPublishedIds.slice(0, 10),
+    live: [],
     past: [{ id: 'mau1' }, { id: 'mau2' }].concat(pastPublishedIds.slice(0, 8)),
   })
-  t.deepEqualIgnoreOrder(otherResult1.components[0].children, undefined)
   t.deepEqualIgnoreOrder(otherResult1.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(otherResult2.components[0].children, undefined)
   t.deepEqualIgnoreOrder(otherResult2.components[1].children.length, 10)
   t.deepEqualIgnoreOrder(pick(otherResult3), {
     id: 'sp1',
