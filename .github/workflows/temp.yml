@@ -6,4 +6,4 @@ jobs:
   test:
     uses: './.github/workflows/build-binaries.yml'
     with:
-      target: macos-12
+      target: macos-13
