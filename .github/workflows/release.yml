@@ -28,7 +28,7 @@ jobs:
       platform: ubuntu-latest
   build-selva-mac-x64:
     uses: './.github/workflows/build-binaries.yml'
-    needs: build-selva-linux-x64
+    needs: test-selva-linux-x64
     with:
       platform: macos-13
   release-binaries-mac-x64:
@@ -38,7 +38,7 @@ jobs:
       platform: ubuntu-latest
   build-selva-mac-arm64:
     uses: './.github/workflows/build-binaries.yml'
-    needs: build-selva-linux-x64
+    needs: test-selva-linux-x64
     with:
       platform: macos-13-xlarge
   release-binaries-mac-arm64:
