@@ -53,8 +53,7 @@ jobs:
         if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
         run: npm run build-c
         env:
-          CC: clang
-          # CC: gcc-13
+          CC: gcc-13
       # - name: Test selva
       #   if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
       #   run: |
