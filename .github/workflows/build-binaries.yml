@@ -7,16 +7,28 @@ on:
         description: "Force build"
         default: false
         type: boolean
+      platform:
+        description: "Platform"
+        options:
+          - ubuntu-latest
+          - macos-12
+          - macos-13-xlarge
+        default: ubuntu-latest
+        type: string
   workflow_call:
     inputs:
       force-build:
         default: false
         type: boolean
+      platform:
+        description: "Platform"
+        default: ubuntu-latest
+        type: string
 jobs:
   build-selva:
     name: Build and Test Selvad
     if: github.event.pull_request.draft == false
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.target }}
     steps:
       - uses: actions/checkout@v4
       - name: Try selvad build cache
