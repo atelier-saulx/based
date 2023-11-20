@@ -19,7 +19,6 @@ jobs:
     uses: './.github/workflows/run-tests.yml'
     needs: build-selva-linux-x64
     with:
-      skip-tests: true # TODO: remove if it works
       target: ubuntu-latest
   release-binaries-linux-x64:
     uses: './.github/workflows/release-binaries.yml'
