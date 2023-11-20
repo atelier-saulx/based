@@ -175,7 +175,9 @@ export class BasedDbClient extends Emitter {
     cleanup: () => Promise<void>
     fetch: () => Promise<any>
     pending?: GetCommand
-    nextRefresh?: () => Promise<{ nextRefresh: number; markerId: number }[]>
+    nextRefresh?: () => Promise<
+      { nextRefresh: number; markerId: number; subId: number }[]
+    >
   }> {
     return sub(this, opts, eventOpts)
   }
