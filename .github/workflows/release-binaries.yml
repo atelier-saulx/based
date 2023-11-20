@@ -1,0 +1,43 @@
+name: Release
+run-name: based-db CI/CD Release 🚀
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      notes:
+        description: Release notes
+        type: string
+      target:
+        type: string
+        default: ubuntu-latest
+jobs:
+  release-binaries:
+    name: Release ${{inputs.version}} binaries
+    runs-on: ${{ inputs.target }}
+    steps:
+      - name: Check version
+        if: ${{ !inputs.version }}
+        run: |
+          echo "No version provided on inputs"
+          exit 1
+      - uses: actions/checkout@v4
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            packages/server/selvad/local
+          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
+          fail-on-cache-miss: true
+      - name: Tar release files
+        run: |
+          tar -czf $(node scripts/getArch.js).tar.gz -C packages/server/selvad/local .
+      - name: Create release
+        run: |
+          gh release view && \
+          gh release upload ${{inputs.version}} $(node scripts/getArch.js).tar.gz || \
+          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} $(node scripts/getArch.js).tar.gz --notes "${{inputs.notes}}" --draft --prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
