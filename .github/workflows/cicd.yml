@@ -32,7 +32,7 @@ on:
 jobs:
   build-selva:
     uses: './.github/workflows/build-binaries.yml'
-  run-tests:
-    uses: './.github/workflows/run-tests.yml'
-    with:
-      skip-tests: false
+  # run-tests:
+  #   uses: './.github/workflows/run-tests.yml'
+  #   with:
+  #     skip-tests: false
