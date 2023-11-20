@@ -3,6 +3,14 @@ run-name: based-db CI/CD 🚀
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: "Target platform"
+        options:
+          - ubuntu-latest
+          - macos-12
+          - macos-13-xlarge
+        default: ubuntu-latest
+        type: string
       skip-tests:
         description: "Skip Tests"
         default: false
@@ -13,6 +21,9 @@ on:
         type: boolean
   workflow_call:
     inputs:
+      target:
+        default: ubuntu-latest
+        type: string
       skip-tests:
         default: false
         type: boolean
@@ -32,8 +43,11 @@ on:
 jobs:
   build-selva:
     uses: './.github/workflows/build-binaries.yml'
+    with:
+      target: ${{ inputs.target }}
   run-tests:
     uses: './.github/workflows/run-tests.yml'
     with:
+      target: ${{ inputs.target }}
       skip-tests: false
     needs: build-selva
