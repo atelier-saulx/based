@@ -25,7 +25,7 @@ on:
         type: boolean
 jobs:
   build-selva:
-    name: Build and Test Selvad ${{ runner.os }} ${{ runner.arch }}
+    name: Build and Test Selvad ${{ inputs.target }}
     if: github.event.pull_request.draft == false
     runs-on: ${{ inputs.target }}
     steps:
