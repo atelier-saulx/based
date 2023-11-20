@@ -1,0 +1,62 @@
+name: Build binaries
+run-name: based-db CI/CD Build Binaries 🚀
+on:
+  workflow_dispatch:
+    inputs:
+      force-build:
+        description: "Force build"
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      force-build:
+        default: false
+        type: boolean
+jobs:
+  build-selva:
+    name: Build and Test Selvad
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Try selvad build cache
+        if: ${{ !inputs.force-build }}
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          lookup-only: true
+          path: |
+            packages/server/selvad/local
+          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
+      - name: Install gcc
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: |
+         sudo apt update
+         sudo apt install gcc-13
+      - name: Use Node.js
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Build selva
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        run: npm run build-c
+        env:
+         CC: gcc-13
+      # - name: Test selva
+      #   if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+      #   run: |
+      #     cd selvad
+      #     make test
+      #     cd ..
+      - name: Save selvad build cache
+        if: ${{ steps.cache-selvad-try.outputs.cache-hit != 'true' }}
+        id: cache-selvad-save
+        uses: actions/cache/save@v3
+        with:
+          path: |
+            packages/server/selvad/local
+          key: ${{ steps.cache-selvad-try.outputs.cache-primary-key }}
+
+
+

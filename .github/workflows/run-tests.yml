@@ -1,0 +1,56 @@
+name: Run Tests
+run-name: based-db CI/CD Run Tests 🚀
+on:
+  workflow_dispatch:
+    inputs:
+      skip-tests:
+        description: "Skip Tests"
+        default: false
+        type: boolean
+  workflow_call:
+    inputs:
+      skip-tests:
+        default: false
+        type: boolean
+jobs:
+  run-tests:
+    name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests
+    if: ${{ inputs.skip-tests == false }}
+    needs: build-selva
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tests:
+          - ["packages/client","test/*.ts"]
+          - ["packages/client", "test/schema/*.ts"]
+          - ["packages/client", "test/subs/*.ts"]
+          - ["packages/client", "test/indexing/*.ts"]
+          - ["packages/schema", "test/*.ts"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - name: Restore selvad build cache
+        id: cache-selvad-try
+        uses: actions/cache/restore@v3
+        with:
+          path: |
+            packages/server/selvad/local
+          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
+      - name: Restore node_modules
+        id: cache-npm-try
+        uses: actions/cache@v3
+        with:
+          path: '**/node_modules'
+          key: ${{ runner.os }}-${{ runner.arch }}-npm-${{ hashFiles('**/package-lock.json') }}
+      - name: Install dependencies
+        if: ${{ steps.cache-npm-try.outputs.cache-hit != 'true' }}
+        run: npm ci
+      - name: Build based-db
+        run: npm run build
+      - name: Run tests
+        run: |
+          cd ${{ matrix.tests[0] }}
+          npm run test-ci -- ${{ matrix.tests[1] }}
