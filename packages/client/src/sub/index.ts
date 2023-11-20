@@ -19,7 +19,9 @@ export async function sub(
   cleanup: () => Promise<void>
   fetch: () => Promise<any>
   pending?: GetCommand
-  nextRefresh?: () => Promise<{ nextRefresh: number; markerId: number }[]>
+  nextRefresh?: () => Promise<
+    { nextRefresh: number; markerId: number; subId: number }[]
+  >
 }> {
   const origMarkerId = eventOpts?.markerId
   const { subId, markerId, merged, defaults, pending, markers } = await get(
@@ -90,7 +92,7 @@ export async function sub(
       return []
     }
 
-    return nextTimestamp(client, opts.$language, nowMarkers)
+    return nextTimestamp(client, opts.$language, subId, nowMarkers)
   }
 
   return { pending, cleanup, fetch, subId, nextRefresh }

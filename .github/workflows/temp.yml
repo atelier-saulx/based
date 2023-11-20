@@ -7,4 +7,3 @@ jobs:
     uses: './.github/workflows/build-binaries.yml'
     with:
       target: macos-12
-      
