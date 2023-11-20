@@ -36,7 +36,7 @@ jobs:
     uses: './.github/workflows/release-binaries.yml'
     needs: build-selva-mac-x64
     with:
-      target: ubuntu-latest
+      target: macos-13
       version: ${{ inputs.version }}
       notes: ${{ inputs.notes }}
   build-selva-mac-arm64:
@@ -48,7 +48,7 @@ jobs:
     uses: './.github/workflows/release-binaries.yml'
     needs: build-selva-mac-arm64
     with:
-      target: ubuntu-latest-xlarge
+      target: macos-13-xlarge
       version: ${{ inputs.version }}
       notes: ${{ inputs.notes }}
   # publish-npm:
