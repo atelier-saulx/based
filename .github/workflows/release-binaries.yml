@@ -9,13 +9,10 @@ on:
       notes:
         description: Release notes
         type: string
-      target:
-        type: string
-        default: ubuntu-latest
 jobs:
   release-binaries:
     name: Release ${{inputs.version}} binaries
-    runs-on: ${{ inputs.target }}
+    runs-on: ubunto-latest
     steps:
       - name: Check version
         if: ${{ !inputs.version }}
@@ -23,34 +20,12 @@ jobs:
           echo "No version provided on inputs"
           exit 1
       - uses: actions/checkout@v4
-      - name: Restore selvad build cache
-        id: cache-selvad-try
-        uses: actions/cache/restore@v3
+      - uses: actions/download-artifact@v3
         with:
-          path: |
-            packages/server/selvad/local
-          key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
-          fail-on-cache-miss: true
-      - name: Tar release files
-        run: |
-          tar -czf $(node scripts/getArch.js).tar.gz -C packages/server/selvad/local .
-      - name: Check if release exists
-        id: check-release
-        run: |
-          set +e
-          gh release view
-          echo "exitcode=$?" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ github.token }}
+          path: .
       - name: Create release
         if: ${{ steps.check-release.outputs.exitcode == 1 }}
         run: |
-          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} $(node scripts/getArch.js).tar.gz --notes "${{inputs.notes}}" --draft --prerelease
-        env:
-          GH_TOKEN: ${{ github.token }}
-      - name: Update release
-        if: ${{ steps.check-release.outputs.exitcode == 0 }}
-        run: |
-          gh release upload ${{inputs.version}} $(node scripts/getArch.js).tar.gz
+          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x64.tar.gz Darwin_x64.tar.gz Darwin_arm64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
