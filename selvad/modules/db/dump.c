@@ -519,6 +519,7 @@ __used static void dump_on_exit(int code, void *)
 
     if (code != 0 ||
         selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD ||
+        main_hierarchy ||
         !selva_db_is_dirty ||
         selva_replication_get_mode() == SELVA_REPLICATION_MODE_REPLICA) {
         /* A dump shall not be made in several cases. */
