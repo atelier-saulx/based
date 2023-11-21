@@ -25,9 +25,16 @@ jobs:
             packages/server/selvad/local
           key: ${{ runner.os }}-${{ runner.arch }}-selvad-${{ hashFiles('selvad') }}
           fail-on-cache-miss: true
+      - name: Get archive name
+        id: archive-name
+        run: |
+          echo "filename=$(node scripts/getArch.js).tar.gz" >> $GITHUB_OUTPUT
+      - name: Compress binaries
+        run: |
+          tar -czf ${{ steps.archive-name.outputs.filename }} -C packages/server/selvad/local .
       - name: Archive artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os}}-${{ runner.arch}}-selvad-binaries
           path: |
-            packages/server/selvad/local/*
+            ${{ steps.archive-name.outputs.filename }}
