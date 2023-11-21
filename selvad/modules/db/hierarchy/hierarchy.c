@@ -151,6 +151,7 @@ static int removeRelationships(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
         enum SelvaHierarchyNode_Relationship rel);
+static void hierarchy_expire_tim_proc(struct event *e __unused, void *data);
 static void hierarchy_set_expire(struct SelvaHierarchy *hierarchy, SelvaHierarchyNode *node, uint32_t expire);
 RB_PROTOTYPE_STATIC(hierarchy_index_tree, SelvaHierarchyNode, _index_entry, SelvaHierarchyNode_Compare)
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type);
@@ -262,6 +263,7 @@ SelvaHierarchy *SelvaModify_NewHierarchy(void) {
 
     SVector_Init(&hierarchy->expiring.list, 0, SVector_HierarchyNode_expire_compare);
     hierarchy->expiring.next = HIERARCHY_EXPIRING_NEVER;
+    hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, hierarchy);
 
 fail:
     return hierarchy;
@@ -4303,9 +4305,6 @@ static void SelvaHierarchy_VerCommand(struct selva_server_response_out *resp, co
 }
 
 static int Hierarchy_OnLoad(void) {
-    /*
-     * Register commands.
-     */
     selva_mk_command(CMD_ID_HIERARCHY_DEL, SELVA_CMD_MODE_MUTATE, "hierarchy.del", SelvaHierarchy_DelNodeCommand);
     selva_mk_command(CMD_ID_HIERARCHY_EXPIRE, SELVA_CMD_MODE_MUTATE, "hierarchy.expire", SelvaHierarchy_ExpireCommand);
     selva_mk_command(CMD_ID_HIERARCHY_HEADS, SELVA_CMD_MODE_PURE, "hierarchy.heads", SelvaHierarchy_HeadsCommand);
@@ -4317,14 +4316,6 @@ static int Hierarchy_OnLoad(void) {
     selva_mk_command(CMD_ID_HIERARCHY_COMPRESS, SELVA_CMD_MODE_PURE, "hierarchy.compress", SelvaHierarchy_CompressCommand); /* Pure or not? */
     selva_mk_command(CMD_ID_HIERARCHY_LIST_COMPRESSED, SELVA_CMD_MODE_PURE, "hierarchy.listCompressed", SelvaHierarchy_ListCompressedCommand);
     selva_mk_command(CMD_ID_HIERARCHY_VER, SELVA_CMD_MODE_PURE, "hierarchy.ver", SelvaHierarchy_VerCommand);
-
-    main_hierarchy = SelvaModify_NewHierarchy();
-    if (!main_hierarchy) {
-        /* Probably not what happened but good enough. */
-        return SELVA_HIERARCHY_ENOMEM;
-    }
-
-    main_hierarchy->expiring.tim_id = evl_set_timeout(&hierarchy_expire_period, hierarchy_expire_tim_proc, main_hierarchy);
 
     return 0;
 }

@@ -22,6 +22,7 @@
 #include "config.h"
 #include "db_config.h"
 #include "selva_db.h"
+#include "hierarchy.h"
 
 struct selva_glob_config selva_glob_config = {
     .debug_modify_replication_delay_ns = 0,
@@ -93,6 +94,11 @@ __constructor static void init(void)
                       selva_strerror(err));
             exit(EXIT_FAILURE);
         }
+    }
+
+    main_hierarchy = SelvaModify_NewHierarchy();
+    if (!main_hierarchy) {
+        exit(EXIT_FAILURE);
     }
 
     err = dump_load_default_sdb();
