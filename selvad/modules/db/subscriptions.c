@@ -287,7 +287,7 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
  * removal is expected to happen.
  * It's advisable to call send_deferred_event(hierarchy, marker) before removing
  * the subs and calling this function or otherwise any pending event will be
- * missing sub_ids when sent later by destroy_marer.
+ * missing sub_ids when sent later by destroy_marker.
  * The marker is only actually destroyed if no subscription is using it.
  */
 static void do_sub_marker_removal(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
@@ -1110,7 +1110,11 @@ int SelvaSubscriptions_AddAliasMarker(
         goto fail;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        do_sub_marker_removal(hierarchy, marker);
+        goto fail;
+    }
     marker_set_dir(marker, SELVA_HIERARCHY_TRAVERSAL_NODE);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
@@ -1132,6 +1136,7 @@ int SelvaSubscriptions_AddMissingMarker(
     ) {
     struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
     struct Selva_SubscriptionMarker *marker;
+    int err;
 
     if (nr_accessors == 0) {
         return SELVA_EINVAL;
@@ -1141,8 +1146,6 @@ int SelvaSubscriptions_AddMissingMarker(
     if (marker && !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_MISSING)) {
         return SELVA_EINVAL;
     } else if (!marker) {
-        int err;
-
         err = new_marker(hierarchy, marker_id, NULL, 0, NULL, 0,
                          SELVA_SUBSCRIPTION_FLAG_MISSING,
                          defer_event, &marker);
@@ -1150,7 +1153,12 @@ int SelvaSubscriptions_AddMissingMarker(
             return err;
         }
     }
-    upsert_sub_marker(hierarchy, sub_id, marker);
+
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err && err != SELVA_SUBSCRIPTIONS_EEXIST) {
+        do_sub_marker_removal(hierarchy, marker);
+        return err;
+    }
 
     for (size_t i = 0; i < nr_accessors; i++) {
         int err;
@@ -1224,7 +1232,11 @@ int SelvaSubscriptions_AddCallbackMarker(
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        do_sub_marker_removal(hierarchy, marker);
+        goto out;
+    }
     marker_set_dir(marker, dir);
 
     if (dir_expression) {
@@ -2039,7 +2051,7 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
 
     marker = find_marker(hierarchy, marker_id);
     if (marker) {
-        upsert_sub_marker(hierarchy, sub_id, marker);
+        (void)upsert_sub_marker(hierarchy, sub_id, marker);
         selva_send_ll(resp, 1);
         return;
     }
@@ -2181,7 +2193,7 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
         goto fail;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    (void)upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_dir(marker, query_opts.dir);
 
     if (traversal_expression) {
@@ -2357,7 +2369,11 @@ static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_ou
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        selva_send_errorf(resp, err, "Failed to create a subscription");
+        goto out;
+    }
     marker_set_trigger(marker, event_type);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
