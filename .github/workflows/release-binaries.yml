@@ -12,7 +12,7 @@ on:
 jobs:
   release-binaries:
     name: Release ${{inputs.version}} binaries
-    runs-on: ubunto-latest
+    runs-on: ubuntu-latest
     steps:
       - name: Check version
         if: ${{ !inputs.version }}
