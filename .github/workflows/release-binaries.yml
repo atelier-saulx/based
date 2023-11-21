@@ -24,8 +24,7 @@ jobs:
         with:
           path: .
       - name: Create release
-        if: ${{ steps.check-release.outputs.exitcode == 1 }}
         run: |
-          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux_x64.tar.gz Darwin_x64.tar.gz Darwin_arm64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
+          gh release create ${{inputs.version}} --title ${{inputs.version}} --target ${{github.ref}} Linux-X64-selvad-binaries/Linux_x64.tar.gz macOS-X64-selvad-binaries/Darwin_x64.tar.gz macOS-ARM64-selvad-binaries/Darwin_arm64.tar.gz --notes "${{inputs.notes}}" --draft --prerelease
         env:
           GH_TOKEN: ${{ github.token }}
