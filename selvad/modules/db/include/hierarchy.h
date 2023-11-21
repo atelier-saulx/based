@@ -283,10 +283,10 @@ void SelvaModify_DestroyHierarchy(SelvaHierarchy *hierarchy);
 
 /**
  * Get the type name for a type prefix.
- * It's the caller's responsibility to call selva_string_free() for the
- * returned string.
+ * The caller may call selva_string_free() for the returned string but it won't
+ * be actually freed.
  */
-struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeType type);
+struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id);
 
 /**
  * Copy nodeId to a buffer.

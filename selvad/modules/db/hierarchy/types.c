@@ -4,6 +4,7 @@
  */
 #include <stddef.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>
 #include "util/finalizer.h"
 #include "util/selva_string.h"
@@ -15,6 +16,21 @@
 #include "selva_onload.h"
 #include "selva_object.h"
 #include "hierarchy.h"
+
+static struct selva_string *root_type;
+
+struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeId node_id) {
+    if (unlikely(!memcmp(node_id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE))) {
+        return root_type;
+    } else {
+        struct SelvaObject *obj = SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy);
+        struct selva_string *out = NULL;
+
+        (void)SelvaObject_GetStringStr(obj, node_id, SELVA_NODE_TYPE_SIZE, &out);
+
+        return out;
+    }
+}
 
 /**
  * This function takes care of sharing/holding name.
@@ -30,15 +46,6 @@ static void SelvaHierarchyTypes_Clear(struct SelvaHierarchy *hierarchy) {
     struct SelvaObject *obj = SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy);
 
     SelvaObject_Clear(obj, NULL);
-}
-
-struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, const Selva_NodeType type) {
-    struct SelvaObject *obj = SELVA_HIERARCHY_GET_TYPES_OBJ(hierarchy);
-    struct selva_string *out = NULL;
-
-    (void)SelvaObject_GetStringStr(obj, type, SELVA_NODE_TYPE_SIZE, &out);
-
-    return out;
 }
 
 static void SelvaHierarchyTypes_AddCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
@@ -92,6 +99,8 @@ static void SelvaHierarchyTypes_ListCommand(struct selva_server_response_out *re
 }
 
 static int SelvaHierarchyTypes_OnLoad(void) {
+    root_type = selva_string_create("root", 4, SELVA_STRING_INTERN);
+
     selva_mk_command(CMD_ID_HIERARCHY_TYPES_ADD, SELVA_CMD_MODE_MUTATE, "hierarchy.types.add", SelvaHierarchyTypes_AddCommand);
     selva_mk_command(CMD_ID_HIERARCHY_TYPES_CLEAR, SELVA_CMD_MODE_MUTATE, "hierarchy.types.clear", SelvaHierarchyTypes_ClearCommand);
     selva_mk_command(CMD_ID_HIERARCHY_TYPES_LIST, SELVA_CMD_MODE_PURE, "hierarchy.types.list", SelvaHierarchyTypes_ListCommand);

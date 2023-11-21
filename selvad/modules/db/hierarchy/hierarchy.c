@@ -324,28 +324,13 @@ static int create_node_object(struct SelvaHierarchy *hierarchy, SelvaHierarchyNo
         return err;
     }
 
-    /* Set the type for root. */
-    if (!memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
-        struct selva_string *type;
+    struct selva_string *type;
 
-        type = selva_string_create("root", 4, 0);
+    type = SelvaHierarchyTypes_Get(hierarchy, node->id);
+    if (type) {
         err = SelvaObject_SetStringStr(obj, SELVA_TYPE_FIELD, sizeof(SELVA_TYPE_FIELD) - 1, type);
         if (err) {
-            selva_string_free(type);
             return err;
-        }
-
-        /* Establish fast access to the root. */
-        hierarchy->root = node;
-    } else {
-        struct selva_string *type;
-
-        type = SelvaHierarchyTypes_Get(hierarchy, node->id);
-        if (type) {
-            err = SelvaObject_SetStringStr(obj, SELVA_TYPE_FIELD, sizeof(SELVA_TYPE_FIELD) - 1, type);
-            if (err) {
-                return err;
-            }
         }
     }
 
@@ -3169,6 +3154,10 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
     const size_t nr_parents = SVector_Size(&node->parents);
     void *tag_compressed;
     int err;
+
+    if (!memcmp(node->id, ROOT_NODE_ID, SELVA_NODE_ID_SIZE)) {
+        return SELVA_HIERARCHY_ENOTSUP;
+    }
 
     if (node->flags & SELVA_NODE_FLAGS_DETACHED) {
         SELVA_LOG(SELVA_LOGL_ERR, "Node already detached: %.*s",
