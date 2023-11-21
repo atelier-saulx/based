@@ -25,8 +25,6 @@ jobs:
     needs: test-selva-linux-x64
     with:
       target: ubuntu-latest
-      version: ${{ inputs.version }}
-      notes: ${{ inputs.notes }}
   build-selva-mac-x64:
     uses: './.github/workflows/build-binaries.yml'
     needs: test-selva-linux-x64
@@ -37,8 +35,6 @@ jobs:
     needs: build-selva-mac-x64
     with:
       target: macos-13
-      version: ${{ inputs.version }}
-      notes: ${{ inputs.notes }}
   build-selva-mac-arm64:
     uses: './.github/workflows/build-binaries.yml'
     needs: test-selva-linux-x64
@@ -49,8 +45,6 @@ jobs:
     needs: build-selva-mac-arm64
     with:
       target: macos-13-xlarge
-      version: ${{ inputs.version }}
-      notes: ${{ inputs.notes }}
   
   # publish-npm:
   #   name: Publish ${{inputs.version}} npm packages
