@@ -54,6 +54,11 @@ jobs:
       - binaries-to-artifacts-mac-arm64
     runs-on: ubuntu-latest
     steps:
+      - name: Check version
+        if: ${{ !inputs.version }}
+        run: |
+          echo "No version provided on inputs"
+          exit 1
       - uses: actions/checkout@v4
       - name: Use Node.js
         uses: actions/setup-node@v3
@@ -108,12 +113,57 @@ jobs:
           cd ../..
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Update linux x64 binaries package version
+        run: |
+          cd packages/server/selvad-packages/linux-x64
+          npm version --no-git-tag-version ${{inputs.version}}
+          cd ../../../..
+      - name: Update darwin x64 binaries package version
+        run: |
+          cd packages/server/selvad-packages/darwin-x64
+          npm version --no-git-tag-version ${{inputs.version}}
+          cd ../../../..
+      - name: Update darwin arm64 binaries package version
+        run: |
+          cd packages/server/selvad-packages/darwin-arm64
+          npm version --no-git-tag-version ${{inputs.version}}
+          cd ../../../..
       - name: Commit and push changes
         run: |
           git config --global user.name 'CI/CD'
           git config --global user.email 'dev@saulx.com'
           git commit -am "CI/CD update package.json files"
           git push
+      - uses: actions/download-artifact@v3
+        with:
+          path: .
+      - name: Extract linux-x64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/linux-x64/bin
+          tar -zxf Linux-X64-selvad-binaries/linux-x64.tar.gz -C packages/server/selvad-packages/linux-x64/bin
+          ls -la packages/server/selvad-packages/linux-x64/bin
+      - name: Publish linux-x64 npm package
+          cd packages/server/selvad-packages/linux-x64
+          npm publish --access=public
+          cd ../../../..
+      - name: Extract darwin-x64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/darwin-x64/bin
+          tar -zxf macOS-X64-selvad-binaries/darwin-x64.tar.gz -C packages/server/selvad-packages/darwin-x64/bin
+          ls -la packages/server/selvad-packages/darwin-x64/bin
+      - name: Publish darwin-x64 npm package
+          cd packages/server/selvad-packages/darwin-x64
+          npm publish --access=public
+          cd ../../../..
+      - name: Extract darwin-arm64 to package bin folder
+        run: |
+          mkdir -p packages/server/selvad-packages/darwin-arm64/bin
+          tar -zxf macOS-ARM64-selvad-binaries/darwin-arm64.tar.gz -C packages/server/selvad-packages/darwin-arm64/bin
+          ls -la packages/server/selvad-packages/darwin-arm64/bin
+      - name: Publish darwin-arm64 npm package
+          cd packages/server/selvad-packages/darwin-arm64
+          npm publish --access=public
+          cd ../../../..
   tag-version:
     name: Create tag for ${{inputs.version}}
     needs: publish-npm
@@ -130,9 +180,3 @@ jobs:
           git config --global user.email 'dev@saulx.com'
           git tag ${{ inputs.version }}
           git push --tags
-  release-binaries:
-    uses: './.github/workflows/release-binaries.yml'
-    needs: tag-version
-    with:
-      version: ${{ inputs.version }}
-      notes: ${{ inputs.notes }}
