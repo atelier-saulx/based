@@ -12,6 +12,7 @@ import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import { mkdirSync, existsSync } from 'fs'
+import node_modules from 'node_modules-path'
 
 export class SelvaServer extends EventEmitter {
   public pm: ChildProcess
@@ -53,14 +54,15 @@ export class SelvaServer extends EventEmitter {
       path.join(__dirname, '..', '..', 'selvad', 'local')
     )
 
-    const execPath = path.join(
-      __dirname,
-      '..',
-      '..',
-      'selvad',
-      localBuild ? 'local' : 'Linux_x86_64',
-      'selvad'
-    )
+    const execPath = localBuild
+      ? path.join(__dirname, '..', '..', 'selvad', 'local', 'selvad')
+      : path.join(
+          node_modules(),
+          '@based',
+          `db-server-${process.platform}-${process.arch}`,
+          'bin',
+          'selvad'
+        )
 
     this.pm = spawn(execPath, [], {
       env: {
