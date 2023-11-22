@@ -131,6 +131,7 @@ jobs:
           cd ../../../..
       - name: Commit and push changes
         run: |
+          npm ci
           git config --global user.name 'CI/CD'
           git config --global user.email 'dev@saulx.com'
           git commit -am "CI/CD update package.json files"
