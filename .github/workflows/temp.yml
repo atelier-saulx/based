@@ -1,9 +1,0 @@
-name: Temp
-run-name: Temp runner
-on:
-  workflow_dispatch:
-jobs:
-  test:
-    uses: './.github/workflows/build-binaries.yml'
-    with:
-      target: ubuntu-latest

@@ -1,5 +1,5 @@
-name: Release
-run-name: based-db CI/CD Release 🚀
+name: Publish
+run-name: based-db CI/CD Publish 🚀
 on:
   workflow_dispatch:
     inputs:
