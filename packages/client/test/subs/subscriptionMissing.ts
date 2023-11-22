@@ -48,7 +48,7 @@ test.serial.skip('verify missing markers', async (t) => {
   // TODO Remove
   await client.command('resolve.nodeid', [1, 'ma1'])
 
-  await wait(100)
+  await wait(200)
   const mMarkersBefore = await client.command('subscriptions.list', 2)
   console.log('missingMarkersBefore:', mMarkersBefore)
   console.log(
@@ -59,7 +59,7 @@ test.serial.skip('verify missing markers', async (t) => {
   //  type: 'match',
   //  //value: 5, TODO crash
   //})
-  await wait(100)
+  await wait(200)
   const mMarkersAfter = await client.command('subscriptions.list', 2)
   console.log('missingMarkersAfter:', mMarkersAfter)
 

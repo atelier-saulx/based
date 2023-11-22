@@ -462,7 +462,7 @@ test.serial('subscribe with timeout right away record', async (t) => {
     }
   )
 
-  await wait(200)
+  await wait(300)
 
   await client.set({
     $id: id,

@@ -48,7 +48,7 @@ test.beforeEach(async (t) => {
   })
 
   // A small delay is needed after setting the schema
-  await wait(100)
+  await wait(200)
 
   await t.context.client.set({
     type: 'author',
@@ -108,7 +108,7 @@ test('find - inherit', async (t) => {
   })
 
   // A small delay is needed after setting the schema
-  await wait(100)
+  await wait(200)
 
   await client.set({
     type: 'author',
@@ -203,7 +203,7 @@ test('find - inherit by type', async (t) => {
   })
 
   // A small delay is needed after setting the schema
-  await wait(100)
+  await wait(200)
 
   await client.set({
     type: 'author',
