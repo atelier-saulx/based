@@ -1,1 +1,1 @@
-console.info(`${process.platform}_${process.arch}`)
+console.info(`${process.platform}-${process.arch}`)
