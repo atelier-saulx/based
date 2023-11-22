@@ -147,6 +147,8 @@ jobs:
           cd packages/server/selvad-packages/linux-x64
           npm publish --access=public
           cd ../../../..
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Extract darwin-x64 to package bin folder
         run: |
           mkdir -p packages/server/selvad-packages/darwin-x64/bin
@@ -157,6 +159,8 @@ jobs:
           cd packages/server/selvad-packages/darwin-x64
           npm publish --access=public
           cd ../../../..
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Extract darwin-arm64 to package bin folder
         run: |
           mkdir -p packages/server/selvad-packages/darwin-arm64/bin
@@ -167,6 +171,8 @@ jobs:
           cd packages/server/selvad-packages/darwin-arm64
           npm publish --access=public
           cd ../../../..
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
   tag-version:
     name: Create tag for ${{inputs.version}}
     needs: publish-npm
