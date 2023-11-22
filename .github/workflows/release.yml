@@ -104,7 +104,8 @@ jobs:
       - name: Update server version
         run: |
           cd packages/server
-          npm version --no-git-tag-version ${{inputs.version}}
+          node scripts/updateOptionalDependencies.js ${{ inputs.version }}
+          npm version --no-git-tag-version ${{ inputs.version }}
           cd ../..
       - name: Publish server package
         run: |
