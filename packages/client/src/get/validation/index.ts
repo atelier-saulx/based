@@ -210,6 +210,8 @@ const filterValidation = (query: any, path: string[]) => {
     '$field',
     '$operator',
     '$value',
+    '$and',
+    '$or',
   ])
   checkArgumentRequiredProperties(queryPart, argument, path, [
     '$field',
@@ -226,7 +228,7 @@ const fieldValidation = (query: any, path: string[]) => {
 const operatorValidation = (query: any, path: string[]) => {
   const argument = '$operator'
   const queryPart = getValueByPath(query, path)
-  checkArgumentParent(argument, path, ['$filter'])
+  checkArgumentParent(argument, path, ['$filter', '$and', '$or'])
   checkArgumentType(queryPart, argument, path, ['string'])
   checkArgumentValues(queryPart, argument, path, [
     '=',
@@ -249,10 +251,24 @@ const valueValidation = (query: any, path: string[]) => {
   const isInFilter =
     path.length > 2 &&
     (!isNaN(parseInt(path[path.length - 2])) ||
-      path[path.length - 2] === '$filter')
+      ['$filter', '$and', '$or'].includes(path[path.length - 2]))
   if (!isInFilter) {
     checkArgumentType(queryPart, argument, path, ['string'])
   }
+}
+
+const andValidation = (query: any, path: string[]) => {
+  const argument = '$and'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentType(queryPart, argument, path, ['object'])
+  checkArgumentParent(argument, path, ['$filter', '$and', '$or'])
+}
+
+const orValidation = (query: any, path: string[]) => {
+  const argument = '$or'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentType(queryPart, argument, path, ['object'])
+  checkArgumentParent(argument, path, ['$filter', '$and', '$or'])
 }
 
 const inheritValidation = (query: any, path: string[]) => {
@@ -337,6 +353,12 @@ export const getQueryValidation = (query: any) => {
           break
         case '$value':
           valueValidation(query, path)
+          break
+        case '$and':
+          andValidation(query, path)
+          break
+        case '$or':
+          orValidation(query, path)
           break
         case '$inherit':
           inheritValidation(query, path)

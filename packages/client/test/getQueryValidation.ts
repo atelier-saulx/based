@@ -329,6 +329,65 @@ test('validate $filter', (t) => {
   )
 })
 
+test('validate $and and $or', (t) => {
+  t.notThrows(() => {
+    getQueryValidation({
+      items: {
+        id: true,
+        $list: {
+          $sort: { $field: 'status', $order: 'desc' },
+          $limit: 1000,
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $operator: '=',
+                $field: 'type',
+                $value: 'match',
+                $and: {
+                  $operator: '=',
+                  $field: 'status',
+                  $value: [300, 2],
+                },
+                $or: {
+                  $operator: '=',
+                  $field: 'name',
+                  $value: 'league 1',
+                  $or: {
+                    $operator: '>',
+                    $field: 'value',
+                    $value: 4,
+                    $and: {
+                      $operator: '>',
+                      $field: 'value',
+                      $value: 6,
+                      $and: {
+                        $operator: '<',
+                        $field: 'value',
+                        $value: 8,
+                        $and: {
+                          $operator: '>',
+                          $field: 'date',
+                          $value: 'now',
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+              {
+                $operator: '!=',
+                $field: 'name',
+                $value: ['match1', 'match2', 'match3'],
+              },
+            ],
+          },
+        },
+      },
+    })
+  })
+})
+
 test('validate $field', (t) => {
   t.throws(
     () => {
