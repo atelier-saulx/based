@@ -76,7 +76,8 @@ typedef struct queue_cb {
  * @return a new queue_cb_t queue control block structure.
  */
 queue_cb_t queue_create(void * data_array, size_t block_size,
-                        size_t array_size);
+                        size_t array_size)
+    __attribute__((pure, access(read_only, 1, 3)));
 
 /**
  * Push an element to the queue.
@@ -86,21 +87,24 @@ queue_cb_t queue_create(void * data_array, size_t block_size,
  * @note element is always copied to the queue, so it is safe to remove the
  * original data after a push.
  */
-int queue_push(queue_cb_t * cb, const void * element);
+int queue_push(queue_cb_t * cb, const void * element)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Allocate an element from the queue.
  * @param cb is a pointer to the queue control block.
  * @return A pointer to the element in the queue.
  */
-void * queue_alloc_get(queue_cb_t * cb);
+void * queue_alloc_get(queue_cb_t * cb)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Commit previous allocation from the queue.
  * @note queue_push() should not be called between calls to queue_alloc_get()
  *       and queue_alloc_commit().
  */
-void queue_alloc_commit(queue_cb_t * cb);
+void queue_alloc_commit(queue_cb_t * cb)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Pop an element from the queue.
@@ -108,7 +112,8 @@ void queue_alloc_commit(queue_cb_t * cb);
  * @param element is the location where element is copied to from the queue.
  * @return 0 if queue is empty; otherwise operation was succeed.
  */
-int queue_pop(queue_cb_t * cb, void * element);
+int queue_pop(queue_cb_t * cb, void * element)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Peek an element from the queue.
@@ -116,42 +121,48 @@ int queue_pop(queue_cb_t * cb, void * element);
  * @param element is the location where element is copied to from the queue.
  * @return 0 if queue is empty; otherwise operation was succeed.
  */
-int queue_peek(queue_cb_t * cb, void ** element);
+int queue_peek(queue_cb_t * cb, void ** element)
+    __attribute__((access(read_only, 1), access(write_only, 2)));
 
 /**
  * Skip n number of elements in the queue.
  * @param cb is a pointer to the queue control block.
  * @return Returns the number of elements skipped.
  */
-int queue_skip(queue_cb_t * cb, size_t n);
+int queue_skip(queue_cb_t * cb, size_t n)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Clear the queue.
  * This operation is considered safe when committed from the push end thread.
  * @param cb is a pointer to the queue control block.
  */
-void queue_clear_from_push_end(queue_cb_t * cb);
+void queue_clear_from_push_end(queue_cb_t * cb)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Clear the queue.
  * This operation is considered safe when committed from the pop end thread.
  * @param cb is a pointer to the queue control block.
  */
-void queue_clear_from_pop_end(queue_cb_t * cb);
+void queue_clear_from_pop_end(queue_cb_t * cb)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Check if the queue is empty.
  * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not empty.
  */
-int queue_isempty(const queue_cb_t * cb);
+int queue_isempty(const queue_cb_t * cb)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Check if the queue is full.
  * @param cb is a pointer to the queue control block.
  * @return 0 if the queue is not full.
  */
-int queue_isfull(const queue_cb_t * cb);
+int queue_isfull(const queue_cb_t * cb)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Seek queue.
@@ -160,7 +171,8 @@ int queue_isfull(const queue_cb_t * cb);
  * @param[in] element returned element.
  * @return 0 if failed; otherwise succeed.
  */
-int seek(queue_cb_t * cb, size_t i, void * element);
+int seek(const queue_cb_t * cb, size_t i, void * element)
+    __attribute__((access(read_only, 1), access(write_only, 3)));
 
 #endif /* QUEUE_R_H */
 
