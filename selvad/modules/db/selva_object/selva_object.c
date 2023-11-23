@@ -109,8 +109,8 @@ SELVA_OBJECT_POINTER_OPTS(default_ptr_opts);
 
 RB_PROTOTYPE_STATIC(SelvaObjectKeys, SelvaObjectKey, _entry, SelvaObject_Compare)
 static int get_key(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, enum SelvaObjectGetKeyFlags flags, struct SelvaObjectKey **out);
-static void replyWithKeyValue(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObjectKey *key);
-static void replyWithObject(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObject *obj, const char *excluded);
+static void replyWithKeyValue(struct selva_server_response_out *resp, const struct selva_string *lang, struct SelvaObjectKey *key);
+static void replyWithObject(struct selva_server_response_out *resp, const struct selva_string *lang, struct SelvaObject *obj, const char *excluded);
 static struct SelvaObject *load_object(struct selva_io *io, int encver, int level, void *ptr_load_data);
 
 static int SelvaObject_Compare(const struct SelvaObjectKey *a, const struct SelvaObjectKey *b) {
@@ -2098,7 +2098,7 @@ static void lang_key_to_res(struct SelvaObjectKey *key, const char *lang_str, si
     res->str = key->value;
 }
 
-static void get_any_string(struct SelvaObjectKey *key, struct selva_string *lang, struct SelvaObjectAny *res) {
+static void get_any_string(struct SelvaObjectKey *key, const struct selva_string *lang, struct SelvaObjectAny *res) {
     TO_STR(lang);
 
     assert(key->type == SELVA_OBJECT_OBJECT);
@@ -2130,7 +2130,7 @@ static void get_any_string(struct SelvaObjectKey *key, struct selva_string *lang
  * @param[in] key is the key.
  * @param[out] res is the any result.
  */
-static void key_to_any(struct selva_string *lang, struct SelvaObjectKey *key, struct SelvaObjectAny *res) {
+static void key_to_any(const struct selva_string *lang, struct SelvaObjectKey *key, struct SelvaObjectAny *res) {
     res->type = key->type;
     res->subtype = key->subtype;
     res->user_meta = key->user_meta;
@@ -2175,7 +2175,7 @@ static void key_to_any(struct selva_string *lang, struct SelvaObjectKey *key, st
     }
 }
 
-int SelvaObject_GetAnyLangStr(struct SelvaObject *obj, struct selva_string *lang, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) {
+int SelvaObject_GetAnyLangStr(struct SelvaObject *obj, const struct selva_string *lang, const char *key_name_str, size_t key_name_len, struct SelvaObjectAny *res) {
     struct SelvaObjectKey *key;
     ssize_t ary_err, ary_idx;
     int err;
@@ -2211,7 +2211,7 @@ int SelvaObject_GetAnyLangStr(struct SelvaObject *obj, struct selva_string *lang
     return 0;
 }
 
-int SelvaObject_GetAnyLang(struct SelvaObject *obj, struct selva_string *lang, const struct selva_string *key_name, struct SelvaObjectAny *res) {
+int SelvaObject_GetAnyLang(struct SelvaObject *obj, const struct selva_string *lang, const struct selva_string *key_name, struct SelvaObjectAny *res) {
     TO_STR(key_name);
 
     return SelvaObject_GetAnyLangStr(obj, lang, key_name_str, key_name_len, res);
@@ -2546,7 +2546,7 @@ static void replyWithHll(struct selva_server_response_out *resp, hll_t *hll)
     }
 }
 
-static void replyWithArray(struct selva_server_response_out *resp, struct selva_string *lang, enum SelvaObjectType subtype, const SVector *array) {
+static void replyWithArray(struct selva_server_response_out *resp, const struct selva_string *lang, enum SelvaObjectType subtype, const SVector *array) {
     struct SVectorIterator it;
 
     switch (subtype) {
@@ -2606,7 +2606,7 @@ static void replyWithArray(struct selva_server_response_out *resp, struct selva_
     }
 }
 
-static void replyWithKeyValue(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObjectKey *key) {
+static void replyWithKeyValue(struct selva_server_response_out *resp, const struct selva_string *lang, struct SelvaObjectKey *key) {
     switch (key->type) {
     case SELVA_OBJECT_NULL:
         selva_send_null(resp);
@@ -2664,7 +2664,7 @@ static void replyWithKeyValue(struct selva_server_response_out *resp, struct sel
     }
 }
 
-static void replyWithObject(struct selva_server_response_out *resp, struct selva_string *lang, struct SelvaObject *obj, const char *excluded) {
+static void replyWithObject(struct selva_server_response_out *resp, const struct selva_string *lang, struct SelvaObject *obj, const char *excluded) {
     struct SelvaObjectKey *key;
 
     if (!obj) {
@@ -2692,7 +2692,7 @@ static void replyWithObject(struct selva_server_response_out *resp, struct selva
 
 int SelvaObject_ReplyWithObjectStr(
         struct selva_server_response_out *resp,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         struct SelvaObject *obj,
         const char *key_name_str,
         size_t key_name_len,
@@ -2738,7 +2738,7 @@ int SelvaObject_ReplyWithObjectStr(
 
 int SelvaObject_ReplyWithObject(
         struct selva_server_response_out *resp,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         struct SelvaObject *obj,
         const struct selva_string *key_name,
         enum SelvaObjectReplyFlags flags __unused) {
@@ -2753,7 +2753,7 @@ int SelvaObject_ReplyWithObject(
 
 int SelvaObject_ReplyWithWildcardStr(
         struct selva_server_response_out *resp,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         struct SelvaObject *obj,
         const char *okey_str,
         size_t okey_len,

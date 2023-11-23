@@ -17,7 +17,7 @@
 #include "field_lookup.h"
 
 static int get_from_edge_field(
-        struct selva_string *lang,
+        const struct selva_string *lang,
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
@@ -88,7 +88,7 @@ static int get_from_edge_field(
  * @param field_str must be verified to start with SELVA_EDGE_META_FIELD.
  */
 static int get_top_level_edge_meta(
-        struct selva_string *lang,
+        const struct selva_string *lang,
         struct SelvaObject *edge_metadata,
         const char *field_str,
         size_t field_len,
@@ -115,7 +115,7 @@ static int get_top_level_edge_meta(
 }
 
 int field_lookup_data_field(
-        struct selva_string *lang,
+        const struct selva_string *lang,
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
         struct SelvaHierarchyNode *node,
         const char *field_str,
