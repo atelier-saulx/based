@@ -49,7 +49,8 @@ struct selva_string **parse_string_list(
  */
 int string_set_list_add(struct selva_string *sl,
                         const char *opt_ignore_str, size_t opt_ignore_len,
-                        const char *el_str, size_t el_len);
+                        const char *el_str, size_t el_len)
+    __attribute__((access(read_only, 2, 3), access(read_only, 4, 5)));
 
 /**
  * Parse a set of lists containing strings.
@@ -68,7 +69,8 @@ int parse_string_set(
         const struct selva_string *raw_in,
         struct SelvaObject **list_out,
         const char *side_list_prefixes,
-        struct selva_string **side_list_out[]);
+        struct selva_string **side_list_out[])
+    __attribute__((access(read_only, 2), access(write_only, 3), access(read_only, 4)));
 
 int parse_enum(
         const struct parsers_enum types[],
@@ -78,4 +80,10 @@ int parse_enum(
  * Parse index hints.
  * List separator: '\0'
  */
-struct selva_string **parse_index_hints(struct finalizer *fin, const char *index_hints_str, size_t index_hints_len, int *nr_index_hints_out);
+[[nodiscard]]
+struct selva_string **parse_index_hints(
+        struct finalizer *fin,
+        const char *index_hints_str,
+        size_t index_hints_len,
+        int *nr_index_hints_out)
+    __attribute__((access(read_only, 2, 3), access(write_only, 4)));

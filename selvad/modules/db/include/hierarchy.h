@@ -351,7 +351,8 @@ int SelvaHierarchy_GetEdgeMetadata(
         const Selva_NodeId dst_node_id,
         bool delete_all,
         bool create,
-        struct SelvaObject **out);
+        struct SelvaObject **out)
+    __attribute__((access(read_only, 2, 3), access(write_only, 7)));
 
 struct SelvaObject *SelvaHierarchy_GetEdgeMetadataByTraversal(
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata,
@@ -396,7 +397,8 @@ int SelvaModify_SetHierarchy(
         size_t nr_children,
         const Selva_NodeId *children,
         enum SelvaModify_SetFlags flags,
-        struct SelvaHierarchyNode **node_out);
+        struct SelvaHierarchyNode **node_out)
+    __attribute__((access(write_only, 8)));
 
 /**
  * Set parents of an existing node.
@@ -440,7 +442,8 @@ int SelvaModify_AddHierarchyP(
         size_t nr_parents,
         const Selva_NodeId *parents,
         size_t nr_children,
-        const Selva_NodeId *children);
+        const Selva_NodeId *children)
+    __attribute__((access(read_only, 4), access(read_only, 6)));
 
 /**
  * Add new relationships relative to other existing nodes.
@@ -458,7 +461,8 @@ int SelvaModify_AddHierarchy(
         size_t nr_parents,
         const Selva_NodeId *parents,
         size_t nr_children,
-        const Selva_NodeId *children);
+        const Selva_NodeId *children)
+    __attribute__((access(read_only, 4), access(read_only, 6)));
 
 /**
  * Remove relationship relative to other existing nodes.
@@ -473,7 +477,8 @@ int SelvaModify_DelHierarchy(
         size_t nr_parents,
         const Selva_NodeId *parents,
         size_t nr_children,
-        const Selva_NodeId *children);
+        const Selva_NodeId *children)
+    __attribute__((access(read_only, 4), access(read_only, 6)));
 
 /**
  * Delete a node from the hierarchy.
@@ -536,7 +541,8 @@ ssize_t SelvaModify_GetHierarchyHeads(SelvaHierarchy *hierarchy, Selva_NodeId **
 /**
  * Get the SVector of a hierarchy field.
  */
-SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type);
+SVector *SelvaHierarchy_GetHierarchyField(struct SelvaHierarchyNode *node, const char *field_str, size_t field_len, enum SelvaTraversal *field_type)
+    __attribute__((access(read_only, 2, 3)));
 
 void SelvaHierarchy_TraverseChildren(
         struct SelvaHierarchy *hierarchy,
@@ -589,7 +595,9 @@ int SelvaHierarchy_TraverseEdgeField(
         const Selva_NodeId id,
         const char *ref_field_str,
         size_t ref_field_len,
-        const struct SelvaHierarchyCallback *cb);
+        const struct SelvaHierarchyCallback *cb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Traverse an edge field using BFS.
  * Implements:
@@ -600,7 +608,9 @@ int SelvaHierarchy_TraverseEdgeFieldBfs(
         const Selva_NodeId id,
         const char *field_name_str,
         size_t field_name_len,
-        const struct SelvaHierarchyCallback *cb);
+        const struct SelvaHierarchyCallback *cb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Traverse a field by first doing a full lookup.
  * Implements:
@@ -616,7 +626,9 @@ int SelvaHierarchy_TraverseField2(
         const char *ref_field_str,
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb);
+        const struct SelvaObjectArrayForeachCallback *acb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Traverse fields by first doing a full lookup and using BFS.
  * Implements:
@@ -628,7 +640,9 @@ int SelvaHierarchy_TraverseField2Bfs(
         const char *ref_field_str,
         size_t ref_field_len,
         const struct SelvaHierarchyCallback *hcb,
-        const struct SelvaObjectArrayForeachCallback *acb);
+        const struct SelvaObjectArrayForeachCallback *acb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Traverse a field by expression.
  * Implements:
@@ -665,7 +679,9 @@ int SelvaHierarchy_TraverseArray(
         const Selva_NodeId id,
         const char *field_str,
         size_t field_len,
-        const struct SelvaObjectArrayForeachCallback *cb);
+        const struct SelvaObjectArrayForeachCallback *cb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Foreach value in a set field.
  */
@@ -674,7 +690,9 @@ int SelvaHierarchy_TraverseSet(
         const Selva_NodeId id,
         const char *field_str,
         size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb);
+        const struct SelvaObjectSetForeachCallback *cb)
+    __attribute__((access(read_only, 3, 4)));
+
 /**
  * Foreach value in a set-like field.
  * Traverse each value (foreach) in a field.
@@ -691,12 +709,14 @@ int SelvaHierarchy_ForeachInField(
         struct SelvaHierarchyNode *node,
         const char *field_str,
         size_t field_len,
-        const struct SelvaObjectSetForeachCallback *cb);
+        const struct SelvaObjectSetForeachCallback *cb)
+    __attribute__((access(read_only, 3, 4)));
 
 /**
  * Check if the field is a non-empty hierarchy field.
  */
-int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len);
+int SelvaHierarchy_IsNonEmptyField(const struct SelvaHierarchyNode *node, const char *field_str, size_t field_len)
+    __attribute((access(read_only, 2, 3)));
 
 /*
  * hierarchy_reply.c
@@ -712,7 +732,8 @@ int HierarchyReply_WithTraversal(
         const Selva_NodeId nodeId,
         size_t nr_types,
         const Selva_NodeType *types,
-        enum SelvaTraversal dir);
+        enum SelvaTraversal dir)
+    __attribute__((access(read_only, 5)));
 
 SelvaHierarchy *Hierarchy_Load(struct selva_io *io);
 void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy);
