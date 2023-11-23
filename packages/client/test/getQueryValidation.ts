@@ -572,14 +572,14 @@ test('validate $value', (t) => {
         $id: 'id',
         one: {
           two: {
-            $value: true,
+            $value: 234,
           },
         },
       })
     },
     {
       message:
-        'Query error: Argument $value must be of type string at "one.two.$value".',
+        'Query error: Argument $value must be of type boolean or string at "one.two.$value".',
     }
   )
 

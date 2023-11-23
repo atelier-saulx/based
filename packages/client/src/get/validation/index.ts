@@ -253,7 +253,7 @@ const valueValidation = (query: any, path: string[]) => {
     (!isNaN(parseInt(path[path.length - 2])) ||
       ['$filter', '$and', '$or'].includes(path[path.length - 2]))
   if (!isInFilter) {
-    checkArgumentType(queryPart, argument, path, ['string'])
+    checkArgumentType(queryPart, argument, path, ['boolean', 'string'])
   }
 }
 
