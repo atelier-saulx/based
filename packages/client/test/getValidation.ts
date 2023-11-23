@@ -9,6 +9,21 @@ test('valid query', (t) => {
         id: true,
         $list: {
           $sort: { $field: 'field', $order: 'asc' },
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'aType',
+              },
+              {
+                $field: 'title',
+                $operator: '=',
+                $value: 'part of title',
+              },
+            ],
+          },
         },
       },
     })
@@ -104,4 +119,81 @@ test('validate $sort', (t) => {
         'Query error: Invalid $order argument value "something" at "list.$list.$sort.$order".',
     }
   )
+})
+
+test('validate $find', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: 'string',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $find must be of type object at "list.$list.$find".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              something: true,
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $find property "something" at "list.$list.$find".',
+    }
+  )
+})
+
+test('validate $traverse', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: true,
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $traverse must be of type string or array at "list.$list.$find.$traverse".',
+    }
+  )
+
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      list: {
+        id: true,
+        $list: {
+          $find: {
+            $traverse: ['id1', 'id2'],
+          },
+        },
+      },
+    })
+  })
 })

@@ -52,7 +52,8 @@ const checkArgumentType = (
   path: string[],
   allowedTypes: string[]
 ) => {
-  if (!allowedTypes.includes(typeof queryPart)) {
+  const type = Array.isArray(queryPart) ? 'array' : typeof queryPart
+  if (!allowedTypes.includes(type)) {
     throw new Error(
       `Query error: Argument ${argument} must be of type ${
         allowedTypes.length > 1
@@ -91,6 +92,20 @@ const orderValidation = (query: any, path: string[]) => {
   checkArgumentValues(queryPart, argument, path, ['asc', 'desc'])
 }
 
+const findValidation = (query: any, path: string[]) => {
+  const argument = '$find'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentType(queryPart, argument, path, ['object'])
+  checkArgumentChildren(queryPart, argument, path, ['$traverse', '$filter'])
+}
+
+const traverseValidation = (query: any, path: string[]) => {
+  const argument = '$traverse'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentParent(argument, path, ['$find'])
+  checkArgumentType(queryPart, argument, path, ['string', 'array'])
+}
+
 export const getQueryValidation = (query: any) => {
   nonRecursiveWalker(
     query,
@@ -105,6 +120,12 @@ export const getQueryValidation = (query: any) => {
           break
         case '$order':
           orderValidation(query, path)
+          break
+        case '$find':
+          findValidation(query, path)
+          break
+        case '$traverse':
+          traverseValidation(query, path)
           break
         default:
           break
