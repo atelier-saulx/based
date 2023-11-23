@@ -179,7 +179,7 @@ test('validate $traverse', (t) => {
     },
     {
       message:
-        'Query error: Argument $traverse must be of type string or array at "list.$list.$find.$traverse".',
+        'Query error: Argument $traverse must be of type string or string array at "list.$list.$find.$traverse".',
     }
   )
 
@@ -216,7 +216,7 @@ test('validate $filter', (t) => {
     },
     {
       message:
-        'Query error: Argument $filter must be of type object or array at "list.$list.$find.$filter".',
+        'Query error: Argument $filter must be of type object or object array at "list.$list.$find.$filter".',
     }
   )
 
@@ -561,6 +561,93 @@ test('validate $value', (t) => {
     {
       message:
         'Query error: Argument $value cannot be a child of "two" at "one.two.$value".',
+    }
+  )
+})
+
+test('validate $inherit', (t) => {
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      one: {
+        two: { $inherit: true },
+      },
+    })
+  })
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      one: {
+        two: { $inherit: { $type: 'aType' } },
+      },
+    })
+  })
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      one: {
+        two: { $inherit: { $type: ['aType', 'anotherType'] } },
+      },
+    })
+  })
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: {
+            $type: 'aType',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $type cannot be a child of "two" at "one.two.$type".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: { $inherit: 'string' },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $inherit must be of type boolean or object at "one.two.$inherit".',
+    }
+  )
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: { $inherit: { $type: true } },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $type must be of type string or string array at "one.two.$inherit.$type".',
+    }
+  )
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: { $inherit: { $type: ['aType', 'anotherType', true] } },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $type must be of type string or string array at "one.two.$inherit.$type".',
     }
   )
 })

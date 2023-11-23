@@ -70,7 +70,19 @@ const checkArgumentType = (
   path: string[],
   allowedTypes: string[]
 ) => {
-  const type = Array.isArray(queryPart) ? 'array' : typeof queryPart
+  // const type = Array.isArray(queryPart) ? 'array' : typeof queryPart
+  let type: string
+  if (Array.isArray(queryPart)) {
+    if (queryPart.every((item) => typeof item === 'string')) {
+      type = 'string array'
+    } else if (queryPart.every((item) => typeof item === 'object')) {
+      type = 'object array'
+    } else {
+      type = 'array'
+    }
+  } else {
+    type = typeof queryPart
+  }
   if (!allowedTypes.includes(type)) {
     throw new Error(
       `Query error: Argument ${argument} must be of type ${
@@ -170,13 +182,13 @@ const traverseValidation = (query: any, path: string[]) => {
   const argument = '$traverse'
   const queryPart = getValueByPath(query, path)
   checkArgumentParent(argument, path, ['$find'])
-  checkArgumentType(queryPart, argument, path, ['string', 'array'])
+  checkArgumentType(queryPart, argument, path, ['string', 'string array'])
 }
 
 const filterValidation = (query: any, path: string[]) => {
   const argument = '$filter'
   const queryPart = getValueByPath(query, path)
-  checkArgumentType(queryPart, argument, path, ['object', 'array'])
+  checkArgumentType(queryPart, argument, path, ['object', 'object array'])
   checkArgumentParent(argument, path, ['$find'])
   checkArgumentChildren(queryPart, argument, path, [
     '$field',
@@ -217,9 +229,22 @@ const operatorValidation = (query: any, path: string[]) => {
   ])
 }
 
-const valueValidation = (query: any, path: string[]) => {
+const valueValidation = (_query: any, path: string[]) => {
   const argument = '$value'
   checkArgumentParent(argument, path, ['$filter'])
+}
+
+const inheritValidation = (query: any, path: string[]) => {
+  const argument = '$inherit'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentType(queryPart, argument, path, ['boolean', 'object'])
+}
+
+const typeValidation = (query: any, path: string[]) => {
+  const argument = '$type'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentParent(argument, path, ['$inherit'])
+  checkArgumentType(queryPart, argument, path, ['string', 'string array'])
 }
 
 export const getQueryValidation = (query: any) => {
@@ -254,6 +279,12 @@ export const getQueryValidation = (query: any) => {
           break
         case '$value':
           valueValidation(query, path)
+          break
+        case '$inherit':
+          inheritValidation(query, path)
+          break
+        case '$type':
+          typeValidation(query, path)
           break
         default:
           break
