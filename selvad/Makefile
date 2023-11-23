@@ -74,6 +74,8 @@ clean: mostlyclean
 	$(RM) selvad
 	find . -type f -name "*.d" -exec rm -f {} \;
 	find . -type f -name "*.o" -exec rm -f {} \;
+	find ./lib -type f -name "*.so" -exec rm -f {} \;
+	find ./lib -type f -name "*.so.*" -exec rm -f {} \;
 	find . \( -type l -o -type l \) -name "*.so" -exec rm -f {} \;
 	find . \( -type l -o -type l \) -name "*.dylib" -exec rm -f {} \;
 	$(MAKE) -C test clean
