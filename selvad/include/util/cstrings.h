@@ -64,6 +64,10 @@ void *memrchr(const void *s, int c, size_t n)
     __attribute__((pure, access(read_only, 1, 3)));
 #endif
 
-char *mempbrk(register const char * restrict s, const char * restrict accept, size_t limit);
+/**
+ * Locate the first occurrence of any of the bytes in accept.
+ */
+char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
+    __attribute__((pure, access(read_only, 1, 2), access(read_only, 3, 4)));
 
 #endif /* _UTIL_CSTRINGS_H_ */
