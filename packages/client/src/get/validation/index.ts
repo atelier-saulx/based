@@ -175,21 +175,37 @@ const findValidation = (query: any, path: string[]) => {
   const argument = '$find'
   const queryPart = getValueByPath(query, path)
   checkArgumentType(queryPart, argument, path, ['object'])
-  checkArgumentProperties(queryPart, argument, path, ['$traverse', '$filter'])
+  checkArgumentProperties(queryPart, argument, path, [
+    '$traverse',
+    '$filter',
+    '$recursive',
+    '$find',
+  ])
 }
 
 const traverseValidation = (query: any, path: string[]) => {
   const argument = '$traverse'
   const queryPart = getValueByPath(query, path)
   checkArgumentParent(argument, path, ['$find', '$aggregate'])
-  checkArgumentType(queryPart, argument, path, ['string', 'string array'])
+  checkArgumentType(queryPart, argument, path, [
+    'string',
+    'object',
+    'string array',
+  ])
+}
+
+const recursiveValidation = (query: any, path: string[]) => {
+  const argument = '$recursive'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentParent(argument, path, ['$find'])
+  checkArgumentType(queryPart, argument, path, ['boolean'])
 }
 
 const filterValidation = (query: any, path: string[]) => {
   const argument = '$filter'
   const queryPart = getValueByPath(query, path)
   checkArgumentType(queryPart, argument, path, ['object', 'object array'])
-  checkArgumentParent(argument, path, ['$find', '$aggregate'])
+  // checkArgumentParent(argument, path, ['$find', '$aggregate'])
   checkArgumentProperties(queryPart, argument, path, [
     '$field',
     '$operator',
@@ -204,8 +220,7 @@ const filterValidation = (query: any, path: string[]) => {
 const fieldValidation = (query: any, path: string[]) => {
   const argument = '$field'
   const queryPart = getValueByPath(query, path)
-  checkArgumentParent(argument, path, ['$filter', '$sort'])
-  checkArgumentType(queryPart, argument, path, ['string'])
+  checkArgumentType(queryPart, argument, path, ['string', 'string array'])
 }
 
 const operatorValidation = (query: any, path: string[]) => {
@@ -228,9 +243,16 @@ const operatorValidation = (query: any, path: string[]) => {
   ])
 }
 
-const valueValidation = (_query: any, path: string[]) => {
+const valueValidation = (query: any, path: string[]) => {
   const argument = '$value'
-  checkArgumentParent(argument, path, ['$filter'])
+  const queryPart = getValueByPath(query, path)
+  const isInFilter =
+    path.length > 2 &&
+    (!isNaN(parseInt(path[path.length - 2])) ||
+      path[path.length - 2] === '$filter')
+  if (!isInFilter) {
+    checkArgumentType(queryPart, argument, path, ['string'])
+  }
 }
 
 const inheritValidation = (query: any, path: string[]) => {
@@ -300,6 +322,9 @@ export const getQueryValidation = (query: any) => {
           break
         case '$traverse':
           traverseValidation(query, path)
+          break
+        case '$recursive':
+          recursiveValidation(query, path)
           break
         case '$filter':
           filterValidation(query, path)

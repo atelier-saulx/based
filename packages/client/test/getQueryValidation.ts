@@ -179,7 +179,7 @@ test('validate $traverse', (t) => {
     },
     {
       message:
-        'Query error: Argument $traverse must be of type string or string array at "list.$list.$find.$traverse".',
+        'Query error: Argument $traverse must be of type string or object or string array at "list.$list.$find.$traverse".',
     }
   )
 
@@ -217,27 +217,6 @@ test('validate $filter', (t) => {
     {
       message:
         'Query error: Argument $filter must be of type object or object array at "list.$list.$find.$filter".',
-    }
-  )
-
-  t.throws(
-    () => {
-      getQueryValidation({
-        $id: 'id',
-        one: {
-          two: {
-            $filter: {
-              $field: 'aField',
-              $operator: '=',
-              $value: 'aValue',
-            },
-          },
-        },
-      })
-    },
-    {
-      message:
-        'Query error: Argument $filter cannot be a child of "two" at "one.two.$filter".',
     }
   )
 
@@ -307,7 +286,6 @@ test('validate $filter', (t) => {
               $traverse: 'descendants',
               $filter: {
                 $field: 'aField',
-                $operator: '=',
               },
             },
           },
@@ -316,7 +294,7 @@ test('validate $filter', (t) => {
     },
     {
       message:
-        'Query error: Argument $filter must have the required properties "$field", "$operator" and "$value" at "list.$list.$find.$filter".',
+        'Query error: Argument $filter must have the required properties "$field" and "$operator" at "list.$list.$find.$filter".',
     }
   )
 
@@ -337,7 +315,6 @@ test('validate $filter', (t) => {
                 },
                 {
                   $field: 'aField',
-                  $operator: '=',
                 },
               ],
             },
@@ -347,7 +324,7 @@ test('validate $filter', (t) => {
     },
     {
       message:
-        'Query error: Argument $filter must have the required properties "$field", "$operator" and "$value" at "list.$list.$find.$filter.1".',
+        'Query error: Argument $filter must have the required properties "$field" and "$operator" at "list.$list.$find.$filter.1".',
     }
   )
 })
@@ -374,7 +351,7 @@ test('validate $field', (t) => {
     },
     {
       message:
-        'Query error: Argument $field must be of type string at "list.$list.$find.$filter.$field".',
+        'Query error: Argument $field must be of type string or string array at "list.$list.$find.$filter.$field".',
     }
   )
 
@@ -401,24 +378,7 @@ test('validate $field', (t) => {
     },
     {
       message:
-        'Query error: Argument $field must be of type string at "list.$list.$find.$filter.0.$field".',
-    }
-  )
-
-  t.throws(
-    () => {
-      getQueryValidation({
-        $id: 'id',
-        one: {
-          two: {
-            $field: '=',
-          },
-        },
-      })
-    },
-    {
-      message:
-        'Query error: Argument $field cannot be a child of "two" at "one.two.$field".',
+        'Query error: Argument $field must be of type string or string array at "list.$list.$find.$filter.0.$field".',
     }
   )
 })
@@ -553,16 +513,47 @@ test('validate $value', (t) => {
         $id: 'id',
         one: {
           two: {
-            $value: '=',
+            $value: true,
           },
         },
       })
     },
     {
       message:
-        'Query error: Argument $value cannot be a child of "two" at "one.two.$value".',
+        'Query error: Argument $value must be of type string at "one.two.$value".',
     }
   )
+
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      one: {
+        $find: {
+          $filter: {
+            $field: 'aField',
+            $operator: '=',
+            $value: 2343234,
+          },
+        },
+      },
+    })
+  })
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'id',
+      one: {
+        $find: {
+          $filter: [
+            {
+              $field: 'aField',
+              $operator: '=',
+              $value: 2343234,
+            },
+          ],
+        },
+      },
+    })
+  })
 })
 
 test('validate $inherit', (t) => {
