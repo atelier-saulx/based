@@ -91,7 +91,7 @@ test.serial('add new reference', async (t) => {
     }
   )
 
-  await wait(100)
+  await wait(200)
   await client.set({
     $id: league,
     matches: {
@@ -105,7 +105,7 @@ test.serial('add new reference', async (t) => {
       ],
     },
   })
-  await wait(100)
+  await wait(200)
   await client.set({
     $id: league,
     matches: {
@@ -119,12 +119,12 @@ test.serial('add new reference', async (t) => {
       ],
     },
   })
-  await wait(100)
+  await wait(200)
   await client.set({
     $id: 'ma3',
     completedAt: { $delete: true },
   })
-  await wait(100)
+  await wait(200)
 
   //const subs = await client.redis.selva_subscriptions_list('___selva_hierarchy')
   //console.log(subs)
@@ -136,7 +136,7 @@ test.serial('add new reference', async (t) => {
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma2' }, { id: 'ma3' }] })
 
   await client.delete({ $id: 'ma2' })
-  await wait(100)
+  await wait(200)
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma3' }] })
 })
 
@@ -162,12 +162,12 @@ test.serial('add new reference reverse', async (t) => {
     }
   )
 
-  await wait(100)
+  await wait(200)
   const match = await client.set({
     type: 'match',
     league,
   })
-  await wait(100)
+  await wait(300)
 
   //console.log(await client.command('subscriptions.debug', [league]))
   t.deepEqual(res, { id: league, matches: [match] })

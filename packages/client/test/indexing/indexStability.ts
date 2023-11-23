@@ -2,7 +2,11 @@ import anyTest, { TestInterface } from 'ava'
 import { BasedDbClient } from '../../src'
 import { startOrigin } from '../../../server/dist'
 import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaResultOrder, SelvaTraversal } from '../../src/protocol'
+import {
+  SelvaFindResultType,
+  SelvaResultOrder,
+  SelvaTraversal,
+} from '../../src/protocol'
 import { wait } from '@saulx/utils'
 import '../assertions'
 import { find, getIndexingState } from '../assertions/utils'
@@ -78,7 +82,7 @@ test.skip('index stability', async (t) => {
       type: 'match',
       $id: `ma${i}`,
       value: i,
-      parents: [ `le${i % 5}` ],
+      parents: [`le${i % 5}`],
       children: [
         {
           type: 'team',
@@ -91,12 +95,13 @@ test.skip('index stability', async (t) => {
           $id: `te${(i % 50) + 1}`,
           name: `Hehe ${i}B`,
           value: i % 3,
-        }
-      ]
+        },
+      ],
     })
   }
 
-  const q1 = { // common
+  const q1 = {
+    // common
     $id: 'root',
     teams: {
       name: true,
@@ -119,7 +124,8 @@ test.skip('index stability', async (t) => {
       },
     },
   }
-  const q2 = { // common
+  const q2 = {
+    // common
     $id: 'root',
     matches: {
       id: true,
@@ -133,13 +139,14 @@ test.skip('index stability', async (t) => {
               $field: 'type',
               $operator: '=',
               $value: 'match',
-            }
+            },
           ],
         },
       },
     },
   }
-  const q3 = { // semi rare
+  const q3 = {
+    // semi rare
     $id: 'root',
     teams: {
       id: true,
@@ -158,13 +165,14 @@ test.skip('index stability', async (t) => {
               $field: 'value',
               $operator: '=',
               $value: 1,
-            }
+            },
           ],
         },
       },
     },
   }
-  const q4 = { // rare
+  const q4 = {
+    // rare
     $id: 'root',
     leagues: {
       id: true,
@@ -178,13 +186,14 @@ test.skip('index stability', async (t) => {
               $field: 'type',
               $operator: '=',
               $value: 'league',
-            }
+            },
           ],
         },
       },
     },
   }
-  const q5 = { // rare
+  const q5 = {
+    // rare
     $id: 'root',
     leagues: {
       id: true,
@@ -200,7 +209,7 @@ test.skip('index stability', async (t) => {
             {
               $field: 'children',
               $operator: 'has',
-              $value: [ 'ma1' ],
+              $value: ['ma1'],
             },
           ],
         },
@@ -209,34 +218,45 @@ test.skip('index stability', async (t) => {
   }
 
   const N = 5 * 60
-  const P = Array(N).fill(null).map((_, i) => async () => {
-    await client.get(q1)
-    await client.get(q2)
+  const P = Array(N)
+    .fill(null)
+    .map((_, i) => async () => {
+      await client.get(q1)
+      await client.get(q2)
 
-    if (i % 5 == 0) {
-      await client.get(q3)
-    }
-    if (i % 60 == 0) {
-      await client.get(q4)
-      await client.get(q5)
-    }
+      if (i % 5 == 0) {
+        await client.get(q3)
+      }
+      if (i % 60 == 0) {
+        await client.get(q4)
+        await client.get(q5)
+      }
 
-    if (i % 60 == 0) {
-      const stateMap = await getIndexingState(client)
+      if (i % 60 == 0) {
+        const stateMap = await getIndexingState(client)
 
-      if (i >= 120) {
+        if (i >= 120) {
           t.deepEqual(stateMap['root.J.InRlIiBl']?.card, '51') // q1, q3
           t.deepEqual(stateMap['root.J.InZhbHVlIiBnICMyIEY=']?.card, '6') // q1
-          t.deepEqual(stateMap['root.J.B.dmFsdWU=.Im1hIiBl']?.card, 'not_active') // q2
-          t.deepEqual(stateMap['root.J.B.dmFsdWU=.InZhbHVlIiBnICMxIEY=']?.card, 'not_active') // q3
+          t.deepEqual(
+            stateMap['root.J.B.dmFsdWU=.Im1hIiBl']?.card,
+            'not_active'
+          ) // q2
+          t.deepEqual(
+            stateMap['root.J.B.dmFsdWU=.InZhbHVlIiBnICMxIEY=']?.card,
+            'not_active'
+          ) // q3
           t.deepEqual(stateMap['root.J.ImxlIiBl']?.card, 'not_active') // q4, q5
-          t.deepEqual(stateMap['root.J.ImNoaWxkcmVuIiB7Im1hMSJ9IGw=']?.card, 'not_active') // q5
+          t.deepEqual(
+            stateMap['root.J.ImNoaWxkcmVuIiB7Im1hMSJ9IGw=']?.card,
+            'not_active'
+          ) // q5
+        }
       }
-    }
-  })
+    })
 
   for (let i = 0; i < P.length; i++) {
     t.notThrows(P[i])
-    await wait(100)
+    await wait(200)
   }
 })

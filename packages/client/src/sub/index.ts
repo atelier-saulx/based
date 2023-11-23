@@ -17,19 +17,18 @@ export async function sub(
 ): Promise<{
   subId: number
   cleanup: () => Promise<void>
-  fetch: () => Promise<any>
+  fetch: () => Promise<void>
+  getValue: () => Promise<any>
   pending?: GetCommand
-  nextRefresh?: () => Promise<{ nextRefresh: number; markerId: number }[]>
+  nextRefresh?: () => Promise<
+    { nextRefresh: number; markerId: number; subId: number }[]
+  >
 }> {
   const origMarkerId = eventOpts?.markerId
-  const { subId, markerId, merged, defaults, pending, markers } = await get(
-    client,
-    opts,
-    {
-      isSubscription: true,
-      ...eventOpts,
-    }
-  )
+  const { subId, markerId, pending, markers } = await get(client, opts, {
+    isSubscription: true,
+    ...eventOpts,
+  })
 
   await addMarkers({ client, subId, markerId }, markers)
   const nowMarkers = markers.filter((m) => m.hasNow)
@@ -70,13 +69,27 @@ export async function sub(
         refresh: true,
       }
 
-      const { nestedObjs } = await execParallel(ctx, [pending])
+      await execParallel(ctx, [pending])
       await addMarkers(ctx, [...ctx.markers])
-
-      deepMergeArrays(merged, ...nestedObjs)
 
       nowMarkers.push(...ctx.markers.filter((m) => m.hasNow))
     }
+  }
+
+  const nextRefresh = async () => {
+    if (!nowMarkers?.length) {
+      return []
+    }
+
+    return nextTimestamp(client, opts.$language, subId, nowMarkers)
+  }
+
+  const getValue = async () => {
+    const { merged, defaults } = await get(client, opts, {
+      isSubscription: true,
+      subId,
+      markerId: -1,
+    })
 
     for (const d of defaults) {
       applyDefault(merged, d)
@@ -85,13 +98,5 @@ export async function sub(
     return merged
   }
 
-  const nextRefresh = async () => {
-    if (!nowMarkers?.length) {
-      return []
-    }
-
-    return nextTimestamp(client, opts.$language, nowMarkers)
-  }
-
-  return { pending, cleanup, fetch, subId, nextRefresh }
+  return { pending, cleanup, fetch, subId, nextRefresh, getValue }
 }

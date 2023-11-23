@@ -6,6 +6,7 @@
 #include <arpa/inet.h> /* Linux defines IPPROTO_TCP in here */
 #include <sys/sendfile.h>
 #endif
+#include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <sys/socket.h>
 #include <sys/types.h>

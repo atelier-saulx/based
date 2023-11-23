@@ -90,6 +90,7 @@ export function findTimebased(ast: Fork): FilterAST[] {
 export async function nextTimestamp(
   client: BasedDbClient,
   lang: string,
+  subId: number,
   nowMarkers: any[]
 ) {
   const refreshes = (
@@ -154,7 +155,7 @@ export async function nextTimestamp(
         }
 
         const nextRefresh = Math.min(...refreshes)
-        return { markerId: m.cmdID, nextRefresh }
+        return { subId, markerId: m.cmdID, nextRefresh }
       })
     )
   ).filter((r) => !!r)

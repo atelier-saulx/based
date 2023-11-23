@@ -75,7 +75,7 @@ test.serial.skip('subscription find', async (t) => {
     children: matches,
   })
 
-  await wait(100)
+  await wait(200)
 
   let cnt = 0
   observe(

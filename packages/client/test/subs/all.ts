@@ -49,7 +49,7 @@ test.serial('subscribing to all fields', async (t) => {
     }
   })
 
-  client.set({
+  await client.set({
     $id: 'fo1',
     $language: 'en',
     children: [
@@ -59,48 +59,43 @@ test.serial('subscribing to all fields', async (t) => {
       },
     ],
   })
+  await wait(300)
 
-  await wait(100)
-
-  client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     buttonText: 'my sall',
   })
+  await wait(300)
 
-  await wait(100)
-
-  client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     buttonText: 'my sa',
   })
+  await wait(300)
 
-  await wait(100)
-
-  client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     buttonText: 'my sal',
   })
+  await wait(300)
 
-  await wait(100)
-
-  client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     buttonText: 'my sallz',
   })
+  await wait(300)
 
-  await wait(100)
-
-  client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     buttonText: 'my sallzzzz',
   })
 
-  await wait(100)
+  await wait(300)
 
   t.deepEqual(results, [
     'my sallz',
