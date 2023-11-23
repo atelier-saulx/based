@@ -1,6 +1,6 @@
 import { getValueByPath, nonRecursiveWalker } from '../../util'
 
-const checkArgumentChildren = (
+const checkArgumentProperties = (
   queryPart: any,
   argument: string,
   path: string[],
@@ -146,8 +146,8 @@ const checkArgumentRequiredProperties = (
 const listValidation = (query: any, path: string[]) => {
   const argument = '$list'
   const queryPart = getValueByPath(query, path)
-  checkArgumentType(queryPart, argument, path, ['object'])
-  checkArgumentChildren(queryPart, argument, path, [
+  checkArgumentType(queryPart, argument, path, ['boolean', 'object'])
+  checkArgumentProperties(queryPart, argument, path, [
     '$find',
     '$sort',
     '$offset',
@@ -159,8 +159,8 @@ const sortValidation = (query: any, path: string[]) => {
   const argument = '$sort'
   const queryPart = getValueByPath(query, path)
   checkArgumentType(queryPart, argument, path, ['object'])
-  checkArgumentChildren(queryPart, argument, path, ['$field', '$order'])
-  checkArgumentParent(argument, path, ['$list'])
+  checkArgumentProperties(queryPart, argument, path, ['$field', '$order'])
+  checkArgumentParent(argument, path, ['$list', '$aggregate'])
 }
 
 const orderValidation = (query: any, path: string[]) => {
@@ -175,13 +175,13 @@ const findValidation = (query: any, path: string[]) => {
   const argument = '$find'
   const queryPart = getValueByPath(query, path)
   checkArgumentType(queryPart, argument, path, ['object'])
-  checkArgumentChildren(queryPart, argument, path, ['$traverse', '$filter'])
+  checkArgumentProperties(queryPart, argument, path, ['$traverse', '$filter'])
 }
 
 const traverseValidation = (query: any, path: string[]) => {
   const argument = '$traverse'
   const queryPart = getValueByPath(query, path)
-  checkArgumentParent(argument, path, ['$find'])
+  checkArgumentParent(argument, path, ['$find', '$aggregate'])
   checkArgumentType(queryPart, argument, path, ['string', 'string array'])
 }
 
@@ -189,8 +189,8 @@ const filterValidation = (query: any, path: string[]) => {
   const argument = '$filter'
   const queryPart = getValueByPath(query, path)
   checkArgumentType(queryPart, argument, path, ['object', 'object array'])
-  checkArgumentParent(argument, path, ['$find'])
-  checkArgumentChildren(queryPart, argument, path, [
+  checkArgumentParent(argument, path, ['$find', '$aggregate'])
+  checkArgumentProperties(queryPart, argument, path, [
     '$field',
     '$operator',
     '$value',
@@ -198,7 +198,6 @@ const filterValidation = (query: any, path: string[]) => {
   checkArgumentRequiredProperties(queryPart, argument, path, [
     '$field',
     '$operator',
-    '$value',
   ])
 }
 
@@ -247,6 +246,40 @@ const typeValidation = (query: any, path: string[]) => {
   checkArgumentType(queryPart, argument, path, ['string', 'string array'])
 }
 
+// $aggregate
+
+const functionValidation = (query: any, path: string[]) => {
+  const allowedFunctionNames = [
+    'sum',
+    'avg',
+    'min',
+    'max',
+    'countUnique',
+    'count',
+  ]
+  const argument = '$function'
+  const queryPart = getValueByPath(query, path)
+  checkArgumentParent(argument, path, ['$aggregate'])
+  checkArgumentType(queryPart, argument, path, ['string', 'object'])
+  if (typeof queryPart === 'object') {
+    checkArgumentProperties(queryPart, argument, path, ['$name', '$args'])
+    checkArgumentRequiredProperties(queryPart, argument, path, ['$name'])
+    checkArgumentValues(
+      queryPart.$name,
+      '$name',
+      path.concat('$name'),
+      allowedFunctionNames
+    )
+    if (queryPart.$args) {
+      checkArgumentType(queryPart.$args, '$args', path.concat('$args'), [
+        'string array',
+      ])
+    }
+  } else {
+    checkArgumentValues(queryPart, argument, path, allowedFunctionNames)
+  }
+}
+
 export const getQueryValidation = (query: any) => {
   nonRecursiveWalker(
     query,
@@ -285,6 +318,12 @@ export const getQueryValidation = (query: any) => {
           break
         case '$type':
           typeValidation(query, path)
+          break
+        // case '$aggregate':
+        //   aggregateValidation(query, path)
+        //   break
+        case '$function':
+          functionValidation(query, path)
           break
         default:
           break

@@ -651,3 +651,165 @@ test('validate $inherit', (t) => {
     }
   )
 })
+
+test('validate $aggregate', (t) => {
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'root',
+      id: true,
+      thing: {
+        $aggregate: {
+          $function: { $name: 'avg', $args: ['value'] },
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'league',
+            },
+          ],
+          $find: {
+            $traverse: 'children',
+            $filter: [
+              {
+                $field: 'type',
+                $operator: '=',
+                $value: 'match',
+              },
+            ],
+          },
+        },
+      },
+    })
+  })
+
+  t.notThrows(() => {
+    getQueryValidation({
+      $id: 'root',
+      id: true,
+      thing: {
+        $aggregate: {
+          $function: 'count',
+          $traverse: 'children',
+          $filter: [
+            {
+              $field: 'type',
+              $operator: '=',
+              $value: 'league',
+            },
+          ],
+        },
+      },
+    })
+  })
+
+  // TODO: What is required for $aggregate?
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $function: 'aFunction',
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $function cannot be a child of "thing" at "thing.$function".',
+    }
+  )
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $aggregate: {
+            $function: true,
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $function must be of type string or object at "thing.$aggregate.$function".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $aggregate: {
+            $function: { $name: 'avg', something: true },
+            $traverse: 'children',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $function property "something" at "thing.$aggregate.$function".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $aggregate: {
+            $function: 'wawa',
+            $traverse: 'children',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $function argument value "wawa" at "thing.$aggregate.$function".',
+    }
+  )
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $aggregate: {
+            $function: { $name: 'wawa' },
+            $traverse: 'children',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $name argument value "wawa" at "thing.$aggregate.$function.$name".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'root',
+        id: true,
+        thing: {
+          $aggregate: {
+            $function: { $name: 'avg', $args: true },
+            $traverse: 'children',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $args must be of type string array at "thing.$aggregate.$function.$args".',
+    }
+  )
+})
