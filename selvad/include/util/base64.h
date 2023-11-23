@@ -1,6 +1,6 @@
 /*
  * Base64 encoding/decoding (RFC1341)
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2023 SAULX
  * Copyright (c) 2005-2011, Jouni Malinen <j@w1.fi>
  * SPDX-License-Identifier: BSD-3-Clause
  */
@@ -8,7 +8,8 @@
 #ifndef BASE64_H
 #define BASE64_H
 
-size_t base64_encode_s(char *out, const char *str_in, size_t len, size_t line_max);
+size_t base64_encode_s(char *out, const char *str_in, size_t len, size_t line_max)
+    __attribute__((access(write_only, 1), access(read_only, 2, 3)));
 
 /**
  * base64_encode - Base64 encode
@@ -21,7 +22,9 @@ size_t base64_encode_s(char *out, const char *str_in, size_t len, size_t line_ma
  * @returns Allocated buffer of out_len bytes of encoded data,
  * or %NULL on failure
  */
-char * base64_encode(const char *str_in, size_t len, size_t *out_len);
+[[nodiscard]]
+char * base64_encode(const char *str_in, size_t len, size_t *out_len)
+    __attribute__((access(read_only, 1, 2), access(read_only, 3)));
 
 /**
  * Base64 decode.
@@ -31,7 +34,9 @@ char * base64_encode(const char *str_in, size_t len, size_t *out_len);
  * @param out_len Pointer to output length variable
  * @returns Allocated buffer of out_len bytes of decoded data, or NULL on failure
  */
-char * base64_decode(const char *str_in, size_t len, size_t *out_len);
+[[nodiscard]]
+char * base64_decode(const char *str_in, size_t len, size_t *out_len)
+    __attribute__((access(read_only, 1, 2), access(write_only, 3)));
 
 /**
  * Calculate the required buffer size of a string of n bytes.

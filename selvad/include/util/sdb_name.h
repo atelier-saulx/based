@@ -13,4 +13,5 @@
 /**
  * Generate a new SDB filename.
  */
-int sdb_name(char *buf, size_t buf_size, const char *prefix, uint64_t id);
+int sdb_name(char * restrict buf, size_t buf_size, const char * restrict prefix, uint64_t id)
+    __attribute__((access(write_only, 1, 2), access(read_only, 3)));

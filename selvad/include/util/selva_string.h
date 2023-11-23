@@ -46,20 +46,23 @@ enum selva_string_flags {
 /**
  * Find already interned string.
  */
-struct selva_string *selva_string_find_intern(const char *str, size_t len);
+struct selva_string *selva_string_find_intern(const char *str, size_t len)
+    __attribute__((access(read_only, 1, 2)));
 
 /**
  * Create a new string.
  * @param str can be NULL.
  */
 [[nodiscard]]
-struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags);
+struct selva_string *selva_string_create(const char *str, size_t len, enum selva_string_flags flags)
+    __attribute__((access(read_only, 1, 2)));
 
 /**
  * Create a string using a printf format string.
  */
 [[nodiscard]]
-struct selva_string *selva_string_createf(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+struct selva_string *selva_string_createf(const char *fmt, ...)
+    __attribute__((format(printf, 1, 2)));
 
 #if defined(_STDIO_H) || defined(_STDIO_H_)
 /**
@@ -81,7 +84,8 @@ struct selva_string *selva_string_fread(FILE *fp, size_t size, enum selva_string
  *              SELVA_STRING_CRC is supported.
  */
 [[nodiscard]]
-struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags);
+struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enum selva_string_flags flags)
+    __attribute__((access(read_only, 1, 2)));
 
 /**
  * Decompress a compressed string.
@@ -91,7 +95,8 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
  *          SELVA_PROTO_EINTYPE if not a compressed string;
  *          SELVA_EINVAL if the string cannot be decompressed.
  */
-int selva_string_decompress(const struct selva_string *s, char *buf);
+int selva_string_decompress(const struct selva_string *s, char *buf)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Duplicate a string.
@@ -115,14 +120,16 @@ int selva_string_truncate(struct selva_string *s, size_t newlen);
  * @param s is a pointer to a selva_string.
  * @returns 0 if succeeded; Otherwise an error code.
  */
-int selva_string_append(struct selva_string *s, const char *str, size_t len);
+int selva_string_append(struct selva_string *s, const char *str, size_t len)
+    __attribute__((access(read_only, 2, 3)));
 
 /**
  * Replace current value of the string s with str.
  * s must be mutable.
  * @returns 0 if succeeded; Otherwise an error code.
  */
-int selva_string_replace(struct selva_string *s, const char *str, size_t len);
+int selva_string_replace(struct selva_string *s, const char *str, size_t len)
+    __attribute__((access(read_only, 2, 3)));
 
 /**
  * Allows selva_string_free() to be passed to finalizer_add() and other similar
@@ -180,7 +187,8 @@ double selva_string_getz_cratio(const struct selva_string *s);
  * @param[out] len is a pointer to a variable to store the length of s.
  * @retruns Returns a pointer to the C-string.
  */
-const char *selva_string_to_str(const struct selva_string *s, size_t *len);
+const char *selva_string_to_str(const struct selva_string *s, size_t *len)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Get a pointer to the mutable C-string.
@@ -193,27 +201,32 @@ char *selva_string_to_mstr(struct selva_string *s, size_t *len);
 /**
  * Convert a string into a long long integer.
  */
-int selva_string_to_ll(const struct selva_string *s, long long *ll);
+int selva_string_to_ll(const struct selva_string *s, long long *ll)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Convert a string into an unsigned long long integer.
  */
-int selva_string_to_ull(const struct selva_string *s, unsigned long long *ull);
+int selva_string_to_ull(const struct selva_string *s, unsigned long long *ull)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Convert a string into a float.
  */
-int selva_string_to_float(const struct selva_string *s, float *f);
+int selva_string_to_float(const struct selva_string *s, float *f)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Convert a string into a double.
  */
-int selva_string_to_double(const struct selva_string *s, double *d);
+int selva_string_to_double(const struct selva_string *s, double *d)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Convert a string into a long double.
  */
-int selva_string_to_ldouble(const struct selva_string *s, long double *ld);
+int selva_string_to_ldouble(const struct selva_string *s, long double *ld)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Freeze the string s in memory.
@@ -264,15 +277,18 @@ void selva_string_set_compress(struct selva_string *s);
  *            0 if the contents of both strings are equal;
  *          > 0 if the first character that does not match has a greater value in ptr1 than in ptr2.
  */
-int selva_string_cmp(const struct selva_string *a, const struct selva_string *b);
+int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
+    __attribute__((access(read_only, 1), access(read_only, 2)));
 
-int selva_string_endswith(struct selva_string *s, const char *suffix);
+int selva_string_endswith(struct selva_string *s, const char *suffix)
+    __attribute__((access(read_only, 2)));
 
 /**
  * Find a substring sub_str in s.
  * This function works correctly with compressed strings.
  */
-ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t sub_len);
+ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t sub_len)
+    __attribute__((access(read_only, 2, 3)));
 
 #define TO_STR_1(_var) \
     size_t _var##_len; \

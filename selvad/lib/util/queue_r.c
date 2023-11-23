@@ -165,7 +165,7 @@ int queue_isfull(const queue_cb_t * cb)
     return ((cb->m_write + 1) % cb->a_len) == cb->m_read;
 }
 
-int seek(queue_cb_t * cb, size_t i, void * element)
+int seek(const queue_cb_t * cb, size_t i, void * element)
 {
     size_t read = cb->m_read;
     size_t write = cb->m_write;

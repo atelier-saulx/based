@@ -4,7 +4,7 @@
  * @author  Olli Vanhoja
  * @brief   time types.
  * @section LICENSE
- * Copyright (c) 2022 Saulx
+ * Copyright (c) 2022-2023 Saulx
  * Copyright (c) 2020 Olli Vanhoja <olli.vanhoja@alumni.helsinki.fi>
  * Copyright (c) 2014 - 2016 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * All rights reserved.
@@ -75,7 +75,8 @@ void nsec2timespec(struct timespec * ts, int64_t nsec);
  * @param[in]   right   is a pointer to the right value.
  */
 void timespec_add(struct timespec * sum, const struct timespec * left,
-                  const struct timespec * right);
+                  const struct timespec * right)
+    __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
 
 /**
  * Calculate the difference of two timespec structs.
@@ -84,7 +85,8 @@ void timespec_add(struct timespec * sum, const struct timespec * left,
  * @param[in]   right   is a pointer to the right value.
  */
 void timespec_sub(struct timespec * diff, const struct timespec * left,
-                  const struct timespec * right);
+                  const struct timespec * right)
+    __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
 
 /**
  * Calculate the product of two timespec structs.
@@ -93,7 +95,8 @@ void timespec_sub(struct timespec * diff, const struct timespec * left,
  * @param[in]   right   is a pointer to the right value.
  */
 void timespec_mul(struct timespec * prod, const struct timespec * left,
-                 const struct timespec * right);
+                 const struct timespec * right)
+    __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
 
 /**
  * Calculate the quotient of two timespec structs.
@@ -102,7 +105,8 @@ void timespec_mul(struct timespec * prod, const struct timespec * left,
  * @param[in]   right   is a pointer to the right value.
  */
 void timespec_div(struct timespec * quot, const struct timespec * left,
-                  const struct timespec * right);
+                  const struct timespec * right)
+    __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
 
 /**
  * Calculate the modulo of two timespec structs.
@@ -111,9 +115,10 @@ void timespec_div(struct timespec * quot, const struct timespec * left,
  * @param[in]   right   is a pointer to the right value.
  */
 void timespec_mod(struct timespec * rem, const struct timespec * left,
-                  const struct timespec * right);
+                  const struct timespec * right)
+    __attribute__((access(write_only, 1), access(read_only, 2), access(read_only, 3)));
 
-static inline double timespec2ms(struct timespec *ts)
+static inline double timespec2ms(const struct timespec *ts)
 {
     return (double)ts->tv_sec * 1000.0 + (double)ts->tv_nsec / 1.0e6;
 }

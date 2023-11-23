@@ -11,22 +11,27 @@
 uint64_t b10digits(uint64_t x);
 
 [[nodiscard]]
-char *selva_strndup(const char *s, size_t n) __attribute__((access(read_only, 1, 2), returns_nonnull));
+char *selva_strndup(const char *s, size_t n)
+    __attribute__((access(read_only, 1, 2), returns_nonnull));
 
 [[nodiscard]]
-char *selva_strdup(const char *s) __attribute__((access(read_only, 1), returns_nonnull));
+char *selva_strdup(const char *s)
+    __attribute__((access(read_only, 1), returns_nonnull));
 
 /**
  * Locate last occurrence of character in string.
  */
-int strrnchr(const char *str, size_t len, char c) __attribute__((pure, access(read_only, 1, 2)));
+int strrnchr(const char *str, size_t len, char c)
+    __attribute__((pure, access(read_only, 1, 2)));
 
-int str_endswith(const char *str, const char *suffix) __attribute__((pure));
+int str_endswith(const char *str, const char *suffix)
+    __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 
 /*
  * Tokenize nul-terminated strings from the buffer buf with the size of size.
  */
-const char *sztok(const char *buf, size_t size, size_t * restrict i);
+const char *sztok(const char *buf, size_t size, size_t * restrict i)
+    __attribute__((pure, access(read_only, 1, 2), access(read_write, 3)));
 
 int stringlist_search(const char *list, const char *str, size_t n, char wildcard)
     __attribute__((pure, access(read_only, 1), access(read_only, 2, 3)));
@@ -45,17 +50,24 @@ size_t substring_count(const char *string, const char *substring, size_t n)
 /**
  * Calculate the number of instances of ch in s.
  */
-int ch_count(const char *s, char ch) __attribute__((pure, access(read_only, 1)));
+int ch_count(const char *s, char ch)
+    __attribute__((pure, access(read_only, 1)));
 
 /**
  * Replace all occurrences of orig_ch in s with new_ch.
  */
-char *ch_replace(char *s, size_t n, char orig_ch, char new_ch) __attribute__((access(read_write, 1, 2)));
+char *ch_replace(char *s, size_t n, char orig_ch, char new_ch)
+    __attribute__((access(read_write, 1, 2)));
 
 #ifndef HAS_MEMRCHR
-void *memrchr(const void *s, int c, size_t n) __attribute__((pure, access(read_only, 1, 3)));
+void *memrchr(const void *s, int c, size_t n)
+    __attribute__((pure, access(read_only, 1, 3)));
 #endif
 
-char *mempbrk(register const char * restrict s, const char * restrict accept, size_t limit);
+/**
+ * Locate the first occurrence of any of the bytes in accept.
+ */
+char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
+    __attribute__((pure, access(read_only, 1, 2), access(read_only, 3, 4)));
 
 #endif /* _UTIL_CSTRINGS_H_ */

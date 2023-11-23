@@ -1090,7 +1090,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
             Selva_NodeId dst_node_id;
             struct SelvaHierarchyNode *dst_node;
 
-            strncpy(dst_node_id, dst_id_str, SELVA_NODE_ID_SIZE);
+            Selva_NodeIdCpy(dst_node_id, dst_id_str);
             dst_node = SelvaHierarchy_FindNode(hierarchy, dst_node_id);
             assert(dst_node);
 
