@@ -197,3 +197,370 @@ test('validate $traverse', (t) => {
     })
   })
 })
+
+test('validate $filter', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'children',
+              $filter: true,
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $filter must be of type object or array at "list.$list.$find.$filter".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: {
+            $filter: {
+              $field: 'aField',
+              $operator: '=',
+              $value: 'aValue',
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $filter cannot be a child of "two" at "one.two.$filter".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: {
+                $field: 'aField',
+                something: true,
+              },
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $filter property "something" at "list.$list.$find.$filter".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: [
+                {
+                  $field: 'aField',
+                  $operator: '=',
+                  $value: 'aValue',
+                },
+                {
+                  $field: 'aField',
+                  something: true,
+                },
+              ],
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $filter property "something" at "list.$list.$find.$filter.1".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: {
+                $field: 'aField',
+                $operator: '=',
+              },
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $filter must have the required properties "$field", "$operator" and "$value" at "list.$list.$find.$filter".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: [
+                {
+                  $field: 'aField',
+                  $operator: '=',
+                  $value: 'aValue',
+                },
+                {
+                  $field: 'aField',
+                  $operator: '=',
+                },
+              ],
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $filter must have the required properties "$field", "$operator" and "$value" at "list.$list.$find.$filter.1".',
+    }
+  )
+})
+
+test('validate $field', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: {
+                $field: true,
+                $operator: '=',
+                $value: 'aValue',
+              },
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $field must be of type string at "list.$list.$find.$filter.$field".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: [
+                {
+                  $field: true,
+                  $operator: '=',
+                  $value: 'aValue',
+                },
+              ],
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $field must be of type string at "list.$list.$find.$filter.0.$field".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: {
+            $field: '=',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $field cannot be a child of "two" at "one.two.$field".',
+    }
+  )
+})
+
+test('validate $operator', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: {
+                $field: 'aField',
+                $operator: true,
+                $value: 'aValue',
+              },
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $operator must be of type string at "list.$list.$find.$filter.$operator".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: [
+                {
+                  $field: 'aField',
+                  $operator: true,
+                  $value: 'aValue',
+                },
+              ],
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $operator must be of type string at "list.$list.$find.$filter.0.$operator".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: {
+            $operator: '=',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $operator cannot be a child of "two" at "one.two.$operator".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: {
+                $field: 'aField',
+                $operator: 'wawa',
+                $value: 'aValue',
+              },
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $operator argument value "wawa" at "list.$list.$find.$filter.$operator".',
+    }
+  )
+
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        list: {
+          id: true,
+          $list: {
+            $find: {
+              $traverse: 'descendants',
+              $filter: [
+                {
+                  $field: 'aField',
+                  $operator: 'wawa',
+                  $value: 'aValue',
+                },
+              ],
+            },
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Invalid $operator argument value "wawa" at "list.$list.$find.$filter.0.$operator".',
+    }
+  )
+})
+
+test('validate $value', (t) => {
+  t.throws(
+    () => {
+      getQueryValidation({
+        $id: 'id',
+        one: {
+          two: {
+            $value: '=',
+          },
+        },
+      })
+    },
+    {
+      message:
+        'Query error: Argument $value cannot be a child of "two" at "one.two.$value".',
+    }
+  )
+})
