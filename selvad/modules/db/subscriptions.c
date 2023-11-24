@@ -227,7 +227,7 @@ int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *nod
     return SVector_Size(&node_metadata->sub_markers.vec) > 0;
 }
 
-uint32_t string_hash(uint32_t hash, const char *s) {
+static uint32_t string_hash(uint32_t hash, const char *s) {
     for (; *s; s++) {
         hash = (hash * 33) ^ *s;
     }
@@ -425,7 +425,7 @@ static void init_deferred_events(struct SelvaSubscriptions_DeferredEvents *def) 
     SVector_Init(&def->marker_events, 2, marker_svector_compare);
 }
 
-void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
+static void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
     struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
 
     SVector_Destroy(&def->marker_events);
@@ -2000,7 +2000,7 @@ static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base
  * Add a new marker to the subscription.
  * SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
  */
-void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2208,7 +2208,7 @@ fail:
 /*
  * SUB_ID MARKER_ID ALIAS_NAME
  */
-void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2255,7 +2255,7 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
  * Add a trigger marker.
  * SUBSCRIPTIONS.ADDTRIGGER SUB_ID MARKER_ID EVENT_TYPE [filter expression] [filter args...]
  */
-void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2375,7 +2375,7 @@ out:
 /*
  * SUBSCRIPTIONS.refresh SUB_ID
  */
-void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh);
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
@@ -2409,7 +2409,7 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
 /*
  * SUBSCRIPTIONS.refreshMarker MRK_ID
  */
-void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh_marker);
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionMarkerId marker_id;
@@ -2443,7 +2443,7 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
 /**
  * List all subscriptions.
  */
-void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     enum {
         SUBSCRIPTIONS_LIST_CMD_SUBS = 0,
@@ -2550,7 +2550,7 @@ static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarc
 /*
  * KEY SUB_ID
  */
-void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     const char *id_str;
     size_t id_len;
@@ -2605,7 +2605,7 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
 /*
  * KEY SUB_ID
  */
-void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
     struct Selva_Subscription *sub;
@@ -2635,7 +2635,7 @@ void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const
 /*
  * KEY SUB_ID MARKER_ID
  */
-void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;

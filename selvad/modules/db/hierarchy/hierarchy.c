@@ -1738,7 +1738,7 @@ static int SelvaHierarchy_DelNodeP(
     return nr_deleted + 1;
 }
 
-int SelvaHierarchy_DelNode(
+static int SelvaHierarchy_DelNode(
         struct selva_server_response_out *resp,
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,

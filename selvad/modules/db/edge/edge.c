@@ -70,7 +70,7 @@ static struct EdgeField *get_bck_edge_field(struct EdgeField *src_edge_field, st
  * @param create if set the object will be created if it didn't exist before.
  * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
  */
-struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
+static struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
     if (!edge_field->metadata && create) {
         edge_field->metadata = SelvaObject_New();
     }

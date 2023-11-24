@@ -14,6 +14,10 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 
+/* TODO We should just fix the warns */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 int selva_proto_verify_frame_chk(
         struct selva_proto_header * restrict hdr,
         const void * restrict payload,
@@ -294,3 +298,5 @@ int selva_proto_parse_replication_sdb(const void *buf, size_t bsize, size_t i, u
     *data_size = le64toh(hdr.bsize);
     return 0;
 }
+
+#pragma GCC diagnostic pop

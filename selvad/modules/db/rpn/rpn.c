@@ -2086,6 +2086,8 @@ static enum rpn_error cond_jump(struct rpn_ctx *ctx, const char *s, const rpn_to
 }
 
 static enum rpn_error rpn(struct rpn_ctx *ctx, const struct rpn_expression *expr) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
     const rpn_token *it = expr->expression;
     const char *s;
 
@@ -2161,6 +2163,7 @@ end:
     }
 
     return RPN_ERR_OK;
+#pragma GCC diagnostic pop
 }
 
 enum rpn_error rpn_bool(struct rpn_ctx *ctx, const struct rpn_expression *expr, int *out) {

@@ -629,7 +629,7 @@ IMPORT() {
     evl_import_event_loop();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     evl_module_init("server");
 

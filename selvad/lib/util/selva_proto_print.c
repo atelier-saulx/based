@@ -11,6 +11,10 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 
+/* TODO We should just fix the warns */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 #define TAB_WIDTH 2
 #define TABS_MAX (80 / TAB_WIDTH / 2)
 
@@ -192,3 +196,5 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
         }
     }
 }
+
+#pragma GCC diagnostic pop

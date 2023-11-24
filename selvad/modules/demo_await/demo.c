@@ -70,7 +70,7 @@ IMPORT() {
     evl_import_promise();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     evl_module_init("demo_await");
 

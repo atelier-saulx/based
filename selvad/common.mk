@@ -18,7 +18,7 @@ CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra
+CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes
 CFLAGS += -DDCACHE_LINESIZE=64
 
 # Add these for valgrind
