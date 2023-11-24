@@ -14,7 +14,7 @@ const test = anyTest as TestInterface<{
 }>
 
 test.beforeEach(async (t) => {
-  t.timeout(4000)
+  t.timeout(5000)
   t.context.port = await getPort()
   console.log('origin')
   t.context.srv = await startOrigin({

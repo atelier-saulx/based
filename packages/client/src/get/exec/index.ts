@@ -12,7 +12,6 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
 import { subscription_opts_def } from '../../protocol'
 import { Path } from '@based/schema'
-import { getQueryValidation } from '../validation'
 
 export async function get(
   client: BasedDbClient,
@@ -38,8 +37,6 @@ export async function get(
   markerId?: number
   markers?: any[]
 }> {
-  getQueryValidation(opts)
-
   if (markerId && cleanup && markerId === subId) {
     // initial lookup invalidated, do full cleanup
     await get(client, opts, {

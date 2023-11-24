@@ -152,6 +152,7 @@ const listValidation = (query: any, path: string[]) => {
     '$sort',
     '$offset',
     '$limit',
+    '$field', // TODO: is this valid?
   ])
 }
 
