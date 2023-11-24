@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -11,7 +11,7 @@
 #include <time.h>
 #include "jemalloc.h"
 #include "selva_log.h"
-#include "event_loop_state.h"
+#include "evl_state.h"
 #include "promise.h"
 
 #if __linux__

@@ -13,8 +13,8 @@
 #include "util/timestamp.h"
 #include "selva_log.h"
 #include "event_loop.h"
-#include "../event_loop_state.h"
-#include "poll.h"
+#include "../evl_state.h"
+#include "../evl_poll.h"
 
 #ifndef USE_POLL
 #error "I only support poll"
