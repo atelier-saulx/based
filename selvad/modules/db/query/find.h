@@ -175,5 +175,8 @@ int find_parse_fields(
         struct selva_string ***inherit_fields_out,
         size_t *nr_inherit_fields_out,
         struct selva_string **excluded_fields_out
-);
-int find_fields_contains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
+)
+    __attribute__((access(read_only, 2), access(write_only, 3), access(write_only, 4), access(write_only, 5), access(write_only, 6)));
+
+int find_fields_contains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len)
+    __attribute__((access(read_only, 1), access(read_only, 2, 3)));

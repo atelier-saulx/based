@@ -45,7 +45,7 @@ const char *make_full_field_name_str(struct finalizer *fin, const char *field_pr
 
 struct selva_string *deprefix_excluded_fields(
         struct finalizer *fin,
-        struct selva_string *excluded_fields,
+        const struct selva_string *excluded_fields,
         const char *field_str, size_t field_len,
         const char *next_field_str, size_t next_field_len)
 {

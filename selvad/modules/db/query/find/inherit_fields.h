@@ -30,7 +30,8 @@ int Inherit_FieldValue(
         size_t nr_types,
         const char *field_name_str,
         size_t field_name_len,
-        struct SelvaObjectAny *res);
+        struct SelvaObjectAny *res)
+    __attribute__((access(read_only, 2), access(read_only, 3), access(read_only, 4), access(read_only, 6, 7)));
 
 /**
  * Send a field value to the client in the find command format.
@@ -44,7 +45,8 @@ int Inherit_SendFieldFind(
         const char *full_field_str,
         size_t full_field_len,
         const char *field_str,
-        size_t field_len);
+        size_t field_len)
+    __attribute__((access(read_only, 3), access(read_only, 6, 7), access(read_only, 8, 9)));
 
 /**
  * Inherit fields and send them to the client in the find command format.
@@ -60,6 +62,7 @@ void Inherit_SendFields(
         struct selva_string *lang,
         const Selva_NodeId node_id,
         struct selva_string **types_field_names,
-        size_t nr_field_names);
+        size_t nr_field_names)
+    __attribute__((access(read_only, 3), access(read_only, 4), access(read_only, 5)));
 
 #endif /* _SELVA_INHERIT_FIELDS_H_ */
