@@ -5,19 +5,16 @@
  */
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
 #include "util/cstrings.h"
 
-char *mempbrk(register const char * restrict s, const char * restrict accept, size_t limit)
+char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
 {
-    if (limit <= 0 || !s || !accept || !*accept) {
+    if (len == 0 || !s || !accept) {
         return 0;
     }
 
-    const size_t acc_len = strlen(accept);
-
-    for (size_t i = 0; i < limit; s++, i++) {
-        for (size_t j = 0; j < acc_len; j++) {
+    for (size_t i = 0; i < len; s++, i++) {
+        for (size_t j = 0; j < accept_len; j++) {
             if (*s == accept[j]) {
                 return (char *)s;
             }

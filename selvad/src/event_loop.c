@@ -15,8 +15,8 @@
 #include "util/ctime.h"
 #include "selva_error.h"
 #include "selva_log.h"
-#include "event_loop_state.h"
-#include "poll.h"
+#include "evl_state.h"
+#include "evl_poll.h"
 
 struct event_loop_state event_loop_state;
 

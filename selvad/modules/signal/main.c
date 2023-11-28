@@ -91,7 +91,7 @@ IMPORT() {
     evl_import_main(selva_log);
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
 
     /*

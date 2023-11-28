@@ -9,6 +9,7 @@
 /**
  * Compute CRC-32C.
  */
-uint32_t crc32c(uint32_t crc, void const *buf, size_t len);
+uint32_t crc32c(uint32_t crc, void const *buf, size_t len)
+    __attribute__((pure, access(read_only, 2, 3)));
 
 #endif /* CRC32C_H */

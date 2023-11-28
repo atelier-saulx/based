@@ -12,7 +12,7 @@
 #include "selva_db.h"
 #include "selva_set.h"
 
-int SelvaSet_CompareString(struct SelvaSetElement *a, struct SelvaSetElement *b) {
+static int SelvaSet_CompareString(struct SelvaSetElement *a, struct SelvaSetElement *b) {
     struct selva_string *ra = a->value_string;
     struct selva_string *rb = b->value_string;
     TO_STR(ra, rb);
@@ -26,21 +26,21 @@ int SelvaSet_CompareString(struct SelvaSetElement *a, struct SelvaSetElement *b)
     return memcmp(ra_str, rb_str, ra_len);
 }
 
-int SelvaSet_CompareDouble(struct SelvaSetElement *a, struct SelvaSetElement *b) {
+static int SelvaSet_CompareDouble(struct SelvaSetElement *a, struct SelvaSetElement *b) {
     double da = a->value_d;
     double db = b->value_d;
 
     return da < db ? -1 : da > db ? 1 : 0;
 }
 
-int SelvaSet_CompareLongLong(struct SelvaSetElement *a, struct SelvaSetElement *b) {
+static int SelvaSet_CompareLongLong(struct SelvaSetElement *a, struct SelvaSetElement *b) {
     long long lla = a->value_ll;
     long long llb = b->value_ll;
 
     return lla < llb ? -1 : lla > llb ? 1 : 0;
 }
 
-int SelvaSet_CompareNodeId(struct SelvaSetElement *a, struct SelvaSetElement *b) {
+static int SelvaSet_CompareNodeId(struct SelvaSetElement *a, struct SelvaSetElement *b) {
     return memcmp(a->value_nodeId, b->value_nodeId, SELVA_NODE_ID_SIZE);
 }
 

@@ -67,7 +67,7 @@ int SelvaResolve_NodeId(
 /*
  * SUB_ID IDS...
  */
-void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaResolve_NodeIdCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;

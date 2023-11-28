@@ -14,9 +14,11 @@ EN_VALGRIND_CFLAGS := -Dselva_malloc=malloc -Dselva_calloc=calloc -Dselva_reallo
 export SOURCE_DATE_EPOCH := $(shell sh -c 'git log -1 --pretty=%ct || date +%s')
 export ZERO_AR_DATE := 1
 
+CC += -fdiagnostics-color=always
+
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra
+CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes
 CFLAGS += -DDCACHE_LINESIZE=64
 
 # Add these for valgrind

@@ -999,7 +999,7 @@ static int in_mem_range(const void *p, const void *start, size_t size) {
     return (ptrdiff_t)p >= (ptrdiff_t)start && (ptrdiff_t)p < (ptrdiff_t)start + (ptrdiff_t)size;
 }
 
-const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *size_out) {
+static const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *size_out) {
     TO_STR(data);
     typeof_field(struct SelvaModify_OpHll, $add_len) size;
     const char *p;
@@ -1027,7 +1027,7 @@ const char *SelvaModify_OpHll_align(const struct selva_string *data, size_t *siz
 /**
  * Get the replicate_ts struct.
  */
-void get_replicate_ts(struct replicate_ts *rs, struct SelvaHierarchyNode *node, bool created, bool updated) {
+static void get_replicate_ts(struct replicate_ts *rs, struct SelvaHierarchyNode *node, bool created, bool updated) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     rs->created = created ? 1 : 0;
     rs->updated = updated ? 1 : 0;

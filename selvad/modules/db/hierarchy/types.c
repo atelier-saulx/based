@@ -41,7 +41,7 @@ struct selva_string *SelvaHierarchyTypes_Get(struct SelvaHierarchy *hierarchy, c
     return out;
 }
 
-void SelvaHierarchyTypes_AddCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaHierarchyTypes_AddCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     struct SelvaHierarchy *hierarchy = main_hierarchy;
     const char type[SELVA_NODE_TYPE_SIZE];
     const char *name_str;
@@ -71,7 +71,7 @@ void SelvaHierarchyTypes_AddCommand(struct selva_server_response_out *resp, cons
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
 }
 
-void SelvaHierarchyTypes_ClearCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaHierarchyTypes_ClearCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     if (len != 0) {
         selva_send_error_arity(resp);
     } else {
@@ -83,7 +83,7 @@ void SelvaHierarchyTypes_ClearCommand(struct selva_server_response_out *resp, co
     }
 }
 
-void SelvaHierarchyTypes_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void SelvaHierarchyTypes_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     if (len != 0) {
         selva_send_error_arity(resp);
     } else {

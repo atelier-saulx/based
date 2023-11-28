@@ -17,6 +17,10 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 
+/* TODO We should just fix the warns */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 /**
  * Supported final types.
  */
@@ -669,3 +673,5 @@ __constructor static void init_selva_proto_scanf(void)
         abort();
     }
 }
+
+#pragma GCC diagnostic pop

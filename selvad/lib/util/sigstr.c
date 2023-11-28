@@ -9,6 +9,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include "util/sigstr.h"
 
 #if __APPLE__
 extern const char * const sys_siglist[];

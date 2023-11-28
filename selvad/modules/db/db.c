@@ -70,7 +70,7 @@ IMPORT() {
     import_selva_replication();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     int err;
     Selva_Onload **onload_p;
@@ -108,7 +108,7 @@ __constructor void init(void)
     }
 }
 
-__destructor void deinit(void) {
+__destructor static void deinit(void) {
     Selva_Onunload **onunload_p;
 
     SET_FOREACH(onunload_p, selva_onunld) {

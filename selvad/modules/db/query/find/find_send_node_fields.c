@@ -20,9 +20,9 @@
 #include "selva_db.h"
 #include "parsers.h"
 #include "hierarchy.h"
-#include "inherit.h"
 #include "../field_names.h"
 #include "../find.h"
+#include "inherit_fields.h"
 #include "find_send.h"
 
 static int send_node_field(

@@ -27,7 +27,7 @@ struct set_has_cb {
     };
 };
 
-int set_has_cb(union SelvaObjectSetForeachValue value, enum SelvaSetType type, void *arg) {
+static int set_has_cb(union SelvaObjectSetForeachValue value, enum SelvaSetType type, void *arg) {
     struct set_has_cb *data = (struct set_has_cb *)arg;
 
     if (type == SELVA_SET_TYPE_STRING) {

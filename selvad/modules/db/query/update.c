@@ -447,7 +447,7 @@ static int fixup_query_opts(struct SelvaUpdate_QueryOpts *qo, const char *base, 
     return 0;
 }
 
-void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaCommand_Update(struct selva_server_response_out *resp, const void *buf, size_t len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
     struct selva_string **argv;

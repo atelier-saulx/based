@@ -516,7 +516,7 @@ IMPORT() {
     import_selva_server();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     evl_module_init("replication");
 

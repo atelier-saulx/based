@@ -34,6 +34,7 @@
     ]
   },
   "dependencies": {
+    "@based/db-query": "*",
     "@based/client": "^4.7.6",
     "@based/schema": "2.1.0",
     "@saulx/diff": "^1.1.4",

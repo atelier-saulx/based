@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2022 SAULX
+Copyright (c) 2022-2023 SAULX
 
 SPDX-License-Identifier: MIT
 -->
@@ -18,6 +18,22 @@ Directory Structure
 Some source directories may have a subdirectory called `fuzz/`, that's for
 fuzzers (using LLVM LibFuzzer).
 
+Prerequisites
+-------------
+
+### Linux
+
+- bash
+- glibc
+- make 3 or preferably 4
+- gcc 13.2
+
+### macOs
+
+- macOS 13 or later
+- Xcode 15 or later
+- Xcode Command line tools
+
 Build Goals
 -----------
 
@@ -30,18 +46,32 @@ The project build uses `make`.
 - `modules` - Builds all loadable modules 
 
 **Phony targets:**
+- `install` - Install all binaries and required files (supports `$INSTALL_DIR`)
+- `check` - Run `cppcheck`
+- `test` - Run unit tests
+- `test-gcov` - Run unit tests with gcov
 - `clean` - Cleans the build results
 - `mostlyclean` - Refrain from deleting libraries
-- `check` - Run `cppcheck`
 
 Running the Server
 ------------------
 
 ```
-./selvad
+./tools/demo-env/origin/start.sh
 ```
 
 **Environment Variables**
 
-Check `config` command with `dbgcli`.
+Most config parameters are changed using environment variables.
 
+See the available parameters by executing `config` command with `dbgcli`.
+
+```
+./tools/dbgcli/dbgcli
+```
+
+or
+
+```
+./tools/dbgcli/dbgcli -p PORT ADDR
+```

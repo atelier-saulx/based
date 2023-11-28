@@ -549,7 +549,7 @@ static size_t AggregateCommand_SendAggregateResult(const struct AggregateCommand
 /**
  * hierarchy.aggregate lang SelvaAggregate_QueryOpts ids filter_expr filter_args
  */
-void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
+static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
     int argc, err;

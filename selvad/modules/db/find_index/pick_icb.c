@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -13,6 +13,7 @@
 #include "traversal.h"
 #include "hierarchy.h"
 #include "icb.h"
+#include "pick_icb.h"
 
 /**
  * Pick a valid unordered ICB.
@@ -38,7 +39,7 @@ static struct SelvaFindIndexControlBlock *pick_unordered(struct SelvaHierarchy *
 /**
  * Recurse into the `<node_id>.<dir>[.<dir_expr>]` object until we find something.
  */
-void pick_any_order_recursive(
+static void pick_any_order_recursive(
         struct SelvaObject *obj,
         const char *base64_filter_str,
         size_t base64_filter_len,

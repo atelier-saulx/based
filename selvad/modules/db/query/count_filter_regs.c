@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "selva_error.h"
+#include "count_filter_regs.h"
 
 int query_count_filter_regs(const char *regs_buf, size_t regs_len)
 {

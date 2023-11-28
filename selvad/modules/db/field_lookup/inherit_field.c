@@ -15,7 +15,7 @@
 
 static int get_field_value(
         SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         const struct SelvaHierarchyNode *node,
         struct SelvaObject *obj,
         const char *field_str,
@@ -54,7 +54,7 @@ static int deref_single_ref(
 
 static int get_edge_field_deref_value(
         SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         const struct EdgeField *edge_field,
         const char *field_str,
         size_t field_len,
@@ -88,7 +88,7 @@ static int get_edge_field_deref_value(
 
 static int get_field_value(
         SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         const struct SelvaHierarchyNode *node,
         struct SelvaObject *obj,
         const char *field_str,
@@ -130,7 +130,7 @@ static int get_field_value(
 
 int field_lookup_inherit(
         SelvaHierarchy *hierarchy,
-        struct selva_string *lang,
+        const struct selva_string *lang,
         const struct SelvaHierarchyNode *node,
         struct SelvaObject *obj,
         const char *field_str,

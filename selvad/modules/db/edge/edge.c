@@ -70,7 +70,7 @@ static struct EdgeField *get_bck_edge_field(struct EdgeField *src_edge_field, st
  * @param create if set the object will be created if it didn't exist before.
  * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
  */
-struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
+static struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
     if (!edge_field->metadata && create) {
         edge_field->metadata = SelvaObject_New();
     }
@@ -1090,7 +1090,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
             Selva_NodeId dst_node_id;
             struct SelvaHierarchyNode *dst_node;
 
-            strncpy(dst_node_id, dst_id_str, SELVA_NODE_ID_SIZE);
+            Selva_NodeIdCpy(dst_node_id, dst_id_str);
             dst_node = SelvaHierarchy_FindNode(hierarchy, dst_node_id);
             assert(dst_node);
 

@@ -47,7 +47,7 @@ struct InheritSendFields_Args {
     struct selva_server_response_out *resp;
     size_t nr_fields;
     struct selva_string *lang;
-    const struct selva_string **field_names;
+    struct selva_string **field_names;
     struct bitmap *found;
 };
 
@@ -290,7 +290,7 @@ void Inherit_SendFields(
         struct SelvaHierarchy *hierarchy,
         struct selva_string *lang,
         const Selva_NodeId node_id,
-        const struct selva_string **types_field_names,
+        struct selva_string **types_field_names,
         size_t nr_field_names) {
     struct InheritSendFields_Args args = {
         .resp = resp,

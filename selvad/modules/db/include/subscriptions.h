@@ -278,7 +278,8 @@ int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *nod
  * @param str is a nul-terminated input string that will be hashed.
  * @returns The function returns a new subscription marker id.
  */
-Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId prev, const char *s);
+Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarkerId prev, const char *s)
+    __attribute__((pure, access(read_only, 2)));
 
 /**
  * Init subscriptions data structures in the hierarchy.
@@ -369,7 +370,8 @@ int SelvaSubscriptions_AddCallbackMarker(
         const char *filter_str,
         Selva_SubscriptionMarkerAction *callback,
         void *owner_ctx
-    );
+    )
+    __attribute__((access(read_only, 7), access(read_only, 8), access(read_only, 9)));
 
 /**
  * Get a pointer to a subscription marker by subscription and marker id.
@@ -431,7 +433,8 @@ void SelvaSubscriptions_InheritEdge(
         struct SelvaHierarchyNode *src_node,
         struct SelvaHierarchyNode *dst_node,
         const char *field_str,
-        size_t field_len);
+        size_t field_len)
+    __attribute__((access(read_only, 4, 5)));
 
 /**
  * Defer an event if id_str was a missing accessor a subscription was waiting for.
@@ -439,16 +442,19 @@ void SelvaSubscriptions_InheritEdge(
 void SelvaSubscriptions_DeferMissingAccessorEvents(
         struct SelvaHierarchy *hierarchy,
         const char *accessor_str,
-        size_t accessor_len);
+        size_t accessor_len)
+    __attribute__((access(read_only, 2, 3)));
 
 void SelvaSubscriptions_FieldChangePrecheck(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node);
+
 void SelvaSubscriptions_DeferFieldChangeEvents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         const char *field_str,
-        size_t field_len);
+        size_t field_len)
+    __attribute__((access(read_only, 3, 4)));
 
 /**
  * Defer alias events and wipeout markers of the subscriptions hit.

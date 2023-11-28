@@ -20,13 +20,17 @@ int find_send_node_fields(
         struct SelvaObject *fields,
         struct selva_string **inherit_fields,
         size_t nr_inherit_fields,
-        struct selva_string *excluded_fields);
+        struct selva_string *excluded_fields)
+    __attribute__((access(read_only, 3), access(read_only, 5), access(read_only, 7), access(read_only, 8), access(read_only, 10)));
+
 int find_send_array_object_fields(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
         struct selva_string *lang,
         struct SelvaObject *obj,
-        struct SelvaObject *fields);
+        struct SelvaObject *fields)
+    __attribute__((access(read_only, 3), access(read_only, 4), access(read_only, 5)));
+
 int send_node_merge(
         struct finalizer *fin,
         struct selva_server_response_out *resp,
@@ -34,4 +38,5 @@ int send_node_merge(
         const struct SelvaHierarchyNode *node,
         enum SelvaMergeStrategy merge_strategy,
         struct selva_string *obj_path,
-        struct SelvaObject *fields);
+        struct SelvaObject *fields)
+    __attribute__((access(read_only, 3), access(read_only, 6), access(read_only, 7)));

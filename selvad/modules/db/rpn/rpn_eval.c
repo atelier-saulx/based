@@ -156,19 +156,19 @@ fail:
     }
 }
 
-void SelvaRpn_EvalBoolCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaRpn_EvalBoolCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaRpn_Eval(EVAL_TYPE_BOOL, resp, buf, len);
 }
 
-void SelvaRpn_EvalDoubleCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaRpn_EvalDoubleCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaRpn_Eval(EVAL_TYPE_DOUBLE, resp, buf, len);
 }
 
-void SelvaRpn_EvalStringCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaRpn_EvalStringCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaRpn_Eval(EVAL_TYPE_STRING, resp, buf, len);
 }
 
-void SelvaRpn_EvalSetCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaRpn_EvalSetCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaRpn_Eval(EVAL_TYPE_SET, resp, buf, len);
 }
 

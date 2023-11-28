@@ -53,7 +53,8 @@ struct bitmap {
  * @param pos               is the bit position to be checked.
  * @return  Boolean value or -1.
  */
-int bitmap_get(const struct bitmap *bitmap, size_t pos);
+int bitmap_get(const struct bitmap *bitmap, size_t pos)
+    __attribute__((pure, access(read_only, 1)));
 
 /**
  * Set a bit in a bitmap pointed by bitmap.
@@ -61,7 +62,8 @@ int bitmap_get(const struct bitmap *bitmap, size_t pos);
  * @param pos               is the bit position to be set.
  * @return  0 or -1.
  */
-int bitmap_set(struct bitmap *bitmap, size_t pos);
+int bitmap_set(struct bitmap *bitmap, size_t pos)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Clear a bit in a bitmap pointed by bitmap.
@@ -69,19 +71,23 @@ int bitmap_set(struct bitmap *bitmap, size_t pos);
  * @param pos               is the bit position to be cleared.
  * @return  0 or -1.
  */
-int bitmap_clear(struct bitmap *bitmap, size_t pos);
+int bitmap_clear(struct bitmap *bitmap, size_t pos)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Erase the whole bitmap.
  * @param bitmap            is a pointer to a bitmap.
  */
-void bitmap_erase(struct bitmap *bitmap);
+void bitmap_erase(struct bitmap *bitmap)
+    __attribute__((access(read_write, 1)));
 
-long long bitmap_popcount(const struct bitmap *bitmap);
+long long bitmap_popcount(const struct bitmap *bitmap)
+    __attribute__((pure, access(read_only, 1)));
 
 /**
  * Find first set.
  */
-int bitmap_ffs(const struct bitmap *bitmap);
+int bitmap_ffs(const struct bitmap *bitmap)
+    __attribute__((pure, access(read_only, 1)));
 
 #endif /* BITMAP_H */

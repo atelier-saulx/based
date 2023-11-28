@@ -621,7 +621,7 @@ static int hllDenseAdd(uint8_t *registers, const unsigned char *ele, size_t eles
 }
 
 /* Compute the register histogram in the dense representation. */
-void hllDenseRegHisto(uint8_t *registers, int *reghisto)
+static void hllDenseRegHisto(uint8_t *registers, int *reghisto)
 {
     for(int j = 0; j < HLL_REGISTERS; j++) {
         unsigned long reg;

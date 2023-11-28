@@ -22,7 +22,10 @@ enum selva_rusage_who {
     SELVA_RUSAGE_CHILDREN,
 };
 
-void selva_getrusage(enum selva_rusage_who who, struct selva_rusage *rusage);
-void selva_getrusage_net(enum selva_rusage_who who, struct selva_rusage *rusage);
+void selva_getrusage(enum selva_rusage_who who, struct selva_rusage *rusage)
+    __attribute__((access(write_only, 2)));
+
+void selva_getrusage_net(enum selva_rusage_who who, struct selva_rusage *rusage)
+    __attribute__((access(write_only, 2)));
 
 #endif /* _UTIL_RUSAGE_H_ */
