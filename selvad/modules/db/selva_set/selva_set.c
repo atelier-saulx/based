@@ -283,9 +283,9 @@ int SelvaSet_HasNodeId(struct SelvaSet *set, const Selva_NodeId node_id) {
     return !!RB_FIND(SelvaSetNodeId, &set->head_nodeId, &find);
 }
 
-struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, struct selva_string *s) {
+struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, const struct selva_string *s) {
     struct SelvaSetElement find = {
-        .value_string = s,
+        .value_string = (struct selva_string *)s,
     };
     struct SelvaSetElement *el = NULL;
 

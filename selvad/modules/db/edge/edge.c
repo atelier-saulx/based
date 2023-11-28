@@ -927,8 +927,8 @@ int Edge_DeleteAll(
     return 0;
 }
 
-size_t Edge_Refcount(struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *metadata;
+size_t Edge_Refcount(const struct SelvaHierarchyNode *node) {
+    const struct SelvaHierarchyMetadata *metadata;
     size_t refcount = 0;
 
     metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);

@@ -137,12 +137,13 @@ int SelvaSet_HasNodeId(struct SelvaSet *set, const Selva_NodeId node_id);
         const char *: SelvaSet_HasNodeId \
         )((set), (x))
 
-struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, struct selva_string *s);
+struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, const struct selva_string *s);
 struct SelvaSetElement *SelvaSet_RemoveDouble(struct SelvaSet *set, double d);
 struct SelvaSetElement *SelvaSet_RemoveLongLong(struct SelvaSet *set, long long ll);
 struct SelvaSetElement *SelvaSet_RemoveNodeId(struct SelvaSet *set, const Selva_NodeId node_id);
 #define SelvaSet_Remove(set, x) _Generic((x), \
         struct selva_string *: SelvaSet_RemoveString, \
+        const struct selva_string *: SelvaSet_RemoveString, \
         double: SelvaSet_RemoveDouble, \
         long long: SelvaSet_RemoveLongLong, \
         char *: SelvaSet_RemoveNodeId, \

@@ -187,11 +187,11 @@ struct EdgeField *Edge_GetField(
         const char *field_name_str, size_t field_name_len)
     __attribute__((access(read_only, 2, 3)));
 
-static inline size_t Edge_GetFieldLength(const struct EdgeField *edge_field) {
+__attribute__((pure)) static inline size_t Edge_GetFieldLength(const struct EdgeField *edge_field) {
     return SVector_Size(&edge_field->arcs);
 }
 
-static inline enum EdgeFieldConstraintFlag Edge_GetFieldConstraintFlags(const struct EdgeField *edge_field) {
+__attribute__((pure)) static inline enum EdgeFieldConstraintFlag Edge_GetFieldConstraintFlags(const struct EdgeField *edge_field) {
     return edge_field->constraint->flags;
 }
 
@@ -199,7 +199,7 @@ static inline enum EdgeFieldConstraintFlag Edge_GetFieldConstraintFlags(const st
  * Get a pointer to the metadata of an edge in the EdgeField.
  */
 int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out)
-    __attribute__((access(write_only, 4)));
+    __attribute__((access(read_only, 2), access(write_only, 4)));
 
 /**
  * Delete all metadata from edge_field.
@@ -213,7 +213,7 @@ void Edge_DeleteFieldMetadata(struct EdgeField *edge_field)
  *          1 = found.
  */
 int Edge_Has(const struct EdgeField *edge_field, struct SelvaHierarchyNode *dst_node)
-    __attribute__((pure, access(read_only, 1)));
+    __attribute__((pure, access(read_only, 1), access(read_only, 2)));
 
 int Edge_HasNodeId(const struct EdgeField *edge_field, const Selva_NodeId dst_node_id)
     __attribute__((pure, access(read_only, 1), access(read_only, 2)));
@@ -301,10 +301,11 @@ int Edge_DeleteAll(
  * @param node is a pointer to the node.
  * @returns Returns the number of references from other nodes.
  */
-size_t Edge_Refcount(struct SelvaHierarchyNode *node)
-    __attribute__((pure));
+size_t Edge_Refcount(const struct SelvaHierarchyNode *node)
+    __attribute__((pure, access(read_only, 1)));
 
-void replyWithEdgeField(struct selva_server_response_out *resp, struct EdgeField *edge_field);
+void replyWithEdgeField(struct selva_server_response_out *resp, struct EdgeField *edge_field)
+    __attribute((access(read_only, 2)));
 
 int Edge_Load(struct selva_io *io, int encver, struct SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node);
 void Edge_Save(struct selva_io *io, struct SelvaHierarchyNode *node);

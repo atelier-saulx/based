@@ -1794,7 +1794,7 @@ int SelvaObject_RemLongLongSet(struct SelvaObject *obj, const struct selva_strin
     return SelvaObject_RemLongLongSetStr(obj, key_name_str, key_name_len, value);
 }
 
-int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) {
+int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, const struct selva_string *value) {
     struct SelvaSet *selva_set;
     struct SelvaSetElement *el;
     int err;
