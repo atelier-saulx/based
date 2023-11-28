@@ -84,6 +84,18 @@ jobs:
         run: npm ci
       - name: Build based-db
         run: npm run build
+      - name: Update query version
+        run: |
+          cd packages/query
+          npm version --no-git-tag-version ${{inputs.version}}
+          cd ../..
+      - name: Publish query package
+        run: |
+          cd packages/query
+          npm publish --access=public
+          cd ../..
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Update client version
         run: |
           cd packages/client
@@ -93,18 +105,6 @@ jobs:
       - name: Publish client package
         run: |
           cd packages/client
-          npm publish --access=public
-          cd ../..
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      - name: Update query version
-        run: |
-          cd packages/query
-          npm version --no-git-tag-version ${{inputs.version}}
-          cd ../..
-      - name: Publish query package
-        run: |
-          cd packages/query
           npm publish --access=public
           cd ../..
         env:
