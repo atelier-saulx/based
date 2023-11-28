@@ -5,7 +5,7 @@ import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 
 test('ping', async (t) => {
-  const TIME = 2500
+  // const TIME = 2500
 
   const port = await getPort()
   const server = await startOrigin({
