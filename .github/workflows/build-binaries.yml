@@ -27,7 +27,7 @@ jobs:
   build-selva:
     name: Build and Test Selvad ${{ inputs.target }}
     if: github.event.pull_request.draft == false
-    runs-on: ${{ inputs.target }}
+    runs-on: ${{ inputs.target || 'ubuntu-latest' }}
     steps:
       - run: echo ${{ runner.os }}
       - uses: actions/checkout@v4
