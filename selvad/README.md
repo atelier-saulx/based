@@ -18,6 +18,22 @@ Directory Structure
 Some source directories may have a subdirectory called `fuzz/`, that's for
 fuzzers (using LLVM LibFuzzer).
 
+Prerequisites
+-------------
+
+### Linux
+
+- bash
+- glibc
+- make 3 or preferably 4
+- gcc 13.2
+
+### macOs
+
+- macOS 13 or later
+- Xcode 15 or later
+- Xcode Command line tools
+
 Build Goals
 -----------
 
