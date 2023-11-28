@@ -90,7 +90,7 @@ static void SelvaRpn_Eval(enum SelvaRpnEvalType type, struct selva_server_respon
         }
     }
 
-    if (rpn_set_string_regs(rpn_ctx, argv + ARGV_FILTER_ARGS, argc - ARGV_FILTER_ARGS)) {
+    if (rpn_set_string_regs(rpn_ctx, argc - ARGV_FILTER_ARGS, argv + ARGV_FILTER_ARGS)) {
         selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
         return;
     }

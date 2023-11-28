@@ -583,7 +583,7 @@ static void SelvaCommand_Update(struct selva_server_response_out *resp, const vo
             return;
         }
 
-        if (rpn_set_string_regs(rpn_ctx, argv + ARGV_FILTER_ARGS, argc - ARGV_FILTER_ARGS)) {
+        if (rpn_set_string_regs(rpn_ctx, argc - ARGV_FILTER_ARGS, argv + ARGV_FILTER_ARGS)) {
             selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
             return;
         }

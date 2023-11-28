@@ -887,7 +887,7 @@ int SelvaFindIndex_AutoMulti(
         struct selva_string *order_field,
         struct selva_string *index_hints[],
         size_t nr_index_hints,
-        struct SelvaFindIndexControlBlock *ind_icb_out[]) {
+        struct SelvaFindIndexControlBlock *ind_icb_out[nr_index_hints]) {
     int ind_select = -1;
 
     for (size_t i = 0; i < nr_index_hints; i++) {

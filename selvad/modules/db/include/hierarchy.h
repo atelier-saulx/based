@@ -401,9 +401,9 @@ int SelvaModify_SetHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children,
+        const Selva_NodeId children[nr_children],
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out)
     __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5), access(write_only, 8)));
@@ -416,7 +416,7 @@ int SelvaModify_SetHierarchyParents(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         enum SelvaModify_SetFlags flags)
     __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
 
@@ -428,7 +428,7 @@ int SelvaModify_SetHierarchyChildren(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_children,
-        const Selva_NodeId *children,
+        const Selva_NodeId children[nr_children],
         enum SelvaModify_SetFlags flags)
     __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
 
@@ -451,10 +451,10 @@ int SelvaModify_AddHierarchyP(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children)
-    __attribute__((access(read_write, 1), access(read_write, 2), access(read_only, 4), access(read_only, 6)));
+        const Selva_NodeId children[nr_children])
+    __attribute__((access(read_write, 1), access(read_write, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
 
 /**
  * Add new relationships relative to other existing nodes.
@@ -470,10 +470,10 @@ int SelvaModify_AddHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4), access(read_only, 6)));
+        const Selva_NodeId children[nr_children])
+    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
 
 /**
  * Remove relationship relative to other existing nodes.
@@ -486,10 +486,10 @@ int SelvaModify_DelHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4), access(read_only, 6)));
+        const Selva_NodeId children[nr_children])
+    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5)));
 
 /**
  * Delete a node from the hierarchy.
@@ -750,7 +750,7 @@ int HierarchyReply_WithTraversal(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId nodeId,
         size_t nr_types,
-        const Selva_NodeType *types,
+        const Selva_NodeType types[nr_types],
         enum SelvaTraversal dir)
     __attribute__((access(read_only, 3), access(read_only, 5, 4)));
 

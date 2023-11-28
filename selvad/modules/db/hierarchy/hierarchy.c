@@ -1251,9 +1251,9 @@ int SelvaModify_SetHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children,
+        const Selva_NodeId children[nr_children],
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out) {
     SelvaHierarchyNode *node;
@@ -1332,7 +1332,7 @@ static int remove_missing(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
         size_t nr_nodes,
-        const Selva_NodeId *nodes,
+        const Selva_NodeId nodes[nr_nodes],
         enum SelvaHierarchyNode_Relationship rel) {
     SVECTOR_AUTOFREE(old_adjs);
     struct SVectorIterator it;
@@ -1378,7 +1378,7 @@ int SelvaModify_SetHierarchyParents(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         enum SelvaModify_SetFlags flags) {
     SelvaHierarchyNode *node;
     int err, res = 0;
@@ -1418,7 +1418,7 @@ int SelvaModify_SetHierarchyChildren(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_children,
-        const Selva_NodeId *children,
+        const Selva_NodeId children[nr_children],
         enum SelvaModify_SetFlags) {
     SelvaHierarchyNode *node;
     int err, res = 0;
@@ -1507,9 +1507,9 @@ int SelvaModify_AddHierarchyP(
         SelvaHierarchy *hierarchy,
         SelvaHierarchyNode *node,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children) {
+        const Selva_NodeId children[nr_children]) {
     int err, res = 0;
 
     /*
@@ -1537,9 +1537,9 @@ int SelvaModify_AddHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children) {
+        const Selva_NodeId children[nr_children]) {
     SelvaHierarchyNode *node;
     int isNewNode;
     int err;
@@ -1569,9 +1569,9 @@ int SelvaModify_DelHierarchy(
         SelvaHierarchy *hierarchy,
         const Selva_NodeId id,
         size_t nr_parents,
-        const Selva_NodeId *parents,
+        const Selva_NodeId parents[nr_parents],
         size_t nr_children,
-        const Selva_NodeId *children) {
+        const Selva_NodeId children[nr_children]) {
     SelvaHierarchyNode *node;
     int err1, err2;
 
