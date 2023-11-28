@@ -87,6 +87,7 @@ jobs:
       - name: Update client version
         run: |
           cd packages/client
+          node scripts/updateDependencies.js ${{ inputs.version }}
           npm version --no-git-tag-version ${{inputs.version}}
           cd ../..
       - name: Publish client package
@@ -96,11 +97,18 @@ jobs:
           cd ../..
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-      # - name: Move local binaries to Linux_x86_64
-      #   run: |
-      #     mv packages/server/selvad/local packages/server/selvad/Linux_x86_64
-      # - run: |
-      #     ls -la packages/server/selvad
+      - name: Update query version
+        run: |
+          cd packages/query
+          npm version --no-git-tag-version ${{inputs.version}}
+          cd ../..
+      - name: Publish query package
+        run: |
+          cd packages/query
+          npm publish --access=public
+          cd ../..
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Update server version
         run: |
           cd packages/server
