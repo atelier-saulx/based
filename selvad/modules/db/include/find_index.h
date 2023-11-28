@@ -40,7 +40,9 @@ int SelvaFindIndex_Auto(
         enum SelvaResultOrder order,
         struct selva_string *order_field,
         struct selva_string *filter,
-        struct SelvaFindIndexControlBlock **icb_out);
+        struct SelvaFindIndexControlBlock **icb_out)
+    __attribute__((access(write_only, 8)));
+
 int SelvaFindIndex_AutoMulti(
         struct SelvaHierarchy *hierarchy,
         enum SelvaTraversal dir, struct selva_string *dir_expression,
@@ -49,7 +51,8 @@ int SelvaFindIndex_AutoMulti(
         struct selva_string *order_field,
         struct selva_string *index_hints[],
         size_t nr_index_hints,
-        struct SelvaFindIndexControlBlock *ind_icb_out[]);
+        struct SelvaFindIndexControlBlock *ind_icb_out[nr_index_hints])
+    __attribute__((access(write_only, 7, 8)));
 
 /**
  * Check whether an ICB is created as an ordered.

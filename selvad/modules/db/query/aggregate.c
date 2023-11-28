@@ -746,7 +746,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
             return;
         }
 
-        if (rpn_set_string_regs(rpn_ctx, filter_expr_args, nr_reg)) {
+        if (rpn_set_string_regs(rpn_ctx, nr_reg, filter_expr_args)) {
             selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
             return;
         }

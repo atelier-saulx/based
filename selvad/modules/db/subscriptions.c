@@ -1041,7 +1041,7 @@ int SelvaSubscriptions_AddAliasMarker(
         struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
-        struct selva_string *alias_name,
+        const struct selva_string *alias_name,
         Selva_NodeId node_id
     ) {
     struct Selva_SubscriptionMarker *old_marker;

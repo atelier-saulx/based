@@ -406,7 +406,7 @@ int SelvaModify_SetHierarchy(
         const Selva_NodeId *children,
         enum SelvaModify_SetFlags flags,
         struct SelvaHierarchyNode **node_out)
-    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4), access(read_only, 6), access(write_only, 8)));
+    __attribute__((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3), access(read_only, 6, 5), access(write_only, 8)));
 
 /**
  * Set parents of an existing node.
@@ -418,7 +418,7 @@ int SelvaModify_SetHierarchyParents(
         size_t nr_parents,
         const Selva_NodeId *parents,
         enum SelvaModify_SetFlags flags)
-    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4)));
+    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
 
 /**
  * Set children of an existing node.
@@ -430,7 +430,7 @@ int SelvaModify_SetHierarchyChildren(
         size_t nr_children,
         const Selva_NodeId *children,
         enum SelvaModify_SetFlags flags)
-    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4)));
+    __attribute((access(read_write, 1), access(read_only, 2), access(read_only, 4, 3)));
 
 int SelvaHierarchy_UpsertNode(
         SelvaHierarchy *hierarchy,
@@ -752,7 +752,7 @@ int HierarchyReply_WithTraversal(
         size_t nr_types,
         const Selva_NodeType *types,
         enum SelvaTraversal dir)
-    __attribute__((access(read_only, 3), access(read_only, 5)));
+    __attribute__((access(read_only, 3), access(read_only, 5, 4)));
 
 SelvaHierarchy *Hierarchy_Load(struct selva_io *io);
 void Hierarchy_Save(struct selva_io *io, SelvaHierarchy *hierarchy);

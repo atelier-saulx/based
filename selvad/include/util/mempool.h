@@ -46,25 +46,29 @@ struct mempool {
  * @param slab_size is the size of a single slab.
  * @param obj_size is the size of a single object stored in a slab.
  */
-void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align);
+void mempool_init(struct mempool *mempool, size_t slab_size, size_t obj_size, size_t obj_align)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Destroy a mempool and free all memory.
  * Note that this function doesn't check whether all objects have been
  * returned.
  */
-void mempool_destroy(struct mempool *mempool);
+void mempool_destroy(struct mempool *mempool)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Free all unused slabs.
  */
-void mempool_gc(struct mempool *mempool);
+void mempool_gc(struct mempool *mempool)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Get a new object from the pool.
  */
 [[nodiscard]]
-void *mempool_get(struct mempool *mempool);
+void *mempool_get(struct mempool *mempool)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Return an object back to the pool.

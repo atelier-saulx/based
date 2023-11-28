@@ -235,11 +235,11 @@ struct EdgeFieldIterator {
     struct SVectorIterator vec_it;
 };
 
-static inline void Edge_ForeachBegin(struct EdgeFieldIterator *it, const struct EdgeField *edge_field) {
+__attribute__((artificial)) static inline void Edge_ForeachBegin(struct EdgeFieldIterator *it, const struct EdgeField *edge_field) {
     SVector_ForeachBegin(&it->vec_it, &edge_field->arcs);
 }
 
-static inline struct SelvaHierarchyNode *Edge_Foreach(struct EdgeFieldIterator *it) {
+__attribute__((artificial)) static inline struct SelvaHierarchyNode *Edge_Foreach(struct EdgeFieldIterator *it) {
     return SVector_Foreach(&it->vec_it);
 }
 
