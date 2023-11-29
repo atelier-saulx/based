@@ -301,7 +301,7 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
     return s;
 }
 
-int selva_string_decompress(const struct selva_string *s, char *buf)
+int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
 {
     if (s->flags & SELVA_STRING_COMPRESS) {
         struct compressed_string_header hdr;
@@ -593,7 +593,7 @@ void selva_string_en_crc(struct selva_string *s)
     update_crc(s);
 }
 
-int selva_string_verify_crc(struct selva_string *s)
+int selva_string_verify_crc(const struct selva_string *s)
 {
     struct selva_string hdr;
 
@@ -607,7 +607,7 @@ int selva_string_verify_crc(struct selva_string *s)
     return s->crc == calc_crc(&hdr, get_buf(s));
 }
 
-uint32_t selva_string_get_crc(struct selva_string *s)
+uint32_t selva_string_get_crc(const struct selva_string *s)
 {
     return s->crc;
 }
@@ -636,7 +636,7 @@ int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     return res;
 }
 
-int selva_string_endswith(struct selva_string *s, const char *suffix)
+int selva_string_endswith(const struct selva_string *s, const char *suffix)
 {
     const size_t lensuffix = strlen(suffix);
     size_t len;
@@ -647,7 +647,7 @@ int selva_string_endswith(struct selva_string *s, const char *suffix)
         : !strcmp(str + len - lensuffix, suffix);
 }
 
-ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t sub_len)
+ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
 {
     int must_free;
     size_t len;
