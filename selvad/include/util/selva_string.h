@@ -140,7 +140,7 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
 typedef union {
     struct selva_string *__s;
     void *__p;
-} _selva_string_ptr_t __attribute__((__transparent_union__));
+} _selva_string_ptr_t __transparent_union;
 
 
 /**

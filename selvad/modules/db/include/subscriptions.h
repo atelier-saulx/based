@@ -484,12 +484,12 @@ void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy);
 typedef union {
     struct Selva_Subscription *sub;
     void *p;
-} Selva_SubscriptionReply_t __attribute__((__transparent_union__));
+} Selva_SubscriptionReply_t __transparent_union;
 
 typedef union {
     struct Selva_SubscriptionMarker *marker;
     void *p;
-} Selva_SubscriptionMarkerReply_t __attribute__((__transparent_union__));
+} Selva_SubscriptionMarkerReply_t __transparent_union;
 
 void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp);
 void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, Selva_SubscriptionMarkerReply_t mp);

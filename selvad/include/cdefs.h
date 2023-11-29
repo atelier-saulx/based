@@ -40,11 +40,15 @@
 #define __constfn
 #endif
 
+#define __sentinel __attribute__((sentinel))
+
 #if __has_c_attribute(noreturn)
 #define __noreturn [[noreturn]]
 #else
 #define __noreturn __attribute__((noreturn))
 #endif
+
+#define __transparent_union __attribute__((__transparent_union__))
 
 #define CONCATENATE(arg1, arg2)   CONCATENATE1(arg1, arg2)
 #define CONCATENATE1(arg1, arg2)  CONCATENATE2(arg1, arg2)
@@ -184,6 +188,28 @@
  * possible alignment.
  */
 #define __packed __attribute__((packed))
+#endif
+
+/**
+ * struct foo {
+ *     unsigned int len;
+ *     char buf[] __attribute__((__element_count__(len)));
+ * };
+ * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
+ */
+#if __has_attribute(__counted_by__)
+#define __counted_by(member) __attribute__((__counted_by__(member)))
+#else
+#define __counted_by(member)
+#endif
+
+/**
+ * Must use a designated initializer with a struct.
+ */
+#if __has_attribute(__designated_init__)
+#define __designated_init __attribute__((__designated_init__))
+#else
+#define __designated_init
 #endif
 
 /* This should come with C23 */

@@ -37,7 +37,7 @@ static const struct protected_field protected_fields[] = {
     PROT_FIELD(SELVA_CREATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
     PROT_FIELD(SELVA_UPDATED_AT_FIELD, SELVA_OBJECT_LONGLONG, SELVA_FIELD_PROT_WRITE),
 };
-static char prot_bloom[num_elem(protected_fields)] __attribute__((nonstring));
+static __nonstring char prot_bloom[num_elem(protected_fields)];
 
 int selva_field_prot_check(const struct selva_string *s, enum SelvaObjectType type, enum selva_field_prot_mode mode)
 {

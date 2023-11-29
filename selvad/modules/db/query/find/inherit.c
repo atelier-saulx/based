@@ -188,7 +188,7 @@ static int Inherit_SendFields_NodeCb(
 		}
 
         size_t full_field_name_len = types_and_field_len + 1;
-        char full_field_name_str[full_field_name_len] __attribute__((nonstring));
+        __nonstring char full_field_name_str[full_field_name_len];
 
         full_field_name_str[0] = '^';
         memcpy(full_field_name_str + 1, types_and_field_str, types_and_field_len);
@@ -273,7 +273,7 @@ static void send_null_for_missing_fields(struct InheritSendFields_Args *args, co
         const struct selva_string *types_and_field = args->field_names[i];
         TO_STR(types_and_field);
         size_t full_field_name_len = types_and_field_len + 1;
-        char full_field_name_str[full_field_name_len] __attribute__((nonstring));
+        __nonstring char full_field_name_str[full_field_name_len];
 
         full_field_name_str[0] = '^';
         memcpy(full_field_name_str + 1, types_and_field_str, types_and_field_len);

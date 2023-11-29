@@ -19,9 +19,9 @@ struct selva_string;
 
 #define SELVA_DB_VERSION_SIZE   40
 struct SelvaDbVersionInfo {
-    char running[SELVA_DB_VERSION_SIZE] __attribute__((nonstring));
-    char created_with[SELVA_DB_VERSION_SIZE] __attribute__((nonstring));
-    char updated_with[SELVA_DB_VERSION_SIZE] __attribute__((nonstring));
+    __nonstring char running[SELVA_DB_VERSION_SIZE];
+    __nonstring char created_with[SELVA_DB_VERSION_SIZE];
+    __nonstring char updated_with[SELVA_DB_VERSION_SIZE];
 };
 
 enum selva_io_flags {
