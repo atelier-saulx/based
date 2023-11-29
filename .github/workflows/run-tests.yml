@@ -19,7 +19,7 @@ on:
 jobs:
   run-tests:
     name: Run ${{ matrix.tests[0] }}/${{ matrix.tests[1] }} tests ${{ inputs.target }}
-    runs-on: ${{ inputs.target }}
+    runs-on: ${{ inputs.target || 'ubuntu-latest' }}
     strategy:
       matrix:
         tests:
