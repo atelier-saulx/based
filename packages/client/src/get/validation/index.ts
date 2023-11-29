@@ -70,7 +70,6 @@ const checkArgumentType = (
   path: string[],
   allowedTypes: string[]
 ) => {
-  // const type = Array.isArray(queryPart) ? 'array' : typeof queryPart
   let type: string
   if (Array.isArray(queryPart)) {
     if (queryPart.every((item) => typeof item === 'string')) {
@@ -367,9 +366,6 @@ export const getQueryValidation = (query: any) => {
         case '$type':
           typeValidation(query, path)
           break
-        // case '$aggregate':
-        //   aggregateValidation(query, path)
-        //   break
         case '$function':
           functionValidation(query, path)
           break
