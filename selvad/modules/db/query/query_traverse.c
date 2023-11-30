@@ -16,9 +16,9 @@
 
 /*
  * Trace handles.
- * TODO Traces in this file seem broken
  */
 SELVA_TRACE_HANDLE(query_traverse_array);
+SELVA_TRACE_HANDLE(query_traverse_refs);
 SELVA_TRACE_HANDLE(query_traverse_bfs_edge_field);
 SELVA_TRACE_HANDLE(query_traverse_traversal_expression);
 SELVA_TRACE_HANDLE(query_traverse_traversal_field);

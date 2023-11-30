@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -13,11 +13,11 @@
 struct SelvaTrace {
 #ifdef SELVA_TRACE
     __itt_string_handle* handle;
-    const char *name;
 #endif
+    const char *name;
 };
-
-#ifdef SELVA_TRACE
+#define SELVA_TRACE_TYPECHECK(_name) \
+    static_assert(__builtin_types_compatible_p(typeof(CONCATENATE(selva_trace_handle_, _name)), struct SelvaTrace), "not a trace handle")
 
 /**
  * Create a new tracing handle.
@@ -29,14 +29,19 @@ struct SelvaTrace {
    }; \
    DATA_SET(selva_trace, CONCATENATE(selva_trace_handle_, _name))
 
+#ifdef SELVA_TRACE
+
+
 /**
  * Begin a new trace.
  * Traces can be nested but different traces will appear flat in the analysis
  * results. Bear in mind that traces are stacked so an outter trace cannot be
  * terminated before its inner trace.
  */
-#define SELVA_TRACE_BEGIN(_name) \
-    __itt_task_begin(selva_trace_domain, __itt_null, __itt_null, CONCATENATE(selva_trace_handle_, _name).handle)
+#define SELVA_TRACE_BEGIN(_name) ({ \
+        SELVA_TRACE_TYPECHECK(_name); \
+        __itt_task_begin(selva_trace_domain, __itt_null, __itt_null, CONCATENATE(selva_trace_handle_, _name).handle) \
+    })
 
 /**
  * Begin a new automatic trace.
@@ -44,6 +49,7 @@ struct SelvaTrace {
  * SELVA_TRACE_END() must not be called for an automatic trace.
  */
 #define SELVA_TRACE_BEGIN_AUTO(_name) \
+    SELVA_TRACE_TYPECHECK(_name); \
     __attribute__((cleanup(SelvaTrace_AutoEnd))) const struct SelvaTrace *CONCATENATE(_autoend_selva_trace_, _name) = \
         &CONCATENATE(selva_trace_handle_, _name); \
     __itt_task_begin(selva_trace_domain, __itt_null, __itt_null, CONCATENATE(selva_trace_handle_, _name).handle)
@@ -51,9 +57,11 @@ struct SelvaTrace {
 /**
  * End a trace.
  */
-#define SELVA_TRACE_END(_name) \
-    CONCATENATE(selva_trace_handle_, _name); \
-    __itt_task_end(selva_trace_domain)
+#define SELVA_TRACE_END(_name) ({ \
+        SELVA_TRACE_TYPECHECK(_name); \
+        CONCATENATE(selva_trace_handle_, _name); \
+        __itt_task_end(selva_trace_domain); \
+    })
 
 void SelvaTrace_AutoEnd(void *);
 
@@ -63,8 +71,17 @@ void SelvaTrace_AutoEnd(void *);
 extern __itt_domain* selva_trace_domain;
 
 #else
-#define SELVA_TRACE_HANDLE(name)
-#define SELVA_TRACE_BEGIN(name)
-#define SELVA_TRACE_END(name)
-#define SELVA_TRACE_BEGIN_AUTO(_name)
+#define SELVA_TRACE_BEGIN(_name) \
+    SELVA_TRACE_TYPECHECK(_name)
+
+#define SELVA_TRACE_END(_name) ({ \
+        SELVA_TRACE_TYPECHECK(_name); \
+        CONCATENATE(selva_trace_handle_, _name); \
+    })
+
+#define SELVA_TRACE_BEGIN_AUTO(_name) \
+    SELVA_TRACE_TYPECHECK(_name); \
+    CONCATENATE(selva_trace_handle_, _name)
+
+
 #endif

@@ -207,6 +207,8 @@
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+#define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
+
 /**
  * Get the struct that contains `m`.
  * This macro can be only used if we know for certain that `x` is a pointer to
