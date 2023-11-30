@@ -76,31 +76,6 @@
  */
 #define S__LINE__ _S__LINE__S2(__LINE__)
 
-/**
- * Get the struct that contains `m`.
- * This macro can be only used if we know for certain that `x` is a pointer to
- * the member `m` in type `s`.
- * @param x is a pointer to the member `m` in a struct of type `s`.
- * @param s is a struct type.
- * @param m is the name of the member in `s`.
- */
-#define containerof(x, s, m) ({                     \
-        const __typeof(((s *)0)->m) *__x = (x);     \
-        ((s *)((uint8_t *)(__x) - offsetof(s, m))); \
-})
-
-/*
- * TODO typeof_unqual() will probably make containerofa unnecessary.
- */
-#define containerofa(a, s, m) \
-    ((s *)((uint8_t *)((void *)(a)) - offsetof(s, m)))
-
-/**
- * It's likely that `x` is always truthy in runtime.
- */
-#define likely(x)   __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
 #ifndef __GLOBL1
 #define  __GLOBL1(sym) __asm__(".globl " #sym)
 /**
@@ -190,6 +165,8 @@
 #define __packed __attribute__((packed))
 #endif
 
+#ifndef __counted_by
+#if __has_attribute(__counted_by__)
 /**
  * struct foo {
  *     unsigned int len;
@@ -197,19 +174,21 @@
  * };
  * __builtin_dynamic_object_size(p->buf) == p->len * sizeof(*p->buf)
  */
-#if __has_attribute(__counted_by__)
 #define __counted_by(member) __attribute__((__counted_by__(member)))
 #else
 #define __counted_by(member)
 #endif
+#endif
 
+#ifndef __designated_init
+#if __has_attribute(__designated_init__)
 /**
  * Must use a designated initializer with a struct.
  */
-#if __has_attribute(__designated_init__)
 #define __designated_init __attribute__((__designated_init__))
 #else
 #define __designated_init
+#endif
 #endif
 
 /* This should come with C23 */
@@ -221,6 +200,31 @@
 #ifndef alignof
 #define alignof(x) _Alignof(x)
 #endif
+
+/**
+ * It's likely that `x` is always truthy in runtime.
+ */
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x) __builtin_expect(!!(x), 0)
+
+/**
+ * Get the struct that contains `m`.
+ * This macro can be only used if we know for certain that `x` is a pointer to
+ * the member `m` in type `s`.
+ * @param x is a pointer to the member `m` in a struct of type `s`.
+ * @param s is a struct type.
+ * @param m is the name of the member in `s`.
+ */
+#define containerof(x, s, m) ({                     \
+        const __typeof(((s *)0)->m) *__x = (x);     \
+        ((s *)((uint8_t *)(__x) - offsetof(s, m))); \
+})
+
+/*
+ * TODO typeof_unqual() will probably make containerofa unnecessary.
+ */
+#define containerofa(a, s, m) \
+    ((s *)((uint8_t *)((void *)(a)) - offsetof(s, m)))
 
 /**
  * Get the number of elements in an array.
