@@ -27,7 +27,7 @@ struct SelvaDbVersionInfo {
 enum selva_io_flags {
     SELVA_IO_FLAGS_READ = 0x0001, /*!< This is a read op. */
     SELVA_IO_FLAGS_WRITE = 0x0002, /*!< This is a write op. */
-    SELVA_IO_FLAGS_COMPRESSED = 0x0100, /* TODO */
+    SELVA_IO_FLAGS_COMPRESSED = 0x0100, /* Compressed data. */
     SELVA_IO_FLAGS_FILE_IO = 0x0010, /*! Save to/Load from a file. Not set by caller. */
     SELVA_IO_FLAGS_STRING_IO = 0x0020, /*!< Save to/Load from a file. Not set by caller. */
     /* Runtime control flags */
