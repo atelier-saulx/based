@@ -392,7 +392,7 @@ struct hllhdr {
 } while(0)
 #define HLL_ALPHA_INF 0.721347520444481703680 /* constant for 0.5 / ln(2) */
 
-typedef char *sds;
+typedef char (*sds)[];
 
 struct sdshdr {
     uint32_t len;
@@ -404,35 +404,35 @@ const uint16_t hll_sparse_max_bytes = 3000;
 
 static inline size_t sdsavail(const sds s)
 {
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 
 	return (sh->alloc - sh->len);
 }
 
 static inline void sdssetlen(sds s, size_t len)
 {
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 
 	sh->len = len;
 }
 
 static inline void sdssetalloc(sds s, size_t len)
 {
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 
 	sh->alloc = len;
 }
 
 static inline size_t sdslen(const sds s)
 {
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 
 	return sh->len;
 }
 
 static inline void sdsIncrLen(sds s, int inc)
 {
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 
 	sh->len += inc;
 }
@@ -441,11 +441,11 @@ static sds sdsnewlen(size_t initlen)
 {
 
 	struct sdshdr *sh = selva_calloc(sizeof(struct sdshdr) + initlen + 1, 1);
-	sds s = sh->buf;
+	sds s = &sh->buf;
 
-	sh->alloc 	= initlen;
-	sh->len   	= initlen;
-	s[initlen] 	= '\0';
+	sh->alloc = initlen;
+	sh->len = initlen;
+	(*s)[initlen] = '\0';
 
 	return s;
 }
@@ -453,14 +453,14 @@ static sds sdsnewlen(size_t initlen)
 static void sdsfree(sds s)
 {
 	if (s) {
-        selva_free(containerofa(s, struct sdshdr, buf));
+        selva_free(containerof(s, struct sdshdr, buf));
     }
 }
 
 static sds sdsMakeRoomFor(void *ptr, size_t addlen)
 {
 	sds s = (sds)ptr;
-    struct sdshdr *sh = containerofa(s, struct sdshdr, buf);
+    struct sdshdr *sh = containerof(s, struct sdshdr, buf);
 	size_t avail = sdsavail(s);
 	size_t len = sdslen(s);
 	size_t newlen = len + addlen;
@@ -482,7 +482,7 @@ static sds sdsMakeRoomFor(void *ptr, size_t addlen)
 
 	struct sdshdr *newsh = selva_realloc(sh, sizeof(struct sdshdr) + newlen + 1);
 
-    s = newsh->buf;
+    s = &newsh->buf;
 	sdssetlen(s, len);
 	sdssetalloc(s, newlen);
 
@@ -1273,7 +1273,7 @@ const char *hll_getstr(hll_t *ptr, size_t *size)
     sds s = (sds)ptr;
 
     *size = sdslen(s);
-    return s;
+    return *s;
 }
 
 /**

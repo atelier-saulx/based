@@ -220,12 +220,6 @@
         ((s *)((uint8_t *)(__x) - offsetof(s, m))); \
 })
 
-/*
- * TODO typeof_unqual() will probably make containerofa unnecessary.
- */
-#define containerofa(a, s, m) \
-    ((s *)((uint8_t *)((void *)(a)) - offsetof(s, m)))
-
 /**
  * Get the number of elements in an array.
  */
