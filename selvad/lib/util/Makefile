@@ -4,7 +4,10 @@ include ../../common.mk
 
 CFLAGS += -fPIC -Wno-unused-function -I../../include
 # To remove warnings about asserts
-CFLAGS += -Wno-unused-value -Wunused-comparison
+CFLAGS += -Wno-unused-value
+ifeq ($(uname_S),Darwin)
+CFLAGS += -Wunused-comparison
+endif
 LDFLAGS += -g -L../
 
 OBJ := \
