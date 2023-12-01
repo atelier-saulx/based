@@ -1394,10 +1394,6 @@ void SelvaSubscriptions_InheritParent(
     }
 }
 
-/*
- * TODO Add SELVA_HIERARCHY_TRAVERSAL_FIELD
- * TODO Add SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
- */
 void SelvaSubscriptions_InheritChild(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id __unused,
@@ -2517,16 +2513,8 @@ static void SelvaSubscriptions_ListCommand(struct selva_server_response_out *res
 
 static SVector *debug_get_sub_markers(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
 {
-    char buf[SELVA_SUB_ID_STR_MAXLEN + 1];
-    Selva_SubscriptionId sub_id;
+    Selva_SubscriptionId sub_id = strntol(id_str, id_len, NULL);
     struct Selva_Subscription *sub;
-
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
-    errno = 0;
-    sub_id = strtoull(buf, NULL, 10);
-    if (errno) {
-        return NULL;
-    }
 
     sub = find_sub(hierarchy, sub_id);
     return sub ? &sub->markers : NULL;
@@ -2550,15 +2538,7 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
 
 static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
 {
-    char buf[SELVA_SUB_ID_STR_MAXLEN + 1]; /* TODO marker id version */
-    Selva_SubscriptionId marker_id;
-
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
-    errno = 0;
-    marker_id = strtoull(buf, NULL, 10);
-    if (errno) {
-        return NULL;
-    }
+    Selva_SubscriptionId marker_id = strntol(id_str, id_len, NULL);
 
     return find_marker(hierarchy, marker_id);
 }

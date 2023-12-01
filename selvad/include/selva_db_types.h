@@ -106,6 +106,4 @@ typedef int64_t Selva_SubscriptionMarkerId;
 #define PRIsubId PRId64
 #define PRImrkId PRId64
 
-#define SELVA_SUB_ID_STR_MAXLEN 20
-
 #endif /* _SELVA_DB_TYPES_ */
