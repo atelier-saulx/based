@@ -5,7 +5,7 @@
  *
  * @brief   Linker sets.
  * @section LICENSE
- * Copyright (c) 2020 SAULX
+ * Copyright (c) 2020, 2023 SAULX
  * Copyright (c) 2018 Olli Vanhoja <olli.vanhoja@gmail.com>
  * Copyright (c) 2015 Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
  * Copyright (c) 1999 John D. Polstra
@@ -74,10 +74,14 @@
 #define SET_DECLARE(set, ptype)                 \
     extern ptype *__CONCAT(__start_set_,set) __asm("section$start$__DATA$set_" #set); \
     extern ptype *__CONCAT(__stop_set_,set)  __asm("section$end$__DATA$set_" #set);
+#define SET_DECLARE_WEAK SET_DECLARE
 #else
 #define SET_DECLARE(set, ptype)                 \
     extern ptype *__CONCAT(__start_set_,set);   \
     extern ptype *__CONCAT(__stop_set_,set)
+#define SET_DECLARE_WEAK(set, ptype)            \
+	extern ptype __weak_sym *__CONCAT(__start_set_,set); \
+	extern ptype __weak_sym *__CONCAT(__stop_set_,set)
 #endif
 
 #define SET_BEGIN(set)              \
