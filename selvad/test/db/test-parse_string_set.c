@@ -6,6 +6,7 @@
 
 #include <punit.h>
 #include <stdint.h>
+#include "cdefs.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 #include "selva_object.h"

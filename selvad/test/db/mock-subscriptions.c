@@ -84,18 +84,6 @@ void SelvaSubscriptions_DeferFieldChangeEvents(
     return;
 }
 
-void SelvaSubscriptions_DeferHierarchyEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    return;
-}
-
-void SelvaSubscriptions_DeferHierarchyDeletionEvents(
-        struct SelvaHierarchy *hierarchy,
-        struct SelvaHierarchyNode *node) {
-    return;
-}
-
 void SelvaSubscriptions_DeferTriggerEvents(
         struct SelvaHierarchy *hierarchy,
         struct SelvaHierarchyNode *node,
