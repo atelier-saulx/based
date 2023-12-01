@@ -49,15 +49,15 @@
 #endif
 #include "linker_set.h"
 
-typedef char *punit_test_fn(void);
+typedef const char *punit_test_fn(void);
 struct punit_test {
     punit_test_fn *fn;
-    char name[];
+    const char name[];
 };
 
 #define PU_TEST_DEF(NAME, SET_NAME) \
-    static char *CONCATENATE(NAME, _fun)(void); \
-    static struct punit_test NAME = { .fn = CONCATENATE(NAME, _fun), .name = #NAME }; \
+    static const char *CONCATENATE(NAME, _fun)(void); \
+    static const struct punit_test NAME = { .fn = CONCATENATE(NAME, _fun), .name = #NAME }; \
     DATA_SET(SET_NAME, NAME) \
 
 /**
@@ -65,14 +65,14 @@ struct punit_test {
  */
 #define PU_TEST(NAME) \
     PU_TEST_DEF(NAME, punit_run); \
-    static char *CONCATENATE(NAME, _fun)(void)
+    static const char *CONCATENATE(NAME, _fun)(void)
 
 /**
  * Marks that this test should be skipped.
  */
 #define PU_SKIP(NAME) \
     PU_TEST_DEF(NAME, punit_skip); \
-    static char *CONCATENATE(NAME, _fun)(void)
+    static const char *CONCATENATE(NAME, _fun)(void)
 
 /**
  * Assert condition.
