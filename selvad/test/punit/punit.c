@@ -19,7 +19,7 @@
 #include "punit.h"
 
 SET_DECLARE(punit_run, struct punit_test);
-SET_DECLARE(punit_skip, struct punit_test);
+SET_DECLARE_WEAK(punit_skip, struct punit_test);
 
 static int pu_tests_passed; /*!< Global tests passed counter. */
 static int pu_tests_skipped; /*! Global tests skipped counter */
@@ -48,7 +48,6 @@ __weak_sym void teardown(void)
 int main(int argc __unused, char **argv __unused)
 {
     const int nr_tests = (int)(SET_COUNT(punit_run) + SET_COUNT(punit_skip));
-    int err;
     struct punit_test **test_p;
 
     SET_FOREACH(test_p, punit_run) {
