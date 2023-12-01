@@ -1,7 +1,7 @@
 /**
  * @file test_queue_r.c
  * @brief Test generic thread-safe queue implementation.
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -9,10 +9,10 @@
 #include <punit.h>
 #include "util/queue_r.h"
 
-int tarr[5];
-queue_cb_t queue;
+static int tarr[5];
+static queue_cb_t queue;
 
-static void setup(void)
+void setup(void)
 {
     size_t i;
 
@@ -23,12 +23,12 @@ static void setup(void)
     queue = queue_create(&tarr, sizeof(int), sizeof(tarr));
 }
 
-static void teardown(void)
+void teardown(void)
 {
     queue_clear_from_push_end(&queue);
 }
 
-static char * test_queue_single_push(void)
+PU_TEST(test_queue_single_push)
 {
     int x = 5;
     int err;
@@ -40,7 +40,7 @@ static char * test_queue_single_push(void)
     return NULL;
 }
 
-static char * test_queue_single_pop(void)
+PU_TEST(test_queue_single_pop)
 {
     int x = 5;
     int y;
@@ -56,7 +56,7 @@ static char * test_queue_single_pop(void)
     return NULL;
 }
 
-static char * test_queue_pop_fail(void)
+PU_TEST(test_queue_pop_fail)
 {
     int y;
     int err;
@@ -67,7 +67,7 @@ static char * test_queue_pop_fail(void)
     return NULL;
 }
 
-static char * test_queue_peek_ok(void)
+PU_TEST(test_queue_peek_ok)
 {
     int x = 5;
     int *xp = NULL;
@@ -84,7 +84,7 @@ static char * test_queue_peek_ok(void)
     return NULL;
 }
 
-static char * test_queue_peek_fail(void)
+PU_TEST(test_queue_peek_fail)
 {
     int *xp = NULL;
     int err;
@@ -95,7 +95,7 @@ static char * test_queue_peek_fail(void)
     return NULL;
 }
 
-static char * test_queue_skip_one(void)
+PU_TEST(test_queue_skip_one)
 {
     int x = 0;
     int err, ret;
@@ -109,7 +109,7 @@ static char * test_queue_skip_one(void)
     return NULL;
 }
 
-static char * test_queue_alloc(void)
+PU_TEST(test_queue_alloc)
 {
     int * p;
     int y;
@@ -132,14 +132,14 @@ static char * test_queue_alloc(void)
     return NULL;
 }
 
-static char * test_queue_is_empty(void)
+PU_TEST(test_queue_is_empty)
 {
     pu_assert("Queue is empty", queue_isempty(&queue) != 0);
 
     return NULL;
 }
 
-static char * test_queue_is_not_empty(void)
+PU_TEST(test_queue_is_not_empty)
 {
     int x = 1;
 
@@ -147,17 +147,4 @@ static char * test_queue_is_not_empty(void)
     pu_assert("Queue is empty", queue_isempty(&queue) == 0);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_queue_single_push, PU_RUN);
-    pu_def_test(test_queue_single_pop, PU_RUN);
-    pu_def_test(test_queue_pop_fail, PU_RUN);
-    pu_def_test(test_queue_peek_ok, PU_RUN);
-    pu_def_test(test_queue_peek_fail, PU_RUN);
-    pu_def_test(test_queue_skip_one, PU_RUN);
-    pu_def_test(test_queue_alloc, PU_RUN);
-    pu_def_test(test_queue_is_empty, PU_RUN);
-    pu_def_test(test_queue_is_not_empty, PU_RUN);
 }

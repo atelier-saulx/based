@@ -1,19 +1,18 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
 #include <punit.h>
 #include <stdio.h>
-#include "cdefs.h"
 #include "util/eztrie.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
@@ -27,7 +26,7 @@ static void print_eztrie(struct eztrie_iterator it)
     printf("\n");
 }
 
-static char * test_destroy(void)
+PU_TEST(test_destroy)
 {
     struct eztrie trie;
 
@@ -37,7 +36,7 @@ static char * test_destroy(void)
     return NULL;
 }
 
-static char * test_insert(void)
+PU_TEST(test_insert)
 {
     struct eztrie trie;
     int x = 1, y = 2;
@@ -64,7 +63,7 @@ static char * test_insert(void)
     return NULL;
 }
 
-static char * test_remove(void)
+PU_TEST(test_remove)
 {
     struct eztrie trie;
     int x = 1, y = 2;
@@ -94,7 +93,7 @@ static void my_cb(void *p, void *arg)
     (*(int *)arg)++;
 }
 
-static char * test_destroy_cb(void)
+PU_TEST(test_destroy_cb)
 {
     struct eztrie trie;
     int arr[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
@@ -119,12 +118,4 @@ static char * test_destroy_cb(void)
     pu_assert_equal("Called cb for every item", count, num_elem(arr));
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_destroy, PU_RUN);
-    pu_def_test(test_insert, PU_RUN);
-    pu_def_test(test_remove, PU_RUN);
-    pu_def_test(test_destroy_cb, PU_RUN);
 }

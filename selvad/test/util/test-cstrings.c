@@ -10,11 +10,11 @@
 #include "util/cstrings.h"
 #include "util/array_field.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
@@ -40,7 +40,7 @@ static int field_matcher(const char *list, const char *field)
     return match;
 }
 
-static char * test_sztok_one(void)
+PU_TEST(test_sztok_one)
 {
     const char str[] = "hello";
 
@@ -53,7 +53,7 @@ static char * test_sztok_one(void)
     return NULL;
 }
 
-static char * test_sztok_two(void)
+PU_TEST(test_sztok_two)
 {
     const char str[] = "hello\0world";
 
@@ -72,7 +72,7 @@ static char * test_sztok_two(void)
     return NULL;
 }
 
-static char * test_sztok_with_strlen(void)
+PU_TEST(test_sztok_with_strlen)
 {
     const char *str = "hello";
 
@@ -92,7 +92,7 @@ static char * test_sztok_with_strlen(void)
  * This could be a bit dangerous use case but it might happen.
  * Safe with selva_string.
  */
-static char * test_sztok_two_minus(void)
+PU_TEST(test_sztok_two_minus)
 {
     const char str[] = "hello\0world";
 
@@ -111,7 +111,7 @@ static char * test_sztok_two_minus(void)
     return NULL;
 }
 
-static char * test_invalid_cases(void)
+PU_TEST(test_invalid_cases)
 {
     const char *field = "title";
     int match;
@@ -128,7 +128,7 @@ static char * test_invalid_cases(void)
     return NULL;
 }
 
-static char * test_simple_match(void)
+PU_TEST(test_simple_match)
 {
     const char *list = "title";
     const char *field = "title";
@@ -140,7 +140,7 @@ static char * test_simple_match(void)
     return NULL;
 }
 
-static char * test_simple_no_match(void)
+PU_TEST(test_simple_no_match)
 {
     const char *list = "title";
     const char *field = "titlo";
@@ -152,7 +152,7 @@ static char * test_simple_no_match(void)
     return NULL;
 }
 
-static char * test_simple_match_in_list(void)
+PU_TEST(test_simple_match_in_list)
 {
     const char *list = "abc\ntitle\ndef";
     const char *field = "title";
@@ -164,7 +164,7 @@ static char * test_simple_match_in_list(void)
     return NULL;
 }
 
-static char * test_simple_match_in_list_last(void)
+PU_TEST(test_simple_match_in_list_last)
 {
     const char *list = "abc\ntitle\ndef";
     const char *field = "def";
@@ -176,7 +176,7 @@ static char * test_simple_match_in_list_last(void)
     return NULL;
 }
 
-static char * test_sub_match(void)
+PU_TEST(test_sub_match)
 {
     const char *list = "title";
     const char *field = "title.en";
@@ -188,7 +188,7 @@ static char * test_sub_match(void)
     return NULL;
 }
 
-static char * test_sub_list_match(void)
+PU_TEST(test_sub_list_match)
 {
     const char *list = "image\ntitle";
     const char *field = "title.en";
@@ -200,7 +200,7 @@ static char * test_sub_list_match(void)
     return NULL;
 }
 
-static char * test_sub_list_no_match(void)
+PU_TEST(test_sub_list_no_match)
 {
     const char *list = "image\ntitle.en";
     const char *field = "title.ru";
@@ -212,7 +212,7 @@ static char * test_sub_list_no_match(void)
     return NULL;
 }
 
-static char * test_sub_list_no_match_inverse1(void)
+PU_TEST(test_sub_list_no_match_inverse1)
 {
     const char *list = "image\ntitle.en";
     const char *field = "title";
@@ -224,7 +224,7 @@ static char * test_sub_list_no_match_inverse1(void)
     return NULL;
 }
 
-static char * test_sub_list_no_match_inverse2(void)
+PU_TEST(test_sub_list_no_match_inverse2)
 {
     const char *list = "image\ntitle.en";
     const char *field = "title.ru";
@@ -236,7 +236,7 @@ static char * test_sub_list_no_match_inverse2(void)
     return NULL;
 }
 
-static char * test_broken_list1(void)
+PU_TEST(test_broken_list1)
 {
     const char *list = "image\ntitle\n";
     const char *field = "title.en";
@@ -248,7 +248,7 @@ static char * test_broken_list1(void)
     return NULL;
 }
 
-static char * test_broken_list2(void)
+PU_SKIP(test_broken_list2)
 {
     const char *list = "pic\n\ntitle.en";
     const char *field = "title.en";
@@ -260,7 +260,7 @@ static char * test_broken_list2(void)
     return NULL;
 }
 
-static char * test_empty_field(void)
+PU_TEST(test_empty_field)
 {
     const char *list = "abc\ntitle\ndef";
     const char *field = "";
@@ -272,7 +272,7 @@ static char * test_empty_field(void)
     return NULL;
 }
 
-static char * test_long_string(void)
+PU_TEST(test_long_string)
 {
     const char *list = "abc\ntitle\ndef";
     const char field[] = "titlee";
@@ -290,7 +290,7 @@ static char * test_long_string(void)
     return NULL;
 }
 
-static char * test_get_array_field_index(void)
+PU_TEST(test_get_array_field_index)
 {
     const char str1[] = "field";
     const char str2[] = "field[]";
@@ -342,7 +342,7 @@ static char * test_get_array_field_index(void)
     return NULL;
 }
 
-static char * test_strntol(void)
+PU_TEST(test_strntol)
 {
     const char *end;
 
@@ -353,28 +353,4 @@ static char * test_strntol(void)
     pu_assert_null("", end);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_sztok_one, PU_RUN);
-    pu_def_test(test_sztok_two, PU_RUN);
-    pu_def_test(test_sztok_with_strlen, PU_RUN);
-    pu_def_test(test_sztok_two_minus, PU_RUN);
-    pu_def_test(test_invalid_cases, PU_RUN);
-    pu_def_test(test_simple_match, PU_RUN);
-    pu_def_test(test_simple_no_match, PU_RUN);
-    pu_def_test(test_simple_match_in_list, PU_RUN);
-    pu_def_test(test_simple_match_in_list_last, PU_RUN);
-    pu_def_test(test_sub_match, PU_RUN);
-    pu_def_test(test_sub_list_match, PU_RUN);
-    pu_def_test(test_sub_list_no_match, PU_RUN);
-    pu_def_test(test_sub_list_no_match_inverse1, PU_RUN);
-    pu_def_test(test_sub_list_no_match_inverse2, PU_RUN);
-    pu_def_test(test_broken_list1, PU_RUN);
-    pu_def_test(test_broken_list2, PU_SKIP); /* TODO This is currently failing but it's not a big deal */
-    pu_def_test(test_empty_field, PU_RUN);
-    pu_def_test(test_long_string, PU_RUN);
-    pu_def_test(test_get_array_field_index, PU_RUN);
-    pu_def_test(test_strntol, PU_RUN);
 }

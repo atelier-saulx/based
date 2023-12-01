@@ -5,7 +5,7 @@
 # PUnit example project #######################################################
 
 # Add here one or more include directories.
-IDIR = ./ ../punit
+IDIR = ./ ../punit ../../include
 
 # Set this to 1 if you will use asserts that compares floats or doubles;
 # or 0 disable

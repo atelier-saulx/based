@@ -56,7 +56,7 @@ include $(wildcard *.mk)
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 CC ?= gcc
-CFLAGS += -Wall -MMD -DPU_TEST_BUILD
+CFLAGS += -include ../../include/cdefs.h -Wall -MMD -DPU_TEST_BUILD
 ifeq ($(uname_S),Linux)
 	CFLAGS +=  -fprofile-arcs -ftest-coverage
 	LDFLAGS += -lgcov --coverage

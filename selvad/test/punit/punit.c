@@ -5,8 +5,8 @@
  * Inspired by: http://www.jera.com/techinfo/jtns/jtn002.html
  *
  * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
- * Copyright (c) 2913, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2013, Olli Vanhoja <olli.vanhoja@cs.helsinki.fi>
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: BSD-2-Clause
  */
@@ -16,26 +16,15 @@
   */
 
 #include <stdio.h>
-#include "cdefs.h"
 #include "punit.h"
 
+SET_DECLARE(punit_run, struct punit_test);
+SET_DECLARE(punit_skip, struct punit_test);
+
+static int pu_tests_passed; /*!< Global tests passed counter. */
+static int pu_tests_skipped; /*! Global tests skipped counter */
+
 const char * const selva_db_version = "unittest";
-
-/* Variables below are documented in punit.h */
-int pu_tests_passed = 0;
-int pu_tests_skipped = 0;
-int pu_tests_count = 0;
-
-/**
- * Test module description.
- * @param str a test module description string.
- */
-void pu_mod_description(char * str)
-{
-#if PU_REPORT_ORIENTED == 1
-    printf("Test module: %s\n", str);
-#endif
-}
 
 /**
  * Test case description.
@@ -48,28 +37,50 @@ void pu_test_description(char * str)
 #endif
 }
 
-/**
- * Run PUnit tests.
- * This should be called in main().
- * @param all_tests pointer to a function containing actual test calls.
- */
-int pu_run_tests(void (*all_tests)(void))
+__weak_sym void setup(void)
 {
-    all_tests();
-    if (pu_tests_passed == pu_tests_count) {
-        printf("ALL TESTS PASSED\n");
-    }
+}
 
-    printf("Test passed: %d/%d, skipped: %d\n\n",
-        pu_tests_passed, pu_tests_count, pu_tests_skipped);
-
-    return (pu_tests_passed + pu_tests_skipped) != pu_tests_count;
+__weak_sym void teardown(void)
+{
 }
 
 int main(int argc __unused, char **argv __unused)
 {
-    void all_tests();
-    return pu_run_tests(&all_tests);
+    const int nr_tests = (int)(SET_COUNT(punit_run) + SET_COUNT(punit_skip));
+    int err;
+    struct punit_test **test_p;
+
+    SET_FOREACH(test_p, punit_run) {
+        struct punit_test *test = *test_p;
+        const char * message;
+
+        printf("-%s\n", test->name);
+        setup();
+        message = test->fn();
+        teardown();
+        if (message) {
+            printf("\t%s\n", message);
+        } else {
+            pu_tests_passed++;
+        }
+    }
+
+    SET_FOREACH(test_p, punit_skip) {
+        struct punit_test *test = *test_p;
+
+        printf("-%s, skipped\n", test->name);
+        pu_tests_skipped++;
+    }
+
+    if (pu_tests_passed == SET_COUNT(punit_run) + SET_COUNT(punit_skip)) {
+        printf("ALL TESTS PASSED\n");
+    }
+
+    printf("Test passed: %d/%d, skipped: %d\n\n",
+            pu_tests_passed, nr_tests, pu_tests_skipped);
+
+    return (pu_tests_passed + pu_tests_skipped) != nr_tests;
 }
 
 /**

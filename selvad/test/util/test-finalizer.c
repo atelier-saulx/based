@@ -1,22 +1,21 @@
-/* Copyright (c) 2022 SAULX
+/* Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
 #include <punit.h>
 #include <stdio.h>
-#include "cdefs.h"
 #include "queue.h"
 #include "util/finalizer.h"
 
 static int fin;
 
-static void setup(void)
+void setup(void)
 {
     fin = 0;
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
@@ -27,7 +26,7 @@ static void dispose(void *p)
     fin |= i;
 }
 
-static char * test_finalizer(void)
+PU_TEST(test_finalizer)
 {
     struct finalizer f;
 
@@ -39,9 +38,4 @@ static char * test_finalizer(void)
     pu_assert_equal("", fin, 0x3);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_finalizer, PU_RUN);
 }

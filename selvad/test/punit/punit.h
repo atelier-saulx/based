@@ -47,6 +47,32 @@
 #if PU_LMATH == 1
 #include <math.h>
 #endif
+#include "linker_set.h"
+
+typedef char *punit_test_fn(void);
+struct punit_test {
+    punit_test_fn *fn;
+    char name[];
+};
+
+#define PU_TEST_DEF(NAME, SET_NAME) \
+    static char *CONCATENATE(NAME, _fun)(void); \
+    static struct punit_test NAME = { .fn = CONCATENATE(NAME, _fun), .name = #NAME }; \
+    DATA_SET(SET_NAME, NAME) \
+
+/**
+ * Marks that this test should be executed.
+ */
+#define PU_TEST(NAME) \
+    PU_TEST_DEF(NAME, punit_run); \
+    static char *CONCATENATE(NAME, _fun)(void)
+
+/**
+ * Marks that this test should be skipped.
+ */
+#define PU_SKIP(NAME) \
+    PU_TEST_DEF(NAME, punit_skip); \
+    static char *CONCATENATE(NAME, _fun)(void)
 
 /**
  * Assert condition.
@@ -251,50 +277,14 @@
     return message;                                                   \
 } while (0)
 
-#define PU_RUN  1 /*!< Marks that a particular test should be run. */
-#define PU_SKIP 0 /*!< Marks that a particular test should be skipped. */
-
-/**
- * Define and run test.
- * This is only used in all_tests() function to declare a test that should
- * be run.
- * @param test to be run.
- * @param run PU_RUN or PU_SKIP
- */
-#define pu_def_test(test, run) do { char * message; \
-    if (run == PU_SKIP) {                           \
-        printf("-%s, skipped\n", #test);            \
-        pu_tests_count++;                           \
-        pu_tests_skipped++;                         \
-        break;                                      \
-    }                                               \
-    printf("-%s\n", #test);                         \
-    setup();                                        \
-    message = test(); pu_tests_count++;             \
-    teardown();                                     \
-    if (message) { printf("\t%s\n", message);       \
-    } else pu_tests_passed++;                       \
-} while (0)
-
-/**
- * Run tests.
- * @deprecated Same as pu_def_test(test, PU_RUN).
- * @param test to be run.
- */
-#define pu_run_test(test) pu_def_test(test, PU_RUN)
-
 #define PU_TEST_BUILD 1 /*!< This definition can be used to exclude included
                          * files and souce code that are not needed for unit
                          * tests. */
 
-extern int pu_tests_passed; /*!< Global tests passed counter. */
-extern int pu_tests_skipped; /*! Global tests skipped counter */
-extern int pu_tests_count; /*!< Global tests counter. */
-
 /* Documented in punit.c */
-void pu_mod_description(char * str);
 void pu_test_description(char * str);
-int pu_run_tests(void (*all_tests)(void));
+void setup(void);
+void teardown(void);
 
 #endif /* PUNIT_H */
 

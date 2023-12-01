@@ -9,20 +9,19 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
-#include "cdefs.h"
 #include "util/selva_string.h"
 #include "util/finalizer.h"
 #include "selva_proto.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
-static char * test_scanf_basic(void)
+PU_TEST(test_scanf_basic)
 {
     __auto_finalizer struct finalizer fin;
     finalizer_init(&fin);
@@ -121,7 +120,7 @@ static char * test_scanf_basic(void)
     return NULL;
 }
 
-static char * test_scanf_rest(void)
+PU_TEST(test_scanf_rest)
 {
     __auto_finalizer struct finalizer fin;
     finalizer_init(&fin);
@@ -204,10 +203,4 @@ static char * test_scanf_rest(void)
     pu_assert_str_equal("rest[3]", selva_string_to_str(rest[3], NULL), "d");
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_scanf_basic, PU_RUN);
-    pu_def_test(test_scanf_rest, PU_RUN);
 }

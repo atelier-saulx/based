@@ -10,12 +10,12 @@
 
 static hll_t *hll;
 
-static void setup(void)
+void setup(void)
 {
     hll = hll_create();
 }
 
-static void teardown(void)
+void teardown(void)
 {
     hll_destroy(hll);
 }
@@ -25,7 +25,7 @@ static void teardown(void)
 #define WITHIN_ERR(act, ve, p) \
     ((act) >= ((ve) - CALC_ERR((ve), (p))) && ((act) <= ((ve) + CALC_ERR((ve), (p)))))
 
-static char * test_hll_sparse(void)
+PU_TEST(test_hll_sparse)
 {
 #define N 100
     long long n = 0, act;
@@ -52,7 +52,7 @@ static char * test_hll_sparse(void)
 #undef N
 }
 
-static char * test_hll_huge(void)
+PU_TEST(test_hll_huge)
 {
 #define N 100000
     long long n = 0, act;
@@ -75,7 +75,7 @@ static char * test_hll_huge(void)
 #undef N
 }
 
-static char * test_hll_dense(void)
+PU_TEST(test_hll_dense)
 {
 #define N 100
     long long n = 0, act;
@@ -105,7 +105,7 @@ static char * test_hll_dense(void)
 #undef N
 }
 
-static char * test_hll_dense2(void)
+PU_TEST(test_hll_dense2)
 {
 #define N 100
     long long n = 0, act;
@@ -131,12 +131,4 @@ static char * test_hll_dense2(void)
 
     return NULL;
 #undef N
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_hll_sparse, PU_RUN);
-    pu_def_test(test_hll_huge, PU_RUN);
-    pu_def_test(test_hll_dense, PU_RUN);
-    pu_def_test(test_hll_dense2, PU_RUN);
 }

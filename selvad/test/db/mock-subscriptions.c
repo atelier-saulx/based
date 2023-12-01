@@ -5,7 +5,6 @@
  */
 #include <stddef.h>
 #include <sys/types.h>
-#include "cdefs.h"
 #include "selva_db.h"
 #include "selva_object.h"
 #include "hierarchy.h"
