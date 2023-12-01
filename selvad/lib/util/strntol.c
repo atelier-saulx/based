@@ -1,3 +1,7 @@
+/*
+ * Copyright (c) 2023 SAULX
+ * SPDX-License-Identifier: MIT
+ */
 #include <stdio.h>
 #include <ctype.h>
 #include <stddef.h>
