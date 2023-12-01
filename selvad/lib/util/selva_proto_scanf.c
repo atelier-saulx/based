@@ -192,7 +192,7 @@ static const char *parse_specifier(struct placeholder_state *ps, const char *fmt
             if (ps->length == LENGTH_none) {
                 ps->length = LENGTH_h;
             } else if (ps->length == LENGTH_h) {
-                ps->length == LENGTH_hh;
+                ps->length = LENGTH_hh;
             } else {
                 return NULL;
             }
