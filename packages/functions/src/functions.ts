@@ -111,6 +111,10 @@ export type ChannelMessageFunctionInternal<K = any> = (
   err?: any
 ) => void
 
+export type BasedJobFunction =
+  | ((based: BasedFunctionClient) => Promise<() => void>)
+  | ((based: BasedFunctionClient) => () => void)
+
 export type UninstallFunction = () => Promise<void>
 
 // ------------ Config -------------------
@@ -180,6 +184,7 @@ export type BasedFunctionTypes =
   | 'function'
   | 'stream'
   | 'app'
+  | 'job'
 
 type BasedChannelFunctionConfig = {
   /** Function type `channel, function, query, stream, authorize` */
@@ -247,6 +252,11 @@ type BasedAppFunctionConfig = {
   favicon?: string
 }
 
+type BasedJobFunctionConfig = {
+  type: 'job'
+  fn?: BasedFunction
+}
+
 export type BasedFunctionConfig<
   T extends BasedFunctionTypes = BasedFunctionTypes
 > = T extends 'channel'
@@ -257,6 +267,8 @@ export type BasedFunctionConfig<
   ? BasedQueryFunctionConfig & FunctionConfigShared
   : T extends 'stream'
   ? BasedStreamFunctionConfig & FunctionConfigShared
+  : T extends 'job'
+  ? BasedJobFunctionConfig & FunctionConfigShared
   : T extends 'app'
   ? BasedAppFunctionConfig & FunctionConfigShared
   :
@@ -264,6 +276,7 @@ export type BasedFunctionConfig<
       | (BasedCallFunctionConfig & FunctionConfigShared)
       | (BasedQueryFunctionConfig & FunctionConfigShared)
       | (BasedStreamFunctionConfig & FunctionConfigShared)
+      | (BasedJobFunctionConfig & FunctionConfigShared)
       | (BasedAppFunctionConfig & FunctionConfigShared)
 
 export type BasedFunctionConfigComplete<
@@ -276,6 +289,8 @@ export type BasedFunctionConfigComplete<
   ? BasedQueryFunctionConfig & FunctionConfigSharedComplete
   : T extends 'stream'
   ? BasedStreamFunctionConfig & FunctionConfigSharedComplete
+  : T extends 'job'
+  ? BasedJobFunctionConfig & FunctionConfigSharedComplete
   : T extends 'app'
   ? BasedAppFunctionConfig & FunctionConfigSharedComplete
   :
@@ -283,6 +298,7 @@ export type BasedFunctionConfigComplete<
       | (BasedCallFunctionConfig & FunctionConfigSharedComplete)
       | (BasedQueryFunctionConfig & FunctionConfigSharedComplete)
       | (BasedStreamFunctionConfig & FunctionConfigSharedComplete)
+      | (BasedJobFunctionConfig & FunctionConfigSharedComplete)
       | (BasedAppFunctionConfig & FunctionConfigSharedComplete)
 
 export type BasedAuthorizeFunctionConfig = {
