@@ -342,6 +342,19 @@ static char * test_get_array_field_index(void)
     return NULL;
 }
 
+static char * test_strntol(void)
+{
+    const char *end;
+
+    pu_assert_equal("", strntol("10", 2, NULL), 10);
+    pu_assert_equal("", strntol("-10", 3, NULL), -10);
+
+    strntol(" x10", 4, &end);
+    pu_assert_null("", end);
+
+    return NULL;
+}
+
 void all_tests(void)
 {
     pu_def_test(test_sztok_one, PU_RUN);
@@ -363,4 +376,5 @@ void all_tests(void)
     pu_def_test(test_empty_field, PU_RUN);
     pu_def_test(test_long_string, PU_RUN);
     pu_def_test(test_get_array_field_index, PU_RUN);
+    pu_def_test(test_strntol, PU_RUN);
 }

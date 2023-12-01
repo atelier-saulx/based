@@ -35,6 +35,7 @@ OBJ := \
 	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \
+	strntol.o \
 	svector.o \
 	tcp.o \
 	timestamp.o \

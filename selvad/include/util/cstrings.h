@@ -70,4 +70,7 @@ void *memrchr(const void *s, int c, size_t n)
 char *mempbrk(const char * restrict s, size_t len, const char * restrict accept, size_t accept_len)
     __attribute__((pure, access(read_only, 1, 2), access(read_only, 3, 4)));
 
+long int strntol(const char *s, size_t n, const char **end)
+    __attribute__((access(read_only, 1, 2), access(write_only, 3)));
+
 #endif /* _UTIL_CSTRINGS_H_ */
