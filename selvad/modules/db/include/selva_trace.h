@@ -74,14 +74,11 @@ extern __itt_domain* selva_trace_domain;
 #define SELVA_TRACE_BEGIN(_name) \
     SELVA_TRACE_TYPECHECK(_name)
 
-#define SELVA_TRACE_END(_name) ({ \
-        SELVA_TRACE_TYPECHECK(_name); \
-        CONCATENATE(selva_trace_handle_, _name); \
-    })
+#define SELVA_TRACE_END(_name) \
+        SELVA_TRACE_TYPECHECK(_name)
 
 #define SELVA_TRACE_BEGIN_AUTO(_name) \
-    SELVA_TRACE_TYPECHECK(_name); \
-    CONCATENATE(selva_trace_handle_, _name)
+    SELVA_TRACE_TYPECHECK(_name)
 
 
 #endif
