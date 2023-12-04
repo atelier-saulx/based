@@ -3,6 +3,9 @@ import { languages as allLanguages } from './languages'
 import type { PartialDeep, SetOptional } from 'type-fest'
 import { ParseError } from './error'
 import { ArgsClass, Path } from './walker'
+import { StringFormat } from './display/string'
+import { NumberFormat } from './display/number'
+import { DateFormat } from './display/timestamp'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html
@@ -39,6 +42,7 @@ export const basedSchemaFieldTypes = [
   'text',
   'cardinality',
 ] as const
+
 export type BasedSchemaFieldType = (typeof basedSchemaFieldTypes)[number]
 
 export const isCollection = (type: string): boolean => {
@@ -162,6 +166,7 @@ export type BasedSchemaStringShared = {
     | 'taxID'
     | 'licensePlate'
     | 'VAT'
+  display?: StringFormat
 }
 
 export type BasedSchemaFieldString = {
@@ -188,20 +193,27 @@ type NumberDefaults = {
   exclusiveMinimum?: boolean
 }
 
-export type BasedSchemaFieldNumber = NumberDefaults & {
-  type: 'number'
-}
+export type BasedNumberDisplay = NumberFormat
+
+export type BasedTimestampDisplay = DateFormat
 
 export type BasedSchemaFieldCardinality = {
   type: 'cardinality'
 }
 
+export type BasedSchemaFieldNumber = NumberDefaults & {
+  type: 'number'
+  display?: BasedNumberDisplay
+}
+
 export type BasedSchemaFieldInteger = NumberDefaults & {
   type: 'integer'
+  display?: BasedNumberDisplay
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldTimeStamp = NumberDefaults & {
   type: 'timestamp'
+  display?: BasedTimestampDisplay
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldBoolean = {
