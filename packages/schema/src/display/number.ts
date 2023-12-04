@@ -56,7 +56,14 @@ const parseNumber = (
     } else if (format === 'ratio') {
       return `${Math.round(nr * 10000) / 100}%`
     } else if (format === 'short') {
-      if (nr >= 10e6) {
+      if (nr >= 10e9) {
+        nr = nr / 1e9
+        nr = nr.toFixed(1)
+        if (nr[nr.length - 1] === '0') {
+          nr = nr.slice(0, -2)
+        }
+        return nr + 'b'
+      } else if (nr >= 10e6) {
         nr = nr / 1e6
         nr = nr.toFixed(1)
         if (nr[nr.length - 1] === '0') {

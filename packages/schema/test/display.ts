@@ -40,7 +40,9 @@ const schema: BasedSchema = {
 }
 
 test('date display', async (t) => {
-  console.log([
+  const now = 1701695869765
+
+  const parsed = [
     display('bla', schema.types.thing.fields.capitalize),
     display('b', schema.types.thing.fields.capitalize),
     display(undefined, schema.types.thing.fields.capitalize),
@@ -62,7 +64,40 @@ test('date display', async (t) => {
 
     display(100e6, schema.types.thing.fields.euros),
     display(100e6, schema.types.thing.fields.dollars),
-  ])
+    display(100e6, schema.types.thing.fields.bytes),
+    display(100e9, schema.types.thing.fields.bytes),
 
-  t.pass()
+    display(100e9, schema.types.thing.fields.short),
+
+    display(now + 20e3, schema.types.thing.fields.dateTimeText),
+    display(now + 20e3, schema.types.thing.fields.timePrecise),
+    display(now + 20e3, schema.types.thing.fields.dateTime),
+    display(now + 20e3, schema.types.thing.fields.time),
+  ]
+
+  t.deepEqual(parsed, [
+    'Bla',
+    'B',
+    undefined,
+    '',
+    'BLA',
+    'bla',
+    '€100k',
+    '$100k',
+    '€10,21',
+    '$10.23',
+    '€1001,21',
+    '$1001.21',
+    '€10k',
+    '$10k',
+    '€100m',
+    '$100m',
+    '95.37 mb',
+    '93.13 gb',
+    '100b',
+    'December 4, 2023, 2:18:09 PM',
+    '14:18:09',
+    '14:18 4/12/2023',
+    '14:18',
+  ])
 })
