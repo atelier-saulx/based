@@ -190,6 +190,7 @@ export type BasedSchemaFieldString = {
 
 export type BasedSchemaFieldEnum = {
   enum: any[]
+  type?: ''
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldCardinality = {
