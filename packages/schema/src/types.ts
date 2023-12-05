@@ -169,22 +169,6 @@ export type BasedSchemaStringShared = {
   display?: StringFormat
 }
 
-export type BasedSchemaFieldString = {
-  type: 'string'
-
-  // maybe add some more? e.g. phone
-} & BasedSchemaFieldShared &
-  BasedSchemaStringShared
-
-export type BasedSchemaFieldEnum = {
-  enum: any[]
-} & BasedSchemaFieldShared
-
-// TODO: check if we want this later
-// export type BasedSchemaFieldConst = {
-//   const: any
-// } & BasedSchemaFieldShared
-
 type NumberDefaults = {
   multipleOf?: number
   minimum?: number
@@ -197,14 +181,23 @@ export type BasedNumberDisplay = NumberFormat
 
 export type BasedTimestampDisplay = DateFormat
 
+export type BasedSchemaFieldString = {
+  type: 'string'
+} & BasedSchemaFieldShared &
+  BasedSchemaStringShared
+
+export type BasedSchemaFieldEnum = {
+  enum: any[]
+} & BasedSchemaFieldShared
+
 export type BasedSchemaFieldCardinality = {
   type: 'cardinality'
-}
+} & BasedSchemaFieldShared
 
 export type BasedSchemaFieldNumber = NumberDefaults & {
   type: 'number'
   display?: BasedNumberDisplay
-}
+} & BasedSchemaFieldShared
 
 export type BasedSchemaFieldInteger = NumberDefaults & {
   type: 'integer'
@@ -233,7 +226,6 @@ export type BasedSchemaFieldPrimitive =
   | BasedSchemaFieldJSON
   | BasedSchemaFieldBoolean
   | BasedSchemaFieldEnum
-  | BasedSchemaFieldShared
 
 // -------------- Enumerable ---------------
 export type BasedSchemaFieldText = {
@@ -292,35 +284,32 @@ export type BasedSchemaFieldReferences = {
 } & BasedSchemaFieldShared
 
 // return type can be typed - sort of
-export type BasedSchemaField =
-  | BasedSchemaFieldEnumerable
-  | BasedSchemaFieldPrimitive
-  | BasedSchemaFieldReference
-  | BasedSchemaFieldReferences
-  | BasedSchemaFieldCardinality
-  | {
-      type?: BasedSchemaFieldType
-      isRequired?: boolean // our own
-      $ref: string // to mimic json schema will just load it in place (so only for setting)
-    }
 
 export type BasedSchemaFields = {
+  string: BasedSchemaFieldString
+  number: BasedSchemaFieldNumber
+  integer: BasedSchemaFieldInteger
+  timestamp: BasedSchemaFieldTimeStamp
+  json: BasedSchemaFieldJSON
+  boolean: BasedSchemaFieldBoolean
   enum: BasedSchemaFieldEnum
   array: BasedSchemaFieldArray
   object: BasedSchemaFieldObject
   set: BasedSchemaFieldSet
   record: BasedSchemaFieldRecord
-  string: BasedSchemaFieldString
-  boolean: BasedSchemaFieldBoolean
-  number: BasedSchemaFieldNumber
-  json: BasedSchemaFieldJSON
-  integer: BasedSchemaFieldInteger
-  timestamp: BasedSchemaFieldTimeStamp
   reference: BasedSchemaFieldReference
   references: BasedSchemaFieldReferences
   text: BasedSchemaFieldText
   cardinality: BasedSchemaFieldCardinality
 }
+
+export type BasedSchemaField =
+  | BasedSchemaFields[keyof BasedSchemaFields]
+  | ({
+      type?: BasedSchemaFieldType
+      isRequired?: boolean // our own
+      $ref: string // to mimic json schema will just load it in place (so only for setting)
+    } & BasedSchemaFieldShared)
 
 export type BasedSchemaType = {
   fields: {
