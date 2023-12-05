@@ -308,11 +308,11 @@ export type BasedSchemaFields = {
 
 export type BasedSchemaField =
   | BasedSchemaFields[keyof BasedSchemaFields]
-  | {
+  | (BasedSchemaFieldShared & {
       type?: ''
       isRequired?: boolean // our own
       $ref: string // to mimic json schema will just load it in place (so only for setting)
-    }
+    })
 
 export type BasedSchemaType = {
   fields: {
