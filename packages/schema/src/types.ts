@@ -167,6 +167,7 @@ export type BasedSchemaStringShared = {
     | 'licensePlate'
     | 'VAT'
   display?: StringFormat
+  multiline?: boolean
 }
 
 type NumberDefaults = {
