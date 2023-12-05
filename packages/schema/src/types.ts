@@ -40,6 +40,7 @@ export const basedSchemaFieldTypes = [
   'reference',
   'references',
   'text',
+  'enum',
   'cardinality',
 ] as const
 
@@ -306,12 +307,11 @@ export type BasedSchemaFields = {
 
 export type BasedSchemaField =
   | BasedSchemaFields[keyof BasedSchemaFields]
-  | ({
+  | {
+      type?: ''
       isRequired?: boolean // our own
       $ref: string // to mimic json schema will just load it in place (so only for setting)
-    } & BasedSchemaFieldShared)
-
-let x: BasedSchemaField
+    }
 
 export type BasedSchemaType = {
   fields: {
