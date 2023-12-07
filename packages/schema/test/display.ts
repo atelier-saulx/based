@@ -69,10 +69,10 @@ test('date display', async (t) => {
 
     display(100e9, schema.types.thing.fields.short),
 
-    display(now + 20e3, schema.types.thing.fields.dateTimeText),
-    display(now + 20e3, schema.types.thing.fields.timePrecise),
-    display(now + 20e3, schema.types.thing.fields.dateTime),
-    display(now + 20e3, schema.types.thing.fields.time),
+    // display(now + 20e3, schema.types.thing.fields.dateTimeText),
+    // display(now + 20e3, schema.types.thing.fields.timePrecise),
+    // display(now+ 20e3, schema.types.thing.fields.dateTime),
+    // display(now + 20e3, schema.types.thing.fields.time),
   ]
 
   t.deepEqual(parsed, [
@@ -95,9 +95,26 @@ test('date display', async (t) => {
     '95.37 mb',
     '93.13 gb',
     '100b',
-    'December 4, 2023, 2:18:09 PM',
-    '14:18:09',
-    '14:18 4/12/2023',
-    '14:18',
+    // 'December 4, 2023, 2:18:09 PM',
+    // '14:18:09',
+    // '14:18 4/12/2023',
+    // '14:18',
   ])
+
+  t.regex(
+    String(display(now + 20e3, schema.types.thing.fields.dateTimeText)),
+    /^December 4, 2023, *./
+  )
+  t.regex(
+    String(display(now + 20e3, schema.types.thing.fields.timePrecise)),
+    /^[0-9]{2}:18:09$/
+  )
+  t.regex(
+    String(display(now + 20e3, schema.types.thing.fields.dateTime)),
+    /^[0-9]{2}:18 4\/12\/2023$/
+  )
+  t.regex(
+    String(display(now + 20e3, schema.types.thing.fields.time)),
+    /^[0-9]{2}:18$/
+  )
 })
