@@ -2367,7 +2367,6 @@ static int bfs_expression(
             SelvaHierarchyNode *adj;
             int err;
 
-            /* FIXME Should probably get the field the same way as SELVA_HIERARCHY_TRAVERSAL_FIELD? */
             /* Get an SVector for the field. */
             err = field_lookup_traversable(node, field_str, field_len, &t);
             if (err || !t.vec) {
@@ -2883,7 +2882,6 @@ int SelvaHierarchy_TraverseExpression(
         SelvaHierarchyNode *adj;
         int err;
 
-        /* FIXME Should probably get the field the same way as SELVA_HIERARCHY_TRAVERSAL_FIELD? */
         /* Get an SVector for the field. */
         err = field_lookup_traversable(head, field_str, field_len, &t);
         if (err || !t.vec) {
