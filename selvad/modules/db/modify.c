@@ -1602,8 +1602,6 @@ static void replicate_modify(struct selva_server_response_out *resp, const struc
     /*
      * It's kinda not optimal needing to check this global on every replication
      * but it helps us with testing and it's still very negligible overhead.
-     * TODO Perhaps in the future we could have a CI build flag to enable this
-     * sort of things.
      */
     if (selva_glob_config.debug_modify_replication_delay_ns > 0) {
         const struct timespec tim = {
