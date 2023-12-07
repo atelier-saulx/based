@@ -14,6 +14,10 @@
  * write or test * your code.
  *
  * Aug 2015. Andrey Jivsov. crypto@brainhub.org
+ *
+ * Copyright (c) 2015 brainhub
+ *
+ * SPDX-License-Identifier: MIT
  * ---------------------------------------------------------------------- */
 
 /* *************************** Self Tests ************************ */
