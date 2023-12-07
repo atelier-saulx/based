@@ -227,7 +227,7 @@ static __hot int FindCommand_NodeCb(
         void *arg) {
     struct FindCommand_Args *args = (struct FindCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(args);
+    int take = find_process_skip(args);
 
     args->acc_tot++;
     if (take && rpn_ctx) {
@@ -253,7 +253,7 @@ static __hot int FindCommand_NodeCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(args);
+    take = take && find_process_offset(args);
     if (take) {
         args->acc_take++;
 

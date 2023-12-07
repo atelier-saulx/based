@@ -229,7 +229,7 @@ static int AggregateCommand_NodeCb(
     Selva_NodeId nodeId;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(&args->find_args);
+    int take = find_process_skip(&args->find_args);
 
     SelvaHierarchy_GetNodeId(nodeId, node);
 
@@ -254,7 +254,7 @@ static int AggregateCommand_NodeCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
+    take = take && find_process_offset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 
@@ -312,7 +312,7 @@ static int AggregateCommand_ArrayObjectCb(
     struct SelvaObject *obj = value.obj;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(&args->find_args);
+    int take = find_process_skip(&args->find_args);
 
     if (subtype != SELVA_OBJECT_OBJECT) {
         SELVA_LOG(SELVA_LOGL_ERR, "Array subtype not supported: %s",
@@ -343,7 +343,7 @@ static int AggregateCommand_ArrayObjectCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
+    take = take && find_process_offset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 

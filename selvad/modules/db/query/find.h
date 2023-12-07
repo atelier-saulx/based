@@ -144,14 +144,10 @@ struct FindCommand_Args {
     SelvaFind_ProcessObject process_obj;
 };
 
-/*
- * TODO Rename these functions.
- */
-
 /**
  * See skip in FindCommand_Args.
  */
-static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
+static inline int find_process_skip(struct FindCommand_Args *args)
 {
     const int take = (args->skip > 0) ? !args->skip-- : 1;
 
@@ -161,7 +157,7 @@ static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
 /**
  * See offset in FindCommand_Args.
  */
-static inline int SelvaTraversal_ProcessOffset(struct FindCommand_Args *args)
+static inline int find_process_offset(struct FindCommand_Args *args)
 {
     const int take = (args->offset > 0) ? !args->offset-- : 1;
 
