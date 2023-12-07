@@ -72,11 +72,7 @@ static void send_merge_text(
         selva_send_string(resp, obj_path);
         err = SelvaObject_ReplyWithObject(resp, lang, obj, NULL, 0);
         if (err) {
-            /* FIXME We should probably send something here. */
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to send \"%s\" (text) of node_id: \"%.*s\". err: \"%s\"",
-                      selva_string_to_str(obj_path, NULL),
-                      (int)SELVA_NODE_ID_SIZE, nodeId,
-                      selva_strerror(err));
+            selva_send_errorf(resp, err, "Sending the field value failed");
         } else {
             /* Mark the key as sent. */
             (void)SelvaObject_SetLongLong(fields, obj_path, 1);
