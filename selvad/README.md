@@ -11,11 +11,13 @@ Directory Structure
 -------------------
 
 - [doc/](doc) documentation
-- `src/` contains sources for the main executable (event loop and module loader)
-- `modules/` contains sources for loadable modules (selva)
 - `lib/` contains libraries that can be used in modules (e.g. util, deflate, jemalloc)
+- `modules/` contains sources for loadable modules (selva)
+- `scripts/` contains scripts used by the build system
+- `src/` contains sources for the main executable (event loop and module loader)
+- `tools/` contains devtools
 
-Some source directories may have a subdirectory called `fuzz/`, that's for
+Some source directories may contain a subdirectory called `fuzz/`, that's for
 fuzzers (using LLVM LibFuzzer).
 
 Prerequisites
