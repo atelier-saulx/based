@@ -3,8 +3,8 @@ import {
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
   BasedSchemaFieldPartial,
+  BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
-  BasedSchemaFields,
   BasedSchemaLanguage,
   BasedSchemaPartial,
   basedSchemaFieldTypes,
@@ -19,7 +19,6 @@ import {
   NewFieldSchemaMutation,
   NewTypeSchemaMutation,
   RemoveFieldSchemaMutation,
-  SchemaFieldMutation,
   SchemaMutation,
   SchemaUpdateMode,
 } from '../types'
@@ -157,8 +156,8 @@ const onlyAllowedFieldTypes: MutationRule = (
       )
     } else if (
       field.type === 'record' &&
-      (!(field as BasedSchemaFieldArray).values ||
-        !(field as BasedSchemaFieldArray).values.type)
+      (!(field as BasedSchemaFieldRecord).values ||
+        !(field as BasedSchemaFieldRecord).values.type)
     ) {
       throw new Error(
         `Field "${mutation.type}.${path.join(
@@ -336,10 +335,7 @@ const cannotDeleteRoot: MutationRule = (mutation: DeleteTypeSchemaMutation) => {
   }
 }
 
-const noDefaultFieldMutations: MutationRule = (
-  mutation: SchemaMutation,
-  { currentSchema }
-) => {
+const noDefaultFieldMutations: MutationRule = (mutation: SchemaMutation) => {
   const defaultFields = Object.keys(DEFAULT_FIELDS)
 
   if (mutation.mutation === 'new_type' || mutation.mutation === 'change_type') {
@@ -396,7 +392,7 @@ export const validateSchemaMutations = async (
   client: BasedDbClient,
   currentSchema: BasedSchema,
   newSchema: BasedSchema,
-  opts: BasedSchemaPartial,
+  _opts: BasedSchemaPartial,
   mutations: SchemaMutation[],
   mode: SchemaUpdateMode
 ) => {
