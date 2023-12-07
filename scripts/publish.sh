@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2023 SAULX
+# SPDX-License-Identifier: MIT
 
 if [ -z "$1" ]; then
 	echo 'Please suply a version name. Example `npm run publish -- v1.2.3 <optional_description>`'

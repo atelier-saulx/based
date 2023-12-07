@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) 2023 SAULX
+# SPDX-License-Identifier: MIT
 
 rm -rf packages/server/selvad/local/*
 cd selvad

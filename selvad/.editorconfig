@@ -1,3 +1,5 @@
+# Copyright (c) 2022 SAULX
+# SPDX-License-Identifier: MIT
 [*]
 end_of_line = lf
 insert_final_newline = true
