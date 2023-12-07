@@ -156,7 +156,6 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
             uint64_t eid;
             int64_t ts;
             int8_t repl_cmd_id;
-            const char *repl_cmd_str;
 #if 0
             char buf[5];
 #endif
@@ -169,13 +168,7 @@ void selva_proto_print(FILE *stream, const void *msg, size_t msg_size)
                 return;
             }
 
-            /* FIXME */
-#if 0
-            repl_cmd_str = commands[repl_cmd_id].cmd_name ?: ({ snprintf(buf, sizeof(buf), "%d", repl_cmd_id); buf; });
-#else
-            repl_cmd_str = "FIXME";
-#endif
-            fprintf(stream, "%*s<replication cmd=%s size=%zu>,\n", tabs * TAB_WIDTH, "", repl_cmd_str, cmd_size);
+            fprintf(stream, "%*s<replication cmd=%d size=%zu>,\n", tabs * TAB_WIDTH, "", repl_cmd_id, cmd_size);
             i = i - off + sizeof(struct selva_proto_replication_cmd);
         } else {
             fprintf(stream, "<Invalid proto value>\n");
