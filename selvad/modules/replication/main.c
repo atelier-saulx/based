@@ -273,18 +273,10 @@ static void replicasync(struct selva_server_response_out *resp, const void *buf,
     }
 }
 
-static int args_to_addr(struct sockaddr_in *addr, struct selva_string *ip, struct selva_string *port)
+static int args_to_addr(struct sockaddr_in *addr, struct selva_string *ip, long long port)
 {
-    long long port_ll;
-    int err;
-
-    err = selva_string_to_ll(port, &port_ll);
-    if (err) {
-        return err;
-    }
-
     addr->sin_family = AF_INET;
-    addr->sin_port = htons(port_ll);
+    addr->sin_port = htons(port);
 
     if (inet_pton(AF_INET, selva_string_to_str(ip, NULL), &addr->sin_addr) == -1) {
         return SELVA_EINVAL;
@@ -299,16 +291,14 @@ static int args_to_addr(struct sockaddr_in *addr, struct selva_string *ip, struc
 static void replicaof(struct selva_server_response_out *resp, const void *buf, size_t size)
 {
     __auto_finalizer struct finalizer fin;
-    struct selva_string **argv = NULL;
+    struct selva_string *ip = NULL;
+    long long port;
     struct sockaddr_in origin_addr;
     int argc, err;
 
     finalizer_init(&fin);
 
-    const size_t ARGV_IP = 0;
-    const size_t ARGV_PORT = 1;
-
-    argc = selva_proto_buf2strings(&fin, buf, size, &argv);
+    argc = selva_proto_scanf(&fin, buf, size, "%lld, %p", &port, &ip);
     if (argc != 2) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -323,7 +313,7 @@ static void replicaof(struct selva_server_response_out *resp, const void *buf, s
         return;
     }
 
-    err = args_to_addr(&origin_addr, argv[ARGV_IP], argv[ARGV_PORT]);
+    err = args_to_addr(&origin_addr, ip, port);
     if (err) {
         selva_send_errorf(resp, err, "Invalid origin address");
         return;

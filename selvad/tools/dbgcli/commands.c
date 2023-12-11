@@ -49,6 +49,7 @@ static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int ar
 
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 /*
  * Currently most commands encode the request arguments using strings and send
@@ -124,6 +125,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_UNSUBSCRIBE,
         .cmd_name = "unsubscribe",
         .cmd_req = cmd_subscribe_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_REPLICAOF] = {
+        .cmd_id = CMD_ID_REPLICAOF,
+        .cmd_name = "replicaof",
+        .cmd_req = cmd_replicaof_req,
         .cmd_res = generic_res,
     },
     [253] = {
@@ -614,6 +621,49 @@ static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int arg
     buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
 
     if (send_message(sock, &buf, sizeof(buf), 0)) {
+        return -1;
+    }
+    return 0;
+}
+
+static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 3) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    long long port = strtol(argv[1], NULL, 10);
+    const char *addr_str = argv[2];
+    size_t addr_len = strlen(addr_str);
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_longlong port;
+        struct selva_proto_string addr;
+    } __packed buf = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf) + addr_len),
+            .msg_bsize = 0,
+            .chk = 0,
+        },
+        .port = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = htole64(port)
+        },
+        .addr = {
+            .type = SELVA_PROTO_STRING,
+            .flags = 0,
+            .bsize = htole32(addr_len),
+        },
+    };
+
+    buf.hdr.chk = htole32(crc32c(crc32c(0, &buf, sizeof(buf)), addr_str, addr_len));
+
+    if (send_message(sock, &buf, sizeof(buf), MSG_MORE) ||
+         send_message(sock, addr_str, addr_len, 0)) {
         return -1;
     }
     return 0;

@@ -71,7 +71,7 @@ export class SelvaServer extends EventEmitter {
           LOCPATH: path.join(execPath, '..', 'locale'),
           SELVA_PORT: String(this.port),
           SERVER_SO_REUSE: '1',
-          SELVA_REPLICATION_MODE: '1',
+          SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
           AUTO_SAVE_INTERVAL: String(this.saveInterval),
           SAVE_AT_EXIT: opts.save ? '1' : '0',
         },

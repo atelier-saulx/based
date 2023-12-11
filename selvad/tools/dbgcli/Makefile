@@ -13,6 +13,7 @@ ifeq ($(uname_S),Linux)
 LDFLAGS += -Wl,-rpath,'$$ORIGIN'/../../lib
 endif
 ifeq ($(uname_S),Darwin)
+CFLAGS += -Wno-unknown-attributes
 LDFLAGS += -Wl,-rpath,@executable_path/../../lib
 endif
 

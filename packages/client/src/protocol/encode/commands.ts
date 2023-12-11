@@ -15,7 +15,10 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   load: strEncoder(1),
   lsaliases: null,
   replicasync: null,
-  replicaof: strEncoder(2), // ip, port
+  replicaof: defaultEncoder([
+    { type: 'longlong' }, // port
+    { type: 'string', }, // ip
+  ]),
   replicainfo: null,
   replicawait: null,
   rusage: null,
