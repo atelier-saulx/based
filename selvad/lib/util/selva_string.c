@@ -394,7 +394,6 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
     }
 
     if (flags & SELVA_STRING_MUTABLE) {
-        /* TODO Optimize to avoid reallocs */
         s->len = len;
         s->p = selva_realloc(s->p, len + 1);
         memcpy(s->p, str, len);
