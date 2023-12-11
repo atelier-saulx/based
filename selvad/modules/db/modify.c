@@ -397,6 +397,246 @@ static int update_edge(
     }
 }
 
+static int add_set_values_char(
+    SelvaHierarchy *hierarchy,
+    struct SelvaObject *obj,
+    const Selva_NodeId node_id,
+    const struct selva_string *field,
+    const char *value_ptr,
+    size_t value_len,
+    int8_t type,
+    int remove_diff) {
+    TO_STR(field);
+    const bool is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
+    const char *ptr = value_ptr;
+    SVector new_set;
+    __auto_finalizer struct finalizer fin;
+    int res = 0;
+
+    finalizer_init(&fin);
+
+    /* Check that the value divides into elements properly. */
+    if ((type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE && (value_len % SELVA_NODE_ID_SIZE)) ||
+        (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE && (value_len % sizeof(double))) ||
+        (type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG && (value_len % sizeof(long long)))) {
+        return SELVA_EINVAL;
+    }
+
+    if (remove_diff) {
+        size_t inital_size = (type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) ? value_len / SELVA_NODE_ID_SIZE : 1;
+
+        SVector_Init(&new_set, inital_size, SelvaSVectorComparator_String);
+    } else {
+        /* If it's empty the destroy function will just skip over. */
+        memset(&new_set, 0, sizeof(new_set));
+    }
+
+    /*
+     * Add missing elements to the set.
+     */
+    for (size_t i = 0; i < value_len; ) {
+        int err;
+        struct selva_string *ref;
+        const ssize_t part_len = string2selva_string(&fin, type, ptr, &ref);
+
+        if (part_len < 0) {
+            res = SELVA_EINVAL;
+            goto string_err;
+        }
+
+        /* Add to the node object. */
+        err = SelvaObject_AddStringSet(obj, field, ref);
+        if (remove_diff && (err == 0 || err == SELVA_EEXIST)) {
+            SVector_Insert(&new_set, ref);
+        }
+        if (err == 0) {
+            finalizer_del(&fin, ref);
+
+            /* Add to the global aliases hash. */
+            if (is_aliases) {
+                update_alias(hierarchy, node_id, ref);
+            }
+
+            res++;
+        } else if (err != SELVA_EEXIST) {
+            if (is_aliases) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Alias update failed");
+            } else {
+                SELVA_LOG(SELVA_LOGL_ERR, "String set field update failed");
+            }
+            res = err;
+            goto string_err;
+        }
+
+        /* +1 to skip the NUL if cstring */
+        const size_t skip_off = type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE ? SELVA_NODE_ID_SIZE : (size_t)part_len + (type == SELVA_MODIFY_OP_SET_TYPE_CHAR);
+        if (skip_off == 0) {
+            res = SELVA_EINVAL;
+            goto string_err;
+        }
+
+        ptr += skip_off;
+        i += skip_off;
+    }
+
+    /*
+     * Remove elements that are not in new_set.
+     * This makes the set in obj.field equal to the set defined by value_str.
+     */
+    if (remove_diff) {
+        struct SelvaSet *objSet = SelvaObject_GetSet(obj, field);
+        if (objSet) {
+            struct SelvaSetElement *set_el;
+            struct SelvaSetElement *tmp;
+
+            SELVA_SET_STRING_FOREACH_SAFE(set_el, objSet, tmp) {
+                struct selva_string *el = set_el->value_string;
+
+                if (!SVector_Search(&new_set, (void *)el)) {
+                    /* el doesn't exist in new_set, therefore it should be removed. */
+                    SelvaSet_DestroyElement(SelvaSet_Remove(objSet, el));
+
+                    if (is_aliases) {
+                        delete_alias(hierarchy, el);
+                    }
+
+                    selva_string_free(el);
+                    res++; /* This too is a change to the set! */
+                }
+            }
+        }
+    }
+string_err:
+    SVector_Destroy(&new_set);
+
+    return res;
+}
+
+static int add_set_values_numeric(
+    struct SelvaObject *obj,
+    const struct selva_string *field,
+    const char *value_ptr,
+    size_t value_len,
+    int8_t type,
+    int remove_diff) {
+    const char *ptr = value_ptr;
+    int res = 0;
+
+    /*
+     * Add missing elements to the set.
+     */
+    for (size_t i = 0; i < value_len; ) {
+        int err;
+        size_t part_len;
+
+        /*
+         * We want to be absolutely sure that we don't hit alignment aborts
+         * on any architecture even if the received data is unaligned, hence
+         * we use memcpy here.
+         */
+        if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) {
+            double v;
+
+            part_len = sizeof(double);
+            memcpy(&v, ptr, part_len);
+            err = SelvaObject_AddDoubleSet(obj, field, v);
+        } else { /* SELVA_MODIFY_OP_SET_TYPE_LONG_LONG */
+            long long v;
+
+            part_len = sizeof(long long);
+            memcpy(&v, ptr, part_len);
+            err = SelvaObject_AddLongLongSet(obj, field, v);
+        }
+        if (err == 0) {
+            res++;
+        } else if (err != SELVA_EEXIST) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Set (%s) field update failed. err: \"%s\"",
+                      (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) ? "double" : "long long",
+                      selva_strerror(err));
+            return err;
+        }
+
+        const size_t skip_off = part_len;
+        if (skip_off == 0) {
+            return SELVA_EINVAL;
+        }
+
+        ptr += skip_off;
+        i += skip_off;
+    }
+
+    /*
+     * Remove elements that are not in new_set.
+     * This makes the set in obj.field equal to the set defined by value_str.
+     */
+    if (remove_diff) {
+        struct SelvaSetElement *set_el;
+        struct SelvaSetElement *tmp;
+        struct SelvaSet *objSet = SelvaObject_GetSet(obj, field);
+
+        assert(objSet);
+        if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE && objSet->type == SELVA_SET_TYPE_DOUBLE) {
+            SELVA_SET_DOUBLE_FOREACH_SAFE(set_el, objSet, tmp) {
+                int found = 0;
+                const double a = set_el->value_d;
+
+                /* This is probably faster than any data structure we could use. */
+                for (size_t i = 0; i < value_len; i += sizeof(double)) {
+                    double b;
+
+                    /*
+                     * We use memcpy here because it's not guranteed that the
+                     * array is aligned properly.
+                     */
+                    memcpy(&b, value_ptr + i, sizeof(double));
+
+                    if (a == b) {
+                        found = 1;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    SelvaSet_DestroyElement(SelvaSet_RemoveDouble(objSet, a));
+                    res++;
+                }
+            }
+        } else if (type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG && objSet->type == SELVA_SET_TYPE_LONGLONG) {
+            SELVA_SET_LONGLONG_FOREACH_SAFE(set_el, objSet, tmp) {
+                int found = 0;
+                const long long a = set_el->value_ll;
+
+                /* This is probably faster than any data structure we could use. */
+                for (size_t i = 0; i < value_len; i++) {
+                    long long b;
+
+                    /*
+                     * We use memcpy here because it's not guranteed that the
+                     * array is aligned properly.
+                     */
+                    memcpy(&b, value_ptr + i, sizeof(long long));
+
+                    if (a == b) {
+                        found = 1;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    SelvaSet_DestroyElement(SelvaSet_RemoveLongLong(objSet, a));
+                    res++;
+                }
+            }
+        } else {
+            SELVA_LOG(SELVA_LOGL_CRIT, "Type mismatch! type: %d objSet->type: %d",
+                      (int)type, (int)objSet->type);
+            abort(); /* Never reached. */
+        }
+    }
+
+    return res;
+}
+
 /**
  * Add all values from value_ptr to the set in obj.field.
  * @returns The number of items added; Otherwise a negative Selva error code is returned.
@@ -411,225 +651,116 @@ static int add_set_values(
     int8_t type,
     int remove_diff
 ) {
+    if (type == SELVA_MODIFY_OP_SET_TYPE_CHAR ||
+        type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
+        return add_set_values_char(hierarchy, obj, node_id, field, value_ptr, value_len, type, remove_diff);
+    } else if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE ||
+               type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG) {
+        return add_set_values_numeric(obj, field, value_ptr, value_len, type, remove_diff);
+    } else {
+        return SELVA_EINTYPE;
+    }
+}
+
+static int del_set_values_char(
+        struct SelvaHierarchy *hierarchy,
+        struct SelvaObject *obj,
+        const struct selva_string *field,
+        const char *value_ptr,
+        size_t value_len,
+        int8_t type) {
     TO_STR(field);
     const int is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
     const char *ptr = value_ptr;
     int res = 0;
 
-    if (type == SELVA_MODIFY_OP_SET_TYPE_CHAR ||
-        type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
-        SVector new_set;
-        __auto_finalizer struct finalizer fin;
+    if (type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE && (value_len % SELVA_NODE_ID_SIZE)) {
+        return SELVA_EINVAL;
+    }
 
-        /* Check that the value divides into elements properly. */
-        if ((type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE && (value_len % SELVA_NODE_ID_SIZE)) ||
-            (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE && (value_len % sizeof(double))) ||
-            (type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG && (value_len % sizeof(long long)))) {
+    for (size_t i = 0; i < value_len; ) {
+        struct selva_string *ref;
+        const ssize_t part_len = string2selva_string(NULL, type, ptr, &ref);
+        int err;
+
+        if (part_len < 0) {
             return SELVA_EINVAL;
         }
 
-        if (remove_diff) {
-            size_t inital_size = (type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) ? value_len / SELVA_NODE_ID_SIZE : 1;
-
-            SVector_Init(&new_set, inital_size, SelvaSVectorComparator_String);
-        } else {
-            /* If it's empty the destroy function will just skip over. */
-            memset(&new_set, 0, sizeof(new_set));
-        }
-        finalizer_init(&fin);
-
         /*
-         * Add missing elements to the set.
+         * Remove from the node object.
          */
-        for (size_t i = 0; i < value_len; ) {
-            int err;
-            struct selva_string *ref;
-            const ssize_t part_len = string2selva_string(&fin, type, ptr, &ref);
-
-            if (part_len < 0) {
-                res = SELVA_EINVAL;
-                goto string_err;
-            }
-
-            /* Add to the node object. */
-            err = SelvaObject_AddStringSet(obj, field, ref);
-            if (remove_diff && (err == 0 || err == SELVA_EEXIST)) {
-                SVector_Insert(&new_set, ref);
-            }
-            if (err == 0) {
-                finalizer_del(&fin, ref);
-
-                /* Add to the global aliases hash. */
-                if (is_aliases) {
-                    update_alias(hierarchy, node_id, ref);
-                }
-
-                res++;
-            } else if (err != SELVA_EEXIST) {
-                if (is_aliases) {
-                    SELVA_LOG(SELVA_LOGL_ERR, "Alias update failed");
-                } else {
-                    SELVA_LOG(SELVA_LOGL_ERR, "String set field update failed");
-                }
-                res = err;
-                goto string_err;
-            }
-
-            /* +1 to skip the NUL if cstring */
-            const size_t skip_off = type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE ? SELVA_NODE_ID_SIZE : (size_t)part_len + (type == SELVA_MODIFY_OP_SET_TYPE_CHAR);
-            if (skip_off == 0) {
-                res = SELVA_EINVAL;
-                goto string_err;
-            }
-
-            ptr += skip_off;
-            i += skip_off;
-        }
-
-        /*
-         * Remove elements that are not in new_set.
-         * This makes the set in obj.field equal to the set defined by value_str.
-         */
-        if (remove_diff) {
-            struct SelvaSet *objSet = SelvaObject_GetSet(obj, field);
-            if (objSet) {
-                struct SelvaSetElement *set_el;
-                struct SelvaSetElement *tmp;
-
-                SELVA_SET_STRING_FOREACH_SAFE(set_el, objSet, tmp) {
-                    struct selva_string *el = set_el->value_string;
-
-                    if (!SVector_Search(&new_set, (void *)el)) {
-                        /* el doesn't exist in new_set, therefore it should be removed. */
-                        SelvaSet_DestroyElement(SelvaSet_Remove(objSet, el));
-
-                        if (is_aliases) {
-                            delete_alias(hierarchy, el);
-                        }
-
-                        selva_string_free(el);
-                        res++; /* This too is a change to the set! */
-                    }
-                }
-            }
-        }
-string_err:
-        SVector_Destroy(&new_set);
-    } else if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE ||
-               type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG) {
-        /*
-         * Add missing elements to the set.
-         */
-        for (size_t i = 0; i < value_len; ) {
-            int err;
-            size_t part_len;
-
+        err = SelvaObject_RemStringSet(obj, field, ref);
+        if (!err) {
             /*
-             * We want to be absolutely sure that we don't hit alignment aborts
-             * on any architecture even if the received data is unaligned, hence
-             * we use memcpy here.
+             * Remove from the global aliases hash.
              */
-            if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) {
-                double v;
-
-                part_len = sizeof(double);
-                memcpy(&v, ptr, part_len);
-                err = SelvaObject_AddDoubleSet(obj, field, v);
-            } else { /* SELVA_MODIFY_OP_SET_TYPE_LONG_LONG */
-                long long v;
-
-                part_len = sizeof(long long);
-                memcpy(&v, ptr, part_len);
-                err = SelvaObject_AddLongLongSet(obj, field, v);
-            }
-            if (err == 0) {
-                res++;
-            } else if (err != SELVA_EEXIST) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Set (%s) field update failed. err: \"%s\"",
-                          (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) ? "double" : "long long",
-                          selva_strerror(err));
-                return err;
+            if (is_aliases) {
+                delete_alias(hierarchy, ref);
             }
 
-            const size_t skip_off = part_len;
-            if (skip_off == 0) {
-                return SELVA_EINVAL;
-            }
-
-            ptr += skip_off;
-            i += skip_off;
+            res++;
         }
+
+        /* +1 to skip the NUL if cstring */
+        const size_t skip_off = type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE ? SELVA_NODE_ID_SIZE : (size_t)part_len + (type == SELVA_MODIFY_OP_SET_TYPE_CHAR);
+        if (skip_off == 0) {
+            return SELVA_EINVAL;
+        }
+
+        selva_string_free(ref);
+        ptr += skip_off;
+        i += skip_off;
+    }
+
+    return res;
+}
+
+static int del_set_values_numeric(
+        struct SelvaObject *obj,
+        const struct selva_string *field,
+        const char *value_ptr,
+        size_t value_len,
+        int8_t type) {
+    const char *ptr = value_ptr;
+    int res = 0;
+
+    for (size_t i = 0; i < value_len; ) {
+        int err;
+        size_t part_len;
 
         /*
-         * Remove elements that are not in new_set.
-         * This makes the set in obj.field equal to the set defined by value_str.
+         * We want to be absolutely sure that we don't hit alignment aborts
+         * on any architecture even if the received data is unaligned, hence
+         * we use memcpy here.
          */
-        if (remove_diff) {
-            struct SelvaSetElement *set_el;
-            struct SelvaSetElement *tmp;
-            struct SelvaSet *objSet = SelvaObject_GetSet(obj, field);
+        if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) {
+            double v;
 
-            assert(objSet);
-            if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE && objSet->type == SELVA_SET_TYPE_DOUBLE) {
-                SELVA_SET_DOUBLE_FOREACH_SAFE(set_el, objSet, tmp) {
-                    int found = 0;
-                    const double a = set_el->value_d;
+            part_len = sizeof(double);
+            memcpy(&v, ptr, part_len);
+            err = SelvaObject_RemDoubleSet(obj, field, v);
+        } else {
+            long long v;
 
-                    /* This is probably faster than any data structure we could use. */
-                    for (size_t i = 0; i < value_len; i += sizeof(double)) {
-                        double b;
-
-                        /*
-                         * We use memcpy here because it's not guranteed that the
-                         * array is aligned properly.
-                         */
-                        memcpy(&b, value_ptr + i, sizeof(double));
-
-                        if (a == b) {
-                            found = 1;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        SelvaSet_DestroyElement(SelvaSet_RemoveDouble(objSet, a));
-                        res++;
-                    }
-                }
-            } else if (type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG && objSet->type == SELVA_SET_TYPE_LONGLONG) {
-                SELVA_SET_LONGLONG_FOREACH_SAFE(set_el, objSet, tmp) {
-                    int found = 0;
-                    const long long a = set_el->value_ll;
-
-                    /* This is probably faster than any data structure we could use. */
-                    for (size_t i = 0; i < value_len; i++) {
-                        long long b;
-
-                        /*
-                         * We use memcpy here because it's not guranteed that the
-                         * array is aligned properly.
-                         */
-                        memcpy(&b, value_ptr + i, sizeof(long long));
-
-                        if (a == b) {
-                            found = 1;
-                            break;
-                        }
-                    }
-
-                    if (!found) {
-                        SelvaSet_DestroyElement(SelvaSet_RemoveLongLong(objSet, a));
-                        res++;
-                    }
-                }
-            } else {
-                SELVA_LOG(SELVA_LOGL_CRIT, "Type mismatch! type: %d objSet->type: %d",
-                          (int)type, (int)objSet->type);
-                abort(); /* Never reached. */
-            }
+            part_len = sizeof(long long);
+            memcpy(&v, ptr, part_len);
+            err = SelvaObject_RemLongLongSet(obj, field, v);
         }
-    } else {
-        return SELVA_EINTYPE;
+        if (err &&
+            err != SELVA_ENOENT &&
+            err != SELVA_EEXIST &&
+            err != SELVA_EINVAL) {
+            SELVA_LOG(SELVA_LOGL_ERR, "Double set field update failed");
+            return err;
+        }
+        if (err == 0) {
+            res++;
+        }
+
+        const size_t skip_off = part_len;
+        ptr += skip_off;
+        i += skip_off;
     }
 
     return res;
@@ -643,95 +774,15 @@ static int del_set_values(
         size_t value_len,
         int8_t type
 ) {
-    TO_STR(field);
-    const int is_aliases = SELVA_IS_ALIASES_FIELD(field_str, field_len);
-    const char *ptr = value_ptr;
-    int res = 0;
-
     if (type == SELVA_MODIFY_OP_SET_TYPE_CHAR ||
         type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE) {
-        if (type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE && (value_len % SELVA_NODE_ID_SIZE)) {
-            return SELVA_EINVAL;
-        }
-
-        for (size_t i = 0; i < value_len; ) {
-            struct selva_string *ref;
-            const ssize_t part_len = string2selva_string(NULL, type, ptr, &ref);
-            int err;
-
-            if (part_len < 0) {
-                return SELVA_EINVAL;
-            }
-
-            /*
-             * Remove from the node object.
-             */
-            err = SelvaObject_RemStringSet(obj, field, ref);
-            if (!err) {
-                /*
-                 * Remove from the global aliases hash.
-                 */
-                if (is_aliases) {
-                    delete_alias(hierarchy, ref);
-                }
-
-                res++;
-            }
-
-            /* +1 to skip the NUL if cstring */
-            const size_t skip_off = type == SELVA_MODIFY_OP_SET_TYPE_REFERENCE ? SELVA_NODE_ID_SIZE : (size_t)part_len + (type == SELVA_MODIFY_OP_SET_TYPE_CHAR);
-            if (skip_off == 0) {
-                return SELVA_EINVAL;
-            }
-
-            selva_string_free(ref);
-            ptr += skip_off;
-            i += skip_off;
-        }
+        return del_set_values_char(hierarchy, obj, field, value_ptr, value_len, type);
     } else if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE ||
                type == SELVA_MODIFY_OP_SET_TYPE_LONG_LONG) {
-        for (size_t i = 0; i < value_len; ) {
-            int err;
-            size_t part_len;
-
-            /*
-             * We want to be absolutely sure that we don't hit alignment aborts
-             * on any architecture even if the received data is unaligned, hence
-             * we use memcpy here.
-             */
-            if (type == SELVA_MODIFY_OP_SET_TYPE_DOUBLE) {
-                double v;
-
-                part_len = sizeof(double);
-                memcpy(&v, ptr, part_len);
-                err = SelvaObject_RemDoubleSet(obj, field, v);
-            } else {
-                long long v;
-
-                part_len = sizeof(long long);
-                memcpy(&v, ptr, part_len);
-                err = SelvaObject_RemLongLongSet(obj, field, v);
-            }
-            if (err &&
-                err != SELVA_ENOENT &&
-                err != SELVA_EEXIST &&
-                err != SELVA_EINVAL) {
-                SELVA_LOG(SELVA_LOGL_ERR, "Double set field update failed");
-                return err;
-            }
-            if (err == 0) {
-                res++;
-            }
-
-            const size_t skip_off = part_len;
-            ptr += skip_off;
-            i += skip_off;
-        }
+        return del_set_values_numeric(obj, field, value_ptr, value_len, type);
     } else {
         return SELVA_EINTYPE;
     }
-
-    return res;
 }
 
 /*
