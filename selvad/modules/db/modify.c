@@ -41,15 +41,32 @@
 #include "typestr.h"
 #include "modify.h"
 
-#define FLAG_NO_ROOT    0x01 /*!< Don't set root as a parent. */
-#define FLAG_NO_MERGE   0x02 /*!< Clear any existing fields. */
-#define FLAG_CREATE     0x04 /*!< Only create a new node or fail. */
-#define FLAG_UPDATE     0x08 /*!< Only update an existing node. */
+enum modify_flags {
+    FLAG_NO_ROOT =  0x01, /*!< Don't set root as a parent. */
+    FLAG_NO_MERGE = 0x02, /*!< Clear any existing fields. */
+    FLAG_CREATE =   0x04, /*!< Only create a new node or fail. */
+    FLAG_UPDATE =   0x08, /*!< Only update an existing node. */
+};
 
-#define FISSET_NO_ROOT(m) (((m) & FLAG_NO_ROOT) == FLAG_NO_ROOT)
-#define FISSET_NO_MERGE(m) (((m) & FLAG_NO_MERGE) == FLAG_NO_MERGE)
-#define FISSET_CREATE(m) (((m) & FLAG_CREATE) == FLAG_CREATE)
-#define FISSET_UPDATE(m) (((m) & FLAG_UPDATE) == FLAG_UPDATE)
+#define FISSET_NO_ROOT(m) ({ \
+        ASSERT_TYPE(enum modify_flags, m); \
+        (((m) & FLAG_NO_ROOT) == FLAG_NO_ROOT); \
+    })
+
+#define FISSET_NO_MERGE(m) ({ \
+        ASSERT_TYPE(enum modify_flags, m); \
+        (((m) & FLAG_NO_MERGE) == FLAG_NO_MERGE); \
+    })
+
+#define FISSET_CREATE(m) ({ \
+        ASSERT_TYPE(enum modify_flags, m); \
+        (((m) & FLAG_CREATE) == FLAG_CREATE); \
+    })
+
+#define FISSET_UPDATE(m) ({ \
+        ASSERT_TYPE(enum modify_flags, m); \
+        (((m) & FLAG_UPDATE) == FLAG_UPDATE); \
+    })
 
 #define REPLY_WITH_ARG_TYPE_ERROR(v) \
     selva_send_errorf(resp, SELVA_EINTYPE, "Expected: %s", typeof_str(v))
@@ -129,7 +146,7 @@ static int update_hierarchy(
     const Selva_NodeId node_id,
     const char *field_str,
     const struct SelvaModify_OpSet *setOpts,
-    unsigned modify_flags
+    enum modify_flags modify_flags
 ) {
     /*
      * If the field starts with 'p' we assume "parents"; Otherwise "children".
@@ -842,7 +859,7 @@ int SelvaModify_ModifySet(
     struct SelvaObject *obj,
     const struct selva_string *field,
     struct SelvaModify_OpSet *setOpts,
-    unsigned modify_flags
+    enum modify_flags modify_flags
 ) {
     TO_STR(field);
 
@@ -944,7 +961,7 @@ int SelvaModify_ModifyDel(
     return err > 0 ? 0 : err;
 }
 
-static unsigned parse_flags(const struct selva_string *arg) {
+static enum modify_flags parse_flags(const struct selva_string *arg) {
     TO_STR(arg);
     unsigned flags = 0;
 
@@ -1245,7 +1262,7 @@ static enum selva_op_repl_state op_increment_longlong(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     struct SelvaModify_OpIncrement incrementOpts;
@@ -1277,7 +1294,7 @@ static enum selva_op_repl_state op_increment_double(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     struct SelvaModify_OpIncrementDouble incrementOpts;
@@ -1342,7 +1359,7 @@ static enum selva_op_repl_state op_del(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value __unused,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field);
     int err;
@@ -1369,7 +1386,7 @@ static enum selva_op_repl_state op_string(
         char type_code,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field, value);
     const enum SelvaObjectType old_type = SelvaObject_GetTypeStr(obj, field_str, field_len);
@@ -1428,7 +1445,7 @@ static enum selva_op_repl_state op_longlong(
         char type_code,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     long long ll;
@@ -1465,7 +1482,7 @@ static enum selva_op_repl_state op_double(
         char type_code,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(value);
     double d;
@@ -1502,7 +1519,7 @@ static enum selva_op_repl_state op_meta(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
 
     return SelvaModify_ModifyMetadata(resp, obj, field, value);
@@ -1516,7 +1533,7 @@ static enum selva_op_repl_state op_array_remove(
         char type_code __unused,
         struct selva_string *field,
         struct selva_string *value,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     struct SelvaObject *obj = SelvaHierarchy_GetNodeObject(node);
     TO_STR(field, value);
     uint32_t v;
@@ -1548,7 +1565,7 @@ static enum selva_op_repl_state op_notsup(
         char type_code,
         struct selva_string *field __unused,
         struct selva_string *value __unused,
-        unsigned modify_flags __unused) {
+        enum modify_flags) {
     selva_send_errorf(resp, SELVA_EINTYPE, "Invalid type: \"%c\"", type_code);
     return SELVA_OP_REPL_STATE_UNCHANGED;
 }
@@ -1946,7 +1963,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     }
 
     struct SelvaHierarchyNode *node;
-    const unsigned flags = parse_flags(argv[1]);
+    const enum modify_flags flags = parse_flags(argv[1]);
 
     node = SelvaHierarchy_FindNode(hierarchy, nodeId);
     if (!node) {

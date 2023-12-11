@@ -210,6 +210,12 @@
 #define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
 /**
+ * Statically assert that VAR is compatible with the type TYPE.
+ */
+#define ASSERT_TYPE(TYPE, VAR) \
+    static_assert(__builtin_types_compatible_p(TYPE, typeof(VAR)))
+
+/**
  * Get the struct that contains `m`.
  * This macro can be only used if we know for certain that `x` is a pointer to
  * the member `m` in type `s`.
