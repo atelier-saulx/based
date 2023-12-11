@@ -68,7 +68,7 @@ void mempool_gc(struct mempool *mempool)
  */
 [[nodiscard]]
 void *mempool_get(struct mempool *mempool)
-    __attribute__((access(read_write, 1)));
+    __attribute__((access(read_write, 1), returns_nonnull));
 
 /**
  * Return an object back to the pool.

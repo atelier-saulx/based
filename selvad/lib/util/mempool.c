@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
 #include "util/align.h"
@@ -178,7 +179,7 @@ void *mempool_get(struct mempool *mempool) {
 
         err = mempool_new_slab(mempool);
         if (err) {
-            return NULL;
+            abort();
         }
     }
 
