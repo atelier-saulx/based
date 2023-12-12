@@ -103,7 +103,7 @@ test('simple', async (t) => {
     ding,
   })
 
-  await wait(100)
+  await originClient.command('replicawait')
 
   const oChildren = await originClient.command('hierarchy.children', ['root'])
   const rChildren = await replicaClient.command('hierarchy.children', ['root'])
