@@ -4,6 +4,7 @@ import { startOrigin, startReplica } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { wait } from '@saulx/utils'
 
 const test = anyTest as TestInterface<{
   origin: SelvaServer
@@ -36,7 +37,9 @@ test.beforeEach(async (t) => {
   t.context.originClient = newClient(t.context.originPort)
   t.context.replicaClient = newClient(t.context.replicaPort)
 
+  console.log('start replication')
   await t.context.replicaClient.command('replicaof', [t.context.originPort, ip])
+  console.log('wait for the replica')
   await t.context.originClient.command('replicawait')
 
   console.log('updating schema')
@@ -87,6 +90,9 @@ test.afterEach.always(async (t) => {
 test('simple', async (t) => {
   const { originClient, replicaClient } = t.context
 
+  t.deepEqual((await originClient.command('replicainfo'))[0][0], 'ORIGIN')
+  t.deepEqual((await replicaClient.command('replicainfo'))[0][0], 'REPLICA_ACTIVE')
+
   const ding = await originClient.set({
     type: 'ding',
     name: 'ding 0',
@@ -97,11 +103,22 @@ test('simple', async (t) => {
     ding,
   })
 
+  await wait(100)
+
+  const oChildren = await originClient.command('hierarchy.children', ['root'])
+  const rChildren = await replicaClient.command('hierarchy.children', ['root'])
+  t.deepEqual(oChildren, rChildren)
+
+  // TODO get doesn't work with replica?
+  const oDong = await originClient.get({
+    $id: dong,
+    name: true,
+    ding: true,
+  })
   const rDong = await replicaClient.get({
     $id: dong,
     name: true,
     ding: true,
   })
-
-  console.log(rDong)
+  t.deepEqual(rDong, oDong)
 })
