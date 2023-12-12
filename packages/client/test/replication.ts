@@ -26,7 +26,24 @@ test.beforeEach(async (t) => {
   t.context.replica = await startReplica({
     port: t.context.replicaPort,
     name: 'default',
+    stdio: 'pipe',
   })
+
+  const setupLogs = (srv: SelvaServer, prefix: string) => {
+    const addPrefix = (s: string) => s.split('\n').map((s: string, i, a) => i < a.length - 1 ? `${prefix}${s}` : s).join('\n')
+
+    if (srv.pm.stdout) {
+      srv.pm.stdout.on('data', (data) => {
+        console.log(addPrefix(`${data}`))
+      })
+    }
+    if (srv.pm.stderr) {
+      srv.pm.stderr.on('data', (data) => {
+        console.error(addPrefix(`${data}`))
+      })
+    }
+  }
+  setupLogs(t.context.replica, 'replica:')
 
   console.log('connecting')
   const newClient = (port: number) => {
@@ -96,7 +113,14 @@ test('simple', async (t) => {
   const { originClient, replicaClient } = t.context
 
   t.deepEqual((await originClient.command('replicainfo'))[0][0], 'ORIGIN')
-  t.deepEqual((await replicaClient.command('replicainfo'))[0][0], 'REPLICA_ACTIVE')
+
+  let replicaState = null
+  for (let retries = 0; retries < 5; retries++) {
+    replicaState = (await replicaClient.command('replicainfo'))[0][0]
+    if (replicaState == 'REPLICA_ACTIVE') break
+    await wait(300)
+  }
+  t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 
   const ding = await originClient.set({
     type: 'ding',
