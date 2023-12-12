@@ -49,23 +49,21 @@ export const incoming = (client: BasedDbClient, data: any /* TODO: type */) => {
     }
 
     if (header.flags & SELVA_PROTO_HDR_STREAM) {
-      const msg = frame.subarray(IGNORED_FIRST_BYTES)
-      let parsed: any
-      try {
-        ;[parsed] = decodeMessage(msg, -1)
-      } catch (e) {
-        console.error('Error decoding stream message payload', e)
-        continue
-      }
-
       const chId = client.subscriptionHandlers.get(header.seqno)
-      if (chId === undefined) {
-        console.error('Channel id not found', chId)
+      if (chId !== undefined) {
+        const msg = frame.subarray(IGNORED_FIRST_BYTES)
+        let parsed: any
+
+        try {
+          ;[parsed] = decodeMessage(msg, -1)
+        } catch (e) {
+          console.error('Error decoding stream message payload', e)
+          continue
+        }
+
+        client.emit('pubsub', [chId, parsed])
         continue
       }
-
-      client.emit('pubsub', [chId, parsed])
-      continue
     }
 
     if (
