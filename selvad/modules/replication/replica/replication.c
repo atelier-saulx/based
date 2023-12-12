@@ -846,10 +846,10 @@ static int start_replication_handler(void)
     }
 
     if (sv.last_sdb_eid && sv.last_cmd_eid == 0 && !partial_sync_fail) {
-        SELVA_LOG(SELVA_LOGL_INFO, "Partial sync req");
+        SELVA_LOG(SELVA_LOGL_INFO, "Sending partial sync req");
         err = send_sync_req(sock);
     } else {
-        SELVA_LOG(SELVA_LOGL_INFO, "Full sync req");
+        SELVA_LOG(SELVA_LOGL_INFO, "Sending full sync req");
         err = send_full_sync_req(sock);
         partial_sync_fail = 0;
     }

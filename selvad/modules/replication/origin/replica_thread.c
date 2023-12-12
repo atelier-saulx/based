@@ -19,14 +19,11 @@
 #include "../replication.h"
 #include "replica.h"
 
-static void log_exit(struct selva_server_response_out *resp)
-{
-    char strcon[80];
-    size_t len;
-
-    len = selva_resp_to_str(resp, strcon, sizeof(strcon));
-    SELVA_LOG(SELVA_LOGL_INFO, "Replica going offline (%.*s)", (int)len, strcon);
-}
+#define log_with_ctx_info(resp, msg) ({ \
+        char strcon[80]; \
+        size_t len = selva_resp_to_str(resp, strcon, sizeof(strcon)); \
+        SELVA_LOG(SELVA_LOGL_INFO, "%s (%.*s)", (msg), (int)len, strcon); \
+    })
 
 /**
  * Send the initial dump to the replica.
@@ -65,14 +62,14 @@ static int sync_dump(
     }
 
     if (sync_mode == REPLICATION_SYNC_MODE_FULL) {
-        SELVA_LOG(SELVA_LOGL_INFO, "Full sync");
+        log_with_ctx_info(resp, "Full sync");
         err = selva_send_replication_sdb(resp, e->id, sdb->filename);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to sync replica's initial state: %s", selva_strerror(err));
             goto fail;
         }
     } else {
-        SELVA_LOG(SELVA_LOGL_INFO, "Partial sync");
+        log_with_ctx_info(resp, "Partial sync");
     }
 
     err = 0;
@@ -89,16 +86,14 @@ void *replication_thread(void *arg)
     struct ring_buffer_reader_state state;
     struct ring_buffer_element *e;
 
-    SELVA_LOG(SELVA_LOGL_INFO, "Thread started");
+    log_with_ctx_info(resp, "Replication started");
 
     /*
      * RFE It would be better to be able to retry with another sdb eid instead
      * of letting the replica die but currently there is no easy way to do it.
      */
     if (ring_buffer_init_state(&state, rb, replica->start_eid, replica->id)) {
-#if 0
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to initialize a ring_buffer_reader_state");
-#endif
+        SELVA_LOG(SELVA_LOGL_DBG, "Failed to initialize a ring_buffer_reader_state");
         selva_send_errorf(resp, SELVA_ENOENT, "Initial state mismatch");
         goto out;
     }
@@ -137,7 +132,7 @@ void *replication_thread(void *arg)
     }
 
 out:
-    log_exit(resp);
+    log_with_ctx_info(resp, "Replica going offline");
     selva_send_end(resp);
     ring_buffer_reader_exit(rb, &state);
     return NULL;
