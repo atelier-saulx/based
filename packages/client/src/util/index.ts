@@ -143,24 +143,6 @@ export const nonRecursiveWalker = (
     throw new Error('fn must be a function')
   }
 
-  // const stack = new Array<string[]>()
-  //
-  // stack.push([])
-  //
-  // while (stack.length) {
-  //   const current = getValueByPath(obj, stack[0])
-  //   for (const key in current) {
-  //     if (typeof current[key] === 'object') {
-  //       stack.push(stack[0].concat(key))
-  //       if (targetObjects) {
-  //         fn(current[key], stack[0].concat(key), 1)
-  //       }
-  //     } else {
-  //       fn(current[key], stack[0].concat(key), 0)
-  //     }
-  //   }
-  //   stack.shift()
-  // }
 
   const stack = new Array<[target: any, path: string[]]>()
 
