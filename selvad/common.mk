@@ -18,8 +18,9 @@ CC += -fdiagnostics-color=always
 
 # CFLAGS shared with all compilation units.
 # TODO gnu23 when available
-CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra
+CFLAGS := -std=gnu2x -O2 -MMD -Wall -Wextra -Wpointer-arith -Wdate-time -Wmissing-prototypes
 CFLAGS += -DDCACHE_LINESIZE=64
+CFLAGS += -fstack-protector
 
 # Add these for valgrind
 #CFLAGS += $(EN_VALGRIND_CFLAGS)
@@ -30,7 +31,9 @@ ifeq ($(uname_S),Linux) # Assume Intel x86-64 Linux
 	#CFLAGS += -opt-info-vec-optimized
 	#CFLAGS += -ftree-vectorizer-verbose=5 -fopt-info-vec-missed
 
-	TARGET_CFLAGS += -D_FORTIFY_SOURCE=3 -fstack-clash-protection
+	TARGET_CFLAGS += -D_FORTIFY_SOURCE=3
+	# Not yet available on macOS
+	TARGET_CFLAGS += -fstack-clash-protection
 	ifeq ($(uname_M),x86_64)
 		TARGET_CFLAGS += -march=x86-64 -mtune=intel -mfpmath=sse -mavx -mavx2 -mbmi -mbmi2 -mlzcnt -mmovbe -mprfchw
 		TARGET_CFLAGS += -fcf-protection=full

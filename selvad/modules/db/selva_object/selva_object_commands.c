@@ -50,7 +50,7 @@ static void touch_updated_at(struct selva_server_response_out *resp, struct Selv
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len); \
     publish_field_change_str(node, okey_str, okey_len)
 
-void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -99,7 +99,7 @@ void SelvaObject_DelCommand(struct selva_server_response_out *resp, const void *
     }
 }
 
-void SelvaObject_ExistsCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_ExistsCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -136,7 +136,7 @@ void SelvaObject_ExistsCommand(struct selva_server_response_out *resp, const voi
 }
 
 
-void SelvaObject_GetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_GetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     __auto_finalizer struct finalizer fin;
     struct selva_string *lang;
@@ -217,7 +217,7 @@ static enum SelvaObjectType set2so_type(char ch)
     }
 }
 
-void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     __auto_finalizer struct finalizer fin;
     int argc;
@@ -328,7 +328,7 @@ void SelvaObject_SetCommand(struct selva_server_response_out *resp, const void *
     MODIFIED(resp, values_set);
 }
 
-void SelvaObject_IncrbyCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_IncrbyCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -369,7 +369,7 @@ void SelvaObject_IncrbyCommand(struct selva_server_response_out *resp, const voi
     MODIFIED(resp, new);
 }
 
-void SelvaObject_IncrbyDoubleCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_IncrbyDoubleCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -409,7 +409,7 @@ void SelvaObject_IncrbyDoubleCommand(struct selva_server_response_out *resp, con
     MODIFIED(resp, new);
 }
 
-void SelvaObject_KeysCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_KeysCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -456,7 +456,7 @@ void SelvaObject_KeysCommand(struct selva_server_response_out *resp, const void 
     selva_send_array_end(resp);
 }
 
-void SelvaObject_TypeCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_TypeCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str;
@@ -558,7 +558,7 @@ void SelvaObject_TypeCommand(struct selva_server_response_out *resp, const void 
     }
 }
 
-void SelvaObject_LenCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_LenCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str = NULL;
@@ -601,7 +601,7 @@ void SelvaObject_LenCommand(struct selva_server_response_out *resp, const void *
     selva_send_ll(resp, obj_len);
 }
 
-void SelvaObject_GetMetaCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_GetMetaCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str = NULL;
@@ -638,7 +638,7 @@ void SelvaObject_GetMetaCommand(struct selva_server_response_out *resp, const vo
     selva_send_ll(resp, user_meta);
 }
 
-void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str = NULL;
@@ -691,7 +691,7 @@ void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, const vo
     MODIFIED(resp, 1);
 }
 
-void SelvaObject_GetStringCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_GetStringCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     Selva_NodeId node_id;
     const char *okey_str = NULL;
@@ -732,7 +732,7 @@ void SelvaObject_GetStringCommand(struct selva_server_response_out *resp, const 
     selva_send_string(resp, value);
 }
 
-void SelvaObject_CasCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
+static void SelvaObject_CasCommand(struct selva_server_response_out *resp, const void *buf, size_t len)
 {
     __auto_finalizer struct finalizer fin;
     Selva_NodeId node_id;

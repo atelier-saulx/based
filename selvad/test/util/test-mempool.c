@@ -1,4 +1,4 @@
-/* Copyright (c) 2022 SAULX
+/* Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -8,15 +8,15 @@
 #include <stdint.h>
 #include "util/mempool.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
-static char * test_simple_allocs(void)
+PU_TEST(test_simple_allocs)
 {
     const size_t slab_size = 4194304;
     const size_t obj_size = 256;
@@ -41,7 +41,7 @@ static char * test_simple_allocs(void)
     return NULL;
 }
 
-static char * test_object_reuse(void)
+PU_TEST(test_object_reuse)
 {
     const size_t slab_size = 4194304;
     const size_t obj_size = 256;
@@ -63,7 +63,7 @@ static char * test_object_reuse(void)
     return NULL;
 }
 
-static char * test_gc(void)
+PU_TEST(test_gc)
 {
     const size_t slab_size = 4194304;
     const size_t obj_size = 256;
@@ -89,7 +89,7 @@ static char * test_gc(void)
     return NULL;
 }
 
-static char * test_allocs(void)
+PU_TEST(test_allocs)
 {
     const size_t slab_size = 1024;
     const size_t obj_size = 100;
@@ -142,12 +142,4 @@ static char * test_allocs(void)
     mempool_destroy(&pool);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_simple_allocs, PU_RUN);
-    pu_def_test(test_object_reuse, PU_RUN);
-    pu_def_test(test_gc, PU_RUN);
-    pu_def_test(test_allocs, PU_RUN);
 }

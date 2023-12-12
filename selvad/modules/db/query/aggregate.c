@@ -229,7 +229,7 @@ static int AggregateCommand_NodeCb(
     Selva_NodeId nodeId;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(&args->find_args);
+    int take = find_process_skip(&args->find_args);
 
     SelvaHierarchy_GetNodeId(nodeId, node);
 
@@ -254,7 +254,7 @@ static int AggregateCommand_NodeCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
+    take = take && find_process_offset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 
@@ -312,7 +312,7 @@ static int AggregateCommand_ArrayObjectCb(
     struct SelvaObject *obj = value.obj;
     struct AggregateCommand_Args *args = (struct AggregateCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->find_args.rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(&args->find_args);
+    int take = find_process_skip(&args->find_args);
 
     if (subtype != SELVA_OBJECT_OBJECT) {
         SELVA_LOG(SELVA_LOGL_ERR, "Array subtype not supported: %s",
@@ -343,7 +343,7 @@ static int AggregateCommand_ArrayObjectCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(&args->find_args);
+    take = take && find_process_offset(&args->find_args);
     if (take) {
         const int sort = !!args->find_args.send_param.order_field;
 
@@ -549,7 +549,7 @@ static size_t AggregateCommand_SendAggregateResult(const struct AggregateCommand
 /**
  * hierarchy.aggregate lang SelvaAggregate_QueryOpts ids filter_expr filter_args
  */
-void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
+static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, const void *buf, size_t buf_len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
     int argc, err;
@@ -746,7 +746,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             return;
         }
 
-        if (rpn_set_string_regs(rpn_ctx, filter_expr_args, nr_reg)) {
+        if (rpn_set_string_regs(rpn_ctx, nr_reg, filter_expr_args)) {
             selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
             return;
         }
@@ -791,7 +791,7 @@ void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *resp, con
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, index_hints, nr_index_hints, ind_icb);
+            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
 
             /*
              * If the index is already ordered then we don't need to sort the

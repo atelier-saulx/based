@@ -1,4 +1,4 @@
-# Copyright (c) 2022 SAULX
+# Copyright (c) 2022-2023 SAULX
 # SPDX-License-Identifier: MIT
 
 SHELL := /bin/bash
@@ -55,8 +55,13 @@ test-valgrind: export WITH_VALGRIND = valgrind
 test-valgrind:
 	$(MAKE) -C test
 
+ifeq ($(uname_S),Linux)
 test-gcov: test
-	./coverage.sh
+	./scripts/coverage.sh
+else
+test-gcov:
+	$(error coverage (gcov) not available on this platform)
+endif
 
 check:
 	cppcheck src/ modules/

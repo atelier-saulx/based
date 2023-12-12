@@ -40,11 +40,11 @@
 #include "subscriptions.h"
 #include "edge.h"
 #include "traversal.h"
-#include "inherit.h"
 #include "find_index.h"
 #include "../field_names.h"
 #include "../count_filter_regs.h"
 #include "query.h"
+#include "inherit_fields.h"
 #include "find_send.h"
 #include "../find.h"
 #include "find_cmd.h"
@@ -227,7 +227,7 @@ static __hot int FindCommand_NodeCb(
         void *arg) {
     struct FindCommand_Args *args = (struct FindCommand_Args *)arg;
     struct rpn_ctx *rpn_ctx = args->rpn_ctx;
-    int take = SelvaTraversal_ProcessSkip(args);
+    int take = find_process_skip(args);
 
     args->acc_tot++;
     if (take && rpn_ctx) {
@@ -253,7 +253,7 @@ static __hot int FindCommand_NodeCb(
         }
     }
 
-    take = take && SelvaTraversal_ProcessOffset(args);
+    take = take && find_process_offset(args);
     if (take) {
         args->acc_take++;
 
@@ -866,7 +866,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             return;
         }
 
-        if (rpn_set_string_regs(rpn_ctx, filter_expr_args, nr_reg)) {
+        if (rpn_set_string_regs(rpn_ctx, nr_reg, filter_expr_args)) {
             selva_send_errorf(resp, SELVA_EGENERAL, "Failed to initialize RPN registers");
             return;
         }
@@ -918,7 +918,7 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, index_hints, nr_index_hints, ind_icb);
+            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
 
             /*
              * Query optimization.

@@ -1,0 +1,17 @@
+{
+  "name": "@based/db-server-linux-x64",
+  "version": "2.0.0-alpha.22",
+  "description": "The Linux 64-bit binary for db-server.",
+  "homepage": "https://github.com/atelier-saulx/based-db#readme",
+  "license": "MIT",
+  "preferUnplugged": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ]
+}

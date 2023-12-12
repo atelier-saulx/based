@@ -5,6 +5,9 @@ include ../../common.mk
 CFLAGS += -fPIC -Wno-unused-function -I../../include
 # To remove warnings about asserts
 CFLAGS += -Wno-unused-value
+ifeq ($(uname_S),Darwin)
+CFLAGS += -Wunused-comparison
+endif
 LDFLAGS += -g -L../
 
 OBJ := \
@@ -35,6 +38,7 @@ OBJ := \
 	selva_rusage.o \
 	selva_string.o \
 	sigstr.o \
+	strntol.o \
 	svector.o \
 	tcp.o \
 	timestamp.o \

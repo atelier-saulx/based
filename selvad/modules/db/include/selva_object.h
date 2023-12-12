@@ -284,8 +284,8 @@ int SelvaObject_GetString(struct SelvaObject *obj, const struct selva_string *ke
  * @param key_name is the name of the key ob obj. The argument is used only for lookup and does't need to be retained.
  * @param value is the value; the caller needs to make sure the string is retained.
  */
-int SelvaObject_SetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3)));
-int SelvaObject_SetString(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value);
+int SelvaObject_SetStringStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3), access(none, 4)));
+int SelvaObject_SetString(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value) __attribute__((access(read_only, 2), access(none, 3)));
 
 /**
  * @}
@@ -339,8 +339,8 @@ int SelvaObject_RemDoubleSetStr(struct SelvaObject *obj, const char *key_name_st
 int SelvaObject_RemDoubleSet(struct SelvaObject *obj, const struct selva_string *key_name, double value);
 int SelvaObject_RemLongLongSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, long long value) __attribute__((access(read_only, 2, 3)));
 int SelvaObject_RemLongLongSet(struct SelvaObject *obj, const struct selva_string *key_name, long long value);
-int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, struct selva_string *value) __attribute__((access(read_only, 2, 3)));
-int SelvaObject_RemStringSet(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value);
+int SelvaObject_RemStringSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len, const struct selva_string *value) __attribute__((access(read_only, 2, 3), access(read_only, 4)));
+int SelvaObject_RemStringSet(struct SelvaObject *obj, const struct selva_string *key_name, struct selva_string *value) __attribute((access(read_only, 2), access(read_only, 3)));
 struct SelvaSet *SelvaObject_GetSetStr(struct SelvaObject *obj, const char *key_name_str, size_t key_name_len) __attribute__((access(read_only, 2, 3)));
 struct SelvaSet *SelvaObject_GetSet(struct SelvaObject *obj, const struct selva_string *key_name);
 

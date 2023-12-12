@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdio.h>
@@ -22,7 +22,7 @@ IMPORT() {
     // or evl_import_event_loop();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     evl_module_init("demo_timeout");
 

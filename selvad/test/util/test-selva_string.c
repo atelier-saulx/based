@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -7,18 +7,17 @@
 #include <punit.h>
 #include <stddef.h>
 #include <stdio.h>
-#include "cdefs.h"
 #include "util/selva_string.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
-static char * test_create(void)
+PU_TEST(test_create)
 {
     struct selva_string *s;
     const char *str;
@@ -36,7 +35,7 @@ static char * test_create(void)
     return NULL;
 }
 
-static char * test_createf(void)
+PU_TEST(test_createf)
 {
     struct selva_string *s;
     const char *str;
@@ -53,7 +52,7 @@ static char * test_createf(void)
     return NULL;
 }
 
-static char * test_createz(void)
+PU_TEST(test_createz)
 {
     static char uncompressed[1048576];
     struct selva_string *s1;
@@ -71,7 +70,7 @@ static char * test_createz(void)
     return NULL;
 }
 
-static char * test_dup(void)
+PU_TEST(test_dup)
 {
     struct selva_string *s1;
     struct selva_string *s2;
@@ -90,7 +89,7 @@ static char * test_dup(void)
     return NULL;
 }
 
-static char * test_truncate(void)
+PU_TEST(test_truncate)
 {
     struct selva_string *s;
     const char *str;
@@ -106,7 +105,7 @@ static char * test_truncate(void)
     return NULL;
 }
 
-static char * test_append(void)
+PU_TEST(test_append)
 {
     struct selva_string *s;
     const char *str;
@@ -122,7 +121,7 @@ static char * test_append(void)
     return NULL;
 }
 
-static char * test_replace(void)
+PU_TEST(test_replace)
 {
     struct selva_string *s;
     const char *str;
@@ -138,7 +137,7 @@ static char * test_replace(void)
     return NULL;
 }
 
-static char * test_crc(void)
+PU_TEST(test_crc)
 {
     struct selva_string *s;
     const char *str;
@@ -160,7 +159,7 @@ static char * test_crc(void)
     return NULL;
 }
 
-static char * test_cmp(void)
+PU_TEST(test_cmp)
 {
     struct selva_string *s1;
     struct selva_string *s2;
@@ -182,7 +181,7 @@ static char * test_cmp(void)
     return NULL;
 }
 
-static char * test_intern(void)
+PU_TEST(test_intern)
 {
     struct selva_string *s1;
     struct selva_string *s2;
@@ -195,18 +194,4 @@ static char * test_intern(void)
     selva_string_free(s1);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_create, PU_RUN);
-    pu_def_test(test_createf, PU_RUN);
-    pu_def_test(test_createz, PU_RUN);
-    pu_def_test(test_dup, PU_RUN);
-    pu_def_test(test_truncate, PU_RUN);
-    pu_def_test(test_append, PU_RUN);
-    pu_def_test(test_replace, PU_RUN);
-    pu_def_test(test_crc, PU_RUN);
-    pu_def_test(test_cmp, PU_RUN);
-    pu_def_test(test_intern, PU_RUN);
 }

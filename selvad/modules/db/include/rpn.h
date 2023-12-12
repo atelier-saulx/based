@@ -104,14 +104,16 @@ static inline void rpn_set_obj(struct rpn_ctx *ctx, struct SelvaObject *obj) {
  * Set register value.
  * A pointer to s is held until the register is cleared or changed.
  */
-enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags);
+enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags)
+    __attribute__((access(read_only, 1, 2)));
 
 
 /**
  * Set register values from an array of selva_strings.
  * The pointers are held.
  */
-enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, struct selva_string *a[], size_t n);
+enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, size_t n, struct selva_string *a[n])
+    __attribute__((access(read_only, 3, 2)));
 
 /**
  * Set all registers using a single buffer.
@@ -129,7 +131,8 @@ enum rpn_error rpn_set_regs(struct rpn_ctx *ctx, const char *regs_buf, size_t re
  * Set a register value from a selva_string.
  * The value is copied and no pointer to s is held.
  */
-enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, struct selva_string *s);
+enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct selva_string *s)
+    __attribute__((access(read_only, 3)));
 
 /**
  * Set a register value as a pointer to a SelvaObject.
@@ -146,8 +149,13 @@ enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet
  * @param input is pointer to a nul-terminated RPN expression.
  * @returns A compiled expression.
  */
-struct rpn_expression *rpn_compile(const char *input);
-struct rpn_expression *rpn_compile_len(const char *str, size_t len);
+[[nodiscard]]
+struct rpn_expression *rpn_compile(const char *input)
+    __attribute__((access(read_only, 1)));
+
+[[nodiscard]]
+struct rpn_expression *rpn_compile_len(const char *str, size_t len)
+    __attribute__((access(read_only, 1, 2)));
 
 /**
  * Destroy a compiled RPN expression.
@@ -155,11 +163,20 @@ struct rpn_expression *rpn_compile_len(const char *str, size_t len);
  */
 void rpn_destroy_expression(struct rpn_expression *expr);
 
-enum rpn_error rpn_bool(struct rpn_ctx *ctx, const struct rpn_expression *expr, int *out);
-enum rpn_error rpn_double(struct rpn_ctx *ctx, const struct rpn_expression *expr, double *out);
-enum rpn_error rpn_integer(struct rpn_ctx *ctx, const struct rpn_expression *expr, long long *out);
-enum rpn_error rpn_string(struct rpn_ctx *ctx, const struct rpn_expression *expr, struct selva_string **out);
-enum rpn_error rpn_selvaset(struct rpn_ctx *ctx, const struct rpn_expression *expr, struct SelvaSet *out);
+enum rpn_error rpn_bool(struct rpn_ctx *ctx, const struct rpn_expression *expr, int *out)
+    __attribute__((access(read_only, 2), access(write_only, 3)));
+
+enum rpn_error rpn_double(struct rpn_ctx *ctx, const struct rpn_expression *expr, double *out)
+    __attribute__((access(read_only, 2), access(write_only, 3)));
+
+enum rpn_error rpn_integer(struct rpn_ctx *ctx, const struct rpn_expression *expr, long long *out)
+    __attribute__((access(read_only, 2), access(write_only, 3)));
+
+enum rpn_error rpn_string(struct rpn_ctx *ctx, const struct rpn_expression *expr, struct selva_string **out)
+    __attribute__((access(read_only, 2), access(write_only, 3)));
+
+enum rpn_error rpn_selvaset(struct rpn_ctx *ctx, const struct rpn_expression *expr, struct SelvaSet *out)
+    __attribute__((access(read_only, 2), access(write_only, 3)));
 
 void _rpn_auto_free_ctx(void *p);
 #define __auto_free_rpn_ctx __attribute__((cleanup(_rpn_auto_free_ctx)))

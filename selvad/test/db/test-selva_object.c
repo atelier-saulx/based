@@ -7,7 +7,6 @@
 #include <punit.h>
 #include <stdlib.h>
 #include <string.h>
-#include "cdefs.h"
 #include "util/svector.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
@@ -16,7 +15,7 @@
 
 static struct SelvaObject *root_obj;
 
-static void setup(void)
+void setup(void)
 {
     root_obj = SelvaObject_New();
     if (!root_obj) {
@@ -24,7 +23,7 @@ static void setup(void)
     }
 }
 
-static void teardown(void)
+void teardown(void)
 {
     if (root_obj) {
         SelvaObject_Destroy(root_obj);
@@ -32,7 +31,7 @@ static void teardown(void)
     root_obj = NULL;
 }
 
-static char * setget_double(void)
+PU_TEST(setget_double)
 {
     struct selva_string *key_name = selva_string_create("x", 1, 0);
     double v = 0.0;
@@ -49,7 +48,7 @@ static char * setget_double(void)
     return NULL;
 }
 
-static char * setget_longlong(void)
+PU_TEST(setget_longlong)
 {
     struct selva_string *key_name = selva_string_create("x", 1, 0);
     long long v = 0;
@@ -66,7 +65,7 @@ static char * setget_longlong(void)
     return NULL;
 }
 
-static char * setget_string(void)
+PU_TEST(setget_string)
 {
     struct selva_string *key_name = selva_string_create("x", 1, 0);
     struct selva_string *orig = selva_string_create("hello", 5, 0);
@@ -88,7 +87,7 @@ static char * setget_string(void)
     return NULL;
 }
 
-static char * delete_key_1(void)
+PU_TEST(delete_key_1)
 {
     /*
      * { x: 1 } => null
@@ -109,7 +108,7 @@ static char * delete_key_1(void)
     return NULL;
 }
 
-static char * delete_key_2(void)
+PU_TEST(delete_key_2)
 {
     /*
      * { x: "hello", y: 2 } => { y: 2 }
@@ -142,7 +141,7 @@ static char * delete_key_2(void)
     return NULL;
 }
 
-static char * nested_object(void)
+PU_TEST(nested_object)
 {
     struct selva_string *key_name = selva_string_create("a.b", 3, 0);
     struct selva_string *wrong_key_name1 = selva_string_create("a.b.c", 5, 0);
@@ -173,7 +172,7 @@ static char * nested_object(void)
     return NULL;
 }
 
-static char * replace_string_with_object(void)
+PU_TEST(replace_string_with_object)
 {
     struct selva_string *key_name_1 = selva_string_create("a", 3, 0);
     struct selva_string *key_name_2 = selva_string_create("a.b", 3, 0);
@@ -223,7 +222,7 @@ static char * replace_string_with_object(void)
     return NULL;
 }
 
-static char * replace_object_with_string(void)
+PU_TEST(replace_object_with_string)
 {
     struct selva_string *key_name_1 = selva_string_create("a.b.c", 5, 0);
     struct selva_string *key_name_2 = selva_string_create("a.b", 3, 0);
@@ -278,7 +277,7 @@ static char * replace_object_with_string(void)
     return NULL;
 }
 
-static char * delete_object(void)
+PU_TEST(delete_object)
 {
     /*
      * Create:
@@ -356,7 +355,7 @@ static char * delete_object(void)
     return NULL;
 }
 
-static char * delete_nested_key(void)
+PU_TEST(delete_nested_key)
 {
     /*
      * Create:
@@ -501,7 +500,7 @@ static char * delete_nested_key(void)
     return NULL;
 }
 
-static char *string_array(void)
+PU_TEST(string_array)
 {
     int err;
     struct selva_string *key_name = selva_string_create("x", 1, 0);
@@ -546,7 +545,8 @@ static size_t ptr_len(void *p __unused) {
     return 42;
 }
 
-static char *pointer_values(void) {
+PU_TEST(pointer_values)
+{
     int err;
     struct SelvaObjectPointerOpts opts = {
         .ptr_type_id = 1,
@@ -560,6 +560,8 @@ static char *pointer_values(void) {
         .text = "hello",
         .value = 10,
     };
+
+    freed = 0;
 
     err = SelvaObject_SetPointerStr(root_obj, "mykey", 5, &d, &opts);
     pu_assert_err_equal("no error when setting a pointer", err, 0);
@@ -581,7 +583,7 @@ static char *pointer_values(void) {
     return NULL;
 }
 
-static char * set_invalid_array_key_1(void)
+PU_SKIP(set_invalid_array_key_1)
 {
     const char key_name_str[] = "x]";
     const size_t key_name_len = sizeof(key_name_str) - 1;
@@ -593,7 +595,7 @@ static char * set_invalid_array_key_1(void)
     return NULL;
 }
 
-static char * set_invalid_array_key_2(void)
+PU_SKIP(set_invalid_array_key_2)
 {
     const char key_name_str[] = "x.y]";
     const size_t key_name_len = sizeof(key_name_str) - 1;
@@ -603,22 +605,4 @@ static char * set_invalid_array_key_2(void)
     pu_assert_err_equal("fail", err, SELVA_EINVAL);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(setget_double, PU_RUN);
-    pu_def_test(setget_longlong, PU_RUN);
-    pu_def_test(setget_string, PU_RUN);
-    pu_def_test(delete_key_1, PU_RUN);
-    pu_def_test(delete_key_2, PU_RUN);
-    pu_def_test(nested_object, PU_RUN);
-    pu_def_test(replace_string_with_object, PU_RUN);
-    pu_def_test(replace_object_with_string, PU_RUN);
-    pu_def_test(delete_object, PU_RUN);
-    pu_def_test(delete_nested_key, PU_RUN);
-    pu_def_test(string_array, PU_RUN);
-    pu_def_test(pointer_values, PU_RUN);
-    pu_def_test(set_invalid_array_key_1, PU_SKIP);
-    pu_def_test(set_invalid_array_key_2, PU_RUN);
 }

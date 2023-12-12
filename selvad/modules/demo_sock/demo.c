@@ -45,7 +45,7 @@ static int new_server(int port)
     return sockfd;
 }
 
-void on_data(struct event *event, void *arg __unused)
+static void on_data(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     char buf[128];
@@ -69,7 +69,7 @@ void on_data(struct event *event, void *arg __unused)
     }
 }
 
-void on_connection(struct event *event, void *arg __unused)
+static void on_connection(struct event *event, void *arg __unused)
 {
     const int fd = event->fd;
     int c = sizeof(struct sockaddr_in);
@@ -93,7 +93,7 @@ IMPORT() {
     evl_import_event_loop();
 }
 
-__constructor void init(void)
+__constructor static void init(void)
 {
     evl_module_init("demo_sock");
 

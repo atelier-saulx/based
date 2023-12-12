@@ -284,12 +284,14 @@ Selva_SubscriptionMarkerId Selva_GenSubscriptionMarkerId(Selva_SubscriptionMarke
 /**
  * Init subscriptions data structures in the hierarchy.
  */
-void SelvaSubscriptions_InitHierarchy(struct SelvaHierarchy *hierarchy);
+void SelvaSubscriptions_InitHierarchy(struct SelvaHierarchy *hierarchy)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Destroy all data structures of the subscriptions subsystem and cancel all deferred events.
  */
-void SelvaSubscriptions_DestroyAll(struct SelvaHierarchy *hierarchy);
+void SelvaSubscriptions_DestroyAll(struct SelvaHierarchy *hierarchy)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Refresh a marker by id.
@@ -339,8 +341,9 @@ int SelvaSubscriptions_AddAliasMarker(
         struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
-        struct selva_string *alias_name,
-        Selva_NodeId node_id);
+        const struct selva_string *alias_name,
+        Selva_NodeId node_id)
+    __attribute__((access(read_only, 4), access(read_only, 5)));
 
 /**
  * Add one-shot marker for one or more node accessors that were not found.
@@ -351,7 +354,8 @@ int SelvaSubscriptions_AddMissingMarker(
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
         struct selva_string **accessors,
-        size_t nr_accessors);
+        size_t nr_accessors)
+    __attribute__((access(read_only, 4, 5)));
 
 /**
  * Add a subscription marker with a callback.
@@ -371,7 +375,7 @@ int SelvaSubscriptions_AddCallbackMarker(
         Selva_SubscriptionMarkerAction *callback,
         void *owner_ctx
     )
-    __attribute__((access(read_only, 7), access(read_only, 8), access(read_only, 9)));
+    __attribute__((access(read_only, 5), access(read_only, 7), access(read_only, 8), access(read_only, 9), access(none, 11)));
 
 /**
  * Get a pointer to a subscription marker by subscription and marker id.
@@ -480,12 +484,12 @@ void SelvaSubscriptions_SendDeferredEvents(struct SelvaHierarchy *hierarchy);
 typedef union {
     struct Selva_Subscription *sub;
     void *p;
-} Selva_SubscriptionReply_t __attribute__((__transparent_union__));
+} Selva_SubscriptionReply_t __transparent_union;
 
 typedef union {
     struct Selva_SubscriptionMarker *marker;
     void *p;
-} Selva_SubscriptionMarkerReply_t __attribute__((__transparent_union__));
+} Selva_SubscriptionMarkerReply_t __transparent_union;
 
 void SelvaSubscriptions_ReplyWithSubscription(struct selva_server_response_out *resp, Selva_SubscriptionReply_t sp);
 void SelvaSubscriptions_ReplyWithMarker(struct selva_server_response_out *resp, Selva_SubscriptionMarkerReply_t mp);

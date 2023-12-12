@@ -41,6 +41,7 @@ typedef void (*evl_event_cb)(struct event *event, void *arg);
 void evl_init(void);
 void evl_deinit(void);
 void evl_start(void);
+void evl_stop(void);
 EVL_EXPORT(int, evl_set_timeout, const struct timespec * restrict timeout, evl_event_cb cb, void *arg);
 
 /**

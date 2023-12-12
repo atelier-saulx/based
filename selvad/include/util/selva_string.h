@@ -95,15 +95,16 @@ struct selva_string *selva_string_createz(const char *in_str, size_t in_len, enu
  *          SELVA_PROTO_EINTYPE if not a compressed string;
  *          SELVA_EINVAL if the string cannot be decompressed.
  */
-int selva_string_decompress(const struct selva_string *s, char *buf)
-    __attribute__((access(write_only, 2)));
+int selva_string_decompress(const struct selva_string * restrict s, char * restrict buf)
+    __attribute__((access(read_only, 1), access(write_only, 2)));
 
 /**
  * Duplicate a string.
  * @param s is a pointer to a selva_string.
  */
 [[nodiscard]]
-struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_string_flags flags);
+struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_string_flags flags)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Truncate the string s to a new length of newlen.
@@ -112,7 +113,8 @@ struct selva_string *selva_string_dup(const struct selva_string *s, enum selva_s
  * @param newlen is the new length of the string.
  * @returns 0 if succeeded; Otherwise an error code.
  */
-int selva_string_truncate(struct selva_string *s, size_t newlen);
+int selva_string_truncate(struct selva_string *s, size_t newlen)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Append str of length len to the string s.
@@ -138,7 +140,7 @@ int selva_string_replace(struct selva_string *s, const char *str, size_t len)
 typedef union {
     struct selva_string *__s;
     void *__p;
-} _selva_string_ptr_t __attribute__((__transparent_union__));
+} _selva_string_ptr_t __transparent_union;
 
 
 /**
@@ -158,26 +160,30 @@ void selva_string_auto_finalize(struct finalizer *finalizer, struct selva_string
  * Get the currently set flags of the string s.
  * @param s is a pointer to a selva_string.
  */
-enum selva_string_flags selva_string_get_flags(const struct selva_string *s);
+enum selva_string_flags selva_string_get_flags(const struct selva_string *s)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Get string length.
  * If the string is compressed then the length returned is the compressed
  * length including any metadata related to the compression algorithm.
  */
-size_t selva_string_get_len(const struct selva_string *s);
+size_t selva_string_get_len(const struct selva_string *s)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Get uncompressed length.
  * The function will return the right size regardless whether the string is
  * actually compressed.
  */
-size_t selva_string_getz_ulen(const struct selva_string *s);
+size_t selva_string_getz_ulen(const struct selva_string *s)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Get compression ratio.
  */
-double selva_string_getz_cratio(const struct selva_string *s);
+double selva_string_getz_cratio(const struct selva_string *s)
+    __attribute__((access(read_only, 1)));
 
 /**
  * Get a pointer to the contained C-string.
@@ -196,7 +202,8 @@ const char *selva_string_to_str(const struct selva_string *s, size_t *len)
  * @param[out] len is a pointer to a variable to store the length of s.
  * @returns Returns a pointer to the C-string if the string is mutable; Otherwise a NULL pointer is returned.
  */
-char *selva_string_to_mstr(struct selva_string *s, size_t *len);
+char *selva_string_to_mstr(struct selva_string *s, size_t *len)
+    __attribute__((access(write_only, 2)));
 
 /**
  * Convert a string into a long long integer.
@@ -235,7 +242,8 @@ int selva_string_to_ldouble(const struct selva_string *s, long double *ld)
  * This function can be called even if the string is immutable.
  * @param s is a pointer to a selva_string.
  */
-void selva_string_freeze(struct selva_string *s);
+void selva_string_freeze(struct selva_string *s)
+    __attribute((access(read_write, 1)));
 
 /**
  * Enable CRC checking for the strings s.
@@ -243,19 +251,22 @@ void selva_string_freeze(struct selva_string *s);
  * If the string is compressed the CRC is computed from the compressed data.
  * @param s is a pointer to a selva_string.
  */
-void selva_string_en_crc(struct selva_string *s);
+void selva_string_en_crc(struct selva_string *s)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Verify the CRC of the string s.
  * If the string is compressed the CRC is computed from the compressed data.
  * @param s is a pointer to a selva_string.
  */
-int selva_string_verify_crc(struct selva_string *s);
+int selva_string_verify_crc(const struct selva_string *s)
+    __attribute((access(read_only, 1)));
 
 /**
  * Get the CRC of the string s.
  */
-uint32_t selva_string_get_crc(struct selva_string *s);
+uint32_t selva_string_get_crc(const struct selva_string *s)
+    __attribute((access(read_only, 1)));
 
 /**
  * Set SELVA_STRING_COMPRESS flag on an existing string.
@@ -266,7 +277,8 @@ uint32_t selva_string_get_crc(struct selva_string *s);
  * the selva_string compression utility will recognize properly. Usually
  * meaning that the data was originally compressed using selva_string.
  */
-void selva_string_set_compress(struct selva_string *s);
+void selva_string_set_compress(struct selva_string *s)
+    __attribute__((access(read_write, 1)));
 
 /**
  * Compare two strings.
@@ -280,15 +292,15 @@ void selva_string_set_compress(struct selva_string *s);
 int selva_string_cmp(const struct selva_string *a, const struct selva_string *b)
     __attribute__((access(read_only, 1), access(read_only, 2)));
 
-int selva_string_endswith(struct selva_string *s, const char *suffix)
-    __attribute__((access(read_only, 2)));
+int selva_string_endswith(const struct selva_string *s, const char *suffix)
+    __attribute__((access(read_only, 1), access(read_only, 2)));
 
 /**
  * Find a substring sub_str in s.
  * This function works correctly with compressed strings.
  */
-ssize_t selva_string_strstr(struct selva_string *s, const char *sub_str, size_t sub_len)
-    __attribute__((access(read_only, 2, 3)));
+ssize_t selva_string_strstr(const struct selva_string *s, const char *sub_str, size_t sub_len)
+    __attribute__((access(read_only, 1), access(read_only, 2, 3)));
 
 #define TO_STR_1(_var) \
     size_t _var##_len; \

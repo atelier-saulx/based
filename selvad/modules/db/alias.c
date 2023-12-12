@@ -104,7 +104,7 @@ void delete_all_node_aliases(SelvaHierarchy *hierarchy, struct SelvaObject *node
     }
 }
 
-void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, struct selva_string *ref)
+void update_alias(SelvaHierarchy *hierarchy, const Selva_NodeId node_id, const struct selva_string *ref)
 {
     struct SelvaObject *aliases = GET_STATIC_SELVA_OBJECT(&hierarchy->aliases);
     TO_STR(ref);

@@ -144,14 +144,10 @@ struct FindCommand_Args {
     SelvaFind_ProcessObject process_obj;
 };
 
-/*
- * TODO Rename these functions.
- */
-
 /**
  * See skip in FindCommand_Args.
  */
-static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
+static inline int find_process_skip(struct FindCommand_Args *args)
 {
     const int take = (args->skip > 0) ? !args->skip-- : 1;
 
@@ -161,7 +157,7 @@ static inline int SelvaTraversal_ProcessSkip(struct FindCommand_Args *args)
 /**
  * See offset in FindCommand_Args.
  */
-static inline int SelvaTraversal_ProcessOffset(struct FindCommand_Args *args)
+static inline int find_process_offset(struct FindCommand_Args *args)
 {
     const int take = (args->offset > 0) ? !args->offset-- : 1;
 
@@ -175,5 +171,8 @@ int find_parse_fields(
         struct selva_string ***inherit_fields_out,
         size_t *nr_inherit_fields_out,
         struct selva_string **excluded_fields_out
-);
-int find_fields_contains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len);
+)
+    __attribute__((access(read_only, 2), access(write_only, 3), access(write_only, 4), access(write_only, 5), access(write_only, 6)));
+
+int find_fields_contains(struct SelvaObject *fields, const char *field_name_str, size_t field_name_len)
+    __attribute__((access(read_only, 1), access(read_only, 2, 3)));

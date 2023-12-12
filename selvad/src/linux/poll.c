@@ -9,8 +9,8 @@
 #include <unistd.h>
 #include "selva_error.h"
 #include "event_loop.h"
-#include "../event_loop_state.h"
-#include "poll.h"
+#include "../evl_state.h"
+#include "../evl_poll.h"
 
 #ifndef USE_EPOLL
 #error "I only support epoll"

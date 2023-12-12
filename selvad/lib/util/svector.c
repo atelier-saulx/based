@@ -77,15 +77,6 @@ static void *rbtree_insert(SVector *vec, void *p) {
     assert(p);
 
     n = mempool_get(&vec->vec_rbmempool);
-    if (!n) {
-        /*
-         * TODO We shouldn't abort here but there is currently no safe way
-         * to fail.
-         */
-        fprintf(stderr, "%s: ENOMEM while allocating from a pool\n", __FILE__);
-        abort();
-    }
-
     n->compar = vec->vec_compar;
     n->p = p;
     res = RB_INSERT(SVector_rbtree, &vec->vec_rbhead, n);

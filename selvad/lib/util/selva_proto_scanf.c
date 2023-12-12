@@ -17,6 +17,10 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 
+/* TODO We should just fix the warns */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
+
 /**
  * Supported final types.
  */
@@ -188,7 +192,7 @@ static const char *parse_specifier(struct placeholder_state *ps, const char *fmt
             if (ps->length == LENGTH_none) {
                 ps->length = LENGTH_h;
             } else if (ps->length == LENGTH_h) {
-                ps->length == LENGTH_hh;
+                ps->length = LENGTH_hh;
             } else {
                 return NULL;
             }
@@ -669,3 +673,5 @@ __constructor static void init_selva_proto_scanf(void)
         abort();
     }
 }
+
+#pragma GCC diagnostic pop

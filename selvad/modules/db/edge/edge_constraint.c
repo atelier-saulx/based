@@ -265,7 +265,7 @@ void EdgeConstraint_Save(struct selva_io *io, struct EdgeFieldConstraints *data)
     SelvaObjectTypeSave(io, get_dyn_constraints(data), NULL);
 }
 
-void Edge_AddConstraintCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void Edge_AddConstraintCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     __auto_finalizer struct finalizer fin;
     SelvaHierarchy *hierarchy = main_hierarchy;
     struct selva_string **argv;
@@ -335,7 +335,7 @@ void Edge_AddConstraintCommand(struct selva_server_response_out *resp, const voi
     }
 }
 
-void Edge_ListConstraintsCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void Edge_ListConstraintsCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     int err;
 

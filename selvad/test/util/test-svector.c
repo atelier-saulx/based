@@ -10,7 +10,6 @@
 #include <string.h>
 #include "jemalloc.h"
 #include "util/svector.h"
-#include "cdefs.h"
 
 struct data {
     int id;
@@ -26,12 +25,12 @@ static int compar(const void ** restrict ap, const void ** restrict bp)
     return a->id - b->id;
 }
 
-static void setup(void)
+void setup(void)
 {
     memset(&vec, 0, sizeof(struct SVector));
 }
 
-static void teardown(void)
+void teardown(void)
 {
     if (vec.vec_mode == SVECTOR_MODE_ARRAY) {
 #if 0
@@ -41,7 +40,7 @@ static void teardown(void)
     }
 }
 
-static char * test_init_works(void)
+PU_TEST(test_init_works)
 {
     SVector_Init(&vec, 50, compar);
 
@@ -53,7 +52,7 @@ static char * test_init_works(void)
     return NULL;
 }
 
-static char * test_init_works_huge(void)
+PU_TEST(test_init_works_huge)
 {
     SVector_Init(&vec, 1000, compar);
 
@@ -64,7 +63,7 @@ static char * test_init_works_huge(void)
     return NULL;
 }
 
-static char * test_init_lazy_alloc(void)
+PU_TEST(test_init_lazy_alloc)
 {
     SVector_Init(&vec, 0, compar);
 
@@ -76,7 +75,7 @@ static char * test_init_lazy_alloc(void)
     return NULL;
 }
 
-static char * test_can_destroy(void)
+PU_TEST(test_can_destroy)
 {
     SVector_Init(&vec, 100, compar);
 
@@ -87,7 +86,7 @@ static char * test_can_destroy(void)
     return NULL;
 }
 
-static char * test_insert_one(void)
+PU_TEST(test_insert_one)
 {
     struct data el1 = {
         .id = 10,
@@ -102,7 +101,7 @@ static char * test_insert_one(void)
     return NULL;
 }
 
-static char * test_insert_one_fast(void)
+PU_TEST(test_insert_one_fast)
 {
     struct data el1 = {
         .id = 10,
@@ -117,7 +116,7 @@ static char * test_insert_one_fast(void)
     return NULL;
 }
 
-static char * test_insert_one_lazy_alloc(void)
+PU_TEST(test_insert_one_lazy_alloc)
 {
     struct data el1 = {
         .id = 10,
@@ -133,7 +132,7 @@ static char * test_insert_one_lazy_alloc(void)
     return NULL;
 }
 
-static char * test_insert_two_desc(void)
+PU_TEST(test_insert_two_desc)
 {
     struct data el1 = {
         .id = 10,
@@ -153,7 +152,7 @@ static char * test_insert_two_desc(void)
     return NULL;
 }
 
-static char * test_insert_many(void)
+PU_TEST(test_insert_many)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -178,7 +177,7 @@ static char * test_insert_many(void)
     return NULL;
 }
 
-static char * test_insertFast_lazy_alloc(void)
+PU_TEST(test_insertFast_lazy_alloc)
 {
     struct data el1 = {
         .id = 10,
@@ -195,7 +194,7 @@ static char * test_insertFast_lazy_alloc(void)
     return NULL;
 }
 
-static char * test_insertFast_many(void)
+PU_TEST(test_insertFast_many)
 {
     struct data el[] = {
         { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 }, { 232 },
@@ -267,7 +266,7 @@ static char * test_insertFast_many(void)
     return NULL;
 }
 
-static char * test_insertFast_dedup(void)
+PU_TEST(test_insertFast_dedup)
 {
     struct data el1 = {
         .id = 10,
@@ -286,7 +285,7 @@ static char * test_insertFast_dedup(void)
     return NULL;
 }
 
-static char * test_mixed_insertFast_and_Remove(void)
+PU_TEST(test_mixed_insertFast_and_Remove)
 {
     struct data el[] = {
         { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 }, { 232 },
@@ -364,7 +363,7 @@ static char * test_mixed_insertFast_and_Remove(void)
     return NULL;
 }
 
-static char * test_insert_no_compar(void)
+PU_TEST(test_insert_no_compar)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -381,7 +380,7 @@ static char * test_insert_no_compar(void)
     return NULL;
 }
 
-static char * test_insert_setIndex(void)
+PU_TEST(test_insert_setIndex)
 {
     struct data el[] = { { 1 } };
 
@@ -393,7 +392,7 @@ static char * test_insert_setIndex(void)
     return NULL;
 }
 
-static char * test_search_index_unordered(void)
+PU_TEST(test_search_index_unordered)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -412,7 +411,7 @@ static char * test_search_index_unordered(void)
     return NULL;
 }
 
-static char * test_search_index_ordered(void)
+PU_TEST(test_search_index_ordered)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -434,7 +433,7 @@ static char * test_search_index_ordered(void)
     return NULL;
 }
 
-static char * test_search(void)
+PU_TEST(test_search)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -451,7 +450,7 @@ static char * test_search(void)
     return NULL;
 }
 
-static char * test_remove_by_index(void)
+PU_TEST(test_remove_by_index)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -476,7 +475,7 @@ static char * test_remove_by_index(void)
     return NULL;
 }
 
-static char * test_remove_one(void)
+PU_TEST(test_remove_one)
 {
     struct data el1 = {
         .id = 10,
@@ -491,7 +490,7 @@ static char * test_remove_one(void)
     return NULL;
 }
 
-static char * test_remove_one_compound_literal(void)
+PU_TEST(test_remove_one_compound_literal)
 {
     struct data el1 = {
         .id = 10,
@@ -507,7 +506,7 @@ static char * test_remove_one_compound_literal(void)
     return NULL;
 }
 
-static char * test_remove_last(void)
+PU_TEST(test_remove_last)
 {
     struct data el1 = {
         .id = 1,
@@ -527,7 +526,7 @@ static char * test_remove_last(void)
     return NULL;
 }
 
-static char * test_remove_first(void)
+PU_TEST(test_remove_first)
 {
     struct data el1 = {
         .id = 1,
@@ -547,7 +546,7 @@ static char * test_remove_first(void)
     return NULL;
 }
 
-static char * test_remove_middle(void)
+PU_TEST(test_remove_middle)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -565,7 +564,7 @@ static char * test_remove_middle(void)
     return NULL;
 }
 
-static char * test_remove_all(void)
+PU_TEST(test_remove_all)
 {
     struct data el[] = { { 1 }, { 5 }, { 15 }, { 800 }, { 3 }, { 300 }, { 10 }, { 20 } };
 
@@ -589,7 +588,7 @@ static char * test_remove_all(void)
     return NULL;
 }
 
-static char * test_peek(void)
+PU_TEST(test_peek)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
     int *v;
@@ -618,7 +617,7 @@ static char * test_peek(void)
     return NULL;
 }
 
-static char * test_pop(void)
+PU_TEST(test_pop)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -638,7 +637,7 @@ static char * test_pop(void)
     return NULL;
 }
 
-static char * test_shift(void)
+PU_TEST(test_shift)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -659,7 +658,7 @@ static char * test_shift(void)
     return NULL;
 }
 
-static char * test_shift_reset(void)
+PU_TEST(test_shift_reset)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 }, { 4 } };
 
@@ -680,7 +679,7 @@ static char * test_shift_reset(void)
     return NULL;
 }
 
-static char * test_foreach_small(void)
+PU_TEST(test_foreach_small)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -701,7 +700,7 @@ static char * test_foreach_small(void)
     return NULL;
 }
 
-static char * test_foreach_large(void)
+PU_TEST(test_foreach_large)
 {
     struct data el[] = {
         { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, { 8 }, { 9 }, { 10 }, { 11 }, { 12 }, { 13 }, { 14 }, { 15 }, { 16 }, { 17 }, { 18 }, { 19 }, { 20 }, { 21 }, { 22 }, { 23 }, { 24 }, { 25 }, { 26 }, { 27 }, { 28 }, { 29 }, { 30 }, { 31 }, { 32 }, { 33 }, { 34 }, { 35 }, { 36 }, { 37 }, { 38 }, { 39 }, { 40 }, { 41 }, { 42 }, { 43 }, { 44 }, { 45 }, { 46 }, { 47 }, { 48 }, { 49 }, { 50 }, { 51 }, { 52 }, { 53 }, { 54 }, { 55 }, { 56 }, { 57 }, { 58 }, { 59 }, { 60 }, { 61 }, { 62 }, { 63 }, { 64 }, { 65 }, { 66 }, { 67 }, { 68 }, { 69 }, { 70 }, { 71 }, { 72 }, { 73 }, { 74 }, { 75 }, { 76 }, { 77 }, { 78 }, { 79 }, { 80 }, { 81 }, { 82 }, { 83 }, { 84 }, { 85 }, { 86 }, { 87 }, { 88 }, { 89 }, { 90 }, { 91 }, { 92 }, { 93 }, { 94 }, { 95 }, { 96 }, { 97 }, { 98 }, { 99 }, { 100 }, { 101 }, { 102 }, { 103 }, { 104 }, { 105 }, { 106 }, { 107 }, { 108 }, { 109 }, { 110 }, { 111 }, { 112 }, { 113 }, { 114 }, { 115 }, { 116 }, { 117 }, { 118 }, { 119 }, { 120 }, { 121 }, { 122 }, { 123 }, { 124 }, { 125 }, { 126 }, { 127 }, { 128 }, { 129 }, { 130 }, { 131 }, { 132 }, { 133 }, { 134 }, { 135 }, { 136 }, { 137 }, { 138 }, { 139 }, { 140 }, { 141 }, { 142 }, { 143 }, { 144 }, { 145 }, { 146 }, { 147 }, { 148 }, { 149 }, { 150 } };
@@ -724,7 +723,7 @@ static char * test_foreach_large(void)
     return NULL;
 }
 
-static char * test_foreach_large_fast_insert(void)
+PU_TEST(test_foreach_large_fast_insert)
 {
     struct data el[] = {
         { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, { 8 }, { 9 }, { 10 }, { 11 }, { 12 }, { 13 }, { 14 }, { 15 }, { 16 }, { 17 }, { 18 }, { 19 }, { 20 }, { 21 }, { 22 }, { 23 }, { 24 }, { 25 }, { 26 }, { 27 }, { 28 }, { 29 }, { 30 }, { 31 }, { 32 }, { 33 }, { 34 }, { 35 }, { 36 }, { 37 }, { 38 }, { 39 }, { 40 }, { 41 }, { 42 }, { 43 }, { 44 }, { 45 }, { 46 }, { 47 }, { 48 }, { 49 }, { 50 }, { 51 }, { 52 }, { 53 }, { 54 }, { 55 }, { 56 }, { 57 }, { 58 }, { 59 }, { 60 }, { 61 }, { 62 }, { 63 }, { 64 }, { 65 }, { 66 }, { 67 }, { 68 }, { 69 }, { 70 }, { 71 }, { 72 }, { 73 }, { 74 }, { 75 }, { 76 }, { 77 }, { 78 }, { 79 }, { 80 }, { 81 }, { 82 }, { 83 }, { 84 }, { 85 }, { 86 }, { 87 }, { 88 }, { 89 }, { 90 }, { 91 }, { 92 }, { 93 }, { 94 }, { 95 }, { 96 }, { 97 }, { 98 }, { 99 }, { 100 }, { 101 }, { 102 }, { 103 }, { 104 }, { 105 }, { 106 }, { 107 }, { 108 }, { 109 }, { 110 }, { 111 }, { 112 }, { 113 }, { 114 }, { 115 }, { 116 }, { 117 }, { 118 }, { 119 }, { 120 }, { 121 }, { 122 }, { 123 }, { 124 }, { 125 }, { 126 }, { 127 }, { 128 }, { 129 }, { 130 }, { 131 }, { 132 }, { 133 }, { 134 }, { 135 }, { 136 }, { 137 }, { 138 }, { 139 }, { 140 }, { 141 }, { 142 }, { 143 }, { 144 }, { 145 }, { 146 }, { 147 }, { 148 }, { 149 }, { 150 } };
@@ -747,7 +746,7 @@ static char * test_foreach_large_fast_insert(void)
     return NULL;
 }
 
-static char * test_foreach_extra_large(void)
+PU_TEST(test_foreach_extra_large)
 {
     struct data el[100000];
     size_t i = 0;
@@ -776,7 +775,7 @@ static char * test_foreach_extra_large(void)
     return NULL;
 }
 
-static char * test_get_index(void)
+PU_TEST(test_get_index)
 {
     struct data el[] = { { 1 }, { 2 }, { 3 } };
 
@@ -792,50 +791,11 @@ static char * test_get_index(void)
     return NULL;
 }
 
-static char * test_sizeof_ctrl(void)
+PU_TEST(test_sizeof_ctrl)
 {
     pu_test_description("Make sure the SVector size doesn't accidentally change when we make changes");
 
     pu_assert_equal("sizeof the control struct", sizeof(SVector), 48);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_init_works, PU_RUN);
-    pu_def_test(test_init_works_huge, PU_RUN);
-    pu_def_test(test_init_lazy_alloc, PU_RUN);
-    pu_def_test(test_can_destroy, PU_RUN);
-    pu_def_test(test_insert_one, PU_RUN);
-    pu_def_test(test_insert_one_fast, PU_RUN);
-    pu_def_test(test_insert_one_lazy_alloc, PU_RUN);
-    pu_def_test(test_insert_two_desc, PU_RUN);
-    pu_def_test(test_insert_many, PU_RUN);
-    pu_def_test(test_insertFast_lazy_alloc, PU_RUN);
-    pu_def_test(test_insertFast_many, PU_RUN);
-    pu_def_test(test_insertFast_dedup, PU_RUN);
-    pu_def_test(test_mixed_insertFast_and_Remove, PU_RUN);
-    pu_def_test(test_insert_no_compar, PU_RUN);
-    pu_def_test(test_insert_setIndex, PU_RUN);
-    pu_def_test(test_search_index_unordered, PU_RUN);
-    pu_def_test(test_search_index_ordered, PU_RUN);
-    pu_def_test(test_search, PU_RUN);
-    pu_def_test(test_remove_by_index, PU_RUN);
-    pu_def_test(test_remove_one, PU_RUN);
-    pu_def_test(test_remove_one_compound_literal, PU_RUN);
-    pu_def_test(test_remove_last, PU_RUN);
-    pu_def_test(test_remove_first, PU_RUN);
-    pu_def_test(test_remove_middle, PU_RUN);
-    pu_def_test(test_remove_all, PU_RUN);
-    pu_def_test(test_peek, PU_RUN);
-    pu_def_test(test_pop, PU_RUN);
-    pu_def_test(test_shift, PU_RUN);
-    pu_def_test(test_shift_reset, PU_RUN);
-    pu_def_test(test_foreach_small, PU_RUN);
-    pu_def_test(test_foreach_large, PU_RUN);
-    pu_def_test(test_foreach_large_fast_insert, PU_RUN);
-    pu_def_test(test_foreach_extra_large, PU_RUN);
-    pu_def_test(test_get_index, PU_RUN);
-    pu_def_test(test_sizeof_ctrl, PU_RUN);
 }

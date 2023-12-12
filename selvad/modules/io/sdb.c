@@ -26,7 +26,7 @@ struct selva_io_zbuf {
     size_t block_buf_i; /*!< Index into block_buf. */
     size_t compressed_buf_size; /*!< Size of compressed_buf. */
     char block_buf[ZBLOCK_BUF_SIZE]; /*!< Buffer for current RW block. */
-    char compressed_buf[]; /*!< Buffer for compressed block_buf. */
+    char compressed_buf[] __counted_by(compressed_buf_size); /*!< Buffer for compressed block_buf. */
 };
 
 extern const char * const selva_db_version;

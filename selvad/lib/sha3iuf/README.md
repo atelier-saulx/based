@@ -1,3 +1,8 @@
+<!--
+Copyright (c) 2020 brainhub
+
+SPDX-License-Identifier: MIT
+-->
 # C implementation of SHA-3 and Keccak with Init/Update/Finalize API
 
 The purpose of this project is:

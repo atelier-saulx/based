@@ -25,6 +25,7 @@ ifeq ($(uname_S),Darwin) # Assume x86-64 macOS
 	JEMALLOC_CONFIG += --with-lg-vaddr=48
 	# TODO Might be unnecessary
 	JEMALLOC_SYS_WITH_LG_VADDR := 48
+	JEMALLOC_CFLAGS += -Wno-typedef-redefinition -Wno-frame-address
 endif
 ifndef SELVA_ARCH
 $(error SELVA_ARCH is not set)

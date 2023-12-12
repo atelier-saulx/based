@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
 
 #include <punit.h>
 #include <tgmath.h>
-#include "cdefs.h"
 #include "util/poptop.h"
 
 struct my_data {
@@ -15,17 +14,17 @@ struct my_data {
 
 struct poptop l;
 
-static void setup(void)
+void setup(void)
 {
     memset(&l, 0, sizeof(l));
 }
 
-static void teardown(void)
+void teardown(void)
 {
     poptop_deinit(&l);
 }
 
-static char * test_add_rm(void)
+PU_TEST(test_add_rm)
 {
     const size_t max_size = 10;
     const float initial_cut = 0.0;
@@ -66,7 +65,7 @@ static char * test_add_rm(void)
     return NULL;
 }
 
-static char * test_add_too_many(void)
+PU_TEST(test_add_too_many)
 {
     int err;
     struct my_data d[] = {
@@ -123,7 +122,7 @@ static char * test_add_too_many(void)
     return NULL;
 }
 
-static char * test_foreach(void)
+PU_TEST(test_foreach)
 {
     int err;
     struct my_data d[] = {
@@ -207,7 +206,7 @@ static char * test_foreach(void)
     return NULL;
 }
 
-static char * test_maintenance(void)
+PU_TEST(test_maintenance)
 {
     int err;
     struct my_data d[] = {
@@ -264,12 +263,4 @@ static char * test_maintenance(void)
     pu_assert_equal("dropped", drop_count, 5);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_add_rm, PU_RUN);
-    pu_def_test(test_add_too_many, PU_RUN);
-    pu_def_test(test_foreach, PU_RUN);
-    pu_def_test(test_maintenance, PU_RUN);
 }

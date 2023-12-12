@@ -17,7 +17,7 @@ int Edge_GetFieldEdgeMetadata(struct EdgeField *edge_field, const Selva_NodeId d
     return 0;
 }
 
-size_t Edge_Refcount(struct SelvaHierarchyNode *node) {
+size_t Edge_Refcount(const struct SelvaHierarchyNode *node) {
     return 0;
 }
 

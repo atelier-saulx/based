@@ -505,7 +505,7 @@ enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t 
     return RPN_ERR_OK;
 }
 
-enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, struct selva_string *a[], size_t n) {
+enum rpn_error rpn_set_string_regs(struct rpn_ctx *ctx, size_t n, struct selva_string *a[n]) {
     enum rpn_error err = RPN_ERR_OK;
 
     for (size_t i = 0; i < n; i++) {
@@ -555,7 +555,7 @@ enum rpn_error rpn_set_regs(struct rpn_ctx *ctx, const char *regs_buf, size_t re
     return err;
 }
 
-enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, struct selva_string *s) {
+enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct selva_string *s) {
     TO_STR(s);
     const size_t size = s_len + 1;
     char *arg;
@@ -2086,6 +2086,8 @@ static enum rpn_error cond_jump(struct rpn_ctx *ctx, const char *s, const rpn_to
 }
 
 static enum rpn_error rpn(struct rpn_ctx *ctx, const struct rpn_expression *expr) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wpointer-arith"
     const rpn_token *it = expr->expression;
     const char *s;
 
@@ -2161,6 +2163,7 @@ end:
     }
 
     return RPN_ERR_OK;
+#pragma GCC diagnostic pop
 }
 
 enum rpn_error rpn_bool(struct rpn_ctx *ctx, const struct rpn_expression *expr, int *out) {

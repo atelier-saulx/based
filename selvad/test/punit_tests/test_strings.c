@@ -1,21 +1,24 @@
-// Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
-//
-// SPDX-License-Identifier: BSD-2-Clause
+/*
+ * Copyright (c) 2023 SAULX
+ * Copyright (c) 2012, Ninjaware Oy, Olli Vanhoja <olli.vanhoja@ninjaware.fi>
+ *
+ * SPDX-License-Identifier: BSD-2-Clause
+ */
 
 /* file test_strings.c */
 
 #include <stdio.h>
 #include "punit.h"
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
 }
 
-static char * test_ok(void)
+PU_TEST(test_ok)
 {
     const char *str = "left string";
 
@@ -23,16 +26,10 @@ static char * test_ok(void)
     return 0;
 }
 
-static char * test_fail(void)
+PU_TEST(test_fail)
 {
     const char *str = "left string";
 
     pu_assert_str_equal("Strings are equal", str, "right string");
     return 0;
-}
-
-void all_tests(void)
-{
-    pu_run_test(test_ok);
-    pu_run_test(test_fail);
 }

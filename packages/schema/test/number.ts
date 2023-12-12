@@ -1,14 +1,6 @@
 import test from 'ava'
-import {
-  ArgsClass,
-  BasedSchema,
-  BasedSchemaCollectProps,
-  BasedSetTarget,
-  setWalker,
-} from '../src/index'
-import { ParseError } from '../src/error'
+import { BasedSchema, setWalker } from '../src/index'
 import { resultCollect, errorCollect } from './utils'
-type NumberTypes = 'number' | 'timestamp' | 'integer'
 
 const schema: BasedSchema = {
   types: {

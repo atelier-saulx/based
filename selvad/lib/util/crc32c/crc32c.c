@@ -23,8 +23,8 @@
 
 #include <stddef.h>
 #include <stdint.h>
-
 #include "crc32c_table.h"
+#include "util/crc32c.h"
 
 #if defined(__x86_64__)
 

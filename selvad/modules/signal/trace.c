@@ -12,10 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include "trace.h"
 
-/* gcc trace.c -g3 -rdynamic */
-
-void print_trace(void *pc)
+static void print_trace(void *pc)
 {
     void *array[10];
     void **ap = array;
@@ -37,7 +36,7 @@ void print_trace(void *pc)
     backtrace_symbols_fd(ap, size, fileno(stderr));
 }
 
-void *get_pc(ucontext_t *ucontext)
+static void *get_pc(ucontext_t *ucontext)
 {
 #if __APPLE__ && defined(__arm64__)
     return (void*)arm_thread_state64_get_pc(ucontext->uc_mcontext->__ss);
@@ -52,7 +51,7 @@ void *get_pc(ucontext_t *ucontext)
 #endif
 }
 
-void sig_segv_handler(int sig, siginfo_t *info, void *_ucontext)
+static void sig_segv_handler(int sig, siginfo_t *info, void *_ucontext)
 {
     ucontext_t *ucontext = (ucontext_t*)_ucontext;
     void *pc = get_pc(ucontext);

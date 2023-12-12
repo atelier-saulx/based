@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 SAULX
+ * Copyright (c) 2022-2023 SAULX
  *
  * SPDX-License-Identifier: MIT
  */
@@ -10,16 +10,16 @@
 
 static struct bitmap *bmap;
 
-static void setup(void)
+void setup(void)
 {
 }
 
-static void teardown(void)
+void teardown(void)
 {
     free(bmap);
 }
 
-static char * test_bmap_single(void)
+PU_TEST(test_bmap_single)
 {
     const size_t bsize = BITMAP_ALLOC_SIZE(1);
     pu_assert("size is greater than the struct size", bsize > sizeof(struct bitmap));
@@ -39,7 +39,7 @@ static char * test_bmap_single(void)
     return NULL;
 }
 
-static char * test_bmap_clear(void)
+PU_TEST(test_bmap_clear)
 {
     const size_t bsize = BITMAP_ALLOC_SIZE(320);
 
@@ -61,7 +61,7 @@ static char * test_bmap_clear(void)
     return NULL;
 }
 
-static char * test_bmap_erase(void)
+PU_TEST(test_bmap_erase)
 {
     const size_t bsize = BITMAP_ALLOC_SIZE(320);
 
@@ -84,7 +84,7 @@ static char * test_bmap_erase(void)
     return NULL;
 }
 
-static char * test_bmap(void)
+PU_TEST(test_bmap)
 {
     const size_t bsize = BITMAP_ALLOC_SIZE(320);
 
@@ -136,12 +136,4 @@ static char * test_bmap(void)
     pu_assert_equal("popcount ok", bitmap_popcount(bmap), 9);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_bmap_single, PU_RUN);
-    pu_def_test(test_bmap_clear, PU_RUN);
-    pu_def_test(test_bmap_erase, PU_RUN);
-    pu_def_test(test_bmap, PU_RUN);
 }

@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
-#include "cdefs.h"
 #include "util/selva_string.h"
 #include "selva_set.h"
 #include "../../tunables.h"
@@ -18,28 +17,28 @@ static struct rpn_ctx *ctx;
 static char **reg;
 static const int nr_reg = 10;
 
-static void setup(void)
+void setup(void)
 {
     reg = selva_calloc(nr_reg, sizeof(char *));
     ctx = rpn_init(nr_reg);
     expr = NULL;
 }
 
-static void teardown(void)
+void teardown(void)
 {
     selva_free(reg);
     rpn_destroy(ctx);
     rpn_destroy_expression(expr);
 }
 
-static char * test_init_works(void)
+PU_TEST(test_init_works)
 {
     pu_assert_equal("nr_reg is set", ctx->nr_reg, nr_reg);
 
     return NULL;
 }
 
-static char * test_number_valid(void)
+PU_TEST(test_number_valid)
 {
     enum rpn_error err;
     long long res;
@@ -56,7 +55,7 @@ static char * test_number_valid(void)
     return NULL;
 }
 
-static char * test_number_invalid(void)
+PU_TEST(test_number_invalid)
 {
     const char expr_str[] = "#r";
 
@@ -66,7 +65,7 @@ static char * test_number_invalid(void)
     return NULL;
 }
 
-static char * test_operand_pool_overflow(void)
+PU_TEST(test_operand_pool_overflow)
 {
     const size_t nr_operands = RPN_SMALL_OPERAND_POOL_SIZE + 5;
     char expr_str[3 * nr_operands + 1];
@@ -87,7 +86,7 @@ static char * test_operand_pool_overflow(void)
     return NULL;
 }
 
-static char * test_stack_overflow(void)
+PU_TEST(test_stack_overflow)
 {
     char expr_str[2 * (RPN_MAX_D * 2) + 3];
     int res;
@@ -113,7 +112,7 @@ static char * test_stack_overflow(void)
     return NULL;
 }
 
-static char * test_add(void)
+PU_TEST(test_add)
 {
     enum rpn_error err;
     long long res;
@@ -130,7 +129,7 @@ static char * test_add(void)
     return NULL;
 }
 
-static char * test_add_double(void)
+PU_TEST(test_add_double)
 {
     enum rpn_error err;
     double res;
@@ -147,7 +146,7 @@ static char * test_add_double(void)
     return NULL;
 }
 
-static char * test_mul(void)
+PU_TEST(test_mul)
 {
     enum rpn_error err;
     long long res;
@@ -164,7 +163,7 @@ static char * test_mul(void)
     return NULL;
 }
 
-static char * test_rem(void)
+PU_TEST(test_rem)
 {
     enum rpn_error err;
     long long res;
@@ -181,7 +180,7 @@ static char * test_rem(void)
     return NULL;
 }
 
-static char * test_necessarily_or(void)
+PU_TEST(test_necessarily_or)
 {
     enum rpn_error err;
     long long res;
@@ -221,7 +220,7 @@ static char * test_necessarily_or(void)
     return NULL;
 }
 
-static char * test_necessarily_and(void)
+PU_TEST(test_necessarily_and)
 {
     enum rpn_error err;
     long long res;
@@ -261,7 +260,7 @@ static char * test_necessarily_and(void)
     return NULL;
 }
 
-static char * test_possibly_or(void)
+PU_TEST(test_possibly_or)
 {
     enum rpn_error err;
     long long res;
@@ -301,7 +300,7 @@ static char * test_possibly_or(void)
     return NULL;
 }
 
-static char * test_possibly_and(void)
+PU_TEST(test_possibly_and)
 {
     enum rpn_error err;
     long long res;
@@ -341,7 +340,7 @@ static char * test_possibly_and(void)
     return NULL;
 }
 
-static char * test_ternary(void)
+PU_TEST(test_ternary)
 {
     enum rpn_error err;
     const char expr_str[] = "$3 $2 @1 T";
@@ -373,7 +372,7 @@ static char * test_ternary(void)
     return NULL;
 }
 
-static char * test_range(void)
+PU_TEST(test_range)
 {
     enum rpn_error err;
     long long res;
@@ -409,7 +408,7 @@ static char * test_range(void)
     return NULL;
 }
 
-static char * test_selvaset_inline(void)
+PU_TEST(test_selvaset_inline)
 {
     enum rpn_error err;
     const char expr_str[] = "{\"abc\",\"def\",\"verylongtextisalsoprettynice\",\"this is another one that is fairly long and with spaces\",\"nice\"}";
@@ -445,7 +444,7 @@ static char * test_selvaset_inline(void)
     return NULL;
 }
 
-static char * test_selvaset_union(void)
+PU_TEST(test_selvaset_union)
 {
     enum rpn_error err;
     const char expr_str[] = "{\"a\",\"b\"} {\"c\",\"d\"} z";
@@ -474,7 +473,7 @@ static char * test_selvaset_union(void)
     return NULL;
 }
 
-static char * test_selvaset_empty(void)
+PU_TEST(test_selvaset_empty)
 {
     enum rpn_error err;
     const char expr_str[] = "\"e\" {} a";
@@ -490,7 +489,7 @@ static char * test_selvaset_empty(void)
     return NULL;
 }
 
-static char * test_selvaset_empty_2(void)
+PU_TEST(test_selvaset_empty_2)
 {
     enum rpn_error err;
     const char expr_str[] = "{\"a\"} {\"b\"} #0 P T";
@@ -512,7 +511,7 @@ static char * test_selvaset_empty_2(void)
     return NULL;
 }
 
-static char * test_selvaset_ill(void)
+PU_TEST(test_selvaset_ill)
 {
     const char expr_str1[] = "{\"abc\",\"def\",\"verylongtextisalsoprettynice\",\"this is another one that is fairly long and with spaces\",\"nice\"";
     const char expr_str2[] = "{\"abc\",\"def\",\"verylongtextisalsoprettynice\",\"this is another one that is fairly long and with spaces,\"nice\"}";
@@ -529,7 +528,7 @@ static char * test_selvaset_ill(void)
     return NULL;
 }
 
-static char * test_cond_jump(void)
+PU_TEST(test_cond_jump)
 {
     static const char expr_str[][30] = {
         "#1 #1 A #1 >1  #1 A .1:X",
@@ -582,7 +581,7 @@ static char * test_cond_jump(void)
     return NULL;
 }
 
-static char * test_dup(void)
+PU_TEST(test_dup)
 {
     enum rpn_error err;
     long long res;
@@ -599,7 +598,7 @@ static char * test_dup(void)
     return NULL;
 }
 
-static char * test_swap(void)
+PU_TEST(test_swap)
 {
     enum rpn_error err;
     long long res;
@@ -614,31 +613,4 @@ static char * test_swap(void)
     pu_assert_equal("4 / 2", res, 2);
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_init_works, PU_RUN);
-    pu_def_test(test_number_valid, PU_RUN);
-    pu_def_test(test_number_invalid, PU_RUN);
-    pu_def_test(test_operand_pool_overflow, PU_RUN);
-    pu_def_test(test_stack_overflow, PU_RUN);
-    pu_def_test(test_add, PU_RUN);
-    pu_def_test(test_add_double, PU_RUN);
-    pu_def_test(test_mul, PU_RUN);
-    pu_def_test(test_rem, PU_RUN);
-    pu_def_test(test_range, PU_RUN);
-    pu_def_test(test_necessarily_or, PU_RUN);
-    pu_def_test(test_necessarily_and, PU_RUN);
-    pu_def_test(test_possibly_or, PU_RUN);
-    pu_def_test(test_possibly_and, PU_RUN);
-    pu_def_test(test_ternary, PU_RUN);
-    pu_def_test(test_selvaset_inline, PU_RUN);
-    pu_def_test(test_selvaset_union, PU_RUN);
-    pu_def_test(test_selvaset_empty, PU_RUN);
-    pu_def_test(test_selvaset_empty_2, PU_RUN);
-    pu_def_test(test_selvaset_ill, PU_RUN);
-    pu_def_test(test_cond_jump, PU_RUN);
-    pu_def_test(test_dup, PU_RUN);
-    pu_def_test(test_swap, PU_RUN);
 }

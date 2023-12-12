@@ -70,7 +70,7 @@ static struct EdgeField *get_bck_edge_field(struct EdgeField *src_edge_field, st
  * @param create if set the object will be created if it didn't exist before.
  * @returns A pointer to the metadata object; Otherwise a NULL pointer is returned.
  */
-struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
+static struct SelvaObject *get_field_metadata(struct EdgeField *edge_field, bool create) {
     if (!edge_field->metadata && create) {
         edge_field->metadata = SelvaObject_New();
     }
@@ -227,8 +227,7 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const
     struct EdgeField *src_edge_field;
     int err;
 
-    /* TODO This needs C23 typeof_unqual not yet supported on macOs. */
-    edges = get_edges((struct SelvaHierarchyNode *)src_node);
+    edges = get_edges((typeof_unqual(*src_node) *)src_node);
     if (!edges) {
         return NULL;
     }
@@ -927,8 +926,8 @@ int Edge_DeleteAll(
     return 0;
 }
 
-size_t Edge_Refcount(struct SelvaHierarchyNode *node) {
-    struct SelvaHierarchyMetadata *metadata;
+size_t Edge_Refcount(const struct SelvaHierarchyNode *node) {
+    const struct SelvaHierarchyMetadata *metadata;
     size_t refcount = 0;
 
     metadata = SelvaHierarchy_GetNodeMetadataByPtr(node);

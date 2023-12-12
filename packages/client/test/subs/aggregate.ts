@@ -659,5 +659,5 @@ test.serial('simple max aggregate sub', async (t) => {
     }),
   ])
 
-  await wait(2e3)
+  await wait(3e3)
 })

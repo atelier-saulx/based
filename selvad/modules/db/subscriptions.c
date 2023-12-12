@@ -227,7 +227,7 @@ int SelvaSubscriptions_hasActiveMarkers(const struct SelvaHierarchyMetadata *nod
     return SVector_Size(&node_metadata->sub_markers.vec) > 0;
 }
 
-uint32_t string_hash(uint32_t hash, const char *s) {
+static uint32_t string_hash(uint32_t hash, const char *s) {
     for (; *s; s++) {
         hash = (hash * 33) ^ *s;
     }
@@ -287,7 +287,7 @@ __attribute__((nonnull (2))) static void destroy_marker(SelvaHierarchy *hierarch
  * removal is expected to happen.
  * It's advisable to call send_deferred_event(hierarchy, marker) before removing
  * the subs and calling this function or otherwise any pending event will be
- * missing sub_ids when sent later by destroy_marer.
+ * missing sub_ids when sent later by destroy_marker.
  * The marker is only actually destroyed if no subscription is using it.
  */
 static void do_sub_marker_removal(SelvaHierarchy *hierarchy, struct Selva_SubscriptionMarker *marker) {
@@ -425,7 +425,7 @@ static void init_deferred_events(struct SelvaSubscriptions_DeferredEvents *def) 
     SVector_Init(&def->marker_events, 2, marker_svector_compare);
 }
 
-void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
+static void destroy_deferred_events(struct SelvaHierarchy *hierarchy) {
     struct SelvaSubscriptions_DeferredEvents *def = &hierarchy->subs.deferred_events;
 
     SVector_Destroy(&def->marker_events);
@@ -1041,7 +1041,7 @@ int SelvaSubscriptions_AddAliasMarker(
         struct SelvaHierarchy *hierarchy,
         Selva_SubscriptionId sub_id,
         Selva_SubscriptionMarkerId marker_id,
-        struct selva_string *alias_name,
+        const struct selva_string *alias_name,
         Selva_NodeId node_id
     ) {
     struct Selva_SubscriptionMarker *old_marker;
@@ -1110,7 +1110,11 @@ int SelvaSubscriptions_AddAliasMarker(
         goto fail;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        do_sub_marker_removal(hierarchy, marker);
+        goto fail;
+    }
     marker_set_dir(marker, SELVA_HIERARCHY_TRAVERSAL_NODE);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
@@ -1132,6 +1136,7 @@ int SelvaSubscriptions_AddMissingMarker(
     ) {
     struct SelvaObject *missing = GET_STATIC_SELVA_OBJECT(&hierarchy->subs.missing);
     struct Selva_SubscriptionMarker *marker;
+    int err;
 
     if (nr_accessors == 0) {
         return SELVA_EINVAL;
@@ -1141,8 +1146,6 @@ int SelvaSubscriptions_AddMissingMarker(
     if (marker && !(marker->marker_flags & SELVA_SUBSCRIPTION_FLAG_MISSING)) {
         return SELVA_EINVAL;
     } else if (!marker) {
-        int err;
-
         err = new_marker(hierarchy, marker_id, NULL, 0, NULL, 0,
                          SELVA_SUBSCRIPTION_FLAG_MISSING,
                          defer_event, &marker);
@@ -1150,7 +1153,12 @@ int SelvaSubscriptions_AddMissingMarker(
             return err;
         }
     }
-    upsert_sub_marker(hierarchy, sub_id, marker);
+
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err && err != SELVA_SUBSCRIPTIONS_EEXIST) {
+        do_sub_marker_removal(hierarchy, marker);
+        return err;
+    }
 
     for (size_t i = 0; i < nr_accessors; i++) {
         int err;
@@ -1224,7 +1232,11 @@ int SelvaSubscriptions_AddCallbackMarker(
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        do_sub_marker_removal(hierarchy, marker);
+        goto out;
+    }
     marker_set_dir(marker, dir);
 
     if (dir_expression) {
@@ -1382,10 +1394,6 @@ void SelvaSubscriptions_InheritParent(
     }
 }
 
-/*
- * TODO Add SELVA_HIERARCHY_TRAVERSAL_FIELD
- * TODO Add SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD
- */
 void SelvaSubscriptions_InheritChild(
         struct SelvaHierarchy *hierarchy,
         const Selva_NodeId node_id __unused,
@@ -2000,7 +2008,7 @@ static int fixup_query_opts(struct Subscriptions_QueryOpts *qo, const char *base
  * Add a new marker to the subscription.
  * SUB_ID MARKER_ID traversal_type [ref_field_name] NODE_ID [fields <fieldnames \n separated>] [filter expression] [filter args...]
  */
-void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2039,7 +2047,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
 
     marker = find_marker(hierarchy, marker_id);
     if (marker) {
-        upsert_sub_marker(hierarchy, sub_id, marker);
+        (void)upsert_sub_marker(hierarchy, sub_id, marker);
         selva_send_ll(resp, 1);
         return;
     }
@@ -2181,7 +2189,7 @@ void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out *resp,
         goto fail;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    (void)upsert_sub_marker(hierarchy, sub_id, marker);
     marker_set_dir(marker, query_opts.dir);
 
     if (traversal_expression) {
@@ -2208,7 +2216,7 @@ fail:
 /*
  * SUB_ID MARKER_ID ALIAS_NAME
  */
-void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2255,7 +2263,7 @@ void SelvaSubscriptions_AddAliasCommand(struct selva_server_response_out *resp, 
  * Add a trigger marker.
  * SUBSCRIPTIONS.ADDTRIGGER SUB_ID MARKER_ID EVENT_TYPE [filter expression] [filter args...]
  */
-void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     Selva_SubscriptionId sub_id;
@@ -2357,7 +2365,11 @@ void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_out *resp
         goto out;
     }
 
-    upsert_sub_marker(hierarchy, sub_id, marker);
+    err = upsert_sub_marker(hierarchy, sub_id, marker);
+    if (err) {
+        selva_send_errorf(resp, err, "Failed to create a subscription");
+        goto out;
+    }
     marker_set_trigger(marker, event_type);
     marker_set_filter(marker, filter_ctx, filter_expression);
 
@@ -2375,7 +2387,7 @@ out:
 /*
  * SUBSCRIPTIONS.refresh SUB_ID
  */
-void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh);
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
@@ -2409,7 +2421,7 @@ void SelvaSubscriptions_RefreshCommand(struct selva_server_response_out *resp, c
 /*
  * SUBSCRIPTIONS.refreshMarker MRK_ID
  */
-void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SELVA_TRACE_BEGIN_AUTO(cmd_subscriptions_refresh_marker);
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionMarkerId marker_id;
@@ -2443,7 +2455,7 @@ void SelvaSubscriptions_RefreshMarkerCommand(struct selva_server_response_out *r
 /**
  * List all subscriptions.
  */
-void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
+static void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, const void *buf __unused, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     enum {
         SUBSCRIPTIONS_LIST_CMD_SUBS = 0,
@@ -2501,16 +2513,8 @@ void SelvaSubscriptions_ListCommand(struct selva_server_response_out *resp, cons
 
 static SVector *debug_get_sub_markers(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
 {
-    char buf[SELVA_SUB_ID_STR_MAXLEN + 1];
-    Selva_SubscriptionId sub_id;
+    Selva_SubscriptionId sub_id = strntol(id_str, id_len, NULL);
     struct Selva_Subscription *sub;
-
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
-    errno = 0;
-    sub_id = strtoull(buf, NULL, 10);
-    if (errno) {
-        return NULL;
-    }
 
     sub = find_sub(hierarchy, sub_id);
     return sub ? &sub->markers : NULL;
@@ -2534,15 +2538,7 @@ static SVector *debug_get_node_markers(SelvaHierarchy *hierarchy, const char *id
 
 static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarchy, const char *id_str, size_t id_len)
 {
-    char buf[SELVA_SUB_ID_STR_MAXLEN + 1]; /* TODO marker id version */
-    Selva_SubscriptionId marker_id;
-
-    snprintf(buf, sizeof(buf), "%.*s", (int)id_len, id_str);
-    errno = 0;
-    marker_id = strtoull(buf, NULL, 10);
-    if (errno) {
-        return NULL;
-    }
+    Selva_SubscriptionId marker_id = strntol(id_str, id_len, NULL);
 
     return find_marker(hierarchy, marker_id);
 }
@@ -2550,7 +2546,7 @@ static struct Selva_SubscriptionMarker *debug_get_marker(SelvaHierarchy *hierarc
 /*
  * KEY SUB_ID
  */
-void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     const char *id_str;
     size_t id_len;
@@ -2605,7 +2601,7 @@ void SelvaSubscriptions_DebugCommand(struct selva_server_response_out *resp, con
 /*
  * KEY SUB_ID
  */
-void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
     struct Selva_Subscription *sub;
@@ -2635,7 +2631,7 @@ void SelvaSubscriptions_DelCommand(struct selva_server_response_out *resp, const
 /*
  * KEY SUB_ID MARKER_ID
  */
-void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
+static void SelvaSubscriptions_DelMarkerCommand(struct selva_server_response_out *resp, const void *buf, size_t len) {
     SelvaHierarchy *hierarchy = main_hierarchy;
     Selva_SubscriptionId sub_id;
     Selva_SubscriptionMarkerId marker_id;

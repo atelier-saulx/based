@@ -141,7 +141,7 @@ struct selva_proto_error {
     int16_t err_code; /*!< Error code. Typically from selva_error.h. */
     uint16_t bsize; /*!< Size of msg in bytes. */
     char msg[0]; /*!< Free form error message. Typically a human-readable string. */
-} __packed;
+} __packed __designated_init;
 
 /**
  * Selva protocol double value.
@@ -154,7 +154,7 @@ struct selva_proto_double {
     enum selva_proto_data_type type;
     uint8_t _spare[7];
     double v; /*!< Value. */
-} __packed;
+} __packed __designated_init;
 
 /**
  * Selva protocol long long.
@@ -176,7 +176,7 @@ struct selva_proto_longlong {
      * expected to happen before using the value.
      */
     uint64_t v;
-} __packed;
+} __packed __designated_init;
 static_assert(sizeof(struct selva_proto_longlong) == 2 * sizeof(uint64_t), "Must be 128 bits");
 
 /**
@@ -195,7 +195,7 @@ struct selva_proto_string {
     uint8_t _spare[2];
     uint32_t bsize; /*!< Size of data in bytes. */
     char data[0]; /*!< A string of bytes. It's not expected to be terminated with anything. */
-} __packed;
+} __packed __designated_init;
 static_assert(sizeof(struct selva_proto_string) == sizeof(uint64_t), "Must be 64 bits");
 static_assert(sizeof_field(struct selva_proto_string, flags) == 1, "string flags must be 8-bit wide");
 
@@ -216,7 +216,7 @@ struct selva_proto_array {
     uint8_t _spare[2];
     uint32_t length; /*!< Length of this array; number of items. */
     char data[0]; /*!< Data (if indicated by a flag). */
-} __packed;
+} __packed __designated_init;
 static_assert(sizeof(struct selva_proto_array) == sizeof(uint64_t), "Must be 64 bits");
 
 /**
@@ -238,7 +238,7 @@ struct selva_proto_replication_cmd {
     int64_t ts; /*!< Original command timestamp. */
     uint64_t bsize; /*!< Size of data in bytes. */
     uint8_t data[0];
-} __packed;
+} __packed __designated_init;
 static_assert(sizeof(struct selva_proto_replication_cmd) == 4 * sizeof(uint64_t), "Replication header should be a multiple of 64-bits");
 
 /**
@@ -262,7 +262,7 @@ struct selva_proto_replication_sdb {
     uint8_t _spare[14];
     uint64_t eid; /*!< Element id of this message. */
     uint64_t bsize; /*!< Size of the dump. */
-} __packed;
+} __packed __designated_init;
 static_assert(sizeof(struct selva_proto_replication_sdb) == 4 * sizeof(uint64_t), "Replication header should be a multiple of 64-bits");
 static_assert(sizeof(struct selva_proto_replication_cmd) == sizeof(struct selva_proto_replication_sdb), "Must be same size to allow easier parsing");
 

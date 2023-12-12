@@ -137,12 +137,13 @@ int SelvaSet_HasNodeId(struct SelvaSet *set, const Selva_NodeId node_id);
         const char *: SelvaSet_HasNodeId \
         )((set), (x))
 
-struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, struct selva_string *s);
+struct SelvaSetElement *SelvaSet_RemoveString(struct SelvaSet *set, const struct selva_string *s);
 struct SelvaSetElement *SelvaSet_RemoveDouble(struct SelvaSet *set, double d);
 struct SelvaSetElement *SelvaSet_RemoveLongLong(struct SelvaSet *set, long long ll);
 struct SelvaSetElement *SelvaSet_RemoveNodeId(struct SelvaSet *set, const Selva_NodeId node_id);
 #define SelvaSet_Remove(set, x) _Generic((x), \
         struct selva_string *: SelvaSet_RemoveString, \
+        const struct selva_string *: SelvaSet_RemoveString, \
         double: SelvaSet_RemoveDouble, \
         long long: SelvaSet_RemoveLongLong, \
         char *: SelvaSet_RemoveNodeId, \
@@ -187,6 +188,6 @@ int SelvaSet_Merge(struct SelvaSet *dst, struct SelvaSet *src);
  * @param res should be an empty set initialized with the right type.
  *            `res` must not be a pointer to one of the source sets.
  */
-int SelvaSet_Union(struct SelvaSet *res, ...) __attribute__((sentinel));
+int SelvaSet_Union(struct SelvaSet *res, ...) __sentinel;
 
 #endif /* _SELVA_SET_H_ */

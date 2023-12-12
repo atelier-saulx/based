@@ -13,12 +13,12 @@
 
 static struct finalizer fin;
 
-static void setup(void)
+void setup(void)
 {
     finalizer_init(&fin);
 }
 
-static void teardown(void)
+void teardown(void)
 {
     finalizer_run(&fin);
 }
@@ -32,7 +32,7 @@ static void teardown(void)
     pu_assert_str_equal("string found", selva_string_to_str(s, NULL), (expected)); \
 } while (0)
 
-static char * test_parse1(void)
+PU_TEST(test_parse1)
 {
     struct selva_string *input = selva_string_createf("a|b\n!c\nd|!e\n\n!f|g\n!id");
     struct SelvaObject *list = NULL;
@@ -54,7 +54,7 @@ static char * test_parse1(void)
     return NULL;
 }
 
-static char * test_parse2(void)
+PU_TEST(test_parse2)
 {
     struct selva_string *input = selva_string_createf("a\n!b\n%%c\n&e\n");
     struct SelvaObject *list_a = NULL;
@@ -82,7 +82,7 @@ static char * test_parse2(void)
     return NULL;
 }
 
-static char *test_parse3(void)
+PU_TEST(test_parse3)
 {
     struct selva_string *input = selva_string_createf("best@name|id\ndesc\ninvalid@\n@otherinvalid\n");
     struct SelvaObject *list = NULL;
@@ -99,11 +99,4 @@ static char *test_parse3(void)
     assert_list(list, "1[0]", "desc");
 
     return NULL;
-}
-
-void all_tests(void)
-{
-    pu_def_test(test_parse1, PU_RUN);
-    pu_def_test(test_parse2, PU_RUN);
-    pu_def_test(test_parse3, PU_RUN);
 }
