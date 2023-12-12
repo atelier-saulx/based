@@ -99,7 +99,7 @@ test('get very deep results', async (t) => {
   recurse(setObj)
 
   setObj.$id = 'root'
-  console.log(JSON.stringify({ setObj }, null, 2))
+  //console.log(JSON.stringify({ setObj }, null, 2))
 
   var d = Date.now()
   await client.set(setObj)
