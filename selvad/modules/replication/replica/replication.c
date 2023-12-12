@@ -465,6 +465,13 @@ static void log_origin_error(struct seq_state *ss)
     if (err) {
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to parse incoming error: %s", selva_strerror(err));
     } else {
+        if (origin_err == SELVA_EINPROGRESS) {
+            /*
+             * Don't log SELVA_EINPROGRESS to avoid unnecessary worry because
+             * it's usually expected and normal.
+             */
+            return;
+        }
         SELVA_LOG(SELVA_LOGL_ERR, "Origin error: (%s) msg: \"%.*s\"", selva_strerror(origin_err), (int)msg_len, msg_str);
         if (origin_err == SELVA_ENOENT) {
             partial_sync_fail = 1;

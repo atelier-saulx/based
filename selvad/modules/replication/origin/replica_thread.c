@@ -96,7 +96,9 @@ void *replication_thread(void *arg)
      * of letting the replica die but currently there is no easy way to do it.
      */
     if (ring_buffer_init_state(&state, rb, replica->start_eid, replica->id)) {
+#if 0
         SELVA_LOG(SELVA_LOGL_ERR, "Failed to initialize a ring_buffer_reader_state");
+#endif
         selva_send_errorf(resp, SELVA_ENOENT, "Initial state mismatch");
         goto out;
     }
