@@ -78,7 +78,7 @@ export class SelvaServer extends EventEmitter {
         ...opts.env,
       },
       cwd: this.backupDir ?? process.cwd(),
-      stdio: 'inherit',
+      stdio: opts.stdio || 'inherit',
     })
   }
 
