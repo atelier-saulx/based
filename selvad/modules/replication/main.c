@@ -52,21 +52,10 @@ static const struct timespec replicawait_interval = {
 };
 
 struct replicawait_arg {
+    uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
     uint64_t eid;
     struct selva_server_response_out *stream_resp;
 };
-
-static void *new_struct(size_t size, void *v)
-{
-    void *p = selva_malloc(size);
-
-    memcpy(p, v, size);
-
-    return p;
-}
-
-#define NEW_STRUCT(_value_) \
-    (typeof(_value_))new_struct(sizeof(*(_value_)), (_value_))
 
 enum replication_mode selva_replication_get_mode(void)
 {
@@ -451,6 +440,15 @@ static void replicawait_cb(struct event *, void *arg)
     const uint64_t expected_eid = args->eid & ~EID_MSB_MASK;
     int i = 0;
 
+    /*
+     * Reset the expected sync point whenever last_sdb_hash changes
+     * (or sdb_hash is uninitialzed).
+     */
+    if (memcmp(args->sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE)) {
+        memcpy(args->sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE);
+        args->eid = replication_origin_get_last_eid();
+    }
+
     for (unsigned replica_id = 0; replica_id < REPLICATION_MAX_REPLICAS; replica_id++) {
         if (replicas_mask & (1 << replica_id)) {
             const uint64_t last_ack = replication_origin_get_replica_last_ack(replica_id) & ~EID_MSB_MASK;
@@ -492,10 +490,10 @@ static void replicawait(struct selva_server_response_out *resp, const void *buf 
         return;
     }
 
-    evl_set_timeout(&replicawait_interval, replicawait_cb, NEW_STRUCT((&(struct replicawait_arg){
-        .eid = replication_origin_get_last_eid(),
-        .stream_resp = stream_resp,
-    })));
+    struct replicawait_arg *arg = selva_calloc(1, sizeof(*arg));
+
+    arg->stream_resp = stream_resp;
+    evl_set_timeout(&replicawait_interval, replicawait_cb, arg);
 }
 
 IMPORT() {
