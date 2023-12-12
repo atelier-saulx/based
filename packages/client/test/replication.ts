@@ -71,6 +71,11 @@ test.beforeEach(async (t) => {
       },
     },
   })
+
+  // FIXME Currently schema on replica doesn't work
+  // - It's never read even for a new client
+  // - It's not updated when it's replicated from the origin
+  t.context.replicaClient.schema = t.context.originClient.schema
 })
 
 test.afterEach.always(async (t) => {
@@ -109,7 +114,6 @@ test('simple', async (t) => {
   const rChildren = await replicaClient.command('hierarchy.children', ['root'])
   t.deepEqual(oChildren, rChildren)
 
-  // TODO get doesn't work with replica?
   const oDong = await originClient.get({
     $id: dong,
     name: true,
