@@ -15,6 +15,7 @@ export const selvaError = [
     "ERR_SELVA ENOBUFS No buffer or resource space available",
     "ERR_SELVA EINPROGRESS Operation in progress",
     "ERR_SELVA Input/output error",
+    "ERR_SELVA Timed out",
     "ERR_PROTO EALREADY Operation already in progress",
     "ERR_PROTO ENOTSUP Operation not supported",
     "ERR_PROTO EINVAL Invalid argument/input value",
@@ -42,6 +43,7 @@ export const selvaError = [
     "ERR_SUBSCRIPTIONS EEXIST Exist",
     "ERR_RPN ECOMP Expression compilation failed",
     "ERROR_SELVA_OBJECT Maximum number of keys reached",
+    "ERROR_SELVA_OBJECT Precondition mismatch or failed",
     "ERR_SELVA Invalid error code",
 ]
 
