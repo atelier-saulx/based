@@ -33,11 +33,10 @@
 #define STR(s) #s
 
 static enum replication_mode replication_mode = SELVA_REPLICATION_MODE_NONE;
-static const char replication_mode_str[4][2 * sizeof(size_t)] = {
+static const char replication_mode_str[3][2 * sizeof(size_t)] = {
     "NONE",
     "ORIGIN",
     "REPLICA",
-    "REPLICA_STALE"
 };
 static int auto_save_interval;
 uint8_t last_sdb_hash[SELVA_IO_HASH_SIZE];
