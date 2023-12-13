@@ -18,7 +18,6 @@ import { GetCommand, applyDefault, get } from './get'
 import genId from './id'
 import { DEFAULT_SCHEMA, updateSchema } from './schema'
 import { sub } from './sub'
-import { getQueryValidation } from './get/validation'
 
 export * as protocol from './protocol'
 export * as dataRecord from 'data-record'
@@ -149,8 +148,6 @@ export class BasedDbClient extends Emitter {
   }
 
   async get(opts: any): Promise<any> {
-    getQueryValidation(opts)
-
     const { merged, defaults } = await get(this, opts)
 
     for (const d of defaults) {
