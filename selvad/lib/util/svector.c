@@ -400,7 +400,7 @@ void *SVector_GetIndex(const SVector * restrict vec, size_t index) {
             return NULL;
         }
 
-        return vec->vec_arr[i];
+        return vec->vec_arr[speculation_safe_value(i)];
     } else if (vec_mode == SVECTOR_MODE_RBTREE) {
         size_t i = 0;
 
@@ -428,9 +428,9 @@ void *SVector_RemoveIndex(SVector * restrict vec, size_t index) {
         SVector_ShiftReset(vec);
         const size_t i = vec->vec_arr_shift_index + index;
 
-        p = vec->vec_arr[i];
-
         if (i < vec->vec_last) {
+            p = vec->vec_arr[speculation_safe_value(i)];
+
             memmove(&vec->vec_arr[i], &vec->vec_arr[i + 1], VEC_SIZE(vec->vec_last - i - 1));
             vec->vec_last--;
         }

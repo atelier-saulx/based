@@ -207,6 +207,12 @@
 #define likely(x)   __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+#if __has_builtin(__builtin_speculation_safe_value)
+#define speculation_safe_value(x) __builtin_speculation_safe_value(x)
+#else
+#define speculation_safe_value(x) x
+#endif
+
 #define same_type(a, b) __builtin_types_compatible_p(typeof(a), typeof(b))
 
 /**
