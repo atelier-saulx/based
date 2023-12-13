@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "util/ctime.h"
 #include "util/finalizer.h"
 #include "util/net.h"
 #include "util/sdb_name.h"
@@ -50,11 +51,16 @@ static const struct timespec replicawait_interval = {
     .tv_sec = 1,
     .tv_nsec = 0,
 };
+static const struct timespec replicawait_default_timeout = {
+    .tv_sec = 60,
+    .tv_nsec = 0,
+};
 
 struct replicawait_arg {
-    uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
-    uint64_t eid;
     struct selva_server_response_out *stream_resp;
+    struct timespec timeout;
+    uint64_t eid;
+    uint8_t sdb_hash[SELVA_IO_HASH_SIZE];
 };
 
 enum replication_mode selva_replication_get_mode(void)
@@ -207,7 +213,6 @@ static void replicasync(struct selva_server_response_out *resp, const void *buf,
 
     argc = selva_proto_scanf(NULL, buf, size, "{%.*s, %" PRIu64 "}", &sdb_hash_len, &sdb_hash, &sdb_eid);
     if (argc < 0) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to parse: %s", selva_strerror(argc));
         selva_send_errorf(resp, argc, "Failed to parse args");
         return;
     }
@@ -442,11 +447,24 @@ static void replicawait_cb(struct event *, void *arg)
 
     /*
      * Reset the expected sync point whenever last_sdb_hash changes
-     * (or sdb_hash is uninitialzed).
+     * (or sdb_hash is uninitialized).
      */
     if (memcmp(args->sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE)) {
         memcpy(args->sdb_hash, last_sdb_hash, SELVA_IO_HASH_SIZE);
         args->eid = replication_origin_get_last_eid();
+    }
+
+    /*
+     * Timeout handling.
+     * Zero timeout means that we wait indefinitely.
+     */
+    if (timespec_cmp(&args->timeout, &(struct timespec){}, !=)) {
+        timespec_sub(&args->timeout, &args->timeout, &replicawait_interval);
+        if (timespec_cmp(&args->timeout, &(struct timespec){}, <=)) {
+            /* Timeout */
+            selva_send_errorf(args->stream_resp, SELVA_ETIMEDOUT, "Timeout");
+            goto end_replicawait;
+        }
     }
 
     for (unsigned replica_id = 0; replica_id < REPLICATION_MAX_REPLICAS; replica_id++) {
@@ -462,6 +480,7 @@ static void replicawait_cb(struct event *, void *arg)
 #endif
     if (i == nr_replicas) {
         selva_send_ll(args->stream_resp, 1);
+end_replicawait:
         selva_send_end(args->stream_resp);
         selva_free(args);
     } else {
@@ -472,9 +491,14 @@ static void replicawait_cb(struct event *, void *arg)
 static void replicawait(struct selva_server_response_out *resp, const void *buf __unused, size_t size)
 {
     struct selva_server_response_out *stream_resp;
-    int err;
+    long long timeout_sec;
+    int argc, err;
 
-    if (size) {
+    argc = selva_proto_scanf(NULL, buf, size, "%lld", &timeout_sec);
+    if (argc < 0) {
+        selva_send_errorf(resp, argc, "Failed to parse args");
+        return;
+    } else if (argc > 1) {
         selva_send_error_arity(resp);
         return;
     }
@@ -493,6 +517,11 @@ static void replicawait(struct selva_server_response_out *resp, const void *buf 
     struct replicawait_arg *arg = selva_calloc(1, sizeof(*arg));
 
     arg->stream_resp = stream_resp;
+    if (argc == 1) {
+        arg->timeout.tv_sec = timeout_sec;
+    } else {
+        arg->timeout = replicawait_default_timeout;
+    }
     evl_set_timeout(&replicawait_interval, replicawait_cb, arg);
 }
 
