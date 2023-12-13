@@ -211,7 +211,7 @@ test.serial.skip('replica restart', async (t) => {
   const { originClient, replicaClient } = t.context
 
   await restartReplica(t)
-  // FIXME sometimes the client gets stuck here and the command is never executed
+  // FIXME sometimes the client gets stuck here and this command is never executed
   // TODO We could also test the case where the restart is practically delayed by delaying this function call
   await t.context.replicaClient.command('replicaof', [t.context.originPort, '127.0.0.1'])
   await t.context.originClient.command('replicawait')
@@ -229,7 +229,7 @@ test.serial.skip('origin restart', async (t) => {
   const { originClient, replicaClient } = t.context
 
   await restartOrigin(t)
-  // FIXME sometimes the client gets stuck here and the command is never executed
+  // FIXME sometimes the client gets stuck here and this command is never executed
   await t.context.originClient.command('replicawait')
 
   let replicaState = null
