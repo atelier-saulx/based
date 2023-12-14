@@ -3,7 +3,9 @@
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
+#include <ctype.h>
 #include <dlfcn.h>
+#include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -178,22 +180,42 @@ static int valid_flags(enum selva_io_flags flags)
     return (!(flags & SELVA_IO_FLAGS_READ) ^ !(flags & SELVA_IO_FLAGS_WRITE));
 }
 
+static bool is_valid_sdb_name(const char *filename)
+{
+    size_t len = strlen(filename);
+    bool res = len > 0;
+
+    for (size_t i = 0; i < len; ++i) {
+        int c = filename[i];
+
+        res &= !!isalnum(c) || c == '-' || c == '.' || c == '_';
+    }
+    SELVA_LOG(SELVA_LOGL_ERR, "VAlid: %d", res);
+
+    return res;
+}
+
 int selva_io_init(struct selva_io *io, const char *filename, enum selva_io_flags flags)
 {
     const char *mode = (flags & SELVA_IO_FLAGS_WRITE) ? "wb" : "rb";
     FILE *file;
 
-    if (!valid_flags(flags)) {
+    if (!(valid_flags(flags) && is_valid_sdb_name(filename))) {
         return SELVA_EINVAL;
     }
 
     file = fopen(filename, mode);
     if (!file) {
-        /*
-         * fopen() can fail for a dozen reasons, the best we can do is to tell
-         * the caller that we failed to open the file.
-         */
-        return SELVA_EGENERAL;
+        if (errno == ENOENT) {
+            return SELVA_ENOENT;
+        } else {
+            /*
+             * fopen() can fail due to a number of other reasons,
+             * the (almost) best we can do is to tell the caller
+             * that we failed to open the file.
+             */
+            return SELVA_EGENERAL;
+        }
     }
 
     if (flags & SELVA_IO_FLAGS_WRITE) {
