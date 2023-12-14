@@ -1,12 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
-import { TestCtx, beforeEachClientAndServer } from '../assertions'
-import { wait } from '@saulx/utils'
-import { BasedSchemaPartial } from '@based/schema'
+import { basicTest } from '../assertions'
 import { subscribe } from '@based/db-subs'
+import { wait } from '@saulx/utils'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     league: {
@@ -28,11 +24,9 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-beforeEachClientAndServer(test, schema)
-
-test.serial('simple count aggregate sub', async (t) => {
+test('simple count aggregate sub', async (t) => {
   // simple nested - single query
   const client = t.context.client
 
@@ -141,7 +135,7 @@ test.serial('simple count aggregate sub', async (t) => {
   await wait(2e3)
 })
 
-test.serial('simple sum aggregate sub', async (t) => {
+test('simple sum aggregate sub', async (t) => {
   // simple nested - single query
   const client = t.context.client
 
@@ -258,7 +252,7 @@ test.serial('simple sum aggregate sub', async (t) => {
   await wait(2e3)
 })
 
-test.serial('list avg aggregate sub', async (t) => {
+test('list avg aggregate sub', async (t) => {
   // simple nested - single query
   const client = t.context.client
 
@@ -421,7 +415,7 @@ test.serial('list avg aggregate sub', async (t) => {
   await wait(1e3)
 })
 
-test.serial('simple nested find avg aggregate sub', async (t) => {
+test('simple nested find avg aggregate sub', async (t) => {
   // simple nested - single query
   const client = t.context.client
 
@@ -509,9 +503,9 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
   )
 
   await wait(1e3)
-  //const subs = await client.command('subscriptions.list', [])
-  //const mrks = subs.flat(1).map(([sub]) => sub)
-  //BigInt.prototype.toJSON = function() { return this.toString() }
+  // const subs = await client.command('subscriptions.list', [])
+  // const mrks = subs.flat(1).map(([sub]) => sub)
+  // BigInt.prototype.toJSON = function() { return this.toString() }
 
   await client.set({
     $id: 'ma10',
@@ -550,7 +544,7 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
   await wait(1e3)
 })
 
-test.serial('simple max aggregate sub', async (t) => {
+test('simple max aggregate sub', async (t) => {
   // simple nested - single query
   const client = t.context.client
 

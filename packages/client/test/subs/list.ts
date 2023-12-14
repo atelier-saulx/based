@@ -1,11 +1,8 @@
-import anyTest, { ExecutionContext, TestInterface } from 'ava'
+import { basicTest } from '../assertions'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     match: {
@@ -19,11 +16,10 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('subscription list', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscription list', async (t) => {
+  const client = t.context.client
 
   const matches: any[] = []
 
@@ -51,7 +47,7 @@ test.serial('subscription list', async (t) => {
     },
   }
   let cnt = 0
-  observe(t, obs, (d) => {
+  subscribe(client, obs, (d) => {
     cnt++
   })
 
@@ -94,11 +90,11 @@ test.serial('subscription list', async (t) => {
 
   let cnt2 = 0
   let cnt3 = 0
-  observe(t, obs2, (d) => {
+  subscribe(client, obs2, (d) => {
     cnt2++
   })
 
-  observe(t, obs3, (d) => {
+  subscribe(client, obs3, (d) => {
     cnt3++
   })
 

@@ -217,7 +217,7 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.serial('schema subs work implicitly', async (t) => {
+test('schema subs work implicitly', async (t) => {
   const { client } = t.context
   const otherClient = new BasedDbClient()
   otherClient.connect({

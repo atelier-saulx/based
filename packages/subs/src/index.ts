@@ -34,6 +34,7 @@ class Subscriber {
   updateTimer: NodeJS.Timeout
   queuedUpdates: [number, number[]][] = []
   batchInProgress: boolean = false
+  queuedMap: Map<number, Set<number>> = new Map()
   subCount = 0
   isDestroyed = false
 
@@ -87,10 +88,10 @@ class Subscriber {
   async updateBatch() {
     this.batchInProgress = true
 
-    const updates = this.queuedUpdates
+    const updates = Array.from(this.queuedMap)
     const promises = []
 
-    this.queuedUpdates = []
+    this.queuedMap = new Map()
 
     for (const [markerId, subIds] of updates) {
       subIds.forEach((subId) => {
@@ -154,7 +155,13 @@ class Subscriber {
   }
 
   updateSubs(markerId: number, subIds: number[]) {
-    this.queuedUpdates.push([markerId, subIds])
+    if (this.queuedMap.has(markerId)) {
+      const subIdsPerMarker = this.queuedMap.get(markerId)
+      subIds.forEach(subIdsPerMarker.add, subIdsPerMarker)
+    } else {
+      this.queuedMap.set(markerId, new Set(subIds))
+    }
+
     if (!this.updateTimer) {
       this.updateTimer = setTimeout(() => {
         this.updateTimer = null
@@ -195,6 +202,7 @@ class Subscriber {
     let killed
     let subId
     this.subCount++
+
     this.init.then(async () => {
       if (killed) {
         return

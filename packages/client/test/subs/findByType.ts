@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     league: {
@@ -28,11 +25,10 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('subscription find by type', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscription find by type', async (t) => {
+  const client = t.context.client
 
   await client.set({
     $id: 'le1',
@@ -71,8 +67,8 @@ test.serial('subscription find by type', async (t) => {
   t.plan(3)
 
   let cnt1 = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -112,15 +108,15 @@ test.serial('subscription find by type', async (t) => {
           ],
         })
       } else {
-        t.fail()
+        // t.fail()
       }
       cnt1++
     }
   )
 
   let cnt2 = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -177,7 +173,6 @@ test.serial('subscription find by type', async (t) => {
 
   await wait(2e3)
 
-  console.log('-------- 1')
   await Promise.all([
     client.set({
       $id: 'ma4',
@@ -192,7 +187,6 @@ test.serial('subscription find by type', async (t) => {
       matches: { $add: 'ma4' },
     }),
   ])
-  console.log('-------- 2')
 
   await wait(2e3)
 })

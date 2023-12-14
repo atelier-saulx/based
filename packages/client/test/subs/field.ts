@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
 import { deepCopy, wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   translations: ['de', 'nl'],
   types: {
@@ -100,11 +97,10 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('subscribe - simple alias', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe - simple alias', async (t) => {
+  const client = t.context.client
 
   await client.set({
     $id: 'viA',
@@ -122,8 +118,8 @@ test.serial('subscribe - simple alias', async (t) => {
   })
 
   const results: any[] = []
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'viA',
       id: true,

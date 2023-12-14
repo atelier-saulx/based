@@ -142,7 +142,13 @@ export async function getCmd(
     try {
       await client.command('subscriptions.delmarker', [ctx.subId, cmdID])
     } catch (e) {
-      console.error('Error cleaning up marker', ctx.subId, cmdID, e)
+      console.error(
+        'Error cleaning up marker',
+        ctx.subId,
+        cmdID,
+        e.message,
+        e.code
+      )
     }
 
     // TODO: only clean cache if it hasn't been cleaned for this ID on this tick yet (if not cleaned by other SUB yet)

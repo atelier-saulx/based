@@ -34,7 +34,7 @@ test('ping', async (t) => {
   t.true(true)
 })
 
-test.serial('echo', async (t) => {
+test('echo', async (t) => {
   const TIME = 2500
   const port = await getPort()
 

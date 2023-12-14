@@ -1,10 +1,7 @@
-import anyTest, { TestInterface } from 'ava'
 import { deepCopy, wait } from '@saulx/utils'
-import '../assertions'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { BasedSchemaPartial } from '@based/schema'
-
-const test = anyTest as TestInterface<TestCtx>
 
 const schema: BasedSchemaPartial = {
   language: 'en',
@@ -55,10 +52,10 @@ const schema: BasedSchemaPartial = {
   },
 }
 
-test.serial('subscription array', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+const test = basicTest(schema)
 
+test('subscription array', async (t) => {
+  const client = t.context.client
   const thing = await client.set({
     type: 'thing',
     title: { en: 'thing' },
@@ -84,20 +81,11 @@ test.serial('subscription array', async (t) => {
   await Promise.all(matches.map((v) => client.set(v)))
 
   await wait(500)
-  console.info(
-    await client.get({
-      $id: thing,
-      ary: {
-        name: true,
-        $list: true,
-      },
-    })
-  )
-
   let lastResult: any
   let cnt = 0
-  observe(
-    t,
+
+  subscribe(
+    client,
     {
       $id: thing,
       ary: true,
@@ -109,6 +97,7 @@ test.serial('subscription array', async (t) => {
   )
 
   await wait(1000)
+
   t.is(cnt, 1)
 
   await client.set({
@@ -145,8 +134,8 @@ test.serial('subscription array', async (t) => {
 
   let cnt2 = 0
   let lastResult2: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: thing,
       $language: 'en',
@@ -199,9 +188,8 @@ test.serial('subscription array', async (t) => {
   })
 })
 
-test.serial('subscription num array', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscription num array', async (t) => {
+  const client = t.context.client
 
   const thing = await client.set({
     type: 'thing',
@@ -226,8 +214,8 @@ test.serial('subscription num array', async (t) => {
   await wait(500)
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: thing,
       intAry: true,
@@ -253,9 +241,8 @@ test.serial('subscription num array', async (t) => {
   t.is(cnt, 2)
 })
 
-test.serial('subscription array in object array', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscription array in object array', async (t) => {
+  const client = t.context.client
 
   const thing = await client.set({
     type: 'thing',
@@ -285,13 +272,13 @@ test.serial('subscription array in object array', async (t) => {
   await wait(500)
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: thing,
       ary: true,
     },
-    (d) => {
+    () => {
       cnt++
     }
   )

@@ -1,18 +1,29 @@
-import anyTest, { TestInterface } from 'ava'
 import { deepCopy, wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-test.serial('inherit object nested field from root youzi', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
+const test = basicTest({
+  language: 'en',
+  translations: ['de', 'nl'],
+  root: {
+    fields: {
+      yesh: { type: 'string' },
+      no: { type: 'string' },
+      flapper: {
+        type: 'object',
+        properties: {
+          snurk: { type: 'json' },
+          bob: { type: 'json' },
+        },
+      },
+    },
+  },
+  types: {
+    yeshType: {
+      prefix: 'ye',
       fields: {
+        yesh: { type: 'string' },
+        no: { type: 'string' },
         flapper: {
           type: 'object',
           properties: {
@@ -22,21 +33,12 @@ test.serial('inherit object nested field from root youzi', async (t) => {
         },
       },
     },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
+  },
+})
+
+test('inherit object nested field from root youzi', async (t) => {
+  const client = t.context.client
+
   await wait(200)
 
   await client.set({
@@ -53,8 +55,8 @@ test.serial('inherit object nested field from root youzi', async (t) => {
   })
 
   const results: any[] = []
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'yeA',
       flapper: { snurk: { $inherit: true } },
@@ -84,28 +86,9 @@ test.serial('inherit object nested field from root youzi', async (t) => {
   t.true(true)
 })
 
-test.serial('inherit object youzi', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
+test('inherit object youzi', async (t) => {
+  const client = t.context.client
 
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
   await wait(200)
 
   await client.set({
@@ -117,8 +100,8 @@ test.serial('inherit object youzi', async (t) => {
   })
 
   const results: any[] = []
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'yeA',
       flapper: { $inherit: { $type: 'yeshType' } },
@@ -145,43 +128,8 @@ test.serial('inherit object youzi', async (t) => {
   ])
 })
 
-test.serial('basic inherit subscription', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: {
-        yesh: { type: 'string' },
-        no: { type: 'string' },
-        flapper: {
-          type: 'object',
-          properties: {
-            snurk: { type: 'json' },
-            bob: { type: 'json' },
-          },
-        },
-      },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          yesh: { type: 'string' },
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
-  await wait(200)
+test('basic inherit subscription', async (t) => {
+  const client = t.context.client
 
   await client.set({
     $id: 'root',
@@ -201,8 +149,8 @@ test.serial('basic inherit subscription', async (t) => {
 
   const results: any = []
 
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'yeB',
       yesh: { $inherit: true },
@@ -236,7 +184,7 @@ test.serial('basic inherit subscription', async (t) => {
 
   await wait(1000)
 
-  console.dir({ subs }, { depth: 8 })
+  // console.dir({ subs }, { depth: 8 })
 
   t.deepEqual(results, [
     { yesh: 'yesh a' },
@@ -245,39 +193,9 @@ test.serial('basic inherit subscription', async (t) => {
   ])
 })
 
-test.serial('inherit object', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
+test('inherit object', async (t) => {
+  const client = t.context.client
 
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: {
-        flapper: {
-          type: 'object',
-          properties: {
-            snurk: { type: 'json' },
-            bob: { type: 'json' },
-          },
-        },
-      },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
   await wait(200)
 
   await client.set({
@@ -312,8 +230,8 @@ test.serial('inherit object', async (t) => {
   )
 
   const results: any = []
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'yeB',
       flapper: { $inherit: true },
@@ -350,42 +268,9 @@ test.serial('inherit object', async (t) => {
   ])
 })
 
-test.serial('list inherit subscription', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
+test('list inherit subscription', async (t) => {
+  const client = t.context.client
 
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: {
-        yesh: { type: 'string' },
-        no: { type: 'string' },
-        flapper: {
-          type: 'object',
-          properties: {
-            snurk: { type: 'json' },
-            bob: { type: 'json' },
-          },
-        },
-      },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          yesh: { type: 'string' },
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
   await wait(200)
 
   await client.set({
@@ -411,21 +296,21 @@ test.serial('list inherit subscription', async (t) => {
     })
   }
 
-  console.log(
-    '---------',
-    await client.get({
-      $id: 'yeA',
-      flapdrol: {
-        id: true,
-        yesh: { $inherit: true },
-        $field: 'children',
-        $list: true,
-      },
-    })
-  )
+  // console.log(
+  //   '---------',
+  //   await client.get({
+  //     $id: 'yeA',
+  //     flapdrol: {
+  //       id: true,
+  //       yesh: { $inherit: true },
+  //       $field: 'children',
+  //       $list: true,
+  //     },
+  //   })
+  // )
   const results: any[] = []
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'yeA',
       flapdrol: {
@@ -481,44 +366,8 @@ test.serial('list inherit subscription', async (t) => {
   ])
 })
 
-test.serial('list inherit + field subscription', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: {
-        yesh: { type: 'string' },
-        no: { type: 'string' },
-        flapper: {
-          type: 'object',
-          properties: {
-            snurk: { type: 'json' },
-            bob: { type: 'json' },
-          },
-        },
-      },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          no: { type: 'string' },
-          yesh: { type: 'string' },
-          flapper: {
-            type: 'object',
-            properties: {
-              snurk: { type: 'json' },
-              bob: { type: 'json' },
-            },
-          },
-        },
-      },
-    },
-  })
-  await wait(200)
+test('list inherit + field subscription', async (t) => {
+  const client = t.context.client
 
   await client.set({
     $id: 'root',
@@ -545,23 +394,23 @@ test.serial('list inherit + field subscription', async (t) => {
 
   const results: any[] = []
 
-  console.log(
-    '---------',
-    await client.get({
-      $id: 'yeA',
-      flapdrol: {
-        id: true,
-        yesh: {
-          $field: 'no',
-          $inherit: true,
-        },
-        $field: 'children',
-        $list: true,
-      },
-    })
-  )
-  observe(
-    t,
+  // console.log(
+  //   '---------',
+  //   await client.get({
+  //     $id: 'yeA',
+  //     flapdrol: {
+  //       id: true,
+  //       yesh: {
+  //         $field: 'no',
+  //         $inherit: true,
+  //       },
+  //       $field: 'children',
+  //       $list: true,
+  //     },
+  //   })
+  // )
+  subscribe(
+    client,
     {
       $id: 'yeA',
       flapdrol: {

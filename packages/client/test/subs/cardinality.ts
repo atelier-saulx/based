@@ -1,11 +1,7 @@
-import anyTest, { TestInterface } from 'ava'
-import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   root: {
     fields: {
@@ -21,34 +17,40 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('record with cardinality', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('record with cardinality', async (t) => {
+  const client = t.context.client
+  let cnt = 0
+
   await client.set({
     $id: 'root',
     uniqueUsers: { total: 16558146173444 },
   })
 
-  observe(
-    t,
-    {
-      uniqueUsers: true,
-    },
-    (res) => {
-      console.log('??', { res })
-    }
+  await client.set({
+    $id: 'root',
+    uniqueUsers: { total: 16558146173444 },
+  })
+
+  await new Promise<void>((resolve) =>
+    subscribe(
+      client,
+      {
+        uniqueUsers: true,
+      },
+      ({ uniqueUsers: { total } }) => {
+        if (cnt++ === 0) {
+          t.is(total, 1)
+          client.set({
+            $id: 'root',
+            uniqueUsers: { total: 333 },
+          })
+        } else {
+          t.is(total, 2)
+          resolve()
+        }
+      }
+    )
   )
-
-  await wait(1e3)
-
-  await client.set({
-    $id: 'root',
-    uniqueUsers: { total: 16558146173444 },
-  })
-
-  await wait(1e3)
-
-  t.pass()
 })

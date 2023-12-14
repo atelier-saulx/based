@@ -1,29 +1,25 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-test.serial('changing alias to another node fires subscription', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          yesh: { type: 'string' },
-        },
+const test = basicTest({
+  language: 'en',
+  translations: ['de', 'nl'],
+  root: {
+    fields: { yesh: { type: 'string' }, no: { type: 'string' } },
+  },
+  types: {
+    yeshType: {
+      prefix: 'ye',
+      fields: {
+        yesh: { type: 'string' },
       },
     },
-  })
+  },
+})
+
+test('changing alias to another node fires subscription', async (t) => {
+  const client = t.context.client
 
   t.plan(2)
 
@@ -34,8 +30,8 @@ test.serial('changing alias to another node fires subscription', async (t) => {
   })
 
   let o1counter = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $alias: 'hello-friend',
       yesh: true,
