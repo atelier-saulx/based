@@ -22,7 +22,7 @@
       "ts-node/register"
     ]
   },
-  "peerDependencies": {
+  "dependencies": {
     "@based/db-client": "*"
   },
   "devDependencies": {
