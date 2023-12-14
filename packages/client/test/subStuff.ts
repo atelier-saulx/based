@@ -1,10 +1,9 @@
 import test from 'ava'
-import { BasedDbClient } from '../src'
+import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { deserialize } from 'data-record'
-import { protocol } from '../src'
 
 // FIXME: failing on main
 test.failing('descendants sub', async (t) => {
