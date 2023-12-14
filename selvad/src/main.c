@@ -4,6 +4,7 @@
  */
 #include <stdint.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include "jemalloc.h"
 #include "libdeflate.h"
 #include "selva_log.h"
@@ -27,6 +28,17 @@ int main(void)
 {
     evl_module_init("main");
     evl_init();
+
+    /*
+     * Safer umask to disallow creating executables or world readable dumps.
+     */
+    umask((S_IRUSR | S_IWUSR | S_IRGRP) ^ 0777);
+
+    /*
+     * In case the caller gave us something that's actually readable, we'll
+     * get rid of it now.
+     */
+    freopen("/dev/null", "r", stdin);
 
     for (size_t i = 0; i < num_elem(modules); i++) {
         if (!evl_load_module(modules[i])) {
