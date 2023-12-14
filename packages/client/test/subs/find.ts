@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   root: {
     fields: { yesh: { type: 'string' }, no: { type: 'string' } },
@@ -33,12 +30,11 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
 // TODO: sub events should de de-duplicated better (on sub manager side)
 test.serial.skip('subscription find', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+  const client = t.context.client
 
   const matches: any[] = []
   const teams: any[] = []
@@ -78,8 +74,8 @@ test.serial.skip('subscription find', async (t) => {
   await wait(200)
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       items: {
         name: true,
@@ -127,8 +123,8 @@ test.serial.skip('subscription find', async (t) => {
   t.is(cnt, 3)
 
   let cnt2 = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $includeMeta: true,
       items: {
@@ -191,8 +187,8 @@ test.serial.skip('subscription find', async (t) => {
   t.is(cnt2, 2)
 
   let cnt3 = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: matchTeam,
       $includeMeta: true,

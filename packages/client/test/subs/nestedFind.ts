@@ -1,41 +1,38 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
 import { deepCopy, wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-test.serial('get - correct order', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    types: {
-      folder: {
-        prefix: 'fl',
-        fields: {
-          name: { type: 'string' },
-          published: { type: 'boolean' },
-          title: { type: 'text' },
-        },
-      },
-      region: {
-        prefix: 're',
-        fields: {
-          published: { type: 'boolean' },
-          title: { type: 'text' },
-        },
-      },
-      match: {
-        prefix: 'ma',
-        fields: {
-          published: { type: 'boolean' },
-          title: { type: 'text' },
-        },
+const test = basicTest({
+  language: 'en',
+  translations: ['de', 'nl'],
+  types: {
+    folder: {
+      prefix: 'fl',
+      fields: {
+        name: { type: 'string' },
+        published: { type: 'boolean' },
+        title: { type: 'text' },
       },
     },
-  })
+    region: {
+      prefix: 're',
+      fields: {
+        published: { type: 'boolean' },
+        title: { type: 'text' },
+      },
+    },
+    match: {
+      prefix: 'ma',
+      fields: {
+        published: { type: 'boolean' },
+        title: { type: 'text' },
+      },
+    },
+  },
+})
+
+test('get - correct order', async (t) => {
+  const client = t.context.client
 
   await client.set({
     $id: 'root',
@@ -122,25 +119,25 @@ test.serial('get - correct order', async (t) => {
 
   const results: any[] = []
 
-  observe(t, obs, (v) => {
-    console.dir({ v }, { depth: 6 })
+  subscribe(client, obs, (v) => {
+    // console.dir({ v }, { depth: 6 })
     results.push(deepCopy(v))
   })
 
   await wait(1e3)
 
-  console.log('1', await client.command('subscriptions.list', []))
+  // console.log('1', await client.command('subscriptions.list', []))
   await client.set({ $id: 'ma1', published: false })
 
   await wait(1e3)
-  console.log('2', await client.command('subscriptions.list', []))
+  // console.log('2', await client.command('subscriptions.list', []))
 
   await client.set({ $id: 'ma1', published: true })
 
   await wait(3e3)
-  console.log('3', await client.command('subscriptions.list', []))
+  // console.log('3', await client.command('subscriptions.list', []))
 
-  console.dir({ results }, { depth: 6 })
+  // console.dir({ results }, { depth: 6 })
 
   t.is(results.length, 3)
   t.is(results[0].children.length, 3)

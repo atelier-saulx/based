@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   translations: ['de', 'nl'],
   types: {
@@ -18,11 +15,10 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('subscribe and delete', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete', async (t) => {
+  const client = t.context.client
 
   const q: any[] = []
   for (let i = 0; i < 10; i++) {
@@ -37,8 +33,8 @@ test.serial('subscribe and delete', async (t) => {
   const ids = await Promise.all(q)
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       things: {
@@ -76,9 +72,8 @@ test.serial('subscribe and delete', async (t) => {
   await wait(1000)
 })
 
-test.serial('subscribe and delete a descendant', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete a descendant', async (t) => {
+  const client = t.context.client
 
   const id = await client.set({
     type: 'thing',
@@ -95,8 +90,8 @@ test.serial('subscribe and delete a descendant', async (t) => {
   t.plan(2)
   let i = 0
 
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: id,
       $language: 'en',
@@ -139,9 +134,8 @@ test.serial('subscribe and delete a descendant', async (t) => {
   await wait(500)
 })
 
-test.serial('subscribe and delete over a reference field', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete over a reference field', async (t) => {
+  const client = t.context.client
 
   const id = await client.set({
     type: 'thing',
@@ -155,8 +149,8 @@ test.serial('subscribe and delete over a reference field', async (t) => {
 
   t.plan(2)
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: id,
       $language: 'en',
@@ -199,9 +193,8 @@ test.serial('subscribe and delete over a reference field', async (t) => {
   await wait(500)
 })
 
-test.serial('subscribe and delete over references field', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete over references field', async (t) => {
+  const client = t.context.client
 
   const id = await client.set({
     type: 'thing',
@@ -222,8 +215,8 @@ test.serial('subscribe and delete over references field', async (t) => {
 
   t.plan(2)
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: id,
       $language: 'en',
@@ -266,12 +259,11 @@ test.serial('subscribe and delete over references field', async (t) => {
   await wait(500)
 })
 
-test.serial('subscribe and delete one item', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete one item', async (t) => {
+  const client = t.context.client
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'thing1',
       things: {
@@ -290,7 +282,7 @@ test.serial('subscribe and delete one item', async (t) => {
       },
     },
     (d) => {
-      console.log('dddd', d)
+      // console.log('dddd', d)
       cnt++ // 1
     }
   )
@@ -304,8 +296,8 @@ test.serial('subscribe and delete one item', async (t) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  console.dir({ subs }, { depth: 8 })
-  console.dir({ cache: client.CMD_SUB_MARKER_MAPPING_CACHE })
+  // console.dir({ subs }, { depth: 8 })
+  // console.dir({ cache: client.CMD_SUB_MARKER_MAPPING_CACHE })
 
   const id = (await client.set({
     type: 'thing',
@@ -321,12 +313,11 @@ test.serial('subscribe and delete one item', async (t) => {
   await wait(1000)
 })
 
-test.serial('subscribe and delete one item: root', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('subscribe and delete one item: root', async (t) => {
+  const client = t.context.client
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       things: {

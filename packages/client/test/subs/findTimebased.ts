@@ -1,93 +1,78 @@
-import anyTest, { ExecutionContext, TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { startSubs, TestCtx } from '../assertions'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const start = async (t: ExecutionContext<TestCtx>) => {
-  await startSubs(t, {
-    language: 'en',
-    translations: ['de', 'fr', 'it', 'nl'],
-    root: {
+const test = basicTest({
+  language: 'en',
+  translations: ['de', 'fr', 'it', 'nl'],
+  root: {
+    fields: {
+      title: { type: 'text' },
+    },
+  },
+  types: {
+    folder: {
+      prefix: 'fo',
       fields: {
+        name: { type: 'string' },
         title: { type: 'text' },
       },
     },
-    types: {
-      folder: {
-        prefix: 'fo',
-        fields: {
-          name: { type: 'string' },
-          title: { type: 'text' },
-        },
-      },
-      league: {
-        prefix: 'le',
-        fields: {
-          value: { type: 'number' },
-        },
-      },
-      team: {
-        prefix: 'te',
-        fields: {
-          title: { type: 'text' },
-          published: { type: 'boolean' },
-        },
-      },
-      video: {
-        prefix: 'vi',
-        fields: {
-          title: { type: 'text' },
-          published: { type: 'boolean' },
-        },
-      },
-      sport: {
-        prefix: 'sp',
-        fields: {
-          title: { type: 'text' },
-          published: { type: 'boolean' },
-        },
-      },
-      match: {
-        prefix: 'ma',
-        fields: {
-          name: { type: 'string' },
-          title: { type: 'text' },
-          published: { type: 'boolean' },
-          homeTeam: { type: 'reference' },
-          awayTeam: { type: 'reference' },
-          startTime: {
-            type: 'timestamp',
-          },
-          endTime: {
-            type: 'timestamp',
-          },
-          date: {
-            type: 'timestamp',
-          },
-          fun: { type: 'set', items: { type: 'string' } },
-          related: { type: 'references' },
-          value: { type: 'number' },
-          status: { type: 'number' },
-        },
+    league: {
+      prefix: 'le',
+      fields: {
+        value: { type: 'number' },
       },
     },
-  })
-}
+    team: {
+      prefix: 'te',
+      fields: {
+        title: { type: 'text' },
+        published: { type: 'boolean' },
+      },
+    },
+    video: {
+      prefix: 'vi',
+      fields: {
+        title: { type: 'text' },
+        published: { type: 'boolean' },
+      },
+    },
+    sport: {
+      prefix: 'sp',
+      fields: {
+        title: { type: 'text' },
+        published: { type: 'boolean' },
+      },
+    },
+    match: {
+      prefix: 'ma',
+      fields: {
+        name: { type: 'string' },
+        title: { type: 'text' },
+        published: { type: 'boolean' },
+        homeTeam: { type: 'reference' },
+        awayTeam: { type: 'reference' },
+        startTime: {
+          type: 'timestamp',
+        },
+        endTime: {
+          type: 'timestamp',
+        },
+        date: {
+          type: 'timestamp',
+        },
+        fun: { type: 'set', items: { type: 'string' } },
+        related: { type: 'references' },
+        value: { type: 'number' },
+        status: { type: 'number' },
+      },
+    },
+  },
+})
 
-const observe = async (
-  t: ExecutionContext<TestCtx>,
-  q: any,
-  cb: (d: any) => void
-) => {
-  const { subClient } = t.context
-  const id = subClient.subscribe('db', q, cb)
-  return id
-}
-
-test.serial('subs layout', async (t) => {
-  await start(t)
-  const client = t.context.dbClient
+test('subs layout', async (t) => {
+  const client = t.context.client
 
   let now = Date.now()
   let viIdx = 0
@@ -133,8 +118,8 @@ test.serial('subs layout', async (t) => {
     parents: ['sp1'],
   })
 
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $language: 'en',
       matches: {
@@ -159,11 +144,13 @@ test.serial('subs layout', async (t) => {
         },
       },
     },
-    (r) => console.info(r)
+    (r) => {
+      // console.info(r)
+    }
   )
 
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $language: 'de',
       matches: {
@@ -188,7 +175,9 @@ test.serial('subs layout', async (t) => {
         },
       },
     },
-    (r) => console.info(r)
+    (r) => {
+      // console.info(r)
+    }
   )
 
   const past: any[] = []
@@ -314,8 +303,8 @@ test.serial('subs layout', async (t) => {
   ])
 
   let result: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       past: {
         id: true,
@@ -415,13 +404,13 @@ test.serial('subs layout', async (t) => {
     },
     (r) => {
       result = r
-      console.info('-->', result)
+      // console.info('-->', result)
     }
   )
 
   let otherResult1: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'mau1',
       $language: 'en',
@@ -564,13 +553,13 @@ test.serial('subs layout', async (t) => {
     },
     (r) => {
       otherResult1 = r
-      console.warn('match layout 1', r)
+      // console.warn('match layout 1', r)
     }
   )
 
   let otherResult2: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'mau2',
       $language: 'en',
@@ -713,13 +702,13 @@ test.serial('subs layout', async (t) => {
     },
     (r) => {
       otherResult2 = r
-      console.warn('match layout 2', r)
+      // console.warn('match layout 2', r)
     }
   )
 
   let otherResult3: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'sp1',
       id: true,
@@ -883,12 +872,12 @@ test.serial('subs layout', async (t) => {
     },
     (r) => {
       otherResult3 = r
-      console.warn('sport layout', r)
+      // console.warn('sport layout', r)
     }
   )
 
   await wait(1000)
-  console.warn('should be upcoming')
+  // console.warn('should be upcoming')
   t.deepEqualIgnoreOrder(result, {
     upcoming: [{ id: 'mau1' }, { id: 'mau2' }].concat(
       upcomingPublishedIds.slice(0, 8)
@@ -923,7 +912,7 @@ test.serial('subs layout', async (t) => {
 
   await wait(3000)
 
-  console.warn('should be live')
+  // console.warn('should be live')
   t.deepEqualIgnoreOrder(result, {
     upcoming: [{ id: 'mau2' }].concat(upcomingPublishedIds.slice(0, 9)),
     past: pastPublishedIds.slice(0, 10),
@@ -974,7 +963,7 @@ test.serial('subs layout', async (t) => {
 
   await wait(3000)
 
-  console.warn('should be past')
+  // console.warn('should be past')
   t.deepEqualIgnoreOrder(result, {
     upcoming: upcomingPublishedIds.slice(0, 10),
     past: [{ id: 'mau1' }].concat(pastPublishedIds.slice(0, 9)),

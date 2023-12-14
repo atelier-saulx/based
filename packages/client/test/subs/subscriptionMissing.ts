@@ -1,22 +1,18 @@
-import anyTest, { ExecutionContext, TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+// import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { startSubs, TestCtx } from '../assertions'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const start = async (t: ExecutionContext<TestCtx>) => {
-  await startSubs(t, {
-    language: 'en',
-    types: {
-      match: {
-        prefix: 'ma',
-        fields: {
-          value: { type: 'number' },
-        },
+const test = basicTest({
+  language: 'en',
+  types: {
+    match: {
+      prefix: 'ma',
+      fields: {
+        value: { type: 'number' },
       },
     },
-  })
-}
+  },
+})
 
 // const observe = async (
 //   t: ExecutionContext<TestCtx>,
@@ -29,8 +25,7 @@ const start = async (t: ExecutionContext<TestCtx>) => {
 // }
 
 test.serial.skip('verify missing markers', async (t) => {
-  await start(t)
-  const client = t.context.dbClient
+  const client = t.context.client
 
   //let res: any
   //observe(

@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     league: {
@@ -55,12 +52,11 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('sub find - list with wildcard', async (t) => {
+test('sub find - list with wildcard', async (t) => {
   // simple nested - single query
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+  const client = t.context.client
   await client.set({
     $id: 'ma1',
     type: 'match',
@@ -108,8 +104,8 @@ test.serial('sub find - list with wildcard', async (t) => {
   })
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -137,7 +133,7 @@ test.serial('sub find - list with wildcard', async (t) => {
     },
     (v) => {
       if (cnt === 0) {
-        console.dir({ v }, { depth: 6 })
+        // console.dir({ v }, { depth: 6 })
         t.deepEqual(v, {
           id: 'root',
           items: [
@@ -200,10 +196,9 @@ test.serial('sub find - list with wildcard', async (t) => {
   t.deepEqual(cnt, 2)
 })
 
-test.serial('sub find - single with wildcard', async (t) => {
+test('sub find - single with wildcard', async (t) => {
   // simple nested - single query
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+  const client = t.context.client
   await client.set({
     $id: 'ma1',
     type: 'match',
@@ -228,8 +223,8 @@ test.serial('sub find - single with wildcard', async (t) => {
   })
 
   let cnt = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'ma1',
       id: true,

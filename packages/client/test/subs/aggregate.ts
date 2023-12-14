@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { BasedSchemaPartial } from '@based/schema'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     league: {
@@ -27,12 +24,11 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('simple count aggregate sub', async (t) => {
-  await startSubs(t, schema)
+test('simple count aggregate sub', async (t) => {
   // simple nested - single query
-  const client = t.context.dbClient
+  const client = t.context.client
 
   t.plan(3)
 
@@ -63,8 +59,8 @@ test.serial('simple count aggregate sub', async (t) => {
   })
 
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -139,10 +135,9 @@ test.serial('simple count aggregate sub', async (t) => {
   await wait(2e3)
 })
 
-test.serial('simple sum aggregate sub', async (t) => {
-  await startSubs(t, schema)
+test('simple sum aggregate sub', async (t) => {
   // simple nested - single query
-  const client = t.context.dbClient
+  const client = t.context.client
 
   t.plan(3)
 
@@ -177,8 +172,8 @@ test.serial('simple sum aggregate sub', async (t) => {
   })
 
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -257,10 +252,9 @@ test.serial('simple sum aggregate sub', async (t) => {
   await wait(2e3)
 })
 
-test.serial('list avg aggregate sub', async (t) => {
-  await startSubs(t, schema)
+test('list avg aggregate sub', async (t) => {
   // simple nested - single query
-  const client = t.context.dbClient
+  const client = t.context.client
 
   t.plan(3)
 
@@ -291,8 +285,8 @@ test.serial('list avg aggregate sub', async (t) => {
   })
 
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -421,10 +415,9 @@ test.serial('list avg aggregate sub', async (t) => {
   await wait(1e3)
 })
 
-test.serial('simple nested find avg aggregate sub', async (t) => {
-  await startSubs(t, schema)
+test('simple nested find avg aggregate sub', async (t) => {
   // simple nested - single query
-  const client = t.context.dbClient
+  const client = t.context.client
 
   t.plan(3)
 
@@ -459,8 +452,8 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
   })
 
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -510,10 +503,9 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
   )
 
   await wait(1e3)
-  //const subs = await client.command('subscriptions.list', [])
-  //const mrks = subs.flat(1).map(([sub]) => sub)
-  //BigInt.prototype.toJSON = function() { return this.toString() }
-  //console.log('markers', JSON.stringify(await Promise.all(mrks.map((sub) => client.command('subscriptions.debug', ['' + sub]))), null, 2))
+  // const subs = await client.command('subscriptions.list', [])
+  // const mrks = subs.flat(1).map(([sub]) => sub)
+  // BigInt.prototype.toJSON = function() { return this.toString() }
 
   await client.set({
     $id: 'ma10',
@@ -552,10 +544,9 @@ test.serial('simple nested find avg aggregate sub', async (t) => {
   await wait(1e3)
 })
 
-test.serial('simple max aggregate sub', async (t) => {
-  await startSubs(t, schema)
+test('simple max aggregate sub', async (t) => {
   // simple nested - single query
-  const client = t.context.dbClient
+  const client = t.context.client
 
   t.plan(3)
 
@@ -586,8 +577,8 @@ test.serial('simple max aggregate sub', async (t) => {
   })
 
   let i = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,

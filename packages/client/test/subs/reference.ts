@@ -1,47 +1,43 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
 
-const test = anyTest as TestInterface<TestCtx>
-
-//TODO: $language with subscription is somehow off?
-test.serial.skip('subscription to a reference', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    types: {
-      sport: {
-        prefix: 'sp',
-        fields: {
-          title: { type: 'text' },
-        },
-      },
-      match: {
-        prefix: 'ma',
-        fields: {
-          title: { type: 'text' },
-          venue: { type: 'reference' },
-        },
-      },
-      venue: {
-        prefix: 've',
-        fields: {
-          title: { type: 'text' },
-          description: { type: 'text' },
-          seats: { type: 'references' },
-        },
-      },
-      seat: {
-        prefix: 'se',
-        fields: {
-          color: { type: 'text' },
-        },
+const test = basicTest({
+  language: 'en',
+  types: {
+    sport: {
+      prefix: 'sp',
+      fields: {
+        title: { type: 'text' },
       },
     },
-  })
+    match: {
+      prefix: 'ma',
+      fields: {
+        title: { type: 'text' },
+        venue: { type: 'reference' },
+      },
+    },
+    venue: {
+      prefix: 've',
+      fields: {
+        title: { type: 'text' },
+        description: { type: 'text' },
+        seats: { type: 'references' },
+      },
+    },
+    seat: {
+      prefix: 'se',
+      fields: {
+        color: { type: 'text' },
+      },
+    },
+  },
+})
 
+// TODO: $language with subscription is somehow off?
+test.skip('subscription to a reference', async (t) => {
+  const client = t.context.client
   const menuItem = await client.set({
     $id: 'ma1',
     $language: 'en',
@@ -89,8 +85,8 @@ test.serial.skip('subscription to a reference', async (t) => {
   })
 
   let n = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: match,
       $language: 'en',
@@ -101,7 +97,6 @@ test.serial.skip('subscription to a reference', async (t) => {
       },
     },
     (v) => {
-      console.log('got', v)
       switch (n++) {
         case 0:
           t.deepEqualIgnoreOrder(v, { title: 'football match' })

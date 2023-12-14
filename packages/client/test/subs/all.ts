@@ -1,13 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
-import '../assertions'
-import { TestCtx, observe, startSubs } from '../assertions'
 
-const test = anyTest as TestInterface<TestCtx>
+const test = basicTest()
 
-test.serial('subscribing to all fields', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
+test('subscribing to all fields', async (t) => {
+  const client = t.context.client
   await client.updateSchema({
     language: 'en',
     translations: ['de', 'nl'],
@@ -43,7 +41,7 @@ test.serial('subscribing to all fields', async (t) => {
   }
 
   const results: any[] = []
-  observe(t, get, (v: any) => {
+  subscribe(client, get, (v: any) => {
     if (v.children[0]) {
       results.push(v.children[0].buttonText)
     }

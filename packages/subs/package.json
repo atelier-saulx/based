@@ -1,0 +1,37 @@
+{
+  "name": "@based/db-subs",
+  "version": "3.0.0",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "watch": "npm run build -- --watch",
+    "clean": "rimraf {.turbo,dist,node_modules}",
+    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
+  },
+  "sideEffects": false,
+  "ava": {
+    "files": [
+      "test/*.ts"
+    ],
+    "concurrency": 1,
+    "extensions": [
+      "ts"
+    ],
+    "require": [
+      "ts-node/register"
+    ]
+  },
+  "dependencies": {
+    "@based/db-client": "*"
+  },
+  "devDependencies": {
+    "@based/db-server": "*",
+    "get-port": "^5.1.1",
+    "@types/node": "^17.0.23",
+    "ava": "3.15.0",
+    "ts-node": "10.9.1",
+    "typescript": "^5.1.6",
+    "rimraf": "^3.0.2"
+  }
+}

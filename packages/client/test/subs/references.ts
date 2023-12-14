@@ -1,11 +1,8 @@
-import anyTest, { TestInterface } from 'ava'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 import { deepCopy, wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     thing: {
@@ -38,11 +35,10 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
-test.serial('add new reference', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('add new reference', async (t) => {
+  const client = t.context.client
 
   const league = await client.set({
     type: 'league',
@@ -64,8 +60,8 @@ test.serial('add new reference', async (t) => {
   })
 
   let res: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: league,
       ongoing: {
@@ -126,12 +122,12 @@ test.serial('add new reference', async (t) => {
   })
   await wait(200)
 
-  //const subs = await client.redis.selva_subscriptions_list('___selva_hierarchy')
-  //console.log(subs)
-  //console.log(await client.redis.selva_subscriptions_debug('___selva_hierarchy', subs[0]))
-  //console.log('ma1', await client.command('subscriptions.debug', ['ma1']))
-  //console.log('ma2', await client.command('subscriptions.debug', ['ma2']))
-  //console.log('ma3', await client.command('subscriptions.debug', ['ma3']))
+  // const subs = await client.redis.selva_subscriptions_list('___selva_hierarchy')
+  // console.log(subs)
+  // console.log(await client.redis.selva_subscriptions_debug('___selva_hierarchy', subs[0]))
+  // console.log('ma1', await client.command('subscriptions.debug', ['ma1']))
+  // console.log('ma2', await client.command('subscriptions.debug', ['ma2']))
+  // console.log('ma3', await client.command('subscriptions.debug', ['ma3']))
 
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma2' }, { id: 'ma3' }] })
 
@@ -140,9 +136,8 @@ test.serial('add new reference', async (t) => {
   t.deepEqual(res, { ongoing: [{ id: 'ma1' }, { id: 'ma3' }] })
 })
 
-test.serial('add new reference reverse', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('add new reference reverse', async (t) => {
+  const client = t.context.client
 
   const league = await client.set({
     type: 'league',
@@ -150,8 +145,8 @@ test.serial('add new reference reverse', async (t) => {
   })
 
   let res: any
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: league,
       id: true,
@@ -169,13 +164,12 @@ test.serial('add new reference reverse', async (t) => {
   })
   await wait(300)
 
-  //console.log(await client.command('subscriptions.debug', [league]))
+  // console.log(await client.command('subscriptions.debug', [league]))
   t.deepEqual(res, { id: league, matches: [match] })
 })
 
-test.serial('find references recursive', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+test('find references recursive', async (t) => {
+  const client = t.context.client
 
   const mainThing = await client.set({
     $id: 'thMain',
@@ -264,8 +258,8 @@ test.serial('find references recursive', async (t) => {
   }
 
   let results: any[] = []
-  observe(t, q, (d) => {
-    console.log('ddd', d)
+  subscribe(client, q, (d) => {
+    // console.log('ddd', d)
     results.push(deepCopy(d))
   })
 

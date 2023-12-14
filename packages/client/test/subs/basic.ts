@@ -1,33 +1,54 @@
-import anyTest, { TestInterface } from 'ava'
 import { wait } from '@saulx/utils'
-import { TestCtx, observe, startSubs } from '../assertions'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-test.serial('basic id based subscriptions', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          yesh: { type: 'string' },
+const test = basicTest({
+  language: 'en',
+  translations: ['de', 'nl'],
+  root: {
+    fields: { yesh: { type: 'string' }, no: { type: 'string' } },
+  },
+  types: {
+    hello: {
+      fields: {
+        name: { type: 'string' },
+        lol: {
+          type: 'record',
+          values: {
+            type: 'object',
+            properties: {
+              x: { type: 'string' },
+              y: { type: 'string' },
+            },
+          },
         },
       },
     },
-  })
+    yeshType: {
+      prefix: 'ye',
+      fields: {
+        hmm: { type: 'number' },
+        yesh: { type: 'string' },
+        myRef: { type: 'reference' },
+      },
+    },
+    refType: {
+      prefix: 're',
+      fields: {
+        yesh: { type: 'string' },
+        myRef: { type: 'reference' },
+      },
+    },
+  },
+})
+
+test('basic id based subscriptions', async (t) => {
+  const client = t.context.client
 
   t.plan(4)
 
   let o1counter = 0
-  const sub1 = observe(t, { $id: 'root', yesh: true }, (d) => {
+  const sub1 = subscribe(client, { $id: 'root', yesh: true }, (d) => {
     if (o1counter === 0) {
       // gets start event
       t.is(d?.yesh, undefined)
@@ -48,22 +69,26 @@ test.serial('basic id based subscriptions', async (t) => {
   })
 
   let o2counter = 0
-  const sub2 = observe(t, { $id: thing, $all: true, aliases: false }, (d) => {
-    if (o2counter === 0) {
-      // gets start event
-      t.deepEqualIgnoreOrder(d, {
-        id: thing,
-        type: 'yeshType',
-        yesh: 'extra nice',
-      })
-    } else if (o2counter === 1) {
-      // gets delete event
-      t.deepEqualIgnoreOrder(d, {})
-    } else {
-      t.fail()
+  const sub2 = subscribe(
+    client,
+    { $id: thing, $all: true, aliases: false },
+    (d) => {
+      if (o2counter === 0) {
+        // gets start event
+        t.deepEqualIgnoreOrder(d, {
+          id: thing,
+          type: 'yeshType',
+          yesh: 'extra nice',
+        })
+      } else if (o2counter === 1) {
+        // gets delete event
+        t.deepEqualIgnoreOrder(d, {})
+      } else {
+        t.fail()
+      }
+      o2counter++
     }
-    o2counter++
-  })
+  )
 
   await wait(500 * 2)
 
@@ -89,25 +114,8 @@ test.serial('basic id based subscriptions', async (t) => {
   await wait(500 * 2)
 })
 
-test.serial('basic id based nested query subscriptions', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      yeshType: {
-        prefix: 'ye',
-        fields: {
-          yesh: { type: 'string' },
-        },
-      },
-    },
-  })
+test('basic id based nested query subscriptions', async (t) => {
+  const client = t.context.client
 
   t.plan(2)
 
@@ -117,8 +125,8 @@ test.serial('basic id based nested query subscriptions', async (t) => {
   })
 
   let o2counter = 0
-  const other = observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       item: {
@@ -140,7 +148,6 @@ test.serial('basic id based nested query subscriptions', async (t) => {
           },
         })
       } else if (o2counter === 1) {
-        console.log('DD', d)
         // gets delete event
         t.deepEqualIgnoreOrder(d, {})
       } else {
@@ -169,30 +176,14 @@ test.serial('basic id based nested query subscriptions', async (t) => {
   await wait(500 * 2)
 })
 
-test.serial('using $field works', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' } },
-    },
-    types: {
-      yeshType: {
-        fields: {
-          yesh: { type: 'string' },
-        },
-      },
-    },
-  })
+test('using $field works', async (t) => {
+  const client = t.context.client
 
   t.plan(2)
 
   let o1counter = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       id: true,
@@ -223,25 +214,8 @@ test.serial('using $field works', async (t) => {
   await wait(1000 * 1)
 })
 
-test.serial('basic $inherit when ancestors change', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' } },
-    },
-    types: {
-      yeshType: {
-        fields: {
-          hmm: { type: 'number' },
-          yesh: { type: 'string' },
-        },
-      },
-    },
-  })
+test('basic $inherit when ancestors change', async (t) => {
+  const client = t.context.client
 
   t.plan(2)
 
@@ -251,8 +225,8 @@ test.serial('basic $inherit when ancestors change', async (t) => {
   })
 
   let o1counter = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: thing,
       id: true,
@@ -285,26 +259,8 @@ test.serial('basic $inherit when ancestors change', async (t) => {
   await wait(1000 * 1)
 })
 
-test.serial('basic id based reference subscriptions', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      refType: {
-        prefix: 're',
-        fields: {
-          yesh: { type: 'string' },
-          myRef: { type: 'reference' },
-        },
-      },
-    },
-  })
+test('basic id based reference subscriptions', async (t) => {
+  const client = t.context.client
 
   t.plan(4)
 
@@ -320,8 +276,8 @@ test.serial('basic id based reference subscriptions', async (t) => {
   })
 
   let o1counter = 0
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 're1',
       yesh: true,
@@ -331,7 +287,6 @@ test.serial('basic id based reference subscriptions', async (t) => {
       },
     },
     (d) => {
-      console.log('ddd', d)
       if (o1counter === 0) {
         // gets start event
         t.deepEqualIgnoreOrder(d, {
@@ -378,8 +333,6 @@ test.serial('basic id based reference subscriptions', async (t) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  console.dir({ subs }, { depth: 6 })
-
   await client.set({
     $id: 're2',
     yesh: 'hello from 2!',
@@ -405,37 +358,11 @@ test.serial('basic id based reference subscriptions', async (t) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  console.dir({ subs }, { depth: 6 })
+  // console.dir({ subs }, { depth: 6 })
 })
 
-test.serial('subscribe with timeout right away record', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      hello: {
-        fields: {
-          name: { type: 'string' },
-          lol: {
-            type: 'record',
-            values: {
-              type: 'object',
-              properties: {
-                x: { type: 'string' },
-                y: { type: 'string' },
-              },
-            },
-          },
-        },
-      },
-    },
-  })
+test('subscribe with timeout right away record', async (t) => {
+  const client = t.context.client
 
   t.plan(2)
 
@@ -444,8 +371,8 @@ test.serial('subscribe with timeout right away record', async (t) => {
     name: 'derp',
   })
 
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: id,
       name: true,
@@ -477,25 +404,8 @@ test.serial('subscribe with timeout right away record', async (t) => {
   await wait(1000)
 })
 
-test.serial('subscribe to descendants: true in list', async (t) => {
-  await startSubs(t, {})
-  const client = t.context.dbClient
-
-  await client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: { yesh: { type: 'string' }, no: { type: 'string' } },
-    },
-    types: {
-      refType: {
-        prefix: 're',
-        fields: {
-          yesh: { type: 'string' },
-        },
-      },
-    },
-  })
+test('subscribe to descendants: true in list', async (t) => {
+  const client = t.context.client
 
   t.plan(4)
 
@@ -512,14 +422,13 @@ test.serial('subscribe to descendants: true in list', async (t) => {
 
   let o1counter = 0
   let res
-  observe(
-    t,
+  subscribe(
+    client,
     {
       $id: 'root',
       descendants: true,
     },
     (d) => {
-      console.log('ddd', d)
       o1counter++
       res = d
     }
@@ -540,12 +449,12 @@ test.serial('subscribe to descendants: true in list', async (t) => {
   t.deepEqual(o1counter, 2)
   t.deepEqualIgnoreOrder(res, { descendants: ['re1', 're2', 're3'] })
 
-  let subs = await Promise.all(
+  const subs = await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  console.dir({ subs }, { depth: 6 })
+  // console.dir({ subs }, { depth: 6 })
 })

@@ -1,11 +1,11 @@
 import { Assertions } from 'ava/lib/assert.js'
 import { deepCopy } from '@saulx/utils'
-import { SelvaServer } from '@based/db-server'
-import { start, SubscriptionClient } from '@based/db-subs'
+import { SelvaServer, startOrigin } from '@based/db-server'
 import { BasedDbClient } from '../../src'
-import { BasedClient } from '@based/client'
-import { ExecutionContext } from 'ava'
+import anyTest, { TestInterface } from 'ava'
+import getPort from 'get-port'
 import { BasedSchemaPartial } from '@based/schema'
+// import { subscribe } from '@based/db-subs'
 
 declare module 'ava' {
   export interface Assertions {
@@ -79,33 +79,33 @@ Object.assign(Assertions.prototype, {
 
 export type TestCtx = {
   srv: SelvaServer
-  subClient: SubscriptionClient
-  dbClient: BasedDbClient
-  pollerClient: BasedClient
+  client: BasedDbClient
   port: number
 }
-export const startSubs = async (
-  t: ExecutionContext<TestCtx>,
-  schema: BasedSchemaPartial
-) => {
-  const {
-    dbClient,
-    subscriptionClient,
-    // @ts-ignore
-  } = await start<TestCtx>(t)
 
-  t.context.dbClient = dbClient
-  t.context.subClient = subscriptionClient
+export const basicTest = (schema?: BasedSchemaPartial) => {
+  const test = anyTest as TestInterface<TestCtx>
+  test.beforeEach(async (t) => {
+    t.context.port = await getPort()
+    t.context.srv = await startOrigin({
+      port: t.context.port,
+      name: 'default',
+    })
+    t.context.client = new BasedDbClient()
+    t.context.client.connect({
+      port: t.context.port,
+      host: '127.0.0.1',
+    })
+    if (schema) {
+      await t.context.client.updateSchema(schema)
+    }
+  })
 
-  await t.context.dbClient.updateSchema(schema)
-}
+  test.afterEach.always(async (t) => {
+    const { srv, client } = t.context
+    await srv.destroy()
+    client.destroy()
+  })
 
-export const observe = async (
-  t: ExecutionContext<TestCtx>,
-  q: any,
-  cb: (d: any) => void
-) => {
-  const { subClient } = t.context
-  const id = subClient.subscribe('db', q, cb)
-  return id
+  return test
 }

@@ -1,10 +1,7 @@
-import anyTest, { TestInterface } from 'ava'
-import { TestCtx, startSubs } from '../assertions'
-import { BasedSchemaPartial } from '@based/schema'
+import { basicTest } from '../assertions'
+import { subscribe } from '@based/db-subs'
 
-const test = anyTest as TestInterface<TestCtx>
-
-const schema: BasedSchemaPartial = {
+const test = basicTest({
   language: 'en',
   types: {
     match: {
@@ -18,12 +15,11 @@ const schema: BasedSchemaPartial = {
       },
     },
   },
-}
+})
 
 // TODO: waiting for error callback
 test.serial.skip('subscription validation error', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+  const client = t.context.client
   let errorCnt = 0
 
   // client
@@ -66,8 +62,7 @@ test.serial.skip('subscription validation error', async (t) => {
 test.serial.skip(
   'subscription initialization with multiple subscribers',
   async (t) => {
-    await startSubs(t, schema)
-    const client = t.context.dbClient
+    const client = t.context.client
 
     let cnt = 0
     const id = await client.set({
@@ -114,8 +109,7 @@ test.serial.skip(
 
 // TODO: waiting for error callback
 test.serial.skip('subscription error on subs manager', async (t) => {
-  await startSubs(t, schema)
-  const client = t.context.dbClient
+  const client = t.context.client
   const results = []
   // client
   //   .observe({
