@@ -121,7 +121,7 @@ test.beforeEach(async (t) => {
   console.log('start replication')
   await t.context.replicaClient.command('replicaof', [t.context.originPort, ip])
   console.log('wait for the replica')
-  await t.context.originClient.command('replicawait')
+  await t.context.originClient.command('replicawait', [])
 
   console.log('updating schema')
   await t.context.originClient.updateSchema({
@@ -191,7 +191,7 @@ test.serial('simple replication', async (t) => {
     ding,
   })
 
-  await originClient.command('replicawait')
+  await originClient.command('replicawait', [])
 
   const oChildren = await originClient.command('hierarchy.children', ['root'])
   const rChildren = await replicaClient.command('hierarchy.children', ['root'])
@@ -218,7 +218,7 @@ test.serial('replicate delete', async (t) => {
     name: 'ding 0',
   })
   originClient.delete({ $id: ding })
-  await originClient.command('replicawait')
+  await originClient.command('replicawait', [])
   t.deepEqual(await replicaClient.get({ $id: ding, id: true }), {})
 })
 
@@ -230,7 +230,7 @@ test.serial('origin flush', async (t) => {
     name: 'ding 0',
   })
   await originClient.command('flush')
-  await originClient.command('replicawait')
+  await originClient.command('replicawait', [])
   t.deepEqual(await replicaClient.get({ $id: ding, id: true }), {})
 })
 
@@ -246,7 +246,7 @@ test.serial('replica restart', async (t) => {
   // FIXME sometimes the client gets stuck here and this command is never executed
   // TODO We could also test the case where the restart is practically delayed by delaying this function call
   await t.context.replicaClient.command('replicaof', [t.context.originPort, '127.0.0.1'])
-  await t.context.originClient.command('replicawait')
+  await t.context.originClient.command('replicawait', [])
 
   let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
@@ -257,7 +257,7 @@ test.serial('origin restart', async (t) => {
 
   await restartOrigin(t)
   // FIXME sometimes the client gets stuck here and this command is never executed
-  await t.context.originClient.command('replicawait')
+  await t.context.originClient.command('replicawait', [])
 
   let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
@@ -271,12 +271,12 @@ test.serial('origin restart with a new db', async (t) => {
     type: 'ding',
     name: 'ding 0',
   })
-  await t.context.originClient.command('replicawait')
+  await t.context.originClient.command('replicawait', [])
 
   // Here we also delete the dump so that the origin will start with a fresh db
   await restartOrigin(t, true)
   // FIXME sometimes the client gets stuck here and this command is never executed
-  await t.context.originClient.command('replicawait')
+  await t.context.originClient.command('replicawait', [])
 
   let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')

@@ -21,7 +21,9 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string', }, // ip
   ]),
   replicainfo: null,
-  replicawait: null,
+  replicawait: defaultEncoder([
+    { type: 'longlong' }, // ?timeout [sec],
+  ]),
   rusage: null,
   // essential
   'resolve.nodeid': defaultEncoder([
