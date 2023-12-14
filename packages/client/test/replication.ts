@@ -36,6 +36,8 @@ function setupLogs(srv: SelvaServer, prefix: string) {
 }
 
 async function restartOrigin(t: Parameters<typeof test>[1], clean?: boolean) {
+  const port = t.context.originPort;
+
   if (t.context.origin) {
     await t.context.origin.destroy()
   }
@@ -45,13 +47,21 @@ async function restartOrigin(t: Parameters<typeof test>[1], clean?: boolean) {
   }
 
   t.context.origin = await startOrigin({
-    port: t.context.originPort,
+    port,
     name: 'default',
     dir: originDumpPath,
   })
+
+  // FIXME sometimes the client gets stuck after the server restarts, so we reconnect just in case
+  if (t.context.originClient) {
+    t.context.originClient.disconnect()
+    t.context.originClient.connect({ port, host: '127.0.0.1' })
+  }
 }
 
 async function restartReplica(t: Parameters<typeof test>[1], clean?: boolean) {
+  const port = t.context.replicaPort;
+
   if (t.context.replica) {
     await t.context.replica.destroy()
   }
@@ -61,12 +71,18 @@ async function restartReplica(t: Parameters<typeof test>[1], clean?: boolean) {
   }
 
   t.context.replica = await startReplica({
-    port: t.context.replicaPort,
+    port,
     name: 'default',
     dir: replicaDumpPath,
     stdio: 'pipe',
   })
   setupLogs(t.context.replica, 'replica:')
+
+  // FIXME sometimes the client gets stuck after the server restarts, so we reconnect just in case
+  if (t.context.replicaClient) {
+    t.context.replicaClient.disconnect()
+    t.context.replicaClient.connect({port, host: '127.0.0.1' })
+  }
 }
 
 async function wait_for_replication_state(replicaClient: BasedDbClient, expectedState: 'NONE' | 'ORIGIN' | 'REPLICA_STALE' | 'REPLICA_ACTIVE') {
@@ -223,7 +239,7 @@ test.serial.skip('origin load another sdb', async (t) => {
   // TODO
 })
 
-test.serial.skip('replica restart', async (t) => {
+test.serial('replica restart', async (t) => {
   const { originClient, replicaClient } = t.context
 
   await restartReplica(t)
@@ -236,7 +252,7 @@ test.serial.skip('replica restart', async (t) => {
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 })
 
-test.serial.skip('origin restart', async (t) => {
+test.serial('origin restart', async (t) => {
   const { originClient, replicaClient } = t.context
 
   await restartOrigin(t)
@@ -247,7 +263,7 @@ test.serial.skip('origin restart', async (t) => {
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 })
 
-test.serial.skip('origin restart with a new db', async (t) => {
+test.serial('origin restart with a new db', async (t) => {
   const { originClient, replicaClient } = t.context
 
   // First we need to write something
