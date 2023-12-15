@@ -3,6 +3,10 @@
   "version": "2.2.6",
   "license": "MIT",
   "main": "dist/index.js",
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
   "scripts": {
     "build": "npx tsc",
     "watch": "npx tsc --watch",

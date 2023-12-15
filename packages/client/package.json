@@ -16,7 +16,8 @@
   },
   "sideEffects": false,
   "files": [
-    "dist"
+    "dist",
+    "!dist/**/*.js.map"
   ],
   "ava": {
     "files": [

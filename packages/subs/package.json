@@ -1,6 +1,6 @@
 {
   "name": "@based/db-subs",
-  "version": "3.0.0",
+  "version": "3.0.0-alpha.0",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -9,6 +9,10 @@
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
   },
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
   "sideEffects": false,
   "ava": {
     "files": [

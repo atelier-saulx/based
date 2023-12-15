@@ -10,6 +10,10 @@
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
   },
   "sideEffects": false,
+  "files": [
+    "dist",
+    "!dist/**/*.js.map"
+  ],
   "ava": {
     "files": [
       "test/*.ts"
