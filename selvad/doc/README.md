@@ -6,6 +6,52 @@ SPDX-License-Identifier: MIT
 
 # Selva Daemon
 
+## Architecture
+
+The Selvad daemon is built on an in-house event\_loop lib/base. The base daemon
+only provides some basic initialization, a simple event loop system, and a
+module loader. All the database functionality is divided into several loadable
+modules.
+
+### Modules
+
+The most important modules are the following:
+
+- **db**: Implements the database (data structures and such)
+- **io**: Implements the serialization to disk and in-mem
+- **server**: Implements the networking parts, TCP server and command message serialization over the wire
+- **replication**: Implements the replication of commands and database dumps over the network using **server**
+
+#### db
+
+The **db** module provides the hierarchy, objects, indexing, subscriptions, and queries.
+It registers a number of RPC-like commands with the **server** module, so that a client
+can read and write the database.
+
+Read [more](modules/db/README.md).
+
+### io
+
+Implements the persistent data serialization format called `SDB` as well as client
+commands to dump and load `SDB` files.
+
+Read [more](modules/io/README.md).
+
+### Server
+
+Read [more](modules/server/README.md).
+
+
+### replication
+
+The **replication** module implements server roles (origin and replica),
+replication of server commands ran on an origin node to the replicas, and
+commands to observe and change the replication. Replication of commands doesn't
+happen implicitly but each command function must explicitly call one of the
+`replicate` functions to trigger the replication.
+
+Read [more](modules/replication/README.md).
+
 ## API
 
 ### Globally available symbols

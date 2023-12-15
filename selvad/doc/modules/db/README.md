@@ -3,7 +3,7 @@ Copyright (c) 2022-2023 SAULX
 
 SPDX-License-Identifier: MIT
 -->
-# DB
+# Module: DB
 
 ## Hierarchy
 
