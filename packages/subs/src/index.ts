@@ -1,8 +1,8 @@
 import { BasedDbClient, protocol, dataRecord } from '@based/db-client'
 
-const subscribers = new Map<BasedDbClient, Subscriber>()
+export const subscribers = new Map<BasedDbClient, Subscriber>()
 
-class Subscriber {
+export class Subscriber {
   constructor(client: BasedDbClient) {
     this.client = client
     this.init = this.initSubs()
