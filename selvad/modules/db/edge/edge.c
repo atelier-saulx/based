@@ -227,7 +227,8 @@ struct EdgeField *Edge_GetField(const struct SelvaHierarchyNode *src_node, const
     struct EdgeField *src_edge_field;
     int err;
 
-    edges = get_edges((typeof_unqual(*src_node) *)src_node);
+    /* TODO This needs C23 typeof_unqual not yet supported on macOs. */
+    edges = get_edges((struct SelvaHierarchyNode *)src_node);
     if (!edges) {
         return NULL;
     }
