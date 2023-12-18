@@ -120,6 +120,10 @@ export const COMMAND_TYPES = {
   // TODO:
   // #define CMD_ID_SUBSCRIPTIONS_ADDTRIGGER 62
   // #define CMD_ID_SUBSCRIPTIONS_DEBUG 67
+  'rpn.evalBool': 44,
+  'rpn.evalDouble': 45,
+  'rpn.evalString': 46,
+  'rpn.evalSet': 47,
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {

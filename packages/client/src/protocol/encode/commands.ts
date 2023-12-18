@@ -181,4 +181,24 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
   ]),
+  'rpn.evalBool': defaultEncoder([
+    { type: 'string' }, // key
+    { type: 'string' }, // expression
+    { type: 'string', vararg: true }, // regs
+  ]),
+  'rpn.evalDouble': defaultEncoder([
+    { type: 'string' }, // key
+    { type: 'string' }, // expression
+    { type: 'string', vararg: true }, // regs
+  ]),
+  'rpn.evalString': defaultEncoder([
+    { type: 'string' }, // key
+    { type: 'string' }, // expression
+    { type: 'string', vararg: true }, // regs
+  ]),
+  'rpn.evalSet': defaultEncoder([
+    { type: 'string' }, // key
+    { type: 'string' }, // expression
+    { type: 'string', vararg: true }, // regs
+  ]),
 }

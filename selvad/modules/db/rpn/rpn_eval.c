@@ -74,7 +74,6 @@ static void SelvaRpn_Eval(enum SelvaRpnEvalType type, struct selva_server_respon
     struct selva_string *reg0 = argv[ARGV_KEY];
     TO_STR(reg0);
 
-
     rpn_set_reg(rpn_ctx, 0, reg0_str, reg0_len, 0);
     if (reg0_len > 0) {
         Selva_NodeId node_id;
