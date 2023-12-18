@@ -42,6 +42,11 @@ static pid_t save_pid;
 static uint64_t save_sdb_eid;
 static struct selva_server_response_out *save_stream_resp;
 
+static int gen_default_sdb_name(char filename[static SDB_NAME_MIN_BUF_SIZE])
+{
+    return sdb_name(filename, SDB_NAME_MIN_BUF_SIZE, NULL, (uint64_t)ts_monorealtime_now());
+}
+
 static void handle_last_good_sync(void)
 {
     /*
@@ -354,8 +359,7 @@ static void auto_save(struct event *, void *arg)
     if (selva_db_is_dirty) {
         char filename[SDB_NAME_MIN_BUF_SIZE];
 
-        sdb_name(filename, SDB_NAME_MIN_BUF_SIZE, NULL, (uint64_t)ts_monorealtime_now());
-
+        gen_default_sdb_name(filename);
         err = dump_save_async(filename);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Failed to autosave: %s", selva_strerror(err));
@@ -448,38 +452,43 @@ static void save_db_cmd(struct selva_server_response_out *resp, const void *buf,
 {
     __auto_finalizer struct finalizer fin;
     struct selva_string *filename;
-    int argc;
-    int err;
+    const char *filename_str;
+    char default_filename[SDB_NAME_MIN_BUF_SIZE];
+    int argc, err;
 
     finalizer_init(&fin);
 
     argc = selva_proto_scanf(&fin, buf, len, "%p", &filename);
-    if (argc < 1) {
-        if (argc < 0) {
-            selva_send_errorf(resp, argc, "Failed to parse args");
-        } else {
-            selva_send_error_arity(resp);
+    if (argc < 0) {
+        selva_send_errorf(resp, argc, "Failed to parse args");
+        return;
+    } else if (argc == 0) {
+        gen_default_sdb_name(default_filename);
+        filename_str = default_filename;
+    } else if (argc == 1) {
+        if (!selva_string_endswith(filename, ".sdb")) {
+            selva_send_errorf(resp, SELVA_EINVAL, "Invalid filename extension");
+            return;
         }
+
+        if (!strcmp(selva_string_to_str(filename, NULL), "dump.sdb")) {
+            selva_send_errorf(resp, SELVA_EINVAL, "dump.sdb is a reserved filename");
+            return;
+        }
+
+        err = selva_start_stream(resp, &save_stream_resp);
+        if (err && err != SELVA_PROTO_ENOTCONN) {
+            selva_send_errorf(resp, err, "Failed to create a stream");
+            return;
+        }
+
+        filename_str = selva_string_to_str(filename, NULL);
+    } else {
+        selva_send_error_arity(resp);
         return;
     }
 
-    if (!selva_string_endswith(filename, ".sdb")) {
-        selva_send_errorf(resp, SELVA_EINVAL, "Invalid filename extension");
-        return;
-    }
-
-    if (!strcmp(selva_string_to_str(filename, NULL), "dump.sdb")) {
-        selva_send_errorf(resp, SELVA_EINVAL, "dump.sdb is a reserved filename");
-        return;
-    }
-
-    err = selva_start_stream(resp, &save_stream_resp);
-    if (err && err != SELVA_PROTO_ENOTCONN) {
-        selva_send_errorf(resp, err, "Failed to create a stream");
-        return;
-    }
-
-    err = dump_save_async(selva_string_to_str(filename, NULL));
+    err = dump_save_async(filename_str);
     if (err) {
         if (save_stream_resp) {
             selva_cancel_stream(resp, save_stream_resp);
@@ -527,8 +536,8 @@ __used static void dump_on_exit(int code, void *)
     }
 
     SELVA_LOG(SELVA_LOGL_INFO, "Dumping the hierarchy before exit...");
-    sdb_name(filename, SDB_NAME_MIN_BUF_SIZE, NULL, (uint64_t)ts_monorealtime_now());
 
+    gen_default_sdb_name(filename);
     err = dump_save_sync(filename);
     if (err) {
         SELVA_LOG(SELVA_LOGL_ERR, "Dump on exit failed: %s", selva_strerror(err));
