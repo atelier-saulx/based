@@ -1080,7 +1080,7 @@ static void *EdgeField_Load(struct selva_io *io, __unused int encver __unused, v
      */
     edge_field->metadata = SelvaObjectTypeLoad2(io, encver, NULL);
 
-    if (constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
+    if (edge_field->metadata && constraint->flags & EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL) {
         SelvaObject_Iterator *obj_it;
         const char *dst_id_str;
         struct EdgeField *bck_edge_field;
