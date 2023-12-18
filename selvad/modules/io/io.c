@@ -190,7 +190,6 @@ static bool is_valid_sdb_name(const char *filename)
 
         res &= !!isalnum(c) || c == '-' || c == '.' || c == '_';
     }
-    SELVA_LOG(SELVA_LOGL_ERR, "VAlid: %d", res);
 
     return res;
 }
