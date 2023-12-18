@@ -6,8 +6,9 @@ import './assertions'
 import getPort from 'get-port'
 import { join } from 'path'
 import { removeDump } from './assertions/utils'
+import { wait } from '@saulx/utils'
 
-const dir = join(process.cwd(), 'tmp', 'rdb-test')
+const dir = join(process.cwd(), 'tmp', 'sdb-test')
 
 const test = anyTest as TestInterface<{
   srv: SelvaServer
@@ -15,14 +16,34 @@ const test = anyTest as TestInterface<{
   port: number
 }>
 
-test.before(removeDump(dir))
+async function restartServer(t: Parameters<typeof test>[1]) {
+  const port = t.context.port;
+
+  if (t.context.srv) {
+    await t.context.srv.destroy()
+  }
+
+  removeDump(dir)
+
+  t.context.srv = await startOrigin({
+    port,
+    name: 'default',
+    dir,
+  })
+
+  // FIXME sometimes the client gets stuck after the server restarts, so we reconnect just in case
+  if (t.context.client) {
+    t.context.client.disconnect()
+    t.context.client.connect({ port, host: '127.0.0.1' })
+  }
+}
+
 test.beforeEach(async (t) => {
+  removeDump(dir)
+
   t.context.port = await getPort()
   console.log('origin')
-  t.context.srv = await startOrigin({
-    port: t.context.port,
-    name: 'default',
-  })
+  restartServer(t)
 
   console.log('connecting')
   t.context.client = new BasedDbClient()
@@ -32,7 +53,6 @@ test.beforeEach(async (t) => {
   })
 
   console.log('updating schema')
-
   await t.context.client.updateSchema({
     language: 'en',
     translations: ['de', 'nl'],
@@ -135,11 +155,10 @@ test.afterEach(async (t) => {
   const { srv, client } = t.context
   await srv.destroy()
   client.destroy()
-  removeDump(dir)()
 })
 
 // TODO: waiting for hierarchy compress
-test.skip('can reload from RDB', async (t) => {
+test('can reload from SDB', async (t) => {
   const { client } = t.context
 
   await client.set({
@@ -193,55 +212,56 @@ test.skip('can reload from RDB', async (t) => {
     },
   })
 
+  // TODO
   // Compressed subtrees
-  await client.set({
-    $id: 'viComp1',
-    title: { en: 'hello' },
-    children: [
-      {
-        $id: 'viComp2',
-        title: { en: 'hello' },
-        children: [
-          {
-            $id: 'viComp4',
-            title: { en: 'hello' },
-          },
-          {
-            $id: 'viComp5',
-            title: { en: 'hello' },
-          },
-        ],
-      },
-      {
-        $id: 'viComp3',
-        title: { en: 'hello' },
-      },
-    ],
-  })
-  await client.set({
-    $id: 'viComp21',
-    title: { en: 'hello' },
-    children: [
-      {
-        $id: 'viComp22',
-        title: { en: 'hello' },
-        children: [
-          {
-            $id: 'viComp24',
-            title: { en: 'hello' },
-          },
-          {
-            $id: 'viComp25',
-            title: { en: 'hello' },
-          },
-        ],
-      },
-      {
-        $id: 'viComp23',
-        title: { en: 'hello' },
-      },
-    ],
-  })
+  //await client.set({
+  //  $id: 'viComp1',
+  //  title: { en: 'hello' },
+  //  children: [
+  //    {
+  //      $id: 'viComp2',
+  //      title: { en: 'hello' },
+  //      children: [
+  //        {
+  //          $id: 'viComp4',
+  //          title: { en: 'hello' },
+  //        },
+  //        {
+  //          $id: 'viComp5',
+  //          title: { en: 'hello' },
+  //        },
+  //      ],
+  //    },
+  //    {
+  //      $id: 'viComp3',
+  //      title: { en: 'hello' },
+  //    },
+  //  ],
+  //})
+  //await client.set({
+  //  $id: 'viComp21',
+  //  title: { en: 'hello' },
+  //  children: [
+  //    {
+  //      $id: 'viComp22',
+  //      title: { en: 'hello' },
+  //      children: [
+  //        {
+  //          $id: 'viComp24',
+  //          title: { en: 'hello' },
+  //        },
+  //        {
+  //          $id: 'viComp25',
+  //          title: { en: 'hello' },
+  //        },
+  //      ],
+  //    },
+  //    {
+  //      $id: 'viComp23',
+  //      title: { en: 'hello' },
+  //    },
+  //  ],
+  //})
   // TODO: waiting for hierarchy compress
   //
   // await client.redis.selva_hierarchy_compress('___selva_hierarchy', 'viComp1')
@@ -276,117 +296,115 @@ test.skip('can reload from RDB', async (t) => {
   //
   // const compressedFilesBefore = (await readdir(dir)).filter((s) => s.includes('.z'))
   //
-  // await client.redis.save()
-  // await wait(1000)
+  await client.command('save', [])
+  await wait(1e3)
   //
   // const compressedFilesAfter = (await readdir(dir)).filter((s) => s.includes('.z'))
-  // t.deepEqualIgnoreOrder(compressedFilesAfter, compressedFilesBefore, 'RDB save should not remove the subtree files')
-  //
-  // await restartServer()
-  // await client.destroy()
-  // await wait(5000)
-  // client = connect({ port })
-  //
-  // t.deepEqual(await client.get({
-  //   $id: 'viTest',
-  //   $all: true,
-  //   parents: true,
-  //   createdAt: false,
-  //   updatedAt: false,
-  // }), {
-  //   id: 'viTest',
-  //   type: 'lekkerType',
-  //   parents: ['root'],
-  //   title: { en: 'hello' },
-  //   stringAry: ['hello', 'world'],
-  //   doubleAry: [1.0, 2.1, 3.2],
-  //   intAry: [7, 6, 5, 4, 0, 3, 2, 999],
-  //   objAry: [
-  //     {
-  //       textyText: {
-  //         en: 'hello 1',
-  //         de: 'hallo 1',
-  //       },
-  //       strField: 'string value hello 1',
-  //       numField: 112,
-  //     },
-  //     {
-  //       textyText: {
-  //         en: 'hello 2',
-  //         de: 'hallo 2',
-  //       },
-  //       strField: 'string value hello 2',
-  //       numField: 113,
-  //     },
-  //     {},
-  //     { strField: 'hello' },
-  //   ],
-  // })
-  //
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viLink1',
-  //     $all: true,
-  //     createdAt: false,
-  //     updatedAt: false,
-  //     lekkerLink: true,
-  //     fren: true,
-  //   }),
-  //   {
-  //     id: 'viLink1',
-  //     type: 'lekkerType',
-  //     title: { en: 'hi' },
-  //     lekkerLink: 'viLink2',
-  //     fren: 'viLink3',
-  //   }
-  // )
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viLink2',
-  //     $all: true,
-  //     createdAt: false,
-  //     updatedAt: false,
-  //     lekkerLink: true,
-  //     fren: true,
-  //   }),
-  //   {
-  //     id: 'viLink2',
-  //     type: 'lekkerType',
-  //     title: { en: 'yo' },
-  //     lekkerLink: 'viLink1',
-  //   }
-  // )
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viLink3',
-  //     $all: true,
-  //     createdAt: false,
-  //     updatedAt: false,
-  //     lekkerLink: true,
-  //     fren: true,
-  //   }),
-  //   {
-  //     id: 'viLink3',
-  //     type: 'lekkerType',
-  //     title: { en: 'sup' },
-  //   }
-  // )
-  // t.deepEqual(
-  //   await client.get({
-  //     $id: 'viLink4',
-  //     $all: true,
-  //     createdAt: false,
-  //     updatedAt: false,
-  //     lekkerLink: true
-  //   }),
-  //   {
-  //     id: 'viLink4',
-  //     type: 'lekkerType',
-  //     title: { en: 'hi' },
-  //     lekkerLink: 'viLink5',
-  //   }
-  // )
-  //
+  // t.deepEqualIgnoreOrder(compressedFilesAfter, compressedFilesBefore, 'SDB save should not remove the subtree files')
+
+  await restartServer(t)
+  await wait(5e3)
+
+  t.deepEqual(await client.get({
+    $id: 'viTest',
+    $all: true,
+    parents: true,
+    createdAt: false,
+    updatedAt: false,
+  }), {
+    id: 'viTest',
+    type: 'lekkerType',
+    parents: ['root'],
+    title: { en: 'hello' },
+    stringAry: ['hello', 'world'],
+    doubleAry: [1.0, 2.1, 3.2],
+    intAry: [7, 6, 5, 4, 0, 3, 2, 999],
+    objAry: [
+      {
+        textyText: {
+          en: 'hello 1',
+          de: 'hallo 1',
+        },
+        strField: 'string value hello 1',
+        numField: 112,
+      },
+      {
+        textyText: {
+          en: 'hello 2',
+          de: 'hallo 2',
+        },
+        strField: 'string value hello 2',
+        numField: 113,
+      },
+      {},
+      { strField: 'hello' },
+    ],
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viLink1',
+      $all: true,
+      createdAt: false,
+      updatedAt: false,
+      lekkerLink: true,
+      fren: true,
+    }),
+    {
+      id: 'viLink1',
+      type: 'lekkerType',
+      title: { en: 'hi' },
+      lekkerLink: 'viLink2',
+      fren: 'viLink3',
+    }
+  )
+  t.deepEqual(
+    await client.get({
+      $id: 'viLink2',
+      $all: true,
+      createdAt: false,
+      updatedAt: false,
+      lekkerLink: true,
+      fren: true,
+    }),
+    {
+      id: 'viLink2',
+      type: 'lekkerType',
+      title: { en: 'yo' },
+      lekkerLink: 'viLink1',
+    }
+  )
+  t.deepEqual(
+    await client.get({
+      $id: 'viLink3',
+      $all: true,
+      createdAt: false,
+      updatedAt: false,
+      lekkerLink: true,
+      fren: true,
+    }),
+    {
+      id: 'viLink3',
+      type: 'lekkerType',
+      title: { en: 'sup' },
+    }
+  )
+  t.deepEqual(
+    await client.get({
+      $id: 'viLink4',
+      $all: true,
+      createdAt: false,
+      updatedAt: false,
+      lekkerLink: true
+    }),
+    {
+      id: 'viLink4',
+      type: 'lekkerType',
+      title: { en: 'hi' },
+      lekkerLink: 'viLink5',
+    }
+  )
+
   // // Check the compressed subtree
   // t.deepEqualIgnoreOrder(
   //   await client.get({
@@ -418,14 +436,12 @@ test.skip('can reload from RDB', async (t) => {
   //   }
   // )
   // //t.deepEqual((await readdir(dir)).filter((s) => s.includes('.z')), [])
-  //
-  // // Do it again
-  // await client.redis.save()
-  // await wait(1000)
-  // await restartServer()
-  // await client.destroy()
-  // await wait(5000)
-  // client = connect({ port })
+
+  // Do it again
+  await client.command('save', [])
+  await wait(1e3)
+  await restartServer(t)
+  await wait(5e3)
 
   t.deepEqual(
     await client.get({
@@ -509,33 +525,34 @@ test.skip('can reload from RDB', async (t) => {
     }
   )
 
+  // TODO
   // Check the previously compressed subtree
-  t.deepEqualIgnoreOrder(
-    await client.get({
-      $id: 'viComp1',
-      id: true,
-      title: true,
-      descendants: true,
-    }),
-    {
-      id: 'viComp1',
-      title: { en: 'hello' },
-      descendants: ['viComp2', 'viComp3', 'viComp4', 'viComp5'],
-    }
-  )
+  //t.deepEqualIgnoreOrder(
+  //  await client.get({
+  //    $id: 'viComp1',
+  //    id: true,
+  //    title: true,
+  //    descendants: true,
+  //  }),
+  //  {
+  //    id: 'viComp1',
+  //    title: { en: 'hello' },
+  //    descendants: ['viComp2', 'viComp3', 'viComp4', 'viComp5'],
+  //  }
+  //)
 
-  // Check the compressed subtree
-  t.deepEqualIgnoreOrder(
-    await client.get({
-      $id: 'viComp21',
-      id: true,
-      title: true,
-      descendants: true,
-    }),
-    {
-      id: 'viComp21',
-      title: { en: 'hello' },
-      descendants: ['viComp22', 'viComp23', 'viComp24', 'viComp25'],
-    }
-  )
+  //// Check the compressed subtree
+  //t.deepEqualIgnoreOrder(
+  //  await client.get({
+  //    $id: 'viComp21',
+  //    id: true,
+  //    title: true,
+  //    descendants: true,
+  //  }),
+  //  {
+  //    id: 'viComp21',
+  //    title: { en: 'hello' },
+  //    descendants: ['viComp22', 'viComp23', 'viComp24', 'viComp25'],
+  //  }
+  //)
 })
