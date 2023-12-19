@@ -82,10 +82,14 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'id' },
     { type: 'string' }, // fieldName
   ]),
+  'object.getMeta': defaultEncoder([
+    { type: 'id' },
+    { type: 'string' }, // fieldName
+  ]),
   'object.setMeta': defaultEncoder([
     { type: 'id' },
     { type: 'string' }, // fieldName
-    { type: 'string' }, // meta value
+    { type: 'longlong' }, // meta value
   ]),
   'object.incrby': defaultEncoder([
     { type: 'id' },

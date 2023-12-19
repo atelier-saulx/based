@@ -643,17 +643,15 @@ static void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, c
     Selva_NodeId node_id;
     const char *okey_str = NULL;
     size_t okey_len = 0;
-    const char *mval_str = NULL;
-    size_t mval_len = 0;
     int argc, err;
     struct SelvaHierarchyNode *node;
     struct SelvaObject *obj;
     SelvaObjectMeta_t user_meta;
 
-    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %.*s, %.*s",
+    argc = selva_proto_scanf(NULL, buf, len, "%" SELVA_SCA_NODE_ID ", %.*s, %" PRIu32,
                              node_id,
                              &okey_len, &okey_str,
-                             &mval_len, &mval_str);
+                             &user_meta);
     if (argc != 3) {
         if (argc < 0) {
             selva_send_errorf(resp, argc, "Failed to parse args");
@@ -668,11 +666,6 @@ static void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, c
         return;
     }
 
-    if (mval_len < sizeof(SelvaObjectMeta_t)) {
-        selva_send_errorf(resp, SELVA_EINTYPE,"Expected: %s", typeof_str(user_meta));
-        return;
-    }
-
     node = SelvaHierarchy_FindNode(main_hierarchy, node_id);
     if (!node) {
         selva_send_error(resp, SELVA_HIERARCHY_ENOENT, NULL, 0);
@@ -681,7 +674,6 @@ static void SelvaObject_SetMetaCommand(struct selva_server_response_out *resp, c
 
     obj = SelvaHierarchy_GetNodeObject(node);
 
-    memcpy(&user_meta, mval_str, sizeof(SelvaObjectMeta_t));
     err = SelvaObject_SetUserMetaStr(obj, okey_str, okey_len, user_meta, NULL);
     if (err) {
         selva_send_errorf(resp, err, "Failed to set key metadata");

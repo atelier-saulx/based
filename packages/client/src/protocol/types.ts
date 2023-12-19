@@ -79,6 +79,7 @@ export const COMMAND_TYPES = {
   'object.del': 48,
   'object.exists': 49,
   'object.len': 53,
+  'object.getMeta': 57,
   'object.setMeta': 58,
   'object.incrby': 51,
   'object.incrbydouble': 52,
