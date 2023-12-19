@@ -134,10 +134,8 @@ export const find = async ({
 }
 
 export const removeDump = (dir: string) => {
-  return () => {
-    if (fs.existsSync(dir)) {
-      rimraf.sync(dir)
-    }
+  if (fs.existsSync(dir)) {
+    rimraf.sync(dir)
   }
 }
 
