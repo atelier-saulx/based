@@ -59,7 +59,7 @@ test.afterEach.always(async (t) => {
   await wait(300)
 })
 
-test.serial('basic batch update', async (t) => {
+test('basic batch update', async (t) => {
   const { client } = t.context
 
   const id = await client.set({
@@ -115,7 +115,7 @@ test.serial('basic batch update', async (t) => {
   )
 })
 
-test.serial('single node updates', async (t) => {
+test('single node updates', async (t) => {
   const { client } = t.context
 
   const th1 = await client.set({
@@ -161,7 +161,7 @@ test.serial('single node updates', async (t) => {
 })
 
 // TODO Move to subs
-//test.serial('subscription and batch update', async (t) => {
+//test('subscription and batch update', async (t) => {
 //  const { client } = t.context
 //  t.plan(3)
 //
@@ -267,7 +267,7 @@ test.serial('single node updates', async (t) => {
 //  sub.unsubscribe()
 //})
 
-test.serial.skip('update refs not supported', async (t) => {
+test.skip('update refs not supported', async (t) => {
   const { client } = t.context
 
   const id1 = await client.set({ type: 'notthing' })
@@ -299,7 +299,7 @@ test.serial.skip('update refs not supported', async (t) => {
 })
 
 // TODO Not supported yet
-//test.serial.skip('update batch - api wrapper', async (t) => {
+//test.skip('update batch - api wrapper', async (t) => {
 //  const { client } = t.context
 //
 //  const id = await client.set({
