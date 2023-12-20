@@ -6,7 +6,6 @@ import {
 import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
-import { deepMerge, setByPath } from '@saulx/utils'
 
 type StringTypes = 'string' | 'text'
 
@@ -75,6 +74,13 @@ const formatPatterns: Record<
   taxID: validators.isTaxID,
   licensePlate: validators.isLicensePlate,
   VAT: validators.isVAT,
+  code: () => true,
+  javascript: () => true,
+  typescript: () => true,
+  python: () => true,
+  rust: () => true,
+  css: () => true,
+  html: () => true,
 }
 
 const validateString = (

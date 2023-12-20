@@ -167,6 +167,13 @@ export type BasedSchemaStringShared = {
     | 'taxID'
     | 'licensePlate'
     | 'VAT'
+    | 'code'
+    | 'typescript'
+    | 'javascript'
+    | 'python'
+    | 'rust'
+    | 'css'
+    | 'html'
   display?: StringFormat
   multiline?: boolean
 }
