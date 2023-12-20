@@ -219,7 +219,7 @@ static size_t sdb_read_string(void * restrict ptr, size_t size, size_t count, st
 
     sha3_Update(&io->hash_c, ptr, rd);
 
-    return rd;
+    return count;
 }
 
 static off_t sdb_tell_file(struct selva_io *io)
