@@ -508,42 +508,37 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     SELVA_TRACE_BEGIN(find_inmem);
     node = find_node_index(hierarchy, id);
     SELVA_TRACE_END(find_inmem);
-    if (node) {
-        if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-            /* NOP */
-        } else if (isDecompressingSubtree) {
-            err = repopulate_detached_head(hierarchy, node);
-            if (err) {
-                return NULL;
-            }
-        } else {
-            node = NULL;
-        }
-    } else {
-        /*
-         * We don't want upsert to be looking from detached nodes.
-         * If isDecompressingSubtree is set it means that restore_subtree() was
-         * already called once.
-         */
-        if (SelvaHierarchyDetached_IndexExists(hierarchy) && !isDecompressingSubtree) {
-            SELVA_TRACE_BEGIN(find_detached);
-            err = restore_subtree(hierarchy, id);
-            SELVA_TRACE_END(find_detached);
-            if (err) {
-                if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
-                    SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
-                              (int)SELVA_NODE_ID_SIZE, id,
-                              selva_strerror(err));
-                }
-
-                return NULL;
-            }
-
-            node = find_node_index(hierarchy, id);
-        }
+    if (!node) {
+        return NULL;
     }
 
-    return node;
+    if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
+        return node;
+    } else if (isDecompressingSubtree) {
+        err = repopulate_detached_head(hierarchy, node);
+        if (err) {
+            return NULL;
+        }
+
+        return node;
+    } else if (SelvaHierarchyDetached_IndexExists(hierarchy)) {
+        SELVA_TRACE_BEGIN(find_detached);
+        err = restore_subtree(hierarchy, id);
+        SELVA_TRACE_END(find_detached);
+        if (err) {
+            if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
+                          (int)SELVA_NODE_ID_SIZE, id,
+                          selva_strerror(err));
+            }
+
+            return NULL;
+        }
+
+        return SelvaHierarchy_FindNode(hierarchy, id);
+    } else {
+        return NULL;
+    }
 }
 
 struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
@@ -3208,15 +3203,15 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
 }
 
 static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_string *compressed) {
-    struct selva_string *decompressed = selva_string_create(NULL, selva_string_getz_ulen(compressed), SELVA_STRING_MUTABLE_FIXED);
-    char *decompressed_str = selva_string_to_mstr(decompressed, NULL);
+    struct selva_string *decompressed;
     int err;
 
+    decompressed = selva_string_create(NULL, selva_string_getz_ulen(compressed), SELVA_STRING_MUTABLE_FIXED);
     if (!decompressed) {
         return SELVA_EINTYPE;
     }
 
-    err = selva_string_decompress(compressed, decompressed_str);
+    err = selva_string_decompress(compressed, selva_string_to_mstr(decompressed, NULL));
     if (err) {
         return err;
     }
@@ -3482,7 +3477,7 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
     node->flags = selva_io_load_unsigned(io);
     node->expire = selva_io_load_unsigned(io);
 
-    if (node->flags & SELVA_NODE_FLAGS_DETACHED && !isDecompressingSubtree) {
+    if ((node->flags & SELVA_NODE_FLAGS_DETACHED) && !isDecompressingSubtree) {
         /*
          * This node and its subtree was compressed.
          * In this case we are supposed to load the subtree as detached and
