@@ -7,6 +7,10 @@ const schema: BasedSchema = {
     bla: {
       prefix: 'bl',
       fields: {
+        color: {
+          type: 'string',
+          format: 'rgbColor',
+        },
         name: {
           minLength: 3,
           maxLength: 6,
@@ -115,4 +119,17 @@ test('setting $value', async (t) => {
     phonkName: { $value: 'bla$' },
   })
   t.deepEqual(resultCollect(res1), [{ path: ['phonkName'], value: 'bla$' }])
+})
+
+test('setting color', async (t) => {
+  const err = await setWalker(schema, {
+    $id: 'bl1',
+    color: 'rgba(255,255,255,0.1)',
+  })
+  t.is(err.errors.length, 0)
+  const err2 = await setWalker(schema, {
+    $id: 'bl1',
+    color: 'rgba(255,255,255,0.1)x',
+  })
+  t.is(err2.errors.length, 1)
 })
