@@ -48,9 +48,18 @@ static void test_io_mode(struct selva_io *io, enum selva_io_flags mode)
  */
 __noreturn static void exit_read_error(struct selva_io *io, const char *type, const char *whence)
 {
-    SELVA_LOG(SELVA_LOGL_CRIT, "SDB read error. file: \"%s\" offset: %lld whence: \"%s\" type: %s",
-              (io->flags & SELVA_IO_FLAGS_FILE_IO) ? selva_string_to_str(io->file_io.filename, NULL) : "None",
-              (long long)io->sdb_tell(io), whence, type);
+    if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB string read error. offset: %lld whence: \"%s\" type: %s last_error: %s",
+                  (long long)io->sdb_tell(io), whence, type,
+                  (io->flags & SELVA_IO_FLAGS_STRING_IO) ? selva_strerror(io->string_io.err) : "unknown");
+    } else if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB file read error. file: \"%s\" offset: %lld whence: \"%s\" type: %s",
+                  (io->flags & SELVA_IO_FLAGS_FILE_IO) ? selva_string_to_str(io->file_io.filename, NULL) : "None",
+                  (long long)io->sdb_tell(io), whence, type);
+    } else {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB read error. offset: %lld whence: \"%s\" type: %s",
+                  (long long)io->sdb_tell(io), whence, type);
+    }
     abort();
 }
 
