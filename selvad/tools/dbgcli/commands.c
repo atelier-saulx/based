@@ -46,6 +46,7 @@ static int cmd_loglevel_req(const struct cmd *cmd, int sock, int seqno, int argc
 static int cmd_resolve_nodeid_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_incrby_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
@@ -107,6 +108,12 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_OBJECT_CAS,
         .cmd_name = "object.cas",
         .cmd_req = cmd_object_cas_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_HIERARCHY_COMPRESS] = {
+        .cmd_id = CMD_ID_HIERARCHY_COMPRESS,
+        .cmd_name = "hierarchy.compress",
+        .cmd_req = cmd_hierarchy_compress,
         .cmd_res = generic_res,
     },
     [CMD_ID_PUBLISH] = {
@@ -541,6 +548,44 @@ static int cmd_object_cas_req(const struct cmd *cmd, int sock, int seqno, int ar
     memcpy(buf + offsetof(struct selva_proto_header, chk), &(CHK_T){htole32(crc32c(crc32c(0, buf, buf_size), value_str, value_len))}, sizeof(CHK_T));
     if (send_message(sock, buf, buf_size, MSG_MORE) ||
         send_message(sock, value_str, value_len, 0)) {
+        return -1;
+    }
+
+    return 0;
+}
+
+static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc != 2 && argc != 3) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_string node_id_hdr;
+        char node_id[SELVA_NODE_ID_SIZE];
+        struct selva_proto_longlong type;
+    } buf = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+            .frame_bsize = htole16(sizeof(buf)),
+        },
+        .node_id_hdr = {
+            .type = SELVA_PROTO_STRING,
+            .bsize = htole32(SELVA_NODE_ID_SIZE),
+        },
+        .type = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = htole64(argc == 4 ? strtol(argv[2], NULL, 10) : 1),
+        },
+    };
+    strncpy(buf.node_id, argv[1], SELVA_NODE_ID_SIZE);
+
+    buf.hdr.chk = htole32(crc32c(0, &buf, sizeof(buf)));
+    if (send_message(sock, &buf, sizeof(buf), 0)) {
         return -1;
     }
 
