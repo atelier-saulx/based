@@ -446,7 +446,7 @@ const char *selva_io_load_str(struct selva_io *io, size_t *len)
 
     buf.bsize = letoh(buf.bsize);
     str = selva_malloc(buf.bsize);
-    if (io->sdb_read(str, sizeof(char), buf.bsize, io) != buf.bsize * sizeof(char)) {
+    if (io->sdb_read(str, sizeof(char), buf.bsize, io) != buf.bsize) {
         selva_free(str);
         exit_read_error(io, selva_proto_typeof_str(buf), READ_WHENCE_VALUE);
     }
