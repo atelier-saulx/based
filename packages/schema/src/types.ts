@@ -226,6 +226,7 @@ export type BasedSchemaFieldBoolean = {
 // Can support full json SCHEMA validation for this
 export type BasedSchemaFieldJSON = {
   type: 'json'
+  format?: 'rich-text'
 } & BasedSchemaFieldShared
 
 export type BasedSchemaFieldPrimitive =
