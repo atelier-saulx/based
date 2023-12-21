@@ -81,6 +81,9 @@ const formatPatterns: Record<
   rust: () => true,
   css: () => true,
   html: () => true,
+  json: () => true,
+  markdown: () => true,
+  clike: () => true,
 }
 
 const validateString = (

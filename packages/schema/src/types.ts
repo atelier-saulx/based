@@ -174,6 +174,9 @@ export type BasedSchemaStringShared = {
     | 'rust'
     | 'css'
     | 'html'
+    | 'json'
+    | 'markdown'
+    | 'clike'
   display?: StringFormat
   multiline?: boolean
 }
