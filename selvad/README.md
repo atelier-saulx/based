@@ -26,7 +26,7 @@ Prerequisites
 ### Linux
 
 - bash
-- glibc
+- glibc 2.35
 - make 3 or preferably 4
 - gcc 13.2
 
