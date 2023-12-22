@@ -54,7 +54,7 @@ export class SelvaServer extends EventEmitter {
       path.join(__dirname, '..', '..', 'selvad', 'local')
     )
 
-    const execPath = localBuild
+    let execPath = localBuild
       ? path.join(__dirname, '..', '..', 'selvad', 'local', 'selvad')
       : path.join(
           node_modules(),
@@ -63,6 +63,10 @@ export class SelvaServer extends EventEmitter {
           'bin',
           'selvad'
         )
+
+    if (opts.ldExecutablePath) {
+      execPath = opts.ldExecutablePath + ' ' + execPath
+    }
 
     this.pm = spawn(execPath, [], {
       env: {

@@ -14,6 +14,7 @@ export type ServerOptions = {
   stdio?: StdioOptions | undefined
   default?: boolean
   ldLibraryPath?: string
+  ldExecutablePath?: string
 }
 
 export type Stats = {
