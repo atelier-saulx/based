@@ -1,6 +1,6 @@
 import { useContext, useState, useEffect } from 'react'
 import { BasedClient } from '@based/client'
-import { Ctx } from './Ctx'
+import { Ctx } from './Ctx.js'
 
 export const useConnected = () => {
   const client: BasedClient = useContext(Ctx)
