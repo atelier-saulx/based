@@ -14,6 +14,17 @@
 #endif
 #endif
 
+#if defined(__linux__)
+/**
+ * Force linking against a specific version of a GLIBC symbol.
+ * Use this at the top-level of a source file.
+ */
+#define GLIBC_COMPAT_SYMBOL(SYM, VER) \
+    __asm__(".symver " #SYM "," #SYM "@GLIBC_" #VER);
+#else
+#define GLIBC_COMPAT_SYMBOL(SYM, VER)
+#endif
+
 #if defined(__GNUC__) && !defined(__clang__)
 /**
  * The char array isn't a NUL terminated C-string.
