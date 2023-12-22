@@ -1,28 +1,28 @@
-import CC from './util/cc'
-import { compile, generateCHeader, deserialize } from '..'
+import CC from './util/cc.js'
+import { compile, generateCHeader, deserialize } from '../src/index.js'
 
 const cc = new CC()
 
 afterAll(() => {
-	cc.clean()
+  cc.clean()
 })
 
 test('Generates a C header that compiles and produces correct output', async () => {
-	const def = [
-		{ name: 'a', type: 'int8' },
-		{ name: 'b', type: 'int8' },
-		{ name: 'c', type: 'uint32_be' },
-		{ name: 'd', type: 'uint32_be' },
-		{ name: 'e', type: 'int8' },
-		{ name: 'f', type: 'uint64_be' },
-		{ name: 'str', type: 'cstring', size: 10 },
-		{ name: 'str_a', type: 'cstring_p' },
-		{ name: 'str_b', type: 'cstring_p' },
-	]
-	const compiled = compile(def, { align: true })
-	const cHeader = generateCHeader(compiled, 'my_record')
+  const def = [
+    { name: 'a', type: 'int8' },
+    { name: 'b', type: 'int8' },
+    { name: 'c', type: 'uint32_be' },
+    { name: 'd', type: 'uint32_be' },
+    { name: 'e', type: 'int8' },
+    { name: 'f', type: 'uint64_be' },
+    { name: 'str', type: 'cstring', size: 10 },
+    { name: 'str_a', type: 'cstring_p' },
+    { name: 'str_b', type: 'cstring_p' },
+  ]
+  const compiled = compile(def, { align: true })
+  const cHeader = generateCHeader(compiled, 'my_record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -63,39 +63,37 @@ int main(void)
 }
 `
 
-	await cc.compile(code)
-	const buf = await cc.run()
-	const obj = deserialize(compiled, buf)
-	const expected = {
-		a: 1,
-		b: 2,
-		c: 4294967295,
-		d: 4294967295,
-		e: -2,
-		f: BigInt('18446744073709551615'),
-		str: 'QWERTYUI',
-		str_a: 'Hello world!',
-		str_b: 'Ciao a tutti!',
-	}
+  await cc.compile(code)
+  const buf = await cc.run()
+  const obj = deserialize(compiled, buf)
+  const expected = {
+    a: 1,
+    b: 2,
+    c: 4294967295,
+    d: 4294967295,
+    e: -2,
+    f: BigInt('18446744073709551615'),
+    str: 'QWERTYUI',
+    str_a: 'Hello world!',
+    str_b: 'Ciao a tutti!',
+  }
 
-	expect(obj).toEqual(expected)
+  expect(obj).toEqual(expected)
 })
 
 test("Unaligned records don't support C Header gen", () => {
-	const def = [
-		{ name: 'a', type: 'int8' },
-		{ name: 'b', type: 'int8' },
-		{ name: 'c', type: 'uint32_be' },
-		{ name: 'd', type: 'uint32_be' },
-		{ name: 'e', type: 'int8' },
-		{ name: 'f', type: 'uint64_be' },
-		{ name: 'str', type: 'cstring', size: 10 },
-		{ name: 'str_a', type: 'cstring_p' },
-		{ name: 'str_b', type: 'cstring_p' },
-	]
-	const compiled = compile(def, { align: false })
+  const def = [
+    { name: 'a', type: 'int8' },
+    { name: 'b', type: 'int8' },
+    { name: 'c', type: 'uint32_be' },
+    { name: 'd', type: 'uint32_be' },
+    { name: 'e', type: 'int8' },
+    { name: 'f', type: 'uint64_be' },
+    { name: 'str', type: 'cstring', size: 10 },
+    { name: 'str_a', type: 'cstring_p' },
+    { name: 'str_b', type: 'cstring_p' },
+  ]
+  const compiled = compile(def, { align: false })
 
-	expect(() => generateCHeader(compiled, 'my_record')).toThrowError(
-		/Unaligned/
-	)
+  expect(() => generateCHeader(compiled, 'my_record')).toThrowError(/Unaligned/)
 })

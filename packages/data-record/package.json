@@ -33,6 +33,7 @@
   },
   "prettier": "@saulx/prettier-config",
   "devDependencies": {
+    "tmp-promise": "^3.0.3",
     "ava": "5.3.1",
     "@saulx/tsconfig": "^1.0.6",
     "@saulx/prettier-config": "^1.0.0",

@@ -9,7 +9,6 @@ import {
 } from '../src/index.js'
 import test from 'ava'
 
-// Test that each type writes the correct value
 test('int8', async (t) => {
   const def = [{ name: 'a', type: 'int8' }]
   const compiled = compile(def, { align: false })
@@ -296,8 +295,7 @@ test('int8', (t) => {
   const def = [{ name: 'a', type: 'int8' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('81', 'hex')
-  expect(buf).toHaveLength(1)
-
+  t.is(buf.length, 1)
   const value = readValue(compiled, buf, '.a')
   t.is(value, -127)
 })
@@ -306,7 +304,7 @@ test('int16', (t) => {
   const def = [{ name: 'a', type: 'int16' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -320,7 +318,7 @@ test('int16_be', (t) => {
   const def = [{ name: 'a', type: 'int16_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x1234)
@@ -330,7 +328,7 @@ test('int16_le', (t) => {
   const def = [{ name: 'a', type: 'int16_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x3412)
@@ -340,7 +338,7 @@ test('int32', (t) => {
   const def = [{ name: 'a', type: 'int32' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -354,7 +352,7 @@ test('int32_be', (t) => {
   const def = [{ name: 'a', type: 'int32_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x12345678)
@@ -364,7 +362,7 @@ test('int32_le', (t) => {
   const def = [{ name: 'a', type: 'int32_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x78563412)
@@ -374,7 +372,7 @@ test('int64', (t) => {
   const def = [{ name: 'a', type: 'int64' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('000000ba55000000', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -388,7 +386,7 @@ test('int64_be', (t) => {
   const def = [{ name: 'a', type: 'int64_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('0deface0deadbeef', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, BigInt('0xdeface0deadbeef'))
@@ -398,7 +396,7 @@ test('int64_le', (t) => {
   const def = [{ name: 'a', type: 'int64_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('efbeaddee0acef0d', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, BigInt('0xdeface0deadbeef'))
@@ -408,7 +406,7 @@ test('uint8', (t) => {
   const def = [{ name: 'a', type: 'uint8' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('fe', 'hex')
-  expect(buf).toHaveLength(1)
+  t.is(buf.length, 1)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 254)
@@ -418,7 +416,7 @@ test('uint16', (t) => {
   const def = [{ name: 'a', type: 'uint16' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -432,7 +430,7 @@ test('uint16_be', (t) => {
   const def = [{ name: 'a', type: 'uint16_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x1234)
@@ -442,7 +440,7 @@ test('uint16_le', (t) => {
   const def = [{ name: 'a', type: 'uint16_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('1234', 'hex')
-  expect(buf).toHaveLength(2)
+  t.is(buf.length, 2)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x3412)
@@ -452,7 +450,7 @@ test('uint32', (t) => {
   const def = [{ name: 'a', type: 'uint32' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -466,7 +464,7 @@ test('uint32_be', (t) => {
   const def = [{ name: 'a', type: 'uint32_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x12345678)
@@ -476,7 +474,7 @@ test('uint32_le', (t) => {
   const def = [{ name: 'a', type: 'uint32_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('12345678', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 0x78563412)
@@ -486,7 +484,7 @@ test('uint64', (t) => {
   const def = [{ name: 'a', type: 'uint64' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('0deface0deadbeef', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   if (ENDIANNESS === 'BE') {
@@ -500,7 +498,7 @@ test('uint64_be', (t) => {
   const def = [{ name: 'a', type: 'uint64_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('0deface0deadbeef', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, BigInt('0xdeface0deadbeef'))
@@ -510,7 +508,7 @@ test('uint64_le', (t) => {
   const def = [{ name: 'a', type: 'uint64_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('0deface0deadbeef', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, BigInt('0xefbeaddee0acef0d'))
@@ -520,7 +518,7 @@ test('float', (t) => {
   const def = [{ name: 'a', type: 'float' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from(ENDIANNESS === 'BE' ? '3fc00000' : '0000c03f', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.5)
@@ -530,7 +528,7 @@ test('float_be', (t) => {
   const def = [{ name: 'a', type: 'float_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('3fc00000', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.5)
@@ -540,7 +538,7 @@ test('float_le', (t) => {
   const def = [{ name: 'a', type: 'float_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('0000c03f', 'hex')
-  expect(buf).toHaveLength(4)
+  t.is(buf.length, 4)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.5)
@@ -553,7 +551,7 @@ test('double', (t) => {
     ENDIANNESS === 'BE' ? '3ff3c083126e978d' : '8d976e1283c0f33f',
     'hex'
   )
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.2345)
@@ -563,7 +561,7 @@ test('double_be', (t) => {
   const def = [{ name: 'a', type: 'double_be' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('3ff3c083126e978d', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.2345)
@@ -573,7 +571,7 @@ test('double_le', (t) => {
   const def = [{ name: 'a', type: 'double_le' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('8d976e1283c0f33f', 'hex')
-  expect(buf).toHaveLength(8)
+  t.is(buf.length, 8)
 
   const value = readValue(compiled, buf, '.a')
   t.is(value, 1.2345)
