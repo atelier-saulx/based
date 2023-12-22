@@ -1,6 +1,7 @@
 import { compile, createRecord, deserialize } from '../src/index.js'
+import test from 'ava'
 
-test('deserialization can deconstruct the object it serialized', () => {
+test('deserialization can deconstruct the object it serialized', (t) => {
   const recordDef = [
     { name: 'a', type: 'uint32_le' },
     { name: 'b', type: 'int32_le' },
@@ -50,10 +51,10 @@ test('deserialization can deconstruct the object it serialized', () => {
   const buf = createRecord(compiled, obj1)
   const obj2 = deserialize(compiled, buf)
 
-  expect(obj1).toEqual(obj2)
+  t.deepEqual(obj1, obj2)
 })
 
-test('A string can be reconstructed', () => {
+test('A string can be reconstructed', (t) => {
   const recordDef = [
     { name: 'a', type: 'uint32_le' },
     { name: 'firstName', type: 'cstring', size: 15 },
@@ -62,27 +63,22 @@ test('A string can be reconstructed', () => {
     a: 4,
     firstName: 'Olli',
   }
-
   const compiled = compile(recordDef, { align: false })
   const buf = createRecord(compiled, obj)
   const deser = deserialize(compiled, buf)
-
-  expect(deser.a).toBe(4)
-  expect(deser.firstName.toString('utf8')).toBe('Olli')
+  t.is(deser.a, 4)
+  t.is(deser.firstName.toString('utf8'), 'Olli')
 })
 
-test('An integer array can be reconstructed', () => {
+test('An integer array can be reconstructed', (t) => {
   const recordDef = [{ name: 'a', type: 'uint16_be[4]' }]
   const obj = {
     a: [0xbeef, 0xface, 0xcafe, 0xf00d],
   }
-
   const compiled = compile(recordDef, { align: false })
-  expect(compiled.size).toBe(4 * 2)
-
+  t.is(compiled.size, 4 * 2)
   const buf = createRecord(compiled, obj)
-  expect(buf.toString('hex')).toBe('beeffacecafef00d')
-
+  t.is(buf.toString('hex'), 'beeffacecafef00d')
   const deser = deserialize(compiled, buf)
-  expect(deser.a).toEqual([0xbeef, 0xface, 0xcafe, 0xf00d])
+  t.is(deser.a, [0xbeef, 0xface, 0xcafe, 0xf00d])
 })
