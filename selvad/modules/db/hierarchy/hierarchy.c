@@ -3317,6 +3317,7 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
 
     /*
      * Note that the metadata must be loaded and saved in predefined order.
+     * See save_metadata() for the right order.
      */
 
     err = Edge_Load(io, encver, hierarchy, node);
@@ -3666,6 +3667,7 @@ static int HierarchySaveSubtreeNode(
 
     selva_io_save_str(io, node->id, SELVA_NODE_ID_SIZE);
     selva_io_save_unsigned(io, node->flags & ~SELVA_NODE_FLAGS_DETACHED);
+    selva_io_save_unsigned(io, node->expire);
     save_metadata(io, node);
     selva_io_save_unsigned(io, SVector_Size(&node->children));
 
