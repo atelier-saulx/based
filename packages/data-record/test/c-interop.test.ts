@@ -1,23 +1,29 @@
-import CC from './util/cc'
-import { compile, generateCHeader, deserialize, createRecord } from '..'
+import CC from './util/cc.js'
+import {
+  compile,
+  generateCHeader,
+  deserialize,
+  createRecord,
+} from '../src/index.js'
+import test from 'ava'
 
 const cc = new CC()
 
-afterAll(() => {
-	cc.clean()
+test.afterEach(() => {
+  cc.clean()
 })
 
-test('The final size matches to C (1)', async () => {
-	const def = [
-		{ name: 'a', type: 'int8' },
-		{ name: 'b', type: 'int16_le' },
-		{ name: 'c', type: 'int32_le' },
-		{ name: 'd', type: 'int8' },
-	]
-	const compiled = compile(def)
-	const cHeader = generateCHeader(compiled, 'record')
+test('The final size matches to C (1)', async (t) => {
+  const def = [
+    { name: 'a', type: 'int8' },
+    { name: 'b', type: 'int16_le' },
+    { name: 'c', type: 'int32_le' },
+    { name: 'd', type: 'int8' },
+  ]
+  const compiled = compile(def)
+  const cHeader = generateCHeader(compiled, 'record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -41,33 +47,29 @@ int main(void)
 	return 0;
 }
 `
-
-	await cc.compile(code)
-	const buf = await cc.run()
-
-	expect(buf).toHaveLength(12)
-	expect(buf).toHaveLength(compiled.size)
-
-	const obj = deserialize(compiled, buf)
-	const expected = {
-		a: 1,
-		b: 2,
-		c: 3,
-		d: 4,
-	}
-
-	expect(obj).toEqual(expected)
+  await cc.compile(code)
+  const buf = await cc.run()
+  t.is(buf.length, 12)
+  t.is(buf.length, compiled.size)
+  const obj = deserialize(compiled, buf)
+  const expected = {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: 4,
+  }
+  t.deepEqual(obj, expected)
 })
 
-test('The final size matches to C (2)', async () => {
-	const def = [
-		{ name: 'a', type: 'float_le' },
-		{ name: 'b', type: 'int8[1]' },
-	]
-	const compiled = compile(def)
-	const cHeader = generateCHeader(compiled, 'record')
+test('The final size matches to C (2)', async (t) => {
+  const def = [
+    { name: 'a', type: 'float_le' },
+    { name: 'b', type: 'int8[1]' },
+  ]
+  const compiled = compile(def)
+  const cHeader = generateCHeader(compiled, 'record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -90,29 +92,29 @@ int main(void)
 }
 `
 
-	await cc.compile(code)
-	const buf = await cc.run()
+  await cc.compile(code)
+  const buf = await cc.run()
 
-	expect(buf).toHaveLength(compiled.size)
+  t.is(buf.length, compiled.size)
 
-	const obj = deserialize(compiled, buf)
-	const expected = {
-		a: 1,
-		b: [2],
-	}
+  const obj = deserialize(compiled, buf)
+  const expected = {
+    a: 1,
+    b: [2],
+  }
 
-	expect(obj).toEqual(expected)
+  t.deepEqual(obj, expected)
 })
 
-test('The final size matches to C (3)', async () => {
-	const def = [
-		{ name: 'a', type: 'int16_le' },
-		{ name: 'b', type: 'int8[3]' },
-	]
-	const compiled = compile(def)
-	const cHeader = generateCHeader(compiled, 'record')
+test('The final size matches to C (3)', async (t) => {
+  const def = [
+    { name: 'a', type: 'int16_le' },
+    { name: 'b', type: 'int8[3]' },
+  ]
+  const compiled = compile(def)
+  const cHeader = generateCHeader(compiled, 'record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -135,32 +137,32 @@ int main(void)
 }
 `
 
-	await cc.compile(code)
-	const buf = await cc.run()
+  await cc.compile(code)
+  const buf = await cc.run()
 
-	expect(buf).toHaveLength(6)
-	expect(buf).toHaveLength(compiled.size)
+  t.is(buf.length, 6)
+  t.is(buf.length, compiled.size)
 
-	const obj = deserialize(compiled, buf)
-	const expected = {
-		a: 1,
-		b: [2, 3, 4],
-	}
+  const obj = deserialize(compiled, buf)
+  const expected = {
+    a: 1,
+    b: [2, 3, 4],
+  }
 
-	expect(obj).toEqual(expected)
+  t.deepEqual(obj, expected)
 })
 
-test('Well ordered record does not need padding', async () => {
-	const def = [
-		{ name: 'a', type: 'int8' },
-		{ name: 'b', type: 'int8' },
-		{ name: 'c', type: 'int16_le' },
-		{ name: 'd', type: 'int32_le' },
-	]
-	const compiled = compile(def)
-	const cHeader = generateCHeader(compiled, 'record')
+test('Well ordered record does not need padding', async (t) => {
+  const def = [
+    { name: 'a', type: 'int8' },
+    { name: 'b', type: 'int8' },
+    { name: 'c', type: 'int16_le' },
+    { name: 'd', type: 'int32_le' },
+  ]
+  const compiled = compile(def)
+  const cHeader = generateCHeader(compiled, 'record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -185,35 +187,35 @@ int main(void)
 }
 `
 
-	await cc.compile(code)
-	const buf = await cc.run()
+  await cc.compile(code)
+  const buf = await cc.run()
 
-	expect(buf).toHaveLength(8)
-	expect(buf).toHaveLength(compiled.size)
+  t.is(buf.length, 8)
+  t.is(buf.length, compiled.size)
 
-	const obj = deserialize(compiled, buf)
-	const expected = {
-		a: 1,
-		b: 2,
-		c: 3,
-		d: 4,
-	}
+  const obj = deserialize(compiled, buf)
+  const expected = {
+    a: 1,
+    b: 2,
+    c: 3,
+    d: 4,
+  }
 
-	expect(obj).toEqual(expected)
+  t.deepEqual(obj, expected)
 })
 
-test('Using string pointers produces expected results', async () => {
-	const def = [
-		{ name: 'flag1', type: 'uint8' },
-		{ name: 'flag2', type: 'uint8' },
-		{ name: 'stra', type: 'cstring_p' },
-		{ name: 'strb', type: 'cstring_p' },
-		{ name: 'strc', type: 'cstring_p' },
-	]
-	const compiled = compile(def)
-	const cHeader = generateCHeader(compiled, 'record')
+test('Using string pointers produces expected results', async (t) => {
+  const def = [
+    { name: 'flag1', type: 'uint8' },
+    { name: 'flag2', type: 'uint8' },
+    { name: 'stra', type: 'cstring_p' },
+    { name: 'strb', type: 'cstring_p' },
+    { name: 'strc', type: 'cstring_p' },
+  ]
+  const compiled = compile(def)
+  const cHeader = generateCHeader(compiled, 'record')
 
-	const code = `
+  const code = `
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -241,23 +243,23 @@ int main(void)
 }
 `
 
-	await cc.compile(code)
-	const strc =
-		'abcabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccbababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
-	const input = createRecord(compiled, {
-		flag1: 1,
-		flag2: 2,
-		stra: null,
-		strc,
-	})
-	const buf = await cc.run(input, 'utf8')
-	const res = buf.toString().split('\n')
+  await cc.compile(code)
+  const strc =
+    'abcabababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccbababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababababcccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'
+  const input = createRecord(compiled, {
+    flag1: 1,
+    flag2: 2,
+    stra: null,
+    strc,
+  })
+  const buf = await cc.run(input, 'utf8')
+  const res = buf.toString().split('\n')
 
-	expect(res[0]).toBe('1')
-	expect(res[1]).toBe('0')
-	expect(res[2]).toBe('0')
-	expect(res[3]).toBe(`${strc.length}`)
-	// expect(res[4]).toBe('(nil)');
-	// expect(res[5]).toBe('(nil)');
-	expect(res[6]).toBe('0x38')
+  t.is(res[0], '1')
+  t.is(res[1], '0')
+  t.is(res[2], '0')
+  t.is(res[3], `${strc.length}`)
+  // t.is((res[4]),'(nil)');
+  // t.is((res[5]),'(nil)');
+  t.is(res[6], '0x38')
 })

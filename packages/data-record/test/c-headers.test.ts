@@ -1,13 +1,14 @@
 import CC from './util/cc.js'
 import { compile, generateCHeader, deserialize } from '../src/index.js'
+import test from 'ava'
 
 const cc = new CC()
 
-afterAll(() => {
+test.afterEach(() => {
   cc.clean()
 })
 
-test('Generates a C header that compiles and produces correct output', async () => {
+test('Generates a C header that compiles and produces correct output', async (t) => {
   const def = [
     { name: 'a', type: 'int8' },
     { name: 'b', type: 'int8' },
@@ -78,10 +79,10 @@ int main(void)
     str_b: 'Ciao a tutti!',
   }
 
-  expect(obj).toEqual(expected)
+  t.deepEqual(obj, expected)
 })
 
-test("Unaligned records don't support C Header gen", () => {
+test("Unaligned records don't support C Header gen", (t) => {
   const def = [
     { name: 'a', type: 'int8' },
     { name: 'b', type: 'int8' },
@@ -94,6 +95,5 @@ test("Unaligned records don't support C Header gen", () => {
     { name: 'str_b', type: 'cstring_p' },
   ]
   const compiled = compile(def, { align: false })
-
-  expect(() => generateCHeader(compiled, 'my_record')).toThrowError(/Unaligned/)
+  t.throws(() => generateCHeader(compiled, 'my_record'))
 })
