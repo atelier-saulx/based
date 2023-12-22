@@ -1,5 +1,5 @@
 // import { ConnectOptions, ServerType } from '@saulx/selva'
-import { StdioOptions } from "child_process"
+import { StdioOptions } from 'child_process'
 
 // TODO: fix the import
 type ConnectOptions = any
@@ -13,6 +13,7 @@ export type ServerOptions = {
   env?: NodeJS.ProcessEnv
   stdio?: StdioOptions | undefined
   default?: boolean
+  ldLibraryPath?: string
 }
 
 export type Stats = {

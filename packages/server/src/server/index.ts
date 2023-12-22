@@ -69,6 +69,11 @@ export class SelvaServer extends EventEmitter {
         ...process.env,
         ...{
           LOCPATH: path.join(execPath, '..', 'locale'),
+          ...(opts.ldLibraryPath
+            ? {
+                LD_LIBRARY_PATH: opts.ldLibraryPath,
+              }
+            : null),
           SELVA_PORT: String(this.port),
           SERVER_SO_REUSE: '1',
           SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
