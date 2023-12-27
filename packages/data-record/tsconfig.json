@@ -7,5 +7,5 @@
     "noPropertyAccessFromIndexSignature": false
   },
   "include": ["./src", "./test"],
-  "exclude": ["./test/browser", "./dist/test", "./dist/src"]
+  "exclude": ["./dist/test", "./dist/src"]
 }
