@@ -82,15 +82,21 @@ export class SelvaServer extends EventEmitter {
       ...opts.env,
     }
 
-    const execPath = opts.ldExecutablePath
-      ? opts.ldExecutablePath + ' ' + binaryPath
-      : binaryPath
-    console.log('---------', { execPath, env })
-    this.pm = spawn(execPath, [], {
-      env,
-      cwd: this.backupDir ?? process.cwd(),
-      stdio: opts.stdio || 'inherit',
-    })
+    if (opts.ldExecutablePath) {
+      console.log('--------- ldExecutablePath:', opts.ldExecutablePath, env)
+      this.pm = spawn(opts.ldExecutablePath, [binaryPath], {
+        env,
+        cwd: this.backupDir ?? process.cwd(),
+        stdio: opts.stdio || 'inherit',
+      })
+    } else {
+      console.log('--------- straight to binary:', opts.ldExecutablePath, env)
+      this.pm = spawn(binaryPath, [], {
+        env,
+        cwd: this.backupDir ?? process.cwd(),
+        stdio: opts.stdio || 'inherit',
+      })
+    }
   }
 
   async destroy() {
