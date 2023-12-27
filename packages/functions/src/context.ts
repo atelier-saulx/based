@@ -1,7 +1,7 @@
-import { AuthState } from './auth'
-import { WebSocket, HttpRequest, HttpResponse } from './uws'
 import { parseQuery } from '@saulx/utils'
-import { BasedFunctionClient } from './client'
+import { AuthState } from './auth.js'
+import { WebSocket, HttpRequest, HttpResponse } from './uws.js'
+import { BasedFunctionClient } from './client.js'
 
 export type WebSocketSession = {
   // State can be used for anything - for us the based class instance

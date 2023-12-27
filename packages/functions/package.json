@@ -2,6 +2,7 @@
   "name": "@based/functions",
   "version": "2.2.4",
   "license": "MIT",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts && cp ./dist/client.d.ts ./dist/client_original.d.ts",

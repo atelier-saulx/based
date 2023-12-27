@@ -1,6 +1,6 @@
-import { BasedFunctionClient } from './client'
-import { HttpRequest } from './uws'
-import { Context, WebSocketSession, HttpSession } from './context'
+import { BasedFunctionClient } from './client.js'
+import { HttpRequest } from './uws.js'
+import { Context, WebSocketSession, HttpSession } from './context.js'
 
 export type AuthState = {
   token?: string
