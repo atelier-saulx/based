@@ -1,6 +1,6 @@
 {
   "name": "@based/db-client",
-  "version": "2.0.0-alpha.26",
+  "version": "2.0.0-alpha.27",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -35,7 +35,7 @@
     ]
   },
   "dependencies": {
-    "@based/db-query": "2.0.0-alpha.26",
+    "@based/db-query": "2.0.0-alpha.27",
     "@based/client": "^4.7.6",
     "@based/schema": "^2.2.9",
     "@saulx/diff": "^1.1.4",
