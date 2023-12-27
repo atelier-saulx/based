@@ -9,9 +9,9 @@ const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
 )
 
-pkg.dependencies['@based/db-server-linux-x64'] = version
-pkg.optionalDependencies['@based/db-server-darwin-x64'] = version
-pkg.optionalDependencies['@based/db-server-darwin-arm64'] = version
+for (const name in pkg.optionalDependencies) {
+  pkg.optionalDependencies[name] = version
+}
 
 fs.writeFileSync(
   path.join(__dirname, '..', 'package.json'),

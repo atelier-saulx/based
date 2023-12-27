@@ -22,8 +22,7 @@
     "node_modules-path": "^2.0.7",
     "get-port": "^5.1.1",
     "mkdirp": "^1.0.4",
-    "chalk": "^4.1.0",
-    "@based/db-server-linux-x64": "2.0.0-alpha.24b"
+    "chalk": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^17.0.23",
@@ -32,6 +31,7 @@
     "rimraf": "^3.0.2"
   },
   "optionalDependencies": {
+    "@based/db-server-linux-x64": "2.0.0-alpha.24",
     "@based/db-server-darwin-x64": "2.0.0-alpha.24",
     "@based/db-server-darwin-arm64": "2.0.0-alpha.24"
   }
