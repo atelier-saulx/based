@@ -1,48 +1,41 @@
-import { BasedClient } from '..'
-import * as fflate from 'fflate'
+import { BasedClient } from '../index.js'
+import { inflateSync } from 'fflate'
 import { applyPatch } from '@saulx/diff'
-import { convertDataToBasedError } from '../types/error'
 import { deepEqual } from '@saulx/utils'
-import { updateAuthState } from '../authState/updateAuthState'
-import { setStorage } from '../persistentStorage'
-import {
-  debugDiff,
-  debugFunction,
-  debugGet,
-  debugSubscribe,
-  debugAuth,
-  debugError,
-  debugChannel,
-  debugChannelReqId,
-} from './debug'
+import { updateAuthState } from '../authState/updateAuthState.js'
+import { setStorage } from '../persistentStorage/index.js'
+import { CACHE_PREFIX } from '../persistentStorage/constants.js'
 import {
   parseArrayBuffer,
   decodeHeader,
   readUint8,
   requestFullData,
-} from './protocol'
-import { encodeSubscribeChannelMessage } from '../outgoing/protocol'
-import { getTargetInfo } from '../getTargetInfo'
-import { CacheValue } from '../types'
+} from './protocol.js'
+import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
+import { getTargetInfo } from '../getTargetInfo.js'
+import { CacheValue, convertDataToBasedError } from '../types/index.js'
 
-export const incoming = async (
-  client: BasedClient,
-  data: any /* TODO: type */
-) => {
+const decodeAndDeflate = (
+  start: number,
+  end: number,
+  isDeflate: boolean,
+  buffer: Uint8Array
+): any => {
+  return new TextDecoder().decode(
+    isDeflate ? inflateSync(buffer.slice(start, end)) : buffer.slice(start, end)
+  )
+}
+
+export const incoming = async (client: BasedClient, data: any) => {
   if (client.isDestroyed) {
     return
   }
 
-  const debug = client.listeners.debug
-
   try {
     const d = data.data
-
     const buffer = await parseArrayBuffer(d)
-
     const { type, len, isDeflate } = decodeHeader(readUint8(buffer, 0, 4))
     // reader for batched replies
-
     // ------- Function
     if (type === 0) {
       // | 4 header | 3 id | * payload |
@@ -53,22 +46,12 @@ export const incoming = async (
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (client.functionResponseListeners.has(id)) {
         client.functionResponseListeners.get(id)[0](payload)
         client.functionResponseListeners.delete(id)
-      }
-
-      if (debug) {
-        debugFunction(client, payload, id)
       }
     }
 
@@ -79,13 +62,9 @@ export const incoming = async (
       if (client.getState.has(id) && client.cache.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
-          resolve(client.cache.get(id).value)
+          resolve(client.cache.get(id).v)
         }
         client.getState.delete(id)
-      }
-
-      if (debug) {
-        debugGet(client, id)
       }
     }
 
@@ -104,7 +83,7 @@ export const incoming = async (
       const checksum = readUint8(buffer, 12, 8)
       const previousChecksum = readUint8(buffer, 20, 8)
 
-      if (cachedData.checksum !== previousChecksum) {
+      if (cachedData.c !== previousChecksum) {
         requestFullData(client, id)
         return
       }
@@ -115,22 +94,13 @@ export const incoming = async (
 
       // if not empty response, parse it
       if (len !== 24) {
-        diff = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        diff = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       try {
-        cachedData.value = applyPatch(cachedData.value, diff)
-        cachedData.checksum = checksum
+        cachedData.v = applyPatch(cachedData.v, diff)
+        cachedData.c = checksum
       } catch (err) {
-        if (debug) {
-          debugDiff(client, diff, id, checksum, true)
-        }
         requestFullData(client, id)
         return
       }
@@ -139,25 +109,21 @@ export const incoming = async (
         const observable = client.observeState.get(id)
 
         if (observable.persistent) {
-          cachedData.persistent = true
-          setStorage(client, '@based-cache-' + id, cachedData)
+          cachedData.p = true
+          setStorage(client, CACHE_PREFIX + id, cachedData)
         }
 
         for (const [, handlers] of observable.subscribers) {
-          handlers.onData(cachedData.value, checksum)
+          handlers.onData(cachedData.v, checksum)
         }
       }
 
       if (client.getState.has(id)) {
         const get = client.getState.get(id)
         for (const [resolve] of get) {
-          resolve(cachedData.value)
+          resolve(cachedData.v)
         }
         client.getState.delete(id)
-      }
-
-      if (debug) {
-        debugDiff(client, diff, id, checksum)
       }
     }
 
@@ -173,35 +139,27 @@ export const incoming = async (
 
       // If not empty response, parse it
       if (len !== 16) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
-      const cacheData: CacheValue = {
-        value: payload,
-        checksum,
-      }
-      client.cache.set(id, cacheData)
+      const noChange = client.cache.get(id)?.c === checksum
 
-      let found = false
-
-      if (client.observeState.has(id)) {
-        const observable = client.observeState.get(id)
-
-        if (observable.persistent) {
-          cacheData.persistent = true
-          setStorage(client, '@based-cache-' + id, cacheData)
+      if (!noChange) {
+        const cacheData: CacheValue = {
+          v: payload,
+          c: checksum,
         }
-
-        for (const [, handlers] of observable.subscribers) {
-          handlers.onData(payload, checksum)
+        client.cache.set(id, cacheData)
+        if (client.observeState.has(id)) {
+          const observable = client.observeState.get(id)
+          if (observable.persistent) {
+            cacheData.p = true
+            setStorage(client, CACHE_PREFIX + id, cacheData)
+          }
+          for (const [, handlers] of observable.subscribers) {
+            handlers.onData(payload, checksum)
+          }
         }
-        found = true
       }
 
       if (client.getState.has(id)) {
@@ -210,11 +168,6 @@ export const incoming = async (
           resolve(payload)
         }
         client.getState.delete(id)
-        found = true
-      }
-
-      if (debug) {
-        debugSubscribe(client, id, payload, checksum, found)
       }
     }
 
@@ -227,13 +180,7 @@ export const incoming = async (
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (payload === true) {
@@ -252,10 +199,6 @@ export const incoming = async (
         }
         client.authRequest?.resolve?.(client.authState)
       }
-
-      if (debug) {
-        debugAuth(client, payload)
-      }
     }
 
     // ------- Errors
@@ -267,13 +210,7 @@ export const incoming = async (
 
       // if not empty response, parse it
       if (len !== 3) {
-        payload = JSON.parse(
-          new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
-        )
+        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
       }
 
       if (payload.requestId) {
@@ -330,22 +267,13 @@ export const incoming = async (
           client.getState.delete(payload.observableId)
         }
       }
-
-      if (debug) {
-        debugError(client, payload)
-      }
-      // else emit ERROR maybe?
     } // ------- Re-Publish send channel name + payload
     else if (type === 6) {
       // | 4 header | 8 id | * payload |
       // get id add last send on the state
       const id = readUint8(buffer, 4, 8)
       const channel = client.channelState.get(id)
-      if (!id) {
-        if (debug) {
-          debugChannelReqId(client, id, 'not-found')
-        }
-      } else {
+      if (id) {
         if (!channel.inTransit) {
           channel.inTransit = true
           const { buffers, len } = encodeSubscribeChannelMessage(id, [
@@ -369,15 +297,8 @@ export const incoming = async (
               channel.inTransit = false
             }
           }, 5e3)
-          if (debug) {
-            debugChannelReqId(client, id, 'register')
-          }
         }
-
         client.connection.ws.send(buffer)
-        if (debug) {
-          debugChannelReqId(client, id, 'publish', buffer, isDeflate)
-        }
       }
     } // ----------- Channel message
     else if (type === 7) {
@@ -394,11 +315,7 @@ export const incoming = async (
 
         // if not empty response, parse it
         if (len !== 9) {
-          const r = new TextDecoder().decode(
-            isDeflate
-              ? fflate.inflateSync(buffer.slice(start, end))
-              : buffer.slice(start, end)
-          )
+          const r = decodeAndDeflate(start, end, isDeflate, buffer)
           try {
             payload = JSON.parse(r)
           } catch (err) {
@@ -406,22 +323,18 @@ export const incoming = async (
           }
         }
 
-        let found = false
-
         if (client.channelState.has(id)) {
           const observable = client.channelState.get(id)
           for (const [, handlers] of observable.subscribers) {
             handlers.onMessage(payload)
           }
-          found = true
-        }
-        if (debug) {
-          debugChannel(client, id, payload, found)
         }
       }
     }
     // ---------------------------------
   } catch (err) {
-    console.error('Error parsing incoming data', err)
+    // just code can load error codes as well
+    // 981 - cannot parse data
+    console.error(981, err)
   }
 }

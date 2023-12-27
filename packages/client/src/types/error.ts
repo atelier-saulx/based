@@ -34,7 +34,7 @@ export type BasedErrorData = {
 
 export class BasedError extends Error {
   public statusMessage?: string
-  public code: BasedErrorCode
+  public code?: BasedErrorCode
 }
 
 export const convertDataToBasedError = (
@@ -43,7 +43,7 @@ export const convertDataToBasedError = (
 ): BasedError => {
   if (!payload || typeof payload !== 'object') {
     const err = new BasedError(`Payload: ${payload}`)
-    err.code = BasedErrorCode.FunctionError
+    // err.code = BasedErrorCode.FunctionError
     err.name = 'Invalid returned payload'
     return err
   }

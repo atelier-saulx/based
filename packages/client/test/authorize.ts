@@ -1,15 +1,23 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedError, BasedErrorCode } from '../src/types/error.js'
 import { wait } from '@saulx/utils'
 import { Authorize, BasedFunction, BasedQueryFunction } from '@based/functions'
+import getPort from 'get-port'
 
-const setup = async () => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const setup = async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
-
+    port: t.context.port,
     functions: {
       configs: {
         login: {
@@ -67,12 +75,12 @@ const setup = async () => {
   return { client, server }
 }
 
-test.serial('authorize functions', async (t) => {
+test('authorize functions', async (t: T) => {
   t.timeout(1000)
 
   const token = 'mock_token'
 
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -81,7 +89,7 @@ test.serial('authorize functions', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -100,12 +108,12 @@ test.serial('authorize functions', async (t) => {
   )
 })
 
-test.serial('authorize observe', async (t) => {
+test('authorize observe', async (t: T) => {
   t.timeout(12000)
 
   const token = 'mock_token'
 
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   let counter: ReturnType<typeof setTimeout>
 
@@ -116,7 +124,7 @@ test.serial('authorize observe', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -157,12 +165,12 @@ test.serial('authorize observe', async (t) => {
   clearInterval(counter)
 })
 
-test.serial('authorize after observe', async (t) => {
+test('authorize after observe', async (t: T) => {
   t.timeout(12000)
 
   const token = 'mock_token'
 
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
   let counter: ReturnType<typeof setInterval>
 
   t.teardown(() => {
@@ -172,7 +180,7 @@ test.serial('authorize after observe', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
   await wait(500)
@@ -203,13 +211,12 @@ test.serial('authorize after observe', async (t) => {
   t.true(receiveCnt > 0)
 })
 
-test.serial('authorize from server after observe', async (t) => {
+test('authorize from server after observe', async (t: T) => {
   t.timeout(12000)
 
   const token = 'mock_token'
 
-  const { client, server } = await setup()
-  let counter: ReturnType<typeof setInterval>
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -218,7 +225,7 @@ test.serial('authorize from server after observe', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
   await wait(500)
@@ -245,8 +252,7 @@ test.serial('authorize from server after observe', async (t) => {
   })
   await wait(1500)
 
-  // @ts-ignore - totally incorrect typescript error...
-  clearInterval(counter)
-
   t.true(receiveCnt > 0)
+
+  t.true(true)
 })

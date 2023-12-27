@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext, useRef } from 'react'
-import { Ctx } from './Ctx'
+import { Ctx } from './Ctx.js'
 import { BasedClient, BasedQuery } from '@based/client'
 import { hash } from '@saulx/hash'
 

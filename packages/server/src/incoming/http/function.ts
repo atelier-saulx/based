@@ -4,10 +4,10 @@ import {
   BasedRoute,
   BasedFunctionConfig,
 } from '@based/functions'
-import { sendHttpResponse } from '../../sendHttpResponse'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
-import { IsAuthorizedHandler } from '../../authorize'
+import { sendHttpResponse } from '../../sendHttpResponse.js'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
+import { IsAuthorizedHandler } from '../../authorize.js'
 
 export const httpFunction: IsAuthorizedHandler<HttpSession> = async (
   route: BasedRoute<'function'>,

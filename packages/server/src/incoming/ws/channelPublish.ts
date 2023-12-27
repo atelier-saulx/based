@@ -1,12 +1,12 @@
-import { readUint8, decodePayload, parsePayload } from '../../protocol'
-import { rateLimitRequest } from '../../security'
-import { verifyRoute } from '../../verifyRoute'
-import { BinaryMessageHandler } from './types'
-import { extendChannel, hasChannel } from '../../channel'
-import { IsAuthorizedHandler, authorize } from '../../authorize'
+import { readUint8, decodePayload, parsePayload } from '../../protocol.js'
+import { rateLimitRequest } from '../../security.js'
+import { verifyRoute } from '../../verifyRoute.js'
+import { BinaryMessageHandler } from './types.js'
+import { extendChannel, hasChannel } from '../../channel/index.js'
+import { IsAuthorizedHandler, authorize } from '../../authorize.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
-import { sendError } from '../../sendError'
-import { BasedErrorCode } from '../../error'
+import { sendError } from '../../sendError.js'
+import { BasedErrorCode } from '../../error/index.js'
 
 const publish: IsAuthorizedHandler<WebSocketSession, BasedRoute<'channel'>> = (
   route,

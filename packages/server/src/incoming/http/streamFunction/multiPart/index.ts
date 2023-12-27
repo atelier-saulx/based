@@ -5,15 +5,15 @@ import {
   BasedRoute,
   BasedFunctionConfig,
 } from '@based/functions'
-import { BasedServer } from '../../../../server'
-import { installFn } from '../../../../installFn'
-import readFormData from './readFormData'
+import { BasedServer } from '../../../../server.js'
+import { installFn } from '../../../../installFn.js'
+import readFormData from './readFormData.js'
 import {
   BasedErrorCode,
   BasedErrorData,
   createErrorData,
-} from '../../../../error'
-import { sendHttpResponse } from '../../../../sendHttpResponse'
+} from '../../../../error/index.js'
+import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 
 const handleFile = async (
   server: BasedServer,

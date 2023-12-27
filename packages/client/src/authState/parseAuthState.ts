@@ -1,15 +1,9 @@
-import { AuthState } from '../types'
-import {
-  decodeBase64,
-  encodeBase64,
-  stringToUtf8,
-  uft8ToString,
-  createEncoder,
-} from '@saulx/utils'
+import { AuthState } from '../types/index.js'
+import { createEncoder, encodeBase64, decodeBase64 } from '@saulx/utils'
 
 export const decodeAuthState = (authState: string): AuthState => {
   try {
-    const str = uft8ToString(decodeBase64(decodeURI(authState)))
+    const str = new TextDecoder().decode(decodeBase64(decode(authState)))
     return JSON.parse(str)
   } catch (err) {
     return { error: 'Invalid authState' }
@@ -27,9 +21,7 @@ export const decodeAuthState = (authState: string): AuthState => {
 */
 // | HT (what is this?)
 
-// can also encode the json - no base64
-
-const { encode } = createEncoder(
+const { encode, decode } = createEncoder(
   [
     '(',
     ')',
@@ -54,6 +46,7 @@ const { encode } = createEncoder(
 )
 
 export const encodeAuthState = (authState: AuthState): string => {
-  const b64 = encode(encodeBase64(stringToUtf8(JSON.stringify(authState))))
-  return encodeURI(b64)
+  return encode(
+    encodeBase64(new TextEncoder().encode(JSON.stringify(authState)))
+  )
 }

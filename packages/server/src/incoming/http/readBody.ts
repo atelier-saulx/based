@@ -1,8 +1,8 @@
 import { HttpSession, Context, BasedRoute } from '@based/functions'
 import zlib from 'node:zlib'
-import { BasedErrorCode } from '../../error'
-import { BasedServer } from '../../server'
-import { sendError } from '../../sendError'
+import { BasedErrorCode } from '../../error/index.js'
+import { BasedServer } from '../../server.js'
+import { sendError } from '../../sendError.js'
 
 const decoder = new TextDecoder('utf-8')
 

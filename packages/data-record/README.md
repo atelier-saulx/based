@@ -1,10 +1,8 @@
-data-record
-===========
+# data-record
 
 Record type for Node.js.
 
-Record Format
--------------
+## Record Format
 
 A record is consist of an array of field definitions, describing a physical data
 structure in memory that can be mapped to a `struct` type in C or C++.
@@ -14,23 +12,29 @@ The following array defines a simple fixed size record with some nested records.
 ```js
 // A record definition
 const def = [
-    { name: 'value1', type: 'uint32_le' },
-    { name: 'value2', type: 'int32_be' },
-    { name: 'custom1', type: 'int_le', size: 3 },
-    { name: 'custom2', type: 'int_le', size: 5 },
-    { name: 'nested', type: 'record', def: [
-        { name: 'a', type: 'uint32_le' },
-        { name: 'b', type: 'uint32_le' }
-    ]},
-    { name: 'x', type: 'record', def: [
-        { name: 'a', type: 'uint32_le' },
-        { name: 'y', type: 'record', def: [
-            { name: 'a', type: 'uint32_le' },
-        ]}
-    ]},
-    { name: 'firstName', type: 'cstring', size: 15 },
+  { name: 'value1', type: 'uint32_le' },
+  { name: 'value2', type: 'int32_be' },
+  { name: 'custom1', type: 'int_le', size: 3 },
+  { name: 'custom2', type: 'int_le', size: 5 },
+  {
+    name: 'nested',
+    type: 'record',
+    def: [
+      { name: 'a', type: 'uint32_le' },
+      { name: 'b', type: 'uint32_le' },
+    ],
+  },
+  {
+    name: 'x',
+    type: 'record',
+    def: [
+      { name: 'a', type: 'uint32_le' },
+      { name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+    ],
+  },
+  { name: 'firstName', type: 'cstring', size: 15 },
 ]
-const compiled = compile(def);
+const compiled = compile(def)
 ```
 
 The compilation result contains the same information as the original definition
@@ -39,68 +43,68 @@ human-readable record definition object.
 
 **Types**
 
-| Type          | Description                                                                               |
-|---------------|-------------------------------------------------------------------------------------------|
-| `int8`	    | 8-bit signed integer							                                            |
-| `int16`       | 16-bit signed integer in host byte order                                                  |
-| `int16_be`    | 16-bit signed integer in big-endian order                                                 |
-| `int16_le`    | 16-bit signed integer in little-endian order                                              |
-| `int32`       | 32-bit signed integer in host byte order                                                  |
-| `int32_be`    | 32-bit signed integer in big-endian order                                                 |
-| `int32_le`    | 32-bit signed integer in little-endian order                                              |
-| `int64`       | 64-bit signed integer in host byte order                                                  |
-| `int64_be`    | 64-bit signed integer in big-endian order                                                 |
-| `int64_le`    | 64-bit signed integer in little-endian order                                              |
-| `uint8`       | 8-bit unsigned integer                                                                    |
-| `uint16`      | 16-bit unsigned integer in host byte order                                                |
-| `uint16_be`   | 16-bit unsigned integer in big-endian order                                               |
-| `uint16_le`   | 16-bit unsigned integer in little-endian order                                            |
-| `uint32`      | 32-bit unsigned integer in host byte order                                                |
-| `uint32_be`   | 32-bit unsigned integer in big-endian order                                               |
-| `uint32_le`   | 32-bit unsigned integer in little-endian order                                            |
-| `uint64`      | 64-bit unsigned integer in host byte order                                                |
-| `uint64_be`   | 64-bit unsigned integer in big-endian order                                               |
-| `uint64_le`   | 64-bit unsigned integer in little-endian order                                            |
-| `float`       | 32-bit single-precision floating-point in host byte order                                 |
-| `float_be`    | 32-bit single-precision floating-point in big-endian order                                |
-| `float_le`    | 32-bit single-precision floating-point in little-endian order                             |
-| `double`      | 64-bit double-precision floating-point in host byte order                                 |
-| `double_be`   | 64-bit double-precision floating-point in big-endian order                                |
-| `double_le`   | 64-bit double-precision floating-point in little-endian order                             |
-| `int_be`      | 0 to 48 bit variable size big-endian signed integer                                       |
-| `int_le`      | 0 to 48 bit variable size little-endian signed integer                                    |
-| `uint_be`     | 0 to 48 bit variable size big-endian unsigned integer                                     |
-| `uint_le`     | 0 to 48 bit variable size little-endian unsigned integer                                  |
-| `cstring`     | null-terminated C-string (termination not enforced, same behavior as `strcpy()`)          |
-| `record`      | A nested record                                                                           |
-| `record_p`    | A pointer to an array of records                                                          |
-| `int8_p`      | A pointer to an array of 8-bit signed integers                                            |
-| `int16_p`     | A pointer to an array of 16-bit signed integers in host byte order                        |
-| `int16_be_p`  | A pointer to an array of 16-bit signed integers in big-endian order                       |
-| `int16_le_p`  | A pointer to an array of 16-bit signed integers in little-endian order                    |
-| `int32_p`     | A pointer to an array of 32-bit signed integers in host byte order                        |
-| `int32_be_p`  | A pointer to an array of 32-bit signed integers in big-endian order                       |
-| `int32_le_p`  | A pointer to an array of 32-bit signed integers in little-endian order                    |
-| `int64_p`     | A pointer to an array of 64-bit signed integers in host byte order                        |
-| `int64_be_p`  | A pointer to an array of 64-bit signed integers in big-endian order                       |
-| `int64_le_p`  | A pointer to an array of 64-bit signed integers in little-endian order                    |
-| `uint8_p`     | A pointer to an array of 8-bit unsigned integers                                          |
-| `uint16_p`    | A pointer to an array of 16-bit unsigned integers in host byte order                      |
-| `uint16_be_p` | A pointer to an array of 16-bit unsigned integers in big-endian order                     |
-| `uint16_le_p` | A pointer to an array of 16-bit unsigned integers in little-endian order                  |
-| `uint32_p`    | A pointer to an array of 32-bit unsigned integers in host byte order                      |
-| `uint32_be_p` | A pointer to an array of 32-bit unsigned integers in big-endian order                     |
-| `uint32_le_p` | A pointer to an array of 32-bit unsigned integers in little-endian order                  |
-| `uint64_p`    | A pointer to an array of 64-bit unsigned integers in host byte order                      |
-| `uint64_be_p` | A pointer to an array of 64-bit unsigned integers in big-endian order                     |
-| `uint64_le_p` | A pointer to an array of 64-bit unsigned integers in little-endian order                  |
-| `float_p`     | A pointer to an array of 32-bit single-precision floating-points in host byte order       |
-| `float_be_p`  | A pointer to an array of 32-bit single-precision floating-points in big-endian order      |
-| `float_le_p`  | A pointer to an array of 32-bit single-precision floating-points in little-endian order   |
-| `double_p`    | A pointer to an array of 64-bit double-precision floating-points in host byte order       |
-| `double_be_p` | A pointer to an array of 64-bit double-precision floating-points in big-endian order      |
-| `double_le_p` | A pointer to an array of 64-bit double-precision floating-points in little-endian order   |
-| `cstring_p`   | A pointer to a C-string                                                                   |
+| Type          | Description                                                                             |
+| ------------- | --------------------------------------------------------------------------------------- |
+| `int8`        | 8-bit signed integer                                                                    |
+| `int16`       | 16-bit signed integer in host byte order                                                |
+| `int16_be`    | 16-bit signed integer in big-endian order                                               |
+| `int16_le`    | 16-bit signed integer in little-endian order                                            |
+| `int32`       | 32-bit signed integer in host byte order                                                |
+| `int32_be`    | 32-bit signed integer in big-endian order                                               |
+| `int32_le`    | 32-bit signed integer in little-endian order                                            |
+| `int64`       | 64-bit signed integer in host byte order                                                |
+| `int64_be`    | 64-bit signed integer in big-endian order                                               |
+| `int64_le`    | 64-bit signed integer in little-endian order                                            |
+| `uint8`       | 8-bit unsigned integer                                                                  |
+| `uint16`      | 16-bit unsigned integer in host byte order                                              |
+| `uint16_be`   | 16-bit unsigned integer in big-endian order                                             |
+| `uint16_le`   | 16-bit unsigned integer in little-endian order                                          |
+| `uint32`      | 32-bit unsigned integer in host byte order                                              |
+| `uint32_be`   | 32-bit unsigned integer in big-endian order                                             |
+| `uint32_le`   | 32-bit unsigned integer in little-endian order                                          |
+| `uint64`      | 64-bit unsigned integer in host byte order                                              |
+| `uint64_be`   | 64-bit unsigned integer in big-endian order                                             |
+| `uint64_le`   | 64-bit unsigned integer in little-endian order                                          |
+| `float`       | 32-bit single-precision floating-point in host byte order                               |
+| `float_be`    | 32-bit single-precision floating-point in big-endian order                              |
+| `float_le`    | 32-bit single-precision floating-point in little-endian order                           |
+| `double`      | 64-bit double-precision floating-point in host byte order                               |
+| `double_be`   | 64-bit double-precision floating-point in big-endian order                              |
+| `double_le`   | 64-bit double-precision floating-point in little-endian order                           |
+| `int_be`      | 0 to 48 bit variable size big-endian signed integer                                     |
+| `int_le`      | 0 to 48 bit variable size little-endian signed integer                                  |
+| `uint_be`     | 0 to 48 bit variable size big-endian unsigned integer                                   |
+| `uint_le`     | 0 to 48 bit variable size little-endian unsigned integer                                |
+| `cstring`     | null-terminated C-string (termination not enforced, same behavior as `strcpy()`)        |
+| `record`      | A nested record                                                                         |
+| `record_p`    | A pointer to an array of records                                                        |
+| `int8_p`      | A pointer to an array of 8-bit signed integers                                          |
+| `int16_p`     | A pointer to an array of 16-bit signed integers in host byte order                      |
+| `int16_be_p`  | A pointer to an array of 16-bit signed integers in big-endian order                     |
+| `int16_le_p`  | A pointer to an array of 16-bit signed integers in little-endian order                  |
+| `int32_p`     | A pointer to an array of 32-bit signed integers in host byte order                      |
+| `int32_be_p`  | A pointer to an array of 32-bit signed integers in big-endian order                     |
+| `int32_le_p`  | A pointer to an array of 32-bit signed integers in little-endian order                  |
+| `int64_p`     | A pointer to an array of 64-bit signed integers in host byte order                      |
+| `int64_be_p`  | A pointer to an array of 64-bit signed integers in big-endian order                     |
+| `int64_le_p`  | A pointer to an array of 64-bit signed integers in little-endian order                  |
+| `uint8_p`     | A pointer to an array of 8-bit unsigned integers                                        |
+| `uint16_p`    | A pointer to an array of 16-bit unsigned integers in host byte order                    |
+| `uint16_be_p` | A pointer to an array of 16-bit unsigned integers in big-endian order                   |
+| `uint16_le_p` | A pointer to an array of 16-bit unsigned integers in little-endian order                |
+| `uint32_p`    | A pointer to an array of 32-bit unsigned integers in host byte order                    |
+| `uint32_be_p` | A pointer to an array of 32-bit unsigned integers in big-endian order                   |
+| `uint32_le_p` | A pointer to an array of 32-bit unsigned integers in little-endian order                |
+| `uint64_p`    | A pointer to an array of 64-bit unsigned integers in host byte order                    |
+| `uint64_be_p` | A pointer to an array of 64-bit unsigned integers in big-endian order                   |
+| `uint64_le_p` | A pointer to an array of 64-bit unsigned integers in little-endian order                |
+| `float_p`     | A pointer to an array of 32-bit single-precision floating-points in host byte order     |
+| `float_be_p`  | A pointer to an array of 32-bit single-precision floating-points in big-endian order    |
+| `float_le_p`  | A pointer to an array of 32-bit single-precision floating-points in little-endian order |
+| `double_p`    | A pointer to an array of 64-bit double-precision floating-points in host byte order     |
+| `double_be_p` | A pointer to an array of 64-bit double-precision floating-points in big-endian order    |
+| `double_le_p` | A pointer to an array of 64-bit double-precision floating-points in little-endian order |
+| `cstring_p`   | A pointer to a C-string                                                                 |
 
 **Arrays**
 
@@ -128,7 +132,6 @@ For example a `cstring_p` pointer can point to the string `"Hello"` during one
 serialization call and to the string `"world!!"` on the next call. The string is
 copied into the dynamic heap section of the resulting buffer which is reserved
 for storing variable sized payloads.
-
 
 ### Data Structure
 
@@ -190,9 +193,7 @@ struct frame {
 };
 ```
 
-
-API
----
+## API
 
 **Functions**
 
@@ -251,12 +252,12 @@ With the definition language here we can do the following:
 ```json
 [
   {
-	"name": "x",
-	"type": "record",
-	"def": [
-		{ "name": "value", "type": "int16_le" },
-		{ "name": "_spare", "type": "int16_le" }
-	]
+    "name": "x",
+    "type": "record",
+    "def": [
+      { "name": "value", "type": "int16_le" },
+      { "name": "_spare", "type": "int16_le" }
+    ]
   },
   { "name": "flags", "type": "uint32_le" }
 ]
@@ -264,9 +265,7 @@ With the definition language here we can do the following:
 
 This is the exact bitwise equivalent of the previous C struct.
 
-
-Scripts
--------
+## Scripts
 
 - `yarn build` - run TS build
 - `yarn lint` - run ESlint
@@ -274,57 +273,61 @@ Scripts
 - `yarn test` - run tests
 - `yarn perf` - run a perf test
 
-
-Examples
---------
+## Examples
 
 ```js
 const recordDefEx = [
-    { name: 'a', type: 'uint32_le' },
-    { name: 'b', type: 'int32_le' },
-    { name: 'c', type: 'int_le', size: 3 },
-    { name: 'd', type: 'int_le', size: 5 },
-    { name: 'nested', type: 'record', def: [
-        { name: 'a', type: 'uint32_le' },
-        { name: 'b', type: 'uint32_le' }
-    ]},
-    { name: 'x', type: 'record', def: [
-        { name: 'a', type: 'uint32_le' },
-        { name: 'y', type: 'record', def: [
-            { name: 'a', type: 'uint32_le' },
-        ]}
-    ]},
-];
+  { name: 'a', type: 'uint32_le' },
+  { name: 'b', type: 'int32_le' },
+  { name: 'c', type: 'int_le', size: 3 },
+  { name: 'd', type: 'int_le', size: 5 },
+  {
+    name: 'nested',
+    type: 'record',
+    def: [
+      { name: 'a', type: 'uint32_le' },
+      { name: 'b', type: 'uint32_le' },
+    ],
+  },
+  {
+    name: 'x',
+    type: 'record',
+    def: [
+      { name: 'a', type: 'uint32_le' },
+      { name: 'y', type: 'record', def: [{ name: 'a', type: 'uint32_le' }] },
+    ],
+  },
+]
 
 const obj = {
-    a: 4,
-    b: -128,
-    c: 10,
-    d: 5,
-    nested: {
-        a: 5,
-        b: 5,
+  a: 4,
+  b: -128,
+  c: 10,
+  d: 5,
+  nested: {
+    a: 5,
+    b: 5,
+  },
+  x: {
+    a: 5,
+    y: {
+      a: 5,
     },
-    x: {
-        a: 5,
-        y: {
-            a: 5
-        }
-    }
-};
+  },
+}
 
-const compiled = compile(recordDefEx);
-const buf = createRecord(compiled, obj);
-const objSerialized = v8.serialize(obj);
-const jsonStr = JSON.stringify(obj);
+const compiled = compile(recordDefEx)
+const buf = createRecord(compiled, obj)
+const objSerialized = v8.serialize(obj)
+const jsonStr = JSON.stringify(obj)
 
-console.log(`buf.length = ${buf.length}, objSerialized.length = ${objSerialized.length}, jsonStr.length = ${jsonStr.length}`);
+console.log(
+  `buf.length = ${buf.length}, objSerialized.length = ${objSerialized.length}, jsonStr.length = ${jsonStr.length}`
+)
 // buf.length = 32, objSerialized.length = 69, JSON.length = 76
 ```
 
-
-Performance Testing
--------------------
+## Performance Testing
 
 ```
 $ yarn perf

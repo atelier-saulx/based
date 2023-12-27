@@ -1,51 +1,61 @@
 {
   "name": "@based/client",
-  "version": "4.8.10",
+  "version": "5.0.0",
   "license": "MIT",
-  "main": "dist/index.js",
   "scripts": {
-    "build": "npx tsc && cp ./dist/index.d.ts ./dist/index_original.d.ts",
+    "build": "npx tsc && cp ./dist/src/index.d.ts ./dist/src/index_original.d.ts",
     "test-stream": "npx ts-node ./test/browser/upload-file.ts",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
-    "browser": "concurrently \"nodemon ./test/browser/based-server.ts --watch ../server/dist --watch ./test/browser/based-server.ts\" \"aristotle watch -t test/browser/index.tsx -p 8006\""
+    "test": "npx ava",
+    "microBuild": "microbundle -i dist/src/index.js -o test/browser/bundle.js --no-pkg-main -f modern --visualize",
+    "browserBuildConsole": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window",
+    "browserBuild": "esbuild ./test/browser/index.ts --bundle --outfile=./test/browser/out.js --minify --metafile=./test/browser/meta.json --define:global=window --drop:console",
+    "browser": "node ./test/browser/server.js"
   },
-  "sideEffects": false,
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "browser": {
+    "./dist/src/stream/index.js": "./dist/src/stream/browser.js",
+    "./dist/src/persistentStorage/index.js": "./dist/src/persistentStorage/browser.js"
+  },
+  "exports": {
+    "./ssr": "./dist/src/ssr.js",
+    ".": "./dist/src/index.js"
+  },
   "ava": {
+    "timeout": "2m",
+    "workerThreads": false,
     "files": [
-      "test/*.ts"
-    ],
-    "concurrency": 1,
-    "extensions": [
-      "ts"
-    ],
-    "require": [
-      "ts-node/register"
+      "./dist/test/**/*.js"
     ]
   },
+  "files": [
+    "dist/src",
+    "README.md",
+    "package.json"
+  ],
   "dependencies": {
-    "@based/opts": "0.7.4",
-    "@saulx/diff": "^1.1.4",
-    "@saulx/hash": "^2.0.0",
-    "fflate": "^0.7.3",
-    "@saulx/utils": "^3.5.0",
-    "@based/fetch": "^1.0.3",
+    "@saulx/diff": "^2.0.1",
+    "@saulx/hash": "^3.0.0",
+    "@saulx/utils": "^4.1.0",
+    "@based/fetch": "^2.0.3",
+    "@based/opts": "^1.0.0",
+    "fflate": "0.8.1",
     "isomorphic-ws": "^5.0.0",
     "ws": "^8.13.0"
   },
   "devDependencies": {
+    "get-port": "7.0.0",
+    "microbundle": "^0.15.1",
+    "esbuild": "^0.19.5",
     "@aws-sdk/lib-storage": "^3.304.0",
     "@aws-sdk/client-s3": "^3.304.0",
-    "nodemon": "^2.0.20",
-    "@based/functions": "^2.0.1",
-    "concurrently": "^7.1.0",
-    "@saulx/utils": "^3.5.0",
-    "@saulx/aristotle": "^4.3.0",
-    "@types/node": "^17.0.23",
-    "ava": "3.15.0",
-    "ts-node": "10.9.1",
-    "typescript": "^4.3.5",
+    "@based/functions": "^3.0.0",
+    "ava": "5.3.1",
+    "@saulx/tsconfig": "^1.0.6",
+    "@saulx/prettier-config": "^1.0.0",
+    "typescript": "^5.2.2",
     "rimraf": "^3.0.2"
   }
 }

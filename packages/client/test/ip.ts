@@ -1,13 +1,22 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { isClientContext } from '@based/functions'
+import getPort from 'get-port'
 
-test.serial('allow overwrite getIp', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('allow overwrite getIp', async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     getIp: () => {
       // this is so you can use custom headers or proxy protocol
       return 'xxx'
@@ -17,7 +26,7 @@ test.serial('allow overwrite getIp', async (t) => {
         getIp: {
           type: 'function',
           maxPayloadSize: 1e8,
-          fn: async (_, payload, ctx) => {
+          fn: async (_, __, ctx) => {
             if (isClientContext(ctx)) {
               return ctx.session?.ip
             }
@@ -39,7 +48,7 @@ test.serial('allow overwrite getIp', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 

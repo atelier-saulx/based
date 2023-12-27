@@ -1,12 +1,21 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('Uninstall hook', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('Uninstall hook', async (t: T) => {
   let uninstallHookFired = false
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         bla: {
@@ -26,7 +35,7 @@ test.serial('Uninstall hook', async (t) => {
   await server.start()
   const client = new BasedClient()
   await client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const x = await client.call('bla')
   t.is(x, 'x')
@@ -38,9 +47,9 @@ test.serial('Uninstall hook', async (t) => {
   await server.destroy()
 })
 
-test.serial('uninstalled function is no longer callable', async (t) => {
+test('uninstalled function is no longer callable', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         bla: {
@@ -56,7 +65,7 @@ test.serial('uninstalled function is no longer callable', async (t) => {
   await server.start()
   const client = new BasedClient()
   await client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const x = await client.call('bla')
   t.is(x, 'x')

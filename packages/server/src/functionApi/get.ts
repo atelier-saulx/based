@@ -1,5 +1,5 @@
-import { BasedServer } from '../server'
-import { BasedErrorCode, createError, BasedErrorData } from '../error'
+import { BasedServer } from '../server.js'
+import { BasedErrorCode, createError, BasedErrorData } from '../error/index.js'
 import { Context, BasedRoute } from '@based/functions'
 import {
   genObservableId,
@@ -9,9 +9,9 @@ import {
   getObsAndStopRemove,
   destroyObs,
   start,
-} from '../query'
-import { verifyRoute } from '../verifyRoute'
-import { installFn } from '../installFn'
+} from '../query/index.js'
+import { verifyRoute } from '../verifyRoute.js'
+import { installFn } from '../installFn.js'
 
 const getObsData = (
   resolve: (x: any) => any,

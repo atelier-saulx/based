@@ -1,16 +1,16 @@
-import { BasedServer } from '../../server'
-import { decodeHeader, readUint8 } from '../../protocol'
-import { functionMessage } from './function'
-import { subscribeMessage, unsubscribeMessage } from './query'
-import { authMessage } from './auth'
-import { getMessage } from './get'
+import { BasedServer } from '../../server.js'
+import { decodeHeader, readUint8 } from '../../protocol.js'
+import { functionMessage } from './function.js'
+import { subscribeMessage, unsubscribeMessage } from './query.js'
+import { authMessage } from './auth.js'
+import { getMessage } from './get.js'
 import { WebSocketSession, Context } from '@based/functions'
-import { BasedErrorCode, createError } from '../../error'
+import { BasedErrorCode, createError } from '../../error/index.js'
 import {
   channelSubscribeMessage,
   unsubscribeChannelMessage,
-} from './channelSubscribe'
-import { channelPublishMessage } from './channelPublish'
+} from './channelSubscribe.js'
+import { channelPublishMessage } from './channelPublish.js'
 
 const reader = (
   server: BasedServer,

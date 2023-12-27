@@ -1,7 +1,7 @@
 import { useContext, useState, useEffect } from 'react'
 import { BasedClient, BasedError, QueryMap } from '@based/client'
-import { Ctx } from './Ctx'
-import { hooksLoading, useLoadingListeners } from './useLoading'
+import { Ctx } from './Ctx.js'
+import { hooksLoading, useLoadingListeners } from './useLoading.js'
 
 export const useQueries = <T = any>(
   name?: string,

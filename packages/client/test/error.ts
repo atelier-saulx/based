@@ -1,8 +1,17 @@
 import test, { ExecutionContext } from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
-import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedError, BasedErrorCode } from '../src/types/error.js'
 import { BasedQueryFunction, ObservableUpdateFunction } from '@based/functions'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
 
 const throwingFunction = async () => {
   throw new Error('This is error message')
@@ -30,12 +39,12 @@ const errorTimer = (_: any, __: any, update: ObservableUpdateFunction) => {
   }
 }
 
-const setup = async (t: ExecutionContext) => {
+const setup = async (t: T) => {
   t.timeout(4000)
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         throwingFunction: {
@@ -71,12 +80,12 @@ const setup = async (t: ExecutionContext) => {
   return { coreClient, server }
 }
 
-test.serial('function error', async (t) => {
+test('function error', async (t: T) => {
   const { coreClient } = await setup(t)
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -88,7 +97,7 @@ test.serial('function error', async (t) => {
   t.is(error.code, BasedErrorCode.FunctionError)
 })
 
-test.serial('function authorize error', async (t) => {
+test('function authorize error', async (t: T) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
@@ -97,7 +106,7 @@ test.serial('function authorize error', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -108,7 +117,7 @@ test.serial('function authorize error', async (t) => {
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
 
-test.serial('observable authorize error', async (t) => {
+test('observable authorize error', async (t: T) => {
   const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
@@ -117,7 +126,7 @@ test.serial('observable authorize error', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -136,12 +145,12 @@ test.serial('observable authorize error', async (t) => {
   t.is(error.code, BasedErrorCode.AuthorizeFunctionError)
 })
 
-test.serial('type error in function', async (t) => {
+test('type error in function', async (t: T) => {
   const { coreClient } = await setup(t)
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -153,11 +162,11 @@ test.serial('type error in function', async (t) => {
 })
 
 // TODO: Will be handled by transpilation of the function (wrapping set inerval / timeout)
-test.serial('throw in an interval', async (t) => {
+test('throw in an interval', async (t: T) => {
   const { coreClient } = await setup(t)
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
   await t.throwsAsync(

@@ -1,6 +1,6 @@
 import { BasedRoute, Context, HttpSession } from '@based/functions'
 import { parseQuery } from '@saulx/utils'
-import { parseAuthState } from '../../auth'
+import { parseAuthState } from '../../auth/index.js'
 
 export default (
   ctx: Context<HttpSession>,

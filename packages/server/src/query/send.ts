@@ -1,9 +1,9 @@
 import { Context, WebSocketSession, HttpSession } from '@based/functions'
-import { updateId } from '../protocol'
-import { BasedServer } from '../server'
-import { destroyObs } from './destroy'
-import { sendErrorData } from '../sendError'
-import { ActiveObservable, ObservableError } from './types'
+import { updateId } from '../protocol.js'
+import { BasedServer } from '../server.js'
+import { destroyObs } from './destroy.js'
+import { sendErrorData } from '../sendError.js'
+import { ActiveObservable, ObservableError } from './types.js'
 
 export const sendObsWs = (
   ctx: Context<WebSocketSession>,

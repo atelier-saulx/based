@@ -1,5 +1,5 @@
-import { ActiveChannel } from './types'
-import { BasedServer } from '../server'
+import { ActiveChannel } from './types.js'
+import { BasedServer } from '../server.js'
 
 export const stopRemoveChannel = (channel: ActiveChannel) => {
   if (channel.timeTillDestroy) {
@@ -7,7 +7,7 @@ export const stopRemoveChannel = (channel: ActiveChannel) => {
   }
 }
 
-export const extendChannel = (server: BasedServer, channel: ActiveChannel) => {
+export const extendChannel = (_server: BasedServer, channel: ActiveChannel) => {
   if (channel.closeAfterIdleTime && channel.timeTillDestroy !== null) {
     channel.timeTillDestroy = channel.closeAfterIdleTime
   }

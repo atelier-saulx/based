@@ -1,8 +1,8 @@
-import { BasedServer } from '../../server'
-import { updateListener } from './update'
-import { errorListener } from './error'
-import { ObservableUpdateFunction } from '../types'
-import { relay } from './relay'
+import { BasedServer } from '../../server.js'
+import { updateListener } from './update.js'
+import { errorListener } from './error.js'
+import { ObservableUpdateFunction } from '../types.js'
+import { relay } from './relay.js'
 import { isBasedFunctionConfig } from '@based/functions'
 
 export const start = (server: BasedServer, id: number) => {
@@ -50,7 +50,6 @@ export const start = (server: BasedServer, id: number) => {
   let isThrottled: boolean
   let throttledArgs: any[]
   let throtDebounced = false
-  let timer: NodeJS.Timeout
 
   const update: ObservableUpdateFunction = spec.throttle
     ? (...args) => {
@@ -59,7 +58,7 @@ export const start = (server: BasedServer, id: number) => {
           throtDebounced = true
         } else {
           isThrottled = true
-          timer = setTimeout(() => {
+          setTimeout(() => {
             if (throtDebounced && !obs.isDestroyed) {
               // @ts-ignore
               updateRaw(...throttledArgs)

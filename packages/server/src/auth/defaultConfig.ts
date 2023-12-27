@@ -6,7 +6,7 @@ export const defaultAuthorize: Authorize = async () => {
 }
 
 export const defaultVerifyAuthState: VerifyAuthState = async (
-  based,
+  _,
   ctx,
   authState
 ) => {

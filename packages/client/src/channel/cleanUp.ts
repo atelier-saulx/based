@@ -1,4 +1,4 @@
-import { BasedClient } from '..'
+import { BasedClient } from '../index.js'
 
 export const cleanUpChannels = (client: BasedClient) => {
   if (!client.channelCleanTimeout) {

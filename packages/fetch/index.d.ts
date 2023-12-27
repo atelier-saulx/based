@@ -1,4 +1,3 @@
-import crossFetch from 'cross-fetch'
+import fetch from 'node-fetch'
 
-const fetch: typeof crossFetch
 export default fetch

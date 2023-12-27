@@ -1,6 +1,6 @@
-import { ActiveChannel } from './types'
-import { BasedServer } from '../server'
-import { stopRemoveChannel } from './extend'
+import { ActiveChannel } from './types.js'
+import { BasedServer } from '../server.js'
+import { stopRemoveChannel } from './extend.js'
 
 export const getChannelAndStopRemove = (
   server: BasedServer,

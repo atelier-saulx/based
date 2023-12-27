@@ -1,18 +1,27 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
 import zlib from 'node:zlib'
 import { promisify } from 'node:util'
-import { encodeAuthState } from '../src/index'
+import { encodeAuthState } from '../src/index.js'
 import { BasedFunctionConfigComplete, isHttpContext } from '@based/functions'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
 
 const deflate = promisify(zlib.deflate)
 const gzip = promisify(zlib.gzip)
 
-test.serial('functions (session url)', async (t) => {
+test.serial('functions (session url)', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -29,14 +38,14 @@ test.serial('functions (session url)', async (t) => {
     },
   })
   await server.start()
-  const url = await (await fetch('http://localhost:9910/hello')).text()
+  const url = await (await fetch(t.context.http + '/hello')).text()
   t.is(url, '/hello')
   await server.destroy()
 })
 
-test.serial('functions (custom headers)', async (t) => {
+test.serial('functions (custom headers)', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -52,7 +61,7 @@ test.serial('functions (custom headers)', async (t) => {
   })
   await server.start()
   const x = await (
-    await fetch('http://localhost:9910/hello', {
+    await fetch(t.context.http + '/hello', {
       headers: {
         bla: 'snurp',
       },
@@ -62,7 +71,7 @@ test.serial('functions (custom headers)', async (t) => {
   await server.destroy()
 })
 
-test.serial('functions (over http)', async (t) => {
+test.serial('functions (over http)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -95,7 +104,7 @@ test.serial('functions (over http)', async (t) => {
   }
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       uninstallAfterIdleTime: 1e3,
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
@@ -132,18 +141,16 @@ test.serial('functions (over http)', async (t) => {
   })
   await server.start()
 
-  const result = await (await fetch('http://localhost:9910/flap')).text()
+  const result = await (await fetch(t.context.http + '/flap')).text()
 
   t.is(result, 'yesh flap')
 
-  const result2 = await (
-    await fetch('http://localhost:9910/flap?flurp=1')
-  ).text()
+  const result2 = await (await fetch(t.context.http + '/flap?flurp=1')).text()
 
   t.is(result2, '{"flurp":1}')
 
   const result3 = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         'content-type': 'application/json',
@@ -154,7 +161,7 @@ test.serial('functions (over http)', async (t) => {
 
   t.is(result3, '{"flurp":2}')
 
-  const x = await (await fetch('http://localhost:9910/gurk')).text()
+  const x = await (await fetch(t.context.http + '/gurk')).text()
 
   t.is(x, `{"error":"[gurk] Function not found","code":40401}`)
 
@@ -165,7 +172,7 @@ test.serial('functions (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('get (over http)', async (t) => {
+test.serial('get (over http)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -225,7 +232,7 @@ test.serial('get (over http)', async (t) => {
   }
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       uninstallAfterIdleTime: 3e3,
@@ -256,23 +263,23 @@ test.serial('get (over http)', async (t) => {
   })
   await server.start()
 
-  const resultObj = await (await fetch('http://localhost:9910/obj')).json()
+  const resultObj = await (await fetch(t.context.http + '/obj')).json()
 
   t.is(typeof resultObj, 'object')
 
-  const result = await (await fetch('http://localhost:9910/counter')).text()
+  const result = await (await fetch(t.context.http + '/counter')).text()
 
   t.is(result, '0')
 
   await wait(1e3)
 
-  const result2 = await (await fetch('http://localhost:9910/counter')).text()
+  const result2 = await (await fetch(t.context.http + '/counter')).text()
 
   t.is(result2, '1')
 
   await wait(1e3)
 
-  const result3 = await (await fetch('http://localhost:9910/hello')).text()
+  const result3 = await (await fetch(t.context.http + '/hello')).text()
 
   t.is(result3, '2')
 
@@ -283,7 +290,7 @@ test.serial('get (over http)', async (t) => {
   server.destroy()
 })
 
-test.serial('functions (over http + contentEncoding)', async (t) => {
+test.serial('functions (over http + contentEncoding)', async (t: T) => {
   const store: {
     [key: string]: BasedFunctionConfigComplete
   } = {
@@ -316,7 +323,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   }
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       closeAfterIdleTime: { query: 3e3, channel: 3e3 },
       uninstallAfterIdleTime: 3e3,
@@ -352,7 +359,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   await server.start()
 
   const result1 = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         'content-encoding': 'deflate',
@@ -365,7 +372,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   t.is(result1, '{"flurp":1}')
 
   const result2 = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         'content-encoding': 'gzip',
@@ -384,7 +391,7 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   }
 
   const result3 = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         'content-encoding': 'gzip',
@@ -403,9 +410,9 @@ test.serial('functions (over http + contentEncoding)', async (t) => {
   server.destroy()
 })
 
-test.serial('auth', async (t) => {
+test.serial('auth', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         flap: {
@@ -429,7 +436,7 @@ test.serial('auth', async (t) => {
   await server.start()
 
   const r1 = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         // allways token ?
@@ -441,7 +448,7 @@ test.serial('auth', async (t) => {
   t.is(r1.code, 40301)
 
   const r = await (
-    await fetch('http://localhost:9910/flap', {
+    await fetch(t.context.http + '/flap', {
       method: 'post',
       headers: {
         authorization: encodeAuthState({ token: 'bla' }),
@@ -458,9 +465,9 @@ test.serial('auth', async (t) => {
   server.destroy()
 })
 
-test.serial('bad accept-encoding header', async (t) => {
+test.serial('bad accept-encoding header', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
   })
 
   server.functions.add({
@@ -494,7 +501,7 @@ test.serial('bad accept-encoding header', async (t) => {
   await wait(1e3)
 
   const r = await (
-    await fetch('http://localhost:9910/hello', {
+    await fetch(t.context.http + '/hello', {
       method: 'post',
       headers: {
         'Accept-Encoding': 'derp',

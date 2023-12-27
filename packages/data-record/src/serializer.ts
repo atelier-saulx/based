@@ -1,6 +1,6 @@
-import { CompiledRecordDef } from './compiler'
-import { getReadFuncs, getWriteFuncs } from './accessors'
-import { isPointerType } from './types'
+import { CompiledRecordDef } from './compiler.js'
+import { getReadFuncs, getWriteFuncs } from './accessors.js'
+import { isPointerType } from './types.js'
 
 /**
  * Get the node.

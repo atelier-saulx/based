@@ -1,29 +1,40 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
-import { BasedServer } from '../../server/src'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
+import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+import getPort from 'get-port'
 
-test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+
+test.serial('persist, store 1M length array or 8mb (nodejs)', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
 
   await mkdir(persistentStorage).catch(() => {})
   const opts = {
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   }
   const client = new BasedClient(opts, {
     persistentStorage,
   })
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         counter: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             let cnt = 1
             update(cnt)
@@ -37,7 +48,6 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
         },
         bigData: {
           type: 'query',
-          uninstallAfterIdleTime: 1e3,
           fn: (_, __, update) => {
             const x: any[] = []
             for (let i = 0; i < 1e6; i++) {
@@ -50,7 +60,9 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
       },
     },
   })
+
   await server.start()
+
   await client.setAuthState({ type: 'boeloe', token: '?', persistent: true })
 
   const r: any[] = []
@@ -79,6 +91,8 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
 
   await wait(2500)
   close()
+
+  await wait(200)
 
   await client.destroy()
   await server.destroy()
@@ -126,18 +140,19 @@ test.serial('persist, store 1M length array or 8mb (nodejs)', async (t) => {
 
   t.is(x.length, 1e6)
 
-  await wait(500)
-  await client2.clearStorage()
-  await client2.destroy(true)
+  t.teardown(async () => {
+    await client2.clearStorage()
+    await client2.destroy(true)
+  })
 })
 
-test.serial.only('auth persist', async (t) => {
+test('auth persist', async (t: T) => {
   const persistentStorage = join(__dirname, '/browser/tmp/')
   await mkdir(persistentStorage).catch(() => {})
 
   const token = 'this is token'
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     auth: {
       verifyAuthState: async (_, ctx, authState) => {
         if (authState.token !== ctx.session?.authState.token) {
@@ -145,7 +160,7 @@ test.serial.only('auth persist', async (t) => {
         }
         return true
       },
-      authorize: async (based, ctx, name) => {
+      authorize: async (based, ctx) => {
         await based.renewAuthState(ctx)
         const userId = ctx.session?.authState.userId
         if (!userId) return false
@@ -181,7 +196,7 @@ test.serial.only('auth persist', async (t) => {
 
   const opts = {
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   }
 
@@ -191,15 +206,11 @@ test.serial.only('auth persist', async (t) => {
       persistentStorage,
     }
   )
-  t.teardown(async () => {
-    await client.clearStorage()
-    await server.destroy()
-  })
 
   await client.connect(opts)
   await client.call('login')
 
-  await wait(300)
+  await wait(6000)
 
   t.is(client.authState.token, token)
 
@@ -213,13 +224,16 @@ test.serial.only('auth persist', async (t) => {
 
   t.is(client2.authState.token, token)
 
-  t.teardown(async () => {
-    await client2.clearStorage()
-    await client2.destroy()
-  })
-
   // this is where its at
   console.log('call hello and not throw!')
 
   await t.notThrowsAsync(client2.call('hello'))
+
+  t.teardown(async () => {
+    await wait(300)
+    await client.clearStorage()
+    await server.destroy()
+    await client2.clearStorage()
+    await client2.destroy()
+  })
 })

@@ -1,12 +1,21 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
 import fetch from 'cross-fetch'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
+import getPort from 'get-port'
 
-test.serial('rate limit', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('rate limit', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         flap: {
@@ -26,7 +35,7 @@ test.serial('rate limit', async (t) => {
   let limits = 0
 
   for (let i = 0; i < 2e3; i++) {
-    const x = await fetch('http://localhost:9910/flap', {
+    const x = await fetch(t.context.http + '/flap', {
       method: 'get',
       headers: {
         'content-type': 'application/json',
@@ -39,7 +48,7 @@ test.serial('rate limit', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 

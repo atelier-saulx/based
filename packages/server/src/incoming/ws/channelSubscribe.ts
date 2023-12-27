@@ -3,19 +3,19 @@ import {
   decodeName,
   decodePayload,
   parsePayload,
-} from '../../protocol'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
+} from '../../protocol.js'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
-import { rateLimitRequest } from '../../security'
-import { verifyRoute } from '../../verifyRoute'
-import { installFn } from '../../installFn'
+import { rateLimitRequest } from '../../security.js'
+import { verifyRoute } from '../../verifyRoute.js'
+import { installFn } from '../../installFn.js'
 import {
   authorize,
   IsAuthorizedHandler,
   AuthErrorHandler,
-} from '../../authorize'
-import { BinaryMessageHandler } from './types'
+} from '../../authorize.js'
+import { BinaryMessageHandler } from './types.js'
 import {
   hasChannel,
   subscribeChannel,
@@ -23,12 +23,12 @@ import {
   unsubscribeChannel,
   destroyChannel,
   extendChannel,
-} from '../../channel'
+} from '../../channel/index.js'
 
 export const enableChannelSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'channel'>
-> = (route, spec, server, ctx, payload, id) => {
+> = (route, _spec, server, ctx, payload, id) => {
   if (hasChannel(server, id)) {
     subscribeChannel(server, id, ctx)
     return
@@ -46,7 +46,7 @@ export const enableChannelSubscribe: IsAuthorizedHandler<
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'channel'>
-> = (route, server, ctx, payload, id) => {
+> = (route, _server, ctx, payload, id) => {
   const session = ctx.session
   if (!session.unauthorizedChannels) {
     session.unauthorizedChannels = new Set()
@@ -192,8 +192,8 @@ export const channelSubscribeMessage: BinaryMessageHandler = (
 export const unsubscribeChannelMessage: BinaryMessageHandler = (
   arr,
   start,
-  len,
-  isDeflate,
+  _len,
+  _isDeflate,
   ctx,
   server
 ) => {

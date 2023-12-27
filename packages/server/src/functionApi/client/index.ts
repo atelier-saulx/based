@@ -1,8 +1,8 @@
-import { BasedServer } from '../../server'
-import { callFunction } from '../callFunction'
-import { BasedQuery } from './query'
-import { BasedChannel } from './channel'
-import { streamFunction } from '../stream'
+import { BasedServer } from '../../server.js'
+import { callFunction } from '../callFunction.js'
+import { BasedQuery } from './query.js'
+import { BasedChannel } from './channel.js'
+import { streamFunction } from '../stream.js'
 import util from 'node:util'
 import {
   AuthState,
@@ -16,7 +16,8 @@ import {
 } from '@based/functions'
 
 export class BasedFunctionClient extends BasedfunctionClientAbstract {
-  server: BasedServer
+  declare server: BasedServer
+
   ctx: Context<InternalSessionClient>
 
   constructor(server: BasedServer) {

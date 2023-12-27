@@ -1,19 +1,19 @@
-import createDataStream from './createStream'
-import { BasedServer } from '../../../../server'
-import { sendError } from '../../../../sendError'
-import getExtension from '../getExtension'
+import createDataStream from './createStream.js'
+import { BasedServer } from '../../../../server.js'
+import { sendError } from '../../../../sendError.js'
+import getExtension from '../getExtension.js'
 import {
   HttpSession,
   Context,
   StreamPayload,
   BasedRoute,
 } from '@based/functions'
-import { BasedErrorCode } from '../../../../error'
-import { sendHttpResponse } from '../../../../sendHttpResponse'
+import { BasedErrorCode } from '../../../../error/index.js'
+import { sendHttpResponse } from '../../../../sendHttpResponse.js'
 import mimeTypes from 'mime-types'
 import { parseQuery } from '@saulx/utils'
-import { installFn } from '../../../../installFn'
-import { authorize } from '../../../../authorize'
+import { installFn } from '../../../../installFn.js'
+import { authorize } from '../../../../authorize.js'
 
 export const singleStream = (
   server: BasedServer,

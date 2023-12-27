@@ -1,8 +1,8 @@
-import { Context, HttpSession } from './context'
-import { BasedFunctionClient } from './client'
-import { BasedDataStream } from './stream'
-import { Authorize } from './auth'
 import type { Required } from 'utility-types'
+import { Context, HttpSession } from './context.js'
+import { BasedFunctionClient } from './client.js'
+import { BasedDataStream } from './stream.js'
+import { Authorize } from './auth.js'
 
 export type ObservableUpdateFunction<K = any> = (
   data: K,

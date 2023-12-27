@@ -1,7 +1,8 @@
 {
   "name": "@based/functions",
-  "version": "2.3.0",
+  "version": "3.0.0",
   "license": "MIT",
+  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "npx tsc && cp src/uws.d.ts dist/uws.d.ts && cp ./dist/client.d.ts ./dist/client_original.d.ts",
@@ -11,7 +12,7 @@
   "sideEffects": false,
   "dependencies": {
     "utility-types": "^3.10.0",
-    "@saulx/utils": "^3.5.0"
+    "@saulx/utils": "^4.1.0"
   },
   "devDependencies": {
     "ts-node": "10.9.1",

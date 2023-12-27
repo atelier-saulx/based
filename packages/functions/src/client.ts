@@ -1,9 +1,9 @@
-import { AuthState } from './auth'
-import { BasedChannel } from './channel'
-import { Context } from './context'
-import { BasedQuery } from './query'
-import { StreamFunctionOpts } from './stream'
-import { Geo } from './geo'
+import { AuthState } from './auth.js'
+import { BasedChannel } from './channel.js'
+import { Context } from './context.js'
+import { BasedQuery } from './query.js'
+import { StreamFunctionOpts } from './stream.js'
+import { Geo } from './geo.js'
 
 export abstract class BasedFunctionClient {
   server: any

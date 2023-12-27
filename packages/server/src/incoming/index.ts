@@ -1,12 +1,12 @@
-import type { BasedServer, ServerOptions } from '../server'
+import type { BasedServer, ServerOptions } from '../server.js'
 import uws from '@based/uws'
-import { upgradeAuthorize, upgrade } from './upgrade'
-import { message } from './ws'
-import { unsubscribeWsIgnoreClient } from '../query'
-import { unsubscribeChannelIgnoreClient } from '../channel'
-import { httpHandler } from './http'
+import { upgradeAuthorize, upgrade } from './upgrade.js'
+import { message } from './ws/index.js'
+import { unsubscribeWsIgnoreClient } from '../query/index.js'
+import { unsubscribeChannelIgnoreClient } from '../channel/index.js'
+import { httpHandler } from './http/index.js'
 import { WebSocketSession, Context, BasedWebSocket } from '@based/functions'
-import { sendAndVerifyAuthMessage } from './ws/auth'
+import { sendAndVerifyAuthMessage } from './ws/auth.js'
 
 export default (
   server: BasedServer,

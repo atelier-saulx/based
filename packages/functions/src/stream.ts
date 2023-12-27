@@ -13,9 +13,9 @@ export class BasedDataStream extends Duplex {
     this.emit('progress', 0)
   }
 
-  _read() {}
+  override _read() {}
 
-  _write(chunk, encoding, callback) {
+  override _write(chunk, encoding, callback) {
     this.receivedBytes += chunk.byteLength
     if (this.size && this.size > 20000) {
       if (!this.progessTimer) {
@@ -30,7 +30,7 @@ export class BasedDataStream extends Duplex {
     callback()
   }
 
-  _final() {
+  override _final() {
     if (!this.size) {
       this.size = this.receivedBytes
     }

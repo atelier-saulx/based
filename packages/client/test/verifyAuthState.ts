@@ -1,14 +1,23 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('verify auth state', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('verify auth state', async (t: T) => {
   t.timeout(4000)
   const client = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     auth: {
       verifyAuthState: async (_, __, authState) => {
         if (authState.token === '9000') {
@@ -62,7 +71,7 @@ test.serial('verify auth state', async (t) => {
   })
   await server.start()
 
-  await client.connect({ url: 'ws://localhost:9910' })
+  await client.connect({ url: t.context.ws })
 
   await client.call('hello')
 

@@ -1,10 +1,10 @@
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 import {
   WebSocketSession,
   Context,
   ChannelMessageFunction,
 } from '@based/functions'
-import { destroyChannel } from './destroy'
+import { destroyChannel } from './destroy.js'
 
 export const unsubscribeFunction = (
   server: BasedServer,

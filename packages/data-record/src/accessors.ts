@@ -1,7 +1,7 @@
 /* eslint-disable camelcase */
-import { Encoding, TYPES, isPointerType } from './types'
-import { CompiledRecordDef } from './compiler'
-import { WORD_SIZE, MACH_TYPE } from './mach'
+import { Encoding, TYPES, isPointerType } from './types.js'
+import { CompiledRecordDef } from './compiler.js'
+import { WORD_SIZE, MACH_TYPE } from './mach.js'
 
 function readWord(buf: Buffer, offset: number): number | bigint {
 	switch (MACH_TYPE) {

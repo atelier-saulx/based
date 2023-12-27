@@ -1,4 +1,4 @@
-import { GenericObject } from './generic'
+import { GenericObject } from './generic.js'
 
 export type FunctionResponseListeners = Map<
   number,

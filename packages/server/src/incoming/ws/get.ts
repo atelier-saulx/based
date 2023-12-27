@@ -4,8 +4,8 @@ import {
   readUint8,
   encodeGetResponse,
   parsePayload,
-} from '../../protocol'
-import { BasedServer } from '../../server'
+} from '../../protocol.js'
+import { BasedServer } from '../../server.js'
 import {
   createObs,
   destroyObs,
@@ -16,18 +16,18 @@ import {
   sendObsWs,
   ActiveObservable,
   sendObsGetError,
-} from '../../query'
+} from '../../query/index.js'
 import { WebSocketSession, Context, BasedRoute } from '@based/functions'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
-import { rateLimitRequest } from '../../security'
-import { verifyRoute } from '../../verifyRoute'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
+import { rateLimitRequest } from '../../security.js'
+import { verifyRoute } from '../../verifyRoute.js'
 import {
   AuthErrorHandler,
   authorize,
   IsAuthorizedHandler,
-} from '../../authorize'
-import { BinaryMessageHandler } from './types'
+} from '../../authorize.js'
+import { BinaryMessageHandler } from './types.js'
 
 const sendGetData = (
   server: BasedServer,
@@ -84,7 +84,7 @@ const getFromExisting = (
 const isAuthorized: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, spec, server, ctx, payload, id, checksum) => {
+> = (route, _spec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     getFromExisting(server, id, ctx, checksum)
     return
@@ -118,7 +118,7 @@ const isAuthorized: IsAuthorizedHandler<
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, server, ctx, payload, id, checksum) => {
+> = (route, _server, ctx, payload, id, checksum) => {
   const session = ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()

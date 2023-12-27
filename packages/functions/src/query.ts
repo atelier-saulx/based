@@ -1,4 +1,4 @@
-import { ObservableUpdateFunction, ObserveErrorListener } from './functions'
+import { ObservableUpdateFunction, ObserveErrorListener } from './functions.js'
 
 export abstract class BasedQuery<K = any> {
   abstract subscribe(

@@ -1,4 +1,4 @@
-import { ChannelMessageFunction } from './functions'
+import { ChannelMessageFunction } from './functions.js'
 
 export abstract class BasedChannel<K = any> {
   abstract subscribe(

@@ -1,9 +1,11 @@
 import test from 'ava'
 import { updateTypes } from '../src'
-import { join } from 'path'
 import { readFile } from 'fs-extra'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
-test.serial('Generate types file from examples', async (t) => {
+test('Generate types file from examples', async (t: T) => {
   const result = await updateTypes([
     {
       config: require('./examples/helloWorld/based.config.json'),

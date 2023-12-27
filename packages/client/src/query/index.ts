@@ -2,11 +2,15 @@ import {
   ObserveDataListener,
   ObserveErrorListener,
   CloseObserve,
-} from '../types'
-import { addObsToQueue, addObsCloseToQueue, addGetToQueue } from '../outgoing'
-import { genObserveId } from '../genObserveId'
-import { BasedClient } from '..'
-import { removeStorage, setStorage } from '../persistentStorage'
+} from '../types/index.js'
+import {
+  addObsToQueue,
+  addObsCloseToQueue,
+  addGetToQueue,
+} from '../outgoing/index.js'
+import { genObserveId } from '../genObserveId.js'
+import { BasedClient } from '../index.js'
+import { removeStorage, setStorage } from '../persistentStorage/index.js'
 
 // Can extend this as a query builder
 // TODO: maybe add user bound as option (will clear / set on a-state chage)
@@ -66,7 +70,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.checksum || 0
+        cachedData?.c || 0
       )
     } else {
       const obs = this.client.observeState.get(this.id)
@@ -84,7 +88,7 @@ export class BasedQuery<P = any, K = any> {
     }
 
     if (cachedData) {
-      onData(cachedData.value, cachedData.checksum)
+      onData(cachedData.v, cachedData.c)
     }
 
     return () => {
@@ -123,15 +127,15 @@ export class BasedQuery<P = any, K = any> {
       this.client.getState.set(this.id, [])
       const cachedData = this.client.cache.get(this.id)
       if (this.client.observeState.has(this.id)) {
-        if (this.client.observeQueue.has(this.id)) {
-          const [type] = this.client.observeQueue.get(this.id)
+        if (this.client.oQ.has(this.id)) {
+          const [type] = this.client.oQ.get(this.id)
           if (type === 1) {
             this.client.getState.get(this.id).push([resolve, reject])
             return
           }
         }
         if (cachedData) {
-          resolve(cachedData.value)
+          resolve(cachedData.v)
           return
         }
       }
@@ -141,7 +145,7 @@ export class BasedQuery<P = any, K = any> {
         this.name,
         this.id,
         this.query,
-        cachedData?.checksum || 0
+        cachedData?.c || 0
       )
     })
   }

@@ -113,7 +113,7 @@ const schema: any = {
 
 test.before(async () => {
   const selvaServer = await start({
-    port: 9910,
+    port: t.context.port,
   })
   db = selvaServer.selvaClient
   await selvaServer.selvaClient.updateSchema(schema)
@@ -123,7 +123,7 @@ test.after(async () => {
   await db.destroy()
 })
 
-test.serial('Get', async (t) => {
+test('Get', async (t: T) => {
   // await client.schema()
 
   // // FIXME start

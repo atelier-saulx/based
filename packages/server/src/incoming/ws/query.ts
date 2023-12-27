@@ -3,24 +3,29 @@ import {
   decodeName,
   readUint8,
   parsePayload,
-} from '../../protocol'
-import { createObs, unsubscribeWs, subscribeWs, hasObs } from '../../query'
-import { BasedErrorCode } from '../../error'
+} from '../../protocol.js'
+import {
+  createObs,
+  unsubscribeWs,
+  subscribeWs,
+  hasObs,
+} from '../../query/index.js'
+import { BasedErrorCode } from '../../error/index.js'
 import { WebSocketSession, BasedRoute } from '@based/functions'
-import { sendError } from '../../sendError'
-import { rateLimitRequest } from '../../security'
-import { verifyRoute } from '../../verifyRoute'
+import { sendError } from '../../sendError.js'
+import { rateLimitRequest } from '../../security.js'
+import { verifyRoute } from '../../verifyRoute.js'
 import {
   authorize,
   IsAuthorizedHandler,
   AuthErrorHandler,
-} from '../../authorize'
-import { BinaryMessageHandler } from './types'
+} from '../../authorize.js'
+import { BinaryMessageHandler } from './types.js'
 
 export const enableSubscribe: IsAuthorizedHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, psec, server, ctx, payload, id, checksum) => {
+> = (route, _spec, server, ctx, payload, id, checksum) => {
   if (hasObs(server, id)) {
     subscribeWs(server, id, checksum, ctx)
     return
@@ -38,7 +43,7 @@ export const enableSubscribe: IsAuthorizedHandler<
 const isNotAuthorized: AuthErrorHandler<
   WebSocketSession,
   BasedRoute<'query'>
-> = (route, server, ctx, payload, id, checksum) => {
+> = (route, _server, ctx, payload, id, checksum) => {
   const session = ctx.session
   if (!session.unauthorizedObs) {
     session.unauthorizedObs = new Set()
@@ -136,8 +141,8 @@ export const subscribeMessage: BinaryMessageHandler = (
 export const unsubscribeMessage: BinaryMessageHandler = (
   arr,
   start,
-  len,
-  isDeflate,
+  _len,
+  _isDeflate,
   ctx,
   server
 ) => {

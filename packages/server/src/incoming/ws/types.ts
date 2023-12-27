@@ -1,4 +1,4 @@
-import { BasedServer } from '../../server'
+import { BasedServer } from '../../server.js'
 import { WebSocketSession, Context } from '@based/functions'
 
 export type BinaryMessageHandler = (

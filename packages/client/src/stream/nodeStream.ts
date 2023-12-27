@@ -7,10 +7,10 @@ import {
   StreamFunctionPath,
   StreamFunctionStream,
   StreamHeaders,
-} from './types'
-import { BasedClient, encodeAuthState } from '..'
+} from './types.js'
+import { BasedClient, encodeAuthState } from '../index.js'
 import parseOpts from '@based/opts'
-import { convertDataToBasedError } from '../types/error'
+import { convertDataToBasedError } from '../types/index.js'
 import { serializeQuery } from '@saulx/utils'
 
 const stat = promisify(fs.stat)

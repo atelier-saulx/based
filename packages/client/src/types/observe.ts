@@ -1,4 +1,4 @@
-import { BasedError } from './error'
+import { BasedError } from './error.js'
 
 export type ObserveOpts = {
   localStorage?: boolean

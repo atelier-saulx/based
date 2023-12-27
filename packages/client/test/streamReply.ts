@@ -1,14 +1,26 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { createReadStream, readFileSync } from 'fs'
-import { join } from 'path'
 import fetch from 'cross-fetch'
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+import getPort from 'get-port'
 
-test.serial('reply with a stream from call fn (http)', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+
+test('reply with a stream from call fn (http)', async (t: T) => {
   const filePath = join(__dirname, './browser/tmp.json')
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         mySnur: {
@@ -37,13 +49,13 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
-  const r1 = await fetch('http://localhost:9910/mySnur')
+  const r1 = await fetch(t.context.http + '/mySnur')
   const result = await r1.text()
   t.deepEqual(result, readFileSync(filePath).toString())
 
-  const r = await fetch('http://localhost:9910/mimeSnur')
+  const r = await fetch(t.context.http + '/mimeSnur')
   t.is(r.headers.get('content-type'), 'application/json')
   t.is(r.headers.get('flapje'), '123')
   const result2 = await r.text()
@@ -53,10 +65,10 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
 })
 
 // extra protocol in WS
-// test.serial('reply with a stream from call fn (http)', async (t) => {
+// test('reply with a stream from call fn (http)', async (t: T) => {
 //   const filePath = join(__dirname, './browser/tmp.json')
 //   const server = await createSimpleServer({ uninstallAfterIdleTime: 1e3,
-//     port: 9910,
+//     port: t.context.port,
 //     functions: {
 //       mySnur: async () => {
 //         return createReadStream(filePath)
@@ -65,9 +77,9 @@ test.serial('reply with a stream from call fn (http)', async (t) => {
 //   })
 //   const client = new BasedClient()
 //   client.connect({
-//     url: async () => 'ws://localhost:9910',
+//     url: async () => t.context.ws,
 //   })
-//   const result = await (await fetch('http://localhost:9910/mySnur')).text()
+//   const result = await (await fetch(t.context.http + '/mySnur')).text()
 //   t.deepEqual(result, readFileSync(filePath).toString())
 //   client.disconnect()
 //   await server.destroy()

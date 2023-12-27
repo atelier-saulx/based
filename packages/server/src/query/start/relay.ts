@@ -1,7 +1,7 @@
 import { ObservableUpdateFunction } from '@based/functions'
-import { BasedServer } from '../../server'
-import { ActiveObservable } from '../types'
-import { errorListener } from './error'
+import { BasedServer } from '../../server.js'
+import { ActiveObservable } from '../types.js'
+import { errorListener } from './error.js'
 
 // this has to be super optmized!
 export const relay = (

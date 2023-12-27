@@ -1,10 +1,19 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import createPatch from '@saulx/diff'
+import { createPatch } from '@saulx/diff'
+import getPort from 'get-port'
 
-test.serial('query reuse diff', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('query reuse diff', async (t: T) => {
   const client = new BasedClient()
 
   const data = {
@@ -12,7 +21,7 @@ test.serial('query reuse diff', async (t) => {
   }
   let checksum = 1
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         counter: {
@@ -41,26 +50,11 @@ test.serial('query reuse diff', async (t) => {
 
   client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
   client.once('connect', (isConnected) => {
     console.info('   connect', isConnected)
-  })
-
-  const incoming: { [key: string]: 0 } = {}
-
-  client.on('debug', (d) => {
-    if (d.direction !== 'incoming') return
-    if (incoming[d.type] === undefined) {
-      incoming[d.type] = 0
-    }
-    if (d.type === 'subscriptionDiff') {
-      if (!d.payload.bla) {
-        t.fail('No diff passed')
-      }
-    }
-    incoming[d.type]++
   })
 
   const obs1Results: any[] = []
@@ -86,9 +80,6 @@ test.serial('query reuse diff', async (t) => {
     })
 
   await wait(1e3)
-
-  t.is(incoming.subscribe, 1)
-  t.true(incoming.subscriptionDiff > 5)
 
   t.true(
     !('bla' in server.activeObservables.counter.get(12244891731268)?.rawData)

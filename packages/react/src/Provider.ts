@@ -1,6 +1,6 @@
 import { createElement, FC, ReactNode } from 'react'
 import { BasedClient } from '@based/client'
-import { Ctx } from './Ctx'
+import { Ctx } from './Ctx.js'
 
 export const Provider: FC<{
   client: BasedClient

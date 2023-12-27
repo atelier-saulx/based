@@ -1,13 +1,22 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('nested functions internal only', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('nested functions internal only', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         helloInternal: {
@@ -31,21 +40,21 @@ test.serial('nested functions internal only', async (t) => {
   await server.start()
 
   await client.connect({
-    url: 'ws://localhost:9910',
+    url: t.context.ws,
   })
   t.is(await client.call('hello'), 'internal')
   await t.throwsAsync(client.call('snuix'))
   await t.throwsAsync(client.call('helloInternal'))
-  const r = await fetch('http://localhost:9910/helloInternal')
+  const r = await fetch(t.context.http + '/helloInternal')
   t.is(r.status, 404)
   client.destroy()
   await server.destroy()
 })
 
-test.serial('nested functions fn does not exist error', async (t) => {
+test('nested functions fn does not exist error', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -61,7 +70,7 @@ test.serial('nested functions fn does not exist error', async (t) => {
   await server.start()
 
   await client.connect({
-    url: 'ws://localhost:9910',
+    url: t.context.ws,
   })
   const err = await t.throwsAsync(client.call('hello'))
   // @ts-ignore
@@ -69,10 +78,10 @@ test.serial('nested functions fn does not exist error', async (t) => {
   await server.destroy()
 })
 
-test.serial('nested query functions fn does not exist error', async (t) => {
+test('nested query functions fn does not exist error', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -88,7 +97,7 @@ test.serial('nested query functions fn does not exist error', async (t) => {
   await server.start()
 
   await client.connect({
-    url: 'ws://localhost:9910',
+    url: t.context.ws,
   })
 
   const errors: any[] = []

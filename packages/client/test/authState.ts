@@ -1,5 +1,5 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import {
   isWsContext,
@@ -7,12 +7,21 @@ import {
   WebSocketSession,
   HttpSession,
 } from '@based/functions'
+import getPort from 'get-port'
 
-const setup = async () => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const setup = async (t: T) => {
   const client = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -44,12 +53,12 @@ const setup = async () => {
   return { client, server }
 }
 
-test.serial('auth string authState', async (t) => {
+test('auth string authState', async (t: T) => {
   t.timeout(4000)
 
   const token = 'mock_token'
 
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -73,7 +82,7 @@ test.serial('auth string authState', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -84,7 +93,7 @@ test.serial('auth string authState', async (t) => {
   t.is(authEventCount, 1)
 })
 
-test.serial('authState simple', async (t) => {
+test('authState simple', async (t: T) => {
   t.timeout(4000)
 
   const authState = {
@@ -93,7 +102,7 @@ test.serial('authState simple', async (t) => {
     userId: 'usUser',
   }
 
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -116,7 +125,7 @@ test.serial('authState simple', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -127,9 +136,9 @@ test.serial('authState simple', async (t) => {
   t.is(authEventCount, 1)
 })
 
-test.serial('multiple authState calls', async (t) => {
+test('multiple authState calls', async (t: T) => {
   t.timeout(4000)
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -143,7 +152,7 @@ test.serial('multiple authState calls', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -155,11 +164,11 @@ test.serial('multiple authState calls', async (t) => {
   t.is(authEventCount, 2)
 })
 
-test.serial('authState server clear', async (t) => {
+test('authState server clear', async (t: T) => {
   let serverSession: WebSocketSession | HttpSession
 
   t.timeout(4000)
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
 
   t.teardown(() => {
     client.disconnect()
@@ -180,7 +189,7 @@ test.serial('authState server clear', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -209,16 +218,16 @@ test.serial('authState server clear', async (t) => {
   t.is(client.authState.token, undefined)
 })
 
-test.serial('authState update', async (t) => {
+test('authState update', async (t: T) => {
   t.timeout(4000)
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
   t.teardown(() => {
     client.disconnect()
     server.destroy()
   })
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
   await client.setAuthState({ token: 'mock_token' })
@@ -240,9 +249,9 @@ test.serial('authState update', async (t) => {
   t.deepEqual(client.authState, { token: 'second_token!', error: 'poopie' })
 })
 
-test.serial('authState 16byte chars encoded on start', async (t) => {
+test('authState 16byte chars encoded on start', async (t: T) => {
   t.timeout(4000)
-  const { client, server } = await setup()
+  const { client, server } = await setup(t)
   t.teardown(() => {
     client.disconnect()
     server.destroy()
@@ -262,7 +271,7 @@ test.serial('authState 16byte chars encoded on start', async (t) => {
 
   await client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 

@@ -8,11 +8,16 @@ import {
   ObserveQueue,
   Cache,
   GetObserveQueue,
-} from './types'
-import { GetState } from './types/observe'
-import { Connection } from './websocket/types'
-import connectWebsocket from './websocket'
-import Emitter from './Emitter'
+  GetState,
+  ChannelQueue,
+  ChannelPublishQueue,
+  ChannelState,
+  CallOptions,
+  QueryOptions,
+} from './types/index.js'
+import { Connection } from './websocket/types.js'
+import connectWebsocket from './websocket/index.js'
+import Emitter from './Emitter.js'
 import {
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
@@ -20,28 +25,27 @@ import {
   addToFunctionQueue,
   drainQueue,
   sendAuth,
-} from './outgoing'
-import { incoming } from './incoming'
-import { BasedQuery } from './query'
-import startStream from './stream'
-import { StreamFunctionOpts } from './stream/types'
-import { initStorage, clearStorage, updateStorage } from './persistentStorage'
-import { BasedChannel } from './channel'
+} from './outgoing/index.js'
+import { incoming } from './incoming/index.js'
+import { BasedQuery } from './query/index.js'
+import startStream from './stream/index.js'
+import { StreamFunctionOpts } from './stream/types.js'
 import {
-  ChannelQueue,
-  ChannelPublishQueue,
-  ChannelState,
-} from './types/channel'
-import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import parseOpts from '@based/opts'
+  initStorage,
+  clearStorage,
+  updateStorage,
+} from './persistentStorage/index.js'
+import { BasedChannel } from './channel/index.js'
 
-import { CallOptions, QueryOptions } from './types'
+import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 
 import { deepEqual } from '@saulx/utils'
 
-export * from './authState/parseAuthState'
+import parseOpts from '@based/opts'
 
-export * from './types/error'
+export * from './authState/parseAuthState.js'
+
+export * from './types/error.js'
 
 export { AuthState, BasedQuery }
 
@@ -68,10 +72,10 @@ export class BasedClient extends Emitter {
   storagePath?: string
   storageBeingWritten?: ReturnType<typeof setTimeout>
   // --------- Connection State
-  opts: BasedOpts
+  opts?: BasedOpts
   connected: boolean = false
-  connection: Connection
-  url: () => Promise<string>
+  connection?: Connection
+  url?: () => Promise<string>
   // --------- Stream
   outgoingStreams: Map<
     string,
@@ -85,14 +89,14 @@ export class BasedClient extends Emitter {
   isDrainingStreams: boolean = false
   // --------- Queue
   maxPublishQueue: number = 1000
-  publishQueue: ChannelPublishQueue = []
-  functionQueue: FunctionQueue = []
-  observeQueue: ObserveQueue = new Map()
-  channelQueue: ChannelQueue = new Map()
-  getObserveQueue: GetObserveQueue = new Map()
+  pQ: ChannelPublishQueue = []
+  fQ: FunctionQueue = []
+  oQ: ObserveQueue = new Map()
+  cQ: ChannelQueue = new Map()
+  gQ: GetObserveQueue = new Map()
   drainInProgress: boolean = false
-  drainTimeout: ReturnType<typeof setTimeout>
-  idlePing: ReturnType<typeof setTimeout>
+  drainTimeout?: ReturnType<typeof setTimeout>
+  idlePing?: ReturnType<typeof setTimeout>
   // --------- Cache State
   localStorage: boolean = false
   maxCacheSize: number = 4e6 // in bytes
@@ -102,7 +106,7 @@ export class BasedClient extends Emitter {
   requestId: number = 0 // max 3 bytes (0 to 16777215)
   // --------- Channel State
   channelState: ChannelState = new Map()
-  channelCleanTimeout?: ReturnType<typeof setTimeout>
+  channelCleanTimeout?: ReturnType<typeof setTimeout> | null
   channelCleanupCycle: number = 30e3
   // --------- Observe State
   observeState: ObserveState = new Map()
@@ -111,10 +115,10 @@ export class BasedClient extends Emitter {
   // -------- Auth state
   authState: AuthState = {}
   authRequest: {
-    authState: AuthState
-    promise: Promise<AuthState>
-    resolve: (result: AuthState) => void
-    reject: (err: Error) => void
+    authState: AuthState | null
+    promise: Promise<AuthState> | null
+    resolve: ((result: AuthState) => void) | null
+    reject: ((err: Error) => void) | null
     inProgress: boolean
   } = {
     authState: null,
@@ -128,10 +132,10 @@ export class BasedClient extends Emitter {
   onClose() {
     this.connected = false
     // Rare edge case where server got dc'ed while sending the queue - before recieving result)
-    if (this.functionResponseListeners.size > this.functionQueue.length) {
+    if (this.functionResponseListeners.size > this.fQ.length) {
       this.functionResponseListeners.forEach((p, k) => {
         if (
-          !this.functionQueue.find(([id]) => {
+          !this.fQ.find(([id]) => {
             if (id === k) {
               return true
             }
@@ -161,21 +165,15 @@ export class BasedClient extends Emitter {
 
     // Resend all subscriptions
     for (const [id, obs] of this.observeState) {
-      if (!this.observeQueue.has(id)) {
+      if (!this.oQ.has(id)) {
         const cachedData = this.cache.get(id)
-        addObsToQueue(
-          this,
-          obs.name,
-          id,
-          obs.payload,
-          cachedData?.checksum || 0
-        )
+        addObsToQueue(this, obs.name, id, obs.payload, cachedData?.c || 0)
       }
     }
 
     // Resend all channels
     for (const [id, channel] of this.channelState) {
-      if (!this.channelQueue.has(id)) {
+      if (!this.cQ.has(id)) {
         if (channel.subscribers.size) {
           addChannelSubscribeToQueue(this, channel.name, id, channel.payload)
         } else {
@@ -273,7 +271,7 @@ export class BasedClient extends Emitter {
    */
   public async destroy(noStorage?: boolean) {
     if (!noStorage) {
-      await updateStorage(this)
+      await updateStorage(this, true)
     }
     clearTimeout(this.storageBeingWritten)
     clearTimeout(this.channelCleanTimeout)
@@ -340,7 +338,7 @@ export class BasedClient extends Emitter {
       return new Promise((resolve) => {
         let time = 0
         let retries = 0
-        const retryReject = (err) => {
+        const retryReject = (err: Error) => {
           const newTime = retryStrategy(err, time, retries)
           retries++
           if (typeof newTime === 'number' && !isNaN(newTime)) {

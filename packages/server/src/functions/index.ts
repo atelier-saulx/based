@@ -1,4 +1,4 @@
-import type { BasedServer } from '../server'
+import type { BasedServer } from '../server.js'
 import { Optional } from 'utility-types'
 import {
   BasedRoute,
@@ -10,13 +10,13 @@ import {
   BasedRouteComplete,
 } from '@based/functions'
 import { deepMerge, deepEqual } from '@saulx/utils'
-import { FunctionConfig } from './types'
-import { fnIsTimedOut, updateTimeoutCounter } from './timeout'
-import { destroyObs, start } from '../query'
-import { destroyChannel, startChannel } from '../channel'
-import { genVersion } from './genVersion'
+import { FunctionConfig } from './types.js'
+import { fnIsTimedOut, updateTimeoutCounter } from './timeout.js'
+import { destroyObs, start } from '../query/index.js'
+import { destroyChannel, startChannel } from '../channel/index.js'
+import { genVersion } from './genVersion.js'
 
-export * from './types'
+export * from './types.js'
 
 export class BasedFunctions {
   server: BasedServer
@@ -81,7 +81,7 @@ export class BasedFunctions {
 
     if (this.config.closeAfterIdleTime === undefined) {
       this.config.closeAfterIdleTime = {
-        query: 3e3, // 3 seconds
+        query: 3e3, // 3 seconds - get it higher e.g 20 seconds / and cache size
         channel: 60e3, // 3 1 Min
       }
     }

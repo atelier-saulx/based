@@ -1,5 +1,5 @@
-import { BasedClient, encodeAuthState } from '..'
-import { StreamFunctionContents, StreamHeaders } from './types'
+import { BasedClient, encodeAuthState } from '../index.js'
+import { StreamFunctionContents, StreamHeaders } from './types.js'
 import fetch from '@based/fetch'
 import { serializeQuery } from '@saulx/utils'
 import parseOpts from '@based/opts'
@@ -33,6 +33,7 @@ export default async (
     method: 'POST',
     cache: 'no-cache',
     headers,
+    // @ts-ignore
     body: options.contents,
   }).then((t) => t.text())
 

@@ -1,5 +1,5 @@
-import { encodeAuthResponse, valueToBuffer } from '../protocol'
-import { BasedServer } from '../server'
+import { encodeAuthResponse, valueToBuffer } from '../protocol.js'
+import { BasedServer } from '../server.js'
 import {
   Context,
   AuthState,
@@ -10,10 +10,10 @@ import {
   AuthorizeConnection,
   VerifyAuthState,
 } from '@based/functions'
-import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig'
-import parseAuthState from './parseAuthState'
-import parseJSONAuthState from './parseJSONAuthState'
-import { reEvaulateUnauthorized } from '../incoming/ws/auth'
+import { defaultAuthorize, defaultVerifyAuthState } from './defaultConfig.js'
+import parseAuthState from './parseAuthState.js'
+import parseJSONAuthState from './parseJSONAuthState.js'
+import { reEvaulateUnauthorized } from '../incoming/ws/auth.js'
 import { deepEqual } from '@saulx/utils'
 
 export { parseAuthState }
@@ -83,7 +83,11 @@ export class BasedAuth {
       return
     }
 
-    if (typeof ctx.session.authState === 'object' && typeof verified === 'object' && deepEqual(ctx.session.authState, verified)) {
+    if (
+      typeof ctx.session.authState === 'object' &&
+      typeof verified === 'object' &&
+      deepEqual(ctx.session.authState, verified)
+    ) {
       return
     }
 

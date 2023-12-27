@@ -52,3 +52,26 @@ export type StreamHeaders = {
   'Content-Name'?: string
   Authorization: string
 }
+
+const isStream = (stream: any): boolean => {
+  return (
+    stream !== null &&
+    typeof stream === 'object' &&
+    typeof stream.pipe === 'function' &&
+    stream.readable !== false &&
+    typeof stream._read === 'function' &&
+    typeof stream._readableState === 'object'
+  )
+}
+
+export const isStreamFunctionPath = (
+  options: StreamFunctionOpts
+): options is StreamFunctionPath => {
+  return 'path' in options && typeof options.path === 'string'
+}
+
+export const isStreamFunctionStream = (
+  options: StreamFunctionOpts
+): options is StreamFunctionStream => {
+  return 'contents' in options && isStream(options.contents)
+}

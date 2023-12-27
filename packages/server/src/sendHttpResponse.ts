@@ -1,6 +1,6 @@
 import { Context, HttpSession, HttpHeaders } from '@based/functions'
 import { Duplex, Readable } from 'stream'
-import { compress } from './compress'
+import { compress } from './compress.js'
 
 export const end = (
   ctx: Context<HttpSession>,

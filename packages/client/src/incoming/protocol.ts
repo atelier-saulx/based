@@ -1,5 +1,5 @@
-import { BasedClient } from '..'
-import { addGetToQueue } from '../outgoing'
+import { BasedClient } from '../index.js'
+import { addGetToQueue } from '../outgoing/index.js'
 
 export const decodeHeader = (
   nr: number
@@ -46,6 +46,7 @@ export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
     return new Uint8Array(d)
   }
 
+  // can make this in browser / node build
   if (typeof window === 'undefined') {
     if (d instanceof Buffer) {
       return new Uint8Array(d)
@@ -56,14 +57,10 @@ export const parseArrayBuffer = async (d: any): Promise<Uint8Array> => {
       return new Uint8Array(buffer)
     }
   }
-  throw new Error('Recieved incorrect data')
+  throw new Error('432')
 }
 
 export const requestFullData = (client: BasedClient, id: number) => {
   const sub = client.observeState.get(id)
-  if (!sub) {
-    console.warn(`Cannot find query function name for id from diff [id]`)
-    return
-  }
   addGetToQueue(client, sub.name, id, sub.payload)
 }

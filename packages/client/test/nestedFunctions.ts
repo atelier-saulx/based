@@ -1,17 +1,26 @@
 import test, { ExecutionContext } from 'ava'
-import { BasedClient } from '../src/index'
+import { BasedClient } from '../src/index.js'
 // make this methods on the server
 import { BasedServer, callFunction, get, observe } from '@based/server'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
 
 const testShared = async (
-  t: ExecutionContext,
+  t: T,
   coreClient: BasedClient,
   server: BasedServer
 ) => {
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -84,11 +93,11 @@ const testShared = async (
   await server.destroy()
 }
 
-test.serial('nested functions (raw api)', async (t) => {
+test.serial('nested functions (raw api)', async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         obsWithNestedLvl2: {
@@ -188,11 +197,11 @@ test.serial('nested functions (raw api)', async (t) => {
   await testShared(t, coreClient, server)
 })
 
-test.serial('nested functions (fancy api)', async (t) => {
+test.serial('nested functions (fancy api)', async (t: T) => {
   const coreClient = new BasedClient()
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         obsWithNestedLvl2: {

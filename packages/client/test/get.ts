@@ -1,13 +1,22 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
-import { BasedError, BasedErrorCode } from '../src/types/error'
+import { BasedError, BasedErrorCode } from '../src/types/error.js'
+import getPort from 'get-port'
 
-const setup = async () => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const setup = async (t: T) => {
   const coreClient = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         any: {
@@ -80,8 +89,8 @@ const setup = async () => {
   return { coreClient, server }
 }
 
-test.serial('get', async (t) => {
-  const { coreClient, server } = await setup()
+test('get', async (t: T) => {
+  const { coreClient, server } = await setup(t)
 
   t.teardown(() => {
     coreClient.disconnect()
@@ -90,7 +99,7 @@ test.serial('get', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -166,8 +175,8 @@ test.serial('get', async (t) => {
   t.is(Object.keys(server.functions.specs).length, 0)
 })
 
-test.serial('authorize get', async (t) => {
-  const { coreClient, server } = await setup()
+test('authorize get', async (t: T) => {
+  const { coreClient, server } = await setup(t)
 
   server.auth.updateConfig({
     authorize: async (_, context) => {
@@ -182,7 +191,7 @@ test.serial('authorize get', async (t) => {
 
   coreClient.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 
@@ -194,10 +203,10 @@ test.serial('authorize get', async (t) => {
   await t.notThrowsAsync(coreClient.query('counter').get())
 })
 
-test.serial('getWhen', async (t) => {
+test('getWhen', async (t: T) => {
   const client = new BasedClient()
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         flap: {
@@ -227,7 +236,7 @@ test.serial('getWhen', async (t) => {
 
   client.connect({
     url: async () => {
-      return 'ws://localhost:9910'
+      return t.context.ws
     },
   })
 

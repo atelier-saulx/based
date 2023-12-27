@@ -1,17 +1,30 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { readStream, wait } from '@saulx/utils'
 import { stat, createReadStream, readFileSync } from 'fs'
 import { promisify } from 'util'
-import { join } from 'path'
+
+import { dirname, join } from 'node:path'
+import { fileURLToPath } from 'url'
+import getPort from 'get-port'
+
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 const statAsync = promisify(stat)
 
-test.serial('stream nested functions (string)', async (t) => {
+test('stream nested functions (string)', async (t: T) => {
   const progressEvents: number[] = []
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         mySnur: {
@@ -42,7 +55,7 @@ test.serial('stream nested functions (string)', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const bigBod: any[] = []
   for (let i = 0; i < 10; i++) {
@@ -62,11 +75,11 @@ test.serial('stream nested functions (string)', async (t) => {
   await server.destroy()
 })
 
-test.serial('stream nested functions (stream)', async (t) => {
+test('stream nested functions (stream)', async (t: T) => {
   const progressEvents: number[] = []
   const filePath = join(__dirname, './browser/tmp.json')
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         mySnur: {
@@ -98,7 +111,7 @@ test.serial('stream nested functions (stream)', async (t) => {
   await server.start()
   const client = new BasedClient()
   client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   const bigBod: any[] = []
   for (let i = 0; i < 10; i++) {

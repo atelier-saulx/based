@@ -1,11 +1,20 @@
-import test from 'ava'
-import { BasedClient } from '../src/index'
+import test, { ExecutionContext } from 'ava'
+import { BasedClient } from '../src/index.js'
 import { BasedServer } from '@based/server'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('mem tests', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('mem tests', async (t: T) => {
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -33,7 +42,7 @@ test.serial('mem tests', async (t) => {
     const client = new BasedClient()
     client.connect({
       url: async () => {
-        return 'ws://localhost:9910'
+        return t.context.ws
       },
     })
     cl.add(client)

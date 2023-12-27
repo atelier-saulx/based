@@ -1,8 +1,8 @@
-import { BasedServer } from '../server'
+import { BasedServer } from '../server.js'
 import { Context } from '@based/functions'
-import { verifyRoute } from '../verifyRoute'
-import { installFn } from '../installFn'
-import { BasedErrorCode, createError } from '../error'
+import { verifyRoute } from '../verifyRoute.js'
+import { installFn } from '../installFn.js'
+import { BasedErrorCode, createError } from '../error/index.js'
 
 export const publish = (
   server: BasedServer,

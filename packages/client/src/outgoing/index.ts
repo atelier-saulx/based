@@ -1,6 +1,6 @@
-import { BasedClient } from '..'
-import { AuthState, GenericObject } from '../types'
-import { updateAuthState } from '../authState/updateAuthState'
+import { BasedClient } from '../index.js'
+import { AuthState, GenericObject } from '../types/index.js'
+import { updateAuthState } from '../authState/updateAuthState.js'
 import {
   encodeAuthMessage,
   encodeFunctionMessage,
@@ -8,15 +8,8 @@ import {
   encodeObserveMessage,
   encodePublishMessage,
   encodeSubscribeChannelMessage,
-} from './protocol'
+} from './protocol.js'
 import { deepEqual } from '@saulx/utils'
-import {
-  debugChannel,
-  debugFunction,
-  debugGet,
-  debugObserve,
-  debugPublish,
-} from './debug'
 
 const PING = new Uint8Array(0)
 
@@ -34,16 +27,18 @@ export const idleTimeout = (client: BasedClient) => {
   }, updateTime)
 }
 
+const hasQueue = (client: BasedClient): boolean => {
+  return !!(
+    client.fQ.length ||
+    client.oQ.size ||
+    client.gQ.size ||
+    client.cQ.size ||
+    client.pQ.length
+  )
+}
+
 export const drainQueue = (client: BasedClient) => {
-  if (
-    client.connected &&
-    !client.drainInProgress &&
-    (client.functionQueue.length ||
-      client.observeQueue.size ||
-      client.getObserveQueue.size ||
-      client.channelQueue.size ||
-      client.publishQueue.length)
-  ) {
+  if (client.connected && !client.drainInProgress && hasQueue(client)) {
     client.drainInProgress = true
     const drainOutgoing = () => {
       client.drainInProgress = false
@@ -52,20 +47,12 @@ export const drainQueue = (client: BasedClient) => {
         return
       }
 
-      const debug = client.listeners.debug
-
-      if (
-        client.functionQueue.length ||
-        client.observeQueue.size ||
-        client.getObserveQueue.size ||
-        client.channelQueue.size ||
-        client.publishQueue.length
-      ) {
-        const channel = client.channelQueue
-        const publish = client.publishQueue
-        const fn = client.functionQueue
-        const obs = client.observeQueue
-        const get = client.getObserveQueue
+      if (hasQueue(client)) {
+        const channel = client.cQ
+        const publish = client.pQ
+        const fn = client.fQ
+        const obs = client.oQ
+        const get = client.gQ
 
         const buffs = []
         let l = 0
@@ -75,9 +62,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeSubscribeChannelMessage(id, o)
           buffs.push(...buffers)
           l += len
-          if (debug) {
-            debugChannel(client, id, o)
-          }
         }
 
         // ------- GetObserve
@@ -85,9 +69,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeGetObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
-          if (debug) {
-            debugGet(client, id, o)
-          }
         }
 
         // ------- Observe
@@ -95,10 +76,6 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeObserveMessage(id, o)
           buffs.push(...buffers)
           l += len
-
-          if (debug) {
-            debugObserve(client, id, o)
-          }
         }
 
         // ------- Function
@@ -106,21 +83,12 @@ export const drainQueue = (client: BasedClient) => {
           const { buffers, len } = encodeFunctionMessage(f)
           buffs.push(...buffers)
           l += len
-
-          if (debug) {
-            debugFunction(client, f)
-          }
         }
 
         // ------- Publish
         for (const f of publish) {
           const { buffers, len } = encodePublishMessage(f)
           buffs.push(...buffers)
-
-          if (debug) {
-            debugPublish(client, f)
-          }
-
           l += len
         }
 
@@ -131,11 +99,11 @@ export const drainQueue = (client: BasedClient) => {
           c += b.length
         }
 
-        client.functionQueue = []
-        client.publishQueue = []
-        client.observeQueue.clear()
-        client.getObserveQueue.clear()
-        client.channelQueue.clear()
+        client.fQ = []
+        client.pQ = []
+        client.oQ.clear()
+        client.gQ.clear()
+        client.cQ.clear()
 
         client.connection.ws.send(n)
         idleTimeout(client)
@@ -173,18 +141,18 @@ export const addToFunctionQueue = (
   const s = Error().stack.split(/BasedClient\.function.+:\d\d\)/)[1]
 
   client.functionResponseListeners.set(id, [resolve, reject, s])
-  client.functionQueue.push([id, name, payload])
+  client.fQ.push([id, name, payload])
 
   drainQueue(client)
 }
 
 // ------------ Channel ---------------
 export const addChannelCloseToQueue = (client: BasedClient, id: number) => {
-  const type = client.channelQueue.get(id)?.[0]
+  const type = client.cQ.get(id)?.[0]
   if (type === 7) {
     return
   }
-  client.channelQueue.set(id, [7])
+  client.cQ.set(id, [7])
   drainQueue(client)
 }
 
@@ -194,11 +162,11 @@ export const addChannelSubscribeToQueue = (
   id: number,
   payload: GenericObject
 ) => {
-  const type = client.channelQueue.get(id)?.[0]
+  const type = client.cQ.get(id)?.[0]
   if (type === 5) {
     return
   }
-  client.channelQueue.set(id, [5, name, payload])
+  client.cQ.set(id, [5, name, payload])
   drainQueue(client)
 }
 
@@ -208,14 +176,15 @@ export const addChannelPublishIdentifier = (
   id: number,
   payload: GenericObject
 ) => {
-  const type = client.channelQueue.get(id)?.[0]
+  const type = client.cQ.get(id)?.[0]
   if (type === 5 || type === 6) {
     return
   }
-  if (type === 7) {
-    console.warn('Case not handled yet... ubsub and req for info for channel')
-  }
-  client.channelQueue.set(id, [6, name, payload])
+  // if (type === 7) {
+  // unsupported
+  // console.warn(10)
+  // }
+  client.cQ.set(id, [6, name, payload])
   drainQueue(client)
 }
 
@@ -225,20 +194,20 @@ export const addToPublishQueue = (
   payload: any
 ) => {
   // TODO: make this configurable at some point
-  if (client.publishQueue.length > client.maxPublishQueue) {
-    client.publishQueue.shift()
+  if (client.pQ.length > client.maxPublishQueue) {
+    client.pQ.shift()
   }
-  client.publishQueue.push([id, payload])
+  client.pQ.push([id, payload])
   drainQueue(client)
 }
 
 // ------------ Observable ---------------
 export const addObsCloseToQueue = (client: BasedClient, id: number) => {
-  const type = client.observeQueue.get(id)?.[0]
+  const type = client.oQ.get(id)?.[0]
   if (type === 2) {
     return
   }
-  client.observeQueue.set(id, [2])
+  client.oQ.set(id, [2])
   drainQueue(client)
 }
 
@@ -249,11 +218,11 @@ export const addObsToQueue = (
   payload: GenericObject,
   checksum: number = 0
 ) => {
-  const type = client.observeQueue.get(id)?.[0]
+  const type = client.oQ.get(id)?.[0]
   if (type === 1) {
     return
   }
-  client.observeQueue.set(id, [1, name, checksum, payload])
+  client.oQ.set(id, [1, name, checksum, payload])
   drainQueue(client)
 }
 
@@ -264,10 +233,10 @@ export const addGetToQueue = (
   payload: GenericObject,
   checksum: number = 0
 ) => {
-  if (client.getObserveQueue.has(id)) {
+  if (client.gQ.has(id)) {
     return
   }
-  client.getObserveQueue.set(id, [3, name, checksum, payload])
+  client.gQ.set(id, [3, name, checksum, payload])
   drainQueue(client)
 }
 

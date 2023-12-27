@@ -1,5 +1,5 @@
-import { BasedServer } from '../server'
-import { ActiveChannel } from './types'
+import { BasedServer } from '../server.js'
+import { ActiveChannel } from './types.js'
 
 const destroyChannel = (server: BasedServer, channel: ActiveChannel) => {
   const id = channel.id

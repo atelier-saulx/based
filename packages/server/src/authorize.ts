@@ -1,6 +1,6 @@
-import { BasedServer } from './server'
-import { sendError } from './sendError'
-import { BasedErrorCode } from './error'
+import { BasedServer } from './server.js'
+import { sendError } from './sendError.js'
+import { BasedErrorCode } from './error/index.js'
 import {
   HttpSession,
   Context,
@@ -9,7 +9,7 @@ import {
   BasedFunctionConfig,
   isBasedRoute,
 } from '@based/functions'
-import { installFn } from './installFn'
+import { installFn } from './installFn.js'
 
 type ClientSession = HttpSession | WebSocketSession
 
@@ -45,9 +45,9 @@ export const defaultAuthError: AuthErrorHandler = (
   route,
   server,
   ctx,
-  payload,
+  _payload,
   id,
-  checksum,
+  _checksum,
   err
 ) => {
   const code = err

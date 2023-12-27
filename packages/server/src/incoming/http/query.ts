@@ -1,4 +1,4 @@
-import { BasedServer } from '../../server'
+import { BasedServer } from '../../server.js'
 import {
   HttpSession,
   Context,
@@ -7,8 +7,8 @@ import {
   BasedRoute,
   BasedFunctionConfig,
 } from '@based/functions'
-import { end, sendHeaders } from '../../sendHttpResponse'
-import { compress } from '../../compress'
+import { end, sendHeaders } from '../../sendHttpResponse.js'
+import { compress } from '../../compress.js'
 import {
   createObs,
   destroyObs,
@@ -19,13 +19,12 @@ import {
   ActiveObservable,
   start,
   genObservableId,
-} from '../../query'
+} from '../../query/index.js'
 import zlib from 'node:zlib'
-import { parseQuery } from '@saulx/utils'
-import { BasedErrorCode } from '../../error'
-import { sendError } from '../../sendError'
+import { BasedErrorCode } from '../../error/index.js'
+import { sendError } from '../../sendError.js'
 import { promisify } from 'node:util'
-import { authorize, IsAuthorizedHandler } from '../../authorize'
+import { authorize, IsAuthorizedHandler } from '../../authorize.js'
 
 const inflate = promisify(zlib.inflateRaw)
 
@@ -153,7 +152,7 @@ const sendGetResponse = (
 ) => {
   if ('httpResponse' in spec) {
     // response data does not work for query responses
-    const send: SendHttpResponse = (responseData, headers, status) => {
+    const send: SendHttpResponse = (_responseData, headers, status) => {
       sendGetResponseInternal(
         route,
         server,

@@ -1,14 +1,26 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
 import fetch from 'cross-fetch'
 import { createReadStream, readFileSync } from 'fs'
-import { join } from 'path'
+import { dirname, join } from 'path'
+import { fileURLToPath } from 'url'
+import getPort from 'get-port'
 
-test.serial('function Stream (http)', async (t) => {
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
+
+test('function Stream (http)', async (t: T) => {
   const p = join(__dirname, '../package.json')
 
   const server = new BasedServer({
-    port: 9910,
+    port: t.context.port,
     functions: {
       configs: {
         hello: {
@@ -27,7 +39,7 @@ test.serial('function Stream (http)', async (t) => {
 
   server.on('error', console.error)
 
-  const x = await fetch('http://localhost:9910/hello')
+  const x = await fetch(t.context.http + '/hello')
   const y = await x.text()
 
   const file = readFileSync(p)

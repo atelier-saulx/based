@@ -1,19 +1,28 @@
-import test from 'ava'
+import test, { ExecutionContext } from 'ava'
 import { BasedServer } from '@based/server'
-import { BasedClient } from '../src'
+import { BasedClient } from '../src/index.js'
 import { wait } from '@saulx/utils'
+import getPort from 'get-port'
 
-test.serial('Channel does not exist', async (t) => {
-  const server = new BasedServer({ port: 9910 })
+type T = ExecutionContext<{ port: number; ws: string; http: string }>
+
+test.beforeEach(async (t: T) => {
+  t.context.port = await getPort()
+  t.context.ws = `ws://localhost:${t.context.port}`
+  t.context.http = `http://localhost:${t.context.port}`
+})
+
+test('Channel does not exist', async (t: T) => {
+  const server = new BasedServer({ port: t.context.port })
   await server.start()
   const client = new BasedClient()
   await client.connect({
-    url: async () => 'ws://localhost:9910',
+    url: async () => t.context.ws,
   })
   let errCnt = 0
   client.channel('bla').subscribe(
     () => {},
-    (err) => {
+    () => {
       errCnt++
     }
   )

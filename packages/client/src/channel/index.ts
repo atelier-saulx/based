@@ -1,14 +1,13 @@
-import { BasedClient } from '../'
-import { genObserveId } from '../genObserveId'
+import { BasedClient } from '../index.js'
+import { genObserveId } from '../genObserveId.js'
 import {
   addChannelCloseToQueue,
   addChannelPublishIdentifier,
   addChannelSubscribeToQueue,
   addToPublishQueue,
-} from '../outgoing'
-import { ChannelMessageFunction } from '../types/channel'
-import { BasedError } from '../types/error'
-import { cleanUpChannels } from './cleanUp'
+} from '../outgoing/index.js'
+import { ChannelMessageFunction, BasedError } from '../types/index.js'
+import { cleanUpChannels } from './cleanUp.js'
 
 export class BasedChannel<P = any, K = any> {
   public id: number
