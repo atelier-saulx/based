@@ -23,8 +23,6 @@ async function restartServer(t: Parameters<typeof test>[1]) {
     await t.context.srv.destroy()
   }
 
-  removeDump(dir)
-
   t.context.srv = await startOrigin({
     port,
     name: 'default',
