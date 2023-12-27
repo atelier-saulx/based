@@ -68,24 +68,27 @@ export class SelvaServer extends EventEmitter {
       execPath = opts.ldExecutablePath + ' ' + execPath
     }
 
-    this.pm = spawn(execPath, [], {
-      env: {
-        ...process.env,
-        ...{
-          LOCPATH: path.join(execPath, '..', 'locale'),
-          ...(opts.ldLibraryPath
-            ? {
-                LD_LIBRARY_PATH: opts.ldLibraryPath,
-              }
-            : null),
-          SELVA_PORT: String(this.port),
-          SERVER_SO_REUSE: '1',
-          SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
-          AUTO_SAVE_INTERVAL: String(this.saveInterval),
-          SAVE_AT_EXIT: opts.save ? '1' : '0',
-        },
-        ...opts.env,
+    const env = {
+      ...process.env,
+      ...{
+        LOCPATH: path.join(execPath, '..', 'locale'),
+        ...(opts.ldLibraryPath
+          ? {
+              LD_LIBRARY_PATH: opts.ldLibraryPath,
+            }
+          : null),
+        SELVA_PORT: String(this.port),
+        SERVER_SO_REUSE: '1',
+        SELVA_REPLICATION_MODE: this.type == 'replica' ? '2' : '1',
+        AUTO_SAVE_INTERVAL: String(this.saveInterval),
+        SAVE_AT_EXIT: opts.save ? '1' : '0',
       },
+      ...opts.env,
+    }
+
+    console.log('---------', { execPath, env })
+    this.pm = spawn(execPath, [], {
+      env,
       cwd: this.backupDir ?? process.cwd(),
       stdio: opts.stdio || 'inherit',
     })
