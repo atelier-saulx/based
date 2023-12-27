@@ -1,7 +1,7 @@
 import { compile, createRecord, deserialize } from '../src/index.js'
 import test from 'ava'
 
-test('deserialization can deconstruct the object it serialized', (t) => {
+test.serial('deserialization can deconstruct the object it serialized', (t) => {
   const recordDef = [
     { name: 'a', type: 'uint32_le' },
     { name: 'b', type: 'int32_le' },
@@ -54,7 +54,7 @@ test('deserialization can deconstruct the object it serialized', (t) => {
   t.deepEqual(obj1, obj2)
 })
 
-test('A string can be reconstructed', (t) => {
+test.serial('A string can be reconstructed', (t) => {
   const recordDef = [
     { name: 'a', type: 'uint32_le' },
     { name: 'firstName', type: 'cstring', size: 15 },
@@ -70,7 +70,7 @@ test('A string can be reconstructed', (t) => {
   t.is(deser.firstName.toString('utf8'), 'Olli')
 })
 
-test('An integer array can be reconstructed', (t) => {
+test.serial('An integer array can be reconstructed', (t) => {
   const recordDef = [{ name: 'a', type: 'uint16_be[4]' }]
   const obj = {
     a: [0xbeef, 0xface, 0xcafe, 0xf00d],
@@ -80,5 +80,5 @@ test('An integer array can be reconstructed', (t) => {
   const buf = createRecord(compiled, obj)
   t.is(buf.toString('hex'), 'beeffacecafef00d')
   const deser = deserialize(compiled, buf)
-  t.is(deser.a, [0xbeef, 0xface, 0xcafe, 0xf00d])
+  t.deepEqual(deser.a, [0xbeef, 0xface, 0xcafe, 0xf00d])
 })
