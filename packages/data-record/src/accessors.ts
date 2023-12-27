@@ -113,9 +113,9 @@ function bufferWriteCstringP(
 }
 
 type BufferReadFunction = (
-	offset: number,
-	len: number,
-	encoding?: Encoding
+	offset: number /*! < Offset in the buf. */,
+	len: number /*! < Length to read. */,
+	encoding?: Encoding /*! < String encoding. */
 ) => any
 
 /**
@@ -332,6 +332,10 @@ export function getReadFuncs(buf: Buffer): {
 			encoding: Encoding
 		): Buffer | string | null =>
 			bufferReadCstringP(buf, offset, len, encoding),
+		pz: (offset: number): Buffer => {
+			const [p, size] = derefPointer(buf, offset)
+			return buf.subarray(p, p + size)
+		},
 	}
 }
 
@@ -762,6 +766,34 @@ export function getWriteFuncs(buf: Buffer): {
 			encoding: Encoding
 		): number =>
 			bufferWriteCstringP(buf, offset, destOffset, v, len, encoding),
+		pz: (
+			v: Buffer | Buffer[],
+			offset: number,
+			_len: number,
+			destOffset: number
+		): number => {
+			const va = Array.isArray(v) ? v : [v]
+			const elemSize = va[0]?.length || 0
+
+			if (!(elemSize > 0)) {
+				throw new Error('Invalid record array element size')
+			}
+			if (
+				!va.every((el) => Buffer.isBuffer(el) && el.length === elemSize)
+			) {
+				throw new Error('Every record array element must be equal')
+			}
+
+			setPointer(buf, offset, destOffset, va.length * elemSize)
+
+			let elementOffset = destOffset
+			for (const value of va) {
+				value.copy(buf, elementOffset, 0)
+				elementOffset += elemSize
+			}
+
+			return elementOffset - destOffset
+		},
 	}
 }
 

@@ -63,6 +63,7 @@ export type FieldTypeCode =
 	| 'pq'
 	| 'pr'
 	| 'pw'
+	| 'pz'
 
 /**
  * A map from type names to Field Type Codes.
@@ -134,6 +135,7 @@ export const TYPES: { [index: string]: FieldTypeCode } = {
 	double_le_p: 'pr',
 	// Variable size pointer types
 	cstring_p: 'pw',
+	record_p: 'pz',
 }
 
 export const TYPE_CODE2TYPE = new Map(
@@ -181,6 +183,7 @@ export const SIZES: { [index: string]: number } = {
 	[TYPES.double_be_p]: 2 * WORD_SIZE, // double_be_p
 	[TYPES.double_le_p]: 2 * WORD_SIZE, // double_le_p
 	[TYPES.cstring_p]: 2 * WORD_SIZE, // cstring_p
+	[TYPES.record_p]: 2 * WORD_SIZE, // record_p
 }
 
 /**
@@ -258,4 +261,5 @@ export const C_TYPES = {
 	[TYPES.float_le_p]: 'float *',
 	[TYPES.double_be_p]: 'double *',
 	[TYPES.double_le_p]: 'double *',
+	[TYPES.record_p]: 'void *', // RFE is there a better way?
 }
