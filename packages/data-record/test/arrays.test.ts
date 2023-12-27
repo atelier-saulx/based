@@ -1,7 +1,7 @@
 import { compile, createRecord, deserialize } from '../src/index.js'
 import test from 'ava'
 
-test('int8[1]', (t) => {
+test.serial('int8[1]', (t) => {
   const def = [{ name: 'a', type: 'int8[1]' }]
   const compiled = compile(def, { align: false })
   const buf = createRecord(compiled, {
@@ -12,7 +12,7 @@ test('int8[1]', (t) => {
   t.is(buf.toString('hex'), '01')
 })
 
-test('serializing int8[2]', (t) => {
+test.serial('serializing int8[2]', (t) => {
   const def = [{ name: 'a', type: 'int8[2]' }]
   const compiled = compile(def, { align: false })
   const buf = createRecord(compiled, {
@@ -23,7 +23,7 @@ test('serializing int8[2]', (t) => {
   t.is(buf.toString('hex'), '0102')
 })
 
-test('serializing cstring[2]', (t) => {
+test.serial('serializing cstring[2]', (t) => {
   const def = [{ name: 'a', type: 'cstring[2]', size: 10 }]
   const compiled = compile(def, { align: false })
   const buf = createRecord(compiled, {
@@ -34,7 +34,7 @@ test('serializing cstring[2]', (t) => {
   t.is(buf.toString('utf8'), 'hello\0\0\0\0\0world\0\0\0\0\0')
 })
 
-test('serializing record[2]', (t) => {
+test.serial('serializing record[2]', (t) => {
   const def = [
     {
       name: 'a',
@@ -51,7 +51,7 @@ test('serializing record[2]', (t) => {
   t.is(buf.toString('hex'), '000005390000a455')
 })
 
-test('serializing record[i].record', (t) => {
+test.serial('serializing record[i].record', (t) => {
   const def = [
     {
       name: 'a',
@@ -74,7 +74,7 @@ test('serializing record[i].record', (t) => {
   t.is(buf.toString('hex'), '000005390000a455')
 })
 
-test('serializing record.record[i]', (t) => {
+test.serial('serializing record.record[i]', (t) => {
   const def = [
     {
       name: 'a',
@@ -97,7 +97,7 @@ test('serializing record.record[i]', (t) => {
   t.is(buf.toString('hex'), '000005390000a455')
 })
 
-test('serializing record.record[i].record', (t) => {
+test.serial('serializing record.record[i].record', (t) => {
   const def = [
     {
       name: 'a',
@@ -128,7 +128,7 @@ test('serializing record.record[i].record', (t) => {
   t.is(buf.toString('hex'), '000005390000a455')
 })
 
-test('serializing record.record[i].record[j]', (t) => {
+test.serial('serializing record.record[i].record[j]', (t) => {
   const def = [
     {
       name: 'a',
@@ -169,16 +169,15 @@ test('serializing record.record[i].record[j]', (t) => {
   t.is(buf.toString('hex'), '000005390000a455000005390000a455000005390000a455')
 })
 
-test('int8[1]', (t) => {
+test.serial('int8[1] #2', (t) => {
   const def = [{ name: 'a', type: 'int8[1]' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('01', 'hex')
   const obj = deserialize(compiled, buf)
-
   t.deepEqual(obj, { a: [1] })
 })
 
-test('int8[3]', (t) => {
+test.serial('int8[3]', (t) => {
   const def = [{ name: 'a', type: 'int8[3]' }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('010101', 'hex')
@@ -187,7 +186,7 @@ test('int8[3]', (t) => {
   t.deepEqual(obj, { a: [1, 1, 1] })
 })
 
-test('deserializing cstring[2]', (t) => {
+test.serial('deserializing cstring[2]', (t) => {
   const def = [{ name: 'a', type: 'cstring[2]', size: 10 }]
   const compiled = compile(def, { align: false })
   const buf = Buffer.from('hello\0\0\0\0\0world\0\0\0\0\0', 'utf8')
@@ -198,7 +197,7 @@ test('deserializing cstring[2]', (t) => {
   })
 })
 
-test('deserializing record[2]', (t) => {
+test.serial('deserializing record[2]', (t) => {
   const def = [
     {
       name: 'a',
@@ -215,7 +214,7 @@ test('deserializing record[2]', (t) => {
   })
 })
 
-test('deserializing record[i].record', (t) => {
+test.serial('deserializing record[i].record', (t) => {
   const def = [
     {
       name: 'a',
@@ -238,7 +237,7 @@ test('deserializing record[i].record', (t) => {
   })
 })
 
-test('deserializing record.record[i]', (t) => {
+test.serial('deserializing record.record[i]', (t) => {
   const def = [
     {
       name: 'a',
@@ -261,7 +260,7 @@ test('deserializing record.record[i]', (t) => {
   })
 })
 
-test('deserializing record.record[i].record', (t) => {
+test.serial('deserializing record.record[i].record', (t) => {
   const def = [
     {
       name: 'a',
@@ -292,7 +291,7 @@ test('deserializing record.record[i].record', (t) => {
   })
 })
 
-test('deserializing record.record[i].record[j]', (t) => {
+test.serial('deserializing record.record[i].record[j]', (t) => {
   const def = [
     {
       name: 'a',

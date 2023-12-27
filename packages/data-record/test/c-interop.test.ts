@@ -13,7 +13,7 @@ test.afterEach(() => {
   cc.clean()
 })
 
-test('The final size matches to C (1)', async (t) => {
+test.serial('The final size matches to C (1)', async (t) => {
   const def = [
     { name: 'a', type: 'int8' },
     { name: 'b', type: 'int16_le' },
@@ -61,7 +61,7 @@ int main(void)
   t.deepEqual(obj, expected)
 })
 
-test('The final size matches to C (2)', async (t) => {
+test.serial('The final size matches to C (2)', async (t) => {
   const def = [
     { name: 'a', type: 'float_le' },
     { name: 'b', type: 'int8[1]' },
@@ -106,7 +106,7 @@ int main(void)
   t.deepEqual(obj, expected)
 })
 
-test('The final size matches to C (3)', async (t) => {
+test.serial('The final size matches to C (3)', async (t) => {
   const def = [
     { name: 'a', type: 'int16_le' },
     { name: 'b', type: 'int8[3]' },
@@ -204,7 +204,7 @@ int main(void)
   t.deepEqual(obj, expected)
 })
 
-test('Using string pointers produces expected results', async (t) => {
+test.serial('Using string pointers produces expected results', async (t) => {
   const def = [
     { name: 'flag1', type: 'uint8' },
     { name: 'flag2', type: 'uint8' },

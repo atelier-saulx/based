@@ -9,7 +9,7 @@ import {
 } from '../src/index.js'
 import test from 'ava'
 
-test('int8', async (t) => {
+test('int8 - #2', async (t) => {
   const def = [{ name: 'a', type: 'int8' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -17,36 +17,27 @@ test('int8', async (t) => {
   t.is(buf.toString('hex'), '81')
 })
 
-test('int16', (t) => {
+test('int16 - #2', (t) => {
   const def = [{ name: 'a', type: 'int16' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
   writeValue(compiled, buf, '.a', 0x1234)
   if (ENDIANNESS === 'BE') {
-    t.is('hex', '1234')
+    t.is(buf.toString('hex'), '1234')
   } else {
-    t.is('hex', '3412')
+    t.is(buf.toString('hex'), '3412')
   }
 })
 
-test('int16_be', (t) => {
+test('int16_be #2', (t) => {
   const def = [{ name: 'a', type: 'int16_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
-  writeValue(compiled, buf, '.a', 0x1234)
-  t.is('hex', '1234')
-})
-
-test('int16_be', (t) => {
-  const def = [{ name: 'a', type: 'int16_be' }]
-  const compiled = compile(def, { align: false })
-  const buf = allocRecord(compiled)
-
   writeValue(compiled, buf, '.a', 0x1234)
   t.is(buf.toString('hex'), '1234')
 })
 
-test('int16_le', (t) => {
+test('int16_le #2', (t) => {
   const def = [{ name: 'a', type: 'int16_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -55,7 +46,7 @@ test('int16_le', (t) => {
   t.is(buf.toString('hex'), '3412')
 })
 
-test('int32', (t) => {
+test('int32 #2', (t) => {
   const def = [{ name: 'a', type: 'int32' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -68,7 +59,7 @@ test('int32', (t) => {
   }
 })
 
-test('int32_be', (t) => {
+test('int32_be #2', (t) => {
   const def = [{ name: 'a', type: 'int32_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -77,7 +68,7 @@ test('int32_be', (t) => {
   t.is(buf.toString('hex'), '12345678')
 })
 
-test('int32_le', (t) => {
+test('int32_le #2', (t) => {
   const def = [{ name: 'a', type: 'int32_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -86,7 +77,7 @@ test('int32_le', (t) => {
   t.is(buf.toString('hex'), '78563412')
 })
 
-test('int64', (t) => {
+test('int64 #2', (t) => {
   const def = [{ name: 'a', type: 'int64' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -99,7 +90,7 @@ test('int64', (t) => {
   }
 })
 
-test('int64_be', (t) => {
+test('int64_be #2', (t) => {
   const def = [{ name: 'a', type: 'int64_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -108,7 +99,7 @@ test('int64_be', (t) => {
   t.is(buf.toString('hex'), '0deface0deadbeef')
 })
 
-test('int64_le', (t) => {
+test('int64_le #2', (t) => {
   const def = [{ name: 'a', type: 'int64_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -117,7 +108,7 @@ test('int64_le', (t) => {
   t.is(buf.toString('hex'), 'efbeaddee0acef0d')
 })
 
-test('uint8', (t) => {
+test('uint8 #2', (t) => {
   const def = [{ name: 'a', type: 'uint8' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -126,7 +117,7 @@ test('uint8', (t) => {
   t.is(buf.toString('hex'), 'fe')
 })
 
-test('uint16', (t) => {
+test('uint16 #2', (t) => {
   const def = [{ name: 'a', type: 'uint16' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -139,7 +130,7 @@ test('uint16', (t) => {
   }
 })
 
-test('uint16_be', (t) => {
+test('uint16_be #2', (t) => {
   const def = [{ name: 'a', type: 'uint16_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -148,7 +139,7 @@ test('uint16_be', (t) => {
   t.is(buf.toString('hex'), '1234')
 })
 
-test('uint16_le', (t) => {
+test('uint16_le #2', (t) => {
   const def = [{ name: 'a', type: 'uint16_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -157,7 +148,7 @@ test('uint16_le', (t) => {
   t.is(buf.toString('hex'), '3412')
 })
 
-test('uint32', (t) => {
+test('uint32 #2', (t) => {
   const def = [{ name: 'a', type: 'uint32' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -170,7 +161,7 @@ test('uint32', (t) => {
   }
 })
 
-test('uint32_be', (t) => {
+test('uint32_be #2', (t) => {
   const def = [{ name: 'a', type: 'uint32_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -179,7 +170,7 @@ test('uint32_be', (t) => {
   t.is(buf.toString('hex'), '12345678')
 })
 
-test('uint32_le', (t) => {
+test('uint32_le #2', (t) => {
   const def = [{ name: 'a', type: 'uint32_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -188,7 +179,7 @@ test('uint32_le', (t) => {
   t.is(buf.toString('hex'), '78563412')
 })
 
-test('uint64', (t) => {
+test('uint64 #2', (t) => {
   const def = [{ name: 'a', type: 'uint64' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -201,7 +192,7 @@ test('uint64', (t) => {
   }
 })
 
-test('uint64_be', (t) => {
+test('uint64_be #2', (t) => {
   const def = [{ name: 'a', type: 'uint64_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -210,7 +201,7 @@ test('uint64_be', (t) => {
   t.is(buf.toString('hex'), '0deface0deadbeef')
 })
 
-test('uint64_le', (t) => {
+test('uint64_le #2', (t) => {
   const def = [{ name: 'a', type: 'uint64_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -219,7 +210,7 @@ test('uint64_le', (t) => {
   t.is(buf.toString('hex'), 'efbeaddee0acef0d')
 })
 
-test('float', (t) => {
+test('float #2', (t) => {
   const def = [{ name: 'a', type: 'float' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -232,7 +223,7 @@ test('float', (t) => {
   }
 })
 
-test('float_be', (t) => {
+test('float_be #2', (t) => {
   const def = [{ name: 'a', type: 'float_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -241,7 +232,7 @@ test('float_be', (t) => {
   t.is(buf.readFloatBE(), 1.5)
 })
 
-test('float_le', (t) => {
+test('float_le #2', (t) => {
   const def = [{ name: 'a', type: 'float_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -250,7 +241,7 @@ test('float_le', (t) => {
   t.is(buf.readFloatLE(), 1.5)
 })
 
-test('double', (t) => {
+test('double #2', (t) => {
   const def = [{ name: 'a', type: 'double' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -263,7 +254,7 @@ test('double', (t) => {
   }
 })
 
-test('double_be', (t) => {
+test('double_be #2', (t) => {
   const def = [{ name: 'a', type: 'double_be' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -272,7 +263,7 @@ test('double_be', (t) => {
   t.is(buf.readDoubleBE(), 1.2345)
 })
 
-test('double_le', (t) => {
+test('double_le #2', (t) => {
   const def = [{ name: 'a', type: 'double_le' }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
@@ -281,7 +272,7 @@ test('double_le', (t) => {
   t.is(buf.readDoubleLE(), 1.2345)
 })
 
-test('cstring', (t) => {
+test('cstring #2', (t) => {
   const def = [{ name: 'a', type: 'cstring', size: 5 }]
   const compiled = compile(def, { align: false })
   const buf = allocRecord(compiled)
