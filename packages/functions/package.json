@@ -1,6 +1,6 @@
 {
   "name": "@based/functions",
-  "version": "2.2.4",
+  "version": "3.0.0",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
