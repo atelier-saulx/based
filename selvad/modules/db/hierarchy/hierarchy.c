@@ -508,20 +508,17 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     SELVA_TRACE_BEGIN(find_inmem);
     node = find_node_index(hierarchy, id);
     SELVA_TRACE_END(find_inmem);
-    if (!node) {
-        return NULL;
-    }
 
-    if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
+    if (node && !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
         return node;
-    } else if (isDecompressingSubtree) {
+    } else if (node && isDecompressingSubtree) {
         err = repopulate_detached_head(hierarchy, node);
         if (err) {
             return NULL;
         }
 
         return node;
-    } else if (SelvaHierarchyDetached_IndexExists(hierarchy)) {
+    } else if (!isDecompressingSubtree && SelvaHierarchyDetached_IndexExists(hierarchy)) {
         SELVA_TRACE_BEGIN(find_detached);
         err = restore_subtree(hierarchy, id);
         SELVA_TRACE_END(find_detached);
