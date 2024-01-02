@@ -152,6 +152,11 @@ export const COMMAND_ENCODERS: CommandEncoders = {
   ]),
   'hierarchy.parents': defaultEncoder([{ type: 'id' }]),
   'hierarchy.children': defaultEncoder([{ type: 'id' }]),
+  'hierarchy.compress': defaultEncoder([
+    { type: 'id', },
+    { type: 'longlong' },
+  ]),
+  'hierarchy.listCompressed': null,
   'subscriptions.addMarker': defaultEncoder([
     { type: 'longlong' }, // subId
     { type: 'longlong' }, // markerId
