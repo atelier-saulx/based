@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <arpa/inet.h>
@@ -477,7 +477,10 @@ static int new_server(int port)
     server.sin_port = htons(port);
 
     if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "bind failed");
+        char buf[80];
+
+        strerror_r(errno, buf, sizeof(buf));
+        SELVA_LOG(SELVA_LOGL_CRIT, "bind failed: %s", buf);
         exit(EXIT_FAILURE);
     }
 
