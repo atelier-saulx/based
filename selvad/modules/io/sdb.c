@@ -53,10 +53,22 @@ static int file_sdb_zwriteout(struct selva_io *io)
     assert(zbuf->block_buf_i == ZBLOCK_BUF_SIZE);
 
     out_nbytes = libdeflate_deflate_compress(io->compressor, zbuf->block_buf, ZBLOCK_BUF_SIZE, zbuf->compressed_buf, zbuf->compressed_buf_size);
+    if (unlikely(out_nbytes == 0)) {
+        /*
+         * This shouldn't happen as the buffer is (should be) always big enough.
+         * Therefore, even if the data expands slightly we can just accept it
+         * like that. This simplifies the process slightly as we can expect
+         * every block of data to be compressed and avoid adding more metadata
+         * and hopefully still actually save some space.
+         */
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to compress an SDB block");
+        abort();
+    }
+
+
     if (fwrite(zbuf->compressed_buf, sizeof(uint8_t), out_nbytes, io->file_io.file) != out_nbytes) {
         return SELVA_EIO;
     }
-
     zbuf->block_buf_i = 0;
 
     return 0;
