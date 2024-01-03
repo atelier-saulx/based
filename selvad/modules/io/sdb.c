@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -45,7 +45,7 @@ void selva_io_get_ver(struct SelvaDbVersionInfo *nfo)
     memcpy(nfo, &selva_db_version_info, sizeof(*nfo));
 }
 
-static int sdb_zwriteout(struct selva_io *io)
+static int file_sdb_zwriteout(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     size_t out_nbytes;
@@ -62,7 +62,7 @@ static int sdb_zwriteout(struct selva_io *io)
     return 0;
 }
 
-static int sdb_flush_block_buf(struct selva_io *io)
+static int file_sdb_flush_block_buf(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
 
@@ -75,12 +75,12 @@ static int sdb_flush_block_buf(struct selva_io *io)
         memset(zbuf->block_buf + zbuf->block_buf_i, 0, remain);
         zbuf->block_buf_i += remain;
 
-        return sdb_zwriteout(io);
+        return file_sdb_zwriteout(io);
     }
     return 0;
 }
 
-static int sdb_zreadin(struct selva_io *io)
+static int file_sdb_zreadin(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     const size_t fread_nbytes = min(zbuf->compressed_buf_size, io->file_io.file_remain);
@@ -109,7 +109,7 @@ static int sdb_zreadin(struct selva_io *io)
     return 0;
 }
 
-static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
+static size_t file_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
 
@@ -130,7 +130,7 @@ static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t coun
             zbuf->block_buf_i += bytes_to_copy;
 
             if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
-                if (sdb_zwriteout(io)) {
+                if (file_sdb_zwriteout(io)) {
                     return (size * count) - left;
                 }
             }
@@ -142,7 +142,7 @@ static size_t sdb_write_file(const void * restrict ptr, size_t size, size_t coun
     }
 }
 
-static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
+static size_t file_sdb_read(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     size_t r;
@@ -157,7 +157,7 @@ static size_t sdb_read_file(void * restrict ptr, size_t size, size_t count, stru
             if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
                 int err;
 
-                err = sdb_zreadin(io);
+                err = file_sdb_zreadin(io);
                 if (err) {
                     goto out;
                 }
@@ -187,7 +187,7 @@ static void sdb_raw_write(struct selva_io *io, const void *p, size_t size)
     }
 }
 
-static size_t sdb_write_string(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+static size_t string_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
 {
     int err;
 
@@ -202,7 +202,7 @@ static size_t sdb_write_string(const void * restrict ptr, size_t size, size_t co
     }
 }
 
-static size_t sdb_read_string(void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+static size_t string_sdb_read(void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
 {
     const char *data;
     size_t data_len;
@@ -222,22 +222,22 @@ static size_t sdb_read_string(void * restrict ptr, size_t size, size_t count, st
     return count;
 }
 
-static off_t sdb_tell_file(struct selva_io *io)
+static off_t file_sdb_tell(struct selva_io *io)
 {
     return ftello(io->file_io.file);
 }
 
-static off_t sdb_tell_string(struct selva_io *io)
+static off_t string_sdb_tell(struct selva_io *io)
 {
     return (off_t)io->string_io.offset;
 }
 
-static int sdb_seek_file(struct selva_io *io, off_t offset, int whence)
+static int file_sdb_seek(struct selva_io *io, off_t offset, int whence)
 {
     return fseeko(io->file_io.file, offset, whence);
 }
 
-static int sdb_seek_string(struct selva_io *io, off_t offset, int whence)
+static int string_sdb_seek(struct selva_io *io, off_t offset, int whence)
 {
     const size_t data_len = selva_string_get_len(io->string_io.data);
 
@@ -259,17 +259,17 @@ static int sdb_seek_string(struct selva_io *io, off_t offset, int whence)
     return 0;
 }
 
-static int sdb_flush_file(struct selva_io *io)
+static int file_sdb_flush(struct selva_io *io)
 {
     return fflush(io->file_io.file);
 }
 
-static int sdb_flush_string(struct selva_io *)
+static int string_sdb_flush(struct selva_io *)
 {
     return 0;
 }
 
-static int sdb_error_file(struct selva_io *restrict io)
+static int file_sdb_error(struct selva_io *restrict io)
 {
     if (ferror(io->file_io.file)) {
         return SELVA_EIO;
@@ -278,17 +278,17 @@ static int sdb_error_file(struct selva_io *restrict io)
     return 0;
 }
 
-static int sdb_error_string(struct selva_io *restrict io)
+static int string_sdb_error(struct selva_io *restrict io)
 {
     return io->string_io.err;
 }
 
-static void sdb_clearerr_file(struct selva_io *restrict io)
+static void file_sdb_clearerr(struct selva_io *restrict io)
 {
     clearerr(io->file_io.file);
 }
 
-static void sdb_clearerr_string(struct selva_io *restrict io)
+static void string_sdb_clearerr(struct selva_io *restrict io)
 {
     io->string_io.err = 0;
 }
@@ -334,21 +334,21 @@ void sdb_init(struct selva_io *io)
     }
 
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        io->sdb_write = sdb_write_file;
-        io->sdb_read = sdb_read_file;
-        io->sdb_tell = sdb_tell_file;
-        io->sdb_seek = sdb_seek_file;
-        io->sdb_flush = sdb_flush_file;
-        io->sdb_error = sdb_error_file;
-        io->sdb_clearerr = sdb_clearerr_file;
+        io->sdb_write = file_sdb_write;
+        io->sdb_read = file_sdb_read;
+        io->sdb_tell = file_sdb_tell;
+        io->sdb_seek = file_sdb_seek;
+        io->sdb_flush = file_sdb_flush;
+        io->sdb_error = file_sdb_error;
+        io->sdb_clearerr = file_sdb_clearerr;
     } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        io->sdb_write = sdb_write_string;
-        io->sdb_read = sdb_read_string;
-        io->sdb_tell = sdb_tell_string;
-        io->sdb_seek = sdb_seek_string;
-        io->sdb_flush = sdb_flush_string;
-        io->sdb_error = sdb_error_string;
-        io->sdb_clearerr = sdb_clearerr_string;
+        io->sdb_write = string_sdb_write;
+        io->sdb_read = string_sdb_read;
+        io->sdb_tell = string_sdb_tell;
+        io->sdb_seek = string_sdb_seek;
+        io->sdb_flush = string_sdb_flush;
+        io->sdb_error = string_sdb_error;
+        io->sdb_clearerr = string_sdb_clearerr;
 
         assert(!(io->flags & SELVA_IO_FLAGS_COMPRESSED));
     }
@@ -432,7 +432,7 @@ int sdb_write_footer(struct selva_io *io)
     int err = SELVA_EINTYPE;
 
     if (prevz) {
-        err = sdb_flush_block_buf(io);
+        err = file_sdb_flush_block_buf(io);
         if (err) {
             return err;
         }
