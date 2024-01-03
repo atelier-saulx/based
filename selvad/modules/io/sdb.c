@@ -241,13 +241,17 @@ static int string_sdb_seek(struct selva_io *io, off_t offset, int whence)
 {
     const size_t data_len = selva_string_get_len(io->string_io.data);
 
-    if (whence == SEEK_SET) {
+    switch (whence) {
+    case SEEK_SET:
         /* NOP */
-    } else if (whence == SEEK_CUR) {
+        break;
+    case SEEK_CUR:
         offset += io->string_io.offset;
-    } else if (whence == SEEK_END) {
+        break;
+    case SEEK_END:
         offset = data_len + io->string_io.offset;
-    } else {
+        break;
+    default:
         return SELVA_EINVAL;
     }
 
