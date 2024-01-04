@@ -384,7 +384,7 @@ void sdb_deinit(struct selva_io *io)
 int sdb_write_header(struct selva_io *io)
 {
     const char *created_with;
-    const uint32_t save_flags = io->flags & SAVE_FLAGS_MASK;
+    const uint32_t save_flags = htole32(io->flags & SAVE_FLAGS_MASK);
     int err;
 
     if (selva_db_version_info.created_with[0] != '\0') {
@@ -432,7 +432,7 @@ int sdb_read_header(struct selva_io *io)
         return SELVA_ENOTSUP;
     }
 
-    io->flags |= letoh(flags) & SELVA_IO_FLAGS_COMPRESSED;
+    io->flags |= letoh(flags) & SAVE_FLAGS_MASK;
 
     if (io->flags & SELVA_IO_FLAGS_COMPRESSED) {
         io->flags |= _SELVA_IO_FLAGS_EN_COMPRESS;
