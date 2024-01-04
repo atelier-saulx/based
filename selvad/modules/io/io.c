@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -249,7 +249,7 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
     struct selva_string *s = selva_string_create(NULL, 0, SELVA_STRING_MUTABLE);
 
     flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_WRITE;
-    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
+    if (!valid_flags(flags)) {
         return NULL;
     }
 
@@ -261,7 +261,7 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
 int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags)
 {
     flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_READ;
-    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
+    if (!valid_flags(flags)) {
         return SELVA_EINVAL;
     }
 
