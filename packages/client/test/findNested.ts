@@ -1,11 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -94,7 +95,7 @@ test('get nested results', async (t) => {
     })
   }
 
-  await Promise.all(teams.map((t) => client.set(t)))
+  await Promise.all(teams.map((t: any) => client.set(t)))
 
   for (let i = 0; i < 10; i++) {
     matches.push({
@@ -199,7 +200,7 @@ test('get descendants of each child', async (t) => {
           $filter: {
             $operator: '=',
             $field: 'id',
-            $value: teams.map((id) => id),
+            $value: teams.map((id: any) => id),
           },
           $find: {
             $traverse: 'descendants',
@@ -216,7 +217,7 @@ test('get descendants of each child', async (t) => {
     },
   })
   console.dir({ res }, { depth: 6 })
-  t.deepEqualIgnoreOrder(res?.matches, [
+  deepEqualIgnoreOrder(t, res?.matches, [
     { name: 'match 0' },
     { name: 'match 2' },
     { name: 'match 3' },
@@ -258,7 +259,7 @@ test('get nested results with $all', async (t) => {
     })
   }
 
-  await Promise.all(teams.map((t) => client.set(t)))
+  await Promise.all(teams.map((t: any) => client.set(t)))
 
   await client.set({
     type: 'league',
@@ -362,7 +363,7 @@ test('get nested results as ids', async (t) => {
     })
   }
 
-  await Promise.all(teams.map((t) => client.set(t)))
+  await Promise.all(teams.map((t: any) => client.set(t)))
 
   await client.set({
     type: 'league',
@@ -421,7 +422,7 @@ test('get nested results without find', async (t) => {
     })
   }
 
-  await Promise.all(teams.map((t) => client.set(t)))
+  await Promise.all(teams.map((t: any) => client.set(t)))
 
   await client.set({
     type: 'league',
@@ -445,7 +446,7 @@ test('get nested results without find', async (t) => {
     },
   })
 
-  const child = result.children.find((c) => c.children.length)
+  const child = result.children.find((c: any) => c.children.length)
 
   t.is(child.children.length, 10, 'has teams')
 })
@@ -453,7 +454,7 @@ test('get nested results without find', async (t) => {
 test('nested refs', async (t) => {
   const { client } = t.context
   for (let i = 0; i < 3; i++) {
-    const docs = await client.set({
+    await client.set({
       type: 'thing',
       docs: [...Array(2)].map((_, i) => ({
         type: 'file',

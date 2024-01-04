@@ -1,12 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
 import { SchemaUpdateMode } from '../src/types'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -123,7 +124,8 @@ test('language in all types of objects', async (t) => {
     randoArray: [{ title: 'randoArray.engTitle' }],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'bl1',
       $language: 'en',

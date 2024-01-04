@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { ExecutionContext, TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -7,17 +7,19 @@ import getPort from 'get-port'
 import { join } from 'path'
 import { removeDump } from './assertions/utils'
 import { wait } from '@saulx/utils'
+import { deepEqualIgnoreOrder } from './assertions'
 
 const dir = join(process.cwd(), 'tmp', 'sdb-test')
 
-const test = anyTest as TestInterface<{
+type Context = {
   srv: SelvaServer
   client: BasedDbClient
   port: number
-}>
+}
+const test = anyTest as TestFn<Context>
 
-async function restartServer(t: Parameters<typeof test>[1]) {
-  const port = t.context.port;
+async function restartServer(t: ExecutionContext<Context>) {
+  const port = t.context.port
 
   if (t.context.srv) {
     await t.context.srv.destroy()
@@ -298,46 +300,49 @@ test('can reload from SDB', async (t) => {
   await wait(1e3)
   //
   // const compressedFilesAfter = (await readdir(dir)).filter((s) => s.includes('.z'))
-  // t.deepEqualIgnoreOrder(compressedFilesAfter, compressedFilesBefore, 'SDB save should not remove the subtree files')
+  // deepEqualIgnoreOrder(t,compressedFilesAfter, compressedFilesBefore, 'SDB save should not remove the subtree files')
 
   await restartServer(t)
   await wait(5e3)
 
-  t.deepEqual(await client.get({
-    $id: 'viTest',
-    $all: true,
-    parents: true,
-    createdAt: false,
-    updatedAt: false,
-  }), {
-    id: 'viTest',
-    type: 'lekkerType',
-    parents: ['root'],
-    title: { en: 'hello' },
-    stringAry: ['hello', 'world'],
-    doubleAry: [1.0, 2.1, 3.2],
-    intAry: [7, 6, 5, 4, 0, 3, 2, 999],
-    objAry: [
-      {
-        textyText: {
-          en: 'hello 1',
-          de: 'hallo 1',
+  t.deepEqual(
+    await client.get({
+      $id: 'viTest',
+      $all: true,
+      parents: true,
+      createdAt: false,
+      updatedAt: false,
+    }),
+    {
+      id: 'viTest',
+      type: 'lekkerType',
+      parents: ['root'],
+      title: { en: 'hello' },
+      stringAry: ['hello', 'world'],
+      doubleAry: [1.0, 2.1, 3.2],
+      intAry: [7, 6, 5, 4, 0, 3, 2, 999],
+      objAry: [
+        {
+          textyText: {
+            en: 'hello 1',
+            de: 'hallo 1',
+          },
+          strField: 'string value hello 1',
+          numField: 112,
         },
-        strField: 'string value hello 1',
-        numField: 112,
-      },
-      {
-        textyText: {
-          en: 'hello 2',
-          de: 'hallo 2',
+        {
+          textyText: {
+            en: 'hello 2',
+            de: 'hallo 2',
+          },
+          strField: 'string value hello 2',
+          numField: 113,
         },
-        strField: 'string value hello 2',
-        numField: 113,
-      },
-      {},
-      { strField: 'hello' },
-    ],
-  })
+        {},
+        { strField: 'hello' },
+      ],
+    }
+  )
 
   t.deepEqual(
     await client.get({
@@ -393,7 +398,7 @@ test('can reload from SDB', async (t) => {
       $all: true,
       createdAt: false,
       updatedAt: false,
-      lekkerLink: true
+      lekkerLink: true,
     }),
     {
       id: 'viLink4',
@@ -404,7 +409,7 @@ test('can reload from SDB', async (t) => {
   )
 
   // // Check the compressed subtree
-  // t.deepEqualIgnoreOrder(
+  // deepEqualIgnoreOrder(t,
   //   await client.get({
   //     $id: 'viComp1',
   //     id: true,
@@ -420,7 +425,7 @@ test('can reload from SDB', async (t) => {
   //
   // // Check the compressed subtree on disk
   // // TODO Check that the compressed subtree is actually on the disk
-  // t.deepEqualIgnoreOrder(
+  // deepEqualIgnoreOrder(t,
   //   await client.get({
   //     $id: 'viDisk1',
   //     id: true,
@@ -480,7 +485,8 @@ test('can reload from SDB', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'viLink1',
       $all: true,
@@ -495,7 +501,8 @@ test('can reload from SDB', async (t) => {
       fren: 'viLink3',
     }
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'viLink2',
       $all: true,
@@ -509,7 +516,8 @@ test('can reload from SDB', async (t) => {
       lekkerLink: 'viLink1',
     }
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'viLink3',
       $all: true,
@@ -525,7 +533,7 @@ test('can reload from SDB', async (t) => {
 
   // TODO
   // Check the previously compressed subtree
-  //t.deepEqualIgnoreOrder(
+  //deepEqualIgnoreOrder(t,
   //  await client.get({
   //    $id: 'viComp1',
   //    id: true,
@@ -540,7 +548,7 @@ test('can reload from SDB', async (t) => {
   //)
 
   //// Check the compressed subtree
-  //t.deepEqualIgnoreOrder(
+  //deepEqualIgnoreOrder(t,
   //  await client.get({
   //    $id: 'viComp21',
   //    id: true,

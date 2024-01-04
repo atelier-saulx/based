@@ -119,7 +119,7 @@ test('get - correct order', async (t) => {
 
   const results: any[] = []
 
-  subscribe(client, obs, (v) => {
+  subscribe(client, obs, (v: any) => {
     // console.dir({ v }, { depth: 6 })
     results.push(deepCopy(v))
   })

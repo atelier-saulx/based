@@ -47,7 +47,7 @@ test('subscription list', async (t) => {
     },
   }
   let cnt = 0
-  subscribe(client, obs, (d) => {
+  subscribe(client, obs, (_d: any) => {
     cnt++
   })
 
@@ -90,11 +90,11 @@ test('subscription list', async (t) => {
 
   let cnt2 = 0
   let cnt3 = 0
-  subscribe(client, obs2, (d) => {
+  subscribe(client, obs2, (_d: any) => {
     cnt2++
   })
 
-  subscribe(client, obs3, (d) => {
+  subscribe(client, obs3, (_d: any) => {
     cnt3++
   })
 

@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../../src'
 import { SelvaServer, startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
@@ -7,7 +7,7 @@ import getPort from 'get-port'
 import { SchemaUpdateMode } from '../../src/types'
 import { DEFAULT_FIELDS } from '../../src/schema/mergeSchema'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -255,7 +255,7 @@ test('schema subs work implicitly', async (t) => {
 test('Creating an already used prefix', async (t) => {
   const { client } = t.context
 
-  const e = await t.throwsAsync(
+  await t.throwsAsync(
     client.updateSchema({
       types: {
         flurpydurpy: {
@@ -292,7 +292,7 @@ test('Keeping the same prefix of a type should not fail', async (t) => {
 test('Adding a type with `ro` prefix should fail because of `root`', async (t) => {
   const { client } = t.context
 
-  const e = await t.throwsAsync(
+  await t.throwsAsync(
     client.updateSchema({
       types: {
         anotherRoot: {
@@ -756,7 +756,7 @@ test('Change defaults should fail', async (t) => {
 test('Change defaults when adding new type should fail', async (t) => {
   const { client } = t.context
 
-  for (const fieldName in DEFAULT_FIELDS) {
+  for (const _fieldName in DEFAULT_FIELDS) {
     await t.throwsAsync(
       client.updateSchema(
         {

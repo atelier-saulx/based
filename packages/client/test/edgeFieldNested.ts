@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,8 +6,9 @@ import './assertions'
 import getPort from 'get-port'
 import { SelvaTraversal } from '../src/protocol'
 import { find } from './assertions/utils'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -126,7 +127,7 @@ test.skip('retrieving nested refs with fields arg', async (t) => {
       rpn: ['"th" e'],
     })
   )[0]
-  t.deepEqualIgnoreOrder(res1[0][1], [
+  deepEqualIgnoreOrder(t, res1[0][1], [
     'docs',
     [
       ['id', 'tx0', 'id', 'tx0', 'name', 'file0.txt', 'type', 'file'],
@@ -165,7 +166,7 @@ test.skip('retrieving nested refs with fields arg', async (t) => {
       rpn: ['"th" e'],
     })
   )[0]
-  t.deepEqualIgnoreOrder(res3[0][1], [
+  deepEqualIgnoreOrder(t, res3[0][1], [
     'docs',
     [
       ['id', 'tx0', 'name', 'file0.txt'],
@@ -242,7 +243,7 @@ test.skip('retrieving nested refs with fields arg', async (t) => {
     },
   })
   console.log(JSON.stringify(res6, null, 2))
-  t.deepEqualIgnoreOrder(res6?.files[0]?.docs.mirrors, [
+  deepEqualIgnoreOrder(t, res6?.files[0]?.docs.mirrors, [
     {
       url: 'http://localhost:3000/file0.txt',
     },
@@ -256,7 +257,7 @@ test.skip('retrieving nested refs with fields arg', async (t) => {
       url: 'http://localhost:3001/file1.txt',
     },
   ])
-  t.deepEqualIgnoreOrder(res6?.files[1]?.docs.mirrors, [
+  deepEqualIgnoreOrder(t, res6?.files[1]?.docs.mirrors, [
     {
       url: 'http://localhost:3000/file0.txt',
     },
@@ -340,7 +341,7 @@ test.skip('retrieving nested refs from an object', async (t) => {
     type: 'match',
     value: 20.0,
   })
-  const sup = await client.set({
+  await client.set({
     type: 'super',
     nested: {
       name: 'refs',

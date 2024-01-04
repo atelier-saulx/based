@@ -128,7 +128,7 @@ test('subscribe - simple alias', async (t) => {
       },
       value: true,
     },
-    (res) => {
+    (res: any) => {
       results.push(deepCopy(res))
     }
   )

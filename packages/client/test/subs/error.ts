@@ -1,5 +1,5 @@
 import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+// import { subscribe } from '@based/db-subs'
 
 const test = basicTest({
   language: 'en',
@@ -18,10 +18,9 @@ const test = basicTest({
 })
 
 // TODO: waiting for error callback
-test.serial.skip('subscription validation error', async (t) => {
-  const client = t.context.client
-  let errorCnt = 0
-
+test.serial.skip('subscription validation error', async (_t) => {
+  // const client = t.context.client
+  // let errorCnt = 0
   // client
   //   .observe({
   //     $db: {},
@@ -64,8 +63,8 @@ test.serial.skip(
   async (t) => {
     const client = t.context.client
 
-    let cnt = 0
-    const id = await client.set({
+    // let cnt = 0
+    /* const id = */ await client.set({
       type: 'match',
       title: { en: 'snurfels' },
     })
@@ -108,9 +107,9 @@ test.serial.skip(
 )
 
 // TODO: waiting for error callback
-test.serial.skip('subscription error on subs manager', async (t) => {
-  const client = t.context.client
-  const results = []
+test.serial.skip('subscription error on subs manager', async (_t) => {
+  // const client = t.context.client
+  // const results = []
   // client
   //   .observe({
   //     $language: 'en',

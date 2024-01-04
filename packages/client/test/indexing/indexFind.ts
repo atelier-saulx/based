@@ -1,14 +1,15 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../../src'
 import { startOrigin } from '../../../server/dist'
 import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaResultOrder, SelvaTraversal } from '../../src/protocol'
+import { SelvaResultOrder, SelvaTraversal } from '../../src/protocol'
 import { wait } from '@saulx/utils'
 import '../assertions'
-import { find, getIndexingState } from '../assertions/utils'
+import { getIndexingState } from '../assertions/utils'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from '../assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -107,7 +108,7 @@ test.skip('find index', async (t) => {
   }
 
   for (let i = 0; i < 500; i++) {
-    t.deepEqualIgnoreOrder(await client.get(q), {
+    deepEqualIgnoreOrder(t, await client.get(q), {
       id: 'root',
       items: [{ name: 'league 2' }],
     })
@@ -147,15 +148,39 @@ test.skip('find index', async (t) => {
 
   const istate = await getIndexingState(client)
   t.truthy(istate['root.J.ImxlIiBl'])
-  t.truthy(istate['root.J.ImxlIiBl'].take_max_ave > 140, `act: ${istate['root.J.ImxlIiBl'].take_max_ave}`)
-  t.truthy(istate['root.J.ImxlIiBl'].tot_max_ave > 400, `act: ${istate['root.J.ImxlIiBl'].tot_max_ave}`)
-  t.truthy(istate['root.J.ImxlIiBl'].ind_take_max_ave < 1, `act: ${istate['root.J.ImxlIiBl'].ind_take_max_ave}`)
-  t.truthy(istate['root.J.ImxlIiBl'].card === '3002', `act: ${istate['root.J.ImxlIiBl'].card}`)
+  t.truthy(
+    istate['root.J.ImxlIiBl'].take_max_ave > 140,
+    `act: ${istate['root.J.ImxlIiBl'].take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImxlIiBl'].tot_max_ave > 400,
+    `act: ${istate['root.J.ImxlIiBl'].tot_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImxlIiBl'].ind_take_max_ave < 1,
+    `act: ${istate['root.J.ImxlIiBl'].ind_take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImxlIiBl'].card === '3002',
+    `act: ${istate['root.J.ImxlIiBl'].card}`
+  )
   t.truthy(istate['root.J.InRoaW5nIiBo'])
-  t.truthy(istate['root.J.InRoaW5nIiBo'].take_max_ave > 150, `act: ${istate['root.J.InRoaW5nIiBo'].take_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBo'].tot_max_ave > 400, `act: ${istate['root.J.InRoaW5nIiBo'].tot_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBo'].ind_take_max_ave > 700, `act: ${istate['root.J.InRoaW5nIiBo'].ind_take_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBo'].card === '1001', `act: ${istate['root.J.InRoaW5nIiBo'].card}`)
+  t.truthy(
+    istate['root.J.InRoaW5nIiBo'].take_max_ave > 150,
+    `act: ${istate['root.J.InRoaW5nIiBo'].take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBo'].tot_max_ave > 400,
+    `act: ${istate['root.J.InRoaW5nIiBo'].tot_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBo'].ind_take_max_ave > 700,
+    `act: ${istate['root.J.InRoaW5nIiBo'].ind_take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBo'].card === '1001',
+    `act: ${istate['root.J.InRoaW5nIiBo'].card}`
+  )
 })
 
 test.skip('find index strings', async (t) => {
@@ -177,10 +202,12 @@ test.skip('find index strings', async (t) => {
   }
 
   await client.command('index.new', [
-      SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS, '',
-      SelvaResultOrder.SELVA_RESULT_ORDER_NONE, '',
-      'root',
-      '"name" f "league 0" c'
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+    '',
+    SelvaResultOrder.SELVA_RESULT_ORDER_NONE,
+    '',
+    'root',
+    '"name" f "league 0" c',
   ])
   await wait(2e3)
   for (let i = 0; i < 500; i++) {
@@ -266,16 +293,20 @@ test.skip('find index string sets', async (t) => {
   }
 
   await client.command('index.new', [
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS, '',
-    SelvaResultOrder.SELVA_RESULT_ORDER_NONE, '',
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+    '',
+    SelvaResultOrder.SELVA_RESULT_ORDER_NONE,
+    '',
     'root',
-    '"g" "things" a'
+    '"g" "things" a',
   ])
   await client.command('index.new', [
-    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS, '',
-    SelvaResultOrder.SELVA_RESULT_ORDER_NONE, '',
+    SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+    '',
+    SelvaResultOrder.SELVA_RESULT_ORDER_NONE,
+    '',
     'root',
-    '"thing" f "abc" c'
+    '"thing" f "abc" c',
   ])
   await wait(1e3)
   for (let i = 0; i < 500; i++) {
@@ -327,15 +358,39 @@ test.skip('find index string sets', async (t) => {
 
   const istate = await getIndexingState(client)
   t.truthy(istate['root.J.ImciICJ0aGluZ3MiIGE='])
-  t.truthy(istate['root.J.ImciICJ0aGluZ3MiIGE='].take_max_ave > 80, `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].take_max_ave}`)
-  t.truthy(istate['root.J.ImciICJ0aGluZ3MiIGE='].tot_max_ave > 80, `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].tot_max_ave}`)
-  t.truthy(istate['root.J.ImciICJ0aGluZ3MiIGE='].ind_take_max_ave > 10, `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].ind_take_max_ave}`)
-  t.truthy(istate['root.J.ImciICJ0aGluZ3MiIGE='].card === '10', `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].card}`)
+  t.truthy(
+    istate['root.J.ImciICJ0aGluZ3MiIGE='].take_max_ave > 80,
+    `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImciICJ0aGluZ3MiIGE='].tot_max_ave > 80,
+    `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].tot_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImciICJ0aGluZ3MiIGE='].ind_take_max_ave > 10,
+    `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].ind_take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.ImciICJ0aGluZ3MiIGE='].card === '10',
+    `act: ${istate['root.J.ImciICJ0aGluZ3MiIGE='].card}`
+  )
   t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='])
-  t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].take_max_ave > 80, `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].take_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].tot_max_ave > 80, `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].tot_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].ind_take_max_ave > 5, `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].ind_take_max_ave}`)
-  t.truthy(istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card === '1000', `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card}`)
+  t.truthy(
+    istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].take_max_ave > 80,
+    `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].tot_max_ave > 80,
+    `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].tot_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].ind_take_max_ave > 5,
+    `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].ind_take_max_ave}`
+  )
+  t.truthy(
+    istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card === '1000',
+    `act: ${istate['root.J.InRoaW5nIiBmICJhYmMiIGM='].card}`
+  )
 })
 
 test.skip('find index integers', async (t) => {

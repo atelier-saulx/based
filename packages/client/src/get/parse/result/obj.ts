@@ -3,10 +3,9 @@ import {
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
 } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../../types'
+import { ExecContext, GetCommand } from '../../types'
 import { setResultValue } from './setResultValue'
 import { parseFieldResult } from './field'
-import { joinPath } from '../../../util'
 import { deepCopy, setByPath } from '@saulx/utils'
 import { hashCmd } from '../../util'
 import { addSubMarker } from '../../exec/cmd'

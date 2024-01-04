@@ -1,9 +1,4 @@
-import {
-  BasedSchemaCollectProps,
-  BasedSchemaField,
-  BasedSchemaFieldArray,
-  Path,
-} from '@based/schema'
+import { BasedSchemaField, BasedSchemaFieldArray, Path } from '@based/schema'
 import { toModifyArgs } from '.'
 import { ModifyArgType } from '../protocol/encode/modify/types'
 import { joinPath } from '../util'

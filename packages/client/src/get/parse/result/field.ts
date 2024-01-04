@@ -4,7 +4,7 @@ import {
   BasedSchemaFieldObject,
   BasedSchemaFieldSet,
 } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../../types'
+import { ExecContext, GetCommand } from '../../types'
 import { parseRecFields } from './rec'
 import { getTypeSchema } from '../../../util'
 import { parseObjFields } from './obj'

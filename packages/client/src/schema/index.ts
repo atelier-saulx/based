@@ -41,7 +41,7 @@ export const DEFAULT_SCHEMA: BasedSchema = {
 export async function updateSchema(
   client: BasedDbClient,
   opts: BasedSchemaPartial,
-  merge: boolean = true,
+  _merge: boolean = true,
   mode: SchemaUpdateMode = SchemaUpdateMode.strict
 ): Promise<BasedSchema> {
   let currentSchema = client.schema

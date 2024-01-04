@@ -1,4 +1,4 @@
-import { basicTest } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from '../assertions'
 import { subscribe } from '@based/db-subs'
 import { deepCopy, wait } from '@saulx/utils'
 
@@ -82,7 +82,7 @@ test('add new reference', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       res = v
     }
   )
@@ -152,7 +152,7 @@ test('add new reference reverse', async (t) => {
       id: true,
       matches: true,
     },
-    (v) => {
+    (v: any) => {
       res = v
     }
   )
@@ -258,7 +258,7 @@ test('find references recursive', async (t) => {
   }
 
   let results: any[] = []
-  subscribe(client, q, (d) => {
+  subscribe(client, q, (d: any) => {
     // console.log('ddd', d)
     results.push(deepCopy(d))
   })
@@ -272,7 +272,7 @@ test('find references recursive', async (t) => {
 
   await wait(1e3)
 
-  t.deepEqualIgnoreOrder(results, [
+  deepEqualIgnoreOrder(t, results, [
     {
       items: [
         { name: 'sub 1' },

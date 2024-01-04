@@ -1,16 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import { BasedDbClient } from '../../src'
 import '../assertions'
 import { SchemaUpdateMode } from '../../src/types'
-import {
-  BasedSchemaFieldObject,
-  BasedSchemaFieldRecord,
-  BasedSchemaFieldSet,
-} from '@based/schema'
+import { BasedSchemaFieldObject, BasedSchemaFieldRecord } from '@based/schema'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -99,7 +95,7 @@ test('Remove record field in strick mode should fail', async (t) => {
 test('Remove record field in flexible mode with exsiting nodes should fail', async (t) => {
   const { client } = t.context
 
-  const id = await client.set({
+  await client.set({
     type: 'aType',
     level1record: {
       rec1: 1,
@@ -168,7 +164,7 @@ test('Change record field in strick mode should fail', async (t) => {
 test('Change record field in flexible mode with existing nodes should fail', async (t) => {
   const { client } = t.context
 
-  const id = await client.set({
+  await client.set({
     type: 'aType',
     level1record: {
       rec1: 1,

@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -142,7 +142,8 @@ test('search user roles', async (t) => {
     2
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await client.get({
         descendants: {

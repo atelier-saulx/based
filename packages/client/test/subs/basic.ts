@@ -1,5 +1,5 @@
 import { wait } from '@saulx/utils'
-import { basicTest } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from '../assertions'
 import { subscribe } from '@based/db-subs'
 
 const test = basicTest({
@@ -48,13 +48,13 @@ test('basic id based subscriptions', async (t) => {
   t.plan(4)
 
   let o1counter = 0
-  const sub1 = subscribe(client, { $id: 'root', yesh: true }, (d) => {
+  subscribe(client, { $id: 'root', yesh: true }, (d: any) => {
     if (o1counter === 0) {
       // gets start event
       t.is(d?.yesh, undefined)
     } else if (o1counter === 1) {
       // gets update event
-      t.deepEqualIgnoreOrder(d, { yesh: 'so nice' })
+      deepEqualIgnoreOrder(t, d, { yesh: 'so nice' })
     } else {
       // doesn't get any more events
       t.fail()
@@ -69,26 +69,22 @@ test('basic id based subscriptions', async (t) => {
   })
 
   let o2counter = 0
-  const sub2 = subscribe(
-    client,
-    { $id: thing, $all: true, aliases: false },
-    (d) => {
-      if (o2counter === 0) {
-        // gets start event
-        t.deepEqualIgnoreOrder(d, {
-          id: thing,
-          type: 'yeshType',
-          yesh: 'extra nice',
-        })
-      } else if (o2counter === 1) {
-        // gets delete event
-        t.deepEqualIgnoreOrder(d, {})
-      } else {
-        t.fail()
-      }
-      o2counter++
+  subscribe(client, { $id: thing, $all: true, aliases: false }, (d: any) => {
+    if (o2counter === 0) {
+      // gets start event
+      deepEqualIgnoreOrder(t, d, {
+        id: thing,
+        type: 'yeshType',
+        yesh: 'extra nice',
+      })
+    } else if (o2counter === 1) {
+      // gets delete event
+      deepEqualIgnoreOrder(t, d, {})
+    } else {
+      t.fail()
     }
-  )
+    o2counter++
+  })
 
   await wait(500 * 2)
 
@@ -137,10 +133,10 @@ test('basic id based nested query subscriptions', async (t) => {
         aliases: false,
       },
     },
-    (d) => {
+    (d: any) => {
       if (o2counter === 0) {
         // gets start event
-        t.deepEqualIgnoreOrder(d, {
+        deepEqualIgnoreOrder(t, d, {
           item: {
             id: thing,
             type: 'yeshType',
@@ -149,7 +145,7 @@ test('basic id based nested query subscriptions', async (t) => {
         })
       } else if (o2counter === 1) {
         // gets delete event
-        t.deepEqualIgnoreOrder(d, {})
+        deepEqualIgnoreOrder(t, d, {})
       } else {
         t.fail()
       }
@@ -189,13 +185,13 @@ test('using $field works', async (t) => {
       id: true,
       aliasedField: { $field: 'yesh' },
     },
-    (d) => {
+    (d: any) => {
       if (o1counter === 0) {
         // gets start event
-        t.deepEqualIgnoreOrder(d, { id: 'root' })
+        deepEqualIgnoreOrder(t, d, { id: 'root' })
       } else if (o1counter === 1) {
         // gets update event
-        t.deepEqualIgnoreOrder(d, { id: 'root', aliasedField: 'so nice' })
+        deepEqualIgnoreOrder(t, d, { id: 'root', aliasedField: 'so nice' })
       } else {
         // doesn't get any more events
         t.fail()
@@ -233,13 +229,13 @@ test('basic $inherit when ancestors change', async (t) => {
       yesh: { $inherit: { $type: ['yeshType', 'root'] } },
     },
 
-    (d) => {
+    (d: any) => {
       if (o1counter === 0) {
         // gets start event
-        t.deepEqualIgnoreOrder(d, { id: thing })
+        deepEqualIgnoreOrder(t, d, { id: thing })
       } else if (o1counter === 1) {
         // gets update event
-        t.deepEqualIgnoreOrder(d, { id: thing, yesh: 'so nice' })
+        deepEqualIgnoreOrder(t, d, { id: thing, yesh: 'so nice' })
       } else {
         // doesn't get any more events
         t.fail()
@@ -286,26 +282,26 @@ test('basic id based reference subscriptions', async (t) => {
         yesh: true,
       },
     },
-    (d) => {
+    (d: any) => {
       if (o1counter === 0) {
         // gets start event
-        t.deepEqualIgnoreOrder(d, {
+        deepEqualIgnoreOrder(t, d, {
           yesh: 'hello from 1',
           myRef: { type: 'refType', yesh: 'hello from 2' },
         })
       } else if (o1counter === 1) {
         // gets update event
-        t.deepEqualIgnoreOrder(d, {
+        deepEqualIgnoreOrder(t, d, {
           yesh: 'hello from 1!',
           myRef: { type: 'refType', yesh: 'hello from 2' },
         })
       } else if (o1counter === 2) {
-        t.deepEqualIgnoreOrder(d, {
+        deepEqualIgnoreOrder(t, d, {
           yesh: 'hello from 1!',
           myRef: { type: 'refType', yesh: 'hello from 2!' },
         })
       } else if (o1counter === 3) {
-        t.deepEqualIgnoreOrder(d, {
+        deepEqualIgnoreOrder(t, d, {
           yesh: 'hello from 1!',
           myRef: { type: 'refType', yesh: 'hello from 3...' },
         })
@@ -326,7 +322,7 @@ test('basic id based reference subscriptions', async (t) => {
 
   await wait(500 * 2)
 
-  let subs = await Promise.all(
+  await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
@@ -351,14 +347,13 @@ test('basic id based reference subscriptions', async (t) => {
 
   await wait(500 * 2)
 
-  subs = await Promise.all(
+  await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  // console.dir({ subs }, { depth: 6 })
 })
 
 test('subscribe with timeout right away record', async (t) => {
@@ -383,7 +378,7 @@ test('subscribe with timeout right away record', async (t) => {
         },
       },
     },
-    (data) => {
+    (data: any) => {
       if (data.name && !data.lol) t.is(data.name, 'derp')
       if (data.name && data.lol) t.is(data.name, 'haha')
     }
@@ -421,14 +416,14 @@ test('subscribe to descendants: true in list', async (t) => {
   })
 
   let o1counter = 0
-  let res
+  let res: any
   subscribe(
     client,
     {
       $id: 'root',
       descendants: true,
     },
-    (d) => {
+    (d: any) => {
       o1counter++
       res = d
     }
@@ -436,7 +431,7 @@ test('subscribe to descendants: true in list', async (t) => {
 
   await wait(500 * 2)
   t.deepEqual(o1counter, 1)
-  t.deepEqualIgnoreOrder(res, { descendants: ['re1', 're2'] })
+  deepEqualIgnoreOrder(t, res, { descendants: ['re1', 're2'] })
 
   await client.set({
     $id: 're3',
@@ -447,14 +442,13 @@ test('subscribe to descendants: true in list', async (t) => {
   await wait(500 * 2)
 
   t.deepEqual(o1counter, 2)
-  t.deepEqualIgnoreOrder(res, { descendants: ['re1', 're2', 're3'] })
+  deepEqualIgnoreOrder(t, res, { descendants: ['re1', 're2', 're3'] })
 
-  const subs = await Promise.all(
+  await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  // console.dir({ subs }, { depth: 6 })
 })

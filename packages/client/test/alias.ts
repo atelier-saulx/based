@@ -1,12 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -134,7 +135,8 @@ test.afterEach.always(async (t) => {
 
 test('get non-existing by $alias', async (t) => {
   const { client } = t.context
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'does_not_exists',
@@ -154,7 +156,8 @@ test('set alias and get by $alias', async (t) => {
     title: { en: 'yesh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -175,7 +178,8 @@ test('set alias and get by $alias', async (t) => {
     title: { en: 'yesh2' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -190,7 +194,8 @@ test('set alias and get by $alias', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'very_nice_match',
@@ -213,7 +218,8 @@ test('set alias and get by $alias', async (t) => {
     aliases: { $remove: ['very_nice_match'] },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -228,7 +234,8 @@ test('set alias and get by $alias', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'ok_match',
@@ -252,7 +259,8 @@ test('set new entry with alias', async (t) => {
     title: { en: 'yesh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -276,7 +284,8 @@ test('set existing entry with alias', async (t) => {
     title: { en: 'yesh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -297,7 +306,8 @@ test('set existing entry with alias', async (t) => {
     title: { en: 'yesh yesh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -312,7 +322,8 @@ test('set existing entry with alias', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'nice_match',
@@ -335,7 +346,8 @@ test('set and get by $alias as id', async (t) => {
     title: { en: 'yesh' },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: match1,
@@ -390,9 +402,10 @@ test('set parent by alias', async (t) => {
     parents: true,
   })
 
-  t.deepEqualIgnoreOrder(stub.parents, undefined)
+  deepEqualIgnoreOrder(t, stub.parents, undefined)
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: match2,
@@ -455,7 +468,7 @@ test('set parent by alias 2', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(result2.items, [{ id: match1 }])
+  deepEqualIgnoreOrder(t, result2.items, [{ id: match1 }])
 })
 
 test('delete all aliases of a node', async (t) => {
@@ -466,7 +479,8 @@ test('delete all aliases of a node', async (t) => {
     aliases: { $add: ['nice_match', 'nicer_match'] },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $alias: 'nice_match',
       id: true,
@@ -477,7 +491,8 @@ test('delete all aliases of a node', async (t) => {
       aliases: ['nice_match', 'nicer_match'],
     }
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $alias: 'nicer_match',
       id: true,
@@ -494,7 +509,8 @@ test('delete all aliases of a node', async (t) => {
     aliases: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: match1,
       id: true,
@@ -528,14 +544,15 @@ test('alias and merge = false', async (t) => {
     //aliases: [],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     // await client.redis.hgetall('___selva_aliases')
     (await client.command('lsaliases'))[0].sort(),
     ['nice_match', match1, 'nicer_match', match2]
   )
   const res1 = (await client.command('object.get', ['', match1]))[0]
   console.dir({ res1 }, { depth: 6 })
-  t.deepEqualIgnoreOrder(res1, [
+  deepEqualIgnoreOrder(t, res1, [
     'aliases',
     ['nice_match'],
     'createdAt',
@@ -602,9 +619,10 @@ test('set with $alias', async (t) => {
     $language: 'en',
   })
 
-  t.deepEqualIgnoreOrder(x, 'ma1')
+  deepEqualIgnoreOrder(t, x, 'ma1')
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $alias: 'thingy',

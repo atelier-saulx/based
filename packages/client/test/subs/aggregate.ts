@@ -1,4 +1,4 @@
-import { basicTest } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from '../assertions'
 import { subscribe } from '@based/db-subs'
 import { wait } from '@saulx/utils'
 
@@ -82,13 +82,13 @@ test('simple count aggregate sub', async (t) => {
         },
       },
     },
-    (x) => {
+    (x: any) => {
       if (i === 0) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', matchCount: 4 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', matchCount: 4 })
       } else if (i === 1) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', matchCount: 5 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', matchCount: 5 })
       } else if (i === 2) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', matchCount: 8 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', matchCount: 8 })
       } else {
         t.fail()
       }
@@ -195,15 +195,15 @@ test('simple sum aggregate sub', async (t) => {
         },
       },
     },
-    (x) => {
+    (x: any) => {
       if (i === 0) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum })
+        deepEqualIgnoreOrder(t, x, { id: 'root', thing: sum })
       } else if (i === 1) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum + 72 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', thing: sum + 72 })
       } else if (i < 4) {
         // skip
       } else if (i === 4) {
-        t.deepEqualIgnoreOrder(x, {
+        deepEqualIgnoreOrder(t, x, {
           id: 'root',
           thing: sum + 72 + 73 + 74 + 75,
         })
@@ -323,7 +323,7 @@ test('list avg aggregate sub', async (t) => {
         },
       },
     },
-    (x) => {
+    (x: any) => {
       if (i === 0) {
         t.deepEqual(x, {
           id: 'root',
@@ -481,17 +481,17 @@ test('simple nested find avg aggregate sub', async (t) => {
         },
       },
     },
-    (x) => {
+    (x: any) => {
       if (i === 0) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', thing: sum / 4 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', thing: sum / 4 })
       } else if (i === 1) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', thing: (sum + 72) / 5 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', thing: (sum + 72) / 5 })
       } else if (i === 2) {
         // skip
       } else if (i === 3) {
         // skip
       } else if (i === 4) {
-        t.deepEqualIgnoreOrder(x, {
+        deepEqualIgnoreOrder(t, x, {
           id: 'root',
           thing: (sum + 72 + 73 + 74 + 75) / 8,
         })
@@ -600,13 +600,13 @@ test('simple max aggregate sub', async (t) => {
         },
       },
     },
-    (x) => {
+    (x: any) => {
       if (i === 0) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', val: 13 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', val: 13 })
       } else if (i === 1) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', val: 72 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', val: 72 })
       } else if (i === 2) {
-        t.deepEqualIgnoreOrder(x, { id: 'root', val: 75 })
+        deepEqualIgnoreOrder(t, x, { id: 'root', val: 75 })
       } else {
         t.fail()
       }

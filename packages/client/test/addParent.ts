@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -56,7 +56,7 @@ test('when using parents.$add empty, root should still be added in ancestors (lo
     },
   })
 
-  t.deepEqualIgnoreOrder(await client.get({ $id: 'sp11', ancestors: true }), {
+  deepEqualIgnoreOrder(t, await client.get({ $id: 'sp11', ancestors: true }), {
     ancestors: ['root'],
   })
 })

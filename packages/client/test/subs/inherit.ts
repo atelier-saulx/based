@@ -1,5 +1,5 @@
 import { deepCopy, wait } from '@saulx/utils'
-import { basicTest } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from '../assertions'
 import { subscribe } from '@based/db-subs'
 
 const test = basicTest({
@@ -61,7 +61,7 @@ test('inherit object nested field from root youzi', async (t) => {
       $id: 'yeA',
       flapper: { snurk: { $inherit: true } },
     },
-    (p) => {
+    (p: any) => {
       // its now not immatable - think about if we want it immutable
       results.push(deepCopy(p))
     }
@@ -106,7 +106,7 @@ test('inherit object youzi', async (t) => {
       $id: 'yeA',
       flapper: { $inherit: { $type: 'yeshType' } },
     },
-    (p) => {
+    (p: any) => {
       results.push(deepCopy(p))
     }
   )
@@ -155,14 +155,14 @@ test('basic inherit subscription', async (t) => {
       $id: 'yeB',
       yesh: { $inherit: true },
     },
-    (p) => {
+    (p: any) => {
       results.push(deepCopy(p))
     }
   )
 
   await wait(1000)
 
-  const subs = await Promise.all(
+  await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
@@ -183,8 +183,6 @@ test('basic inherit subscription', async (t) => {
   })
 
   await wait(1000)
-
-  // console.dir({ subs }, { depth: 8 })
 
   t.deepEqual(results, [
     { yesh: 'yesh a' },
@@ -236,7 +234,7 @@ test('inherit object', async (t) => {
       $id: 'yeB',
       flapper: { $inherit: true },
     },
-    (p) => {
+    (p: any) => {
       results.push(deepCopy(p))
     }
   )
@@ -320,7 +318,7 @@ test('list inherit subscription', async (t) => {
         $list: true,
       },
     },
-    (p) => {
+    (p: any) => {
       results.push(deepCopy(p))
     }
   )
@@ -341,7 +339,7 @@ test('list inherit subscription', async (t) => {
 
   await wait(1000)
 
-  t.deepEqualIgnoreOrder(results, [
+  deepEqualIgnoreOrder(t, results, [
     {
       flapdrol: [
         { id: 'ye0', yesh: 'yesh a' },
@@ -423,7 +421,7 @@ test('list inherit + field subscription', async (t) => {
         $list: true,
       },
     },
-    (p) => {
+    (p: any) => {
       results.push(deepCopy(p))
     }
   )
@@ -462,7 +460,7 @@ test('list inherit + field subscription', async (t) => {
 
   await wait(1000)
 
-  t.deepEqualIgnoreOrder(results, [
+  deepEqualIgnoreOrder(t, results, [
     {
       flapdrol: [
         { id: 'ye0', yesh: 'no' },

@@ -1,23 +1,15 @@
-import { Assertions } from 'ava/lib/assert.js'
+import { ExecutionContext } from 'ava'
 import { deepCopy } from '@saulx/utils'
 import { SelvaServer, startOrigin } from '@based/db-server'
 import { BasedDbClient } from '../../src'
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { BasedSchemaPartial } from '@based/schema'
-// import { subscribe } from '@based/db-subs'
-
-declare module 'ava' {
-  export interface Assertions {
-    deepEqualIgnoreOrder(a: any, b: any, message?: string): boolean
-    connectionsAreEmpty(): Promise<void>
-  }
-}
 
 const deepSort = (a: any, b: any): void => {
   if (Array.isArray(a)) {
     if (typeof a[0] === 'object') {
-      const s = (a, b) => {
+      const s = (a: any, b: any) => {
         if (typeof a === 'object' && typeof b === 'object') {
           if (a.id && b.id) {
             if (b.id < a.id) {
@@ -59,23 +51,26 @@ const deepSort = (a: any, b: any): void => {
   }
 }
 
-Object.assign(Assertions.prototype, {
-  deepEqualIgnoreOrder(actual, expected, message = '') {
-    const actCopy = deepCopy(actual)
-    const expCopy = deepCopy(expected)
+export const deepEqualIgnoreOrder = (
+  t: ExecutionContext,
+  actual: any,
+  expected: any,
+  message: string = ''
+) => {
+  const actCopy = deepCopy(actual)
+  const expCopy = deepCopy(expected)
 
-    if (!expCopy.createdAt) {
-      delete actCopy.createdAt
-    }
+  if (!expCopy.createdAt) {
+    delete actCopy.createdAt
+  }
 
-    if (!expCopy.updatedAt) {
-      delete actCopy.updatedAt
-    }
+  if (!expCopy.updatedAt) {
+    delete actCopy.updatedAt
+  }
 
-    deepSort(actCopy, expCopy)
-    this.deepEqual(actCopy, expCopy, message)
-  },
-})
+  deepSort(actCopy, expCopy)
+  t.deepEqual(actCopy, expCopy, message)
+}
 
 export type TestCtx = {
   srv: SelvaServer
@@ -84,7 +79,7 @@ export type TestCtx = {
 }
 
 export const basicTest = (schema?: BasedSchemaPartial) => {
-  const test = anyTest as TestInterface<TestCtx>
+  const test = anyTest as TestFn<TestCtx>
   test.beforeEach(async (t) => {
     t.context.port = await getPort()
     t.context.srv = await startOrigin({

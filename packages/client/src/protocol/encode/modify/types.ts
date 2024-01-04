@@ -1,6 +1,5 @@
 import { compile, CompiledRecordDef } from 'data-record'
 import { SELVA_NODE_ID_LEN } from '../../types'
-import { encodeDouble, encodeLongLong } from './primitiveTypes'
 
 export enum ModifyArgType {
   SELVA_MODIFY_ARG_INVALID = '\0',

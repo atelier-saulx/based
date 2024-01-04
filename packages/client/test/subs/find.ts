@@ -99,7 +99,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt++
     }
   )
@@ -160,7 +160,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt2++
     }
   )
@@ -212,7 +212,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt3++
     }
   )

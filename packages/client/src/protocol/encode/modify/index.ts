@@ -1,4 +1,3 @@
-import { SELVA_PROTO_STRING } from '../../types'
 import { defaultEncoder } from '../defaultEncoder'
 import { encodeLongLong, encodeDouble } from './primitiveTypes'
 import { EncodeDefinition } from '../protocol'

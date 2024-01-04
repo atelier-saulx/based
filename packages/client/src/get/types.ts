@@ -57,11 +57,22 @@ export type TraverseByTypeExpression =
 
 export type GetNodeShared = {
   target: { path: (string | number)[] }
-  source: {
-    idList?: string[]
-    id?: string
-    alias?: string
-  }
+  source:
+    | {
+        idList: string[]
+        id?: string
+        alias?: string
+      }
+    | {
+        idList?: string[]
+        id: string
+        alias?: string
+      }
+    | {
+        idList?: string[]
+        id?: string
+        alias: string
+      }
   // fields by type
   fields: Fields
 

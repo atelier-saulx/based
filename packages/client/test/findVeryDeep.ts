@@ -1,12 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { worker } from './assertions/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -136,7 +137,8 @@ test('get very deep results', async (t) => {
     })
   }
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     ultraResults.x,
     r,
     `has correct amount of result (${levelMap[levels - 1]}) for ${
@@ -174,7 +176,7 @@ test('get very deep results', async (t) => {
   for (let i = 0; i < workerAmount; i++) {
     workers.push(
       worker(
-        async ({ BasedDbClient, wait }, { port }) => {
+        async ({ BasedDbClient }, { port }) => {
           const client = new BasedDbClient()
           client.connect({
             port,
@@ -233,7 +235,7 @@ test('get very deep results', async (t) => {
 
   const results = await Promise.all(workers)
 
-  results.forEach((v, i) => {
+  results.forEach((v, _i) => {
     // console.log(
     //   chalk.gray(
     //     `    worker #${i} {Get all desc using descendants in ${v[0]} ms`

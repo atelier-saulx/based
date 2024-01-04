@@ -1,12 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
-import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -88,14 +87,9 @@ test('get all', async (t) => {
   res[0].shift()
   res[0].pop()
   res[0].pop()
-  t.deepEqual(res, [[
-    'id',
-    'maTest0001',
-    'title',
-    ['en', 'ma1'],
-    'type',
-    'match',
-  ]])
+  t.deepEqual(res, [
+    ['id', 'maTest0001', 'title', ['en', 'ma1'], 'type', 'match'],
+  ])
 })
 
 test('obj len', async (t) => {
@@ -107,7 +101,9 @@ test('obj len', async (t) => {
 test('string len', async (t) => {
   const { client } = t.context
 
-  t.deepEqual(await client.command('object.len', ['maTest0001', 'title.en']), [3n])
+  t.deepEqual(await client.command('object.len', ['maTest0001', 'title.en']), [
+    3n,
+  ])
 })
 
 test('meta', async (t) => {
@@ -116,14 +112,12 @@ test('meta', async (t) => {
   await client.command('object.set', ['maTest0001', 'a', 's', 'abc'])
   t.deepEqual(await client.command('object.getMeta', ['maTest0001', 'a']), [0n])
   t.deepEqual(
-    await client.command('object.setMeta', [
-      'maTest0001',
-      'a',
-      0xbaddcafe
-    ]),
+    await client.command('object.setMeta', ['maTest0001', 'a', 0xbaddcafe]),
     [1n]
   )
-  t.deepEqual(await client.command('object.getMeta', ['maTest0001', 'a']), [BigInt('0xbaddcafe')])
+  t.deepEqual(await client.command('object.getMeta', ['maTest0001', 'a']), [
+    BigInt('0xbaddcafe'),
+  ])
 })
 
 test('deleting deep objects', async (t) => {
@@ -148,19 +142,19 @@ test('deleting a field from object arrays', async (t) => {
 
   t.deepEqual(
     await client.command('object.get', ['', 'maTest0001', 'a.r[0]']),
-    [[ 's1', 'Hello', 's2', 'Hello', 's3', 'Hello' ]]
+    [['s1', 'Hello', 's2', 'Hello', 's3', 'Hello']]
   )
 
   await client.command('modify', ['maTest0001', '', ['7', 'a.r[0].s1', '']])
   t.deepEqual(
     await client.command('object.get', ['', 'maTest0001', 'a.r[0]']),
-    [[ 's2', 'Hello', 's3', 'Hello' ]]
+    [['s2', 'Hello', 's3', 'Hello']]
   )
 
   await client.command('object.del', ['maTest0001', 'a.r[0].s2'])
   t.deepEqual(
     await client.command('object.get', ['', 'maTest0001', 'a.r[0]']),
-    [[ 's3', 'Hello' ]]
+    [['s3', 'Hello']]
   )
 
   // This will delete the whole array

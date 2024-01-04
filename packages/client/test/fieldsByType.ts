@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,7 +6,7 @@ import { deepCopy } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -106,7 +106,7 @@ test('$fieldsByType simple', async (t) => {
       },
     },
   })
-  res.parts.sort((a, b) =>
+  res.parts.sort((a: any, b: any) =>
     a.type === b.type
       ? a.position.localeCompare(b.position)
       : a.type.localeCompare(b.type)

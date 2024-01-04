@@ -64,6 +64,7 @@ export function toModifyArgs(props: {
   const strPath = joinPath(path)
 
   switch (fieldSchema.type) {
+    // @ts-expect-error fallthrough
     case 'reference':
       if (!value.$value && !value.$delete) {
         value = { $value: [value] }

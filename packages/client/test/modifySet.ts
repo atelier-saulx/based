@@ -1,11 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -74,7 +75,7 @@ test('float sets', async (t) => {
     floats: [9001],
   })
   const { floats: floats1 } = await client.get({ $id: id1, floats: true })
-  t.deepEqualIgnoreOrder(floats1, [9001])
+  deepEqualIgnoreOrder(t, floats1, [9001])
 
   const id2 = await client.set({
     type: 'thing',
@@ -84,7 +85,7 @@ test('float sets', async (t) => {
   })
 
   const { floats: floats2 } = await client.get({ $id: id2, floats: true })
-  t.deepEqualIgnoreOrder(floats2, [1.5, 2, 3.5, 1.1])
+  deepEqualIgnoreOrder(t, floats2, [1.5, 2, 3.5, 1.1])
 
   await client.set({
     $id: id2,
@@ -104,7 +105,7 @@ test('float sets', async (t) => {
   )
 
   const { floats: floats3 } = await client.get({ $id: id2, floats: true })
-  t.deepEqualIgnoreOrder(floats3, [1.5, 2, 3.5, 1.1, 7.7])
+  deepEqualIgnoreOrder(t, floats3, [1.5, 2, 3.5, 1.1, 7.7])
 })
 
 test('integer sets', async (t) => {
@@ -114,7 +115,7 @@ test('integer sets', async (t) => {
     integers: [1],
   })
   const { integers: integers1 } = await client.get({ $id: id1, integers: true })
-  t.deepEqualIgnoreOrder(integers1, [1])
+  deepEqualIgnoreOrder(t, integers1, [1])
 
   const id2 = await client.set({
     type: 'thing',
@@ -124,7 +125,7 @@ test('integer sets', async (t) => {
   })
 
   const { integers: integers2 } = await client.get({ $id: id2, integers: true })
-  t.deepEqualIgnoreOrder(integers2, [1, 2, 3])
+  deepEqualIgnoreOrder(t, integers2, [1, 2, 3])
 
   await client.set({
     $id: id2,
@@ -138,7 +139,7 @@ test('integer sets', async (t) => {
   )
 
   const { integers: integers3 } = await client.get({ $id: id2, integers: true })
-  t.deepEqualIgnoreOrder(integers3, [1, 2, 3, 4])
+  deepEqualIgnoreOrder(t, integers3, [1, 2, 3, 4])
 })
 
 test('string sets', async (t) => {
@@ -148,7 +149,7 @@ test('string sets', async (t) => {
     strings: ['abc'],
   })
   const { strings: strings1 } = await client.get({ $id: id1, strings: true })
-  t.deepEqualIgnoreOrder(strings1, ['abc'])
+  deepEqualIgnoreOrder(t, strings1, ['abc'])
 
   const id2 = await client.set({
     type: 'thing',
@@ -158,7 +159,7 @@ test('string sets', async (t) => {
   })
 
   const { strings: strings2 } = await client.get({ $id: id2, strings: true })
-  t.deepEqualIgnoreOrder(strings2, ['a', 'b', 'c'])
+  deepEqualIgnoreOrder(t, strings2, ['a', 'b', 'c'])
 
   await client.set({
     $id: id2,
@@ -172,5 +173,5 @@ test('string sets', async (t) => {
   )
 
   const { strings: strings3 } = await client.get({ $id: id2, strings: true })
-  t.deepEqualIgnoreOrder(strings3, ['a', 'b', 'c', 'd'])
+  deepEqualIgnoreOrder(t, strings3, ['a', 'b', 'c', 'd'])
 })

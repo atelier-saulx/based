@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -71,7 +71,7 @@ test('find - single', async (t) => {
     })
   }
 
-  await Promise.all(matches.map((v) => client.set(v)))
+  await Promise.all(matches.map((v: any) => client.set(v)))
 
   const r = await client.get({
     $id: 'te0',
@@ -123,7 +123,7 @@ test('find - single with no wrapping', async (t) => {
     })
   }
 
-  await Promise.all(matches.map((v) => client.set(v)))
+  await Promise.all(matches.map((v: any) => client.set(v)))
 
   const r = await client.get({
     $id: 'te0',
@@ -168,7 +168,7 @@ test('find - single in array', async (t) => {
     })
   }
 
-  await Promise.all(matches.map((v) => client.set(v)))
+  await Promise.all(matches.map((v: any) => client.set(v)))
 
   const r = await client.get({
     $id: 'te0',
@@ -222,7 +222,7 @@ test('find - single no wrapping in array', async (t) => {
     })
   }
 
-  await Promise.all(matches.map((v) => client.set(v)))
+  await Promise.all(matches.map((v: any) => client.set(v)))
 
   const r = await client.get({
     $id: 'te0',

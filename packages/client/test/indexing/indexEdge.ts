@@ -1,14 +1,14 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../../src'
 import { startOrigin } from '../../../server/dist'
 import { SelvaServer } from '../../../server/dist/server'
-import { SelvaFindResultType, SelvaTraversal } from '../../src/protocol'
 import { wait } from '@saulx/utils'
 import '../assertions'
 import { getIndexingState } from '../assertions/utils'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from '../assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -136,7 +136,7 @@ test.skip('find references', async (t) => {
   }
 
   for (let i = 0; i < 300; i++) {
-    t.deepEqualIgnoreOrder(await client.get(q), {
+    deepEqualIgnoreOrder(t, await client.get(q), {
       items: [
         { name: 'sub 1' },
         { name: 'sub 2' },

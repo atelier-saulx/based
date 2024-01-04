@@ -1,11 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -192,7 +193,7 @@ test('find - with wildcard', async (t) => {
     },
   })
   console.info(JSON.stringify({ hmmwut: r }, null, 2))
-  t.deepEqualIgnoreOrder(r.items[0], {
+  deepEqualIgnoreOrder(t, r.items[0], {
     name: 'match 1',
     record: {
       obj: { a: 'abba', b: 'babba' },
@@ -200,7 +201,7 @@ test('find - with wildcard', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(r.items[1], {
+  deepEqualIgnoreOrder(t, r.items[1], {
     name: 'match 2',
     record: {
       obj: { a: '2_abba', b: '2_babba' },
@@ -257,7 +258,8 @@ test('find - nothing found with a wildcard', async (t) => {
     { depth: 8 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,

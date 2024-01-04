@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../../src'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import '../assertions'
@@ -6,7 +6,7 @@ import getPort from 'get-port'
 import { SchemaUpdateMode } from '../../src/types'
 import { BasedSchemaFieldObject } from '@based/schema'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number

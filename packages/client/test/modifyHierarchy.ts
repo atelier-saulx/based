@@ -1,11 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -108,47 +109,58 @@ test('complex hierarchy on one set', async (t) => {
     ],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0001']))[0],
     ['root']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0011']))[0],
     ['maTest0001', 'maTest0002']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0012']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0013']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0021']))[0],
     ['maTest0011', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0001']))[0],
     ['maTest0011', 'maTest0012', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0002']))[0],
     ['maTest0011']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0011']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0012']))[0],
     []
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0013']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0021']))[0],
     ['maTest0031']
   )
@@ -193,47 +205,58 @@ test('complex hierarchy on two sets', async (t) => {
     ],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0001']))[0],
     ['root']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0011']))[0],
     ['maTest0001', 'maTest0002']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0012']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0013']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0021']))[0],
     ['maTest0011', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0001']))[0],
     ['maTest0011', 'maTest0012', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0002']))[0],
     ['maTest0011']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0011']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0012']))[0],
     []
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0013']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0021']))[0],
     ['maTest0031']
   )
@@ -285,47 +308,58 @@ test('complex hierarchy using add', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0001']))[0],
     ['root']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0011']))[0],
     ['maTest0001', 'maTest0002']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0012']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0013']))[0],
     ['maTest0001']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0021']))[0],
     ['maTest0011', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0001']))[0],
     ['maTest0011', 'maTest0012', 'maTest0013']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0002']))[0],
     ['maTest0011']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0011']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0012']))[0],
     []
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0013']))[0],
     ['maTest0021']
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0021']))[0],
     ['maTest0031']
   )
@@ -377,7 +411,8 @@ test('Undo complex hierarchy using set', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0021']))[0],
     ['maTest0011', 'maTest0013']
   )
@@ -387,17 +422,20 @@ test('Undo complex hierarchy using set', async (t) => {
     parents: ['maTest0013'],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.parents', ['maTest0021']))[0],
     ['maTest0013']
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0011']))[0],
     []
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (await client.command('hierarchy.children', ['maTest0013']))[0],
     ['maTest0021']
   )

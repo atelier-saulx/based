@@ -98,7 +98,7 @@ test('subscription find by type', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       if (cnt1 === 0) {
         t.deepEqual(v, {
           id: 'root',
@@ -146,7 +146,7 @@ test('subscription find by type', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       if (cnt2 === 0) {
         t.deepEqual(v, {
           id: 'root',

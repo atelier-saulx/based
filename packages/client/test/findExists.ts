@@ -1,11 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -129,7 +130,8 @@ test('find - string field only exists', async (t) => {
     thing: 'yes some value here',
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       // id: true,
@@ -174,7 +176,8 @@ test('find - numeric not exists field', async (t) => {
     name: 'match 2',
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       items: {
@@ -238,7 +241,7 @@ test('find - string field only not exists indexed', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(m, { items: [{ name: 'league 1' }] })
+  deepEqualIgnoreOrder(t, m, { items: [{ name: 'league 1' }] })
 })
 
 test('find - text exists field', async (t) => {
@@ -274,7 +277,8 @@ test('find - text exists field', async (t) => {
     name: 'special 1',
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       items: {
@@ -300,7 +304,8 @@ test('find - text exists field', async (t) => {
     { items: [{ description: { en: 'match 1' } }] }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: 'root',

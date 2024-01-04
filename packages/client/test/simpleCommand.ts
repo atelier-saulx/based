@@ -35,7 +35,6 @@ test('ping', async (t) => {
 })
 
 test('echo', async (t) => {
-  const TIME = 2500
   const port = await getPort()
 
   const server = await startOrigin({
@@ -61,7 +60,6 @@ test('echo', async (t) => {
 })
 
 test('object.set and get', async (t) => {
-  const TIME = 2500
   const port = await getPort()
 
   const server = await startOrigin({
@@ -121,7 +119,6 @@ test('object.set and get', async (t) => {
 // })
 
 test('object.set wrong node', async (t) => {
-  const TIME = 2500
   const port = await getPort()
 
   const server = await startOrigin({
@@ -148,7 +145,6 @@ test('object.set wrong node', async (t) => {
 })
 
 test('object.set big multi-frame string', async (t) => {
-  const TIME = 2500
   const port = await getPort()
 
   const server = await startOrigin({

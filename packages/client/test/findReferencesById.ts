@@ -1,12 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -72,12 +73,12 @@ test('find - references', async (t) => {
         type: 'match',
         name: 'match' + j,
         value: Number(i + '.' + j),
-        related: globMatches.map((v) => v.$id),
+        related: globMatches.map((v: any) => v.$id),
       }
       matches.push(match)
       globMatches.push(match)
     }
-    const matchesIds = await Promise.all(matches.map((m) => client.set(m)))
+    const matchesIds = await Promise.all(matches.map((m: any) => client.set(m)))
     leaguesSet.push({
       type: 'league',
       name: 'league' + i,
@@ -85,7 +86,7 @@ test('find - references', async (t) => {
       children: matchesIds,
     })
   }
-  await Promise.all(leaguesSet.map((v) => client.set(v)))
+  await Promise.all(leaguesSet.map((v: any) => client.set(v)))
 
   const { items: leagues } = await client.get({
     items: {
@@ -224,7 +225,8 @@ test('find - references', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     relatedMatchesLeagues,
     [
       { value: 0, name: 'league0' },
@@ -271,7 +273,8 @@ test('find - references', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     relatedMatchesLeaguesNoTraverse,
     [
       { value: 0, name: 'league0' },

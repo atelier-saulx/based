@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient, protocol } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
@@ -6,8 +6,9 @@ import './assertions'
 import getPort from 'get-port'
 import { find } from './assertions/utils'
 import { SelvaTraversal } from '../src/protocol'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -712,7 +713,8 @@ test('traverse by expression', async (t) => {
     d: { $add: ['ma2'] },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,

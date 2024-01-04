@@ -34,7 +34,7 @@ const connect = (
       }
     )
 
-    socket.on('error', (err) => {})
+    socket.on('error', (_err) => {})
 
     socket.on('data', (data) => {
       client.onData(data)

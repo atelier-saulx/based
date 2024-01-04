@@ -77,7 +77,7 @@ export function addSubMarker(
     if (purged) {
       ctx.client
         .command('subscriptions.delmarker', [ctx.subId, subCmd.cmdId])
-        .catch((e) => {
+        .catch((_e) => {
           console.error('Error cleaning up marker', ctx.subId, subCmd.cmdId)
         })
     }
@@ -89,7 +89,7 @@ export function addSubMarker(
 
     if (added) {
       const marker = makeOpts(ctx, subCmd)
-      ctx.markers.push(marker)
+      ctx.markers?.push(marker)
     }
   }
 }
@@ -98,7 +98,7 @@ export async function resolveNodeId(
   ctx: ExecContext,
   cmd: GetCommand,
   aliases: string[]
-): Promise<string> {
+): Promise<string | undefined> {
   const [resolved] = await ctx.client.command('resolve.nodeid', [
     ctx.subId ?? 0,
     ...aliases,
@@ -108,7 +108,7 @@ export async function resolveNodeId(
     return
   }
 
-  const [markerId, name, nodeId] = resolved
+  const [markerId, _name, nodeId] = resolved
 
   if (markerId) {
     ctx.client.addSubMarkerMapping(Number(markerId), cmd.markerId || cmd.cmdId)
@@ -168,7 +168,7 @@ export async function getCmd(
     }
 
     if (subId) {
-      ctx.markers.push(opts)
+      ctx.markers?.push(opts)
       client.CMD_RESULT_CACHE.set(cmdID, result)
     }
   }
@@ -179,7 +179,7 @@ export async function getCmd(
     nestedFind.source = { idList: ids }
     nestedFind.markerId = hashCmd(nestedFind)
 
-    if (subId && nestedFind.markerId === ctx.markerId) {
+    if (setPending && subId && nestedFind.markerId === ctx.markerId) {
       setPending(nestedFind)
     }
     return getCmd(ctx, nestedFind)
@@ -240,7 +240,7 @@ export function makeOpts(ctx: ExecContext, cmd: GetCommand): CmdExecOpts {
         : SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_EXPRESSION
       struct.dir_opt_str = bfsExpr2rpn(
         ctx.client.schema.types,
-        cmd.traverseExpr
+        cmd.traverseExpr! // TODO: handle undefined
       )
     }
 

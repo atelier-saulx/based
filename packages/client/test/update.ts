@@ -1,13 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { wait } from '@saulx/utils'
 import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
-import {SelvaTraversal} from '../src/protocol'
+import { SelvaTraversal } from '../src/protocol'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -82,14 +82,12 @@ test('basic batch update', async (t) => {
   })
 
   await client.command('update', [
-      {
-          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS
-      },
-      [
-          { type: '0', field: 'str', value: 'hello' },
-      ],
-      [ id ],
-      '"th" e'
+    {
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS,
+    },
+    [{ type: '0', field: 'str', value: 'hello' }],
+    [id],
+    '"th" e',
   ])
   t.deepEqual(
     await client.get({
@@ -130,15 +128,13 @@ test('single node updates', async (t) => {
   })
 
   await client.command('update', [
-      {
-          dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE
-      },
-      [
-          { type: '0', field: 'str', value: 'changed' },
-      ],
-      [ th1, th2 ],
-      '$1 g',
-      [ 'flap' ]
+    {
+      dir: SelvaTraversal.SELVA_HIERARCHY_TRAVERSAL_NODE,
+    },
+    [{ type: '0', field: 'str', value: 'changed' }],
+    [th1, th2],
+    '$1 g',
+    ['flap'],
   ])
   t.deepEqual(
     await client.get({
@@ -270,13 +266,10 @@ test('single node updates', async (t) => {
 test.skip('update refs not supported', async (t) => {
   const { client } = t.context
 
-  const id1 = await client.set({ type: 'notthing' })
+  await client.set({ type: 'notthing' })
   await client.set({
     $id: 'root',
-    children: [
-     { type: 'thing' },
-     { type: 'thing' },
-    ]
+    children: [{ type: 'thing' }, { type: 'thing' }],
   })
 
   // TODO

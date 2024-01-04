@@ -1,12 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
 import { SelvaServer } from '../../server/dist/server'
 import { wait } from '@saulx/utils'
 import './assertions'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -95,7 +96,7 @@ test('find - references', async (t) => {
       children: matches,
     })
   }
-  const leagueIds = await Promise.all(leaguesSet.map((v) => client.set(v)))
+  await Promise.all(leaguesSet.map((v: any) => client.set(v)))
 
   const { items: leagues } = await client.get({
     items: {
@@ -391,7 +392,7 @@ test('find references recursive', async (t) => {
     },
   }
 
-  t.deepEqualIgnoreOrder(await client.get(q), {
+  deepEqualIgnoreOrder(t, await client.get(q), {
     items: [
       { name: 'sub 1' },
       { name: 'sub 2' },

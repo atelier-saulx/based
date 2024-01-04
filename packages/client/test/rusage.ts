@@ -1,4 +1,4 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import { deserialize } from 'data-record'
 import { BasedDbClient } from '../src'
 import { startOrigin } from '../../server/dist'
@@ -7,7 +7,7 @@ import { selva_rusage } from '../src/protocol'
 import './assertions'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -54,7 +54,7 @@ test('test rusage command', async (t) => {
   const { client } = t.context
 
   const [rusage_self, rusage_children] = (await client.command('rusage')).map(
-    (buf) => deserialize(selva_rusage, buf)
+    (buf: any) => deserialize(selva_rusage, buf)
   )
 
   t.truthy(Number(rusage_self.ru_maxrss) > 20 * 1024 * 1024)
