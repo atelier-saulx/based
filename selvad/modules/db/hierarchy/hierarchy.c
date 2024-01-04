@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define SELVA_IO_TYPE
@@ -3109,8 +3109,6 @@ static int verifyDetachableSubtree(struct SelvaHierarchy *hierarchy, struct Selv
  * @returns The compressed tree is returned as a compressed selva_string.
  */
 static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct selva_string *raw;
-    struct selva_string *compressed;
     int err;
 
     err = verifyDetachableSubtree(hierarchy, node);
@@ -3124,20 +3122,7 @@ static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct S
     }
 
 
-    raw = Hierarchy_SubtreeSave(hierarchy, node);
-
-    TO_STR(raw);
-    compressed = selva_string_createz(raw_str, raw_len, 0);
-    selva_string_free(raw);
-    if (!compressed) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to compress the subtree of %.*s. err: \"%s\"",
-                  (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-
-        return NULL;
-    }
-
-    return compressed;
+    return Hierarchy_SubtreeSave(hierarchy, node);
 }
 
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type) {
@@ -3200,23 +3185,9 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
 }
 
 static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_string *compressed) {
-    struct selva_string *decompressed;
-    int err;
-
-    decompressed = selva_string_create(NULL, selva_string_getz_ulen(compressed), SELVA_STRING_MUTABLE_FIXED);
-    if (!decompressed) {
-        return SELVA_EINTYPE;
-    }
-
-    err = selva_string_decompress(compressed, selva_string_to_mstr(decompressed, NULL));
-    if (err) {
-        return err;
-    }
-
     isDecompressingSubtree = 1;
-    Hierarchy_SubtreeLoad(hierarchy, decompressed);
+    Hierarchy_SubtreeLoad(hierarchy, compressed);
     isDecompressingSubtree = 0;
-    selva_string_free(decompressed);
 
     return 0;
 }
@@ -3793,7 +3764,7 @@ static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string
  */
 static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     struct selva_io io;
-    struct selva_string *raw = selva_io_init_string_write(&io, 0);
+    struct selva_string *raw = selva_io_init_string_write(&io, SELVA_IO_FLAGS_COMPRESSED);
     const struct SelvaHierarchyCallback cb = {
         .head_cb = NULL,
         .head_arg = NULL,
