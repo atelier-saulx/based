@@ -22,6 +22,13 @@
 #define SAVE_FLAGS_MASK (SELVA_IO_FLAGS_COMPRESSED)
 #define ZBLOCK_BUF_SIZE (1024 * 1024)
 
+/**
+ * Total bytes used by the header and footer.
+ */
+#define HDR_FTR_SIZE \
+    (sizeof(magic_start) + SELVA_DB_VERSION_SIZE + SELVA_DB_VERSION_SIZE + sizeof(uint32_t) + sizeof(uint32_t) + \
+     sizeof(magic_end) + SELVA_IO_HASH_SIZE)
+
 struct selva_io_zbuf {
     size_t block_buf_i; /*!< Index into block_buf. */
     size_t compressed_buf_size; /*!< Size of compressed_buf. */
@@ -323,9 +330,6 @@ void sdb_init(struct selva_io *io)
         };
 #endif
         struct stat st;
-        const size_t hdr_ftr_size =
-            sizeof(magic_start) + SELVA_DB_VERSION_SIZE + SELVA_DB_VERSION_SIZE + sizeof(uint32_t) + sizeof(uint32_t) +
-            sizeof(magic_end) + SELVA_IO_HASH_SIZE;
 
         /* NOTE decomp needs the compressor to determine the worst case buf size. */
         /* TODO Coming in the upcoming version */
@@ -346,7 +350,7 @@ void sdb_init(struct selva_io *io)
          * Find the size of the compressed segment in the SDB file.
          */
         fstat(fileno(io->file_io.file), &st);
-        io->file_io.file_remain = (st.st_size >= SELVA_IO_HASH_SIZE) ? st.st_size - hdr_ftr_size : 0;
+        io->file_io.file_remain = (st.st_size >= SELVA_IO_HASH_SIZE) ? st.st_size - HDR_FTR_SIZE : 0;
     }
 
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
