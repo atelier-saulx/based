@@ -52,6 +52,38 @@ void selva_io_get_ver(struct SelvaDbVersionInfo *nfo)
     memcpy(nfo, &selva_db_version_info, sizeof(*nfo));
 }
 
+static void file_raw_write(struct selva_io *io, const void *p, size_t size)
+{
+    (void)fwrite(p, sizeof(uint8_t), size, io->file_io.file);
+}
+
+static void string_raw_write(struct selva_io *io, const void *p, size_t size)
+{
+    io->string_io.err = selva_string_append(io->string_io.data, p, size);
+}
+
+static int file_raw_read(struct selva_io *io, void *buf, size_t rd)
+{
+    return (fread(buf, sizeof(uint8_t), rd, io->file_io.file) != rd) ? SELVA_EIO : 0;
+}
+
+static int string_raw_read(struct selva_io *io, void *buf, size_t rd)
+{
+    const char *data;
+    size_t data_len;
+    size_t offset = io->string_io.offset;
+
+    data = selva_string_to_str(io->string_io.data, &data_len);
+
+    if (offset + rd > data_len) {
+        return SELVA_EINVAL;
+    }
+
+    memcpy(buf, data + offset, rd);
+    io->string_io.offset = offset + rd;
+    return 0;
+}
+
 static int file_sdb_zwriteout(struct selva_io *io)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
@@ -195,15 +227,6 @@ out:
     sha3_Update(&io->hash_c, ptr, r * size);
 
     return r;
-}
-
-static void sdb_raw_write(struct selva_io *io, const void *p, size_t size)
-{
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        (void)fwrite(p, sizeof(uint8_t), size, io->file_io.file);
-    } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        io->string_io.err = selva_string_append(io->string_io.data, p, size);
-    }
 }
 
 static size_t string_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
@@ -354,6 +377,8 @@ void sdb_init(struct selva_io *io)
     }
 
     if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        io->raw_write = file_raw_write;
+        io->raw_read = file_raw_read;
         io->sdb_write = file_sdb_write;
         io->sdb_read = file_sdb_read;
         io->sdb_tell = file_sdb_tell;
@@ -362,6 +387,8 @@ void sdb_init(struct selva_io *io)
         io->sdb_error = file_sdb_error;
         io->sdb_clearerr = file_sdb_clearerr;
     } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
+        io->raw_write = string_raw_write;
+        io->raw_read = string_raw_read;
         io->sdb_write = string_sdb_write;
         io->sdb_read = string_sdb_read;
         io->sdb_tell = string_sdb_tell;
@@ -459,9 +486,9 @@ int sdb_write_footer(struct selva_io *io)
     }
 
     sha3_Update(&io->hash_c, magic_end, sizeof(magic_end));
-    sdb_raw_write(io, magic_end, sizeof(magic_end));
+    io->raw_write(io, magic_end, sizeof(magic_end));
     io->computed_hash = sha3_Finalize(&io->hash_c);
-    sdb_raw_write(io, (void *)io->computed_hash, SELVA_IO_HASH_SIZE);
+    io->raw_write(io, (void *)io->computed_hash, SELVA_IO_HASH_SIZE);
     err = io->sdb_error(io);
 
     return err;
@@ -471,6 +498,7 @@ int sdb_read_footer(struct selva_io *io)
 {
     char magic[sizeof(magic_end)];
     size_t res;
+    int err;
     typeof(io->flags) prevz = io->flags & _SELVA_IO_FLAGS_EN_COMPRESS;
 
     io->flags &= ~_SELVA_IO_FLAGS_EN_COMPRESS;
@@ -486,24 +514,9 @@ int sdb_read_footer(struct selva_io *io)
     }
 
     io->computed_hash = sha3_Finalize(&io->hash_c);
-    if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
-        res = fread(io->stored_hash, sizeof(uint8_t), sizeof(io->stored_hash), io->file_io.file);
-        if (res != SELVA_IO_HASH_SIZE) {
-            SELVA_LOG(SELVA_LOGL_ERR, "Hash size invalid. act: %zu expected: %zu", res, (size_t)SELVA_IO_HASH_SIZE);
-            return SELVA_EINVAL;
-        }
-    } else if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
-        const char *data;
-        size_t data_len;
-        const size_t rd = (size_t)SELVA_IO_HASH_SIZE;
-
-        data = selva_string_to_str(io->string_io.data, &data_len);
-
-        if (io->string_io.offset + rd > data_len) {
-            return SELVA_EINVAL;
-        }
-
-        memcpy(io->stored_hash, data + io->string_io.offset, rd);
+    err = io->raw_read(io, io->stored_hash, sizeof(io->stored_hash));
+    if (err) {
+        return err;
     }
 
     io->flags |= prevz;
