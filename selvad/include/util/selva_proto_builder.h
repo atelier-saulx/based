@@ -36,6 +36,12 @@ void selva_proto_builder_end(struct selva_proto_builder_msg *msg)
 void selva_proto_builder_insert_null(struct selva_proto_builder_msg *msg)
     __attribute__((access(read_write, 1)));
 
+void selva_proto_builder_insert_error(
+        struct selva_proto_builder_msg * restrict msg,
+        int err,
+        const char * restrict str,
+        size_t len);
+
 void selva_proto_builder_insert_double(struct selva_proto_builder_msg *msg, double v)
     __attribute__((access(read_write, 1)));
 

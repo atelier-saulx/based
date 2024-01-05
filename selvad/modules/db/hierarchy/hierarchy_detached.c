@@ -26,7 +26,7 @@
 
 #define DISK_SUBTREE_PREFIX_SIZE 5
 
-static void gen_prefix(char str[DISK_SUBTREE_PREFIX_SIZE])
+static void gen_prefix(char str[static DISK_SUBTREE_PREFIX_SIZE])
 {
     static const char *hex_digits = "0123456789abcdef";
 

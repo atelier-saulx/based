@@ -514,6 +514,7 @@ static void on_data(struct event *event, void *arg)
         struct selva_server_response_out resp = {
             .ctx = ctx,
             .cork = 1, /* Cork the full response (lazy). This will be turned off if a stream is started. */
+            .resp_msg_handler = SERVER_MESSAGE_HANDLER_SOCK,
             .cmd = ctx->recv_frame_hdr_buf.cmd,
             .frame_flags = SELVA_PROTO_HDR_FFIRST,
             .seqno = seqno,
@@ -595,30 +596,61 @@ static void on_connection(struct event *event, void *arg __unused)
     evl_wait_fd(new_sockfd, on_data, NULL, on_close, conn_ctx);
 }
 
-int selva_server_run_cmd(int8_t cmd_id, int64_t ts, void *msg, size_t msg_size)
+static int run_cmd(struct selva_server_response_out * restrict resp, const void * restrict msg, size_t msg_size, bool force)
+{
+    struct command *cmd;
+    int err;
+
+    cmd = get_command(resp->cmd);
+    if (cmd) {
+        if (force || !(cmd->cmd_mode & SELVA_CMD_MODE_MUTATE && readonly_server)) {
+            /*
+             * Run the command.
+             */
+            cmd->cmd_fn(resp, msg, msg_size);
+            err = resp->last_error;
+        } else {
+            err = SELVA_PROTO_ENOTSUP;
+            selva_send_errorf(resp, err, "Server is read-only");
+        }
+    } else {
+        err = SELVA_EINVAL;
+        selva_send_errorf(resp, err, "Invalid cmd_id: %d", resp->cmd);
+    }
+
+    return err;
+}
+
+int selva_server_run_cmd(int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size)
 {
     struct selva_server_response_out resp = {
         .ctx = NULL,
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_NONE,
         .cmd = cmd_id,
         .last_error = 0,
         .ts = ts ? ts : ts_now(),
     };
-    struct command *cmd;
-    int err;
 
-    cmd = get_command(cmd_id);
-    if (cmd) {
-        /*
-         * Note that we don't care here whether the server is in read-only mode.
-         */
-        cmd->cmd_fn(&resp, msg, msg_size);
-        err = resp.last_error;
-    } else {
-        SELVA_LOG(SELVA_LOGL_ERR, "Invalid cmd_id: %d", cmd_id);
-        err = SELVA_EINVAL;
-    }
+    /*
+     * Note that we don't care here whether the server is in read-only mode.
+     * This is because we are currently using this function only for replication
+     * purposes but if this changes then we might not want to do it like this.
+     */
+    return run_cmd(&resp, msg, msg_size, true);
+}
 
-    return err;
+int selva_server_run_cmd2buf(int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size, struct selva_string *out)
+{
+    struct selva_server_response_out resp = {
+        .ctx = NULL,
+        .resp_msg_handler = SERVER_MESSAGE_HANDLER_BUF,
+        .cmd = cmd_id,
+        .last_error = 0,
+        .ts = ts ? ts : ts_now(),
+        .msg_buf = out,
+    };
+
+    return run_cmd(&resp, msg, msg_size, false);
 }
 
 IMPORT() {
@@ -662,8 +694,8 @@ __constructor static void init(void)
     selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
     pubsub_init();
-
-    /* Async server for receiving messages. */
+    message_sock_init();
+    message_buf_init();
     conn_init(max_clients);
     server_sockfd = new_server(selva_port);
     evl_wait_fd(server_sockfd, on_connection, NULL, NULL, NULL);

@@ -7,24 +7,51 @@
 
 #define MAX_STREAMS 2
 
-struct selva_server_response_out;
 struct conn_ctx;
+struct selva_server_response_out;
+struct selva_string;
 
 typedef uint16_t pubsub_ch_mask_t;
+
+enum server_message_handler {
+    SERVER_MESSAGE_HANDLER_NONE = 0x0,
+    SERVER_MESSAGE_HANDLER_SOCK = 0x1,
+    SERVER_MESSAGE_HANDLER_BUF = 0x2,
+};
 
 /**
  * Outgoing response.
  */
 struct selva_server_response_out {
     struct conn_ctx *ctx; /*!< Can be NULL. */
-    int8_t cork; /*!< Cork the full response. Should not be used with streams. */
+    struct {
+        /**
+         * Cork the full response.
+         * Should not be used with streams.
+         */
+        uint8_t cork : 1;
+        /**
+         * Response type.
+         * Use enum server_message_handler_type.
+         */
+        uint8_t resp_msg_handler: 2;
+    };
     typeof_field(struct selva_proto_header, cmd) cmd;
     typeof_field(struct selva_proto_header, flags) frame_flags;
     typeof_field(struct selva_proto_header, seqno) seqno;
     int last_error; /*!< Last error. Set by send_error functions. 0 if none. */
-    int64_t ts; /* Timestamp when the command execution started. */
-    size_t buf_i;
-    _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    int64_t ts; /*!< Timestamp when the command execution started. */
+    size_t buf_i; /*!< Index into buf */
+    union {
+        /**
+         * Used with SERVER_MESSAGE_HANDLER_SOCKSERVER_MESSAGE_HANDLER_SOCK.
+         */
+        struct selva_string *msg_buf;
+        /**
+         * Used with SERVER_MESSAGE_HANDLER_SOCK.
+         */
+        _Alignas(struct selva_proto_header) char buf[SELVA_PROTO_FRAME_SIZE_MAX];
+    };
 };
 
 /**
@@ -165,34 +192,43 @@ int pubsub_unsubscribe(struct conn_ctx *ctx, unsigned ch_id);
  */
 int server_recv_message(struct conn_ctx *ctx);
 
-/**
- * Receive a single frame from a connection.
- */
-ssize_t server_recv_frame(struct conn_ctx *ctx);
+struct message_handlers_vtable {
+    /**
+     * Receive a single frame from a connection.
+     */
+    ssize_t (*recv_frame)(struct conn_ctx *ctx);
+    /**
+     * Flush outgoing frame buffer.
+     * Sends the data currently in the outgoing buffer.
+     * @param last_frame if set the current message will be terminated.
+     */
+    int (*flush)(struct selva_server_response_out *resp, bool last_frame);
+    /**
+     * Send buffer as a part of the response resp.
+     * The data is sent as is framed within selva_proto frames. Typically the buf
+     * should point to one of the selva_proto value structs. The buffer might be
+     * split into multiple frames and the receiver must reassemble the data. All
+     * data within a sequence will be always delivered in the sending order.
+     * @returns Return bytes sent; Otherwise an error.
+     */
+    ssize_t (*send_buf)(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags);
+    /**
+     * Send contents of a file pointed by fd a part of the response resp.
+     * The file is sent with a new selva_proto frame header with no payload but
+     * msg_bsize set to size. The file is sent completely at once ignoring any
+     * normal frame size limits. The frame header CRC check doesn't apply to the
+     * file sent and thus any integrity checking must be implemented separately.
+     * @returns Return bytes sent; Otherwise an error.
+     */
+    ssize_t (*send_file)(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags);
+    int (*start_stream)(struct selva_server_response_out *resp, struct selva_server_response_out **stream_resp_out);
+    void (*cancel_stream)(struct selva_server_response_out *resp, struct selva_server_response_out *stream_resp);
+};
+extern struct message_handlers_vtable message_handlers[3];
 
 /**
- * Flush outgoing frame buffer.
- * Sends the data currently in the outgoing buffer.
- * @param last_frame if set the current message will be terminated.
+ * Init message handlers vtable for sock.
  */
-int server_flush_frame_buf(struct selva_server_response_out *resp, bool last_frame);
+void message_sock_init(void);
 
-/**
- * Send buffer as a part of the response resp.
- * The data is sent as is framed within selva_proto frames. Typically the buf
- * should point to one of the selva_proto value structs. The buffer might be
- * split into multiple frames and the receiver must reassemble the data. All
- * data within a sequence will be always delivered in the sending order.
- * @returns Return bytes sent; Otherwise an error.
- */
-ssize_t server_send_buf(struct selva_server_response_out *restrict resp, const void *restrict buf, size_t len, enum server_send_flags flags);
-
-/**
- * Send contents of a file pointed by fd a part of the response resp.
- * The file is sent with a new selva_proto frame header with no payload but
- * msg_bsize set to size. The file is sent completely at once ignoring any
- * normal frame size limits. The frame header CRC check doesn't apply to the
- * file sent and thus any integrity checking must be implemented separately.
- * @returns Return bytes sent; Otherwise an error.
- */
-ssize_t server_send_file(struct selva_server_response_out *resp, int fd, size_t size, enum server_send_flags flags);
+void message_buf_init(void);

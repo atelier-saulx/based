@@ -102,6 +102,8 @@ export const COMMAND_TYPES = {
   'hierarchy.listConstraints': 24,
   'hierarchy.del': 25,
   'hierarchy.expire': 26,
+  'hierarchy.compress': 33,
+  'hierarchy.listCompressed': 34,
   // subscriptions
   'subscriptions.addMarker': 59,
   'subscriptions.addAlias': 60,
@@ -335,6 +337,11 @@ export const hierarchy_find_def = compile(
     align: true,
   }
 )
+
+export const hierarchyCompressType = {
+  SELVA_HIERARCHY_DETACHED_COMPRESSED_MEM: 1n,
+  SELVA_HIERARCHY_DETACHED_COMPRESSED_DISK: 2n,
+}
 
 export enum SelvaHierarchy_AggregateType {
   SELVA_AGGREGATE_TYPE_COUNT_NODE = 0,

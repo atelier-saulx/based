@@ -253,9 +253,23 @@ SELVA_SERVER_EXPORT(int, selva_send_replication_pseudo_sdb, struct selva_server_
  */
 
 /**
+ * @addtogroup run_cmd
+ * Run commands internally.
+ */
+
+/**
  * Run a command.
  */
-SELVA_SERVER_EXPORT(int, selva_server_run_cmd, int8_t cmd_id, int64_t ts, void *msg, size_t msg_size);
+SELVA_SERVER_EXPORT(int, selva_server_run_cmd, int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size);
+
+/**
+ * Run a command and store the response to the out buffer.
+ */
+SELVA_SERVER_EXPORT(int, selva_server_run_cmd2buf, int8_t cmd_id, int64_t ts, const void *msg, size_t msg_size, struct selva_string *out);
+
+/**
+ * @}
+ */
 
 /**
  * @addtogroup pubsub
@@ -299,6 +313,7 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
     apply(selva_send_replication_sdb) \
     apply(selva_send_replication_pseudo_sdb) \
     apply(selva_server_run_cmd) \
+    apply(selva_server_run_cmd2buf) \
     apply(selva_pubsub_publish)
 
 #define _import_selva_server1(f) \

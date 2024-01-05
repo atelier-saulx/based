@@ -23,6 +23,7 @@ static const char *modules[] = {
     "mod_io.so",
     "mod_replication.so",
     "mod_db.so",
+    "mod_piper.so",
 };
 
 int main(void)

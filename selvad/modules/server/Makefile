@@ -3,11 +3,13 @@
 
 OBJ := \
 	   conn.o \
+	   message.o \
+	   message_buf.o \
+	   message_sock.o \
 	   pubsub.o \
 	   selva_send.o \
 	   server.o \
-	   server_frame.o \
-	   server_msg.o
+	   server_recv_message.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_SERVER_MAIN=1
 LDFLAGS += -lutil -ljemalloc_selva

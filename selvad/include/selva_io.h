@@ -1,6 +1,6 @@
 /*
  * Selva IO Module.
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -65,6 +65,13 @@ struct selva_io {
     const uint8_t *computed_hash; /*!< Updated at the end of load/save. */
     uint8_t stored_hash[SELVA_IO_HASH_SIZE]; /*!< The hash found in the footer. */
 
+    void (*raw_write)(struct selva_io *io, const void *p, size_t size);
+    /**
+     * Raw read from string sdb.
+     * Doesn't update sha. Also no decompression will happen. This function can be
+     * reused internally to read compressed and uncompressed SDB strings.
+     */
+    int (*raw_read)(struct selva_io *io, void *buf, size_t size);
     size_t (*sdb_write)(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io); /* TODO Do we need the ret value */
     size_t (*sdb_read)(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io);
     off_t (*sdb_tell)(struct selva_io *io);

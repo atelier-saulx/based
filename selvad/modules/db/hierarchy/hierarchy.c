@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define SELVA_IO_TYPE
@@ -508,42 +508,34 @@ SelvaHierarchyNode *SelvaHierarchy_FindNode(SelvaHierarchy *hierarchy, const Sel
     SELVA_TRACE_BEGIN(find_inmem);
     node = find_node_index(hierarchy, id);
     SELVA_TRACE_END(find_inmem);
-    if (node) {
-        if (!(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
-            /* NOP */
-        } else if (isDecompressingSubtree) {
-            err = repopulate_detached_head(hierarchy, node);
-            if (err) {
-                return NULL;
-            }
-        } else {
-            node = NULL;
+
+    if (node && !(node->flags & SELVA_NODE_FLAGS_DETACHED)) {
+        return node;
+    } else if (node && isDecompressingSubtree) {
+        err = repopulate_detached_head(hierarchy, node);
+        if (err) {
+            return NULL;
         }
+
+        return node;
+    } else if (!isDecompressingSubtree && SelvaHierarchyDetached_IndexExists(hierarchy)) {
+        SELVA_TRACE_BEGIN(find_detached);
+        err = restore_subtree(hierarchy, id);
+        SELVA_TRACE_END(find_detached);
+        if (err) {
+            if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
+                SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
+                          (int)SELVA_NODE_ID_SIZE, id,
+                          selva_strerror(err));
+            }
+
+            return NULL;
+        }
+
+        return SelvaHierarchy_FindNode(hierarchy, id);
     } else {
-        /*
-         * We don't want upsert to be looking from detached nodes.
-         * If isDecompressingSubtree is set it means that restore_subtree() was
-         * already called once.
-         */
-        if (SelvaHierarchyDetached_IndexExists(hierarchy) && !isDecompressingSubtree) {
-            SELVA_TRACE_BEGIN(find_detached);
-            err = restore_subtree(hierarchy, id);
-            SELVA_TRACE_END(find_detached);
-            if (err) {
-                if (err != SELVA_ENOENT && err != SELVA_HIERARCHY_ENOENT) {
-                    SELVA_LOG(SELVA_LOGL_ERR, "Restoring a subtree containing %.*s failed. err: \"%s\"",
-                              (int)SELVA_NODE_ID_SIZE, id,
-                              selva_strerror(err));
-                }
-
-                return NULL;
-            }
-
-            node = find_node_index(hierarchy, id);
-        }
+        return NULL;
     }
-
-    return node;
 }
 
 struct SelvaObject *SelvaHierarchy_GetNodeObject(const struct SelvaHierarchyNode *node) {
@@ -3117,8 +3109,6 @@ static int verifyDetachableSubtree(struct SelvaHierarchy *hierarchy, struct Selv
  * @returns The compressed tree is returned as a compressed selva_string.
  */
 static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
-    struct selva_string *raw;
-    struct selva_string *compressed;
     int err;
 
     err = verifyDetachableSubtree(hierarchy, node);
@@ -3132,20 +3122,7 @@ static struct selva_string *compress_subtree(SelvaHierarchy *hierarchy, struct S
     }
 
 
-    raw = Hierarchy_SubtreeSave(hierarchy, node);
-
-    TO_STR(raw);
-    compressed = selva_string_createz(raw_str, raw_len, 0);
-    selva_string_free(raw);
-    if (!compressed) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to compress the subtree of %.*s. err: \"%s\"",
-                  (int)SELVA_NODE_ID_SIZE, node->id,
-                  selva_strerror(err));
-
-        return NULL;
-    }
-
-    return compressed;
+    return Hierarchy_SubtreeSave(hierarchy, node);
 }
 
 static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node, enum SelvaHierarchyDetachedType type) {
@@ -3208,23 +3185,9 @@ static int detach_subtree(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *
 }
 
 static int restore_compressed_subtree(SelvaHierarchy *hierarchy, struct selva_string *compressed) {
-    struct selva_string *decompressed = selva_string_create(NULL, selva_string_getz_ulen(compressed), SELVA_STRING_MUTABLE_FIXED);
-    char *decompressed_str = selva_string_to_mstr(decompressed, NULL);
-    int err;
-
-    if (!decompressed) {
-        return SELVA_EINTYPE;
-    }
-
-    err = selva_string_decompress(compressed, decompressed_str);
-    if (err) {
-        return err;
-    }
-
     isDecompressingSubtree = 1;
-    Hierarchy_SubtreeLoad(hierarchy, decompressed);
+    Hierarchy_SubtreeLoad(hierarchy, compressed);
     isDecompressingSubtree = 0;
-    selva_string_free(decompressed);
 
     return 0;
 }
@@ -3322,6 +3285,7 @@ static int load_metadata(struct selva_io *io, int encver, SelvaHierarchy *hierar
 
     /*
      * Note that the metadata must be loaded and saved in predefined order.
+     * See save_metadata() for the right order.
      */
 
     err = Edge_Load(io, encver, hierarchy, node);
@@ -3482,7 +3446,7 @@ static int load_node(struct finalizer *fin, struct selva_io *io, int encver, Sel
     node->flags = selva_io_load_unsigned(io);
     node->expire = selva_io_load_unsigned(io);
 
-    if (node->flags & SELVA_NODE_FLAGS_DETACHED && !isDecompressingSubtree) {
+    if ((node->flags & SELVA_NODE_FLAGS_DETACHED) && !isDecompressingSubtree) {
         /*
          * This node and its subtree was compressed.
          * In this case we are supposed to load the subtree as detached and
@@ -3671,6 +3635,7 @@ static int HierarchySaveSubtreeNode(
 
     selva_io_save_str(io, node->id, SELVA_NODE_ID_SIZE);
     selva_io_save_unsigned(io, node->flags & ~SELVA_NODE_FLAGS_DETACHED);
+    selva_io_save_unsigned(io, node->expire);
     save_metadata(io, node);
     selva_io_save_unsigned(io, SVector_Size(&node->children));
 
@@ -3799,7 +3764,7 @@ static void Hierarchy_SubtreeLoad(SelvaHierarchy *hierarchy, struct selva_string
  */
 static struct selva_string *Hierarchy_SubtreeSave(SelvaHierarchy *hierarchy, struct SelvaHierarchyNode *node) {
     struct selva_io io;
-    struct selva_string *raw = selva_io_init_string_write(&io, 0);
+    struct selva_string *raw = selva_io_init_string_write(&io, SELVA_IO_FLAGS_COMPRESSED);
     const struct SelvaHierarchyCallback cb = {
         .head_cb = NULL,
         .head_arg = NULL,

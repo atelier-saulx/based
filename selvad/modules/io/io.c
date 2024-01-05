@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -48,22 +48,31 @@ static void test_io_mode(struct selva_io *io, enum selva_io_flags mode)
  */
 __noreturn static void exit_read_error(struct selva_io *io, const char *type, const char *whence)
 {
-    SELVA_LOG(SELVA_LOGL_CRIT, "SDB read error. file: \"%s\" offset: %lld whence: \"%s\" type: %s",
-              (io->flags & SELVA_IO_FLAGS_FILE_IO) ? selva_string_to_str(io->file_io.filename, NULL) : "None",
-              (long long)io->sdb_tell(io), whence, type);
+    if (io->flags & SELVA_IO_FLAGS_STRING_IO) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB string read error. offset: %lld whence: \"%s\" type: %s last_error: %s",
+                  (long long)io->sdb_tell(io), whence, type,
+                  (io->flags & SELVA_IO_FLAGS_STRING_IO) ? selva_strerror(io->string_io.err) : "unknown");
+    } else if (io->flags & SELVA_IO_FLAGS_FILE_IO) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB file read error. file: \"%s\" offset: %lld whence: \"%s\" type: %s",
+                  (io->flags & SELVA_IO_FLAGS_FILE_IO) ? selva_string_to_str(io->file_io.filename, NULL) : "None",
+                  (long long)io->sdb_tell(io), whence, type);
+    } else {
+        SELVA_LOG(SELVA_LOGL_CRIT, "SDB read error. offset: %lld whence: \"%s\" type: %s",
+                  (long long)io->sdb_tell(io), whence, type);
+    }
     abort();
 }
 
 /**
  * Init an io structure for a file.
- * Note that flags must be validated before calling this function.
+ * Note that flags must be valid and validated before calling this function.
  */
 static void init_io_file(struct selva_io *io, FILE *file, const char *filename, enum selva_io_flags flags)
 {
     memset(io, 0, sizeof(*io));
+    io->flags = flags;
     io->file_io.filename = selva_string_createf("%s", filename);
     io->file_io.file = file;
-    io->flags = (flags & ~SELVA_IO_FLAGS_STRING_IO) | SELVA_IO_FLAGS_FILE_IO;
     sdb_init(io);
 
     if (flags & SELVA_IO_FLAGS_WRITE) {
@@ -73,11 +82,15 @@ static void init_io_file(struct selva_io *io, FILE *file, const char *filename, 
     }
 }
 
+/**
+ * Init an io structure for a selva_string.
+ * Note that flags must be valid and validated before calling this function.
+ */
 static void init_io_string(struct selva_io *io, struct selva_string *s, enum selva_io_flags flags)
 {
     memset(io, 0, sizeof(*io));
+    io->flags = flags;
     io->string_io.data = s;
-    io->flags = (flags & ~SELVA_IO_FLAGS_FILE_IO) | SELVA_IO_FLAGS_STRING_IO;
     sdb_init(io);
 
     if (flags & SELVA_IO_FLAGS_WRITE) {
@@ -111,7 +124,7 @@ int selva_io_open_last_good(struct selva_io *io)
         return SELVA_EGENERAL;
     }
 
-    init_io_file(io, file, selva_string_to_str(filename, NULL), SELVA_IO_FLAGS_READ);
+    init_io_file(io, file, selva_string_to_str(filename, NULL), SELVA_IO_FLAGS_FILE_IO | SELVA_IO_FLAGS_READ);
     selva_string_free(filename);
 
     return 0;
@@ -175,9 +188,12 @@ int selva_io_read_hash(const char *filename, uint8_t hash[SELVA_IO_HASH_SIZE])
     return err;
 }
 
+__attribute__((pure))
 static int valid_flags(enum selva_io_flags flags)
 {
-    return (!(flags & SELVA_IO_FLAGS_READ) ^ !(flags & SELVA_IO_FLAGS_WRITE));
+    return (!(flags & SELVA_IO_FLAGS_READ) ^ !(flags & SELVA_IO_FLAGS_WRITE)) ||
+           (!(flags & SELVA_IO_FLAGS_FILE_IO) ^ !(flags & SELVA_IO_FLAGS_STRING_IO)) ||
+           !(flags & _SELVA_IO_FLAGS_EN_COMPRESS);
 }
 
 static bool is_valid_sdb_name(const char *filename)
@@ -199,6 +215,7 @@ int selva_io_init(struct selva_io *io, const char *filename, enum selva_io_flags
     const char *mode = (flags & SELVA_IO_FLAGS_WRITE) ? "wb" : "rb";
     FILE *file;
 
+    flags |= SELVA_IO_FLAGS_FILE_IO;
     if (!(valid_flags(flags) && is_valid_sdb_name(filename))) {
         return SELVA_EINVAL;
     }
@@ -231,8 +248,8 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
 {
     struct selva_string *s = selva_string_create(NULL, 0, SELVA_STRING_MUTABLE);
 
-    flags |= SELVA_IO_FLAGS_WRITE;
-    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
+    flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_WRITE;
+    if (!valid_flags(flags)) {
         return NULL;
     }
 
@@ -243,8 +260,8 @@ struct selva_string *selva_io_init_string_write(struct selva_io *io, enum selva_
 
 int selva_io_init_string_read(struct selva_io * restrict io, struct selva_string * restrict s, enum selva_io_flags flags)
 {
-    flags |= SELVA_IO_FLAGS_READ;
-    if (!valid_flags(flags) || (flags & SELVA_IO_FLAGS_COMPRESSED)) {
+    flags |= SELVA_IO_FLAGS_STRING_IO | SELVA_IO_FLAGS_READ;
+    if (!valid_flags(flags)) {
         return SELVA_EINVAL;
     }
 
@@ -437,7 +454,7 @@ const char *selva_io_load_str(struct selva_io *io, size_t *len)
 
     buf.bsize = letoh(buf.bsize);
     str = selva_malloc(buf.bsize);
-    if (io->sdb_read(str, sizeof(char), buf.bsize, io) != buf.bsize * sizeof(char)) {
+    if (io->sdb_read(str, sizeof(char), buf.bsize, io) != buf.bsize) {
         selva_free(str);
         exit_read_error(io, selva_proto_typeof_str(buf), READ_WHENCE_VALUE);
     }
