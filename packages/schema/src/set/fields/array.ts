@@ -1,7 +1,7 @@
 import { setByPath } from '@saulx/utils'
 import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
-import { BasedSetTarget } from '../../types'
+import { BasedSetTarget } from '../../types.js'
 
 const collectOperation = (
   fromArgs: ArgsClass<BasedSetTarget, 'array'>,

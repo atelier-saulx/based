@@ -1,8 +1,8 @@
 import { BasedSchema, BasedSchemaField } from '@based/schema'
 import { deepCopy, deepMerge } from '@saulx/utils'
-import { SchemaMutation } from '../types'
-import { getSchemaTypeFieldByPath } from '../util'
-import { generateNewPrefix } from './utils'
+import { SchemaMutation } from '../types.js'
+import { getSchemaTypeFieldByPath } from '../util/index.js'
+import { generateNewPrefix } from './utils.js'
 
 export const DEFAULT_FIELDS: any = {
   id: { type: 'string' },

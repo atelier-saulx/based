@@ -1,6 +1,6 @@
 import { FieldParsers } from '../../walker'
 import { ParseError } from '../../error'
-import { BasedSetTarget } from '../../types'
+import { BasedSetTarget } from '../../types.js'
 import { array } from './array'
 import { object, record } from './object'
 import { number, integer, timestamp } from './number'

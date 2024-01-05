@@ -1,4 +1,4 @@
-import { write, bufLen, EncodeDefinition } from './protocol'
+import { write, bufLen, EncodeDefinition } from './protocol.js'
 
 export function defaultEncoder(
   schema: EncodeDefinition

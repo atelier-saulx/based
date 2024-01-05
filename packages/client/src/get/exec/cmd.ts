@@ -1,17 +1,17 @@
 import { CompiledRecordDef, createRecord } from 'data-record'
-import { protocol } from '../..'
+import { protocol } from '../../index.js'
 import {
   Command,
   SelvaHierarchy_AggregateType,
   SelvaResultOrder,
   SelvaTraversal,
-} from '../../protocol'
-import { makeLangArg } from './lang'
-import { ExecContext, GetCommand } from '../types'
-import { sourceId } from '../id'
-import { getFields } from './fields'
+} from '../../protocol/index.js'
+import { makeLangArg } from './lang.js'
+import { ExecContext, GetCommand } from '../types.js'
+import { sourceId } from '../id.js'
+import { getFields } from './fields.js'
 import { ast2rpn, bfsExpr2rpn, createAst } from '@based/db-query'
-import { hashCmd } from '../util'
+import { hashCmd } from '../util.js'
 import { inspect } from 'node:util'
 
 type CmdExecOpts = {

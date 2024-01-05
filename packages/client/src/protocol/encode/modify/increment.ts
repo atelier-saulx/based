@@ -1,5 +1,5 @@
 import { createRecord } from 'data-record'
-import { ModifyArgType, incrementDef, incrementDoubleDef } from './types'
+import { ModifyArgType, incrementDef, incrementDoubleDef } from './types.js'
 
 const DEFS = {
   [ModifyArgType.SELVA_MODIFY_ARG_OP_INCREMENT]: incrementDef,

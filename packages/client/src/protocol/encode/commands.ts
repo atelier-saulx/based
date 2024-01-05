@@ -1,7 +1,7 @@
-import { Command } from '../types'
-import { defaultEncoder, strEncoder } from './defaultEncoder'
-import { modify } from './modify'
-import { update } from './update'
+import { Command } from '../types.js'
+import { defaultEncoder, strEncoder } from './defaultEncoder.js'
+import { modify } from './modify/index.js'
+import { update } from './update.js'
 
 type CommandEncoders = Record<Command, (payload: any) => Buffer | null>
 

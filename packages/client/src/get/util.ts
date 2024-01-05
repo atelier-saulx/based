@@ -1,5 +1,5 @@
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
-import { GetCommand } from './types'
+import { GetCommand } from './types.js'
 
 export function hashCmd(cmd: GetCommand): number {
   return hashObjectIgnoreKeyOrder({

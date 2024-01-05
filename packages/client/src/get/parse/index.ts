@@ -1,2 +1,2 @@
-export * from './opts'
-export * from './result'
+export * from './opts/index.js'
+export * from './result/index.js'

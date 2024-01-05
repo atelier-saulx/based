@@ -1,4 +1,4 @@
-import { BasedSchema } from '../types'
+import { BasedSchema } from '../types.js'
 import { ArgsClass } from './args'
 import { AsyncOperation, Opts } from './types'
 

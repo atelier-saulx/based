@@ -1,6 +1,6 @@
 import { fieldsExpr2rpn } from '@based/db-query'
-import { joinPath } from '../../util'
-import { ExecContext, Field, Fields } from '../types'
+import { joinPath } from '../../util/index.js'
+import { ExecContext, Field, Fields } from '../types.js'
 
 function getField(field: Field): { str: string; isInherit: boolean } {
   let str = joinPath(field.field)

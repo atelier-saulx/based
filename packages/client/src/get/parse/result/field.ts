@@ -4,12 +4,12 @@ import {
   BasedSchemaFieldObject,
   BasedSchemaFieldSet,
 } from '@based/schema'
-import { ExecContext, GetCommand } from '../../types'
-import { parseRecFields } from './rec'
-import { getTypeSchema } from '../../../util'
-import { parseObjFields } from './obj'
-import { hashCmd } from '../../util'
-import { addSubMarker } from '../../exec/cmd'
+import { ExecContext, GetCommand } from '../../types.js'
+import { parseRecFields } from './rec.js'
+import { getTypeSchema } from '../../../util/index.js'
+import { parseObjFields } from './obj.js'
+import { hashCmd } from '../../util.js'
+import { addSubMarker } from '../../exec/cmd.js'
 
 const FIELD_PARSERS: Record<
   string,

@@ -1,5 +1,5 @@
 import { compile, CompiledRecordDef } from 'data-record'
-import { SELVA_NODE_ID_LEN } from '../../types'
+import { SELVA_NODE_ID_LEN } from '../../types.js'
 
 export enum ModifyArgType {
   SELVA_MODIFY_ARG_INVALID = '\0',

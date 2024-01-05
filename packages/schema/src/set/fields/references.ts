@@ -1,5 +1,5 @@
 import { ParseError } from '../../error'
-import { AllowedTypes, BasedSetTarget } from '../../types'
+import { AllowedTypes, BasedSetTarget } from '../../types.js'
 import { ArgsClass, FieldParser } from '../../walker'
 import { isValidId } from '../isValidId'
 

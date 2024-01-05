@@ -1,10 +1,9 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../../src'
-import { startOrigin } from '../../../server/dist'
-import { SelvaServer } from '../../../server/dist/server'
+import { BasedDbClient } from '../../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
 import '../assertions'
-import { getIndexingState } from '../assertions/utils'
+import { getIndexingState } from '../assertions/utils.js'
 import getPort from 'get-port'
 
 const chars = '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'

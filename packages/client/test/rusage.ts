@@ -1,9 +1,8 @@
 import anyTest, { TestFn } from 'ava'
 import { deserialize } from 'data-record'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import { selva_rusage } from '../src/protocol'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import { selva_rusage } from '../src/protocol/index.js'
 import './assertions'
 import getPort from 'get-port'
 

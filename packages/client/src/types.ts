@@ -5,7 +5,7 @@ import {
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
-import { Command } from './protocol/types'
+import { Command } from './protocol/types.js'
 
 export type CommandResponseListeners = Map<
   number,

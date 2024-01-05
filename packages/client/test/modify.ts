@@ -1,14 +1,13 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { readValue } from 'data-record'
 import './assertions'
-import { SelvaTraversal } from '../src/protocol'
-import { doubleDef } from '../src/protocol/encode/modify/types'
+import { SelvaTraversal } from '../src/protocol/index.js'
+import { doubleDef } from '../src/protocol/encode/modify/types.js'
 import getPort from 'get-port'
-import { find, idExists } from './assertions/utils'
-import { deepEqualIgnoreOrder } from './assertions'
+import { find, idExists } from './assertions/utils.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
 export function readDouble(x: any) {
   return readValue(doubleDef, x, '.d')

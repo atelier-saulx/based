@@ -1,5 +1,5 @@
-import { Connection } from './types'
-import { BasedDbClient } from '..'
+import { Connection } from './types.js'
+import { BasedDbClient } from '../index.js'
 import { Socket } from 'node:net'
 
 const connect = (

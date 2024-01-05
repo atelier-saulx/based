@@ -1,5 +1,5 @@
 import { ParseError } from '../error'
-import { BasedSchema, BasedSchemaCollectProps, BasedSetTarget } from '../types'
+import { BasedSchema, BasedSchemaCollectProps, BasedSetTarget } from '../types.js'
 import { walk, Opts, AsyncOperation } from '../walker'
 import { fields } from './fields'
 import { isValidId } from './isValidId'

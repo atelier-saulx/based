@@ -4,8 +4,8 @@ import { join } from 'path'
 import beforeExit from 'before-exit'
 import { hash } from '@saulx/hash'
 import { createRecord } from 'data-record'
-import { BasedDbClient, protocol } from '../../src'
-import { SelvaFindResultType, SelvaMergeStrategy, SelvaTraversal } from '../../src/protocol'
+import { BasedDbClient, protocol } from '../../src/index.js'
+import { SelvaFindResultType, SelvaMergeStrategy, SelvaTraversal } from '../../src/protocol/index.js'
 import rimraf from 'rimraf'
 
 const tmp = join(__dirname, '../../tmp')

@@ -1,6 +1,6 @@
 import { Filter } from '@based/db-query'
 import { BasedSchemaField } from '@based/schema'
-import { BasedDbClient } from '..'
+import { BasedDbClient } from '../index.js'
 
 export type ExecContext = {
   client: BasedDbClient

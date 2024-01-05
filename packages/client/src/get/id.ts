@@ -1,5 +1,5 @@
-import { protocol } from '..'
-import { GetCommand } from './types'
+import { protocol } from '../index.js'
+import { GetCommand } from './types.js'
 
 export function sourceId(cmd: GetCommand): string {
   return cmd.source.idList

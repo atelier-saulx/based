@@ -1,4 +1,4 @@
-import { basicTest } from '../assertions'
+import { basicTest } from '../assertions/index.js'
 import { wait } from '@saulx/utils'
 import { subscribe } from '@based/db-subs'
 

@@ -1,10 +1,10 @@
 import { createRecord } from 'data-record'
-import { SELVA_NODE_ID_LEN } from '../../types'
+import { SELVA_NODE_ID_LEN } from '../../types.js'
 import {
   SET_TYPE_TO_MODIFY_VALUE_TYPE,
   ModifyOpSetType,
   SET_OP_BY_TYPE,
-} from './types'
+} from './types.js'
 
 // TODO: impl. bidirectional
 function getConstraint({

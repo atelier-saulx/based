@@ -7,7 +7,7 @@ type ServerDescriptor = {
   type: ServerType
 }
 
-import { ServerOptions } from '../types'
+import { ServerOptions } from '../types.js'
 import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'

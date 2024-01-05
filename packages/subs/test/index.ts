@@ -1,7 +1,7 @@
 import test from 'ava'
 import { BasedDbClient } from '@based/db-client'
 import { startOrigin } from '@based/db-server'
-import { subscribe } from '../src'
+import { subscribe } from '../src/index.js'
 import getPort from 'get-port'
 
 test('subs', async (t) => {

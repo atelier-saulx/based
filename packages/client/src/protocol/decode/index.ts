@@ -8,9 +8,9 @@ import {
   SELVA_PROTO_CHECK_OFFSET,
   SelvaProtocolHeader,
   selva_proto_header_def as selvaProtoHeaderDef,
-} from '../types'
-import { crc32 } from '../crc32c'
-import { VALUE_PARSERS } from './valueParsers'
+} from '../types.js'
+import { crc32 } from '../crc32c.js'
+import { VALUE_PARSERS } from './valueParsers.js'
 
 export function findFrame(buf: Buffer): {
   header: SelvaProtocolHeader

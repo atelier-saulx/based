@@ -1,5 +1,5 @@
-import { BasedSchema } from '../types'
-import { BasedSchemaType, BasedSchemaFields } from '../types'
+import { BasedSchema } from '../types.js'
+import { BasedSchemaType, BasedSchemaFields } from '../types.js'
 import { ArgsOpts, Path, Opts, Stopped, Collect } from './types'
 import { parse } from './parse'
 import { ParseError } from '../error'

@@ -3,12 +3,12 @@ import {
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
 } from '@based/schema'
-import { ExecContext, GetCommand } from '../../types'
-import { setResultValue } from './setResultValue'
-import { parseFieldResult } from './field'
+import { ExecContext, GetCommand } from '../../types.js'
+import { setResultValue } from './setResultValue.js'
+import { parseFieldResult } from './field.js'
 import { deepCopy, setByPath } from '@saulx/utils'
-import { hashCmd } from '../../util'
-import { addSubMarker } from '../../exec/cmd'
+import { hashCmd } from '../../util.js'
+import { addSubMarker } from '../../exec/cmd.js'
 
 export function findFieldSchema(
   f: string,

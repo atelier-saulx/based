@@ -1,15 +1,14 @@
 import anyTest, { ExecutionContext, TestFn } from 'ava'
-import { hierarchyCompressType } from '../src/protocol'
+import { hierarchyCompressType } from '../src/protocol/index.js'
 import { readdir } from 'fs/promises'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import './assertions'
 import getPort from 'get-port'
 import { join } from 'path'
-import { removeDump } from './assertions/utils'
+import { removeDump } from './assertions/utils.js'
 import { wait } from '@saulx/utils'
-import { deepEqualIgnoreOrder } from './assertions'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
 const dir = join(process.cwd(), 'tmp', 'sdb-test')
 

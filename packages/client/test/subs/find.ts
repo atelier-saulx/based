@@ -1,5 +1,5 @@
 import { wait } from '@saulx/utils'
-import { basicTest } from '../assertions'
+import { basicTest } from '../assertions/index.js'
 import { subscribe } from '@based/db-subs'
 
 const test = basicTest({

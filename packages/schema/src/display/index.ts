@@ -1,4 +1,4 @@
-import { BasedSchemaField } from '../types'
+import { BasedSchemaField } from '../types.js'
 import timestampDisplay from './timestamp'
 import numberDisplay from './number'
 import stringDisplay from './string'

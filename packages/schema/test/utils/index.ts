@@ -1,5 +1,5 @@
 import { Path } from '@saulx/utils'
-import { BasedSetTarget } from '../../src'
+import { BasedSetTarget } from '../../src/index.js'
 import { ParseError } from '../../src/error'
 
 export const resultCollect = (...results: BasedSetTarget[]) => {

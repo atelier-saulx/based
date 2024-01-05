@@ -1,4 +1,4 @@
-import { setWalker, BasedSchema } from '../src'
+import { setWalker, BasedSchema } from '../src/index.js'
 import test from 'ava'
 import { resultCollect } from './utils'
 import { languages } from '../src/languages'

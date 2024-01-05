@@ -1,11 +1,10 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import { SelvaServer } from '../../server/dist/server'
 import './assertions'
 import getPort from 'get-port'
-import { deepEqualIgnoreOrder } from './assertions'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
 const test = anyTest as TestFn<{
   srv: SelvaServer

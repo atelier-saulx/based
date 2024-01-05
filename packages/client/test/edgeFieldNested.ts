@@ -1,12 +1,11 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient, protocol } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import { BasedDbClient, protocol } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import './assertions'
 import getPort from 'get-port'
-import { SelvaTraversal } from '../src/protocol'
-import { find } from './assertions/utils'
-import { deepEqualIgnoreOrder } from './assertions'
+import { SelvaTraversal } from '../src/protocol/index.js'
+import { find } from './assertions/utils.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
 const test = anyTest as TestFn<{
   srv: SelvaServer

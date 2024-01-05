@@ -1,11 +1,11 @@
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
-import { BasedDbClient } from '..'
-import { NewTypeSchemaMutation, SchemaUpdateMode } from '../types'
-import { findEdgeConstraints } from './findEdgeConstraints'
-import { getMutations } from './getMutations'
-import { mergeSchema } from './mergeSchema'
-import { migrateNodes } from './migrateNodes'
-import { validateSchemaMutations } from './validationRules'
+import { BasedDbClient } from '../index.js'
+import { NewTypeSchemaMutation, SchemaUpdateMode } from '../types.js'
+import { findEdgeConstraints } from './findEdgeConstraints.js'
+import { getMutations } from './getMutations.js'
+import { mergeSchema } from './mergeSchema.js'
+import { migrateNodes } from './migrateNodes.js'
+import { validateSchemaMutations } from './validationRules.js'
 
 type EdgeConstraint = {
   prefix: string

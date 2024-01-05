@@ -4,7 +4,7 @@ import {
   BasedSchemaFields,
   BasedSchemaField,
   BasedSchema,
-} from '../types'
+} from '../types.js'
 import { ArgsClass } from './args'
 
 export type Path = (string | number)[]

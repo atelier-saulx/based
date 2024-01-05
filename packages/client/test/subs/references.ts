@@ -1,4 +1,4 @@
-import { basicTest, deepEqualIgnoreOrder } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from '../assertions/index.js'
 import { subscribe } from '@based/db-subs'
 import { deepCopy, wait } from '@saulx/utils'
 

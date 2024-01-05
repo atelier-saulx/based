@@ -1,16 +1,16 @@
-import { ExecContext, GetCommand } from '../types'
-import { BasedDbClient } from '../..'
+import { ExecContext, GetCommand } from '../types.js'
+import { BasedDbClient } from '../../index.js'
 import { deepCopy, deepMergeArrays } from '@saulx/utils'
 
-export * from '../types'
-export * from '../parse'
+export * from '../types.js'
+export * from '../parse/index.js'
 
-import { parseGetOpts, parseGetResult } from '../parse'
-import { getCmd, resolveNodeId } from './cmd'
-import { hashCmd } from '../util'
+import { parseGetOpts, parseGetResult } from '../parse/index.js'
+import { getCmd, resolveNodeId } from './cmd.js'
+import { hashCmd } from '../util.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
-import { subscription_opts_def } from '../../protocol'
+import { subscription_opts_def } from '../../protocol/index.js'
 import { Path } from '@based/schema'
 
 export async function get(

@@ -1,11 +1,11 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import { SelvaServer } from '../../server/dist/server'
+import { SelvaServer } from '@based/db-server'
 import './assertions'
 import getPort from 'get-port'
-import { SelvaTraversal } from '../src/protocol'
+import { SelvaTraversal } from '../src/protocol/index.js'
 
 const test = anyTest as TestFn<{
   srv: SelvaServer

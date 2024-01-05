@@ -1,6 +1,6 @@
 import { BasedSchemaField } from '@based/schema'
 import { deepMerge, getByPath, setByPath } from '@saulx/utils'
-import { aliasStrToPath } from '../../../util'
+import { aliasStrToPath } from '../../../util/index.js'
 
 export function setResultValue({
   path,

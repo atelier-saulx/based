@@ -4,7 +4,7 @@ import {
   BasedSchemaType,
   BasedSchemaTypePartial,
 } from '@based/schema'
-import { ExecContext, Path } from '../get'
+import { ExecContext, Path } from '../get/index.js'
 
 export function joinPath(path: (string | number)[]): string {
   if (!path.length) {

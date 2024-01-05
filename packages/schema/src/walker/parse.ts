@@ -4,7 +4,7 @@ import {
   BasedSchemaFieldObject,
   BasedSchemaFieldRecord,
   BasedSchemaFields,
-} from '../types'
+} from '../types.js'
 import { ArgsClass } from './args'
 import { ArgsOpts, FieldParser, KeyParser, Stopped } from './types'
 

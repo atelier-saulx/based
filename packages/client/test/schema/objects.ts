@@ -1,9 +1,9 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../../src'
+import { BasedDbClient } from '../../src/index.js'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import '../assertions'
 import getPort from 'get-port'
-import { SchemaUpdateMode } from '../../src/types'
+import { SchemaUpdateMode } from '../../src/types.js'
 import { BasedSchemaFieldObject } from '@based/schema'
 
 const test = anyTest as TestFn<{

@@ -1,11 +1,11 @@
 import anyTest, { TestFn } from 'ava'
-import { BasedDbClient } from '../../src'
+import { BasedDbClient } from '../../src/index.js'
 import { SelvaServer, startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
 import '../assertions'
 import getPort from 'get-port'
-import { SchemaUpdateMode } from '../../src/types'
-import { DEFAULT_FIELDS } from '../../src/schema/mergeSchema'
+import { SchemaUpdateMode } from '../../src/types.js'
+import { DEFAULT_FIELDS } from '../../src/schema/mergeSchema.js'
 
 const test = anyTest as TestFn<{
   srv: SelvaServer

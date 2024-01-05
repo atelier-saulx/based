@@ -8,7 +8,7 @@ import {
   selva_proto_null_def,
   selva_proto_string_def,
   selvaError,
-} from '../types'
+} from '../types.js'
 import { deserialize } from 'data-record'
 
 type ParserFn = (buf: Buffer) => [any, number]

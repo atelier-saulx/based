@@ -5,9 +5,9 @@ import {
   applyDefault,
   execParallel,
   get,
-} from '../get'
-import { BasedDbClient } from '..'
-import { nextTimestamp } from '../get/exec/timebased'
+} from '../get/index.js'
+import { BasedDbClient } from '../index.js'
+import { nextTimestamp } from '../get/exec/timebased.js'
 
 export async function sub(
   client: BasedDbClient,

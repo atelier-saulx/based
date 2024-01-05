@@ -1,12 +1,12 @@
 import anyTest, { ExecutionContext, TestFn } from 'ava'
-import { BasedDbClient } from '../src'
+import { BasedDbClient } from '../src/index.js'
 import { join as pathJoin } from 'path'
-import { startOrigin, startReplica } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import { startOrigin, startReplica } from '@based/db-server'
+import { SelvaServer } from '@based/db-server'
 import './assertions'
 import getPort from 'get-port'
 import { wait } from '@saulx/utils'
-import { removeDump } from './assertions/utils'
+import { removeDump } from './assertions/utils.js'
 
 type Context = {
   origin: SelvaServer

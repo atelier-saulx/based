@@ -1,5 +1,5 @@
-import { BasedDbClient } from '.'
-import { encode, Command } from './protocol'
+import { BasedDbClient } from './index.js'
+import { encode, Command } from './protocol/index.js'
 
 export const drainQueue = (client: BasedDbClient) => {
   if (

@@ -2,7 +2,7 @@ import {
   BasedSchemaFieldString,
   BasedSchemaLanguage,
   BasedSetTarget,
-} from '../../types'
+} from '../../types.js'
 import { ParseError } from '../../error'
 import { FieldParser, ArgsClass } from '../../walker'
 import validators from 'validator'
