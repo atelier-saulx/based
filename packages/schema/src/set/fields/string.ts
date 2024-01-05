@@ -3,8 +3,8 @@ import {
   BasedSchemaLanguage,
   BasedSetTarget,
 } from '../../types.js'
-import { ParseError } from '../../error'
-import { FieldParser, ArgsClass } from '../../walker'
+import { ParseError } from '../../error.js'
+import { FieldParser, ArgsClass } from '../../walker/index.js'
 import validators from 'validator'
 
 type StringTypes = 'string' | 'text'

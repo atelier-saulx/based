@@ -1,11 +1,11 @@
-import { ParseError } from '../error'
+import { ParseError } from '../error.js'
 import {
   BasedSchemaType,
   BasedSchemaFields,
   BasedSchemaField,
   BasedSchema,
 } from '../types.js'
-import { ArgsClass } from './args'
+import { ArgsClass } from './args.js'
 
 export type Path = (string | number)[]
 

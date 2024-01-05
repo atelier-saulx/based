@@ -1,8 +1,12 @@
-import { ParseError } from '../error'
-import { BasedSchema, BasedSchemaCollectProps, BasedSetTarget } from '../types.js'
-import { walk, Opts, AsyncOperation } from '../walker'
-import { fields } from './fields'
-import { isValidId } from './isValidId'
+import { ParseError } from '../error.js'
+import {
+  BasedSchema,
+  BasedSchemaCollectProps,
+  BasedSetTarget,
+} from '../types.js'
+import { walk, Opts, AsyncOperation } from '../walker/index.js'
+import { fields } from './fields/index.js'
+import { isValidId } from './isValidId.js'
 
 const opts: Opts<BasedSetTarget> = {
   parsers: {

@@ -1,6 +1,6 @@
 import { BasedSchema } from '../types.js'
-import { ArgsClass } from './args'
-import { AsyncOperation, Opts } from './types'
+import { ArgsClass } from './args.js'
+import { AsyncOperation, Opts } from './types.js'
 
 export const walk = async <T>(
   schema: BasedSchema,
@@ -45,4 +45,4 @@ export const walk = async <T>(
 
 export { ArgsClass }
 
-export * from './types'
+export * from './types.js'

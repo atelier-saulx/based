@@ -1,5 +1,5 @@
-import { ParseError } from '../../error'
-import { ArgsClass, FieldParser } from '../../walker'
+import { ParseError } from '../../error.js'
+import { ArgsClass, FieldParser } from '../../walker/index.js'
 
 async function parseOperator<T>(
   args: ArgsClass<T, 'set'>,

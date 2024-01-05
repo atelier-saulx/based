@@ -1,5 +1,5 @@
-import { Fork, FilterAST } from './types'
-import isFork from './isFork'
+import { Fork, FilterAST } from './types.js'
+import isFork from './isFork.js'
 
 // use chalk maybe...
 const colors =

@@ -1,8 +1,8 @@
 import { BasedSchema } from '../types.js'
 import { BasedSchemaType, BasedSchemaFields } from '../types.js'
-import { ArgsOpts, Path, Opts, Stopped, Collect } from './types'
-import { parse } from './parse'
-import { ParseError } from '../error'
+import { ArgsOpts, Path, Opts, Stopped, Collect } from './types.js'
+import { parse } from './parse.js'
+import { ParseError } from '../error.js'
 import { deepEqual } from '@saulx/utils'
 
 let id = 0

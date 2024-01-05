@@ -1,18 +1,18 @@
-import printAst from './printAst'
-import isFork from './isFork'
-import ast2rpn from './ast2rpn'
-import bfsExpr2rpn from './bfsExpr2rpn'
-import fieldsExpr2rpn from './fieldsExpr2rpn'
+import printAst from './printAst.js'
+import isFork from './isFork.js'
+import ast2rpn from './ast2rpn.js'
+import bfsExpr2rpn from './bfsExpr2rpn.js'
+import fieldsExpr2rpn from './fieldsExpr2rpn.js'
 
-import createAst from './parseFilters'
+import createAst from './parseFilters.js'
 
-import optimizeTypeFilters from './optimizeTypeFilters'
+import optimizeTypeFilters from './optimizeTypeFilters.js'
 
-import convertNow from './convertNow'
+import convertNow from './convertNow.js'
 
-import { Filter } from './types'
+import { Filter } from './types.js'
 
-import { Rpn } from './types'
+import { Rpn } from './types.js'
 
 const createRpn = (
   types: Record<string, { prefix?: string }>,
@@ -27,7 +27,7 @@ const createRpn = (
   }
 }
 
-export * from './types'
+export * from './types.js'
 
 export {
   printAst,

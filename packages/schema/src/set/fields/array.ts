@@ -1,6 +1,6 @@
 import { setByPath } from '@saulx/utils'
-import { ParseError } from '../../error'
-import { FieldParser, ArgsClass } from '../../walker'
+import { ParseError } from '../../error.js'
+import { FieldParser, ArgsClass } from '../../walker/index.js'
 import { BasedSetTarget } from '../../types.js'
 
 const collectOperation = (

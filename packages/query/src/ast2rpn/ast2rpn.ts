@@ -1,5 +1,5 @@
-import { Fork, FilterAST as Filter, Rpn } from './types'
-import { convertNowFilter } from './convertNow'
+import { Fork, FilterAST as Filter, Rpn } from './types.js'
+import { convertNowFilter } from './convertNow.js'
 
 function isFork(x: any): x is Fork {
   return x.isFork
