@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -545,10 +545,14 @@
 
 /**
  * Get a selva_string field flags, crc, and value.
+ * module: db
+ * cmd: object.getString
  */
 #define CMD_ID_OBJECT_GET_STRING 81
 
 /**
  * Compare & Swap a string.
+ * module: db
+ * cmd: object.cas
  */
 #define CMD_ID_OBJECT_CAS 82
