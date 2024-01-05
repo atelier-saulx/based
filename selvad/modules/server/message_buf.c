@@ -1,6 +1,6 @@
 /*
  * Message encapsulation handling functions.
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -51,9 +51,9 @@ static void buf_cancel_stream(
 {
 }
 
-void message_buf_init(void)
+void message_buf_init(struct message_handlers_vtable *vt)
 {
-    message_handlers[SERVER_MESSAGE_HANDLER_BUF] = (struct message_handlers_vtable){
+    *vt = (struct message_handlers_vtable){
         .recv_frame = buf_recv_frame,
         .flush = buf_flush,
         .send_buf = buf_send_buf,
