@@ -1,12 +1,19 @@
-import fs from 'fs'
+import fs from 'node:fs'
 import { Worker } from 'worker_threads'
-import { join } from 'path'
+import { join, dirname } from 'node:path'
 import beforeExit from 'before-exit'
 import { hash } from '@saulx/hash'
 import { createRecord } from 'data-record'
 import { BasedDbClient, protocol } from '../../src/index.js'
-import { SelvaFindResultType, SelvaMergeStrategy, SelvaTraversal } from '../../src/protocol/index.js'
+import {
+  SelvaFindResultType,
+  SelvaMergeStrategy,
+  SelvaTraversal,
+} from '../../src/protocol/index.js'
 import rimraf from 'rimraf'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url).replace('/dist/', '/'))
 
 const tmp = join(__dirname, '../../tmp')
 

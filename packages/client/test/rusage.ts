@@ -3,7 +3,7 @@ import { deserialize } from 'data-record'
 import { BasedDbClient } from '../src/index.js'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import { selva_rusage } from '../src/protocol/index.js'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 
 const test = anyTest as TestFn<{

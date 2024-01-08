@@ -2,7 +2,7 @@ import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src/index.js'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 
 const test = anyTest as TestFn<{

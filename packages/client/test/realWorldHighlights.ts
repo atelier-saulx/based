@@ -1,7 +1,7 @@
 import anyTest, { TestFn } from 'ava'
 import { BasedDbClient } from '../src/index.js'
 import { startOrigin } from '@based/db-server'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 import { SelvaServer } from '@based/db-server'
 import { deepEqualIgnoreOrder } from './assertions/index.js'

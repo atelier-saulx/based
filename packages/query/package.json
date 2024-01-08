@@ -12,8 +12,8 @@
   "sideEffects": false,
   "type": "module",
   "files": [
-    "dist",
-    "!dist/**/*.js.map"
+    "dist/src",
+    "!dist/src/**/*.js.map"
   ],
   "ava": {
     "concurrency": 1,

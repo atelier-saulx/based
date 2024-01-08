@@ -3,7 +3,7 @@ import { BasedDbClient } from '../src/index.js'
 import { startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
 import { SelvaServer } from '@based/db-server'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 import { SelvaTraversal } from '../src/protocol/index.js'
 

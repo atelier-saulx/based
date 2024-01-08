@@ -1,7 +1,7 @@
 import anyTest, { TestFn } from 'ava'
 import { BasedDbClient, protocol } from '../src/index.js'
 import { startOrigin, SelvaServer } from '@based/db-server'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 import { find } from './assertions/utils.js'
 import { SelvaTraversal } from '../src/protocol/index.js'
