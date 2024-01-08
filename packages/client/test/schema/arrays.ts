@@ -2,7 +2,7 @@ import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { startOrigin, SelvaServer } from '@based/db-server'
 import { BasedDbClient } from '../../src/index.js'
-import '../assertions'
+import '../assertions/index.js'
 import { SchemaUpdateMode } from '../../src/types.js'
 import { BasedSchemaFieldArray } from '@based/schema'
 

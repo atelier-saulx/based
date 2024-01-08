@@ -12,5 +12,10 @@
   "exclude": [
     "dist",
     "tmp",
+  ],
+  "references": [
+    {
+      "path": "../client"
+    }
   ]
 }

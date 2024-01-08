@@ -6,7 +6,7 @@ import {
   SelvaTraversal,
 } from '../../src/protocol/index.js'
 import { wait } from '@saulx/utils'
-import '../assertions'
+import '../assertions/index.js'
 import { find } from '../assertions/utils.js'
 import getPort from 'get-port'
 import { deepEqualIgnoreOrder } from '../assertions/index.js'

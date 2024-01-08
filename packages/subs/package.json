@@ -10,8 +10,8 @@
     "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
   },
   "files": [
-    "dist",
-    "!dist/**/*.js.map"
+    "dist/src",
+    "!dist/src/**/*.js.map"
   ],
   "sideEffects": false,
   "type": "module",

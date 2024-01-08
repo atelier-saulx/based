@@ -4,6 +4,7 @@
     "outDir": "dist",
     "target": "es2021",
     "esModuleInterop": true,
+    "composite": true
   },
   "include": [
     "src",
