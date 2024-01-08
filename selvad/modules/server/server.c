@@ -38,6 +38,7 @@ static struct command {
     enum selva_cmd_mode cmd_mode;
     const char *cmd_name;
 } commands[254];
+struct message_handlers_vtable message_handlers[3];
 
 static const struct config server_cfg_map[] = {
     { "SELVA_PORT",             CONFIG_INT, &selva_port },
@@ -668,6 +669,10 @@ __constructor static void init(void)
 {
     evl_module_init("server");
 
+    message_none_init(&message_handlers[SERVER_MESSAGE_HANDLER_NONE]);
+    message_sock_init(&message_handlers[SERVER_MESSAGE_HANDLER_SOCK]);
+    message_buf_init(&message_handlers[SERVER_MESSAGE_HANDLER_BUF]);
+
 	int err = config_resolve("server", server_cfg_map, num_elem(server_cfg_map));
     if (err) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args: %s",
@@ -694,8 +699,6 @@ __constructor static void init(void)
     selva_mk_command(CMD_ID_CLIENT, SELVA_CMD_MODE_PURE, "client", client_command);
 
     pubsub_init();
-    message_sock_init();
-    message_buf_init();
     conn_init(max_clients);
     server_sockfd = new_server(selva_port);
     evl_wait_fd(server_sockfd, on_connection, NULL, NULL, NULL);

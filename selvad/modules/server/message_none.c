@@ -1,6 +1,6 @@
 /*
  * Message encapsulation handling functions.
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -50,13 +50,14 @@ static void none_cancel_stream(
 {
 }
 
-struct message_handlers_vtable message_handlers[3] = {
-    [SERVER_MESSAGE_HANDLER_NONE] = {
+void message_none_init(struct message_handlers_vtable *vt)
+{
+    *vt = (struct message_handlers_vtable){
         .recv_frame = none_recv_frame,
         .flush = none_flush,
         .send_buf = none_send_buf,
         .send_file = none_send_file,
         .start_stream = none_start_stream,
-        .cancel_stream = none_cancel_stream
-    },
-};
+        .cancel_stream = none_cancel_stream,
+    };
+}

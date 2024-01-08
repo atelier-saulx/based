@@ -1,6 +1,6 @@
 /*
  * Selva Server Module.
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -14,9 +14,10 @@ struct selva_string;
 typedef uint16_t pubsub_ch_mask_t;
 
 enum server_message_handler {
-    SERVER_MESSAGE_HANDLER_NONE = 0x0,
-    SERVER_MESSAGE_HANDLER_SOCK = 0x1,
-    SERVER_MESSAGE_HANDLER_BUF = 0x2,
+    SERVER_MESSAGE_HANDLER_NONE = 0, /*!< Discard server responses and receive nothing. */
+    SERVER_MESSAGE_HANDLER_SOCK, /*!< Receive messages from conn sock and send responses back to the same conn sock. */
+    SERVER_MESSAGE_HANDLER_BUF, /*!< Send server responses to a selva_string buffer. */
+    NR_SERVER_MESSAGE_HANDLERS
 };
 
 /**
@@ -224,11 +225,12 @@ struct message_handlers_vtable {
     int (*start_stream)(struct selva_server_response_out *resp, struct selva_server_response_out **stream_resp_out);
     void (*cancel_stream)(struct selva_server_response_out *resp, struct selva_server_response_out *stream_resp);
 };
-extern struct message_handlers_vtable message_handlers[3];
 
-/**
- * Init message handlers vtable for sock.
+extern struct message_handlers_vtable message_handlers[NR_SERVER_MESSAGE_HANDLERS];
+
+/*
+ * Init message handlers vtables.
  */
-void message_sock_init(void);
-
-void message_buf_init(void);
+void message_none_init(struct message_handlers_vtable *vt);
+void message_sock_init(struct message_handlers_vtable *vt);
+void message_buf_init(struct message_handlers_vtable *vt);
