@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -17,7 +17,6 @@
 #include "selva_io.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
 #include "hierarchy.h"
 #include "selva_db.h"
@@ -329,7 +328,7 @@ static void Edge_AddConstraintCommand(struct selva_server_response_out *resp, co
         selva_send_error(resp, err, NULL, 0);
         return;
     } else {
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
         selva_send_ll(resp, 1);
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     }

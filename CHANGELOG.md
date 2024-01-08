@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Change the subtree compression to use the zsdb format like it's used with dump files
+- Moved `sdb` and replication handling to the `io` module
+
+### Removed
+
+- Removed the `replication` module as its functionality is now implemented in the `io` module
 
 ### Fixed
 

@@ -98,21 +98,21 @@
 
 /**
  * Load db.
- * module: db
+ * module: io
  * cmd: load
  */
 #define CMD_ID_LOAD 14
 
 /**
  * Save db.
- * module: db
+ * module: io
  * cmd: save
  */
 #define CMD_ID_SAVE 15
 
 /**
  * Flush the in-mem database.
- * module: db
+ * module: io
  * cmd: flush
  */
 #define CMD_ID_FLUSH 16
@@ -486,21 +486,21 @@
 
 /**
  * Start replication stream.
- * module: replication
+ * module: io
  * cmd: replicasync
  */
 #define CMD_ID_REPLICASYNC 73
 
 /**
  * Set this node as a replica of another node.
- * module: replication
+ * module: io
  * cmd: replicaof
  */
 #define CMD_ID_REPLICAOF 74
 
 /**
  * Show the current status of the replication module.
- * module: replication
+ * module: io
  * cmd: replicainfo
  */
 #define CMD_ID_REPLICAINFO 75
@@ -508,7 +508,7 @@
 /**
  * Replica status message.
  * Sent by a replica to the origin.
- * module: replication
+ * module: io
  * cmd: replicastatus
  */
 #define CMD_ID_REPLICASTATUS 76
@@ -517,7 +517,7 @@
  * Wait for replicas to sync.
  * Waits until all replicas are at current or newer eid (if new sync points are
  * created during the execution of this command).
- * module: replication
+ * module: io
  * cmd: replicawait
  */
 #define CMD_ID_REPLICAWAIT 77

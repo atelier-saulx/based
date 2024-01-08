@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -21,6 +21,24 @@ enum replication_sync_mode {
  * Updated by selva_replication_new_sdb().
  */
 extern uint8_t last_sdb_hash[SELVA_IO_HASH_SIZE];
+
+/**
+ * Publish a new SDB dump to the replication.
+ */
+void selva_replication_new_sdb(const char *filename, const uint8_t sdb_hash[SELVA_IO_HASH_SIZE]);
+
+/**
+ * Let the module know that a new dump should be coming.
+ * The new dump is added to the replication ring buffer and marked as
+ * incomplete.
+ * @returns an sdb_eid.
+ */
+uint64_t selva_replication_incomplete_sdb(const char *filename);
+
+/**
+ * Mark the previously registered incomplete dump sdb_eid as complete.
+ */
+void selva_replication_complete_sdb(uint64_t sdb_eid, uint8_t sdb_hash[SELVA_IO_HASH_SIZE]);
 
 /**
  * Origin must implement.
@@ -149,6 +167,10 @@ size_t replication_replica_origin2str(char buf[CONN_STR_LEN]);
  */
 int replication_replica_start(struct sockaddr_in *origin_addr);
 void replication_replica_init(void);
+
+void replication_init(void);
+
+extern enum replication_mode replication_mode;
 
 /**
  * @}

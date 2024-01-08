@@ -1,14 +1,15 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <inttypes.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "sha3iuf/sha3.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
-#include "selva_replication.h"
+#include "selva_io.h"
 #include "eid.h"
 
 uint64_t replication_new_origin_sdb_eid(const char *filename)

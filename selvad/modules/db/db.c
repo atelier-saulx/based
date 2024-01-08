@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdio.h>
@@ -10,15 +10,12 @@
 #include "libdeflate.h"
 #include "linker_set.h"
 #include "event_loop.h"
-#include "evl_signal.h"
 #include "module.h"
 #include "selva_error.h"
 #include "selva_log.h"
-#include "dump.h"
 #include "selva_onload.h"
 #include "selva_server.h"
 #include "selva_io.h"
-#include "selva_replication.h"
 #include "config.h"
 #include "db_config.h"
 #include "selva_db.h"
@@ -36,8 +33,6 @@ struct selva_glob_config selva_glob_config = {
     .find_indexing_icb_update_interval = 5000,
     .find_indexing_interval = 60000,
     .find_indexing_popularity_ave_period = 216000,
-    .save_at_exit = 1,
-    .auto_save_interval = 0,
 };
 
 static const struct config cfg_map[] = {
@@ -52,8 +47,6 @@ static const struct config cfg_map[] = {
     { "FIND_INDEXING_ICB_UPDATE_INTERVAL",      CONFIG_INT,     &selva_glob_config.find_indexing_icb_update_interval },
     { "FIND_INDEXING_INTERVAL",                 CONFIG_INT,     &selva_glob_config.find_indexing_interval },
     { "FIND_INDEXING_POPULARITY_AVE_PERIOD",    CONFIG_INT,     &selva_glob_config.find_indexing_popularity_ave_period },
-    { "SAVE_AT_EXIT",                           CONFIG_INT,     &selva_glob_config.save_at_exit },
-    { "AUTO_SAVE_INTERVAL",                     CONFIG_INT,     &selva_glob_config.auto_save_interval },
 };
 
 SET_DECLARE(selva_onload, Selva_Onload);
@@ -65,10 +58,45 @@ IMPORT() {
     evl_import_main(evl_clear_timeout);
     evl_import_main(config_resolve);
     evl_import_event_loop();
-	evl_import_signal();
     import_selva_server();
     import_selva_io();
-    import_selva_replication();
+}
+
+static bool db_is_ready(void)
+{
+    return !!main_hierarchy;
+}
+
+static int db_load(struct selva_io *io)
+{
+    struct SelvaHierarchy *tmp_hierarchy = main_hierarchy;
+
+    main_hierarchy = Hierarchy_Load(io);
+    if (!main_hierarchy) {
+        main_hierarchy = tmp_hierarchy;
+        return SELVA_EGENERAL;
+    }
+
+    if (tmp_hierarchy) {
+        SelvaModify_DestroyHierarchy(tmp_hierarchy);
+    }
+
+    return 0;
+}
+
+static void db_save(struct selva_io *io)
+{
+    Hierarchy_Save(io, main_hierarchy);
+}
+
+static void db_flush(void)
+{
+    SelvaModify_DestroyHierarchy(main_hierarchy);
+    main_hierarchy = SelvaModify_NewHierarchy();
+    if (!main_hierarchy) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to create a new main_hierarchy");
+        exit(1);
+    }
 }
 
 __constructor static void init(void)
@@ -78,10 +106,7 @@ __constructor static void init(void)
 
     evl_module_init("db");
 
-    err = config_resolve("db", cfg_map, num_elem(cfg_map));
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args: %s",
-                  selva_strerror(err));
+    if (config_resolve("db", cfg_map, num_elem(cfg_map))) {
         exit(EXIT_FAILURE);
     }
 
@@ -101,17 +126,12 @@ __constructor static void init(void)
         exit(EXIT_FAILURE);
     }
 
-    err = dump_load_default_sdb();
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the default dump: %s",
-                  selva_strerror(err));
-        exit(EXIT_FAILURE);
-    }
-
-    if (selva_glob_config.auto_save_interval > 0 &&
-        dump_auto_sdb(selva_glob_config.auto_save_interval)) {
-        exit(EXIT_FAILURE);
-    }
+    selva_io_register_serializer(SELVA_IO_ORD_HIERARCHY, &(struct selva_io_serializer){
+        .is_ready = db_is_ready,
+        .deserialize = db_load,
+        .serialize = db_save,
+        .flush = db_flush,
+    });
 }
 
 __destructor static void deinit(void) {

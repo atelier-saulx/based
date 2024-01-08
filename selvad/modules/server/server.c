@@ -673,10 +673,7 @@ __constructor static void init(void)
     message_sock_init(&message_handlers[SERVER_MESSAGE_HANDLER_SOCK]);
     message_buf_init(&message_handlers[SERVER_MESSAGE_HANDLER_BUF]);
 
-	int err = config_resolve("server", server_cfg_map, num_elem(server_cfg_map));
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args: %s",
-                  selva_strerror(err));
+	if (config_resolve("server", server_cfg_map, num_elem(server_cfg_map))) {
         exit(EXIT_FAILURE);
     }
 

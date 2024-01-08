@@ -1,11 +1,10 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 
 OBJ := \
 	   alias.o \
 	   comparator.o \
 	   db.o \
-	   dump.o \
 	   edge/edge.o \
 	   edge/edge_constraint.o \
 	   find_index/find_index.o \

@@ -1,9 +1,8 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
-#define SELVA_IO_TYPE
 #include <assert.h>
 #include <signal.h>
 #include <stddef.h>
@@ -22,25 +21,50 @@
 #include "util/sigstr.h"
 #include "util/timestamp.h"
 #include "sha3iuf/sha3.h"
-#include "evl_signal.h"
 #include "event_loop.h"
+#include "evl_signal.h"
 #include "selva_error.h"
 #include "selva_io.h"
 #include "selva_log.h"
-#include "selva_db.h"
-#include "selva_onload.h"
+#include "selva_db_types.h"
 #include "selva_proto.h"
 #include "selva_server.h"
-#include "selva_replication.h"
-#include "hierarchy.h"
-#include "db_config.h"
+#include "replication/replication.h"
 #include "dump.h"
 
-int selva_db_is_dirty;
-enum selva_db_dump_state selva_db_dump_state;
+static int selva_db_is_dirty;
+static enum selva_io_dump_state selva_db_dump_state;
 static pid_t save_pid;
 static uint64_t save_sdb_eid;
 static struct selva_server_response_out *save_stream_resp;
+static struct selva_io_serializer serializers[NR_SELVA_IO_ORD];
+
+/**
+ * Save db at exit.
+ */
+int save_at_exit = 1;
+
+/**
+ * [sec] Load the default SDB on startup and save a dump on interval.
+ * 0 = disabled.
+ */
+int auto_save_interval = 0;
+
+void selva_io_set_dirty(void)
+{
+    selva_db_is_dirty = 1;
+}
+
+void selva_io_register_serializer(enum selva_io_load_order ord, const struct selva_io_serializer *serializer)
+{
+    assert(ord >= 0 && ord < NR_SELVA_IO_ORD);
+    serializers[ord] = *serializer;
+}
+
+enum selva_io_dump_state selva_io_get_dump_state(void)
+{
+    return selva_db_dump_state;
+}
 
 static int gen_default_sdb_name(char filename[static SDB_NAME_MIN_BUF_SIZE])
 {
@@ -49,40 +73,38 @@ static int gen_default_sdb_name(char filename[static SDB_NAME_MIN_BUF_SIZE])
 
 static void handle_last_good_sync(void)
 {
-    /*
-     * Let mod_replication know about the the new last good dump.
-     */
-    if (selva_replication_get_mode() != SELVA_REPLICATION_MODE_NONE) {
-        uint8_t hash[SELVA_IO_HASH_SIZE];
-        struct selva_string *filename;
+    uint8_t hash[SELVA_IO_HASH_SIZE];
+    struct selva_string *filename;
+    const char *filename_str;
 
-        if (!selva_io_last_good_info(hash, &filename)) {
-            SELVA_LOG(SELVA_LOGL_INFO, "Found last good: \"%s\"", selva_string_to_str(filename, NULL));
-            selva_replication_new_sdb(selva_string_to_str(filename, NULL), hash);
-            selva_string_free(filename);
-        } else {
-            SELVA_LOG(SELVA_LOGL_ERR, "Failed to read the last good file");
-        }
+    if (selva_io_last_good_info(hash, &filename)) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to read the last good file (sync)");
+        return;
     }
+
+    filename_str = selva_string_to_str(filename, NULL);
+    SELVA_LOG(SELVA_LOGL_INFO, "Found last good (sync): \"%s\"", filename_str);
+    selva_replication_new_sdb(filename_str, hash);
+
+    selva_string_free(filename);
 }
 
 static int handle_last_good_async(void)
 {
     uint8_t hash[SELVA_IO_HASH_SIZE];
     struct selva_string *filename;
-    int saved = 0;
 
-    if (!selva_io_last_good_info(hash, &filename)) {
-        SELVA_LOG(SELVA_LOGL_INFO, "Found last good: \"%s\"", selva_string_to_str(filename, NULL));
-        /* It's safe to call this function even if replication is not enabled. */
-        selva_replication_complete_sdb(save_sdb_eid, hash);
-        selva_string_free(filename);
-        saved = 1;
-    } else {
-        SELVA_LOG(SELVA_LOGL_ERR, "Failed to read the last good file");
+    if (selva_io_last_good_info(hash, &filename)) {
+        SELVA_LOG(SELVA_LOGL_ERR, "Failed to read the last good file (async)");
+        return 0;
     }
 
-    return saved;
+    SELVA_LOG(SELVA_LOGL_INFO, "Found last good (async): \"%s\"", selva_string_to_str(filename, NULL));
+    selva_replication_complete_sdb(save_sdb_eid, hash);
+
+    selva_string_free(filename);
+
+    return 1;
 }
 
 /**
@@ -233,20 +255,13 @@ static void print_ready(const char * restrict msg, struct timespec * restrict ts
  */
 static int dump_load(struct selva_io *io)
 {
-    struct SelvaHierarchy *tmp_hierarchy = main_hierarchy;
     struct timespec ts_start, ts_end;
     int err = 0;
 
     ts_monotime(&ts_start);
 
-    main_hierarchy = Hierarchy_Load(io);
-    if (main_hierarchy) {
-        if (tmp_hierarchy) {
-            SelvaModify_DestroyHierarchy(tmp_hierarchy);
-        }
-    } else {
-        main_hierarchy = tmp_hierarchy;
-        err = SELVA_EGENERAL;
+    for (int i = 0; i < NR_SELVA_IO_ORD; i++) {
+        serializers[i].deserialize(io);
     }
 
     selva_io_end(io);
@@ -288,7 +303,10 @@ static int dump_save_async(const char *filename)
             return err;
         }
 
-        Hierarchy_Save(&io, main_hierarchy);
+        for (int i = 0; i < NR_SELVA_IO_ORD; i++) {
+            serializers[i].serialize(&io);
+        }
+
         selva_io_end(&io);
 
         ts_monotime(&ts_end);
@@ -328,7 +346,10 @@ static int dump_save_sync(const char *filename)
         return err;
     }
 
-    Hierarchy_Save(&io, main_hierarchy);
+    for (int i = 0; i < NR_SELVA_IO_ORD; i++) {
+        serializers[i].serialize(&io);
+    }
+
     selva_io_end(&io);
 
     handle_last_good_sync();
@@ -367,7 +388,7 @@ static void auto_save(struct event *, void *arg)
     }
 }
 
-int dump_load_default_sdb(void)
+static int dump_load_default_sdb(void)
 {
     struct selva_io io;
     int err;
@@ -390,7 +411,7 @@ int dump_load_default_sdb(void)
     return 0;
 }
 
-int dump_auto_sdb(int interval_s)
+static int dump_auto_sdb(int interval_s)
 {
     static struct timespec ts;
     int tim;
@@ -510,15 +531,33 @@ static void flush_db_cmd(struct selva_server_response_out *resp, const void *buf
         return;
     }
 
-    SelvaModify_DestroyHierarchy(main_hierarchy);
-    main_hierarchy = SelvaModify_NewHierarchy();
-    if (!main_hierarchy) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to create a new main_hierarchy");
-        exit(1);
+    for (int i = 0; i < NR_SELVA_IO_ORD; i++) {
+        serializers[i].flush();
     }
 
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     selva_send_ll(resp, 1);
+}
+
+static void load_on_startup(struct event *, void *)
+{
+    int err = dump_load_default_sdb();
+    if (err) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to load the default dump: %s",
+                  selva_strerror(err));
+        exit(EXIT_FAILURE);
+    }
+}
+
+static bool is_every_serializer_ready(void)
+{
+    bool ready = true;
+
+    for (int i = 0; i < NR_SELVA_IO_ORD; i++) {
+        ready = ready && serializers[i].is_ready();
+    }
+
+    return ready;
 }
 
 __used static void dump_on_exit(int code, void *)
@@ -528,9 +567,9 @@ __used static void dump_on_exit(int code, void *)
 
     if (code != 0 ||
         selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD ||
-        main_hierarchy ||
         !selva_db_is_dirty ||
-        selva_replication_get_mode() == SELVA_REPLICATION_MODE_REPLICA) {
+        !is_every_serializer_ready() ||
+        replication_mode == SELVA_REPLICATION_MODE_REPLICA) {
         /* A dump shall not be made in several cases. */
         return;
     }
@@ -544,17 +583,27 @@ __used static void dump_on_exit(int code, void *)
     }
 }
 
-static int dump_onload(void) {
+void dump_init(void)
+{
     selva_mk_command(CMD_ID_LOAD, SELVA_CMD_MODE_MUTATE, "load", load_db_cmd);
     selva_mk_command(CMD_ID_SAVE, SELVA_CMD_MODE_PURE, "save", save_db_cmd);
     selva_mk_command(CMD_ID_FLUSH, SELVA_CMD_MODE_MUTATE, "flush", flush_db_cmd);
 
+    /*
+     * We can only load the dump once all modules expected to touch the dumps are
+     * loaded.
+     */
+    if (evl_set_timeout(&(struct timespec){ 0 }, load_on_startup, NULL) < 0) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to setup a timer");
+        exit(EXIT_FAILURE);
+    }
+
     setup_sigchld();
 
-    if (selva_glob_config.save_at_exit) {
+    if (save_at_exit) {
 #ifdef __GLIBC__
         if (on_exit(dump_on_exit, NULL)) {
-            SELVA_LOG(SELVA_LOGL_CRIT, "Can't register an exit function");
+            SELVA_LOG(SELVA_LOGL_CRIT, "Failed to register an exit function");
             return SELVA_ENOBUFS;
         }
 #else
@@ -562,6 +611,8 @@ static int dump_onload(void) {
 #endif
     }
 
-    return 0;
+    if (auto_save_interval > 0 &&
+        dump_auto_sdb(auto_save_interval)) {
+        exit(EXIT_FAILURE);
+    }
 }
-SELVA_ONLOAD(dump_onload);

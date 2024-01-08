@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stddef.h>
@@ -102,6 +102,8 @@ int config_resolve(const char *mod_name, const struct config cfg_map[], size_t l
             break;
         }
         if (err) {
+            SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args for \"%s\": %s",
+                      mod_name, selva_strerror(err));
             return err;
         }
 

@@ -28,10 +28,8 @@
 #include "selva_io.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
 #include "db_config.h"
-#include "dump.h"
 #include "edge.h"
 #include "field_lookup.h"
 #include "find_index.h"
@@ -3237,7 +3235,7 @@ static void auto_compress_proc(struct event *, void *data) {
      * We can't run this if a backup is still running because we share the
      * inactive nodes data structure with the backup process.
      */
-    if (selva_db_dump_state == SELVA_DB_DUMP_NONE) {
+    if (selva_io_get_dump_state() == SELVA_DB_DUMP_NONE) {
         const size_t n = hierarchy->inactive.nr_nodes;
 
         for (size_t i = 0; i < n; i++) {
@@ -3861,7 +3859,7 @@ static void SelvaHierarchy_DelNodeCommand(struct selva_server_response_out *resp
     }
 
     if (nr_deleted > 0) {
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
         selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len);
     }
     SelvaSubscriptions_SendDeferredEvents(hierarchy);

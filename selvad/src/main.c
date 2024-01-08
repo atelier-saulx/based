@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <stdint.h>
@@ -21,7 +21,6 @@ static const char *modules[] = {
 #endif
     "mod_server.so",
     "mod_io.so",
-    "mod_replication.so",
     "mod_db.so",
     "mod_piper.so",
 };

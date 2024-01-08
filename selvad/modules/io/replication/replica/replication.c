@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <arpa/inet.h>
@@ -12,6 +12,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "sha3iuf/sha3.h"
 #include "endian.h"
 #include "jemalloc.h"
 #include "util/backoff_timeout.h"
@@ -24,10 +25,10 @@
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
+#include "selva_io.h"
 #include "selva_server.h"
-#include "../../../commands.h"
-#include "../../../tunables.h"
+#include "../../../../commands.h"
+#include "../../../../tunables.h"
 #include "../eid.h"
 #include "../replication.h"
 

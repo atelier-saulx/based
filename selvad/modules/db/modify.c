@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -19,8 +19,8 @@
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
 #include "selva_server.h"
+#include "selva_io.h"
 #include "util/array_field.h"
 #include "util/bitmap.h"
 #include "util/cstrings.h"
@@ -2234,7 +2234,7 @@ static void SelvaCommand_Modify(struct selva_server_response_out *resp, const vo
     }
 
     if (created || updated) {
-        selva_db_is_dirty = 1;
+        selva_io_set_dirty();
     }
 
     if (selva_replication_get_mode() == SELVA_REPLICATION_MODE_ORIGIN) {

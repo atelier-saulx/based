@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include "sha3iuf/sha3.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
 #include "util/net.h"
@@ -26,25 +27,22 @@
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_server.h"
-#include "selva_replication.h"
+#include "selva_io.h"
+#include "../../../tunables.h"
+#include "../dump.h"
 #include "replication.h"
 
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
-static enum replication_mode replication_mode = SELVA_REPLICATION_MODE_NONE;
+enum replication_mode replication_mode = SELVA_REPLICATION_MODE_NONE;
 static const char replication_mode_str[3][2 * sizeof(size_t)] = {
     "NONE",
     "ORIGIN",
     "REPLICA",
 };
-static int auto_save_interval;
 uint8_t last_sdb_hash[SELVA_IO_HASH_SIZE];
 
-static const struct config cfg_map[] = {
-    { "SELVA_REPLICATION_MODE", CONFIG_INT, &replication_mode },
-    { "AUTO_SAVE_INTERVAL",     CONFIG_INT, &auto_save_interval },
-};
 
 static const struct timespec replicawait_interval = {
     .tv_sec = 1,
@@ -524,25 +522,8 @@ static void replicawait(struct selva_server_response_out *resp, const void *buf 
     evl_set_timeout(&replicawait_interval, replicawait_cb, arg);
 }
 
-IMPORT() {
-    evl_import_main(selva_log);
-    evl_import_main(config_resolve);
-    evl_import_main(evl_set_timeout);
-    evl_import_event_loop();
-    import_selva_server();
-}
-
-__constructor static void init(void)
+void replication_init(void)
 {
-    evl_module_init("replication");
-
-	int err = config_resolve("replication", cfg_map, num_elem(cfg_map));
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to parse config args: %s",
-                  selva_strerror(err));
-        exit(EXIT_FAILURE);
-    }
-
     if (replication_mode > 2) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Invalid replication mode");
         exit(EXIT_FAILURE);

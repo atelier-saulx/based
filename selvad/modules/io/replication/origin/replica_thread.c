@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -10,11 +10,12 @@
 #include <stdint.h>
 #include <string.h>
 #include "module.h"
+#include "sha3iuf/sha3.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_log.h"
 #include "selva_server.h"
-#include "selva_replication.h"
+#include "selva_io.h"
 #include "ring_buffer.h"
 #include "../replication.h"
 #include "replica.h"

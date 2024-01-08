@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -15,7 +15,7 @@
 #include "util/svector.h"
 #include "selva_error.h"
 #include "selva_proto.h"
-#include "selva_replication.h"
+#include "selva_io.h"
 #include "selva_server.h"
 #include "selva_db.h"
 #include "hierarchy.h"
@@ -46,7 +46,7 @@ static void touch_updated_at(struct selva_server_response_out *resp, struct Selv
 #define MODIFIED(resp, resp_value) \
     touch_updated_at(resp, obj); \
     so_send_x((resp), (resp_value)); \
-    selva_db_is_dirty = 1; \
+    selva_io_set_dirty(); \
     selva_replication_replicate(selva_resp_to_ts(resp), selva_resp_to_cmd_id(resp), buf, len); \
     publish_field_change_str(node, okey_str, okey_len)
 
