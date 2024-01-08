@@ -33,45 +33,52 @@ export const worker = (
       const fn = ${body};
       global.isWorker = true
 
-      const selvaServer = require('@based/db-server')
-      const selva = require('@based/db-client')
-      const wait = (t = 100) => (new Promise(r => setTimeout(r, t)))
+      Promise.all([
+        import('@based/db-server'),
+        import('@based/db-client')
+      ]).then(([selvaServer, selva]) => {
 
-      const p = { wait }
+        // const selvaServer = import('@based/db-server')
+        // const selva = import('@based/db-client')
+        const wait = (t = 100) => (new Promise(r => setTimeout(r, t)))
+
+        const p = { wait }
 
 
-      for (let key in selva) {
-        p[key] = selva[key]
-      }
-
-      for (let key in selvaServer) {
-        p[key] = selvaServer[key]
-      }
-
-      const { workerData, parentPort } = require('worker_threads')
-      let cleanup
-      fn(p, workerData).then((v) => {
-        if (typeof v === 'function') {
-          cleanup = v
-          v = null
+        for (let key in selva) {
+          p[key] = selva[key]
         }
-        parentPort.postMessage(v);
-      }).catch(err => {
-        throw err
-      })
 
-      parentPort.on('message', async (msg) => {
-        if (msg === '___KILL___') {
-          if (cleanup) {
-            await cleanup()
-            await wait(500)
+        for (let key in selvaServer) {
+          p[key] = selvaServer[key]
+        }
+
+        const { workerData, parentPort } = require('worker_threads')
+        let cleanup
+        fn(p, workerData).then((v) => {
+          if (typeof v === 'function') {
+            cleanup = v
+            v = null
           }
-          process.exit()
-        }
+          parentPort.postMessage(v);
+        }).catch(err => {
+          throw err
+        })
+
+        parentPort.on('message', async (msg) => {
+          if (msg === '___KILL___') {
+            if (cleanup) {
+              await cleanup()
+              await wait(500)
+            }
+            process.exit()
+          }
+        })
       })
+
     `
 
-    const id = 'worker-' + hash(script) + '.js'
+    const id = 'worker-' + hash(script) + '.cjs'
 
     const file = join(tmp, id)
 
