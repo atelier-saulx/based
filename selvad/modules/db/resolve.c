@@ -34,7 +34,17 @@ int SelvaResolve_NodeId(
         const struct selva_string *id = ids[i];
         TO_STR(id);
 
-        /* First check if it's a nodeId. */
+        /* Check if we have an alias with this id. */
+        Selva_NodeId tmp_id;
+        if (!get_alias(hierarchy, id, tmp_id)) {
+            if (SelvaHierarchy_NodeExists(hierarchy, tmp_id)) {
+                memcpy(node_id, tmp_id, SELVA_NODE_ID_SIZE);
+                res = SELVA_RESOLVE_ALIAS | i;
+                break;
+            }
+        }
+
+        /* Check if we have a node with this id. */
         if (id_len <= SELVA_NODE_ID_SIZE) {
             Selva_NodeIdCpy(node_id, id_str);
 
@@ -46,16 +56,6 @@ int SelvaResolve_NodeId(
 
             if (SelvaHierarchy_NodeExists(hierarchy, node_id)) {
                 res = SELVA_RESOLVE_NODE_ID | i;
-                break;
-            }
-        }
-
-        /* Then check if there is an alias with this string. */
-        Selva_NodeId tmp_id;
-        if (!get_alias(hierarchy, id, tmp_id)) {
-            if (SelvaHierarchy_NodeExists(hierarchy, tmp_id)) {
-                memcpy(node_id, tmp_id, SELVA_NODE_ID_SIZE);
-                res = SELVA_RESOLVE_ALIAS | i;
                 break;
             }
         }
