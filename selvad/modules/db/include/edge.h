@@ -28,18 +28,32 @@ struct selva_string;
 #define EDGE_FIELD_CONSTRAINT_SINGLE_REF    1
 #define EDGE_FIELD_CONSTRAINT_DYNAMIC       2
 
-/*
- * EdgeFieldConstraint Flags
- * -------------------------
+/**
+ * EdgeFieldConstraint Flags.
  *
- * Bidirectional references:
+ * **Bidirectional references**
  * If one edge is removed the other edge is removed too. This flag requires
  * that fwd_field, and bck_field are set.
  */
 enum EdgeFieldConstraintFlag {
-    EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01, /*!< Single reference edge. */
-    EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02, /*!< Bidirectional reference. */
-    EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC          = 0x04, /*!< Lookup from dynamic constraints by node type and field_name. */
+    /**
+     * Single reference edge.
+     */
+    EDGE_FIELD_CONSTRAINT_FLAG_SINGLE_REF       = 0x01,
+    /**
+     * Bidirectional reference.
+     */
+    EDGE_FIELD_CONSTRAINT_FLAG_BIDIRECTIONAL    = 0x02,
+    /**
+     * User defined constraints apply.
+     * Lookup from dynamic constraints by node type and field_name.
+     */
+    EDGE_FIELD_CONSTRAINT_FLAG_DYNAMIC          = 0x04,
+    /**
+     * Edge field array mode.
+     * By default an edge field acts like a set. This flag makes the field work like an array.
+     */
+    EDGE_FIELD_CONSTRAINT_FLAG_ARRAY            = 0x40,
 } __packed;
 
 struct EdgeFieldDynConstraintParams {
@@ -62,7 +76,10 @@ struct EdgeFieldConstraint {
      */
     enum EdgeFieldConstraintFlag flags;
 
-    Selva_NodeType src_node_type; /*!< Source node type this constraint applies to. */
+    /**
+     * Source node type this constraint applies to.
+     */
+    Selva_NodeType src_node_type;
 
     /**
      * Forward traversing field of this constraint.
