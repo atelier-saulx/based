@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include "sha3iuf/sha3.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
 #include "util/sdb_name.h"
@@ -20,7 +21,6 @@
 #include "util/selva_string.h"
 #include "util/sigstr.h"
 #include "util/timestamp.h"
-#include "sha3iuf/sha3.h"
 #include "event_loop.h"
 #include "evl_signal.h"
 #include "selva_error.h"

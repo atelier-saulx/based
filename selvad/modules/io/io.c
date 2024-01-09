@@ -26,8 +26,9 @@
 #include "selva_io.h"
 #include "selva_server.h"
 #include "myreadlink.h"
-#include "sdb.h"
 #include "dump.h"
+#include "sdb.h"
+#include "sdb_purge.h"
 #include "replication/replication.h"
 
 #define READ_WHENCE_READ_HEADER "read header"
@@ -522,5 +523,6 @@ __constructor static void init(void)
     }
 
     dump_init();
+    sdb_purge_init();
     replication_init();
 }

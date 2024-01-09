@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _DEFAULT_SOURCE
@@ -13,15 +13,16 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include "sha3iuf/sha3.h"
 #include "util/cstrings.h"
 #include "util/finalizer.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_log.h"
-#include "selva_onload.h"
 #include "selva_proto.h"
 #include "selva_server.h"
 #include "selva_io.h"
+#include "sdb_purge.h"
 
 static struct selva_string *get_last_good(void)
 {
@@ -82,9 +83,7 @@ out:
     free(namelist);
 }
 
-static int sdb_purge_onload(void) {
+void sdb_purge_init(void)
+{
     selva_mk_command(CMD_ID_PURGE, SELVA_CMD_MODE_PURE, "purge", purge_sdb_cmd);
-
-    return 0;
 }
-SELVA_ONLOAD(sdb_purge_onload);

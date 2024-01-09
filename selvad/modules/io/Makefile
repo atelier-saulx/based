@@ -13,6 +13,7 @@ OBJ := \
 	   replication/replica/replication.o \
 	   replication/replication.o \
 	   sdb.o \
+	   sdb_purge.o \
 	   version.o
 DEP := $(OBJ:%.o=%.d)
 CFLAGS += -DSELVA_IO_MAIN=1 -DSELVA_IO_TYPE

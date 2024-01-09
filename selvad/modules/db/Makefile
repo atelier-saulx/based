@@ -41,7 +41,6 @@ OBJ := \
 	   resolve.o \
 	   rpn/rpn.o \
 	   rpn/rpn_eval.o \
-	   sdb_purge.o \
 	   selva_lang.o \
 	   selva_object/selva_object.o \
 	   selva_object/selva_object_commands.o \
