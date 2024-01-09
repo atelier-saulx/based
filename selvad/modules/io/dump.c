@@ -604,7 +604,7 @@ void dump_init(void)
 #ifdef __GLIBC__
         if (on_exit(dump_on_exit, NULL)) {
             SELVA_LOG(SELVA_LOGL_CRIT, "Failed to register an exit function");
-            return SELVA_ENOBUFS;
+            exit(EXIT_FAILURE);
         }
 #else
         SELVA_LOG(SELVA_LOGL_WARN, "Not registering an exit function (GLIBC-only feat)");
