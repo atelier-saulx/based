@@ -11,8 +11,8 @@
     "build": "npx tsc",
     "watch": "npx tsc --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
-    "test-ci": "ava --color --node-arguments='--expose-gc' --concurrency 1 --timeout 3m"
+    "test": "ava --color --timeout 3m --verbose",
+    "test-ci": "ava --color --concurrency 1 --timeout 3m"
   },
   "sideEffects": false,
   "type": "module",
