@@ -1,6 +1,6 @@
-import { basicTest } from '../assertions/index.js'
+import { basicTest } from './assertions/index.js'
 import { wait } from '@saulx/utils'
-import { subscribe } from '@based/db-subs'
+import { subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',

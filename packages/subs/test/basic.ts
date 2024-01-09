@@ -1,6 +1,6 @@
 import { wait } from '@saulx/utils'
-import { basicTest, deepEqualIgnoreOrder } from '../assertions/index.js'
-import { subscribe } from '@based/db-subs'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
