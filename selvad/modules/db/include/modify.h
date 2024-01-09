@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -13,6 +13,13 @@ struct SelvaObject;
 struct finalizer;
 struct selva_server_response_out;
 struct selva_string;
+
+enum modify_flags {
+    FLAG_NO_ROOT =  0x01, /*!< Don't set root as a parent. */
+    FLAG_NO_MERGE = 0x02, /*!< Clear any existing fields. */
+    FLAG_CREATE =   0x04, /*!< Only create a new node or fail. */
+    FLAG_UPDATE =   0x08, /*!< Only update an existing node. */
+};
 
 enum SelvaModify_ArgType {
     SELVA_MODIFY_ARG_INVALID = '\0',
@@ -130,7 +137,7 @@ int SelvaModify_ModifySet(
     struct SelvaObject *obj,
     const struct selva_string *field,
     struct SelvaModify_OpSet *setOpts,
-    unsigned modify_flags
+    enum modify_flags modify_flags
 );
 
 int SelvaModify_ModifyDel(
