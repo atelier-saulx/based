@@ -1,12 +1,12 @@
 {
   "name": "@based/react",
-  "version": "5.0.0",
+  "version": "5.0.1",
   "license": "MIT",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "browser": "npx aristotle watch -t ./test/browser.tsx",
-    "server": "npx ts-node ./test/based-server.ts",
+    "server": "npx ts-node-esm ./test/based-server.ts",
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}"

@@ -30,8 +30,8 @@ export const useQueries = <T = any>(
       key += id
 
       if (cache) {
-        sum += cache.checksum
-        return { loading: false, data: cache.value, checksum: cache.checksum }
+        sum += cache.c
+        return { loading: false, data: cache.v, checksum: cache.c }
       }
 
       return { loading: true }
@@ -47,7 +47,7 @@ export const useQueries = <T = any>(
             raf = null
             update(
               queries.reduce((sum, { cache }) => {
-                return cache ? sum + cache.checksum : sum
+                return cache ? sum + cache.c : sum
               }, '')
             )
           })
@@ -93,9 +93,7 @@ export const useQuery = <N extends keyof QueryMap>(
     // @ts-ignore
     const q = client.query(name, payload, opts)
     const { id, cache } = q
-    const [checksumOrError, update] = useState<number | BasedError>(
-      cache?.checksum
-    )
+    const [checksumOrError, update] = useState<number | BasedError>(cache?.c)
 
     useEffect(() => {
       const unsubscribe = q.subscribe(
@@ -133,7 +131,7 @@ export const useQuery = <N extends keyof QueryMap>(
           return { loading: true }
         }
 
-        return { loading: false, data: cache.value, checksum: checksumOrError }
+        return { loading: false, data: cache.v, checksum: checksumOrError }
       }
 
       return { loading: false, error: checksumOrError }

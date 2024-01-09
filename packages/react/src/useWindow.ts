@@ -90,7 +90,7 @@ export const useWindow = (
           raf.current = null
           setCheckum(
             queries.current.reduce((combined, { cache }) => {
-              const checksum = cache?.checksum
+              const checksum = cache?.c
               return checksum ? combined + checksum : combined
             }, 0)
           )
@@ -122,7 +122,7 @@ export const useWindow = (
 
       if (q) {
         if (q.cache) {
-          let data = q.cache.value
+          let data = q.cache.v
           for (const i of path) {
             data = data?.[i]
           }
