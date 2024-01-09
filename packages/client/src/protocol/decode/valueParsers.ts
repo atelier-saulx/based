@@ -8,7 +8,7 @@ import {
   selva_proto_null_def,
   selva_proto_string_def,
   selvaError,
-} from '../types'
+} from '../types.js'
 import { deserialize } from 'data-record'
 
 type ParserFn = (buf: Buffer) => [any, number]
@@ -26,7 +26,7 @@ enum ValueType {
 }
 
 export const VALUE_PARSERS: Record<ValueType, ParserFn> = {
-  [ValueType.null]: (buf) => {
+  [ValueType.null]: (_buf) => {
     return [null, selva_proto_null_def.size]
   },
   [ValueType.error]: (buf) => {
@@ -72,10 +72,10 @@ export const VALUE_PARSERS: Record<ValueType, ParserFn> = {
     const v = deserialize(def, buf)
     return [v, def.size]
   },
-  [ValueType.replication_cmd]: (buf) => {
+  [ValueType.replication_cmd]: (_buf) => {
     throw new Error('ENOTSUP')
   },
-  [ValueType.replication_sdb]: (buf) => {
+  [ValueType.replication_sdb]: (_buf) => {
     throw new Error('ENOTSUP')
   },
 }

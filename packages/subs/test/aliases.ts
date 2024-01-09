@@ -1,6 +1,6 @@
-import { basicTest } from '../assertions'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
 import { wait } from '@saulx/utils'
-import { subscribe } from '@based/db-subs'
+import { subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -36,13 +36,13 @@ test('changing alias to another node fires subscription', async (t) => {
       $alias: 'hello-friend',
       yesh: true,
     },
-    (d) => {
+    (d: any) => {
       if (o1counter === 0) {
         // gets start event
         t.is(d.yesh, 'pretty nice')
       } else if (o1counter === 1) {
         // gets update event
-        t.deepEqualIgnoreOrder(d, { yesh: 'extra nice' })
+        deepEqualIgnoreOrder(t, d, { yesh: 'extra nice' })
       } else {
         // doesn't get any more evente
         t.fail()

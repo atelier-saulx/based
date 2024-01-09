@@ -1,6 +1,6 @@
 import { deepCopy, wait } from '@saulx/utils'
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 import { BasedSchemaPartial } from '@based/schema'
 
 const schema: BasedSchemaPartial = {
@@ -90,7 +90,7 @@ test('subscription array', async (t) => {
       $id: thing,
       ary: true,
     },
-    (d) => {
+    (d: any) => {
       lastResult = deepCopy(d)
       cnt++
     }
@@ -147,7 +147,7 @@ test('subscription array', async (t) => {
       },
     },
 
-    (d) => {
+    (d: any) => {
       lastResult2 = deepCopy(d)
       cnt2++
     }
@@ -220,7 +220,7 @@ test('subscription num array', async (t) => {
       $id: thing,
       intAry: true,
     },
-    (d) => {
+    (_d: any) => {
       cnt++
     }
   )

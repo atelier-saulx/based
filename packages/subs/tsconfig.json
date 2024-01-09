@@ -1,9 +1,21 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@saulx/tsconfig/default.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist"
+    "outDir": "dist",
+    "target": "es2021",
+    "esModuleInterop": true,
   },
-  "include": ["src/**/*", "src/**/*.json"],
-  "exclude": ["node_modules", "test", "dist", "tmp", "examples"]
+  "include": [
+    "src",
+    "test"
+  ],
+  "exclude": [
+    "dist",
+    "tmp",
+  ],
+  "references": [
+    {
+      "path": "../client"
+    }
+  ]
 }

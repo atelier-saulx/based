@@ -1,6 +1,6 @@
 import { wait } from '@saulx/utils'
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -99,7 +99,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt++
     }
   )
@@ -160,7 +160,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt2++
     }
   )
@@ -212,7 +212,7 @@ test.serial.skip('subscription find', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt3++
     }
   )

@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -96,8 +96,8 @@ test('remove object from record', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(res1.members[0], { x: 'hallo', refs: [thingId] })
-  t.deepEqualIgnoreOrder(res1.members[1], { x: 'doei' })
+  deepEqualIgnoreOrder(t, res1.members[0], { x: 'hallo', refs: [thingId] })
+  deepEqualIgnoreOrder(t, res1.members[1], { x: 'doei' })
 
   await client.set({
     $id: id,
@@ -120,5 +120,5 @@ test('remove object from record', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(res2, { name: 'derp' })
+  deepEqualIgnoreOrder(t, res2, { name: 'derp' })
 })

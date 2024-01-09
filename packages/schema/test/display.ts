@@ -1,5 +1,5 @@
 import test from 'ava'
-import { BasedSchema, display } from '../src/index'
+import { BasedSchema, display } from '../src/index.js'
 
 const schema: BasedSchema = {
   types: {

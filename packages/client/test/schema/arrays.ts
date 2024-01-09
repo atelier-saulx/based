@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
+import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { startOrigin, SelvaServer } from '@based/db-server'
-import { BasedDbClient } from '../../src'
-import '../assertions'
-import { SchemaUpdateMode } from '../../src/types'
+import { BasedDbClient } from '../../src/index.js'
+import '../assertions/index.js'
+import { SchemaUpdateMode } from '../../src/types.js'
 import { BasedSchemaFieldArray } from '@based/schema'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -112,7 +112,7 @@ test('Change array field in strick mode should fail', async (t) => {
 test('Change array field in flexible mode with existing nodes should fail', async (t) => {
   const { client } = t.context
 
-  const id = await client.set({
+  await client.set({
     type: 'aType',
     level1array: ['one', 'one', 'three'],
   })

@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -325,7 +325,7 @@ test('get - field with array', async (t) => {
     $all: true,
   })
 
-  t.deepEqualIgnoreOrder(all, {
+  deepEqualIgnoreOrder(t, all, {
     id,
     // dong: { dingdong: [] },
     type: 'lekkerType',
@@ -370,7 +370,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -400,7 +400,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -430,7 +430,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -460,7 +460,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [
@@ -506,7 +506,7 @@ test('get - field with array', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(objs, {
+  deepEqualIgnoreOrder(t, objs, {
     objRec: {
       abba: {
         objArray: [

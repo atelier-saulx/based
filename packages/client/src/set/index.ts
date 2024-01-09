@@ -11,17 +11,17 @@ import {
   ModifyOpSetType,
   SelvaModify_OpEdgeMetaCode,
   edgeMetaDef,
-} from '../protocol/encode/modify/types'
-import { arrayOpToModify } from './array'
-import { joinPath } from '../util'
-import { BasedDbClient } from '..'
-import genId from '../id'
+} from '../protocol/encode/modify/types.js'
+import { arrayOpToModify } from './array.js'
+import { joinPath } from '../util/index.js'
+import { BasedDbClient } from '../index.js'
+import genId from '../id/index.js'
 import { createRecord } from 'data-record'
 import {
   encodeDouble,
   encodeLongLong,
-} from '../protocol/encode/modify/primitiveTypes'
-import { resolveNodeId } from '../get/exec/cmd'
+} from '../protocol/encode/modify/primitiveTypes.js'
+import { resolveNodeId } from '../get/exec/cmd.js'
 
 const DB_TYPE_TO_MODIFY_TYPE = {
   string: ModifyArgType.SELVA_MODIFY_ARG_STRING,
@@ -64,6 +64,7 @@ export function toModifyArgs(props: {
   const strPath = joinPath(path)
 
   switch (fieldSchema.type) {
+    // @ts-expect-error fallthrough
     case 'reference':
       if (!value.$value && !value.$delete) {
         value = { $value: [value] }

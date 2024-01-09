@@ -1,7 +1,7 @@
-import { FilterAST, Fork, Value, WithRequired } from './types'
-import { Filter, GeoFilter } from './types'
-import isFork from './isFork'
-import reduceAnd from './reduceAnd'
+import { FilterAST, Fork, Value, WithRequired } from './types.js'
+import { Filter, GeoFilter } from './types.js'
+import isFork from './isFork.js'
+import reduceAnd from './reduceAnd.js'
 
 const addToOption = (
   prevList: (FilterAST | Fork)[],

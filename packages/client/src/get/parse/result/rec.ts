@@ -1,6 +1,6 @@
 import { BasedSchemaField } from '@based/schema'
-import { ExecContext, Field, GetCommand } from '../../types'
-import { parseFieldResult } from './field'
+import { ExecContext, GetCommand } from '../../types.js'
+import { parseFieldResult } from './field.js'
 
 export function parseRecFields(
   ctx: ExecContext,

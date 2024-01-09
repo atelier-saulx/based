@@ -1,5 +1,5 @@
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -38,7 +38,7 @@ const test = basicTest({
 // TODO: $language with subscription is somehow off?
 test.skip('subscription to a reference', async (t) => {
   const client = t.context.client
-  const menuItem = await client.set({
+  await client.set({
     $id: 'ma1',
     $language: 'en',
     type: 'match',
@@ -96,19 +96,19 @@ test.skip('subscription to a reference', async (t) => {
         seats: true,
       },
     },
-    (v) => {
+    (v: any) => {
       switch (n++) {
         case 0:
-          t.deepEqualIgnoreOrder(v, { title: 'football match' })
+          deepEqualIgnoreOrder(t, v, { title: 'football match' })
           break
         case 1:
-          t.deepEqualIgnoreOrder(v, {
+          deepEqualIgnoreOrder(t, v, {
             title: 'football match',
             venue: { title: 'Ipurua Stadium', seats: [seat1] },
           })
           break
         case 2:
-          t.deepEqualIgnoreOrder(v, {
+          deepEqualIgnoreOrder(t, v, {
             title: 'football match',
             venue: { title: 'Ipurua Stadium', seats: [seat1, seat2] },
           })

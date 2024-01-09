@@ -2,12 +2,12 @@ import {
   BasedSchemaPartial,
   BasedSchemaFieldPartial,
   BasedSchemaTypePartial,
-} from './types'
+} from './types.js'
 
 // gaurd in the schema for refs in arrays
 
 export const validateType = (
-  fromSchema: BasedSchemaPartial,
+  _fromSchema: BasedSchemaPartial,
   typeName: string,
   type: BasedSchemaTypePartial
 ) => {
@@ -22,9 +22,9 @@ export const validateType = (
 }
 
 export const validateField = (
-  fromSchema: BasedSchemaPartial,
-  path: string[],
-  field: BasedSchemaFieldPartial
+  _fromSchema: BasedSchemaPartial,
+  _path: string[],
+  _field: BasedSchemaFieldPartial
 ) => {
   //
 }

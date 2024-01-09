@@ -7,12 +7,17 @@ type ServerDescriptor = {
   type: ServerType
 }
 
-import { ServerOptions } from '../types'
+import { ServerOptions } from '../types.js'
 import { EventEmitter } from 'events'
 import { spawn, ChildProcess } from 'child_process'
 import path from 'path'
 import { mkdirSync, existsSync } from 'fs'
 import node_modules from 'node_modules-path'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(
+  fileURLToPath(import.meta.url).replace('/dist/', '/')
+)
 
 export class SelvaServer extends EventEmitter {
   public pm: ChildProcess

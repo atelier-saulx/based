@@ -1,5 +1,10 @@
 const path = require('node:path')
 const fs = require('node:fs')
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(
+  fileURLToPath(import.meta.url).replace('/dist/', '/')
+)
 
 const version = process.argv[2]
 if (!version) {

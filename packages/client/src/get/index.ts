@@ -1,9 +1,9 @@
-import { Path } from './types'
+import { Path } from './types.js'
 import { setByPath } from '@saulx/utils'
 
-export * from './types'
-export * from './parse'
-export * from './exec'
+export * from './types.js'
+export * from './parse/index.js'
+export * from './exec/index.js'
 
 export function applyDefault(
   obj: any,

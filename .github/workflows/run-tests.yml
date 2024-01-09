@@ -23,11 +23,11 @@ jobs:
     strategy:
       matrix:
         tests:
-          - ["packages/client","test/*.ts"]
-          - ["packages/client", "test/schema/*.ts"]
-          - ["packages/client", "test/subs/*.ts"]
-          - ["packages/client", "test/indexing/*.ts"]
-          - ["packages/schema", "test/*.ts"]
+          - ["packages/client","dist/test/*.js"]
+          - ["packages/client", "dist/test/schema/*.js"]
+          - ["packages/client", "dist/test/indexing/*.js"]
+          - ["packages/schema", "dist/test/*.js"]
+          - ["packages/subs", "dist/test/*.js"]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js

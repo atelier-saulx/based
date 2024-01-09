@@ -7,9 +7,9 @@ import {
   COMMAND_TYPES,
   selva_proto_header_def,
   SELVA_PROTO_FRAME_SIZE_MAX,
-} from '../types'
-import { crc32 } from '../crc32c'
-import { COMMAND_ENCODERS } from './commands'
+} from '../types.js'
+import { crc32 } from '../crc32c.js'
+import { COMMAND_ENCODERS } from './commands.js'
 
 export function encode(cmd: Command, seqno: number, payload: any): Buffer[] {
   if (COMMAND_TYPES[cmd] === undefined) {

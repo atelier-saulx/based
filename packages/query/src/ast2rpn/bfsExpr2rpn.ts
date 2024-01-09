@@ -1,11 +1,11 @@
-import { TraverseByType, TraverseByTypeExpression } from './types'
+import { TraverseByType, TraverseByTypeExpression } from './types.js'
 
 const SUPPORTED_OPS = {
   maxRecordKeyLEQ: ([field, val]) => `"${val}" "lJ" "${field}" o`,
 }
 
 function op2rpn(
-  types: Record<string, { prefix?: string }>,
+  _types: Record<string, { prefix?: string }>,
   rule: { $fn?: string; $args?: any[] }
 ): string {
   if (!SUPPORTED_OPS[rule.$fn]) {

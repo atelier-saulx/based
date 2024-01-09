@@ -1,4 +1,4 @@
-import { BasedSchema } from '../types'
+import { BasedSchema } from '../types.js'
 
 export const isValidId = (schema: BasedSchema, id: any): boolean => {
   if (typeof id !== 'string') {

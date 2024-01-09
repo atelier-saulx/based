@@ -1,16 +1,16 @@
-import { ExecContext, GetCommand } from '../types'
-import { BasedDbClient } from '../..'
+import { ExecContext, GetCommand } from '../types.js'
+import { BasedDbClient } from '../../index.js'
 import { deepCopy, deepMergeArrays } from '@saulx/utils'
 
-export * from '../types'
-export * from '../parse'
+export * from '../types.js'
+export * from '../parse/index.js'
 
-import { parseGetOpts, parseGetResult } from '../parse'
-import { getCmd, resolveNodeId } from './cmd'
-import { hashCmd } from '../util'
+import { parseGetOpts, parseGetResult } from '../parse/index.js'
+import { getCmd, resolveNodeId } from './cmd.js'
+import { hashCmd } from '../util.js'
 import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { createRecord } from 'data-record'
-import { subscription_opts_def } from '../../protocol'
+import { subscription_opts_def } from '../../protocol/index.js'
 import { Path } from '@based/schema'
 
 export async function get(
@@ -62,7 +62,7 @@ export async function get(
   if (isSubscription) {
     ctx.subId = subId || hashObjectIgnoreKeyOrder(opts)
 
-    ctx.markerId = client.mapSubMarkerId(markerId)
+    ctx.markerId = client.mapSubMarkerId(markerId!) // TODO: handle undefined
     ctx.markers = []
     ctx.cleanup = cleanup
   }
@@ -78,7 +78,7 @@ export async function get(
         fields: { $any: [{ type: 'field', field: ['id'] }] },
         source: { alias: aliases[0] },
         target: { path: [] },
-        cmdId: ctx.subId,
+        cmdId: ctx.subId!, // TODO: handle undefined
       },
       aliases
     )
@@ -136,7 +136,7 @@ export async function execParallel(
 ): Promise<{ nestedObjs: any[]; pending?: GetCommand }> {
   const { markerId, subId, cleanup, refresh } = ctx
 
-  let pending: GetCommand
+  let pending: GetCommand | undefined
   let q = cmds
   const nestedIds: any[] = []
   const nestedObjs: any[] = []
@@ -176,7 +176,7 @@ export async function execParallel(
     )
 
     const ids =
-      results?.map((cmdResult, i) => {
+      results?.map((cmdResult, _i) => {
         if (!cmdResult) {
           return []
         }
@@ -197,11 +197,11 @@ export async function execParallel(
     const obj = parseGetResult({ ...ctx }, q, results)
     nestedObjs.push(obj)
 
-    q = q.reduce((all, cmd, j) => {
+    q = q.reduce((all: GetCommand[], cmd, j) => {
       const ids = nestedIds?.[i]?.[j]
 
       cmd.nestedCommands?.forEach((c) => {
-        const ns = ids.map((id: string, k: number) => {
+        const ns: GetCommand[] = ids.map((id: string, k: number) => {
           const n: GetCommand = deepCopy(c)
           const path = c.target.path
 

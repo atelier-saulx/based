@@ -1,6 +1,6 @@
-import { BasedDbClient } from '..'
-import { SchemaMutation } from '../types'
-import { getValueByPath, pathToQuery } from '../util'
+import { BasedDbClient } from '../index.js'
+import { SchemaMutation } from '../types.js'
+import { getValueByPath, pathToQuery } from '../util/index.js'
 
 const PAGE_AMOUNT = 3e3
 export const migrateNodes = async (

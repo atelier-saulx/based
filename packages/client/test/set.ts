@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin } from '@based/db-server'
 import getPort from 'get-port'
 
 test('set primitive fields', async (t) => {

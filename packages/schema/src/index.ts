@@ -1,9 +1,9 @@
-export * from './types'
+export * from './types.js'
 
-export * from './validateSchema'
+export * from './validateSchema.js'
 
-export * from './walker'
+export * from './walker/index.js'
 
-export * from './set'
+export * from './set/index.js'
 
-export * from './display'
+export * from './display/index.js'

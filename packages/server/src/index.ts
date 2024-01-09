@@ -2,8 +2,8 @@ import fs from 'fs'
 import { join } from 'path'
 import mkdirp from 'mkdirp'
 import chalk from 'chalk'
-import { Options, ServerOptions } from './types'
-import { SelvaServer, startServer } from './server'
+import { Options, ServerOptions } from './types.js'
+import { SelvaServer, startServer } from './server/index.js'
 
 export { SelvaServer }
 

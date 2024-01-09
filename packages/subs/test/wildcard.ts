@@ -1,5 +1,5 @@
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -131,7 +131,7 @@ test('sub find - list with wildcard', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       if (cnt === 0) {
         // console.dir({ v }, { depth: 6 })
         t.deepEqual(v, {
@@ -236,9 +236,9 @@ test('sub find - single with wildcard', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       if (cnt === 0) {
-        t.deepEqualIgnoreOrder(v, {
+        deepEqualIgnoreOrder(t, v, {
           id: 'ma1',
           name: 'match 1',
           record: {
@@ -246,7 +246,7 @@ test('sub find - single with wildcard', async (t) => {
           },
         })
       } else if (cnt === 1) {
-        t.deepEqualIgnoreOrder(v, {
+        deepEqualIgnoreOrder(t, v, {
           id: 'ma1',
           name: 'match 1',
           record: {

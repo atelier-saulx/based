@@ -1,27 +1,32 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
+import anyTest, { ExecutionContext, TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
 import { join as pathJoin } from 'path'
-import { startOrigin, startReplica } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import { startOrigin, startReplica } from '@based/db-server'
+import { SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
 import { wait } from '@saulx/utils'
-import { removeDump } from './assertions/utils'
+import { removeDump } from './assertions/utils.js'
 
-const test = anyTest as TestInterface<{
+type Context = {
   origin: SelvaServer
   replica: SelvaServer
   originClient: BasedDbClient
   replicaClient: BasedDbClient
   originPort: number
   replicaPort: number
-}>
+}
+const test = anyTest as TestFn<Context>
 
 const originDumpPath = pathJoin(process.cwd(), 'tmp', 'origin')
 const replicaDumpPath = pathJoin(process.cwd(), 'tmp', 'replica')
 
 function setupLogs(srv: SelvaServer, prefix: string) {
-  const addPrefix = (s: string) => s.split('\n').map((s: string, i, a) => i < a.length - 1 ? `${prefix}${s}` : s).join('\n')
+  const addPrefix = (s: string) =>
+    s
+      .split('\n')
+      .map((s: string, i, a) => (i < a.length - 1 ? `${prefix}${s}` : s))
+      .join('\n')
 
   if (srv.pm.stdout) {
     srv.pm.stdout.on('data', (data) => {
@@ -35,8 +40,8 @@ function setupLogs(srv: SelvaServer, prefix: string) {
   }
 }
 
-async function restartOrigin(t: Parameters<typeof test>[1], clean?: boolean) {
-  const port = t.context.originPort;
+async function restartOrigin(t: ExecutionContext<Context>, clean?: boolean) {
+  const port = t.context.originPort
 
   if (t.context.origin) {
     await t.context.origin.destroy()
@@ -59,8 +64,8 @@ async function restartOrigin(t: Parameters<typeof test>[1], clean?: boolean) {
   }
 }
 
-async function restartReplica(t: Parameters<typeof test>[1], clean?: boolean) {
-  const port = t.context.replicaPort;
+async function restartReplica(t: ExecutionContext<Context>, clean?: boolean) {
+  const port = t.context.replicaPort
 
   if (t.context.replica) {
     await t.context.replica.destroy()
@@ -81,11 +86,14 @@ async function restartReplica(t: Parameters<typeof test>[1], clean?: boolean) {
   // FIXME sometimes the client gets stuck after the server restarts, so we reconnect just in case
   if (t.context.replicaClient) {
     t.context.replicaClient.disconnect()
-    t.context.replicaClient.connect({port, host: '127.0.0.1' })
+    t.context.replicaClient.connect({ port, host: '127.0.0.1' })
   }
 }
 
-async function wait_for_replication_state(replicaClient: BasedDbClient, expectedState: 'NONE' | 'ORIGIN' | 'REPLICA_STALE' | 'REPLICA_ACTIVE') {
+async function wait_for_replication_state(
+  replicaClient: BasedDbClient,
+  expectedState: 'NONE' | 'ORIGIN' | 'REPLICA_STALE' | 'REPLICA_ACTIVE'
+) {
   let replicaState = null
 
   for (let retries = 0; retries < 5; retries++) {
@@ -178,7 +186,10 @@ test.serial('simple replication', async (t) => {
 
   t.deepEqual((await originClient.command('replicainfo'))[0][0], 'ORIGIN')
 
-  let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
+  let replicaState = await wait_for_replication_state(
+    replicaClient,
+    'REPLICA_ACTIVE'
+  )
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 
   const ding = await originClient.set({
@@ -234,32 +245,41 @@ test.serial('origin flush', async (t) => {
   t.deepEqual(await replicaClient.get({ $id: ding, id: true }), {})
 })
 
-test.serial.skip('origin load another sdb', async (t) => {
-  const { originClient, replicaClient } = t.context
+test.serial.skip('origin load another sdb', async (_t) => {
+  // const { originClient, replicaClient } = t.context
   // TODO
 })
 
 test.serial('replica restart', async (t) => {
-  const { originClient, replicaClient } = t.context
+  const { replicaClient } = t.context
 
   await restartReplica(t)
   // FIXME sometimes the client gets stuck here and this command is never executed
   // TODO We could also test the case where the restart is practically delayed by delaying this function call
-  await t.context.replicaClient.command('replicaof', [t.context.originPort, '127.0.0.1'])
+  await t.context.replicaClient.command('replicaof', [
+    t.context.originPort,
+    '127.0.0.1',
+  ])
   await t.context.originClient.command('replicawait', [])
 
-  let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
+  let replicaState = await wait_for_replication_state(
+    replicaClient,
+    'REPLICA_ACTIVE'
+  )
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 })
 
 test.serial('origin restart', async (t) => {
-  const { originClient, replicaClient } = t.context
+  const { replicaClient } = t.context
 
   await restartOrigin(t)
   // FIXME sometimes the client gets stuck here and this command is never executed
   await t.context.originClient.command('replicawait', [])
 
-  let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
+  let replicaState = await wait_for_replication_state(
+    replicaClient,
+    'REPLICA_ACTIVE'
+  )
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
 })
 
@@ -278,17 +298,20 @@ test.serial('origin restart with a new db', async (t) => {
   // FIXME sometimes the client gets stuck here and this command is never executed
   await t.context.originClient.command('replicawait', [])
 
-  let replicaState = await wait_for_replication_state(replicaClient, 'REPLICA_ACTIVE')
+  let replicaState = await wait_for_replication_state(
+    replicaClient,
+    'REPLICA_ACTIVE'
+  )
   t.deepEqual(replicaState, 'REPLICA_ACTIVE')
   t.deepEqual(await replicaClient.get({ $id: ding, id: true }), {})
 })
 
-test.serial.skip('replica mismatch', async (t) => {
-  const { originClient, replicaClient } = t.context
+test.serial.skip('replica mismatch', async (_t) => {
+  // const { originClient, replicaClient } = t.context
   // TODO Replica should load an SDB that's different from origin's state
 })
 
-test.serial.skip('full replication buffer', async (t) => {
-    // TODO Fill the replication buffer and verify that everything stabilizes eventually
-    // TODO This should be also tested with >1 replicas where one or more replicas are too slow to follow the origin
+test.serial.skip('full replication buffer', async (_t) => {
+  // TODO Fill the replication buffer and verify that everything stabilizes eventually
+  // TODO This should be also tested with >1 replicas where one or more replicas are too slow to follow the origin
 })

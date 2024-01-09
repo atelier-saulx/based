@@ -1,6 +1,6 @@
-import { Fork, FilterAST, Value, WithRequired } from './types'
-import isFork from './isFork'
-import convertNow from './convertNow'
+import { Fork, FilterAST, Value, WithRequired } from './types.js'
+import isFork from './isFork.js'
+import convertNow from './convertNow.js'
 
 const valueIsEqual = (a: Value, b: Value, strict: boolean): boolean => {
   if (a === b) {

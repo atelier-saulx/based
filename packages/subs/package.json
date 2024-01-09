@@ -2,38 +2,35 @@
   "name": "@based/db-subs",
   "version": "3.0.0-alpha.1",
   "license": "MIT",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
     "build": "npx tsc",
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
-    "test": "ava --color --node-arguments='--expose-gc' --timeout 3m --verbose"
+    "test": "FORCE_COLOR=1 ava --color --timeout 3m --verbose",
+    "test-ci": "FORCE_COLOR=1 ava --color --concurrency 1 --timeout 3m"
   },
   "files": [
-    "dist",
-    "!dist/**/*.js.map"
+    "dist/src",
+    "!dist/src/**/*.js.map"
   ],
   "sideEffects": false,
+  "type": "module",
   "ava": {
-    "files": [
-      "test/*.ts"
-    ],
     "concurrency": 1,
-    "extensions": [
-      "ts"
-    ],
-    "require": [
-      "ts-node/register"
+    "timeout": "2m",
+    "files": [
+      "./dist/test/*.js"
     ]
   },
   "dependencies": {
-    "@based/db-client": "*"
+    "@based/db-client": "2.0.0-alpha.23"
   },
   "devDependencies": {
-    "@based/db-server": "*",
+    "@based/db-server": "2.0.0-alpha.23",
     "get-port": "^5.1.1",
     "@types/node": "^17.0.23",
-    "ava": "3.15.0",
+    "ava": "5.3.1",
     "ts-node": "10.9.1",
     "typescript": "^5.1.6",
     "rimraf": "^3.0.2"

@@ -1,29 +1,29 @@
 import { BasedSchema, BasedSchemaPartial } from '@based/schema'
 
-import Emitter from './Emitter'
-import { addCommandToQueue, drainQueue } from './outgoing'
-import connect from './socket'
-import { Connection } from './socket/types'
+import Emitter from './Emitter.js'
+import { addCommandToQueue, drainQueue } from './outgoing.js'
+import connect from './socket/index.js'
+import { Connection } from './socket/types.js'
 import {
   CommandQueue,
   CommandResponseListeners,
   IncomingMessageBuffers,
   SchemaUpdateMode,
   SubscriptionHandlers,
-} from './types'
-import { incoming } from './incoming'
-import { Command } from './protocol/types'
-import { set } from './set'
-import { GetCommand, applyDefault, get } from './get'
-import genId from './id'
-import { DEFAULT_SCHEMA, updateSchema } from './schema'
-import { sub } from './sub'
+} from './types.js'
+import { incoming } from './incoming.js'
+import { Command } from './protocol/types.js'
+import { set } from './set/index.js'
+import { GetCommand, applyDefault, get } from './get/index.js'
+import genId from './id/index.js'
+import { DEFAULT_SCHEMA, updateSchema } from './schema/index.js'
+import { sub } from './sub/index.js'
 
-export * as protocol from './protocol'
+export * as protocol from './protocol/index.js'
 export * as dataRecord from 'data-record'
 export * as schema from '@based/schema'
 
-export * as get from './get'
+export * as get from './get/index.js'
 
 export type BasedDbClientOpts = { port: number; host: string }
 

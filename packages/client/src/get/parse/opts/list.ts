@@ -1,5 +1,5 @@
-import { GetAggregate, GetTraverse, GetTraverseIds } from '../../types'
-import { hashCmd } from '../../util'
+import { GetAggregate, GetTraverse, GetTraverseIds } from '../../types.js'
+import { hashCmd } from '../../util.js'
 
 export function parseList(
   type: 'aggregate' | 'traverse',

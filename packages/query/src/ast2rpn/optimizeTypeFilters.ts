@@ -1,5 +1,5 @@
-import { Fork } from './types'
-import { isFork } from './'
+import { Fork } from './types.js'
+import { isFork } from './index.js'
 
 export default function optimizeTypeFilters(f: Fork) {
   if (f.$and) {

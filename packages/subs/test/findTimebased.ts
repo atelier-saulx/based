@@ -1,5 +1,5 @@
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -144,7 +144,7 @@ test('subs layout', async (t) => {
         },
       },
     },
-    (r) => {
+    (_r: any) => {
       // console.info(r)
     }
   )
@@ -175,7 +175,7 @@ test('subs layout', async (t) => {
         },
       },
     },
-    (r) => {
+    (_r: any) => {
       // console.info(r)
     }
   )
@@ -402,7 +402,7 @@ test('subs layout', async (t) => {
         },
       },
     },
-    (r) => {
+    (r: any) => {
       result = r
       // console.info('-->', result)
     }
@@ -551,7 +551,7 @@ test('subs layout', async (t) => {
         },
       ],
     },
-    (r) => {
+    (r: any) => {
       otherResult1 = r
       // console.warn('match layout 1', r)
     }
@@ -700,7 +700,7 @@ test('subs layout', async (t) => {
         },
       ],
     },
-    (r) => {
+    (r: any) => {
       otherResult2 = r
       // console.warn('match layout 2', r)
     }
@@ -870,7 +870,7 @@ test('subs layout', async (t) => {
         },
       ],
     },
-    (r) => {
+    (r: any) => {
       otherResult3 = r
       // console.warn('sport layout', r)
     }
@@ -878,17 +878,17 @@ test('subs layout', async (t) => {
 
   await wait(1000)
   // console.warn('should be upcoming')
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     upcoming: [{ id: 'mau1' }, { id: 'mau2' }].concat(
       upcomingPublishedIds.slice(0, 8)
     ),
     live: [],
     past: pastPublishedIds.slice(0, 10),
   })
-  // t.deepEqualIgnoreOrder(otherResult1.components[0].children, [])
-  t.deepEqualIgnoreOrder(otherResult1.components[1].children.length, 10)
-  // t.deepEqualIgnoreOrder(otherResult2.components[0].children, [])
-  t.deepEqualIgnoreOrder(otherResult2.components[1].children.length, 10)
+  // deepEqualIgnoreOrder(t,otherResult1.components[0].children, [])
+  deepEqualIgnoreOrder(t, otherResult1.components[1].children.length, 10)
+  // deepEqualIgnoreOrder(t,otherResult2.components[0].children, [])
+  deepEqualIgnoreOrder(t, otherResult2.components[1].children.length, 10)
   const pick = ({ id, type, ancestors, general, meta }) => ({
     id,
     type,
@@ -896,7 +896,7 @@ test('subs layout', async (t) => {
     general,
     meta,
   })
-  t.deepEqualIgnoreOrder(pick(otherResult3), {
+  deepEqualIgnoreOrder(t, pick(otherResult3), {
     id: 'sp1',
     type: 'sport',
     ancestors: ['root'],
@@ -907,18 +907,18 @@ test('subs layout', async (t) => {
       title: 'sport one',
     },
   })
-  t.deepEqualIgnoreOrder(otherResult3.components[0].children.length, 100)
-  // t.deepEqualIgnoreOrder(otherResult3.components[1].children.length, 0)
+  deepEqualIgnoreOrder(t, otherResult3.components[0].children.length, 100)
+  // deepEqualIgnoreOrder(t,otherResult3.components[1].children.length, 0)
 
   await wait(3000)
 
   // console.warn('should be live')
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     upcoming: [{ id: 'mau2' }].concat(upcomingPublishedIds.slice(0, 9)),
     past: pastPublishedIds.slice(0, 10),
     live: [{ id: 'mau1' }],
   })
-  t.deepEqualIgnoreOrder(otherResult1.components[0].children, [
+  deepEqualIgnoreOrder(t, otherResult1.components[0].children, [
     {
       id: 'mau1',
       type: 'match',
@@ -931,8 +931,8 @@ test('subs layout', async (t) => {
       title: 'upcoming match 1',
     },
   ])
-  t.deepEqualIgnoreOrder(otherResult1.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(otherResult2.components[0].children, [
+  deepEqualIgnoreOrder(t, otherResult1.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, otherResult2.components[0].children, [
     {
       id: 'mau1',
       type: 'match',
@@ -945,8 +945,8 @@ test('subs layout', async (t) => {
       title: 'upcoming match 1',
     },
   ])
-  t.deepEqualIgnoreOrder(otherResult2.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(pick(otherResult3), {
+  deepEqualIgnoreOrder(t, otherResult2.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, pick(otherResult3), {
     id: 'sp1',
     type: 'sport',
     ancestors: ['root'],
@@ -957,19 +957,19 @@ test('subs layout', async (t) => {
       title: 'sport one',
     },
   })
-  t.deepEqualIgnoreOrder(otherResult3.components[0].children.length, 100)
-  t.deepEqualIgnoreOrder(otherResult3.components[1].children.length, 1)
-  t.deepEqualIgnoreOrder(otherResult3.components[1].children[0].id, 'mau1')
+  deepEqualIgnoreOrder(t, otherResult3.components[0].children.length, 100)
+  deepEqualIgnoreOrder(t, otherResult3.components[1].children.length, 1)
+  deepEqualIgnoreOrder(t, otherResult3.components[1].children[0].id, 'mau1')
 
   await wait(3000)
 
   // console.warn('should be past')
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     upcoming: upcomingPublishedIds.slice(0, 10),
     past: [{ id: 'mau1' }].concat(pastPublishedIds.slice(0, 9)),
     live: [{ id: 'mau2' }],
   })
-  t.deepEqualIgnoreOrder(otherResult1.components[0].children, [
+  deepEqualIgnoreOrder(t, otherResult1.components[0].children, [
     {
       id: 'mau2',
       type: 'match',
@@ -982,8 +982,8 @@ test('subs layout', async (t) => {
       title: 'upcoming match 2',
     },
   ])
-  t.deepEqualIgnoreOrder(otherResult1.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(otherResult2.components[0].children, [
+  deepEqualIgnoreOrder(t, otherResult1.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, otherResult2.components[0].children, [
     {
       id: 'mau2',
       type: 'match',
@@ -996,8 +996,8 @@ test('subs layout', async (t) => {
       title: 'upcoming match 2',
     },
   ])
-  t.deepEqualIgnoreOrder(otherResult2.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(pick(otherResult3), {
+  deepEqualIgnoreOrder(t, otherResult2.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, pick(otherResult3), {
     id: 'sp1',
     type: 'sport',
     ancestors: ['root'],
@@ -1008,20 +1008,20 @@ test('subs layout', async (t) => {
       title: 'sport one',
     },
   })
-  t.deepEqualIgnoreOrder(otherResult3.components[0].children.length, 100)
-  t.deepEqualIgnoreOrder(otherResult3.components[1].children.length, 1)
-  t.deepEqualIgnoreOrder(otherResult3.components[1].children[0].id, 'mau2')
+  deepEqualIgnoreOrder(t, otherResult3.components[0].children.length, 100)
+  deepEqualIgnoreOrder(t, otherResult3.components[1].children.length, 1)
+  deepEqualIgnoreOrder(t, otherResult3.components[1].children[0].id, 'mau2')
 
   await wait(2000)
 
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     upcoming: upcomingPublishedIds.slice(0, 10),
     live: [],
     past: [{ id: 'mau1' }, { id: 'mau2' }].concat(pastPublishedIds.slice(0, 8)),
   })
-  t.deepEqualIgnoreOrder(otherResult1.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(otherResult2.components[1].children.length, 10)
-  t.deepEqualIgnoreOrder(pick(otherResult3), {
+  deepEqualIgnoreOrder(t, otherResult1.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, otherResult2.components[1].children.length, 10)
+  deepEqualIgnoreOrder(t, pick(otherResult3), {
     id: 'sp1',
     type: 'sport',
     ancestors: ['root'],
@@ -1032,6 +1032,6 @@ test('subs layout', async (t) => {
       title: 'sport one',
     },
   })
-  t.deepEqualIgnoreOrder(otherResult3.components[0].children.length, 100)
-  t.deepEqualIgnoreOrder(otherResult3.components[1].children.length, 0)
+  deepEqualIgnoreOrder(t, otherResult3.components[0].children.length, 100)
+  deepEqualIgnoreOrder(t, otherResult3.components[1].children.length, 0)
 })

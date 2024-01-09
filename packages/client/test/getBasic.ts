@@ -1,12 +1,12 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -662,7 +662,7 @@ test('get - references', async (t) => {
     refs: true,
   })
 
-  t.deepEqualIgnoreOrder(result, {
+  deepEqualIgnoreOrder(t, result, {
     refs: [id1, id11],
   })
 
@@ -731,7 +731,8 @@ test('get - hierarchy', async (t) => {
     { depth: 6 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'viflapx',
       descendants: true,
@@ -847,13 +848,14 @@ test('get - $inherit', async (t) => {
     title: { $inherit: { $type: ['custom', 'club'] } },
   })
   t.log({ r })
-  t.deepEqualIgnoreOrder(r, {
+  deepEqualIgnoreOrder(t, r, {
     title: {
       en: 'snurf',
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'cuC',
       $language: 'nl',
@@ -864,7 +866,8 @@ test('get - $inherit', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'cuC',
       image: {
@@ -877,7 +880,7 @@ test('get - $inherit', async (t) => {
   )
 
   // FIXME: is the order really specific here?
-  // t.deepEqualIgnoreOrder(
+  // deepEqualIgnoreOrder(t,
   //   await client.get({
   //     $id: 'cuD',
   //     image: {

@@ -1,6 +1,6 @@
 import test from 'ava'
-import { BasedDbClient } from '../dist'
-import { startOrigin } from '../../server/dist'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin } from '@based/db-server'
 import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 

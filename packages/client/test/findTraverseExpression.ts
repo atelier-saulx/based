@@ -1,13 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient, protocol } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
-import { find } from './assertions/utils'
-import { SelvaTraversal } from '../src/protocol'
+import { find } from './assertions/utils.js'
+import { SelvaTraversal } from '../src/protocol/index.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -365,7 +365,8 @@ test('find - traverse expression with records', async (t) => {
   //  },
   //})
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $language: 'en',
       $id: 'sc1',
@@ -382,7 +383,8 @@ test('find - traverse expression with records', async (t) => {
   )
 
   // TODO recursive expressions not supported yet so we can't select the version nicely
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: book,
       $language: 'en',
@@ -607,7 +609,7 @@ test('find - versioned hierarchies', async (t) => {
     console.log('RES', i, JSON.stringify(res, null, 2))
   }
 
-  t.deepEqualIgnoreOrder(responses, [
+  deepEqualIgnoreOrder(t, responses, [
     {
       cooking: {
         things: [

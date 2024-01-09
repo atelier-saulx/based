@@ -1,5 +1,5 @@
 import test from 'ava'
-import { validateSchema } from '../src/index'
+import { validateSchema } from '../src/index.js'
 
 test.serial('throw on invalid schema', async (t) => {
   const prefixError = t.throws(() => {
@@ -17,7 +17,7 @@ test.serial('throw on invalid schema', async (t) => {
           fields: {
             yuzi: {
               type: 'object',
-              customValidator: async (value, path, target) => {
+              customValidator: async (_value, _path, _target) => {
                 return true
               },
               properties: {

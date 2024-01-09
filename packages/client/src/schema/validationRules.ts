@@ -10,7 +10,7 @@ import {
   basedSchemaFieldTypes,
   languages,
 } from '@based/schema'
-import { BasedDbClient } from '..'
+import { BasedDbClient } from '../index.js'
 import {
   ChangeFieldSchemaMutation,
   ChangeLanguagesMutation,
@@ -21,9 +21,9 @@ import {
   RemoveFieldSchemaMutation,
   SchemaMutation,
   SchemaUpdateMode,
-} from '../types'
-import { getSchemaTypeFieldByPath } from '../util'
-import { DEFAULT_FIELDS } from './mergeSchema'
+} from '../types.js'
+import { getSchemaTypeFieldByPath } from '../util/index.js'
+import { DEFAULT_FIELDS } from './mergeSchema.js'
 import { deepCopy, deepEqual, deepMerge } from '@saulx/utils'
 
 type ExistingNodes = {

@@ -1,13 +1,13 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient, protocol } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient, protocol } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
-import { find } from './assertions/utils'
-import { SelvaTraversal } from '../src/protocol'
+import { find } from './assertions/utils.js'
+import { SelvaTraversal } from '../src/protocol/index.js'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -712,7 +712,8 @@ test('traverse by expression', async (t) => {
     d: { $add: ['ma2'] },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     (
       await find({
         client,

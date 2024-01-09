@@ -1,5 +1,5 @@
-import { basicTest } from '../assertions'
-import { subscribe } from '@based/db-subs'
+import { basicTest, deepEqualIgnoreOrder } from './assertions/index.js'
+import { subscribe } from '../src/index.js'
 import { wait } from '@saulx/utils'
 
 const test = basicTest({
@@ -52,7 +52,7 @@ test('subscribe and delete', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt++
     }
   )
@@ -117,7 +117,7 @@ test('subscribe and delete a descendant', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       switch (i++) {
         case 0:
           t.deepEqual(v, { items: [{ id: 'th2' }] })
@@ -176,7 +176,7 @@ test('subscribe and delete over a reference field', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       switch (i++) {
         case 0:
           t.deepEqual(v, { items: [{ id: 'th2' }] })
@@ -242,10 +242,10 @@ test('subscribe and delete over references field', async (t) => {
         },
       },
     },
-    (v) => {
+    (v: any) => {
       switch (i++) {
         case 0:
-          t.deepEqualIgnoreOrder(v, { items: [{ id: 'th2' }, { id: 'th3' }] })
+          deepEqualIgnoreOrder(t, v, { items: [{ id: 'th2' }, { id: 'th3' }] })
           break
         case 1:
           t.deepEqual(v, { items: [{ id: 'th3' }] })
@@ -281,23 +281,20 @@ test('subscribe and delete one item', async (t) => {
         },
       },
     },
-    (d) => {
-      // console.log('dddd', d)
+    (_d: any) => {
       cnt++ // 1
     }
   )
 
   await wait(1000)
 
-  let subs = await Promise.all(
+  await Promise.all(
     (
       await client.command('subscriptions.list', [])
     )[0].map(([subId]) => {
       return client.command('subscriptions.debug', ['' + Number(subId)])
     })
   )
-  // console.dir({ subs }, { depth: 8 })
-  // console.dir({ cache: client.CMD_SUB_MARKER_MAPPING_CACHE })
 
   const id = (await client.set({
     type: 'thing',
@@ -335,7 +332,7 @@ test('subscribe and delete one item: root', async (t) => {
         },
       },
     },
-    (d) => {
+    (_d: any) => {
       cnt++ // 1
     }
   )

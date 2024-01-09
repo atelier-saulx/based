@@ -1,11 +1,11 @@
-import type { Language } from './languages'
-import { languages as allLanguages } from './languages'
-import type { PartialDeep, SetOptional } from 'type-fest'
-import { ParseError } from './error'
-import { ArgsClass, Path } from './walker'
-import { StringFormat } from './display/string'
-import { NumberFormat } from './display/number'
-import { DateFormat } from './display/timestamp'
+import type { Language } from './languages.js'
+import { languages as allLanguages } from './languages.js'
+import type { PartialDeep } from 'type-fest'
+import { ParseError } from './error.js'
+import { ArgsClass, Path } from './walker/index.js'
+import { StringFormat } from './display/string.js'
+import { NumberFormat } from './display/number.js'
+import { DateFormat } from './display/timestamp.js'
 
 // Schema type
 // inspiration from https://json-schema.org/understanding-json-schema/index.html

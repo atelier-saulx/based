@@ -1,7 +1,7 @@
-import { BasedSchemaField } from '../types'
-import timestampDisplay from './timestamp'
-import numberDisplay from './number'
-import stringDisplay from './string'
+import { BasedSchemaField } from '../types.js'
+import timestampDisplay from './timestamp.js'
+import numberDisplay from './number.js'
+import stringDisplay from './string.js'
 
 export const display = (
   value: string | number | void,

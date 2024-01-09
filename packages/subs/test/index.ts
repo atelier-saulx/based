@@ -1,7 +1,7 @@
 import test from 'ava'
 import { BasedDbClient } from '@based/db-client'
 import { startOrigin } from '@based/db-server'
-import { subscribe } from '../src'
+import { subscribe } from '../src/index.js'
 import getPort from 'get-port'
 
 test('subs', async (t) => {
@@ -11,7 +11,7 @@ test('subs', async (t) => {
     port,
     host: '127.0.0.1',
   }
-  const server = startOrigin(dbOpts)
+  /* const server = */ startOrigin(dbOpts)
   const client = new BasedDbClient()
 
   client.connect(dbOpts)
@@ -58,7 +58,7 @@ test('subs', async (t) => {
           $list: true,
         },
       },
-      async (res) => {
+      async (_res: any) => {
         count++
         if (count === 10) {
           resolve()

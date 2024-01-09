@@ -1,6 +1,6 @@
-import { basicTest } from '../assertions'
+import { basicTest } from './assertions/index.js'
 import { deepCopy, wait } from '@saulx/utils'
-import { subscribe } from '@based/db-subs'
+import { subscribe } from '../src/index.js'
 
 const test = basicTest({
   language: 'en',
@@ -119,7 +119,7 @@ test('get - correct order', async (t) => {
 
   const results: any[] = []
 
-  subscribe(client, obs, (v) => {
+  subscribe(client, obs, (v: any) => {
     // console.dir({ v }, { depth: 6 })
     results.push(deepCopy(v))
   })

@@ -1,7 +1,7 @@
 import { ExecutionContext } from 'ava'
 import { deepCopy } from '@saulx/utils'
 import { SelvaServer, startOrigin } from '@based/db-server'
-import { BasedDbClient } from '../../src/index.js'
+import { BasedDbClient } from '@based/db-client'
 import anyTest, { TestFn } from 'ava'
 import getPort from 'get-port'
 import { BasedSchemaPartial } from '@based/schema'

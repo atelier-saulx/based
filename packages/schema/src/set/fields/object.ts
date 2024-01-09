@@ -1,5 +1,5 @@
-import { ParseError } from '../../error'
-import { FieldParser } from '../../walker'
+import { ParseError } from '../../error.js'
+import { FieldParser } from '../../walker/index.js'
 
 export const object: FieldParser<'object'> = async (args) => {
   if (typeof args.value !== 'object' || args.value === null) {

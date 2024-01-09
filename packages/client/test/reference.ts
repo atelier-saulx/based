@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -148,7 +148,7 @@ test('simple singular reference', async (t) => {
     },
     parents: ['clA'],
   })
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -162,7 +162,8 @@ test('simple singular reference', async (t) => {
     specialMatch,
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -175,7 +176,8 @@ test('simple singular reference', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -212,7 +214,7 @@ test('singular reference inherit', async (t) => {
     },
   })
 
-  const club2 = await client.set({
+  await client.set({
     $id: 'clB',
     title: {
       en: 'yesh club 2',
@@ -220,7 +222,7 @@ test('singular reference inherit', async (t) => {
     specialMatch: 'maB',
   })
 
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -244,7 +246,8 @@ test('singular reference inherit', async (t) => {
   //   }
   // })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -274,7 +277,7 @@ test('singular reference $field', async (t) => {
     },
   })
 
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -295,7 +298,8 @@ test('singular reference $field', async (t) => {
   //   }
   // })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -331,7 +335,7 @@ test('list of simple singular reference', async (t) => {
   //   specialMatch: match1
   // })
 
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -345,7 +349,8 @@ test('list of simple singular reference', async (t) => {
     specialMatch: match1,
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -358,7 +363,8 @@ test('list of simple singular reference', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -557,7 +563,7 @@ test('list of simple singular reference', async (t) => {
 
 test('simple singular bidirectional reference', async (t) => {
   const { client } = t.context
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -582,7 +588,7 @@ test('simple singular bidirectional reference', async (t) => {
     },
   })
 
-  const club2 = await client.set({
+  await client.set({
     $id: 'clB',
     title: {
       en: 'yesh club 2',
@@ -592,7 +598,8 @@ test('simple singular bidirectional reference', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       $language: 'en',
@@ -627,7 +634,8 @@ test('simple singular bidirectional reference', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       $language: 'en',
@@ -648,7 +656,8 @@ test('simple singular bidirectional reference', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -687,7 +696,8 @@ test('simple singular bidirectional reference', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -720,7 +730,8 @@ test('simple singular bidirectional reference', async (t) => {
     bidirClub: { $delete: true },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -743,7 +754,8 @@ test('simple singular bidirectional reference', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -774,7 +786,8 @@ test('simple singular bidirectional reference', async (t) => {
     },
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -793,7 +806,8 @@ test('simple singular bidirectional reference', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clB',
       $language: 'en',
@@ -830,7 +844,7 @@ test('list of simple singular reference with $field usage', async (t) => {
   //   specialMatch: match1
   // })
 
-  const club1 = await client.set({
+  await client.set({
     $id: 'clA',
     title: {
       en: 'yesh club',
@@ -973,7 +987,8 @@ test('simple singular reference metadata', async (t) => {
     ],
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -996,7 +1011,8 @@ test('simple singular reference metadata', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'clA',
       $language: 'en',
@@ -1030,7 +1046,8 @@ test('simple singular reference metadata', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'maA',
       parents: {

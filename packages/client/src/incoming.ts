@@ -1,4 +1,4 @@
-import { BasedDbClient } from '.'
+import { BasedDbClient } from './index.js'
 import {
   SELVA_PROTO_HDR_FFIRST,
   SELVA_PROTO_HDR_FLAST,
@@ -6,7 +6,7 @@ import {
   SELVA_PROTO_HDR_STREAM,
   decodeMessage,
   findFrame,
-} from './protocol'
+} from './protocol/index.js'
 
 const IGNORED_FIRST_BYTES = 2 * 8
 

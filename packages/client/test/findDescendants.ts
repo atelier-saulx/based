@@ -1,12 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -317,7 +316,7 @@ test('find - descendants 1', async (t) => {
     })
 
     t.deepEqual(
-      videosSorted.map((v) => v.value),
+      videosSorted.map((v: any) => v.value),
       [99, 98, 97, 96, 95]
     )
 
@@ -342,11 +341,11 @@ test('find - descendants 1', async (t) => {
 
     console.log(
       'hello nice',
-      nextVideosSorted.map((v) => v.value)
+      nextVideosSorted.map((v: any) => v.value)
     )
 
     t.deepEqual(
-      nextVideosSorted.map((v) => v.value),
+      nextVideosSorted.map((v: any) => v.value),
       [94, 93, 92, 91, 90]
     )
 

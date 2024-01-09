@@ -1,12 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
 import { wait } from '@saulx/utils'
-import './assertions'
+import './assertions/index.js'
 import getPort from 'get-port'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -301,7 +300,7 @@ test('createdAt not set if nothing changed', async (t) => {
 test('automatic child creation and timestamps', async (t) => {
   const { client } = t.context
   const now = Date.now()
-  const parent = await client.set({
+  await client.set({
     $id: 'viParent',
     title: {
       nl: 'nl',

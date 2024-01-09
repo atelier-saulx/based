@@ -1,11 +1,11 @@
-import anyTest, { TestInterface } from 'ava'
-import { BasedDbClient } from '../src'
-import { startOrigin } from '../../server/dist'
-import { SelvaServer } from '../../server/dist/server'
-import './assertions'
+import anyTest, { TestFn } from 'ava'
+import { BasedDbClient } from '../src/index.js'
+import { startOrigin, SelvaServer } from '@based/db-server'
+import './assertions/index.js'
 import getPort from 'get-port'
+import { deepEqualIgnoreOrder } from './assertions/index.js'
 
-const test = anyTest as TestInterface<{
+const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
@@ -106,7 +106,8 @@ test('simple aggregate', async (t) => {
     name: 'match 999',
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -131,7 +132,8 @@ test('simple aggregate', async (t) => {
     { id: 'root', matchCount: 4 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -156,7 +158,8 @@ test('simple aggregate', async (t) => {
     { id: 'root', valueSum: sum }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -250,7 +253,8 @@ test('simple aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -270,7 +274,8 @@ test('simple aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -304,7 +309,8 @@ test('simple aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -329,7 +335,8 @@ test('simple aggregate', async (t) => {
     { id: 'root', value: 10 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -354,7 +361,8 @@ test('simple aggregate', async (t) => {
     { id: 'root', value: 13 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -378,7 +386,8 @@ test('simple aggregate', async (t) => {
     }),
     { id: 'root', value: 4 }
   )
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -446,7 +455,8 @@ test('simple aggregate with reference fields', async (t) => {
     )
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'le1',
       id: true,
@@ -501,7 +511,8 @@ test('sorted aggregate', async (t) => {
     name: 'match 999',
   })
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -531,7 +542,8 @@ test('sorted aggregate', async (t) => {
     { id: 'root', matchCount: 4 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -561,7 +573,8 @@ test('sorted aggregate', async (t) => {
     { id: 'root', valueSum: 46 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -613,7 +626,8 @@ test('sorted aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -638,7 +652,8 @@ test('sorted aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -677,7 +692,8 @@ test('sorted aggregate', async (t) => {
     }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
@@ -707,7 +723,8 @@ test('sorted aggregate', async (t) => {
     { id: 'root', value: 10 }
   )
 
-  t.deepEqualIgnoreOrder(
+  deepEqualIgnoreOrder(
+    t,
     await client.get({
       $id: 'root',
       id: true,
