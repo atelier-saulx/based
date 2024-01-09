@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021-2022 SAULX
+ * Copyright (c) 2021-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -35,24 +35,24 @@ size_t SelvaFindIndex_IcbCard(const struct SelvaFindIndexControlBlock *icb);
  */
 int SelvaFindIndex_Auto(
         struct SelvaHierarchy *hierarchy,
-        enum SelvaTraversal dir, struct selva_string *dir_expression_str,
+        enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
         enum SelvaResultOrder order,
         struct selva_string *order_field,
         struct selva_string *filter,
         struct SelvaFindIndexControlBlock **icb_out)
-    __attribute__((access(read_only, 3), access(write_only, 8)));
+    __attribute__((access(read_only, 3, 4), access(read_only, 5), access(write_only, 9)));
 
 int SelvaFindIndex_AutoMulti(
         struct SelvaHierarchy *hierarchy,
-        enum SelvaTraversal dir, struct selva_string *dir_expression,
+        enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
         enum SelvaResultOrder order,
         struct selva_string *order_field,
         size_t nr_index_hints,
         struct selva_string *index_hints[static restrict nr_index_hints],
         struct SelvaFindIndexControlBlock *ind_icb_out[static restrict nr_index_hints])
-    __attribute__((access(read_only, 3), access(read_only, 4), access(read_only, 8, 7), access(write_only, 9, 7)));
+    __attribute__((access(read_only, 3, 4), access(read_only, 5), access(read_only, 9, 8), access(write_only, 10, 8)));
 
 /**
  * Check whether an ICB is created as an ordered.

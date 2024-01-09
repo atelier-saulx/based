@@ -791,7 +791,7 @@ static void SelvaHierarchy_AggregateCommand(struct selva_server_response_out *re
             /*
              * Select the best index res set.
              */
-            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, dir_expr, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
+            ind_select = SelvaFindIndex_AutoMulti(hierarchy, query_opts.dir, query_opts.dir_opt_str, query_opts.dir_opt_len, nodeId, query_opts.order, order_by_field, nr_index_hints, index_hints, ind_icb);
 
             /*
              * If the index is already ordered then we don't need to sort the

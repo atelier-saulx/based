@@ -26,7 +26,12 @@ struct index_order {
  */
 struct icb_descriptor {
     enum SelvaTraversal dir; /*!< Indexing traversal direction. */
-    struct selva_string *dir_expression; /*!< Indexing traversal expression. (optional) */
+    /**
+     * Traversal dir option.
+     * - dir_expression
+     * - field
+     */
+    struct selva_string *dir_opt;
     struct selva_string *filter; /*!< Indexing filter. */
     struct index_order sort; /*!< Sort order of the index. */
 };

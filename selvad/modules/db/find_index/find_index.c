@@ -43,7 +43,8 @@
     ((enum SelvaTraversal) \
     SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS | \
     SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS | \
-    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION)
+    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION | \
+    SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD)
 
 static float lpf_a; /*!< Popularity count average dampening coefficient. */
 
@@ -269,7 +270,7 @@ static void update_index(
 static int start_index(
         struct SelvaHierarchy *hierarchy,
         struct SelvaFindIndexControlBlock *icb) {
-    const unsigned short marker_flags =
+    const enum SelvaSubscriptionsMarkerFlags marker_flags =
         SELVA_SUBSCRIPTION_FLAG_CH_HIERARCHY |
         SELVA_SUBSCRIPTION_FLAG_CH_FIELD |
         SELVA_SUBSCRIPTION_FLAG_REFRESH;
@@ -277,8 +278,16 @@ static int start_index(
     const char *dir_expression = NULL;
     int err;
 
-    if (icb->traversal.dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-        dir_expression = selva_string_to_str(icb->traversal.dir_expression, NULL);
+    switch (icb->traversal.dir) {
+    case SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION:
+        dir_expression = selva_string_to_str(icb->traversal.dir_opt, NULL);
+        break;
+    case SELVA_HIERARCHY_TRAVERSAL_FIELD:
+        dir_field = selva_string_to_str(icb->traversal.dir_opt, NULL);
+        break;
+    default:
+        /* NOP */
+        break;
     }
 
     err = SelvaSubscriptions_AddCallbackMarker(
@@ -388,8 +397,8 @@ __attribute__((nonnull (1, 2))) static int destroy_icb(
         ida_free(hierarchy->dyn_index.ida, (ida_t)icb->marker_id);
     }
 
-    if (icb->traversal.dir_expression) {
-        selva_string_free(icb->traversal.dir_expression);
+    if (icb->traversal.dir_opt) {
+        selva_string_free(icb->traversal.dir_opt);
     }
 
     if (icb->traversal.filter) {
@@ -697,8 +706,8 @@ static struct SelvaFindIndexControlBlock *upsert_icb(
 
         /* Note that dir_field is not supported for indexing. */
         icb->traversal = *desc;
-        if (icb->traversal.dir_expression) {
-            finalizer_del(fin, icb->traversal.dir_expression);
+        if (icb->traversal.dir_opt) {
+            finalizer_del(fin, icb->traversal.dir_opt);
         }
         finalizer_del(fin, icb->traversal.filter);
 
@@ -821,7 +830,7 @@ void SelvaFindIndex_Deinit(struct SelvaHierarchy *hierarchy) {
 
 int SelvaFindIndex_Auto(
         struct SelvaHierarchy *hierarchy,
-        enum SelvaTraversal dir, struct selva_string *dir_expression,
+        enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
         enum SelvaResultOrder order,
         struct selva_string *order_field,
@@ -841,6 +850,7 @@ int SelvaFindIndex_Auto(
     }
 
     __auto_finalizer struct finalizer fin;
+    struct selva_string *dir_opt = NULL;
     struct SelvaFindIndexControlBlock *icb;
 
     finalizer_init(&fin);
@@ -848,9 +858,9 @@ int SelvaFindIndex_Auto(
     /*
      * Copy the strings.
      */
-    if (dir_expression) {
-        dir_expression = selva_string_dup(dir_expression, 0);
-        selva_string_auto_finalize(&fin, dir_expression);
+    if (dir_opt_str) {
+        dir_opt = selva_string_create(dir_opt_str, dir_opt_len, 0);
+        selva_string_auto_finalize(&fin, dir_opt);
     }
     if (order_field) {
         order_field = selva_string_dup(order_field, 0);
@@ -861,7 +871,7 @@ int SelvaFindIndex_Auto(
 
     struct icb_descriptor icb_desc = {
         .dir = dir,
-        .dir_expression = dir_expression,
+        .dir_opt = dir_opt,
         .filter = filter,
         .sort = {
             .order = order,
@@ -881,7 +891,7 @@ int SelvaFindIndex_Auto(
 
 int SelvaFindIndex_AutoMulti(
         struct SelvaHierarchy *hierarchy,
-        enum SelvaTraversal dir, struct selva_string *dir_expression,
+        enum SelvaTraversal dir, const char *dir_opt_str, size_t dir_opt_len,
         const Selva_NodeId node_id,
         enum SelvaResultOrder order,
         struct selva_string *order_field,
@@ -901,7 +911,7 @@ int SelvaFindIndex_AutoMulti(
 #if DISABLE_ORDERED_INDICES
         order = SELVA_RESULT_ORDER_NONE
 #endif
-        err = SelvaFindIndex_Auto(hierarchy, dir, dir_expression, node_id, order, order_field, index_hints[i], &icb);
+        err = SelvaFindIndex_Auto(hierarchy, dir, dir_opt_str, dir_opt_len, node_id, order, order_field, index_hints[i], &icb);
         ind_icb_out[i] = icb;
         if (!err) {
             if (icb &&
@@ -1140,7 +1150,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     SelvaHierarchy *hierarchy = main_hierarchy;
     __auto_finalizer struct finalizer fin;
     enum SelvaTraversal dir;
-    struct selva_string *ref_field;
+    struct selva_string *dir_opt;
     enum SelvaResultOrder order_ord;
     struct selva_string *order_field;
     Selva_NodeId node_id;
@@ -1156,7 +1166,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
 
     argc = selva_proto_scanf(&fin, buf, len, "%d, %p, %d, %p, %" SELVA_SCA_NODE_ID ", %p",
                              &dir,
-                             &ref_field,
+                             &dir_opt,
                              &order_ord,
                              &order_field,
                              node_id,
@@ -1170,12 +1180,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
         return;
     }
 
-    struct selva_string *dir_expression;
-    if (dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-        dir_expression = ref_field;
-    } else if ((dir & ALLOWED_DIRS) != 0) {
-        dir_expression = NULL;
-    } else {
+    if ((dir & ALLOWED_DIRS) == 0) {
         selva_send_errorf(resp, SELVA_ENOTSUP, "Traversal direction");
         return;
     }
@@ -1185,7 +1190,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
      * This is not strictly necessary but it will save us from at least the most
      * obvious surprises with invalid expressions.
      */
-    TO_STR(filter);
+    TO_STR(filter, dir_opt);
     struct rpn_expression *expr = rpn_compile(filter_str);
     rpn_destroy_expression(expr);
     if (!expr) {
@@ -1199,7 +1204,7 @@ static void SelvaFindIndex_NewCommand(struct selva_server_response_out *resp, co
     struct SelvaFindIndexControlBlock *icb = NULL;
     err = SelvaFindIndex_Auto(
             hierarchy,
-            dir, dir_expression, node_id,
+            dir, dir_opt_str, dir_opt_len, node_id,
             order_ord, order_ord != SELVA_RESULT_ORDER_NONE ? order_field : NULL,
             filter, &icb);
     if ((err && err != SELVA_ENOENT) || !icb) {

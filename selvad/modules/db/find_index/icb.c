@@ -21,12 +21,8 @@ size_t SelvaFindIndexICB_CalcNameLen(const Selva_NodeId node_id, const struct ic
 
     n = Selva_NodeIdLen(node_id) + base64_out_len(filter_len, 0) + 3;
 
-    if (desc->dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-        /*
-         * Currently only expressions are supported in addition to fixed
-         * field name traversals.
-         */
-        n += base64_out_len(selva_string_get_len(desc->dir_expression), 0) + 1;
+    if (desc->dir_opt) {
+        n += base64_out_len(selva_string_get_len(desc->dir_opt), 0) + 1;
     }
 
     if (desc->sort.order != SELVA_RESULT_ORDER_NONE) {
@@ -50,12 +46,12 @@ void SelvaFindIndexICB_BuildName(char *buf, const Selva_NodeId node_id, const st
     *s++ = 'A' + (char)__builtin_ffs(desc->dir);
 
     if (desc->dir == SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION) {
-        size_t dir_expression_len;
-        const char *dir_expression_str = selva_string_to_str(desc->dir_expression, &dir_expression_len);
+        size_t dir_opt_len;
+        const char *dir_opt_str = selva_string_to_str(desc->dir_opt, &dir_opt_len);
 
-        if (dir_expression_len > 0) {
+        if (dir_opt_len > 0) {
             *s++ = '.';
-            s += base64_encode_s(s, dir_expression_str, dir_expression_len, 0);
+            s += base64_encode_s(s, dir_opt_str, dir_opt_len, 0);
         }
     }
 
