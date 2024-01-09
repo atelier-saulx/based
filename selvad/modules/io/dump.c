@@ -16,7 +16,6 @@
 #include "sha3iuf/sha3.h"
 #include "util/ctime.h"
 #include "util/finalizer.h"
-#include "util/sdb_name.h"
 #include "util/selva_rusage.h"
 #include "util/selva_string.h"
 #include "util/sigstr.h"
@@ -29,6 +28,7 @@
 #include "selva_db_types.h"
 #include "selva_proto.h"
 #include "selva_server.h"
+#include "sdb_name.h"
 #include "replication/replication.h"
 #include "dump.h"
 

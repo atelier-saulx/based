@@ -1,4 +1,4 @@
-# Copyright (c) 2022-2023 SAULX
+# Copyright (c) 2022-2024 SAULX
 # SPDX-License-Identifier: MIT
 include ../../common.mk
 
@@ -28,7 +28,6 @@ OBJ := \
 	mempool.o \
 	poptop.o \
 	queue_r.o \
-	sdb_name.o \
 	selva_error.o \
 	selva_proto.o \
 	selva_proto_buf.o \

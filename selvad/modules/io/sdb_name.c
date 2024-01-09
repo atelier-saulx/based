@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
-#include "util/sdb_name.h"
+#include "sdb_name.h"
 
 int sdb_name(char * restrict buf, size_t buf_size, const char * restrict prefix, uint64_t id)
 {

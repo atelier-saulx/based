@@ -13,6 +13,7 @@ OBJ := \
 	   replication/replica/replication.o \
 	   replication/replication.o \
 	   sdb.o \
+	   sdb_name.o \
 	   sdb_purge.o \
 	   version.o
 DEP := $(OBJ:%.o=%.d)
