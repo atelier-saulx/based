@@ -119,7 +119,7 @@
 
 /**
  * Purge old SDB dumps.
- * module: db
+ * module: io
  * cmd: purge
  */
 #define CMD_ID_PURGE 17
