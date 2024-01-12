@@ -10,6 +10,9 @@ const version = process.argv[2]
 if (!version) {
   throw new Error('no version argument')
 }
+if (Array.from(version)[0] === 'v') {
+  version = version.slice(1, version.length)
+}
 const pkg = JSON.parse(
   fs.readFileSync(path.join(__dirname, '..', 'package.json'), 'utf8')
 )
