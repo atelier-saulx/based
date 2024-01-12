@@ -6,7 +6,7 @@
 
 #include "_evl_export.h"
 
-#define EVENT_LOOP_MAX_TIMERS 512
+#define EVENT_LOOP_MAX_TIMERS 26214
 #define EVENT_LOOP_MAX_FDS 100
 #define EVENT_LOOP_MAX_EVENTS 64
 #define EVENT_LOOP_MAX_ASYNC 1000 /*!< Maximum number of async function call contexts. */
