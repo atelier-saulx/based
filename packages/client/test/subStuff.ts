@@ -5,8 +5,7 @@ import { wait } from '@saulx/utils'
 import getPort from 'get-port'
 import { deserialize } from 'data-record'
 
-// FIXME: failing on main
-test.failing('descendants sub', async (t) => {
+test('descendants sub', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -213,7 +212,8 @@ test.failing('descendants sub', async (t) => {
   if (sub.pending) {
     await client.refreshMarker(12276536598524)
   }
-  let find = await sub.fetch()
+  await sub.fetch()
+  let find = await sub.getValue()
 
   console.dir({ find }, { depth: 8 })
 
@@ -304,7 +304,8 @@ test.failing('descendants sub', async (t) => {
   if (sub.pending) {
     await client.refreshMarker(12276536598524)
   }
-  find = await sub.fetch()
+  await sub.fetch()
+  find = await sub.getValue()
 
   console.dir({ find }, { depth: 8 })
 
@@ -374,8 +375,7 @@ test.failing('descendants sub', async (t) => {
   await server.destroy()
 })
 
-// FIXME: failing on main
-test.failing('node sub', async (t) => {
+test('node sub', async (t) => {
   const port = await getPort()
   const server = await startOrigin({
     port,
@@ -503,7 +503,8 @@ test.failing('node sub', async (t) => {
   if (sub.pending) {
     await client.refreshMarker(12747838989715)
   }
-  let find = await sub.fetch()
+  await sub.fetch()
+  let find = await sub.getValue()
 
   console.dir({ find }, { depth: 8 })
 
@@ -545,7 +546,8 @@ test.failing('node sub', async (t) => {
   if (sub.pending) {
     await client.refreshMarker(12747838989715)
   }
-  find = await sub.fetch()
+  await sub.fetch()
+  find = await sub.getValue()
 
   console.dir({ find }, { depth: 8 })
 
