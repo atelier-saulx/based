@@ -1,5 +1,5 @@
-const path = require('node:path')
-const fs = require('node:fs')
+import path from 'node:path'
+import fs from 'node:fs'
 
 const version = process.argv[2]
 if (!version) {
