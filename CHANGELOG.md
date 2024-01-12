@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Change the subtree compression to use the zsdb format like it's used with dump files
 - Moved `sdb` and replication handling to the `io` module
+- Max number of fds/clients increased from 100 to 10000
+- Max number of streams per client increased from 2 to 3
 
 ### Removed
 
