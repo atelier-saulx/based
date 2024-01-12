@@ -1,5 +1,10 @@
 import path from 'node:path'
 import fs from 'node:fs'
+import { fileURLToPath } from 'node:url'
+
+const __dirname = path.dirname(
+  fileURLToPath(import.meta.url).replace('/dist/', '/')
+)
 
 let version = process.argv[2]
 if (!version) {
