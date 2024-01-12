@@ -25,6 +25,8 @@ export * as schema from '@based/schema'
 
 export * as get from './get/index.js'
 
+export { SchemaUpdateMode }
+
 export type BasedDbClientOpts = { port: number; host: string }
 
 /* TODO: very important
