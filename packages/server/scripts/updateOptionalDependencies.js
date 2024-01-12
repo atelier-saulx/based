@@ -1,7 +1,7 @@
 import path from 'node:path'
 import fs from 'node:fs'
 
-const version = process.argv[2]
+let version = process.argv[2]
 if (!version) {
   throw new Error('no version argument')
 }

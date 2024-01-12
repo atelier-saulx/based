@@ -6,7 +6,7 @@ const __dirname = path.dirname(
   fileURLToPath(import.meta.url).replace('/dist/', '/')
 )
 
-const version = process.argv[2]
+let version = process.argv[2]
 if (!version) {
   throw new Error('no version argument')
 }
