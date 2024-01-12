@@ -29,7 +29,7 @@
 #define ENV_PORT_NAME "SELVA_PORT"
 static int selva_port = 3000;
 static int server_backlog_size = 10;
-static int max_clients = 100;
+static int max_clients = EVENT_LOOP_MAX_FDS - 16; /* minus few because we need some fds for other purposes */
 static int so_reuse;
 static int server_sockfd;
 static int readonly_server;
@@ -674,6 +674,11 @@ __constructor static void init(void)
     message_buf_init(&message_handlers[SERVER_MESSAGE_HANDLER_BUF]);
 
 	if (config_resolve("server", server_cfg_map, num_elem(server_cfg_map))) {
+        exit(EXIT_FAILURE);
+    }
+
+    if (max_clients >= EVENT_LOOP_MAX_FDS - 3) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "max_clients can't be greater than EVENT_LOOP_MAX_FDS minus few fds");
         exit(EXIT_FAILURE);
     }
 

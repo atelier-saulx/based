@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -14,6 +14,7 @@
 #include "selva_log.h"
 #include "selva_proto.h"
 #include "selva_server.h"
+#include "../../tunables.h"
 #include "server.h"
 
 #define NR_CHANNELS (sizeof(pubsub_ch_mask_t) * CHAR_BIT)

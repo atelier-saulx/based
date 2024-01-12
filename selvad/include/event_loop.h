@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -7,7 +7,7 @@
 #include "_evl_export.h"
 
 #define EVENT_LOOP_MAX_TIMERS 26214
-#define EVENT_LOOP_MAX_FDS 100
+#define EVENT_LOOP_MAX_FDS 10000
 #define EVENT_LOOP_MAX_EVENTS 64
 #define EVENT_LOOP_MAX_ASYNC 1000 /*!< Maximum number of async function call contexts. */
 #define EVENT_LOOP_ASYNC_STACK_SIZE 1048576 /*!< Async call stack size in bytes. */

@@ -9,6 +9,7 @@
 #include "util/selva_string.h"
 #include "selva_error.h"
 #include "selva_proto.h"
+#include "../../tunables.h"
 #include "server.h"
 
 static ssize_t buf_recv_frame(struct conn_ctx *ctx __unused)

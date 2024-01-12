@@ -5,8 +5,6 @@
  */
 #pragma once
 
-#define MAX_STREAMS 2
-
 struct conn_ctx;
 struct selva_server_response_out;
 struct selva_string;
@@ -93,7 +91,7 @@ struct conn_ctx {
      */
     struct {
         _Atomic unsigned int free_map; /*!< A bit is unset if the corresponding stream_resp is in use. */
-        struct selva_server_response_out stream_resp[MAX_STREAMS];
+        struct selva_server_response_out stream_resp[SERVER_MAX_STREAMS];
     } streams;
 
     pubsub_ch_mask_t pubsub_ch_mask; /*!< Subscribed to the channels in this mask. */
