@@ -51,6 +51,9 @@ test.beforeEach(async (t) => {
       lekkerType: {
         prefix: 'vi',
         fields: {
+          anyField: {
+            type: 'any',
+          },
           strRec: {
             type: 'record',
             values: {
@@ -1485,6 +1488,93 @@ test('get - record with nested wildcard query', async (t) => {
               value: 13,
             },
           },
+        },
+      },
+    }
+  )
+})
+test.only('get - any type', async (t) => {
+  const { client } = t.context
+  await client.set({
+    $id: 'viA',
+    title: {
+      en: 'nice!',
+    },
+    anyField: {
+      hello: {
+        test: 1,
+        yes: 'no',
+        nest: {
+          a: 112,
+        },
+      },
+    },
+  })
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: true,
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          test: 1,
+          yes: 'no',
+          nest: {
+            a: 112,
+          },
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: {
+        hello: {
+          yes: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          yes: 'no',
+        },
+      },
+    }
+  )
+
+  t.deepEqual(
+    await client.get({
+      $id: 'viA',
+      $language: 'en',
+      id: true,
+      title: true,
+      anyField: {
+        hello: {
+          test: true,
+        },
+      },
+    }),
+    {
+      id: 'viA',
+      title: 'nice!',
+      anyField: {
+        hello: {
+          test: 1,
         },
       },
     }

@@ -63,6 +63,7 @@ export function toModifyArgs(props: {
   let { fieldSchema, path, value } = props
   const strPath = joinPath(path)
 
+  let opType: ModifyArgType
   switch (fieldSchema.type) {
     // @ts-expect-error fallthrough
     case 'reference':
@@ -122,8 +123,16 @@ export function toModifyArgs(props: {
         strPath,
         value.$delete === true ? { $delete: true } : [2],
       ]
+    case 'any':
+      opType = DB_TYPE_TO_MODIFY_TYPE[typeof value]
+      if (!opType) {
+        console.error('Unsupported field type', path, fieldSchema, value)
+        return []
+      }
+
+      return [opType, strPath, value]
     default:
-      let opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
+      opType = DB_TYPE_TO_MODIFY_TYPE[fieldSchema.type]
 
       if (value?.$increment) {
         opType = VALUE_TYPE_TO_INCREMENT_TYPE[opType]

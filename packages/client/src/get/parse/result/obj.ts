@@ -28,6 +28,8 @@ export function findFieldSchema(
     } else if (fieldSchema.type === 'array') {
       // @ts-ignore
       fieldSchema = fieldSchema.values
+    } else if (fieldSchema.type === 'any') {
+      return { type: 'any' }
     }
   }
 
