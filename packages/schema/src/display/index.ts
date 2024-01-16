@@ -8,19 +8,13 @@ export const display = (
   field: BasedSchemaField
 ): string | number | void => {
   if (field.type === 'timestamp' && typeof value === 'number') {
-    // @ts-ignore
     return timestampDisplay(value, field.display)
   }
-
   if (field.type === 'number' && typeof value === 'number') {
-    // @ts-ignore
     return numberDisplay(value, field.display)
   }
-
   if (field.type === 'string' && typeof value === 'string') {
-    // @ts-ignore
     return stringDisplay(value, field.display)
   }
-
   return value
 }
