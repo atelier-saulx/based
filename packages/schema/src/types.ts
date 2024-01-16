@@ -284,7 +284,6 @@ export type BasedSchemaFieldReference = {
   bidirectional?: {
     fromField: string
   }
-  sortable?: boolean
   allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
@@ -294,6 +293,7 @@ export type BasedSchemaFieldReferences = {
   bidirectional?: {
     fromField: string
   }
+  sortable?: boolean
   allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
