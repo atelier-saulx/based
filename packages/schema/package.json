@@ -1,6 +1,6 @@
 {
   "name": "@based/schema",
-  "version": "2.2.12",
+  "version": "2.2.13",
   "license": "MIT",
   "main": "dist/src/index.js",
   "files": [
