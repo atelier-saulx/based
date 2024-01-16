@@ -284,7 +284,7 @@ export type BasedSchemaFieldReference = {
   bidirectional?: {
     fromField: string
   }
-  // TODO: selva filters { $operator: 'includes', $value: 'image/', $field: 'mimeType' }
+  sortable?: boolean
   allowedTypes?: AllowedTypes
 } & BasedSchemaFieldShared
 
