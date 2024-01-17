@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _GNU_SOURCE
@@ -21,6 +21,7 @@
 #include "util/data-record.h"
 #include "util/finalizer.h"
 #include "util/ptag.h"
+#include "util/selva_lang.h"
 #include "util/selva_string.h"
 #include "util/svector.h"
 #include "selva_error.h"
@@ -31,7 +32,6 @@
 #include "hierarchy.h"
 #include "rpn.h"
 #include "db_config.h"
-#include "selva_lang.h"
 #include "selva_object.h"
 #include "selva_onload.h"
 #include "selva_set.h"

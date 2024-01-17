@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -9,8 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include "util/selva_lang.h"
 #include "selva_set.h"
-#include "selva_lang.h"
 #include "selva_object_type.h"
 
 /*
@@ -111,7 +111,7 @@ struct SelvaObjectAny {
     enum SelvaObjectType type; /*!< Type of the value. */
     enum SelvaObjectType subtype; /*!< Subtype of the value. Arrays use this. */
     SelvaObjectMeta_t user_meta; /*!< User defined metadata. */
-    char str_lang[LANG_MAX + 1]; /*!< Language of str if applicable. */
+    char str_lang[LANG_NAME_MAX + 1]; /*!< Language of str if applicable. */
     union {
         double d; /*!< SELVA_OBJECT_DOUBLE */
         long long ll; /*!< SELVA_OBJECT_LONGLONG and SELVA_OBJECT_HLL */

@@ -35,7 +35,7 @@
 
 /**
  * List supported languages.
- * module: db
+ * module: server
  * cmd: lslang
  */
 #define CMD_ID_LSLANG 4
