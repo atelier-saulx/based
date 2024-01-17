@@ -57,7 +57,6 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
     }
   },
   enum: async (args) => {
-    // args.stop()
     const enumValues = args.fieldSchema.enum
     for (let i = 0; i < enumValues.length; i++) {
       if (deepEqual(enumValues[i], args.value)) {
