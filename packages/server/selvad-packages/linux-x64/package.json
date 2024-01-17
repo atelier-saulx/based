@@ -1,6 +1,6 @@
 {
   "name": "@based/db-server-linux-x64",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "The Linux 64-bit binary for db-server.",
   "homepage": "https://github.com/atelier-saulx/based-db#readme",
   "license": "MIT",
