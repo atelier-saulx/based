@@ -12,6 +12,11 @@ const opts: Opts<BasedSetTarget> = {
   parsers: {
     keys: {
       $delete: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'json') {
+          return
+        }
+
         if (args.prev === args.root) {
           args.error(ParseError.cannotDeleteNodeFromModify)
           return
@@ -24,6 +29,11 @@ const opts: Opts<BasedSetTarget> = {
         }
       },
       $alias: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'json') {
+          return
+        }
+
         if (Array.isArray(args.value)) {
           for (const field of args.value) {
             if (typeof field !== 'string') {
@@ -38,6 +48,11 @@ const opts: Opts<BasedSetTarget> = {
         }
       },
       $merge: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'json') {
+          return
+        }
+
         if (typeof args.value !== 'boolean') {
           args.error(ParseError.incorrectFormat)
           return
@@ -50,12 +65,22 @@ const opts: Opts<BasedSetTarget> = {
         return
       },
       $id: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'json') {
+          return
+        }
+
         if (!isValidId(args.schema, args.value)) {
           args.error(ParseError.incorrectFormat)
           return
         }
       },
       $language: async (args) => {
+        const type = args.fieldSchema?.type
+        if (type === 'json') {
+          return
+        }
+
         if (
           !(args.schema.translations || [])
             .concat(args.schema.language)
@@ -67,7 +92,12 @@ const opts: Opts<BasedSetTarget> = {
       },
       $value: async (args) => {
         const type = args.fieldSchema?.type
-        if (type === 'text' || type === 'set' || type == 'references') {
+        if (
+          type === 'text' ||
+          type === 'set' ||
+          type == 'references' ||
+          type === 'json'
+        ) {
           return
         }
         args.prev.stop()
@@ -83,7 +113,12 @@ const opts: Opts<BasedSetTarget> = {
       },
       $default: async (args) => {
         const type = args.fieldSchema?.type
-        if (type === 'number' || type === 'integer' || type === 'text') {
+        if (
+          type === 'number' ||
+          type === 'integer' ||
+          type === 'text' ||
+          type === 'json'
+        ) {
           // default can exist with $incr and $decr
           return
         }
