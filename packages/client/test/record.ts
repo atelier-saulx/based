@@ -57,6 +57,7 @@ test.beforeEach(async (t) => {
       jsonTest: {
         prefix: 'js',
         fields: {
+          enabled: { type: 'boolean' },
           jsonRecord: {
             type: 'record',
             values: { type: 'json' },
@@ -132,7 +133,7 @@ test('remove object from record', async (t) => {
   deepEqualIgnoreOrder(t, res2, { name: 'derp' })
 })
 
-test.failing('json record should allow based-db reserved keys', async (t) => {
+test('json record should allow based-db reserved keys', async (t) => {
   const { client } = t.context
 
   let id: string
@@ -153,5 +154,22 @@ test.failing('json record should allow based-db reserved keys', async (t) => {
   if (id) {
     const result = await client.get({ $id: id, $all: true })
     t.is(result.jsonRecord.record2.$id, 'id_inside_json')
+  }
+})
+
+test('empty json records', async (t) => {
+  const { client } = t.context
+
+  let id: string
+  await t.notThrowsAsync(async () => {
+    id = await client.set({
+      type: 'jsonTest',
+      enabled: true,
+      jsonRecord: {},
+    })
+  })
+  if (id) {
+    //   const result = await client.get({ $id: id, $all: true })
+    //   t.is(result.jsonRecord.record2.$id, 'id_inside_json')
   }
 })

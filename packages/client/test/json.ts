@@ -48,26 +48,23 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-test.failing(
-  'json fields should allow based-db query reserved keys',
-  async (t) => {
-    const { client } = t.context
+test('json fields should allow based-db query reserved keys', async (t) => {
+  const { client } = t.context
 
-    let id: string
-    await t.notThrowsAsync(async () => {
-      id = await client.set({
-        type: 'aType',
-        json: {
-          fieldA: 'record2FieldA',
-          $id: '$id_inside_json',
-          $alias: '$alias_inside_json',
-        },
-      })
+  let id: string
+  await t.notThrowsAsync(async () => {
+    id = await client.set({
+      type: 'aType',
+      json: {
+        fieldA: 'record2FieldA',
+        $id: '$id_inside_json',
+        $alias: '$alias_inside_json',
+      },
     })
-    if (id) {
-      const result = await client.get({ $id: id, $all: true })
-      t.is(result.json.$id, '$id_inside_json')
-      t.is(result.json.$alias, '$alias_inside_json')
-    }
+  })
+  if (id) {
+    const result = await client.get({ $id: id, $all: true })
+    t.is(result.json.$id, '$id_inside_json')
+    t.is(result.json.$alias, '$alias_inside_json')
   }
-)
+})
