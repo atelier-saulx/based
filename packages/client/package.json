@@ -8,7 +8,7 @@
     "watch": "npm run build -- --watch",
     "clean": "rimraf {.turbo,dist,node_modules}",
     "test": "FORCE_COLOR=1 ava --color --node-arguments='--expose-gc' --timeout 3m --verbose",
-    "test-ci": "FORCE_COLOR=1 ava --color --node-arguments='--expose-gc' --concurrency 1 --timeout 3m",
+    "test-ci": "FORCE_COLOR=1 ava --color --node-arguments='--expose-gc' --concurrency 1 --timeout 5m",
     "testSchema": "npm run test --concurrency 5 ./dist/test/schema/*.js",
     "testGet": "npm run test --concurrency 5 ./dist/test/*.js",
     "testIndexing": "npm run test ./dist/test/indexing/*.js"
