@@ -1493,7 +1493,7 @@ test('get - record with nested wildcard query', async (t) => {
     }
   )
 })
-test.only('get - any type', async (t) => {
+test('get - any type', async (t) => {
   const { client } = t.context
   await client.set({
     $id: 'viA',
