@@ -4,6 +4,7 @@
  */
 #include <assert.h>
 #include <errno.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "jemalloc.h"
@@ -37,7 +38,7 @@ static struct selva_lang *find_slang(struct selva_langs *langs, const char *lang
 
 static int load_lang(struct selva_lang *lang)
 {
-    const char locale_name[40];
+    char locale_name[40];
     locale_t loc;
     int err;
 
