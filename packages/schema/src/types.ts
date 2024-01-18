@@ -326,6 +326,7 @@ export type BasedSchemaField =
     })
 
 export type BasedSchemaType = {
+  directory?: string // sets field that we want for navigation e.g. children
   fields: {
     [name: string]: BasedSchemaField
   }
