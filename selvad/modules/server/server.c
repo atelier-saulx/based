@@ -174,28 +174,28 @@ static void lscmd(struct selva_server_response_out *resp, const void *buf __unus
     selva_send_array_end(resp);
 }
 
-static void lslang_cb(void *ctx, const char *name, locale_t loc)
-{
-    struct selva_server_response_out *resp = (struct selva_server_response_out *)ctx;
-    const char *lang_ident;
-
-#ifdef __linux__
-    lang_ident = nl_langinfo_l(_NL_IDENTIFICATION_LANGUAGE, loc);
-#else
-    (void)loc;
-    lang_ident = "";
-#endif
-
-    selva_send_array(resp, 2);
-    selva_send_strf(resp, "%s", name);
-    selva_send_strf(resp, "%s", lang_ident);
-}
-
 static void lslang(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
 {
-    selva_send_array(resp, -1);
-    selva_lang_foreach(selva_langs, lslang_cb, resp);
-    selva_send_array_end(resp);
+    selva_send_array(resp, selva_langs->len);
+    for (size_t i = 0; i < selva_langs->len; i++) {
+        const struct selva_lang *lang = &selva_langs->langs[i];
+        const char *lang_ident;
+
+        if (lang->locale) {
+#ifdef __linux__
+            lang_ident = nl_langinfo_l(_NL_IDENTIFICATION_LANGUAGE, lang->locale);
+#else
+            lang_ident = "loaded";
+#endif
+        } else {
+            lang_ident = "not_loaded";
+        }
+
+        selva_send_array(resp, 3);
+        selva_send_strf(resp, "%s", lang->name);
+        selva_send_strf(resp, "%s", lang->loc_name);
+        selva_send_strf(resp, "%s", lang_ident);
+    }
 }
 
 static void lsmod(struct selva_server_response_out *resp, const void *buf __unused, size_t size __unused)
@@ -689,7 +689,7 @@ IMPORT() {
     evl_import_main(evl_get_next_module);
     evl_import_main(config_resolve);
     evl_import_main(config_list_get);
-    evl_import_selva_langs();
+    evl_import_main(selva_langs);
     evl_import_event_loop();
 }
 

@@ -9,8 +9,6 @@
 #include "selva_langs.h"
 #include "../tunables.h"
 
-struct selva_langs *selva_langs;
-
 #if (__APPLE__)
 #define FORALL_LANGS(apply) \
     apply(af, af_ZA) \
@@ -200,26 +198,34 @@ struct selva_langs *selva_langs;
     apply(en, en_GB)
 #endif
 
-static void load_lang(const char *lang, const char *locale_name) {
-    int err;
-
-    err = selva_lang_add(selva_langs, lang, locale_name);
-    if (err) {
-        SELVA_LOG(SELVA_LOGL_ERR, "Loading locale %s for lang %s failed. err: \"%s\"",
-                locale_name, lang,
-                selva_strerror(err));
-    }
-}
-
-#define LOAD_LANG(lang, loc_lang) \
-    load_lang(#lang, #loc_lang ".UTF-8");
-
 #define COUNT_LANGS(lang, loc_lang) \
     + 1
 
+#define LANG_ENTRY(lang, loc_lang) \
+    { \
+        .name = #lang, \
+        .loc_name = #loc_lang, \
+    },
+
+static void langs_log(const struct selva_lang *langs, int err);
+
+struct selva_langs selva_langs = {
+    .len = FORALL_LANGS(COUNT_LANGS),
+    .err_cb = langs_log,
+    .langs = {
+        FORALL_LANGS(LANG_ENTRY)
+    },
+};
+
+static void langs_log(const struct selva_lang *lang, int err)
+{
+    SELVA_LOG(SELVA_LOGL_ERR, "Loading locale %s for lang %s failed. err: \"%s\"",
+              lang->loc_name, lang->name,
+              selva_strerror(err));
+}
+
 int load_langs(void)
 {
-    selva_langs = selva_lang_create(FORALL_LANGS(COUNT_LANGS));
-    FORALL_LANGS(LOAD_LANG)
-    return selva_lang_set_fallback(selva_langs, FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
+    selva_langs_sort(&selva_langs);
+    return selva_lang_set_fallback(&selva_langs, FALLBACK_LANG, sizeof(FALLBACK_LANG) - 1);
 }

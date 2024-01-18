@@ -1,4 +1,4 @@
-# Copyright (c) 2022 SAULX
+# Copyright (c) 2022, 2024 SAULX
 # SPDX-License-Identifier: MIT
 
 SUPPORTED_LOCALES := \
