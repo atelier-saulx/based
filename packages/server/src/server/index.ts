@@ -99,7 +99,7 @@ function addSignalHandlers(server: SelvaServer): void {
   process.setMaxListeners(10e4)
 
   process.on('SIGINT', () => {
-    console.info('Got SIGINT, closing redis server')
+    console.info('Got SIGINT, closing selvad server')
     if (server.pm) {
       server.pm.kill('SIGINT')
     }
@@ -110,7 +110,7 @@ function addSignalHandlers(server: SelvaServer): void {
     }, 1e3 * 4).unref()
   })
   process.on('SIGTERM', () => {
-    console.info('Got SIGTERM, closing redis server')
+    console.info('Got SIGTERM, closing selvad server')
     if (server.pm) {
       server.pm.kill('SIGTERM')
     }
@@ -134,7 +134,7 @@ export const startServer = async (
   const server = new SelvaServer(type)
   await server.start(opts)
 
-  // add singnal handlers in selva itself to close redis
+  // add signal handlers in selva itself to close selvad
   console.log('ADDING SIGNAL HANDLERS')
   addSignalHandlers(server)
 

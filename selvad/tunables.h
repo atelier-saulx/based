@@ -12,6 +12,8 @@
  * Generic tunables.
  */
 
+#define FALLBACK_LANG "en"
+
 /**
  * Debug memory usage.
  * 0 or undefined = Nothing

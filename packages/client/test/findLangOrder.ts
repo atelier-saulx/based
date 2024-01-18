@@ -29,7 +29,7 @@ test.beforeEach(async (t) => {
 
   await t.context.client.updateSchema({
     language: 'cs',
-    translations: ['en', 'de', 'fi', 'pt'],
+    translations: ['en', 'de', 'fi', 'pt', 'gsw' ],
     types: {
       match: {
         prefix: 'ma',
@@ -56,9 +56,8 @@ test.afterEach.always(async (t) => {
   client.destroy()
 })
 
-// only runs on darwin?
-// test[process.platform === 'darwin' ? 'skip' : 'serial'](
-test.skip('$lang should change the order when relevant', async (t) => {
+test[process.platform === 'darwin' ? 'skip' : 'serial'](
+  '$lang should change the order when relevant', async (t) => {
   const { client } = t.context
   const children = await Promise.all(
     [
@@ -71,6 +70,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Öäpelin pallo',
           fi: 'Öäpelin pallo',
           pt: 'Öäpelin pallo',
+          gsw: 'Öäpelin pallo',
         },
       },
       {
@@ -82,6 +82,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Aopelin pallo',
           fi: 'Aopelin pallo',
           pt: 'Aopelin pallo',
+          gsw: 'Aopelin pallo',
         },
       },
       {
@@ -93,6 +94,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Oopelin pallo',
           fi: 'OOpelin pallo',
           pt: 'OOpelin pallo',
+          gsw: 'OOpelin pallo',
         },
       },
       {
@@ -104,6 +106,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'Ääpelin pallo',
           fi: 'Ääpelin pallo',
           pt: 'Ääpelin pallo',
+          gsw: 'Ääpelin pallo',
         },
       },
       {
@@ -115,6 +118,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'öäpelin pallo',
           fi: 'öäpelin pallo',
           pt: 'öäpelin pallo',
+          gsw: 'öäpelin pallo',
         },
       },
       {
@@ -126,6 +130,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'aopelin pallo',
           fi: 'aopelin pallo',
           pt: 'aopelin pallo',
+          gsw: 'aopelin pallo',
         },
       },
       {
@@ -137,6 +142,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'oopelin pallo',
           fi: 'oOpelin pallo',
           pt: 'oOpelin pallo',
+          gsw: 'oOpelin pallo',
         },
       },
       {
@@ -148,6 +154,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'ääpelin pallo',
           fi: 'ääpelin pallo',
           pt: 'ääpelin pallo',
+          gsw: 'ääpelin pallo',
         },
       },
       {
@@ -159,6 +166,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'hrnec pallo',
           fi: 'hrnec pallo',
           pt: 'hrnec pallo',
+          gsw: 'hrnec pallo',
         },
       },
       {
@@ -170,6 +178,7 @@ test.skip('$lang should change the order when relevant', async (t) => {
           en: 'chrt pallo',
           fi: 'chrt pallo',
           pt: 'chrt pallo',
+          gsw: 'chrt pallo',
         },
       },
     ].map((s) => client.set(s))

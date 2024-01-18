@@ -59,12 +59,6 @@ struct selva_glob_config {
      * [sec] Averaging period for indexing hint demand count. After this period the original value is reduced to 1/e * n.
      */
     int find_indexing_popularity_ave_period;
-
-    /**
-     * Redis used for publishing subscription changes.
-     */
-    const char *redis_addr;
-    int redis_port;
 };
 
 extern struct selva_glob_config selva_glob_config;

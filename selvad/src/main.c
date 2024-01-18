@@ -2,6 +2,7 @@
  * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
+#include <locale.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,6 +12,8 @@
 #include "selva_log.h"
 #include "event_loop.h"
 #include "module.h"
+#include "selva_langs.h"
+#include "../tunables.h"
 
 static const char *modules[] = {
     "mod_signal.so",
@@ -29,6 +32,21 @@ int main(void)
 {
     evl_module_init("main");
     evl_init();
+
+    /*
+     * This should probably always be en_GB or en_US to avoid any unforeseen
+     * consequences like ctype functions breaking or error messages changing.
+     * Although, if necessary, it could be possible to just change the LC_CTYPE
+     * or some other specific category.
+     */
+    if (!setlocale(LC_ALL, "en_GB.UTF-8")) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "Failed to set the process default locale");
+        exit(EXIT_FAILURE);
+    }
+    if (load_langs()) {
+        SELVA_LOG(SELVA_LOGL_CRIT, "selva_langs init failed");
+        exit(EXIT_FAILURE);
+    }
 
     /*
      * Safer umask to disallow creating executables or world readable dumps.

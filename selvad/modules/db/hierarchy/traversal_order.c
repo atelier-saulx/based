@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <math.h>
@@ -8,8 +8,10 @@
 #include "util/finalizer.h"
 #include "util/funmap.h"
 #include "util/ptag.h"
+#include "util/selva_lang.h"
 #include "util/selva_string.h"
 #include "selva_error.h"
+#include "selva_langs.h"
 #include "db_config.h"
 #include "selva_db.h"
 #include "field_lookup.h"
@@ -25,7 +27,7 @@ struct order_data {
     double d;
     const char *data;
     size_t data_len;
-    char data_lang[LANG_MAX];
+    char data_lang[LANG_NAME_MAX];
     enum TraversalOrderItemType type;
 };
 
@@ -130,7 +132,7 @@ static size_t calc_final_data_len(const char *data_lang, const char *data, size_
     locale_t locale = 0;
 
     if (data_len > 0) {
-        locale = SelvaLang_GetLocale(data_lang, strlen(data_lang));
+        locale = selva_lang_getlocale(selva_langs, data_lang, strlen(data_lang));
         final_data_len = strxfrm_l(NULL, data, 0, locale);
     }
 

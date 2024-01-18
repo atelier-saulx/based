@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved `sdb` and replication handling to the `io` module
 - Max number of fds/clients increased from 100 to 10000
 - Max number of streams per client increased from 2 to 3
+- Moved `selva_lang` functionality to `libutil` and slightly changed the output of `lslang`
 
 ### Removed
 
