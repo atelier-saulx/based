@@ -2225,8 +2225,9 @@ __attribute__((nonnull (5))) static int exec_edge_filter(
     }
 
     rpn_set_reg(edge_filter_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(edge_filter_ctx, hierarchy, node);
-    rpn_set_obj(edge_filter_ctx, edge_metadata);
+    edge_filter_ctx->data.hierarchy = hierarchy;
+    edge_filter_ctx->data.node = node;
+    edge_filter_ctx->data.obj = edge_metadata;
     rpn_err = rpn_bool(edge_filter_ctx, edge_filter, &res);
 
     return (!rpn_err && res) ? 1 : 0;
@@ -2323,8 +2324,9 @@ static int bfs_expression(
         SelvaSet_Init(&fields, SELVA_SET_TYPE_STRING);
 
         rpn_set_reg(rpn_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
         rpn_err = rpn_selvaset(rpn_ctx, rpn_expr, &fields);
         if (rpn_err) {
             SELVA_LOG(SELVA_LOGL_ERR, "RPN field selector expression failed for %.*s: %s",
@@ -2839,8 +2841,9 @@ int SelvaHierarchy_TraverseExpression(
     SelvaSet_Init(&fields, SELVA_SET_TYPE_STRING);
 
     rpn_set_reg(rpn_ctx, 0, head->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(rpn_ctx, hierarchy, head);
-    rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(head));
+    rpn_ctx->data.hierarchy = hierarchy;
+    rpn_ctx->data.node = head;
+    rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(head);
     rpn_err = rpn_selvaset(rpn_ctx, rpn_expr, &fields);
     if (rpn_err) {
         Trx_End(&hierarchy->trx_state, &trx_cur);

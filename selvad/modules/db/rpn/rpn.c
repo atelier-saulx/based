@@ -18,12 +18,14 @@
 #include "selva_log.h"
 #include "util/cstrings.h"
 #include "util/fast_parsei.h"
+#include "util/selva_lang.h"
 #include "util/selva_math.h"
 #include "util/selva_string.h"
 #include "util/timestamp.h"
 #include "selva_db.h"
 #include "hierarchy.h"
 #include "field_lookup.h"
+#include "selva_langs.h"
 #include "selva_object.h"
 #include "selva_set.h"
 #include "selva_set_ops.h"
@@ -150,6 +152,9 @@ struct rpn_ctx *rpn_init(int nr_reg) {
 
     ctx = selva_calloc(1, sizeof(struct rpn_ctx) + nr_reg * sizeof(struct rpn_operand *));
     ctx->nr_reg = nr_reg;
+#ifndef PU_TEST_BUILD
+    ctx->data.loc = selva_langs->fallback; /* We just assume that the fallback is always set, as it should be. */
+#endif
 
     return ctx;
 }
@@ -686,12 +691,12 @@ static enum rpn_error rpn_getfld(struct rpn_ctx *ctx, const struct rpn_operand *
     struct SelvaObjectAny any;
     int err;
 
-    if (ctx->node) {
+    if (ctx->data.node) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
 
-        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
-    } else if (ctx->obj) {
-        err = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_str, field_len, &any);
+    } else if (ctx->data.obj) {
+        err = SelvaObject_GetAnyStr(ctx->data.obj, field_str, field_len, &any);
     } else {
         return RPN_ERR_NPE;
     }
@@ -966,7 +971,7 @@ static enum rpn_error rpn_op_exists(struct rpn_ctx *ctx) {
     AUTO_OPERANDS(field);
     const char *field_str = OPERAND_GET_S(field);
     const size_t field_len = field->s_size;
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
     int res;
 
     /*
@@ -978,11 +983,11 @@ static enum rpn_error rpn_op_exists(struct rpn_ctx *ctx) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
         struct SelvaObjectAny any;
 
-        res = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_str, field_len, &any);
-    } else if (ctx->obj) {
+        res = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_str, field_len, &any);
+    } else if (ctx->data.obj) {
         struct SelvaObjectAny any;
 
-        res = SelvaObject_GetAnyStr(ctx->obj, field_str, field_len, &any);
+        res = SelvaObject_GetAnyStr(ctx->data.obj, field_str, field_len, &any);
     } else {
         res = SELVA_ENOENT;
     }
@@ -1043,12 +1048,12 @@ static int data_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, 
     struct SelvaObjectAny any;
     int err;
 
-    if (ctx->node) {
+    if (ctx->data.node) {
         const struct SelvaHierarchyTraversalMetadata *traversal_metadata = NULL;
 
-        err = field_lookup_data_field(NULL, traversal_metadata, ctx->node, field_name_str, field_name_len, &any);
-    } else if (ctx->obj) {
-        err = SelvaObject_GetAnyStr(ctx->obj, field_name_str, field_name_len, &any);
+        err = field_lookup_data_field(NULL, traversal_metadata, ctx->data.node, field_name_str, field_name_len, &any);
+    } else if (ctx->data.obj) {
+        err = SelvaObject_GetAnyStr(ctx->data.obj, field_name_str, field_name_len, &any);
     } else {
         err = SELVA_ENOENT;
     }
@@ -1063,7 +1068,7 @@ static int data_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, 
  *          2 = match.
  */
 static int set_like_field_has(struct rpn_ctx *ctx, const struct rpn_operand *field, const struct rpn_operand *v) {
-    if (ctx->node) {
+    if (ctx->data.node) {
         /*
          * The operand `s` is the name of a set-like field.
          */
@@ -1075,9 +1080,9 @@ static int set_like_field_has(struct rpn_ctx *ctx, const struct rpn_operand *fie
             const char *value_str = OPERAND_GET_S(v);
             const size_t value_len = v->s_size;
 
-            res = SelvaSet_field_has_string(ctx->hierarchy, ctx->node, field_name_str, field_name_len, value_str, value_len);
+            res = SelvaSet_field_has_string(ctx->data.hierarchy, ctx->data.node, field_name_str, field_name_len, value_str, value_len);
         } else { /* Assume number */
-            res = SelvaSet_field_has_double(ctx->hierarchy, ctx->node, field_name_str, field_name_len, v->d);
+            res = SelvaSet_field_has_double(ctx->data.hierarchy, ctx->data.node, field_name_str, field_name_len, v->d);
         }
 
         return !!res + 1;
@@ -1173,7 +1178,7 @@ static enum rpn_error rpn_op_ffirst(struct rpn_ctx *ctx) {
     struct SelvaSet *set_a;
     RESULT_OPERAND(result);
     struct SelvaSetElement *el;
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
 
     if (!node) {
         return RPN_ERR_ILLOPN;
@@ -1218,7 +1223,7 @@ static enum rpn_error rpn_op_aon(struct rpn_ctx *ctx) {
     AUTO_OPERANDS(a);
     struct SelvaSet *set_a;
     struct SelvaSetElement *el;
-    const struct SelvaHierarchyNode *node = ctx->node;
+    const struct SelvaHierarchyNode *node = ctx->data.node;
 
     if (!node) {
         return RPN_ERR_ILLOPN;
@@ -1267,19 +1272,19 @@ static enum rpn_error rpn_op_in(struct rpn_ctx *ctx) {
         const char *field_str = OPERAND_GET_S(b);
         const size_t field_len = b->s_size;
 
-        res = SelvaSet_seta_in_fieldb(set_a, ctx->hierarchy, ctx->node, field_str, field_len);
+        res = SelvaSet_seta_in_fieldb(set_a, ctx->data.hierarchy, ctx->data.node, field_str, field_len);
     } else if (!set_a && set_b) {
         const char *field_str = OPERAND_GET_S(a);
         const size_t field_len = a->s_size;
 
-        res = SelvaSet_fielda_in_setb(ctx->hierarchy, ctx->node, field_str, field_len, set_b);
+        res = SelvaSet_fielda_in_setb(ctx->data.hierarchy, ctx->data.node, field_str, field_len, set_b);
     } else if (!set_a && !set_b) {
         const char *field_a_str = OPERAND_GET_S(a);
         const size_t field_a_len = a->s_size;
         const char *field_b_str = OPERAND_GET_S(b);
         const size_t field_b_len = b->s_size;
 
-        res = SelvaSet_fielda_in_fieldb(ctx->hierarchy, ctx->node, field_a_str, field_a_len, field_b_str, field_b_len);
+        res = SelvaSet_fielda_in_fieldb(ctx->data.hierarchy, ctx->data.node, field_a_str, field_a_len, field_b_str, field_b_len);
     }
 
     return push_int_result(ctx, res);
@@ -1335,12 +1340,12 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
         return RPN_ERR_ILLOPN;
     }
 
-    if (!ctx->obj || !ctx->node) {
+    if (!ctx->data.obj || !ctx->data.node) {
         return RPN_ERR_NPE;
     }
 
     /* RFE Is it possible to know if this is a record? */
-    edges = SelvaHierarchy_GetNodeMetadataByPtr(ctx->node)->edge_fields.edges;
+    edges = SelvaHierarchy_GetNodeMetadataByPtr(ctx->data.node)->edge_fields.edges;
     if (!edges) {
         return push_empty_value(ctx);
     }
@@ -1419,6 +1424,33 @@ static enum rpn_error rpn_op_rec_filter(struct rpn_ctx *ctx) {
     }
 
     return push(ctx, res);
+}
+
+static enum rpn_error rpn_op_like(struct rpn_ctx *ctx) {
+    OPERAND(ctx, t); /* transformation */
+    OPERAND(ctx, a); /* string */
+    OPERAND(ctx, b); /* string */
+    AUTO_OPERANDS(a, b, t);
+
+#ifdef PU_TEST_BUILD
+    return push_int_result(ctx, 0);
+#else
+    const char *a_str = OPERAND_GET_S(a);
+    const size_t a_len = a->s_size;
+    const char *b_str = OPERAND_GET_S(b);
+    const size_t b_len = a->s_size;
+    const char *t_str = OPERAND_GET_S(t);
+    const size_t t_len = t->s_size;
+
+    /*
+     * This isn't strictly necessary but it allows the user to rewrite
+     * `ctx->data` in a more relaxed way.
+     * We also assume that at least the fallback is always set.
+     */
+    locale_t loc = ctx->data.loc ?: selva_langs->fallback;
+
+    return push_int_result(ctx, !selva_mbscmp(a_str, a_len, b_str, b_len, selva_wctrans(t_str, t_len, loc), loc));
+#endif
 }
 
 static enum rpn_error rpn_op_union(struct rpn_ctx *ctx) {
@@ -1514,7 +1546,7 @@ static rpn_fp funcs[] = {
     rpn_op_abo,     /* p spare */
     rpn_op_abo,     /* q spare */
     rpn_op_abo,     /* r spare */
-    rpn_op_abo,     /* s spare */
+    rpn_op_like,    /* s */
     rpn_op_abo,     /* t spare */
     rpn_op_abo,     /* u spare */
     rpn_op_abo,     /* v spare */

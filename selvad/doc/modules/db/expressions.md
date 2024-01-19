@@ -1,5 +1,5 @@
 <!--
-Copyright (c) 2022 SAULX
+Copyright (c) 2022-2024 SAULX
 
 SPDX-License-Identifier: MIT
 -->
@@ -222,8 +222,8 @@ Therefore, neither of these yields the expected result.
 | `n`      | `() => n`                  | Get the current value of `CLOCK_REALTIME` in ms. | `l => 1623253120970` |
 | `o`      | `(s, s, s) => Z`           | Filter by record edge field property names. | `"myprefix_" "am" "rec" o => {"myprefix_a","myprefix_b"}` |
 
-`j`, `k`, and `o` are only available if `rpn_set_hierarchy_node()` is called before
-executing an expression.
+`j`, `k`, and `o` are only available if `ctx->data.hierarchy` and
+`ctx->data.node` are set before executing an expression.
 
 `o` takes three operands, field name, selector + comparison operator and a
 string value. The selector and operand are concatenated as a string. Three

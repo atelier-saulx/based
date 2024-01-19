@@ -209,8 +209,9 @@ int Selva_SubscriptionFilterMatch(
 
         SelvaHierarchy_GetNodeId(node_id, node);
         rpn_set_reg(filter_ctx, 0, node_id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(filter_ctx, hierarchy, node);
-        rpn_set_obj(filter_ctx, SelvaHierarchy_GetNodeObject(node));
+        filter_ctx->data.hierarchy = hierarchy;
+        filter_ctx->data.node = node;
+        filter_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
         err = rpn_bool(filter_ctx, marker->filter_expression, &res);
         if (err) {
             SELVA_LOG(SELVA_LOGL_ERR, "Expression failed (node: \"%.*s\"): \"%s\"",
