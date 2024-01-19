@@ -45,8 +45,12 @@ void conn_init(int max_clients)
     }
 
     clients = selva_aligned_alloc(DCACHE_LINESIZE, CLIENTS_SIZE(max_clients));
-    /* Clean the memory mainly to make sure that it's all allocated. */
-    memset(clients, 0, CLIENTS_SIZE(max_clients));
+    /*
+     * Clean a a part of the memory to enforce actual allocation (avoid page fault).
+     * This will make first connections to the server faster but avoid
+     * overcommit in case the limit was exaggerated.
+     */
+    memset(clients, 0, CLIENTS_SIZE(max_clients >> 1));
 }
 
 struct conn_ctx *alloc_conn_ctx(void)
