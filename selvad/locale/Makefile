@@ -152,11 +152,9 @@ export I18NPATH = ./localedata
 
 all: $(LOCALE_RES)
 
-$(LOCALE_RES):
+$(LOCALE_RES): $(shell find localedata -type f)
 	@mkdir -p $(LOCPATH)
 	localedef -c --no-archive --no-hard-links -f UTF-8 -i $(subst .UTF-8,,$(notdir $@)) $@
 
 clean:
 	$(RM) -r cache
-
-#.PHONY: $(LOCALE_RES)
