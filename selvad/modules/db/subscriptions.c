@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define _POSIX_C_SOURCE 200809L
@@ -1086,7 +1086,7 @@ int SelvaSubscriptions_AddAliasMarker(
      */
     enum rpn_error rpn_err;
     if ((rpn_err = rpn_set_reg_string(filter_ctx, 1, alias_name)) ||
-        (rpn_err = rpn_set_reg(filter_ctx, 2, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD), 0))) {
+        (rpn_err = rpn_set_reg(filter_ctx, 2, SELVA_ALIASES_FIELD, sizeof(SELVA_ALIASES_FIELD) - 1, 0))) {
 
         SELVA_LOG(SELVA_LOGL_ERR,
                   "Fatal RPN error while adding an alias maker. sub_id: %" PRIsubId " alias: %s rpn_error: %d",
@@ -2146,9 +2146,9 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
             /*
              * Args needs to be duplicated so the strings don't get freed
              * when the command returns.
+             * TODO Can we just hold on those original strings?
              */
             str = selva_string_to_str(filter_args[i], &str_len);
-            str_len++;
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
 
@@ -2337,7 +2337,6 @@ static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_ou
              * when the command returns.
              */
             str = selva_string_to_str(filter_args[i], &str_len);
-            str_len++;
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
 
