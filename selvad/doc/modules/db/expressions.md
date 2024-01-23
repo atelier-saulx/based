@@ -221,6 +221,7 @@ Therefore, neither of these yields the expected result.
 | `m`      | `(s, s) => n`              | Substring includes test.                  | `"cd" "abcde" m`          |
 | `n`      | `() => n`                  | Get the current value of `CLOCK_REALTIME` in ms. | `l => 1623253120970` |
 | `o`      | `(s, s, s) => Z`           | Filter by record edge field property names. | `"myprefix_" "am" "rec" o => {"myprefix_a","myprefix_b"}` |
+| `s`      | `(s, s, s) => n`           | Similar/like string comparison.           | `"abc" "ABC" "toupper" s => 1` |
 
 `j`, `k`, and `o` are only available if `ctx->data.hierarchy` and
 `ctx->data.node` are set before executing an expression.

@@ -340,3 +340,76 @@ test[process.platform === 'darwin' ? 'skip' : 'serial'](
     }
   )
 })
+
+test('like op', async (t) => {
+  const { client } = t.context
+
+  await client.set({
+    $id: 'root',
+    children: [
+      {
+        type: 'team',
+        title: {
+          de: 'Öäpelin pallo',
+          en: 'Öäpelin pallo',
+          fi: 'Öäpelin pallo',
+        },
+      },
+      {
+        type: 'team',
+        title: {
+          de: 'Erdäpfel',
+          en: 'Potato',
+          fi: 'Peruna',
+        },
+      }
+    ]
+  })
+
+  t.deepEqual(
+    await client.get({
+      $language: 'fi',
+      $id: 'root',
+      teams: {
+        title: true,
+        $list: {
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $operator: '=',
+                $field: 'title',
+                $value: 'ÖÄPELIN PALLO',
+                $caseInsensitive: true,
+              }
+            ],
+          }
+        },
+      },
+    }),
+    { teams: [ { title: 'Öäpelin pallo' } ] }
+  )
+  t.deepEqual(
+    await client.get({
+      $language: 'de',
+      $id: 'root',
+      teams: {
+        title: true,
+        $list: {
+          $find: {
+            $traverse: 'descendants',
+            $filter: [
+              {
+                $operator: '!=',
+                $field: 'title',
+                $value: 'erdäpfel',
+                $caseInsensitive: true,
+              }
+            ],
+          }
+        },
+      },
+    }),
+    { teams: [ { title: 'Öäpelin pallo' } ] }
+  )
+})
