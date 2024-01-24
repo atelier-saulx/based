@@ -177,6 +177,7 @@ export type BasedSchemaStringShared = {
     | 'json'
     | 'markdown'
     | 'clike'
+    | 'basedId'
   display?: StringFormat
   multiline?: boolean
 }

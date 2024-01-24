@@ -84,6 +84,8 @@ const formatPatterns: Record<
   json: () => true,
   markdown: () => true,
   clike: () => true,
+  // Can add some more checks for this...
+  basedId: (value) => typeof value === 'string' && value.length < 16,
 }
 
 const validateString = (
