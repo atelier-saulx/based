@@ -4,7 +4,7 @@ import numberDisplay from './number.js'
 import stringDisplay from './string.js'
 
 export const display = (
-  value: string | number | void,
+  value: string | number | undefined,
   field: BasedSchemaField
 ): string | number | void => {
   if (field.type === 'timestamp' && typeof value === 'number') {
