@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a Message Queue (MQ) module and commands
 - Unicode 14.0.0 support
 
 ### Changed
