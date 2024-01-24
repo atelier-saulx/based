@@ -6,7 +6,7 @@ import stringDisplay from './string.js'
 export const display = (
   value: string | number | undefined,
   field: BasedSchemaField
-): string | number | void => {
+): string | number | undefined => {
   if (field.type === 'timestamp' && typeof value === 'number') {
     return timestampDisplay(value, field.display)
   }
