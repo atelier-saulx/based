@@ -563,3 +563,52 @@
  * cmd: pipe
  */
 #define CMD_ID_PIPE 83
+
+/**
+ * Create MQ.
+ * module: mq
+ * cmd: mq.create
+ */
+#define CMD_ID_MQ_CREATE 84
+
+/**
+ * Delete MQ.
+ * module: mq
+ * cmd: mq.delete
+ */
+#define CMD_ID_MQ_DELETE 85
+
+/**
+ * List MQs.
+ * module: mq
+ * cmd: mq.list
+ */
+#define CMD_ID_MQ_LIST 86
+
+/**
+ * MQ post.
+ * module: mq
+ * cmd: mq.post
+ */
+#define CMD_ID_MQ_POST 87
+
+/**
+ * MQ receive msg.
+ * module: mq
+ * cmd: mq.recv
+ */
+#define CMD_ID_MQ_RECV 88
+
+/**
+ * MQ ack msg.
+ * module: mq
+ * cmd: mq.ack
+ */
+#define CMD_ID_MQ_ACK 89
+
+/**
+ * MQ nack msg.
+ * module: mq
+ * cmd: mq.nack
+ */
+#define CMD_ID_MQ_NACK 90

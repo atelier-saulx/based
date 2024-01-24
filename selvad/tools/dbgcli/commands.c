@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #define __STDC_FORMAT_MACROS 1
@@ -17,6 +17,7 @@
 #include "selva_error.h"
 #include "selva_proto.h"
 #include "util/crc32c.h"
+#include "util/selva_rusage.h"
 #include "../../commands.h"
 #include "commands.h"
 
@@ -51,6 +52,8 @@ static int cmd_hierarchy_compress(const struct cmd *cmd, int sock, int seqno, in
 static int cmd_publish_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_subscribe_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_mq_create_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
+static int cmd_mq_recv_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 /*
  * Currently most commands encode the request arguments using strings and send
@@ -60,6 +63,7 @@ static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int arg
  */
 static int generic_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 static void generic_res(const struct cmd *cmd, const void *msg, size_t msg_size);
+static void rusage_res(const struct cmd *, const void *msg, size_t msg_size);
 static int skip_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[]);
 
 /**
@@ -91,6 +95,12 @@ static struct cmd commands[255] = {
         .cmd_name = "loglevel",
         .cmd_req = cmd_loglevel_req,
         .cmd_res = generic_res,
+    },
+    [CMD_ID_RUSAGE] = {
+        .cmd_id = CMD_ID_RUSAGE,
+        .cmd_name = "rusage",
+        .cmd_req = generic_req,
+        .cmd_res = rusage_res,
     },
     [CMD_ID_RESOLVE_NODEID] = {
         .cmd_id = CMD_ID_RESOLVE_NODEID,
@@ -138,6 +148,30 @@ static struct cmd commands[255] = {
         .cmd_id = CMD_ID_REPLICAOF,
         .cmd_name = "replicaof",
         .cmd_req = cmd_replicaof_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_MQ_CREATE] = {
+        .cmd_id = CMD_ID_MQ_CREATE,
+        .cmd_name = "mq.create",
+        .cmd_req = cmd_mq_create_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_MQ_RECV] = {
+        .cmd_id = CMD_ID_MQ_RECV,
+        .cmd_name = "mq.recv",
+        .cmd_req = cmd_mq_recv_req,
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_MQ_ACK] = {
+        .cmd_id = CMD_ID_MQ_ACK,
+        .cmd_name = "mq.ack",
+        .cmd_req = cmd_mq_create_req, /* reuse the same handler */
+        .cmd_res = generic_res,
+    },
+    [CMD_ID_MQ_NACK] = {
+        .cmd_id = CMD_ID_MQ_NACK,
+        .cmd_name = "mq.nack",
+        .cmd_req = cmd_mq_create_req, /* reuse the same handler */
         .cmd_res = generic_res,
     },
     [253] = {
@@ -268,9 +302,11 @@ void recv_message(int fd)
          * us responses to a single command.
          */
         if (resp_hdr.flags & SELVA_PROTO_HDR_STREAM) {
+#if 0
             if (resp_hdr.flags & SELVA_PROTO_HDR_FLAST) {
                 return;
             }
+#endif
 
             handle_response(&resp_hdr, msg_buf, i);
             i = 0;
@@ -714,6 +750,126 @@ static int cmd_replicaof_req(const struct cmd *cmd, int sock, int seqno, int arg
     return 0;
 }
 
+static int cmd_mq_create_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc < 2) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    const char *name_str = argv[1];
+    size_t name_len = strlen(name_str);
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_string name;
+    } __packed buf1 = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+        },
+        .name = {
+            .type = SELVA_PROTO_STRING,
+            .bsize = htole32(name_len),
+        },
+    };
+    struct {
+        struct selva_proto_longlong timeout;
+    } __packed buf2 = {
+        .timeout = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = argc >= 3 ? htole64(strtol(argv[2], NULL, 10)) : 0,
+        },
+    };
+
+
+    buf1.hdr.frame_bsize = htole16(
+            sizeof(buf1) + name_len +
+            (argc >= 3) * sizeof(buf2));
+
+    buf1.hdr.chk = crc32c(crc32c(0, &buf1, sizeof(buf1)), name_str, name_len);
+    if (argc >= 3) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf2, sizeof(buf2));
+    buf1.hdr.chk = htole32(buf1.hdr.chk);
+
+    if (send_message(sock, &buf1, sizeof(buf1), MSG_MORE) ||
+        send_message(sock, name_str, name_len, (argc >= 3) ? MSG_MORE : 0) ||
+        (argc >= 3 && send_message(sock, &buf2, sizeof(buf2), 0))) {
+        return -1;
+    }
+    return 0;
+}
+
+static int cmd_mq_recv_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
+{
+    if (argc < 2) {
+        fprintf(stderr, "Invalid arguments\n");
+        return -1;
+    }
+
+    const char *name_str = argv[1];
+    size_t name_len = strlen(name_str);
+    struct {
+        struct selva_proto_header hdr;
+        struct selva_proto_string name;
+    } __packed buf1 = {
+        .hdr = {
+            .cmd = cmd->cmd_id,
+            .flags = SELVA_PROTO_HDR_FFIRST | SELVA_PROTO_HDR_FLAST,
+            .seqno = htole32(seqno),
+        },
+        .name = {
+            .type = SELVA_PROTO_STRING,
+            .bsize = htole32(name_len),
+        },
+    };
+    struct {
+        struct selva_proto_longlong msg_min;
+    } __packed buf2 = {
+        .msg_min = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = argc >= 3 ? htole64(strtol(argv[2], NULL, 10)) : 0,
+        },
+    };
+    struct {
+        struct selva_proto_longlong msg_max;
+    } __packed buf3 = {
+        .msg_max = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = argc >= 4 ? htole64(strtol(argv[3], NULL, 10)) : 0,
+        },
+    };
+    struct {
+        struct selva_proto_longlong timeout;
+    } __packed buf4 = {
+        .timeout = {
+            .type = SELVA_PROTO_LONGLONG,
+            .v = argc >= 5 ? htole64(strtol(argv[4], NULL, 10)) : 0,
+        },
+    };
+
+
+    buf1.hdr.frame_bsize = htole16(
+            sizeof(buf1) + name_len +
+            (argc >= 3) * sizeof(buf2) +
+            (argc >= 4) * sizeof(buf3) +
+            (argc >= 5) * sizeof(buf4));
+
+    buf1.hdr.chk = crc32c(crc32c(0, &buf1, sizeof(buf1)), name_str, name_len);
+    if (argc >= 3) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf2, sizeof(buf2));
+    if (argc >= 4) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf3, sizeof(buf3));
+    if (argc >= 5) buf1.hdr.chk = crc32c(buf1.hdr.chk, &buf4, sizeof(buf4));
+    buf1.hdr.chk = htole32(buf1.hdr.chk);
+
+    if (send_message(sock, &buf1, sizeof(buf1), MSG_MORE) ||
+        send_message(sock, name_str, name_len, (argc >= 3) ? MSG_MORE : 0) ||
+        (argc >= 3 && send_message(sock, &buf2, sizeof(buf2), (argc >= 4) ? MSG_MORE : 0)) ||
+        (argc >= 4 && send_message(sock, &buf3, sizeof(buf3), (argc >= 5) ? MSG_MORE : 0)) ||
+        (argc >= 5 && send_message(sock, &buf4, sizeof(buf4), 0))) {
+        return -1;
+    }
+    return 0;
+}
+
 static int generic_req(const struct cmd *cmd, int sock, int seqno, int argc, char *argv[])
 {
     const int seq = htole32(seqno);
@@ -784,6 +940,54 @@ static int generic_req(const struct cmd *cmd, int sock, int seqno, int argc, cha
 static void generic_res(const struct cmd *, const void *msg, size_t msg_size)
 {
     selva_proto_print(stdout, msg, msg_size);
+}
+
+static void rusage_res(const struct cmd *, const void *msg, size_t msg_size)
+{
+    size_t i = 0;
+
+    while (msg && i < msg_size) {
+        enum selva_proto_data_type type;
+        size_t data_len;
+        int off;
+
+        off = selva_proto_parse_vtype(msg, msg_size, i, &type, &data_len);
+        if (off <= 0) {
+            if (off < 0) {
+                fprintf(stderr, "Failed to parse a value header: %s\n", selva_strerror(off));
+            }
+            return;
+        }
+
+        i += off;
+
+        if (type == SELVA_PROTO_STRING && data_len == sizeof(struct selva_rusage)) {
+            struct selva_rusage rusage;
+
+            memcpy(&rusage, (char *)msg + i - data_len, data_len);
+            /* TODO endianness */
+
+            char unit[3] = "kB";
+            unsigned long long maxrss = rusage.ru_maxrss / 1024;
+
+            if (maxrss > 1024) {
+                maxrss /= 1024;
+                strcpy(unit, "MB");
+            }
+            if (maxrss > 1024) {
+                maxrss /= 1024;
+                strcpy(unit, "GB");
+            }
+
+            printf("utime: %lld s stime: %lld s max_rss: %llu %s\n",
+                   (long long)rusage.ru_utime.tv_sec,
+                   (long long)rusage.ru_stime.tv_sec,
+                   maxrss, unit);
+        } else {
+            fprintf(stderr, "Invalid response");
+            return;
+        }
+    }
 }
 
 static int skip_req(const struct cmd *, int sock __unused, int seqno __unused, int argc __unused, char *argv[] __unused)

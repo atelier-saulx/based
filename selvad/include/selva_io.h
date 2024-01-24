@@ -49,6 +49,7 @@ enum replication_mode {
  */
 enum selva_io_load_order {
     SELVA_IO_ORD_HIERARCHY = 0,
+    SELVA_IO_ORD_MQ,
     NR_SELVA_IO_ORD,
 };
 

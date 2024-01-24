@@ -210,4 +210,30 @@ export const COMMAND_ENCODERS: CommandEncoders = {
     { type: 'string' }, // expression
     { type: 'string', vararg: true }, // regs
   ]),
+  'mq.create': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // optional timeout
+  ]),
+  'mq.delete': defaultEncoder([
+    { type: 'string' }, // name
+  ]),
+  'mq.list': null,
+  'mq.post': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'string', vararg: true }, // messages
+  ]),
+  'mq.recv': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // min
+    { type: 'longlong' }, // max
+    { type: 'longlong' }, // timeout
+  ]),
+  'mq.ack': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // msg_id
+  ]),
+  'mq.nack': defaultEncoder([
+    { type: 'string' }, // name
+    { type: 'longlong' }, // msg_id
+  ]),
 }

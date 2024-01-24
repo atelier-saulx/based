@@ -21,6 +21,7 @@ MODULES := \
 		   demo_sock \
 		   demo_timeout \
 		   io \
+		   mq \
 		   piper \
 		   server \
 		   signal
