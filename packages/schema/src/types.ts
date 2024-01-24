@@ -42,6 +42,7 @@ export const basedSchemaFieldTypes = [
   'text',
   'enum',
   'cardinality',
+  'any',
 ] as const
 
 export type BasedSchemaFieldType = (typeof basedSchemaFieldTypes)[number]
@@ -233,6 +234,10 @@ export type BasedSchemaFieldJSON = {
   format?: 'rich-text'
 } & BasedSchemaFieldShared
 
+export type BasedSchemaFieldAny = {
+  type: 'any'
+} & BasedSchemaFieldShared
+
 export type BasedSchemaFieldPrimitive =
   | BasedSchemaFieldString
   | BasedSchemaFieldNumber
@@ -316,6 +321,7 @@ export type BasedSchemaFields = {
   references: BasedSchemaFieldReferences
   text: BasedSchemaFieldText
   cardinality: BasedSchemaFieldCardinality
+  any: BasedSchemaFieldAny
 }
 
 export type BasedSchemaField =

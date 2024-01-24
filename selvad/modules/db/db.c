@@ -58,7 +58,7 @@ IMPORT() {
     evl_import_main(evl_set_timeout);
     evl_import_main(evl_clear_timeout);
     evl_import_main(config_resolve);
-    evl_import_selva_langs();
+    evl_import_main(selva_langs);
     evl_import_event_loop();
     import_selva_server();
     import_selva_io();

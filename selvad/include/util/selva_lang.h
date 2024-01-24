@@ -11,19 +11,29 @@
 #endif
 #include <locale.h>
 #include <wctype.h>
+#include "cdefs.h"
 
 #define LANG_NAME_MAX 4ul
 
-struct selva_lang;
-struct selva_langs;
+struct selva_lang {
+    __nonstring char name[LANG_NAME_MAX];
+    const char loc_name[8];
+    locale_t locale;
+};
 
-struct selva_langs *selva_lang_create(size_t n);
+struct selva_langs {
+    size_t len;
+    locale_t fallback;
+    void (*err_cb)(const struct selva_lang *lang, int err);
+    struct selva_lang langs[] __counted_by(len);
+};
+
+/**
+ * Sort a selva_langs struct so that it can be used with selva_lang_getlocale().
+ */
+void selva_langs_sort(struct selva_langs *langs);
 
 int selva_lang_set_fallback(struct selva_langs *langs, const char *lang_str, size_t lang_len);
-
-int selva_lang_add(struct selva_langs *langs, const char *lang, const char *locale_name);
-
-void selva_lang_foreach(struct selva_langs *langs, void (*cb)(void *ctx, const char *name, locale_t loc), void *ctx);
 
 /**
  * Get locale for a lang string.

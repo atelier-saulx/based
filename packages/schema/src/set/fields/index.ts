@@ -66,4 +66,23 @@ export const fields: Partial<FieldParsers<BasedSetTarget>> = {
     }
     args.error(ParseError.incorrectFormat)
   },
+  any: async (args) => {
+    args.stop()
+
+    if (typeof args.value !== 'object') {
+      args.collect(args.value)
+      return
+    }
+
+    const q: Promise<any>[] = []
+    for (const key in args.value) {
+      q.push(
+        args.parse({
+          key: key,
+          value: args.value[key],
+          fieldSchema: { type: 'any' },
+        })
+      )
+    }
+  },
 }

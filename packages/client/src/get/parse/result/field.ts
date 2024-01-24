@@ -1,7 +1,9 @@
 import {
   BasedSchemaField,
+  BasedSchemaFieldAny,
   BasedSchemaFieldArray,
   BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
   BasedSchemaFieldSet,
 } from '@based/schema'
 import { ExecContext, GetCommand } from '../../types.js'
@@ -129,9 +131,18 @@ const FIELD_PARSERS: Record<
     ary: any[],
     ctx: ExecContext,
     cmd,
-    fieldSchema: BasedSchemaFieldArray
+    fieldSchema: BasedSchemaFieldRecord
   ) => {
     return parseRecFields(ctx, fieldSchema.values, cmd, ary)
+  },
+  any: (v: any, ctx: ExecContext, cmd, _fieldSchema: BasedSchemaFieldAny) => {
+    if (Array.isArray(v)) {
+      return parseRecFields(ctx, { type: 'any' }, cmd, v)
+    }
+
+    const fs: BasedSchemaField = { type: <any>typeof v }
+    const parser = FIELD_PARSERS[fs.type]
+    return parser?.(v, ctx, cmd, fs)
   },
 }
 

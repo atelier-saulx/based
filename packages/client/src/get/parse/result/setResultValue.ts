@@ -14,7 +14,9 @@ export function setResultValue({
   value: any
 }) {
   const parsedPath = aliasStrToPath(path)
-  if (['object', 'record', 'text', 'reference'].includes(fieldSchema.type)) {
+  if (
+    ['object', 'record', 'text', 'reference', 'any'].includes(fieldSchema.type)
+  ) {
     const currentValue = getByPath(obj, parsedPath)
     if (typeof currentValue === 'object') {
       deepMerge(currentValue, value)

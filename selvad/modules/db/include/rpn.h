@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -68,8 +68,10 @@ struct rpn_expression {
     struct rpn_operand *literal_reg[RPN_MAX_D]; /*!< Literals used in the expression. */
 };
 
-#define RPN_SET_REG_FLAG_SELVA_FREE 0x01 /*!< Free register values after unref using selva_free. */
-#define RPN_SET_REG_FLAG_IS_NAN     0x02 /*!< The numeric value of a reg should be NaN when set with rpn_set_reg(). */
+enum rpn_set_reg_flags {
+    RPN_SET_REG_FLAG_SELVA_FREE = 0x01, /*!< Free register values after unref using selva_free. */
+    RPN_SET_REG_FLAG_IS_NAN     = 0x02, /*!< The numeric value of a reg should be NaN when set with rpn_set_reg(). */
+};
 
 extern const char *rpn_str_error[RPN_ERR_LAST];
 
@@ -104,7 +106,7 @@ static inline void rpn_set_obj(struct rpn_ctx *ctx, struct SelvaObject *obj) {
  * Set register value.
  * A pointer to s is held until the register is cleared or changed.
  */
-enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, unsigned flags)
+enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t size, enum rpn_set_reg_flags flags)
     __attribute__((access(read_only, 1, 2)));
 
 

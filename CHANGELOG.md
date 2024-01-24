@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Unicode 14.0.0 support
+
+### Changed
+
+- Moved `selva_lang` functionality to `libutil` and slightly changed the output of `lslang`
+- Lazy load locales as needed for faster startup and memory savings
+
+### Removed
+
+### Fixed
+
+## [2.0.1] - 2024-01-17
+
+## [2.0.0] - 2024-01-17
+
+### Added
+
 - `CMD_ID_PIPE`/`"pipe"` for piping commands together without a roundtrip back to the client
 
 ### Changed
@@ -17,7 +34,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved `sdb` and replication handling to the `io` module
 - Max number of fds/clients increased from 100 to 10000
 - Max number of streams per client increased from 2 to 3
-- Moved `selva_lang` functionality to `libutil` and slightly changed the output of `lslang`
 
 ### Removed
 
