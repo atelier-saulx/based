@@ -558,6 +558,26 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
     return !node ? NULL : &node->metadata;
 }
 
+/**
+ * Delete all edge_metadata from a parent to child relationship.
+ * @returns 0 if deleted or no edge_metadata was set for this relationship;
+ *          Otherwise a SelvaObject_DelKey() error is returned.
+ */
+static int delete_all_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id)
+{
+    int err;
+
+    if (!parent->children_metadata) {
+        return 0;
+    }
+
+    err = SelvaObject_DelKeyStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE);
+    return (err == SELVA_ENOENT) ? 0 : err;
+}
+
+/**
+ * Get or create the edge_metadata object for a parent to child arc.
+ */
 static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
     int err = SELVA_ENOENT;
 
@@ -567,7 +587,7 @@ static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const 
 
     if (parent->children_metadata) {
         err = SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
-        if (err == SELVA_ENOENT) {
+        if (err == SELVA_ENOENT && create) {
             struct SelvaObject *edge_metadata = SelvaObject_New();
 
             err = SelvaObject_SetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
@@ -601,11 +621,26 @@ int SelvaHierarchy_GetEdgeMetadata(
             return SELVA_HIERARCHY_ENOENT;
         }
 
-        /* TODO Support delete_all, how? */
+        if (delete_all) {
+            int err;
+
+            err = delete_all_hierarchy_edge_metadata(parent, node->id);
+            if (err) {
+                return err;
+            }
+        }
 
         return get_hierarchy_edge_metadata(parent, node->id, create, out);
     } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        /* TODO Support delete_all */
+        if (delete_all) {
+            int err;
+
+            err = delete_all_hierarchy_edge_metadata(node, dst_node_id);
+            if (err) {
+                return err;
+            }
+        }
+
         return get_hierarchy_edge_metadata(node, dst_node_id, create, out);
     } else {
         struct EdgeField *edge_field;
