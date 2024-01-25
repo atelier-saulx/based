@@ -129,7 +129,7 @@ static int zsdb_flush_block_buf(struct selva_io *io)
     return 0;
 }
 
-static size_t zsdb_write(struct selva_io *restrict io, const void *restrict ptr, size_t size)
+static void zsdb_write(struct selva_io *restrict io, const void *restrict ptr, size_t size)
 {
     struct selva_io_zbuf *zbuf = io->zbuf;
     size_t left = size;
@@ -146,13 +146,9 @@ static size_t zsdb_write(struct selva_io *restrict io, const void *restrict ptr,
         zbuf->block_buf_i += bytes_to_copy;
 
         if (zbuf->block_buf_i >= ZBLOCK_BUF_SIZE) {
-            if (zsdb_writeout(io)) {
-                return size - left;
-            }
+            (void)zsdb_writeout(io);
         }
     }
-
-    return size;
 }
 
 static int file_zsdb_readin(struct selva_io *io)
@@ -240,16 +236,16 @@ out:
     return r;
 }
 
-static size_t file_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
+static void file_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io)
 {
     const size_t wr = count * size;
 
     sha3_Update(&io->hash_c, ptr, wr);
 
     if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
-        return zsdb_write(io, ptr, wr) / size;
+        zsdb_write(io, ptr, wr);
     } else {
-        return fwrite(ptr, size, count, io->file_io.file);
+        (void)fwrite(ptr, size, count, io->file_io.file);
     }
 }
 
@@ -268,7 +264,7 @@ static size_t file_sdb_read(void * restrict ptr, size_t size, size_t count, stru
     }
 }
 
-static size_t string_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
+static void string_sdb_write(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io)
 {
     const size_t wr = count * size;
     int err;
@@ -276,15 +272,11 @@ static size_t string_sdb_write(const void * restrict ptr, size_t size, size_t co
     sha3_Update(&io->hash_c, ptr, wr);
 
     if (io->flags & _SELVA_IO_FLAGS_EN_COMPRESS) {
-        return zsdb_write(io, ptr, wr) / size;
+        zsdb_write(io, ptr, wr);
     } else {
         err = selva_string_append(io->string_io.data, ptr, wr);
-
         if (err) {
             io->string_io.err = err;
-            return 0;
-        } else {
-            return count;
         }
     }
 }
