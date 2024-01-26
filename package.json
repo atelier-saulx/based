@@ -38,6 +38,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
+    "@saulx/tsconfig": "^1.1.0",
     "@saulx/eslint-config": "^1.1.1",
     "@saulx/prettier-config": "^1.0.0",
     "lint-staged": "12.1.2",
