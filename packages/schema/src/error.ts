@@ -16,4 +16,6 @@ export enum ParseError {
   'cannotDeleteNodeFromModify',
   'nestedModifyObjectNotAllowed',
   'infinityNotSupported',
+  'invalidSchemaFormat',
+  'invalidProperty',
 }

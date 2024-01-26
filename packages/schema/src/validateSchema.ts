@@ -29,6 +29,7 @@ export const validateField = (
   //
 }
 
+// FIXME: Deprecated
 export const validateSchema = (
   schema: BasedSchemaPartial
 ): BasedSchemaPartial => {
