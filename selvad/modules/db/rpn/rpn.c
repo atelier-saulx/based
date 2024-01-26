@@ -82,9 +82,9 @@ struct rpn_operand {
         bool pooled : 1; /*!< Pooled operand, do not free. */
         bool regist : 1; /*!< Register value, do not free. */
         bool spused : 1; /*!< The value is a string pointed by sp. */
-        bool spfree : 1; /*!< Free sp if set when freeing the operand. */
+        bool apfree : 1; /*!< Free sp if set when freeing the operand. */
         bool slvobj : 1; /*!< SelvaObject pointer. */
-        bool slvset : 1; /*!< Set pointer is pointing to a SelvaSet. */
+        bool slvset : 1; /*!< The value is a SelvaSet. */
         bool embset : 1; /*!< Embedded set is used and it must be destroyed. */
     } flags;
     uint32_t refcount; /*!< Stack reference counter adjusted on push/pop. */
@@ -276,10 +276,24 @@ static void free_rpn_operand(void *p) {
         return;
     }
 
-    if (v->flags.spused && v->flags.spfree && v->sp) {
-        selva_free((void *)v->sp);
-    } else if (v->flags.embset && v->flags.slvset) {
-        SelvaSet_Destroy(&v->set_emb);
+    if (v->flags.apfree || v->flags.embset) {
+        /*
+         * Auto free unref'd values.
+         * Moreover, an embedded set must be always destroyed.
+         */
+        if (v->flags.spused) {
+            if (v->sp) {
+                selva_free((void *)v->sp);
+            }
+        } else if (v->flags.slvobj) {
+            if (v->obj) {
+                SelvaObject_Destroy(v->obj);
+            }
+        } else if (v->flags.slvset) {
+            if (v->set) {
+                SelvaSet_Destroy(v->set);
+            }
+        }
     }
     if (v->flags.pooled) {
         struct rpn_operand *prev = small_operand_pool_next;
@@ -458,6 +472,11 @@ static int to_bool(struct rpn_operand *v) {
     return !!((long long)d);
 }
 
+/**
+ * Clear old register value.
+ * Note that this function doesn't reset the pointer in ctx->reg and it must
+ * be done by the caller.
+ */
 static void clear_old_reg(struct rpn_ctx *ctx, size_t i) {
     struct rpn_operand *old;
 
@@ -485,7 +504,7 @@ enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t 
          */
         r->flags.regist = true; /* Can't be freed when this flag is set. */
         r->flags.spused = true;
-        r->flags.spfree = (flags & RPN_SET_REG_FLAG_SELVA_FREE) == RPN_SET_REG_FLAG_SELVA_FREE;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->s_size = size;
         r->sp = s;
 
@@ -558,11 +577,10 @@ enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct se
     char *val = selva_malloc(len);
 
     memcpy(val, s_str, len);
-    return rpn_set_reg(ctx, i, val, len, RPN_SET_REG_FLAG_SELVA_FREE);
+    return rpn_set_reg(ctx, i, val, len, RPN_SET_REG_FLAG_AUTO_FREE);
 }
 
-/* TODO free flag for rpn_set_reg_slvobj() */
-enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -577,6 +595,7 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
          */
         r->flags.regist = true;
         r->flags.slvobj = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->obj = obj;
 
@@ -588,8 +607,7 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
     return RPN_ERR_OK;
 }
 
-/* TODO free flag for rpn_set_reg_slvset() */
-enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -611,6 +629,7 @@ enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet
          */
         r->flags.regist = true;
         r->flags.slvset = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->set = set;
 

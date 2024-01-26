@@ -2152,7 +2152,7 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
 
-            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_SELVA_FREE);
+            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_AUTO_FREE);
         }
     }
 
@@ -2340,7 +2340,7 @@ static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_ou
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
 
-            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_SELVA_FREE);
+            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_AUTO_FREE);
         }
     }
 
