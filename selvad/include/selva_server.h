@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -102,7 +102,9 @@ SELVA_SERVER_EXPORT(void, selva_cancel_stream, struct selva_server_response_out 
 
 /**
  * End sending a response.
- * Finalizes the response sequence.
+ * Finalizes the response sequence. Nothing can be sent to the response after
+ * this function has been called. Normally the respnose is terminated
+ * automatically but streams must be ended explicitly.
  */
 SELVA_SERVER_EXPORT(int, selva_send_end, struct selva_server_response_out *restrict resp);
 

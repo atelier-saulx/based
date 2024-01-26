@@ -24,6 +24,7 @@ static const char *modules[] = {
 #endif
     "mod_server.so",
     "mod_io.so",
+    "mod_mq.so",
     "mod_db.so",
     "mod_piper.so",
 };

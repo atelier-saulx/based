@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 SAULX
+ * Copyright (c) 2023-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #pragma once
@@ -14,7 +14,7 @@ struct selva_timespec {
 struct selva_rusage {
     struct selva_timespec ru_utime;
     struct selva_timespec ru_stime;
-    uint64_t ru_maxrss;
+    uint64_t ru_maxrss; /* in bytes */
 };
 
 enum selva_rusage_who {

@@ -504,10 +504,6 @@ static void SelvaObject_TypeCommand(struct selva_server_response_out *resp, cons
         const char *subtype_str;
         size_t subtype_len;
 
-        /*
-         * TODO It would be nicer if we wouldn't need to look for the subtype
-         * separately.
-         */
         (void)SelvaObject_GetArrayStr(obj, okey_str, okey_len, &subtype, NULL);
         subtype_str = SelvaObject_Type2String(subtype, &subtype_len);
 

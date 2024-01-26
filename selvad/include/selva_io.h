@@ -49,6 +49,7 @@ enum replication_mode {
  */
 enum selva_io_load_order {
     SELVA_IO_ORD_HIERARCHY = 0,
+    SELVA_IO_ORD_MQ,
     NR_SELVA_IO_ORD,
 };
 
@@ -107,7 +108,7 @@ struct selva_io {
      * reused internally to read compressed and uncompressed SDB strings.
      */
     int (*raw_read)(struct selva_io *io, void *buf, size_t size);
-    size_t (*sdb_write)(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io); /* TODO Do we need the ret value */
+    void (*sdb_write)(const void * restrict ptr, size_t size, size_t count, struct selva_io * restrict io);
     size_t (*sdb_read)(void * restrict ptr, size_t size, size_t count, struct selva_io *restrict io);
     off_t (*sdb_tell)(struct selva_io *io);
     int (*sdb_seek)(struct selva_io *io, off_t offset, int whence);

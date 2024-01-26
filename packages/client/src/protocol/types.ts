@@ -127,6 +127,13 @@ export const COMMAND_TYPES = {
   'rpn.evalDouble': 45,
   'rpn.evalString': 46,
   'rpn.evalSet': 47,
+  'mq.create': 84,
+  'mq.delete': 85,
+  'mq.list': 86,
+  'mq.post': 87,
+  'mq.recv': 88,
+  'mq.ack': 89,
+  'mq.nack': 90,
 }
 export type Command = keyof typeof COMMAND_TYPES
 export type SelvaProtocolHeader = {
