@@ -2138,22 +2138,12 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
          * Get the filter expression arguments and set them to the registers.
          */
         for (int i = 0; i < nr_reg; i++) {
-            /* reg[0] is reserved for the current nodeId */
-            const size_t reg_i = i + 1;
-            size_t str_len;
-            const char *str;
-            char *arg;
-
             /*
              * Args needs to be duplicated so the strings don't get freed
              * when the command returns.
-             * TODO Can we just hold on those original strings?
+             * reg[0] is reserved for the current nodeId.
              */
-            str = selva_string_to_str(filter_args[i], &str_len);
-            arg = selva_malloc(str_len);
-            memcpy(arg, str, str_len);
-
-            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_SELVA_FREE);
+            rpn_set_reg_string(filter_ctx, i + 1, filter_args[i]);
         }
     }
 
