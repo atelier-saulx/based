@@ -84,8 +84,9 @@ static void SelvaRpn_Eval(enum SelvaRpnEvalType type, struct selva_server_respon
 
         node = SelvaHierarchy_FindNode(hierarchy, node_id);
         if (node) {
-            rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-            rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+            rpn_ctx->data.hierarchy = hierarchy;
+            rpn_ctx->data.node = node;
+            rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
         }
     }
 

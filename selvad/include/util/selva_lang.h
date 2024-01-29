@@ -43,6 +43,38 @@ int selva_lang_set_fallback(struct selva_langs *langs, const char *lang_str, siz
  */
 locale_t selva_lang_getlocale(struct selva_langs *langs, const char *lang_str, size_t lang_len);
 
-char *mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans);
+/**
+ * Transform a multibyte string.
+ * At least the following transforms are supported:
+ * - "" none
+ * - "toupper"
+ * - "tolower"
+ * - "tojhira" when lang is "jp"
+ * - "tojkata" when lang is "jp"
+ */
+char *selva_mbstrans(locale_t loc, const char *src, size_t len, wctrans_t trans);
+
+/**
+ * Compare two multibyte strings by transforming each character.
+ * At least the following transforms are supported:
+ * - "" none
+ * - "toupper"
+ * - "tolower"
+ * - "tojhira" when lang is "jp"
+ * - "tojkata" when lang is "jp"
+ * Unicode normalization and flattening is not supported.
+ */
+int selva_mbscmp(const char *mbs1_str, size_t mbs1_len, const char *mbs2_str, size_t mbs2_len, wctrans_t trans, locale_t loc);
+
+static inline wctrans_t selva_wctrans(const char *class_str, size_t class_len, locale_t loc)
+{
+    char charclass[16] = {};
+
+    if (likely(class_len < sizeof(charclass))) {
+        __builtin_memcpy(charclass, class_str, class_len);
+    }
+
+    return wctrans_l(charclass, loc);
+}
 
 #endif /* SELVA_LANG_H */

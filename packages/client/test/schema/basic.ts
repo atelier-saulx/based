@@ -6,12 +6,189 @@ import '../assertions/index.js'
 import getPort from 'get-port'
 import { SchemaUpdateMode } from '../../src/types.js'
 import { DEFAULT_FIELDS } from '../../src/schema/mergeSchema.js'
+import { BasedSchemaPartial } from '@based/schema'
 
 const test = anyTest as TestFn<{
   srv: SelvaServer
   client: BasedDbClient
   port: number
 }>
+
+const startingSchema: BasedSchemaPartial = {
+  language: 'en',
+  translations: ['de', 'nl'],
+  root: {
+    fields: {
+      value: { type: 'number' },
+      nested: {
+        type: 'object',
+        properties: {
+          fun: { type: 'string' },
+        },
+      },
+    },
+  },
+  types: {
+    lekkerType: {
+      prefix: 'vi',
+      fields: {
+        strRec: {
+          type: 'record',
+          values: {
+            type: 'string',
+          },
+        },
+        textRec: {
+          type: 'record',
+          values: {
+            type: 'text',
+          },
+        },
+        objRec: {
+          type: 'record',
+          values: {
+            type: 'object',
+            properties: {
+              floatArray: { type: 'array', values: { type: 'number' } },
+              intArray: { type: 'array', values: { type: 'integer' } },
+              objArray: {
+                type: 'array',
+                values: {
+                  type: 'object',
+                  properties: {
+                    hello: { type: 'string' },
+                    value: { type: 'integer' },
+                    fvalue: { type: 'number' },
+                  },
+                },
+              },
+              hello: {
+                type: 'string',
+              },
+              nestedRec: {
+                type: 'record',
+                values: {
+                  type: 'object',
+                  properties: {
+                    value: {
+                      type: 'number',
+                    },
+                    hello: {
+                      type: 'string',
+                    },
+                  },
+                },
+              },
+              value: {
+                type: 'number',
+              },
+              stringValue: {
+                type: 'string',
+              },
+            },
+          },
+        },
+        thing: { type: 'set', items: { type: 'string' } },
+        ding: {
+          type: 'object',
+          properties: {
+            dong: { type: 'set', items: { type: 'string' } },
+            texty: { type: 'text' },
+            dung: { type: 'number' },
+            dang: {
+              type: 'object',
+              properties: {
+                dung: { type: 'number' },
+                dunk: { type: 'string' },
+              },
+            },
+            dunk: {
+              type: 'object',
+              properties: {
+                ding: { type: 'number' },
+                dong: { type: 'number' },
+              },
+            },
+          },
+        },
+        dong: { type: 'json' },
+        dingdongs: { type: 'array', values: { type: 'string' } },
+        floatArray: { type: 'array', values: { type: 'number' } },
+        intArray: { type: 'array', values: { type: 'integer' } },
+        tsArray: { type: 'array', values: { type: 'timestamp' } },
+        refs: { type: 'references' },
+        value: { type: 'number' },
+        age: { type: 'number' },
+        auth: {
+          type: 'json',
+        },
+        title: { type: 'text' },
+        description: { type: 'text' },
+        image: {
+          type: 'object',
+          properties: {
+            thumb: { type: 'string' },
+            poster: { type: 'string' },
+          },
+        },
+      },
+    },
+    custom: {
+      prefix: 'cu',
+      fields: {
+        name: { type: 'string' },
+        value: { type: 'number' },
+        age: { type: 'number' },
+        auth: {
+          type: 'json',
+        },
+        title: { type: 'text' },
+        description: { type: 'text' },
+        image: {
+          type: 'object',
+          properties: {
+            thumb: { type: 'string' },
+            poster: { type: 'string' },
+          },
+        },
+      },
+    },
+    club: {
+      prefix: 'cl',
+      fields: {
+        value: { type: 'number' },
+        age: { type: 'number' },
+        auth: {
+          type: 'json',
+        },
+        title: { type: 'text' },
+        description: { type: 'text' },
+        image: {
+          type: 'object',
+          properties: {
+            thumb: { type: 'string' },
+            poster: { type: 'string' },
+          },
+        },
+      },
+    },
+    match: {
+      prefix: 'ma',
+      fields: {
+        title: { type: 'text' },
+        value: { type: 'number' },
+        description: { type: 'text' },
+      },
+    },
+    yesno: {
+      prefix: 'yn',
+      fields: {
+        bolYes: { type: 'boolean' },
+        bolNo: { type: 'boolean' },
+      },
+    },
+  },
+}
 
 test.beforeEach(async (t) => {
   t.timeout(5000)
@@ -32,181 +209,7 @@ test.beforeEach(async (t) => {
 
   console.log('updating schema')
 
-  await t.context.client.updateSchema({
-    language: 'en',
-    translations: ['de', 'nl'],
-    root: {
-      fields: {
-        value: { type: 'number' },
-        nested: {
-          type: 'object',
-          properties: {
-            fun: { type: 'string' },
-          },
-        },
-      },
-    },
-    types: {
-      lekkerType: {
-        prefix: 'vi',
-        fields: {
-          strRec: {
-            type: 'record',
-            values: {
-              type: 'string',
-            },
-          },
-          textRec: {
-            type: 'record',
-            values: {
-              type: 'text',
-            },
-          },
-          objRec: {
-            type: 'record',
-            values: {
-              type: 'object',
-              properties: {
-                floatArray: { type: 'array', values: { type: 'number' } },
-                intArray: { type: 'array', values: { type: 'integer' } },
-                objArray: {
-                  type: 'array',
-                  values: {
-                    type: 'object',
-                    properties: {
-                      hello: { type: 'string' },
-                      value: { type: 'integer' },
-                      fvalue: { type: 'number' },
-                    },
-                  },
-                },
-                hello: {
-                  type: 'string',
-                },
-                nestedRec: {
-                  type: 'record',
-                  values: {
-                    type: 'object',
-                    properties: {
-                      value: {
-                        type: 'number',
-                      },
-                      hello: {
-                        type: 'string',
-                      },
-                    },
-                  },
-                },
-                value: {
-                  type: 'number',
-                },
-                stringValue: {
-                  type: 'string',
-                },
-              },
-            },
-          },
-          thing: { type: 'set', items: { type: 'string' } },
-          ding: {
-            type: 'object',
-            properties: {
-              dong: { type: 'set', items: { type: 'string' } },
-              texty: { type: 'text' },
-              dung: { type: 'number' },
-              dang: {
-                type: 'object',
-                properties: {
-                  dung: { type: 'number' },
-                  dunk: { type: 'string' },
-                },
-              },
-              dunk: {
-                type: 'object',
-                properties: {
-                  ding: { type: 'number' },
-                  dong: { type: 'number' },
-                },
-              },
-            },
-          },
-          dong: { type: 'json' },
-          dingdongs: { type: 'array', values: { type: 'string' } },
-          floatArray: { type: 'array', values: { type: 'number' } },
-          intArray: { type: 'array', values: { type: 'integer' } },
-          tsArray: { type: 'array', values: { type: 'timestamp' } },
-          refs: { type: 'references' },
-          value: { type: 'number' },
-          age: { type: 'number' },
-          auth: {
-            type: 'json',
-          },
-          title: { type: 'text' },
-          description: { type: 'text' },
-          image: {
-            type: 'object',
-            properties: {
-              thumb: { type: 'string' },
-              poster: { type: 'string' },
-            },
-          },
-        },
-      },
-      custom: {
-        prefix: 'cu',
-        fields: {
-          name: { type: 'string' },
-          value: { type: 'number' },
-          age: { type: 'number' },
-          auth: {
-            type: 'json',
-          },
-          title: { type: 'text' },
-          description: { type: 'text' },
-          image: {
-            type: 'object',
-            properties: {
-              thumb: { type: 'string' },
-              poster: { type: 'string' },
-            },
-          },
-        },
-      },
-      club: {
-        prefix: 'cl',
-        fields: {
-          value: { type: 'number' },
-          age: { type: 'number' },
-          auth: {
-            type: 'json',
-          },
-          title: { type: 'text' },
-          description: { type: 'text' },
-          image: {
-            type: 'object',
-            properties: {
-              thumb: { type: 'string' },
-              poster: { type: 'string' },
-            },
-          },
-        },
-      },
-      match: {
-        prefix: 'ma',
-        fields: {
-          title: { type: 'text' },
-          value: { type: 'number' },
-          description: { type: 'text' },
-        },
-      },
-      yesno: {
-        prefix: 'yn',
-        fields: {
-          bolYes: { type: 'boolean' },
-          bolNo: { type: 'boolean' },
-        },
-      },
-    },
-  })
+  await t.context.client.updateSchema(startingSchema)
 
   t.context.client.unsubscribeSchema()
 })
@@ -778,4 +781,10 @@ test('Change defaults when adding new type should fail', async (t) => {
       }
     )
   }
+})
+
+test('Setting the same schema in default mode should not fail', async (t) => {
+  const { client } = t.context
+
+  await t.notThrowsAsync(client.updateSchema(startingSchema))
 })

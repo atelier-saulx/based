@@ -8,6 +8,7 @@ export type GeoFilter = {
     $lon: number
     $radius: number
   }
+  $caseInsensitive?: undefined
   $and?: Filter
   $or?: Filter
 }
@@ -16,6 +17,7 @@ export type ExistsFilter = {
   $operator: 'exists' | 'notExists'
   $field: string
   $value?: undefined // makes compiling this easier, nice...
+  $caseInsensitive?: undefined
   $and?: Filter
   $or?: Filter
 }
@@ -35,6 +37,7 @@ export type Filter =
         | 'textSearch'
       $field: string
       $value: string | number | (string | number)[]
+      $caseInsensitive?: boolean
       $and?: Filter
       $or?: Filter
     }
@@ -43,10 +46,12 @@ export type FilterAST = {
   $field: string
   $operator:
     | '='
+    | '!='
     | '>'
     | '<'
     | '..'
-    | '!='
+    | 'like'
+    | 'notLike'
     | 'has'
     | 'includes'
     | 'distance'

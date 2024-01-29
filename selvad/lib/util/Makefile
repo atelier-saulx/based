@@ -29,8 +29,9 @@ OBJ := \
 	poptop.o \
 	queue_r.o \
 	selva_error.o \
-	selva_lang/mbstrans.o \
 	selva_lang/selva_lang.o \
+	selva_lang/selva_mbscmp.o \
+	selva_lang/selva_mbstrans.o \
 	selva_proto.o \
 	selva_proto_buf.o \
 	selva_proto_builder.o \

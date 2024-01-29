@@ -948,7 +948,7 @@ int SelvaModify_ModifyDel(
          */
         err1 = Edge_DeleteAll(hierarchy, node, field_str, field_len);
         err2 = SelvaObject_DelKeyStr(obj, field_str, field_len);
-        err = err1 != SELVA_ENOENT ? err1 : err2;
+        err = (err1 != SELVA_ENOENT && err1 != SELVA_EINTYPE) ? err1 : err2;
     }
 
     return err > 0 ? 0 : err;

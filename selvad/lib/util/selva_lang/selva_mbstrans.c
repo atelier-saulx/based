@@ -16,7 +16,7 @@
 #include "jemalloc.h"
 #include "util/selva_lang.h"
 
-char *mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)
+char *selva_mbstrans(locale_t loc, const char *s, size_t len, wctrans_t trans)
 {
     len++;
     size_t dst_len = len * sizeof(wchar_t);
