@@ -259,19 +259,37 @@ static void drop_replicas(unsigned replicas)
     }
 }
 
+/**
+ * Select the CPU for this replica_id.
+ * @param n is the number of available CPUs.
+ *          We assume that they are linearly available from 0 to n, which may
+ *          not hold true in a the real world.
+ *  @param replica_id is replica->id.
+ */
+static void select_cpu(int n, unsigned replica_id, size_t cpusetsize, cpu_set_t *cpuset)
+{
+    int cpu0 = 0;
+    int cpu1 = 0;
+
+    if (n > 1) {
+        cpu0 = replica_id % (n - 1) + 1;
+        cpu1 = (replica_id + 1) % (n - 1) + 1;
+    }
+
+    CPU_ZERO_S(cpusetsize, cpuset);
+    CPU_SET_S(cpu0, cpusetsize, cpuset);
+    CPU_SET_S(cpu1, cpusetsize, cpuset);
+}
+
 static void init_attr(pthread_attr_t *attr, unsigned replica_id)
 {
+    pthread_attr_init(attr);
+
 #if defined(__linux__)
-    const int cpu = nr_cpus == 1 ? 0 : replica_id % (nr_cpus - 1) + 1;
     const size_t cpusetsize = CPU_ALLOC_SIZE(nr_cpus);
     cpu_set_t *cpuset = CPU_ALLOC(nr_cpus);
 
-    CPU_ZERO_S(cpusetsize, cpuset);
-    CPU_SET_S(cpu, cpusetsize, cpuset);
-#endif
-
-    pthread_attr_init(attr);
-#if defined(__linux__)
+    select_cpu(nr_cpus, replica_id, cpusetsize, cpuset);
     pthread_attr_setaffinity_np(attr, cpusetsize, cpuset);
 
     CPU_FREE(cpuset);

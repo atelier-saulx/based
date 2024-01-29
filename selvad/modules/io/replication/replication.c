@@ -540,7 +540,7 @@ void replication_init(void)
          * following manner:
          * - main thread: CPU0
          * - async dump process: CPU1
-         * - replication threads: CPU1 .. CPUn
+         * - replication threads: CPU1 + CPU2,..
          */
         replication_origin_init();
         break;
