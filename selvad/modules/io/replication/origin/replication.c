@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/sysinfo.h>
 #include <unistd.h>
 #include "sha3iuf/sha3.h"
 #include "jemalloc.h"
@@ -63,6 +64,8 @@ struct origin_state {
 };
 
 static struct origin_state origin_state __lazy_alloc_glob;
+
+static int nr_cpus; /*!< Number of CPUs available. */
 
 /**
  * Request replica reader threaders in the mask to stop and release their data.
@@ -256,6 +259,25 @@ static void drop_replicas(unsigned replicas)
     }
 }
 
+static void init_attr(pthread_attr_t *attr, unsigned replica_id)
+{
+#if defined(__linux__)
+    const int cpu = nr_cpus == 1 ? 0 : replica_id % (nr_cpus - 1) + 1;
+    const size_t cpusetsize = CPU_ALLOC_SIZE(nr_cpus);
+    cpu_set_t *cpuset = CPU_ALLOC(nr_cpus);
+
+    CPU_ZERO_S(cpusetsize, cpuset);
+    CPU_SET_S(cpu, cpusetsize, cpuset);
+#endif
+
+    pthread_attr_init(attr);
+#if defined(__linux__)
+    pthread_attr_setaffinity_np(attr, cpusetsize, cpuset);
+
+    CPU_FREE(cpuset);
+#endif
+}
+
 int replication_origin_register_replica(
         struct selva_server_response_out *stream_resp,
         uint64_t start_eid,
@@ -273,7 +295,12 @@ int replication_origin_register_replica(
     memcpy(replica->start_sdb_hash, start_sdb_hash, SELVA_IO_HASH_SIZE);
     replica->sync_mode = mode;
     ring_buffer_add_reader(&origin_state.rb, replica->id);
+
+    pthread_attr_t attr;
+
+    init_attr(&attr, replica->id);
     pthread_create(&replica->thread, NULL, replication_thread, replica);
+    pthread_attr_destroy(&attr);
 
     return 0;
 }
@@ -389,8 +416,23 @@ static void replication_heartbeat(struct event *, void *)
     replication_origin_replicate(ts_now(), CMD_ID_PING, NULL, 0);
 }
 
+static void migrate_to_cpu0(void)
+{
+#if defined(__linux__)
+    cpu_set_t cpuset;
+
+    CPU_ZERO(&cpuset);
+    CPU_SET(0, &cpuset);
+    sched_setaffinity(0, sizeof(cpuset), &cpuset);
+#endif
+}
+
 void replication_origin_init(void)
 {
+
+    nr_cpus = get_nprocs();
+    migrate_to_cpu0();
+
     memset(&origin_state, 0, sizeof(origin_state));
 
     for (unsigned i = 0; i < REPLICATION_MAX_REPLICAS; i++) {
