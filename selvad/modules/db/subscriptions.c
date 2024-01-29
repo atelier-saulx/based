@@ -2143,6 +2143,7 @@ static void SelvaSubscriptions_AddMarkerCommand(struct selva_server_response_out
              * when the command returns.
              * reg[0] is reserved for the current nodeId.
              */
+
             rpn_set_reg_string(filter_ctx, i + 1, filter_args[i]);
         }
     }
@@ -2331,7 +2332,7 @@ static void SelvaSubscriptions_AddTriggerCommand(struct selva_server_response_ou
             arg = selva_malloc(str_len);
             memcpy(arg, str, str_len);
 
-            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_SELVA_FREE);
+            rpn_set_reg(filter_ctx, reg_i, arg, str_len, RPN_SET_REG_FLAG_AUTO_FREE);
         }
     }
 
