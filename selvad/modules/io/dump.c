@@ -298,6 +298,17 @@ static int dump_save_async(const char *filename)
 
         selva_db_dump_state = SELVA_DB_DUMP_IS_CHILD;
 
+        /*
+         * Lower the CPU priority (bigger number) to avoid hogging the resources
+         * from the main process while dumping. This shouldn't actually reduce
+         * the available CPU time, as long as we are assigned on our own
+         * core/CPU.
+         * Under Linux changing the CPU priority should also change the IO
+         * priority according the following formula:
+         * io_priority = (cpu_nice + 20) / 5
+         */
+        nice(10);
+
         err = selva_io_init(&io, filename, flags);
         if (err) {
             return err;
