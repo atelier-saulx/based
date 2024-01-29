@@ -31,6 +31,7 @@
     "clean-c": "cd selvad; make mostlyclean",
     "publish": "sh scripts/publish.sh",
     "test": "cd packages/client && npm run test",
+    "testSubs": "cd packages/subs && npm run test",
     "clean": "turbo run clean && rimraf node_modules"
   },
   "packageManager": "npm@8.1.0",
