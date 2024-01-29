@@ -22,12 +22,9 @@ const basedSchemaValidator: Validatior<BasedSchema> = {
       if (!Array.isArray(value)) {
         return ParseError.incorrectFormat
       }
-      value.forEach((l: string) => {
-        if (!languages.includes(l)) {
-          return ParseError.languageNotSupported
-        }
-      })
-      return true
+      return value.every((l: string) => languages.includes(l))
+        ? true
+        : ParseError.languageNotSupported
     },
     optional: true,
   },
