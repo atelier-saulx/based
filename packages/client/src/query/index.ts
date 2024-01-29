@@ -124,13 +124,13 @@ export class BasedQuery<P = any, K = any> {
         this.client.getState.get(this.id).push([resolve, reject])
         return
       }
-      this.client.getState.set(this.id, [])
+
       const cachedData = this.client.cache.get(this.id)
       if (this.client.observeState.has(this.id)) {
         if (this.client.oQ.has(this.id)) {
           const [type] = this.client.oQ.get(this.id)
           if (type === 1) {
-            this.client.getState.get(this.id).push([resolve, reject])
+            this.client.getState.set(this.id, [[resolve, reject]])
             return
           }
         }
@@ -139,7 +139,8 @@ export class BasedQuery<P = any, K = any> {
           return
         }
       }
-      this.client.getState.get(this.id).push([resolve, reject])
+
+      this.client.getState.set(this.id, [[resolve, reject]])
       addGetToQueue(
         this.client,
         this.name,

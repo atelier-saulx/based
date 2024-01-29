@@ -89,6 +89,32 @@ const setup = async (t: T) => {
   return { coreClient, server }
 }
 
+test('get while subscribed', async (t: T) => {
+  const { coreClient, server } = await setup(t)
+
+  t.teardown(() => {
+    coreClient.disconnect()
+    server.destroy()
+  })
+
+  coreClient.connect({
+    url: async () => {
+      return t.context.ws
+    },
+  })
+
+  const res0 = await new Promise<any>((resolve) => {
+    coreClient.query('any', 'xxx').subscribe((res) => {
+      resolve(res)
+    })
+  })
+  t.is(res0, 'xxx')
+  const res1 = await coreClient.query('any', 'xxx').get()
+  t.is(res1, res0)
+  const res2 = await coreClient.query('any', 'xxx').get()
+  t.is(res2, res1)
+})
+
 test('get', async (t: T) => {
   const { coreClient, server } = await setup(t)
 
