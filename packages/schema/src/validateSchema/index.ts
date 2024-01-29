@@ -4,13 +4,18 @@ import { BasedSchema, BasedSchemaPartial, languages } from '../types.js'
 type Validatior<T> = {
   [P in keyof Required<T>]: {
     optional?: boolean
-    validator?: (value: any) => true | number
+    validator?: (
+      value: any,
+      newSchema: BasedSchemaPartial,
+      oldSchema: BasedSchema
+    ) => true | number
   }
 }
 
 const basedSchemaValidator: Validatior<BasedSchema> = {
   language: {
     validator: (value) => {
+      // language not supported
       if (!languages.includes(value)) {
         return ParseError.languageNotSupported
       }
@@ -18,10 +23,17 @@ const basedSchemaValidator: Validatior<BasedSchema> = {
     },
   },
   translations: {
-    validator: (value) => {
+    validator: (value, newSchema, oldSchema) => {
+      // translations property needs to be an array
       if (!Array.isArray(value)) {
         return ParseError.incorrectFormat
       }
+      const language = newSchema.language || oldSchema.language
+      // translations property cannot include language value
+      if (language && value.includes(language)) {
+        return ParseError.invalidProperty
+      }
+      // language not supported
       return value.every((l: string) => languages.includes(l))
         ? true
         : ParseError.languageNotSupported
@@ -37,8 +49,8 @@ const basedSchemaValidator: Validatior<BasedSchema> = {
 
 type ValidateSchemaError = { code: ParseError; path?: string[] }
 export const validateSchema = async (
-  newSchema: BasedSchemaPartial
-  // oldSchema?: BasedSchemaPartial
+  newSchema: BasedSchemaPartial,
+  oldSchema?: BasedSchema
 ): Promise<{ valid?: true; errors?: ValidateSchemaError[] }> => {
   const errors: ValidateSchemaError[] = []
 
@@ -51,7 +63,11 @@ export const validateSchema = async (
     if (newSchema.hasOwnProperty(key)) {
       if (basedSchemaValidator[key]) {
         if (basedSchemaValidator[key].validator) {
-          const result = basedSchemaValidator[key].validator(newSchema[key])
+          const result = basedSchemaValidator[key].validator(
+            newSchema[key],
+            newSchema,
+            oldSchema
+          )
           if (typeof result === 'number') {
             errors.push({ code: result, path: [key] })
           }
