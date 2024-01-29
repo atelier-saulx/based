@@ -41,6 +41,7 @@
     "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@based/db-server": "*",
     "@based/server": "^6.7.2",
     "@saulx/prettier-config": "^1.0.0",
     "@types/node": "^17.0.23",
