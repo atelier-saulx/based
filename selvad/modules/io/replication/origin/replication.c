@@ -11,7 +11,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#if defined(__linux__)
 #include <sys/sysinfo.h>
+#endif
 #include <unistd.h>
 #include "sha3iuf/sha3.h"
 #include "jemalloc.h"
@@ -266,6 +268,7 @@ static void drop_replicas(unsigned replicas)
  *          not hold true in a the real world.
  *  @param replica_id is replica->id.
  */
+#if defined(__linux__)
 static void select_cpu(int n, unsigned replica_id, size_t cpusetsize, cpu_set_t *cpuset)
 {
     int cpu0 = 0;
@@ -280,6 +283,7 @@ static void select_cpu(int n, unsigned replica_id, size_t cpusetsize, cpu_set_t 
     CPU_SET_S(cpu0, cpusetsize, cpuset);
     CPU_SET_S(cpu1, cpusetsize, cpuset);
 }
+#endif
 
 static void init_attr(pthread_attr_t *attr, unsigned replica_id)
 {
@@ -293,6 +297,8 @@ static void init_attr(pthread_attr_t *attr, unsigned replica_id)
     pthread_attr_setaffinity_np(attr, cpusetsize, cpuset);
 
     CPU_FREE(cpuset);
+#else
+    (void)replica_id;
 #endif
 }
 
@@ -448,7 +454,12 @@ static void migrate_to_cpu0(void)
 void replication_origin_init(void)
 {
 
+#if defined(__linux__)
     nr_cpus = get_nprocs();
+#else
+    /* Only used with Linux. */
+    nr_cpus = 1;
+#endif
     migrate_to_cpu0();
 
     memset(&origin_state, 0, sizeof(origin_state));
