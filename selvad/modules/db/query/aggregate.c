@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022-2023 SAULX
+ * Copyright (c) 2022-2024 SAULX
  * SPDX-License-Identifier: MIT
  */
 #include <assert.h>
@@ -237,10 +237,10 @@ static int AggregateCommand_NodeCb(
     if (take && rpn_ctx) {
         int err;
 
-        /* Set node_id to the register */
         rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
         /*
          * Resolve the expression and get the result.
@@ -330,7 +330,7 @@ static int AggregateCommand_ArrayObjectCb(
                       rpn_str_error[err]);
             return 1;
         }
-        rpn_set_obj(rpn_ctx, obj);
+        rpn_ctx->data.obj = obj;
 
         /*
          * Resolve the expression and get the result.

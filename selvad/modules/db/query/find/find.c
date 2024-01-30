@@ -72,8 +72,9 @@ static int exec_fields_expression(
 
     SelvaHierarchy_GetNodeId(nodeId, node);
     rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-    rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+    rpn_ctx->data.hierarchy = hierarchy;
+    rpn_ctx->data.node = node;
+    rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
     rpn_err = rpn_string(rpn_ctx, expr, &out);
     if (rpn_err) {
@@ -236,10 +237,10 @@ static __hot int FindCommand_NodeCb(
 
         SelvaHierarchy_GetNodeId(nodeId, node);
 
-        /* Set node_id to the register */
         rpn_set_reg(rpn_ctx, 0, nodeId, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
 
         /*
          * Resolve the expression and get the result.
@@ -334,7 +335,7 @@ static int FindCommand_ArrayObjectCb(
                       rpn_str_error[err]);
             return 1;
         }
-        rpn_set_obj(rpn_ctx, obj);
+        rpn_ctx->data.obj = obj;
 
         /*
          * Resolve the expression and get the result.

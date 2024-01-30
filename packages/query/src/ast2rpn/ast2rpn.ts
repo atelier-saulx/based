@@ -15,6 +15,8 @@ function getValueType(f: Filter) {
 const opMapString = {
   '=': 'c',
   '!=': 'c L',
+  like: '"toupper" s',
+  notLike: '"toupper" s L',
   exists: 'h',
   notExists: 'h',
   has: 'a',
@@ -97,7 +99,7 @@ export default function ast2rpn(
         types,
         {
           isFork: true,
-          [f.$operator == '!=' ? '$and' : '$or']: [
+          [['!=', 'notLike'].includes(f.$operator) ? '$and' : '$or']: [
             {
               $operator: f.$operator,
               $field: f.$field,
@@ -136,7 +138,7 @@ export default function ast2rpn(
         console.error(`Invalid op for ${vType} field`, f)
       }
 
-      if (vType == 'string' && f.$operator == 'has') {
+      if (f.$operator === 'has') {
         out += ` $${valueId} $${fieldId} ${op}`
       } else {
         out += ` $${valueId} $${fieldId} f ${op}`

@@ -46,7 +46,7 @@ static locale_t newlocale_any(const char *names[])
 
 static char *trans(locale_t loc, const char *s, const char *trs)
 {
-    return mbstrans(loc, s, strlen(s), wctrans_l(trs, loc));
+    return selva_mbstrans(loc, s, strlen(s), wctrans_l(trs, loc));
 }
 
 PU_TEST(test_mbstrans_fi)
@@ -177,6 +177,83 @@ PU_TEST(test_mbstrans_ar)
         pu_assert_not_null("", dst);
         pu_assert_str_equal("", dst, "نَرْقُص.");
         free(dst);
+    }
+
+    return NULL;
+}
+
+static int call_mbscmp(const char *s1, const char *s2, wctrans_t trans, locale_t loc)
+{
+    return selva_mbscmp(s1, strlen(s1), s2, strlen(s2), trans, loc);
+}
+
+PU_TEST(test_mbscmp)
+{
+    setlocale(LC_CTYPE, "fi_FI.utf8");
+    setlocale(LC_CTYPE, "fi_FI.UTF-8");
+    loc = newlocale_any((const char *[]){ "fi_FI.utf8", "fi_FI.utf-8", "fi_FI.UTF8", "fi_FI.UTF-8", NULL });
+    if (loc) {
+        wctrans_t trans = wctrans_l("tolower", loc);
+        int res;
+
+        res = call_mbscmp("abc", "abc", trans, loc);
+        pu_assert_equal("", res, 0);
+
+        res = call_mbscmp("abcd", "abc", trans, loc);
+        pu_assert_equal("", res, 100);
+
+        res = call_mbscmp("ööää", "ööää", trans, loc);
+        pu_assert_equal("", res, 0);
+
+        res = call_mbscmp("ööää", "ööäa", trans, loc);
+        pu_assert_equal("", res, 131);
+
+        res = call_mbscmp("öÖÄä", "öÖäÄ", trans, loc);
+        pu_assert_equal("", res, 0);
+
+        res = call_mbscmp("ka\xcc\x84śī", "k\xc4\x81śī", trans, loc);
+        pu_assert_equal("", res, -160); /* RFE Ideally this would be normalized and the result would be 0 */
+
+        freelocale(loc);
+        loc = NULL;
+    }
+
+    loc = newlocale_any((const char *[]){ "de_DE.utf8", "de_DE.utf-8", "de_DE.UTF8", "de_DE.UTF-8", NULL });
+    if (loc) {
+        wctrans_t trans;
+        int res;
+
+        trans = wctrans_l("tolower", loc);
+        res = call_mbscmp("straße", "STRASSE", trans, loc);
+        pu_assert_equal("", res, 108);
+
+        /* RFE */
+        trans = wctrans_l("toupper", loc);
+        res = call_mbscmp("straße", "STRASSE", trans, loc);
+        pu_assert_equal("", res, 140);
+
+        /*
+         * > Traditionally, ⟨ß⟩ did not have a capital form, although some type
+         * > designers introduced de facto capitalized variants. In 2017, the
+         * > Council for German Orthography officially adopted a capital, ⟨ẞ⟩,
+         * > as an acceptable variant in German orthography, ending a long
+         * > orthographic debate.
+         * - Wikipedia
+         *
+         * This is not supported by the locale(s) in macOS as of 2024.
+         */
+#if __linux__
+        trans = wctrans_l("tolower", loc);
+        res = call_mbscmp("ß", "ẞ", trans, loc);
+        pu_assert_equal("if this fails then your locale is probably pre-2017", res, 0);
+
+        trans = wctrans_l("tolower", loc);
+        res = call_mbscmp("ß", "ẞ", trans, loc);
+        pu_assert_equal("if this fails then your locale is probably pre-2017", res, 0);
+#endif
+
+        freelocale(loc);
+        loc = NULL;
     }
 
     return NULL;

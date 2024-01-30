@@ -558,6 +558,26 @@ struct SelvaHierarchyMetadata *SelvaHierarchy_GetNodeMetadata(
     return !node ? NULL : &node->metadata;
 }
 
+/**
+ * Delete all edge_metadata from a parent to child relationship.
+ * @returns 0 if deleted or no edge_metadata was set for this relationship;
+ *          Otherwise a SelvaObject_DelKey() error is returned.
+ */
+static int delete_all_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id)
+{
+    int err;
+
+    if (!parent->children_metadata) {
+        return 0;
+    }
+
+    err = SelvaObject_DelKeyStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE);
+    return (err == SELVA_ENOENT) ? 0 : err;
+}
+
+/**
+ * Get or create the edge_metadata object for a parent to child arc.
+ */
 static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const Selva_NodeId dst_node_id, bool create, struct SelvaObject **out) {
     int err = SELVA_ENOENT;
 
@@ -567,7 +587,7 @@ static int get_hierarchy_edge_metadata(struct SelvaHierarchyNode *parent, const 
 
     if (parent->children_metadata) {
         err = SelvaObject_GetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, out);
-        if (err == SELVA_ENOENT) {
+        if (err == SELVA_ENOENT && create) {
             struct SelvaObject *edge_metadata = SelvaObject_New();
 
             err = SelvaObject_SetObjectStr(parent->children_metadata, dst_node_id, SELVA_NODE_ID_SIZE, edge_metadata);
@@ -601,11 +621,26 @@ int SelvaHierarchy_GetEdgeMetadata(
             return SELVA_HIERARCHY_ENOENT;
         }
 
-        /* TODO Support delete_all, how? */
+        if (delete_all) {
+            int err;
+
+            err = delete_all_hierarchy_edge_metadata(parent, node->id);
+            if (err) {
+                return err;
+            }
+        }
 
         return get_hierarchy_edge_metadata(parent, node->id, create, out);
     } else if (IS_FIELD(SELVA_CHILDREN_FIELD)) {
-        /* TODO Support delete_all */
+        if (delete_all) {
+            int err;
+
+            err = delete_all_hierarchy_edge_metadata(node, dst_node_id);
+            if (err) {
+                return err;
+            }
+        }
+
         return get_hierarchy_edge_metadata(node, dst_node_id, create, out);
     } else {
         struct EdgeField *edge_field;
@@ -2225,8 +2260,9 @@ __attribute__((nonnull (5))) static int exec_edge_filter(
     }
 
     rpn_set_reg(edge_filter_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(edge_filter_ctx, hierarchy, node);
-    rpn_set_obj(edge_filter_ctx, edge_metadata);
+    edge_filter_ctx->data.hierarchy = hierarchy;
+    edge_filter_ctx->data.node = node;
+    edge_filter_ctx->data.obj = edge_metadata;
     rpn_err = rpn_bool(edge_filter_ctx, edge_filter, &res);
 
     return (!rpn_err && res) ? 1 : 0;
@@ -2323,8 +2359,9 @@ static int bfs_expression(
         SelvaSet_Init(&fields, SELVA_SET_TYPE_STRING);
 
         rpn_set_reg(rpn_ctx, 0, node->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-        rpn_set_hierarchy_node(rpn_ctx, hierarchy, node);
-        rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(node));
+        rpn_ctx->data.hierarchy = hierarchy;
+        rpn_ctx->data.node = node;
+        rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(node);
         rpn_err = rpn_selvaset(rpn_ctx, rpn_expr, &fields);
         if (rpn_err) {
             SELVA_LOG(SELVA_LOGL_ERR, "RPN field selector expression failed for %.*s: %s",
@@ -2839,8 +2876,9 @@ int SelvaHierarchy_TraverseExpression(
     SelvaSet_Init(&fields, SELVA_SET_TYPE_STRING);
 
     rpn_set_reg(rpn_ctx, 0, head->id, SELVA_NODE_ID_SIZE, RPN_SET_REG_FLAG_IS_NAN);
-    rpn_set_hierarchy_node(rpn_ctx, hierarchy, head);
-    rpn_set_obj(rpn_ctx, SelvaHierarchy_GetNodeObject(head));
+    rpn_ctx->data.hierarchy = hierarchy;
+    rpn_ctx->data.node = head;
+    rpn_ctx->data.obj = SelvaHierarchy_GetNodeObject(head);
     rpn_err = rpn_selvaset(rpn_ctx, rpn_expr, &fields);
     if (rpn_err) {
         Trx_End(&hierarchy->trx_state, &trx_cur);
