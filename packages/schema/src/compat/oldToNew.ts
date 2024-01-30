@@ -7,14 +7,16 @@ export const oldToNew = (oldSchema) => {
       if (i in target) {
         if (i === 'meta') {
           for (const j in source[i]) {
-            target[j] = source[i][j]
+            if (j === 'name') {
+              target.title = source[i][j]
+            } else {
+              target[j] = source[i][j]
+            }
           }
           delete target[i]
         } else if (source[i] && typeof source[i] === 'object') {
           walker(target[i], source[i])
         } else {
-          if (i === 'meta') {
-          }
           target[i] = source[i]
         }
       } else {

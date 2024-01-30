@@ -284,7 +284,9 @@ const oldSchema: oldSchema = {
       },
       prefix: 'as',
       meta: {
-        title: 'thingy',
+        name: 'thingy',
+        index: 0,
+        description: 'bla',
       },
     },
   },
@@ -295,7 +297,9 @@ const oldSchema: oldSchema = {
 //   t.true(true)
 // })
 test('test', async (t) => {
-  console.dir(oldToNew(oldSchema), { depth: null })
+  // console.dir(oldToNew(oldSchema), { depth: null })
+  // newToOld(newSchemas[2])
+  console.dir(newToOld(newSchemas[2]), { depth: null })
 
   t.true(true)
 })
