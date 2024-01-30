@@ -23,33 +23,35 @@ const oldSchemaThingy: oldSchema = {
 export const newToOld = (schema: BasedSchema) => {
   const tempSchema = {} as BasedSchema
   const checker = (field) => {
-    return field === 'description' || field === 'title' || field === 'examples'
+    return (
+      field === 'description' ||
+      field === 'title' ||
+      field === 'examples' ||
+      field === 'name'
+    )
   }
 
   const walker = (target: any, source: any) => {
     for (const i in source) {
-      if (i in target) {
-        if (source[i] && typeof source[i] === 'object') {
+      if (source[i] && typeof source[i] === 'object' && i in target === false) {
+        if (!checker(i)) {
+          target[i] = source[i].length ? [] : {}
           walker(target[i], source[i])
-        } else {
-          if (!checker(i)) {
-            target[i] = source[i]
-          } else {
-            target.meta = {}
-            // console.log(i)
-            for (const i in source) {
-              if (checker(i)) {
-                target.meta = { ...target.meta, [i]: source[i] }
-                delete source[i]
-              }
+        }
+      } else if (!checker(i)) {
+        target[i] = source[i]
+      } else {
+        target.meta = {}
+        for (const i in source) {
+          if (checker(i)) {
+            if (i === 'title') {
+              target.meta = { ...target.meta, name: source[i] }
+            } else {
+              target.meta = { ...target.meta, [i]: source[i] }
             }
-
-            // target.meta[i] = source[i]
+            delete source[i]
           }
         }
-      } else {
-        target[i] = source[i].length ? [] : {}
-        walker(target, source)
       }
     }
   }
