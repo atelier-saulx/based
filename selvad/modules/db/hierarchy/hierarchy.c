@@ -2016,6 +2016,8 @@ static bool SelvaHierarchy_CanTrackInactiveNodes(struct SelvaHierarchy *hierarch
         selva_glob_config.hierarchy_auto_compress_period_ms > 0 &&
         /*
          * Track only in the dump process.
+         * This should also prevent query_forks from writing the
+         * tracking data.
          */
         hierarchy->flag_isSaving;
 }
@@ -3277,6 +3279,11 @@ static void auto_compress_proc(struct event *, void *data) {
     static struct backoff_timeout backoff;
     struct timespec timeout;
     SelvaHierarchy *hierarchy = (struct SelvaHierarchy *)data;
+
+    if (selva_server_is_query_fork()) {
+        /* Never do auto compression in a query_fork. */
+        return;
+    }
 
     SELVA_TRACE_BEGIN_AUTO(auto_compress_proc);
 

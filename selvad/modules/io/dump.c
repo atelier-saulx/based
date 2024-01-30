@@ -334,6 +334,11 @@ static void auto_save(struct event *, void *arg)
     struct timespec *ts = (struct timespec *)arg;
     int tim, err;
 
+    if (selva_server_is_query_fork()) {
+        /* Never auto save in a query fork. */
+        return;
+    }
+
     tim = evl_set_timeout(ts, auto_save, ts);
     if (tim < 0) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to schedule an autosave");
@@ -531,6 +536,7 @@ __used static void dump_on_exit(int code, void *)
     if (code != 0 ||
         selva_db_dump_state == SELVA_DB_DUMP_IS_CHILD ||
         !selva_db_is_dirty ||
+        selva_server_is_query_fork() ||
         !is_every_serializer_ready() ||
         replication_mode == SELVA_REPLICATION_MODE_REPLICA) {
         /* A dump shall not be made in several cases. */

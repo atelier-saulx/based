@@ -1034,8 +1034,47 @@ static void SelvaHierarchy_FindCommand(struct selva_server_response_out *resp, c
     }
 }
 
+static bool query_fork_eligible(const void *buf, size_t len)
+{
+    const char *lang_str;
+    size_t lang_len;
+    const char *query_opts_str = NULL;
+    size_t query_opts_len = 0;
+    struct SelvaFind_QueryOpts query_opts;
+    int argc;
+
+    argc = selva_proto_scanf(NULL, buf, len, "%.*s, %.*s",
+                             &lang_str, &lang_len,
+                             &query_opts_len, &query_opts_str
+                            );
+
+    if (argc == SELVA_PROTO_EINVAL && /* TODO We might want an unique error code for this one. */
+        query_opts_str && query_opts_len) {
+        /*
+         * query_opts was read.
+         */
+        int err;
+
+        /* TODO It would be faster to check against some "finterprints" i.e. bit masks or so. */
+        memcpy(&query_opts, query_opts_str, sizeof(query_opts));
+        err = fixup_query_opts(&query_opts, query_opts_str, query_opts_len);
+
+        return !err &&
+               !!(query_opts.dir & (SELVA_HIERARCHY_TRAVERSAL_BFS_ANCESTORS |
+                                    SELVA_HIERARCHY_TRAVERSAL_BFS_DESCENDANTS |
+                                    SELVA_HIERARCHY_TRAVERSAL_DFS_ANCESTORS |
+                                    SELVA_HIERARCHY_TRAVERSAL_DFS_DESCENDANTS |
+                                    SELVA_HIERARCHY_TRAVERSAL_DFS_FULL |
+                                    SELVA_HIERARCHY_TRAVERSAL_BFS_EDGE_FIELD |
+                                    SELVA_HIERARCHY_TRAVERSAL_BFS_EXPRESSION |
+                                    SELVA_HIERARCHY_TRAVERSAL_BFS_FIELD));
+    }
+
+    return false;
+}
+
 static int Find_OnLoad(void) {
-    selva_mk_command(CMD_ID_HIERARCHY_FIND, SELVA_CMD_MODE_PURE, "hierarchy.find", SelvaHierarchy_FindCommand);
+    selva_mk_command(CMD_ID_HIERARCHY_FIND, SELVA_CMD_MODE_PURE | SELVA_CMD_MODE_QUERY_FORK, "hierarchy.find", SelvaHierarchy_FindCommand, query_fork_eligible);
 
     return 0;
 }

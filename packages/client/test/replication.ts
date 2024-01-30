@@ -80,6 +80,9 @@ async function restartReplica(t: ExecutionContext<Context>, clean?: boolean) {
     name: 'default',
     dir: replicaDumpPath,
     stdio: 'pipe',
+    env: {
+      SELVA_MAIN_CPU: '1',
+    },
   })
   setupLogs(t.context.replica, 'replica:')
 

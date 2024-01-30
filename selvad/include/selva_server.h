@@ -33,6 +33,13 @@ enum selva_cmd_mode {
      * database objects as well as their serialized state.
      */
     SELVA_CMD_MODE_MUTATE = 0x02,
+    /**
+     * Allow forking when executing this command.
+     * SELVA_CMD_MODE_PURE must be set and SELVA_CMD_MODE_MUTATE must not be set.
+     * When a command is executed in a fork any changes in the memory are not
+     * directly reflected on the origin.
+     */
+    SELVA_CMD_MODE_QUERY_FORK = 0x04,
 };
 
 /**
@@ -44,6 +51,14 @@ enum selva_cmd_mode {
 typedef void (*selva_cmd_function)(struct selva_server_response_out *resp, const void *buf, size_t len);
 
 /**
+ * Function to test whether this command is eligible for forking.
+ * The function should return true if it's safe to fork the process and any
+ * in-memory changes are either temporary, handled properly, or communicated
+ * to the main process.
+ */
+typedef bool (*selva_cmd_query_fork_test)(const void *buf, size_t len);
+
+/**
  * Set the server to read-only mode.
  * This operation is irreversible at runtime.
  * A read-only server can only invoke commands marked as `SELVA_CMD_MODE_PURE`
@@ -52,11 +67,20 @@ typedef void (*selva_cmd_function)(struct selva_server_response_out *resp, const
 SELVA_SERVER_EXPORT(void, selva_server_set_readonly, void);
 
 /**
- * Register a command.
+ * Test if this process is a query fork.
+ * A query fork is a short-lived process created for processing a slow read-only query.
+ * A query fork is also a readonly db.
  */
-SELVA_SERVER_EXPORT(int, selva_mk_command, int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd);
-#define SELVA_MK_COMMAND(nr, mode, cmd) \
-    selva_mk_command(nr, mode, #cmd, cmd)
+SELVA_SERVER_EXPORT(bool, selva_server_is_query_fork, void);
+
+/**
+ * Register a command.
+ * A fifth argument of type selva_cmd_query_fork_test must be given if
+ * `SELVA_CMD_MODE_QUERY_FORK` is set in `mode`.
+ */
+SELVA_SERVER_EXPORT(int, selva_mk_command, int nr, enum selva_cmd_mode mode, const char *name, selva_cmd_function cmd, ...);
+#define SELVA_MK_COMMAND(nr, mode, cmd, ...) \
+    selva_mk_command(nr, mode, #cmd, cmd __VA_OPT__(,) __VA_ARGS__)
 
 /**
  * Describe the connection related to this response as a string.
@@ -286,6 +310,7 @@ SELVA_SERVER_EXPORT(int, selva_pubsub_publish, unsigned ch_id, const void *messa
 
 #define _import_selva_server(apply) \
     apply(selva_server_set_readonly) \
+    apply(selva_server_is_query_fork) \
     apply(selva_mk_command) \
     apply(selva_resp_to_str) \
     apply(selva_resp_cmp_conn) \

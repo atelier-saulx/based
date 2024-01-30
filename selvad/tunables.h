@@ -51,6 +51,11 @@
  */
 #define SERVER_MAX_STREAMS 3
 
+/**
+ * Maximum number of query fork processes.
+ */
+#define MAX_QUERY_FORKS 16
+
 /*
  * Replication tunables.
  */
