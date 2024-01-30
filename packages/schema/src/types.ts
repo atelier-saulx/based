@@ -70,7 +70,7 @@ export type BasedSchemaContentMediaType =
   | 'video/*'
   | 'audio/*'
   | '*/*'
-  | `${string}/${string}`
+  | `${string}/${string}` // this is overriding the previous
 
 export type BasedSchemaFieldShared = {
   hooks?:
@@ -99,6 +99,80 @@ export type BasedSchemaFieldShared = {
   $delete?: boolean
 }
 
+export const basedSchemaStringFormatValues = [
+  'email',
+  'URL',
+  'MACAddress',
+  'IP',
+  'IPRange',
+  'FQDN',
+  'IBAN',
+  'BIC',
+  'alpha',
+  'alphaLocales',
+  'alphanumeric',
+  'alphanumericLocales',
+  'passportNumber',
+  'port',
+  'lowercase',
+  'uppercase',
+  'ascii',
+  'semVer',
+  'surrogatePair',
+  'IMEI',
+  'hexadecimal',
+  'octal',
+  'hexColor',
+  'rgbColor',
+  'HSL',
+  'ISRC',
+  'MD5',
+  'JWT',
+  'UUID',
+  'luhnNumber',
+  'creditCard',
+  'identityCard',
+  'EAN',
+  'ISIN',
+  'ISBN',
+  'ISSN',
+  'mobilePhone',
+  'mobilePhoneLocales',
+  'postalCode',
+  'postalCodeLocales',
+  'ethereumAddress',
+  'currency',
+  'btcAddress',
+  'ISO6391',
+  'ISO8601',
+  'RFC3339',
+  'ISO31661Alpha2',
+  'ISO31661Alpha3',
+  'ISO4217',
+  'base32',
+  'base58',
+  'base64',
+  'dataURI',
+  'magnetURI',
+  'mimeType',
+  'latLong',
+  'slug',
+  'strongPassword',
+  'taxID',
+  'licensePlate',
+  'VAT',
+  'code',
+  'typescript',
+  'javascript',
+  'python',
+  'rust',
+  'css',
+  'html',
+  'json',
+  'markdown',
+  'clike',
+  'basedId',
+] as const
 // -------------- Primitive ---------------
 export type BasedSchemaStringShared = {
   minLength?: number
@@ -106,79 +180,7 @@ export type BasedSchemaStringShared = {
   contentMediaEncoding?: string // base64
   contentMediaType?: BasedSchemaContentMediaType // 'image/*'
   pattern?: BasedSchemaPattern // TODO: does not exist
-  format?:
-    | 'email'
-    | 'URL'
-    | 'MACAddress'
-    | 'IP'
-    | 'IPRange'
-    | 'FQDN'
-    | 'IBAN'
-    | 'BIC'
-    | 'alpha'
-    | 'alphaLocales'
-    | 'alphanumeric'
-    | 'alphanumericLocales'
-    | 'passportNumber'
-    | 'port'
-    | 'lowercase'
-    | 'uppercase'
-    | 'ascii'
-    | 'semVer'
-    | 'surrogatePair'
-    | 'IMEI'
-    | 'hexadecimal'
-    | 'octal'
-    | 'hexColor'
-    | 'rgbColor'
-    | 'HSL'
-    | 'ISRC'
-    | 'MD5'
-    | 'JWT'
-    | 'UUID'
-    | 'luhnNumber'
-    | 'creditCard'
-    | 'identityCard'
-    | 'EAN'
-    | 'ISIN'
-    | 'ISBN'
-    | 'ISSN'
-    | 'mobilePhone'
-    | 'mobilePhoneLocales'
-    | 'postalCode'
-    | 'postalCodeLocales'
-    | 'ethereumAddress'
-    | 'currency'
-    | 'btcAddress'
-    | 'ISO6391'
-    | 'ISO8601'
-    | 'RFC3339'
-    | 'ISO31661Alpha2'
-    | 'ISO31661Alpha3'
-    | 'ISO4217'
-    | 'base32'
-    | 'base58'
-    | 'base64'
-    | 'dataURI'
-    | 'magnetURI'
-    | 'mimeType'
-    | 'latLong'
-    | 'slug'
-    | 'strongPassword'
-    | 'taxID'
-    | 'licensePlate'
-    | 'VAT'
-    | 'code'
-    | 'typescript'
-    | 'javascript'
-    | 'python'
-    | 'rust'
-    | 'css'
-    | 'html'
-    | 'json'
-    | 'markdown'
-    | 'clike'
-    | 'basedId'
+  format?: (typeof basedSchemaStringFormatValues)[number]
   display?: StringFormat
   multiline?: boolean
 }

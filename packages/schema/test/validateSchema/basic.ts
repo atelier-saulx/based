@@ -39,6 +39,18 @@ test('root', async (t) => {
   t.deepEqual(
     await validateSchema({
       root: {
+        // @ts-ignore
+        fields: 'wa',
+      },
+    }),
+    {
+      errors: [{ code: ParseError.incorrectFormat, path: ['root', 'fields'] }],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
         prefix: 'wa',
       },
     }),

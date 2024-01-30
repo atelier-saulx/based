@@ -2,43 +2,25 @@ import { deepEqual } from '@saulx/utils'
 import { ParseError } from '../error.js'
 import { BasedSchemaType } from '../types.js'
 import { Validator } from './index.js'
-
-const mustBeString = (value: string, path: string[]) =>
-  typeof value === 'string'
-    ? true
-    : [
-        {
-          code: ParseError.incorrectFormat,
-          path,
-        },
-      ]
-
-const mustBeStringArray = (value: string[], path: string[]) =>
-  Array.isArray(value) && value.every((i) => typeof i === 'string')
-    ? true
-    : [
-        {
-          code: ParseError.incorrectFormat,
-          path,
-        },
-      ]
-
-const mustBeBoolean = (value: string, path: string[]) =>
-  typeof value === 'boolean'
-    ? true
-    : [
-        {
-          code: ParseError.incorrectFormat,
-          path,
-        },
-      ]
+import { mustBeBoolean, mustBeString, mustBeStringArray } from './utils.js'
 
 export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
   directory: {
     validator: mustBeString,
     optional: true,
   },
-  fields: {},
+  fields: {
+    validator: (value, path, newSchema, oldSchema) => {
+      if (!(typeof value === 'object' && !Array.isArray(value))) {
+        return [
+          {
+            code: ParseError.incorrectFormat,
+            path,
+          },
+        ]
+      }
+    },
+  },
   title: {
     validator: mustBeString,
     optional: true,

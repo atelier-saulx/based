@@ -8,7 +8,7 @@ import {
 } from '../types.js'
 import { basedSchemaTypeValidator } from './basedSchemaTypeValidator.js'
 
-type ValidateSchemaError = { code: ParseError; path?: string[] }
+export type ValidateSchemaError = { code: ParseError; path?: string[] }
 export type Validator<T> = {
   [P in keyof Required<T>]: {
     optional?: boolean
