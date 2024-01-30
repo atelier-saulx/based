@@ -21,7 +21,7 @@ test('should not allow non object schemas', async (t) => {
   })
 })
 
-test('should only allow supported `languages`', async (t) => {
+test('`languages` property', async (t) => {
   t.deepEqual(await validateSchema({ language: 'en' }), {
     valid: true,
   })
@@ -31,7 +31,7 @@ test('should only allow supported `languages`', async (t) => {
   })
 })
 
-test('should only allow supported languages in `translations`', async (t) => {
+test('`translations` property', async (t) => {
   t.deepEqual(
     await validateSchema({
       language: 'en',
@@ -60,6 +60,100 @@ test('should only allow supported languages in `translations`', async (t) => {
     {
       errors: [
         { code: ParseError.languageNotSupported, path: ['translations'] },
+      ],
+    }
+  )
+})
+
+test('`languageFallbacks` property', async (t) => {
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      languageFallbacks: {
+        fr: ['en'],
+        pt: ['fr', 'pt'],
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      // @ts-ignore
+      languageFallbacks: 'pt',
+    }),
+    {
+      errors: [
+        { code: ParseError.incorrectFormat, path: ['languageFallbacks'] },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      // @ts-ignore
+      languageFallbacks: ['pt'],
+    }),
+    {
+      errors: [
+        { code: ParseError.incorrectFormat, path: ['languageFallbacks'] },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      languageFallbacks: {
+        fr: ['en'],
+        // @ts-ignore
+        pt: ['xx', 'pt'],
+      },
+    }),
+    {
+      errors: [
+        { code: ParseError.noLanguageFound, path: ['languageFallbacks'] },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      languageFallbacks: {
+        // @ts-ignore
+        fr: 'en',
+      },
+    }),
+    {
+      errors: [
+        { code: ParseError.incorrectFormat, path: ['languageFallbacks'] },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      language: 'en',
+      translations: ['fr', 'pt'],
+      languageFallbacks: {
+        fr: ['en'],
+        // @ts-ignore
+        xx: ['fr', 'pt'],
+      },
+    }),
+    {
+      errors: [
+        { code: ParseError.noLanguageFound, path: ['languageFallbacks'] },
       ],
     }
   )

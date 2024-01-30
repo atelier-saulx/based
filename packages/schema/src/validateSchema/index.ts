@@ -1,5 +1,10 @@
 import { ParseError } from '../error.js'
-import { BasedSchema, BasedSchemaPartial, languages } from '../types.js'
+import {
+  BasedSchema,
+  BasedSchemaPartial,
+  languages,
+  BasedSchemaLanguage,
+} from '../types.js'
 
 type Validatior<T> = {
   [P in keyof Required<T>]: {
@@ -40,7 +45,38 @@ const basedSchemaValidator: Validatior<BasedSchema> = {
     },
     optional: true,
   },
-  languageFallbacks: { optional: true },
+  languageFallbacks: {
+    validator: (
+      value: Record<BasedSchemaLanguage, BasedSchemaLanguage[]>,
+      newSchema,
+      oldSchema
+    ) => {
+      // languageFallbacks needs to be an object
+      if (typeof value !== 'object' || Array.isArray(value)) {
+        return ParseError.incorrectFormat
+      }
+      const schemaLangs = [newSchema.language || oldSchema?.language].concat(
+        newSchema.translations || oldSchema?.translations
+      )
+      for (const key in value) {
+        // languageFallbacks keys must be a language or a translation
+        if (!schemaLangs.includes(key as BasedSchemaLanguage)) {
+          return ParseError.noLanguageFound
+        }
+        // languageFallbacks language values need to be array
+        if (!Array.isArray(value[key])) {
+          return ParseError.incorrectFormat
+        }
+        if (
+          !value[key].every((l: BasedSchemaLanguage) => schemaLangs.includes(l))
+        ) {
+          return ParseError.noLanguageFound
+        }
+      }
+      return true
+    },
+    optional: true,
+  },
   root: {},
   $defs: {},
   types: {},
