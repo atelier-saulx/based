@@ -72,7 +72,10 @@ struct conn_ctx {
          * responses but makes processing on the server-side more efficient.
          */
         uint8_t batch_active: 1;
-
+        /**
+         * Used by server_recv_message().
+         * Must be initialized to CONN_CTX_RECV_STATE_NEW.
+         */
         enum {
             CONN_CTX_RECV_STATE_NEW, /*!< Waiting for the next seq; No recv in progress. */
             CONN_CTX_RECV_STATE_FRAGMENT, /*!< Waiting for the next frame of a sequence. */
