@@ -412,12 +412,6 @@ test('find - descendants 1', async (t) => {
   }
 })
 
-test.afterEach.always(async (t) => {
-  const { srv, client } = t.context
-  await srv.destroy()
-  client.destroy()
-})
-
 // from w_youri.ts
 test('$inherit in a list', async (t) => {
   const { client } = t.context
