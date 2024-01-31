@@ -323,7 +323,7 @@ int replication_origin_register_replica(
     pthread_attr_t attr;
 
     init_attr(&attr, replica->id);
-    pthread_create(&replica->thread, NULL, replication_thread, replica);
+    pthread_create(&replica->thread, &attr, replication_thread, replica);
     pthread_attr_destroy(&attr);
 
     return 0;
