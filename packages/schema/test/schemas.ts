@@ -132,80 +132,80 @@ export const newSchemas: BasedSchema[] = [
       fields: {},
     },
     types: {
-      //   file: {
-      //     prefix: 'fi',
-      //     fields: {
-      //       usedIn: {
-      //         type: 'references',
-      //         bidirectional: { fromField: 'img' },
-      //       },
-      //       caption: {
-      //         // needs translation?
-      //         type: 'text',
-      //         description: 'Caption for seo',
-      //         title: 'Caption',
-      //       },
-      //     },
-      //   },
-      //   user: {
-      //     prefix: 'us',
-      //     fields: {
-      //       firstName: { type: 'string' },
-      //       lastName: { type: 'string' },
-      //       // email: { type: 'string', format: 'email' },
-      //       company: { type: 'reference' },
-      //       // newsletter: { type: 'int' }, type mismatch
-      //       ip: { type: 'string' },
-      //       seen: { type: 'timestamp' },
-      //       charges: {
-      //         type: 'references',
-      //         bidirectional: { fromField: 'user' },
-      //         allowedTypes: ['charge'],
-      //       },
-      //       articles: {
-      //         type: 'references',
-      //         bidirectional: { fromField: 'contributors' },
-      //         allowedTypes: ['article'],
-      //       },
-      //     },
-      //   },
-      //   charge: {
-      //     fields: {
-      //       // does this have a user?
-      //       user: {
-      //         type: 'reference',
-      //         bidirectional: { fromField: 'charges' },
-      //         allowedTypes: ['user'],
-      //       },
-      //       token: { type: 'string' },
-      //       description: { type: 'string' },
-      //       amount: { type: 'number' },
-      //       stripeId: { type: 'string' },
-      //     },
-      //   },
-      //   category: {
-      //     fields: {
-      //       title: { type: 'text' },
-      //       children: {
-      //         type: 'references',
-      //         allowedTypes: ['article'],
-      //       },
-      //     },
-      //   },
-      // section: {
-      //   fields: {
-      //     title: { type: 'text' },
-      //     membership: { type: 'number' },
-      //     membershipFreeDays: { type: 'number' },
-      //     hidden: { type: 'boolean' },
-      //     metaDescription: { type: 'text' },
-      //     // meta_keywords: { type: 'array', values: { type: 'string' } },
-      //     children: {
-      //       type: 'references',
-      //       allowedTypes: ['article', 'category'],
-      //     },
-      //   },
-      // },
+      file: {
+        prefix: 'fi',
+        fields: {
+          usedIn: {
+            type: 'references',
+            bidirectional: { fromField: 'img' },
+          },
+          caption: {
+            // needs translation?
+            type: 'text',
+            description: 'Caption for seo',
+            title: 'Caption',
+          },
+        },
+      },
+      user: {
+        prefix: 'us',
+        fields: {
+          firstName: { type: 'string' },
+          lastName: { type: 'string' },
+          // email: { type: 'string', format: 'email' },
+          company: { type: 'reference' },
+          // newsletter: { type: 'int' }, type mismatch
+          ip: { type: 'string' },
+          seen: { type: 'timestamp' },
+          charges: {
+            type: 'references',
+            bidirectional: { fromField: 'user' },
+            allowedTypes: ['charge'],
+          },
+          articles: {
+            type: 'references',
+            bidirectional: { fromField: 'contributors' },
+            allowedTypes: ['article'],
+          },
+        },
+      },
+      charge: {
+        fields: {
+          // does this have a user?
+          user: {
+            type: 'reference',
+            bidirectional: { fromField: 'charges' },
+            allowedTypes: ['user'],
+          },
+          token: { type: 'string' },
+          description: { type: 'string' },
+          amount: { type: 'number' },
+          stripeId: { type: 'string' },
+        },
+      },
+      category: {
+        fields: {
+          title: { type: 'text' },
+          children: {
+            type: 'references',
+            allowedTypes: ['article'],
+          },
+        },
+      },
+      section: {
+        fields: {
+          title: { type: 'text' },
+          membership: { type: 'number' },
+          membershipFreeDays: { type: 'number' },
+          hidden: { type: 'boolean' },
+          metaDescription: { type: 'text' },
+          // meta_keywords: { type: 'array', values: { type: 'string' } },
+          children: {
+            type: 'references',
+            allowedTypes: ['article', 'category'],
+          },
+        },
+      },
       article: {
         prefix: 'ar',
         fields: {
@@ -264,6 +264,7 @@ const oldSchema: oldSchema = {
   languages: ['en', 'nl'],
 
   rootType: {},
+  // $defs: {},
   types: {
     thing1: {
       fields: {
@@ -276,7 +277,7 @@ const oldSchema: oldSchema = {
             objectNumber: {
               type: 'number',
               meta: {
-                title: 'thingy',
+                name: 'name',
               },
             },
           },
@@ -284,7 +285,7 @@ const oldSchema: oldSchema = {
       },
       prefix: 'as',
       meta: {
-        name: 'thingy',
+        name: 'name',
         index: 0,
         description: 'bla',
       },
@@ -297,7 +298,7 @@ const oldSchema: oldSchema = {
 //   t.true(true)
 // })
 test('test', async (t) => {
-  // console.dir(oldToNew(oldSchema), { depth: null })
+  console.dir(oldToNew(oldSchema), { depth: null })
   // newToOld(newSchemas[2])
   console.dir(newToOld(newSchemas[2]), { depth: null })
 
