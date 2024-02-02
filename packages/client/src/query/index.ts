@@ -11,7 +11,7 @@ import {
 import { genObserveId } from '../genObserveId.js'
 import { BasedClient } from '../index.js'
 import { removeStorage, setStorage } from '../persistentStorage/index.js'
-import { cacheClock } from '../cache.js'
+import { freeCacheMemory } from '../cache.js'
 
 // Can extend this as a query builder
 // TODO: maybe add user bound as option (will clear / set on a-state chage)
@@ -89,7 +89,6 @@ export class BasedQuery<P = any, K = any> {
     }
 
     if (cachedData) {
-      cachedData.t = cacheClock()
       onData(cachedData.v, cachedData.c)
     }
 
@@ -99,6 +98,11 @@ export class BasedQuery<P = any, K = any> {
         obs.subscribers.delete(subscriberId)
         if (obs.subscribers.size === 0) {
           this.client.observeState.delete(this.id)
+
+          if (this.client.cacheSize > this.client.maxCacheSize) {
+            freeCacheMemory(this.client)
+          }
+
           addObsCloseToQueue(this.client, this.id)
         }
       } else {

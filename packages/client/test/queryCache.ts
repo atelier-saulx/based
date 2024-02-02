@@ -14,7 +14,7 @@ test.beforeEach(async (t: T) => {
 
 test('query cache', async (t: T) => {
   const client = new BasedClient(undefined, {
-    maxCacheSize: 1e4,
+    maxCacheSize: 1e5,
   })
 
   const server = new BasedServer({
@@ -65,7 +65,7 @@ test('query cache', async (t: T) => {
 
   await wait(1500)
 
-  console.log(client.cacheSize / 1024 / 1024, 'mb')
+  console.log(client.cacheSize / 1024, 'kb')
 
   await wait(1000)
 

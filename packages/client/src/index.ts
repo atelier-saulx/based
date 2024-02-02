@@ -42,6 +42,7 @@ import { hashObjectIgnoreKeyOrder } from '@saulx/hash'
 import { deepEqual } from '@saulx/utils'
 
 import parseOpts from '@based/opts'
+import { freeCacheMemory } from './cache.js'
 
 export * from './authState/parseAuthState.js'
 
@@ -128,6 +129,11 @@ export class BasedClient extends Emitter {
     resolve: null,
     reject: null,
     inProgress: false,
+  }
+
+  // cache
+  clearUnusedCache() {
+    freeCacheMemory(this)
   }
 
   // --------- Internal Events

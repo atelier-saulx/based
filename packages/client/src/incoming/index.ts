@@ -14,7 +14,7 @@ import {
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue, convertDataToBasedError } from '../types/index.js'
-import { cacheClock, freeCacheMemory } from '../cache.js'
+import { freeCacheMemory } from '../cache.js'
 
 const decodeAndDeflate = (
   start: number,
@@ -92,23 +92,25 @@ export const incoming = async (client: BasedClient, data: any) => {
       const start = 28
       const end = len + 4
       let diff: any
+      let size = 0
 
-      // if not empty response, parse it
       if (len !== 24) {
         const inflatedBuffer = isDeflate
           ? inflateSync(buffer.slice(start, end))
           : buffer.slice(start, end)
-
-        console.info('BYTES DIFF', inflatedBuffer)
-
+        size = inflatedBuffer.byteLength
         diff = JSON.parse(new TextDecoder().decode(inflatedBuffer))
       }
 
       try {
+        // bit weird...
+        if (size > cachedData.s) {
+          client.cacheSize -= cachedData.s
+          client.cacheSize += size
+          cachedData.s = size
+        }
         cachedData.v = applyPatch(cachedData.v, diff)
         cachedData.c = checksum
-        cachedData.t = cacheClock()
-        // cachedData.s = sizeof(cachedData.v)
       } catch (err) {
         requestFullData(client, id)
         return
@@ -166,21 +168,17 @@ export const incoming = async (client: BasedClient, data: any) => {
       if (!noChange) {
         client.cacheSize += size
 
-        // clean up
-
         if (cached && cached.s) {
           client.cacheSize -= cached.s
         }
 
         if (client.cacheSize > client.maxCacheSize) {
-          // flap
           freeCacheMemory(client)
         }
 
         const cacheData: CacheValue = {
           v: payload,
           c: checksum,
-          t: cacheClock(),
           s: size,
         }
 
