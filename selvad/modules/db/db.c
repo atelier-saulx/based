@@ -97,7 +97,7 @@ static void db_flush(void)
     main_hierarchy = SelvaModify_NewHierarchy();
     if (!main_hierarchy) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Failed to create a new main_hierarchy");
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 

@@ -349,7 +349,7 @@ static int dump_save_async(const char *filename)
         ts_monotime(&ts_end);
         print_ready(__func__, &ts_start, &ts_end);
 
-        exit(0);
+        exit(EXIT_SUCCESS);
     } else if (pid < 0) {
         save_sdb_eid = 0;
         return SELVA_EGENERAL;

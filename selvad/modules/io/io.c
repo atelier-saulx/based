@@ -52,7 +52,7 @@ static void test_io_mode(struct selva_io *io, enum selva_io_flags mode)
 
     if (unlikely(!(act & (mode)))) {
         SELVA_LOG(SELVA_LOGL_CRIT, "Incorrect IO mode: act: %d exp: %d", act, mode);
-        exit(1);
+        exit(EXIT_FAILURE);
     }
 }
 

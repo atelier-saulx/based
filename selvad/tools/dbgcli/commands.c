@@ -267,7 +267,7 @@ void recv_message(int fd)
         r = recvn(fd, &resp_hdr, sizeof(resp_hdr));
         if (r != (ssize_t)sizeof(resp_hdr)) {
             fprintf(stderr, "Reading selva_proto header failed. result: %d\n", (int)r);
-            exit(1);
+            exit(EXIT_FAILURE);
         } else {
             size_t frame_bsize = le16toh(resp_hdr.frame_bsize);
             const size_t payload_size = frame_bsize - sizeof(resp_hdr);
