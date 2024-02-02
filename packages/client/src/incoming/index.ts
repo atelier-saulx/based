@@ -14,6 +14,7 @@ import {
 import { encodeSubscribeChannelMessage } from '../outgoing/protocol.js'
 import { getTargetInfo } from '../getTargetInfo.js'
 import { CacheValue, convertDataToBasedError } from '../types/index.js'
+import { cacheClock, freeCacheMemory } from '../cache.js'
 
 const decodeAndDeflate = (
   start: number,
@@ -94,12 +95,20 @@ export const incoming = async (client: BasedClient, data: any) => {
 
       // if not empty response, parse it
       if (len !== 24) {
-        diff = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        const inflatedBuffer = isDeflate
+          ? inflateSync(buffer.slice(start, end))
+          : buffer.slice(start, end)
+
+        console.info('BYTES DIFF', inflatedBuffer)
+
+        diff = JSON.parse(new TextDecoder().decode(inflatedBuffer))
       }
 
       try {
         cachedData.v = applyPatch(cachedData.v, diff)
         cachedData.c = checksum
+        cachedData.t = cacheClock()
+        // cachedData.s = sizeof(cachedData.v)
       } catch (err) {
         requestFullData(client, id)
         return
@@ -137,18 +146,44 @@ export const incoming = async (client: BasedClient, data: any) => {
       const end = len + 4
       let payload: any
 
+      let size = 0
+
       // If not empty response, parse it
       if (len !== 16) {
-        payload = JSON.parse(decodeAndDeflate(start, end, isDeflate, buffer))
+        const inflatedBuffer = isDeflate
+          ? inflateSync(buffer.slice(start, end))
+          : buffer.slice(start, end)
+
+        size = inflatedBuffer.byteLength
+
+        payload = JSON.parse(new TextDecoder().decode(inflatedBuffer))
       }
 
-      const noChange = client.cache.get(id)?.c === checksum
+      const cached = client.cache.get(id)
+
+      const noChange = cached?.c === checksum
 
       if (!noChange) {
+        client.cacheSize += size
+
+        // clean up
+
+        if (cached && cached.s) {
+          client.cacheSize -= cached.s
+        }
+
+        if (client.cacheSize > client.maxCacheSize) {
+          // flap
+          freeCacheMemory(client)
+        }
+
         const cacheData: CacheValue = {
           v: payload,
           c: checksum,
+          t: cacheClock(),
+          s: size,
         }
+
         client.cache.set(id, cacheData)
         if (client.observeState.has(id)) {
           const observable = client.observeState.get(id)

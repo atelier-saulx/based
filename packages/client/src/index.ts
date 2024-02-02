@@ -98,8 +98,10 @@ export class BasedClient extends Emitter {
   drainTimeout?: ReturnType<typeof setTimeout>
   idlePing?: ReturnType<typeof setTimeout>
   // --------- Cache State
+  cacheSize: number = 0
   localStorage: boolean = false
-  maxCacheSize: number = 4e6 // in bytes
+  maxCacheSize: number = 5e7 // 50MB
+  // cacheExpiry: number = 1e3 * 60 * 60 // 1 hour
   cache: Cache = new Map()
   // --------- Function State
   functionResponseListeners: FunctionResponseListeners = new Map()
