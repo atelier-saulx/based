@@ -125,7 +125,7 @@ export const newSchemas: BasedSchema[] = [
   },
   {
     language: 'en',
-    translations: [],
+    translations: ['nl'],
     $defs: {},
     prefixToTypeMapping: {},
     root: {
@@ -169,99 +169,100 @@ export const newSchemas: BasedSchema[] = [
           },
         },
       },
-      charge: {
-        fields: {
-          // does this have a user?
-          user: {
-            type: 'reference',
-            bidirectional: { fromField: 'charges' },
-            allowedTypes: ['user'],
-          },
-          token: { type: 'string' },
-          description: { type: 'string' },
-          amount: { type: 'number' },
-          stripeId: { type: 'string' },
-        },
-      },
-      category: {
-        fields: {
-          title: { type: 'text' },
-          children: {
-            type: 'references',
-            allowedTypes: ['article'],
-          },
-        },
-      },
-      section: {
-        fields: {
-          title: { type: 'text' },
-          membership: { type: 'number' },
-          membershipFreeDays: { type: 'number' },
-          hidden: { type: 'boolean' },
-          metaDescription: { type: 'text' },
-          // meta_keywords: { type: 'array', values: { type: 'string' } },
-          children: {
-            type: 'references',
-            allowedTypes: ['article', 'category'],
-          },
-        },
-      },
-      article: {
-        prefix: 'ar',
-        fields: {
-          contributors: {
-            title: 'Writers',
-            description: 'Writers or people involved with the article.',
-            type: 'references',
-            allowedTypes: ['user'],
-            bidirectional: {
-              fromField: 'articles',
-            },
-          },
-          contributorsText: {
-            title: 'Contributors text',
-            description:
-              'Gets auto generated based on contributors, fill it in to override.',
-            examples: ['Peter Teffer, graphics by Kashyap Raibagi (EDJNET)'],
-            type: 'text',
-          },
-          headline: {
-            title: 'Headline',
-            description: 'Displayed on pages, also used as meta title for seo.',
-            type: 'text',
-          },
-          publishDate: {
-            title: 'Publish date',
-            description: 'Any time you want the article to show on the website',
-            type: 'timestamp',
-          },
-          archived: {
-            title: 'Archived',
-            description:
-              'Archived articles will not show up on the website or be available outside of the cms',
-            type: 'boolean',
-          },
-          img: {
-            type: 'reference',
-            allowedTypes: ['file'],
-            bidirectional: { fromField: 'usedIn' },
-          },
-          hits: { type: 'number' }, // get a bit more going here maybe? what does this mean
-          membership: { enum: ['Need membership', 'Free'] },
-          location: { type: 'text' }, // or string its just city name or smth
-          bio: { type: 'text', format: 'json' }, //has a href and stuff so aarich text
-          tweet: { type: 'string' }, // ask if it needs translation  // 'The 2009 allocation of solar subsidies in Solvakia "was rigged," say a US cable. PM Fico denies it.',
-          notes: { type: 'string' },
-          abstract: { type: 'text' },
-          body: { type: 'text', format: 'json' }, // will add rich text
-        },
-      },
+      // charge: {
+      //   fields: {
+      //     // does this have a user?
+      //     user: {
+      //       type: 'reference',
+      //       bidirectional: { fromField: 'charges' },
+      //       allowedTypes: ['user'],
+      //     },
+      //     token: { type: 'string' },
+      //     description: { type: 'string' },
+      //     amount: { type: 'number' },
+      //     stripeId: { type: 'string' },
+      //   },
+      // },
+      // category: {
+      //   fields: {
+      //     title: { type: 'text' },
+      //     children: {
+      //       type: 'references',
+      //       allowedTypes: ['article'],
+      //     },
+      //   },
+      // },
+      // section: {
+      //   fields: {
+      //     title: { type: 'text' },
+      //     membership: { type: 'number' },
+      //     membershipFreeDays: { type: 'number' },
+      //     hidden: { type: 'boolean' },
+      //     metaDescription: { type: 'text' },
+      //     // meta_keywords: { type: 'array', values: { type: 'string' } },
+      //     children: {
+      //       type: 'references',
+      //       allowedTypes: ['article', 'category'],
+      //     },
+      //   },
+      // },
+      // article: {
+      //   prefix: 'ar',
+      //   fields: {
+      //     contributors: {
+      //       title: 'Writers',
+      //       description: 'Writers or people involved with the article.',
+      //       type: 'references',
+      //       allowedTypes: ['user'],
+      //       bidirectional: {
+      //         fromField: 'articles',
+      //       },
+      //     },
+      //     contributorsText: {
+      //       title: 'Contributors text',
+      //       description:
+      //         'Gets auto generated based on contributors, fill it in to override.',
+      //       examples: ['Peter Teffer, graphics by Kashyap Raibagi (EDJNET)'],
+      //       type: 'text',
+      //     },
+      //     headline: {
+      //       title: 'Headline',
+      //       description: 'Displayed on pages, also used as meta title for seo.',
+      //       type: 'text',
+      //     },
+      //     publishDate: {
+      //       title: 'Publish date',
+      //       description: 'Any time you want the article to show on the website',
+      //       type: 'timestamp',
+      //     },
+      //     archived: {
+      //       title: 'Archived',
+      //       description:
+      //         'Archived articles will not show up on the website or be available outside of the cms',
+      //       type: 'boolean',
+      //     },
+      //     img: {
+      //       type: 'reference',
+      //       allowedTypes: ['file'],
+      //       bidirectional: { fromField: 'usedIn' },
+      //     },
+      //     hits: { type: 'number' }, // get a bit more going here maybe? what does this mean
+      //     membership: { enum: ['Need membership', 'Free'] },
+      //     location: { type: 'text' }, // or string its just city name or smth
+      //     bio: { type: 'text', format: 'json' }, //has a href and stuff so aarich text
+      //     tweet: { type: 'string' }, // ask if it needs translation  // 'The 2009 allocation of solar subsidies in Solvakia "was rigged," say a US cable. PM Fico denies it.',
+      //     notes: { type: 'string' },
+      //     abstract: { type: 'text' },
+      //     body: { type: 'text', format: 'json' }, // will add rich text
+      //   },
+      // },
     },
   },
 ]
 
 const oldSchema: oldSchema = {
   languages: ['en', 'nl'],
+  prefixToTypeMapping: {},
 
   rootType: {},
   // $defs: {},
@@ -300,7 +301,7 @@ const oldSchema: oldSchema = {
 test('test', async (t) => {
   console.dir(oldToNew(oldSchema), { depth: null })
   // newToOld(newSchemas[2])
-  console.dir(newToOld(newSchemas[2]), { depth: null })
+  // console.dir(newToOld(newSchemas[2]), { depth: null })
 
   t.true(true)
 })

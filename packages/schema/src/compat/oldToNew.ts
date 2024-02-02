@@ -1,4 +1,3 @@
-import { languages } from '../languages.js'
 import { oldSchema } from './oldSchemaType.js'
 
 export const oldToNew = (oldSchema): oldSchema => {

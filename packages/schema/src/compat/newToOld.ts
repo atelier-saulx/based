@@ -21,8 +21,8 @@ const oldSchemaThingy: oldSchema = {
 }
 
 export const newToOld = (schema: BasedSchema) => {
-  const tempSchema = {} as BasedSchema
-  const checker = (field) => {
+  const tempSchema = {} as any
+  const metaChecker = (field) => {
     return (
       field === 'description' ||
       field === 'title' ||
@@ -30,20 +30,23 @@ export const newToOld = (schema: BasedSchema) => {
       field === 'name'
     )
   }
+  const excludedFields = (field) => {
+    return field === 'language' || field === 'translations' || field === '$defs'
+  }
 
   const walker = (target: any, source: any) => {
     for (const i in source) {
       if (source[i] && typeof source[i] === 'object' && i in target === false) {
-        if (!checker(i)) {
+        if (!metaChecker(i) && !excludedFields(i)) {
           target[i] = source[i].length ? [] : {}
           walker(target[i], source[i])
         }
-      } else if (!checker(i)) {
+      } else if (!metaChecker(i) && !excludedFields(i)) {
         target[i] = source[i]
       } else {
         target.meta = {}
         for (const i in source) {
-          if (checker(i)) {
+          if (metaChecker(i)) {
             if (i === 'title') {
               target.meta = { ...target.meta, name: source[i] }
             } else {
@@ -52,10 +55,15 @@ export const newToOld = (schema: BasedSchema) => {
             delete source[i]
           }
         }
+        if ((target.meta = {})) {
+          delete target.meta
+        }
       }
     }
   }
 
   walker(tempSchema, schema)
+
+  tempSchema.languages = [schema.language, ...schema?.translations]
   return tempSchema
 }
