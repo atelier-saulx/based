@@ -710,11 +710,6 @@ __constructor static void init(void)
         exit(EXIT_FAILURE);
     }
 
-    const char *selva_port_str = getenv(ENV_PORT_NAME);
-    if (selva_port_str) {
-        selva_port = strtol(selva_port_str, NULL, 10);
-    }
-
     SELVA_MK_COMMAND(CMD_ID_PING, SELVA_CMD_MODE_PURE, ping);
     SELVA_MK_COMMAND(CMD_ID_ECHO, SELVA_CMD_MODE_PURE, echo);
     SELVA_MK_COMMAND(CMD_ID_LSCMD, SELVA_CMD_MODE_PURE, lscmd);
