@@ -1,10 +1,10 @@
 import { BasedSchema } from '../types.js'
-import { oldSchema } from './oldSchemaType.js'
+import { BasedOldSchema } from './oldSchemaType.js'
 
-export const oldToNew = (oldSchema): BasedSchema => {
+export const convertOldToNew = (oldSchema: BasedOldSchema): BasedSchema => {
   const tempSchema = {} as any
 
-  const walker = (target: any, source: oldSchema) => {
+  const walker = (source: BasedOldSchema, target: any) => {
     for (const i in source) {
       if (i === 'languages' && source[i].length) {
         target.language = source[i][0]
@@ -23,7 +23,7 @@ export const oldToNew = (oldSchema): BasedSchema => {
           }
         } else {
           target[i] = source[i].length ? [] : {}
-          walker(target[i], source[i])
+          walker(source[i], target[i])
         }
       } else if (i !== 'meta') {
         target[i] = source[i]
@@ -31,7 +31,7 @@ export const oldToNew = (oldSchema): BasedSchema => {
     }
   }
 
-  walker(tempSchema, oldSchema)
+  walker(oldSchema, tempSchema)
   tempSchema.$defs = {}
 
   return tempSchema

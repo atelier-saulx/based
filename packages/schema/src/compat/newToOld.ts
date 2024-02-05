@@ -1,23 +1,51 @@
 import { BasedSchema } from '../types.js'
-import { oldSchema } from './oldSchemaType.js'
+import { BasedOldSchema } from './oldSchemaType.js'
 
-export const newToOld = (schema: BasedSchema) => {
-  const tempSchema = {} as any
-  const metaChecker = (field) => {
-    return (
-      field === 'validation' ||
-      field === 'format' ||
-      field === 'index' ||
-      field === 'description' ||
-      field === 'title' ||
-      field === 'examples' ||
-      field === 'ui'
-      // field === 'name'
-    )
-  }
-  const excludedFields = (field) => {
-    return field === 'language' || field === 'translations' || field === '$defs'
-  }
+const metaChecker = (field: string) => {
+  return (
+    field === 'validation' ||
+    field === 'format' ||
+    field === 'index' ||
+    field === 'description' ||
+    field === 'title' ||
+    field === 'examples' ||
+    field === 'ui' ||
+    field === 'isRequired' ||
+    field === 'title' ||
+    field === 'description' ||
+    field === 'index' ||
+    field === 'readOnly' ||
+    field === 'writeOnly' ||
+    field === '$comment' ||
+    field === 'examples' ||
+    field === 'default' ||
+    field === 'customValidator' ||
+    field === 'value' ||
+    field === 'path' ||
+    field === 'target' ||
+    field === 'minLength' ||
+    field === 'maxLength' ||
+    field === 'contentMediaEncoding' ||
+    field === 'pattern' ||
+    field === 'display' ||
+    field === 'multiline' ||
+    field === 'multipleOf' ||
+    field === 'minimum' ||
+    field === 'maximum' ||
+    field === 'exclusiveMaximum' ||
+    field === 'exclusiveMinimum' ||
+    field === '$delete'
+  )
+}
+
+const excludedFields = (field: string) => {
+  return field === 'language' || field === 'translations' || field === '$defs'
+}
+
+export const convertNewToOld = (
+  schema: BasedSchema
+): Partial<BasedOldSchema> => {
+  const tmpSchema: any = {}
 
   const walker = (target: any, source: any) => {
     for (const i in source) {
@@ -42,16 +70,15 @@ export const newToOld = (schema: BasedSchema) => {
     }
   }
 
-  walker(tempSchema, schema)
-  if ((tempSchema.meta = {})) delete tempSchema.meta
-  for (const i in tempSchema) {
+  walker(tmpSchema, schema)
+  if ((tmpSchema.meta = {})) delete tmpSchema.meta
+  for (const i in tmpSchema) {
     if (excludedFields(i)) {
-      delete tempSchema[i]
+      delete tmpSchema[i]
     }
   }
 
-  tempSchema.languages = [schema.language, ...schema?.translations]
+  tmpSchema.languages = [schema.language, ...schema?.translations]
 
-  return tempSchema
+  return tmpSchema
 }
-// enum to integer options in meta

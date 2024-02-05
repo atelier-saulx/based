@@ -1,19 +1,15 @@
 import test from 'ava'
-import { newSchemas } from './data/newSchemas.js'
-import { newToOld } from '../src/compat/newToOld.js'
-import { oldToNew } from '../src/compat/oldToNew.js'
+// TODO: maybe nice to use for validate import { newSchemas } from './data/newSchemas.js'
 import { oldSchemas } from './data/oldSchemas.js'
-import { validateSchema } from '../src/validateSchema.js'
+import { convertNewToOld, convertOldToNew } from '../src/index.js'
 
-test('test', async (t) => {
-  // need validator that returns true false
-  //t.true(validateSchema(oldToNew(oldSchemas[0])))
-
-  t.deepEqual(newToOld(await oldToNew(oldSchemas[0])), oldSchemas[0])
-})
-test('test2', async (t) => {
-  t.deepEqual(newToOld(await oldToNew(oldSchemas[1])), oldSchemas[1])
-})
-test('test3', async (t) => {
-  t.deepEqual(newToOld(await oldToNew(oldSchemas[2])), oldSchemas[2])
+test('old schema compat mode', async (t) => {
+  for (let i = 0; i < oldSchemas.length; i++) {
+    const oldSchema = oldSchemas[i]
+    t.deepEqual(
+      convertNewToOld(convertOldToNew(oldSchema)),
+      oldSchema,
+      `Schema conversion oldSchemas index ${i}`
+    )
+  }
 })

@@ -123,11 +123,11 @@ type TypeSchema = {
 
 type Types = { [key: string]: TypeSchema }
 
-export type oldSchema = {
+export type BasedOldSchema = {
   sha?: string
   languages?: string[]
   types: Types
-  rootType: Pick<TypeSchema, 'fields' | 'prefix' | 'meta'>
+  rootType?: Pick<TypeSchema, 'fields' | 'prefix' | 'meta'>
   idSeedCounter?: number
   prefixToTypeMapping?: Record<string, string>
 }
