@@ -17,19 +17,17 @@ export type Validator<T> = {
       path: string[],
       newSchema: BasedSchemaPartial,
       oldSchema: BasedSchema
-    ) => true | ValidateSchemaError[]
+    ) => ValidateSchemaError[]
   }
 }
 
 const basedSchemaValidator: Validator<BasedSchema> = {
   language: {
-    validator: (value, path) => {
+    validator: (value, path) =>
       // language not supported
-      if (!languages.includes(value)) {
-        return [{ code: ParseError.languageNotSupported, path }]
-      }
-      return true
-    },
+      languages.includes(value)
+        ? []
+        : [{ code: ParseError.languageNotSupported, path }],
   },
   translations: {
     validator: (value, path, newSchema, oldSchema) => {
@@ -44,7 +42,7 @@ const basedSchemaValidator: Validator<BasedSchema> = {
       }
       // language not supported
       return value.every((l: string) => languages.includes(l))
-        ? true
+        ? []
         : [{ code: ParseError.languageNotSupported, path }]
     },
     optional: true,
@@ -78,7 +76,7 @@ const basedSchemaValidator: Validator<BasedSchema> = {
           return [{ code: ParseError.noLanguageFound, path }]
         }
       }
-      return true
+      return []
     },
     optional: true,
   },
@@ -93,7 +91,33 @@ const basedSchemaValidator: Validator<BasedSchema> = {
       ),
   },
   $defs: {},
-  types: {},
+  types: {
+    validator: (value, path, newSchema, oldSchema) => {
+      if (!(typeof value === 'object' && !Array.isArray(value))) {
+        return [
+          {
+            code: ParseError.incorrectFormat,
+            path,
+          },
+        ]
+      }
+      const errors: ValidateSchemaError[] = []
+      for (const key in value) {
+        if (value.hasOwnProperty(key)) {
+          errors.push(
+            ...validate<BasedSchemaType>(
+              basedSchemaTypeValidator,
+              value[key],
+              path.concat(key),
+              newSchema,
+              oldSchema
+            )
+          )
+        }
+      }
+      return errors
+    },
+  },
   prefixToTypeMapping: {},
 }
 
@@ -110,7 +134,7 @@ export const validate: <T>(
   newSchema,
   oldSchema
 ) => {
-  let errors: ValidateSchemaError[] = []
+  const errors: ValidateSchemaError[] = []
   for (const key in target) {
     if (target.hasOwnProperty(key)) {
       if (validator[key]) {
@@ -121,9 +145,7 @@ export const validate: <T>(
             newSchema,
             oldSchema
           )
-          if (result !== true) {
-            errors = errors.concat(result)
-          }
+          errors.push(...result)
         }
       } else {
         errors.push({
@@ -140,7 +162,7 @@ export const validateSchema = async (
   newSchema: BasedSchemaPartial,
   oldSchema?: BasedSchema
 ): Promise<{ valid?: true; errors?: ValidateSchemaError[] }> => {
-  let errors: ValidateSchemaError[] = []
+  const errors: ValidateSchemaError[] = []
 
   if (newSchema === null || typeof newSchema !== 'object') {
     errors.push({ code: ParseError.invalidSchemaFormat })
@@ -165,8 +187,8 @@ export const validateSchema = async (
   //     }
   //   }
   // }
-  errors = errors.concat(
-    validate(basedSchemaValidator, newSchema, [], newSchema, oldSchema)
+  errors.push(
+    ...validate(basedSchemaValidator, newSchema, [], newSchema, oldSchema)
   )
 
   return errors.length ? { errors } : { valid: true }

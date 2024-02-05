@@ -1,8 +1,10 @@
 import { deepEqual } from '@saulx/utils'
 import { ParseError } from '../error.js'
 import { BasedSchemaType } from '../types.js'
-import { Validator } from './index.js'
+import { ValidateSchemaError, Validator, validate } from './index.js'
 import { mustBeBoolean, mustBeString, mustBeStringArray } from './utils.js'
+import { basedSchemaStringSharedValidator } from './basedSchemaStringValidator.js'
+import { basedSchemaFieldSharedValidator } from './basedSchemaFieldValidator.js'
 
 export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
   directory: {
@@ -19,6 +21,31 @@ export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
           },
         ]
       }
+      const errors: ValidateSchemaError[] = []
+      for (const key in value) {
+        if (value.hasOwnProperty(key)) {
+          switch (value[key].type) {
+            case 'string':
+              errors.push(
+                ...validate(
+                  {
+                    ...basedSchemaStringSharedValidator,
+                    ...basedSchemaFieldSharedValidator,
+                  },
+                  value[key],
+                  path.concat(key),
+                  newSchema,
+                  oldSchema
+                )
+              )
+              break
+
+            default:
+              break
+          }
+        }
+      }
+      return errors
     },
   },
   title: {
@@ -33,11 +60,11 @@ export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
     validator: (value, path) => {
       if (deepEqual(path, ['root', 'prefix'])) {
         return value === 'ro'
-          ? true
+          ? []
           : [{ code: ParseError.incorrectFormat, path }]
       }
       return /^[a-z]{2}$/.test(value)
-        ? true
+        ? []
         : [{ code: ParseError.incorrectFormat, path }]
     },
     optional: true,

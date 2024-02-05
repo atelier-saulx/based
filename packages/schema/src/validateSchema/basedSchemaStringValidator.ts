@@ -1,9 +1,8 @@
-import {
-  BasedSchemaContentMediaType,
-  BasedSchemaStringShared,
-} from '../types.js'
+import { basedSchemaDisplayFormats } from '../display/string.js'
+import { ParseError } from '../error.js'
+import { BasedSchemaStringShared, basedSchemaFieldTypes } from '../types.js'
 import { Validator } from './index.js'
-import { mustBeNumber, mustBeString } from './utils.js'
+import { mustBeBoolean, mustBeNumber, mustBeString } from './utils.js'
 
 export const basedSchemaStringSharedValidator: Validator<BasedSchemaStringShared> =
   {
@@ -20,11 +19,32 @@ export const basedSchemaStringSharedValidator: Validator<BasedSchemaStringShared
       optional: true,
     },
     contentMediaType: {
-      // validator: (value, path) => /^{} // FIXME: COntinue heree -----------
+      validator: (value, path) =>
+        /^\w*\/\w*$/.test(value)
+          ? []
+          : [{ code: ParseError.incorrectFormat, path }],
       optional: true,
     },
-    pattern: { optional: true },
-    format: { optional: true },
-    display: { optional: true },
-    multiline: { optional: true },
+    pattern: {
+      validator: mustBeString,
+      optional: true,
+    },
+    format: {
+      validator: (value, path) =>
+        basedSchemaFieldTypes.includes(value)
+          ? []
+          : [{ code: ParseError.incorrectFormat, path }],
+      optional: true,
+    },
+    display: {
+      validator: (value, path) =>
+        basedSchemaDisplayFormats.includes(value)
+          ? []
+          : [{ code: ParseError.incorrectFormat, path }],
+      optional: true,
+    },
+    multiline: {
+      validator: mustBeBoolean,
+      optional: true,
+    },
   }
