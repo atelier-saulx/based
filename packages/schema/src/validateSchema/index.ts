@@ -118,6 +118,7 @@ const basedSchemaValidator: Validator<BasedSchema> = {
       return errors
     },
   },
+  // TODO:
   prefixToTypeMapping: {},
 }
 

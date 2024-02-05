@@ -5,6 +5,7 @@ import { ParseError } from '../error.js'
 import {
   BasedSchema,
   BasedSchemaFieldAny,
+  BasedSchemaFieldArray,
   BasedSchemaFieldBoolean,
   BasedSchemaFieldCardinality,
   BasedSchemaFieldEnum,
@@ -12,6 +13,10 @@ import {
   BasedSchemaFieldJSON,
   BasedSchemaFieldNumber,
   BasedSchemaFieldObject,
+  BasedSchemaFieldRecord,
+  BasedSchemaFieldReference,
+  BasedSchemaFieldReferences,
+  BasedSchemaFieldSet,
   BasedSchemaFieldShared,
   BasedSchemaFieldString,
   BasedSchemaFieldText,
@@ -24,11 +29,100 @@ import {
 } from '../types.js'
 import { ValidateSchemaError, Validator, validate } from './index.js'
 import {
+  mustBeBidirectional,
   mustBeBoolean,
   mustBeNumber,
   mustBeString,
   mustBeStringArray,
 } from './utils.js'
+
+type MustBeFieldOptions = {
+  limitTo?: 'primitives' | 'enumerables'
+}
+export const mustBeField = (
+  value: any,
+  path: string[],
+  newSchema: BasedSchemaPartial,
+  oldSchema: BasedSchema,
+  options?: MustBeFieldOptions
+) => {
+  if (!(typeof value === 'object' && !Array.isArray(value))) {
+    return [
+      {
+        code: ParseError.incorrectFormat,
+        path,
+      },
+    ]
+  }
+  const type = value.type
+  if (
+    (options?.limitTo === 'primitives' &&
+      ![
+        'string',
+        'number',
+        'integer',
+        'timestamp',
+        'json',
+        'boolean',
+        'enum',
+      ].includes(type)) ||
+    (options?.limitTo === 'enumerables' &&
+      !['text', 'object', 'record', 'array', 'set'].includes(type))
+  ) {
+    return [
+      {
+        code: ParseError.incorrectFormat,
+        path: path.concat('type'),
+      },
+    ]
+  }
+  let validator: Validator<unknown>
+  switch (type) {
+    case 'string':
+      validator = basedSchemaStringValidator
+      break
+    case 'enum':
+      validator = basedSchemaFieldEnumValidator
+      break
+    case 'cardinality':
+      validator = basedSchemaFieldCardinalityValidator
+      break
+    case 'number':
+      validator = basedSchemaFieldNumberValidator
+      break
+    case 'integer':
+      validator = basedSchemaFieldIntegerValidator
+      break
+    case 'timestamp':
+      validator = basedSchemaFieldTimeStampValidator
+      break
+    case 'boolean':
+      validator = basedSchemaFieldBooleanValidator
+      break
+    case 'json':
+      validator = basedSchemaFieldJSONValidator
+      break
+    case 'text':
+      validator = basedSchemaFieldTextValidator
+      break
+    case 'object':
+      validator = basedSchemaFieldObjectValidator
+      break
+    case 'record':
+      validator = basedSchemaFieldRecordValidator
+      break
+    case 'array':
+      validator = basedSchemaFieldArrayValidator
+      break
+    case 'set':
+      validator = basedSchemaFieldSetValidator
+      break
+    default:
+      validator = basedSchemaFieldSharedValidator
+      break
+  }
+  return validate(validator, value, path, newSchema, oldSchema)
+}
 
 export const mustBeFields = (
   value: any,
@@ -47,51 +141,8 @@ export const mustBeFields = (
   const errors: ValidateSchemaError[] = []
   for (const key in value) {
     if (value.hasOwnProperty(key)) {
-      const type = value[key].type
-      let validator: Validator<unknown>
-      switch (type) {
-        case 'string':
-          validator = basedSchemaStringValidator
-          break
-        case 'enum':
-          validator = basedSchemaFieldEnumValidator
-          break
-        case 'cardinality':
-          validator = basedSchemaFieldCardinalityValidator
-          break
-        case 'number':
-          validator = basedSchemaFieldNumberValidator
-          break
-        case 'integer':
-          validator = basedSchemaFieldIntegerValidator
-          break
-        case 'timestamp':
-          validator = basedSchemaFieldTimeStampValidator
-          break
-        case 'boolean':
-          validator = basedSchemaFieldBooleanValidator
-          break
-        case 'json':
-          validator = basedSchemaFieldJSONValidator
-          break
-        case 'text':
-          validator = basedSchemaFieldTextValidator
-          break
-        case 'object':
-          validator = basedSchemaFieldObjectValidator
-          break
-        default:
-          validator = basedSchemaFieldSharedValidator
-          break
-      }
       errors.push(
-        ...validate(
-          validator,
-          value[key],
-          path.concat(key),
-          newSchema,
-          oldSchema
-        )
+        ...mustBeField(value[key], path.concat(key), newSchema, oldSchema)
       )
     }
   }
@@ -346,6 +397,65 @@ export const basedSchemaFieldObjectValidator: Validator<BasedSchemaFieldObject> 
     },
     required: {
       validator: mustBeStringArray,
+      optional: true,
+    },
+  }
+
+export const basedSchemaFieldRecordValidator: Validator<BasedSchemaFieldRecord> =
+  {
+    ...basedSchemaFieldSharedValidator,
+    values: {
+      validator: mustBeField,
+    },
+  }
+
+export const basedSchemaFieldArrayValidator: Validator<BasedSchemaFieldArray> =
+  {
+    ...basedSchemaFieldSharedValidator,
+    values: {
+      validator: mustBeField,
+    },
+  }
+
+export const basedSchemaFieldSetValidator: Validator<BasedSchemaFieldSet> = {
+  ...basedSchemaFieldSharedValidator,
+  items: {
+    validator: (
+      value: string,
+      path: string[],
+      newSchema: BasedSchemaPartial,
+      oldSchema: BasedSchema
+    ) =>
+      mustBeField(value, path, newSchema, oldSchema, { limitTo: 'primitives' }),
+  },
+}
+
+export const basedSchemaFieldReferenceValidator: Validator<BasedSchemaFieldReference> =
+  {
+    ...basedSchemaFieldSharedValidator,
+    bidirectional: {
+      validator: mustBeBidirectional,
+      optional: true,
+    },
+    allowedTypes: {
+      // TODO: validator
+      optional: true,
+    },
+  }
+
+export const basedSchemaFieldReferencesValidator: Validator<BasedSchemaFieldReferences> =
+  {
+    ...basedSchemaFieldSharedValidator,
+    bidirectional: {
+      validator: mustBeBidirectional,
+      optional: true,
+    },
+    allowedTypes: {
+      // TODO: validator
+      optional: true,
+    },
+    sortable: {
+      validator: mustBeBoolean,
       optional: true,
     },
   }

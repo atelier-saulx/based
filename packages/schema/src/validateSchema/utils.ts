@@ -39,3 +39,23 @@ export const mustBeNumber = (value: string, path: string[]) =>
           path,
         },
       ]
+
+export const mustBeBidirectional = (value: any, path: string[]) => {
+  if (!(typeof value === 'object' && !Array.isArray(value))) {
+    return [
+      {
+        code: ParseError.incorrectFormat,
+        path,
+      },
+    ]
+  }
+  return value.hasOwnProperty('fromField') &&
+    typeof value.fromField === 'string'
+    ? []
+    : [
+        {
+          code: ParseError.incorrectFormat,
+          path: path.concat('fromField'),
+        },
+      ]
+}

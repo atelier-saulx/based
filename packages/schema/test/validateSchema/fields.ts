@@ -314,3 +314,119 @@ test('objects', async (t) => {
     }
   )
 })
+
+test('records', async (t) => {
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          recordField: {
+            type: 'record',
+            values: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          recordField: {
+            type: 'record',
+            values: {
+              type: 'object',
+              properties: {
+                aWrongObjectField: {
+                  type: 'object',
+                  // @ts-ignore
+                  values: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.invalidProperty,
+          path: [
+            'root',
+            'fields',
+            'recordField',
+            'values',
+            'properties',
+            'aWrongObjectField',
+            'values',
+          ],
+        },
+      ],
+    }
+  )
+})
+
+test('arrays', async (t) => {
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          arrayField: {
+            type: 'array',
+            values: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          arrayField: {
+            type: 'array',
+            values: {
+              type: 'object',
+              properties: {
+                aWrongObjectField: {
+                  type: 'object',
+                  // @ts-ignore
+                  values: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.invalidProperty,
+          path: [
+            'root',
+            'fields',
+            'arrayField',
+            'values',
+            'properties',
+            'aWrongObjectField',
+            'values',
+          ],
+        },
+      ],
+    }
+  )
+})
