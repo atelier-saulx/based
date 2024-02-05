@@ -1,10 +1,9 @@
 import { deepEqual } from '@saulx/utils'
 import { ParseError } from '../error.js'
 import { BasedSchemaType } from '../types.js'
-import { ValidateSchemaError, Validator, validate } from './index.js'
+import { Validator } from './index.js'
 import { mustBeBoolean, mustBeString, mustBeStringArray } from './utils.js'
-import { basedSchemaStringSharedValidator } from './basedSchemaStringValidator.js'
-import { basedSchemaFieldSharedValidator } from './basedSchemaFieldValidator.js'
+import { mustBeFields } from './fieldValidators.js'
 
 export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
   directory: {
@@ -12,41 +11,7 @@ export const basedSchemaTypeValidator: Validator<BasedSchemaType> = {
     optional: true,
   },
   fields: {
-    validator: (value, path, newSchema, oldSchema) => {
-      if (!(typeof value === 'object' && !Array.isArray(value))) {
-        return [
-          {
-            code: ParseError.incorrectFormat,
-            path,
-          },
-        ]
-      }
-      const errors: ValidateSchemaError[] = []
-      for (const key in value) {
-        if (value.hasOwnProperty(key)) {
-          switch (value[key].type) {
-            case 'string':
-              errors.push(
-                ...validate(
-                  {
-                    ...basedSchemaStringSharedValidator,
-                    ...basedSchemaFieldSharedValidator,
-                  },
-                  value[key],
-                  path.concat(key),
-                  newSchema,
-                  oldSchema
-                )
-              )
-              break
-
-            default:
-              break
-          }
-        }
-      }
-      return errors
-    },
+    validator: mustBeFields,
   },
   title: {
     validator: mustBeString,

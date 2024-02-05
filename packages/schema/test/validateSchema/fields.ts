@@ -218,3 +218,99 @@ test('string', async (t) => {
     }
   )
 })
+
+test('objects', async (t) => {
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          objectField: {
+            type: 'object',
+            properties: {
+              aStringField: {
+                type: 'string',
+              },
+            },
+          },
+        },
+      },
+    }),
+    {
+      valid: true,
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          objectField: {
+            type: 'object',
+            properties: {
+              aStringField: {
+                // @ts-ignore
+                wawa: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.invalidProperty,
+          path: [
+            'root',
+            'fields',
+            'objectField',
+            'properties',
+            'aStringField',
+            'wawa',
+          ],
+        },
+      ],
+    }
+  )
+
+  t.deepEqual(
+    await validateSchema({
+      root: {
+        fields: {
+          objectField: {
+            type: 'object',
+            properties: {
+              anotherObjectField: {
+                type: 'object',
+                properties: {
+                  aWrongObjectField: {
+                    type: 'object',
+                    // @ts-ignore
+                    values: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    }),
+    {
+      errors: [
+        {
+          code: ParseError.invalidProperty,
+          path: [
+            'root',
+            'fields',
+            'objectField',
+            'properties',
+            'anotherObjectField',
+            'properties',
+            'aWrongObjectField',
+            'values',
+          ],
+        },
+      ],
+    }
+  )
+})
