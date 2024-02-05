@@ -10,7 +10,10 @@ export const oldToNew = (oldSchema): BasedSchema => {
         target.language = source[i][0]
         target.translations = source[i].filter((_, i) => i !== 0)
       } else if (typeof source[i] === 'object' && i in target === false) {
-        if (i === 'meta' && typeof source[i] === 'object') {
+        if (
+          i === 'meta' &&
+          !Object.keys(source[i]).includes('properties' || 'type')
+        ) {
           for (const j in source[i]) {
             if (j === 'name') {
               target.title = source[i][j]

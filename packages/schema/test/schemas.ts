@@ -5,18 +5,15 @@ import { oldToNew } from '../src/compat/oldToNew.js'
 import { oldSchemas } from './data/oldSchemas.js'
 import { validateSchema } from '../src/validateSchema.js'
 
-// {} old => new validateSchema
-
-// test('test', async (t) => {
-//   newToOld(newSchemas[2])
-//   t.true(true)
-// })
-
 test('test', async (t) => {
-  // console.dir(newToOld(await oldToNew(oldSchemas[0])), { depth: null })
-  // validateSchema(oldToNew(oldSchemas[1]))
+  // need validator that returns true false
+  //t.true(validateSchema(oldToNew(oldSchemas[0])))
+
   t.deepEqual(newToOld(await oldToNew(oldSchemas[0])), oldSchemas[0])
+})
+test('test2', async (t) => {
   t.deepEqual(newToOld(await oldToNew(oldSchemas[1])), oldSchemas[1])
+})
+test('test3', async (t) => {
   t.deepEqual(newToOld(await oldToNew(oldSchemas[2])), oldSchemas[2])
-  // t.true(true)
 })
