@@ -81,13 +81,13 @@ enum rpn_code {
 
 struct rpn_operand {
     struct {
-        unsigned pooled : 1; /*!< Pooled operand, do not free. */
-        unsigned regist : 1; /*!< Register value, do not free. */
-        unsigned spused : 1; /*!< The value is a string pointed by sp. */
-        unsigned spfree : 1; /*!< Free sp if set when freeing the operand. */
-        unsigned slvobj : 1; /*!< SelvaObject pointer. */
-        unsigned slvset : 1; /*!< Set pointer is pointing to a SelvaSet. */
-        unsigned embset : 1; /*!< Embedded set is used and it must be destroyed. */
+        bool pooled : 1; /*!< Pooled operand, do not free. */
+        bool regist : 1; /*!< Register value, do not free. */
+        bool spused : 1; /*!< The value is a string pointed by sp. */
+        bool apfree : 1; /*!< Free sp if set when freeing the operand. */
+        bool slvobj : 1; /*!< SelvaObject pointer. */
+        bool slvset : 1; /*!< The value is a SelvaSet. */
+        bool embset : 1; /*!< Embedded set is used and it must be destroyed. */
     } flags;
     uint32_t refcount; /*!< Stack reference counter adjusted on push/pop. */
     struct rpn_operand *next_free; /* Next free in pool. */
@@ -170,7 +170,7 @@ void rpn_destroy(struct rpn_ctx *ctx) {
             }
 
             v->refcount = 0;
-            v->flags.regist = 0;
+            v->flags.regist = false;
 
             free_rpn_operand(&v);
         }
@@ -245,7 +245,7 @@ static struct rpn_operand *alloc_rpn_operand(size_t s_size) {
         small_operand_pool_next = v->next_free;
 
         memset(v, 0, sizeof(struct rpn_operand));
-        v->flags.pooled = 1;
+        v->flags.pooled = true;
     } else {
         const size_t size = sizeof(struct rpn_operand) - RPN_SMALL_OPERAND_SIZE + s_size;
 
@@ -259,8 +259,8 @@ static struct rpn_operand *alloc_rpn_set_operand(enum SelvaSetType type) {
     struct rpn_operand *v;
 
     v = alloc_rpn_operand(sizeof(struct SelvaSet *) + sizeof(struct SelvaSet));
-    v->flags.slvset = 1;
-    v->flags.embset = 1;
+    v->flags.slvset = true;
+    v->flags.embset = true;
     v->d = nan_undefined();
     v->set = &v->set_emb;
     SelvaSet_Init(v->set, type);
@@ -281,10 +281,24 @@ static void free_rpn_operand(void *p) {
         return;
     }
 
-    if (v->flags.spused && v->flags.spfree && v->sp) {
-        selva_free((void *)v->sp);
-    } else if (v->flags.embset && v->flags.slvset) {
-        SelvaSet_Destroy(&v->set_emb);
+    if (v->flags.apfree || v->flags.embset) {
+        /*
+         * Auto free unref'd values.
+         * Moreover, an embedded set must be always destroyed.
+         */
+        if (v->flags.spused) {
+            if (v->sp) {
+                selva_free((void *)v->sp);
+            }
+        } else if (v->flags.slvobj) {
+            if (v->obj) {
+                SelvaObject_Destroy(v->obj);
+            }
+        } else if (v->flags.slvset) {
+            if (v->set) {
+                SelvaSet_Destroy(v->set);
+            }
+        }
     }
     if (v->flags.pooled) {
         struct rpn_operand *prev = small_operand_pool_next;
@@ -419,7 +433,7 @@ static enum rpn_error push_empty_value(struct rpn_ctx *ctx) {
 static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct selva_string *s) {
     struct rpn_operand *v = alloc_rpn_operand(sizeof(struct selva_string *));
 
-    v->flags.spused = 1;
+    v->flags.spused = true;
     v->sp = selva_string_to_str(s, &v->s_size);
     v->d = nan_undefined();
 
@@ -429,7 +443,7 @@ static enum rpn_error push_selva_string_result(struct rpn_ctx *ctx, const struct
 static enum rpn_error push_selva_set_result(struct rpn_ctx *ctx, struct SelvaSet *set) {
     struct rpn_operand *v = alloc_rpn_operand(sizeof(struct SelvaSet *));
 
-    v->flags.slvset = 1;
+    v->flags.slvset = true;
     v->set = set;
     v->d = nan_undefined();
 
@@ -463,13 +477,18 @@ static int to_bool(struct rpn_operand *v) {
     return !!((long long)d);
 }
 
+/**
+ * Clear old register value.
+ * Note that this function doesn't reset the pointer in ctx->reg and it must
+ * be done by the caller.
+ */
 static void clear_old_reg(struct rpn_ctx *ctx, size_t i) {
     struct rpn_operand *old;
 
     old = ctx->reg[i];
     if (old) {
         /* Can be freed again unless some other flag inhibits it. */
-        old->flags.regist = 0;
+        old->flags.regist = false;
 
         free_rpn_operand(&old);
     }
@@ -488,9 +507,9 @@ enum rpn_error rpn_set_reg(struct rpn_ctx *ctx, size_t i, const char *s, size_t 
         /*
          * Set the string value.
          */
-        r->flags.regist = 1; /* Can't be freed when this flag is set. */
-        r->flags.spused = 1;
-        r->flags.spfree = (flags & RPN_SET_REG_FLAG_SELVA_FREE) == RPN_SET_REG_FLAG_SELVA_FREE;
+        r->flags.regist = true; /* Can't be freed when this flag is set. */
+        r->flags.spused = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->s_size = size;
         r->sp = s;
 
@@ -563,11 +582,10 @@ enum rpn_error rpn_set_reg_string(struct rpn_ctx *ctx, size_t i, const struct se
     char *val = selva_malloc(len);
 
     memcpy(val, s_str, len);
-    return rpn_set_reg(ctx, i, val, len, RPN_SET_REG_FLAG_SELVA_FREE);
+    return rpn_set_reg(ctx, i, val, len, RPN_SET_REG_FLAG_AUTO_FREE);
 }
 
-/* TODO free flag for rpn_set_reg_slvobj() */
-enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObject *obj, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -580,8 +598,9 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
         /*
          * Set the values.
          */
-        r->flags.regist = 1;
-        r->flags.slvobj = 1;
+        r->flags.regist = true;
+        r->flags.slvobj = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->obj = obj;
 
@@ -593,8 +612,7 @@ enum rpn_error rpn_set_reg_slvobj(struct rpn_ctx *ctx, size_t i, struct SelvaObj
     return RPN_ERR_OK;
 }
 
-/* TODO free flag for rpn_set_reg_slvset() */
-enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags __unused) {
+enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet *set, unsigned flags) {
     if (i >= (size_t)ctx->nr_reg) {
         return RPN_ERR_BNDS;
     }
@@ -614,8 +632,9 @@ enum rpn_error rpn_set_reg_slvset(struct rpn_ctx *ctx, size_t i, struct SelvaSet
         /*
          * Set the values.
          */
-        r->flags.regist = 1;
-        r->flags.slvset = 1;
+        r->flags.regist = true;
+        r->flags.slvset = true;
+        r->flags.apfree = (flags & RPN_SET_REG_FLAG_AUTO_FREE) == RPN_SET_REG_FLAG_AUTO_FREE;
         r->d = nan_undefined();
         r->set = set;
 
@@ -1742,7 +1761,7 @@ static enum rpn_error compile_store_literal(struct rpn_expression *expr, size_t 
         return RPN_ERR_BADSTK;
     }
 
-    v->flags.regist = 1;
+    v->flags.regist = true;
     expr->literal_reg[i] = v;
 
     return RPN_ERR_OK;
@@ -2018,7 +2037,7 @@ void rpn_destroy_expression(struct rpn_expression *expr) {
         selva_free(expr->expression);
 
         while (*op) {
-            (*op)->flags.regist = 0;
+            (*op)->flags.regist = false;
             free_rpn_operand(op);
             op++;
         }

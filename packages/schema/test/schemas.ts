@@ -4,6 +4,8 @@ import { newToOld } from '../src/compat/newToOld.js'
 import { oldToNew } from '../src/compat/oldToNew.js'
 import { oldSchema } from '../src/compat/oldSchemaType.js'
 
+// {} old => new validateSchema
+
 export const newSchemas: BasedSchema[] = [
   {
     types: {
@@ -294,14 +296,15 @@ const oldSchema: oldSchema = {
   },
 }
 
-// test('test', async (t) => {
-//   newToOld(newSchemas[2])
-//   t.true(true)
-// })
+test('test', async (t) => {
+  newToOld(newSchemas[2])
+  t.true(true)
+})
+
 test('test', async (t) => {
   console.dir(oldToNew(oldSchema), { depth: null })
-  // newToOld(newSchemas[2])
-  // console.dir(newToOld(newSchemas[2]), { depth: null })
+  newToOld(newSchemas[2])
+  console.dir(newToOld(newSchemas[2]), { depth: null })
 
   t.true(true)
 })
