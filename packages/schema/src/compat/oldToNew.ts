@@ -14,7 +14,6 @@ export const oldToNew = (oldSchema): oldSchema => {
           walker(target[i], source[i])
         } else {
           for (const j in source[i]) {
-            console.log(j)
             if (j === 'name') {
               target.title = source[i][j]
             } else {
@@ -29,5 +28,7 @@ export const oldToNew = (oldSchema): oldSchema => {
   }
 
   walker(tempSchema, oldSchema)
+  tempSchema.$defs = {}
+
   return tempSchema
 }

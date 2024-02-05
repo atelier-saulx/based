@@ -55,9 +55,9 @@ export const newToOld = (schema: BasedSchema) => {
             delete source[i]
           }
         }
-        if ((target.meta = {})) {
-          delete target.meta
-        }
+        // if ((target.meta = {})) {
+        //   delete target.meta
+        // }
       }
     }
   }
