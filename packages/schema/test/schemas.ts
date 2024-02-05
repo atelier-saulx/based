@@ -17,3 +17,6 @@ test('test2', async (t) => {
 test('test3', async (t) => {
   t.deepEqual(newToOld(await oldToNew(oldSchemas[2])), oldSchemas[2])
 })
+test('test4', async (t) => {
+  t.deepEqual(newToOld(await oldToNew(oldSchemas[3])), oldSchemas[3])
+})

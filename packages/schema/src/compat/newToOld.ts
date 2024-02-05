@@ -1,24 +1,4 @@
 import { BasedSchema } from '../types.js'
-import { oldSchema } from './oldSchemaType.js'
-
-const oldSchemaThingy: oldSchema = {
-  languages: ['en'],
-
-  rootType: {},
-  types: {
-    type1: {
-      fields: {
-        number: {
-          type: 'reference',
-        },
-      },
-      prefix: 'as',
-      meta: {
-        title: 'thingy',
-      },
-    },
-  },
-}
 
 export const newToOld = (schema: BasedSchema) => {
   const tempSchema = {} as any
@@ -30,7 +10,32 @@ export const newToOld = (schema: BasedSchema) => {
       field === 'description' ||
       field === 'title' ||
       field === 'examples' ||
-      field === 'ui'
+      field === 'ui' ||
+      field === 'isRequired' ||
+      field === 'title' ||
+      field === 'description' ||
+      field === 'index' ||
+      field === 'readOnly' ||
+      field === 'writeOnly' ||
+      field === '$comment' ||
+      field === 'examples' ||
+      field === 'default' ||
+      field === 'customValidator' ||
+      field === 'value' ||
+      field === 'path' ||
+      field === 'target' ||
+      field === 'minLength' ||
+      field === 'maxLength' ||
+      field === 'contentMediaEncoding' ||
+      field === 'pattern' ||
+      field === 'display' ||
+      field === 'multiline' ||
+      field === 'multipleOf' ||
+      field === 'minimum' ||
+      field === 'maximum' ||
+      field === 'exclusiveMaximum' ||
+      field === 'exclusiveMinimum' ||
+      field === '$delete'
       // field === 'name'
     )
   }
