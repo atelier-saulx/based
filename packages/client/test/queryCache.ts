@@ -85,8 +85,8 @@ test('query cache', async (t: T) => {
 
   await wait(1000)
 
+  t.true(client.cacheSize < 1e5)
+
   await server.destroy()
   client.destroy()
-
-  t.pass()
 })
