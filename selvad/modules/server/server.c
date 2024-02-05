@@ -316,6 +316,9 @@ static void config(struct selva_server_response_out *resp, const void *buf __unu
             case CONFIG_INT:
                 selva_send_ll(resp, *(int *)cfg->dp);
                 break;
+            case CONFIG_BOOL:
+                selva_send_ll(resp, *(bool *)cfg->dp);
+                break;
             case CONFIG_SIZE_T:
                 selva_send_ll(resp, *(size_t *)cfg->dp);
                 break;

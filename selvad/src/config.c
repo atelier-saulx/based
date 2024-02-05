@@ -44,6 +44,22 @@ static int parse_int(void *dst, const char *src)
     return 0;
 }
 
+static int parse_bool(void *dst, const char *src)
+{
+    long long v;
+    char *endptr = (char *)src;
+    bool *x = (bool *)dst;
+
+    v = strtol(src, &endptr, 10);
+    if (endptr == src) {
+        return SELVA_EINVAL;
+    }
+
+    *x = (bool)(!!v);
+
+    return 0;
+}
+
 static void config_list_insert(const char *mod_name, const struct config cfg_map[], size_t len)
 {
     if (config_list_next == num_elem(config_list)) {
@@ -96,6 +112,9 @@ int config_resolve(const char *mod_name, const struct config cfg_map[], size_t l
             break;
         case CONFIG_INT:
             err = parse_int(cfg->dp, str);
+            break;
+        case CONFIG_BOOL:
+            err = parse_bool(cfg->dp, str);
             break;
         case CONFIG_SIZE_T:
             err = parse_size_t(cfg->dp, str);
